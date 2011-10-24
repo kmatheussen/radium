@@ -1,0 +1,166 @@
+/* Copyright 2003 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
+#include "nsmtracker.h"
+
+#include <string.h>
+
+#include "visual_proc.h"
+
+
+int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max){
+	ReqType file;
+	char rettext[50];
+	int ret=min-1;
+
+	if(reqtype==NULL){
+		file=GFX_OpenReq(tvisual,strlen(text)+10,4,"title");
+	}else{
+		file=reqtype;
+	}
+
+	if(file==0){
+		return ret;
+	}
+
+	while(ret<min || ret>max){
+		GFX_WriteString(file,text);
+		GFX_ReadString(file,rettext,40);
+		if(rettext[0]=='\0'){
+			ret=min-1;
+			break;
+		}
+		ret=atoi(rettext);
+	}
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
+	}
+
+	return ret;
+}
+
+float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,float min,float max){
+	ReqType file;
+	char rettext[50];
+	float ret=min-1.0f;
+
+	if(reqtype==NULL){
+		file=GFX_OpenReq(tvisual,strlen(text)+10,4,"title");
+	}else{
+		file=reqtype;
+	}
+
+	if(file==0){
+		return ret;
+	}
+
+	while(ret<min || ret>max){
+		GFX_WriteString(file,text);
+		GFX_ReadString(file,rettext,40);
+		if(rettext[0]=='\0'){
+			ret=min-1.0f;
+			break;
+		}
+		if(rettext[0]=='/'){
+			ret=(float)atof(rettext+1);
+			if(ret!=0.0f){
+				ret=(float)1.0f/ret;
+			}else{
+				ret=min-1.0f;
+			}
+		}else{
+			ret=(float)atof(rettext);
+		}
+	}
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
+	}
+
+	return ret;
+}
+
+
+char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){
+	ReqType file;
+	char temp[70];
+	char *rettext=NULL;
+
+	if(reqtype==NULL){
+		file=GFX_OpenReq(tvisual,strlen(text)+10,4,"title");
+	}else{
+		file=reqtype;
+	}
+
+	if(file==0){
+		return NULL;
+	}
+
+	GFX_WriteString(file,text);
+	GFX_ReadString(file,temp,49);
+	if(temp[0]=='\0'){
+	}else{
+		rettext=talloc_atomic(strlen(temp)+2);
+		sprintf(rettext,"%s",temp);
+	}
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
+	}
+
+	return rettext;
+}
+
+
+int GFX_ReqTypeMenu(
+	struct Tracker_Windows *tvisual,
+	ReqType reqtype,
+	char *seltext,
+	int num_sel,
+	char **menutext
+){
+  char temp[500];
+  int lokke;
+  int ret=0;
+
+  if(reqtype==NULL){
+    reqtype=GFX_OpenReq(tvisual,strlen(seltext)+10,num_sel+5,"title");
+  }
+
+  GFX_WriteString(reqtype,seltext);
+  GFX_WriteString(reqtype,"\\n");
+  
+  for(lokke=0;lokke<num_sel;lokke++){
+    sprintf(temp,"%d. %s\n",lokke+1,menutext[lokke]);
+    GFX_WriteString(reqtype,temp);
+  }
+  GFX_WriteString(reqtype,"\n");
+  
+  while(ret<=0 || ret>num_sel){
+    GFX_WriteString(reqtype,"> ");
+    GFX_ReadString(reqtype,temp,3);
+    if(temp[0]=='\0'){
+      ret=0;
+      break;
+    }
+    ret=atoi(temp);
+  }
+  
+  return ret-1;
+}
+

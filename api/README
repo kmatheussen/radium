@@ -1,0 +1,11 @@
+
+
+
+API code for extension language interfaces. All functions in here should be
+crash-proof. No matter what you put in, radium should in theory
+not crash.
+
+
+
+
+

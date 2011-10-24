@@ -1,0 +1,172 @@
+/* Copyright 2003 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
+#include "../common/nsmtracker.h"
+
+#include "../common/gfx_wtrackheaders_proc.h"
+#include "../common/list_proc.h"
+#include "midi_i_plugin.h"
+#include "../common/patch_proc.h"
+#include "midi_i_plugin_proc.h"
+#include "../common/playerclass.h"
+
+#include "midi_getEvents_proc.h"
+#include "OS_midigfx_proc.h"
+
+extern struct Patch *currpatch;
+extern struct Root *root;
+extern PlayerClass *pc;
+extern bool useOx90ForNoteOff;
+
+
+void MIDIGetEvents(
+		   struct Instruments *instrument,
+		   int arg0,
+		   int arg1,
+		   int arg2,
+		   int arg3
+		   )
+{
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct Patch *patch=currpatch;
+  struct PatchData *patchdata;
+  int channel;
+  struct MyMidiLinks *mymidilink;
+  struct ChannelSpesific *cs;
+
+  switch(arg0){
+  case MIDIEVENT_USE0x90FORNOTEOFF:
+    useOx90ForNoteOff=arg1;
+    break;
+  case MIDIEVENT_NEWPATCH:
+    SelectPatch(window,window->wblock->wtrack->track);
+    return;
+    break;
+  case MIDIEVENT_SETSTANDARDVEL:
+    if(currpatch==NULL){
+      root->standardvel=arg1;
+    }else{
+      currpatch->standardvel=arg1;
+    }
+    break;
+  case MIDIEVENT_CHANGECURRENTPATCH:
+    {
+      struct Patch *patch=NULL;
+      
+      if(arg1!=0){
+	patch=ListFindElement1(&instrument->patches->l,arg1);
+      }
+      
+      if( ! pc->isplaying){
+	window->wblock->wtrack->track->patch=patch;
+	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
+      }
+      instrument->PP_Update(instrument,patch);
+    }
+    break;
+  case MIDIEVENT_CHANGECURRENTPORT:
+    printf("MIDIEVENT_CHANGE.. %d\n",arg1);
+    break;
+  default:
+    break;
+  }
+
+  if(currpatch==NULL) return;
+
+  patchdata=(struct PatchData *)patch->patchdata;
+  channel=patchdata->channel;
+  mymidilink=patchdata->mymidilink;
+  cs=&mymidilink->channelspesific[channel];
+    
+
+  //  struct PatchData *patchdata;
+
+  //  if(currpatch==NULL) return;
+
+  //  patchdata=patch->patchdata;
+
+  printf("Got MidiEvent %d, %d,%d,%d\n",arg0,arg1,arg2,arg3);
+
+
+  if(arg0>0x7f){
+    R_PutMidi3(mymidilink,arg0,arg1,arg2);
+  }else{
+    switch(arg0){
+    case MIDIEVENT_SETMIDIINPUT:
+      break;
+    case MIDIEVENT_CHANGEPATCHNAME:
+      break;    
+    case MIDIEVENT_SETPORT:
+      break;
+    case MIDIEVENT_CHANGEPORT:
+      break;
+    case MIDIEVENT_SETCHANNEL:
+      if(arg1<1 || arg1>16){
+	MIDIGFX_SetChannel(patchdata->channel);
+      }else{
+	patchdata->channel=arg1-1;
+	MIDIGFX_UpdateAll();
+      }
+      break;
+    case MIDIEVENT_SETMSB:
+      if(arg1>=-1 && arg1<128){
+	patchdata->MSB=arg1;
+      }else{
+	MIDIGFX_SetMSB(patchdata->MSB);
+      }
+      break;
+    case MIDIEVENT_SETLSB:
+      if(arg1>=-1 && arg1<128){
+	patchdata->LSB=arg1;
+      }else{
+	MIDIGFX_SetLSB(patchdata->LSB);
+      }
+      break;
+    case MIDIEVENT_SETPRESET:
+      patchdata->preset=arg1-1;
+      break;
+    case MIDIEVENT_PANNINGONOFF:
+      cs->panonoff=cs->panonoff?false:true;
+      MIDIGFX_SetPanSlider(cs->panonoff,cs->pan);
+      break;
+    case MIDIEVENT_SETPANNING:
+      cs->pan=arg1;
+      D_PutMidi3(mymidilink,0xb0|channel,0xa,cs->pan);
+      break;
+    case MIDIEVENT_SETVOLONOFF:
+      cs->volumeonoff=cs->volumeonoff?false:true;
+      MIDIGFX_SetVolumeSlider(cs->volumeonoff,cs->volume);
+      break;
+    case MIDIEVENT_SETVOL:
+      cs->volume=arg1;
+      D_PutMidi3(mymidilink,0xb0|channel,0x7,cs->volume);
+      break;
+    case MIDIEVENT_CC_ONOFF:
+      cs->ccsonoff[arg1]=arg2==1?true:false;
+      MIDIGFX_SetCCSlider(arg1,cs->ccsonoff[arg1],cs->ccvalues[arg1]);
+      break;
+    case MIDIEVENT_CC_VAL:
+      cs->ccvalues[arg1]=arg2;
+      break;
+    default:
+      printf("Unknown MIDIEVENT message: %d\n",arg0);
+      break;
+    }
+  }
+}
+
+

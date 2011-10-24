@@ -1,0 +1,31 @@
+; Sas-C does not do any 64 bit integer operations,
+; at least not that I know of. PEQ_calc.c needs
+; 64 bit types. This file contains a function that
+; multiplies two 32 integers, and divide it by another
+; 32 bit number. The result of the 2 32 bit integers
+; that are to be multiplied is often more than 64 bit.
+; This function can not be run on a 68000 cpu. When
+; Compiling for 68000 or 68060 cpu, PEQ_calc_64bit.c is used
+; instead. (not very likely that anyone wants to use
+; this program on an 68000 cpu, but I made the PEQ_calc_64bit
+; function before I knew it was possible to divide
+; 64bit numbers directly. Function is used when compiling
+; for 68020, 68030 and 68040. Not 68060 as that one
+; is much slower than Mul32Div64_000, because 64 bits divs (and muls)
+; is emulated.
+
+	xdef _Mul32Div64_020
+
+	section text,code
+
+;Works like:
+; d0=d0*d1/d2
+
+_Mul32Div64_020:
+	muls.l	d1,d1:d0
+	divs.l	d2,d1:d0
+	rts
+
+
+
+	END

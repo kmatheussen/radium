@@ -1,0 +1,714 @@
+#----------------DEFININTIONS----------------------
+
+P=dummies/
+API=api/
+
+MAKEFILE=Makefile.dummies
+
+MAX_NUM_UNDOS=800
+
+CD=common/
+
+CCC=g++
+CC=gcc
+LINKER=g++
+
+DEBUG=-g
+
+GCDIR=/hom/kjetil/gc
+
+DEFINES= -DNOPAUSEPLAY
+# -DMEMORY_DEBUG
+# define SYSBASEDEBUG
+# define TRACKER_DEBUG
+# define MEMORY_DEBUG
+# define TRACKER_GB
+
+OPTIMIZE=
+#-O
+
+UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -I$(GCDIR)/include -I$(P) -I/usr/local/include/python2.2
+
+OPT= $(UPOPT)
+
+
+#-------------------OBJECT DEFINITIONS-------------------------------
+
+OBJ1= windows.o window_config.o list.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o
+
+OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_window_title.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o
+
+OBJ3= gfx_wtext.o eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o trackreallineelements.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+
+OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o
+
+OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o subtrack.o velocities.o pixmap.o scroll.o blts.o
+
+OBJ6= realline_calc.o gfx_subtrack.o LPB.o resizewindow.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o
+
+OBJ7= nodelines.o nodeboxes.o instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_play.o gfx_tempocolor.o
+
+#Tempos and time
+OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o mouse_temponodes.o temponodes_legalize.o
+
+#Playing
+OBJ9= Ptask2Mtask.o player.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o
+
+#Disk
+OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
+
+#Undo
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o
+
+#dummy Spesific
+OBJ12= dummy_visual.o dummy_error.o dummy_Ptask2Mtask.o dummy_Bs_edit.o dummy_Main.o dummy_endprogram.o dummy_disk.o dummy_Player.o dummy_instrument.o dummy_memory.o
+
+#Python
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o
+
+OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13)
+
+
+
+
+#-------------------KARSJK-------------------------------
+
+
+all: bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py
+	@echo "Compilation OK".
+
+clean:
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core
+
+
+
+bin/radiummodule.so: $(OBJ) $(MAKEFILE)
+#	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
+	gcc -shared $(OBJ) -o bin/radiummodule.so -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
+
+bin/protoconfparser.py: $(API)protoconfparser.py
+	echo "#This file is copied from ../python/ during make-process" >bin/protoconfparser.py
+	cat $(API)protoconfparser.py >>bin/protoconfparser.py
+
+bin/protos.conf: $(API)protos.conf
+	echo "#Warning! Strange things may happen if this file is changed." >bin/protos.conf
+	echo "#The file is copied from ../python/ during make-process." >>bin/protos.conf
+	cat $(API)protos.conf >>bin/protos.conf
+
+bin/common.py: $(API)common.py
+	echo "#This file is copied from ../python/ during make-process." >bin/common.py
+	cat $(API)common.py >>bin/common.py
+
+
+#-----------------COMPILING-----------------------------
+
+windows.o: $(CD)windows.c 
+	$(CC) $(CD)windows.c $(OPT)
+
+list.o: $(CD)list.c 
+	$(CC) $(CD)list.c $(OPT)
+
+song.o: $(CD)song.c 
+	$(CC) $(CD)song.c $(OPT)
+
+blocks.o: $(CD)blocks.c 
+	$(CC) $(CD)blocks.c $(OPT)
+
+tracks.o: $(CD)tracks.c 
+	$(CC) $(CD)tracks.c $(OPT)
+
+localzooms.o: $(CD)localzooms.c 
+	$(CC) $(CD)localzooms.c $(OPT)
+
+notes.o: $(CD)notes.c 
+	$(CC) $(CD)notes.c $(OPT)
+
+wblocks.o: $(CD)wblocks.c 
+	$(CC) $(CD)wblocks.c $(OPT)
+
+wtracks.o: $(CD)wtracks.c 
+	$(CC) $(CD)wtracks.c $(OPT)
+
+sliders.o: $(CD)sliders.c 
+	$(CC) $(CD)sliders.c $(OPT)
+
+gfx_wblocks.o: $(CD)gfx_wblocks.c 
+	$(CC) $(CD)gfx_wblocks.c $(OPT)
+
+common.o: $(CD)common.c 
+	$(CC) $(CD)common.c $(OPT)
+
+gfx_wtracks.o: $(CD)gfx_wtracks.c 
+	$(CC) $(CD)gfx_wtracks.c $(OPT)
+
+gfx_wtext.o: $(CD)gfx_wtext.c 
+	$(CC) $(CD)gfx_wtext.c $(OPT)
+
+eventreciever.o: $(CD)eventreciever.c $(API)radium_proc.h
+	$(CC) $(CD)eventreciever.c $(UPOPT)
+
+reallines.o: $(CD)reallines.c
+	$(CC) $(CD)reallines.c $(OPT)
+
+mouse.o: $(CD)mouse.c
+	$(CC) $(CD)mouse.c $(UPOPT)
+
+notestext.o: $(CD)notestext.c
+	$(CC) $(CD)notestext.c $(OPT)
+
+trackreallines.o: $(CD)trackreallines.c
+	$(CC) $(CD)trackreallines.c $(OPT)
+
+debug.o: $(CD)debug.c
+	$(CC) $(CD)debug.c $(OPT) 
+
+memory.o: $(CD)memory.c
+	$(CC) $(CD)memory.c $(OPT)
+
+placement.o: $(CD)placement.c
+	$(CC) $(CD)placement.c $(OPT)
+
+t_gc.o: $(CD)t_gc.c
+	$(CC) $(CD)t_gc.c $(OPT)
+
+cursor.o: $(CD)cursor.c
+	$(CC) $(CD)cursor.c $(OPT)
+
+cursor_updown.o: $(CD)cursor_updown.c
+	$(CC) $(CD)cursor_updown.c $(OPT)
+
+subtrack.o: $(CD)subtrack.c
+	$(CC) $(CD)subtrack.c $(OPT)
+
+velocities.o: $(CD)velocities.c
+	$(CC) $(CD)velocities.c $(OPT)
+
+realline_calc.o: $(CD)realline_calc.c
+	$(CC) $(CD)realline_calc.c $(OPT)
+
+gfx_subtrack.o: $(CD)gfx_subtrack.c
+	$(CC) $(CD)gfx_subtrack.c $(OPT)
+
+tempos.o: $(CD)tempos.c
+	$(CC) $(CD)tempos.c $(OPT)
+
+LPB.o: $(CD)LPB.c
+	$(CC) $(CD)LPB.c $(OPT)
+
+resizewindow.o: $(CD)resizewindow.c
+	$(CC) $(CD)resizewindow.c $(OPT)
+
+gfx_wtrackheaders.o: $(CD)gfx_wtrackheaders.c
+	$(CC) $(CD)gfx_wtrackheaders.c $(OPT)
+
+nodelines.o: $(CD)nodelines.c
+	$(CC) $(CD)nodelines.c $(OPT)
+
+temponodes.o: $(CD)temponodes.c
+	$(CC) $(CD)temponodes.c $(OPT)
+
+instruments.o: $(CD)instruments.c
+	$(CC) $(CD)instruments.c $(OPT)
+
+fxlines.o: $(CD)fxlines.c
+	$(CC) $(CD)fxlines.c $(OPT)
+
+tbox.o: $(CD)tbox.c
+	$(CC) $(CD)tbox.c $(UPOPT)
+
+
+area.o: $(CD)area.c
+	$(CC) $(CD)area.c $(UPOPT)
+
+mouse_wtrack.o: $(CD)mouse_wtrack.c
+	$(CC) $(CD)mouse_wtrack.c $(UPOPT)
+
+
+mouse_temponodes.o: $(CD)mouse_temponodes.c
+	$(CC) $(CD)mouse_temponodes.c $(UPOPT)
+
+
+mouse_wtrackborder.o: $(CD)mouse_wtrackborder.c
+	$(CC) $(CD)mouse_wtrackborder.c $(UPOPT)
+
+
+mouse_temponodeborder.o: $(CD)mouse_temponodeborder.c
+	$(CC) $(CD)mouse_temponodeborder.c $(UPOPT)
+
+
+mouse_fxarea.o: $(CD)mouse_fxarea.c
+	$(CC) $(CD)mouse_fxarea.c $(UPOPT)
+
+mouse_vellinenode.o: $(CD)mouse_vellinenode.c
+	$(CC) $(CD)mouse_vellinenode.c $(UPOPT)
+
+mouse_vellinestart.o: $(CD)mouse_vellinestart.c
+	$(CC) $(CD)mouse_vellinestart.c $(UPOPT)
+
+mouse_vellineend.o: $(CD)mouse_vellineend.c
+	$(CC) $(CD)mouse_vellineend.c $(UPOPT)
+
+mouse_fxnode.o: $(CD)mouse_fxnode.c
+	$(CC) $(CD)mouse_fxnode.c $(UPOPT)
+
+blocklist.o: $(CD)blocklist.c
+	$(CC) $(CD)blocklist.c $(OPT)
+
+time.o: $(CD)time.c
+	$(CC) $(CD)time.c $(OPT) 
+
+reltempo.o: $(CD)reltempo.c
+	$(CC) $(CD)reltempo.c $(OPT)
+
+
+#player source-files.
+
+Ptask2Mtask.o: $(CD)Ptask2Mtask.c $(CD)playerclass.h
+	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
+
+player.o: $(CD)player.c $(CD)playerclass.h
+	$(CC) $(CD)player.c $(UPOPT)
+
+PEQrealline.o: $(CD)PEQrealline.c $(CD)playerclass.h
+	$(CC) $(CD)PEQrealline.c $(OPT) 
+
+PEQmempool.o: $(CD)PEQmempool.c $(CD)playerclass.h
+	$(CC) $(CD)PEQmempool.c $(OPT) 
+
+PEQblock.o: $(CD)PEQblock.c $(CD)playerclass.h
+	$(CC) $(CD)PEQblock.c $(OPT)
+
+PEQnotes.o: $(CD)PEQnotes.c $(CD)playerclass.h
+	$(CC) $(CD)PEQnotes.c $(OPT)
+
+PEQcommon.o: $(CD)PEQcommon.c $(CD)playerclass.h
+	$(CC) $(CD)PEQcommon.c $(UPOPT)
+
+playerclass.o: $(CD)playerclass.c $(CD)playerclass.h
+	$(CC) $(CD)playerclass.c $(OPT)
+
+player_startstop.o: $(CD)player_startstop.c $(CD)playerclass.h
+	$(CC) $(CD)player_startstop.c $(OPT)
+
+PEQvelocities.o: $(CD)PEQvelocities.c
+	$(CC) $(CD)PEQvelocities.c $(OPT)
+
+PEQ_calc.o: $(CD)PEQ_calc.c
+	$(CC) $(CD)PEQ_calc.c $(OPT)
+
+PEQfxs.o: $(CD)PEQfxs.c
+	$(CC) $(CD)PEQfxs.c $(OPT)
+
+patch.o: $(CD)patch.c
+	$(CC) $(CD)patch.c $(OPT)
+
+clipboard_range.o: $(CD)clipboard_range.c $(CD)clipboard_range.h
+	$(CC) $(CD)clipboard_range.c $(OPT)
+
+clipboard_range_calc.o: $(CD)clipboard_range_calc.c $(CD)clipboard_range.h
+	$(CC) $(CD)clipboard_range_calc.c $(OPT)
+
+clipboard_range_copy.o: $(CD)clipboard_range_copy.c $(CD)clipboard_range.h
+	$(CC) $(CD)clipboard_range_copy.c $(OPT)
+
+clipboard_range_paste.o: $(CD)clipboard_range_paste.c $(CD)clipboard_range.h
+	$(CC) $(CD)clipboard_range_paste.c $(OPT)
+
+clipboard_range_cut.o: $(CD)clipboard_range_cut.c $(CD)clipboard_range.h
+	$(CC) $(CD)clipboard_range_cut.c $(OPT)
+
+player_pause.o: $(CD)player_pause.c $(CD)playerclass.h
+	$(CC) $(CD)player_pause.c $(OPT)
+
+PEQ_type.o: $(CD)PEQ_type.c $(CD)playerclass.h
+	$(CC) $(CD)PEQ_type.c $(OPT)
+
+
+transpose.o: $(CD)transpose.c
+	$(CC) $(CD)transpose.c $(OPT)
+
+
+
+disk_wblock.o: $(CD)disk_wblock.c $(CD)disk.h
+	$(CC) $(CD)disk_wblock.c $(OPT)
+
+
+disk_localzooms.o: $(CD)disk_localzooms.c $(CD)disk.h
+	$(CC) $(CD)disk_localzooms.c $(OPT)
+
+
+disk_track.o: $(CD)disk_track.c $(CD)disk.h
+	$(CC) $(CD)disk_track.c $(OPT)
+
+disk_fx.o: $(CD)disk_fx.c $(CD)disk.h
+	$(CC) $(CD)disk_fx.c $(OPT)
+
+disk_fxnodelines.o: $(CD)disk_fxnodelines.c $(CD)disk.h
+	$(CC) $(CD)disk_fxnodelines.c $(OPT)
+
+disk_wtrack.o: $(CD)disk_wtrack.c $(CD)disk.h
+	$(CC) $(CD)disk_wtrack.c $(OPT)
+
+disk_temponodes.o: $(CD)disk_temponodes.c $(CD)disk.h
+	$(CC) $(CD)disk_temponodes.c $(OPT)
+
+disk_tempos.o: $(CD)disk_tempos.c $(CD)disk.h
+	$(CC) $(CD)disk_tempos.c $(OPT)
+
+disk_song.o: $(CD)disk_song.c $(CD)disk.h
+	$(CC) $(CD)disk_song.c $(OPT)
+
+disk_velocities.o: $(CD)disk_velocities.c $(CD)disk.h
+	$(CC) $(CD)disk_velocities.c $(OPT)
+
+disk_block.o: $(CD)disk_block.c $(CD)disk.h
+	$(CC) $(CD)disk_block.c $(OPT)
+
+disk_placement.o: $(CD)disk_placement.c $(CD)disk.h
+	$(CC) $(CD)disk_placement.c $(OPT)
+
+disk_stops.o: $(CD)disk_stops.c $(CD)disk.h
+	$(CC) $(CD)disk_stops.c $(OPT)
+
+disk_playlist.o: $(CD)disk_playlist.c $(CD)disk.h
+	$(CC) $(CD)disk_playlist.c $(OPT)
+
+disk_root.o: $(CD)disk_root.c $(CD)disk.h
+	$(CC) $(CD)disk_root.c $(OPT)
+
+disk_notes.o: $(CD)disk_notes.c $(CD)disk.h
+	$(CC) $(CD)disk_notes.c $(OPT)
+
+disk_lpbs.o: $(CD)disk_lpbs.c $(CD)disk.h
+	$(CC) $(CD)disk_lpbs.c $(OPT)
+
+disk_windows.o: $(CD)disk_windows.c $(CD)disk.h
+	$(CC) $(CD)disk_windows.c $(OPT)
+
+disk_fxs.o: $(CD)disk_fxs.c $(CD)disk.h
+	$(CC) $(CD)disk_fxs.c $(OPT)
+
+disk.o: $(CD)disk.c $(CD)disk.h
+	$(CC) $(CD)disk.c $(OPT)
+
+disk_warea.o: $(CD)disk_warea.c $(CD)disk.h
+	$(CC) $(CD)disk_warea.c $(OPT)
+
+disk_save.o: $(CD)disk_save.c config/config.h
+	$(CC) $(CD)disk_save.c $(OPT)
+
+disk_load.o: $(CD)disk_load.c config/config.h
+	$(CC) $(CD)disk_load.c $(OPT)
+
+trackreallineelements.o: $(CD)trackreallineelements.c
+	$(CC) $(CD)trackreallineelements.c $(OPT)
+
+control.o: $(CD)control.c
+	$(CC) $(CD)control.c $(OPT)
+
+disk_instrument.o: $(CD)disk_instrument.c $(CD)disk.h
+	$(CC) $(CD)disk_instrument.c $(OPT)
+
+disk_patches.o: $(CD)disk_patches.c $(CD)disk.h
+	$(CC) $(CD)disk_patches.c $(OPT)
+
+disk_slider.o: $(CD)disk_slider.c
+	$(CC) $(CD)disk_slider.c $(OPT)
+
+clipboard_track_copy.o: $(CD)clipboard_track_copy.c
+	$(CC) $(CD)clipboard_track_copy.c $(OPT)
+
+clipboard_track_paste.o: $(CD)clipboard_track_paste.c
+	$(CC) $(CD)clipboard_track_paste.c $(OPT)
+
+clipboard_track_cut.o: $(CD)clipboard_track_cut.c
+	$(CC) $(CD)clipboard_track_cut.c $(OPT)
+
+lines.o: $(CD)lines.c
+	$(CC) $(CD)lines.c $(OPT)
+
+notes_legalize.o: $(CD)notes_legalize.c
+	$(CC) $(CD)notes_legalize.c $(OPT)
+
+temponodes_legalize.o: $(CD)temponodes_legalize.c
+	$(CC) $(CD)temponodes_legalize.c $(OPT)
+
+fxlines_legalize.o: $(CD)fxlines_legalize.c
+	$(CC) $(CD)fxlines_legalize.c $(OPT)
+
+reallines_insert.o: $(CD)reallines_insert.c
+	$(CC) $(CD)reallines_insert.c $(OPT)
+
+block_properties.o: $(CD)block_properties.c
+	$(CC) $(CD)block_properties.c $(OPT)
+
+clipboard_tempos_copy.o: $(CD)clipboard_tempos_copy.c
+	$(CC) $(CD)clipboard_tempos_copy.c $(OPT)
+
+font.o: $(CD)font.c
+	$(CC) $(CD)font.c $(OPT)
+
+clipboard_localzooms.o: $(CD)clipboard_localzooms.c
+	$(CC) $(CD)clipboard_localzooms.c $(OPT)
+
+clipboard_block_copy.o: $(CD)clipboard_block_copy.c
+	$(CC) $(CD)clipboard_block_copy.c $(OPT)
+
+clipboard_block_paste.o: $(CD)clipboard_block_paste.c
+	$(CC) $(CD)clipboard_block_paste.c $(OPT)
+
+undo.o: $(CD)undo.c $(CD)undo.h
+	$(CC) $(CD)undo.c $(OPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
+
+undo_notes.o: $(CD)undo_notes.c $(CD)undo.h
+	$(CC) $(CD)undo_notes.c $(OPT)
+
+undo_fxs.o: $(CD)undo_fxs.c $(CD)undo.h
+	$(CC) $(CD)undo_fxs.c $(OPT)
+
+undo_temponodes.o: $(CD)undo_temponodes.c $(CD)undo.h
+	$(CC) $(CD)undo_temponodes.c $(OPT)
+
+undo_tempos.o: $(CD)undo_tempos.c $(CD)undo.h
+	$(CC) $(CD)undo_tempos.c $(OPT)
+
+undo_lpbs.o: $(CD)undo_lpbs.c $(CD)undo.h
+	$(CC) $(CD)undo_lpbs.c $(OPT)
+
+undo_notesandfxs.o: $(CD)undo_notesandfxs.c $(CD)undo.h
+	$(CC) $(CD)undo_notesandfxs.c $(OPT)
+
+undo_reallines.o: $(CD)undo_reallines.c $(CD)undo.h
+	$(CC) $(CD)undo_reallines.c $(OPT)
+
+undo_tracks.o: $(CD)undo_tracks.c $(CD)undo.h
+	$(CC) $(CD)undo_tracks.c $(OPT)
+
+undo_range.o: $(CD)undo_range.c
+	$(CC) $(CD)undo_range.c $(OPT)
+
+undo_blocks.o: $(CD)undo_blocks.c
+	$(CC) $(CD)undo_blocks.c $(OPT)
+
+time2place.o: $(CD)time2place.c
+	$(CC) $(CD)time2place.c $(OPT)
+
+nodeboxes.o: $(CD)nodeboxes.c
+	$(CC) $(CD)nodeboxes.c $(OPT)
+
+PEQ_calc_64bit.o: $(CD)PEQ_calc_64bit.c
+	$(CC) $(CD)PEQ_calc_64bit.c $(OPT)
+
+track_insert.o: $(CD)track_insert.c
+	$(CC) $(CD)track_insert.c $(OPT)
+
+quantitize.o: $(CD)quantitize.c
+	$(CC) $(CD)quantitize.c $(OPT)
+
+gfx_wtrackheader_volpan.o: $(CD)gfx_wtrackheader_volpan.c
+	$(CC) $(CD)gfx_wtrackheader_volpan.c $(OPT)
+
+mouse_wtrackheader.o: $(CD)mouse_wtrackheader.c
+	$(CC) $(CD)mouse_wtrackheader.c $(OPT)
+
+gfx_tempotrackheader.o: $(CD)gfx_tempotrackheader.c
+	$(CC) $(CD)gfx_tempotrackheader.c $(OPT)
+
+undo_trackheader.o: $(CD)undo_trackheader.c
+	$(CC) $(CD)undo_trackheader.c $(OPT)
+
+mouse_tempoheader.o: $(CD)mouse_tempoheader.c
+	$(CC) $(CD)mouse_tempoheader.c $(OPT)
+
+undo_reltempomax.o: $(CD)undo_reltempomax.c
+	$(CC) $(CD)undo_reltempomax.c $(OPT)
+
+undo_maintempos.o: $(CD)undo_maintempos.c
+	$(CC) $(CD)undo_maintempos.c $(OPT)
+
+gfx_upperleft.o: $(CD)gfx_upperleft.c
+	$(CC) $(CD)gfx_upperleft.c $(OPT)
+
+mouse_quantitize.o: $(CD)mouse_quantitize.c
+	$(CC) $(CD)mouse_quantitize.c $(OPT)
+
+gfx_window_title.o: $(CD)gfx_window_title.c
+	$(CC) $(CD)gfx_window_title.c $(OPT)
+
+window_config.o: $(CD)window_config.c
+	$(CC) $(CD)window_config.c $(OPT)
+
+PEQ_clock.o: $(CD)PEQ_clock.c $(CD)playerclass.h
+	$(CC) $(CD)PEQ_clock.c $(OPT)
+
+block_insert.o: $(CD)block_insert.c
+	$(CC) $(CD)block_insert.c $(OPT)
+
+block_delete.o: $(CD)block_delete.c
+	$(CC) $(CD)block_delete.c $(OPT)
+
+undo_block_insertdelete.o: $(CD)undo_block_insertdelete.c
+	$(CC) $(CD)undo_block_insertdelete.c $(OPT)
+
+track_onoff.o: $(CD)track_onoff.c
+	$(CC) $(CD)track_onoff.c $(OPT)
+
+backwards.o: $(CD)new/backwards.c
+	$(CC) $(CD)new/backwards.c $(OPT)
+
+invert.o: $(CD)new/invert.c
+	$(CC) $(CD)new/invert.c $(OPT)
+
+gfx_slider.o: $(CD)gfx_slider.c
+	$(CC) $(CD)gfx_slider.c $(OPT)
+
+gfx_wblocks_reltempo.o: $(CD)gfx_wblocks_reltempo.c
+	$(CC) $(CD)gfx_wblocks_reltempo.c $(OPT)
+
+undo_reltemposlider.o: $(CD)undo_reltemposlider.c
+	$(CC) $(CD)undo_reltemposlider.c $(OPT)
+
+mouse_reltemposlider.o: $(CD)mouse_reltemposlider.c
+	$(CC) $(CD)mouse_reltemposlider.c $(OPT)
+
+dummy_Main.o: $(P)dummy_Main.c 
+	$(CC) $(P)dummy_Main.c $(OPT)
+
+dummy_visual.o: $(P)dummy_visual.c 
+	$(CC) $(P)dummy_visual.c $(OPT) 
+
+dummy_error.o: $(P)dummy_error.c 
+	$(CC) $(P)dummy_error.c $(OPT)
+
+dummy_Ptask2Mtask.o: $(P)dummy_Ptask2Mtask.c 
+	$(CC) $(P)dummy_Ptask2Mtask.c $(OPT)
+
+dummy_Bs_edit.o: $(P)dummy_Bs_edit.c 
+	$(CC) $(P)dummy_Bs_edit.c $(OPT)
+
+dummy_endprogram.o: $(P)dummy_endprogram.c 
+	$(CC) $(P)dummy_endprogram.c $(OPT)
+
+dummy_disk.o: $(P)dummy_disk.c 
+	$(CC) $(P)dummy_disk.c $(OPT)
+
+dummy_Player.o: $(P)dummy_Player.c 
+	$(CC) $(P)dummy_Player.c $(OPT)
+
+dummy_instrument.o: dummies/dummy_instrument.c
+	$(CC) dummies/dummy_instrument.c $(OPT)
+
+
+scroll.o: $(CD)scroll.c
+	$(CC) $(CD)scroll.c $(OPT)
+
+
+pixmap.o:  $(CD)pixmap.c
+	$(CC)  $(CD)pixmap.c $(OPT)
+
+blts.o:  $(CD)blts.c
+	$(CC)  $(CD)blts.c $(OPT)
+
+dummy_memory.o:  $(P)dummy_memory.c 
+	$(CC)  $(P)dummy_memory.c $(OPT)
+
+gfx_shrink.o:  $(CD)gfx_shrink.c
+	$(CC)  $(CD)gfx_shrink.c $(OPT)
+
+gfx_shrink_t.o:  $(CD)gfx_shrink_t.c
+	$(CC)  $(CD)gfx_shrink_t.c $(OPT)
+
+scroll_play.o:  $(CD)scroll_play.c
+	$(CC)  $(CD)scroll_play.c $(OPT)
+
+gfx_tempocolor.o:  $(CD)gfx_tempocolor.c
+	$(CC)  $(CD)gfx_tempocolor.c $(OPT)
+
+block_split.o:  $(CD)block_split.c
+	$(CC)  $(CD)block_split.c $(OPT)
+
+undo_block_mergesplit.o:  $(CD)undo_block_mergesplit.c
+	$(CC)  $(CD)undo_block_mergesplit.c $(OPT)
+
+glissando.o:  $(CD)new/glissando.c
+	$(CC)  $(CD)new/glissando.c $(OPT)
+
+api_common.o:  $(API)api_common.c
+	$(CC)  $(API)api_common.c $(OPT)
+
+api_keyplay.o:  $(API)api_keyplay.c $(API)radium_proc.h
+	$(CC)  $(API)api_keyplay.c $(OPT)
+
+api_keyplayedit.o:  $(API)api_keyplayedit.c $(API)radium_proc.h
+	$(CC)  $(API)api_keyplayedit.c $(OPT)
+
+api_navigate.o:  $(API)api_navigate.c $(API)radium_proc.h
+	$(CC)  $(API)api_navigate.c $(OPT)
+
+api_noteedit.o:  $(API)api_noteedit.c $(API)radium_proc.h
+	$(CC)  $(API)api_noteedit.c $(OPT)
+
+api_trackonoff.o:  $(API)api_trackonoff.c $(API)radium_proc.h
+	$(CC)  $(API)api_trackonoff.c $(OPT)
+
+api_zoom.o:  $(API)api_zoom.c $(API)radium_proc.h
+	$(CC)  $(API)api_zoom.c $(OPT)
+
+api_notemanipulate.o:  $(API)api_notemanipulate.c $(API)radium_proc.h
+	$(CC)  $(API)api_notemanipulate.c $(OPT)
+
+api_play.o:  $(API)api_play.c $(API)radium_proc.h
+	$(CC)  $(API)api_play.c $(OPT)
+
+api_clipboard.o:  $(API)api_clipboard.c $(API)radium_proc.h
+	$(CC)  $(API)api_clipboard.c $(OPT)
+
+api_undo.o:  $(API)api_undo.c $(API)radium_proc.h
+	$(CC)  $(API)api_undo.c $(OPT)
+
+api_various.o:  $(API)api_various.c $(API)radium_proc.h
+	$(CC)  $(API)api_various.c $(OPT)
+
+radium_wrap.o:  $(API)radium_wrap.c $(API)radium_proc.h
+	$(CC)  $(API)radium_wrap.c $(OPT) -w
+
+
+$(API)radium_wrap.c: $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
+	cd $(API) ; sh makeradiumwrap_c.sh ; cd ..
+
+# # The following two lines can be uses instead of the two previous.
+# # But I haven't found out how to make swig generate the "PyArg_ParseTupleAndKeywords"
+# # function (if possible), and I haven't bothered porting swig to amigaos.
+# # And protoconfparser.py does a perfectly fine job anyway.
+#$(API)radium_wrap.c: $(API)radium.i
+#	swig -python $(API)radium.i
+
+api_support.o:  $(API)api_support.c
+	$(CC)  $(API)api_support.c $(OPT)
+
+ad_noteadd.o:  advanced/ad_noteadd.c
+	$(CC)  advanced/ad_noteadd.c $(OPT)
+
+wrapfunclist.o: $(API)wrapfunclist.c
+	$(CC) $(API)wrapfunclist.c $(OPT)
+
+$(API)wrapfunclist.c: $(API)protos.conf $(API)protoconfparser.py
+	@echo "python protoconfparser.py wrapfunclist.c"
+	cd $(API) ; python protoconfparser.py wrapfunclist.c ; cd ..
+
+$(API)radium.i: $(API)protos.conf $(API)protoconfparser.py
+	@echo "python protoconfparser.py radium.i"
+	cd $(API) ; python protoconfparser.py radium.i ; cd ..
+
+$(API)radium_proc.h: $(API)protos.conf $(API)protoconfparser.py
+	@echo "python protoconfparser.py radium_proc.h"
+	cd $(API) ; python protoconfparser.py radium_proc.h ; cd ..
+
+#.o:  .c
+#	$(CC)  .c $(OPT)
+
+#.o:  .c
+#	$(CC)  .c $(OPT)
+
+
+
