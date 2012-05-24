@@ -1,6 +1,6 @@
 #!/bin/sh
 
-
+set -e
 
 rm -f /tmp/radium
 ln -s `pwd` /tmp/radium
@@ -31,6 +31,7 @@ export PYTHON=$1
 ./configure --prefix=/tmp/radium --with-libglade-config=/tmp/radium/bin/libglade-config
 make
 make install
+sed -i s/" as"/" as2"/ /tmp/radium/lib/python2.6/site-packages/gtk-1.2/gtk.py
 cd ..
 
 

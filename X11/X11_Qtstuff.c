@@ -1,9 +1,10 @@
 
+#include "Python.h"
+
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 
 #include "X11_ReqType_proc.h"
-#include "Python.h"
 
 #include "X11_Qtstuff_proc.h"
 

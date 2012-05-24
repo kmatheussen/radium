@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#include <Python.h>
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -24,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_common_proc.h"
 
-#include <Python.h>
 
 extern struct Root *root;
 

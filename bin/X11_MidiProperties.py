@@ -124,8 +124,11 @@ def MIDI_StartMidiProperties():
 
 
     #os.system("/tmp/radium/bin/python X11_MidiProperties.py "+str(port)+" &")
-    os.system("python X11_MidiProperties.py "+str(port)+" &")
+    #os.system("python X11_MidiProperties.py "+str(port)+" &")
+    thisfile = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "X11_MidiProperties.py")
+    os.system("python " + thisfile + " " +str(port)+" &")
 
+    
     conn, addr = s.accept()
 
     atexit.register(MIDI_EndMidiProperties)

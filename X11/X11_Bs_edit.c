@@ -15,14 +15,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include "Python.h"
+
 #include "../common/nsmtracker.h"
 #include "../common/blocklist_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 
 #include "X11.h"
 #include "X11_ReqType_proc.h"
-
-#include "Python.h"
 
 #include "X11_Bs_edit_proc.h"
 

@@ -14,7 +14,8 @@ PYQTEXE=/usr/bin/python
 
 # QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
 
-QTDIR=/usr/lib/qt3
+QTDIR=/usr/lib/qt-3.3
+#/usr/lib/qt3
 
 
 
@@ -151,7 +152,7 @@ radium/deletemetorebuild: radium/build.sh
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
-	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -L${QTDIR}/lib -lqt -pg -lasound
+	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -L${QTDIR}/lib -lqt-mt -pg -lasound
 
 bin/protoconfparser.py: $(API)protoconfparser.py
 	echo "#This file is copied from ../python/ during make-process" >bin/protoconfparser.py

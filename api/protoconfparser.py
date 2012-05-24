@@ -336,9 +336,9 @@ class Read:
         oh=open("wrapfunclist.c","w");
         oh.write("/* This file is automaticly generated from protos.conf. */\n")
         oh.write("\n")
+        oh.write("#include \"Python.h\"\n\n")
         oh.write("#include \"../common/nsmtracker.h\"\n")
         oh.write("#include \"../common/nsmtracker_events.h\"\n")
-        oh.write("#include \"Python.h\"\n\n")
         oh.write("struct WrapFuncList wrapfunclist[]={\n")
         self.protos.writeC(oh)
         oh.write("\t{NULL,NULL}\n")

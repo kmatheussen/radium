@@ -83,8 +83,8 @@ while(XPending(display)) {
 
 static pthread_t guiplayerthread={0};
 static pthread_cond_t cond={{0}};
-static pthread_mutex_t mutex={0};
-static pthread_mutex_t guimutex={0};
+static pthread_mutex_t mutex={{0}};
+static pthread_mutex_t guimutex={{0}};
 
 static bool goingtoend=false;
 

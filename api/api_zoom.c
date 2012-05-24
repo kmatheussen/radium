@@ -15,13 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include "Python.h"
+
 #include "../common/nsmtracker.h"
 #include "../common/reallines_proc.h"
 #include "../common/font_proc.h"
 
 #include "api_common_proc.h"
-
-#include "Python.h"
 
 
 void expandLine(int numlines,int windownum){

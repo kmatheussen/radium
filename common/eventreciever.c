@@ -16,10 +16,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#include <Python.h>
 
 #include "nsmtracker.h"
-
-#include <Python.h>
 
 #include "windows_proc.h"
 #include "mouse_proc.h"

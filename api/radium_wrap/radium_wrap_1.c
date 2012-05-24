@@ -8,6 +8,8 @@
  * interface file instead. 
  * ----------------------------------------------------------------------------- */
 
+#include "Python.h"
+
 #define SWIGPYTHON
 /***********************************************************************
  * common.swg
@@ -176,7 +178,6 @@ SWIG_TypeQuery(const char *name) {
  ************************************************************************/
 
 #include <stdlib.h>
-#include "Python.h"
 
 #ifdef __cplusplus
 extern "C" {

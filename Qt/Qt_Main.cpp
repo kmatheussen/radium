@@ -98,7 +98,10 @@ extern LANGSPEC int radium_main(char *arg);
 //int radium_main(int argc,char **argv){
 int radium_main(char *arg){
   int argc=1;
-  char *argv[1]={"Radium"};
+  char *argv[1];
+
+  argv[0] = strdup("Radium");
+  argv[1] = NULL;
 
   qapplication=new MyApplication(argc,argv);
 

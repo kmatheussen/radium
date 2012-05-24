@@ -60,7 +60,7 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 
 }
 
-struct TEvent tevent={{0}};
+struct TEvent tevent={0};
 
 
 #if 0
