@@ -41,8 +41,6 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 void MyWidget::customEvent(QCustomEvent *e){
   P2MUpdateSongPosCallBack();
   UpdateClock(this->window);
-
-  //  printf("hmm, well\n");
 }
 
 void MyWidget::paintEvent( QPaintEvent *e ){
@@ -108,7 +106,7 @@ void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
   printf("key press: %d,%d\n",qkeyevent->state(),Qt2SubId[max(0,qkeyevent->key()-0x41)]);
   printf("text     : -%s-\n",(const char *)qkeyevent->text());
   printf("Auto     : %d\n\n",qkeyevent->isAutoRepeat());
-  //  return;
+  // return;
 
   tevent.ID=TR_KEYBOARD;
 

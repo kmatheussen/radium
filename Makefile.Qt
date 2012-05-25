@@ -693,7 +693,7 @@ X11_ClientMessages.o: X11/X11_ClientMessages.c
 
 
 Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h
-	$(CCC) $(P)Qt_Main.cpp $(OPT)
+	$(CCC) $(P)Qt_Main.cpp $(OPT) -Wno-error 
 
 Qt_visual.o: $(P)Qt_visual.c $(P)MyWidget.h
 	$(CCC) $(P)Qt_visual.c $(OPT) 

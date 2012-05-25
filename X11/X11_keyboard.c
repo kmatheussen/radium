@@ -234,7 +234,7 @@ static void fixBrokenKeySwitch(unsigned int state){
 
 int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   //switch(((XKeyEvent *)&event)->keycode){
-  //printf("Pressing %d,\n",keynum);
+  printf("Pressing %d,\n",keynum);
   keyupdowns[keynum]=1;
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARD;

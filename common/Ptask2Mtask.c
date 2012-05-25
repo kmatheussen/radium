@@ -83,7 +83,7 @@ void P2MUpdateSongPosCallBack(void){
 				till_curr_realline=wblock->till_curr_realline=0;
 			}
 
-//			debug("currline: %d, tilline: %d\n",window->wblock->curr_realline,root->curr_realline);
+			//printf("tilline: %d\n",till_curr_realline);
 			ScrollEditorToRealLine(window,wblock,till_curr_realline);
 
 		  Blt_clearNotUsedVisible(window);

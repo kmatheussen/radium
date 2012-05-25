@@ -85,9 +85,12 @@ extern LANGSPEC void Qt_Ptask2Mtask(void);
 
 extern LANGSPEC void Qt_Ptask2Mtask(void){
   QObject *qobject=(QObject *)root->song->tracker_windows->os_visual->widget;
-  QCustomEvent qce(QEvent::User+1);
 
-  qapplication->sendEvent(qobject,&qce);
+#warning "FIXME: Player thread shall not allocate"
+  QCustomEvent *qce = new QCustomEvent(QEvent::User+1);
+
+  //qapplication->sendEvent(qobject,&qce);
+  qapplication->postEvent(qobject,qce);
 }
 
 

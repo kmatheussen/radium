@@ -711,7 +711,7 @@ int GFX_Menu(
     qapplication->processEvents();
     //    sleep(1);
     //    if(qlb->isSelected(3)) break;
-    //printf("sel: %d\n",qlb->currentItem());
+    printf("sel: %d\n",qlb->currentItem());
     if(qlb->selected!=-1) break;
   }
 
