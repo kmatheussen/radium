@@ -112,11 +112,12 @@ int radium_main(char *arg){
   X11_StartMidiProperties();
 
   StartGuiThread();
-  X11_InitPlayer();
 
   printf("starting\n");
   InitProgram();
   printf("ending\n");
+
+  X11_InitPlayer();
 
   X11_StartQtStuff();
 
