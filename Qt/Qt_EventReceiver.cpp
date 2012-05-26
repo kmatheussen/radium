@@ -35,12 +35,33 @@ void MyWidget::timerEvent(QTimerEvent *){
 }
 #endif
 
+#if 0
+static double get_ms(void){
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
+}
+#endif
 
 extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
+#include "X11/Xlib.h"
+
+
 void MyWidget::customEvent(QCustomEvent *e){
+  //static int gakk;
+  //static double last_call = 0.0;
+  //double start = get_ms();
   P2MUpdateSongPosCallBack();
   UpdateClock(this->window);
+  //double end = get_ms();
+  //fprintf(stderr,"CustomEvent called %d. Time: %f. Since last time: %f\n", gakk++, (float)(end-start), (float)(start-last_call)*1000.0f);
+  //last_call = get_ms();
+
+  // Flushing and syncing X to avoid lag when playing fast.
+  Display *dpy = QPaintDevice::x11AppDisplay();
+  XFlush(dpy);
+  XSync(dpy, false);
 }
 
 void MyWidget::paintEvent( QPaintEvent *e ){
