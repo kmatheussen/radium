@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
 
+#define DONT_USE_UAE_TIMER 1
+
 __far extern struct CIA ciaa;
 __far extern struct Custom custom;
 
@@ -71,6 +73,9 @@ extern struct Library *RealTimeBase;
 extern char *screenname;
 char *playertaskname;
 
+// Try to call PlayerTask 1200 times a second.
+#define PLAYERTASKFREQ 1200
+
 struct myHook{
 	struct Hook hook;
 	struct Task *task;
@@ -93,12 +98,26 @@ STime GetCurrentSTime(void){
 	return (STime)(conductor->cdt_ClockTime*(PFREQ/1200));		// 1200 is a constant from realtime.libary
 }
 
+#if DONT_USE_UAE_TIMER
 STime lasttime=0;
+#endif
 
 extern PlayerClass *pc;
 
+#if DONT_USE_UAE_TIMER
+#else
+static ULONG (*calltrap3)(ULONG,ULONG) = (ULONG (*)())0xF0FF60;
+
+static ULONG camd_GetTime(ULONG freq)
+{
+  return (*calltrap3) (93,freq);
+}
+#endif
+
 void __saveds Amiga_timertask(void){
+#if DONT_USE_UAE_TIMER
 	STime newtime;
+#endif
 
 	ULONG mysignal;
 	ULONG tempsigbit;
@@ -124,8 +143,11 @@ void __saveds Amiga_timertask(void){
 
 	Wait(1L<<startamigatimersig);
 	FreeSignal(waitforamigatimersig);
- 
 
+#if DONT_USE_UAE_TIMER
+#else 
+	camd_GetTime(PFREQ);
+#endif
 	for(;;){
 		mysignal=Wait(waitforamigatimersig | SIGBREAKF_CTRL_C | pausesig | startplaysig);
 
@@ -138,14 +160,18 @@ void __saveds Amiga_timertask(void){
 		}
 
 		if(mysignal & startplaysig){
-			lasttime=0;
-			SetConductorState(player,CONDSTATE_RUNNING,0);
+#if DONT_USE_UAE_TIMER
+		  lasttime=0;
+#endif
+		  SetConductorState(player,CONDSTATE_RUNNING,0);
 		}
-
+#if DONT_USE_UAE_TIMER
 		newtime=conductor->cdt_ClockTime*(PFREQ/1200);		// 1200 is a constant from realtime.libary
 		PlayerTask(newtime-lasttime);
 		lasttime=newtime;
-
+#else
+		PlayerTask(camd_GetTime(PFREQ)/6000);
+#endif
 		if(mysignal & SIGBREAKF_CTRL_C) break;
 	}
 
@@ -153,6 +179,40 @@ void __saveds Amiga_timertask(void){
 	FreeSignal(tempsigbit);
 	FreeSignal(temp2sigbit);
 }
+
+
+#if 0
+#include <dos/dostags.h>
+#include <proto/dos.h>
+#define POLL_FREQUENCY 1024 // times a second.
+#include <exec/memory.h>
+static bool running=true;
+static bool putproc_running=true;
+
+static void __saveds PutProc(void){
+  struct timerequest *TimerIO;
+  struct MsgPort  *TimerMP;
+  TimerMP=CreateMsgPort();
+  TimerIO=(struct timerequest *)AllocMem(sizeof(struct timerequest),MEMF_ANY|MEMF_CLEAR|MEMF_PUBLIC);
+  TimerIO->tr_node.io_Message.mn_Node.ln_Type=NT_MESSAGE;
+  TimerIO->tr_node.io_Message.mn_ReplyPort=TimerMP;
+  TimerIO->tr_node.io_Message.mn_Length=sizeof(struct timerequest);
+  OpenDevice(
+	     TIMERNAME,UNIT_ECLOCK,(struct IORequest *)TimerIO,0L
+	     );
+  while(running==true){
+    TimerIO->tr_node.io_Command=TR_ADDREQUEST;
+    TimerIO->tr_time.tv_secs=0;
+    TimerIO->tr_time.tv_micro=1000000/POLL_FREQUENCY;
+    DoIO((struct IORequest *)TimerIO);
+    Signal(amigatimertask,waitforamigatimersig);
+  }
+  CloseDevice((struct IORequest *)TimerIO);
+  FreeMem(TimerIO,sizeof(struct timerequest));
+  DeleteMsgPort(TimerMP);
+  putproc_running=false;
+}
+#endif
 
 
 ULONG __asm __saveds timercallback(
@@ -202,6 +262,13 @@ void Amiga_endtimertask(void){
 }
 
 void Amiga_endplayer(void){
+#if 0
+	running=false;
+	while(putproc_running==true){
+	  Delay(1);
+	}
+#endif
+
 	if(player!=NULL){
 		SetConductorState(player,CONDSTATE_STOPPED,0);
 		DeletePlayer(player);
@@ -311,7 +378,14 @@ bool __saveds Amiga_initplayer1(void){
 	}else{
 		printf("player not ready\n");
 	}
-
+#if 0
+	CreateNewProcTags(
+			  NP_Entry,PutProc,
+			  NP_Name,"camd_254uae_putproc",
+			  NP_Priority,36,
+			  TAG_END
+			  );
+#endif
 	return true;
 }
 

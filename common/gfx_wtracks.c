@@ -386,8 +386,7 @@ void UpdateWTrack(
 					SetTextLine(
 						window,
 						wblock,
-						trackrealline->note==NOTE_STP||trackrealline->note==NOTE_MUL?1:
-							NCol[trackrealline->note/12],
+						(trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : NCol[trackrealline->note/12],
 						NotesTexts[trackrealline->note],
 						wtrack->notearea.x,
 						lokke,

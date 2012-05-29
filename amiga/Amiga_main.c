@@ -440,6 +440,18 @@ newprogram:
 					tevent.y=msg->MouseY-temp->os_visual->ypluss;
 					switch (msg->Class){
 						case IDCMP_RAWKEY:
+						  switch(msg->Code){
+						  case 0x7a:
+						    tevent.ID=TR_KEYBOARD;
+						    tevent.SubID=EVENT_UPARROW;
+						    EventReciever(&tevent,temp);
+						    break;
+						  case 0x7b:
+						    tevent.ID=TR_KEYBOARD;
+						    tevent.SubID=EVENT_DOWNARROW;
+						    EventReciever(&tevent,temp);
+						    break;
+						  default:
 							switch(HandleKey(msg,temp)){
 								case 1: done=TRUE;
 									break;
@@ -447,7 +459,8 @@ newprogram:
 								default:
 									break;
 							}
-							break;
+                                                  }
+                                                  break;
 						case IDCMP_MOUSEMOVE:
 							tevent.ID=TR_MOUSEMOVE;
 							if(EventReciever(&tevent,temp)==1) done=TRUE;

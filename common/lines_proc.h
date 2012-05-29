@@ -24,7 +24,8 @@ void InsertLines(
 );
 
 extern void InsertLines_CurrPos(
-	struct Tracker_Windows *window
+                                struct Tracker_Windows *window,
+                                int toinsert
 );
 
 

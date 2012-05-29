@@ -65,6 +65,7 @@ void InsertLines_notes(
 			note->noend=1;
 		}else{
 			note->end.line+=toinsert;
+                        note->end.line=max(note->end.line,line);
 		}
 
 		List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
@@ -173,17 +174,18 @@ void InsertLines(
 
 
 void InsertLines_CurrPos(
-	struct Tracker_Windows *window
+                         struct Tracker_Windows *window,
+                         int toinsert
 ){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
 	int curr_line=wblock->reallines[curr_realline]->Tline;
 	int num_lines=wblock->block->num_lines;
-	int toinsert;
 
 	PlayStop();
 
-	toinsert=GFX_GetInteger(window,NULL,"Number of lines to insert\n(number can be negative): ",-(num_lines-curr_line),10000);
+        if(toinsert==0)
+	  toinsert=GFX_GetInteger(window,NULL,"Number of lines to insert\n(number can be negative): ",-(num_lines-curr_line),10000);
 
 	if(toinsert==-(num_lines-curr_line)-1) return;
 

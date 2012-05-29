@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/quantitize_proc.h"
 #include "../common/new/backwards_proc.h"
 #include "../common/new/invert_proc.h"
+#include "../common/new/pitchexpand_proc.h"
 #include "../common/new/glissando_proc.h"
 
 #include "api_common_proc.h"
@@ -48,7 +49,8 @@ void transposeRange(int transpose,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  TransposeBlock_CurrPos(window,transpose);
+
+  TransposeRange_CurrPos(window,transpose);
 }
 
 void transposeNote(int transpose,int windownum){
@@ -80,7 +82,30 @@ void invertRange(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  InvertBlock_CurrPos(window);
+  InvertRange_CurrPos(window);
+}
+
+
+/************** PitchExpand ******************/
+
+void pexpandTrack(int f,int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  PExpandTrack_CurrPos(window,(float)((float)f/1000.0f));
+}
+
+void pexpandBlock(int f,int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+  PExpandBlock_CurrPos(window,(float)((float)f/1000.0f));
+}
+
+void pexpandRange(int f,int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  PExpandRange_CurrPos(window,(float)((float)f/1000.0f));
 }
 
 
@@ -104,7 +129,7 @@ void backwardsRange(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  BackWardsBlock_CurrPos(window);
+  BackWardsRange_CurrPos(window);
 }
 
 

@@ -83,7 +83,7 @@ OBJ1= windows.o window_config.o list.o song.o blocks.o block_insert.o block_spli
 
 OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_window_title.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o
 
-OBJ3= gfx_wtext.o eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o trackreallineelements.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+OBJ3= gfx_wtext.o eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o trackreallineelements.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
 OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o
 
@@ -764,6 +764,9 @@ undo_block_mergesplit.o:  $(CD)undo_block_mergesplit.c
 
 glissando.o:  $(CD)new/glissando.c
 	$(CC)  $(CD)new/glissando.c $(OPT)
+
+pitchexpand.o:  $(CD)new/pitchexpand.c
+	$(CC)  $(CD)new/pitchexpand.c $(OPT)
 
 api_common.o:  $(API)api_common.c
 	$(CC)  $(API)api_common.c $(OPT)

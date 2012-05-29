@@ -63,3 +63,13 @@ def bubble():
 #print "start"
 #bubble()
 
+# Note-expand/shrink (max range is expanded and shrinked, and the pitches are scaled accordingly)
+
+import radium
+ra=radium
+
+def pitchexpand(percent):
+	for lokke in range(ra.getNumNotes()):
+		print lokke
+		notenote=ra.getNoteNote(-1,-1,-1,lokke)
+		ra.putNoteNote(notenote+6,-1,-1,-1,lokke)

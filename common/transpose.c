@@ -169,7 +169,12 @@ void TransposeNote_CurrPos(
 
 	element=trackrealline->trackreallineelements;
 
-	while(element->type!=TRE_THISNOTELINES) element=element->next;
+        while(element!=NULL && element->type!=TRE_THISNOTELINES)
+	  element=element->next;
+
+	if(element==NULL)
+	  return;
+
 	note=(struct Notes *)element->pointer;
 
 	Transpose_note(note,trans);

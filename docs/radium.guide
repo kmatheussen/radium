@@ -1109,6 +1109,20 @@ http://www.notam02.no/radium/
 
 @node history " HISTORY"
 
+0.61b_amiga -> 0.61c_amiga
+-Don't scrollplay when scrolling more than one line up or down.
+-Added shortcuts for inserting exactly one line (Left Alt + down)
+ and deleting exactly one line (Left Alt + up).
+-Switched keybindings for continue block (Right Shift + Space) and
+ continue song (Right Shift + Right Alt + Space).
+-And other smaller fixes.
+
+
+0.61  -> 0.61b_amiga
+-Fixed various types in the keybinding configurations, and a hang-bug in
+ the transpose note function.
+-Maybe more.
+
 0.60g -> 0.61
 -Setting fontsize and changing slider-widths previously did not clear
  some graphics, and caused a warning to appear. Fixed. Bug introduced

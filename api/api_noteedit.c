@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/velocities_proc.h"
+#include "../common/windows_proc.h"
+#include "../common/wtracks_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 
 #include "api_common_proc.h"
@@ -44,6 +46,23 @@ int getNoteNote(int windownum,int blocknum,int tracknum,int notenum){
 	if(note==NULL) return -1;
 
   return note->note;
+}
+
+void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+
+  if(window==NULL) return;
+  if(note==NULL) return;
+
+  note->note=notenote;
+
+  UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+						window,
+						window->wblock,
+						0,
+						window->wblock->block->num_tracks-1
+						);
 }
 
 int getNoteVolume(int windownum,int blocknum,int tracknum,int notenum){

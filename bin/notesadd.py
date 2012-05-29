@@ -99,7 +99,7 @@ def addNoteAdds(noteadds,track=-1,startplace=-1.0,transpose=0,sort=1):
 		addNoteAdds_list(noteadds,track,startplace,transpose,sort)
 
 
-def getNoteAdds(windownum=-1,blocknum=-1,tracknum=-1,range=false):
+def getNoteAdds(windownum=-1,blocknum=-1,tracknum=-1,das_range=false):
 	noteadds=[]
 	numnotes=ra.getNumNotes(blocknum,tracknum)
 
@@ -110,8 +110,7 @@ def getNoteAdds(windownum=-1,blocknum=-1,tracknum=-1,range=false):
 
 	print ra.getNoteNote(windownum,blocknum,tracknum,0)
 
-#	for lokke in range(numnotes):
-	for lokke in [0,1,2,4]:
+	for lokke in range(numnotes):
 		noteadds.append(
 			NoteAdd(
 				ra.getNoteNote(windownum,blocknum,tracknum,lokke),

@@ -271,7 +271,7 @@ fontfailed:
 		fprintf(stderr," It is strongly reccomended that you do so, you will then gain\n");
 		fprintf(stderr," a 50-100 percent speed increase on the graphics operations, and\n");
 		fprintf(stderr," will have much less graphical flickering. A link to the FBlint\n");
-		fprintf(stderr," homepage can be foundn here: http://www.notam02.no/radium/\n");
+		fprintf(stderr," homepage can be foundn here: http://www.notam.uio.no/~kjetism/radium/\n");
 		fprintf(stderr,"************************************************\n\n\n");
 	}
 
@@ -1006,6 +1006,109 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtype){
 	Close(reqtype);
 }
 
+int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max){
+	ReqType file;
+	char rettext[50];
+	int ret=min-1;
+
+	if(reqtype==NULL){
+		file=GFX_OpenReq(tvisual,strlen(text)+10,4,"title");
+	}else{
+		file=reqtype;
+	}
+
+	if(file==0){
+		return ret;
+	}
+
+	while(ret<min || ret>max){
+		writestring(file,text);
+		readstring(file,rettext,40);
+		if(rettext[0]=='\0'){
+			ret=min-1;
+			break;
+		}
+		ret=atoi(rettext);
+	}
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
+	}
+
+	return ret;
+}
+
+float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,float min,float max){
+	ReqType file;
+	char rettext[50];
+	float ret=min-1.0f;
+
+	if(reqtype==NULL){
+		file=GFX_OpenReq(tvisual,strlen(text)+10,4,"title");
+	}else{
+		file=reqtype;
+	}
+
+	if(file==0){
+		return ret;
+	}
+
+	while(ret<min || ret>max){
+		writestring(file,text);
+		readstring(file,rettext,40);
+		if(rettext[0]=='\0'){
+			ret=min-1.0f;
+			break;
+		}
+		if(rettext[0]=='/'){
+			ret=(float)atof(rettext+1);
+			if(ret!=0.0f){
+				ret=(float)1.0f/ret;
+			}else{
+				ret=min-1.0f;
+			}
+		}else{
+			ret=(float)atof(rettext);
+		}
+	}
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
+	}
+
+	return ret;
+}
+
+
+char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){
+	ReqType file;
+	char temp[70];
+	char *rettext=NULL;
+
+	if(reqtype==NULL){
+		file=GFX_OpenReq(tvisual,strlen(text)+10,4,"title");
+	}else{
+		file=reqtype;
+	}
+
+	if(file==0){
+		return NULL;
+	}
+
+	writestring(file,text);
+	readstring(file,temp,49);
+	if(temp[0]=='\0'){
+	}else{
+		rettext=talloc_atomic(strlen(temp)+2);
+		sprintf(rettext,"%s",temp);
+	}
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
+	}
+
+	return rettext;
+}
 
 int GFX_Menu(
 	struct Tracker_Windows *tvisual,
@@ -1152,18 +1255,18 @@ char *GFX_GetLoadFileName(
 	struct FileRequester *requester;
 
 	requester=AllocAslRequestTags(
-				      ASL_FileRequest,
-				      ASLFR_TitleText,seltext,
-				      ASLFR_InitialDrawer,filedrawer,
-				      ASLFR_Screen,Scr,
-				      ASLFR_InitialPattern,"#?.(rad|mmd|mmd2|mmd3)",
-				      ASLFR_DoPatterns,TRUE,
-				      TAG_END
-				      );
+		ASL_FileRequest,
+		ASLFR_TitleText,seltext,
+		ASLFR_InitialDrawer,filedrawer,
+		ASLFR_Screen,Scr,
+		ASLFR_InitialPattern,"#?.(rad|mmd|mmd2|mmd3)",
+		ASLFR_DoPatterns,TRUE,
+		TAG_END
+	);
 
 	if(requester==NULL){
 			RError("Could not open asl-requester, 1\n");
-			return NULL;
+		return NULL;
 	}
 
 	if(AslRequestTags(requester,0L)==NULL){

@@ -391,7 +391,7 @@ def printsak(file,keyhandles,parser,codestring):
 
     
 def start(keyhandles,filehandle,outfilehandle):
-    keybindingsdict={}
+    keybindingsdict={} # Note: Latest E-radium version has just removed everything related to keybindingsdict from this function. Could be unnecessary.
     
     parser=Parser(filehandle)
     defnum=0

@@ -101,9 +101,9 @@ void generalDelete(int windownum){
   }
 }
 
-void insertLines(int windownum){
+void insertLines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  InsertLines_CurrPos(window);
+  InsertLines_CurrPos(window,toinsert);
 }
 
 void generalReturn(int windownum){
@@ -159,8 +159,12 @@ void splitBlock(int windownum){
 
 
 void configColors(int windownum){
+#ifdef _AMIGA
+  Amiga_ConfigColors();
+#else
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_ConfigColors(window);
+#endif
 }
 
 void configWindow(int windownum){
