@@ -70,6 +70,7 @@ static void PExpand_DoIt(
 	float scalefactor
 ){
 	if(note==NULL) return;
+        if(minnote==maxnote) return;
 
 	if(PlaceGreaterOrEqual(&note->l.p,p1)){
 	  float midnote;
@@ -77,7 +78,14 @@ static void PExpand_DoIt(
 
 	  midnote=(minnote+maxnote)/2.0f;
 
-	  note->note=max(1,min(127,0.5f+SCALE(note->note,minnote,maxnote, midnote - ( (midnote-minnote) * scalefactor), midnote + ( (midnote-minnote) * scalefactor))));
+	  note->note=(int) (0.5f + SCALE(note->note, 
+                                         minnote, 
+                                         maxnote, 
+                                         midnote - ( (midnote-minnote) * scalefactor),
+                                         midnote + ( (midnote-minnote) * scalefactor)
+                                         )
+                            );
+	  note->note=max(1,min(127,note->note));
 
 	}
 
@@ -127,7 +135,7 @@ void PExpandTrack(
 	
 	PExpand_SetMinMax(track->notes,&p1,&p2,true);
 	
-	PExpand_DoIt(track->notes,&p1,&p2,scalefactor);
+        PExpand_DoIt(track->notes,&p1,&p2,scalefactor);
 }
 
 void PExpandBlock(
