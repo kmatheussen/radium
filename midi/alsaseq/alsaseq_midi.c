@@ -111,7 +111,7 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
   struct MyMidiLinks *mymidilink;
   //  printf("MIDI_getMyMidiLink\n");
   snd_seq_client_info_t *cinfo;
-  snd_seq_port_info_t *pinfo;
+  snd_seq_port_info_t *pinfo = NULL;
   int client;
   int ret;
 

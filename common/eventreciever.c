@@ -162,7 +162,7 @@ const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
 	}
 
 	for(lokke=0;lokke<keyslen;lokke++){
-		kc->a |= (1<<(keys[lokke]-EVENT_MAX));
+		kc->a |= 1<<keys[lokke];
 	}
 
 	kc->next=keyconfigs[key];
@@ -175,7 +175,7 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 	struct KeyConfigs *kc=keyconfigs[key];
 
 	if(down==false){
-		a|=(1<<(EVENT_UP_I-EVENT_MAX));
+		a |= EVENT_UP2;
 	}
 
 	while(kc!=NULL){
@@ -200,7 +200,7 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 					(*((void (*)(int,int,int,int,int))(kc->func)))(kc->args[0],kc->args[1],kc->args[2],kc->args[3],kc->args[4]);
 					break;
 				default:
-					RError("Program is not able to to handle that many arguments in file eventreceiver.c. Very strange that this bug showed up, by the way. If its present among many releases, please report to the author.\n");
+					RError("Program is not able to to handle that many arguments in file eventreceiver.c. Very strange that this bug showed up, by the way. Please report.\n");
 					break;
 			}
 			return true;
@@ -243,43 +243,43 @@ int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
 			len=0;
 
 			if(a&EVENT_LEFTCTRL){
-				places[len]=EVENT_LEFTCTRL_I;
+				places[len]=EVENT_CTRL_L;
 				len++;
 			}
 			if(a&EVENT_RIGHTCTRL){
-				places[len]=EVENT_RIGHTCTRL_I;
+				places[len]=EVENT_CTRL_L;
 				len++;
 			}
 			if(a&EVENT_CAPSLOCK){
-				places[len]=EVENT_CAPSLOCK_I;
+				places[len]=EVENT_CAPS;
 				len++;
 			}
 			if(a&EVENT_LEFTSHIFT){
-				places[len]=EVENT_LEFTSHIFT_I;
+				places[len]=EVENT_SHIFT_L;
 				len++;
 			}
 			if(a&EVENT_RIGHTSHIFT){
-				places[len]=EVENT_RIGHTSHIFT_I;
+				places[len]=EVENT_SHIFT_R;
 				len++;
 			}
 			if(a&EVENT_LEFTALT){
-				places[len]=EVENT_LEFTALT_I;
+				places[len]=EVENT_ALT_L;
 				len++;
 			}
 			if(a&EVENT_RIGHTALT){
-				places[len]=EVENT_RIGHTALT_I;
+				places[len]=EVENT_ALT_R;
 				len++;
 			}
 			if(a&EVENT_LEFTEXTRA1){
-				places[len]=EVENT_LEFTEXTRA1_I;
+				places[len]=EVENT_EXTRA_L;
 				len++;
 			}
 			if(a&EVENT_RIGHTEXTRA1){
-				places[len]=EVENT_RIGHTEXTRA1_I;
+				places[len]=EVENT_EXTRA_R;
 				len++;
 			}
 			if(in_tevent->ID==TR_KEYBOARDUP){
-				places[len]=EVENT_UP_I;
+				places[len]=EVENT_UP;
 				len++;
 			}
 

@@ -14,7 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef X11_KEYBOARD_PROC
+#define X11_KEYBOARD_PROC
 
+#include <X11/Xlib.h>
+
+extern LANGSPEC void X11_init_keyboard(void);
 
 extern LANGSPEC int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window);
 extern LANGSPEC int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window);
@@ -24,3 +29,6 @@ extern LANGSPEC void X11_ResetKeysUpDowns(void);
 extern LANGSPEC int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window);
 extern LANGSPEC int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window);
 
+extern LANGSPEC void X11_init_keyboard(void);
+
+#endif

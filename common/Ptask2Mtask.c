@@ -62,7 +62,7 @@ void P2MUpdateSongPosCallBack(void){
 	while(window!=NULL){
 		if(window->playalong==true){
 
-		  Blt_markVisible(window);
+		  Blt_markVisible(window); {
 
 			wblock=ListFindElement1(&window->wblocks->l,curr_block);
 			till_curr_realline=wblock->till_curr_realline;
@@ -79,15 +79,17 @@ void P2MUpdateSongPosCallBack(void){
 				);
 			}
 
-			if(setfirstpos){			// The player-routine (PEQblock.c) change this one.
+			if(setfirstpos){			// The player routine (PEQblock.c) sets this one.
 				till_curr_realline=wblock->till_curr_realline=0;
 			}
 
-			//printf("tilline: %d\n",till_curr_realline);
+			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
 			ScrollEditorToRealLine(window,wblock,till_curr_realline);
 
-		  Blt_clearNotUsedVisible(window);
-		  Blt_blt(window);
+                  } { 
+                    Blt_clearNotUsedVisible(window);
+		    Blt_blt(window);
+                  }
 
 		}
 		window=NextWindow(window);

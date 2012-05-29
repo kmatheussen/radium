@@ -110,6 +110,8 @@ int radium_main(char *arg){
   printf("arg: -%s-\n",arg);
   printf("Width/Height: %d/%d\n",DisplayWidth(x11_display,x11_screen),DisplayHeight(x11_display,x11_screen));
 
+  X11_init_keyboard();
+
   X11_StartBlockSelector();
   X11_StartMidiProperties();
 

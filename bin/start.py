@@ -30,7 +30,6 @@ class KeyHandler:
         self.handlers=[]
 
     def addHandle(self,keys,handle):
-
         for lokke in range(len(self.keyslist)):
             if self.keyslist[lokke]==keys:
                 return false
@@ -58,7 +57,7 @@ keyhandles=map(getKeyHandler,range(len(keybindingsparser.keysub)))
 
 # key and keys are constants!
 def gotKey(windownum,key,keys):
-#    print "key: %d, keys: %s" % (key,keys)
+    print "*********** key: " + keybindingsparser.keysub[key] + ". keys: " + str(map(lambda k:keybindingsparser.keysub[k], keys))
 #    key=keys.pop(0)
     keyhandles[key].exe(windownum,keys);    
 
@@ -89,7 +88,6 @@ except:
     print "Could not close file. Out of disk space?"
     sys.exit(3)
 
-
 import eventreceiverparser_generated
 
 #import os
@@ -99,3 +97,4 @@ if len(sys.argv)>2:
     ra.init_radium(sys.argv[2],gotKey)
 else:
     ra.init_radium("",gotKey)
+

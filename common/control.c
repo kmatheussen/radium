@@ -52,7 +52,6 @@ bool InitProgram(void){
 	printf("...Memory handler\n");
 	init_memory();
 
-
 	root=tralloc(sizeof(struct Root));
 
 	if(root==NULL){

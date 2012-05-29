@@ -25,5 +25,8 @@ void  OS_tfree(void *mem){
 }
 
 void *OS_getmem(size_t size){
-  return calloc(1,size);
+  void *ret = calloc(1,size);
+  if(ret==NULL)
+    abort();
+  return ret;
 }

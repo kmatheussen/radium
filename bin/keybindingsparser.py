@@ -67,155 +67,7 @@ from common import *
 
 #/* Keyboard Sub IDs: (picked from common/nsmtracker_events.h (must be the same)) */
 
-keysub=(
-
-#Have no idea what these (LEFT*) are for. Probably spares.
-"LEFT0",
-"LEFT1",
-"LEFT2",
-"LEFT3",
-"LEFT4",
-"LEFT5",
-"LEFT6",
-"LEFT7",
-"LEFT8",
-"LEFT9",
-"LEFT10",
-"LEFT11",
-"LEFT12",
-"LEFT13",
-"LEFT14",
-"LEFT15",
-"LEFT16",
-"LEFT17",
-"LEFT18",
-"LEFT19",
-"LEFT20",
-
-"ESC",
-
-"F1",
-"F2",
-"F3",
-"F4",
-"F5",
-"F6",
-"F7",
-"F8",
-"F9",
-"F10",
-"F11",
-"F12",
-"F13",
-"F14",
-"F15",
-"F16",
-"F20",
-
-"1L1",
-"1",
-"2",
-"3",
-"4",
-"5",
-"6",
-"7",
-"8",
-"9",
-"0",
-"0R1",
-"0R2",
-"0R3",
-"BACKSPACE",
-
-"TAB",
-"Q",
-"W",
-"E",
-"R",
-"T",
-"Y",
-"U",
-"I",
-"O",
-"P",
-"PR1",
-"PR2",
-"RETURN",
-
-"A",
-"S",
-"D",
-"F",
-"G",
-"H",
-"J",
-"K",
-"L",
-"LR1",
-"LR2",
-"LR3",
-
-"ZL1",
-"Z",
-"X",
-"C",
-"V",
-"B",
-"N",
-"M",
-"MR1",
-"MR2",
-"MR3",
-
-"MIDDLE1",		# PC: Insert    */
-"MIDDLE2",		# PC: Home      */
-"MIDDLE3",		# PC: Page Up   */
-"DEL",
-"HELP", 		# PC: End, Amiga: Help       */
-"MIDDLE6",		# PC: Page Down */
-
-"DOWNARROW",
-"UPARROW",
-"RIGHTARROW",
-"LEFTARROW",
-
-"KP_E1",		# Amiga: the one above 7, on the keypad */
-"KP_E2",		# -------------------- 8, ------------- */
-
-"KP_DIV",
-"KP_MUL",
-"KP_SUB",
-"KP_ADD",
-
-"KP_0",
-"KP_DOT",
-"KP_ENTER",
-
-"KP_1",
-"KP_2",
-"KP_3",
-
-"KP_4",
-"KP_5",
-"KP_6",
-
-"KP_7",
-"KP_8",
-"KP_9",
-
-"SPACE"
-#,
-
-#...Room for more, update EVENT_MAX to allways be the last number... */
-#"MAX"
-)
-
-keysub+=("CTRL_L","CTRL_R","CAPS","SHIFT_L","SHIFT_R","ALT_L","ALT_R","EXTRA_L","EXTRA_R","UP")
-#keysub+=("/CTRL_L","/CTRL_R","/CAPS","/SHIFT_L","/SHIFT_R","/ALT_L","/ALT_R","/EXTRA_L","/EXTRA_R")
-
-qualsub=("CL","CR","CAPS","SL","SR","AL","AR","EL","ER")
-#qualsub=("/CL","/CR","/CAPS","/SL","/SR","/AL","/AR","/EL","/ER")
+from keysubids import *
 
 
 
@@ -227,8 +79,10 @@ def tuple_has_key(tuple,string):
     return -1
 
 
+def key_is_qualifier(key):
+    #print "key_is_qualifier? "+str(key)+" : "+keysub[key]
+    return key!=0 and key<tuple_has_key(keysub,"FIRST_NON_QUALIFIER")
 
-        
 
 def isSpace(char):
     if char==" " or char=="\t": return true
@@ -459,23 +313,29 @@ class Parser:
                         lokke+=1
 
                 keys.sort()
-                lokke=0
-                while lokke<len(keys) and keys[lokke] < tuple_has_key(keysub,"CTRL_L"):
-                    lokke+=1
-                self.qualifiers=keys[lokke:]
-                if len(keys)>len(self.qualifiers):
-                    self.keys=keys[:lokke]
+                new_keys = []
+                self.qualifiers = []
+                
+                for key in keys:
+                    if key_is_qualifier(key):
+                        self.qualifiers.append(key)
+                    else:
+                        new_keys.append(key)
+
+                if len(keys)>len(self.qualifiers): # ????????
+                    self.keys=new_keys
+                        
                 if self.linetype!="GOINGTOINSERTCODE":
                     if len(self.command)==0:
                         self.linetype="SKIP"
                     else:
                         self.linetype="NORMAL"
 
-#                print "------------------------------------------>"
-#                print "command: %s" % self.command
-#                print "self.qualifiers: %s" % self.qualifiers
-#                print "self.keys: %s " % self.keys
-#                print "<------------------------------------------"
+                #print "------------------------------------------>"
+                #print "command: %s" % self.command
+                #print "self.qualifiers: %s" % str(map(lambda k:keysub[k], self.qualifiers))
+                #print "self.keys: %s " % str(map(lambda k:keysub[k], self.keys))
+                #print "<------------------------------------------"
 
         return "OK"
     
@@ -509,7 +369,7 @@ def putCode(keyhandles,parser,codestring):
     #print "adding \"%s\", line: %d, firstkey: %d, keys: %s" % (codestring,parser.getCurrLineNum(),firstkey,keys)
 
     if keyhandles[firstkey].addHandle(keys,compile(codestring,'<string>','single'))==false:
-        print "Keybindings for command \"%s\" in line %d is allready used" % (codestring , parser.getCurrLineNum())
+        print "Keybindings for command \"%s\" in line %d is already used" % (codestring , parser.getCurrLineNum())
         return false
     else:
         print "%s compiled." % codestring
@@ -518,7 +378,7 @@ def putCode(keyhandles,parser,codestring):
 
 
 def printsak(file,keyhandles,parser,codestring):
-    if 0:
+    if 1:
         keys=parser.getKeys()+parser.getQualifiers() 
         firstkey=keys.pop(0)
         print "Putting code for '"+codestring+"', with key "+keysub[firstkey]

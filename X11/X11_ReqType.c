@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 
 #include "X11_ReqType_proc.h"
+#include "X11_keyboard_proc.h"
 
 
 void GFX_WriteString_Do(ReqType reqtype,char *text){
@@ -42,7 +43,7 @@ static void GFX_WriteMultiLineString(ReqType reqtype,char *text){
 	sprintf(temp2,"X11_ReqType.GFX_WriteString(0,\"%s\")",temp);
 	PyRun_SimpleString(temp2);
 	return;
-      }else{
+      }else if(strlen(temp)>0) {
 	sprintf(temp2,"X11_ReqType.GFX_WriteString(0,\"%s\"" "\"\\n\""  ")",temp);
 	PyRun_SimpleString(temp2);
       }
@@ -117,6 +118,9 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
 
   sprintf(buffer,GFX_ReadStringFromPythonCommand("X11_ReqType.GFX_ReadString(\"%s\")"));
+
+  //printf("resetting keys\n");
+  //X11_ResetKeysUpDowns();
 
 #if 0
 

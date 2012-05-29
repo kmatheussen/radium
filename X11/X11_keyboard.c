@@ -70,103 +70,102 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
  */
 
 
-static int X11_keytable_to_radium_keytable[]={
-  // 0
-  EVENT_NO,EVENT_NO,EVENT_NO,EVENT_NO,EVENT_NO,EVENT_NO,EVENT_NO,EVENT_NO,EVENT_NO,
-  // 9
-  EVENT_ESC,
-  // 10
-  EVENT_1,EVENT_2,EVENT_3,EVENT_4,EVENT_5,EVENT_6,EVENT_7,EVENT_8,EVENT_9,EVENT_0,EVENT_0R1,EVENT_0R2,EVENT_BACKSPACE,
-  // 23
-  EVENT_TAB,EVENT_Q,EVENT_W,EVENT_E,EVENT_R,EVENT_T,EVENT_Y,EVENT_U,EVENT_I,EVENT_O,EVENT_P,EVENT_PR1,EVENT_PR2,
-  // 36
-  EVENT_RETURN,
-  // 37
-  EVENT_LEFTCTRL_I,
-  //EVENT_NO,
-  // 38
-  EVENT_A,EVENT_S,EVENT_D,EVENT_F,EVENT_G,EVENT_H,EVENT_J,EVENT_K,EVENT_L,EVENT_LR1,EVENT_LR2,
-  // 49
-  EVENT_1L1,
-  // 50
-  EVENT_LEFTSHIFT_I,
-  //EVENT_NO,
-  // 51
-  EVENT_LR3,
-  // 52
-  EVENT_Z,EVENT_X,EVENT_C,EVENT_V,EVENT_B,EVENT_N,EVENT_M,EVENT_MR1,EVENT_MR2,EVENT_MR3,
-  // 62
-  EVENT_RIGHTSHIFT_I,
-  // 63
-  EVENT_KP_MUL,
-  // 64
-  EVENT_LEFTALT_I,
-  // 65
-  EVENT_SPACE,
-  // 66
-  EVENT_CAPSLOCK_I,
-  //  EVENT_NO,
-  // 67
-  EVENT_F1,EVENT_F2,EVENT_F3,EVENT_F4,EVENT_F5,EVENT_F6,EVENT_F7,EVENT_F8,EVENT_F9,EVENT_F10,
-  // 77
-  EVENT_NO,EVENT_NO,
-  // 79
-  EVENT_KP_7,EVENT_KP_8,EVENT_KP_9,
-  // 82
-  EVENT_KP_SUB,
-  // 83
-  EVENT_KP_4,EVENT_KP_5,EVENT_KP_6,
-  // 86
-  EVENT_KP_ADD,
-  // 87
-  EVENT_KP_1,EVENT_KP_2,EVENT_KP_3,
-  //90
-  EVENT_KP_0,
-  //91
-  EVENT_KP_DOT,
-  //92
-  EVENT_NO,EVENT_NO,
-  //94
-  EVENT_ZL1,
-  //95
-  EVENT_F11,EVENT_F12,
-  //97
-  EVENT_MIDDLE2,
-  //98
-  EVENT_UPARROW,
-  //99
-  EVENT_MIDDLE3,
-  //100
-  EVENT_LEFTARROW,
-  //101
-  EVENT_NO,
-  //102
-  EVENT_RIGHTARROW,
-  //103
-  EVENT_HELP,
-  EVENT_DOWNARROW,
-  EVENT_MIDDLE6,
-  EVENT_MIDDLE1,
-  EVENT_DEL,
-  EVENT_KP_ENTER,
-  //109
-  EVENT_RIGHTCTRL_I,
-  EVENT_NO,
-  //111
-  EVENT_F13,
-  EVENT_KP_DIV,
-  //113
-  EVENT_RIGHTALT_I,
-  //114
-  EVENT_NO,
-  //115
-  EVENT_LEFTEXTRA1_I,
-  EVENT_RIGHTEXTRA1_I,
-  //117
-  EVENT_HELP
-};
+static int keytable_size = 0;
+static int *keytable = NULL;
 
-static int keyupdowns[EVENT_MAX_I+1]={0};
+static void add_key(int X11_val, int EVENT_val){
+  if (X11_val >= keytable_size) {
+    int new_size = 128;
+    while (X11_val >= new_size)
+      new_size *= 2;
+    int *new_keytable = talloc_atomic_uncollectable(sizeof(int)*new_size);
+    {
+      int i=0;
+      for(i=0 ; i<new_size ; i++)
+        if (i<keytable_size)
+          new_keytable[i] = keytable[i];
+        else
+          new_keytable[i] = EVENT_NO;
+    }
+    tfree(keytable);
+    keytable = new_keytable;
+    keytable_size = new_size;
+  }
+  keytable[X11_val] = EVENT_val;
+}
+
+static void init_keytable(void) {
+# define S(X11_VAL, EVENT_VAL) add_key(XK_##X11_VAL, EVENT_##EVENT_VAL)
+# define T(VAL) add_key(XK_##VAL, EVENT_##VAL)
+
+  S(Escape,ESC);
+  T(F1);T(F2);T(F3);T(F4);T(F5);T(F6);T(F7);T(F8);T(F9);T(F10);T(F11);T(F12);
+
+  // 1L1
+  T(1);T(2);T(3);T(4);T(5);T(6);T(7);T(8);T(9);T(0);
+  // 0R1, 0R2, 0R3
+  S(BackSpace, BACKSPACE);
+
+  S(Tab, TAB);
+  S(q,Q);S(w,W);S(e,E);S(r,R);S(t,T);S(y,Y);S(u,U);S(i,I);S(o,O);S(p,P);
+  // PR1 PR2
+  S(Return, RETURN);
+
+  S(a,A);S(s,S);S(d,D);S(f,F);S(g,G);S(h,H);S(j,J);S(k,K);S(l,L);
+  // LR1, LR2, LR3
+
+  // ZL1
+  S(z,Z);S(x,X);S(c,C);S(v,V);S(b,B);S(n,N);S(m,M);
+  // MR1, MR2, MR3
+
+  S(Insert, INSERT);
+  S(Home, HOME);
+  S(Page_Up, PAGE_UP);
+  S(Page_Down, PAGE_DOWN);
+  S(Delete, DEL);
+  S(Home, HOME);
+  S(End, END);
+
+  S(Down, DOWNARROW);
+  S(Up, UPARROW);
+  S(Right, RIGHTARROW);
+  S(Left, LEFTARROW);
+
+  // KP_E1, KP_E2
+  S(KP_Divide, KP_DIV);
+  S(KP_Multiply, KP_MUL);
+  S(KP_Subtract, KP_SUB);
+  S(KP_Add, KP_ADD);
+  S(KP_Insert, KP_0);
+  S(KP_Delete, KP_DOT);
+  S(KP_Enter, KP_ENTER);
+  S(KP_End, KP_1);
+  S(KP_Down, KP_2);
+  S(KP_Next, KP_3);
+  S(KP_Left, KP_4);
+  S(KP_Begin, KP_5);
+  S(KP_Right, KP_6);
+  S(KP_Home, KP_7);
+  S(KP_Up, KP_8);
+  S(KP_Prior, KP_9);
+
+  S(space, SPACE);
+
+  S(Control_L, CTRL_L);
+  S(Control_R, CTRL_R);
+  // Caps-lock
+  S(Shift_L, SHIFT_L);
+  S(Shift_R, SHIFT_R);
+  S(Alt_L, ALT_L);
+  S(Alt_R, ALT_R);
+  S(Super_L, EXTRA_L);
+  S(Super_R, EXTRA_R);
+
+# undef T
+# undef S
+}
+
+static int keyupdowns[EVENT_MAX+1]={0};
 
 
 extern struct TEvent tevent;
@@ -189,15 +188,10 @@ extern struct TEvent tevent;
 static void setKeySwitch(unsigned int state){
   int lokke;
   const int numswitches=9;
-#if 0
-  static int x11switch[]   ={37,50,66,
-			     115,64,113,
-			     116,109,62};
-#endif
 
-  static int x11switch[]={EVENT_LEFTCTRL_I,EVENT_LEFTSHIFT_I,EVENT_CAPSLOCK_I,
-			     EVENT_LEFTEXTRA1_I,EVENT_LEFTALT_I,EVENT_RIGHTALT_I,
-			     EVENT_RIGHTEXTRA1_I,EVENT_RIGHTCTRL_I,EVENT_RIGHTSHIFT_I};
+  static int x11switch[]={EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPSLOCK,
+                          EVENT_EXTRA_L,EVENT_ALT_L,EVENT_ALT_R,
+                          EVENT_EXTRA_R, EVENT_CTRL_R, EVENT_SHIFT_R};
 
   // Note! EVENT_RIGHTEXTRA1 and EVENT_RIGHTCTRL is switched because EVENT_RIGHTEXTRA1 is autorepeating.
   // EVENT_RIGHTCTRL isn't used anyway.
@@ -209,11 +203,11 @@ static void setKeySwitch(unsigned int state){
   tevent.keyswitch=0;
   for(lokke=0;lokke<numswitches;lokke++){
     if(keyupdowns[x11switch[lokke]]==1){
-      tevent.keyswitch|=radiumswitch[lokke];
+      tevent.keyswitch |= radiumswitch[lokke];
     }
   }
 
-  printf("keyswitch: %x / %x\n",(unsigned int)tevent.keyswitch,state);
+  printf("keyswitch: %x / %x. Leftshift: %s. Rightshift: %s\n",(unsigned int)tevent.keyswitch, state, LeftShift(tevent.keyswitch)?"on":"off", RightShift(tevent.keyswitch)?"on":"off");
 }
 
 
@@ -234,12 +228,13 @@ static void fixBrokenKeySwitch(unsigned int state){
 
 int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   //switch(((XKeyEvent *)&event)->keycode){
-  printf("Pressing %d,\n",keynum);
   keyupdowns[keynum]=1;
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARD;
   tevent.SubID=keynum;
-  if(tevent.SubID>EVENT_MAX) tevent.SubID=EVENT_NO;
+
+  if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
+    tevent.SubID=EVENT_NO;
 
   //fixBrokenKeySwitch(keystate);
 
@@ -247,28 +242,35 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
 }
 
 void X11_ResetKeysUpDowns(void){
-  memset(keyupdowns,0,sizeof(int)*EVENT_MAX_I+1);
+  memset(keyupdowns,0,sizeof(int)*EVENT_MAX+1);
 }
 
 int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
-  //printf("State: %x\n",(unsigned int)event->state);
-  //  return 0;
-  return X11Event_KeyPress(X11_keytable_to_radium_keytable[event->keycode],event->state,window);
+  KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+  return X11Event_KeyPress(keytable[sym],event->state,window);
 }
 
 
 int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
-  //printf("Releasing %d,\n",keynum);
+  printf("Releasing %d,\n",keynum);
   keyupdowns[keynum]=0;
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARDUP;
   tevent.SubID=keynum;
-  if(tevent.SubID>EVENT_MAX) tevent.SubID=EVENT_NO;
+
+  if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
+    tevent.SubID=EVENT_NO;
+
   EventReciever(&tevent,window);
   return 0;
 }
 
 int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window){
-  return X11Event_KeyRelease(X11_keytable_to_radium_keytable[event->keycode],event->state,window);
+  KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+  return X11Event_KeyRelease(keytable[sym],event->state,window);
 }
 
+
+void X11_init_keyboard(void) {
+  init_keytable();
+}

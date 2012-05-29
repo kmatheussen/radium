@@ -44,6 +44,8 @@ extern struct Root *root;
 
 static bool isplaying=false;
 
+//#include "google/profiler.h"
+
 void *X11_PlayerThread(void *arg){
   long long newtime;
   long long lasttime=0;
@@ -53,6 +55,7 @@ void *X11_PlayerThread(void *arg){
   message.xclient.type = ClientMessage;
   message.xclient.format=32;
 
+  //ProfilerStart("hepps");
 
   while(doexit==false){
     struct timeval tv;
@@ -87,6 +90,9 @@ void *X11_PlayerThread(void *arg){
     }
 #endif
   }
+
+  //ProfilerStop();
+
   return NULL;
 }
 
@@ -102,13 +108,13 @@ bool X11_InitPlayer(void){
     return false;
   } 
 
-#if 0
+#if 1
   {
     struct sched_param rtparam;
     int x;
     
     memset (&rtparam, 0, sizeof (rtparam));
-    rtparam.sched_priority = 10;
+    rtparam.sched_priority = 1;
     
     //system("/usr/bin/givertcap");
     

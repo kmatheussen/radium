@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpainter.h>
 #include <unistd.h>
 
+
 #include "../X11/X11_Bs_edit_proc.h"
 #include "../X11/X11_MidiProperties_proc.h"
 
@@ -574,6 +575,7 @@ void GFX_Scroll(
 		   mywidget,
 		   x,y,x2-x+1,y2-y+1
 		   );
+
   /*
 	if(dy<0){
 	  //RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
@@ -601,6 +603,7 @@ void GFX_P_Scroll(
 		   mywidget->qpixmap,
 		   x,y,x2-x+1,y2-y+1
 		   );
+
 
   /*
 	if(dy<0){

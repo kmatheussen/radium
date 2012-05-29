@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <X11/Xutil.h>
 #include <X11/Xproto.h>
 #include <X11/keysym.h>
+#include <X11/XKBlib.h>
 
 #include <sys/ipc.h>
 #include <sys/shm.h>

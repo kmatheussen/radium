@@ -53,7 +53,6 @@ bool MyApplication::x11EventFilter(XEvent *event){
 
   switch(event->type){
   case KeyPress:
-    //printf("%d\n",((XKeyEvent *)event)->keycode);
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       this->quit();
     }
@@ -62,7 +61,11 @@ bool MyApplication::x11EventFilter(XEvent *event){
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
     return TRUE;
   case EnterNotify:
+    printf("got enter notify\n");
+    X11_ResetKeysUpDowns();
+    break;
   case LeaveNotify:
+    printf("got leave notify\n");
     X11_ResetKeysUpDowns();
     break;
   case ClientMessage:
@@ -89,15 +92,18 @@ extern LANGSPEC void Qt_Ptask2Mtask(void){
 #warning "FIXME: Player thread shall not allocate"
   QCustomEvent *qce = new QCustomEvent(QEvent::User+1);
 
+  //static int gakk;
   //qapplication->sendEvent(qobject,&qce);
+  //fprintf(stderr,"Posting custom event %d\n", gakk++);
   qapplication->postEvent(qobject,qce);
 }
 
 
+//#include "google/profiler.h"
 
 //extern LANGSPEC int dasmain(int argc,char **argv);
 extern LANGSPEC int radium_main(char *arg);
-
+extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
 int radium_main(char *arg){
   int argc=1;
@@ -106,16 +112,24 @@ int radium_main(char *arg){
   argv[0] = strdup("Radium");
   argv[1] = NULL;
 
+  //GC_dont_gc = 1;
+
   qapplication=new MyApplication(argc,argv);
+
+  X11_init_keyboard();
 
   X11_StartBlockSelector();
   X11_StartMidiProperties();
 
   StartGuiThread();
 
+  // ProfilerStart("hepps");
+
   printf("starting\n");
   InitProgram();
   printf("ending\n");
+
+  //ProfilerStop();
 
   X11_InitPlayer();
 
