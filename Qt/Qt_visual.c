@@ -439,8 +439,10 @@ void GFX_P_InvertText(
 	int x,
 	int y,
 	bool clear
-){return ;}
-
+){
+  GFX_P_InvertTextNoText(tvisual, color, strlen(text), x, y, clear);
+  GFX_P_Text(tvisual, 0, text, x ,y, clear);
+}
 
 void GFX_P_InvertTextNoText(
 	struct Tracker_Windows *tvisual,
@@ -450,7 +452,7 @@ void GFX_P_InvertTextNoText(
 	int y,
 	bool clear
 ){
-	GFX_All_FilledBox(tvisual,1,x,y,
+	GFX_P_FilledBox(tvisual,color,x,y,
 		x+(len*tvisual->fontwidth),
 		y+tvisual->fontheight
 	);
