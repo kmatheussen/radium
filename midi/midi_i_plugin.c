@@ -272,6 +272,7 @@ void MIDIclosePatch(void){
 	return;
 }
 
+
 int MIDIgetPatch(
 	struct Tracker_Windows *window,
 	ReqType reqtype,

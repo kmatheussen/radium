@@ -85,7 +85,7 @@ char **MIDI_getPortNames(int *retsize){
 
       if ( snd_seq_port_info_get_client(pinfo) != 0 ){
 	if ( (cap & SND_SEQ_PORT_CAP_SUBS_WRITE) != 0){
-	  ret[num]=talloc(strlen(snd_seq_port_info_get_name(pinfo))+1);
+	  ret[num]=talloc_atomic(strlen(snd_seq_port_info_get_name(pinfo))+1);
 	  sprintf(ret[num],      snd_seq_port_info_get_name(pinfo));
 	  num++;
 	  printf("gakk %s\n", snd_seq_port_info_get_name(pinfo));
@@ -106,14 +106,29 @@ char **MIDI_getPortNames(int *retsize){
   return ret;
 }
 
+static struct MyMidiLinks *g_my_midi_links = NULL;
 
 struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType reqtype,char *name){
-  struct MyMidiLinks *mymidilink;
   //  printf("MIDI_getMyMidiLink\n");
   snd_seq_client_info_t *cinfo;
   snd_seq_port_info_t *pinfo = NULL;
   int client;
   int ret;
+
+  if(name==NULL){
+    int num_ports;
+    char **portnames=MIDI_getPortNames(&num_ports);
+    int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
+    name=portnames[sel];
+  }
+
+  struct MyMidiLinks *mymidilink = g_my_midi_links;
+
+  while (mymidilink != NULL) {
+    if(!strcmp(mymidilink->name,name))
+      return mymidilink;
+    mymidilink = mymidilink->next;
+  }
 
   //name="FLUID Synth (3405)";
   //name="FLUID Synth (4081)";
@@ -124,15 +139,7 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
 
   mymidilink=talloc(sizeof(struct MyMidiLinks));
   mymidilink->midilink=talloc(sizeof(struct MidiLink));
-  mymidilink->name="Dummy midi patch";
-
-
-  if(name==NULL){
-    int num_ports;
-    char **portnames=MIDI_getPortNames(&num_ports);
-    int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
-    name=portnames[sel];
-  }
+  mymidilink->name=name; //"Dummy midi patch";
 
   snd_seq_client_info_alloca(&cinfo);
   snd_seq_client_info_set_client(cinfo, -1);
@@ -162,12 +169,22 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
 
  gotit:
 
+#if 0
   mymidilink->midilink->port = snd_seq_create_simple_port(radium_seq, 
 							  "radium out",
-							  SND_SEQ_PORT_CAP_NO_EXPORT |
-							  SND_SEQ_PORT_CAP_READ,
-							  SND_SEQ_PORT_TYPE_MIDI_GENERIC |
-							  SND_SEQ_PORT_TYPE_APPLICATION );
+							  SND_SEQ_PORT_CAP_NO_EXPORT | SND_SEQ_PORT_CAP_READ,
+							  SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION
+                                                          );
+#endif
+  mymidilink->midilink->port = snd_seq_create_simple_port(radium_seq,
+                                                          name,
+                                                          SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ, // | SND_SEQ_PORT_CAP_SUBS_WRITE,
+                                                          SND_SEQ_PORT_TYPE_APPLICATION | SND_SEQ_PORT_TYPE_SPECIFIC
+                                                          );
+
+  if(mymidilink->midilink->port!=0) {
+    RError("Could not create ALSA port (%s)\n", snd_strerror(mymidilink->midilink->port));
+  }
 
   ret = snd_seq_connect_to(
 			   radium_seq, 
@@ -177,11 +194,20 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
 			   );
 
 
+  if(ret!=0) {
+    RError("Could not connect ALSA port (%s)\n", snd_strerror(ret));
+  }
+
   printf("myport: %d, connectret: %d\n",mymidilink->midilink->port,ret);
 
 
 
   MIDI_initMyMidiLink(mymidilink);
+
+
+  mymidilink->next = g_my_midi_links;
+  g_my_midi_links = mymidilink;
+
 
   return mymidilink;
 }
@@ -280,21 +306,29 @@ bool MIDI_New(struct Instruments *instrument){
 
   printf("ALSASEQ_MIDI_New\n");
 
-#if 1
   if(snd_seq_open(&radium_seq,"default",SND_SEQ_OPEN_DUPLEX,0)!=0){
     fprintf(stderr,"Could not open ALSA sequencer.\n");
-    return true;
+    return false;
   }
+
+  snd_seq_set_client_name(radium_seq, "radium");
+#if 0
+  int err = snd_seq_create_simple_port(radium_seq,
+                                       "Output", 
+                                       SND_SEQ_PORT_CAP_READ|SND_SEQ_PORT_CAP_SUBS_READ|SND_SEQ_PORT_CAP_SUBS_WRITE,
+                                       SND_SEQ_PORT_TYPE_APPLICATION|SND_SEQ_PORT_TYPE_SPECIFIC);
+  if(err!=0) {
+    fprintf(stderr, "Could not create ALSA port (%s)\n", snd_strerror(err));
+    snd_seq_close(radium_seq);
+    return false;
+  }
+#endif
 
   alsaseq_opened=true;
 
-
   radium_queue = snd_seq_alloc_queue(radium_seq); 
 
-
   snd_seq_start_queue(radium_seq, radium_queue, NULL );
-
-#endif
 
   //  instrument->PP_Update=MIDI_PP_Update;
   instrument->PP_Update=X11_MIDI_PP_Update;
