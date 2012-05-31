@@ -189,16 +189,13 @@ static void setKeySwitch(unsigned int state){
   int lokke;
   const int numswitches=9;
 
-  static int x11switch[]={EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPSLOCK,
+  static int x11switch[]={EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPS,
                           EVENT_EXTRA_L,EVENT_ALT_L,EVENT_ALT_R,
                           EVENT_EXTRA_R, EVENT_CTRL_R, EVENT_SHIFT_R};
 
-  // Note! EVENT_RIGHTEXTRA1 and EVENT_RIGHTCTRL is switched because EVENT_RIGHTEXTRA1 is autorepeating.
-  // EVENT_RIGHTCTRL isn't used anyway.
-  // This behaviour might change in the future.
   static int radiumswitch[]={EVENT_LEFTCTRL,EVENT_LEFTSHIFT,EVENT_CAPSLOCK,
 			     EVENT_LEFTEXTRA1,EVENT_LEFTALT,EVENT_RIGHTALT,
-			     EVENT_RIGHTEXTRA1,EVENT_RIGHTEXTRA1,EVENT_RIGHTSHIFT};
+			     EVENT_RIGHTEXTRA1,EVENT_RIGHTCTRL,EVENT_RIGHTSHIFT};
 
   tevent.keyswitch=0;
   for(lokke=0;lokke<numswitches;lokke++){
@@ -242,7 +239,7 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
 }
 
 void X11_ResetKeysUpDowns(void){
-  memset(keyupdowns,0,sizeof(int)*EVENT_MAX+1);
+  memset(keyupdowns,0,sizeof(int)*EVENT_MAX);
 }
 
 int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){

@@ -232,7 +232,7 @@ int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
 	switch(in_tevent->ID){
 		case TR_KEYBOARDUP:
 		case TR_KEYBOARD:
-		  if(in_tevent->SubID<0 || in_tevent->SubID>EVENT_MAX){
+		  if(in_tevent->SubID<0 || in_tevent->SubID>=EVENT_MAX) {
 		    RError("Warning, Unknown TR_KEYBOARD; TR_SUB event: %d. \n",in_tevent->SubID);
 		    break;
 		  }
