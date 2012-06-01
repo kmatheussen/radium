@@ -45,6 +45,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 
 
+Place *PlaceCreate(int line, int counter, int dividor) {
+  Place *place=talloc(sizeof(Place));
+  place->line = line;
+  place->counter = counter;
+  place->dividor = dividor;
+  return place;
+}
 
 
 /*************************************************************

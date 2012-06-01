@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/velocities_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/notes_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 
 #include "api_common_proc.h"
@@ -99,6 +100,38 @@ int getNumNotes(int blocknum,int tracknum,int windownum){
 	return ListFindNumElements3(&wtrack->track->notes->l);
 }
 
+void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+
+  if(window==NULL) return;
+  if(note==NULL) return;
+
+  PlaceCopy(&note->end, PlaceCreate(line,counter,dividor));
+}
+
+int addNote(int notenum,int velocity,int line,int counter,int dividor,int end_line,int end_counter,int end_dividor, int windownum, int blocknum, int tracknum) {
+  struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
+  struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
+  if(wblock==NULL || wtrack==NULL) return -1;
+
+  struct Notes *note = InsertNote(wblock,
+                                  wtrack,
+                                  PlaceCreate(line,counter,dividor),
+                                  end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor),
+                                  notenum,
+                                  velocity,
+                                  1);
+  int pos = 0;
+  {
+    struct Notes *notes = wtrack->track->notes;
+    while(notes!=note) {
+      notes=NextNote(notes);
+      pos++;
+    }
+  }
+  return pos;
+}
 
 void addNoteAdds(
 	PyObject *noteadds,

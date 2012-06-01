@@ -21,10 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
-extern void InsertNote(
+extern struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	Place *placement,
+        Place *end_placement,
 	int notenum,
 	int velocity,
 	int override

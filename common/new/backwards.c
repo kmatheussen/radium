@@ -70,7 +70,7 @@ void BackWards_notes(
 		newfloat=max(f_p1,f_p2-f-addfloat);
 		Float2Placement(newfloat,&newplace);
 
-		InsertNote(wblock,wtrack,&newplace,notes->note,notes->velocity,0);
+		InsertNote(wblock,wtrack,&newplace,NULL,notes->note,notes->velocity,0);
 
 		notes=NextNote(notes);
 	}

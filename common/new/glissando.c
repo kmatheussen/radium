@@ -60,7 +60,7 @@ void Glissando(
 		InsertNote(
 			wblock,
 			wtrack,
-			&p,
+			&p,NULL,
 			notenote,
 			(int)(note1->velocity+(
 				((f-f1)*(note2->velocity-note1->velocity))/(f2-f1)

@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -139,10 +140,11 @@ void StopAllNotesAtPlace(
 	}
 }
 
-void InsertNote(
+struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	Place *placement,
+        Place *end_placement,
 	int notenum,
 	int velocity,
 	int override
@@ -164,8 +166,12 @@ void InsertNote(
 	if(override==0)
 		StopAllNotesAtPlace(wblock,wtrack,placement);
 
-	SetEndAttributes(block,track,note);
+        if (end_placement==NULL)
+          SetEndAttributes(block,track,note);
+        else
+          PlaceCopy(&note->end, end_placement);
 
+        return note;
 }
 
 
@@ -236,9 +242,9 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 			}
 
 		InsertNote(
-			wblock,wtrack,&realline->l.p,notenum,
-			wtrack->track->patch==NULL?root->standardvel:wtrack->track->patch->standardvel,
-			override
+                           wblock,wtrack,&realline->l.p,NULL,notenum,
+                           wtrack->track->patch==NULL?root->standardvel:wtrack->track->patch->standardvel,
+                           override
 		);
 
 		if(wtrack->l.num==wblock->right_track && override!=0)
