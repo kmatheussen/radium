@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+import midi.sequencer as sequencer
+
+s = sequencer.SequencerHardware()
+
+print s
