@@ -134,6 +134,14 @@ all: /tmp/radium radium/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bi
 clean:
 	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh
 
+check_dependencies:
+	@echo
+	@echo "Checking dependencies: "
+	which zenity
+	which python
+	@echo "All seems good (but everything has probably not been tested)"
+	@echo
+
 run-gdb:
 	make -j3 && cd bin && gdb --args python start.py keybindings.conf && cd ..          
 

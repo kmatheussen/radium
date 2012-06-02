@@ -61,7 +61,7 @@ STime PEQ_CalcNextEvent(
 
 
 	if(time2==0 || x2==0){
-		RError("To fast! time2 or x2 in PEQ_calc.c is 0. time2: %d, x2: %d\n",time2,x2);
+		RError("Too fast! time2 or x2 in PEQ_calc.c is 0. time2: %d, x2: %d\n",time2,x2);
 		return time2+time1;
 	}
 

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern bool Error_init(void);
 
-extern void RError(const char *fmt,...);
+extern LANGSPEC void RError(const char *fmt,...);
 extern void Error_uninit(void);
 
 #endif

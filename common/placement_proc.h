@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef TRACKER_PLACEMENT
+#define TRACKER_PLACEMENT
+
+
 extern Place *PlaceCreate(int line, int counter, int dividor);
 
 extern int PlaceCmp(  Place *p1,  Place *p2);
@@ -51,10 +55,6 @@ extern void PlaceSetReallinePlace(
 extern void PlaceTilLimit(Place *p,  Place *tp);
 extern void PlaceFromLimit(Place *p,  Place *tp);
 
-
-
-#ifndef TRACKER_PLACEMENT
-#define TRACKER_PLACEMENT
 
 
 //#define PlaceEqual(a,b) (PlaceCmp((a),(b))==0)
@@ -102,7 +102,7 @@ extern Place PlaceFirstPos;
 
 #define PlaceGetFirstPos() &PlaceFirstPos
 
-#define PlaceSetFirstPos(a) (a)->line=0;(a)->counter=0;(a)->dividor=1
+#define PlaceSetFirstPos(a) do { (a)->line=0;(a)->counter=0;(a)->dividor=1; }while(0)
 
 #define PlaceCopy(a,b) do {                              \
     Place *das_a = (Place *)a;                           \
