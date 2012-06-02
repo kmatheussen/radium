@@ -170,7 +170,7 @@ struct Notes *InsertNote(
           SetEndAttributes(block,track,note);
         else
           PlaceCopy(&note->end, end_placement);
-
+        
         return note;
 }
 

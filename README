@@ -55,11 +55,11 @@ ABOUT THE CODE
 
 
 ACKNOWLEDGEMENTS
-        * Hans Boehms GC library (BDW-GC) is used for most memory allocation and deallocation.
+        * Hans Boehms GC library ("BDW-GC") is used for most memory allocation and deallocation.
         http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 
         * "python-midi" by Giles Hall is copied into the source. python-midi is used
-        to read used to read and write standard midi files.
+        to read and write standard midi files.
         https://github.com/vishnubob/python-midi
 
 

@@ -104,10 +104,13 @@ extern Place PlaceFirstPos;
 
 #define PlaceSetFirstPos(a) (a)->line=0;(a)->counter=0;(a)->dividor=1
 
-#define PlaceCopy(a,b) \
-	((Place *)(a))->line=((Place *)(b))->line; \
-	((Place *)(a))->counter=((Place *)(b))->counter; \
-	((Place *)(a))->dividor=((Place *)(b))->dividor
+#define PlaceCopy(a,b) do {                              \
+    Place *das_a = (Place *)a;                           \
+    Place *das_b = (Place *)b;                                    \
+    das_a->line=das_b->line;                                      \
+    das_a->counter=das_b->counter;                                \
+    das_a->dividor=das_b->dividor;                                \
+  } while(0)
 
 #define GetfloatFromPlace(a) ((float) ( \
 		(float)((a)->line) + ( \
