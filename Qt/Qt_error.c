@@ -34,7 +34,7 @@ void RError(const char *fmt,...){
   va_end(argp);
 
   char command[1000];
-  sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --no-wrap --text=\"%s\\n\\nContinue?\"",message);
+  sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue?\"",message);
   if(system(command))
     abort();
 }

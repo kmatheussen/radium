@@ -70,7 +70,10 @@ void init_radium(char *arg,PyObject *gkf){
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
 	if(windownum==-1) return root->song->tracker_windows;
-	return (struct Tracker_Windows *)ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
+	struct Tracker_Windows *ret = (struct Tracker_Windows *)ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
+        if (ret==NULL)
+          RError("Window #%d does not exist", windownum);
+        return ret;
 }
 
 
@@ -79,7 +82,10 @@ struct WBlocks *getWBlockFromNum(int windownum,int wblocknum){
 	if(window==NULL) return NULL;
 
 	if(wblocknum==-1) return window->wblock;
-	return (struct WBlocks *)ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
+	struct WBlocks *ret = (struct WBlocks *)ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
+        if (ret==NULL)
+          RError("WBlock #%d does not exist", wblocknum);
+        return ret;
 }
 
 
@@ -92,12 +98,18 @@ struct WBlocks *getWBlockFromNumA(
 	if(*window==NULL) return NULL;
 
 	if(blocknum==-1) return (*window)->wblock;
-	return (struct WBlocks *)ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
+	struct WBlocks *ret = (struct WBlocks *)ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
+        if (ret==NULL)
+          RError("WBlock #%d does not exist", blocknum);
+        return ret;
 }
 
 
 struct Blocks *getBlockFromNum(int blocknum){
-  return (struct Blocks *)ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
+  struct Blocks *ret = (struct Blocks *)ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
+  if (ret==NULL)
+    RError("Block #%d does not exist",blocknum);
+  return ret;
 }
 
 
@@ -105,7 +117,10 @@ struct Tracks *getTrackFromNum(int blocknum,int tracknum){
 	struct Blocks *block=getBlockFromNum(blocknum);
 	if(block==NULL) return NULL;
 
-	return (struct Tracks *)ListFindElement1_num(&block->tracks->l,(NInt)tracknum);
+	struct Tracks *ret = (struct Tracks *)ListFindElement1_num(&block->tracks->l,(NInt)tracknum);
+        if (ret==NULL)
+          RError("Track #%d in Block #%d does not exist",tracknum,blocknum);
+        return ret;
 }
 
 struct WTracks *getWTrackFromNum(
@@ -116,7 +131,10 @@ struct WTracks *getWTrackFromNum(
 	struct WBlocks *wblock=getWBlockFromNum(windownum,wblocknum);
 	if(wblock==NULL) return NULL;
 	if(wtracknum==-1) return wblock->wtrack;
-	return (struct WTracks *)ListFindElement1_num(&wblock->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = (struct WTracks *)ListFindElement1_num(&wblock->wtracks->l,(NInt)wtracknum);
+        if (ret==NULL)
+          RError("WTrack #%d in WBlock #%d in window #%d does not exist",wtracknum, wblocknum, windownum);
+        return ret;
 }
 
 struct WTracks *getWTrackFromNumA(
@@ -129,12 +147,15 @@ struct WTracks *getWTrackFromNumA(
 	(*wblock)=getWBlockFromNumA(windownum,window,wblocknum);
 
 	if(wblock==NULL){
-		fprintf(stderr,"Warning, might be a program-error, wblock==NULL at function getWTrackFromNumA in file api/api_common.c\n");
+		RError("Warning, might be a program-error, wblock==NULL at function getWTrackFromNumA in file api/api_common.c\n");
 		return NULL;
 	}
 	if(wtracknum==-1) return (*wblock)->wtrack;
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
-	return (struct WTracks *)ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = (struct WTracks *)ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
+        if (ret==NULL)
+          RError("WTrack #%d in WBlock %d does not exist",wtracknum, wblocknum);
+        return ret;
 }
 
 struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum){
@@ -143,8 +164,10 @@ struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum){
 
 	if(notenum==-1) notenum=0;
 
-	return (struct Notes *)ListFindElement3_num(&track->notes->l,(NInt)notenum);
-	
+	struct Notes *ret = (struct Notes *)ListFindElement3_num(&track->notes->l,(NInt)notenum);
+        if (ret==NULL)
+          RError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
+        return ret;
 }
 
 

@@ -128,7 +128,7 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 #-------------------KARSJK-------------------------------
 
 
-all: /tmp/radium radium/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
+all: check_dependencies /tmp/radium radium/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
 	@echo "Compilation OK".
 
 clean:
