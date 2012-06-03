@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 
 #include "windows_proc.h"
+#include "wblocks_proc.h"
 #include "mouse_proc.h"
 
 #include "fxlines_proc.h"
@@ -212,7 +213,7 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 }
 
 
-int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
+static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
 	uint32_t a=in_tevent->keyswitch;
 	static bool isPyObjects=false;
 	int lokke;
@@ -353,6 +354,7 @@ int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	  if(collectTREgarbage==true){
 	    TRE_collectGarbage();
 	  }
+          checkIfWBlocksAreDirty(window);
 	  return ret;
 	}
 
@@ -373,7 +375,7 @@ int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	return 0;
 }
 
-int DoTreatAllEvents(struct Tracker_Windows *window){
+static int DoTreatAllEvents(struct Tracker_Windows *window){
 	struct TEventFIFO *element,*prev=NULL;
 	int ret=0,nowret;
 	element=window->TELroot;

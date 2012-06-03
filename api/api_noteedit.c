@@ -110,10 +110,22 @@ void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum
   PlaceCopy(&note->end, PlaceCreate(line,counter,dividor));
 }
 
-int addNote(int notenum,int velocity,int line,int counter,int dividor,int end_line,int end_counter,int end_dividor, int windownum, int blocknum, int tracknum) {
+#include "../common/trackreallines_proc.h"
+#include "../common/gfx_wtracks_proc.h"
+//#include "../common/placement_proc.h"
+#include "../common/wtracks_proc.h"
+
+int addNote(int notenum,int velocity,
+            int line,int counter,int dividor,
+            int end_line,int end_counter,int end_dividor, 
+            int windownum, int blocknum, int tracknum)
+{
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
-  if(wblock==NULL || wtrack==NULL) return -1;
+  if(wblock==NULL || wtrack==NULL) {
+    RError("unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
+    return -1;
+  }
 
   struct Notes *note = InsertNote(wblock,
                                   wtrack,
@@ -121,7 +133,7 @@ int addNote(int notenum,int velocity,int line,int counter,int dividor,int end_li
                                   end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor),
                                   notenum,
                                   velocity,
-                                  1);
+                                  0);
   int pos = 0;
   {
     struct Notes *notes = wtrack->track->notes;
@@ -130,6 +142,9 @@ int addNote(int notenum,int velocity,int line,int counter,int dividor,int end_li
       pos++;
     }
   }
+
+  wblock->is_dirty = true;
+
   return pos;
 }
 

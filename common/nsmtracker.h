@@ -667,6 +667,9 @@ struct WBlocks{
 
 	TBox reltempo;
 
+  // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
+  bool is_dirty; 
+
   //tempocolor stuff
   bool tc_onoff;
   int tc_numcolors;

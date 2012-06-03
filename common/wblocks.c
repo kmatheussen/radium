@@ -246,6 +246,28 @@ void UpdateWBlocks(struct Tracker_Windows *window){
 	}
 }
 
+static void checkIfWBlockIsDirty(struct Tracker_Windows *window,struct WBlocks *wblock){
+  if (wblock->is_dirty) {
+    UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                  window,
+                                                  wblock,
+                                                  0,
+                                                  window->wblock->block->num_tracks-1
+                                                  );
+    wblock->is_dirty = false;
+  }
+}
+
+void checkIfWBlocksAreDirty(struct Tracker_Windows *window) {
+  struct WBlocks *wblock=window->wblocks;
+
+  while(wblock!=NULL){
+    checkIfWBlockIsDirty(window, wblock);
+    wblock=NextWBlock(wblock);
+  }
+}
+
+
 void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	NInt newcurrtrack=window->curr_track;
 	int newcurrtracksub=window->curr_track_sub;

@@ -40,6 +40,9 @@ extern void UpdateAllWBlockCoordinates(
 
 extern void UpdateAllWBlockWidths(struct Tracker_Windows *window);
 
+//extern void checkIfWBlockIsDirty(struct Tracker_Windows *window,struct WBlocks *wblock);
+extern void checkIfWBlocksAreDirty(struct Tracker_Windows *window);
+
 extern void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock);
 
 extern void SelectPrevWBlock(struct Tracker_Windows *window);
