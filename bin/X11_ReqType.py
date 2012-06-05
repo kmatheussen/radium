@@ -15,13 +15,13 @@
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-import sys,os,socket,string
+import sys,os,socket,string,subprocess
 
 
 conn=0
 
 def GFX_OpenReqType(width,height,title):
-    global conn
+    global conn,xterm_process
     
     port=50010
 
@@ -39,7 +39,11 @@ def GFX_OpenReqType(width,height,title):
                 s.close()
                 s=None
                 
-    os.system("/tmp/radium/bin/xterm -geometry "+str(width)+"x"+str(height)+"+100+100 -title \""+title+"\" -e python X11_ReqType.py "+str(port)+" &");
+    xterm_process = subprocess.Popen(["/tmp/radium/bin/xterm",
+                                      "-geometry",str(width)+"x"+str(height)+"+100+100",
+                                      "-title","\""+title+"\"",
+                                      "-e","python","X11_ReqType.py",str(port)])
+                     
 #    print "Open Port "+str(port)
         
     conn, addr = s.accept()
@@ -50,6 +54,7 @@ def GFX_CloseReqType(reqtype):
     reqtype=conn
     reqtype.send('exit')
     reqtype.close()
+    xterm_process.wait()
 
 #def GFX_ReadString(reqtype):
 def GFX_ReadString(filename):
@@ -95,4 +100,3 @@ if __name__=="__main__":
             s.send(reading)
 
     s.close()
-

@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpainter.h>
 #include <unistd.h>
 
+#include <X11/Xlib.h>
+#include "../X11/X11_keyboard_proc.h"
 
 #include "../X11/X11_Bs_edit_proc.h"
 #include "../X11/X11_MidiProperties_proc.h"
@@ -728,10 +730,13 @@ int GFX_Menu(
 }
 #endif
 
-
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+
   mywidget->raise();
+
+  XSetInputFocus(mywidget->x11Display(),(Window)mywidget->x11AppRootWindow(),RevertToNone,CurrentTime);
+  X11_ResetKeysUpDowns();
 }
 
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){

@@ -73,6 +73,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *t
 
 void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtype){
   PyRun_SimpleString("X11_ReqType.GFX_CloseReqType(0)");
+  GFX_EditorWindowToFront(tvisual);
 }
 
 
