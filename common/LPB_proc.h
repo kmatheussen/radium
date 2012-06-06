@@ -21,12 +21,11 @@ extern void UpdateWLPBs(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
-extern void SetLPB(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	Place *place,
-	int newlpb
-);
+extern struct LPBs *SetLPB(
+                           struct Blocks *block,
+                           Place *place,
+                           int newlpb
+                           );
 extern void SetLPBCurrPos(struct Tracker_Windows *window);
 
 extern void RemoveLPBsCurrPos(struct Tracker_Windows *window);

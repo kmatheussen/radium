@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wtracks_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/tempos_proc.h"
+#include "../common/LPB_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 
 #include "api_common_proc.h"
@@ -99,6 +100,25 @@ int getNumNotes(int blocknum,int tracknum,int windownum){
 	if(wtrack->track->notes==NULL) return 0;
 
 	return ListFindNumElements3(&wtrack->track->notes->l);
+}
+
+int addLPB(int lpb_value,
+           int line,int counter,int dividor,
+           int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL) {
+    RError("unknown block(%p)",blocknum);
+    return -1;
+  }
+
+  Place *place = PlaceCreate(line,counter,dividor);
+
+  struct LPBs *lpb = SetLPB(wblock->block,place,lpb_value);
+
+  wblock->is_dirty = true;
+
+  return ListFindElementPos3(&wblock->block->lpbs->l,&lpb->l);
 }
 
 int addBPM(int bpm,

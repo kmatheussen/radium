@@ -66,14 +66,13 @@ void UpdateWLPBs(
 }
 
 
-void SetLPB(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+struct LPBs *SetLPB(
+	struct Blocks *block,
 	Place *place,
 	int newlpb
 ){
 	struct LPBs *lpb;
-	lpb=ListFindElement3(&wblock->block->lpbs->l,place);
+	lpb=ListFindElement3(&block->lpbs->l,place);
 
 	if(lpb!=NULL && PlaceEqual(&lpb->l.p,place)){
 		lpb->lpb=newlpb;
@@ -81,9 +80,11 @@ void SetLPB(
 		lpb=talloc(sizeof(struct LPBs));
 		PlaceCopy(&lpb->l.p,place);
 		lpb->lpb=newlpb;
-		ListAddElement3(&wblock->block->lpbs,&lpb->l);
+		ListAddElement3(&block->lpbs,&lpb->l);
 	}
-	UpdateSTimes(wblock->block);
+	UpdateSTimes(block);
+
+        return lpb;
 }
 
 
@@ -98,7 +99,7 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 
 	Undo_LPBs_CurrPos(window);
 
-	SetLPB(window,wblock,place,newlpb);
+	SetLPB(wblock->block,place,newlpb);
 
 	UpdateWLPBs(window,wblock);
 	DrawLPBs(window,wblock,curr_realline,curr_realline);
