@@ -93,6 +93,7 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
   char filename[50];
   char temp[strlen(pythoncommand)+500];
   char *ret=talloc_atomic(strlen(pythoncommand)+500);
+  ret[0] = '\0';
 
   sprintf(filename,"/tmp/radiumipctempfileXXXXXX");
   mkstemp(filename);
@@ -104,7 +105,11 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 
 
   file=fopen(filename,"r");
-  if(file==NULL) printf("Oops file is null -%s-\n",filename);
+  if(file==NULL) {
+    RError("GFX_ReadStringFromPythonCommand: File is null -%s-.\n",filename);
+    return ret;
+  }
+
   fgets(ret,strlen(pythoncommand)+499,file);
   fclose(file);
 
