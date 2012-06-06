@@ -57,7 +57,6 @@ void UpdateWTempos(
 	}
 }
 
-
 struct Tempos *SetTempo(
 	struct Blocks *block,
 	Place *place,

@@ -63,7 +63,7 @@ void SetMouseActionMainLPB(
 }
 
 void SetMouseActionMainBPM(
-	struct Tracker_Windows *window
+                           struct Tracker_Windows *window
 ){
 	struct WBlocks *wblock=window->wblock;
 
