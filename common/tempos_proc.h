@@ -24,9 +24,8 @@ extern void UpdateWTempos(
 	struct WBlocks *wblock
 );
 
-extern void SetTempo(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+extern struct Tempos *SetTempo(
+	struct Blocks *block,
 	Place *place,
 	int newtempo
 );

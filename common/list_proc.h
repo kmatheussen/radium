@@ -126,6 +126,16 @@ extern NInt ListFindNumElements3(
 	struct ListHeader3 *list
 );
 
+extern NInt ListFindElementPos1(
+                                struct ListHeader1 *list,
+                                struct ListHeader1 *element
+                                );
+
+extern NInt ListFindElementPos3(
+                                struct ListHeader3 *list,
+                                struct ListHeader3 *element
+                                );
+
 extern void *ListLast3(struct ListHeader3 *list);
 extern void *ListLast1(struct ListHeader1 *list);
 

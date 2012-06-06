@@ -58,14 +58,13 @@ void UpdateWTempos(
 }
 
 
-void SetTempo(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+struct Tempos *SetTempo(
+	struct Blocks *block,
 	Place *place,
 	int newtempo
 ){
 	struct Tempos *tempo;
-	tempo=ListFindElement3(&wblock->block->tempos->l,place);
+	tempo=ListFindElement3(&block->tempos->l,place);
 
 	if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
 		tempo->tempo=newtempo;
@@ -73,9 +72,12 @@ void SetTempo(
 		tempo=talloc(sizeof(struct Tempos));
 		PlaceCopy(&tempo->l.p,place);
 		tempo->tempo=newtempo;
-		ListAddElement3(&wblock->block->tempos,&tempo->l);
+		ListAddElement3(&block->tempos,&tempo->l);
 	}
-	UpdateSTimes(wblock->block);
+
+	UpdateSTimes(block);
+
+        return tempo;
 }
 
 
@@ -90,7 +92,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 
 	Undo_Tempos_CurrPos(window);
 
-	SetTempo(window,wblock,place,newtempo);
+	SetTempo(wblock->block,place,newtempo);
 
 	UpdateWTempos(window,wblock);
 	DrawTempos(window,wblock,curr_realline,curr_realline);

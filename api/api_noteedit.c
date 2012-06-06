@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/windows_proc.h"
 #include "../common/wtracks_proc.h"
 #include "../common/notes_proc.h"
+#include "../common/tempos_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 
 #include "api_common_proc.h"
@@ -100,6 +101,25 @@ int getNumNotes(int blocknum,int tracknum,int windownum){
 	return ListFindNumElements3(&wtrack->track->notes->l);
 }
 
+int addBPM(int bpm,
+           int line,int counter,int dividor,
+           int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL) {
+    RError("unknown block(%p)",blocknum);
+    return -1;
+  }
+
+  Place *place = PlaceCreate(line,counter,dividor);
+
+  struct Tempos *tempo = SetTempo(wblock->block,place,bpm);
+
+  wblock->is_dirty = true;
+
+  return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
+}
+
 void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
@@ -109,11 +129,6 @@ void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum
 
   PlaceCopy(&note->end, PlaceCreate(line,counter,dividor));
 }
-
-#include "../common/trackreallines_proc.h"
-#include "../common/gfx_wtracks_proc.h"
-//#include "../common/placement_proc.h"
-#include "../common/wtracks_proc.h"
 
 int addNote(int notenum,int velocity,
             int line,int counter,int dividor,
@@ -134,18 +149,10 @@ int addNote(int notenum,int velocity,
                                   notenum,
                                   velocity,
                                   0);
-  int pos = 0;
-  {
-    struct Notes *notes = wtrack->track->notes;
-    while(notes!=note) {
-      notes=NextNote(notes);
-      pos++;
-    }
-  }
 
   wblock->is_dirty = true;
 
-  return pos;
+  return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
 
 void addNoteAdds(

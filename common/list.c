@@ -628,6 +628,35 @@ NInt ListFindNumElements3(
 
 /******************************************************************************
   FUNCTION
+    Returns the position of an element in a list.
+******************************************************************************/
+
+NInt ListFindElementPos1(
+                         struct ListHeader1 *list,
+                         struct ListHeader1 *element
+){
+	NInt pos=0;
+	while(list!=element){
+		list=list->next;
+		pos++;
+                if (list==NULL) {
+                  RError("element not in list");
+                  return pos-1;
+                }
+	}
+	return pos;
+}
+
+NInt ListFindElementPos3(
+                         struct ListHeader3 *list,
+                         struct ListHeader3 *element
+){
+  return ListFindElementPos1((struct ListHeader1 *)list,(struct ListHeader1 *)element);
+}
+
+
+/******************************************************************************
+  FUNCTION
     Finds the last element in a list. 'list' may be NULL.
 ******************************************************************************/
 

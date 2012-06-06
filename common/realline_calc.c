@@ -38,8 +38,8 @@ int FindRealLineFor(
 	struct LocalZooms **reallines=wblock->reallines;
 
 	if(realline>=wblock->num_reallines){
-		RError("\n\nError In the function \"FindReallineFor\" in the file \"realline_calc.c\"\n");
-		RError("Input parameter 'realline' is below last realline.\n\n");
+		RError("\n\nError In the function \"FindReallineFor\" in the file \"realline_calc.c\"\n"
+                       "Input parameter 'realline' is below last realline.\n\n");
 		return wblock->num_reallines-1;
 	}
 
