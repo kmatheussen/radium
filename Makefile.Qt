@@ -114,7 +114,7 @@ OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_di
 #Qt_Bs_edit.o 
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o disk_midi_mymidilinks.o midi_fx.o midi_MyMidiLink.o midi_i_plugin.o midi_playfromstart.o alsaseq_midi.o midi_getEvents.o
@@ -811,6 +811,9 @@ api_undo.o:  $(API)api_undo.c $(API)radium_proc.h
 
 api_various.o:  $(API)api_various.c $(API)radium_proc.h
 	$(CC)  $(API)api_various.c $(OPT)
+
+api_instruments.o:  $(API)api_instruments.c $(API)radium_proc.h
+	$(CC)  $(API)api_instruments.c $(OPT)
 
 radium_wrap.o:  $(API)radium_wrap.c $(API)radium_proc.h
 	$(CC)  $(API)radium_wrap.c $(OPT) -w

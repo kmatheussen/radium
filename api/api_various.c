@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "Python.h"
+#include "radium_proc.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -26,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/fxlines_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/wblocks_proc.h"
-#include "../common/patch_proc.h"
 #include "../common/disk_save_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/lines_proc.h"
@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/gfx_wtracks_proc.h"
 #include "../common/visual_proc.h"
-#include "../midi/midi_i_plugin_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -299,90 +298,3 @@ void setBlockNoteShowType(int type,int blocknum,int windownum){
 }
 
 
-/********** Instruments ***********/
-
-void selectPatchForTrack(int tracknum,int blocknum,int windownum){
-  struct Tracker_Windows *window=NULL;
-  struct WTracks *wtrack;
-  struct WBlocks *wblock;
-
-  wtrack=getWTrackFromNumA(
-	windownum,
-	&window,
-	blocknum,
-	&wblock,
-	tracknum
-	);
-
-  if(wtrack==NULL) return;
-
-  SelectPatch(window,wtrack->track);
-}
-
-
-int createNewInstrument(char *type) {
-  int instrument_num;
-  struct Patch *patch=talloc(sizeof(struct Patch));
-  struct Instruments *instrument;
-
-  if(!strcmp("midi", type)) {
-    MIDI_InitPatch(patch);
-    instrument_num = 0;
-#if 0
-  } else if(!strcmp("audio", type)) {
-    AUDIO_InitPatch(patch);
-    instrument_num = 1;
-#endif
-  }else{
-    RError("Unknown instrument type '%s'.", type);
-    return 0;
-  }
-
-  instrument = getInstrumentFromNum(instrument_num);
-
-  ListAddElement1_ff(&instrument->patches,&patch->l);
-  (*instrument->PP_Update)(instrument,patch);
-
-  return getInstrumentPatchNum(instrument_num, patch->l.num);
-}
-
-void setInstrumentName(int instrument_num, char *name) {
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return;
-
-  patch->name = talloc_strdup(name);
-}
-
-char *getInstrumentName(int instrument_num) {
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return NULL;
-
-  return patch->name;
-}
-
-#if 0
-void setInstrumentVolume(int instrument_num, float volume) {
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return NULL;
-}
-
-float getInstrumentVolume(int instrument_num) {
-  return 0.0f;
-}
-#endif
-
-void setInstrumentData(int instrument_num, char *key, char *value) {
-  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return;
-
-  instrument->setPatchData(patch, key, value);
-}
-
-char *getInstrumentData(int instrument_num, char *key) {
-  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return NULL;
-
-  return instrument->getPatchData(patch, key);
-}
