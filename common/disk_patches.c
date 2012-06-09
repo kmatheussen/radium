@@ -63,11 +63,7 @@ struct Patch *LoadPatch(void){
 	patch->closePatch=CAMDclosePatch;
 	patch->changeTrackPan=CAMDchangeTrackPan;
 #else
-	patch->playnote=MIDIplaynote;
-	patch->stopnote=MIDIstopnote;
-	patch->changevelocity=MIDIchangevelocity;
-	patch->closePatch=MIDIclosePatch;
-	patch->changeTrackPan=MIDIchangeTrackPan;
+        MIDI_InitPatch(patch);
 #endif
 
 	GENERAL_LOAD(1,4)

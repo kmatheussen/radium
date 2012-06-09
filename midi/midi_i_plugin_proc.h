@@ -15,6 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#ifndef MIDI_I_PLUGIN_PROC_H
+#define MIDI_I_PLUGIN_PROC_H
+
+#include "midi_i_plugin.h"
+
 
 
 void MIDIchangeTrackPan(int newpan,struct Tracks *track);
@@ -22,6 +27,7 @@ void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note);
 void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
 void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
 void MIDIclosePatch(void);
+void MIDI_InitPatch(struct Patch *patch);
 
 void MyGoodPutMidi(
 	struct MyMidiLinks *mymidilink,
@@ -50,7 +56,6 @@ void MyPutMidi(
 
 
 
-
 /***************** General ****************************/
 
 #define PutMidi3(a,b,c,d,s) MyPutMidi(a,b,c,d,s,0)
@@ -75,4 +80,6 @@ void MyPutMidi(
 #define R_PutMidi3(a,b,c,d) MyMyPutMidi(a,b,c,d)
 #define R_PutMidi2(a,b,c) MyMyPutMidi(a,b,c,0)
 
+
+#endif
 

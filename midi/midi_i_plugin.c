@@ -20,8 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/playerclass.h"
 
-#include "midi_i_plugin.h"
-
 //#include "midi_get_clustername_proc.h"
 //#include "midi_getMidiLink_proc.h"
 #include "midi_playfromstart_proc.h"
@@ -272,6 +270,22 @@ void MIDIclosePatch(void){
 	return;
 }
 
+int MIDIgetStandardVelocity(struct Tracks *track);
+int MIDIgetMaxVelocity(struct Tracks *track);
+
+void MIDI_InitPatch(struct Patch *patch) {
+  patch->playnote=MIDIplaynote;
+  patch->stopnote=MIDIstopnote;
+  patch->changevelocity=MIDIchangevelocity;
+  patch->closePatch=MIDIclosePatch;
+  patch->changeTrackPan=MIDIchangeTrackPan;
+
+  patch->patchdata = NULL;
+
+  patch->minvel=0;
+  patch->maxvel=MIDIgetMaxVelocity(NULL);
+  patch->standardvel=MIDIgetStandardVelocity(NULL);
+}
 
 int MIDIgetPatch(
 	struct Tracker_Windows *window,
@@ -282,6 +296,7 @@ int MIDIgetPatch(
 	struct MyMidiLinks *mymidilink;
 	struct PatchData *patchdata;
 
+        MIDI_InitPatch(patch);
 
 #if 0
 	char *clustername;
@@ -301,7 +316,10 @@ int MIDIgetPatch(
 //	debug("midilink: %x, ml_parserData:%x, ml_UserData: %x\n",midilink,midilink->ml_ParserData,midilink->ml_UserData);
 
 	patchdata=talloc(sizeof(struct PatchData));
+        patchdata->MSB=-1;
+        patchdata->LSB=-1;
 	patchdata->mymidilink=mymidilink;
+
 	while(patchdata->channel==0){
 		patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16);
 	}
@@ -309,19 +327,6 @@ int MIDIgetPatch(
 
 	patchdata->preset=GFX_GetInteger(window,reqtype,"Preset: (1-128) ",1,128);
 	patchdata->preset--;
-	patchdata->MSB=-1;
-	patchdata->LSB=-1;
-
-	patch->patchdata=patchdata;
-	patch->minvel=0;
-	patch->maxvel=127;
-	patch->standardvel=100;
-
-	patch->playnote=MIDIplaynote;
-	patch->stopnote=MIDIstopnote;
-	patch->changevelocity=MIDIchangevelocity;
-	patch->closePatch=MIDIclosePatch;
-	patch->changeTrackPan=MIDIchangeTrackPan;
 
 	return PATCH_SUCCESS;
 }
