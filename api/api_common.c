@@ -70,7 +70,7 @@ void init_radium(char *arg,PyObject *gkf){
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
 	if(windownum==-1) return root->song->tracker_windows;
-	struct Tracker_Windows *ret = (struct Tracker_Windows *)ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
+	struct Tracker_Windows *ret = ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
         if (ret==NULL)
           RError("Window #%d does not exist", windownum);
         return ret;
@@ -82,7 +82,7 @@ struct WBlocks *getWBlockFromNum(int windownum,int wblocknum){
 	if(window==NULL) return NULL;
 
 	if(wblocknum==-1) return window->wblock;
-	struct WBlocks *ret = (struct WBlocks *)ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
+	struct WBlocks *ret = ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
         if (ret==NULL)
           RError("WBlock #%d does not exist", wblocknum);
         return ret;
@@ -98,7 +98,7 @@ struct WBlocks *getWBlockFromNumA(
 	if(*window==NULL) return NULL;
 
 	if(blocknum==-1) return (*window)->wblock;
-	struct WBlocks *ret = (struct WBlocks *)ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
+	struct WBlocks *ret = ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
         if (ret==NULL)
           RError("WBlock #%d does not exist", blocknum);
         return ret;
@@ -106,7 +106,7 @@ struct WBlocks *getWBlockFromNumA(
 
 
 struct Blocks *getBlockFromNum(int blocknum){
-  struct Blocks *ret = (struct Blocks *)ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
+  struct Blocks *ret = ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
   if (ret==NULL)
     RError("Block #%d does not exist",blocknum);
   return ret;
@@ -117,7 +117,7 @@ struct Tracks *getTrackFromNum(int blocknum,int tracknum){
 	struct Blocks *block=getBlockFromNum(blocknum);
 	if(block==NULL) return NULL;
 
-	struct Tracks *ret = (struct Tracks *)ListFindElement1_num(&block->tracks->l,(NInt)tracknum);
+	struct Tracks *ret = ListFindElement1_num(&block->tracks->l,(NInt)tracknum);
         if (ret==NULL)
           RError("Track #%d in Block #%d does not exist",tracknum,blocknum);
         return ret;
@@ -131,7 +131,7 @@ struct WTracks *getWTrackFromNum(
 	struct WBlocks *wblock=getWBlockFromNum(windownum,wblocknum);
 	if(wblock==NULL) return NULL;
 	if(wtracknum==-1) return wblock->wtrack;
-	struct WTracks *ret = (struct WTracks *)ListFindElement1_num(&wblock->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = ListFindElement1_num(&wblock->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
           RError("WTrack #%d in WBlock #%d in window #%d does not exist",wtracknum, wblocknum, windownum);
         return ret;
@@ -152,7 +152,7 @@ struct WTracks *getWTrackFromNumA(
 	}
 	if(wtracknum==-1) return (*wblock)->wtrack;
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
-	struct WTracks *ret = (struct WTracks *)ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
           RError("WTrack #%d in WBlock %d does not exist",wtracknum, wblocknum);
         return ret;
@@ -164,7 +164,7 @@ struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum){
 
 	if(notenum==-1) notenum=0;
 
-	struct Notes *ret = (struct Notes *)ListFindElement3_num(&track->notes->l,(NInt)notenum);
+	struct Notes *ret = ListFindElement3_num(&track->notes->l,(NInt)notenum);
         if (ret==NULL)
           RError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
         return ret;
