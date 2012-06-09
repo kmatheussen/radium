@@ -249,6 +249,9 @@ struct Instruments{
 	void (*PlayFromStartHook)(struct Instruments *instrument);
 
 	void *(*LoadFX)(struct FX *fx,struct Tracks *track);
+
+  void (*setPatchData)(struct Patch *patch, char *key, char *value);
+  void *(*getPatchData)(struct Patch *patch, char *key);
 };
 #define INSTRUMENT_FAILED 0
 #define INSTRUMENT_SUCCESS 1

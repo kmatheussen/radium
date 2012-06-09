@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "t_gc_proc.h"
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -211,7 +213,8 @@ void *talloc_atomic_uncollectable(size_t size){
 	return NULL;
 }
 
-
-
-
-
+char *talloc_strdup(char *input) {
+  char *ret = talloc_atomic(strlen(input) + 1);
+  memcpy(ret, input, strlen(input));
+  return ret;
+}

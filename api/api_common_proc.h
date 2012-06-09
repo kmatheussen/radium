@@ -52,5 +52,6 @@ struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum);
 
 struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenum);
 
-
-
+int getInstrumentPatchNum(int instrument_num, int patch_num);
+struct Instruments *getInstrumentFromNum(int instrument_num);
+struct Patch *getPatchFromNum(int instrument_patch_num);

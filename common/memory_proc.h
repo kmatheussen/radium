@@ -37,5 +37,6 @@ extern LANGSPEC void *talloc_atomic(size_t size);
 
 extern LANGSPEC void *talloc_atomic_uncollectable(size_t size);
 
+extern LANGSPEC char *talloc_strdup(char *input);
 #endif
 

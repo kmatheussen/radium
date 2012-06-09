@@ -106,7 +106,6 @@ void SelectPatch(struct Tracker_Windows *window,struct Tracks *track){
 	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
 
 	(*instrument->PP_Update)(instrument,patch);
-
 }
 
 

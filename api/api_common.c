@@ -189,6 +189,42 @@ struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenu
 
 }
 
+const static int num_instrument_types = 1;
 
+int getInstrumentPatchNum(int instrument_num, int patch_num){
+  return (patch_num*num_instrument_types) + instrument_num;
+}
 
+static int getPatchNum(int instrument_num, int instrument_patch_num){
+  return (instrument_patch_num - instrument_num) / num_instrument_types;
+}
+
+struct Instruments *getInstrumentFromNum(int instrument_num){
+  if(instrument_num==-1)
+    return root->def_instrument;
+
+  if(instrument_num==0)
+    return root->def_instrument;
+
+#if 0
+  if(instrument_num==1)
+    return root->audio_instrument;
+#endif
+
+  RError("Unknown instrument_num: %d", instrument_num);
+  return root->def_instrument;
+}
+
+struct Patch *getPatchFromNum(int instrument_patch_num){
+  int instrument_num = instrument_patch_num % num_instrument_types;
+  int patch_num = getPatchNum(instrument_num, instrument_patch_num);
+
+  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
+
+  struct Patch *patch = ListFindElement1_r0(&instrument->patches->l, patch_num);
+  if(patch==NULL)
+    RError("Instrument #%d does not exist",instrument_patch_num);
+
+  return patch;
+}
 
