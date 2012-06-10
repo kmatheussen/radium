@@ -183,7 +183,7 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
                                                           );
 
   if(mymidilink->midilink->port!=0) {
-    RError("Could not create ALSA port (%s)\n", snd_strerror(mymidilink->midilink->port));
+    RWarning("Could not create ALSA port (%s)\n", snd_strerror(mymidilink->midilink->port));
   }
 
   ret = snd_seq_connect_to(
@@ -195,7 +195,7 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
 
 
   if(ret!=0) {
-    RError("Could not connect ALSA port (%s)\n", snd_strerror(ret));
+    RWarning("Could not connect ALSA port (%s)\n", snd_strerror(ret));
   }
 
   printf("myport: %d, connectret: %d\n",mymidilink->midilink->port,ret);
