@@ -49,8 +49,14 @@ void RWarning(const char *fmt,...){
   va_end(argp);
 
   char command[1000];
+#ifdef DEBUG
+  sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue? (warning)\"",message);
+  if(system(command))
+    abort();
+#else
   sprintf(command,"zenity --warning --text=\"%s\"",message);
   system(command);
+#endif
 }
 
 void Error_uninit(void){}
