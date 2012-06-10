@@ -39,4 +39,18 @@ void RError(const char *fmt,...){
     abort();
 }
 
+void RWarning(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  char command[1000];
+  sprintf(command,"zenity --warning --text=\"%s\"",message);
+  system(command);
+}
+
 void Error_uninit(void){}
