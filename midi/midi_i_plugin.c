@@ -266,18 +266,7 @@ void MIDIchangeTrackPan(int newpan,struct Tracks *track){
 0 - 127
 */
 
-static struct PatchData *createPatchData(struct MyMidiLinks *mymidilink) {
-  struct PatchData *patchdata=talloc(sizeof(struct PatchData));
-  patchdata->MSB=-1;
-  patchdata->LSB=-1;
-  patchdata->mymidilink=mymidilink;
-  return patchdata;
-}
-
-
 static struct PatchData *getPatchData(struct Patch *patch){
-  if(patch->patchdata==NULL)
-    RWarning("setInstrumentData: midilink must be set first");
   return patch->patchdata;
 }
 
@@ -285,34 +274,18 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
   if(false){
 
   }else if(!strcasecmp(key,"midilink")){
-    struct MyMidiLinks *mymidilink = MIDI_getMyMidiLink(NULL, NULL, value);
-    if(mymidilink==NULL) {
-      RError("midilink with name \"%s\" could not be opened", value);
-      return;
-    }
-    if(patch->patchdata==NULL)
-      patch->patchdata = createPatchData(mymidilink);
-    else
-      ((struct PatchData *)patch->patchdata)->mymidilink = mymidilink;
+    getPatchData(patch)->mymidilink = MIDI_getMyMidiLink(NULL, NULL, value);
 
   }else if(!strcasecmp(key,"channel")){
-    if(getPatchData(patch)==NULL)
-      return;
     getPatchData(patch)->channel = atoi(value);
 
   }else if(!strcasecmp(key,"LSB")){
-    if(getPatchData(patch)==NULL)
-      return;
     getPatchData(patch)->LSB = atoi(value);
 
   }else if(!strcasecmp(key,"MSB")){
-    if(getPatchData(patch)==NULL)
-      return;
     getPatchData(patch)->MSB = atoi(value);
 
   }else if(!strcasecmp(key,"preset")){
-    if(getPatchData(patch)==NULL)
-      return;
     getPatchData(patch)->preset = atoi(value);
 
   } else
@@ -323,32 +296,22 @@ char *MIDIGetPatchData(struct Patch *patch, char *key){
   if(false){
 
   }else if(!strcasecmp(key,"midilink")){
-    if(getPatchData(patch)==NULL)
-      return "";
     if(getPatchData(patch)->mymidilink==NULL) {
-      RError("midilink has not been set");
-      return NULL;
+      RWarning("midilink has not been set");
+      return "";
     }
     return getPatchData(patch)->mymidilink->name;
 
   }else if(!strcasecmp(key,"channel")){
-    if(getPatchData(patch)==NULL)
-      return "";
     return talloc_numberstring(getPatchData(patch)->channel);
 
   }else if(!strcasecmp(key,"LSB")){
-    if(getPatchData(patch)==NULL)
-      return "";
     return talloc_numberstring(getPatchData(patch)->LSB);
 
   }else if(!strcasecmp(key,"MSB")){
-    if(getPatchData(patch)==NULL)
-      return "";
     return talloc_numberstring(getPatchData(patch)->MSB);
 
   }else if(!strcasecmp(key,"preset")){
-    if(getPatchData(patch)==NULL)
-      return "";
     return talloc_numberstring(getPatchData(patch)->preset);
 
   } else
@@ -364,6 +327,13 @@ void MIDIclosePatch(void){
 int MIDIgetStandardVelocity(struct Tracks *track);
 int MIDIgetMaxVelocity(struct Tracks *track);
 
+static struct PatchData *createPatchData(void) {
+  struct PatchData *patchdata=talloc(sizeof(struct PatchData));
+  patchdata->MSB=-1;
+  patchdata->LSB=-1;
+  return patchdata;
+}
+
 void MIDI_InitPatch(struct Patch *patch) {
   patch->playnote=MIDIplaynote;
   patch->stopnote=MIDIstopnote;
@@ -371,7 +341,7 @@ void MIDI_InitPatch(struct Patch *patch) {
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 
-  patch->patchdata = NULL;
+  patch->patchdata = createPatchData();
 
   patch->minvel=0;
   patch->maxvel=MIDIgetMaxVelocity(NULL);
@@ -389,25 +359,13 @@ int MIDIgetPatch(
 
         MIDI_InitPatch(patch);
 
-#if 0
-	char *clustername;
-
-	clustername=MIDI_getClusterName(reqtype);
-
-	if(clustername==NULL) return PATCH_FAILED;
-
-	mymidilink=MIDI_getMyMidiLink(clustername);
-
-	if(mymidilink==NULL) return PATCH_FAILED;
-#else
 	mymidilink=MIDI_getMyMidiLink(window,reqtype,NULL);
 	if(mymidilink==NULL) return PATCH_FAILED;
-#endif
 
 //	debug("midilink: %x, ml_parserData:%x, ml_UserData: %x\n",midilink,midilink->ml_ParserData,midilink->ml_UserData);
 
-	patchdata=createPatchData(mymidilink);
-        patch->patchdata = patchdata;
+	patchdata=getPatchData(patch);
+        patchdata->mymidilink = mymidilink;
 
 	while(patchdata->channel==0){
 		patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16);
