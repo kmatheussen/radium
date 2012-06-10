@@ -77,10 +77,13 @@ int createNewInstrument(char *type) {
 }
 
 void setInstrumentName(int instrument_num, char *name) {
+  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
   struct Patch *patch = getPatchFromNum(instrument_num);
   if(patch==NULL) return;
 
   patch->name = talloc_strdup(name);
+
+  (*instrument->PP_Update)(instrument,patch);
 }
 
 char *getInstrumentName(int instrument_num) {
@@ -92,8 +95,11 @@ char *getInstrumentName(int instrument_num) {
 
 #if 0
 void setInstrumentVolume(int instrument_num, float volume) {
+  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
   struct Patch *patch = getPatchFromNum(instrument_num);
   if(patch==NULL) return NULL;
+
+  (*instrument->PP_Update)(instrument,patch);
 }
 
 float getInstrumentVolume(int instrument_num) {
@@ -107,6 +113,8 @@ void setInstrumentData(int instrument_num, char *key, char *value) {
   if(patch==NULL) return;
 
   instrument->setPatchData(patch, key, value);
+
+  (*instrument->PP_Update)(instrument,patch);
 }
 
 char *getInstrumentData(int instrument_num, char *key) {
