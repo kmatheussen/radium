@@ -107,18 +107,18 @@ void *tracker_alloc(size_t size,void *(*AllocFunction)(size_t size2)){
 }
 
 void *tralloc(size_t size){
-	return tracker_alloc(size,GC_malloc);
+  return tracker_alloc(size,GC_malloc);
 }
 
 void *tralloc_atomic(size_t size){
-	return tracker_alloc(size,GC_malloc_atomic);
+  return tracker_alloc(size,GC_malloc_atomic);
 }
-
 
 
 /************************************************************
    FUNCTION
      Does never return NULL.
+     Clears memory.
 ************************************************************/
 void *talloc(size_t size){
 	void *ret;
@@ -157,7 +157,6 @@ void *talloc(size_t size){
 	ShutDownYepp();
 	return NULL;
 }
-
 
 void *talloc_atomic(size_t size){
 	void *ret;
@@ -215,6 +214,12 @@ void *talloc_atomic_uncollectable(size_t size){
 
 char *talloc_strdup(char *input) {
   char *ret = talloc_atomic(strlen(input) + 1);
-  memcpy(ret, input, strlen(input));
+  sprintf(ret,"%s",input);
   return ret;
+}
+
+char *talloc_numberstring(int number){
+  char s[1000];
+  sprintf(s,"%d",number);
+  return talloc_strdup(s);
 }
