@@ -266,6 +266,97 @@ void MIDIchangeTrackPan(int newpan,struct Tracks *track){
 0 - 127
 */
 
+static struct PatchData *createPatchData(struct MyMidiLinks *mymidilink) {
+  struct PatchData *patchdata=talloc(sizeof(struct PatchData));
+  patchdata->MSB=-1;
+  patchdata->LSB=-1;
+  patchdata->mymidilink=mymidilink;
+  return patchdata;
+}
+
+
+static struct PatchData *getPatchData(struct Patch *patch){
+  if(patch->patchdata==NULL)
+    RWarning("setInstrumentData: midilink must be set first");
+  return patch->patchdata;
+}
+
+void MIDISetPatchData(struct Patch *patch, char *key, char *value){
+  if(false){
+
+  }else if(!strcasecmp(key,"midilink")){
+    struct MyMidiLinks *mymidilink = MIDI_getMyMidiLink(NULL, NULL, value);
+    if(mymidilink==NULL) {
+      RError("midilink with name \"%s\" could not be opened", value);
+      return;
+    }
+    if(patch->patchdata==NULL)
+      patch->patchdata = createPatchData(mymidilink);
+    else
+      ((struct PatchData *)patch->patchdata)->mymidilink = mymidilink;
+
+  }else if(!strcasecmp(key,"channel")){
+    if(getPatchData(patch)==NULL)
+      return;
+    getPatchData(patch)->channel = atoi(value);
+
+  }else if(!strcasecmp(key,"LSB")){
+    if(getPatchData(patch)==NULL)
+      return;
+    getPatchData(patch)->LSB = atoi(value);
+
+  }else if(!strcasecmp(key,"MSB")){
+    if(getPatchData(patch)==NULL)
+      return;
+    getPatchData(patch)->MSB = atoi(value);
+
+  }else if(!strcasecmp(key,"preset")){
+    if(getPatchData(patch)==NULL)
+      return;
+    getPatchData(patch)->preset = atoi(value);
+
+  } else
+    RWarning("Unknown key \"%s\" for midi instrument", key);
+}
+
+char *MIDIGetPatchData(struct Patch *patch, char *key){
+  if(false){
+
+  }else if(!strcasecmp(key,"midilink")){
+    if(getPatchData(patch)==NULL)
+      return "";
+    if(getPatchData(patch)->mymidilink==NULL) {
+      RError("midilink has not been set");
+      return NULL;
+    }
+    return getPatchData(patch)->mymidilink->name;
+
+  }else if(!strcasecmp(key,"channel")){
+    if(getPatchData(patch)==NULL)
+      return "";
+    return talloc_numberstring(getPatchData(patch)->channel);
+
+  }else if(!strcasecmp(key,"LSB")){
+    if(getPatchData(patch)==NULL)
+      return "";
+    return talloc_numberstring(getPatchData(patch)->LSB);
+
+  }else if(!strcasecmp(key,"MSB")){
+    if(getPatchData(patch)==NULL)
+      return "";
+    return talloc_numberstring(getPatchData(patch)->MSB);
+
+  }else if(!strcasecmp(key,"preset")){
+    if(getPatchData(patch)==NULL)
+      return "";
+    return talloc_numberstring(getPatchData(patch)->preset);
+
+  } else
+    RWarning("Unknown key \"%s\" for midi instrument", key);
+
+  return "";
+}
+
 void MIDIclosePatch(void){
 	return;
 }
@@ -315,10 +406,8 @@ int MIDIgetPatch(
 
 //	debug("midilink: %x, ml_parserData:%x, ml_UserData: %x\n",midilink,midilink->ml_ParserData,midilink->ml_UserData);
 
-	patchdata=talloc(sizeof(struct PatchData));
-        patchdata->MSB=-1;
-        patchdata->LSB=-1;
-	patchdata->mymidilink=mymidilink;
+	patchdata=createPatchData(mymidilink);
+        patch->patchdata = patchdata;
 
 	while(patchdata->channel==0){
 		patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16);
@@ -401,6 +490,10 @@ int InitInstrumentPlugIn(struct Instruments *instrument){
   instrument->CopyInstrumentData=MIDI_CopyInstrumentData;
   instrument->PlayFromStartHook=MIDIPlayFromStartHook;
   instrument->LoadFX=MIDILoadFX;
+
+  instrument->setPatchData=MIDISetPatchData;
+  instrument->getPatchData=MIDIGetPatchData;
+
   return INSTRUMENT_SUCCESS;
   
 }
