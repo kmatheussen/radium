@@ -54,6 +54,9 @@ void OnOffNotesTrack(
 	int data1,
 	int data2
 ){
+        if(mymidilink==NULL)
+          return;
+
 	if((cc&0xf0)==0x80 || (((cc&0xf0)==0x90 && data2==0))){
 		if(mymidilink->channelspesific[cc&0xf].num_ons[data1]>0)
 			mymidilink->channelspesific[cc&0xf].num_ons[data1]--;
@@ -71,6 +74,9 @@ void MyGoodPutMidi(
 	int data2,
 	int maxbuff
 ){
+        if(mymidilink==NULL)
+          return;
+
 	GoodPutMidi(mymidilink->midilink,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)),(uint32_t)maxbuff);
 	OnOffNotesTrack(mymidilink,cc,data1,data2);
 }
@@ -81,6 +87,9 @@ void MyMyPutMidi(
 	int data1,
 	int data2
 ){
+        if(mymidilink==NULL)
+          return;
+
 	PutMidi(mymidilink->midilink,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)));	
 	OnOffNotesTrack(mymidilink,cc,data1,data2);
 }
@@ -99,6 +108,9 @@ void MyPutMidi(
 	int maxbuff,
 	int skip
 ){
+        if(mymidilink==NULL)
+          return;
+
 	struct MidiLink *midilink=mymidilink->midilink;
 
 
@@ -121,6 +133,9 @@ void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *
 	struct MyMidiLinks *mymidilink=patchdata->mymidilink;
 	const int channel=patchdata->channel;
 	int maxbuf=70;
+
+        if(mymidilink==NULL)
+          return;
 
 	/* Scale the velocity to the volume set by the track.*/
 	if(track->volumeonoff){
@@ -414,13 +429,14 @@ void MIDIStopPlaying(struct Instruments *instrument){
 		patchdata=(struct PatchData *)patch->patchdata;
 		mymidilink=patchdata->mymidilink;
 
-		for(lokke=0;lokke<16;lokke++){
-			for(lokke2=0;lokke2<128;lokke2++){
-				while(mymidilink->channelspesific[lokke].num_ons[lokke2] > 0){
-					R_PutMidi3(mymidilink,0x80|lokke,lokke2,0x00);
-				}
-			}
-		}
+                if(mymidilink!=NULL)
+                  for(lokke=0;lokke<16;lokke++){
+                    for(lokke2=0;lokke2<128;lokke2++){
+                      while(mymidilink->channelspesific[lokke].num_ons[lokke2] > 0){
+                        R_PutMidi3(mymidilink,0x80|lokke,lokke2,0x00);
+                      }
+                    }
+                  }
 		patch=NextPatch(patch);
 	}
 }
