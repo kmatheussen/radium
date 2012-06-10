@@ -289,7 +289,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
   if(false){
 
   }else if(!strcasecmp(key,"midilink")){
-    getPatchData(patch)->mymidilink = MIDI_getMyMidiLink(NULL, NULL, value);
+    getPatchData(patch)->mymidilink = MIDI_getMyMidiLink(NULL, NULL, !strcmp("",value) ? NULL : value);
 
   }else if(!strcasecmp(key,"channel")){
     getPatchData(patch)->channel = atoi(value);
@@ -304,7 +304,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
     getPatchData(patch)->preset = atoi(value);
 
   } else
-    RWarning("Unknown key \"%s\" for midi instrument", key);
+    RWarning("MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
 }
 
 char *MIDIGetPatchData(struct Patch *patch, char *key){
@@ -330,7 +330,7 @@ char *MIDIGetPatchData(struct Patch *patch, char *key){
     return talloc_numberstring(getPatchData(patch)->preset);
 
   } else
-    RWarning("Unknown key \"%s\" for midi instrument", key);
+    RWarning("MIDIGetPatchData: Unknown key \"%s\" for midi instrument", key);
 
   return "";
 }
