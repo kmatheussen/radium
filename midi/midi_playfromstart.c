@@ -34,7 +34,7 @@ void MIDIPlayFromStartHook(struct Instruments *instrument){
 
 	struct PatchData *patchdata;
 	struct MyMidiLinks *mymidilink;
-	struct ChannelSpesific *cs;
+	struct ChannelSpecific *cs;
 
 	struct Patch *patch=instrument->patches;
 	int channel;
@@ -46,7 +46,7 @@ void MIDIPlayFromStartHook(struct Instruments *instrument){
 		channel=patchdata->channel;
 		mymidilink=patchdata->mymidilink;
 
-		cs=&mymidilink->channelspesific[channel];
+		cs=&mymidilink->channelspecific[channel];
 
 		if(cs->volumeonoff){
 			R_PutMidi3(mymidilink,0xb0|channel,0x7,cs->volume);

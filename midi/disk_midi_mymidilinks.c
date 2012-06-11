@@ -35,7 +35,7 @@ extern struct MyMidiLinks *usedmidilinks;
 
 void SaveMyMidiLinks(void){
 	struct MyMidiLinks *mymidilink=usedmidilinks;
-	struct ChannelSpesific *sc;
+	struct ChannelSpecific *sc;
 	int lokke,lokke2;
 DC_start("MYMIDILINKS");
 
@@ -46,7 +46,7 @@ DC_start("MYMIDILINKS");
 			DC_SaveI(mymidilink->standardccs[lokke]);
 		}
 		for(lokke=0;lokke<16;lokke++){
-			sc=&mymidilink->channelspesific[lokke];
+			sc=&mymidilink->channelspecific[lokke];
 			DC_SaveB(sc->volumeonoff);
 			DC_SaveB(sc->panonoff);
 			DC_SaveI(sc->volume);
@@ -65,7 +65,7 @@ DC_end();
 
 void LoadMyMidiLinks(void){
 	struct MyMidiLinks *mymidilink;
-	struct ChannelSpesific *sc;
+	struct ChannelSpecific *sc;
 	int lokke,lokke2;
 
 	while(dc.success){
@@ -79,7 +79,7 @@ void LoadMyMidiLinks(void){
 			mymidilink->standardccs[lokke]=DC_LoadI();
 		}
 		for(lokke=0;lokke<16;lokke++){
-			sc=&mymidilink->channelspesific[lokke];
+			sc=&mymidilink->channelspecific[lokke];
 			sc->volumeonoff=DC_LoadB();
 			sc->panonoff=DC_LoadB();
 			sc->volume=DC_LoadI();

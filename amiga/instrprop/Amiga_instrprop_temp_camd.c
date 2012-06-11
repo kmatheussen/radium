@@ -241,13 +241,13 @@ int ChannelClicked( void )
 	APP_GetVars()
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 	struct MyMidiLinks *mymidilink;
-	struct ChannelSpesific *cs;
+	struct ChannelSpecific *cs;
 	int lokke;
 
 	patchdata->channel=CPPWindowMsg.Code-1;
 
 	mymidilink=patchdata->mymidilink;
-	cs=&mymidilink->channelspesific[patchdata->channel];
+	cs=&mymidilink->channelspecific[patchdata->channel];
 
 	GT_SetGadgetAttrs(
 		CPPWindowGadgets[GD_LSB],
@@ -427,7 +427,7 @@ void SliderClicked(int gadgetnum){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 	int channel=patchdata->channel;
 	struct MyMidiLinks *mymidilink=patchdata->mymidilink;
-	struct ChannelSpesific *cs=&mymidilink->channelspesific[channel];
+	struct ChannelSpecific *cs=&mymidilink->channelspecific[channel];
 
 	char *name;
 	int cc;
@@ -569,7 +569,7 @@ void CCselectClicked(int gadget){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 	int channel=patchdata->channel;
 	struct MyMidiLinks *mymidilink=patchdata->mymidilink;
-	struct ChannelSpesific *cs=&mymidilink->channelspesific[channel];
+	struct ChannelSpecific *cs=&mymidilink->channelspecific[channel];
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	int cc;
 
@@ -697,7 +697,7 @@ int PanonoffClicked( void )
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 	int channel=patchdata->channel;
 	struct MyMidiLinks *mymidilink=patchdata->mymidilink;
-	struct ChannelSpesific *cs=&mymidilink->channelspesific[channel];
+	struct ChannelSpecific *cs=&mymidilink->channelspecific[channel];
 
 	cs->panonoff=cs->panonoff?false:true;
 
@@ -722,7 +722,7 @@ int VolumeonoffClicked( void )
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 	int channel=patchdata->channel;
 	struct MyMidiLinks *mymidilink=patchdata->mymidilink;
-	struct ChannelSpesific *cs=&mymidilink->channelspesific[channel];
+	struct ChannelSpecific *cs=&mymidilink->channelspecific[channel];
 
 	cs->volumeonoff=cs->volumeonoff?false:true;
 

@@ -46,7 +46,7 @@ void MIDIGetEvents(
   struct PatchData *patchdata;
   int channel;
   struct MyMidiLinks *mymidilink;
-  struct ChannelSpesific *cs;
+  struct ChannelSpecific *cs;
 
   switch(arg0){
   case MIDIEVENT_USE0x90FORNOTEOFF:
@@ -90,7 +90,7 @@ void MIDIGetEvents(
   patchdata=(struct PatchData *)patch->patchdata;
   channel=patchdata->channel;
   mymidilink=patchdata->mymidilink;
-  cs=&mymidilink->channelspesific[channel];
+  cs=&mymidilink->channelspecific[channel];
     
 
   //  struct PatchData *patchdata;

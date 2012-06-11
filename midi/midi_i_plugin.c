@@ -58,11 +58,11 @@ void OnOffNotesTrack(
           return;
 
 	if((cc&0xf0)==0x80 || (((cc&0xf0)==0x90 && data2==0))){
-		if(mymidilink->channelspesific[cc&0xf].num_ons[data1]>0)
-			mymidilink->channelspesific[cc&0xf].num_ons[data1]--;
+		if(mymidilink->channelspecific[cc&0xf].num_ons[data1]>0)
+			mymidilink->channelspecific[cc&0xf].num_ons[data1]--;
 	}else{
 		if((cc&0xf0)==0x90){
-			mymidilink->channelspesific[cc&0xf].num_ons[data1]++;
+			mymidilink->channelspecific[cc&0xf].num_ons[data1]++;
 		}
 	}
 }
@@ -148,8 +148,8 @@ void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *
 	*/
 	if(
 		(
-			mymidilink->channelspesific[channel].LSB != patchdata->LSB ||
-			mymidilink->channelspesific[channel].MSB != patchdata->MSB
+			mymidilink->channelspecific[channel].LSB != patchdata->LSB ||
+			mymidilink->channelspecific[channel].MSB != patchdata->MSB
 		) &&
 			patchdata->LSB!=-1
 	){
@@ -161,7 +161,7 @@ void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *
 				patchdata->MSB,
 				10
 			);
-			mymidilink->channelspesific[channel].MSB = patchdata->MSB;
+			mymidilink->channelspecific[channel].MSB = patchdata->MSB;
 		}
 
 		PutMidi3(
@@ -171,7 +171,7 @@ void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *
 			patchdata->LSB,
 			100000
 		);
-		mymidilink->channelspesific[channel].LSB = patchdata->LSB;
+		mymidilink->channelspecific[channel].LSB = patchdata->LSB;
 
 		PutMidi2(
 			mymidilink,
@@ -179,13 +179,13 @@ void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *
 			patchdata->preset,
 			100000
 		);
-		mymidilink->channelspesific[channel].preset = patchdata->preset;
+		mymidilink->channelspecific[channel].preset = patchdata->preset;
 		maxbuf=100000;
 
 	}else{
 		if(
 			patchdata->preset!=-1 &&
-			mymidilink->channelspesific[channel].preset != patchdata->preset
+			mymidilink->channelspecific[channel].preset != patchdata->preset
 		){
 			PutMidi2(
 				mymidilink,
@@ -193,7 +193,7 @@ void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *
 				patchdata->preset,
 				10
 			);
-			mymidilink->channelspesific[channel].preset = patchdata->preset;
+			mymidilink->channelspecific[channel].preset = patchdata->preset;
 			maxbuf=100000;
 		}
 	}
@@ -432,7 +432,7 @@ void MIDIStopPlaying(struct Instruments *instrument){
                 if(mymidilink!=NULL)
                   for(lokke=0;lokke<16;lokke++){
                     for(lokke2=0;lokke2<128;lokke2++){
-                      while(mymidilink->channelspesific[lokke].num_ons[lokke2] > 0){
+                      while(mymidilink->channelspecific[lokke].num_ons[lokke2] > 0){
                         R_PutMidi3(mymidilink,0x80|lokke,lokke2,0x00);
                       }
                     }

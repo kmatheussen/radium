@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MIDI_I_PLUGIN_H
 
 
-struct ChannelSpesific{
+struct ChannelSpecific{
 	char MSB;
 	char LSB;
 	char preset;
@@ -43,7 +43,7 @@ struct MyMidiLinks{
 
 	char *ccnames[8];
 	char standardccs[8];
-	struct ChannelSpesific channelspesific[16];
+	struct ChannelSpecific channelspecific[16];
 };
 
 struct PatchData{

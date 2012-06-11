@@ -51,19 +51,19 @@ void MIDI_initMyMidiLink(struct MyMidiLinks *mymidilink){
   
   
   for(lokke=0;lokke<16;lokke++){
-    mymidilink->channelspesific[lokke].MSB=-1;
-    mymidilink->channelspesific[lokke].LSB=-1;
-    mymidilink->channelspesific[lokke].preset=-1;
+    mymidilink->channelspecific[lokke].MSB=-1;
+    mymidilink->channelspecific[lokke].LSB=-1;
+    mymidilink->channelspecific[lokke].preset=-1;
     
-    mymidilink->channelspesific[lokke].volumeonoff=false;
-    mymidilink->channelspesific[lokke].panonoff=false;
+    mymidilink->channelspecific[lokke].volumeonoff=false;
+    mymidilink->channelspecific[lokke].panonoff=false;
     
-    mymidilink->channelspesific[lokke].volume=100;
-    mymidilink->channelspesific[lokke].pan=0x40;
+    mymidilink->channelspecific[lokke].volume=100;
+    mymidilink->channelspecific[lokke].pan=0x40;
     
     for(lokke2=0;lokke2<8;lokke2++){
-      mymidilink->channelspesific[lokke].ccvalues[lokke2]=0;
-      mymidilink->channelspesific[lokke].ccsonoff[lokke2]=false;
+      mymidilink->channelspecific[lokke].ccvalues[lokke2]=0;
+      mymidilink->channelspecific[lokke].ccsonoff[lokke2]=false;
     }
   }
   

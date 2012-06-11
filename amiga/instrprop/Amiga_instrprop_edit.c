@@ -54,7 +54,7 @@ void CAMDPP_Update_doit(struct Instruments *instrument,struct Patch *patch){
 	NInt num_patches;
 	struct PatchData *patchdata;
 	struct MyMidiLinks *mymidilink;
-	struct ChannelSpesific *cs;
+	struct ChannelSpecific *cs;
 	int lokke;
 
 	if(patch==NULL){
@@ -180,7 +180,7 @@ void CAMDPP_Update_doit(struct Instruments *instrument,struct Patch *patch){
 	num_patches=ListFindNumElements1(&instrument->patches->l);
 	patchdata=(struct PatchData *)patch->patchdata;
 	mymidilink=patchdata->mymidilink;
-	cs=&mymidilink->channelspesific[patchdata->channel];
+	cs=&mymidilink->channelspecific[patchdata->channel];
 
 	GT_SetGadgetAttrs(
 		CPPWindowGadgets[GD_name],
