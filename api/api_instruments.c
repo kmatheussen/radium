@@ -50,7 +50,7 @@ void selectPatchForTrack(int tracknum,int blocknum,int windownum){
 }
 
 
-int createNewInstrument(char *type) {
+int createNewInstrument(char *type, char *name) {
   int instrument_num;
   struct Patch *patch=talloc(sizeof(struct Patch));
   struct Instruments *instrument;
@@ -67,6 +67,8 @@ int createNewInstrument(char *type) {
     RError("Unknown instrument type '%s'.", type);
     return 0;
   }
+
+  patch->name = talloc_strdup(name);
 
   instrument = getInstrumentFromNum(instrument_num);
 
