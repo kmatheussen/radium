@@ -32,32 +32,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 void MIDIPlayFromStartHook(struct Instruments *instrument){
 
-	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
-	struct ChannelSpecific *cs;
-
 	struct Patch *patch=instrument->patches;
-	int channel;
-
-	int lokke;
 
 	while(patch!=NULL){
-		patchdata=(struct PatchData *)patch->patchdata;
-		channel=patchdata->channel;
-		mymidilink=patchdata->mymidilink;
+		struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
+		int channel=patchdata->channel;
+		struct MidiPort *midi_port = patchdata->midi_port;
 
-		cs=&mymidilink->channelspecific[channel];
-
-		if(cs->volumeonoff){
-			R_PutMidi3(mymidilink,0xb0|channel,0x7,cs->volume);
+		if(patchdata->volumeonoff){
+			R_PutMidi3(midi_port,0xb0|channel,0x7,patchdata->volume);
 		}
-		if(cs->panonoff){
-			R_PutMidi3(mymidilink,0xb0|channel,0xa,cs->pan);
+		if(patchdata->panonoff){
+			R_PutMidi3(midi_port,0xb0|channel,0xa,patchdata->pan);
 		}
 
-		for(lokke=0;lokke<8;lokke++){
-			if(mymidilink->standardccs[lokke]>=0 && cs->ccsonoff[lokke]){
-				R_PutMidi3(mymidilink,0xb0|channel,mymidilink->standardccs[lokke],cs->ccvalues[lokke]);
+		{
+			int lokke;
+			for(lokke=0;lokke<8;lokke++){
+				if(patchdata->standardccs[lokke]>=0 && patchdata->ccsonoff[lokke]){
+					R_PutMidi3(midi_port,0xb0|channel,patchdata->standardccs[lokke],patchdata->ccvalues[lokke]);
+				}
 			}
 		}
 

@@ -17,42 +17,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef MIDI_I_PLUGIN_H
 #define MIDI_I_PLUGIN_H
 
+#include "OS_midi_proc.h"
 
-struct ChannelSpecific{
-	char MSB;
-	char LSB;
-	char preset;
+struct MidiPort{
+  struct MidiPort *next;
+  char *name;
 
-	bool volumeonoff;
-	bool panonoff;
+  MidiPortOs port;
 
-	char volume;
-	char pan;
+  /* Keep track of last used LSB/MSB/preset. If different from the one defined in PatchData, send new value to port. */
+  char LSB[16];
+  char MSB[16];
+  char preset[16];
 
-	bool ccsonoff[8];
-	char ccvalues[8];
-
-	/* To keep track of how many on-notes that have to be turned off. */
-	int num_ons[128];
-};
-
-struct MyMidiLinks{
-	struct MyMidiLinks *next;
-	struct MidiLink *midilink;
-	char *name;
-
-	char *ccnames[8];
-	char standardccs[8];
-	struct ChannelSpecific channelspecific[16];
+  /* To keep track of how many times the notes has to be turned off. */
+  int num_ons[16][128];
 };
 
 struct PatchData{
-	struct MyMidiLinks *mymidilink;
+	char *name;
+
+	struct MidiPort *midi_port;
 
 	int channel;
 	char LSB;
 	char MSB;
 	char preset;
+
+	bool volumeonoff;
+	char volume;
+
+	bool panonoff;
+	char pan;
+
+	char *ccnames[8];
+	char standardccs[8];
+
+	bool ccsonoff[8];
+	char ccvalues[8];
 };
 
 

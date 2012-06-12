@@ -121,7 +121,7 @@ char *midi_fxs_fullnames[MIDI_NUM_FX]={
 	"CutOff        CC> 74",
 	"Resonance     CC> 71",
 	"Tremolo       CC> 92",
-   "Phaser        CC> 95",
+	"Phaser        CC> 95",
 
 	"-----------------------",
 	"Other CC",
@@ -135,128 +135,128 @@ char *midi_fxs_fullnames[MIDI_NUM_FX]={
 void MIDI_treatFX_CC7(struct FX *fx,int val,struct Tracks *track,int skip){
 	struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi3_FX(mymidilink,0xb0|channel,midi_fx->cc,val,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,midi_fx->cc,val,10,skip);
 }
 
 
 void MIDI_treatFX_CC14(struct FX *fx,int val,struct Tracks *track,int skip){
 	struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi3_FX(mymidilink,0xb0|channel,midi_fx->cc-128,val>>7,10,skip);
-	PutMidi3_FX(mymidilink,0xb0|channel,midi_fx->cc-128+32,val&127,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,midi_fx->cc-128,val>>7,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,midi_fx->cc-128+32,val&127,10,skip);
 }
 
 void MIDI_treatFX_Pan7(struct FX *fx,int val,struct Tracks *track,int skip){
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi3_FX(mymidilink,0xb0|channel,10,val+0x40,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,10,val+0x40,10,skip);
 }
 
 
 void MIDI_treatFX_Pan14(struct FX *fx,int val,struct Tracks *track,int skip){
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
 	val+=0x2000;
 
-	PutMidi3_FX(mymidilink,0xb0|channel,10,val>>7,10,skip);
-	PutMidi3_FX(mymidilink,0xb0|channel,42,val&127,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,10,val>>7,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,42,val&127,10,skip);
 }
 
 void MIDI_treatFX_ProgramChange(struct FX *fx,int val,struct Tracks *track,int skip){
 
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi2(mymidilink,0xc0|channel,val,50);
+	PutMidi2(midi_port,0xc0|channel,val,50);
 }
 
 void MIDI_treatFX_ChannelPreassure(struct FX *fx,int val,struct Tracks *track,int skip){
 
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi2_FX(mymidilink,0xd0|channel,val,10,skip);
+	PutMidi2_FX(midi_port,0xd0|channel,val,10,skip);
 }
 
 void MIDI_treatFX_Pitch7(struct FX *fx,int val,struct Tracks *track,int skip){
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi3_FX(mymidilink,0xe0|channel,0,val+0x40,10,skip);
+	PutMidi3_FX(midi_port,0xe0|channel,0,val+0x40,10,skip);
 }
 
 void MIDI_treatFX_Pitch14(struct FX *fx,int val,struct Tracks *track,int skip){
 
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(track->patch==NULL) return;
 
 
 	patchdata=(struct PatchData *)track->patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
 	val+=0x2000;
 
-	PutMidi3_FX(mymidilink,0xe0|channel,val&127,val>>7,10,skip);
+	PutMidi3_FX(midi_port,0xe0|channel,val&127,val>>7,10,skip);
 }
 
 bool isFXUsed(struct TrackInstrumentData *tid,struct MIDI_FX *midi_fx){

@@ -45,8 +45,6 @@ void MIDIGetEvents(
   struct Patch *patch=currpatch;
   struct PatchData *patchdata;
   int channel;
-  struct MyMidiLinks *mymidilink;
-  struct ChannelSpecific *cs;
 
   switch(arg0){
   case MIDIEVENT_USE0x90FORNOTEOFF:
@@ -89,21 +87,13 @@ void MIDIGetEvents(
 
   patchdata=(struct PatchData *)patch->patchdata;
   channel=patchdata->channel;
-  mymidilink=patchdata->mymidilink;
-  cs=&mymidilink->channelspecific[channel];
-    
-
-  //  struct PatchData *patchdata;
-
-  //  if(currpatch==NULL) return;
-
-  //  patchdata=patch->patchdata;
+  struct MidiPort *midi_port = patchdata->midi_port;
 
   printf("Got MidiEvent %d, %d,%d,%d\n",arg0,arg1,arg2,arg3);
 
 
   if(arg0>0x7f){
-    R_PutMidi3(mymidilink,arg0,arg1,arg2);
+    R_PutMidi3(midi_port,arg0,arg1,arg2);
   }else{
     switch(arg0){
     case MIDIEVENT_SETMIDIINPUT:
@@ -140,27 +130,27 @@ void MIDIGetEvents(
       patchdata->preset=arg1-1;
       break;
     case MIDIEVENT_PANNINGONOFF:
-      cs->panonoff=cs->panonoff?false:true;
-      MIDIGFX_SetPanSlider(cs->panonoff,cs->pan);
+      patchdata->panonoff=patchdata->panonoff?false:true;
+      MIDIGFX_SetPanSlider(patchdata->panonoff,patchdata->pan);
       break;
     case MIDIEVENT_SETPANNING:
-      cs->pan=arg1;
-      D_PutMidi3(mymidilink,0xb0|channel,0xa,cs->pan);
+      patchdata->pan=arg1;
+      D_PutMidi3(midi_port,0xb0|channel,0xa,patchdata->pan);
       break;
     case MIDIEVENT_SETVOLONOFF:
-      cs->volumeonoff=cs->volumeonoff?false:true;
-      MIDIGFX_SetVolumeSlider(cs->volumeonoff,cs->volume);
+      patchdata->volumeonoff=patchdata->volumeonoff?false:true;
+      MIDIGFX_SetVolumeSlider(patchdata->volumeonoff,patchdata->volume);
       break;
     case MIDIEVENT_SETVOL:
-      cs->volume=arg1;
-      D_PutMidi3(mymidilink,0xb0|channel,0x7,cs->volume);
+      patchdata->volume=arg1;
+      D_PutMidi3(midi_port,0xb0|channel,0x7,patchdata->volume);
       break;
     case MIDIEVENT_CC_ONOFF:
-      cs->ccsonoff[arg1]=arg2==1?true:false;
-      MIDIGFX_SetCCSlider(arg1,cs->ccsonoff[arg1],cs->ccvalues[arg1]);
+      patchdata->ccsonoff[arg1]=arg2==1?true:false;
+      MIDIGFX_SetCCSlider(arg1,patchdata->ccsonoff[arg1],patchdata->ccvalues[arg1]);
       break;
     case MIDIEVENT_CC_VAL:
-      cs->ccvalues[arg1]=arg2;
+      patchdata->ccvalues[arg1]=arg2;
       break;
     default:
       printf("Unknown MIDIEVENT message: %d\n",arg0);

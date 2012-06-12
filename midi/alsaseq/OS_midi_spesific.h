@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef OS_MIDI_SPECIFIC_H
+#define OS_MIDI_SPECIFIC_H
+
 
 #include <alsa/asoundlib.h>
 #include <alsa/seq_event.h>
@@ -23,6 +26,6 @@ void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch);
 
 extern char **MIDI_getPortNames(int *retsize);
 
-struct MidiLink{
-  int port;
-};
+typedef int MidiPortOs;
+
+#endif

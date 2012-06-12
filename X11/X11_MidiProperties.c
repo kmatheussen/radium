@@ -65,8 +65,7 @@ void X11_MIDI_PP_Update_doit(struct Instruments *instrument,struct Patch *patch)
   }else{
     NInt num_patches;
     struct PatchData *patchdata;
-    struct MyMidiLinks *mymidilink;
-    struct ChannelSpecific *cs = NULL;
+    struct MidiPort *midi_port;
     int lokke;
     int num_ports;
     char **ports;
@@ -74,9 +73,7 @@ void X11_MIDI_PP_Update_doit(struct Instruments *instrument,struct Patch *patch)
 
     num_patches=ListFindNumElements1(&instrument->patches->l);
     patchdata=(struct PatchData *)patch->patchdata;
-    mymidilink=patchdata->mymidilink;
-    if(mymidilink!=NULL)
-      cs=&mymidilink->channelspecific[patchdata->channel];
+    midi_port=patchdata->midi_port;
 
     sprintf(temp,"X11_MidiProperties.UpdatePatch([\"%s\"",instrument->patches->name);
 
@@ -97,39 +94,39 @@ void X11_MIDI_PP_Update_doit(struct Instruments *instrument,struct Patch *patch)
 
     sprintf(temp,"%s],\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,",
 	    temp,
-	    mymidilink==NULL ? "<not set>" : mymidilink->name,
+	    midi_port==NULL ? "<not set>" : midi_port->name,
 	    patchdata->channel+1,
 	    patchdata->MSB,
 	    patchdata->LSB,
 	    patchdata->preset+1,
-	    cs==NULL?0:cs->panonoff==true?1:0,
-	    cs==NULL?0:cs->pan,
-	    cs==NULL?0:cs->volumeonoff==true?1:0,
-	    cs==NULL?0:cs->volume,
+	    patchdata->panonoff==true?1:0,
+	    patchdata->pan,
+	    patchdata->volumeonoff==true?1:0,
+	    patchdata->volume,
 	    currpatch->standardvel
 	    );
 
     sprintf(temp,"%s[",temp);
     for(lokke=0;lokke<8;lokke++){
-      sprintf(temp,"%s%d%s",temp,cs==NULL?0:cs->ccsonoff[lokke]==true?1:0,lokke<7?",":"");
+      sprintf(temp,"%s%d%s",temp,patchdata->ccsonoff[lokke]==true?1:0,lokke<7?",":"");
     }
 
     sprintf(temp,"%s],[",temp);
 
     for(lokke=0;lokke<8;lokke++){
-      sprintf(temp,"%s\"%s\"%s",temp,mymidilink==NULL?"<midilink not set>":mymidilink->ccnames[lokke],lokke<7?",":"");
+      sprintf(temp,"%s\"%s\"%s",temp,patchdata->ccnames[lokke],lokke<7?",":"");
     }
     
     sprintf(temp,"%s],[",temp);
 
     for(lokke=0;lokke<8;lokke++){
-      sprintf(temp,"%s%d%s",temp,mymidilink==NULL?0:mymidilink->standardccs[lokke],lokke<7?",":"");
+      sprintf(temp,"%s%d%s",temp,patchdata->standardccs[lokke],lokke<7?",":"");
     }
 
     sprintf(temp,"%s],[",temp);
 
     for(lokke=0;lokke<8;lokke++){
-      sprintf(temp,"%s%d%s",temp,cs==NULL?0:cs->ccvalues[lokke],lokke<7?",":"");
+      sprintf(temp,"%s%d%s",temp,patchdata->ccvalues[lokke],lokke<7?",":"");
     }
 
     sprintf(temp,"%s])",temp);

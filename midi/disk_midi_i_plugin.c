@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "../common/disk.h"
 #include "midi_i_plugin.h"
+#include "midi_i_plugin_proc.h"
 
 #include "OS_midi_proc.h"
 
@@ -29,7 +30,7 @@ void SavePatchData(void *pd){
 	struct PatchData *patchdata=(struct PatchData *)pd;
 DC_start("PATCHDATA");
 
-	DC_SSS("clustername",patchdata->mymidilink->name);
+	DC_SSS("clustername",patchdata->midi_port->name);
 	DC_SSI("channel",patchdata->channel);
 	DC_SSI("preset",patchdata->preset);
 	DC_SSI("LSB",patchdata->LSB);
@@ -54,7 +55,7 @@ void *LoadPatchData(void){
 
 var0:
 	clustername=DC_LoadS();
-	patchdata->mymidilink=MIDI_getMyMidiLink(NULL,NULL,clustername);
+	patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername);
 #if 0
 	if(patchdata->mymidilink==NULL){
 		fprintf(stderr,"Can't find midicluster '%s', using standard midi outlink instead\n",clustername);

@@ -25,9 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../midi_i_plugin.h"
 
-#include "../midi_MyMidiLink_proc.h"
-
-
 #include "../OS_midi_proc.h"
 
 
@@ -106,29 +103,11 @@ char **MIDI_getPortNames(int *retsize){
   return ret;
 }
 
-static struct MyMidiLinks *g_my_midi_links = NULL;
-
-struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType reqtype,char *name){
-  //  printf("MIDI_getMyMidiLink\n");
+MidiPortOs MIDI_getMidiPortOs(char *name){
   snd_seq_client_info_t *cinfo;
   snd_seq_port_info_t *pinfo = NULL;
   int client;
-  int ret;
-
-  if(name==NULL){
-    int num_ports;
-    char **portnames=MIDI_getPortNames(&num_ports);
-    int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
-    name=portnames[sel];
-  }
-
-  struct MyMidiLinks *mymidilink = g_my_midi_links;
-
-  while (mymidilink != NULL) {
-    if(!strcmp(mymidilink->name,name))
-      return mymidilink;
-    mymidilink = mymidilink->next;
-  }
+  int port;
 
   //name="FLUID Synth (3405)";
   //name="FLUID Synth (4081)";
@@ -136,10 +115,6 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
   //name="Client-128";
   //name="Hydrogen Midi-In";
   //name="Synth input port (29830)";
-
-  mymidilink=talloc(sizeof(struct MyMidiLinks));
-  mymidilink->midilink=talloc(sizeof(struct MidiLink));
-  mymidilink->name=name; //"Dummy midi patch";
 
   snd_seq_client_info_alloca(&cinfo);
   snd_seq_client_info_set_client(cinfo, -1);
@@ -169,58 +144,36 @@ struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType re
 
  gotit:
 
-#if 0
-  mymidilink->midilink->port = snd_seq_create_simple_port(radium_seq, 
-							  "radium out",
-							  SND_SEQ_PORT_CAP_NO_EXPORT | SND_SEQ_PORT_CAP_READ,
-							  SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION
-                                                          );
-#endif
-  mymidilink->midilink->port = snd_seq_create_simple_port(radium_seq,
-                                                          name,
-                                                          SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ, // | SND_SEQ_PORT_CAP_SUBS_WRITE,
-                                                          SND_SEQ_PORT_TYPE_APPLICATION | SND_SEQ_PORT_TYPE_SPECIFIC
-                                                          );
+  port = snd_seq_create_simple_port(radium_seq,
+                                        name,
+                                        SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ, // | SND_SEQ_PORT_CAP_SUBS_WRITE,
+                                        SND_SEQ_PORT_TYPE_APPLICATION | SND_SEQ_PORT_TYPE_SPECIFIC
+                                        );
 
-  if(mymidilink->midilink->port!=0) {
-    RWarning("Could not create ALSA port (%s)\n", snd_strerror(mymidilink->midilink->port));
+  if(port < 0) {
+    RError("Could not create ALSA port (%s)\n", snd_strerror(port));
+    return 0;
   }
 
-  ret = snd_seq_connect_to(
-			   radium_seq, 
-			   mymidilink->midilink->port,
-			   snd_seq_port_info_get_client(pinfo),
-			   snd_seq_port_info_get_port(pinfo)
-			   );
+  {
+    int ret = snd_seq_connect_to(
+                                 radium_seq, 
+                                 port,
+                                 snd_seq_port_info_get_client(pinfo),
+                                 snd_seq_port_info_get_port(pinfo)
+                                 );
 
 
-  if(ret!=0) {
-    RWarning("Could not connect ALSA port (%s)\n", snd_strerror(ret));
+    if(ret!=0) {
+      RWarning("Could not connect ALSA port (%s)\n", snd_strerror(ret));
+    }
+
+    printf("myport: %d, connectret: %d\n",port,ret);
   }
 
-  printf("myport: %d, connectret: %d\n",mymidilink->midilink->port,ret);
-
-
-
-  MIDI_initMyMidiLink(mymidilink);
-
-
-  mymidilink->next = g_my_midi_links;
-  g_my_midi_links = mymidilink;
-
-
-  return mymidilink;
+  return port;
 }
 
-
-#if 0
-// NOTE! When name==null, name is really "out.0" for camd.
-
-struct MyMidiLinks *MIDI_GetMyMidiLink(char *name){
-  //printf("MIDI_GetMyMidiLink\n");
-  return MIDI_getMyMidiLink();
-}
-#endif
 
 
 void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
@@ -231,7 +184,7 @@ void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
 
 
 static void alsaseq_PutMidi(
-			    struct MidiLink *midilink,
+                            MidiPortOs port,
 			    uint32_t msg
 			    )
 {
@@ -251,7 +204,7 @@ static void alsaseq_PutMidi(
 			&ev); 
   snd_midi_event_free( midi_ev );
   
-  snd_seq_ev_set_source(&ev,midilink->port);
+  snd_seq_ev_set_source(&ev,port);
   snd_seq_ev_set_subs(&ev);
   
   snd_seq_ev_schedule_tick( &ev, radium_queue, 1, 1);
@@ -262,22 +215,22 @@ static void alsaseq_PutMidi(
 
 }
 
-void GoodPutMidi(struct MidiLink *midilink,
-		   uint32_t msg,
-		   uint32_t maxbuff
-		   )
+void GoodPutMidi(MidiPortOs port,
+                 uint32_t msg,
+                 uint32_t maxbuff
+                 )
 {
-  alsaseq_PutMidi(midilink,msg);
+  alsaseq_PutMidi(port,msg);
   //MIDI_print(msg,maxbuff);
   ////////printf("GoodPutMidi %x - %d\n",msg,maxbuff);
 }
 
 
-void PutMidi(struct MidiLink *midilink,
-	       uint32_t msg
-	       )
+void PutMidi(MidiPortOs port,
+             uint32_t msg
+             )
 {
-  alsaseq_PutMidi(midilink,msg);
+  alsaseq_PutMidi(port,msg);
   //MIDI_print(msg,0);
   //printf("PutMidi %x\n",msg);
 }

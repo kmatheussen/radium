@@ -21,16 +21,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_plugin.h"
 
 
-
 void MIDIchangeTrackPan(int newpan,struct Tracks *track);
 void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note);
 void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
 void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
 void MIDIclosePatch(void);
 void MIDI_InitPatch(struct Patch *patch);
+struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name);
 
 void MyGoodPutMidi(
-	struct MyMidiLinks *mymidilink,
+	struct MidiPort *midi_port,
 	int cc,
 	int data1,
 	int data2,
@@ -38,14 +38,14 @@ void MyGoodPutMidi(
 );
 
 void MyMyPutMidi(
-	struct MyMidiLinks *mymidilink,
+	struct MidiPort *midi_port,
 	int cc,
 	int data1,
 	int data2
 );
 
 void MyPutMidi(
-	struct MyMidiLinks *mymidilink,
+	struct MidiPort *midi_port,
 	int cc,
 	int data1,
 	int data2,

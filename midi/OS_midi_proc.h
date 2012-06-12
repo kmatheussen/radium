@@ -15,8 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#ifndef OS_MIDI_PROC_H
+#define OS_MIDI_PROC_H
 
-// OS_midi_spesific.h contains the definition of struct MidiLink.
+
+
+
+// OS_midi_spesific.h contains the definition of MidiPortOs
 #include <OS_midi_spesific.h>
 
 
@@ -28,23 +33,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern void MIDI_Delete(void);
 
 
-extern struct MyMidiLinks *MIDI_getMyMidiLink(struct Tracker_Windows *window,ReqType reqtype,char *name);
-
-#if 0
-extern struct MyMidiLinks *MIDI_getMyMidiLink(void);
-// NOTE! When name==null, name is really "out.0" for camd.
-extern struct MyMidiLinks *MIDI_GetMyMidiLink(char *name);
-#endif
-
+MidiPortOs MIDI_getMidiPortOs(char *name);
 
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
-extern void GoodPutMidi(struct MidiLink *midilink,
+extern void GoodPutMidi(MidiPortOs port,
 		   uint32_t msg,
 		   uint32_t maxbuff
 		   );
 
-extern void PutMidi(struct MidiLink *midilink,
+extern void PutMidi(MidiPortOs port,
 	       uint32_t msg
 	       );
 
@@ -52,3 +50,4 @@ extern bool MIDI_New(struct Instruments *instrument);
 
 
 
+#endif
