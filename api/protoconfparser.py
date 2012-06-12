@@ -106,11 +106,11 @@ class Proto:
         oh.write("PyObject *resultobj;\n")
         for lokke in range(self.arglen):
             arg=self.args[lokke]
-            for lokke2 in range(len(arg.qualifiers)):
-                if sys.platform=="amiga" and arg.qualifiers[lokke2]=="float":
+            for qualifier in arg.qualifiers:
+                if sys.platform=="amiga" and qualifier=="float":
                     oh.write("double ")
                 else:
-	                oh.write(arg.qualifiers[lokke2]+" ")
+                    oh.write(qualifier+" ")
                 oh.write("arg%d" % lokke)
             if arg.default!="":
                 oh.write("="+arg.default)

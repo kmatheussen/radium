@@ -55,7 +55,8 @@ def GFX_CloseReqType(reqtype):
     reqtype.send('exit')
     reqtype.close()
     xterm_process.wait()
-
+    xterm_process.kill()
+    
 #def GFX_ReadString(reqtype):
 def GFX_ReadString(filename):
     reqtype=conn
