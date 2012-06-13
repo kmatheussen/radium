@@ -51,6 +51,31 @@ void selectPatchForTrack(int tracknum,int blocknum,int windownum){
   SelectPatch(window,wtrack->track);
 }
 
+void setInstrumentForTrack(int instrument_num, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
+  struct Patch *patch = getPatchFromNum(instrument_num);
+  if(patch==NULL) return;
+
+  wtrack->track->patch = patch;
+
+  wblock->block->is_dirty = true;
+
+  (*instrument->PP_Update)(instrument,patch);
+}
 
 int createNewInstrument(char *type, char *name) {
   int instrument_num;
@@ -124,7 +149,7 @@ void setInstrumentData(int instrument_num, char *key, char *value) {
 char *getInstrumentData(int instrument_num, char *key) {
   struct Instruments *instrument = getInstrumentFromNum(instrument_num);
   struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return NULL;
+  if(patch==NULL) return "";
 
   return instrument->getPatchData(patch, key);
 }

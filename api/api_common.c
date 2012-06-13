@@ -199,9 +199,11 @@ static int getPatchNum(int instrument_num, int instrument_patch_num){
   return (instrument_patch_num - instrument_num) / num_instrument_types;
 }
 
-struct Instruments *getInstrumentFromNum(int instrument_num){
-  if(instrument_num==-1)
+struct Instruments *getInstrumentFromNum(int instrument_patch_num){
+  if(instrument_patch_num==-1)
     return root->def_instrument;
+
+  int instrument_num = instrument_patch_num % num_instrument_types;
 
   if(instrument_num==0)
     return root->def_instrument;
