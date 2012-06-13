@@ -254,6 +254,10 @@ void insertBlock(int windownum){
   InsertBlock_CurrPos(window);
 }
 
+int numBlocks(void){
+  return root->song->num_blocks;
+}
+
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;

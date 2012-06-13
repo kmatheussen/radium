@@ -12,6 +12,11 @@
     * Scripts must first tell radium which tracks/blocks/etc. that are going to be changed.
     * The functions in type 2 checks that the tracks/blocks/etc. that are manipulated, are really marked.
       If the script tries to manipulate something else, radium will refuse to do so + call RWarning.
+      * No, if not, radium can just add that track/block/etc. into the current list of undo.
+        The point about telling which track/block/etc. is going to be changed, is just to speed
+        up situations where, for instance, you add 1000 notes to a track. Undoing that track 1000
+        times is extremely inefficient.
+        * But if that track is already in the undo list, why does it have to be added the next 999 times too?
 
 
 * Updating the "LPB" and "BPM" text seems to just draw over the old graphics.
