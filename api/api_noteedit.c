@@ -106,7 +106,7 @@ int getNumNotes(int blocknum,int tracknum,int windownum){
 void setLPB(int lpb_value){
   root->lpb = lpb_value;
   struct WBlocks *wblock=getWBlockFromNum(-1,-1);
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 
   UpdateAllSTimes();
 }
@@ -114,7 +114,7 @@ void setLPB(int lpb_value){
 void setBPM(int bpm_value){
   root->tempo = bpm_value;
   struct WBlocks *wblock=getWBlockFromNum(-1,-1);
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 
   UpdateAllSTimes();
 }
@@ -133,7 +133,7 @@ int addLPB(int lpb_value,
 
   struct LPBs *lpb = SetLPB(wblock->block,place,lpb_value);
 
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 
   return ListFindElementPos3(&wblock->block->lpbs->l,&lpb->l);
 }
@@ -152,7 +152,7 @@ int addBPM(int bpm,
 
   struct Tempos *tempo = SetTempo(wblock->block,place,bpm);
 
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 
   return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
 }
@@ -187,7 +187,7 @@ int addNote(int notenum,int velocity,
                                   velocity,
                                   0);
 
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }

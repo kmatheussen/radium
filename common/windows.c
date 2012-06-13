@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "wblocks_proc.h"
+#include "wtracks_proc.h"
+#include "reallines_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "common_proc.h"
 #include "visual_proc.h"
@@ -219,6 +221,42 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 
 
+
+
+static void handleDirtyBlock(int blocknum){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  while(window!=NULL){
+    struct WBlocks *wblock=ListFindElement1(&window->wblocks->l,blocknum);
+
+    UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                  window,
+                                                  wblock,
+                                                  0,
+                                                  window->wblock->block->num_tracks-1
+                                                  );
+
+
+    if(wblock->curr_realline>=wblock->num_reallines){
+      wblock->curr_realline=wblock->num_reallines-1;
+    }
+
+    UpdateReallinesDependens(window,wblock);
+    window=NextWindow(window);
+  }
+}
+
+void checkIfWBlocksAreDirty(void) {
+  struct Blocks *block=root->song->blocks;
+
+  while(block!=NULL){
+    if (block->is_dirty==true){
+      handleDirtyBlock(block->l.num);
+      block->is_dirty = false;
+    }
+    block = NextBlock(block);
+  }
+}
 
 
 

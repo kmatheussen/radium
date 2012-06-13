@@ -572,6 +572,8 @@ struct Blocks{
 
 	float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
+  // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
+  bool is_dirty; 
 };
 #define NextBlock(a) (struct Blocks *)((a)->l.next)
 
@@ -669,9 +671,6 @@ struct WBlocks{
 	bool isgfxdatahere;
 
 	TBox reltempo;
-
-  // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
-  bool is_dirty; 
 
   //tempocolor stuff
   bool tc_onoff;

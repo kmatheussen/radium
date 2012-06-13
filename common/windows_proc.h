@@ -34,5 +34,6 @@ extern int CloseTrackerWindow(NInt place);
 
 extern void CloseAllTrackerWindows(void);
 
+void checkIfWBlocksAreDirty(void);
 
 #endif

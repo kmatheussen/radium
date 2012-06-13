@@ -171,7 +171,7 @@ void setNumTracks(int numtracks, int blocknum, int windownum){
   if(wblock==NULL) return;
 
   Block_Set_num_tracks(wblock->block, numtracks);
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 }
 
 // Warning, must be called via python (does not update graphics or handle undo/redo)
@@ -185,7 +185,7 @@ void setNumLines(int numlines, int blocknum, int windownum){
   if(wblock==NULL) return;
 
   Block_Set_num_lines(wblock->block, numlines);
-  wblock->is_dirty = true;
+  wblock->block->is_dirty = true;
 }
 
 void changeTrackNoteLength(int windownum){

@@ -354,7 +354,7 @@ int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	  if(collectTREgarbage==true){
 	    TRE_collectGarbage();
 	  }
-          checkIfWBlocksAreDirty(window);
+          checkIfWBlocksAreDirty();
 	  return ret;
 	}
 
