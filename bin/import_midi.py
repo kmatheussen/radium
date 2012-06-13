@@ -62,10 +62,10 @@ def find_lowest_pitched_note(notes):
     return lowest
 
 
-def remove_overlapping_notes_from_sequence(note, sequence):
+def remove_overlapping_notes_from_sequence(overlapping_note, sequence):
     result = []
     for n in sequence:
-        if n==note or is_overlapping(n, note)==False:
+        if n==overlapping_note or not is_overlapping(n, overlapping_note):
             result.append(n)
     return result
 
@@ -347,29 +347,39 @@ class Events:
             #self.events[channel] = event
 
 
-    def send_to_editor(self, tracknum):
-        res = 60
-        for note in self.notes[self.channel]:
-            #print "add note",note,tracknum
-            
-            line = int(note.start_tick / res)
-            counter = note.start_tick - (line*res)
-            
-            end_line = int(note.end_tick / res)
-            end_counter = note.end_tick - (end_line*res)
-            
-            radium.addNote(note.notenum, note.velocity,
-                           line, counter, res,
-                           end_line, end_counter, res,
-                           -1, -1, tracknum)
+def tick_to_place_simple(tick, resolution, lpb):
+    resolution = int(resolution / lpb)
+    line       = int(tick / resolution)
+    counter    = tick - (line*resolution)
+    dividor    = resolution
+    return [line, counter, dividor]
 
+def tick_to_line(tick, resolution, lpb):
+    return int(lpb * tick/resolution)
+
+def line_to_tick(line, resolution, lpb):
+    return int(line*resolution/lpb)
+
+def tick_to_counter(tick, line, resolution, lpb):
+    #subtick = tick - line_to_tick(line, resolution, lpb) # inaccurate
+    subtick = tick*lpb - line*resolution # accurate
+    return subtick
 
 def tick_to_place(tick, resolution, lpb):
-    resolution = int(resolution / lpb)
-    line = int(tick / resolution)
-    counter = tick - (line*resolution)
-    dividor = resolution
+    line       = tick_to_line(tick, resolution, lpb)
+    counter    = tick_to_counter(tick, line, resolution, lpb)
+    dividor    = resolution
     return [line, counter, dividor]
+
+if 0:
+    tick = 500
+    resolution = 400
+    lpb = 3
+    line = tick_to_line(tick, resolution, lpb)
+    counter = tick_to_counter(tick, line, resolution, lpb)
+    print tick_to_place(tick, resolution, lpb)
+    print tick_to_place_simple(tick, resolution, lpb)
+    sys.exit(0)
 
 def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
     for note in notes:
@@ -431,7 +441,7 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
     return radium_tracks
 
 # Quick hack.
-def clear_editor():
+def clear_radium_editor():
     while radium.numBlocks()>1:
         radium.deleteBlock()
     radium.appendBlock()
@@ -439,10 +449,7 @@ def clear_editor():
     radium.deleteBlock()
     
 def import_midi(filename):
-    print "gakksann:",radium.createNewInstrument("midi","testinstrument")
-    radium.setInstrumentData(0,"port","")
-    clear_editor()
-
+    clear_radium_editor()
     radium.setNumLines(1000)
     radium.setNumTracks(16)
     
