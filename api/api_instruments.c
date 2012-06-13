@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
+// Warning, All these functions (except selectPatchForTrack) must be called via python (does not update graphics, or handle undo/redo))
+// (TODO: detect this automatically.)
 
 
 void selectPatchForTrack(int tracknum,int blocknum,int windownum){
