@@ -141,6 +141,7 @@ check_dependencies:
 	@echo "Checking dependencies: "
 	which zenity
 	which python
+	grep -e "char\ \*" api/protos.conf
 	@echo "All seems good (but everything has probably not been tested)"
 	@echo
 
