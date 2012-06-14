@@ -80,14 +80,17 @@ if 0:
     sys.exit(0)
 
 
-def extract_monophonic_sequence(sequence):
+def extract_monophonic_sequence(sequence, max_polyphony):
+    if max_polyphony==0:
+        return sequence
+    
     polyphonic_notes = extract_polyphonic_notes(sequence)
     if polyphonic_notes==[]:
         return sequence
     else:
         lowest_polyphonic_note = find_lowest_pitched_note(polyphonic_notes)
         improved_sequence      = remove_overlapping_notes_from_sequence(lowest_polyphonic_note, sequence)
-        return extract_monophonic_sequence(improved_sequence)
+        return extract_monophonic_sequence(improved_sequence, max_polyphony-1)
 
 
 def remove_notes_from_sequence(notes, sequence):
@@ -98,7 +101,7 @@ def polyphonic_sequence_to_monophonic_sequences(sequence):
     if sequence==[]:
         return []
     else:
-        monophonic_sequence = extract_monophonic_sequence(sequence)
+        monophonic_sequence = extract_monophonic_sequence(sequence, 16)
         rest_sequence       = remove_notes_from_sequence(monophonic_sequence, sequence)
         return [monophonic_sequence] + polyphonic_sequence_to_monophonic_sequences(rest_sequence)
 
@@ -501,9 +504,9 @@ def clear_radium_editor():
     radium.deleteBlock()
     
 
-def import_midi(filename):
+def import_midi(filename, polyphonic=False):
     clear_radium_editor()    
-    return import_midi_do(filename, 4, "", False)
+    return import_midi_do(filename, 4, "", polyphonic)
 
 
 if __name__ == "__main__":
