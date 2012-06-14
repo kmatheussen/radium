@@ -229,6 +229,7 @@ static void handleDirtyBlock(int blocknum){
   while(window!=NULL){
     struct WBlocks *wblock=ListFindElement1(&window->wblocks->l,blocknum);
 
+    UpdateAllWTracksCoordinates(window,wblock);
     UpdateAndClearSomeTrackReallinesAndGfxWTracks(
                                                   window,
                                                   wblock,
@@ -247,14 +248,24 @@ static void handleDirtyBlock(int blocknum){
 }
 
 void checkIfWBlocksAreDirty(void) {
+  bool is_dirty = false;
   struct Blocks *block=root->song->blocks;
 
   while(block!=NULL){
     if (block->is_dirty==true){
       handleDirtyBlock(block->l.num);
       block->is_dirty = false;
+      is_dirty = true;
     }
     block = NextBlock(block);
+  }
+
+  if(is_dirty==true){
+    struct Tracker_Windows *window=root->song->tracker_windows;
+    while(window!=NULL){
+      DrawUpTrackerWindow(window);
+      window=NextWindow(window);
+    }
   }
 }
 

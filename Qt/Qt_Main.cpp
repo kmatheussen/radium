@@ -61,11 +61,11 @@ bool MyApplication::x11EventFilter(XEvent *event){
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
     return TRUE;
   case EnterNotify:
-    printf("got enter notify\n");
+    //printf("got enter notify\n");
     X11_ResetKeysUpDowns();
     break;
   case LeaveNotify:
-    printf("got leave notify\n");
+    //printf("got leave notify\n");
     X11_ResetKeysUpDowns();
     break;
   case ClientMessage:

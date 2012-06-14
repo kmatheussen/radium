@@ -254,6 +254,13 @@ void insertBlock(int windownum){
   InsertBlock_CurrPos(window);
 }
 
+int numTracks(int blocknum){
+  struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
+  if(wblock==NULL) return 0;
+
+  return wblock->block->num_tracks;
+}
+
 int numBlocks(void){
   return root->song->num_blocks;
 }

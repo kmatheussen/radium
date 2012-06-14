@@ -119,7 +119,7 @@ class Instrument:
     def __init__(self, channel, preset, name, tick):
         self.channel = channel
         self.preset  = preset
-        self.name    = name
+        self.name    = name + (" [%d/%d]" % (channel,preset))
         if self.name=="":
             self.name = "ch "+str(channel)
         self.tick    = tick
@@ -415,6 +415,15 @@ def handle_radium_instruments(tracks, port=""):
         radium.setInstrumentForTrack(instrument_num, track_num)
         track_num = track_num + 1
 
+
+def get_last_tick(tracks):
+    ret = 0
+    for track in tracks:
+        last_tick = track[-1].tick
+        if last_tick > ret:
+            ret = last_tick
+    return ret
+    
     
 def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
     radium_tracks = []
@@ -424,13 +433,18 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
     print resolution
     print format
     print "num_tracks: "+str(len(tracks))
+    
+    tracks.make_ticks_abs()
+
+    num_tracks = 0 #radium.numTracks()
     tracknum = 0
 
     radium.setLPB(lpb)
     radium.setBPM(120) # Default SMF value.
 
-    tracks.make_ticks_abs()
-
+    last_place = tick_to_place(get_last_tick(tracks), resolution, lpb)
+    radium.setNumLines(last_place[0] + 2)
+    
     # Init instruments first
     for track in tracks:
         for event in track:
@@ -443,13 +457,16 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
             events.add_event(event)
 
         tracks = events.get_radium_tracks(polyphonic)
-        
-        for notes in tracks:
-            print "VVV instrument: '"+notes.instrument.name+"'. preset:"+str(notes.instrument.preset)
-            send_notes_to_radium_track(notes.notes[notes.channel], tracknum, resolution, lpb)
-            radium_tracks.append(notes)
-            tracknum = tracknum + 1
-
+        if len(tracks)>0:
+            num_tracks = num_tracks + len(tracks)
+            radium.setNumTracks(num_tracks)
+            
+            for notes in tracks:
+                print "VVV instrument: '"+notes.instrument.name+"'. preset:"+str(notes.instrument.preset)
+                send_notes_to_radium_track(notes.notes[notes.channel], tracknum, resolution, lpb)
+                radium_tracks.append(notes)
+                tracknum = tracknum + 1
+   
     handle_radium_instruments(radium_tracks, midi_port)
 
     return radium_tracks
@@ -465,10 +482,7 @@ def clear_radium_editor():
     
 
 def import_midi(filename):
-    clear_radium_editor()
-    radium.setNumLines(1000)
-    radium.setNumTracks(24)
-    
+    clear_radium_editor()    
     return import_midi_do(filename, 4, "", False)
 
 

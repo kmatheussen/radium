@@ -33,6 +33,8 @@ void RError(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
+  fprintf(stderr,message);
+
   char command[1000];
   sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue?\"",message);
   if(system(command))
@@ -47,6 +49,8 @@ void RWarning(const char *fmt,...){
   /*	vfprintf(stderr,fmt,argp); */
   vsprintf(message,fmt,argp);
   va_end(argp);
+
+  fprintf(stderr,message);
 
   char command[1000];
 #ifdef DEBUG
