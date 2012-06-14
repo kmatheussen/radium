@@ -559,6 +559,7 @@ def get_parameters(lpb, midi_port, polyphonic):
 
 
 def import_midi(filename="", lpb=0, midi_port="", polyphonic="not set"):
+    #filename = "sinclair.MID"
     tracks = get_tracks(filename)
     if tracks==False:
         return
@@ -587,10 +588,20 @@ if __name__ == "__main__":
     radium.setBPM = setBPM
     radium.setNumLines = dummy
     radium.setNumTracks = dummy
-
-    #filename = "sinclair.MID"
-    filename = "/gammelhd/gammelhd/gammelhd/home/kjetil/bmod54.mid"
-    for channel in import_midi_do(filename, 4, "", False):
+    radium.openRequester = dummy
+    radium.closeRequester = dummy
+    radium.addBPM = dummy
+    radium.createNewInstrument = dummy
+    radium.setInstrumentData = dummy
+    radium.setInstrumentForTrack = dummy
+    radium.numBlocks = dummy
+    radium.appendBlock=dummy
+    radium.selectPrevBlock=dummy
+    radium.deleteBlock=dummy
+    
+    filename = "sinclair.MID"
+    #filename = "/gammelhd/gammelhd/gammelhd/home/kjetil/bmod54.mid"
+    for channel in import_midi(filename, 4, "port", False):
         print "new channel"
         for note in channel.notes[0]:
             print note.channel,note.notenum,":",note.start_tick/480.0,note.end_tick/480.0

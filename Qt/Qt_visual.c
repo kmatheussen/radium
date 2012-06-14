@@ -28,7 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../X11/X11_Bs_edit_proc.h"
 #include "../X11/X11_MidiProperties_proc.h"
 
-
+#include "../X11/X11_Qtstuff_proc.h"
+#include "../X11/X11_ReqType_proc.h"
 
 RPoints::RPoints() {
   this->qpa=new QPointArray(INITIALPOOLSIZE);
@@ -739,7 +740,67 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   X11_ResetKeysUpDowns();
 }
 
+//void GFX_ConfigColors(struct Tracker_Windows *tvisual){
+//}
+#define NUM_COLORS 8
+
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+
+  //Colormap colormap;
+  char command[100*NUM_COLORS];
+  int lokke;
+  char *string;
+  int r[NUM_COLORS],g[NUM_COLORS],b[NUM_COLORS];
+  printf("GOINGTO\n");
+
+  sprintf(command,"X11_Qtstuff.GFX_ColorDialog(\"%%s\"");
+  for(lokke=0;lokke<NUM_COLORS;lokke++){
+    sprintf(command,"%s,%d,%d,%d",
+            command,
+            mywidget->colors[lokke].red(),
+            mywidget->colors[lokke].green(),
+            mywidget->colors[lokke].blue());
+  }
+  sprintf(command,"%s)",command);
+
+  printf("String: -%s-\n",command);
+  string=GFX_ReadStringFromPythonCommand(command);
+  printf("Got: -%s-\n",string);
+
+  sscanf(
+	 string,
+	 "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+	 &r[0],&g[0],&b[0],
+	 &r[1],&g[1],&b[1],
+	 &r[2],&g[2],&b[2],
+	 &r[3],&g[3],&b[3],
+	 &r[4],&g[4],&b[4],
+	 &r[5],&g[5],&b[5],
+	 &r[6],&g[6],&b[6],
+	 &r[7],&g[7],&b[7]
+	 );
+
+#if 0
+  colormap = DefaultColormap(x11_display,x11_screen);
+  for(lokke=0;lokke<NUM_COLORS;lokke++){
+    char rgb[500];
+    printf("%d %d %d\n",r[lokke],g[lokke],b[lokke]);
+    //XStoreColor(display, colormap, color)
+
+    /*    xcolors[lokke].red=r[lokke];
+    xcolors[lokke].green=g[lokke];
+    xcolors[lokke].blue=b[lokke];
+    */
+    //    XStoreColor(x11_display,colormap,&xcolors[lokke]);
+    sprintf(rgb,"rgbi:%f/%f/%f",(float)r[lokke]/256.0,(float)g[lokke]/256.0,(float)b[lokke]/256.0);
+    XParseColor(x11_display,colormap,rgb,&xcolors[lokke]);
+    XAllocColor(x11_display,colormap,&xcolors[lokke]);
+
+    //    tvisual->os_visual->gcs[lokke]=XCreateGC(x11_display,window, 0, 0);
+    XSetForeground(x11_display, tvisual->os_visual->gcs[lokke],xcolors[lokke].pixel);
+  }
+#endif
 }
 
 
