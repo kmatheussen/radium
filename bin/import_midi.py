@@ -119,7 +119,7 @@ class Instrument:
     def __init__(self, channel, preset, name, tick):
         self.channel = channel
         self.preset  = preset
-        self.name    = name + (" [%d/%d]" % (channel,preset))
+        self.name    = name + (" [%d/%d]" % (channel+1,preset+1))
         if self.name=="":
             self.name = "ch "+str(channel)
         self.tick    = tick
@@ -164,6 +164,22 @@ class Instruments:
         return ret
 
 instruments = Instruments()
+
+
+class Tempos:
+    def __init__(self):
+        self.tempos = []
+        
+    def add_event(self, event):
+        if type(event) is midi.SetTempoEvent:
+            self.tempos.append(event)
+
+    def send_tempos_to_radium(self, resolution, lpb):
+        for tempo in sorted(self.tempos, key=lambda event: event.tick):
+            place = tick_to_place(tempo.tick, resolution, lpb)
+            radium.addBPM(int(tempo.bpm), place[0], place[1], place[2])
+        
+tempos = Tempos()
 
 
 class Events:
@@ -450,7 +466,13 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
         for event in track:
             instruments.add_event(event)
 
-    # Generate radium tracks from midi tracks
+    # Init tempos
+    for track in tracks:
+        for event in track:
+            tempos.add_event(event)
+    tempos.send_tempos_to_radium(resolution, lpb)
+
+    # Init notes and fx, plus generate radium tracks
     for track in tracks:
         events = Events()
         for event in track:
@@ -497,12 +519,18 @@ if __name__ == "__main__":
         pass
     def setBPM(pbm):
         pass
-
+    def dummy(*args):
+        pass
+    
     radium.addNote = addNote
     radium.setLPB = setLPB
     radium.setBPM = setBPM
-    
-    for channel in import_midi_do("sinclair.MID", 4, "", False):
+    radium.setNumLines = dummy
+    radium.setNumTracks = dummy
+
+    #filename = "sinclair.MID"
+    filename = "/gammelhd/gammelhd/gammelhd/home/kjetil/bmod54.mid"
+    for channel in import_midi_do(filename, 4, "", False):
         print "new channel"
         for note in channel.notes[0]:
             print note.channel,note.notenum,":",note.start_tick/480.0,note.end_tick/480.0
