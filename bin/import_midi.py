@@ -163,8 +163,6 @@ class Instruments:
 
         return ret
 
-instruments = Instruments()
-
 
 class Tempos:
     def __init__(self):
@@ -179,8 +177,6 @@ class Tempos:
             place = tick_to_place(tempo.tick, resolution, lpb)
             radium.addBPM(int(tempo.bpm), place[0], place[1], place[2])
         
-tempos = Tempos()
-
 
 class Events:
     def __init__(self):
@@ -245,7 +241,7 @@ class Events:
         return [self] + other_channels
     
 
-    def split_by_instrument(self):
+    def split_by_instrument(self, instruments):
         """
         Does two things:
         1. Returns a list of preset-specific Event instances, replacing 'self'.
@@ -320,11 +316,11 @@ class Events:
         return ret
 
 
-    def get_radium_tracks(self, polyphonic):
+    def get_radium_tracks(self, polyphonic, instruments):
         tracks = []
         
         for channel_track in self.split_by_channel():
-            tracks = tracks + channel_track.split_by_instrument()
+            tracks = tracks + channel_track.split_by_instrument(instruments)
             
         if polyphonic:
             return tracks
@@ -462,11 +458,13 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
     radium.setNumLines(last_place[0] + 2)
     
     # Init instruments first
+    instruments = Instruments()
     for track in tracks:
         for event in track:
             instruments.add_event(event)
 
     # Init tempos
+    tempos = Tempos()
     for track in tracks:
         for event in track:
             tempos.add_event(event)
@@ -478,7 +476,7 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
         for event in track:
             events.add_event(event)
 
-        tracks = events.get_radium_tracks(polyphonic)
+        tracks = events.get_radium_tracks(polyphonic, instruments)
         if len(tracks)>0:
             num_tracks = num_tracks + len(tracks)
             radium.setNumTracks(num_tracks)
