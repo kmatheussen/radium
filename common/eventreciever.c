@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../api/radium_proc.h"
+#include "../api/api_requesters_proc.h"
 
 
 #include <string.h>
@@ -354,6 +355,7 @@ int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	  if(collectTREgarbage==true){
 	    TRE_collectGarbage();
 	  }
+          closeRequester();
           checkIfWBlocksAreDirty();
 	  return ret;
 	}

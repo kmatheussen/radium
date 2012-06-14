@@ -213,7 +213,14 @@ void load(void){
   }
 }
 
-
+void importMidi(void){
+  static bool imported=false;
+  if(imported==false){
+    PyRun_SimpleString("import import_midi");
+    imported=true;
+  }
+  PyRun_SimpleString("import_midi.import_midi()");
+}
 
 void insertTracks(int numtracks,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

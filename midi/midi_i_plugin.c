@@ -390,12 +390,16 @@ void MIDI_InitPatch(struct Patch *patch) {
 
 static struct MidiPort *g_midi_ports = NULL;
 
+char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
+  int num_ports;
+  char **portnames=MIDI_getPortNames(&num_ports);
+  int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
+  return portnames[sel];
+}
+
 struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name){
   if(name==NULL){
-    int num_ports;
-    char **portnames=MIDI_getPortNames(&num_ports);
-    int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
-    name=portnames[sel];
+    name = MIDIrequestPortName(window,reqtype);
   }
 
   struct MidiPort *midi_port = g_midi_ports;

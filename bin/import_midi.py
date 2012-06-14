@@ -1,14 +1,30 @@
+"""
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+"""
+
 
 import sys
 sys.path.append("python-midi")
 
-import fractions
-
-
-#from src import *
 import src as midi
 
+import fractions
 import radium
+
 
 class Note:
     def __init__(self, start_tick, channel, notenum, velocity):
@@ -440,9 +456,17 @@ def get_last_tick(tracks):
     return ret
     
     
-def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
+# Quick hack.
+def clear_radium_editor():
+    while radium.numBlocks()>1:
+        radium.deleteBlock()
+    radium.appendBlock()
+    radium.selectPrevBlock()
+    radium.deleteBlock()
+    
+
+def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
     radium_tracks = []
-    tracks = midi.read_midifile(filename)
     resolution = tracks.resolution
     format = tracks.format
     print resolution
@@ -453,6 +477,8 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
 
     num_tracks = 0 #radium.numTracks()
     tracknum = 0
+
+    clear_radium_editor()    
 
     radium.setLPB(lpb)
     radium.setBPM(120) # Default SMF value.
@@ -495,22 +521,51 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
     return radium_tracks
 
 
-# Quick hack.
-def clear_radium_editor():
-    while radium.numBlocks()>1:
-        radium.deleteBlock()
-    radium.appendBlock()
-    radium.selectPrevBlock()
-    radium.deleteBlock()
-    
-
-def import_midi(filename="", polyphonic=False):
+def get_tracks(filename):
     if filename=="":
         filename = radium.getLoadFilename("Choose midi file")
     if filename=="":
+        return False
+    try:
+        tracks = midi.read_midifile(filename)
+    except:
+        radium.showWarning("Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.");
+        return False
+    
+    return tracks
+
+    
+def get_parameters(lpb, midi_port, polyphonic):
+    radium.openRequester("Please define Midi File Properties")
+
+    if lpb==0:
+        lpb = radium.requestInteger("Lines per beat? (4) ",1,100000)
+        if lpb==0:
+            lpb = 4
+
+    if polyphonic=="not set":
+        polyphonic = radium.requestString("Polyphonic tracks? (Yes) ")
+        if polyphonic=="no" or polyphonic=="No" or polyphonic=="NO":
+            polyphonic = False
+        else:
+            polyphonic = True
+
+    while midi_port=="":
+        midi_port = radium.requestMidiPort()
+        
+    radium.closeRequester()
+
+    return lpb,midi_port,polyphonic
+
+
+def import_midi(filename="", lpb=0, midi_port="", polyphonic="not set"):
+    tracks = get_tracks(filename)
+    if tracks==False:
         return
-    clear_radium_editor()    
-    return import_midi_do(filename, 4, "", polyphonic)
+    
+    lpb, midi_port, polyphonic = get_parameters(lpb, midi_port, polyphonic)
+    
+    return import_midi_do(tracks, lpb, midi_port, polyphonic)
 
 
 if __name__ == "__main__":

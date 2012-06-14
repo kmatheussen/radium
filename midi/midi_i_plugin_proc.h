@@ -27,6 +27,7 @@ void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *n
 void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
 void MIDIclosePatch(void);
 void MIDI_InitPatch(struct Patch *patch);
+char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype);
 struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name);
 
 void MyGoodPutMidi(

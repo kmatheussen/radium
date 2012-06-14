@@ -137,6 +137,7 @@ class Proto:
             if defaultused==false and arg.default!="":
                 oh.write("|")
                 defaultused=true
+                
             qualifier=arg.qualifiers[len(arg.qualifiers)-1]
             if qualifier=="int":
                 t="i"
@@ -146,6 +147,10 @@ class Proto:
                 t="O"
             elif qualifier=="char*":
                 t="s"
+            else:
+                sys.stderr.write("Unknown type '"+qualifier+"'")
+                raise "Unknown type '"+qualifier+"'"
+            
             oh.write(t)
 
         oh.write(":"+self.proc.varname+"\"")
