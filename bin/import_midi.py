@@ -504,7 +504,11 @@ def clear_radium_editor():
     radium.deleteBlock()
     
 
-def import_midi(filename, polyphonic=False):
+def import_midi(filename="", polyphonic=False):
+    if filename=="":
+        filename = radium.getLoadFilename("Choose midi file")
+    if filename=="":
+        return
     clear_radium_editor()    
     return import_midi_do(filename, 4, "", polyphonic)
 

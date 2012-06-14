@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/block_properties_proc.h"
 #include "../common/track_insert_proc.h"
 #include "../common/wtracks_proc.h"
-#include "../common/window_config_proc.h"
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
 #include "../common/block_split_proc.h"
@@ -140,25 +139,6 @@ void splitBlock(int windownum){
   BLOCK_Split_CurrPos(window);
 }
 
-
-void configColors(int windownum){
-#ifdef _AMIGA
-  Amiga_ConfigColors();
-#else
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  GFX_ConfigColors(window);
-#endif
-}
-
-void configWindow(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  Window_config(window);
-}
-
-void configBlock(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  Block_Properties_CurrPos(window);
-}
 
 // Warning, must be called via python (does not update graphics or handle undo/redo)
 void setNumTracks(int numtracks, int blocknum, int windownum){
