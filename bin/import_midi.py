@@ -2,6 +2,8 @@
 import sys
 sys.path.append("python-midi")
 
+import fractions
+
 
 #from src import *
 import src as midi
@@ -148,7 +150,6 @@ class Instruments:
             if channel==self.current_channel:
                 instrument_name = self.current_instrument_name
             instrument          = Instrument(channel, event.get_value(), instrument_name, event.tick)
-            instrument.tick     = event.tick
             self.instruments[channel].append(instrument)
             
     def get_instrument(self, channel, tick):
@@ -162,6 +163,8 @@ class Instruments:
 
         return ret
 
+instruments = Instruments()
+
 
 class Events:
     def __init__(self):
@@ -169,7 +172,6 @@ class Events:
         self.notes = map(lambda i:[], range(16))
         self.events = map(lambda i:[], range(16))
         self.other_events = []
-        self.instruments = Instruments()
         self.instrument = False
 
         
@@ -196,7 +198,7 @@ class Events:
             return False
 
         events = Events()
-
+        
         events.channel=last_used_channel
         
         events.notes[events.channel] = self.notes[events.channel]
@@ -244,7 +246,7 @@ class Events:
             raise Exception("Instance has not been splitted by channel")
 
         if len(self.notes[self.channel])==0:
-            self.instrument = self.instruments.get_instrument(self.channel, 0)
+            self.instrument = instruments.get_instrument(self.channel, 0)
             return [self]
 
         splitted = []
@@ -254,7 +256,7 @@ class Events:
 
         for note in self.notes[self.channel]:
             
-            instrument = self.instruments.get_instrument(self.channel, note.start_tick)
+            instrument = instruments.get_instrument(self.channel, note.start_tick)
             
             if instrument!=last_instrument:
                 last_instrument = instrument
@@ -330,7 +332,6 @@ class Events:
 
         
     def add_event(self, event):
-        self.instruments.add_event(event)
         
         #if type(event) is NoteOnEvent:
         #    print event.velocity
@@ -352,7 +353,8 @@ def tick_to_place_simple(tick, resolution, lpb):
     line       = int(tick / resolution)
     counter    = tick - (line*resolution)
     dividor    = resolution
-    return [line, counter, dividor]
+    gcd        = fractions.gcd(counter,dividor)
+    return [line, counter/gcd, dividor/gcd]
 
 def tick_to_line(tick, resolution, lpb):
     return int(lpb * tick/resolution)
@@ -369,16 +371,18 @@ def tick_to_place(tick, resolution, lpb):
     line       = tick_to_line(tick, resolution, lpb)
     counter    = tick_to_counter(tick, line, resolution, lpb)
     dividor    = resolution
-    return [line, counter, dividor]
+    gcd        = fractions.gcd(counter,dividor)
+    return [line, counter/gcd, dividor/gcd]
 
 if 0:
-    tick = 500
-    resolution = 400
-    lpb = 3
+    tick = 1234
+    resolution = 1943
+    lpb = 333
     line = tick_to_line(tick, resolution, lpb)
     counter = tick_to_counter(tick, line, resolution, lpb)
-    print tick_to_place(tick, resolution, lpb)
-    print tick_to_place_simple(tick, resolution, lpb)
+    print tick_to_place(tick, resolution, lpb),lpb
+    #print tick_to_place_simple(tick, resolution, lpb)
+    # (define (g a b c d) (/ (+ a (/ b c)) d))
     sys.exit(0)
 
 def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
@@ -393,16 +397,21 @@ def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
                        -1, -1, tracknum)
 
 
-def handle_radium_instruments(tracks, port):
+def handle_radium_instruments(tracks, port=""):
+    instruments = {}
     track_num = 0
     for track in tracks:
         instrument = track.instrument
-        instrument_num = radium.createNewInstrument("midi", instrument.name)
-        radium.setInstrumentData(instrument_num, "channel", str(instrument.channel))
-        radium.setInstrumentData(instrument_num, "preset", str(instrument.preset))
-        radium.setInstrumentData(instrument_num, "port", port)
-        if port=="":
-            port = radium.getInstrumentData(instrument_num, "port") # if port=="", radium will ask the user. We only want to do that one time.
+        if instrument not in instruments:
+            instrument_num = radium.createNewInstrument("midi", instrument.name)
+            radium.setInstrumentData(instrument_num, "channel", str(instrument.channel))
+            radium.setInstrumentData(instrument_num, "preset", str(instrument.preset))
+            radium.setInstrumentData(instrument_num, "port", port)
+            if port=="":
+                port = radium.getInstrumentData(instrument_num, "port") # if port=="", radium will ask the user. We only want to do that one time.
+            instruments[instrument] = instrument_num
+        else:
+            instrument_num = instruments[instrument]
         radium.setInstrumentForTrack(instrument_num, track_num)
         track_num = track_num + 1
 
@@ -420,25 +429,31 @@ def import_midi_do(filename, lpb=4, midi_port="", polyphonic=True):
     radium.setLPB(lpb)
     radium.setBPM(120) # Default SMF value.
 
+    tracks.make_ticks_abs()
+
+    # Init instruments first
+    for track in tracks:
+        for event in track:
+            instruments.add_event(event)
+
+    # Generate radium tracks from midi tracks
     for track in tracks:
         events = Events()
-        #print
-        #print dir(track)
-        track.make_ticks_abs()
         for event in track:
             events.add_event(event)
 
         tracks = events.get_radium_tracks(polyphonic)
         
-        for track_event in tracks:
-            print "VVV instrument: '"+track_event.instrument.name+"'. preset:"+str(track_event.instrument.preset)
-            send_notes_to_radium_track(track_event.notes[track_event.channel], tracknum, resolution, lpb)
-            radium_tracks.append(track_event)
+        for notes in tracks:
+            print "VVV instrument: '"+notes.instrument.name+"'. preset:"+str(notes.instrument.preset)
+            send_notes_to_radium_track(notes.notes[notes.channel], tracknum, resolution, lpb)
+            radium_tracks.append(notes)
             tracknum = tracknum + 1
 
     handle_radium_instruments(radium_tracks, midi_port)
 
     return radium_tracks
+
 
 # Quick hack.
 def clear_radium_editor():
@@ -448,12 +463,14 @@ def clear_radium_editor():
     radium.selectPrevBlock()
     radium.deleteBlock()
     
+
 def import_midi(filename):
     clear_radium_editor()
     radium.setNumLines(1000)
-    radium.setNumTracks(16)
+    radium.setNumTracks(24)
     
     return import_midi_do(filename, 4, "", False)
+
 
 if __name__ == "__main__":
     def addNote(notenum, velocity,
