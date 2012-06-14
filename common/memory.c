@@ -123,6 +123,7 @@ void *tralloc_atomic(size_t size){
 void *talloc(size_t size){
 	void *ret;
 
+#ifdef _AMIGA
 	if(size>tmemorysize){
 		RError("\n\n\nYour out-of-memory-buffer is too low!!!\n");
 		RError("Save and quit, and set the out-of memory-buffer\n");
@@ -144,6 +145,10 @@ void *talloc(size_t size){
 		GC_free(tmemory);
 		tmemory=NULL;
 	}
+#else
+	ret=tracker_alloc(size,GC_malloc);
+	if(ret!=NULL) return ret;
+#endif
 
 #ifndef MEMORY_DEBUG
 	ret=GC_malloc(size);
