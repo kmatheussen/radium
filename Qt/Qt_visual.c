@@ -168,7 +168,53 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   return 0;
 }
 
-bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
+//bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
+bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
+  char *rawfontname;
+
+  rawfontname = GFX_ReadStringFromPythonCommand((char*)"X11_Qtstuff.GFX_SelectEditFont(\"%s\")");
+
+  printf("Got -%s-\n",rawfontname);
+
+#if 0
+  int lokke;
+  XFontStruct *xfontstruct = XLoadQueryFont(x11_display,rawfontname);
+
+  if(xfontstruct==NULL){
+    printf("Unable to load font \"%s\"\n",rawfontname);
+    return false;
+  }
+
+  tvisual->os_visual->xfontstruct=xfontstruct;
+
+  //max_bounds.rbearing - min_bounds.lbearing
+
+  tvisual->fontwidth=tvisual->h_fontwidth=xfontstruct->max_bounds.rbearing - xfontstruct->min_bounds.lbearing;
+  tvisual->org_fontheight=xfontstruct->max_bounds.ascent+xfontstruct->max_bounds.descent;
+  tvisual->fontheight=tvisual->org_fontheight+2;
+
+  for(lokke=0;lokke<8;lokke++){
+    GC gc=tvisual->os_visual->gcs[lokke];
+    XSetFont(x11_display,gc,tvisual->os_visual->xfontstruct->fid);
+  }
+#if 0
+
+       XSetFont(display, gc, font)
+             Display *display;
+             GC gc;
+             Font font;
+
+
+       Font XLoadFont(display, name)
+             Display *display;
+             char *name;
+
+#endif
+
+#endif
+
+  return true;
+}
 
 
 void GFX_bouncePoints(MyWidget *mywidget){
