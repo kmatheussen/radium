@@ -20,7 +20,13 @@ import string,sys,os,cPickle
 
 import radium
 
-
+commands = {}
+def get_command(menutext):
+  if menutext in commands:
+    return commands[menutext]
+  else:
+    return ""
+    
 class LineParser:
   def __init__(self,filename):
     file=open("keybindings.cPickle","r")
@@ -62,7 +68,9 @@ class LineParser:
     
     for item in key[1]:
       qualifier+=code2read[item]+" + "
-    return string.rstrip(items[0])+emptystring(40-((len(items[0]))*3/2))+qualifier+key[0][0]
+    ret = string.rstrip(items[0])+emptystring(40-((len(items[0]))*3/2))+qualifier+key[0][0]
+    commands[string.lstrip(ret)] = string.lstrip(items[1])
+    return ret
   
   def numTabs(self,line):
     if line[0]!='\t':
@@ -105,21 +113,21 @@ class Menu:
         space = ""
         for i in range(self.level):
           space = space + "  "
-        print space+str(self.level)+". "+item
+        print space+str(self.level)+". "+item+". Command: '"+get_command(item)+"'"
 
   def createRadiumMenues(self):
-    def iter(items):
+    def rec(items):
       if items==[]:
         return
       if len(items)>1 and isinstance(items[1],Menu):
         radium.addMenuMenu(items[0])
         items[1].createRadiumMenues()
         radium.goPreviousMenuLevel()
-        iter(items[2:])
+        rec(items[2:])
       else:
-        radium.addMenuItem(items[0],'print "'+items[0]+"'")
-        iter(items[1:])
-    iter(self.items)
+        radium.addMenuItem(items[0],get_command(items[0]))
+        rec(items[1:])
+    rec(self.items)
     
   def createGtkMenues(self,menu):
     global prevmenuitem
