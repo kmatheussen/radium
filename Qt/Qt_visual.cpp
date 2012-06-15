@@ -182,7 +182,7 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name){
   current_menu = menu;
 }
 
-void GFX_GoPreviousMenu(struct Tracker_Windows *tvisual){
+void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual){
   if(current_menu->base!=NULL){
     RError("Already at top level");
     return;
@@ -232,12 +232,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   GFX_AddMenuItem(NULL, "menu1 - item1", "");
   GFX_AddMenuSeparator(NULL);
   GFX_AddMenuItem(NULL, "menu1 - item2", "");
-  GFX_GoPreviousMenu(NULL);
+  GFX_GoPreviousMenuLevel(NULL);
   GFX_AddMenuItem(NULL, "item3", "");
   GFX_AddMenuMenu(NULL, "menu2");
   GFX_AddMenuMenu(NULL, "menu2 -> menu1");
   GFX_AddMenuItem(NULL, "menu2 -> menu1 -> item1", "");
-  GFX_GoPreviousMenu(NULL);
+  GFX_GoPreviousMenuLevel(NULL);
   GFX_AddMenuItem(NULL, "item2 -> item1", "");
 
 #if 0

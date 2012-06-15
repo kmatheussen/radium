@@ -323,4 +323,22 @@ void setBlockNoteShowType(int type,int blocknum,int windownum){
   
 }
 
+void addMenuItem(char* name, char* command){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_AddMenuItem(window, name, command);
+}
 
+void addMenuSeparator(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_AddMenuSeparator(window);
+}
+
+void addMenuMenu(char* name){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_AddMenuMenu(window, name);
+}
+
+void goPreviousMenuLevel(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_GoPreviousMenuLevel(window);
+}
