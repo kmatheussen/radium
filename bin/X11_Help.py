@@ -14,6 +14,20 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+import sys
+
+if __name__=="__main__":
+  import os.path
+
+  print os.path.abspath(os.path.dirname(sys.argv[0]))
+    
+  sys.path.insert(0,'/tmp/radium/lib/python'+sys.version[:3]+'/site-packages/gtk-1.2')
+  #sys.path=sys.path[:-1]
+  #sys.path.append('/tmp/radium/lib/python2.2/site-packages/gtk-1.2')
+  #sys.path.insert=[append(os.path.abspath(os.path.dirname(sys.argv[0]))+"/../lib/")
+
+  import gtk
+  import libglade
 
 import gtk
 import string,sys,os,cPickle
