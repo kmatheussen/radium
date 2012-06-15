@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "Python.h"
 
 #include <qapplication.h>
 #include <qmainwindow.h>
@@ -172,6 +173,9 @@ int radium_main(char *arg){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual->main_window);
   main_window->show();
   qapplication->setMainWidget(main_window);
+
+  PyRun_SimpleString("import menues");
+  
   qapplication->exec();
   
   X11_EndPlayer();

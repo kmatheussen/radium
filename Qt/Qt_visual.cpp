@@ -226,6 +226,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   main_window->statusBar()->message( "Ready", 2000 );
 
   initMenues(main_window->menuBar());
+#if 0
   GFX_AddMenuItem(NULL, "item1", "dosomething");
   GFX_AddMenuItem(NULL, "item2", "");
   GFX_AddMenuMenu(NULL, "menu1");
@@ -239,6 +240,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   GFX_AddMenuItem(NULL, "menu2 -> menu1 -> item1", "");
   GFX_GoPreviousMenuLevel(NULL);
   GFX_AddMenuItem(NULL, "item2 -> item1", "");
+#endif
 
 #if 0
   QPopupMenu *dummy_menu = new QPopupMenu(main_window);

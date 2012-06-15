@@ -523,8 +523,6 @@ if __name__=="__main__":
     ConnectToRadium()
     gtk.input_add(s,gtk.GDK.INPUT_READ,callback)
 
-    import X11_Help
-    
     gtk.mainloop()
     s.close()
 
