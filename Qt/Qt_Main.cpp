@@ -103,6 +103,15 @@ extern LANGSPEC void Qt_Ptask2Mtask(void){
 }
 
 
+#include <qwindowsstyle.h>
+//#include <qmacstyle_mac.h>
+#if 0
+#include <qplatinumstyle.h>
+#include <qcdestyle.h>
+#include <qmotifplusstyle.h>
+#include <qsgistyle.h>
+#endif
+
 //#include "google/profiler.h"
 
 //extern LANGSPEC int dasmain(int argc,char **argv);
@@ -118,7 +127,23 @@ int radium_main(char *arg){
 
   //GC_dont_gc = 1;
 
+#if 0
+  QApplication::setStyle( new QPlatinumStyle() );
+  QApplication::setStyle( new QCDEStyle() );
+  QApplication::setStyle( new QMotifPlusStyle() );
+  QApplication::setStyle( new QSGIStyle() );
+#endif
+  QApplication::setStyle( new QWindowsStyle() );
+
   qapplication=new MyApplication(argc,argv);
+
+  QColor c(0xe5, 0xe5, 0xe5);
+  QPalette pal = QPalette(qapplication->palette());
+  pal.setColor( QPalette::Active, QColorGroup::Background, c);
+  pal.setColor( QPalette::Active, QColorGroup::Button, c);
+  pal.setColor( QPalette::Inactive, QColorGroup::Background, c);
+  pal.setColor( QPalette::Inactive, QColorGroup::Button, c);
+  qapplication->setPalette(pal);
 
   X11_init_keyboard();
 

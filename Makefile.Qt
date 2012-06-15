@@ -716,8 +716,11 @@ X11_ClientMessages.o: X11/X11_ClientMessages.c
 Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h
 	$(CCC) $(P)Qt_Main.cpp $(CPPOPT) -Wno-error 
 
-Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h
+Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(P)mQt_visual.cpp
 	$(CCC) $(P)Qt_visual.cpp $(CPPOPT) 
+
+$(P)mQt_visual.cpp: $(P)Qt_visual.cpp
+	cd $(P) && moc Qt_visual.cpp >mQt_visual.cpp
 
 Qt_error.o: $(P)Qt_error.c $(P)MyWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)

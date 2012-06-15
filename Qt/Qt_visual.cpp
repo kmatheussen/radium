@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "Python.h"
 
 
 #include <stdbool.h>
@@ -81,7 +82,9 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
   this->colors[7]=QColor("pink");
   */
 
-  this->colors[0]=QColor("grey");
+  //this->colors[0]=QColor("grey");
+  this->colors[0]=QColor(0xd0, 0xd5, 0xd0);
+  //this->colors[0]=QColor(0xe0, 0xe0, 0xe0);
   this->colors[1]=QColor("black");
   this->colors[2]=QColor("white");
   this->colors[3]=QColor("blue");
@@ -124,6 +127,76 @@ MyWidget::~MyWidget()
 
 extern QApplication *qapplication;
 
+struct Menues{
+  struct Menues *up;
+  QPopupMenu *menu;
+  QMenuBar *base;
+};
+
+static struct Menues *current_menu = NULL;
+
+
+class MenuItem : public QWidget
+{
+    Q_OBJECT
+public:
+  MenuItem(const char *name, const char *python_command){
+    this->python_command = python_command;
+    if(current_menu->base!=NULL)
+      current_menu->base->insertItem(name, this, SLOT(clicked()));
+    else
+      current_menu->menu->insertItem(name, this, SLOT(clicked()));
+  }
+
+private:
+  const char *python_command;
+
+public slots:
+  void clicked() {
+    PyRun_SimpleString(python_command);
+  }
+};
+
+#include "mQt_visual.cpp"
+
+void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command){
+  new MenuItem(name, python_command);
+}
+
+void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
+  if(current_menu->menu==NULL){
+    RError("Can not add separator at toplevel");
+    return;
+  }
+  current_menu->menu->insertSeparator();
+}
+
+void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name){
+  struct Menues *menu = (struct Menues*)talloc(sizeof(struct Menues));
+  menu->up = current_menu;
+  menu->menu = new QPopupMenu();
+  if(current_menu->base!=NULL)
+    current_menu->base->insertItem(name, menu->menu);
+  else
+    current_menu->menu->insertItem(name, menu->menu);
+  current_menu = menu;
+}
+
+void GFX_GoPreviousMenu(struct Tracker_Windows *tvisual){
+  if(current_menu->base!=NULL){
+    RError("Already at top level");
+    return;
+  }
+  current_menu = current_menu->up;
+}
+
+
+static void initMenues(QMenuBar *base_menu){
+  current_menu = (struct Menues*)talloc(sizeof(struct Menues));
+  current_menu->base = base_menu;
+}
+
+//#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   tvisual->os_visual=(struct OS_visual *)talloc_atomic(sizeof(struct OS_visual));
@@ -134,11 +207,15 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   QMainWindow *main_window = new QMainWindow();
   tvisual->os_visual->main_window = main_window;
+
+  //QPalette pal = QPalette(main_window->palette());
+  //pal.setColor( QPalette::Active, QColorGroup::Background, Qt::green);
+  //pal.setColor(main_window->backgroundRole(), Qt::blue);
+  //main_window->setPalette(pal);
+  //main_window->menuBar()->setPalette(pal);
+
   MyWidget *mywidget=new MyWidget(tvisual,main_window,"name");
   mywidget->setFocus();
-
-  //main_window->setMinimumWidth(400);
-  //main_window->setMinimumHeight(400);
 
   main_window->resize(800,400);
   mywidget->setMinimumWidth(400);
@@ -148,8 +225,26 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   main_window->setCentralWidget(mywidget);
   main_window->statusBar()->message( "Ready", 2000 );
 
+  initMenues(main_window->menuBar());
+  GFX_AddMenuItem(NULL, "item1", "dosomething");
+  GFX_AddMenuItem(NULL, "item2", "");
+  GFX_AddMenuMenu(NULL, "menu1");
+  GFX_AddMenuItem(NULL, "menu1 - item1", "");
+  GFX_AddMenuSeparator(NULL);
+  GFX_AddMenuItem(NULL, "menu1 - item2", "");
+  GFX_GoPreviousMenu(NULL);
+  GFX_AddMenuItem(NULL, "item3", "");
+  GFX_AddMenuMenu(NULL, "menu2");
+  GFX_AddMenuMenu(NULL, "menu2 -> menu1");
+  GFX_AddMenuItem(NULL, "menu2 -> menu1 -> item1", "");
+  GFX_GoPreviousMenu(NULL);
+  GFX_AddMenuItem(NULL, "item2 -> item1", "");
+
+#if 0
   QPopupMenu *dummy_menu = new QPopupMenu(main_window);
   main_window->menuBar()->insertItem("&Dummy Menu", dummy_menu);
+  current_menu = main_window->menuBar();
+#endif
 
  if(tvisual->height==0 || tvisual->width==0){
     tvisual->x=0;
@@ -187,6 +282,7 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   mywidget->close();
   return 0;
 }
+
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
 bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
@@ -727,78 +823,6 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){
 #endif
 
 
-#if 0
-class MyQListBox : public QListBox{
-  Q_OBJECT
- public:
-  int selected;
-  MyQListBox(QWidget *qwidget,char *name);
- signals:
-  void aselected(int index);
-};
-
-void MyQListBox::aselected(int index){
-  this->selected=index;
-  //  printf("selected: %d\n",index);
-}
-
-MyQListBox::MyQListBox(QWidget *qwidget,char *name) : QListBox(qwidget,name){
-  this->selected=-1;
-  connect(this,SIGNAL(selected(int)),SIGNAL(aselected(int)));
-}
-#endif
-
-
-#if 0
-int GFX_Menu(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	int num_sel,
-	char **menutext
-){
-  int ret;
-
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-
-  MyQListBox *qlb;
-  //  QListViewItem *qlvi;
-
-  printf("jadda\n");
-  qlb=new MyQListBox(mywidget,seltext);
-
-  for(int lokke=0;lokke<num_sel;lokke++){
-    qlb->insertItem(menutext[lokke]);
-  }
-
-  qlb->setMinimumSize(mywidget->width()-10,mywidget->height()-10);
-
-  qlb->setSelected(0,TRUE);
-  qlb->setFocusPolicy(QWidget::StrongFocus);
-  //  qlb->focusInEvent(new QFocusEvent(QEvent::FocusIn));
-  qlb->setFocus();
-  qlb->show();
-
-  //  connect(qlb,SIGNAL(selected()),SIGNAL(aselected()));
-
-  while(1){
-    //    qapplication->exec();
-    //qlb->update();
-    //qlb->repaint();
-    qapplication->processEvents();
-    //    sleep(1);
-    //    if(qlb->isSelected(3)) break;
-    printf("sel: %d\n",qlb->currentItem());
-    if(qlb->selected!=-1) break;
-  }
-
-  ret=qlb->selected;
-
-  qlb->close(TRUE);
-
-  return ret;
-}
-#endif
 
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;

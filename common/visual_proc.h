@@ -20,6 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_visual_input.h"
 
 
+extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
+extern LANGSPEC void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name);
+extern LANGSPEC void GFX_GoPreviousMenu(struct Tracker_Windows *tvisual);
+
 
 extern LANGSPEC void GFX_C2V_bitBlt(
 				    struct Tracker_Windows *window,
