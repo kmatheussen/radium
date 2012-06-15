@@ -73,11 +73,12 @@ OPTIMIZE=
 #-O3
 #-O
 
-UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(QTDIR)/include -I$(PYPATH) -DGUIISQT $(MIDIINC) -I/home/kjetil/site/include
+UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -I/home/kjetil/site/include
 # -pg
 
 OPT= $(UPOPT)
 
+CPPOPT=$(OPT) -I$(QTDIR)/include
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
@@ -167,7 +168,7 @@ radium/deletemetorebuild: radium/build.sh
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
-	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -L${QTDIR}/lib -lqt-mt -lasound
+	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt -lasound
 # -L/home/kjetil/site/lib -lprofiler
 # -pg 
 
@@ -713,10 +714,10 @@ X11_ClientMessages.o: X11/X11_ClientMessages.c
 
 
 Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h
-	$(CCC) $(P)Qt_Main.cpp $(OPT) -Wno-error 
+	$(CCC) $(P)Qt_Main.cpp $(CPPOPT) -Wno-error 
 
-Qt_visual.o: $(P)Qt_visual.c $(P)MyWidget.h
-	$(CCC) $(P)Qt_visual.c $(OPT) 
+Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h
+	$(CCC) $(P)Qt_visual.cpp $(CPPOPT) 
 
 Qt_error.o: $(P)Qt_error.c $(P)MyWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
@@ -737,7 +738,7 @@ Qt_Player.o: $(P)Qt_Player.c $(P)MyWidget.h
 	$(CC) $(P)Qt_Player.c $(OPT)
 
 Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)MyWidget.h
-	$(CCC) $(P)Qt_EventReceiver.cpp $(OPT)
+	$(CCC) $(P)Qt_EventReceiver.cpp $(CPPOPT)
 
 Qt_memory.o:  $(P)Qt_memory.c 
 	$(CC)  $(P)Qt_memory.c $(OPT)

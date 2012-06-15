@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <qapplication.h>
+#include <qmainwindow.h>
+
+#include "MyWidget.h"
+
 #include <X11/Xlib.h>
 
 #include "../common/nsmtracker.h"
@@ -140,9 +144,11 @@ int radium_main(char *arg){
   BS_SelectBlock(root->song->blocks);
   BS_SelectPlaylistPos(0);
 
-  qapplication->setMainWidget((QWidget *)root->song->tracker_windows->os_visual->widget);
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual->main_window);
+  main_window->show();
+  qapplication->setMainWidget(main_window);
   qapplication->exec();
-
+  
   X11_EndPlayer();
   EndGuiThread();
 

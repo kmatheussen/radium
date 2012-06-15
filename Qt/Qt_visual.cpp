@@ -18,6 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdbool.h>
 #include "MyWidget.h"
+#include <qmainwindow.h>
+#include <qstatusbar.h>
+
 #include <qlistbox.h>
 #include <qpainter.h>
 #include <unistd.h>
@@ -62,6 +65,9 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
 {
   this->qpixmap=NULL;
   this->window=window;
+
+  //this->menu = new QMenuBar(this);
+  //this->menu->show();
 
   /*
   this->colors[0]=QColor("grey");
@@ -126,17 +132,31 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   tvisual->fontwidth=13;
   tvisual->org_fontheight=tvisual->fontheight;
 
+  QMainWindow *main_window = new QMainWindow();
+  tvisual->os_visual->main_window = main_window;
+  MyWidget *mywidget=new MyWidget(tvisual,main_window,"name");
+  mywidget->setFocus();
 
-  MyWidget *mywidget=new MyWidget(tvisual,NULL,"name");
+  //main_window->setMinimumWidth(400);
+  //main_window->setMinimumHeight(400);
 
-  if(tvisual->height==0 || tvisual->width==0){
+  main_window->resize(800,400);
+  mywidget->setMinimumWidth(400);
+  mywidget->setMinimumHeight(200);
+
+  main_window->setCaption("Radium editor window");
+  main_window->setCentralWidget(mywidget);
+  main_window->statusBar()->message( "Ready", 2000 );
+
+  QPopupMenu *dummy_menu = new QPopupMenu(main_window);
+  main_window->menuBar()->insertItem("&Dummy Menu", dummy_menu);
+
+ if(tvisual->height==0 || tvisual->width==0){
     tvisual->x=0;
     tvisual->y=0;
     tvisual->width=mywidget->width()-100;
-    tvisual->height=mywidget->height()-30;
+    tvisual->height=mywidget->height();
   }
-
-  mywidget->show();
 
   tvisual->os_visual->widget=mywidget;
 
@@ -147,10 +167,10 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
   mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
-//  mywidget->grabKeyboard();
 
   BS_SetX11Window((int)mywidget->x11AppRootWindow());
   X11_MidiProperties_SetX11Window((int)mywidget->x11AppRootWindow());
+
 
   return 0;
 }
@@ -597,6 +617,9 @@ void GFX_V_DrawTrackBorderSingle(
 
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual->main_window;
+  main_window->statusBar()->message(title);
+#if 0
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
   //mywidget->setCaption(title);
 
@@ -607,7 +630,7 @@ void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
   paint.setFont(font);
   paint.setPen(mywidget->colors[1]);
   paint.drawText(0,mywidget->height()-28+tvisual->org_fontheight+2,title);
-  
+#endif
 }
 
 void GFX_Scroll(
@@ -864,10 +887,6 @@ char *GFX_GetSaveFileName(
 	char *seltext,
 	char *dir
 ){return NULL;}
-
-
-
-#include "mQt_visual.c"
 
 
 #endif

@@ -63,7 +63,8 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 
 //  setBackgroundColor( this->colors[0] );		/* white background */
 
-  Resize_resized(this->window,this->width()-100,this->height()-30,false);
+  //Resize_resized(this->window,this->width()-100,this->height()-30,false);
+  Resize_resized(this->window,this->width()-100,this->height(),false);
   //    UpdateTrackerWindow(this->window);
 
     //    QPainter paint(this);
@@ -280,7 +281,8 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   this->cursorpixmap=new QPixmap(this->width(),this->height());
   this->cursorpixmap->fill( this->colors[7] );		/* the xored background color for the cursor.*/
 
-  Resize_resized(this->window,this->width()-100,this->height()-30,false);
+  //Resize_resized(this->window,this->width()-100,this->height()-30,false);
+  Resize_resized(this->window,this->width()-100,this->height(),false);
 
   QPainter paint( this );
   paint.setPen(this->colors[6]);

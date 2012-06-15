@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpushbutton.h>
 #include <qcanvas.h>
 #include <qpixmap.h>
+#include <qmenubar.h>
 
 #define GFX_DONTSHRINK
 #include "../common/nsmtracker.h"
