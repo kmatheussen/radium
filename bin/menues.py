@@ -120,7 +120,7 @@ class Menu:
       if items==[]:
         return
       if len(items)>1 and isinstance(items[1],Menu):
-        radium.addMenuMenu(items[0])
+        radium.addMenuMenu(items[0], get_command(items[0]))
         items[1].createRadiumMenues()
         radium.goPreviousMenuLevel()
         rec(items[2:])

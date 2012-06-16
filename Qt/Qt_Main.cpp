@@ -138,7 +138,8 @@ int radium_main(char *arg){
 
   qapplication=new MyApplication(argc,argv);
 
-  QColor c(0xe5, 0xe5, 0xe5);
+  //QColor c(0xe5, 0xe5, 0xe5);
+  QColor c(0xd2, 0xd0, 0xd5);
   QPalette pal = QPalette(qapplication->palette());
   pal.setColor( QPalette::Active, QColorGroup::Background, c);
   pal.setColor( QPalette::Active, QColorGroup::Button, c);

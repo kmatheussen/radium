@@ -623,7 +623,7 @@ struct WBlocks{
         WArea tempocolorarea;
 	WArea lpbTypearea;
 	WArea lpbarea;
-	WArea tempoTypearea;
+	WArea tempoTypearea; // When one character signals whether the tempo is down "d", or multi "m"
 	WArea tempoarea;
 	WArea temponodearea;
 

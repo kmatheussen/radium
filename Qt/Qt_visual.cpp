@@ -140,12 +140,21 @@ class MenuItem : public QWidget
 {
     Q_OBJECT
 public:
-  MenuItem(const char *name, const char *python_command){
-    this->python_command = python_command;
-    if(current_menu->base!=NULL)
-      current_menu->base->insertItem(name, this, SLOT(clicked()));
-    else
-      current_menu->menu->insertItem(name, this, SLOT(clicked()));
+  MenuItem(const char *name, const char *python_command, QPopupMenu *menu = NULL){
+    this->python_command = strdup(python_command);
+    if(menu!=NULL) {
+      if(current_menu->base!=NULL){
+        current_menu->base->insertItem(name, menu, 0);
+        current_menu->base->connectItem(0, this, SLOT(clicked()));
+      }else{
+        current_menu->menu->insertItem(name, menu, 0);
+        current_menu->menu->connectItem(0, this, SLOT(clicked()));
+      }
+    }else
+      if(current_menu->base!=NULL)
+        current_menu->base->insertItem(name, this, SLOT(clicked()));
+      else
+        current_menu->menu->insertItem(name, this, SLOT(clicked()));
   }
 
 private:
@@ -171,14 +180,11 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
   current_menu->menu->insertSeparator();
 }
 
-void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name){
-  struct Menues *menu = (struct Menues*)talloc(sizeof(struct Menues));
+void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
+  struct Menues *menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
   menu->menu = new QPopupMenu();
-  if(current_menu->base!=NULL)
-    current_menu->base->insertItem(name, menu->menu);
-  else
-    current_menu->menu->insertItem(name, menu->menu);
+  new MenuItem(name, command, menu->menu);
   current_menu = menu;
 }
 
@@ -192,7 +198,7 @@ void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual){
 
 
 static void initMenues(QMenuBar *base_menu){
-  current_menu = (struct Menues*)talloc(sizeof(struct Menues));
+  current_menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   current_menu->base = base_menu;
 }
 

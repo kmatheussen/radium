@@ -23,13 +23,6 @@
 
 * The width for line numbers are too small when loading 1.rad.
 
-* Config colors doesn't seem to work. (Could be because there is no "Left Meta" key)
-  "Right Meta" seems to be equal to "Right Extra" though. But I'm not sure
-  if "Left Meta" is equal to "Left Extra".
-
-  * More likely a script problem: It seems like nothing Qt_stuff.py works.
-
-
 * When loading a new song, the old editor window isn't closed.
   (When enabling GC again, this might crash the program. I guess there is no pointer
   to the data displayed in the window?)
@@ -40,4 +33,11 @@
   Not volume either.
 
 * Fix saving. (loading is probably broken as well now after midi refactoring)
+
+* When loading standard midi files, track velocities should be set to max.
+
+* 1LZ, 1MR, etc. (could ask when selecting via menues)
+
+* Instrument->Add doesn't do anything. (No command option for menu menues)
+
 

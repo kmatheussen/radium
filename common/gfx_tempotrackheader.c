@@ -105,6 +105,14 @@ void UpdateTempoTrackHeader_LPB(
 ){
 	char temp[50];
 
+	GFX_FilledBox(
+		window,0,
+		wblock->lpbTypearea.x+1,
+		wblock->a.y1,
+		wblock->lpbTypearea.x2,
+		wblock->t.y1-2
+	);
+
 	GFX_Text(
 		window,1,"LPB",
 		wblock->lpbTypearea.x+1,
@@ -127,6 +135,15 @@ void UpdateTempoTrackHeader_BPM(
 	int color
 ){
 	char temp[50];
+
+	GFX_FilledBox(
+		window,0,
+		wblock->tempoTypearea.x+1,
+		wblock->a.y1,
+		wblock->tempoarea.x2+3,
+		//wblock->temponodearea.x2+3,
+		wblock->t.y1-2
+	);
 
 	GFX_Text(
 		window,1,"BPM",
@@ -160,16 +177,17 @@ void DrawTempoTrackHeader(
 /*
 	This command was commented out for v0.60g. If you read this many version later
 	and there are no problem with gfx-garbage in this area, please remove all this.
-
+*/
 
 	GFX_FilledBox(
 		window,0,
-		wblock->lpbTypearea.x+1,
+		wblock->lpbTypearea.x,
 		wblock->a.y1,
-		wblock->tempoTypearea.x2+3,
+		wblock->tempoarea.x2+3,
+		//wblock->temponodearea.x2+3,
 		wblock->t.y1-2
 	);
-*/
+
 	UpdateTempoTrackHeader_LPB(window,wblock,2);
 	UpdateTempoTrackHeader_BPM(window,wblock,2);
 	UpdateTempoTrackHeader_reltempo(window,wblock,2);
