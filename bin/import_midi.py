@@ -513,6 +513,7 @@ def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
             for notes in tracks:
                 print "VVV instrument: '"+notes.instrument.name+"'. preset:"+str(notes.instrument.preset)
                 send_notes_to_radium_track(notes.notes[notes.channel], tracknum, resolution, lpb)
+                radium.setTrackVolume(1.0,tracknum)
                 radium_tracks.append(notes)
                 tracknum = tracknum + 1
    
