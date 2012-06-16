@@ -154,6 +154,7 @@ void setNumTracks(int numtracks, int blocknum, int windownum){
   wblock->block->is_dirty = true;
 }
 
+
 // Warning, must be called via python (does not update graphics or handle undo/redo)
 void setNumLines(int numlines, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
@@ -272,6 +273,56 @@ void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
   if(window->wblock==wblock){
     DrawUpWTrack(window,wblock,wtrack);
   }
+}
+
+void setTrackVolume(float volume,int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  if(volume<=0.0f)
+    wtrack->track->volume = 0;
+  else if(volume>=1.0f)
+    wtrack->track->volume = MAXTRACKPAN;
+  else
+    wtrack->track->volume = (int)(volume * (float)MAXTRACKVOL);
+
+  wblock->block->is_dirty = true;
+}
+
+void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  if(pan<=-1.0f)
+    wtrack->track->pan = -MAXTRACKPAN;
+  else if(pan>=1.0f)
+    wtrack->track->pan = MAXTRACKPAN;
+  else
+    wtrack->track->pan = (int)(pan * (float)MAXTRACKPAN);
+
+  wblock->block->is_dirty = true;
 }
 
 void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){

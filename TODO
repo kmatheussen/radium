@@ -32,8 +32,6 @@
 * Doesn't seem to work changing the slider values of midi effects in the midi properties window.
   Not volume either.
 
-* Fix saving. (loading is probably broken as well now after midi refactoring)
-
 * When loading standard midi files, track velocities should be set to max.
 
 * 1LZ, 1MR, etc. (could ask when selecting via menues)
@@ -46,10 +44,10 @@
     * Refuse to make window smaller
     * Make temponodearea smaller. (better)
 
-* Loading is broken after midi refactoring.
-
 * "Play song from start" only plays block 0 one time. (doesn't matter whether block 0 is first or last in playlist)
   Could seem like playlist in radium is not updated from playlist GUI.
 
 * After selecting a menu, doquit is not checked. (must press a key first to quit)
+
+* Alsaseq midi port names only contain the port names. They should also contain the client names.
 
