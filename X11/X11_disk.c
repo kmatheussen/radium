@@ -22,15 +22,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_disk_proc.h"
 
 
-void SaveOsStuff(void){}
+void SaveOsStuff(void){
+  DC_SaveCleanString("X11\n");
+}
 
 void LoadOsStuff(void){
   char *osname=DC_LoadS();
 
-  if(strcmp(osname,"X11")){
-    DC_SkipBlock();
-    DC_fgets();
-    return;
-  }
+  DC_SkipBlock();
+  DC_fgets();
 }
-

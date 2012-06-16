@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/OS_disk_proc.h"
 
+This file is not used! (X11/X11_disk.c is used instead.)
 
 void SaveOsStuff(void){}
 void LoadOsStuff(void){}

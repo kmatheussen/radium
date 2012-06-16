@@ -111,10 +111,10 @@ bool Load(char *filename){
 
 	printf("dc.ls: -%s-\n",dc.ls);
 	if(strcmp(dc.ls,"ROOT")){
-		fprintf(stderr,"ROOT not found\n");
-		fclose(dc.file);
-		EndProgram();
-		exit(5);
+          fprintf(stderr,"ROOT not found. Found '%s' instead.\n", dc.ls);
+          fclose(dc.file);
+          EndProgram();
+          exit(5);
 	}
 
 	newroot=LoadRoot();
