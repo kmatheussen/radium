@@ -185,7 +185,7 @@ int addNote(int notenum,int velocity,
                                   end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor),
                                   notenum,
                                   velocity,
-                                  0);
+                                  1);
 
   wblock->block->is_dirty = true;
 

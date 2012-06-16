@@ -27,9 +27,9 @@ import radium
 
 
 class Note:
-    def __init__(self, start_tick, channel, notenum, velocity):
+    def __init__(self, start_tick, channel=0, notenum=64, velocity=100, end_tick=-1):
         self.start_tick = start_tick
-        self.end_tick = -1
+        self.end_tick = end_tick
         self.channel = channel
         self.notenum = notenum
         self.velocity = velocity
@@ -39,13 +39,25 @@ class Note:
         self.end_tick = end_tick
         self.end_velocity = end_velocity
 
+    def printit(self):
+        print self.start_tick, self.end_tick
 
 def is_overlapping(a, b):
     if b.start_tick < a.start_tick:
         return is_overlapping(b, a)
+    elif a.end_tick==-1:
+        return True
     else:
         return b.start_tick < a.end_tick
 
+if 0:
+    print True, is_overlapping(Note( 50,end_tick=100),Note( 50,end_tick=60))
+    print True, is_overlapping(Note( 50,end_tick=60), Note( 50,end_tick=100))
+    print False,is_overlapping(Note( 50,end_tick=100),Note(100,end_tick=100))
+    print True, is_overlapping(Note( 50,end_tick=-1), Note(100,end_tick=-1))
+    print True, is_overlapping(Note(100,end_tick=-1), Note( 50,end_tick=-1))
+    print True, is_overlapping(Note(100,end_tick=-1), Note(100,end_tick=-1))
+    sys.exit(0)
 
 def extract_polyphonic_notes_0(overlap_end, sequence):
     if sequence==[]:
@@ -96,19 +108,16 @@ if 0:
     sys.exit(0)
 
 
-def extract_monophonic_sequence(sequence, max_polyphony):
-    if max_polyphony==0:
-        return sequence
-    
+def extract_monophonic_sequence(sequence):
     polyphonic_notes = extract_polyphonic_notes(sequence)
     if polyphonic_notes==[]:
         return sequence
     else:
         lowest_polyphonic_note = find_lowest_pitched_note(polyphonic_notes)
         improved_sequence      = remove_overlapping_notes_from_sequence(lowest_polyphonic_note, sequence)
-        return extract_monophonic_sequence(improved_sequence, max_polyphony-1)
+        return extract_monophonic_sequence(improved_sequence)
 
-
+    
 def remove_notes_from_sequence(notes, sequence):
     return filter(lambda n:n not in notes, sequence)
 
@@ -117,7 +126,7 @@ def polyphonic_sequence_to_monophonic_sequences(sequence):
     if sequence==[]:
         return []
     else:
-        monophonic_sequence = extract_monophonic_sequence(sequence, 16)
+        monophonic_sequence = extract_monophonic_sequence(sequence)
         rest_sequence       = remove_notes_from_sequence(monophonic_sequence, sequence)
         return [monophonic_sequence] + polyphonic_sequence_to_monophonic_sequences(rest_sequence)
 
@@ -561,6 +570,7 @@ def get_parameters(lpb, midi_port, polyphonic):
 
 def import_midi(filename="", lpb=0, midi_port="", polyphonic="not set"):
     #filename = "sinclair.MID"
+    #filename = "/gammelhd/gammelhd/gammel_lyd/gammelhd/amiga/work/gammelhd/music/octamed6/Midi/simpsons.mid"
     tracks = get_tracks(filename)
     if tracks==False:
         return
@@ -599,7 +609,8 @@ if __name__ == "__main__":
     radium.appendBlock=dummy
     radium.selectPrevBlock=dummy
     radium.deleteBlock=dummy
-    
+    radium.setTrackVolume = dummy
+
     filename = "sinclair.MID"
     #filename = "/gammelhd/gammelhd/gammelhd/home/kjetil/bmod54.mid"
     for channel in import_midi(filename, 4, "port", False):

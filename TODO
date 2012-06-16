@@ -32,8 +32,6 @@
 * Doesn't seem to work changing the slider values of midi effects in the midi properties window.
   Not volume either.
 
-* When loading standard midi files, track velocities should be set to max.
-
 * 1LZ, 1MR, etc. (could ask when selecting via menues)
 
 * Instrument->Add doesn't do anything. (No command option for menu menues)
