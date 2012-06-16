@@ -55,7 +55,6 @@ MyApplication::MyApplication(int argc,char **argv)
 
 
 bool MyApplication::x11EventFilter(XEvent *event){
-
   switch(event->type){
   case KeyPress:
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
@@ -77,6 +76,9 @@ bool MyApplication::x11EventFilter(XEvent *event){
     if(X11Event_ClientMessage((XClientMessageEvent *)&event,root->song->tracker_windows)==false){
       this->quit();
     }
+    break;
+  default:
+    //fprintf(stderr, "got Unknown x11 event\n");
     break;
   }
 

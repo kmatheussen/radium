@@ -40,4 +40,16 @@
 
 * Instrument->Add doesn't do anything. (No command option for menu menues)
 
+* If making temponode area very big, and thn make window very small,
+  then there's lots of warnings. Not unlikely to crash.
+  Options:
+    * Refuse to make window smaller
+    * Make temponodearea smaller. (better)
+
+* Loading is broken after midi refactoring.
+
+* "Play song from start" only plays block 0 one time. (doesn't matter whether block 0 is first or last in playlist)
+  Could seem like playlist in radium is not updated from playlist GUI.
+
+* After selecting a menu, doquit is not checked. (must press a key first to quit)
 

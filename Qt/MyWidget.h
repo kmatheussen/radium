@@ -56,6 +56,8 @@ public:
 
     //void timerEvent(QTimerEvent *);
 
+    struct Tracker_Windows *window;
+
 protected:
     //    bool        event(QEvent *);
     void	paintEvent( QPaintEvent * );
@@ -75,7 +77,5 @@ private:
 
     int		count;				// count = number of points
     bool	down;				// TRUE if mouse down
-
-    struct Tracker_Windows *window;
 };
 

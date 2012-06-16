@@ -117,7 +117,7 @@ bool Load(char *filename){
 		exit(5);
 	}
 
-		newroot=LoadRoot();
+	newroot=LoadRoot();
 
 	fclose(dc.file);
 
@@ -207,7 +207,11 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 			return Load("radium:Init.rad");
 		}
 	}
-
+        {
+        bool ret = Load(filename);
+        fprintf(stderr,"Got here (loading finished)\n");
+        return ret;
+        }
 	return Load(filename);
 
 }

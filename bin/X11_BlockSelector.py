@@ -108,7 +108,13 @@ def BS_SetX11Window(windownum):
 def BS_StopXSend():
     conn.send("StopXSend")
     WaitForData()
-    
+
+old_system = os.system
+def new_system(command):
+    print "command: "+command
+    old_system(command)
+os.system=new_system
+
 if __name__=="__main__":
     from Tkinter import *
     import threading,Queue

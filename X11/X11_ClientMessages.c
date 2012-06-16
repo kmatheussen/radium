@@ -14,15 +14,18 @@ extern struct Root *root;
 
 bool X11Event_ClientMessage(XClientMessageEvent *event,struct Tracker_Windows *window){
   struct TEvent tevent={0};
+  //fprintf(stderr,"******************** Got client message *************************** \n");
 
   switch(event->data.l[0]){
   case X11EVENT_PLAYLISTINSERT:
+    fprintf(stderr,"******************** Got plauylist insert client message *************************** \n");
     BL_insert(
 	      event->data.l[1],
 	      getBlockFromNum(event->data.l[2])
 	      );
     break;
   case X11EVENT_PLAYLISTDELETE:
+    fprintf(stderr,"******************** Got plauylistdetlete client message *************************** \n");
     BL_delete(event->data.l[1]);
     break;
   case X11EVENT_KEYBOARDDOWN:

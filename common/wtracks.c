@@ -565,7 +565,7 @@ int WTRACK_getx2(
 		break;
 	}
 
-	if(track>wblock->right_track){
+	if(track > wblock->right_track){
 		RError("illegal starttrack at function WTRACK_getx2 in file wtracks.c");
 		return wblock->t.x2;
 	}

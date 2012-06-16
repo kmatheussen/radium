@@ -32,7 +32,7 @@ int main(int argc,char **argv){
 
   message.xclient.window = atoi(argv[1]);
 
-  printf("Argc: %d\n",argc);
+  printf("Argc: %d. Window: %d\n",argc, (int)message.xclient.window);
   for(lokke=2;lokke<argc;lokke++){
     message.xclient.data.l[lokke-2]=atoi(argv[lokke]);
     printf("arg %d=%d\n",lokke-2,atoi(argv[lokke]));
@@ -40,7 +40,9 @@ int main(int argc,char **argv){
 
   x11_display=XOpenDisplay(NULL);
 
-  XSendEvent(
+  XSync(x11_display, False);
+
+  int ret = XSendEvent(
 	     x11_display,
 	     atoi(argv[1]),
 	     //	     strcmp(argv[2],"True")?False:True,
@@ -49,8 +51,16 @@ int main(int argc,char **argv){
 	     NoEventMask,
 	     &message
 	     );
+
+  XSync(x11_display, False);
+
+  while(XPending(x11_display)) {}
+
+  //usleep(1000*1000);
+
   XCloseDisplay(x11_display);
 
+  printf("XSendEvent returned %d\n",ret);
   return 0;
 }
 

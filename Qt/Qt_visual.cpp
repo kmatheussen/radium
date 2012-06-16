@@ -202,14 +202,31 @@ static void initMenues(QMenuBar *base_menu){
   current_menu->base = base_menu;
 }
 
+static QMainWindow *g_main_window = NULL;;
+static MyWidget *g_mywidget = NULL;
+
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
-
   tvisual->os_visual=(struct OS_visual *)talloc_atomic(sizeof(struct OS_visual));
 
   tvisual->fontheight=17;
   tvisual->fontwidth=13;
   tvisual->org_fontheight=tvisual->fontheight;
+
+  if(g_main_window!=NULL){
+    tvisual->os_visual->main_window = g_main_window;
+    tvisual->os_visual->widget = g_mywidget;
+
+    tvisual->width=g_mywidget->width()-100;
+    tvisual->height=g_mywidget->height();
+    
+    //g_mywidget->qpixmap=new QPixmap(g_mywidget->width(),mywidget->height());
+    //g_mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
+
+    g_mywidget->window = tvisual;
+
+    return 0;
+  }
 
   QMainWindow *main_window = new QMainWindow();
   tvisual->os_visual->main_window = main_window;
@@ -271,14 +288,18 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
   mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
 
-  BS_SetX11Window((int)mywidget->x11AppRootWindow());
-  X11_MidiProperties_SetX11Window((int)mywidget->x11AppRootWindow());
+  BS_SetX11Window((int)main_window->x11AppRootWindow());
+  X11_MidiProperties_SetX11Window((int)main_window->x11AppRootWindow());
 
+  g_main_window = main_window;
+  g_mywidget = mywidget;
 
   return 0;
 }
 
 int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
+  return 0;
+
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
 
   BS_StopXSend();
@@ -833,11 +854,11 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){
 
 
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual->main_window);
 
-  mywidget->raise();
+  main_window->raise();
 
-  XSetInputFocus(mywidget->x11Display(),(Window)mywidget->x11AppRootWindow(),RevertToNone,CurrentTime);
+  XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
   X11_ResetKeysUpDowns();
 }
 
