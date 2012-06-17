@@ -243,6 +243,15 @@ gfx_wtracks.o: $(CD)gfx_wtracks.c
 gfx_wtext.o: $(CD)gfx_wtext.c 
 	$(CC) $(CD)gfx_wtext.c $(OPT)
 
+gfx_op_queue.o: $(CD)gfx_op_queue_generated.c $(CD)visual_op_queue_proc.h $(CD)gfx_op_queue.c
+	$(CC) $(CD)gfx_op_queue.c $(OPT)
+
+$(CD)gfx_op_queue_generated.c: $(CD)gfx_op_queue.scm $(CD)gfx_op_queue.c
+	cd $(CD) && ./gfx_op_queue.scm op-queue-code >gfx_op_queue_generated.c
+
+$(CD)visual_op_queue_proc.h: $(CD)gfx_op_queue.scm 
+	cd $(CD) && ./gfx_op_queue.scm protos >visual_op_queue_proc.h
+
 eventreciever.o: $(CD)eventreciever.c $(API)radium_proc.h
 	$(CC) $(CD)eventreciever.c $(UPOPT)
 

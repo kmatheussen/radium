@@ -49,3 +49,19 @@
 
 * Alsaseq midi port names only contain the port names. They should also contain the client names.
 
+* The error/warning window moves all other radium windows to the back, behind the terminal. Which is very annoying.
+
+* Page up/down should scroll page up/down
+
+* The midi properties window uses gtk1. Few modern distributions uses gtk1. Don't want to include gtk1.
+
+* Port to Qt4. Needed first: Create a queue of graphics command since QPaint constructor can only be called from paintEvent() in Qt4.
+  This (non-QT specific) queue can be placed in common/.
+
+* Trying to load a standard midi file as normal file (instead of selecting "import midi") should really import the midi file, not quit the editor.
+  At least, it should not quit the editor.
+
+* Trying to connect to ALSA seq port sometimes gives error message "invalid argument":
+  "Could not connect to ALSA port 0. (Invalid argument)."
+  Don't know how to reproduce.
+

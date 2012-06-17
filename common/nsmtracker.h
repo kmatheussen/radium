@@ -776,6 +776,10 @@ struct Tracker_Windows{
   int *pixmapdefs_calc;
 
   Blt blt;
+
+#ifdef USE_GFX_OP_QUEUE
+  void *op_queue;
+#endif
 };
 #define NextWindow(a) (struct Tracker_Windows *)((a)->l.next)
 

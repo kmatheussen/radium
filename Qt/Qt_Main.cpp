@@ -44,7 +44,8 @@ class MyApplication : public QApplication{
 public:
   MyApplication(int argc,char **argv);
 protected:
-  bool x11EventFilter ( XEvent *);
+  bool x11EventFilter(XEvent*);
+  //int x11ProcessEvent(XEvent*);
 };
 
 MyApplication::MyApplication(int argc,char **argv)
@@ -53,6 +54,13 @@ MyApplication::MyApplication(int argc,char **argv)
 }
 
 
+#if 0
+int MyApplication::x11ProcessEvent(XEvent *event){
+  if(event->type==ClientMessage)
+    fprintf(stderr,"GOT IT\n");
+  return QApplication::x11ProcessEvent(event);
+}
+#endif
 
 bool MyApplication::x11EventFilter(XEvent *event){
   switch(event->type){
