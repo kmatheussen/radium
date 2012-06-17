@@ -63,7 +63,9 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
   queue_t *queue = window->op_queue;
   int i;
 
-  for(i=0;i<queue->pos;queue++){
+  //fprintf(stderr,"queue size: %d\n",queue->pos);
+
+  for(i=0;i<queue->pos;i++){
     queue_element_t *el = &queue->elements[i];
     switch(el->type){
 #     define OP_CASES

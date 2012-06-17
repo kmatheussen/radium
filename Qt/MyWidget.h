@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/windows_proc.h"
 
 #include "../common/visual_proc.h"
+#include "../common/visual_op_queue_proc.h"
+
 
 #define INITIALPOOLSIZE 64
 

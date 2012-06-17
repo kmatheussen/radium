@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/PEQ_clock_proc.h"
 
 #include "../common/player_proc.h"
+#include "../common/gfx_op_queue_proc.h"
+
 
 extern QApplication *qapplication;
 extern "C" void WBLOCKS_bltBlt(struct Tracker_Windows *window);
@@ -49,14 +51,16 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 
 void MyWidget::customEvent(QCustomEvent *e){
-  Display *dpy = QPaintDevice::x11AppDisplay();
-  XSync(dpy, false);
+  //Display *dpy = QPaintDevice::x11AppDisplay();
+  //XSync(dpy, false);
   {
     P2MUpdateSongPosCallBack();
     UpdateClock(this->window);
   }
   // Flushing and syncing X to avoid lag when playing fast.
-  XFlush(dpy);
+  //XFlush(dpy);
+
+  update();
 }
 
 void MyWidget::paintEvent( QPaintEvent *e ){
@@ -64,7 +68,13 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 //  setBackgroundColor( this->colors[0] );		/* white background */
 
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
-  Resize_resized(this->window,this->width()-100,this->height(),false);
+  //fprintf(stderr,"\n\n*************** paintEVent. Erased? %s ****************\n\n",e->erased()?"TRUE":"FALSE");
+
+  if(e->erased())
+    Resize_resized(this->window,this->width()-100,this->height(),false);
+
+  GFX_play_op_queue(this->window);
+
   //    UpdateTrackerWindow(this->window);
 
     //    QPainter paint(this);
@@ -118,6 +128,8 @@ const unsigned int Qt2SubId[0x2000]={
 
 
 void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
+  RWarning("keyPressEvent should not be called.\n");
+
   printf("ascii    : %d\n",qkeyevent->ascii());
   printf("key      : %d\n",qkeyevent->key());
   printf("key press: %d,%d\n",qkeyevent->state(),Qt2SubId[max(0,qkeyevent->key()-0x41)]);
@@ -183,6 +195,7 @@ void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
 
    EventReciever(&tevent,this->window);
 
+   update();
   //  WBLOCKS_bltBlt(this->window);
 
   //this->repaint();
@@ -190,6 +203,8 @@ void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
 }
 
 void MyWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
+  RWarning("keyReleaseEvent should not be called.\n");
+
   //  printf("key release: %d\n",qkeyevent->ascii());
   //  printf("key release: %d\n",qkeyevent->key());
   // printf("Released\n");
@@ -216,6 +231,7 @@ void MyWidget::wheelEvent(QWheelEvent *qwheelevent){
     EventReciever(&tevent,window);
   }
 
+  update();
 }
 
 
@@ -235,6 +251,8 @@ void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
   tevent.y=qmouseevent->y();
 
   EventReciever(&tevent,this->window);
+
+  update();
 
   //  WBLOCKS_bltBlt(this->window);
   //bitBlt(this,0,0,this->qpixmap);
@@ -256,6 +274,8 @@ void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 
   EventReciever(&tevent,this->window);
 
+  update();
+
   //  WBLOCKS_bltBlt(this->window);
   //bitBlt(this,0,0,this->qpixmap);
 }
@@ -265,6 +285,8 @@ void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();
   tevent.y=qmouseevent->y();
   EventReciever(&tevent,this->window);
+
+  update();
 
   //  WBLOCKS_bltBlt(this->window);
   //  bitBlt(this,0,0,this->qpixmap);
@@ -288,6 +310,7 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   paint.setPen(this->colors[6]);
   paint.drawLine(this->width()-99,0,this->width()-99,this->height());
 
+  update();
 }
 
 void MyWidget::closeEvent(QCloseEvent *ce){

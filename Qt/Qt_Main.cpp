@@ -68,9 +68,11 @@ bool MyApplication::x11EventFilter(XEvent *event){
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       this->quit();
     }
+    static_cast<MyWidget*>(root->song->tracker_windows->os_visual->widget)->update();
     return TRUE;
   case KeyRelease:
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
+    static_cast<MyWidget*>(root->song->tracker_windows->os_visual->widget)->update();
     return TRUE;
   case EnterNotify:
     //printf("got enter notify\n");
