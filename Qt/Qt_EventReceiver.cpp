@@ -73,7 +73,25 @@ void MyWidget::paintEvent( QPaintEvent *e ){
   if(e->erased())
     Resize_resized(this->window,this->width()-100,this->height(),false);
 
-  GFX_play_op_queue(this->window);
+  if(GFX_get_op_queue_size(this->window) > 0){
+    QPainter paint(this);
+    QPainter pixmap_paint(this->qpixmap);
+    QPainter cursorpixmap_paint(this->cursorpixmap);
+
+    this->painter = &paint;
+    this->pixmap_painter = &pixmap_paint;
+    this->cursorpixmap_painter = &cursorpixmap_paint;
+
+    this->pixmap_painter->setFont(*this->font);
+    this->painter->setFont(*this->font);
+
+    GFX_play_op_queue(this->window);
+
+    this->painter = NULL;
+    this->pixmap_painter = NULL;
+    this->cursorpixmap_painter = NULL;
+  }
+
 
   //    UpdateTrackerWindow(this->window);
 

@@ -60,6 +60,12 @@ public:
 
     struct Tracker_Windows *window;
 
+    QPainter *painter; // Set in paintEvent
+    QPainter *pixmap_painter; // Set in paintEvent
+    QPainter *cursorpixmap_painter; // Set in paintEvent
+
+    QFont *font;
+
 protected:
     //    bool        event(QEvent *);
     void	paintEvent( QPaintEvent * );

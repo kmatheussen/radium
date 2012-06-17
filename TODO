@@ -65,3 +65,11 @@
   "Could not connect to ALSA port 0. (Invalid argument)."
   Don't know how to reproduce.
 
+* Resizing doesn't always update everything.
+
+* Qt font handling has never been made properly.
+
+* Loading standard midi file doesn't ask yes/no if current song is modified.
+
+* When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time.
+

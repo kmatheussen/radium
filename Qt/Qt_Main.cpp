@@ -68,11 +68,11 @@ bool MyApplication::x11EventFilter(XEvent *event){
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       this->quit();
     }
-    static_cast<MyWidget*>(root->song->tracker_windows->os_visual->widget)->update();
+    static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     return TRUE;
   case KeyRelease:
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
-    static_cast<MyWidget*>(root->song->tracker_windows->os_visual->widget)->update();
+    static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     return TRUE;
   case EnterNotify:
     //printf("got enter notify\n");
@@ -104,7 +104,7 @@ MyApplication *qapplication;
 extern LANGSPEC void Qt_Ptask2Mtask(void);
 
 extern LANGSPEC void Qt_Ptask2Mtask(void){
-  QObject *qobject=(QObject *)root->song->tracker_windows->os_visual->widget;
+  QObject *qobject=(QObject *)root->song->tracker_windows->os_visual.widget;
 
 #warning "FIXME: Player thread shall not allocate"
   QCustomEvent *qce = new QCustomEvent(QEvent::User+1);
@@ -183,7 +183,7 @@ int radium_main(char *arg){
   BS_SelectBlock(root->song->blocks);
   BS_SelectPlaylistPos(0);
 
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual->main_window);
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   main_window->show();
   qapplication->setMainWidget(main_window);
 

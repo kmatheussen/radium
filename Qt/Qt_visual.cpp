@@ -212,15 +212,13 @@ static MyWidget *g_mywidget = NULL;
 
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
-  tvisual->os_visual=(struct OS_visual *)talloc_atomic(sizeof(struct OS_visual));
-
   tvisual->fontheight=17;
   tvisual->fontwidth=13;
   tvisual->org_fontheight=tvisual->fontheight;
 
   if(g_main_window!=NULL){
-    tvisual->os_visual->main_window = g_main_window;
-    tvisual->os_visual->widget = g_mywidget;
+    tvisual->os_visual.main_window = g_main_window;
+    tvisual->os_visual.widget = g_mywidget;
 
     tvisual->width=g_mywidget->width()-100;
     tvisual->height=g_mywidget->height();
@@ -234,7 +232,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   }
 
   QMainWindow *main_window = new QMainWindow();
-  tvisual->os_visual->main_window = main_window;
+  tvisual->os_visual.main_window = main_window;
 
   //QPalette pal = QPalette(main_window->palette());
   //pal.setColor( QPalette::Active, QColorGroup::Background, Qt::green);
@@ -252,6 +250,11 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   main_window->setCaption("Radium editor window");
   main_window->setCentralWidget(mywidget);
   main_window->statusBar()->message( "Ready", 2000 );
+
+  // helvetica
+  mywidget->font = new QFont("Monospace");
+  //mywidget->font->setStyleHint(QFont::TypeWriter);
+  //mywidget->font->setFixedPitch(false);
 
   initMenues(main_window->menuBar());
 #if 0
@@ -283,7 +286,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
     tvisual->height=mywidget->height();
   }
 
-  tvisual->os_visual->widget=mywidget;
+  tvisual->os_visual.widget=mywidget;
 
   if(mywidget->qpixmap==NULL){
     mywidget->qpixmap=new QPixmap(mywidget->width(),mywidget->height());
@@ -305,7 +308,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   return 0;
 
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   BS_StopXSend();
   X11_MidiProperties_StopXSend();
@@ -335,7 +338,7 @@ bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
     return false;
   }
 
-  tvisual->os_visual->xfontstruct=xfontstruct;
+  tvisual->os_visual.xfontstruct=xfontstruct;
 
   //max_bounds.rbearing - min_bounds.lbearing
 
@@ -344,8 +347,8 @@ bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   tvisual->fontheight=tvisual->org_fontheight+2;
 
   for(lokke=0;lokke<8;lokke++){
-    GC gc=tvisual->os_visual->gcs[lokke];
-    XSetFont(x11_display,gc,tvisual->os_visual->xfontstruct->fid);
+    GC gc=tvisual->os_visual.gcs[lokke];
+    XSetFont(x11_display,gc,tvisual->os_visual.xfontstruct->fid);
   }
 #if 0
 
@@ -368,11 +371,9 @@ bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
 
 void QGFX_bouncePoints(MyWidget *mywidget){
-  QPainter paint( mywidget->qpixmap );
-
   for(int lokke=0;lokke<8;lokke++){
-    paint.setPen(mywidget->colors[lokke]);
-    mywidget->rpoints[lokke]->drawPoints(&paint);
+    mywidget->pixmap_painter->setPen(mywidget->colors[lokke]);
+    mywidget->rpoints[lokke]->drawPoints(mywidget->pixmap_painter);
   }
 }
 
@@ -381,7 +382,7 @@ void QGFX_C2V_bitBlt(
 		    int from_x1,int from_x2,
 		    int to_y
 		    ){
-  MyWidget *mywidget=(MyWidget *)window->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
   QGFX_bouncePoints(mywidget);
 
@@ -404,14 +405,12 @@ void QGFX_C_DrawCursor(
 				      int x1,int x2,int x3,int x4,int height,
 				      int y_pixmap
 				      ){
-  MyWidget *mywidget=(MyWidget *)window->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
   QGFX_bouncePoints(mywidget);
 
-  QPainter paint( mywidget->cursorpixmap );
-
-  paint.fillRect(x1,0,x4,height,mywidget->colors[7]);
-  paint.fillRect(x2,0,x3-x2+1,height,mywidget->colors[1]);
+  mywidget->cursorpixmap_painter->fillRect(x1,0,x4,height,mywidget->colors[7]);
+  mywidget->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,mywidget->colors[1]);
 
   bitBlt(
 	 mywidget->cursorpixmap,
@@ -431,7 +430,7 @@ void QGFX_P2V_bitBlt(
 		    int width,int height
 		    ){
   
-  MyWidget *mywidget=(MyWidget *)window->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
   QGFX_bouncePoints(mywidget);
 
@@ -456,26 +455,23 @@ void QGFX_P_ClearWindow(struct Tracker_Windows *tvisual){
 }
 
 void QGFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-  QPainter paint( mywidget->qpixmap );
-  paint.fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->pixmap_painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
 }
 
 void QGFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-  QPainter paint( mywidget->qpixmap );
-  paint.setPen(mywidget->colors[color]);
-  paint.drawRect(x,y,x2-x+1,y2-y+1);
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->pixmap_painter->drawRect(x,y,x2-x+1,y2-y+1);
 }
 
 
 void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 //  QColor *qcolor=mywidget->colors[color];
 
-  QPainter paint( mywidget->qpixmap );
-  paint.setPen(mywidget->colors[color]);
-  paint.drawLine(x,y,x2,y2);
+  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->pixmap_painter->drawLine(x,y,x2,y2);
 //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
 
@@ -485,7 +481,7 @@ void QGFX_P_Point(
 	int x,int y
 	)
 {
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   color=color>7?7:color<0?0:color;
 
@@ -504,21 +500,14 @@ void QGFX_P_Text(
 	int y,
 	bool clear
 ){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-  QPainter paint( mywidget->qpixmap );
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   if(clear){
     QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
   }
 
-  //QFont font=QFont("helvetica",tvisual->org_fontheight-5);
-  QFont font("Monospace");
-  font.setStyleHint(QFont::TypeWriter);
-
-  font.setFixedPitch(false);
-  paint.setFont(font);
-  paint.setPen(mywidget->colors[color]);
-  paint.drawText(x,y+tvisual->org_fontheight-1,text);
+  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->pixmap_painter->drawText(x,y+tvisual->org_fontheight-1,text);
 
   //  int x2=x+(strlen(text)*tvisual->fontwidth);
   //  int y2=y+tvisual->fontheight-1;
@@ -533,12 +522,11 @@ void QGFX_P_Text(
 
 void QGFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 //  QColor *qcolor=mywidget->colors[color];
 
-  QPainter paint( mywidget );
-  paint.setPen(mywidget->colors[color]);
-  paint.drawLine(x,y,x2,y2);
+  mywidget->painter->setPen(mywidget->colors[color]);
+  mywidget->painter->drawLine(x,y,x2,y2);
 //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
   
 }
@@ -550,17 +538,15 @@ void QGFX_All_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,
 
 
 void QGFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-  QPainter paint( mywidget );
-  paint.setPen(mywidget->colors[color]);
-  paint.drawRect(x,y,x2-x+1,y2-y+1);
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->painter->setPen(mywidget->colors[color]);
+  mywidget->painter->drawRect(x,y,x2-x+1,y2-y+1);
 }
 
 
 void QGFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-  QPainter paint( mywidget );
-  paint.fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
 }
 
 
@@ -581,22 +567,17 @@ void QGFX_Text(
 	int y,
 	bool clear
 ){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
-  QPainter paint( mywidget );
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   //QFont font=QFont("helvetica",tvisual->org_fontheight-5);
   //  font.setStrikeOut(true);
-
-  QFont font("Monospace");
-  font.setStyleHint(QFont::TypeWriter);
 
   if(clear){
     QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->org_fontheight);
   }
 
-  paint.setFont(font);
-  paint.setPen(mywidget->colors[color]);
-  paint.drawText(x,y+tvisual->org_fontheight-1,text);
+  mywidget->painter->setPen(mywidget->colors[color]);
+  mywidget->painter->drawText(x,y+tvisual->org_fontheight-1,text);
 
   /*
   int x2=x+(strlen(text)*tvisual->fontwidth);
@@ -628,7 +609,7 @@ void QGFX_Text_noborder(
 	int y,
 	bool clear
 ){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   QPainter paint( mywidget );
   paint.setFont(QFont("helvetica",tvisual->fontheight));
   QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
@@ -680,7 +661,7 @@ void QGFX_DrawCursorPos(
 	int fx, int fy, int fx2, int fy2,
 	int x, int y, int x2, int y2
 ){
-  //  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  //  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //QPainter paint( mywidget );
 
   //  paint.setRasterOp(Qt::AndROP);
@@ -703,21 +684,20 @@ void QGFX_DrawCursorPos(
 
   //  paint.setRasterOp(Qt::CopyROP);
   /*
-	RectFill(tvisual->os_visual->window->RPort,(LONG)fx,(LONG)fy,(LONG)fx2,(LONG)fy2);
-	SetAPen(tvisual->os_visual->window->RPort,0);
-	SetWrMsk(tvisual->os_visual->window->RPort,2);
-	RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
+	RectFill(tvisual->os_visual.window->RPort,(LONG)fx,(LONG)fy,(LONG)fx2,(LONG)fy2);
+	SetAPen(tvisual->os_visual.window->RPort,0);
+	SetWrMsk(tvisual->os_visual.window->RPort,2);
+	RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
 	*/
 }
 
-void Qt_BLine(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+static void Qt_BLine(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
 //  QColor *qcolor=mywidget->colors[color];
 
-  QPainter paint( mywidget->qpixmap );
-  paint.setPen(mywidget->colors[color]);
-  paint.drawLine(x,y,x2,y2);
+  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->pixmap_painter->drawLine(x,y,x2,y2);
 //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
 
@@ -753,22 +733,16 @@ void QGFX_V_DrawTrackBorderSingle(
 
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual->main_window;
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->statusBar()->message(title);
 #if 0
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //mywidget->setCaption(title);
 
-  QPainter paint( mywidget );
-  paint.fillRect(0,mywidget->height()-28,mywidget->width(),mywidget->height(),mywidget->colors[0]);
+  mywidget->painter->fillRect(0,mywidget->height()-28,mywidget->width(),mywidget->height(),mywidget->colors[0]);
 
-  QFont font("Monospace");
-  font.setStyleHint(QFont::TypeWriter);
-
-  //QFont font=QFont("helvetica",tvisual->org_fontheight);
-  paint.setFont(font);
-  paint.setPen(mywidget->colors[1]);
-  paint.drawText(0,mywidget->height()-28+tvisual->org_fontheight+2,title);
+  mywidget->painter->setPen(mywidget->colors[1]);
+  mywidget->painter->drawText(0,mywidget->height()-28+tvisual->org_fontheight+2,title);
 #endif
 }
 
@@ -778,7 +752,7 @@ void QGFX_Scroll(
 	int x,int y,
 	int x2,int y2
 ){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //  const QPaintDevice *ai=(QPaintDevice *)mywidget;
 
   QGFX_bouncePoints(mywidget);
@@ -791,10 +765,10 @@ void QGFX_Scroll(
 
   /*
 	if(dy<0){
-	  //RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
+	  //RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
 		QGFX_FilledBox(tvisual,0,x,y2+dy,x2,y2);
 	}else{
-	  //		RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y+dy);
+	  //		RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y+dy);
 		QGFX_FilledBox(tvisual,0,x,y,x2,y+dy-1);
 	}
   */
@@ -806,7 +780,7 @@ void QGFX_P_Scroll(
 	int x,int y,
 	int x2,int y2
 ){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //  const QPaintDevice *ai=(QPaintDevice *)mywidget;
 
   QGFX_bouncePoints(mywidget);
@@ -820,10 +794,10 @@ void QGFX_P_Scroll(
 
   /*
 	if(dy<0){
-	  //RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
+	  //RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
 		QGFX_FilledBox(tvisual,0,x,y2+dy,x2,y2);
 	}else{
-	  //		RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y+dy);
+	  //		RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y+dy);
 		QGFX_FilledBox(tvisual,0,x,y,x2,y+dy-1);
 	}
   */
@@ -839,7 +813,7 @@ void QGFX_ScrollDown(
 
 
 void QGFX_ClearWindow(struct Tracker_Windows *tvisual){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //mywidget->fill(mywidget->colors[0]);
   QGFX_bouncePoints(mywidget);
   //  QGFX_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
@@ -868,7 +842,7 @@ char *QGFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text)
 
 
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual->main_window);
+  QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual.main_window);
 
   main_window->raise();
 
@@ -881,7 +855,7 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 #define NUM_COLORS 8
 
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual->widget;
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   //Colormap colormap;
   char command[100*NUM_COLORS];
@@ -933,8 +907,8 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     XParseColor(x11_display,colormap,rgb,&xcolors[lokke]);
     XAllocColor(x11_display,colormap,&xcolors[lokke]);
 
-    //    tvisual->os_visual->gcs[lokke]=XCreateGC(x11_display,window, 0, 0);
-    XSetForeground(x11_display, tvisual->os_visual->gcs[lokke],xcolors[lokke].pixel);
+    //    tvisual->os_visual.gcs[lokke]=XCreateGC(x11_display,window, 0, 0);
+    XSetForeground(x11_display, tvisual->os_visual.gcs[lokke],xcolors[lokke].pixel);
   }
 #endif
 }

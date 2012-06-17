@@ -728,7 +728,7 @@ typedef struct{
 struct Tracker_Windows{
 	struct ListHeader1 l;
 
-	struct OS_visual *os_visual;
+	struct OS_visual os_visual;
 	int x,y;								/* Where window is placed. (for amiga: screen-pos)*/
 	int width,height;					/* Size of area to use. */
 	char *fontname;
