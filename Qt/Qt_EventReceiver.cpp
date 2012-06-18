@@ -17,7 +17,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "MyWidget.h"
+
 #include <qpainter.h>
+
+#ifdef USE_QT4
+//Added by qt3to4:
+#include <QCustomEvent>
+#include <QCloseEvent>
+#include <QTimerEvent>
+#include <QWheelEvent>
+#include <QPaintEvent>
+#include <QResizeEvent>
+#include <QPixmap>
+#include <QMouseEvent>
+#include <QKeyEvent>
+#endif
 
 #include "../common/resizewindow_proc.h"
 #include "../common/blts_proc.h"
@@ -63,32 +77,55 @@ void MyWidget::customEvent(QCustomEvent *e){
   update();
 }
 
+
+#ifdef USE_QT4
+const QPaintEngine* MyWidget::paintEngine(){     
+  //qDebug()<<"Paint Engine";
+  return NULL;
+}
+#endif
+
 void MyWidget::paintEvent( QPaintEvent *e ){
 
 //  setBackgroundColor( this->colors[0] );		/* white background */
 
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
-  //fprintf(stderr,"\n\n*************** paintEVent. Erased? %s ****************\n\n",e->erased()?"TRUE":"FALSE");
+  //fprintf(stderr,"\n\n*************** paintEVent. Erased? %s **************** %d\n\n",e->erased()?"TRUE":"FALSE",times++);
 
+#ifdef USE_QT4
+  static int times = 0;
+  if(GFX_get_op_queue_size(this->window) ==0) {
+    Resize_resized(this->window,this->width()-100,this->height()-50,false);
+    fprintf(stderr," painting up everything, %d\n",times++);
+  }
+#endif
+
+#ifdef USE_QT3
   if(e->erased())
-    Resize_resized(this->window,this->width()-100,this->height(),false);
+     Resize_resized(this->window,this->width()-100,this->height()-50,false);
+#endif
 
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
     QPainter pixmap_paint(this->qpixmap);
     QPainter cursorpixmap_paint(this->cursorpixmap);
+    //paint.setRenderHints(QPainter::Antialiasing);
+    //pixmap_paint.setRenderHints(QPainter::Antialiasing);
+    //this->pixmap_painter->setPen(this->colors[5]);
 
     this->painter = &paint;
-    this->pixmap_painter = &pixmap_paint;
+    this->qpixmap_painter = &pixmap_paint;
     this->cursorpixmap_painter = &cursorpixmap_paint;
 
-    this->pixmap_painter->setFont(*this->font);
+    this->qpixmap_painter->setFont(*this->font);
     this->painter->setFont(*this->font);
 
-    GFX_play_op_queue(this->window);
+    {
+      GFX_play_op_queue(this->window);
+    }
 
     this->painter = NULL;
-    this->pixmap_painter = NULL;
+    this->qpixmap_painter = NULL;
     this->cursorpixmap_painter = NULL;
   }
 
@@ -157,13 +194,13 @@ void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
 
   tevent.ID=TR_KEYBOARD;
 
-  ButtonState buttonstate=qkeyevent->state();
+  Qt::ButtonState buttonstate=qkeyevent->state();
 
   tevent.keyswitch=0;
 
-  if(buttonstate&ShiftButton) tevent.keyswitch=EVENT_LEFTSHIFT;
-  if(buttonstate&ControlButton) tevent.keyswitch|=EVENT_LEFTCTRL;
-  if(buttonstate&AltButton) tevent.keyswitch|=EVENT_RIGHTEXTRA1;
+  if(buttonstate&Qt::ShiftModifier) tevent.keyswitch=EVENT_LEFTSHIFT;
+  if(buttonstate&Qt::ControlModifier) tevent.keyswitch|=EVENT_LEFTCTRL;
+  if(buttonstate&Qt::AltModifier) tevent.keyswitch|=EVENT_RIGHTEXTRA1;
 
   //  printf("%d\n",qkeyevent->key());
 
@@ -255,10 +292,10 @@ void MyWidget::wheelEvent(QWheelEvent *qwheelevent){
 
 void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
-  if(qmouseevent->button()==LeftButton){
+  if(qmouseevent->button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEDOWN;
   }else{
-    if(qmouseevent->button()==RightButton){
+    if(qmouseevent->button()==Qt::RightButton){
       tevent.ID=TR_RIGHTMOUSEDOWN;
       //      exit(2);
     }else{
@@ -277,10 +314,10 @@ void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
 }
 
 void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
-  if(qmouseevent->button()==LeftButton){
+  if(qmouseevent->button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEUP;
   }else{
-    if(qmouseevent->button()==RightButton){
+    if(qmouseevent->button()==Qt::RightButton){
       tevent.ID=TR_RIGHTMOUSEUP;
     }else{
       tevent.ID=TR_MIDDLEMOUSEUP;
@@ -315,7 +352,8 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   //  this->window->height=this->height();
 
   //  this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
-  this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
+  //this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
+  this->qpixmap=new QPixmap(this->width(),this->height());
   this->qpixmap->fill( this->colors[0] );		/* grey background */
 
   this->cursorpixmap=new QPixmap(this->width(),this->height());
@@ -324,9 +362,12 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
   Resize_resized(this->window,this->width()-100,this->height(),false);
 
+#if 0
+  // What's this?
   QPainter paint( this );
   paint.setPen(this->colors[6]);
   paint.drawLine(this->width()-99,0,this->width()-99,this->height());
+#endif
 
   update();
 }

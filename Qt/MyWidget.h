@@ -15,12 +15,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
 #include <qapplication.h>
-#include <qpushbutton.h>
-#include <qcanvas.h>
 #include <qpixmap.h>
 #include <qmenubar.h>
+#include <qpointarray.h>
+
+#ifdef USE_QT4
+//Added by qt3to4:
+#include <QWidget>
+#include <QCustomEvent>
+#include <QPaintEvent>
+#include <QResizeEvent>
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include <QWheelEvent>
+#include <QCloseEvent>
+#include <Q3PointArray>
+#endif
+
+#ifdef USE_QT3
+# define Q3PointArray QPointArray
+# define Q3PopupMenu QPopupMenu
+#endif
+
 
 #define GFX_DONTSHRINK
 #include "../common/nsmtracker.h"
@@ -41,7 +58,7 @@ public:
   void drawPoints(QPainter *qp);
 
 private:
-  QPointArray *qpa;
+  Q3PointArray *qpa;
   uint num_points;
 };
 
@@ -50,6 +67,10 @@ class MyWidget : public QWidget
 public:
   MyWidget(struct Tracker_Windows *window, QWidget *parent=0, const char *name=0 );
   ~MyWidget();
+
+#if USE_QT4
+  const QPaintEngine* paintEngine();
+#endif
 
     QColor     colors[8];				// color array
     RPoints    *rpoints[8];
@@ -61,7 +82,7 @@ public:
     struct Tracker_Windows *window;
 
     QPainter *painter; // Set in paintEvent
-    QPainter *pixmap_painter; // Set in paintEvent
+    QPainter *qpixmap_painter; // Set in paintEvent
     QPainter *cursorpixmap_painter; // Set in paintEvent
 
     QFont *font;

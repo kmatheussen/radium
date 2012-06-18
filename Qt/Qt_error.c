@@ -36,8 +36,8 @@ void RError(const char *fmt,...){
   fprintf(stderr,message);
 
   char command[1000];
-  //sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue?\"",message);
-  sprintf(command,"xmessage %s",message);
+  sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue?\"",message);
+  //sprintf(command,"xmessage %s",message);
 
   //./xmessage -buttons gakk:0,end:1 -nearmouse -print -default gakk "a message"
 
@@ -58,8 +58,8 @@ void RWarning(const char *fmt,...){
 
   char command[1000];
 #ifdef DEBUG
-  //sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue? (warning)\"",message);
-  sprintf(command,"xmessage %s",message);
+  sprintf(command,"zenity --question --ok-label=\"Yes\" --cancel-label=\"No\" --text=\"%s\\n\\nContinue? (warning)\"",message);
+  //sprintf(command,"xmessage %s",message);
   if(system(command))
     abort();
 #else

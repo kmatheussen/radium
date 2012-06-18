@@ -19,6 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <qmainwindow.h>
 
+#ifdef USE_QT4
+#include <QMainWindow>
+
+//Added by qt3to4:
+#include <QEvent>
+#include <QCustomEvent>
+#endif
+
 #include "MyWidget.h"
 
 #include <X11/Xlib.h>
@@ -83,9 +91,11 @@ bool MyApplication::x11EventFilter(XEvent *event){
     X11_ResetKeysUpDowns();
     break;
   case ClientMessage:
+#if 0
     if(X11Event_ClientMessage((XClientMessageEvent *)&event,root->song->tracker_windows)==false){
       this->quit();
     }
+#endif
     break;
   default:
     //fprintf(stderr, "got Unknown x11 event\n");
@@ -148,7 +158,13 @@ int radium_main(char *arg){
 #endif
   QApplication::setStyle( new QWindowsStyle() );
 
+#ifdef USE_QT4
+  //QApplication::setGraphicsSystem("native");
+  //QApplication::setGraphicsSystem("raster");
+#endif
+
   qapplication=new MyApplication(argc,argv);
+
 
   //QColor c(0xe5, 0xe5, 0xe5);
   QColor c(0xd2, 0xd0, 0xd5);

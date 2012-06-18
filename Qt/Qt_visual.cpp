@@ -20,11 +20,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdbool.h>
 #include "MyWidget.h"
 
-#include <qmainwindow.h>
-#include <qstatusbar.h>
-
-#include <qlistbox.h>
 #include <qpainter.h>
+#include <qstatusbar.h>
+#include <qmainwindow.h>
+
+#ifdef USE_QT4
+//#include <QMainWindow>
+#  include <Q3PointArray>
+#  include <QPixmap>
+#  include <Q3PopupMenu>
+#else
+#  include "qpopupmenu.h"
+#endif
+
 #include <unistd.h>
 
 #include <X11/Xlib.h>
@@ -38,10 +46,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/gfx_op_queue_proc.h"
 
+#ifdef USE_QT4
+#  define DRAW_PIXMAP_ON_WIDGET(dst_widget, x, y, src_pixmap, from_x, from_y, width, height) \
+     dst_widget->painter->drawPixmap(x,y,*(src_pixmap),from_x,from_y,width,height)
+#  define DRAW_PIXMAP_ON_PIXMAP(dst_pixmap, x, y, src_pixmap, from_x, from_y, width, height) \
+     dst_pixmap##_painter->drawPixmap(x,y,*(src_pixmap),from_x,from_y,width,height)
+#else
+#  define DRAW_PIXMAP_ON_WIDGET(dst_widget, x, y, src_pixmap, from_x, from_y, width, height) \
+     bitBlt(dst_widget,x,y,src_pixmap,from_x,from_y,width,height)
+#  define DRAW_PIXMAP_ON_PIXMAP(dst_pixmap, x, y, src_pixmap, from_x, from_y, width, height) \
+     bitBlt(dst_pixmap,x,y,src_pixmap,from_x,from_y,width,height)
+#endif
 
 
 RPoints::RPoints() {
-  this->qpa=new QPointArray(INITIALPOOLSIZE);
+  this->qpa=new Q3PointArray(INITIALPOOLSIZE);
 
   this->num_points=0;
 
@@ -49,7 +68,7 @@ RPoints::RPoints() {
 }
 
 void RPoints::addPoint(int x,int y){
-  if(this->qpa->size()<=this->num_points){
+  if((int)this->qpa->size() <= (int)this->num_points){
     this->qpa->resize(this->qpa->size()*2);
   }
   this->qpa->setPoint(this->num_points,x,y);
@@ -67,13 +86,10 @@ void RPoints::drawPoints(QPainter *qp){
 
 
 MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *name )
-       : QWidget( parent, name, WNorthWestGravity | WResizeNoErase | WRepaintNoErase )
+  : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
 {
   this->qpixmap=NULL;
   this->window=window;
-
-  //this->menu = new QMenuBar(this);
-  //this->menu->show();
 
   /*
   this->colors[0]=QColor("grey");
@@ -134,7 +150,7 @@ extern QApplication *qapplication;
 
 struct Menues{
   struct Menues *up;
-  QPopupMenu *menu;
+  Q3PopupMenu *menu;
   QMenuBar *base;
 };
 
@@ -145,7 +161,7 @@ class MenuItem : public QWidget
 {
     Q_OBJECT
 public:
-  MenuItem(const char *name, const char *python_command, QPopupMenu *menu = NULL){
+  MenuItem(const char *name, const char *python_command, Q3PopupMenu *menu = NULL){
     this->python_command = strdup(python_command);
     if(menu!=NULL) {
       if(current_menu->base!=NULL){
@@ -188,7 +204,7 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
 void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
   struct Menues *menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
-  menu->menu = new QPopupMenu();
+  menu->menu = new Q3PopupMenu();
   new MenuItem(name, command, menu->menu);
   current_menu = menu;
 }
@@ -221,7 +237,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
     tvisual->os_visual.widget = g_mywidget;
 
     tvisual->width=g_mywidget->width()-100;
-    tvisual->height=g_mywidget->height();
+    tvisual->height=g_mywidget->height()-50;
     
     //g_mywidget->qpixmap=new QPixmap(g_mywidget->width(),mywidget->height());
     //g_mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
@@ -233,6 +249,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   QMainWindow *main_window = new QMainWindow();
   tvisual->os_visual.main_window = main_window;
+#ifdef USE_QT4
+  main_window->setAttribute(Qt::WA_PaintOnScreen);
+  main_window->setAttribute(Qt::WA_OpaquePaintEvent);
+  main_window->setAttribute(Qt::WA_NoSystemBackground);
+#endif
+  main_window->setBackgroundMode(Qt::NoBackground);
 
   //QPalette pal = QPalette(main_window->palette());
   //pal.setColor( QPalette::Active, QColorGroup::Background, Qt::green);
@@ -242,6 +264,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   MyWidget *mywidget=new MyWidget(tvisual,main_window,"name");
   mywidget->setFocus();
+#ifdef USE_QT4
+  mywidget->setAttribute(Qt::WA_PaintOnScreen);
+  mywidget->setAttribute(Qt::WA_OpaquePaintEvent);
+  mywidget->setAttribute(Qt::WA_NoSystemBackground);
+#endif
+  main_window->setBackgroundMode(Qt::NoBackground);
 
   main_window->resize(800,400);
   mywidget->setMinimumWidth(400);
@@ -273,17 +301,11 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   GFX_AddMenuItem(NULL, "item2 -> item1", "");
 #endif
 
-#if 0
-  QPopupMenu *dummy_menu = new QPopupMenu(main_window);
-  main_window->menuBar()->insertItem("&Dummy Menu", dummy_menu);
-  current_menu = main_window->menuBar();
-#endif
-
  if(tvisual->height==0 || tvisual->width==0){
     tvisual->x=0;
     tvisual->y=0;
     tvisual->width=mywidget->width()-100;
-    tvisual->height=mywidget->height();
+    tvisual->height=mywidget->height()-50;
   }
 
   tvisual->os_visual.widget=mywidget;
@@ -372,8 +394,8 @@ bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
 void QGFX_bouncePoints(MyWidget *mywidget){
   for(int lokke=0;lokke<8;lokke++){
-    mywidget->pixmap_painter->setPen(mywidget->colors[lokke]);
-    mywidget->rpoints[lokke]->drawPoints(mywidget->pixmap_painter);
+    mywidget->qpixmap_painter->setPen(mywidget->colors[lokke]);
+    mywidget->rpoints[lokke]->drawPoints(mywidget->qpixmap_painter);
   }
 }
 
@@ -386,8 +408,8 @@ void QGFX_C2V_bitBlt(
 
   QGFX_bouncePoints(mywidget);
 
-  bitBlt(
-	 mywidget,from_x1,to_y,
+  DRAW_PIXMAP_ON_WIDGET(mywidget,
+ 	 from_x1,to_y,
 	 mywidget->cursorpixmap,
 	 // The next two lines are the ones that should be used.
 	 //	 from_x1,0,
@@ -412,14 +434,19 @@ void QGFX_C_DrawCursor(
   mywidget->cursorpixmap_painter->fillRect(x1,0,x4,height,mywidget->colors[7]);
   mywidget->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,mywidget->colors[1]);
 
+  //mywidget->cursorpixmap_painter->setCompositionMode(QPainter::CompositionMode_Xor);
+
+  // TODO: fix Qt4
+#ifdef USE_QT3
   bitBlt(
-	 mywidget->cursorpixmap,
-	 0,0,
-	 mywidget->qpixmap,
-	 0,y_pixmap,
-	 x4+1,height
-	 ,Qt::XorROP
-	 );
+         mywidget->cursorpixmap,
+         0,0,
+         mywidget->qpixmap,
+         0,y_pixmap,
+         x4+1,height
+         ,Qt::XorROP
+         );
+#endif
 }
 
 
@@ -434,12 +461,13 @@ void QGFX_P2V_bitBlt(
 
   QGFX_bouncePoints(mywidget);
 
-  bitBlt(
-	 mywidget,to_x,to_y,
-	 mywidget->qpixmap,
-	 from_x,from_y,
-	 width,height
-	 );
+  DRAW_PIXMAP_ON_WIDGET(
+                        mywidget,
+                        to_x,to_y,
+                        mywidget->qpixmap,
+                        from_x,from_y,
+                        width,height
+                        );
 
   /*
   QGFX_C2V_bitBlt(
@@ -456,13 +484,13 @@ void QGFX_P_ClearWindow(struct Tracker_Windows *tvisual){
 
 void QGFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->pixmap_painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+  mywidget->qpixmap_painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
 }
 
 void QGFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->pixmap_painter->drawRect(x,y,x2-x+1,y2-y+1);
+  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->qpixmap_painter->drawRect(x,y,x2-x+1,y2-y+1);
 }
 
 
@@ -470,8 +498,8 @@ void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 //  QColor *qcolor=mywidget->colors[color];
 
-  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->pixmap_painter->drawLine(x,y,x2,y2);
+  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
 //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
 
@@ -506,8 +534,8 @@ void QGFX_P_Text(
     QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
   }
 
-  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->pixmap_painter->drawText(x,y+tvisual->org_fontheight-1,text);
+  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->qpixmap_painter->drawText(x,y+tvisual->org_fontheight-1,text);
 
   //  int x2=x+(strlen(text)*tvisual->fontwidth);
   //  int y2=y+tvisual->fontheight-1;
@@ -696,8 +724,8 @@ static void Qt_BLine(struct Tracker_Windows *tvisual,int color,int x,int y,int x
 
 //  QColor *qcolor=mywidget->colors[color];
 
-  mywidget->pixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->pixmap_painter->drawLine(x,y,x2,y2);
+  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
 //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
 
@@ -752,17 +780,19 @@ void QGFX_Scroll(
 	int x,int y,
 	int x2,int y2
 ){
+  RWarning("QGFX_Scroll is not implemented. (Should not be needed).\n");
+#if 0
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //  const QPaintDevice *ai=(QPaintDevice *)mywidget;
 
   QGFX_bouncePoints(mywidget);
 
-  bitBlt(
-		   mywidget,x+dx,y+dy,
-		   mywidget,
+  mywidget->painter->drawPixmap(
+		   x+dx,y+dy,
+		   *mywidget,
 		   x,y,x2-x+1,y2-y+1
 		   );
-
+#endif
   /*
 	if(dy<0){
 	  //RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
@@ -785,11 +815,12 @@ void QGFX_P_Scroll(
 
   QGFX_bouncePoints(mywidget);
 
-  bitBlt(
-		   mywidget->qpixmap,x+dx,y+dy,
-		   mywidget->qpixmap,
-		   x,y,x2-x+1,y2-y+1
-		   );
+  DRAW_PIXMAP_ON_PIXMAP(
+                        mywidget->qpixmap,
+                        x+dx,y+dy,
+                        mywidget->qpixmap,
+                        x,y,x2-x+1,y2-y+1
+                        );
 
 
   /*

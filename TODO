@@ -58,6 +58,9 @@
 * Port to Qt4. Needed first: Create a queue of graphics command since QPaint constructor can only be called from paintEvent() in Qt4.
   This (non-QT specific) queue can be placed in common/.
 
+  Important: Qt4 widgets are double buffered by default. Must call unbufferedWidget->setAttribute(Qt::WA_PaintOnScreen) to avoid
+  double buffering twice.
+
 * Trying to load a standard midi file as normal file (instead of selecting "import midi") should really import the midi file, not quit the editor.
   At least, it should not quit the editor.
 
@@ -72,4 +75,26 @@
 * Loading standard midi file doesn't ask yes/no if current song is modified.
 
 * When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time.
+
+* Not unlikely that altGr, and possibly other qualifier keys, are autorepeating. Check if it is possible
+  to check this, and manually autorepeat if autorepeat is turned on for any of the qualifier keys.
+  If it is not possible (or very simple) to check this, just handle autorepeat manually for everyone.
+
+* Thicker lines
+
+* Anti aliasing, etc.
+  QT4: painter.setRenderHints(QPainter::Antialiasing);
+
+* Bigger boxes by default
+
+* Check common/memory.c. I'm not sure if I enabled gc again after debugging something.
+
+* Would be convenient with a realloc function.
+
+* Menu separators
+
+
+
+
+
 

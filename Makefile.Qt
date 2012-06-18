@@ -1,5 +1,8 @@
 
 
+#export QT_FATAL_WARNINGS=1
+
+
 
 #----------------USER SETTINGS-------------------------------
 
@@ -12,10 +15,11 @@ PYQTEXE=/usr/bin/python
 
 
 
-# QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
+# If using QT3 (recommended), QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
 
 QTDIR=/usr/lib/qt-3.3
 #/usr/lib/qt3
+
 
 
 BUILDTYPE=DEBUG
@@ -43,6 +47,7 @@ PYTHONEXE=${PYQTEXE}
 PYPATH=`cat pypath.comp`
 
 MIDIINC=-Imidi/alsaseq
+
 
 
 P=Qt/
@@ -78,7 +83,22 @@ UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)
 
 OPT= $(UPOPT)
 
-CPPOPT=$(OPT) -I$(QTDIR)/include
+
+# QT4 opts
+#QTOPTS = -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql
+#QTOPTS = -DUSE_QT4 `pkg-config --cflags Qt3Support`
+#MOC = moc
+#
+# or:
+#
+# QT3 opts
+# 
+QTOPTS = -DUSE_QT3 -I$(QTDIR)/include
+MOC = $(QTDIR)/bin/moc
+
+CPPOPT=$(OPT) $(QTOPTS)
+
+
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
@@ -169,8 +189,9 @@ radium/deletemetorebuild: radium/build.sh
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
 	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt -lasound
-# -L/home/kjetil/site/lib -lprofiler
+#	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
+
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
 	cd bin && python generate_keyboard_sub_ids.py > ../$(CD)keyboard_sub_ids.h
@@ -729,7 +750,7 @@ Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(P)mQt_visual.cpp $(CD)visual_op_
 	$(CCC) $(P)Qt_visual.cpp $(CPPOPT) 
 
 $(P)mQt_visual.cpp: $(P)Qt_visual.cpp
-	cd $(P) && moc Qt_visual.cpp >mQt_visual.cpp
+	cd $(P) && $(MOC) Qt_visual.cpp >mQt_visual.cpp
 
 Qt_error.o: $(P)Qt_error.c $(P)MyWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
