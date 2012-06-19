@@ -113,6 +113,8 @@ void MyWidget::paintEvent( QPaintEvent *e ){
     //pixmap_paint.setRenderHints(QPainter::Antialiasing);
     //this->pixmap_painter->setPen(this->colors[5]);
 
+    paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
+
     this->painter = &paint;
     this->qpixmap_painter = &pixmap_paint;
     this->cursorpixmap_painter = &cursorpixmap_paint;
@@ -137,6 +139,8 @@ void MyWidget::paintEvent( QPaintEvent *e ){
     //    bitBlt(this,0,0,this->qpixmap);
 //  QPainter paint( this );
 //  paint.drawLine(0,0,50,50);
+
+  QFrame::paintEvent(e);
 
 }
 

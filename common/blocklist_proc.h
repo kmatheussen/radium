@@ -17,10 +17,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void BL_init(void);
-extern void BL_insert(int pos,struct Blocks *block);
-extern void BL_delete(int pos);
-struct Blocks *BL_GetBlockFromPos(int pos);
+extern LANGSPEC void BL_init(void);
+extern LANGSPEC void BL_insert(int pos,struct Blocks *block);
+extern LANGSPEC void BL_delete(int pos);
+extern LANGSPEC struct Blocks *BL_GetBlockFromPos(int pos);
 
 #endif
 

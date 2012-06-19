@@ -62,7 +62,11 @@ private:
   uint num_points;
 };
 
-class MyWidget : public QWidget
+// Don't paint on the frame.
+#define XOFFSET 2
+#define YOFFSET 2
+
+class MyWidget : public QFrame
 {
 public:
   MyWidget(struct Tracker_Windows *window, QWidget *parent=0, const char *name=0 );

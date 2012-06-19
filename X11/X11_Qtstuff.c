@@ -34,9 +34,12 @@ char *GFX_GetSaveFileName(
   return GFX_ReadStringFromPythonCommand("X11_Qtstuff.GFX_SaveFileRequester(\"%s\")");
 }
 
+#ifndef GUIISQT
 void GFX_PlayListWindowToFront(void){
   PyRun_SimpleString("X11_BlockSelector.BS_ToFront()");
 }
+#endif
+
 void GFX_InstrumentWindowToFront(void){
   PyRun_SimpleString("X11_MidiProperties.MIDI_ToFront()");
 }

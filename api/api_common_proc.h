@@ -17,30 +17,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-struct Tracker_Windows *getWindowFromNum(int windownum);
+extern LANGSPEC struct Tracker_Windows *getWindowFromNum(int windownum);
 
 
-struct WBlocks *getWBlockFromNum(int windownum,int wblocknum);
+extern LANGSPEC struct WBlocks *getWBlockFromNum(int windownum,int wblocknum);
 
 
-struct WBlocks *getWBlockFromNumA(
+extern LANGSPEC struct WBlocks *getWBlockFromNumA(
 	int windownum,
 	struct Tracker_Windows **window,
 	int blocknum
 );
 
-struct Blocks *getBlockFromNum(int blocknum);
+extern LANGSPEC struct Blocks *getBlockFromNum(int blocknum);
 
-struct Tracks *getTrackFromNum(int blocknum,int tracknum);
+extern LANGSPEC struct Tracks *getTrackFromNum(int blocknum,int tracknum);
 
-struct WTracks *getWTrackFromNum(
+extern LANGSPEC struct WTracks *getWTrackFromNum(
 	int windownum,
 	int blocknum,
 	int wtracknum
 );
 
 
-struct WTracks *getWTrackFromNumA(
+extern LANGSPEC struct WTracks *getWTrackFromNumA(
 	int windownum,
 	struct Tracker_Windows **window,
 	int wblocknum,
@@ -48,10 +48,10 @@ struct WTracks *getWTrackFromNumA(
 	int wtracknum
 );
 
-struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum);
+extern LANGSPEC struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum);
 
-struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenum);
+extern LANGSPEC struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenum);
 
-int getInstrumentPatchNum(int instrument_num, int patch_num);
-struct Instruments *getInstrumentFromNum(int instrument_num);
-struct Patch *getPatchFromNum(int instrument_patch_num);
+extern LANGSPEC int getInstrumentPatchNum(int instrument_num, int patch_num);
+extern LANGSPEC struct Instruments *getInstrumentFromNum(int instrument_num);
+extern LANGSPEC struct Patch *getPatchFromNum(int instrument_patch_num);

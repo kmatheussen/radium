@@ -132,7 +132,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_memory.o X11_ReqType.o X11_Player.o X11_Qtstuff.o X11_MidiProperties.o X11_keyboard.o X11_ClientMessages.o X11_Bs_edit.o
+OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_memory.o X11_ReqType.o X11_Player.o X11_Qtstuff.o X11_MidiProperties.o X11_keyboard.o X11_ClientMessages.o
 
 #Qt_Bs_edit.o 
 
@@ -758,9 +758,6 @@ Qt_error.o: $(P)Qt_error.c $(P)MyWidget.h
 Qt_Ptask2Mtask.o: $(P)Qt_Ptask2Mtask.c $(P)MyWidget.h
 	$(CC) $(P)Qt_Ptask2Mtask.c $(OPT)
 
-Qt_Bs_edit.o: $(P)Qt_Bs_edit.c $(P)MyWidget.h
-	$(CC) $(P)Qt_Bs_edit.c $(OPT)
-
 Qt_endprogram.o: $(P)Qt_endprogram.c $(P)MyWidget.h
 	$(CC) $(P)Qt_endprogram.c $(OPT)
 
@@ -772,6 +769,12 @@ Qt_Player.o: $(P)Qt_Player.c $(P)MyWidget.h
 
 Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)MyWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(CPPOPT)
+
+Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
+	$(CCC) $(P)Qt_Bs_edit.cpp $(CPPOPT)
+
+$(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
+	cd $(P) && $(MOC) Qt_Bs_edit.cpp >mQt_Bs_edit.cpp
 
 Qt_memory.o:  $(P)Qt_memory.c 
 	$(CC)  $(P)Qt_memory.c $(OPT)

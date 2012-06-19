@@ -19,46 +19,46 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-extern void CloseWBlock(struct Tracker_Windows *window, NInt blocknum);
-extern void CloseAllWBlocks(struct Tracker_Windows *window);
+extern LANGSPEC void CloseWBlock(struct Tracker_Windows *window, NInt blocknum);
+extern LANGSPEC void CloseAllWBlocks(struct Tracker_Windows *window);
 
-extern bool WBlock_legalizeStartEndReallines(struct WBlocks *wblock,int *start_realline,int *end_realline);
+extern LANGSPEC bool WBlock_legalizeStartEndReallines(struct WBlocks *wblock,int *start_realline,int *end_realline);
 
-extern void UpdateWBlockCoordinates(
+extern LANGSPEC void UpdateWBlockCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-extern void SetWBlock_Top_And_Bot_Realline(
+extern LANGSPEC void SetWBlock_Top_And_Bot_Realline(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-extern void UpdateAllWBlockCoordinates(
+extern LANGSPEC void UpdateAllWBlockCoordinates(
 	struct Tracker_Windows *window
 );
 
-extern void UpdateAllWBlockWidths(struct Tracker_Windows *window);
+extern LANGSPEC void UpdateAllWBlockWidths(struct Tracker_Windows *window);
 
-extern void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock);
+extern LANGSPEC void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock);
 
-extern void SelectPrevWBlock(struct Tracker_Windows *window);
+extern LANGSPEC void SelectPrevWBlock(struct Tracker_Windows *window);
 
-extern void SelectNextWBlock(struct Tracker_Windows *window);
+extern LANGSPEC void SelectNextWBlock(struct Tracker_Windows *window);
 
-extern void SelectPrevPlaylistWBlock(struct Tracker_Windows *window);
-extern void SelectNextPlaylistWBlock(struct Tracker_Windows *window);
+extern LANGSPEC void SelectPrevPlaylistWBlock(struct Tracker_Windows *window);
+extern LANGSPEC void SelectNextPlaylistWBlock(struct Tracker_Windows *window);
 
-extern void NewWBlock(
+extern LANGSPEC void NewWBlock(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct Blocks *block
 );
 
-extern void UpdateWBlocks(struct Tracker_Windows *window);
+extern LANGSPEC void UpdateWBlocks(struct Tracker_Windows *window);
 
-extern void AppendWBlock(struct Tracker_Windows *window);
+extern LANGSPEC void AppendWBlock(struct Tracker_Windows *window);
 
-extern void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks);
+extern LANGSPEC void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks);
 
 #endif

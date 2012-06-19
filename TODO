@@ -84,6 +84,7 @@
 
 * Anti aliasing, etc.
   QT4: painter.setRenderHints(QPainter::Antialiasing);
+  QT: http://twinlib.roard.com/
 
 * Bigger boxes by default
 
@@ -93,8 +94,16 @@
 
 * Menu separators
 
+* The line connecting note name with note graphics, would perhaps
+  be better if was connected at the top. The reason is that we
+  would use the full line height to visually show note placement
+  within the line. Now, only half the line is used for this.
 
+* Shift + Left/Right should change track, not Alt + Left/Right.
+  Reason: Shift + Up/Down is used a lot, and changing track is a common operation.
 
+* Qualifier keys are resetted after pressing.
+  E.g pressing "Ctrl+1" and "Ctrl+2" while holding the Ctrl key pressed causes "Ctrl+1" and "2" to be executed.
 
 
 

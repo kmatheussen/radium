@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdbool.h>
 #include "MyWidget.h"
+#include "Qt_Bs_edit_proc.h"
 
 #include <qpainter.h>
 #include <qstatusbar.h>
@@ -38,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <X11/Xlib.h>
 #include "../X11/X11_keyboard_proc.h"
 
-#include "../X11/X11_Bs_edit_proc.h"
+//#include "../X11/X11_Bs_edit_proc.h"
 #include "../X11/X11_MidiProperties_proc.h"
 
 #include "../X11/X11_Qtstuff_proc.h"
@@ -53,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
      dst_pixmap##_painter->drawPixmap(x,y,*(src_pixmap),from_x,from_y,width,height)
 #else
 #  define DRAW_PIXMAP_ON_WIDGET(dst_widget, x, y, src_pixmap, from_x, from_y, width, height) \
-     bitBlt(dst_widget,x,y,src_pixmap,from_x,from_y,width,height)
+     bitBlt(dst_widget,x+XOFFSET,y+YOFFSET,src_pixmap,from_x,from_y,width,height)
 #  define DRAW_PIXMAP_ON_PIXMAP(dst_pixmap, x, y, src_pixmap, from_x, from_y, width, height) \
      bitBlt(dst_pixmap,x,y,src_pixmap,from_x,from_y,width,height)
 #endif
@@ -86,7 +87,7 @@ void RPoints::drawPoints(QPainter *qp){
 
 
 MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *name )
-  : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+  : QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
 {
   this->qpixmap=NULL;
   this->window=window;
@@ -135,6 +136,12 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
     for ( int i=0; i<MAXCOLORS; i++ )		// init color array
 	colors[i] = QColor( rand()&255, rand()&255, rand()&255 );
 	*/
+
+  this->setFrameStyle(QFrame::Raised );
+  //this->setFrameStyle(QFrame::Sunken );
+  this->setFrameShape(QFrame::Panel);
+  this->setLineWidth(1);
+
 }
 
 MyWidget::~MyWidget()
@@ -276,7 +283,6 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   mywidget->setMinimumHeight(200);
 
   main_window->setCaption("Radium editor window");
-  main_window->setCentralWidget(mywidget);
   main_window->statusBar()->message( "Ready", 2000 );
 
   // helvetica
@@ -318,7 +324,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
   mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
 
-  BS_SetX11Window((int)main_window->x11AppRootWindow());
+  //BS_SetX11Window((int)main_window->x11AppRootWindow());
   X11_MidiProperties_SetX11Window((int)main_window->x11AppRootWindow());
 
   g_main_window = main_window;
@@ -332,7 +338,7 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
 
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
-  BS_StopXSend();
+  //BS_StopXSend();
   X11_MidiProperties_StopXSend();
 
   delete mywidget->qpixmap;
@@ -499,6 +505,14 @@ void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
 //  QColor *qcolor=mywidget->colors[color];
 
   mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+
+#if 0
+  QPen pen(mywidget->colors[color],4,Qt::SolidLine);  
+  pen.setCapStyle(Qt::RoundCap);
+  pen.setJoinStyle(Qt::RoundJoin);
+  mywidget->qpixmap_painter->setPen(pen);
+#endif
+
   mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
 //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
@@ -875,6 +889,7 @@ char *QGFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text)
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual.main_window);
 
+  GFX_PlayListWindowToBack();
   main_window->raise();
 
   XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);

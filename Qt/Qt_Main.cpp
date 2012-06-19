@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qapplication.h>
 #include <qmainwindow.h>
+#include <qsplitter.h>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -35,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 
-#include "../X11/X11_Bs_edit_proc.h"
+//#include "../X11/X11_Bs_edit_proc.h"
 #include "../X11/X11_MidiProperties_proc.h"
 #include "../X11/X11_keyboard_proc.h"
 #include "../X11/X11_ClientMessages_proc.h"
@@ -43,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Bs_edit_proc.h"
 #include "../X11/X11_Ptask2Mtask_proc.h"
 #include "../X11/X11_Player_proc.h"
+
+#include "Qt_Bs_edit_proc.h"
 
 
 extern struct Root *root;
@@ -135,7 +138,14 @@ extern LANGSPEC void Qt_Ptask2Mtask(void){
 #include <qsgistyle.h>
 #endif
 
+
+
+#include "qwidget.h"
+#include "qlistbox.h"
+
 //#include "google/profiler.h"
+
+void start_blockselector();
 
 //extern LANGSPEC int dasmain(int argc,char **argv);
 extern LANGSPEC int radium_main(char *arg);
@@ -177,7 +187,7 @@ int radium_main(char *arg){
 
   X11_init_keyboard();
 
-  X11_StartBlockSelector();
+  //X11_StartBlockSelector();
   X11_StartMidiProperties();
 
   StartGuiThread();
@@ -194,14 +204,32 @@ int radium_main(char *arg){
 
   X11_StartQtStuff();
 
+  QWidget *block_selector = create_blockselector();
+
   BS_UpdateBlockList();
   BS_UpdatePlayList();
   BS_SelectBlock(root->song->blocks);
   BS_SelectPlaylistPos(0);
 
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-  main_window->show();
-  qapplication->setMainWidget(main_window);
+  {
+    QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+    MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+
+    {
+      QSplitter *splitter = new QSplitter(main_window);
+      splitter->setOpaqueResize(true);
+
+      my_widget->reparent(splitter, QPoint(0,0), true);
+      block_selector->reparent(splitter, QPoint(main_window->width()-100,0), true);
+
+      block_selector->resize(100,block_selector->height());
+      
+      main_window->setCentralWidget(splitter);
+    }
+
+    qapplication->setMainWidget(main_window);
+    main_window->show();
+  }
 
   PyRun_SimpleString("import menues");
   
