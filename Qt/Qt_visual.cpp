@@ -137,10 +137,10 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
 	colors[i] = QColor( rand()&255, rand()&255, rand()&255 );
 	*/
 
-  this->setFrameStyle(QFrame::Raised );
-  //this->setFrameStyle(QFrame::Sunken );
+  //this->setFrameStyle(QFrame::Raised );
+  this->setFrameStyle(QFrame::Sunken );
   this->setFrameShape(QFrame::Panel);
-  this->setLineWidth(1);
+  this->setLineWidth(2);
 
 }
 

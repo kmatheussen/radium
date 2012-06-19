@@ -124,6 +124,9 @@ class Menu:
         items[1].createRadiumMenues()
         radium.goPreviousMenuLevel()
         rec(items[2:])
+      elif items[0].startswith("--"):
+        radium.addMenuSeparator()
+        rec(items[1:])
       else:
         radium.addMenuItem(items[0],get_command(items[0]))
         rec(items[1:])

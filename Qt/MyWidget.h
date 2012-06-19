@@ -63,7 +63,7 @@ private:
 };
 
 // Don't paint on the frame.
-#define XOFFSET 2
+#define XOFFSET 5
 #define YOFFSET 2
 
 class MyWidget : public QFrame

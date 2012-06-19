@@ -1,4 +1,4 @@
-/* Copyright 2003 Kjetil S. Matheussen
+/* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -35,8 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 
-static const int xborder = 10;
-static const int yborder = 10;
+static const int xborder = 3;
+static const int yborder = 3;
 
 static int button_height = 30;
 static int button_width = 50;
@@ -61,7 +61,7 @@ static int get_blocklist_y2(bool stacked, int width, int height){
   if(stacked)
     return get_add_button_y1(stacked,width,height) - yborder;
   else
-    return height-yborder;
+    return height;//-yborder;
 }
 
 static int get_blocklist_x2(bool stacked, int width, int height){
@@ -91,7 +91,7 @@ static int get_playlist_x2(bool stacked, int width, int height){
 }
 
 static int get_playlist_y2(bool stacked, int width, int height){
-  return height-yborder;
+  return height;//-yborder;
 }
 
 static int get_add_button_x1(bool stacked, int width, int height){

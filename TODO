@@ -105,5 +105,9 @@
 * Qualifier keys are resetted after pressing.
   E.g pressing "Ctrl+1" and "Ctrl+2" while holding the Ctrl key pressed causes "Ctrl+1" and "2" to be executed.
 
+* FX is missing for importing standard midi files.
 
+* When selecting midi preset, the standard midi name should be shown somehow. (roll down)
 
+* Blocklist/playlist non-stacking should only happen if there are more blocks / longer playlist than can be viewed simultaneously
+  in the list boxes. And maybe not even then, since it looks bad and limits the number of characters to display.
