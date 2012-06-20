@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qsplitter.h>
+#include <qpalette.h>
+#include <qtabwidget.h>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -46,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../X11/X11_Player_proc.h"
 
 #include "Qt_Bs_edit_proc.h"
+#include "Qt_instruments_proc.h"
 
 
 extern struct Root *root;
@@ -216,15 +219,28 @@ int radium_main(char *arg){
     MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
 
     {
-      QSplitter *splitter = new QSplitter(main_window);
-      splitter->setOpaqueResize(true);
+      QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
+      xsplitter->setOpaqueResize(true);
 
-      my_widget->reparent(splitter, QPoint(0,0), true);
-      block_selector->reparent(splitter, QPoint(main_window->width()-100,0), true);
+      my_widget->reparent(xsplitter, QPoint(0,0), true);
+      block_selector->reparent(xsplitter, QPoint(main_window->width()-100,0), true);
 
       block_selector->resize(100,block_selector->height());
-      
-      main_window->setCentralWidget(splitter);
+
+      {
+        QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
+        ysplitter->setOpaqueResize(true);
+
+        QWidget *instruments = createInstrumentsWidget();
+        //instruments->show();
+
+        xsplitter->reparent(ysplitter, QPoint(0,0), true);
+        instruments->reparent(ysplitter, QPoint(0, main_window->height()-100), true);
+
+        //ysplitter->show();
+
+        main_window->setCentralWidget(ysplitter);
+      }
     }
 
     qapplication->setMainWidget(main_window);

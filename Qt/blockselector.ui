@@ -1,0 +1,309 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>Form1</class>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>Form1</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>526</width>
+            <height>591</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Form1</string>
+    </property>
+    <grid>
+        <property name="name">
+            <cstring>unnamed</cstring>
+        </property>
+        <widget class="QButtonGroup" row="0" column="0">
+            <property name="name">
+                <cstring>buttonGroup4</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>3</hsizetype>
+                    <vsizetype>7</vsizetype>
+                    <horstretch>244</horstretch>
+                    <verstretch>244</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="title">
+                <string>buttonGroup4</string>
+            </property>
+            <property name="alignment">
+                <set>AlignVCenter|AlignRight</set>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLayoutWidget" row="0" column="0">
+                    <property name="name">
+                        <cstring>layout13</cstring>
+                    </property>
+                    <grid>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QListBox" row="0" column="3">
+                            <item>
+                                <property name="text">
+                                    <string>0: NN</string>
+                                </property>
+                            </item>
+                            <property name="name">
+                                <cstring>listBox1_2</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>7</hsizetype>
+                                    <vsizetype>3</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                        </widget>
+                        <widget class="QPushButton" row="0" column="2">
+                            <property name="name">
+                                <cstring>pushButton1</cstring>
+                            </property>
+                            <property name="text">
+                                <string>pushButton1</string>
+                            </property>
+                        </widget>
+                        <widget class="QListBox" row="0" column="0">
+                            <item>
+                                <property name="text">
+                                    <string>0: NN</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>New Item</string>
+                                </property>
+                            </item>
+                            <property name="name">
+                                <cstring>listBox1</cstring>
+                            </property>
+                            <property name="sizePolicy">
+                                <sizepolicy>
+                                    <hsizetype>3</hsizetype>
+                                    <vsizetype>7</vsizetype>
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="resizePolicy">
+                                <enum>AutoOneFit</enum>
+                            </property>
+                        </widget>
+                        <widget class="QPushButton" row="0" column="1">
+                            <property name="name">
+                                <cstring>pushButton1_2</cstring>
+                            </property>
+                            <property name="text">
+                                <string>pushButton1</string>
+                            </property>
+                        </widget>
+                    </grid>
+                </widget>
+            </grid>
+        </widget>
+    </grid>
+</widget>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

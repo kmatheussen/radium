@@ -95,6 +95,7 @@ OPT= $(UPOPT)
 # 
 QTOPTS = -DUSE_QT3 -I$(QTDIR)/include
 MOC = $(QTDIR)/bin/moc
+UIC = $(QTDIR)/bin/uic
 
 CPPOPT=$(OPT) $(QTOPTS)
 
@@ -132,7 +133,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_memory.o X11_ReqType.o X11_Player.o X11_Qtstuff.o X11_MidiProperties.o X11_keyboard.o X11_ClientMessages.o
+OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o X11_ReqType.o X11_Player.o X11_Qtstuff.o X11_MidiProperties.o X11_keyboard.o X11_ClientMessages.o
 
 #Qt_Bs_edit.o 
 
@@ -743,7 +744,7 @@ X11_ClientMessages.o: X11/X11_ClientMessages.c
 	$(CC) X11/X11_ClientMessages.c $(OPT)
 
 
-Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h
+Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(CPPOPT) -Wno-error 
 
 Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(P)mQt_visual.cpp $(CD)visual_op_queue_proc.h
@@ -775,6 +776,27 @@ Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
 	cd $(P) && $(MOC) Qt_Bs_edit.cpp >mQt_Bs_edit.cpp
+
+Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h
+	$(CCC) $(P)Qt_instruments.cpp $(CPPOPT)
+
+$(P)Qt_instruments_widget.h: $(P)instruments_widget.ui
+	cd $(P) && $(UIC) instruments_widget.ui >Qt_instruments_widget.h
+	cd $(P) && $(MOC) Qt_instruments_widget.h >mQt_instruments_widget.cpp
+	cd $(P) && $(UIC) -impl Qt_instruments_widget.h instruments_widget.ui >Qt_instruments_widget.cpp
+	cd $(P) && cat mQt_instruments_widget.cpp >>Qt_instruments_widget.cpp
+
+$(P)Qt_instrument_widget.h: $(P)instrument_widget.ui
+	cd $(P) && $(UIC) instrument_widget.ui >Qt_instrument_widget.h
+	cd $(P) && $(MOC) Qt_instrument_widget.h >mQt_instrument_widget.cpp
+	cd $(P) && $(UIC) -impl Qt_instrument_widget.h instrument_widget.ui >Qt_instrument_widget.cpp
+	cd $(P) && cat mQt_instrument_widget.cpp >>Qt_instrument_widget.cpp
+
+$(P)Qt_control_change_widget.h: $(P)control_change_widget.ui
+	cd $(P) && $(UIC) control_change_widget.ui >Qt_control_change_widget.h
+	cd $(P) && $(MOC) Qt_control_change_widget.h >mQt_control_change_widget.cpp
+	cd $(P) && $(UIC) -impl Qt_control_change_widget.h control_change_widget.ui >Qt_control_change_widget.cpp
+	cd $(P) && cat mQt_control_change_widget.cpp >>Qt_control_change_widget.cpp
 
 Qt_memory.o:  $(P)Qt_memory.c 
 	$(CC)  $(P)Qt_memory.c $(OPT)

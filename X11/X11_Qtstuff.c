@@ -38,11 +38,11 @@ char *GFX_GetSaveFileName(
 void GFX_PlayListWindowToFront(void){
   PyRun_SimpleString("X11_BlockSelector.BS_ToFront()");
 }
-#endif
 
 void GFX_InstrumentWindowToFront(void){
   PyRun_SimpleString("X11_MidiProperties.MIDI_ToFront()");
 }
+#endif
 
 void GFX_HelpWindowToFront(void){}
 void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual){}

@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../X11/X11_keyboard_proc.h"
 
 //#include "../X11/X11_Bs_edit_proc.h"
-#include "../X11/X11_MidiProperties_proc.h"
+//#include "../X11/X11_MidiProperties_proc.h"
 
 #include "../X11/X11_Qtstuff_proc.h"
 #include "../X11/X11_ReqType_proc.h"
@@ -254,7 +254,8 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
     return 0;
   }
 
-  QMainWindow *main_window = new QMainWindow();
+  //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
+  QMainWindow *main_window = new QMainWindow(NULL, "Radium");
   tvisual->os_visual.main_window = main_window;
 #ifdef USE_QT4
   main_window->setAttribute(Qt::WA_PaintOnScreen);
@@ -284,6 +285,14 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   main_window->setCaption("Radium editor window");
   main_window->statusBar()->message( "Ready", 2000 );
+
+  {
+    QStatusBar *status_bar = main_window->statusBar();
+    mywidget->status_label = new QLabel(status_bar);//"");
+    mywidget->status_label->setFrameStyle(QFrame::Sunken);
+    //mywidget->status_frame->
+    status_bar->addWidget(mywidget->status_label, 1, true);
+  }
 
   // helvetica
   mywidget->font = new QFont("Monospace");
@@ -325,7 +334,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
 
   //BS_SetX11Window((int)main_window->x11AppRootWindow());
-  X11_MidiProperties_SetX11Window((int)main_window->x11AppRootWindow());
+  //X11_MidiProperties_SetX11Window((int)main_window->x11AppRootWindow());
 
   g_main_window = main_window;
   g_mywidget = mywidget;
@@ -339,7 +348,7 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   //BS_StopXSend();
-  X11_MidiProperties_StopXSend();
+  //X11_MidiProperties_StopXSend();
 
   delete mywidget->qpixmap;
   delete mywidget->cursorpixmap;
@@ -775,8 +784,12 @@ void QGFX_V_DrawTrackBorderSingle(
 
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->statusBar()->message(title);
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //main_window->statusBar()->message(title);
+
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->status_label->setText(title);
+
 #if 0
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //mywidget->setCaption(title);

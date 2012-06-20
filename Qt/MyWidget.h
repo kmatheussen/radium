@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpixmap.h>
 #include <qmenubar.h>
 #include <qpointarray.h>
+#include <qlabel.h>
 
 #ifdef USE_QT4
 //Added by qt3to4:
@@ -90,6 +91,9 @@ public:
     QPainter *cursorpixmap_painter; // Set in paintEvent
 
     QFont *font;
+
+    //QFrame *status_frame;
+    QLabel *status_label;
 
 protected:
     //    bool        event(QEvent *);

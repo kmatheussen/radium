@@ -35,8 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 
-static const int xborder = 3;
-static const int yborder = 3;
+static const int xborder = 0;
+static const int yborder = 0;
 
 static int button_height = 30;
 static int button_width = 50;
