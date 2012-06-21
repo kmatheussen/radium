@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/control_proc.h"
 
 //#include "../X11/X11_Bs_edit_proc.h"
-#include "../X11/X11_MidiProperties_proc.h"
+//#include "../X11/X11_MidiProperties_proc.h"
 #include "../X11/X11_keyboard_proc.h"
 #include "../X11/X11_ClientMessages_proc.h"
 #include "../X11/X11_Qtstuff_proc.h"
@@ -191,7 +191,7 @@ int radium_main(char *arg){
   X11_init_keyboard();
 
   //X11_StartBlockSelector();
-  X11_StartMidiProperties();
+  //X11_StartMidiProperties();
 
   StartGuiThread();
 

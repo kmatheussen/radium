@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "patch_proc.h"
 
 
+struct Patch *g_currpatch=NULL;
+
+
 
 void SelectPatch(struct Tracker_Windows *window,struct Tracks *track){
 	struct Instruments *instrument=track->instrument;

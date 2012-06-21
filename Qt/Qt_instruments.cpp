@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../midi/OS_midigfx_proc.h"
+
+
+extern struct Patch *g_currpatch;
 
 
 QWidget *createInstrumentsWidget(void){
@@ -49,4 +53,15 @@ QWidget *createInstrumentsWidget(void){
 }
 
 void GFX_InstrumentWindowToFront(void){
+}
+
+void MIDIGFX_UpdateAll(void){}
+void MIDIGFX_SetPanSlider(bool on,int value){}
+void MIDIGFX_SetVolumeSlider(bool on,int value){}
+void MIDIGFX_SetLSB(int lsb){}
+void MIDIGFX_SetMSB(int msb){}
+void MIDIGFX_SetChannel(int ch){}
+void MIDIGFX_SetCCSlider(int slidernum,bool on,int value){}
+
+void MIDIGFX_PP_Update(struct Instruments *instrument,struct Patch *patch){
 }

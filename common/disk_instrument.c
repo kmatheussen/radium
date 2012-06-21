@@ -85,20 +85,11 @@ extern void *MIDI_CopyInstrumentData(struct Tracks *track);
 extern void *MIDILoadFX(struct FX *fx,struct Tracks *track);
 
 
-#if 0
-#include "plug-ins/camd_playfromstart_proc.h"
-#else
 #include "../midi/midi_playfromstart_proc.h"
-#endif
-
-#include "../midi/dummy/OS_midi_spesific.h"
-
-#include "../X11/X11_MidiProperties_proc.h"
+#include "../midi/OS_midigfx_proc.h"
 
 
 void DLoadInstrument(struct Instruments *instrument){
-
-#if 1
 	instrument->instrumentname="MIDI instrument";
 	instrument->getStandardVelocity= &MIDIgetStandardVelocity;
 	instrument->getMaxVelocity= &MIDIgetMaxVelocity;
@@ -108,11 +99,10 @@ void DLoadInstrument(struct Instruments *instrument){
 	instrument->SelectTrackInstrument=MIDISelectTrackInstrument;
 	instrument->StopPlaying=MIDIStopPlaying;
 	//	instrument->PP_Update=MIDI_PP_Update;
-	instrument->PP_Update=X11_MIDI_PP_Update;
+	instrument->PP_Update=MIDIGFX_PP_Update;
 	instrument->PlayFromStartHook=MIDIPlayFromStartHook;
 	instrument->CopyInstrumentData=MIDI_CopyInstrumentData;
 	instrument->LoadFX=MIDILoadFX;
-#endif
 }
 
 

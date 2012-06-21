@@ -71,9 +71,12 @@ extern struct MyMidiLinks *MIDI_GetMyMidiLink(char *name){
 }
 
 
+#if 0
+// This is a GUI function.
 void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
   printf("MIDI_PP_Update");    
 }
+#endif
 
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
@@ -95,11 +98,11 @@ extern void PutMidi(struct MidiLink *midilink,
 }
 
 
-#include "../X11/X11_MidiProperties_proc.h"
+//#include "../X11/X11_MidiProperties_proc.h"
 
 extern bool MIDI_New(struct Instruments *instrument){
-  //  instrument->PP_Update=MIDI_PP_Update;
-  instrument->PP_Update=X11_MIDI_PP_Update;
+  instrument->PP_Update=MIDIGFX_PP_Update;
+  //instrument->PP_Update=X11_MIDI_PP_Update;
   return true;
 }
 

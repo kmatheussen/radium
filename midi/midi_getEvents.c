@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_getEvents_proc.h"
 #include "OS_midigfx_proc.h"
 
-extern struct Patch *currpatch;
+extern struct Patch *g_currpatch;
 extern struct Root *root;
 extern PlayerClass *pc;
 extern bool useOx90ForNoteOff;
@@ -42,7 +42,7 @@ void MIDIGetEvents(
 		   )
 {
   struct Tracker_Windows *window=root->song->tracker_windows;
-  struct Patch *patch=currpatch;
+  struct Patch *patch=g_currpatch;
   struct PatchData *patchdata;
   int channel;
 
@@ -55,10 +55,10 @@ void MIDIGetEvents(
     return;
     break;
   case MIDIEVENT_SETSTANDARDVEL:
-    if(currpatch==NULL){
+    if(g_currpatch==NULL){
       root->standardvel=arg1;
     }else{
-      currpatch->standardvel=arg1;
+      g_currpatch->standardvel=arg1;
     }
     break;
   case MIDIEVENT_CHANGECURRENTPATCH:
@@ -83,7 +83,7 @@ void MIDIGetEvents(
     break;
   }
 
-  if(currpatch==NULL) return;
+  if(g_currpatch==NULL) return;
 
   patchdata=(struct PatchData *)patch->patchdata;
   channel=patchdata->channel;

@@ -133,8 +133,9 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o X11_ReqType.o X11_Player.o X11_Qtstuff.o X11_MidiProperties.o X11_keyboard.o X11_ClientMessages.o
+OBJ12= Qt_visual.o Qt_error.o X11_Ptask2Mtask.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o X11_ReqType.o X11_Player.o X11_Qtstuff.o X11_keyboard.o X11_ClientMessages.o
 
+#X11_MidiProperties.o 
 #Qt_Bs_edit.o 
 
 #Python

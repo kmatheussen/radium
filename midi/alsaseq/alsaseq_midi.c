@@ -176,10 +176,6 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
 
 
 
-void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
-  printf("MIDI_PP_Update");    
-}
-
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
 
@@ -237,8 +233,7 @@ void PutMidi(MidiPortOs port,
 
 
 
-#include "../X11/X11_MidiProperties_proc.h"
-
+#include "../midi/OS_midigfx_proc.h"
 
 void MIDI_Delete(void){
   snd_seq_event_t ev;
@@ -283,8 +278,7 @@ bool MIDI_New(struct Instruments *instrument){
 
   snd_seq_start_queue(radium_seq, radium_queue, NULL );
 
-  //  instrument->PP_Update=MIDI_PP_Update;
-  instrument->PP_Update=X11_MIDI_PP_Update;
+  instrument->PP_Update=MIDIGFX_PP_Update;
   return true;
 }
 

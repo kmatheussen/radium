@@ -43,7 +43,7 @@ bool X11_StartMidiProperties(){
 
 void X11_MIDI_PP_Update_doit(struct Instruments *instrument,struct Patch *patch);
 
-void X11_MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
+void MIDIGFX_PP_Update(struct Instruments *instrument,struct Patch *patch){
   if(currpatch==patch) return;
   X11_MIDI_PP_Update_doit(instrument,patch);
 }

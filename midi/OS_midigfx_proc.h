@@ -15,11 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-void MIDIGFX_UpdateAll(void);
-void MIDIGFX_SetPanSlider(bool on,int value);
-void MIDIGFX_SetVolumeSlider(bool on,int value);
-void MIDIGFX_SetLSB(int lsb);
-void MIDIGFX_SetMSB(int msb);
-void MIDIGFX_SetChannel(int ch);
-void MIDIGFX_SetCCSlider(int slidernum,bool on,int value);
+extern LANGSPEC void MIDIGFX_UpdateAll(void);
+extern LANGSPEC void MIDIGFX_SetPanSlider(bool on,int value);
+extern LANGSPEC void MIDIGFX_SetVolumeSlider(bool on,int value);
+extern LANGSPEC void MIDIGFX_SetLSB(int lsb);
+extern LANGSPEC void MIDIGFX_SetMSB(int msb);
+extern LANGSPEC void MIDIGFX_SetChannel(int ch);
+extern LANGSPEC void MIDIGFX_SetCCSlider(int slidernum,bool on,int value);
+
+extern LANGSPEC void MIDIGFX_PP_Update(struct Instruments *instrument,struct Patch *patch);
 
