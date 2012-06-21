@@ -43,7 +43,8 @@ void set_editor_focus(void){
   public:                                                \
   My##Class(QWidget *parent, const char *name)           \
   : Class(parent, name)                                  \
-    {}                                                   \
+    {                                                    \
+    }                                                    \
                                                          \
   void focusInEvent ( QFocusEvent *e ){                  \
     fprintf(stderr," oh yeah, i got fokus\n");           \
@@ -54,18 +55,17 @@ void set_editor_focus(void){
     fprintf(stderr," lsot focus\n");                     \
     num_focus--;                                         \
     Class::focusOutEvent(e);                             \
-  }                                                      \
-  bool eventFilter ( QObject * o, QEvent * ev ) {                   \
-    if(ev->type()==QEvent::FocusIn)                                  \
-      num_focus++;                                                   \
-    if(ev->type()==QEvent::FocusOut)                                 \
+  }                                                                     \
+  bool eventFilter ( QObject * o, QEvent * ev ) {                       \
+    if(ev->type()==QEvent::FocusIn)                                     \
+      num_focus++;                                                      \
+    if(ev->type()==QEvent::FocusOut)                                    \
       num_focus--;                                                      \
     if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) \
       set_editor_focus();                                               \
-                                                                        \
     return Class::eventFilter(o,ev);                                    \
-  }                                                             \
-  };                                                    
+  }                                                                     \
+}                                                    
 
 MakeFocusOverrideClass(QSpinBox);
 MakeFocusOverrideClass(QLineEdit);
@@ -83,16 +83,7 @@ Instrument_widget *current_instrument;
 
 
 
-#if 0
-static void name_widget_textChanged( const QString &string);
-
-static void name_widget_textChanged( const QString &string ){
-  //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
-  //  tab_bar->tab(tab_bar->currentTabl())->setText(string);
-}
-#endif
-
-bool hasFocus(){
+bool instrumentWindowUsesKeyboard(){
   return num_focus>0;
 }
 

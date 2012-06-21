@@ -11,22 +11,6 @@
 *****************************************************************************/
 
 
-void Instruments_widget::gotFocus( QFocusEvent * )
-{
-    fprintf(stderr,"Got focus!");
-}
 
-
-void Instruments_widget::lostFocus( QFocusEvent * )
-{
-    fprintf(stderr,"Lost focus!");
-}
-
-
-void Instruments_widget::focusInEvent( QFocusEvent * )
-{
-    fprintf(stderr,"Got focus!");
-
-}
 
 

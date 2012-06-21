@@ -27,6 +27,7 @@ void Instrument_widget::volume_spin_valueChanged( int val )
     fprintf(stderr,"Hepp hepp2 %d\n",val);
     
     patchdata->volume = val;
+    set_editor_focus();
 }
 
 
@@ -60,6 +61,7 @@ void Instrument_widget::velocity_spin_valueChanged( int val)
     fprintf(stderr,"Hepp hepp3 %d\n",val);
 
     g_currpatch->standardvel = val;
+    set_editor_focus();
 }
 
 
@@ -92,6 +94,7 @@ void Instrument_widget::panning_spin_valueChanged( int val)
     fprintf(stderr,"Pan %d\n",val);
     
     patchdata->pan = val + 63;
+    set_editor_focus();
 }
 
 void Instrument_widget::panning_onoff_stateChanged( int val)
@@ -112,18 +115,21 @@ void Instrument_widget::panning_onoff_stateChanged( int val)
 void Instrument_widget::channel_valueChanged( int val)
 {
     patchdata->channel = val;
+    set_editor_focus();                                               
 }
 
 
 void Instrument_widget::msb_valueChanged( int val)
 {
     patchdata->MSB = val;
+    set_editor_focus();
 }
 
 
 void Instrument_widget::lsb_valueChanged( int val)
 {
     patchdata->LSB = val;
+    set_editor_focus();
 }
 
 

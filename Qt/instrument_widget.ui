@@ -339,8 +339,14 @@
                     <property name="name">
                         <cstring>channel</cstring>
                     </property>
+                    <property name="mouseTracking">
+                        <bool>false</bool>
+                    </property>
                     <property name="maxValue">
-                        <number>15</number>
+                        <number>16</number>
+                    </property>
+                    <property name="minValue">
+                        <number>1</number>
                     </property>
                 </widget>
             </grid>

@@ -24,6 +24,7 @@ void Control_change_widget::value_spin_valueChanged( int val)
     
     patchdata->ccvalues[this->ccnum] = val;
     printf("num: %d, value: %d\n",this->ccnum,val);
+    set_editor_focus();
 }
 
 

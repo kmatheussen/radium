@@ -9,6 +9,5 @@ V=$3
 # * Replace QLineEdit with MyQLineEdit so that we can override focusIn
 
 $UIC $3.ui | sed s/protected/public/ | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ >Qt_$3.h
-$MOC Qt_$3.h >mQt_$3.cpp
 $UIC -impl Qt_$3.h $3.ui  | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ >Qt_$3.cpp
-cat mQt_$3.cpp >>Qt_$3.cpp
+$MOC Qt_$3.h >>Qt_$3.cpp
