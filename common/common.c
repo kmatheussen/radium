@@ -179,12 +179,12 @@ int GetReallineFromY(
 	ret+=top_realline;
 
 	if(ret<0 || y<wblock->t.y1){
-		realtoprealline=max(0,top_realline);
+		realtoprealline=R_MAX(0,top_realline);
 		ret=y-Common_oldGetReallineY1Pos(window,wblock,realtoprealline);
 	}
 
 	if(ret>bot_realline || ret>=num_reallines || y>wblock->t.y2){
-		realbotrealline=min(num_reallines-1,bot_realline);
+		realbotrealline=R_MIN(num_reallines-1,bot_realline);
 		ret=Common_oldGetReallineY2Pos(window,wblock,realbotrealline)-y;
 	}
 
@@ -219,12 +219,12 @@ int GetReallineAndPlaceFromY(
 	ret=realline;
 
 	if(realline<0 || y<wblock->t.y1){
-		realline=max(0,top_realline);
+		realline=R_MAX(0,top_realline);
 		ret=y-Common_oldGetReallineY1Pos(window,wblock,realline);
 	}
 
 	if(realline>bot_realline || realline>=num_reallines || y>wblock->t.y2){
-		realline=min(num_reallines-1,bot_realline);
+		realline=R_MIN(num_reallines-1,bot_realline);
 		ret=Common_oldGetReallineY2Pos(window,wblock,realline)-y;
 		bot=1;
 	}
@@ -263,7 +263,7 @@ int GetReallineAndPlaceFromY(
 
 	if(place->line<0 || place->line>=wblock->num_reallines){
 	  RError("Error in function GetReallineAndPlaceFromY. place->line=%d\n",place->line);
-	  place->line=boundaries(0,place->line,wblock->num_reallines-1);
+	  place->line=R_BOUNDARIES(0,place->line,wblock->num_reallines-1);
 	}
 	return ret;
 }

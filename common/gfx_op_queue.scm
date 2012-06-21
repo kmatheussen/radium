@@ -231,7 +231,7 @@ void GFX_ClearWindow(struct Tracker_Windows* tvisual);
                                  (let ((type (car arg))
                                        (name (cadr arg)))
                                    (if (string=? type "char*")
-                                       (c-display (<-> "  memcpy(el->" (get-element-slot-name type n) ", " name ", min(strlen(" name ")+1,62));"))
+                                       (c-display (<-> "  memcpy(el->" (get-element-slot-name type n) ", " name ", R_MIN(strlen(" name ")+1,62));"))
                                        (c-display (<-> "  el->" (get-element-slot-name type n)) "=" name ";"))))
                                (cdr args)
                                (iota (1- (length args))))

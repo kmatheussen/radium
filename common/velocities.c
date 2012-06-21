@@ -59,7 +59,7 @@ void SetNum_Vel_set(
 		if(num_vel>wtrack->num_vel) wtrack->num_vel=num_vel;
 		velstruct=NextFindNum_Velstruct(velstruct);
 	}
-	wtrack->num_vel=max(1,wtrack->num_vel);
+	wtrack->num_vel=R_MAX(1,wtrack->num_vel);
 }
 
 void SetNum_Vel_rec(
@@ -186,9 +186,9 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 	while(element->type!=TRE_THISNOTELINES) element=element->next;
 	note=(struct Notes *)element->pointer;
 
-	note->velocity=boundaries(0,note->velocity+inc,maxvelocity);
+	note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
 	if(note->velocities==NULL)
-		note->velocity_end=boundaries(0,note->velocity_end+inc,maxvelocity);
+		note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
 
 
 	UpdateTrackReallines(window,wblock,wtrack);

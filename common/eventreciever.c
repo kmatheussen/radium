@@ -384,7 +384,7 @@ static int DoTreatAllEvents(struct Tracker_Windows *window){
 	while(element!=NULL){
 		if(CanITreatThisEvent_questionmark(element->t.ID,window)==0){
 			nowret=EventTreater(&element->t,window);
-			ret=max(ret,nowret);
+			ret=R_MAX(ret,nowret);
 			if(prev!=NULL){
 				prev->next=element->next;
 			}else{

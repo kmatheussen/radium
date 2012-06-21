@@ -61,6 +61,12 @@
                     <property name="name">
                         <cstring>value_spin</cstring>
                     </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
+                    <property name="maxValue">
+                        <number>127</number>
+                    </property>
                 </widget>
                 <widget class="QComboBox" row="0" column="1">
                     <property name="name">
@@ -71,6 +77,12 @@
                     <property name="name">
                         <cstring>value_slider</cstring>
                     </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
+                    <property name="maxValue">
+                        <number>127</number>
+                    </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
                     </property>
@@ -79,5 +91,36 @@
         </widget>
     </grid>
 </widget>
+<connections>
+    <connection>
+        <sender>value_slider</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Control_change_widget</receiver>
+        <slot>value_slider_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>value_spin</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Control_change_widget</receiver>
+        <slot>value_spin_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>onoff</sender>
+        <signal>stateChanged(int)</signal>
+        <receiver>Control_change_widget</receiver>
+        <slot>onoff_stateChanged(int)</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="local" impldecl="in implementation">control_change_widget.ui.h</include>
+</includes>
+<variables>
+    <variable access="public">int ccnum;</variable>
+</variables>
+<slots>
+    <slot>value_slider_valueChanged( int val )</slot>
+    <slot>value_spin_valueChanged( int val )</slot>
+    <slot>onoff_stateChanged( int )</slot>
+</slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

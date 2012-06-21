@@ -14,42 +14,71 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "qstring.h"
 
-#define protected public // Stupid qtdesigner
+#include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
+#include "../midi/midi_i_plugin.h"
+#include "../midi/OS_midigfx_proc.h"
+#include "../midi/OS_midi_proc.h"
+
+extern struct Patch *g_currpatch;
+static struct PatchData dummy_patchdata;
+static struct PatchData *patchdata = &dummy_patchdata;
+
+#define protected public // Stupid uic program
 #  include "Qt_instruments_widget.cpp"
 #  include "Qt_instrument_widget.cpp"
 #  include "Qt_control_change_widget.cpp"
 #undef protected
 
-#include "../common/nsmtracker.h"
-#include "../common/visual_proc.h"
-#include "../midi/OS_midigfx_proc.h"
+Instruments_widget *instruments_widget;
 
 
-extern struct Patch *g_currpatch;
+#if 0
+static void name_widget_textChanged( const QString &string);
+
+static void name_widget_textChanged( const QString &string ){
+  //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
+  //  tab_bar->tab(tab_bar->currentTabl())->setText(string);
+}
+#endif
 
 
 QWidget *createInstrumentsWidget(void){
-  Instruments_widget *instruments = new Instruments_widget();
+  instruments_widget = new Instruments_widget();
 
-  Instrument_widget *instrument = new Instrument_widget();
-  for(int x=0;x<4;x++){
-    for(int y=0;y<2;y++){
-      Control_change_widget *cc = new Control_change_widget(instrument->control_change_group, "hepp");
-      instrument->control_change_groupLayout->addWidget(cc,y,x);
+  {
+    Instrument_widget *instrument = new Instrument_widget();
+    int ccnum = 0;
+    for(int x=0;x<4;x++){
+      for(int y=0;y<2;y++){
+        Control_change_widget *cc = new Control_change_widget(instrument->control_change_group, "hepp");
+        cc->ccnum = ccnum++;
+        instrument->control_change_groupLayout->addWidget(cc,y,x);
+      }
     }
+
+    {
+      int num_ports;
+      char **portnames = MIDI_getPortNames(&num_ports);
+
+      for(int i = 0; i<num_ports ; i++)
+        instrument->port->insertItem(portnames[i]);
+    }
+
+    instrument->name_widget->setText("Test instrument");
+
+    instruments_widget->tabs->insertTab(instrument, QString::fromLatin1("Test instrument"), 0);
+    instruments_widget->tabs->showPage(instrument);
   }
 
-
-  instruments->tabs->insertTab(instrument, QString::fromLatin1("Test instruments"), 0);
-  instruments->tabs->showPage(instrument);
-
-  QPalette pal = QPalette(instruments->palette());
+  QPalette pal = QPalette(instruments_widget->palette());
   pal.setColor(QPalette::Active, QColorGroup::Base, QColor(0xd0, 0xd5, 0xd0));
   pal.setColor(QPalette::Inactive, QColorGroup::Base, QColor(0xd0, 0xd5, 0xd0));
-  instruments->setPalette(pal);
+  instruments_widget->setPalette(pal);
 
-  return instruments;
+  return instruments_widget;
 }
 
 void GFX_InstrumentWindowToFront(void){

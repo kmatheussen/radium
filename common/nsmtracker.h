@@ -74,7 +74,7 @@ typedef STime NInt;
 #include <OS_Visual.h>
 
 
-
+#if 0
 #ifdef max
 #undef max
 #endif
@@ -94,6 +94,12 @@ typedef STime NInt;
 #define abs(a) ((a)<0?(-(a)):(a))
 
 #define boundaries(a,b,c) (min(max((a),(b)),(c)))
+#endif
+
+#define R_MAX(a,b) (((a)>(b))?(a):(b))
+#define R_MIN(a,b) (((a)<(b))?(a):(b))
+#define R_ABS(a) ((a)<0?(-(a)):(a))
+#define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
 
 /*********************************************************************

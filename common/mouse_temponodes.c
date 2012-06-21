@@ -64,8 +64,8 @@ int MoveTempoNode_Mouse(
 
 	PlayStop();
 
-	lx=max(wblock->temponodearea.x+1,x);
-	lx=min(wblock->temponodearea.x2,lx);
+	lx=R_MAX(wblock->temponodearea.x+1,x);
+	lx=R_MIN(wblock->temponodearea.x2,lx);
 
 	dx=lx - wblock->temponodearea.x -1;
 
@@ -162,8 +162,8 @@ void SetMouseActionTempoNodes(
 	within.y1=Common_oldGetReallineY1Pos(window,wblock,realline);
 	within.y2=Common_oldGetReallineY2Pos(window,wblock,realline);
 
-	x=max(temponodearea->x+1,x);
-	x=min(temponodearea->x2-1,x);
+	x=R_MAX(temponodearea->x+1,x);
+	x=R_MIN(temponodearea->x2-1,x);
 
 	dx=x - temponodearea->x -1;
 

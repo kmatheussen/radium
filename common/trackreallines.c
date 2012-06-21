@@ -548,7 +548,7 @@ int FindNumberOfFreeReallinesDown(struct WBlocks *wblock,struct WTracks *wtrack,
 		done=FindNumberOfNotesOnTrackRealline(wtrack->trackreallines[free].trackreallineelements);
 		free++;
 	}
-	return max(0,free-realline-2);  /* The use of 'max' is just a hack here 
+	return R_MAX(0,free-realline-2);  /* The use of 'max' is just a hack here 
 	                                   I did to get it to work. I don't know
 	                                   if this allways works as I haven't
 	                                   thought this function thru. ...After
@@ -796,7 +796,7 @@ void AddStopsElements(
 	struct Stops *stop=wtrack->track->stops;
 
 	while(stop!=NULL){
-		realline=FindRealLineFor(wblock,max(stop->Tline,realline),&stop->l.p);
+		realline=FindRealLineFor(wblock,R_MAX(stop->Tline,realline),&stop->l.p);
 
 		subrealline=FindSubRealLine(window,wblock,realline,&stop->l.p);
 		InsertTRLElementS(

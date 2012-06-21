@@ -94,8 +94,8 @@ void Scroll_play(
 ){
 	if(pc->isplaying || root->scrollplayonoff==false) return;
 
-	start_realline=boundaries(0,start_realline,wblock->num_reallines-1);
-	end_realline=boundaries(0,end_realline,wblock->num_reallines-1);
+	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
+	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
 	
 //	printf("start: %d, end: %d\n",start_realline,end_realline);
 

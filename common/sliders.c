@@ -70,7 +70,7 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 		if(wtrack->l.num==wblock->right_track) vx2=mdx - (wtrack->x2-wblock->a.x2);
 		wtrack=NextWTrack(wtrack);
 	}
-	vx2=min(vx2,mdx);
+	vx2=R_MIN(vx2,mdx);
 	rx2=mdx;
 
 	x=sx1 + (sx2-sx1)*(vx1-rx1)/(rx2-rx1) + 2;

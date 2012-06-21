@@ -34,12 +34,12 @@ void MakeBlackBox(
 	int width,
 	struct TrackReallineElements *tre
 ){
-	int size=max(window->minnodesize,window->fontwidth/4);
+	int size=R_MAX(window->minnodesize,window->fontwidth/4);
 
-	tre->y1=max(0,u_y-size);
-	tre->y2=min(window->fontheight-1,u_y+size);
-	tre->x1=max(0,u_x-size);
-	tre->x2=min(width,u_x+size);
+	tre->y1=R_MAX(0,u_y-size);
+	tre->y2=R_MIN(window->fontheight-1,u_y+size);
+	tre->x1=R_MAX(0,u_x-size);
+	tre->x2=R_MIN(width,u_x+size);
 }
 
 
@@ -76,7 +76,7 @@ void GetNodeBox_customsize(
 }
 
 int GetNodeSize(struct Tracker_Windows *window){
-  return max(window->minnodesize*2/3,window->fontwidth*2/3);
+  return R_MAX(window->minnodesize*2/3,window->fontwidth*2/3);
 }
 
 void GetNodeBox(
@@ -86,7 +86,7 @@ void GetNodeBox(
 		TBox *within,
 		TBox *ret
 ){
-    int size=max(window->minnodesize*2/3,window->fontwidth*2/3);
+    int size=R_MAX(window->minnodesize*2/3,window->fontwidth*2/3);
     GetNodeBox_customsize(tre,warea,within,ret,size,size);
 }
 

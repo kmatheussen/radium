@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <alsa/seq_event.h>
 
 
-extern char **MIDI_getPortNames(int *retsize);
-
 typedef int MidiPortOs;
 
 #endif

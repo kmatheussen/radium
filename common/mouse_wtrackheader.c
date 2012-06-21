@@ -41,7 +41,7 @@ int MoveWTrackPan_Mouse(
 
 	if(isInList1(&wblock->wtracks->l,&wtrack->l)==false) return 0;
 
-	wtrack->track->pan=boundaries(
+	wtrack->track->pan=R_BOUNDARIES(
 		-MAXTRACKPAN,
 		2*MAXTRACKPAN*(x-wtrack->pan.x1)/((wtrack->pan.x2-wtrack->pan.x1)) - MAXTRACKPAN,
 		MAXTRACKPAN
@@ -70,7 +70,7 @@ int MoveWTrackVolume_Mouse(
 
 	if(isInList1(&wblock->wtracks->l,&wtrack->l)==false) return 0;
 
-	wtrack->track->volume=boundaries(
+	wtrack->track->volume=R_BOUNDARIES(
 		0,
 		MAXTRACKVOL*(x-wtrack->volume.x1)/(wtrack->volume.x2-wtrack->volume.x1),
 		MAXTRACKVOL

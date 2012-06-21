@@ -52,7 +52,7 @@ int MoveTempoNodeBorder_Mouse(
 	oldwidth=wblock->temponodearea.width;
 	oldrighttrack=wblock->right_track;
 
-	x=boundaries(wblock->temponodearea.x+3, x, wblock->t.x2-window->fontwidth*10);
+	x=R_BOUNDARIES(wblock->temponodearea.x+3, x, wblock->t.x2-window->fontwidth*10);
 
 	wblock->temponodearea.width=x - wblock->temponodearea.x;
 

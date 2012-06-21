@@ -67,7 +67,7 @@ void BackWards_notes(
 
 	while(notes!=NULL){
 		f=GetfloatFromPlace(&notes->l.p);
-		newfloat=max(f_p1,f_p2-f-addfloat);
+		newfloat=R_MAX(f_p1,f_p2-f-addfloat);
 		Float2Placement(newfloat,&newplace);
 
 		InsertNote(wblock,wtrack,&newplace,NULL,notes->note,notes->velocity,0);

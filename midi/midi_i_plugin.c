@@ -251,10 +251,10 @@ void MIDIchangeTrackPan(int newpan,struct Tracks *track){
 		patchdata->midi_port,
 		0xb0|patchdata->channel,
 		10,
-		boundaries(
-			0,
-			(127*(newpan+MAXTRACKPAN)/(MAXTRACKPAN*2)),
-			127
+		R_BOUNDARIES(
+                             0,
+                             (127*(newpan+MAXTRACKPAN)/(MAXTRACKPAN*2)),
+                             127
 		)
 	);
 /*

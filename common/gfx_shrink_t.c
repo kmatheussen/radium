@@ -84,7 +84,7 @@ void GFXST_BoxType(
 	if(x>x2) return;
 	if(y>y2) return;
 
-  GFXS_BoxType(GFX_OSFunc,window,color,max(minx,x),y,x2,y2);
+  GFXS_BoxType(GFX_OSFunc,window,color,R_MAX(minx,x),y,x2,y2);
 }
 
 
@@ -137,7 +137,7 @@ void GFXST_TextType2(
 	     )
 {
   int minx=getMinX(window);
-  GFXS_TextType2(GFX_OSFunc,window,color,len,max(minx,x),y,clear);
+  GFXS_TextType2(GFX_OSFunc,window,color,len,R_MAX(minx,x),y,clear);
 }
 
 void GFXST_BorderType(

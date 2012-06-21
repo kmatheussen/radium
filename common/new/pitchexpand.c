@@ -50,8 +50,8 @@ static void PExpand_SetMinMax(
 		if(PlaceGreaterOrEqual(&note->l.p,p2)) return;
 
 		if(firsttime==false){
-		  maxnote=max(note->note,maxnote);
-		  minnote=min(note->note,minnote);
+		  maxnote=R_MAX(note->note,maxnote);
+		  minnote=R_MIN(note->note,minnote);
 		}else{
 		  minnote=127;
 		  maxnote=0;
@@ -85,7 +85,7 @@ static void PExpand_DoIt(
                                          midnote + ( (midnote-minnote) * scalefactor)
                                          )
                             );
-	  note->note=max(1,min(127,note->note));
+	  note->note=R_MAX(1,R_MIN(127,note->note));
 
 	}
 

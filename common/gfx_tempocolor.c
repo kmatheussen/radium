@@ -173,7 +173,7 @@ void WBLOCK_DrawTempoColor(
 						);
 
       colortouse/=(maxtime-mintime);
-      colortousebase=boundaries(0,(int)colortouse,numcolors-1);
+      colortousebase=R_BOUNDARIES(0,(int)colortouse,numcolors-1);
       colortousefloor=1.0f-(colortouse-(float)colortousebase);
 
       //	WBLOCK_DrawLineTempoColor(

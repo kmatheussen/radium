@@ -25,28 +25,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <OS_midi_spesific.h>
 
 
+extern LANGSPEC char **MIDI_getPortNames(int *retsize);
+
 
 // DeleteMidi(midinode);
 //	CloseLibrary(CamdBase);
 //	UninitMiniCamd();
 //	if(inputsig!=-1) FreeSignal(inputsig);
-extern void MIDI_Delete(void);
+extern LANGSPEC void MIDI_Delete(void);
 
 
-MidiPortOs MIDI_getMidiPortOs(char *name);
+extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(char *name);
 
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
-extern void GoodPutMidi(MidiPortOs port,
-		   uint32_t msg,
-		   uint32_t maxbuff
-		   );
+extern LANGSPEC void GoodPutMidi(MidiPortOs port,
+                                 uint32_t msg,
+                                 uint32_t maxbuff
+                                 );
 
-extern void PutMidi(MidiPortOs port,
-	       uint32_t msg
-	       );
+extern LANGSPEC void PutMidi(MidiPortOs port,
+                             uint32_t msg
+                             );
 
-extern bool MIDI_New(struct Instruments *instrument);
+extern LANGSPEC bool MIDI_New(struct Instruments *instrument);
 
 
 

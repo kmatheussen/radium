@@ -70,7 +70,7 @@ void CloseAllTrackerWindows(void){
 *********************************************************************/
 void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
 
-	window->bottomslider.x2=window->width - max(window->bottomslider.width,10);
+	window->bottomslider.x2=window->width - R_MAX(window->bottomslider.width,10);
 
 	window->resizebox.x1=window->bottomslider.x2+1;
 	window->resizebox.y1=window->height - window->bottomslider.width;

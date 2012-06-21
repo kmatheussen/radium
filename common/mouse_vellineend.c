@@ -94,7 +94,7 @@ int MoveVelEnd_Mouse(
 	realline=GetReallineAndPlaceFromY(window,wblock,y,&place,pp_vel,pn_vel);
 
 	note->velocity_end=(maxvel*(x-sx1)/(sx2-sx1));
-	note->velocity_end=boundaries(0,note->velocity_end,maxvel);
+	note->velocity_end=R_BOUNDARIES(0,note->velocity_end,maxvel);
 	if(note->velocities==NULL && note->velocity==velocity_end_org){
 		note->velocity=note->velocity_end;
 	}
@@ -107,8 +107,8 @@ int MoveVelEnd_Mouse(
 	  ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	  UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	}else{
-	  start_realline=min(realline,start_realline);
-	  end_realline=max(realline,end_realline);
+	  start_realline=R_MIN(realline,start_realline);
+	  end_realline=R_MAX(realline,end_realline);
 	  ClearTrack(window,wblock,wtrack,start_realline,end_realline);
 	  UpdateWTrack(window,wblock,wtrack,start_realline,end_realline);
 	}

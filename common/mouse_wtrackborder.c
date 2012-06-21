@@ -52,13 +52,13 @@ int MoveWTrackBorder_Mouse(
 
 	if(wtrack==NULL) return 0;
 
-	x=boundaries(wtrack->fxarea.x+3, x, wblock->t.x2-3);
+	x=R_BOUNDARIES(wtrack->fxarea.x+3, x, wblock->t.x2-3);
 
 	oldfxwidth=wtrack->fxwidth;
 	oldrighttrack=wblock->right_track;
 
 	wtrack->fxwidth=x - wtrack->fxarea.x;
-	wtrack->fxwidth=max(wtrack->fxwidth,2);
+	wtrack->fxwidth=R_MAX(wtrack->fxwidth,2);
 
 	if(oldfxwidth==wtrack->fxwidth && window->prevaction.action!=NOACTION){
 	  return 0;

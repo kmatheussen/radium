@@ -76,7 +76,7 @@ void DrawWTrackBorder(struct Tracker_Windows *window,struct WBlocks *wblock,stru
 		window,Col[1],
 		wtrack->x,
 		wblock->t.y1-1,
-		min(wtrack->x2-1,wblock->a.x2),
+		R_MIN(wtrack->x2-1,wblock->a.x2),
 		wblock->t.y1-1
 	);
 	*/
@@ -110,9 +110,9 @@ void ClearTrack(
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 	  GFX_P_T_FilledBox(
 			  window,Col[0],
-			  max(wtrack->notearea.x,wblock->temponodearea.x2+2),
+			  R_MAX(wtrack->notearea.x,wblock->temponodearea.x2+2),
 			  GetReallineY1Pos(window,wblock,lokke),
-			  min(wtrack->fxarea.x2,wblock->a.x2),
+			  R_MIN(wtrack->fxarea.x2,wblock->a.x2),
 			  GetReallineY2Pos(window,wblock,lokke)
 			  );
 	}
@@ -146,9 +146,9 @@ void ClearAllTrack(
 	printf("ca2\n");
 	GFX_P_FilledBox(
 		window,Col[0],
-		max(wtrack->fxarea.x,wblock->temponodearea.x2+2),
+		R_MAX(wtrack->fxarea.x,wblock->temponodearea.x2+2),
 		wblock->t.y1,
-		min(wtrack->fxarea.x2,wblock->a.x2),
+		R_MIN(wtrack->fxarea.x2,wblock->a.x2),
 		wblock->t.y2
 	);
 
@@ -412,7 +412,7 @@ void UpdateWTrack(
 							window,Col[3],
 							(int)(wtrack->fxarea.x+element->x1),
 							(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
-							min(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
+							R_MIN(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
 							(int)(within2.y1+(element->y2*(within2.y2-within2.y1)))
 						);
 					}
@@ -579,7 +579,7 @@ void UpdateAndClearSomeWTracks(
 	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,starttrack);
 	if(wtrack==NULL) return;
 
-	endtrack=min(endtrack,wblock->right_track);
+	endtrack=R_MIN(endtrack,wblock->right_track);
 
 	for(lokke=0;lokke<=endtrack-starttrack;lokke++){
 		ClearTrack(window,wblock,wtrack,start_realline,end_realline);

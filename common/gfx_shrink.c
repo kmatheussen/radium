@@ -126,7 +126,7 @@ void GFXS_BoxType(
     return;
   }
 
-  (*GFX_OSFunc)(window,color,x,y,min(x2,maxx),y2);
+  (*GFX_OSFunc)(window,color,x,y,R_MIN(x2,maxx),y2);
 
 }
 

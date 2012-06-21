@@ -50,7 +50,7 @@ void GFX_UpdateQuantitize(
 	}
 
 	precision-=quant>=10.0?3:2;
-	precision=max(0,precision);
+	precision=R_MAX(0,precision);
 
 	if(less){
 		sprintf(temp,"/%.*f",precision,quant);

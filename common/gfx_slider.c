@@ -64,13 +64,13 @@ void DrawSlider(
 		);
 		GFX_P_T_FilledBox(
 			window,3,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max)-3,
 				box->x2-1
 			),
 			y1,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max)+3,
 				box->x2-1
@@ -79,13 +79,13 @@ void DrawSlider(
 		);
 		GFX_P_T_FilledBox(
 			window,1,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max),
 				box->x2-1
 			),
 			y1,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max),
 				box->x2-1
@@ -104,13 +104,13 @@ void DrawSlider(
 
 	GFX_P_T_FilledBox(
 		window,3,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)-9,
 			box->x2-1
 		),
 		y1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)+9,
 			box->x2-1
@@ -120,13 +120,13 @@ void DrawSlider(
 
 	GFX_P_T_FilledBox(
 		window,1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)-3,
 			box->x2-1
 		),
 		y1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)+3,
 			box->x2-1
@@ -136,13 +136,13 @@ void DrawSlider(
 
 	GFX_P_T_FilledBox(
 		window,2,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max),
 			box->x2-1
 		),
 		y1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max),
 			box->x2-1
@@ -165,13 +165,13 @@ void DrawSlider(
 		);
 		GFX_All_FilledBox(
 			window,3,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max)-3,
 				box->x2-1
 			),
 			y1,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max)+3,
 				box->x2-1
@@ -180,13 +180,13 @@ void DrawSlider(
 		);
 		GFX_All_FilledBox(
 			window,1,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max),
 				box->x2-1
 			),
 			y1,
-			boundaries(
+			R_BOUNDARIES(
 				box->x1+1,
 				box->x1+((box->x2-box->x1)*val/max),
 				box->x2-1
@@ -205,13 +205,13 @@ void DrawSlider(
 
 	GFX_All_FilledBox(
 		window,3,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)-9,
 			box->x2-1
 		),
 		y1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)+9,
 			box->x2-1
@@ -221,13 +221,13 @@ void DrawSlider(
 
 	GFX_All_FilledBox(
 		window,1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)-3,
 			box->x2-1
 		),
 		y1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max)+3,
 			box->x2-1
@@ -237,13 +237,13 @@ void DrawSlider(
 
 	GFX_All_FilledBox(
 		window,2,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max),
 			box->x2-1
 		),
 		y1,
-		boundaries(
+		R_BOUNDARIES(
 			box->x1+1,
 			box->x1+((box->x2-box->x1)*val/max),
 			box->x2-1

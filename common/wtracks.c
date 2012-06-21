@@ -532,10 +532,10 @@ int WTRACK_getx1(
 	wtrack=ListFindElement1(&wblock->wtracks->l,track);
 
 	if(onlyfx==false){
-		return boundaries(wtrack->notearea.x,wblock->t.x1,wblock->t.x2);
+		return R_BOUNDARIES(wtrack->notearea.x,wblock->t.x1,wblock->t.x2);
 	}
 
-	return boundaries(wtrack->fxarea.x,wblock->t.x1,wblock->t.x2);
+	return R_BOUNDARIES(wtrack->fxarea.x,wblock->t.x1,wblock->t.x2);
 }
 
 
@@ -576,7 +576,7 @@ int WTRACK_getx2(
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,track);
 
-	return max(wtrack->fxarea.x2,wblock->t.x1);
+	return R_MAX(wtrack->fxarea.x2,wblock->t.x1);
 
 }
 

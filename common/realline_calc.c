@@ -43,7 +43,7 @@ int FindRealLineFor(
 		return wblock->num_reallines-1;
 	}
 
-	for(realline=max(realline,place->line);;realline++){
+	for(realline=R_MAX(realline,place->line);;realline++){
 		if(realline>=wblock->num_reallines) break;
 		if(
 			PlaceLessThan(place,&reallines[realline]->l.p) &&
@@ -68,7 +68,7 @@ int FindRealLineForEndNote(
 	int realline,
 	struct Notes *note
 ){
-	return FindRealLineFor(wblock,max(note->end.line,realline),&note->end);
+	return FindRealLineFor(wblock,R_MAX(note->end.line,realline),&note->end);
 }
 
 

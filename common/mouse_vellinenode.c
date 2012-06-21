@@ -91,7 +91,7 @@ int MoveVelNode_Mouse(
 		ListRemoveElement3(&note->velocities,&velocity->l);
 		action->action=NOACTION;
 	}else{
-		velocity->velocity=boundaries(0,velocity->velocity,maxvel);
+		velocity->velocity=R_BOUNDARIES(0,velocity->velocity,maxvel);
 		PlaceCopy(&velocity->l.p,&place);
 		GFX_SetChangeInt(window,wblock,"Velocity",velocity->velocity);
 		GFX_DrawWindowTitle(window,wblock);

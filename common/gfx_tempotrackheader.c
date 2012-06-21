@@ -50,7 +50,7 @@ void UpdateTempoTrackHeader_reltempo(
 		temp[0]='*';
 		temp[1]=0;
 	}else{
-		presicion=min(5,presicion);
+		presicion=R_MIN(5,presicion);
 		sprintf(
 			temp,"%.*f",
 			presicion,

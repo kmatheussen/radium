@@ -80,7 +80,7 @@ void Blt_blt(struct Tracker_Windows *window){
 		  window,
 		  blt->startrealline-wblock->top_realline,
 		  blt->endrealline-wblock->top_realline,
-		  blt->x1,min(blt->x2,wblock->t.x2)
+		  blt->x1,R_MIN(blt->x2,wblock->t.x2)
 		  );
 
   blt->blt_do=false;
@@ -115,11 +115,11 @@ void Blt_mark(
     return;
   }
 
-  wblt->x1=min(wblt->x1,x1);
-  wblt->x2=max(wblt->x2,x2);
+  wblt->x1=R_MIN(wblt->x1,x1);
+  wblt->x2=R_MAX(wblt->x2,x2);
 
-  wblt->startrealline=min(wblt->startrealline,startrealline);
-  wblt->endrealline=max(wblt->endrealline,endrealline);
+  wblt->startrealline=R_MIN(wblt->startrealline,startrealline);
+  wblt->endrealline=R_MAX(wblt->endrealline,endrealline);
 
   wblt->blt_do=true;
 }
@@ -137,8 +137,8 @@ void Blt_marktrackheader(
     blt->endtrack=endtrack;
     blt->blt_doheader=true;
   }else{
-    blt->starttrack=min(blt->starttrack,starttrack);
-    blt->endtrack=max(blt->endtrack,endtrack);
+    blt->starttrack=R_MIN(blt->starttrack,starttrack);
+    blt->endtrack=R_MAX(blt->endtrack,endtrack);
   }
 }
 
@@ -182,7 +182,7 @@ void Blt_marktrack(
 		}else{
 			nx1=wtrack->fxarea.x;
 		}
-		nx1=min(nx1,wblock->t.x2);
+		nx1=R_MIN(nx1,wblock->t.x2);
 		break;
 	}
 	
@@ -212,7 +212,7 @@ void Blt_marktrack(
 		}else{
 			wtrack=ListFindElement1(&wblock->wtracks->l,starttrack);
 			nx2=wtrack->fxarea.x2;
-			nx1=max(nx1,wblock->t.x1);
+			nx1=R_MAX(nx1,wblock->t.x1);
 		}
 		break;
 	}

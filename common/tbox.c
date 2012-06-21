@@ -45,10 +45,10 @@ bool TboxInsideTBox(TBox *tbox1,TBox *tbox2){
 
 
 void TBOX_within(TBox *in,TBox *within){
-  in->x1=boundaries(within->x1,in->x1,within->x2);
-  in->x2=boundaries(within->x1,in->x2,within->x2);
-  in->y1=boundaries(within->y1,in->y1,within->y2);
-  in->y2=boundaries(within->y1,in->y2,within->y2);
+  in->x1=R_BOUNDARIES(within->x1,in->x1,within->x2);
+  in->x2=R_BOUNDARIES(within->x1,in->x2,within->x2);
+  in->y1=R_BOUNDARIES(within->y1,in->y1,within->y2);
+  in->y2=R_BOUNDARIES(within->y1,in->y2,within->y2);
 }
 
 
@@ -97,13 +97,13 @@ bool TBoxOnlyOverLapTBox_X(TBox *tbox1,TBox *tbox2){
 }
 
 void TBoxSquize_Y(TBox *from,TBox *to){
-  to->y1=min(to->y1,from->y1);
-  from->y2=max(to->y2,from->y2);
+  to->y1=R_MIN(to->y1,from->y1);
+  from->y2=R_MAX(to->y2,from->y2);
 }
 
 void TBoxSquize_X(TBox *from,TBox *to){
-  to->x1=min(to->x1,from->x1);
-  from->x2=max(to->x2,from->x2);
+  to->x1=R_MIN(to->x1,from->x1);
+  from->x2=R_MAX(to->x2,from->x2);
 }
 
 

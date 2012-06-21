@@ -778,7 +778,7 @@ Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
 	cd $(P) && $(MOC) Qt_Bs_edit.cpp >mQt_Bs_edit.cpp
 
-Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h
+Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h #$(P)instruments_widget.ui.h $(P)control_change_widget.ui.h
 	$(CCC) $(P)Qt_instruments.cpp $(CPPOPT)
 
 $(P)Qt_instruments_widget.h: $(P)instruments_widget.ui

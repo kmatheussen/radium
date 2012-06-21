@@ -100,12 +100,12 @@ int MoveFXNode_Mouse(
 	}else{
 		PlaceCopy(&fxnodeline->l.p,&place);
 		fxnodeline->val=((fx->max-fx->min)*(x-sx1)/(sx2-sx1))+fx->min;
-		fxnodeline->val=boundaries(fx->min,fxnodeline->val,fx->max);
+		fxnodeline->val=R_BOUNDARIES(fx->min,fxnodeline->val,fx->max);
 		GFX_SetChangeInt(window,wblock,fx->name,fxnodeline->val);
 		GFX_DrawWindowTitle(window,wblock);
 
-		start_realline=min(start_realline,realline);
-		end_realline=max(end_realline,realline);
+		start_realline=R_MIN(start_realline,realline);
+		end_realline=R_MAX(end_realline,realline);
 	}
 
 

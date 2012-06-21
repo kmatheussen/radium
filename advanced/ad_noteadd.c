@@ -133,10 +133,10 @@ void AD_installNoteAdds_track(
 		if(nat->volume<0.0f){
 			note->velocity_end=note->velocity=standardvel;
 		}else{
-			note->velocity_end=note->velocity=min(maxvel,maxvel*nat->volume);
+			note->velocity_end=note->velocity=R_MIN(maxvel,maxvel*nat->volume);
 		}
 
-		note->note=boundaries(nat->notenum,1,127);
+		note->note=R_BOUNDARIES(nat->notenum,1,127);
 
 		ListAddElement3(&wtrack->track->notes,&note->l);
 	}
@@ -264,12 +264,12 @@ void AD_insertNoteAdds_block_do(
 		if(nab->nats_do[lokke]->startplace<0.0f){
 			nab->nats_do[lokke]->startplace=GetfloatFromPlace(&wblock->reallines[wblock->curr_realline]->l.p);
 		}
-		maxplace=max(ftemp+nab->nats_do[lokke]->startplace,maxplace);
+		maxplace=R_MAX(ftemp+nab->nats_do[lokke]->startplace,maxplace);
 		itemp=nab->nats_do[lokke]->tracknum;
 		if(itemp==-1){
 			itemp=wblock->wtrack->l.num;
 		}
-		maxtrack=max(maxtrack,itemp);
+		maxtrack=R_MAX(maxtrack,itemp);
 	}
 
 	Undo_Block(window,wblock,wblock->wtrack,wblock->curr_realline);

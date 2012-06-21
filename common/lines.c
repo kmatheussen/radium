@@ -65,7 +65,7 @@ void InsertLines_notes(
 			note->noend=1;
 		}else{
 			note->end.line+=toinsert;
-                        note->end.line=max(note->end.line,line);
+                        note->end.line=R_MAX(note->end.line,line);
 		}
 
 		List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);

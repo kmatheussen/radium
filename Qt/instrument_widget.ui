@@ -11,7 +11,7 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>661</width>
+            <width>698</width>
             <height>184</height>
         </rect>
     </property>
@@ -30,32 +30,30 @@
         <property name="name">
             <cstring>unnamed</cstring>
         </property>
-        <widget class="QButtonGroup" row="2" column="0" rowspan="1" colspan="5">
+        <widget class="QGroupBox" row="0" column="0" rowspan="1" colspan="2">
             <property name="name">
-                <cstring>control_change_group</cstring>
-            </property>
-            <property name="font">
-                <font>
-                </font>
+                <cstring>groupBox8</cstring>
             </property>
             <property name="frameShadow">
                 <enum>Sunken</enum>
             </property>
-            <property name="lineWidth">
-                <number>1</number>
-            </property>
             <property name="title">
-                <string>Control Change</string>
+                <string>Name</string>
             </property>
             <grid>
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
+                <widget class="QLineEdit" row="0" column="0">
+                    <property name="name">
+                        <cstring>name_widget</cstring>
+                    </property>
+                </widget>
             </grid>
         </widget>
-        <widget class="QGroupBox" row="1" column="4">
+        <widget class="QGroupBox" row="0" column="5" rowspan="3" colspan="1">
             <property name="name">
-                <cstring>groupBox13</cstring>
+                <cstring>groupBox17</cstring>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -66,7 +64,7 @@
                 </sizepolicy>
             </property>
             <property name="title">
-                <string>LSB</string>
+                <string>Volume</string>
             </property>
             <grid>
                 <property name="name">
@@ -74,16 +72,165 @@
                 </property>
                 <widget class="QSpinBox" row="0" column="0">
                     <property name="name">
-                        <cstring>lsb</cstring>
+                        <cstring>volume_spin</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>false</bool>
                     </property>
                     <property name="maxValue">
                         <number>127</number>
                     </property>
-                    <property name="minValue">
-                        <number>-1</number>
+                    <property name="value">
+                        <number>100</number>
+                    </property>
+                </widget>
+                <widget class="QSlider" row="1" column="0">
+                    <property name="name">
+                        <cstring>volume_slider</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
+                    <property name="maxValue">
+                        <number>127</number>
                     </property>
                     <property name="value">
-                        <number>-1</number>
+                        <number>27</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                </widget>
+                <widget class="QCheckBox" row="2" column="0">
+                    <property name="name">
+                        <cstring>volume_onoff</cstring>
+                    </property>
+                    <property name="text">
+                        <string>On</string>
+                    </property>
+                </widget>
+            </grid>
+        </widget>
+        <widget class="QGroupBox" row="0" column="6" rowspan="3" colspan="1">
+            <property name="name">
+                <cstring>groupBox17_2</cstring>
+            </property>
+            <property name="enabled">
+                <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>5</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="title">
+                <string>Velocity</string>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QSpinBox" row="0" column="0">
+                    <property name="name">
+                        <cstring>velocity_spin</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>true</bool>
+                    </property>
+                    <property name="maxValue">
+                        <number>127</number>
+                    </property>
+                    <property name="value">
+                        <number>100</number>
+                    </property>
+                </widget>
+                <widget class="QSlider" row="1" column="0">
+                    <property name="name">
+                        <cstring>velocity_slider</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>true</bool>
+                    </property>
+                    <property name="maxValue">
+                        <number>127</number>
+                    </property>
+                    <property name="value">
+                        <number>27</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Vertical</enum>
+                    </property>
+                </widget>
+                <widget class="QCheckBox" row="2" column="0">
+                    <property name="name">
+                        <cstring>velocity_onoff</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
+                    <property name="text">
+                        <string>On</string>
+                    </property>
+                    <property name="checked">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </grid>
+        </widget>
+        <widget class="QGroupBox" row="0" column="2" rowspan="1" colspan="3">
+            <property name="name">
+                <cstring>groupBox16</cstring>
+            </property>
+            <property name="frameShadow">
+                <enum>Sunken</enum>
+            </property>
+            <property name="title">
+                <string>Panning</string>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QCheckBox" row="0" column="0">
+                    <property name="name">
+                        <cstring>panning_onoff</cstring>
+                    </property>
+                    <property name="text">
+                        <string>On</string>
+                    </property>
+                </widget>
+                <widget class="QSpinBox" row="0" column="1">
+                    <property name="name">
+                        <cstring>panning_spin</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                    <property name="minValue">
+                        <number>-63</number>
+                    </property>
+                </widget>
+                <widget class="QSlider" row="0" column="2">
+                    <property name="name">
+                        <cstring>panning_slider</cstring>
+                    </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
+                    <property name="minValue">
+                        <number>-63</number>
+                    </property>
+                    <property name="maxValue">
+                        <number>64</number>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
                     </property>
                 </widget>
             </grid>
@@ -123,32 +270,66 @@
                 </widget>
             </grid>
         </widget>
-        <widget class="QGroupBox" row="1" column="0">
+        <widget class="QGroupBox" row="1" column="4">
             <property name="name">
-                <cstring>groupBox10</cstring>
+                <cstring>groupBox13</cstring>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
-                    <hsizetype>1</hsizetype>
+                    <hsizetype>0</hsizetype>
                     <vsizetype>5</vsizetype>
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                 </sizepolicy>
             </property>
-            <property name="font">
-                <font>
-                </font>
-            </property>
             <property name="title">
-                <string>Port</string>
+                <string>LSB</string>
             </property>
             <grid>
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
-                <widget class="QComboBox" row="0" column="0">
+                <widget class="QSpinBox" row="0" column="0">
                     <property name="name">
-                        <cstring>port</cstring>
+                        <cstring>lsb</cstring>
+                    </property>
+                    <property name="maxValue">
+                        <number>127</number>
+                    </property>
+                    <property name="minValue">
+                        <number>-1</number>
+                    </property>
+                    <property name="value">
+                        <number>-1</number>
+                    </property>
+                </widget>
+            </grid>
+        </widget>
+        <widget class="QGroupBox" row="1" column="2">
+            <property name="name">
+                <cstring>groupBox11</cstring>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>5</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="title">
+                <string>Channel</string>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QSpinBox" row="0" column="0">
+                    <property name="name">
+                        <cstring>channel</cstring>
+                    </property>
+                    <property name="maxValue">
+                        <number>15</number>
                     </property>
                 </widget>
             </grid>
@@ -189,199 +370,151 @@
                 </widget>
             </grid>
         </widget>
-        <widget class="QGroupBox" row="0" column="5" rowspan="3" colspan="1">
+        <widget class="QGroupBox" row="1" column="0">
             <property name="name">
-                <cstring>groupBox17</cstring>
+                <cstring>groupBox10</cstring>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
-                    <hsizetype>0</hsizetype>
+                    <hsizetype>1</hsizetype>
                     <vsizetype>5</vsizetype>
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                 </sizepolicy>
             </property>
+            <property name="font">
+                <font>
+                </font>
+            </property>
             <property name="title">
-                <string>Volume</string>
+                <string>Port</string>
             </property>
             <grid>
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
-                <widget class="QSpinBox" row="0" column="0">
+                <widget class="QComboBox" row="0" column="0">
                     <property name="name">
-                        <cstring>volume_spin</cstring>
-                    </property>
-                    <property name="maxValue">
-                        <number>127</number>
-                    </property>
-                    <property name="value">
-                        <number>100</number>
-                    </property>
-                </widget>
-                <widget class="QSlider" row="1" column="0">
-                    <property name="name">
-                        <cstring>volume_slider</cstring>
-                    </property>
-                    <property name="maxValue">
-                        <number>127</number>
-                    </property>
-                    <property name="value">
-                        <number>100</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                </widget>
-                <widget class="QCheckBox" row="2" column="0">
-                    <property name="name">
-                        <cstring>volume_onoff</cstring>
-                    </property>
-                    <property name="text">
-                        <string>On</string>
+                        <cstring>port</cstring>
                     </property>
                 </widget>
             </grid>
         </widget>
-        <widget class="QGroupBox" row="0" column="2" rowspan="1" colspan="3">
+        <widget class="QButtonGroup" row="2" column="0" rowspan="1" colspan="5">
             <property name="name">
-                <cstring>groupBox16</cstring>
+                <cstring>control_change_group</cstring>
+            </property>
+            <property name="font">
+                <font>
+                </font>
             </property>
             <property name="frameShadow">
                 <enum>Sunken</enum>
             </property>
+            <property name="lineWidth">
+                <number>1</number>
+            </property>
             <property name="title">
-                <string>Panning</string>
+                <string>Control Change</string>
             </property>
             <grid>
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
-                <widget class="QCheckBox" row="0" column="0">
-                    <property name="name">
-                        <cstring>panning_onoff</cstring>
-                    </property>
-                    <property name="text">
-                        <string>On</string>
-                    </property>
-                </widget>
-                <widget class="QSpinBox" row="0" column="1">
-                    <property name="name">
-                        <cstring>panning_spin</cstring>
-                    </property>
-                </widget>
-                <widget class="QSlider" row="0" column="2">
-                    <property name="name">
-                        <cstring>panning_slider</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                </widget>
-            </grid>
-        </widget>
-        <widget class="QGroupBox" row="0" column="0" rowspan="1" colspan="2">
-            <property name="name">
-                <cstring>groupBox8</cstring>
-            </property>
-            <property name="frameShadow">
-                <enum>Sunken</enum>
-            </property>
-            <property name="title">
-                <string>Name</string>
-            </property>
-            <grid>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QLineEdit" row="0" column="0">
-                    <property name="name">
-                        <cstring>name_widget</cstring>
-                    </property>
-                </widget>
-            </grid>
-        </widget>
-        <widget class="QGroupBox" row="1" column="2">
-            <property name="name">
-                <cstring>groupBox11</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>0</hsizetype>
-                    <vsizetype>5</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="title">
-                <string>Channel</string>
-            </property>
-            <grid>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QSpinBox" row="0" column="0">
-                    <property name="name">
-                        <cstring>channel</cstring>
-                    </property>
-                </widget>
-            </grid>
-        </widget>
-        <widget class="QGroupBox" row="0" column="6" rowspan="3" colspan="1">
-            <property name="name">
-                <cstring>groupBox17_2</cstring>
-            </property>
-            <property name="sizePolicy">
-                <sizepolicy>
-                    <hsizetype>0</hsizetype>
-                    <vsizetype>5</vsizetype>
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                </sizepolicy>
-            </property>
-            <property name="title">
-                <string>Velocity</string>
-            </property>
-            <grid>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QSpinBox" row="0" column="0">
-                    <property name="name">
-                        <cstring>velocity_spin</cstring>
-                    </property>
-                    <property name="maxValue">
-                        <number>127</number>
-                    </property>
-                    <property name="value">
-                        <number>100</number>
-                    </property>
-                </widget>
-                <widget class="QSlider" row="1" column="0">
-                    <property name="name">
-                        <cstring>velocity_slider</cstring>
-                    </property>
-                    <property name="maxValue">
-                        <number>127</number>
-                    </property>
-                    <property name="value">
-                        <number>100</number>
-                    </property>
-                    <property name="orientation">
-                        <enum>Vertical</enum>
-                    </property>
-                </widget>
-                <widget class="QCheckBox" row="2" column="0">
-                    <property name="name">
-                        <cstring>velocity_onoff</cstring>
-                    </property>
-                    <property name="text">
-                        <string>On</string>
-                    </property>
-                </widget>
             </grid>
         </widget>
     </grid>
 </widget>
+<connections>
+    <connection>
+        <sender>volume_slider</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>volume_slider_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>volume_spin</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>volume_spin_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>velocity_spin</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>velocity_spin_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>velocity_slider</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>velocity_slider_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>velocity_onoff</sender>
+        <signal>stateChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>velocity_onoff_stateChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>volume_onoff</sender>
+        <signal>stateChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>volume_onoff_stateChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>panning_onoff</sender>
+        <signal>stateChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>panning_onoff_stateChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>panning_spin</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>panning_spin_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>panning_slider</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>panning_slider_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>channel</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>channel_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>msb</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>msb_valueChanged(int)</slot>
+    </connection>
+    <connection>
+        <sender>lsb</sender>
+        <signal>valueChanged(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>lsb_valueChanged(int)</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="local" impldecl="in implementation">instrument_widget.ui.h</include>
+</includes>
+<slots>
+    <slot>volume_slider_valueChanged( int val )</slot>
+    <slot>volume_spin_valueChanged( int val )</slot>
+    <slot>volume_onoff_stateChanged( int val )</slot>
+    <slot>velocity_slider_valueChanged( int val )</slot>
+    <slot>velocity_spin_valueChanged( int val )</slot>
+    <slot>velocity_onoff_stateChanged( int val )</slot>
+    <slot>panning_slider_valueChanged( int val )</slot>
+    <slot>panning_spin_valueChanged( int val )</slot>
+    <slot>panning_onoff_stateChanged( int val )</slot>
+    <slot>channel_valueChanged( int val )</slot>
+    <slot>msb_valueChanged( int val )</slot>
+    <slot>lsb_valueChanged( int val )</slot>
+</slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

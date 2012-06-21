@@ -182,7 +182,7 @@ void GFX_P_Text(
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Text ; 
   el->i1 = color ; 
-  memcpy(el->s2, text, min(strlen(text)+1,62)); 
+  memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
   el->i3 = x ; 
   el->i4 = y ; 
   el->b5 = clear ; 
@@ -275,7 +275,7 @@ void GFX_Text(
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Text ; 
   el->i1 = color ; 
-  memcpy(el->s2, text, min(strlen(text)+1,62)); 
+  memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
   el->i3 = x ; 
   el->i4 = y ; 
   el->b5 = clear ; 
@@ -295,7 +295,7 @@ void GFX_P_InvertText(
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_InvertText ; 
   el->i1 = color ; 
-  memcpy(el->s2, text, min(strlen(text)+1,62)); 
+  memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
   el->i3 = x ; 
   el->i4 = y ; 
   el->b5 = clear ; 

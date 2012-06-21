@@ -214,7 +214,7 @@ int CursorNextTrack(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	while(curr_track==window->curr_track){
 		tempret=CursorRight(window,wblock);
-		ret=max(tempret,ret);
+		ret=R_MAX(tempret,ret);
 	}
 	return ret;
 }
@@ -238,30 +238,30 @@ int SetCursorPosConcrete(
 		if(tracknum>window->curr_track){
 			while(window->curr_track!=tracknum){
 				tempret=CursorRight(window,wblock);
-				ret=max(tempret,ret);
+				ret=R_MAX(tempret,ret);
 			}
 		}else{
 			while(window->curr_track!=tracknum){
 				tempret=CursorLeft(window,wblock);
-				ret=max(tempret,ret);
+				ret=R_MAX(tempret,ret);
 			}
 		}
 	}else{
 		wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
-		subtrack=min(wtrack->num_vel-1,subtrack);
+		subtrack=R_MIN(wtrack->num_vel-1,subtrack);
 
 		if(tracknum==window->curr_track && subtrack==window->curr_track_sub) return 0;
 
 		if(tracknum>window->curr_track || (tracknum==window->curr_track && subtrack>window->curr_track_sub)){
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorRight(window,wblock);
-				ret=max(tempret,ret);
+				ret=R_MAX(tempret,ret);
 			}
 		}else{
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorLeft(window,wblock);
-				ret=max(tempret,ret);
+				ret=R_MAX(tempret,ret);
 			}
 		}
 	}

@@ -61,12 +61,12 @@ void DrawUpLineNums(
 
 		if(realline->level>0){
 			if(realline->zoomline>0){
-				color=min(7,realline->level+1);
+				color=R_MIN(7,realline->level+1);
 			}else{
 				if(realline->level==1){
 					color=1;
 				}else{
-					color=min(7,realline->level);
+					color=R_MIN(7,realline->level);
 				}
 			}
 		}else{

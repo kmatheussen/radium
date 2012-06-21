@@ -19,7 +19,7 @@ int MoveRelTempoSlider_Mouse(
 
 	if(wblock!=(struct WBlocks *)window->prevaction.pointer1) return 0;
 
-	wblock->block->reltempo=boundaries(
+	wblock->block->reltempo=R_BOUNDARIES(
 		MINBLOCKRELTIME,
 		MINBLOCKRELTIME+(((MAXBLOCKRELTIME-MINBLOCKRELTIME)*((float)(x-wblock->reltempo.x1)))/((float)(wblock->reltempo.x2-wblock->reltempo.x1))),
 		MAXBLOCKRELTIME

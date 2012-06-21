@@ -100,7 +100,7 @@ void UpdateWBlockCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-	wblock->a.x1  = max(window->fontwidth+3,window->leftslider.width+1);
+	wblock->a.x1  = R_MAX(window->fontwidth+3,window->leftslider.width+1);
 	wblock->a.y1  = 0;
 	wblock->a.x2 = window->width;
 	wblock->a.y2 = window->height - window->bottomslider.width -1;

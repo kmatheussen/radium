@@ -130,14 +130,14 @@ void MakeRangeLegal(
 ){
 	if(wblock->isranged==false) return;
 
-	wblock->rangey2=min(wblock->rangey2,wblock->num_reallines-1);
+	wblock->rangey2=R_MIN(wblock->rangey2,wblock->num_reallines-1);
 	if(wblock->rangey2>=wblock->rangey1){
 		wblock->isranged=false;
 		return;
 	};
 
-	wblock->rangex2=min(wblock->rangex2,wblock->block->num_tracks-1);
-	wblock->rangex1=min(wblock->rangex1,wblock->rangex2);
+	wblock->rangex2=R_MIN(wblock->rangex2,wblock->block->num_tracks-1);
+	wblock->rangex1=R_MIN(wblock->rangex1,wblock->rangex2);
 }
 
 

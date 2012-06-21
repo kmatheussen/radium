@@ -95,7 +95,7 @@ void SetMouseActionRelTempo(
 	char temp[500];
 	float ret;
 
-	max=max(1.1f,max);
+	max=R_MAX(1.1f,max);
 
 	sprintf(temp,"New RelTempoMax (%.1f - 99.9) :",max);
 

@@ -102,7 +102,7 @@ void MakeNodeLines(
   float y2=GetFloatFromPlace(p2);
 
   int realline1=FindRealLineFor(wblock,p1->line,p1);
-  int realline2=FindRealLineFor(wblock,max(realline1,p2->line),p2);
+  int realline2=FindRealLineFor(wblock,R_MAX(realline1,p2->line),p2);
 
   float ry1,ry2;
 

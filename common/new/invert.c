@@ -50,7 +50,7 @@ void Invert_notes(
 		next=note->note;
 
 		if(firsttime==false){
-			note->note=max(1,min(127,2*last-note->note));
+			note->note=R_MAX(1,R_MIN(127,2*last-note->note));
 		}else{
 			firsttime=false;
 		}

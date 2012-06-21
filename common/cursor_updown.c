@@ -278,7 +278,7 @@ void ScrollEditorToLine_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 
-	line=min(line,block->num_lines-1);
+	line=R_MIN(line,block->num_lines-1);
 	ScrollEditorToRealLine(window,wblock,wblock->reallines[line]->realline);
 }
 
