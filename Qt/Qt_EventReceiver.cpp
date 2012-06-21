@@ -345,6 +345,8 @@ void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.y=qmouseevent->y();
   EventReciever(&tevent,this->window);
 
+  //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
+
   update();
 
   //  WBLOCKS_bltBlt(this->window);

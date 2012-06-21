@@ -14,25 +14,73 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include "qstring.h"
-
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
+#include "MyWidget.h"
 
+extern struct Root *root;
 extern struct Patch *g_currpatch;
 static struct PatchData dummy_patchdata;
 static struct PatchData *patchdata = &dummy_patchdata;
 
-#define protected public // Stupid uic program
-#  include "Qt_instruments_widget.cpp"
-#  include "Qt_instrument_widget.cpp"
-#  include "Qt_control_change_widget.cpp"
-#undef protected
+#include "qstring.h"
+#include "qlineedit.h"
+#include "qspinbox.h"
 
+static int num_focus = 0;
+
+void set_editor_focus(void){
+  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+  my_widget->setFocus();
+}
+
+
+#define MakeFocusOverrideClass(Class)                    \
+  class My##Class : public Class {                       \
+  public:                                                \
+  My##Class(QWidget *parent, const char *name)           \
+  : Class(parent, name)                                  \
+    {}                                                   \
+                                                         \
+  void focusInEvent ( QFocusEvent *e ){                  \
+    fprintf(stderr," oh yeah, i got fokus\n");           \
+    num_focus++;                                         \
+    Class::focusInEvent(e);                              \
+  }                                                      \
+  void focusOutEvent ( QFocusEvent *e ){                 \
+    fprintf(stderr," lsot focus\n");                     \
+    num_focus--;                                         \
+    Class::focusOutEvent(e);                             \
+  }                                                      \
+  bool eventFilter ( QObject * o, QEvent * ev ) {                   \
+    if(ev->type()==QEvent::FocusIn)                                  \
+      num_focus++;                                                   \
+    if(ev->type()==QEvent::FocusOut)                                 \
+      num_focus--;                                                      \
+    if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) \
+      set_editor_focus();                                               \
+                                                                        \
+    return Class::eventFilter(o,ev);                                    \
+  }                                                             \
+  };                                                    
+
+MakeFocusOverrideClass(QSpinBox);
+MakeFocusOverrideClass(QLineEdit);
+
+class Instruments_widget;
 Instruments_widget *instruments_widget;
+
+class Instrument_widget;
+Instrument_widget *current_instrument;
+
+//#define protected public
+#include "Qt_instruments_widget.cpp"
+#include "Qt_instrument_widget.cpp"
+#include "Qt_control_change_widget.cpp"
+
 
 
 #if 0
@@ -44,6 +92,9 @@ static void name_widget_textChanged( const QString &string ){
 }
 #endif
 
+bool hasFocus(){
+  return num_focus>0;
+}
 
 QWidget *createInstrumentsWidget(void){
   instruments_widget = new Instruments_widget();
@@ -68,6 +119,8 @@ QWidget *createInstrumentsWidget(void){
     }
 
     instrument->name_widget->setText("Test instrument");
+
+    current_instrument = instrument;
 
     instruments_widget->tabs->insertTab(instrument, QString::fromLatin1("Test instrument"), 0);
     instruments_widget->tabs->showPage(instrument);

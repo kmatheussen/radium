@@ -11,9 +11,17 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>698</width>
-            <height>184</height>
+            <width>641</width>
+            <height>164</height>
         </rect>
+    </property>
+    <property name="sizePolicy">
+        <sizepolicy>
+            <hsizetype>5</hsizetype>
+            <vsizetype>0</vsizetype>
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+        </sizepolicy>
     </property>
     <property name="font">
         <font>
@@ -29,6 +37,9 @@
     <grid>
         <property name="name">
             <cstring>unnamed</cstring>
+        </property>
+        <property name="margin">
+            <number>0</number>
         </property>
         <widget class="QGroupBox" row="0" column="0" rowspan="1" colspan="2">
             <property name="name">
@@ -498,6 +509,18 @@
         <receiver>Instrument_widget</receiver>
         <slot>lsb_valueChanged(int)</slot>
     </connection>
+    <connection>
+        <sender>name_widget</sender>
+        <signal>textChanged(const QString&amp;)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>name_widget_textChanged(const QString&amp;)</slot>
+    </connection>
+    <connection>
+        <sender>name_widget</sender>
+        <signal>returnPressed()</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>name_widget_returnPressed()</slot>
+    </connection>
 </connections>
 <includes>
     <include location="local" impldecl="in implementation">instrument_widget.ui.h</include>
@@ -515,6 +538,8 @@
     <slot>channel_valueChanged( int val )</slot>
     <slot>msb_valueChanged( int val )</slot>
     <slot>lsb_valueChanged( int val )</slot>
+    <slot>name_widget_textChanged( const QString &amp; string )</slot>
+    <slot>name_widget_returnPressed()</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
