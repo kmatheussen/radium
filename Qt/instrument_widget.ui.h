@@ -155,3 +155,20 @@ void Instrument_widget::name_widget_returnPressed()
     
     set_editor_focus();
 }
+
+
+
+void Instrument_widget::preset_activated( int num)
+{
+    patchdata->preset = num;
+    printf("activated %d\n",num);
+    
+     set_editor_focus();
+}
+
+
+void Instrument_widget::port_activated( const QString &portname )
+{
+  MIDISetPatchData(g_currpatch, (char*)"port", (char*)portname.ascii());
+  fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.ascii());
+}

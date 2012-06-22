@@ -43,8 +43,19 @@
         </widget>
     </grid>
 </widget>
+<connections>
+    <connection>
+        <sender>tabs</sender>
+        <signal>selected(const QString&amp;)</signal>
+        <receiver>Instruments_widget</receiver>
+        <slot>tabs_selected(const QString&amp;)</slot>
+    </connection>
+</connections>
 <includes>
     <include location="local" impldecl="in implementation">instruments_widget.ui.h</include>
 </includes>
+<slots>
+    <slot>tabs_selected( const QString &amp; tabname )</slot>
+</slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

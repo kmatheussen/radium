@@ -72,6 +72,9 @@
                     <property name="name">
                         <cstring>cctype</cstring>
                     </property>
+                    <property name="enabled">
+                        <bool>false</bool>
+                    </property>
                 </widget>
                 <widget class="QSlider" row="1" column="1">
                     <property name="name">
@@ -110,6 +113,12 @@
         <receiver>Control_change_widget</receiver>
         <slot>onoff_stateChanged(int)</slot>
     </connection>
+    <connection>
+        <sender>cctype</sender>
+        <signal>activated(int)</signal>
+        <receiver>Control_change_widget</receiver>
+        <slot>cctype_activated(int)</slot>
+    </connection>
 </connections>
 <includes>
     <include location="local" impldecl="in implementation">control_change_widget.ui.h</include>
@@ -120,7 +129,8 @@
 <slots>
     <slot>value_slider_valueChanged( int val )</slot>
     <slot>value_spin_valueChanged( int val )</slot>
-    <slot>onoff_stateChanged( int )</slot>
+    <slot>onoff_stateChanged( int val )</slot>
+    <slot>cctype_activated( int val )</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

@@ -54,6 +54,7 @@ struct PatchData{
 	char standardccs[8];
 
 	bool ccsonoff[8];
+        char cc[8];
 	char ccvalues[8];
 };
 

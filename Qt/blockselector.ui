@@ -43,13 +43,13 @@
                 </property>
                 <widget class="QLayoutWidget" row="0" column="0">
                     <property name="name">
-                        <cstring>layout13</cstring>
+                        <cstring>layout15</cstring>
                     </property>
                     <grid>
                         <property name="name">
                             <cstring>unnamed</cstring>
                         </property>
-                        <widget class="QListBox" row="0" column="3">
+                        <widget class="QListBox" row="0" column="2">
                             <item>
                                 <property name="text">
                                     <string>0: NN</string>
@@ -65,14 +65,6 @@
                                     <horstretch>0</horstretch>
                                     <verstretch>0</verstretch>
                                 </sizepolicy>
-                            </property>
-                        </widget>
-                        <widget class="QPushButton" row="0" column="2">
-                            <property name="name">
-                                <cstring>pushButton1</cstring>
-                            </property>
-                            <property name="text">
-                                <string>pushButton1</string>
                             </property>
                         </widget>
                         <widget class="QListBox" row="0" column="0">
@@ -291,13 +283,31 @@
                                 <enum>AutoOneFit</enum>
                             </property>
                         </widget>
-                        <widget class="QPushButton" row="0" column="1">
+                        <widget class="QLayoutWidget" row="0" column="1">
                             <property name="name">
-                                <cstring>pushButton1_2</cstring>
+                                <cstring>layout14</cstring>
                             </property>
-                            <property name="text">
-                                <string>pushButton1</string>
-                            </property>
+                            <vbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <widget class="QPushButton">
+                                    <property name="name">
+                                        <cstring>pushButton1</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>&lt;-</string>
+                                    </property>
+                                </widget>
+                                <widget class="QPushButton">
+                                    <property name="name">
+                                        <cstring>add</cstring>
+                                    </property>
+                                    <property name="text">
+                                        <string>-&gt;</string>
+                                    </property>
+                                </widget>
+                            </vbox>
                         </widget>
                     </grid>
                 </widget>

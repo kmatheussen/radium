@@ -79,7 +79,7 @@ int MyApplication::x11ProcessEvent(XEvent *event){
 bool MyApplication::x11EventFilter(XEvent *event){
   switch(event->type){
   case KeyPress:
-    if(instrumentWindowUsesKeyboard())
+    if(instrumentWidgetUsesKeyboard())
       return false;
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       this->quit();
@@ -87,7 +87,7 @@ bool MyApplication::x11EventFilter(XEvent *event){
     static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     return TRUE;
   case KeyRelease:
-    if(instrumentWindowUsesKeyboard())
+    if(instrumentWidgetUsesKeyboard())
       return false;
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
     static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();

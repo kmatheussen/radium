@@ -527,6 +527,18 @@
         <receiver>Instrument_widget</receiver>
         <slot>name_widget_returnPressed()</slot>
     </connection>
+    <connection>
+        <sender>preset</sender>
+        <signal>activated(int)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>preset_activated(int)</slot>
+    </connection>
+    <connection>
+        <sender>port</sender>
+        <signal>activated(const QString&amp;)</signal>
+        <receiver>Instrument_widget</receiver>
+        <slot>port_activated(const QString&amp;)</slot>
+    </connection>
 </connections>
 <includes>
     <include location="local" impldecl="in implementation">instrument_widget.ui.h</include>
@@ -546,6 +558,8 @@
     <slot>lsb_valueChanged( int val )</slot>
     <slot>name_widget_textChanged( const QString &amp; string )</slot>
     <slot>name_widget_returnPressed()</slot>
+    <slot>preset_activated( int num )</slot>
+    <slot>port_activated( const QString &amp; portname )</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

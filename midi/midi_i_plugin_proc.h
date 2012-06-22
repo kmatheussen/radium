@@ -21,16 +21,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_plugin.h"
 
 
-void MIDIchangeTrackPan(int newpan,struct Tracks *track);
-void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note);
-void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
-void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
-void MIDIclosePatch(void);
-void MIDI_InitPatch(struct Patch *patch);
-char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype);
-struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name);
+extern LANGSPEC void MIDIchangeTrackPan(int newpan,struct Tracks *track);
+extern LANGSPEC void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note);
+extern LANGSPEC void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
+extern LANGSPEC void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
+extern LANGSPEC void MIDIclosePatch(void);
+extern LANGSPEC void MIDI_InitPatch(struct Patch *patch);
+extern LANGSPEC char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype);
+extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name);
+extern LANGSPEC void MIDISetPatchData(struct Patch *patch, char *key, char *value);
 
-void MyGoodPutMidi(
+extern LANGSPEC void MyGoodPutMidi(
 	struct MidiPort *midi_port,
 	int cc,
 	int data1,
@@ -38,14 +39,14 @@ void MyGoodPutMidi(
 	int maxbuff
 );
 
-void MyMyPutMidi(
+extern LANGSPEC void MyMyPutMidi(
 	struct MidiPort *midi_port,
 	int cc,
 	int data1,
 	int data2
 );
 
-void MyPutMidi(
+extern LANGSPEC void MyPutMidi(
 	struct MidiPort *midi_port,
 	int cc,
 	int data1,
