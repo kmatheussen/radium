@@ -160,9 +160,9 @@ void Instrument_widget::name_widget_returnPressed()
 
 void Instrument_widget::preset_activated( int num)
 {
-    patchdata->preset = num;
-    printf("activated %d\n",num);
+    printf("activated preset %d\n",num-1);
     
+    patchdata->preset = num-1;    
      set_editor_focus();
 }
 

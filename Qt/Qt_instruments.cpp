@@ -280,6 +280,7 @@ static Instrument_widget *createInstrumentWidget(const char *name){
       }
     }
 
+    instrument->preset->insertItem("<Not set>");
     {
       for(int i=0;i<128;i++) {
         char temp[500];
