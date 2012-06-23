@@ -434,13 +434,12 @@ int MIDIgetPatch(
 	struct PatchData *patchdata=getPatchData(patch);
         patchdata->midi_port = midi_port;
 
-	while(patchdata->channel==0){
-		patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16);
-	}
-	patchdata->channel--;
+        patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16);
+        if(patchdata->channel>0)
+          patchdata->channel--;
 
 	patchdata->preset=GFX_GetInteger(window,reqtype,"Preset: (1-128) ",1,128);
-	patchdata->preset--;
+        patchdata->preset--;
 
 	return PATCH_SUCCESS;
 }
