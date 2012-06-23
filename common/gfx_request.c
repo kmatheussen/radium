@@ -145,11 +145,21 @@ int GFX_ReqTypeMenu(
   GFX_WriteString(reqtype,seltext);
   GFX_WriteString(reqtype,"\\n");
   
+  if(num_sel<1){
+    RWarning("num_sel=%d",num_sel);
+    return 0;
+  }
+
   for(lokke=0;lokke<num_sel;lokke++){
     sprintf(temp,"%d. %s\n",lokke+1,menutext[lokke]);
     GFX_WriteString(reqtype,temp);
   }
   GFX_WriteString(reqtype,"\n");
+
+  if(num_sel==1){
+    GFX_WriteString(reqtype,"> 1\\n");
+    return 0;
+  }
   
   while(ret<=0 || ret>num_sel){
     GFX_WriteString(reqtype,"> ");

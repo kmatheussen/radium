@@ -111,3 +111,7 @@
 
 * Blocklist/playlist non-stacking should only happen if there are more blocks / longer playlist than can be viewed simultaneously
   in the list boxes. And maybe not even then, since it looks bad and limits the number of characters to display.
+
+* Loading t.rad makes radium crash.
+
+* Must check what happens if there are no alsaseq ports.
