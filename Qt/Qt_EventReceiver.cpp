@@ -42,9 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 
 
-extern QApplication *qapplication;
-extern "C" void WBLOCKS_bltBlt(struct Tracker_Windows *window);
-
 #if 0
 void MyWidget::timerEvent(QTimerEvent *){
   PlayerTask(40);
@@ -61,18 +58,13 @@ static double get_ms(void){
 
 extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
-#include "X11/Xlib.h"
 
 
 void MyWidget::customEvent(QCustomEvent *e){
-  //Display *dpy = QPaintDevice::x11AppDisplay();
-  //XSync(dpy, false);
   {
     P2MUpdateSongPosCallBack();
     UpdateClock(this->window);
   }
-  // Flushing and syncing X to avoid lag when playing fast.
-  //XFlush(dpy);
 
   update();
 }
@@ -136,7 +128,6 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 
     //    QPainter paint(this);
 
-    //    bitBlt(this,0,0,this->qpixmap);
 //  QPainter paint( this );
 //  paint.drawLine(0,0,50,50);
 
@@ -255,10 +246,6 @@ void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
    EventReciever(&tevent,this->window);
 
    update();
-  //  WBLOCKS_bltBlt(this->window);
-
-  //this->repaint();
-  //  bitBlt(this,0,0,this->qpixmap);
 }
 
 void MyWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
@@ -312,9 +299,6 @@ void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
   EventReciever(&tevent,this->window);
 
   update();
-
-  //  WBLOCKS_bltBlt(this->window);
-  //bitBlt(this,0,0,this->qpixmap);
 }
 
 void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
@@ -334,9 +318,6 @@ void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   EventReciever(&tevent,this->window);
 
   update();
-
-  //  WBLOCKS_bltBlt(this->window);
-  //bitBlt(this,0,0,this->qpixmap);
 }
 
 void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
@@ -349,8 +330,6 @@ void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
   update();
 
-  //  WBLOCKS_bltBlt(this->window);
-  //  bitBlt(this,0,0,this->qpixmap);
 }
 
 void MyWidget::resizeEvent( QResizeEvent *qresizeevent){

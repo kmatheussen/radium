@@ -44,8 +44,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../X11/X11_ClientMessages_proc.h"
 #include "../X11/X11_Qtstuff_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
-#include "../X11/X11_Ptask2Mtask_proc.h"
+//#include "../X11/X11_Ptask2Mtask_proc.h"
 #include "../X11/X11_Player_proc.h"
+#include "../common/OS_Ptask2Mtask_proc.h"
 
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_instruments_proc.h"
@@ -123,11 +124,35 @@ MyApplication *qapplication;
 
 extern LANGSPEC void Qt_Ptask2Mtask(void);
 
-extern LANGSPEC void Qt_Ptask2Mtask(void){
+
+// Should ideally be atomic, but read and write are usually atomic anyway.
+static volatile int using_the_event;
+
+class MyQCustomEvent : public QCustomEvent{
+public:
+  MyQCustomEvent()
+    : QCustomEvent(QEvent::User+1)
+  {}
+
+  void* operator new(size_t size){
+    static MyQCustomEvent event;
+    using_the_event = 1;
+    return &event;
+  }
+  void operator delete(void *p){
+    using_the_event = 0;
+  }
+};
+
+void Ptask2Mtask(void){
+  if(using_the_event==1)
+    return;
+
   QObject *qobject=(QObject *)root->song->tracker_windows->os_visual.widget;
 
-#warning "FIXME: Player thread shall not allocate"
-  QCustomEvent *qce = new QCustomEvent(QEvent::User+1);
+  //#warning "FIXME: Player thread shall not allocate"
+  //QCustomEvent *qce = new QCustomEvent(QEvent::User+1);
+  MyQCustomEvent *qce = new MyQCustomEvent();
 
   //static int gakk;
   //qapplication->sendEvent(qobject,&qce);
@@ -173,7 +198,7 @@ int radium_main(char *arg){
   QApplication::setStyle( new QMotifPlusStyle() );
   QApplication::setStyle( new QSGIStyle() );
 #endif
-  QApplication::setStyle( new QWindowsStyle() );
+  // QApplication::setStyle( new QWindowsStyle() );
 
 #ifdef USE_QT4
   //QApplication::setGraphicsSystem("native");
@@ -197,7 +222,7 @@ int radium_main(char *arg){
   //X11_StartBlockSelector();
   //X11_StartMidiProperties();
 
-  StartGuiThread();
+  //StartGuiThread();
 
   // ProfilerStart("hepps");
 
@@ -256,7 +281,7 @@ int radium_main(char *arg){
   qapplication->exec();
   
   X11_EndPlayer();
-  EndGuiThread();
+  //EndGuiThread();
 
   return 0;
 

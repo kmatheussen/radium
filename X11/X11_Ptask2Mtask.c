@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/PEQ_clock_proc.h"
 
+// Note, this file is no longer used from Qt!
+
+
 #ifdef GUIISQT
 extern void Qt_Ptask2Mtask(void);
 #else
@@ -100,7 +103,8 @@ static void *PlayerGuiThread(void *arg){
     pthread_cond_wait(&cond,&mutex);
     if(goingtoend==true) break;
 #ifdef GUIISQT
-    Qt_Ptask2Mtask();
+    abort(); // Not supposed to be here.
+    Qt_Ptask2Mtask(); // Qt_Ptask2Mtask triggers the Qt main loop, so we don't have to use the guilock.
 #else
     pthread_mutex_lock(&guimutex);
     P2MUpdateSongPosCallBack();
@@ -146,7 +150,11 @@ void unlockGUI(void){
 // Called from player-thread.
 
 void Ptask2Mtask(void){
+#ifdef GUIISQT
+    Qt_Ptask2Mtask(); // Qt_Ptask2Mtask triggers the Qt main loop, so we don't have to use the guilock.
+#else
   pthread_cond_broadcast(&cond);
+#endif
 }
 
 
