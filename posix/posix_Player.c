@@ -16,22 +16,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <errno.h>
-
-#include <X11/Xlib.h>
-
-#include "../common/nsmtracker.h"
-
-#include "X11.h"
-
+#include <sys/time.h>
+#include <string.h>
+#include <stdint.h>
 #include <pthread.h>
 #include <unistd.h>
 
-#include "../common/OS_Player_proc.h"
 
+#include "../common/nsmtracker.h"
+#include "../common/OS_Player_proc.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
+#include "posix_Player_proc.h"
 
-#include "X11_Player_proc.h"
 
 // Try to call PlayerTask 1200 times a second.
 #define PLAYERTASKFREQ 1200
@@ -46,16 +43,9 @@ static bool isplaying=false;
 
 //#include "google/profiler.h"
 
-void *X11_PlayerThread(void *arg){
-  long long newtime;
-  long long lasttime=0;
-
-  XEvent message;
-
-  message.xclient.type = ClientMessage;
-  message.xclient.format=32;
-
-  //ProfilerStart("hepps");
+void *posix_PlayerThread(void *arg){
+  int64_t newtime;
+  int64_t lasttime=0;
 
   while(doexit==false){
     struct timeval tv;
@@ -74,21 +64,6 @@ void *X11_PlayerThread(void *arg){
     PlayerTask(newtime-lasttime);
 
     lasttime=newtime;
-
-#if 0
-    if(isplaying==true){
-      message.xclient.window = root->song->tracker_windows->os_visual->window;
-      message.xclient.data.l[0]=X11EVENT_UPDATESONGPOS;
-      
-      XSendEvent(
-		 x11_display,
-		 message.xclient.window,
-		 True,
-		 NoEventMask,
-		 &message
-		 );
-    }
-#endif
   }
 
   //ProfilerStop();
@@ -96,19 +71,18 @@ void *X11_PlayerThread(void *arg){
   return NULL;
 }
 
-void X11_EndPlayer(void){
+void posix_EndPlayer(void){
   doexit=true;
   pthread_join(playerthread,NULL);
 }
 
-bool X11_InitPlayer(void){
+bool posix_InitPlayer(void){
 
-  if(pthread_create(&playerthread,NULL,X11_PlayerThread,NULL)!=0){
+  if(pthread_create(&playerthread,NULL,posix_PlayerThread,NULL)!=0){
     fprintf(stderr,"Could not create player\n");
     return false;
   } 
 
-#if 1
   {
     struct sched_param rtparam;
     int x;
@@ -116,13 +90,10 @@ bool X11_InitPlayer(void){
     memset (&rtparam, 0, sizeof (rtparam));
     rtparam.sched_priority = 1;
     
-    //system("/usr/bin/givertcap");
-    
     if ((x = pthread_setschedparam (playerthread, SCHED_FIFO, &rtparam)) != 0) {
       fprintf(stderr,"cannot set thread to real-time priority (FIFO/%d) (%d: %s)", rtparam.sched_priority, x, strerror (errno));
     }
   }
-#endif
 
   return true;
 }

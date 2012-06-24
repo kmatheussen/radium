@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../X11/X11_Qtstuff_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 //#include "../X11/X11_Ptask2Mtask_proc.h"
-#include "../X11/X11_Player_proc.h"
+#include "../posix/posix_Player_proc.h"
 #include "../common/OS_Ptask2Mtask_proc.h"
 
 #include "Qt_Bs_edit_proc.h"
@@ -243,7 +243,7 @@ int radium_main(char *arg){
 
   //ProfilerStop();
 
-  X11_InitPlayer();
+  posix_InitPlayer();
 
   X11_StartQtStuff();
 
@@ -291,7 +291,7 @@ int radium_main(char *arg){
   
   qapplication->exec();
   
-  X11_EndPlayer();
+  posix_EndPlayer();
   //EndGuiThread();
 
   return 0;

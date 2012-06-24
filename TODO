@@ -107,3 +107,5 @@
 * Play Song from Curr waits xx seconds before starting to play, where xx is the
   the time from the start to the current position.
 
+* PausePlayer and StopPausePlayer has not been implemented. Check out
+  what they do.

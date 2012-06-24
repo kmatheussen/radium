@@ -46,7 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "X11_Ptask2Mtask_proc.h"
 
-#include "X11_Player_proc.h"
+#include "../posix/posix_Player_proc.h"
 #include "X11_ClientMessages_proc.h"
 
 #include "../common/visual_proc.h"
@@ -116,7 +116,7 @@ int radium_main(char *arg){
   X11_StartMidiProperties();
 
   StartGuiThread();
-  X11_InitPlayer();
+  posix_InitPlayer();
 
   if(InitProgram()==true){
 
@@ -326,7 +326,7 @@ int radium_main(char *arg){
     EndProgram();
   }
 
-  X11_EndPlayer();
+  posix_EndPlayer();
   unlockGUI();
   EndGuiThread();
 
