@@ -81,10 +81,10 @@ MakeFocusOverrideClass(QLineEdit);
 static void tab_selected();
 
 class Instruments_widget;
-Instruments_widget *instruments_widget;
+static Instruments_widget *instruments_widget;
 
 class No_instrument_widget;
-No_instrument_widget *no_instrument_widget;
+static No_instrument_widget *no_instrument_widget;
 
 //#define protected public
 #include "Qt_instruments_widget.cpp"

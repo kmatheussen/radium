@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "resizewindow_proc.h"
 #include "reallines_proc.h"
 #include "control_proc.h"
+#include "gfx_op_queue_proc.h"
 
 #include "disk_windows_proc.h"
 
@@ -182,6 +183,8 @@ end:
 
 void DLoadWindows(struct Root *newroot,struct Tracker_Windows *window){
 if(window==NULL) return;
+
+        GFX_create_op_queue(window);
 
 	if(GFX_CreateVisual(window)!=0){
 		EndProgram();

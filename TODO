@@ -19,31 +19,16 @@
         * But if that track is already in the undo list, why does it have to be added the next 999 times too?
 
 
-* Updating the "LPB" and "BPM" text seems to just draw over the old graphics.
-
 * The width for line numbers are too small when loading 1.rad.
-
-* When loading a new song, the old editor window isn't closed.
-  (When enabling GC again, this might crash the program. I guess there is no pointer
-  to the data displayed in the window?)
-  No, the extra window is actually functional. Guess it's just not removed from the
-  list of edtor windows.
-
-* Doesn't seem to work changing the slider values of midi effects in the midi properties window.
-  Not volume either.
+  -Probably caused by missing font size handling. Currently, same font is always used.
 
 * 1LZ, 1MR, etc. (could ask when selecting via menues)
-
-* Instrument->Add doesn't do anything. (No command option for menu menues)
 
 * If making temponode area very big, and thn make window very small,
   then there's lots of warnings. Not unlikely to crash.
   Options:
     * Refuse to make window smaller
     * Make temponodearea smaller. (better)
-
-* "Play song from start" only plays block 0 one time. (doesn't matter whether block 0 is first or last in playlist)
-  Could seem like playlist in radium is not updated from playlist GUI.
 
 * After selecting a menu, doquit is not checked. (must press a key first to quit)
 
@@ -52,14 +37,6 @@
 * The error/warning window moves all other radium windows to the back, behind the terminal. Which is very annoying.
 
 * Page up/down should scroll page up/down
-
-* The midi properties window uses gtk1. Few modern distributions uses gtk1. Don't want to include gtk1.
-
-* Port to Qt4. Needed first: Create a queue of graphics command since QPaint constructor can only be called from paintEvent() in Qt4.
-  This (non-QT specific) queue can be placed in common/.
-
-  Important: Qt4 widgets are double buffered by default. Must call unbufferedWidget->setAttribute(Qt::WA_PaintOnScreen) to avoid
-  double buffering twice.
 
 * Trying to load a standard midi file as normal file (instead of selecting "import midi") should really import the midi file, not quit the editor.
   At least, it should not quit the editor.
@@ -92,8 +69,6 @@
 
 * Would be convenient with a realloc function.
 
-* Menu separators
-
 * The line connecting note name with note graphics, would perhaps
   be better if was connected at the top. The reason is that we
   would use the full line height to visually show note placement
@@ -107,8 +82,6 @@
 
 * FX is missing for importing standard midi files.
 
-* When selecting midi preset, the standard midi name should be shown somehow. (roll down)
-
 * Blocklist/playlist non-stacking should only happen if there are more blocks / longer playlist than can be viewed simultaneously
   in the list boxes. And maybe not even then, since it looks bad and limits the number of characters to display.
 
@@ -119,3 +92,8 @@
 * amiga/midiproperties/amiga_instrprop_camd_menues.c seems to contain mostly
   portable code. Should be moved to midi/ .
 
+* When changing values in the instrument widget, MIDI signals should be sent.
+
+* Play song might not work properly. Not playing all blocks.
+
+* Midi stuff to menues.

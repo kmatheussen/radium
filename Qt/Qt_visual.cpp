@@ -327,10 +327,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   if(mywidget->qpixmap==NULL){
     mywidget->qpixmap=new QPixmap(mywidget->width(),mywidget->height());
+    mywidget->qpixmap->setOptimization(QPixmap::BestOptim);
     mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
   }
 
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
+  mywidget->cursorpixmap->setOptimization(QPixmap::BestOptim);
   mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
 
   //BS_SetX11Window((int)main_window->x11AppRootWindow());
