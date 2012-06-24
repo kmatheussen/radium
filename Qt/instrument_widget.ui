@@ -11,13 +11,13 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>641</width>
+            <width>645</width>
             <height>164</height>
         </rect>
     </property>
     <property name="sizePolicy">
         <sizepolicy>
-            <hsizetype>5</hsizetype>
+            <hsizetype>7</hsizetype>
             <vsizetype>0</vsizetype>
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
@@ -41,30 +41,12 @@
         <property name="margin">
             <number>0</number>
         </property>
-        <widget class="QGroupBox" row="0" column="0" rowspan="1" colspan="2">
-            <property name="name">
-                <cstring>groupBox8</cstring>
-            </property>
-            <property name="frameShadow">
-                <enum>Sunken</enum>
-            </property>
-            <property name="title">
-                <string>Name</string>
-            </property>
-            <grid>
-                <property name="name">
-                    <cstring>unnamed</cstring>
-                </property>
-                <widget class="QLineEdit" row="0" column="0">
-                    <property name="name">
-                        <cstring>name_widget</cstring>
-                    </property>
-                </widget>
-            </grid>
-        </widget>
         <widget class="QGroupBox" row="0" column="5" rowspan="3" colspan="1">
             <property name="name">
-                <cstring>groupBox17</cstring>
+                <cstring>volumeBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -124,10 +106,10 @@
         </widget>
         <widget class="QGroupBox" row="0" column="6" rowspan="3" colspan="1">
             <property name="name">
-                <cstring>groupBox17_2</cstring>
+                <cstring>velocityBox</cstring>
             </property>
             <property name="enabled">
-                <bool>true</bool>
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -149,7 +131,7 @@
                         <cstring>velocity_spin</cstring>
                     </property>
                     <property name="enabled">
-                        <bool>true</bool>
+                        <bool>false</bool>
                     </property>
                     <property name="maxValue">
                         <number>127</number>
@@ -163,7 +145,7 @@
                         <cstring>velocity_slider</cstring>
                     </property>
                     <property name="enabled">
-                        <bool>true</bool>
+                        <bool>false</bool>
                     </property>
                     <property name="maxValue">
                         <number>127</number>
@@ -193,7 +175,10 @@
         </widget>
         <widget class="QGroupBox" row="0" column="2" rowspan="1" colspan="3">
             <property name="name">
-                <cstring>groupBox16</cstring>
+                <cstring>panningBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="frameShadow">
                 <enum>Sunken</enum>
@@ -248,7 +233,10 @@
         </widget>
         <widget class="QGroupBox" row="1" column="3">
             <property name="name">
-                <cstring>groupBox12</cstring>
+                <cstring>MSBBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -283,7 +271,10 @@
         </widget>
         <widget class="QGroupBox" row="1" column="4">
             <property name="name">
-                <cstring>groupBox13</cstring>
+                <cstring>LSBBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -318,7 +309,10 @@
         </widget>
         <widget class="QGroupBox" row="1" column="2">
             <property name="name">
-                <cstring>groupBox11</cstring>
+                <cstring>channelBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -353,7 +347,10 @@
         </widget>
         <widget class="QGroupBox" row="1" column="1">
             <property name="name">
-                <cstring>groupBox10_2</cstring>
+                <cstring>presetBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -389,7 +386,10 @@
         </widget>
         <widget class="QGroupBox" row="1" column="0">
             <property name="name">
-                <cstring>groupBox10</cstring>
+                <cstring>portBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
             </property>
             <property name="sizePolicy">
                 <sizepolicy>
@@ -421,6 +421,9 @@
             <property name="name">
                 <cstring>control_change_group</cstring>
             </property>
+            <property name="enabled">
+                <bool>false</bool>
+            </property>
             <property name="font">
                 <font>
                 </font>
@@ -438,6 +441,30 @@
                 <property name="name">
                     <cstring>unnamed</cstring>
                 </property>
+            </grid>
+        </widget>
+        <widget class="QGroupBox" row="0" column="0" rowspan="1" colspan="2">
+            <property name="name">
+                <cstring>nameBox</cstring>
+            </property>
+            <property name="enabled">
+                <bool>false</bool>
+            </property>
+            <property name="frameShadow">
+                <enum>Sunken</enum>
+            </property>
+            <property name="title">
+                <string>Name</string>
+            </property>
+            <grid>
+                <property name="name">
+                    <cstring>unnamed</cstring>
+                </property>
+                <widget class="QLineEdit" row="0" column="0">
+                    <property name="name">
+                        <cstring>name_widget</cstring>
+                    </property>
+                </widget>
             </grid>
         </widget>
     </grid>
@@ -543,6 +570,11 @@
 <includes>
     <include location="local" impldecl="in implementation">instrument_widget.ui.h</include>
 </includes>
+<variables>
+    <variable access="public">Control_change_widget *cc_widgets[8];</variable>
+    <variable access="public">struct Patch *patch;</variable>
+    <variable access="public">struct PatchData *patchdata;</variable>
+</variables>
 <slots>
     <slot>volume_slider_valueChanged( int val )</slot>
     <slot>volume_spin_valueChanged( int val )</slot>

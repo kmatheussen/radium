@@ -115,3 +115,7 @@
 * Loading t.rad makes radium crash.
 
 * Must check what happens if there are no alsaseq ports.
+
+* amiga/midiproperties/amiga_instrprop_camd_menues.c seems to contain mostly
+  portable code. Should be moved to midi/ .
+

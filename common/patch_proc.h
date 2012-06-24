@@ -18,10 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-extern void SelectPatch(struct Tracker_Windows *window,struct Tracks *track);
-extern void PATCH_playNoteCurrPos(struct Tracker_Windows *window,int notenum);
-extern void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum);
+extern LANGSPEC struct Patch *NewPatchCurrPos(void);
+extern LANGSPEC void SelectPatch(struct Tracker_Windows *window,struct Tracks *track);
+extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window,int notenum);
+extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum);
 
 
 

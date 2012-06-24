@@ -8,7 +8,7 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>175</width>
+            <width>184</width>
             <height>78</height>
         </rect>
     </property>
@@ -125,6 +125,7 @@
 </includes>
 <variables>
     <variable access="public">int ccnum;</variable>
+    <variable access="public">struct PatchData *patchdata;</variable>
 </variables>
 <slots>
     <slot>value_slider_valueChanged( int val )</slot>

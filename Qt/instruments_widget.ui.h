@@ -15,10 +15,7 @@
 
 
 
-
 void Instruments_widget::tabs_selected( const QString &tabname)
 {
-    printf("tab selected -%s-\n",tabname.ascii());
-    if(tabname=="<New Instrument>")
-      selectPatchForTrack(-1,-1,-1);
+  tab_selected();
 }

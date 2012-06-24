@@ -40,9 +40,9 @@ struct PatchData{
 	struct MidiPort *midi_port;
 
 	int channel;
-	char LSB;
-	char MSB;
-	char preset;
+	signed char LSB;
+	signed char MSB;
+	signed char preset;
 
 	bool volumeonoff;
 	char volume;

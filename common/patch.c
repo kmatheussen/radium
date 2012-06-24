@@ -23,26 +23,66 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheaders_proc.h"
 #include "player_proc.h"
 #include "undo_tracks_proc.h"
+#include "../api/api_common_proc.h"
+#include "../midi/midi_i_plugin_proc.h"
 
 #include "patch_proc.h"
 
 
+// A Major cleanup is needed for the patch/instrument system.
+
+
 struct Patch *g_currpatch=NULL;
 
+struct Patch *NewPatchCurrPos(void){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
 
+  wtrack=getWTrackFromNumA(
+                           -1,
+                           &window,
+                           -1,
+                           &wblock,
+                           -1
+                           );
+
+  if(wtrack==NULL) return NULL;
+
+  {
+    struct Patch *patch=(struct Patch*)talloc(sizeof(struct Patch));
+    wtrack->track->patch = patch;
+
+    // Set default name
+    {
+      char temp[500];
+      sprintf(temp, "Instr. %d/%d", wblock->l.num, wtrack->l.num);
+      patch->name = talloc_strdup(temp);
+    }
+
+    MIDI_InitPatch(patch);
+
+    Undo_Track_CurrPos(window);
+    ListAddElement1_ff(&wtrack->track->instrument->patches,&patch->l);
+
+    DrawWTrackHeader(window,wblock,wtrack);
+
+    return patch;
+  }
+
+}
 
 void SelectPatch(struct Tracker_Windows *window,struct Tracks *track){
 	struct Instruments *instrument=track->instrument;
 	struct Patch *patch;
 	char **menutext;
-	NInt numpatches;
 	int lokke;
 	int selection;
 	ReqType reqtype;
 
 	PlayStop();
 
-	numpatches=ListFindNumElements1(&instrument->patches->l);
+	NInt numpatches=ListFindNumElements1(&instrument->patches->l);
 
 	reqtype=GFX_OpenReq(window,70,(int)(numpatches+50),"Select Patch");
 

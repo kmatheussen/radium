@@ -21,17 +21,18 @@ extern "C"{
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/blts_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
 #include "MyWidget.h"
 
+#include "Qt_instruments_proc.h"
 
-static struct Patch dummy_patch;
+
 extern struct Root *root;
 extern struct Patch *g_currpatch;
-static struct PatchData *patchdata;
 
 #include "qstring.h"
 #include "qlineedit.h"
@@ -77,17 +78,19 @@ void set_editor_focus(void){
 MakeFocusOverrideClass(QSpinBox);
 MakeFocusOverrideClass(QLineEdit);
 
+static void tab_selected();
+
 class Instruments_widget;
 Instruments_widget *instruments_widget;
 
-class Instrument_widget;
-Instrument_widget *current_instrument;
+class No_instrument_widget;
+No_instrument_widget *no_instrument_widget;
 
 //#define protected public
 #include "Qt_instruments_widget.cpp"
-#include "Qt_instrument_widget.cpp"
 #include "Qt_control_change_widget.cpp"
-
+#include "Qt_instrument_widget.cpp"
+#include "Qt_no_instrument_widget.cpp"
 
 
 bool instrumentWidgetUsesKeyboard(void){
@@ -227,7 +230,7 @@ static const char *gm_names[] = {
 
 static const char *ccnames[128];
 
-static Instrument_widget *createInstrumentWidget(const char *name){
+static Instrument_widget *createInstrumentWidget(const char *name, struct PatchData *patchdata){
     Instrument_widget *instrument = new Instrument_widget();
 
     {
@@ -254,9 +257,10 @@ static Instrument_widget *createInstrumentWidget(const char *name){
       ccnames[125] = "Omni Mode On";
       ccnames[126] = "Mono Mode";
       ccnames[127] = "Poly Mode";
-      for(int i=0;i<8;i++){
-        ccnames[(int)patchdata->standardccs[i]] = patchdata->ccnames[i];
-      }
+      if(patchdata!=NULL)
+        for(int i=0;i<8;i++){
+          ccnames[(int)patchdata->standardccs[i]] = patchdata->ccnames[i];
+        }
     }
 
     {
@@ -271,10 +275,16 @@ static Instrument_widget *createInstrumentWidget(const char *name){
             cc->cctype->insertItem(temp);
           }
 
-          cc->cctype->setCurrentItem(patchdata->standardccs[ccnum]);
-          patchdata->cc[ccnum] = patchdata->standardccs[ccnum];
+          if(patchdata!=NULL){
+            cc->patchdata = patchdata;
 
+            cc->cctype->setCurrentItem(patchdata->standardccs[ccnum]);
+            patchdata->cc[ccnum] = patchdata->standardccs[ccnum];
+          }
+
+          instrument->cc_widgets[ccnum] = cc;
           cc->ccnum = ccnum++;
+
           instrument->control_change_groupLayout->addWidget(cc,y,x);
         }
       }
@@ -303,19 +313,55 @@ static Instrument_widget *createInstrumentWidget(const char *name){
 }
 
 
-QWidget *createInstrumentsWidget(void){
-  MIDI_InitPatch(&dummy_patch);
-  g_currpatch = &dummy_patch;
-  patchdata = (struct PatchData*)dummy_patch.patchdata;
+void addInstrument(struct Patch *patch){
+  Instrument_widget *instrument = createInstrumentWidget(patch->name, (struct PatchData*)patch->patchdata);
 
+  instrument->patch = patch;
+  instrument->patchdata = (struct PatchData*)patch->patchdata;
+
+#if 0
+  //This was a failed attempt to make the no_widget instrument more fancy
+  {
+    //instrument->Instrument_widgetLayout->removeItem(instrument->select_operationLayout);
+    delete instrument->select_operation;
+    //delete instrument->select_operationLayout;
+
+    instrument->Instrument_widgetLayout->removeItem(instrument->nameBoxLayout);
+    instrument->Instrument_widgetLayout->removeItem(instrument->panningBoxLayout);
+
+    // The next two lines seems to do what I want, but I don't know why.
+    instrument->Instrument_widgetLayout->addItem(instrument->nameBoxLayout, 0,1);
+    instrument->Instrument_widgetLayout->addItem(instrument->panningBoxLayout, 0,1);
+  }
+#endif
+
+  instrument->nameBox->setEnabled(true);
+  instrument->panningBox->setEnabled(true);
+  instrument->volumeBox->setEnabled(true);
+  instrument->velocityBox->setEnabled(true);
+  instrument->portBox->setEnabled(true);
+  instrument->presetBox->setEnabled(true);
+  instrument->channelBox->setEnabled(true);
+  instrument->MSBBox->setEnabled(true);
+  instrument->LSBBox->setEnabled(true);
+  instrument->control_change_group->setEnabled(true);
+
+  instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count()-1);
+  instruments_widget->tabs->showPage(instrument);
+}
+
+
+QWidget *createInstrumentsWidget(void){
   instruments_widget = new Instruments_widget();
 
   {
-    Instrument_widget *instrument = createInstrumentWidget("Test instrument");
-    current_instrument = instrument;
+    const char *name = "<No Instrument>";
 
-    instruments_widget->tabs->insertTab(instrument, QString::fromLatin1("Test instrument"), 0);
-    instruments_widget->tabs->showPage(instrument);
+    no_instrument_widget = new No_instrument_widget();
+
+    delete instruments_widget->tabs->page(0);
+    instruments_widget->tabs->insertTab(no_instrument_widget, QString::fromLatin1(name), 0);
+    instruments_widget->tabs->showPage(no_instrument_widget);
   }
 
   {
@@ -331,6 +377,9 @@ QWidget *createInstrumentsWidget(void){
 void GFX_InstrumentWindowToFront(void){
 }
 
+
+// These functions (MIDIGFX_*) seems to be only used by the GTK1 instrument window when the wrong value
+// was received from the GUI, and the original value must be sent back.
 void MIDIGFX_UpdateAll(void){}
 void MIDIGFX_SetPanSlider(bool on,int value){}
 void MIDIGFX_SetVolumeSlider(bool on,int value){}
@@ -339,6 +388,76 @@ void MIDIGFX_SetMSB(int msb){}
 void MIDIGFX_SetChannel(int ch){}
 void MIDIGFX_SetCCSlider(int slidernum,bool on,int value){}
 
-void MIDIGFX_PP_Update(struct Instruments *instrument,struct Patch *patch){
+
+static Instrument_widget *get_instrument_widget(struct Patch *patch){
+  QTabWidget* tabs = instruments_widget->tabs;
+
+  for(int i=0;i<tabs->count()-1;i++){
+    Instrument_widget *instrument = static_cast<Instrument_widget*>(tabs->page(i));
+    if(instrument->patch==patch)
+      return instrument;
+  }
+
+  return NULL;
+}
+
+static void update_instrument_widget(Instrument_widget *instrument, struct Patch *patch){
+  struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
+
+  instrument->volume_spin->setValue(patchdata->volume);
+  instrument->panning_spin->setValue(patchdata->pan);
+  instrument->channel->setValue(patchdata->channel);
+  instrument->msb->setValue(patchdata->MSB);
+  instrument->lsb->setValue(patchdata->LSB);
+
+  instrument->volume_onoff->setChecked(patchdata->volumeonoff);
+  instrument->panning_onoff->setChecked(patchdata->panonoff);
+
+  instrument->preset->setCurrentItem(patchdata->preset+1);
+
+  for(int ccnum=0;ccnum<8;ccnum++){
+    Control_change_widget *cc = instrument->cc_widgets[ccnum];
+    cc->value_spin->setValue(patchdata->ccvalues[ccnum]);
+    cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
+    cc->cctype->setCurrentItem(patchdata->cc[ccnum]);
+  }
+}
+
+void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *patch){
   printf("PP update. Instrument name: \"%s\"\n",patch==NULL?"(null)":patch->name);
+  if(g_currpatch==patch)
+    return;
+
+  if(patch==NULL){
+
+    instruments_widget->tabs->showPage(no_instrument_widget);
+
+  }else{
+
+    Instrument_widget *instrument = get_instrument_widget(patch);
+    if(instrument==NULL){
+      addInstrument(patch);
+      instrument = get_instrument_widget(patch);
+    }
+
+    update_instrument_widget(instrument,patch);
+
+    instruments_widget->tabs->showPage(instrument);
+  }
+
+  g_currpatch = patch;
+}
+
+static void tab_selected(){
+  //printf("tab selected -%s-\n",tabname.ascii());
+  if(instruments_widget->tabs->currentPage()==no_instrument_widget)
+    return;
+
+  Instrument_widget *instrument = static_cast<Instrument_widget*>(instruments_widget->tabs->currentPage());
+  g_currpatch = instrument->patch;
+
+  setInstrumentForTrack(instrument->patch->l.num, -1, -1, -1);
+
+  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+  my_widget->repaint(); // Update track name.
 }

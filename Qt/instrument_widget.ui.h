@@ -11,6 +11,8 @@
 *****************************************************************************/
 
 #include <qtabbar.h>
+#include "../common/patch_proc.h"
+
 
 // Volume
 
@@ -60,7 +62,7 @@ void Instrument_widget::velocity_spin_valueChanged( int val)
 	velocity_slider->setValue(127-val);
     fprintf(stderr,"Hepp hepp3 %d\n",val);
 
-    g_currpatch->standardvel = val;
+    patch->standardvel = val;
     set_editor_focus();
 }
 
@@ -143,16 +145,19 @@ void Instrument_widget::name_widget_textChanged( const QString &string )
 
 
 
+class QTabBar;
 
 void Instrument_widget::name_widget_returnPressed()
 {
     printf("return pressed\n");
     //focus = false;
     
-     //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
-     //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
-    instruments_widget->tabs->setTabLabel(current_instrument, name_widget->text());
-    
+    //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
+    //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
+    instruments_widget->tabs->setTabLabel(this, name_widget->text());
+
+    patchdata->name = talloc_strdup((char*)name_widget->text().ascii());
+
     set_editor_focus();
 }
 
@@ -169,6 +174,7 @@ void Instrument_widget::preset_activated( int num)
 
 void Instrument_widget::port_activated( const QString &portname )
 {
-  MIDISetPatchData(g_currpatch, (char*)"port", (char*)portname.ascii());
+  MIDISetPatchData(patch, (char*)"port", (char*)portname.ascii());
   fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.ascii());
 }
+

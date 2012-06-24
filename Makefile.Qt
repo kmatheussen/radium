@@ -778,7 +778,7 @@ Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
 	cd $(P) && $(MOC) Qt_Bs_edit.cpp >mQt_Bs_edit.cpp
 
-Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h #$(P)instruments_widget.ui.h $(P)control_change_widget.ui.h
+Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 	$(CCC) $(P)Qt_instruments.cpp $(CPPOPT)
 
 $(P)Qt_instruments_widget.h: $(P)instruments_widget.ui $(P)create_source_from_ui.sh
@@ -786,6 +786,9 @@ $(P)Qt_instruments_widget.h: $(P)instruments_widget.ui $(P)create_source_from_ui
 
 $(P)Qt_instrument_widget.h: $(P)instrument_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instrument_widget
+
+$(P)Qt_no_instrument_widget.h: $(P)no_instrument_widget.ui $(P)create_source_from_ui.sh
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) no_instrument_widget
 
 $(P)Qt_control_change_widget.h: $(P)control_change_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
