@@ -101,3 +101,9 @@
    * show/hide instrument widget
    * show/hide playlist widget
 
+
+* Play Song (AltGr+Space) doesn't seem to use LPB...
+
+* Play Song from Curr waits xx seconds before starting to play, where xx is the
+  the time from the start to the current position.
+

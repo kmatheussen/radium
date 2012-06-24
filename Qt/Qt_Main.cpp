@@ -122,7 +122,11 @@ bool MyApplication::x11EventFilter(XEvent *event){
 MyApplication *qapplication;
 
 
-extern LANGSPEC void Qt_Ptask2Mtask(void);
+static double get_ms(void){
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
+}
 
 
 // Should ideally be atomic, but read and write are usually atomic anyway.
@@ -134,6 +138,7 @@ public:
     : QCustomEvent(QEvent::User+1)
   {}
 
+  // We don't want to malloc() from the player thread, since it's running SCHED_FIFO.
   void* operator new(size_t size){
     static MyQCustomEvent event;
     using_the_event = 1;
@@ -144,20 +149,26 @@ public:
   }
 };
 
+
 void Ptask2Mtask(void){
   if(using_the_event==1)
     return;
 
-  QObject *qobject=(QObject *)root->song->tracker_windows->os_visual.widget;
+  // Check that we're not overflowing the Qt Event system.
+  {
+    static double last_time = 0.0;
+    double time = get_ms();
+    if(time-last_time < 5)
+      return;
+    last_time = time;
+  }
 
-  //#warning "FIXME: Player thread shall not allocate"
-  //QCustomEvent *qce = new QCustomEvent(QEvent::User+1);
-  MyQCustomEvent *qce = new MyQCustomEvent();
+  {
+    QObject *qobject=(QObject *)root->song->tracker_windows->os_visual.widget;
+    MyQCustomEvent *qce = new MyQCustomEvent();
 
-  //static int gakk;
-  //qapplication->sendEvent(qobject,&qce);
-  //fprintf(stderr,"Posting custom event %d\n", gakk++);
-  qapplication->postEvent(qobject,qce);
+    qapplication->postEvent(qobject,qce);
+  }
 }
 
 
