@@ -244,6 +244,8 @@ void X11_ResetKeysUpDowns(void){
 
 int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
   KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+  if(sym > keytable_size)
+    return 0;
   return X11Event_KeyPress(keytable[sym],event->state,window);
 }
 
@@ -264,6 +266,8 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
 
 int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window){
   KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+  if(sym > keytable_size)
+    return 0;
   return X11Event_KeyRelease(keytable[sym],event->state,window);
 }
 
