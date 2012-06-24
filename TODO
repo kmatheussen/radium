@@ -65,8 +65,6 @@
 
 * Bigger boxes by default
 
-* Check common/memory.c. I'm not sure if I enabled gc again after debugging something.
-
 * Would be convenient with a realloc function.
 
 * The line connecting note name with note graphics, would perhaps

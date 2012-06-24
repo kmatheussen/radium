@@ -39,7 +39,7 @@ BUILDTYPE=DEBUG
 
 
 # Dont change these, they are correct.
-GCDIR=/tmp/radium/gc6.1
+GCDIR=/tmp/radium/gc-7.2
 PYTHONEXE=${PYQTEXE}
 #PYTHONEXE=/tmp/radium/bin/python
 
@@ -184,7 +184,7 @@ run-gdb:
 radium/deletemetorebuild: radium/build.sh
 	echo "\
 	cd radium;\
-	./build.sh $(PYTHONEXE)\
+	./build.sh $(PYTHONEXE) no\
 	" >makescript.sh
 	sh makescript.sh
 

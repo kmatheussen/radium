@@ -14,25 +14,38 @@ ln -s `pwd` /tmp/radium
 #make install
 #cd ..
 
+if [ $# -ne 2 ] ; then
+    echo "Usage: python_bin use_pygtk"
+    exit
+fi
+
+if test $2 != "no" ; then
+    if test $2 != "yes" ; then
+        echo "argument two (if using pygtk1) must be either yes or no"
+        exit
+    fi
+fi
 
 #http://www.daa.com.au/~james/software/libglade/
-tar xvzf libglade-0.17.tar.gz
-cd libglade-0.17
-./configure --prefix=/tmp/radium
-make
-make install
-cd ..
+if test $2 = "yes" ; then
+    tar xvzf libglade-0.17.tar.gz
+    cd libglade-0.17
+    ./configure --prefix=/tmp/radium
+    make
+    make install
+    cd ..
 
 
 #http://www.daa.com.au/~james/software/pygtk/
-tar xvzf pygtk-0.6.11.tar.gz
-cd pygtk-0.6.11
-export PYTHON=$1
-./configure --prefix=/tmp/radium --with-libglade-config=/tmp/radium/bin/libglade-config
-make
-make install
-sed -i s/" as"/" as2"/ /tmp/radium/lib/python2.6/site-packages/gtk-1.2/gtk.py
-cd ..
+    tar xvzf pygtk-0.6.11.tar.gz
+    cd pygtk-0.6.11
+    export PYTHON=$1
+    ./configure --prefix=/tmp/radium --with-libglade-config=/tmp/radium/bin/libglade-config
+    make
+    make install
+    sed -i s/" as"/" as2"/ /tmp/radium/lib/python2.6/site-packages/gtk-1.2/gtk.py
+    cd ..
+fi
 
 
 #http://dickey.his.com/xterm/xterm.htlm
@@ -47,7 +60,7 @@ cd ..
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 tar xvzf gc.tar.gz
-cd gc6.1
+cd gc-7.2
 ./configure --prefix=/tmp/radium
 make
 cd ..
