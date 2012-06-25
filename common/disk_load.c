@@ -162,8 +162,8 @@ extern char *mmp2filename;
 
 
 bool Load_CurrPos(struct Tracker_Windows *window){
+	bool ret = false;
 	char *filename;
-	char *ret=NULL;
 	char temp[200];
 
         // So many things happen here, that we should turn off garbage collection while loading.
@@ -180,6 +180,8 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 	PlayStop();
 
 	if(num_undos>0){
+		char *retreq=NULL;
+
 //		sprintf(temp,"%s%d changes has been made to file. Are you shure? (yes/no)",num_undos>=max_num_undos-1?"At least":"",num_undos);
 		sprintf(
 			temp,
@@ -189,23 +191,23 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 			num_undos>1?"s":""
 		);
 		while(
-			ret==NULL || (
-				strcmp("yes",ret) &&
-				strcmp("no",ret)
+			retreq==NULL || (
+				strcmp("yes",retreq) &&
+				strcmp("no",retreq)
 			)
 		){
-			ret=GFX_GetString(
+			retreq=GFX_GetString(
 				window,
 				NULL,
 				temp
 			);
 		}
-		if(!strcmp("no",ret)) return false;
+		if(!strcmp("no",retreq)) goto exit;
 	}
 
 	filename=GFX_GetLoadFileName(window,NULL,"Select file to load","obsolete");
 
-	if(filename==NULL) return false;
+	if(filename==NULL) goto exit;
 
 	if(strlen(filename)>4){
 		if(
@@ -216,19 +218,23 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 #ifdef _AMIGA
 			mmp2filename=filename;
 #endif
-			return Load("radium:Init.rad");
+			ret = Load("radium:Init.rad");
+                        goto exit;
 		}
 	}
 
         {
-          bool ret = Load(filename);
+          ret = Load(filename);
           fprintf(stderr,"Got here (loading finished)\n");
-
-          {
-            GC_enable();
-          }
-
-          return ret;
         }
+
+ exit:
+
+        {
+          GC_enable();
+        }
+
+        return ret;
+
 }
 
