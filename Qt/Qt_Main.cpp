@@ -94,12 +94,20 @@ bool MyApplication::x11EventFilter(XEvent *event){
     static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     return TRUE;
   case EnterNotify:
-    //printf("got enter notify\n");
-    X11_ResetKeysUpDowns();
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        X11_ResetKeysUpDowns();
+    }
     break;
   case LeaveNotify:
-    //printf("got leave notify\n");
-    X11_ResetKeysUpDowns();
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        X11_ResetKeysUpDowns();
+    }
     break;
   case ClientMessage:
 #if 0

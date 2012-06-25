@@ -57,6 +57,8 @@
   to check this, and manually autorepeat if autorepeat is turned on for any of the qualifier keys.
   If it is not possible (or very simple) to check this, just handle autorepeat manually for everyone.
 
+* Rewrite qualifier key handling. Total mess.
+
 * Thicker lines
 
 * Anti aliasing, etc.
