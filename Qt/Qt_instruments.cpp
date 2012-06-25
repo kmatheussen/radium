@@ -21,7 +21,8 @@ extern "C"{
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
-#include "../common/blts_proc.h"
+#include "../common/gfx_proc.h"
+#include "../common/gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/OS_midigfx_proc.h"
@@ -456,8 +457,17 @@ static void tab_selected(){
   Instrument_widget *instrument = static_cast<Instrument_widget*>(instruments_widget->tabs->currentPage());
   g_currpatch = instrument->patch;
 
-  setInstrumentForTrack(instrument->patch->l.num, -1, -1, -1);
+  {
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    struct WTracks *wtrack = wblock->wtrack;
 
-  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
-  my_widget->repaint(); // Update track name.
+    DO_GFX(
+           wtrack->track->patch = instrument->patch;
+           DrawWTrackHeader(window,wblock,wtrack);
+           );
+
+    MyWidget *my_widget = static_cast<MyWidget*>(window->os_visual.widget);
+    my_widget->update();
+  }
 }

@@ -17,29 +17,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-void UpdateWTrackHeader(
+extern LANGSPEC void UpdateWTrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 );
 
-extern void DrawWTrackHeader(
+extern LANGSPEC void DrawWTrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 );
 
-void UpdateAllWTrackHeaders(
+extern LANGSPEC void UpdateAllWTrackHeaders(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-extern void DrawAllWTrackHeaders(
+extern LANGSPEC void DrawAllWTrackHeaders(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-void DrawUpAllWTrackHeaders(
+extern LANGSPEC void DrawUpAllWTrackHeaders(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );

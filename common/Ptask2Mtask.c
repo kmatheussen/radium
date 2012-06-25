@@ -44,7 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "blocklist_proc.h"
 #include "OS_Bs_edit_proc.h"
-#include "blts_proc.h"
+#include "gfx_proc.h"
+
 
 extern PlayerClass *pc;
 extern struct Root *root;
@@ -62,8 +63,7 @@ void P2MUpdateSongPosCallBack(void){
 	while(window!=NULL){
 		if(window->playalong==true){
 
-		  Blt_markVisible(window); {
-
+                  DO_GFX_BLT({
 			wblock=ListFindElement1(&window->wblocks->l,curr_block);
 			till_curr_realline=wblock->till_curr_realline;
 
@@ -86,11 +86,7 @@ void P2MUpdateSongPosCallBack(void){
 			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
 			ScrollEditorToRealLine(window,wblock,till_curr_realline);
 
-                  } { 
-                    Blt_clearNotUsedVisible(window);
-		    Blt_blt(window);
-                  }
-
+                    });
 		}
 		window=NextWindow(window);
 	}

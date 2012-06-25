@@ -27,13 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_proc.h"
 
 #include "visual_proc.h"
-
-#include "blts_proc.h"
-#include "trackreallineelements_proc.h"
+#include "../common/gfx_proc.h"
 
 
 #include "../api/radium_proc.h"
-#include "../api/api_requesters_proc.h"
 
 
 #include <string.h>
@@ -343,20 +340,12 @@ uint32_t CanITreatThisEvent_questionmark(int ID,struct Tracker_Windows *window){
 
 int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	struct TEventFIFO *element;
-	int ret;
 
 	if(window->dontbuffer==1) return 0;
 
 	if(CanITreatThisEvent_questionmark(in_tevent->ID,window)==0){
-	  Blt_markVisible(window);
-	  ret=EventTreater(in_tevent,window);
-	  Blt_clearNotUsedVisible(window);
-	  Blt_blt(window);
-	  if(collectTREgarbage==true){
-	    TRE_collectGarbage();
-	  }
-          closeRequester();
-          checkIfWBlocksAreDirty();
+          int ret;
+          DO_GFX(ret=EventTreater(in_tevent,window));
 	  return ret;
 	}
 

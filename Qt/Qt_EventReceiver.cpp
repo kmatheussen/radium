@@ -82,7 +82,10 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 //  setBackgroundColor( this->colors[0] );		/* white background */
 
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
-  //fprintf(stderr,"\n\n*************** paintEVent. Erased? %s **************** %d\n\n",e->erased()?"TRUE":"FALSE",times++);
+#if 0
+  static int times=0;
+  fprintf(stderr,"\n\n*************** paintEVent. Queue size: %d. Erased? %s **************** %d\n\n",GFX_get_op_queue_size(this->window),e->erased()?"TRUE":"FALSE",times++);
+#endif
 
 #ifdef USE_QT4
   static int times = 0;

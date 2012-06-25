@@ -35,8 +35,6 @@ struct MidiPort{
 };
 
 struct PatchData{
-	char *name;
-
 	struct MidiPort *midi_port;
 
 	int channel;

@@ -156,7 +156,17 @@ void Instrument_widget::name_widget_returnPressed()
     //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
     instruments_widget->tabs->setTabLabel(this, name_widget->text());
 
-    patchdata->name = talloc_strdup((char*)name_widget->text().ascii());
+    {
+      struct Tracker_Windows *window = root->song->tracker_windows;
+      struct WBlocks *wblock = window->wblock;
+      struct WTracks *wtrack = wblock->wtrack;
+      DO_GFX(
+             patch->name = talloc_strdup((char*)name_widget->text().ascii());
+             DrawWTrackHeader(window,wblock,wtrack);
+             );
+      MyWidget *my_widget = static_cast<MyWidget*>(window->os_visual.widget);
+      my_widget->update();
+    }
 
     set_editor_focus();
 }

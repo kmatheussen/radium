@@ -19,26 +19,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern void FreeAllTREelementHolders(void);
+extern LANGSPEC void FreeAllTREelementHolders(void);
 
-extern void ReturnRTEelement(struct TrackReallineElements *tre);
-extern void FreeAllRTEelements_fromroot(
+extern LANGSPEC void ReturnRTEelement(struct TrackReallineElements *tre);
+extern LANGSPEC void FreeAllRTEelements_fromroot(
 	struct TrackReallineElements **to
 );
-extern bool FreeASpesifiedWBlockTREelement(
+extern LANGSPEC bool FreeASpesifiedWBlockTREelement(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
-extern bool FreeANotShowedWBlockTREelement(void);
+extern LANGSPEC bool FreeANotShowedWBlockTREelement(void);
 
-extern void FreeAllNotShowedWBlockTREelement(void);
+extern LANGSPEC void FreeAllNotShowedWBlockTREelement(void);
 
 extern bool collectTREgarbage;
-extern bool TRE_collectGarbage(void);
+extern LANGSPEC bool TRE_collectGarbage(void);
 
-extern struct TrackReallineElements *TRE_GetTREelementHard(void);
+extern LANGSPEC struct TrackReallineElements *TRE_GetTREelementHard(void);
 
-extern struct TrackReallineElements *nextfreeelement;
+extern LANGSPEC struct TrackReallineElements *nextfreeelement;
 
 #define GetTREelement(a) if(nextfreeelement!=NULL){					\
 			     (a)=nextfreeelement;nextfreeelement=nextfreeelement->next;(a)->next=NULL;	\

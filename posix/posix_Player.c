@@ -43,7 +43,7 @@ static bool isplaying=false;
 
 //#include "google/profiler.h"
 
-void *posix_PlayerThread(void *arg){
+static void *posix_PlayerThread(void *arg){
   int64_t newtime;
   int64_t lasttime=0;
 

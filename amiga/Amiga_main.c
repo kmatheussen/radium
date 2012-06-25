@@ -551,10 +551,8 @@ newprogram:
 #endif
 
 		if(signal & 1L<<inputsig){
-		   Blt_markVisible(root->song->tracker_windows);
-			GetMidiInput(&note,&velocity);
-		   Blt_clearNotUsedVisible(root->song->tracker_windows);
-		   Blt_blt(root->song->tracker_windows);
+                  struct Tracker_Windows *window = root->song->tracker_windows;
+                  DO_GFX_BLT(GetMidiInput(&note,&velocity));
 		}
 
 		if(signal & ptask2mtasksig){

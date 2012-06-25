@@ -16,24 +16,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #ifdef TRACKER_INCLUDE
-void DrawUpTrackerWindow(struct Tracker_Windows *window);
-void UpdateTrackerWindow(struct Tracker_Windows *window);
+extern LANGSPEC void DrawUpTrackerWindow(struct Tracker_Windows *window);
+extern LANGSPEC void UpdateTrackerWindow(struct Tracker_Windows *window);
 #endif
 
 #ifndef TRACKER_INCLUDE
 
-extern void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window);
+extern LANGSPEC void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window);
 
 extern LANGSPEC void UpdateTrackerWindow(struct Tracker_Windows *window);
 
 extern LANGSPEC void DrawUpTrackerWindow(struct Tracker_Windows *window);
 
-extern int OpenTrackerWindow(int x,int y,int width,int height);
+extern LANGSPEC int OpenTrackerWindow(int x,int y,int width,int height);
 
-extern int CloseTrackerWindow(NInt place);
+extern LANGSPEC int CloseTrackerWindow(NInt place);
 
-extern void CloseAllTrackerWindows(void);
+extern LANGSPEC void CloseAllTrackerWindows(void);
 
-void checkIfWBlocksAreDirty(void);
+extern LANGSPEC void checkIfWBlocksAreDirty(void);
 
 #endif
