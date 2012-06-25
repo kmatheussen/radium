@@ -34,8 +34,6 @@
 
 * Alsaseq midi port names only contain the port names. They should also contain the client names.
 
-* The error/warning window moves all other radium windows to the back, behind the terminal. Which is very annoying.
-
 * Page up/down should scroll page up/down
 
 * Trying to load a standard midi file as normal file (instead of selecting "import midi") should really import the midi file, not quit the editor.
@@ -77,9 +75,6 @@
 * Shift + Left/Right should change track, not Alt + Left/Right.
   Reason: Shift + Up/Down is used a lot, and changing track is a common operation.
 
-* Qualifier keys are resetted after pressing.
-  E.g pressing "Ctrl+1" and "Ctrl+2" while holding the Ctrl key pressed causes "Ctrl+1" and "2" to be executed.
-
 * FX is missing for importing standard midi files.
 
 * Blocklist/playlist non-stacking should only happen if there are more blocks / longer playlist than can be viewed simultaneously
@@ -116,4 +111,9 @@
 
 * Perform gc_a_little between events, similar to amiga. Subclassing QEventLoop
   seems like the simplest solution. (with incremental gc, it probably makes no difference though)
+
+* Lots of files in bin/ which are copied from api/ and elsewhere. Confusing.
+  github seems to handle symlinks fine, so that's a better solution.
+
+* KP_ADD / KP_SUB could be used for zooming.
 

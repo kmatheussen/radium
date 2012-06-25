@@ -54,7 +54,9 @@ class LineParser:
     
     if len(items)==1:
       return items[0]
-    key=keybindingsdict[string.lstrip(string.rstrip(items[1]))]
+
+    keykey=string.lstrip(string.rstrip(items[1]))
+    key=keybindingsdict[keykey]
     qualifier=""
     code2read={"CTRL_L":"Left Ctrl",
                "CTRL_R":"Right Ctrl",
