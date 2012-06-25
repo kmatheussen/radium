@@ -129,11 +129,5 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
 	DLoadWindows(newroot,song->tracker_windows);
 
+        DLoadInstrumentGUI(song->instruments);
 }
-
-
-
-
-
-
-

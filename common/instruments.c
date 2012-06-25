@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 
 #include "instruments_proc.h"
-
+#include "../midi/midi_i_plugin_proc.h"
 
 
 extern struct Root *root;
@@ -46,15 +46,12 @@ void CloseAllInstruments(void){
 
 
 
-extern int InitInstrumentPlugIn(struct Instruments *instrument);
-
-
 /* This function must be made more general later. */
 bool OpenInstrument(void){
 	struct Instruments *instrument=talloc(sizeof(struct Instruments));
 	instrument->l.num=ListFindFirstFreePlace1(&root->song->instruments->l);
 
-	if(InitInstrumentPlugIn(instrument)==INSTRUMENT_FAILED) return false;
+	if(MIDIinitInstrumentPlugIn(instrument)==INSTRUMENT_FAILED) return false;
 
 	ListAddElement1(&root->song->instruments,&instrument->l);
 	root->def_instrument=instrument;

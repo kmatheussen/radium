@@ -20,6 +20,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_i_plugin.h"
 
+extern LANGSPEC int MIDIinitInstrumentPlugIn(struct Instruments *instrument);
+
+extern LANGSPEC int MIDIgetStandardVelocity(struct Tracks *track);
+extern LANGSPEC int MIDIgetMaxVelocity(struct Tracks *track);
+extern LANGSPEC int MIDIgetPatch(
+                                 struct Tracker_Windows *window,
+                                 ReqType reqtype,
+                                 struct Tracks *track,
+                                 struct Patch *patch
+                                 );
+extern LANGSPEC void MIDICloseInstrument(struct Instruments *instrument);
+extern LANGSPEC void MIDISelectTrackInstrument(struct Tracks *track,struct Instruments *instrument);
+extern LANGSPEC void MIDIStopPlaying(struct Instruments *instrument);
 
 extern LANGSPEC void MIDIchangeTrackPan(int newpan,struct Tracks *track);
 extern LANGSPEC void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note);

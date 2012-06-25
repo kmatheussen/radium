@@ -109,3 +109,5 @@
 
 * PausePlayer and StopPausePlayer has not been implemented. Check out
   what they do.
+
+* Delete instrument. (right click tab could bring a popup menu)

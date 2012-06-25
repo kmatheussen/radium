@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdbool.h>
 #include "MyWidget.h"
 #include "Qt_Bs_edit_proc.h"
+#include "Qt_instruments_proc.h"
 
 #include <qpainter.h>
 #include <qstatusbar.h>
@@ -345,8 +346,11 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 }
 
 int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
-  return 0;
 
+  close_all_instrument_widgets();
+
+  // Reuse it instead.
+#if 0
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   //BS_StopXSend();
@@ -356,6 +360,7 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   delete mywidget->cursorpixmap;
 
   mywidget->close();
+#endif
   return 0;
 }
 

@@ -68,41 +68,22 @@ end:
 	return instrument;
 }
 
-int MIDIgetStandardVelocity(struct Tracks *track);
-int MIDIgetMaxVelocity(struct Tracks *track);
-void MIDICloseInstrument(struct Instruments *instrument);
-void MIDISelectTrackInstrument(struct Tracks *track,struct Instruments *instrument);
-void MIDIStopPlaying(struct Instruments *instrument);
-int MIDIgetPatch(
-	struct Tracker_Windows *window,
-	ReqType reqtype,
-	struct Tracks *track,
-	struct Patch *patch
-); 
-extern int MIDIgetFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx);
-extern void MIDIPP_Update(struct Instruments *instrument,struct Patch *patch);
-extern void *MIDI_CopyInstrumentData(struct Tracks *track);
-extern void *MIDILoadFX(struct FX *fx,struct Tracks *track);
 
-
+#include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_fx_proc.h"
+#include "../midi/disk_midi_fx_proc.h"
 #include "../midi/midi_playfromstart_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 
 
 void DLoadInstrument(struct Instruments *instrument){
-	instrument->instrumentname="MIDI instrument";
-	instrument->getStandardVelocity= &MIDIgetStandardVelocity;
-	instrument->getMaxVelocity= &MIDIgetMaxVelocity;
-	instrument->getFX= &MIDIgetFX;
-	instrument->getPatch= &MIDIgetPatch;
-	instrument->CloseInstrument=MIDICloseInstrument;
-	instrument->SelectTrackInstrument=MIDISelectTrackInstrument;
-	instrument->StopPlaying=MIDIStopPlaying;
-	//	instrument->PP_Update=MIDI_PP_Update;
-	instrument->PP_Update=MIDIGFX_PP_Update;
-	instrument->PlayFromStartHook=MIDIPlayFromStartHook;
-	instrument->CopyInstrumentData=MIDI_CopyInstrumentData;
-	instrument->LoadFX=MIDILoadFX;
+  MIDIinitInstrumentPlugIn(instrument);
 }
 
-
+void DLoadInstrumentGUI(struct Instruments *instrument){
+  struct Patch *patch = instrument->patches;
+  while(patch!=NULL){
+    instrument->PP_Update(instrument, patch);
+    patch = NextPatch(patch);
+  }
+}

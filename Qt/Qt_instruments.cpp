@@ -79,13 +79,16 @@ void set_editor_focus(void){
 MakeFocusOverrideClass(QSpinBox);
 MakeFocusOverrideClass(QLineEdit);
 
-static void tab_selected();
-
 class Instruments_widget;
 static Instruments_widget *instruments_widget;
 
 class No_instrument_widget;
 static No_instrument_widget *no_instrument_widget;
+
+class Instrument_widget;
+
+static void tab_selected();
+static Instrument_widget *get_instrument_widget(struct Patch *patch);
 
 //#define protected public
 #include "Qt_instruments_widget.cpp"
@@ -348,7 +351,7 @@ void addInstrument(struct Patch *patch){
   instrument->control_change_group->setEnabled(true);
 
   instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count()-1);
-  instruments_widget->tabs->showPage(instrument);
+  //instruments_widget->tabs->showPage(instrument);
 }
 
 
@@ -469,5 +472,14 @@ static void tab_selected(){
 
     MyWidget *my_widget = static_cast<MyWidget*>(window->os_visual.widget);
     my_widget->update();
+  }
+}
+
+void close_all_instrument_widgets(void){
+  QTabWidget* tabs = instruments_widget->tabs;
+
+  while(tabs->count()>1){
+    Instrument_widget *instrument = static_cast<Instrument_widget*>(tabs->page(0));
+    delete instrument;
   }
 }

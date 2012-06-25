@@ -249,10 +249,13 @@ void MIDI_Delete(void){
   }
 }
 
-
 bool MIDI_New(struct Instruments *instrument){
-
   printf("ALSASEQ_MIDI_New\n");
+
+  instrument->PP_Update=MIDIGFX_PP_Update;
+
+  if(alsaseq_opened==true)
+    return true;
 
   if(snd_seq_open(&radium_seq,"default",SND_SEQ_OPEN_DUPLEX,0)!=0){
     fprintf(stderr,"Could not open ALSA sequencer.\n");
@@ -278,7 +281,6 @@ bool MIDI_New(struct Instruments *instrument){
 
   snd_seq_start_queue(radium_seq, radium_queue, NULL );
 
-  instrument->PP_Update=MIDIGFX_PP_Update;
   return true;
 }
 

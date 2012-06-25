@@ -15,4 +15,6 @@ void No_instrument_widget::create_instrument_clicked()
 {
     struct Patch *patch = NewPatchCurrPos();
     addInstrument(patch);
+    Instrument_widget *instrument = get_instrument_widget(patch);
+    instruments_widget->tabs->showPage(instrument);
 }

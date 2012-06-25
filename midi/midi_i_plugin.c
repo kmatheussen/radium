@@ -494,7 +494,7 @@ void MIDIStopPlaying(struct Instruments *instrument){
 char *inlinkname=NULL;
 
 
-int InitInstrumentPlugIn(struct Instruments *instrument){
+int MIDIinitInstrumentPlugIn(struct Instruments *instrument){
 
   if(MIDI_New(instrument)==false){
     return INSTRUMENT_FAILED;
