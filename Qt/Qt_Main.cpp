@@ -86,13 +86,13 @@ bool MyApplication::x11EventFilter(XEvent *event){
       this->quit();
     }
     static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
-    return TRUE;
+    return true;
   case KeyRelease:
     if(instrumentWidgetUsesKeyboard())
       return false;
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
     static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
-    return TRUE;
+    return true;
   case EnterNotify:
     {
       XCrossingEvent *e = (XCrossingEvent*) event;
