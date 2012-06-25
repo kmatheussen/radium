@@ -288,7 +288,7 @@ int radium_main(char *arg){
   }
 
   PyRun_SimpleString("import menues");
-  
+
   qapplication->exec();
   
   posix_EndPlayer();

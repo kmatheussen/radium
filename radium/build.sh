@@ -26,8 +26,10 @@ if test $2 != "no" ; then
     fi
 fi
 
-#http://www.daa.com.au/~james/software/libglade/
+
 if test $2 = "yes" ; then
+
+    #http://www.daa.com.au/~james/software/libglade/
     tar xvzf libglade-0.17.tar.gz
     cd libglade-0.17
     ./configure --prefix=/tmp/radium
@@ -36,7 +38,7 @@ if test $2 = "yes" ; then
     cd ..
 
 
-#http://www.daa.com.au/~james/software/pygtk/
+    #http://www.daa.com.au/~james/software/pygtk/
     tar xvzf pygtk-0.6.11.tar.gz
     cd pygtk-0.6.11
     export PYTHON=$1
@@ -61,6 +63,12 @@ cd ..
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 tar xvzf gc.tar.gz
 cd gc-7.2
+./configure --prefix=/tmp/radium
+make
+cd ..
+
+tar xvjf xmessage-1.0.3.tar.bz2
+cd xmessage-1.0.3
 ./configure --prefix=/tmp/radium
 make
 cd ..
