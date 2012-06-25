@@ -16,7 +16,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include "../common/nsmtracker.h"
+#include <new>
+#include <stdlib.h>
+#include <stdio.h>
+#include <gc.h>
+
+#include "../common/OS_memory_proc.h"
+
+#if 0
+// Segfault, probably some Qt root which is missing.
+
+void* operator new(size_t size){
+  static int num=1;
+  printf("new: %d. size: %d\n",num++,(int)size);
+  //return malloc(size);
+  return GC_malloc(size);
+}
+
+void operator delete (void* mem){
+  //printf("delete %p\n",mem);
+  //free(mem);
+}
+
+void* operator new[](size_t size){
+  //return malloc(size);
+  return GC_malloc(size);
+}
+
+void operator delete[](void* mem)
+{
+  //free(mem);
+}
+#endif
 
 
 

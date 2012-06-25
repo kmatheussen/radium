@@ -795,8 +795,8 @@ $(P)Qt_no_instrument_widget.h: $(P)no_instrument_widget.ui $(P)create_source_fro
 $(P)Qt_control_change_widget.h: $(P)control_change_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
-Qt_memory.o:  $(P)Qt_memory.c 
-	$(CC)  $(P)Qt_memory.c $(OPT)
+Qt_memory.o:  $(P)Qt_memory.cpp
+	$(CCC)  $(P)Qt_memory.cpp $(OPT)
 
 scroll.o: $(CD)scroll.c
 	$(CC) $(CD)scroll.c $(OPT)

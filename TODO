@@ -111,3 +111,7 @@
   what they do.
 
 * Delete instrument. (right click tab could bring a popup menu)
+
+* Perform gc_a_little between events, similar to amiga. Subclassing QEventLoop
+  seems like the simplest solution. (with incremental gc, it probably makes no difference though)
+

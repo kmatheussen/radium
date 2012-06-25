@@ -39,7 +39,7 @@ void CloseTrack(struct Blocks *block, NInt tracknum){
 
 void NewTrack(struct Blocks *block,struct Tracks *track){
 	track->onoff=1;
-	track->trackname="NTN";
+	track->trackname="<>";
 	track->instrument=root->def_instrument;
 	track->volume=800;
 	track->panonoff=false;

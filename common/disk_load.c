@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#include <gc.h>
 
 #include "nsmtracker.h"
 #include "disk.h"
@@ -160,10 +160,22 @@ extern int max_num_undos;
 extern char *mmp2filename;
 #endif
 
+
 bool Load_CurrPos(struct Tracker_Windows *window){
 	char *filename;
 	char *ret=NULL;
 	char temp[200];
+
+        // So many things happen here, that we should turn off garbage collection while loading.
+        //
+        // For instance, the instrument widget contains pointers (which are unreachable from the GC) to Patch
+        // and PatchData objects. The instrument widget is updated after setting a new root, so it may access
+        // that memory while a new song is loaded (since we don't have control over what Qt may do while we
+        // access it). Not unlikely to be other similar situations.
+        {
+          GC_disable();
+        }
+
 
 	PlayStop();
 
@@ -207,12 +219,16 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 			return Load("radium:Init.rad");
 		}
 	}
-        {
-        bool ret = Load(filename);
-        fprintf(stderr,"Got here (loading finished)\n");
-        return ret;
-        }
-	return Load(filename);
 
+        {
+          bool ret = Load(filename);
+          fprintf(stderr,"Got here (loading finished)\n");
+
+          {
+            GC_enable();
+          }
+
+          return ret;
+        }
 }
 
