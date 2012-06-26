@@ -145,8 +145,6 @@ void Instrument_widget::name_widget_textChanged( const QString &string )
 
 
 
-class QTabBar;
-
 void Instrument_widget::name_widget_returnPressed()
 {
     printf("return pressed\n");

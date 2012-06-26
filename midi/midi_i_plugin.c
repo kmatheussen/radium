@@ -340,14 +340,14 @@ static struct PatchData *createPatchData(void) {
   patchdata->MSB=-1;
   patchdata->LSB=-1;
 
-  patchdata->standardccs[0]=0x5d;
-  patchdata->standardccs[1]=0x5b;
-  patchdata->standardccs[2]=0x49;
-  patchdata->standardccs[3]=0x48;
-  patchdata->standardccs[4]=0x4a;
-  patchdata->standardccs[5]=0x47;
-  patchdata->standardccs[6]=0x5e;
-  patchdata->standardccs[7]=0x1;
+  patchdata->cc[0]=0x5d;
+  patchdata->cc[1]=0x5b;
+  patchdata->cc[2]=0x49;
+  patchdata->cc[3]=0x48;
+  patchdata->cc[4]=0x4a;
+  patchdata->cc[5]=0x47;
+  patchdata->cc[6]=0x5e;
+  patchdata->cc[7]=0x1;
   
   
   patchdata->ccnames[0]="Chorus";

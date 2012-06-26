@@ -49,8 +49,8 @@ void MIDIPlayFromStartHook(struct Instruments *instrument){
 		{
 			int lokke;
 			for(lokke=0;lokke<8;lokke++){
-				if(patchdata->standardccs[lokke]>=0 && patchdata->ccsonoff[lokke]){
-					R_PutMidi3(midi_port,0xb0|channel,patchdata->standardccs[lokke],patchdata->ccvalues[lokke]);
+				if(patchdata->cc[lokke]>=0 && patchdata->ccsonoff[lokke]){
+					R_PutMidi3(midi_port,0xb0|channel,patchdata->cc[lokke],patchdata->ccvalues[lokke]);
 				}
 			}
 		}

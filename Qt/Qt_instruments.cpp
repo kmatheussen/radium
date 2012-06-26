@@ -90,6 +90,8 @@ class Instrument_widget;
 static void tab_selected();
 static Instrument_widget *get_instrument_widget(struct Patch *patch);
 
+static const char *ccnames[128];
+
 //#define protected public
 #include "Qt_instruments_widget.cpp"
 #include "Qt_control_change_widget.cpp"
@@ -232,10 +234,12 @@ static const char *gm_names[] = {
   "Gunshot"
   };
 
-static const char *ccnames[128];
 
 static Instrument_widget *createInstrumentWidget(const char *name, struct PatchData *patchdata){
     Instrument_widget *instrument = new Instrument_widget();
+
+    for(int i=0;i<128;i++)
+      ccnames[i] = "";
 
     {
       ccnames[01] = "Modulation Wheel";
@@ -263,7 +267,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct PatchD
       ccnames[127] = "Poly Mode";
       if(patchdata!=NULL)
         for(int i=0;i<8;i++){
-          ccnames[(int)patchdata->standardccs[i]] = patchdata->ccnames[i];
+          ccnames[(int)patchdata->cc[i]] = patchdata->ccnames[i];
         }
     }
 
@@ -282,8 +286,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct PatchD
           if(patchdata!=NULL){
             cc->patchdata = patchdata;
 
-            cc->cctype->setCurrentItem(patchdata->standardccs[ccnum]);
-            patchdata->cc[ccnum] = patchdata->standardccs[ccnum];
+            cc->cctype->setCurrentItem(patchdata->cc[ccnum]);
           }
 
           instrument->cc_widgets[ccnum] = cc;
@@ -409,7 +412,7 @@ static void update_instrument_widget(Instrument_widget *instrument, struct Patch
   struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
 
   instrument->volume_spin->setValue(patchdata->volume);
-  instrument->panning_spin->setValue(patchdata->pan);
+  instrument->panning_spin->setValue(patchdata->pan-63);
   instrument->channel->setValue(patchdata->channel);
   instrument->msb->setValue(patchdata->MSB);
   instrument->lsb->setValue(patchdata->LSB);

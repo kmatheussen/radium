@@ -48,10 +48,8 @@ struct PatchData{
 	bool panonoff;
 	char pan;
 
-	char *ccnames[8];
-	char standardccs[8];
-
 	bool ccsonoff[8];
+	char *ccnames[8];
         char cc[8];
 	char ccvalues[8];
 };

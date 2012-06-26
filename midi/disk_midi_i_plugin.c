@@ -40,13 +40,12 @@ DC_start("PATCHDATA");
         DC_SSB("volumeonoff",patchdata->volumeonoff);
         DC_SSI("volume",patchdata->volume);
         DC_SSB("panonoff",patchdata->panonoff);
-        DC_SSB("pan",patchdata->pan);
+        DC_SSI("pan",patchdata->pan);
 
         DC_SaveS("controlchange");
         int num;
         for(num=0;num<8;num++){
           DC_SaveCleanString(patchdata->ccnames[num]);DC_SaveCleanString("\n");
-          DC_SaveI(patchdata->standardccs[num]);
           DC_SaveB(patchdata->ccsonoff[num]);
           DC_SaveI(patchdata->cc[num]);
           DC_SaveI(patchdata->ccvalues[num]);
@@ -118,7 +117,6 @@ var9:
           int num;
           for(num=0;num<8;num++){
             patchdata->ccnames[num]=DC_LoadS();
-            patchdata->standardccs[num]=DC_LoadI();
             patchdata->ccsonoff[num]=DC_LoadB();
             patchdata->cc[num]=DC_LoadI();
             patchdata->ccvalues[num]=DC_LoadI();

@@ -38,9 +38,14 @@ DiskClass dc;
 /*************************************************************
               SAVE FUNCTIONS
 *************************************************************/
+static const char *emptystringstring = "_________empty__________";
 
 void DC_SaveCleanString(const char *string){
-	if(fprintf(dc.file,"%s",string)<0) dc.success=false;
+  if(strlen(string)==0){
+    if(fprintf(dc.file,"%s",emptystringstring)<0) dc.success=false;
+  }else{
+    if(fprintf(dc.file,"%s",string)<0) dc.success=false;
+  }
 }
 
 void DC_SaveST(const char *string){
@@ -227,8 +232,13 @@ NInt DC_LoadN(void){
 char *DC_LoadS(void){
 	char *ret;
 	DC_fgets();
-	ret=DC_alloc_atomic(strlen(dc.ret)+1);
-	strcpy(ret,dc.ret);
+        if(!strcmp(dc.ret, emptystringstring)){
+          ret=DC_alloc_atomic(1);
+          ret[0]='\0';
+        }else{
+          ret=DC_alloc_atomic(strlen(dc.ret)+1);
+          strcpy(ret,dc.ret);
+        }
 error:
 	return ret;
 }

@@ -34,10 +34,12 @@ void Control_change_widget::onoff_stateChanged( int val)
 	value_slider->setEnabled(true);
 	value_spin->setEnabled(true);
 	cctype->setEnabled(true);
+        this->patchdata->ccsonoff[this->ccnum] = true;
     }else if(val==QButton::Off){
 	value_slider->setEnabled(false);
 	value_spin->setEnabled(false);
 	cctype->setEnabled(false);
+        this->patchdata->ccsonoff[this->ccnum] = false;
     }
 }
 
@@ -45,4 +47,5 @@ void Control_change_widget::onoff_stateChanged( int val)
 void Control_change_widget::cctype_activated( int val)
 {
     patchdata->cc[this->ccnum] = val;
+    patchdata->ccnames[this->ccnum] = talloc_strdup((char*)ccnames[val]);
 }
