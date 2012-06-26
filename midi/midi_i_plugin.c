@@ -336,6 +336,7 @@ int MIDIgetMaxVelocity(struct Tracks *track);
 
 static struct PatchData *createPatchData(void) {
   struct PatchData *patchdata=talloc(sizeof(struct PatchData));
+  patchdata->preset=-1;
   patchdata->MSB=-1;
   patchdata->LSB=-1;
 

@@ -30,32 +30,53 @@ void SavePatchData(void *pd){
 	struct PatchData *patchdata=(struct PatchData *)pd;
 DC_start("PATCHDATA");
 
-	DC_SSS("clustername",patchdata->midi_port->name);
+	if(patchdata->midi_port!=NULL)
+		DC_SSS("clustername",patchdata->midi_port->name);
 	DC_SSI("channel",patchdata->channel);
 	DC_SSI("preset",patchdata->preset);
 	DC_SSI("LSB",patchdata->LSB);
 	DC_SSI("MSB",patchdata->MSB);
+
+        DC_SSB("volumeonoff",patchdata->volumeonoff);
+        DC_SSI("volume",patchdata->volume);
+        DC_SSB("panonoff",patchdata->panonoff);
+        DC_SSB("pan",patchdata->pan);
+
+        DC_SaveS("controlchange");
+        int num;
+        for(num=0;num<8;num++){
+          DC_SaveCleanString(patchdata->ccnames[num]);DC_SaveCleanString("\n");
+          DC_SaveI(patchdata->standardccs[num]);
+          DC_SaveB(patchdata->ccsonoff[num]);
+          DC_SaveI(patchdata->cc[num]);
+          DC_SaveI(patchdata->ccvalues[num]);
+        }
 
 DC_end();
 }
 
 void *LoadPatchData(void){
 	static char **objs=NULL;
-	static char *vars[5]={
+	static char *vars[10]={
 		"clustername",
 		"channel",
 		"preset",
 		"LSB",
-		"MSB"
+		"MSB",
+                "volumeonoff",
+                "volume",
+                "panonoff",
+                "pan",
+                "controlchange"
 	};
-	char *clustername;
+	char *clustername = NULL;
 	struct PatchData *patchdata=DC_alloc(sizeof(struct PatchData));
 
-	GENERAL_LOAD(0,5)
+	GENERAL_LOAD(0,10)
 
 var0:
 	clustername=DC_LoadS();
-	patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername);
+        patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername);
 #if 0
 	if(patchdata->mymidilink==NULL){
 		fprintf(stderr,"Can't find midicluster '%s', using standard midi outlink instead\n",clustername);
@@ -81,10 +102,29 @@ var4:
 	goto start;
 
 var5:
+        patchdata->volumeonoff=DC_LoadB();
+        goto start;
 var6:
+        patchdata->volume=DC_LoadI();
+        goto start;
 var7:
+        patchdata->panonoff=DC_LoadB();
+        goto start;
 var8:
+        patchdata->pan=DC_LoadI();
+        goto start;
 var9:
+        {
+          int num;
+          for(num=0;num<8;num++){
+            patchdata->ccnames[num]=DC_LoadS();
+            patchdata->standardccs[num]=DC_LoadI();
+            patchdata->ccsonoff[num]=DC_LoadB();
+            patchdata->cc[num]=DC_LoadI();
+            patchdata->ccvalues[num]=DC_LoadI();
+          }
+        }
+        goto start;
 var10:
 var11:
 var12:

@@ -34,9 +34,7 @@ DC_start("PATCH");
 	DC_SSI("maxvel",patch->maxvel);
 	DC_SSI("standardvel",patch->standardvel);
 
-#ifdef _AMIGA
 	SavePatchData(patch->patchdata);
-#endif
 
 DC_end();
 SavePatch(NextPatch(patch));
