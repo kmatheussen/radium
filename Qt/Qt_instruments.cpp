@@ -387,6 +387,7 @@ void GFX_InstrumentWindowToFront(void){
 
 // These functions (MIDIGFX_*) seems to be only used by the GTK1 instrument window when the wrong value
 // was received from the GUI, and the original value must be sent back.
+// It would make sense to use them though, to make it simpler to implement new GUI backends.
 void MIDIGFX_UpdateAll(void){}
 void MIDIGFX_SetPanSlider(bool on,int value){}
 void MIDIGFX_SetVolumeSlider(bool on,int value){}
@@ -430,33 +431,43 @@ static void update_instrument_widget(Instrument_widget *instrument, struct Patch
   }
 }
 
+static bool called_from_pp_update = false;
+
 void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *patch){
-  printf("PP update. Instrument name: \"%s\"\n",patch==NULL?"(null)":patch->name);
-  if(g_currpatch==patch)
-    return;
+  called_from_pp_update = true;{
 
-  if(patch==NULL){
+    printf("PP update. Instrument name: \"%s\"\n",patch==NULL?"(null)":patch->name);
+    if(g_currpatch==patch)
+      return;
 
-    instruments_widget->tabs->showPage(no_instrument_widget);
+    if(patch==NULL){
 
-  }else{
+      instruments_widget->tabs->showPage(no_instrument_widget);
 
-    Instrument_widget *instrument = get_instrument_widget(patch);
-    if(instrument==NULL){
-      addInstrument(patch);
-      instrument = get_instrument_widget(patch);
+    }else{
+
+      Instrument_widget *instrument = get_instrument_widget(patch);
+      if(instrument==NULL){
+        addInstrument(patch);
+        instrument = get_instrument_widget(patch);
+      }
+
+      update_instrument_widget(instrument,patch);
+
+      instruments_widget->tabs->showPage(instrument);
     }
 
-    update_instrument_widget(instrument,patch);
+    g_currpatch = patch;
 
-    instruments_widget->tabs->showPage(instrument);
-  }
-
-  g_currpatch = patch;
+  }called_from_pp_update = false;
 }
 
 static void tab_selected(){
   //printf("tab selected -%s-\n",tabname.ascii());
+
+  if(called_from_pp_update==true)
+    return;
+
   if(instruments_widget->tabs->currentPage()==no_instrument_widget)
     return;
 

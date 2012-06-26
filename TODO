@@ -123,9 +123,6 @@
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.
 
-* After loading, track 1 always get the last instrument. (the
-  activated slot is probably called when adding a new instrument widget)
-
 * It could seem like loading a song with an instrument with a non-existant midi-port
   causes patchdata->midi_port to be NULL. There's no need for that, alsaseq should
   create the port anyway, it doesn't have to connect it anyhwere.
