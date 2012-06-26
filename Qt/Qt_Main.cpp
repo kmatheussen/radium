@@ -149,10 +149,12 @@ public:
   // We don't want to malloc() from the player thread, since it's running SCHED_FIFO.
   void* operator new(size_t size){
     static MyQCustomEvent event;
+    // new is always called from the player thread
     using_the_event = 1;
     return &event;
   }
   void operator delete(void *p){
+    // delete is always called from the GUI thread
     using_the_event = 0;
   }
 };

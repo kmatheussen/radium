@@ -388,7 +388,7 @@ void CAMDCloseInstrument(struct Instruments *instrument){
 }
 
 
-void CAMDSelectTrackInstrument(struct Tracks *track,struct Instruments *instrument){
+void CAMDInitTrack(struct Instruments *instrument,struct Tracks *track){
 	struct TrackInstrumentData *tid;
 	tid=talloc(sizeof(struct TrackInstrumentData));
 	track->instrumentdata=tid;
@@ -480,7 +480,7 @@ int InitInstrumentPlugIn(struct Instruments *instrument){
 	instrument->getFX= &CAMDgetFX;
 	instrument->getPatch= &CAMDgetPatch;
 	instrument->CloseInstrument=CAMDCloseInstrument;
-	instrument->SelectTrackInstrument=CAMDSelectTrackInstrument;
+	instrument->InitTrack=CAMDInitTrack;
 	instrument->StopPlaying=CAMDStopPlaying;
 	instrument->PP_Update=CAMDPP_Update;
 	instrument->CopyInstrumentData=CAMD_CopyInstrumentData;

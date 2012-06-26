@@ -246,7 +246,7 @@ struct Instruments{
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,struct Tracks *track,struct Patch *patch);
 	void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
-	void (*SelectTrackInstrument)(struct Tracks *track,struct Instruments *instrument);
+	void (*InitTrack)(struct Instruments *instrument,struct Tracks *track);
 	void (*StopPlaying)(struct Instruments *instrument);
 	int (*getStandardVelocity)(struct Tracks *track);
 	void (*PP_Update)(struct Instruments *instrument,struct Patch *patch);

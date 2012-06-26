@@ -82,9 +82,7 @@ struct Tracks *LoadTrack(void){
 	};
 	struct Tracks *track=DC_alloc(sizeof(struct Tracks));
 	track->l.num=DC_LoadN();
-
-	track->instrument=root->def_instrument;
-	(*track->instrument->SelectTrackInstrument)(track,track->instrument);
+        InitTrack(track);
 
 	GENERAL_LOAD(3,8)
 
@@ -95,7 +93,7 @@ var1:
 	track->trackname=DC_LoadS();
 	goto start;
 var2:
-	track->patch=DC_alloc_atomic(sizeof(struct Patch));	//Stupid. Only l.num is used.
+	track->patch=DC_alloc_atomic(sizeof(struct Patch)); // Reason for atomic alloc: only l.num is used. track->patch is replaced in DLoadTracks
 	track->patch->l.num=DC_LoadN();
 	goto start;
 var3:

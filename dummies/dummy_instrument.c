@@ -23,7 +23,7 @@ void DUMMYtreatSpecialCommand(char *command,struct Tracks *track){
 void DUMMYCloseInstrument(struct Instruments *instrument){
 }
 
-void DUMMYSelectTrackInstrument(struct Tracks *track,struct Instruments *instrument){
+void DUMMYInitTrack(struct Instruments *instrument,struct Tracks *track){
 }
 
 void DUMMYStopPlaying(struct Instruments *instrument){
@@ -55,7 +55,7 @@ int InitInstrumentPlugIn(struct Instruments *instrument){
   instrument->getFX= &DUMMYgetFX;
   instrument->getPatch= &DUMMYgetPatch;
   instrument->CloseInstrument=DUMMYCloseInstrument;
-  instrument->SelectTrackInstrument=DUMMYSelectTrackInstrument;
+  instrument->InitTrack=DUMMYInitTrack;
   instrument->StopPlaying=DUMMYStopPlaying;
   instrument->PP_Update=DUMMYPP_Update;
   instrument->CopyInstrumentData=DUMMYCopyInstrumentData;

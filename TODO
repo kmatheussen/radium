@@ -117,3 +117,8 @@
 
 * KP_ADD / KP_SUB could be used for zooming.
 
+* Fix shortcutless menu options. Removing the keybinding for ra.unzoom() caused
+  nothing to happen when selecting it from the menu.
+
+* The function that returns the alsaseq portnames only returns the public ones.
+  It should also return the ones created by Radium.

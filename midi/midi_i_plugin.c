@@ -463,7 +463,7 @@ void MIDICloseInstrument(struct Instruments *instrument){
 }
 
 
-void MIDISelectTrackInstrument(struct Tracks *track,struct Instruments *instrument){
+static void MIDIInitTrack(struct Instruments *instrument,struct Tracks *track){
 	struct TrackInstrumentData *tid;
 	tid=talloc(sizeof(struct TrackInstrumentData));
 	track->instrumentdata=tid;
@@ -506,7 +506,7 @@ int MIDIinitInstrumentPlugIn(struct Instruments *instrument){
   instrument->getFX= &MIDIgetFX;
   instrument->getPatch= &MIDIgetPatch;
   instrument->CloseInstrument=MIDICloseInstrument;
-  instrument->SelectTrackInstrument=MIDISelectTrackInstrument;
+  instrument->InitTrack=MIDIInitTrack;
   instrument->StopPlaying=MIDIStopPlaying;
 
   instrument->CopyInstrumentData=MIDI_CopyInstrumentData;

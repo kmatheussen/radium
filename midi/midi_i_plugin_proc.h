@@ -31,7 +31,7 @@ extern LANGSPEC int MIDIgetPatch(
                                  struct Patch *patch
                                  );
 extern LANGSPEC void MIDICloseInstrument(struct Instruments *instrument);
-extern LANGSPEC void MIDISelectTrackInstrument(struct Tracks *track,struct Instruments *instrument);
+//extern LANGSPEC void MIDISelectTrackInstrument(struct Tracks *track,struct Instruments *instrument);
 extern LANGSPEC void MIDIStopPlaying(struct Instruments *instrument);
 
 extern LANGSPEC void MIDIchangeTrackPan(int newpan,struct Tracks *track);

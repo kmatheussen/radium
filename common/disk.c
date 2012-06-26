@@ -142,6 +142,7 @@ void DC_fgets(void){
 	char *ret=fgets(dc.ls,BUFFERLENGTH,dc.file);
 
 	if(ret==NULL){
+          RError("Unable to load string");
 		dc.success=false;
 		return;
 	}
@@ -273,6 +274,7 @@ int DC_Next(void){
 			dc.type=LS_ENDOBJECT;
 			break;
 		default:
+                  RError("DC_Next: Unknown type: \"%s\" ",dc.ret);
 			dc.success=false;
 			return LS_ERROR;
 	}

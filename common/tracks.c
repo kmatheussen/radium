@@ -36,16 +36,20 @@ void CloseTrack(struct Blocks *block, NInt tracknum){
 	ListRemoveElement1(&block->tracks,&temp->l);
 }
 
-
-void NewTrack(struct Blocks *block,struct Tracks *track){
+// l.num must not be set here!
+void InitTrack(struct Tracks *track){
 	track->onoff=1;
 	track->trackname="<>";
 	track->instrument=root->def_instrument;
 	track->volume=800;
 	track->panonoff=false;
 	track->volumeonoff=true;
-	ListAddElement1(&block->tracks,&track->l);
-	(*track->instrument->SelectTrackInstrument)(track,track->instrument);
+	(*track->instrument->InitTrack)(track->instrument,track);
+}
+
+static void NewTrack(struct Blocks *block,struct Tracks *track){
+  InitTrack(track);
+  ListAddElement1(&block->tracks,&track->l);
 }
 
 void AppendTrack(struct Blocks *block){

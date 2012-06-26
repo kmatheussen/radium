@@ -102,6 +102,9 @@ bool Load(char *filename){
 	DC_Next();
 	if(strcmp(dc.ls,"OSSTUFF")){
 		fprintf(stderr,"OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,filename);
+#ifdef DEBUG
+                abort();
+#endif
 		fclose(dc.file);
 		EndProgram();
 		exit(4);
@@ -112,6 +115,9 @@ bool Load(char *filename){
 	printf("dc.ls: -%s-\n",dc.ls);
 	if(strcmp(dc.ls,"ROOT")){
           fprintf(stderr,"ROOT not found. Found '%s' instead.\n", dc.ls);
+#ifdef DEBUG
+          abort();
+#endif
           fclose(dc.file);
           EndProgram();
           exit(5);
@@ -123,6 +129,9 @@ bool Load(char *filename){
 
 	if(!dc.success){
 		printf("Loading failed.\n");
+#ifdef DEBUG
+                abort();
+#endif
 		EndProgram();
 		exit(6);
 	}
