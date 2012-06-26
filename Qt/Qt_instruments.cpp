@@ -438,7 +438,7 @@ void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *pat
 
     printf("PP update. Instrument name: \"%s\"\n",patch==NULL?"(null)":patch->name);
     if(g_currpatch==patch)
-      return;
+      goto exit;
 
     if(patch==NULL){
 
@@ -459,7 +459,7 @@ void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *pat
 
     g_currpatch = patch;
 
-  }called_from_pp_update = false;
+  }exit: called_from_pp_update = false;
 }
 
 static void tab_selected(){
