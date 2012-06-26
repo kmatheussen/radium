@@ -1,3 +1,5 @@
+Non-urgent
+==========
 
 * There are two types of API functions:
   1. Those that takes care of undo/redo and graphics
@@ -18,19 +20,10 @@
         times is extremely inefficient.
         * But if that track is already in the undo list, why does it have to be added the next 999 times too?
 
-
 * The width for line numbers are too small when loading 1.rad.
   -Probably caused by missing font size handling. Currently, same font is always used.
 
 * 1LZ, 1MR, etc. (could ask when selecting via menues)
-
-* If making temponode area very big, and thn make window very small,
-  then there's lots of warnings. Not unlikely to crash.
-  Options:
-    * Refuse to make window smaller
-    * Make temponodearea smaller. (better)
-
-* After selecting a menu, doquit is not checked. (must press a key first to quit)
 
 * Alsaseq midi port names only contain the port names. They should also contain the client names.
 
@@ -39,17 +32,9 @@
 * Trying to load a standard midi file as normal file (instead of selecting "import midi") should really import the midi file, not quit the editor.
   At least, it should not quit the editor.
 
-* Trying to connect to ALSA seq port sometimes gives error message "invalid argument":
-  "Could not connect to ALSA port 0. (Invalid argument)."
-  Don't know how to reproduce.
-
-* Resizing doesn't always update everything.
-
-* Qt font handling has never been made properly.
+* When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time.
 
 * Loading standard midi file doesn't ask yes/no if current song is modified.
-
-* When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time.
 
 * Not unlikely that altGr, and possibly other qualifier keys, are autorepeating. Check if it is possible
   to check this, and manually autorepeat if autorepeat is turned on for any of the qualifier keys.
@@ -63,9 +48,9 @@
   QT4: painter.setRenderHints(QPainter::Antialiasing);
   QT: http://twinlib.roard.com/
 
-* Bigger boxes by default
-
 * Would be convenient with a realloc function.
+
+* Bigger boxes by default
 
 * The line connecting note name with note graphics, would perhaps
   be better if was connected at the top. The reason is that we
@@ -80,33 +65,6 @@
 * Blocklist/playlist non-stacking should only happen if there are more blocks / longer playlist than can be viewed simultaneously
   in the list boxes. And maybe not even then, since it looks bad and limits the number of characters to display.
 
-* Loading t.rad makes radium crash.
-
-* Must check what happens if there are no alsaseq ports.
-
-* amiga/midiproperties/amiga_instrprop_camd_menues.c seems to contain mostly
-  portable code. Should be moved to midi/ .
-
-* When changing values in the instrument widget, MIDI signals should be sent.
-
-* Play song might not work properly. Not playing all blocks.
-
-* Midi stuff to menues.
-
-* Windows menu:
-   * Full screen option.
-   * show/hide instrument widget
-   * show/hide playlist widget
-
-
-* Play Song (AltGr+Space) doesn't seem to use LPB...
-
-* Play Song from Curr waits xx seconds before starting to play, where xx is the
-  the time from the start to the current position.
-
-* PausePlayer and StopPausePlayer has not been implemented. Check out
-  what they do.
-
 * Delete instrument. (right click tab could bring a popup menu)
 
 * Perform gc_a_little between events, similar to amiga. Subclassing QEventLoop
@@ -115,10 +73,54 @@
 * Lots of files in bin/ which are copied from api/ and elsewhere. Confusing.
   github seems to handle symlinks fine, so that's a better solution.
 
-* KP_ADD / KP_SUB could be used for zooming.
-
 * Fix shortcutless menu options. Removing the keybinding for ra.unzoom() caused
   nothing to happen when selecting it from the menu.
+
+
+
+
+Urgent
+======
+
+* If making temponode area very big, and thn make window very small,
+  then there's lots of warnings. Not unlikely to crash.
+  Options:
+    * Refuse to make window smaller
+    * Make temponodearea smaller. (better)
+
+* After selecting a menu, doquit is not checked. (must press a key first to quit)
+
+* Trying to connect to ALSA seq port sometimes gives error message "invalid argument":
+  "Could not connect to ALSA port 0. (Invalid argument)."
+  Don't know how to reproduce.
+
+* Resizing doesn't always update everything.
+
+* Qt font handling has never been made properly.
+
+* Must check what happens if there are no alsaseq ports.
+
+* amiga/midiproperties/amiga_instrprop_camd_menues.c seems to contain mostly
+  portable code. Should be moved to midi/ .
+
+* Midi stuff to menues.
+
+* When changing values in the instrument widget, MIDI signals should be sent.
+
+* Play song might not work properly. Not playing all blocks.
+
+* Windows menu:
+   * Full screen option.
+   * show/hide instrument widget
+   * show/hide playlist widget
+
+* Play Song (AltGr+Space) doesn't seem to use LPB.
+
+* Play Song from Curr waits xx seconds before starting to play, where xx is the
+  the time from the start to the current position.
+
+* PausePlayer and StopPausePlayer has not been implemented. Check out
+  what they do.
 
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.
