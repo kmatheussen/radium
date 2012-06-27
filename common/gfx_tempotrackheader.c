@@ -36,32 +36,21 @@ void UpdateTempoTrackHeader_reltempo(
 	char temp[500];
 	char *name="RelTempoMax (RelTempoMin is 1/RelTempoMax)";
 
-        int width = wblock->temponodearea.x2-wblock->temponodearea.x;
+        int width = wblock->temponodearea.x2-wblock->temponodearea.x - 10;
 
 	int numchars=width/window->fontwidth;
-	int presicion;
-
-	char cuttemp=false;
-	bool cut=false;
-
 	if(numchars<=0) return;
 
-	presicion=numchars-(wblock->reltempomax>=10.0 ? 3:2);
+	int presicion=numchars-(wblock->reltempomax>=10.0 ? 3:2);
 
 	if(presicion<0){
 		temp[0]='*';
 		temp[1]=0;
 	}else{
-		presicion=R_MIN(5,presicion);
 		sprintf(
-			temp,"%.*f",
-			presicion,
+			temp,"%f",
 			wblock->reltempomax
 		);
-		if(strlen(temp)>numchars){
-			temp[0]='*';
-			temp[1]=0;
-		}
 	}
 
 	GFX_P_FilledBox(
@@ -76,26 +65,16 @@ void UpdateTempoTrackHeader_reltempo(
 		window,color,temp,
 		wblock->temponodearea.x+1,
 		wblock->a.y1+window->org_fontheight,
-                width,TEXT_NOFLAGS
+                width,TEXT_CLIPRECT
 	);
-
-	sprintf(temp,"%.*s",numchars,name);
-	if(numchars<strlen(name)-1){
-		cuttemp=temp[numchars];
-		temp[numchars]='\0';
-		cut=true;
-	}
 
 	GFX_P_Text(
-		window,1,temp,
-		wblock->temponodearea.x+1,
-		wblock->a.y1,
-                width,TEXT_NOFLAGS
+                   window,1,name,
+                   wblock->temponodearea.x+1,
+                   wblock->a.y1,
+                   width,TEXT_CLIPRECT
 	);
 
-	if(cut){
-		temp[numchars]=cuttemp;
-	}
 	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1);
 	GFX_P_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1);
 

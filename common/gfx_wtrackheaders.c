@@ -48,18 +48,30 @@ void UpdateWTrackHeader(
 #endif
 	sprintf(temp,"%d: %s",wtrack->l.num,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name);
 
+#if 0
         int maxwidth = GFX_get_num_characters(window, temp, wtrack->x2 - wtrack->x - 1);
-        if(wtrack->l.num==0)
-          printf("maxwidth: %d. x/x2: %d/%d\n",maxwidth,wtrack->x,wtrack->x2);
+        //if(wtrack->l.num==0)
+        //  printf("maxwidth: %d. x/x2: %d/%d\n",maxwidth,wtrack->x,wtrack->x2);
         temp[maxwidth] = 0;
+#endif
 
+	sprintf(temp,"%d:",wtrack->l.num);
 	GFX_P_T_Text(
 		window,1,temp,
-		wtrack->x+1,
+		wtrack->x+window->fontwidth/2,
 		wtrack->y,
-                TEXT_IGNORE_WIDTH,
-                TEXT_NOFLAGS
+                wtrack->x2-wtrack->x-1,
+                TEXT_CLIPRECT|TEXT_BOLD
 	);
+
+        int name_x = wtrack->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
+	GFX_P_T_Text(
+                     window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
+                     name_x,
+                     wtrack->y,
+                     (wtrack->x2-window->fontwidth/2) - name_x,
+                     TEXT_CLIPRECT
+                     );
 	UpdatePanSlider(window,wblock,wtrack);
 	UpdateVolumeSlider(window,wblock,wtrack);
 

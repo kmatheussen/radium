@@ -77,7 +77,7 @@ public:
   const QPaintEngine* paintEngine();
 #endif
 
-    QColor     colors[8];				// color array
+    QColor     colors[16];				// color array
     RPoints    *rpoints[8];
     QPixmap    *qpixmap;
     QPixmap    *cursorpixmap;

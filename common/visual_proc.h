@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TEXT_CENTER 4
 #define TEXT_CLIPRECT 8
 #define TEXT_NOTEXT 16
+#define TEXT_BOLD 32
 
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
@@ -81,6 +82,7 @@ extern LANGSPEC void GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,i
 extern LANGSPEC void GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 extern LANGSPEC void GFX_P_Point(struct Tracker_Windows *tvisual,int color,int x,int y);
 
+extern LANGSPEC int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text);
 extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width);
 
 extern LANGSPEC void GFX_P_Text(

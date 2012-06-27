@@ -117,7 +117,12 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
   this->colors[4]=QColor("yellow");
   this->colors[5]=QColor("red");
   this->colors[6]=QColor("orange");
-  this->colors[7]=QColor("green");
+  //this->colors[7]=QColor("green");
+
+  this->colors[7]=QColor(0x10,0x18,0x12);
+  //this->colors[7]=QColor(0x20,0x30,0x28);
+
+  this->colors[8]=QColor(0x45,0x22,0x20);
 
   for(int lokke=0;lokke<8;lokke++){
     this->rpoints[lokke]=new RPoints();
@@ -517,9 +522,11 @@ void QGFX_P_ClearWindow(struct Tracker_Windows *tvisual){
   QGFX_P_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
 }
 
+static void draw_filled_box(MyWidget *mywidget,QPainter *painter,int color,int x,int y,int x2,int y2);
+
 void QGFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->qpixmap_painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+  draw_filled_box(mywidget,mywidget->qpixmap_painter,color,x,y,x2,y2);
 }
 
 void QGFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
@@ -563,12 +570,18 @@ void QGFX_P_Point(
 }
 
 
+int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  const QFontMetrics fn = QFontMetrics(mywidget->font);
+  return fn.width(text);
+}
+
 static bool does_text_fit(const QFontMetrics &fn, const QString &text, int pos, int max_width){
   return fn.width(text, pos) <= max_width;
 }
 
 static int average(int min, int max){
-  return (min+max)/2;
+  return (1+min+max)/2;
 }
 
 // binary search
@@ -577,9 +590,6 @@ static int find_text_length(const QFontMetrics &fn, const QString &text, int max
     return min;
 
   int mid = average(min,max);
-
-  if(mid==min)
-    return mid;
 
   if(does_text_fit(fn, text, mid, max_width))
     return find_text_length(fn, text, max_width, mid, max);
@@ -601,6 +611,58 @@ int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_
     return find_text_length(fn, string, max_width, 0, len-1);
 }
 
+static void draw_text(struct Tracker_Windows *tvisual,
+                      QPainter *painter,
+                      int color,
+                      char *text,
+                      int x,
+                      int y,
+                      int width,
+                      int flags
+){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+
+  if(flags & TEXT_CLIPRECT){
+    if(width==TEXT_IGNORE_WIDTH){
+      RError("width can not be TEXT_IGNORE_WIDTH when using the TEXT_CLIPRECT flag");
+    }else{
+      if(width<=0)
+        return;
+      painter->setClipRect(x,y,width,tvisual->fontheight+20);
+    }
+    painter->setClipping(true);
+  }
+
+  if(flags & TEXT_INVERT){
+    draw_filled_box(mywidget,painter,color,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
+  }else if(flags & TEXT_CLEAR){
+    draw_filled_box(mywidget,painter,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
+  }
+
+  painter->setPen(mywidget->colors[flags&TEXT_INVERT ? 0 : color]);
+
+  if(flags & TEXT_BOLD){
+    mywidget->font.setBold(true);
+    painter->setFont(mywidget->font);
+  }
+
+  if(flags & TEXT_CENTER){
+    QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+    painter->drawText(rect, Qt::AlignCenter, text);
+  }else{
+    painter->drawText(x,y+tvisual->org_fontheight-1,text);
+  }
+
+  if(flags & TEXT_BOLD){
+    mywidget->font.setBold(false);
+    painter->setFont(mywidget->font);
+  }
+
+  if(flags & TEXT_CLIPRECT){
+    painter->setClipping(false);
+  }
+}                      
+
 void QGFX_P_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
@@ -611,34 +673,7 @@ void QGFX_P_Text(
 	int flags
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-
-  if(flags && TEXT_CLEAR){
-    QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-  }
-
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-  QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
-  mywidget->qpixmap_painter->drawText(rect, Qt::AlignCenter, text);
-}
-
-void QGFX_P_Text_Centered(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-        int width,
-	bool clear
-){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-
-  if(clear){
-    QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-  }
-
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-  QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
-  mywidget->qpixmap_painter->drawText(rect, Qt::AlignCenter, text);
+  draw_text(tvisual,mywidget->qpixmap_painter,color,text,x,y,width,flags);
 }
 
 void QGFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
@@ -664,10 +699,13 @@ void QGFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y
   mywidget->painter->drawRect(x,y,x2-x+1,y2-y+1);
 }
 
+static void draw_filled_box(MyWidget *mywidget, QPainter *painter,int color,int x,int y,int x2,int y2){
+  painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+}
 
 void QGFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+  draw_filled_box(mywidget,mywidget->painter,color,x,y,x2,y2);
 }
 
 
@@ -690,55 +728,8 @@ void QGFX_Text(
         int flags
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-
-  //QFont font=QFont("helvetica",tvisual->org_fontheight-5);
-  //  font.setStrikeOut(true);
-
-  if(flags && TEXT_CLEAR){
-    QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->org_fontheight);
-  }
-
-  mywidget->painter->setPen(mywidget->colors[color]);
-  mywidget->painter->drawText(x,y+tvisual->org_fontheight-1,text);
-
-  /*
-  int x2=x+(strlen(text)*tvisual->fontwidth);
-  int y2=y+tvisual->fontheight-1;
-
-
-  paint.drawLine(x,y,x,y2);
-  paint.drawLine(x2,y,x2,y2);
-  paint.drawLine(x,y,x2,y);
-  paint.drawLine(x,y2,x2,y2);
-  */
-
-  /*
-  QGFX_Box(
-	  tvisual,1,
-	  x,
-	  y,
-	  x+(strlen(text)*tvisual->fontwidth),
-	  y+tvisual->fontheight
-	  );
-  */
+  draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
 }
-/*
-void QGFX_Text_noborder(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-	bool clear
-){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  QPainter paint( mywidget );
-  paint.setFont(QFont("helvetica",tvisual->fontheight));
-  QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-  paint.setPen(mywidget->colors[color]);
-  paint.drawText(x,y+tvisual->fontheight,text);
-}
-*/
 
 #if 0
 void QGFX_P_InvertText(

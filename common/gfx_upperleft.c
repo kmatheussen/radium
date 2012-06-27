@@ -60,8 +60,8 @@ void GFX_UpdateQuantitize(
 
 	GFX_Text(
 		 window,2,temp,0,0,
-                 wblock->lpbTypearea.x - 2,
-                 TEXT_NOFLAGS
+                 wblock->linenumarea.x2 - 2,
+                 TEXT_CLEAR|TEXT_CLIPRECT
 	);
 
 }
@@ -74,13 +74,11 @@ void GFX_UpdateKeyOctave(
 	char temp[4];
 
 	sprintf(temp,"%X",root->keyoct/12);
-
 	GFX_Text(
-		 window,3,temp,0,window->org_fontheight,
+		 window,3,temp,0,window->org_fontheight+1,
                  wblock->lpbTypearea.x - 2,
-                 TEXT_NOFLAGS
+                 TEXT_CLEAR
 	);
-
 }
 
 void GFX_UpdateCurrLine(
@@ -91,11 +89,11 @@ void GFX_UpdateCurrLine(
 	int line=wblock->reallines[wblock->curr_realline]->Tline;
 
 	sprintf(temp,"  %d",line);
-
 	GFX_Text(
-		 window,1,temp+(line>99?2:line>9?1:0),wblock->linenumarea.x,window->org_fontheight,
+		 window,1,temp+(line>99?2:line>9?1:0),wblock->linenumarea.x,
+                 window->org_fontheight+1,
                  wblock->linenumarea.x2-wblock->linenumarea.x,
-                 TEXT_NOFLAGS
+                 TEXT_CLEAR
 	);
 }
 
@@ -104,9 +102,9 @@ void GFX_UpdateUpLeft(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-	GFX_UpdateQuantitize(window,wblock);
 	GFX_UpdateKeyOctave(window,wblock);
 	GFX_UpdateCurrLine(window,wblock);
+	GFX_UpdateQuantitize(window,wblock);
 }
 
 
@@ -114,6 +112,7 @@ void GFX_DrawUpLeft(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
+#if 0
 	GFX_FilledBox(
 		window,0,
 		0,
@@ -121,9 +120,10 @@ void GFX_DrawUpLeft(
 		wblock->lpbTypearea.x-1,
 		wblock->t.y1-2
 	);
-	GFX_UpdateQuantitize(window,wblock);
+#endif
 	GFX_UpdateKeyOctave(window,wblock);
 	GFX_UpdateCurrLine(window,wblock);
+	GFX_UpdateQuantitize(window,wblock);
 }
 
 

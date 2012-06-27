@@ -116,6 +116,7 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 
     this->qpixmap_painter->setFont(this->font);
     this->painter->setFont(this->font);
+    this->setFont(this->font);
 
     {
       GFX_play_op_queue(this->window);
