@@ -19,6 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "OS_visual_input.h"
 
+#define TEXT_IGNORE_WIDTH -1 // Can be used instead of width, not a flag
+// flags:
+#define TEXT_NOFLAGS 0
+#define TEXT_CLEAR 1
+#define TEXT_INVERT 2
+#define TEXT_CENTER 4
+#define TEXT_CLIPRECT 8
+#define TEXT_NOTEXT 16
+
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
 extern LANGSPEC void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual);
@@ -72,13 +81,16 @@ extern LANGSPEC void GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,i
 extern LANGSPEC void GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 extern LANGSPEC void GFX_P_Point(struct Tracker_Windows *tvisual,int color,int x,int y);
 
+extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width);
+
 extern LANGSPEC void GFX_P_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
 	int x,
 	int y,
-	bool clear
+        int width,
+        int flags
 	);
 
 extern LANGSPEC void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
@@ -94,26 +106,8 @@ extern LANGSPEC void GFX_Text(
 	char *text,
 	int x,
 	int y,
-	bool clear
-);
-
-extern LANGSPEC void GFX_P_InvertText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-	bool clear
-);
-
-
-extern LANGSPEC void GFX_P_InvertTextNoText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
+        int width,
+	int flags
 );
 
 extern LANGSPEC void GFX_InitDrawCurrentLine(
@@ -206,24 +200,14 @@ void GFXS_TextType(
 				struct Tracker_Windows *window,
 				int color,char *text,
 				int x,int y,
-				bool clear
+                                int width,
+                                int flags
 				),
 	     struct Tracker_Windows *window,
 	     int color,char *text,
 	     int x,int y,
-	     bool clear
-	     );
-void GFXS_TextType2(
-	     void (*GFX_OSFunc)(
-				struct Tracker_Windows *window,
-				int color,int len,
-				int x,int y,
-				bool clear
-				),
-	     struct Tracker_Windows *window,
-	     int color,int len,
-	     int x,int y,
-	     bool clear
+             int width,
+	     int flags
 	     );
 
 void GFXS_BorderType(
@@ -283,24 +267,14 @@ void GFXST_TextType(
 				struct Tracker_Windows *window,
 				int color,char *text,
 				int x,int y,
-				bool clear
+                                int width,
+                                int flags
 				),
 	     struct Tracker_Windows *window,
 	     int color,char *text,
 	     int x,int y,
-	     bool clear
-	     );
-void GFXST_TextType2(
-	     void (*GFX_OSFunc)(
-				struct Tracker_Windows *window,
-				int color,int len,
-				int x,int y,
-				bool clear
-				),
-	     struct Tracker_Windows *window,
-	     int color,int len,
-	     int x,int y,
-	     bool clear
+             int width,
+             int flags
 	     );
 void GFXST_BorderType(
 		     void (*GFX_P_OSFunc)(
@@ -319,7 +293,6 @@ void GFXST_BorderType2(
 		     int x, int y, int y2
 		     );
 
-
 #ifndef GFX_DONTSHRINK
 
 #define GFX_P_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_P_FilledBox,a,b,c,d,e,f)
@@ -331,10 +304,8 @@ void GFXST_BorderType2(
 #define GFX_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_FilledBox,a,b,c,d,e,f)
 #define GFX_All_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_All_FilledBox,a,b,c,d,e,f)
 
-#define GFX_P_Text(a,b,c,d,e,f) GFXS_TextType(GFX_P_Text,a,b,c,d,e,f)
-#define GFX_Text(a,b,c,d,e,f) GFXS_TextType(GFX_Text,a,b,c,d,e,f)
-#define GFX_P_InvertText(a,b,c,d,e,f) GFXS_TextType(GFX_P_InvertText,a,b,c,d,e,f)
-#define GFX_P_InvertTextNoText(a,b,c,d,e,f) GFXS_TextType2(GFX_P_InvertTextNoText,a,b,c,d,e,f)
+#define GFX_P_Text(a,b,c,d,e,f,g) GFXS_TextType(GFX_P_Text,a,b,c,d,e,f,g)
+#define GFX_Text(a,b,c,d,e,f,g) GFXS_TextType(GFX_Text,a,b,c,d,e,f,g)
 
 #define GFX_P_DrawTrackBorderSingle(a,b,c,d) GFXS_BorderType(GFX_P_DrawTrackBorderSingle,a,b,c,d)
 #define GFX_P_DrawTrackBorderDouble(a,b,c,d) GFXS_BorderType2(GFX_P_DrawTrackBorderDouble,a,b,c,d)
@@ -351,15 +322,13 @@ void GFXST_BorderType2(
 #define GFX_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_FilledBox,a,b,c,d,e,f)
 #define GFX_T_All_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_All_FilledBox,a,b,c,d,e,f)
 
-#define GFX_P_T_Text(a,b,c,d,e,f) GFXST_TextType(GFX_P_Text,a,b,c,d,e,f)
-#define GFX_T_Text(a,b,c,d,e,f) GFXST_TextType(GFX_Text,a,b,c,d,e,f)
-#define GFX_P_T_InvertText(a,b,c,d,e,f) GFXST_TextType(GFX_P_InvertText,a,b,c,d,e,f)
-#define GFX_P_T_InvertTextNoText(a,b,c,d,e,f) GFXST_TextType2(GFX_P_InvertTextNoText,a,b,c,d,e,f)
+#define GFX_P_T_Text(a,b,c,d,e,f,g) GFXST_TextType(GFX_P_Text,a,b,c,d,e,f,g)
+#define GFX_T_Text(a,b,c,d,e,f,g) GFXST_TextType(GFX_Text,a,b,c,d,e,f,g)
 
 #define GFX_P_T_DrawTrackBorderSingle(a,b,c,d) GFXST_BorderType(GFX_P_DrawTrackBorderSingle,a,b,c,d)
 #define GFX_P_T_DrawTrackBorderDouble(a,b,c,d) GFXST_BorderType2(GFX_P_DrawTrackBorderDouble,a,b,c,d)
 
-
 #endif
+
 #endif
 

@@ -90,7 +90,7 @@ public:
     QPainter *qpixmap_painter; // Set in paintEvent
     QPainter *cursorpixmap_painter; // Set in paintEvent
 
-    QFont *font;
+    QFont font;
 
     //QFrame *status_frame;
     QLabel *status_label;

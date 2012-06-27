@@ -66,7 +66,8 @@ void GFX_P_Text(
 	char* text,
 	int x,
 	int y,
-	bool clear
+	int width,
+	int flags
 	);
 
 void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
@@ -82,26 +83,8 @@ void GFX_Text(
 	char* text,
 	int x,
 	int y,
-	bool clear
-);
-
-void GFX_P_InvertText(
-	struct Tracker_Windows* tvisual,
-	int color,
-	char* text,
-	int x,
-	int y,
-	bool clear
-);
-
-
-void GFX_P_InvertTextNoText(
-	struct Tracker_Windows* tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
+	int width,
+	int flags
 );
 
 void GFX_InitDrawCurrentLine(

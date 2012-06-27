@@ -136,82 +136,73 @@ void GFXS_TextType(
 				struct Tracker_Windows *window,
 				int color,char *text,
 				int x,int y,
-				bool clear
+                                int width,
+                                int flags
 				),
 	     struct Tracker_Windows *window,
 	     int color,char *text,
 	     int x,int y,
-	     bool clear
+             int width,
+             int flags
 	     )
 {
-  int maxx=window->wblock->t.x2;
-  int len=strlen(text);
-  int glen=len*window->fontwidth;
-  char temp[100],*to;
-  int newlen;
+  if(flags && TEXT_NOTEXT){
+    int len=strlen(text);
+    int maxx=window->wblock->t.x2;
+    int glen=len*window->fontwidth;
 
-  if(x>=maxx) return;
+    if(x>=maxx) return;
 
-  if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
-    return;
-  }
-
-  if(x+glen>=maxx){
-    newlen=(maxx-x-1)/window->fontwidth;
-
-    if(newlen>99){
-      to=talloc(newlen+4);
-      sprintf(to,"%s",text);
-      text=to;
-    }else{
-      sprintf(temp,"%s",text);
-      text=&temp[0];
+    if(GFXS_EnsureBoundaries(window,"GFXS_TextType NOTEXT",x,y,x,y)==false){
+      return;
     }
-    text[newlen]=0;
+
+    if(x+glen>=maxx){
+      len=(maxx-x-1)/window->fontwidth;
+    }
+
+    if(GFXS_EnsureBoundaries(window,"GFXS_TextType NOTEXT2",x,y,x,y)==false){
+      return;
+    }
+    
+    (*GFX_OSFunc)(window,color,text,x,y,width,flags);
+    
+  }else{
+
+    int maxx=window->wblock->t.x2;
+    int len=strlen(text);
+    int glen=len*window->fontwidth;
+    char temp[100],*to;
+    int newlen;
+    
+    if(x>=maxx) return;
+    
+    if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
+      return;
+    }
+    
+    if(x+glen>=maxx){
+      newlen=(maxx-x-1)/window->fontwidth;
+      
+      if(newlen>99){
+        to=talloc(newlen+4);
+        sprintf(to,"%s",text);
+        text=to;
+      }else{
+        sprintf(temp,"%s",text);
+        text=&temp[0];
+      }
+      text[newlen]=0;
+    }
+
+    if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
+      return;
+    }
+
+    (*GFX_OSFunc)(window,color,text,x,y,width,flags);
   }
-
-  if(GFXS_EnsureBoundaries(window,"GFXS_TextType2",x,y,x,y)==false){
-    return;
-  }
-
-  (*GFX_OSFunc)(window,color,text,x,y,clear);
-
 }
 
-
-void GFXS_TextType2(
-	     void (*GFX_OSFunc)(
-				struct Tracker_Windows *window,
-				int color,int len,
-				int x,int y,
-				bool clear
-				),
-	     struct Tracker_Windows *window,
-	     int color,int len,
-	     int x,int y,
-	     bool clear
-	     )
-{
-  int maxx=window->wblock->t.x2;
-  int glen=len*window->fontwidth;
-
-  if(x>=maxx) return;
-
-  if(GFXS_EnsureBoundaries(window,"GFXS_TextType2",x,y,x,y)==false){
-    return;
-  }
-
-  if(x+glen>=maxx){
-    len=(maxx-x-1)/window->fontwidth;
-  }
-
-  if(GFXS_EnsureBoundaries(window,"GFXS_TextType22",x,y,x,y)==false){
-    return;
-  }
-
-  (*GFX_OSFunc)(window,color,len,x,y,clear);
-
-}
 
 void GFXS_BorderType(
 		     void (*GFX_P_OSFunc)(

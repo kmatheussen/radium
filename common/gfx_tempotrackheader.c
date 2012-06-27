@@ -36,7 +36,9 @@ void UpdateTempoTrackHeader_reltempo(
 	char temp[500];
 	char *name="RelTempoMax (RelTempoMin is 1/RelTempoMax)";
 
-	int numchars=(wblock->temponodearea.x2-wblock->temponodearea.x)/window->fontwidth;
+        int width = wblock->temponodearea.x2-wblock->temponodearea.x;
+
+	int numchars=width/window->fontwidth;
 	int presicion;
 
 	char cuttemp=false;
@@ -73,7 +75,8 @@ void UpdateTempoTrackHeader_reltempo(
 	GFX_P_Text(
 		window,color,temp,
 		wblock->temponodearea.x+1,
-		wblock->a.y1+window->org_fontheight,false
+		wblock->a.y1+window->org_fontheight,
+                width,TEXT_NOFLAGS
 	);
 
 	sprintf(temp,"%.*s",numchars,name);
@@ -86,7 +89,8 @@ void UpdateTempoTrackHeader_reltempo(
 	GFX_P_Text(
 		window,1,temp,
 		wblock->temponodearea.x+1,
-		wblock->a.y1,false
+		wblock->a.y1,
+                width,TEXT_NOFLAGS
 	);
 
 	if(cut){
@@ -103,6 +107,7 @@ void UpdateTempoTrackHeader_LPB(
 	struct WBlocks *wblock,
 	int color
 ){
+	int width = wblock->lpbTypearea.x2 - wblock->lpbTypearea.x - 1; // shouldn't it be lpbarea.x2 ?
 	char temp[50];
 
 	GFX_FilledBox(
@@ -116,14 +121,16 @@ void UpdateTempoTrackHeader_LPB(
 	GFX_Text(
 		window,1,"LPB",
 		wblock->lpbTypearea.x+1,
-		wblock->a.y1,false
+		wblock->a.y1,
+                width,TEXT_NOFLAGS
 	);
 
 	sprintf(temp,"%3d",root->lpb);
 	GFX_Text(
 		window,color,temp,
 		wblock->lpbTypearea.x+1,
-		wblock->a.y1+window->org_fontheight,false
+		wblock->a.y1+window->org_fontheight,
+                width,TEXT_NOFLAGS
 	);
 //	GFX_Line(window,1,wblock->lpbTypearea.x+1,wblock->t.y1-1,wblock->lpbTypearea.x2+1,wblock->t.y1-1);
 }
@@ -134,6 +141,7 @@ void UpdateTempoTrackHeader_BPM(
 	struct WBlocks *wblock,
 	int color
 ){
+  int width = wblock->tempoarea.x2 - wblock->tempoTypearea.x;
 	char temp[50];
 
 	GFX_FilledBox(
@@ -148,14 +156,16 @@ void UpdateTempoTrackHeader_BPM(
 	GFX_Text(
 		window,1,"BPM",
 		wblock->tempoTypearea.x+1,
-		wblock->a.y1,false
+		wblock->a.y1,
+                width,TEXT_NOFLAGS
 	);
 
 	sprintf(temp,"%3d",root->tempo);
 	GFX_Text(
 		window,2,temp,
 		wblock->tempoTypearea.x+1,
-		wblock->a.y1+window->org_fontheight,false
+		wblock->a.y1+window->org_fontheight,
+                width,TEXT_NOFLAGS
 	);
 }
 

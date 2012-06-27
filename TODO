@@ -76,7 +76,24 @@ Non-urgent
 * Fix shortcutless menu options. Removing the keybinding for ra.unzoom() caused
   nothing to happen when selecting it from the menu.
 
+* Not possible to set ccname.
 
+* Scrolling doesn't work with the mouse wheel button after entering the window.
+  Must press a key first.
+
+* Moving note by clicking on the note name.
+
+* Clean up the GFX_*_TEXT functions. They can all be unified by giving two more
+  options: width and flags, plus remove the clear option.
+
+  Flags can be: INVERT, CENTER, CLIPRECT, NOTEXT, CLEAR.
+
+  This would make it a lot easier to tell Qt to ClipRect and Center text since
+  the shrink system, etc. makes adding new options and functions very messy.
+  It's simpler to let the various indirections functions and macros just pass
+  further flags.
+
+* Remove all usages of strlen to find text width.
 
 
 Urgent
@@ -97,6 +114,8 @@ Urgent
 * Resizing doesn't always update everything.
 
 * Qt font handling has never been made properly.
+
+* Qt color handling also missing
 
 * Must check what happens if there are no alsaseq ports.
 

@@ -93,52 +93,41 @@ void GFXST_TextType(
 				struct Tracker_Windows *window,
 				int color,char *text,
 				int x,int y,
-				bool clear
+                                int width,
+                                int flags
 				),
 	     struct Tracker_Windows *window,
 	     int color,char *text,
 	     int x,int y,
-	     bool clear
+             int width,
+             int flags
 	     )
 {
-  int minx=getMinX(window);
-  char temp[600];
-
-  if(GFX_OSFunc==GFX_Text){
-    if(x<minx){
-      x=minx;
-      sprintf(temp,"<--%s",text);
-      GFXS_TextType(GFX_OSFunc,window,color,temp,x,y,clear);
-    }else
-      GFXS_TextType(GFX_OSFunc,window,color,text,x,y,clear);
+  if(flags && TEXT_NOTEXT){
+    int minx=getMinX(window);
+    GFXS_TextType(GFX_OSFunc,window,color,text,R_MAX(minx,x),y,width,flags);
   }else{
-    if(x<minx){
-      if((strlen(text)+1)*window->fontwidth<minx) return;
-      text+=(minx-x)/window->fontwidth;
-      x=minx;
+    int minx=getMinX(window);
+    char temp[600];
+
+    if(GFX_OSFunc==GFX_Text){
+      if(x<minx){
+        x=minx;
+        sprintf(temp,"<--%s",text);
+        GFXS_TextType(GFX_OSFunc,window,color,temp,x,y,width,flags);
+      }else
+        GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags);
+    }else{
+      if(x<minx){
+        if((strlen(text)+1)*window->fontwidth<minx) return;
+        text+=(minx-x)/window->fontwidth;
+        x=minx;
+      }
+      GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags);
     }
-    GFXS_TextType(GFX_OSFunc,window,color,text,x,y,clear);
   }
-
 }
 
-
-void GFXST_TextType2(
-	     void (*GFX_OSFunc)(
-				struct Tracker_Windows *window,
-				int color,int len,
-				int x,int y,
-				bool clear
-				),
-	     struct Tracker_Windows *window,
-	     int color,int len,
-	     int x,int y,
-	     bool clear
-	     )
-{
-  int minx=getMinX(window);
-  GFXS_TextType2(GFX_OSFunc,window,color,len,R_MAX(minx,x),y,clear);
-}
 
 void GFXST_BorderType(
 		     void (*GFX_P_OSFunc)(

@@ -10,16 +10,14 @@ extern LANGSPEC void QGFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,
 extern LANGSPEC void QGFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_P_Point(struct Tracker_Windows* tvisual,int color,int x,int y); 
-extern LANGSPEC void QGFX_P_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,bool clear); 
+extern LANGSPEC void QGFX_P_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,int width,int flags); 
 extern LANGSPEC void QGFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_All_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_Slider_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_All_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
-extern LANGSPEC void QGFX_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,bool clear); 
-extern LANGSPEC void QGFX_P_InvertText(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,bool clear); 
-extern LANGSPEC void QGFX_P_InvertTextNoText(struct Tracker_Windows* tvisual,int color,int len,int x,int y,bool clear); 
+extern LANGSPEC void QGFX_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,int width,int flags); 
 extern LANGSPEC void QGFX_InitDrawCurrentLine(struct Tracker_Windows* tvisual,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_InitDrawCurrentLine2(struct Tracker_Windows* tvisual,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_DrawCursorPos(struct Tracker_Windows* tvisual,int fx,int fy,int fx2,int fy2,int x,int y,int x2,int y2); 

@@ -43,7 +43,8 @@ void GWT_P_Text(
 		     text,
 		     x,
 		     y,
-		     false
+                     x2-x,
+                     TEXT_CENTER
 		     );
 	  
 	  if(window->textborder){
@@ -59,7 +60,8 @@ void GWT_P_Text(
 		     text,
 		     x,
 		     y,
-		     false
+                     x2-x,
+                     TEXT_CENTER
 		     );
 	  
 	  if(window->textborder){
@@ -172,23 +174,27 @@ int SetInvertTextLine(
 	int realline,
 	bool t
 ){
+  int x2=x+(strlen(text)*window->fontwidth);
+
   if(t){
-	GFX_P_T_InvertText(
+	GFX_P_T_Text(
 		window,
 		color,
 		text,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
-		false
+                x2-x,
+                TEXT_CENTER | TEXT_INVERT
 	);
   }else{
-	GFX_P_InvertText(
+	GFX_P_Text(
 		window,
 		color,
 		text,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
-		false
+                x2-x,
+                TEXT_CENTER | TEXT_INVERT
 	);
   }
 	return 0;
@@ -203,23 +209,31 @@ int SetInvertTextLineNotext(
 	int realline,
 	bool t
 ){
+  char temp[len+1];
+  memset(temp,' ',len);
+  temp[len]=0;
+
+  int x2=x+(len*window->fontwidth);
+
   if(t){
-	GFX_P_T_InvertTextNoText(
+	GFX_P_T_Text(
 		window,
 		color,
-		len,
+                temp,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
-		false
+                x2-x,
+                TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT
 	);
   }else{
-	GFX_P_InvertTextNoText(
+	GFX_P_Text(
 		window,
 		color,
-		len,
+                temp,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
-		false
+                x2-x,
+                TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT
 	);
   }
 	return 0;

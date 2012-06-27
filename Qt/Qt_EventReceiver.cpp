@@ -114,8 +114,8 @@ void MyWidget::paintEvent( QPaintEvent *e ){
     this->qpixmap_painter = &pixmap_paint;
     this->cursorpixmap_painter = &cursorpixmap_paint;
 
-    this->qpixmap_painter->setFont(*this->font);
-    this->painter->setFont(*this->font);
+    this->qpixmap_painter->setFont(this->font);
+    this->painter->setFont(this->font);
 
     {
       GFX_play_op_queue(this->window);

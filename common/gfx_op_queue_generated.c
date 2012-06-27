@@ -16,8 +16,6 @@ ENUM_GFX_FilledBox,
 ENUM_GFX_Slider_FilledBox, 
 ENUM_GFX_All_FilledBox, 
 ENUM_GFX_Text, 
-ENUM_GFX_P_InvertText, 
-ENUM_GFX_P_InvertTextNoText, 
 ENUM_GFX_InitDrawCurrentLine, 
 ENUM_GFX_InitDrawCurrentLine2, 
 ENUM_GFX_DrawCursorPos, 
@@ -40,16 +38,14 @@ case ENUM_GFX_P_FilledBox: QGFX_P_FilledBox(window, el->i1, el->i2, el->i3, el->
 case ENUM_GFX_P_Box: QGFX_P_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_P_Line: QGFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_P_Point: QGFX_P_Point(window, el->i1, el->i2, el->i3); break; 
-case ENUM_GFX_P_Text: QGFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->b5); break; 
+case ENUM_GFX_P_Text: QGFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_Line: QGFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_All_Line: QGFX_All_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Box: QGFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_FilledBox: QGFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Slider_FilledBox: QGFX_Slider_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_All_FilledBox: QGFX_All_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_Text: QGFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->b5); break; 
-case ENUM_GFX_P_InvertText: QGFX_P_InvertText(window, el->i1, el->s2, el->i3, el->i4, el->b5); break; 
-case ENUM_GFX_P_InvertTextNoText: QGFX_P_InvertTextNoText(window, el->i1, el->i2, el->i3, el->i4, el->b5); break; 
+case ENUM_GFX_Text: QGFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_InitDrawCurrentLine: QGFX_InitDrawCurrentLine(window, el->i1, el->i2, el->i3, el->i4); break; 
 case ENUM_GFX_InitDrawCurrentLine2: QGFX_InitDrawCurrentLine2(window, el->i1, el->i2, el->i3, el->i4); break; 
 case ENUM_GFX_DrawCursorPos: QGFX_DrawCursorPos(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6, el->i7, el->i8); break; 
@@ -176,7 +172,8 @@ void GFX_P_Text(
 	char* text,
 	int x,
 	int y,
-	bool clear
+	int width,
+	int flags
 	) 
 { 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
@@ -185,7 +182,8 @@ void GFX_P_Text(
   memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
   el->i3 = x ; 
   el->i4 = y ; 
-  el->b5 = clear ; 
+  el->i5 = width ; 
+  el->i6 = flags ; 
 } 
 
 
@@ -269,7 +267,8 @@ void GFX_Text(
 	char* text,
 	int x,
 	int y,
-	bool clear
+	int width,
+	int flags
 ) 
 { 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
@@ -278,48 +277,8 @@ void GFX_Text(
   memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
   el->i3 = x ; 
   el->i4 = y ; 
-  el->b5 = clear ; 
-} 
-
-
-
-void GFX_P_InvertText(
-	struct Tracker_Windows* tvisual,
-	int color,
-	char* text,
-	int x,
-	int y,
-	bool clear
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_InvertText ; 
-  el->i1 = color ; 
-  memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
-  el->i3 = x ; 
-  el->i4 = y ; 
-  el->b5 = clear ; 
-} 
-
-
-
-
-void GFX_P_InvertTextNoText(
-	struct Tracker_Windows* tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_InvertTextNoText ; 
-  el->i1 = color ; 
-  el->i2 = len ; 
-  el->i3 = x ; 
-  el->i4 = y ; 
-  el->b5 = clear ; 
+  el->i5 = width ; 
+  el->i6 = flags ; 
 } 
 
 

@@ -142,7 +142,7 @@ void UpdateClock(
 	sprintf(temp,"%.02d:%.02d",clock_minutes,clock_seconds);
 
 	GFX_Text(
-		 window,2,temp,0,0,true
+		 window,2,temp,0,0,TEXT_IGNORE_WIDTH,TEXT_CLEAR
 	);
 
 //	ReleaseRSemaphore(ClockSemaphore);

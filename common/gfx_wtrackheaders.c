@@ -38,19 +38,27 @@ void UpdateWTrackHeader(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	static char temp[50];
+	static char temp[500];
 
+#if 0
 	int maxwidth=(wtrack->notelength*window->fontwidth) + wtrack->fxwidth;
 	maxwidth-=window->fontwidth*(wtrack->l.num>=10 ? wtrack->l.num>=100 ? 3 : 2 : 1);
 	maxwidth-=2*window->fontwidth;
 	maxwidth/=window->fontwidth;
+#endif
+	sprintf(temp,"%d: %s",wtrack->l.num,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name);
 
-	sprintf(temp,"%d: %.*s",wtrack->l.num,maxwidth,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name);
+        int maxwidth = GFX_get_num_characters(window, temp, wtrack->x2 - wtrack->x - 1);
+        if(wtrack->l.num==0)
+          printf("maxwidth: %d. x/x2: %d/%d\n",maxwidth,wtrack->x,wtrack->x2);
+        temp[maxwidth] = 0;
+
 	GFX_P_T_Text(
 		window,1,temp,
 		wtrack->x+1,
 		wtrack->y,
-		false
+                TEXT_IGNORE_WIDTH,
+                TEXT_NOFLAGS
 	);
 	UpdatePanSlider(window,wblock,wtrack);
 	UpdateVolumeSlider(window,wblock,wtrack);

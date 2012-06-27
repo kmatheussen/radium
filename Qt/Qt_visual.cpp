@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpainter.h>
 #include <qstatusbar.h>
 #include <qmainwindow.h>
+#include <qfontdialog.h>
+
 
 #ifdef USE_QT4
 //#include <QMainWindow>
@@ -296,7 +298,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   }
 
   // helvetica
-  mywidget->font = new QFont("Monospace");
+  mywidget->font = QFont("Monospace");
   //mywidget->font->setStyleHint(QFont::TypeWriter);
   //mywidget->font->setFixedPitch(false);
 
@@ -367,12 +369,23 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
 bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
+#if 0
   char *rawfontname;
 
   rawfontname = GFX_ReadStringFromPythonCommand((char*)"X11_Qtstuff.GFX_SelectEditFont(\"%s\")");
 
   printf("Got -%s-\n",rawfontname);
+#endif
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->font = QFontDialog::getFont( 0, mywidget->font ) ;
+  mywidget->setFont(mywidget->font);
 
+  QFontMetrics fm(mywidget->font);
+
+  tvisual->fontwidth=(int)ceil((double)fm.width("G-4")/3.0);
+  tvisual->org_fontheight=fm.height();
+  tvisual->fontheight=fm.height();
+ 
 #if 0
   int lokke;
   XFontStruct *xfontstruct = XLoadQueryFont(x11_display,rawfontname);
@@ -550,12 +563,71 @@ void QGFX_P_Point(
 }
 
 
+static bool does_text_fit(const QFontMetrics &fn, const QString &text, int pos, int max_width){
+  return fn.width(text, pos) <= max_width;
+}
+
+static int average(int min, int max){
+  return (min+max)/2;
+}
+
+// binary search
+static int find_text_length(const QFontMetrics &fn, const QString &text, int max_width, int min, int max){
+  if(max<=min)
+    return min;
+
+  int mid = average(min,max);
+
+  if(mid==min)
+    return mid;
+
+  if(does_text_fit(fn, text, mid, max_width))
+    return find_text_length(fn, text, max_width, mid, max);
+  else
+    return find_text_length(fn, text, max_width, min, mid-1);
+}
+
+int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  const QFontMetrics fn = QFontMetrics(mywidget->font);
+  int len = strlen(text);
+  QString string(text);
+
+  //printf("width: %d / %d / %d\n",fn.width(string,len), fn.width(string,len/2), max_width);
+
+  if(does_text_fit(fn, string, len, max_width))
+    return len;
+  else
+    return find_text_length(fn, string, max_width, 0, len-1);
+}
+
 void QGFX_P_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
 	int x,
 	int y,
+        int width,
+	int flags
+){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+
+  if(flags && TEXT_CLEAR){
+    QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
+  }
+
+  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+  mywidget->qpixmap_painter->drawText(rect, Qt::AlignCenter, text);
+}
+
+void QGFX_P_Text_Centered(
+	struct Tracker_Windows *tvisual,
+	int color,
+	char *text,
+	int x,
+	int y,
+        int width,
 	bool clear
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
@@ -565,17 +637,8 @@ void QGFX_P_Text(
   }
 
   mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->qpixmap_painter->drawText(x,y+tvisual->org_fontheight-1,text);
-
-  //  int x2=x+(strlen(text)*tvisual->fontwidth);
-  //  int y2=y+tvisual->fontheight-1;
-
-  /*
-  paint.drawLine(x,y,x,y2);
-  paint.drawLine(x2,y,x2,y2);
-  paint.drawLine(x,y,x2,y);
-  paint.drawLine(x,y2,x2,y2);
-  */
+  QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+  mywidget->qpixmap_painter->drawText(rect, Qt::AlignCenter, text);
 }
 
 void QGFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
@@ -623,14 +686,15 @@ void QGFX_Text(
 	char *text,
 	int x,
 	int y,
-	bool clear
+        int width,
+        int flags
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   //QFont font=QFont("helvetica",tvisual->org_fontheight-5);
   //  font.setStrikeOut(true);
 
-  if(clear){
+  if(flags && TEXT_CLEAR){
     QGFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->org_fontheight);
   }
 
@@ -676,6 +740,7 @@ void QGFX_Text_noborder(
 }
 */
 
+#if 0
 void QGFX_P_InvertText(
 	struct Tracker_Windows *tvisual,
 	int color,
@@ -701,6 +766,7 @@ void QGFX_P_InvertTextNoText(
 		y+tvisual->fontheight
 	);
 }
+#endif
 
 void QGFX_InitDrawCurrentLine(
 	struct Tracker_Windows *tvisual,
