@@ -103,7 +103,7 @@ void GFXST_TextType(
              int flags
 	     )
 {
-  if(flags && TEXT_NOTEXT){
+  if(flags & TEXT_NOTEXT){
     int minx=getMinX(window);
     GFXS_TextType(GFX_OSFunc,window,color,text,R_MAX(minx,x),y,width,flags);
   }else{

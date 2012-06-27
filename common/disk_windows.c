@@ -108,37 +108,47 @@ struct Tracker_Windows *LoadWindow(void){
 	GENERAL_LOAD(1,17)
 
 var0:
-	window->x=DC_LoadI();
+	//window->x=
+        DC_LoadI();
 	goto start;
 var1:
-	window->y=DC_LoadI();
+	//window->y=
+        DC_LoadI();
 	goto start;
 var2:
-	window->width=DC_LoadI();
+	//window->width=
+        DC_LoadI();
 	goto start;
 var3:
-	window->height=DC_LoadI();
+	//window->height=
+        DC_LoadI();
 	goto start;
 var4:
-	window->fontname=DC_LoadS();
+	//window->fontname=
+        DC_LoadS();
 	goto start;
 var5:
-	window->fontID=DC_LoadI();
+	//window->fontID=
+        DC_LoadI();
 	goto start;
 var6:
-	window->fontTags=DC_LoadI();
+	//window->fontTags=
+        DC_LoadI();
 	goto start;
 var7:
-	window->fontwidth=DC_LoadI();
+	//window->fontwidth=
+        DC_LoadI();
 	goto start;
 var8:
-	window->fontheight=DC_LoadI();
+	//window->fontheight=
+        DC_LoadI();
 	goto start;
 var9:
 	window->curr_block=DC_LoadN();
 	goto start;
 var10:
-	window->maxwtracksize=DC_LoadI();
+	//window->maxwtracksize=
+        DC_LoadI();
 	goto start;
 var11:
 	window->playalong=DC_LoadB();
@@ -153,7 +163,8 @@ var14:
 	window->textborder=DC_LoadB();
 	goto start;
 var15:
-	window->org_fontheight=DC_LoadI();
+	//window->org_fontheight=
+        DC_LoadI();
 	goto start;
 var16:
 	window->minnodesize=DC_LoadI();

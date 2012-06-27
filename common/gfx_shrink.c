@@ -146,7 +146,7 @@ void GFXS_TextType(
              int flags
 	     )
 {
-  if(flags && TEXT_NOTEXT){
+  if(flags & TEXT_NOTEXT){
     int len=strlen(text);
     int maxx=window->wblock->t.x2;
     int glen=len*window->fontwidth;
