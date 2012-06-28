@@ -17,27 +17,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "nsmtracker.h"
 #include "settings_proc.h"
 #include "OS_settings_proc.h"
 
-// todo: strip whitespace and so forth, so the file can be more easely edited manually.
+static bool line_has_key(char *key, char *string){
+  if(isblank(string[0])) // strip whitespace
+    return line_has_key(key,string+1);
 
-static bool line_contains_key(char *key, char *string){
-  if(key[0]==0)
+  if(string[0]=='=' && key[0]==0)
     return true;
+
+  if(key[0]==0)
+    return false;
+
   if(string[0]==0)
     return false;
+
   if(key[0]==string[0])
-    return line_contains_key(key+1,string+1);
+    return line_has_key(key+1,string+1);
+
   return false;
 }
 
 static int find_linenum(char *key, char **lines, int num_lines){
   int linenum;
   for(linenum=0;linenum<num_lines;linenum++){
-    if(line_contains_key(key,lines[linenum]))
+    if(line_has_key(key,lines[linenum]))
       return linenum;
     linenum++;
   }
@@ -91,7 +99,7 @@ static void SETTINGS_put(char *key, char *val){
   }
 
   char temp[500];
-  sprintf(temp,"%s=%s",key,val);
+  sprintf(temp,"%s = %s",key,val);
   lines[linenum] = talloc_strdup(temp);
 
   write_lines(lines, num_lines);
@@ -108,6 +116,8 @@ static char *SETTINGS_get(char *key){
   char *line = lines[linenum];
   int pos=0;
   while(line[pos]!='=')
+    pos++;
+  while(isblank(line[pos])) // strip whitespace
     pos++;
 
   return line+pos;
