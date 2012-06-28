@@ -51,6 +51,13 @@ typedef struct{
   int i6;
   int i7;
   int i8;
+#if 0
+  // this would be nice
+#ifdef DEBUG
+  char *line;
+  char *file;
+#endif
+#endif
 } queue_element_t;
 
 typedef struct{

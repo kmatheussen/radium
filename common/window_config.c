@@ -53,7 +53,7 @@ void SelectEditFont(
 	GFX_ClearWindow(window);window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
 
-        fprintf(stderr,"font: -%s-\n",font);
+        printf("font: -%s-\n",font);
         // Saved last in case the font crashes radium
         SETTINGS_write_string("font",font);
 }
@@ -82,6 +82,8 @@ void SelectLeftSliderWidth(
 
 	GFX_ClearWindow(window);window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
+
+        SETTINGS_write_int("left_slider_width",newwidth);
 }
 
 void SelectBottomSliderHeight(
@@ -108,6 +110,8 @@ void SelectBottomSliderHeight(
 
 	GFX_ClearWindow(window);window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
+
+        SETTINGS_write_int("bottom_slider_height",newwidth);
 }
 
 void SelectMinNodeSize(
@@ -137,6 +141,8 @@ void SelectMinNodeSize(
 	UpdateReallinesDependens(window,wblock);
 
 	DrawUpTrackerWindow(window);
+
+        SETTINGS_write_int("minimum_node_size",newwidth);
 }
 
 void TextBorderOn(
@@ -144,6 +150,7 @@ void TextBorderOn(
 ){
 	window->textborder=true;
 	DrawUpTrackerWindow(window);
+        SETTINGS_write_bool("show_text_border",true);
 }
 
 void TextBorderOff(
@@ -151,6 +158,7 @@ void TextBorderOff(
 ){
 	window->textborder=false;
 	DrawUpTrackerWindow(window);
+        SETTINGS_write_bool("show_text_border",false);
 }
 
 void Window_config(

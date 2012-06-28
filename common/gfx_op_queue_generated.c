@@ -176,6 +176,11 @@ void GFX_P_Text(
 	int flags
 	) 
 { 
+  if(flags & TEXT_CLIPRECT){
+    if(width==TEXT_IGNORE_WIDTH){
+      RError("width can not be TEXT_IGNORE_WIDTH when using the TEXT_CLIPRECT flag");
+    }
+  }
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Text ; 
   el->i1 = color ; 

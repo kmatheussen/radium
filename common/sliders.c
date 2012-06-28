@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "visual_proc.h"
 #include "list_proc.h"
+#include "settings_proc.h"
 
 #include "sliders_proc.h"
 
@@ -238,6 +239,6 @@ void InitSliderValues(struct Tracker_Windows *window){
   window->bottomslider.show=1;
 
   //	twindow->bottomslider.width=twindow->fontwidth;
-  window->bottomslider.width=window->fontheight*2/3;
-  window->leftslider.width=window->fontwidth;
+  window->bottomslider.width = SETTINGS_read_int("bottom_slider_height",window->fontheight*2/3);
+  window->leftslider.width   = SETTINGS_read_int("left_slider_width",window->fontwidth);
 }

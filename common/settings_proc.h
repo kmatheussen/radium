@@ -18,10 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef SETTINGS_PROC_H
 #define SETTINGS_PROC_H
 
-extern LANGSPEC bool SETTINGS_get_bool(char *key, bool def);
-extern LANGSPEC int64_t SETTINGS_get_int(char *key, int64_t def);
-extern LANGSPEC double SETTINGS_get_double(char *key, double def);
-extern LANGSPEC char *SETTINGS_get_string(char *key, char *def);
+extern LANGSPEC bool SETTINGS_read_bool(char *key, bool def);
+extern LANGSPEC int64_t SETTINGS_read_int(char *key, int64_t def);
+extern LANGSPEC double SETTINGS_read_double(char *key, double def);
+extern LANGSPEC char *SETTINGS_read_string(char *key, char *def);
 extern LANGSPEC void SETTINGS_write_bool(char *key, bool val);
 extern LANGSPEC void SETTINGS_write_int(char *key, int64_t val);
 extern LANGSPEC void SETTINGS_write_double(char *key, double val);

@@ -121,9 +121,7 @@ Urgent
 
 * Resizing doesn't always update everything.
 
-* Qt font handling has never been made properly.
-
-* Qt color handling also missing
+* Qt color handling missing
 
 * Must check what happens if there are no alsaseq ports.
 
@@ -134,23 +132,23 @@ Urgent
 
 * When changing values in the instrument widget, MIDI signals should be sent.
 
-* Play song might not work properly. Not playing all blocks.
-
 * Windows menu:
    * Full screen option.
    * show/hide instrument widget
    * show/hide playlist widget
+
+* Play song might not work properly. Not playing all blocks.
 
 * Play Song (AltGr+Space) doesn't seem to use LPB.
 
 * Play Song from Curr waits xx seconds before starting to play, where xx is the
   the time from the start to the current position.
 
-* Sometims the editor still jumps to line 1 briefly when continue play block.
-  It always happens if I don't continue from the place where playing last stopped.
-
 * PausePlayer and StopPausePlayer has not been implemented. Check out
   what they do.
+
+* Sometims the editor still jumps to line 1 briefly when continue play block.
+  It always happens if I don't continue from the place where playing last stopped.
 
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.

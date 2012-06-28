@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "trackreallineelements_proc.h"
 #include "gfx_op_queue_proc.h"
+#include "settings_proc.h"
 
 #include "windows_proc.h"
 
@@ -185,7 +186,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 	twindow->width=width;
 	twindow->height=height;
 
-	twindow->textborder=true;
+	twindow->textborder=SETTINGS_read_bool("show_text_border",true);
 
 #ifdef USE_GFX_OP_QUEUE
         GFX_create_op_queue(twindow);
@@ -202,7 +203,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	twindow->curr_track_sub= -1;
 
-	twindow->minnodesize=20;
+	twindow->minnodesize=SETTINGS_read_int("minimum_node_size",20);
 
 	UpdateWBlocks(twindow);
 	twindow->wblock=twindow->wblocks;

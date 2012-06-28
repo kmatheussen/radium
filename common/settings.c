@@ -18,10 +18,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "settings_proc.h"
 #include "OS_settings_proc.h"
+
+static char *get_value(char *line){
+  int pos=0;
+  while(line[pos]!='='){
+    if(line[pos]==0)
+      return NULL;
+    pos++;
+  }
+
+  pos++;
+
+  while(isblank(line[pos])){
+    if(line[pos]==0)
+      return NULL;
+    pos++;
+  }
+
+  return line+pos;
+}
 
 static bool line_has_key(char *key, char *string){
   if(isblank(string[0])) // strip whitespace
@@ -42,9 +62,9 @@ static bool line_has_key(char *key, char *string){
   return false;
 }
 
-static int find_linenum(char *key, char **lines, int num_lines){
-  int linenum;
-  for(linenum=0;linenum<num_lines;linenum++){
+static int find_linenum(char *key, char **lines){
+  int linenum = 0;
+  while(lines[linenum]!=NULL){
     if(line_has_key(key,lines[linenum]))
       return linenum;
     linenum++;
@@ -52,20 +72,22 @@ static int find_linenum(char *key, char **lines, int num_lines){
   return -1;
 }
 
-static char** get_lines(int *linenums){
+static char** get_lines(void){
   char *filename = OS_get_config_filename();
   FILE *file = fopen(filename, "r");
 
-  *linenums = 0;
   char **ret = talloc(10000 * sizeof(char*));
 
   if(file==NULL)
     return ret;
 
+  int linenum = 0;
   char line[500];  
   while(fgets(line,499,file)!=NULL){
-    ret[*linenums] = talloc_strdup(line);
-    *linenums = *linenums + 1;
+    if(line[strlen(line)-1]=='\n')
+      line[strlen(line)-1] = 0;
+    ret[linenum] = talloc_strdup(line);
+    linenum++;
   }
 
   fclose(file);
@@ -73,7 +95,7 @@ static char** get_lines(int *linenums){
   return ret;
 }
 
-static void write_lines(char **lines, int num_lines){
+static void write_lines(char **lines){
   char *filename = OS_get_config_filename();
   FILE *file = fopen(filename, "w");
   if(file==NULL){
@@ -81,53 +103,50 @@ static void write_lines(char **lines, int num_lines){
     return;
   }
 
-  int i;
-  for(i=0;i<num_lines;i++)
-    fputs(lines[i],file);
+  int i = 0;
+  while(lines[i]!=NULL)
+    fprintf(file,"%s\n",lines[i++]);
 
   fclose(file);
 }
 
+static void append_line(char **lines, char *line){
+  int i=0;
+  while(lines[i]!=NULL)
+    i++;
+  lines[i] = line;
+}
+
 static void SETTINGS_put(char *key, char *val){
-  int num_lines;
-  char **lines = get_lines(&num_lines);
-  int linenum = find_linenum(key,lines,num_lines);
+  char **lines = get_lines();
+  int linenum = find_linenum(key,lines);
 
-  if(linenum==-1){
-    linenum = num_lines;
-    num_lines++;
-  }
-
-  char temp[500];
+  char *temp = talloc_atomic(strlen(key)+strlen(val)+10);
   sprintf(temp,"%s = %s",key,val);
-  lines[linenum] = talloc_strdup(temp);
 
-  write_lines(lines, num_lines);
+  if(linenum==-1)
+    append_line(lines, temp);
+  else
+    lines[linenum] = temp;
+  
+  write_lines(lines);
 }
 
 static char *SETTINGS_get(char *key){
-  int num_lines;
-  char **lines = get_lines(&num_lines);
-  int linenum = find_linenum(key,lines,num_lines);
+  char **lines = get_lines();
+  int linenum = find_linenum(key,lines);
 
   if(linenum==-1)
     return NULL;
 
-  char *line = lines[linenum];
-  int pos=0;
-  while(line[pos]!='=')
-    pos++;
-  while(isblank(line[pos])) // strip whitespace
-    pos++;
-
-  return line+pos;
+  return get_value(lines[linenum]);
 }
 
-bool SETTINGS_get_bool(char *key, bool def){
-  return SETTINGS_get_int(key, def==true?1:0) == 1 ? true : false;
+bool SETTINGS_read_bool(char *key, bool def){
+  return SETTINGS_read_string(key, def==true?"true":"false")[0] == 't';
 }
 
-int64_t SETTINGS_get_int(char *key, int64_t def){
+int64_t SETTINGS_read_int(char *key, int64_t def){
   char *val = SETTINGS_get(key);
 
   if(val==NULL)
@@ -136,7 +155,7 @@ int64_t SETTINGS_get_int(char *key, int64_t def){
     return atoll(val);
 }
 
-double SETTINGS_get_double(char *key, double def){
+double SETTINGS_read_double(char *key, double def){
   char *val = SETTINGS_get(key);
 
   if(val==NULL)
@@ -145,7 +164,7 @@ double SETTINGS_get_double(char *key, double def){
     return atof(val);
 }
 
-char *SETTINGS_get_string(char *key, char *def){
+char *SETTINGS_read_string(char *key, char *def){
   char *val = SETTINGS_get(key);
 
   if(val==NULL)
@@ -155,7 +174,7 @@ char *SETTINGS_get_string(char *key, char *def){
 }
 
 void SETTINGS_write_bool(char *key, bool val){
-  SETTINGS_write_int(key, val==true?1:0);
+  SETTINGS_write_string(key, val==true?"true":"false");
 }
 
 void SETTINGS_write_int(char *key, int64_t val){

@@ -256,7 +256,7 @@ static MyWidget *g_mywidget = NULL;
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   QFont font = QFont("Monospace");
 
-  char *fontstring = SETTINGS_get_string((char*)"font",NULL);
+  char *fontstring = SETTINGS_read_string((char*)"font",NULL);
   if(fontstring!=NULL)
     font.fromString(fontstring);
 
