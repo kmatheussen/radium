@@ -218,6 +218,8 @@ void *talloc_atomic_uncollectable(size_t size){
 }
 
 char *talloc_strdup(char *input) {
+  if(input==NULL)
+    return NULL;
   char *ret = talloc_atomic(strlen(input) + 1);
   sprintf(ret,"%s",input);
   return ret;

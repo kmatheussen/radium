@@ -30,7 +30,14 @@ Non-urgent
 * Trying to load a standard midi file as normal file (instead of selecting "import midi") should really import the midi file, not quit the editor.
   At least, it should not quit the editor.
 
-* When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time.
+* When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time
+
+* The player should detect when using too much time (must add a time interface to OS),
+  and then only update each second line. If still using too much time, only
+  update each third line. And so on. Like it is now, we sometimes see all lines updated,
+  while it sometimes skips a line, and other variants. That doesn't look good. This scheme might also
+  be a good enough system to avoid overflowing the GUI backend system with requests.
+  (so that the backend system doesn't have to check this itself)
 
 * Loading standard midi file doesn't ask yes/no if current song is modified.
 
@@ -81,23 +88,21 @@ Non-urgent
 
 * Moving note by clicking on the note name.
 
-* Clean up the GFX_*_TEXT functions. They can all be unified by giving two more
-  options: width and flags, plus remove the clear option.
-
-  Flags can be: INVERT, CENTER, CLIPRECT, NOTEXT, CLEAR.
-
-  This would make it a lot easier to tell Qt to ClipRect and Center text since
-  the shrink system, etc. makes adding new options and functions very messy.
-  It's simpler to let the various indirections functions and macros just pass
-  further flags.
-
 * Remove all usages of strlen to find text width.
 
-* Note name flickering if using very big fonts.
+* Note name flickering if using very big fonts. (don't see it anymore)
 
 * RError and RWarning should be macros so that line number and file name can be
   added automatically.
 
+* GoodPutMidi can probably be implemented fully in alsaseq. Number of unsent
+  message can probably be found. (should improve the name of the function as well)
+
+* That graphical column on the left that shows tempo can be replaced with a bar.
+  Over 50% of the CPU is used to draw that.
+
+* zoom should change the font itself, not only the window->fontheight value.
+  
 
 Urgent
 ======
@@ -141,6 +146,9 @@ Urgent
 * Play Song from Curr waits xx seconds before starting to play, where xx is the
   the time from the start to the current position.
 
+* Sometims the editor still jumps to line 1 briefly when continue play block.
+  It always happens if I don't continue from the place where playing last stopped.
+
 * PausePlayer and StopPausePlayer has not been implemented. Check out
   what they do.
 
@@ -153,4 +161,9 @@ Urgent
 
 * Page up/down should scroll page up/down
 
-* Centering note names horizontally doesn't look that good.
+* make install. First get rid of /tmp/radium and put everything that's needed for the program into bin/.
+  Then "make install" can do:
+
+  mkdir -f $(PREFIX)/lib/radium/
+  cp -a bin/* $(PREFIX)/lib/radium/ 
+  ln -sf $(PREFX)/lib/radium/start.sh $(PREFIX)/bin/radium.

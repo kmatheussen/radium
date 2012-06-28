@@ -103,7 +103,7 @@ CPPOPT=$(OPT) $(QTOPTS)
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= windows.o window_config.o list.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o
+OBJ1= windows.o window_config.o list.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o
 
 OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_window_title.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtext.o gfx_op_queue.o
 
@@ -133,7 +133,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_ClientMessages.o X11_error.o 
+OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_ClientMessages.o X11_error.o 
 
 #X11_MidiProperties.o 
 #Qt_Bs_edit.o 
@@ -797,6 +797,12 @@ $(P)Qt_control_change_widget.h: $(P)control_change_widget.ui $(P)create_source_f
 
 Qt_memory.o:  $(P)Qt_memory.cpp
 	$(CCC)  $(P)Qt_memory.cpp $(OPT)
+
+posix_settings.o: posix/posix_settings.c
+	$(CC) posix/posix_settings.c $(OPT)
+
+settings.o: $(CD)settings.c
+	$(CC) $(CD)settings.c $(OPT)
 
 scroll.o: $(CD)scroll.c
 	$(CC) $(CD)scroll.c $(OPT)

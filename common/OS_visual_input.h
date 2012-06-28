@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-extern LANGSPEC bool GFX_SelectEditFont(struct Tracker_Windows *tvisual);
+extern LANGSPEC char *GFX_SelectEditFont(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title);
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);

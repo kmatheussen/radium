@@ -202,7 +202,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	twindow->curr_track_sub= -1;
 
-	twindow->minnodesize=4;
+	twindow->minnodesize=20;
 
 	UpdateWBlocks(twindow);
 	twindow->wblock=twindow->wblocks;

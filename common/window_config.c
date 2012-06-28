@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "reallines_proc.h"
 #include "wblocks_proc.h"
+#include "settings_proc.h"
 
 #include "window_config_proc.h"
 
@@ -37,7 +38,9 @@ void SelectEditFont(
 ){
 	struct WBlocks *wblock=window->wblock;
 
-	if( ! GFX_SelectEditFont(window)) return;
+        char *font = GFX_SelectEditFont(window);
+	if(font==NULL)
+          return;
 
 	while(FreeANotShowedWBlockTREelement());
 
@@ -49,6 +52,10 @@ void SelectEditFont(
 
 	GFX_ClearWindow(window);window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
+
+        fprintf(stderr,"font: -%s-\n",font);
+        // Saved last in case the font crashes radium
+        SETTINGS_write_string("font",font);
 }
 
 void SelectLeftSliderWidth(
