@@ -100,6 +100,7 @@ struct WBlocks *LoadWBlock(void){
 	wblock->l.num=DC_LoadN();
 	wblock->tempocolorarea.width=22;
 
+        WArea dummy;
 
 	GENERAL_LOAD(2,18)
 
@@ -112,22 +113,28 @@ var1:
 	wblock->temponodetrackonoff=DC_LoadI();
 	goto start;
 var2:
-	LoadWArea(&wblock->zoomlevelarea);
+	//LoadWArea(&wblock->zoomlevelarea);
+	LoadWArea(&dummy);
 	goto start;
 var3:
-	LoadWArea(&wblock->linenumarea);
+	//LoadWArea(&wblock->linenumarea);
+	LoadWArea(&dummy);
 	goto start;
 var4:
-	LoadWArea(&wblock->lpbTypearea);
+	//LoadWArea(&wblock->lpbTypearea);
+	LoadWArea(&dummy);
 	goto start;
 var5:
-	LoadWArea(&wblock->lpbarea);
+	//LoadWArea(&wblock->lpbarea);
+	LoadWArea(&dummy);
 	goto start;
 var6:
-	LoadWArea(&wblock->tempoTypearea);
+	//LoadWArea(&wblock->tempoTypearea);
+	LoadWArea(&dummy);
 	goto start;
 var7:
-	LoadWArea(&wblock->tempoarea);
+	//LoadWArea(&wblock->tempoarea);
+	LoadWArea(&dummy);
 	goto start;
 var8:
 	LoadWArea(&wblock->temponodearea);
@@ -179,6 +186,11 @@ end:
 	return wblock;
 }
 
+void ExpandLineCurrPos(
+	struct Tracker_Windows *window,
+	int num_newreallines
+                       );
+#include <math.h>
 
 void DLoadWBlocks(
 	struct Root *newroot,
@@ -198,9 +210,16 @@ if(wblock==NULL) return;
 
 	DLoadWTracks(newroot,window,wblock,wblock->wtrack);
 
-	UpdateWBlockCoordinates(window,wblock);	//Does allso update wtrack
+        //int zoomwidth = wblock->zoomlevelarea.width;{
+          UpdateWBlockWidths(window,wblock);
+          //}wblock->zoomlevelarea.width = zoomwidth;
+
+
+        UpdateWBlockCoordinates(window,wblock);	//Does allso update wtrack	
 
 	DLoadLocalZooms(newroot,window,wblock);
+
+        //ExpandLineCurrPos(window,1);
 
 DLoadWBlocks(newroot,window,NextWBlock(wblock));
 }

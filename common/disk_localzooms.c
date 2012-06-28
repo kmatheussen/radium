@@ -156,6 +156,14 @@ void DLoadLocalZooms(
 ){
 	UpdateRealLines(window,wblock);
 	UpdateReallinesDependens(window,wblock);
+
+        int highest = FindHighestLocalzoomLevel(wblock);
+        if(highest>0)
+          wblock->zoomlevelarea.width = window->fontwidth;
+        if(highest>10)
+          wblock->zoomlevelarea.width += window->fontwidth;
+        if(highest>100)
+          wblock->zoomlevelarea.width += window->fontwidth;
 }
 
 

@@ -201,6 +201,14 @@ void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 }
 
+int FindHighestLocalzoomLevel(struct WBlocks *wblock){
+  int highest=0;
+  int i;
+  for(i=0;i<wblock->num_reallines;i++)
+    highest = R_MAX(wblock->reallines[i]->level, highest);
+  return highest;
+}
+
 
 void ExpandLine(
 	struct Tracker_Windows *window,
@@ -214,7 +222,7 @@ void ExpandLine(
 
 
 	if(localzoom->Tdividor*num_newreallines>=MAX_UINT32){
-		fprintf(stderr,"To many levels, cant expand.\n");
+		fprintf(stderr,"Too many levels, can't expand.\n");
 		return;
 	}
 
