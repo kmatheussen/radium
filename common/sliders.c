@@ -233,6 +233,11 @@ void DrawLeftSlider(struct Tracker_Windows *window){
 
 }
 
+void InitSliderValues(struct Tracker_Windows *window){
+  window->leftslider.show=1;
+  window->bottomslider.show=1;
 
-
-
+  //	twindow->bottomslider.width=twindow->fontwidth;
+  window->bottomslider.width=window->fontheight*2/3;
+  window->leftslider.width=window->fontwidth;
+}

@@ -210,16 +210,12 @@ if(wblock==NULL) return;
 
 	DLoadWTracks(newroot,window,wblock,wblock->wtrack);
 
-        //int zoomwidth = wblock->zoomlevelarea.width;{
-          UpdateWBlockWidths(window,wblock);
-          //}wblock->zoomlevelarea.width = zoomwidth;
+        UpdateWBlockWidths(window,wblock);
 
 
         UpdateWBlockCoordinates(window,wblock);	//Does allso update wtrack	
 
 	DLoadLocalZooms(newroot,window,wblock);
-
-        //ExpandLineCurrPos(window,1);
 
 DLoadWBlocks(newroot,window,NextWBlock(wblock));
 }

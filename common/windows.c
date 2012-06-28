@@ -198,12 +198,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	twindow->playalong=true;
 
-	twindow->leftslider.show=1;
-	twindow->bottomslider.show=1;
-
-//	twindow->bottomslider.width=twindow->fontwidth;
-	twindow->bottomslider.width=twindow->fontheight*2/3;
-	twindow->leftslider.width=twindow->fontwidth;
+        InitSliderValues(twindow);
 
 	twindow->curr_track_sub= -1;
 

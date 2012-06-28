@@ -23,5 +23,6 @@ extern void UpdateBottomSlider(struct Tracker_Windows *window);
 extern void DrawBottomSlider(struct Tracker_Windows *window);
 extern void UpdateLeftSlider(struct Tracker_Windows *window);
 extern void DrawLeftSlider(struct Tracker_Windows *window);
+extern void InitSliderValues(struct Tracker_Windows *window);
 
 #endif

@@ -102,6 +102,7 @@ struct Tracker_Windows *LoadWindow(void){
 		"org_fontheight",
 		"minnodesize"
 	};
+        struct Slider dummy;
 	struct Tracker_Windows *window=DC_alloc(sizeof(struct Tracker_Windows));
 	window->l.num=DC_LoadN();
 
@@ -154,10 +155,12 @@ var11:
 	window->playalong=DC_LoadB();
 	goto start;
 var12:
-	LoadSlider(&window->leftslider);
+	//LoadSlider(&window->leftslider);
+	LoadSlider(&dummy);
 	goto start;
 var13:
-	LoadSlider(&window->bottomslider);
+	//LoadSlider(&window->bottomslider);
+	LoadSlider(&dummy);
 	goto start;
 var14:
 	window->textborder=DC_LoadB();
@@ -167,7 +170,8 @@ var15:
         DC_LoadI();
 	goto start;
 var16:
-	window->minnodesize=DC_LoadI();
+	//window->minnodesize=DC_LoadI();
+        DC_LoadI();
 	goto start;
 
 obj0:
@@ -204,6 +208,8 @@ if(window==NULL) return;
 
 	window->curr_track=0;
 	window->curr_track_sub=-1;
+
+        InitSliderValues(window);
 
 	UpdateTrackerWindowCoordinates(window);
 
