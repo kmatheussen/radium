@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "OS_visual_input.h"
 
+
 #define TEXT_IGNORE_WIDTH -1 // Can be used instead of width, not a flag
 // flags:
 #define TEXT_NOFLAGS 0

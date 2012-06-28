@@ -36,32 +36,19 @@ void GFX_UpdateQuantitize(
 	struct WBlocks *wblock
 ){
 	char temp[52];
-	float quant;
-	bool less=false;
-	int precision;
 
-	precision=wblock->lpbTypearea.x/(window->fontwidth+1);
-
-	quant=root->quantitize;
-	if(quant<=1.0f){
-		less=true;
-		quant=1/quant;
-		precision--;
-	}
-
-	precision-=quant>=10.0?3:2;
-	precision=R_MAX(0,precision);
-
-	if(less){
-		sprintf(temp,"/%.*f",precision,quant);
+	if(root->quantitize<=1.0f){
+		sprintf(temp,"/%f",1/root->quantitize);
 	}else{
-		sprintf(temp,"%.*f",precision,quant);
+		sprintf(temp,"%f",root->quantitize);
 	}
+
+        temp[GFX_get_num_characters(window, temp, wblock->linenumarea.x2 - 2)] = 0;
 
 	GFX_Text(
 		 window,2,temp,0,0,
                  wblock->linenumarea.x2 - 2,
-                 TEXT_CLEAR|TEXT_CLIPRECT
+                 TEXT_CLEAR
 	);
 
 }

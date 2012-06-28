@@ -238,14 +238,23 @@ static void initMenues(QMenuBar *base_menu){
   current_menu->base = base_menu;
 }
 
+static void setFontValues(struct Tracker_Windows *tvisual, const QFont &font){
+  QFontMetrics fm(font);
+
+  double width3 = R_MAX(fm.width("MUL"), fm.width("STP"));
+  tvisual->fontwidth=(int)ceil(width3/3.0);
+  tvisual->org_fontheight=fm.height();
+  tvisual->fontheight=fm.height();
+}
+
 static QMainWindow *g_main_window = NULL;;
 static MyWidget *g_mywidget = NULL;
 
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
-  tvisual->fontheight=17;
-  tvisual->fontwidth=13;
-  tvisual->org_fontheight=tvisual->fontheight;
+  QFont font = QFont("Monospace");
+
+  setFontValues(tvisual, font);
 
   if(g_main_window!=NULL){
     tvisual->os_visual.main_window = g_main_window;
@@ -303,7 +312,8 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   }
 
   // helvetica
-  mywidget->font = QFont("Monospace");
+  mywidget->font = font;
+
   //mywidget->font->setStyleHint(QFont::TypeWriter);
   //mywidget->font->setFixedPitch(false);
 
@@ -385,12 +395,8 @@ bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   mywidget->font = QFontDialog::getFont( 0, mywidget->font ) ;
   mywidget->setFont(mywidget->font);
 
-  QFontMetrics fm(mywidget->font);
+  setFontValues(tvisual, mywidget->font);
 
-  tvisual->fontwidth=(int)ceil((double)fm.width("G-4")/3.0);
-  tvisual->org_fontheight=fm.height();
-  tvisual->fontheight=fm.height();
- 
 #if 0
   int lokke;
   XFontStruct *xfontstruct = XLoadQueryFont(x11_display,rawfontname);
@@ -648,7 +654,7 @@ static void draw_text(struct Tracker_Windows *tvisual,
 
   if(flags & TEXT_CENTER){
     QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
-    painter->drawText(rect, Qt::AlignCenter, text);
+    painter->drawText(rect, Qt::AlignVCenter, text);
   }else{
     painter->drawText(x,y+tvisual->org_fontheight-1,text);
   }

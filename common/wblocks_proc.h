@@ -38,6 +38,7 @@ extern LANGSPEC void UpdateAllWBlockCoordinates(
 	struct Tracker_Windows *window
 );
 
+extern LANGSPEC void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock);
 extern LANGSPEC void UpdateAllWBlockWidths(struct Tracker_Windows *window);
 
 extern LANGSPEC void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock);

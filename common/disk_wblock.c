@@ -186,12 +186,6 @@ end:
 	return wblock;
 }
 
-void ExpandLineCurrPos(
-	struct Tracker_Windows *window,
-	int num_newreallines
-                       );
-#include <math.h>
-
 void DLoadWBlocks(
 	struct Root *newroot,
 	struct Tracker_Windows *window,
