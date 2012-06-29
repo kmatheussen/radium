@@ -102,6 +102,9 @@ Non-urgent
   Over 50% of the CPU is used to draw that.
 
 * zoom should change the font itself, not only the window->fontheight value.
+
+* Trying to select a node close to another can sometimes be frustrating. Seems
+  to be missing logic for selecting the node line closest to the mouse pointer.
   
 
 Urgent
@@ -120,8 +123,6 @@ Urgent
   Don't know how to reproduce.
 
 * Resizing doesn't always update everything.
-
-* Qt color handling missing
 
 * Must check what happens if there are no alsaseq ports.
 

@@ -33,6 +33,8 @@ static char *get_value(char *line){
   }
 
   pos++;
+  if(line[pos]==0)
+    return NULL;
 
   while(isblank(line[pos])){
     if(line[pos]==0)

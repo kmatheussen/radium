@@ -28,7 +28,7 @@ extern "C"{
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
 #include "MyWidget.h"
-
+#include "Qt_colors_proc.h"
 #include "Qt_instruments_proc.h"
 
 
@@ -371,12 +371,7 @@ QWidget *createInstrumentsWidget(void){
     instruments_widget->tabs->showPage(no_instrument_widget);
   }
 
-  {
-    QPalette pal = QPalette(instruments_widget->palette());
-    pal.setColor(QPalette::Active, QColorGroup::Base, QColor(0xd0, 0xd5, 0xd0));
-    pal.setColor(QPalette::Inactive, QColorGroup::Base, QColor(0xd0, 0xd5, 0xd0));
-    instruments_widget->setPalette(pal);
-  }
+  setWidgetColors(instruments_widget);
 
   return instruments_widget;
 }

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 
 #include "MyWidget.h"
+#include "Qt_colors_proc.h"
 
 #include "qwidget.h"
 #include "qlistbox.h"
@@ -189,11 +190,7 @@ public:
     connect(&add_button, SIGNAL(pressed()), this, SLOT(add_to_playlist()));
     connect(&remove_button, SIGNAL(pressed()), this, SLOT(remove_from_playlist()));
 
-    QPalette pal = QPalette(palette());
-    pal.setColor(QPalette::Active, QColorGroup::Base, QColor(0xd0, 0xd5, 0xd0));
-    pal.setColor(QPalette::Inactive, QColorGroup::Base, QColor(0xd0, 0xd5, 0xd0));
-    setPalette(pal);
-  
+    setWidgetColors(this);
   }
 
   void resizeEvent(QResizeEvent *qresizeevent){

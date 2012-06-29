@@ -21,11 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "MyWidget.h"
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_instruments_proc.h"
+#include "Qt_colors_proc.h"
 
 #include <qpainter.h>
 #include <qstatusbar.h>
 #include <qmainwindow.h>
 #include <qfontdialog.h>
+#include <qcolordialog.h>
 
 
 #ifdef USE_QT4
@@ -97,34 +99,7 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
   this->qpixmap=NULL;
   this->window=window;
 
-  /*
-  this->colors[0]=QColor("grey");
-  this->colors[1]=QColor("black");
-  this->colors[2]=QColor("white");
-  this->colors[3]=QColor("red");
-
-  this->colors[4]=QColor("green");
-  this->colors[5]=QColor("blue");
-  this->colors[6]=QColor("yellow");
-  this->colors[7]=QColor("pink");
-  */
-
-  //this->colors[0]=QColor("grey");
-  this->colors[0]=QColor(0xd0, 0xd5, 0xd0);
-  //this->colors[0]=QColor(0xe0, 0xe0, 0xe0);
-  this->colors[1]=QColor("black");
-  this->colors[2]=QColor("white");
-  this->colors[3]=QColor("blue");
-
-  this->colors[4]=QColor("yellow");
-  this->colors[5]=QColor("red");
-  this->colors[6]=QColor("orange");
-  //this->colors[7]=QColor("green");
-
-  this->colors[7]=QColor(0x10,0x18,0x12);
-  //this->colors[7]=QColor(0x20,0x30,0x28);
-
-  this->colors[8]=QColor(0x45,0x22,0x20);
+  setEditorColors(this);
 
   for(int lokke=0;lokke<8;lokke++){
     this->rpoints[lokke]=new RPoints();
@@ -942,11 +917,27 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 
 //void GFX_ConfigColors(struct Tracker_Windows *tvisual){
 //}
+#if 0
+
 #define NUM_COLORS 8
 
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
+  for(int i=0;i<9;i++)
+    QColorDialog::setCustomColor(i, mywidget->colors[i].rgb());
+
+  QColorDialog::getColor(mywidget->colors[0]);
+
+  for(int i=0;i<9;i++){
+    mywidget->colors[i].setRgb(QColorDialog::customColor(i));
+    char key[500];
+    sprintf(key,"color%d",i);
+    SETTINGS_write_string(key,(char*)mywidget->colors[i].name().ascii());
+  }
+
+
+#if 0
   //Colormap colormap;
   char command[100*NUM_COLORS];
   int lokke;
@@ -981,6 +972,8 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
 	 &r[7],&g[7],&b[7]
 	 );
 
+#endif
+
 #if 0
   colormap = DefaultColormap(x11_display,x11_screen);
   for(lokke=0;lokke<NUM_COLORS;lokke++){
@@ -1002,6 +995,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   }
 #endif
 }
+#endif
 
 
 #if 0

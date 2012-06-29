@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "MyWidget.h"
+#include "Qt_colors_proc.h"
 
 #include <X11/Xlib.h>
 
@@ -228,15 +229,7 @@ int radium_main(char *arg){
 
   qapplication=new MyApplication(argc,argv);
 
-
-  //QColor c(0xe5, 0xe5, 0xe5);
-  QColor c(0xd2, 0xd0, 0xd5);
-  QPalette pal = QPalette(qapplication->palette());
-  pal.setColor( QPalette::Active, QColorGroup::Background, c);
-  pal.setColor( QPalette::Active, QColorGroup::Button, c);
-  pal.setColor( QPalette::Inactive, QColorGroup::Background, c);
-  pal.setColor( QPalette::Inactive, QColorGroup::Button, c);
-  qapplication->setPalette(pal);
+  setApplicationColors(qapplication);
 
   X11_init_keyboard();
 
@@ -248,7 +241,8 @@ int radium_main(char *arg){
   // ProfilerStart("hepps");
 
   printf("starting\n");
-  InitProgram();
+  if(InitProgram()==false)
+    return 0;
   printf("ending\n");
 
   //ProfilerStop();

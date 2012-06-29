@@ -99,7 +99,7 @@ void GFX_DrawUpLeft(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-#if 0
+#if 1
 	GFX_FilledBox(
 		window,0,
 		0,

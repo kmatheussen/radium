@@ -58,6 +58,8 @@
 #include "qsettings.h"
 #include "qpopupmenu.h"
 
+
+
 #ifdef Q_WS_MAC
 QRgb macGetRgba( QRgb initial, bool *ok, QWidget *parent, const char* name );
 QColor macGetColor( const QColor& initial, QWidget *parent, const char *name );
@@ -113,6 +115,7 @@ private:
     int selRow;
     int selCol;
     bool smallStyle;
+public:
     QWellArrayData *d;
 
 private:	// Disabled copy constructor and operator=
@@ -123,7 +126,6 @@ private:	// Disabled copy constructor and operator=
 };
 
 
-
 // non-interface ...
 
 
@@ -131,6 +133,28 @@ private:	// Disabled copy constructor and operator=
 struct QWellArrayData {
     QBrush *brush;
 };
+
+static QRgb cusrgb[2*8];
+static QWellArray *custom_well_array = NULL;
+static int curr_colornum=0;
+static QColor curr_color;
+#include "Qt_color_proc.h"
+
+static void update_curr_colornum(int row, int col){
+  if(custom_well_array!=NULL){
+    int row = custom_well_array->selRow;
+    int col = custom_well_array->selCol;
+    if(row!=-1 && col!=-1)
+      curr_colornum = col*2 + row;
+    printf("setselected %d/%d. Curr color: %d\n",row, col,curr_colornum);
+  }
+}
+
+static void updateRealtime(){
+  testColorInRealtime(curr_colornum,curr_color);
+  cusrgb[curr_colornum] = curr_color.rgb();
+  custom_well_array->repaintContents(FALSE);
+}
 
 /*!
     \internal
@@ -248,6 +272,7 @@ void QWellArray::mousePressEvent( QMouseEvent* e )
     // in.
     QPoint pos = e->pos();
     setCurrent( rowAt( pos.y() ), columnAt( pos.x() ) );
+    updateRealtime();
 }
 
 /*\reimp
@@ -270,6 +295,7 @@ void QWellArray::mouseMoveEvent( QMouseEvent* e )
 	QPoint pos = e->pos();
 	setCurrent( rowAt( pos.y() ), columnAt( pos.x() ) );
     }
+    updateRealtime();
 }
 
 /*
@@ -303,7 +329,6 @@ void QWellArray::setCurrent( int row, int col )
 
   Does not set the position of the focus indicator.
 */
-
 void QWellArray::setSelected( int row, int col )
 {
     if ( (selRow == row) && (selCol == col) )
@@ -325,6 +350,8 @@ void QWellArray::setSelected( int row, int col )
 
     if ( isVisible() && ::qt_cast<QPopupMenu*>(parentWidget()) )
 	parentWidget()->close();
+
+    update_curr_colornum();
 }
 
 
@@ -431,7 +458,6 @@ void QWellArray::keyPressEvent( QKeyEvent* e )
 
 static bool initrgb = FALSE;
 static QRgb stdrgb[6*8];
-static QRgb cusrgb[2*8];
 static bool customSet = FALSE;
 
 
@@ -552,6 +578,7 @@ void QColorWell::mousePressEvent( QMouseEvent *e )
     QWellArray::mousePressEvent( e );
     mousePressed = TRUE;
     pressPos = e->pos();
+    updateRealtime();
 }
 
 void QColorWell::mouseMoveEvent( QMouseEvent *e )
@@ -575,6 +602,7 @@ void QColorWell::mouseMoveEvent( QMouseEvent *e )
 	drg->dragCopy();
     }
 #endif
+    updateRealtime();
 }
 
 #ifndef QT_NO_DRAGANDDROP
@@ -589,6 +617,7 @@ void QColorWell::dragEnterEvent( QDragEnterEvent *e )
 
 void QColorWell::dragLeaveEvent( QDragLeaveEvent * )
 {
+
     if ( hasFocus() )
 	parentWidget()->setFocus();
 }
@@ -722,10 +751,12 @@ QColorLuminancePicker::~QColorLuminancePicker()
 void QColorLuminancePicker::mouseMoveEvent( QMouseEvent *m )
 {
     setVal( y2val(m->y()) );
+    updateRealtime();
 }
 void QColorLuminancePicker::mousePressEvent( QMouseEvent *m )
 {
     setVal( y2val(m->y()) );
+    updateRealtime();
 }
 
 void QColorLuminancePicker::setVal( int v )
@@ -748,7 +779,6 @@ void QColorLuminancePicker::setCol( int h, int s )
 void QColorLuminancePicker::paintEvent( QPaintEvent * )
 {
     int w = width() - 5;
-
     QRect r( 0, foff, w, height() - 2*foff );
     int wi = r.width() - 2;
     int hi = r.height() - 2;
@@ -757,7 +787,7 @@ void QColorLuminancePicker::paintEvent( QPaintEvent * )
 	QImage img( wi, hi, 32 );
 	int y;
 	for ( y = 0; y < hi; y++ ) {
-	    QColor c( hue, sat, y2val(y+coff), QColor::Hsv );
+          QColor c( hue, sat, y2val(y+coff), QColor::Hsv );
 	    QRgb r = c.rgb();
 	    int x;
 	    for ( x = 0; x < wi; x++ )
@@ -802,7 +832,6 @@ QColorPicker::QColorPicker(QWidget* parent, const char* name )
 {
     hue = 0; sat = 0;
     setCol( 150, 255 );
-
     QImage img( pWidth, pHeight, 32 );
     int x,y;
     for ( y = 0; y < pHeight; y++ )
@@ -841,11 +870,13 @@ void QColorPicker::setCol( int h, int s )
     repaint( r, FALSE );
 }
 
+
 void QColorPicker::mouseMoveEvent( QMouseEvent *m )
 {
     QPoint p = m->pos() - contentsRect().topLeft();
     setCol( p );
     emit newCol( hue, sat );
+    updateRealtime();
 }
 
 void QColorPicker::mousePressEvent( QMouseEvent *m )
@@ -853,6 +884,7 @@ void QColorPicker::mousePressEvent( QMouseEvent *m )
     QPoint p = m->pos() - contentsRect().topLeft();
     setCol( p );
     emit newCol( hue, sat );
+    updateRealtime();
 }
 
 void QColorPicker::drawContents(QPainter* p)
@@ -998,7 +1030,8 @@ private:
 
 void QColorShowLabel::drawContents( QPainter *p )
 {
-    p->fillRect( contentsRect(), col );
+  p->fillRect( contentsRect(), col );
+  curr_color = col;
 }
 
 void QColorShower::showAlpha( bool b )
@@ -1016,6 +1049,7 @@ void QColorShowLabel::mousePressEvent( QMouseEvent *e )
 {
     mousePressed = TRUE;
     pressPos = e->pos();
+    updateRealtime();
 }
 
 void QColorShowLabel::mouseMoveEvent( QMouseEvent *e )
@@ -1035,6 +1069,7 @@ void QColorShowLabel::mouseMoveEvent( QMouseEvent *e )
 	drg->dragCopy();
     }
 #endif
+    updateRealtime();
 }
 
 #ifndef QT_NO_DRAGANDDROP
@@ -1400,6 +1435,8 @@ QColorDialogPrivate::QColorDialogPrivate( QColorDialog *dialog ) :
 	rightLay->addWidget( addCusBt );
 	connect( addCusBt, SIGNAL(clicked()), this, SLOT(addCustom()) );
     }
+
+    custom_well_array = custom;
 }
 
 void QColorDialogPrivate::addCustom()

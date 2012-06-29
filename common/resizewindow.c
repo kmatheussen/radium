@@ -93,6 +93,8 @@ void Resize_resized(struct Tracker_Windows *window,int width,int height,bool isc
   struct WBlocks *wblock;
   int x2,y2;
 
+  printf("Resize_resized called.\n");
+
   /* Since resize-events might happen before everything is drawn up, we make some tests. */
   if(window==NULL) return;
   if(window->wblock==NULL) return;

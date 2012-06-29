@@ -133,7 +133,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_ClientMessages.o X11_error.o 
+OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_ClientMessages.o X11_error.o 
 
 #X11_MidiProperties.o 
 #Qt_Bs_edit.o 
@@ -773,6 +773,18 @@ Qt_Player.o: $(P)Qt_Player.c $(P)MyWidget.h
 
 Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)MyWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(CPPOPT)
+
+Qt_colors.o: $(P)Qt_colors.cpp
+	$(CCC) $(P)Qt_colors.cpp $(CPPOPT)
+
+#QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
+QD = $(P)
+
+# Compile our own (modified) version of the qcolordialog in order to show real time update of colors.
+# (it was surprisingly simple to do this. I just had to copy the file. No editing or use of custom compiler flags was needed.)
+qcolordialog.o: $(QD)qcolordialog.cpp
+	cd $(QD) && $(MOC) qcolordialog.cpp >qcolordialog.moc
+	$(CCC) $(QD)qcolordialog.cpp $(CPPOPT) -Wno-error
 
 Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(CPPOPT)
