@@ -78,9 +78,6 @@ Non-urgent
 * Lots of files in bin/ which are copied from api/ and elsewhere. Confusing.
   github seems to handle symlinks fine, so that's a better solution.
 
-* Fix shortcutless menu options. Removing the keybinding for ra.unzoom() caused
-  nothing to happen when selecting it from the menu.
-
 * Not possible to set ccname.
 
 * Scrolling doesn't work with the mouse wheel button after entering the window.
@@ -105,7 +102,12 @@ Non-urgent
 
 * Trying to select a node close to another can sometimes be frustrating. Seems
   to be missing logic for selecting the node line closest to the mouse pointer.
+
+* Clicking track in blockselector doesn't change track.
   
+* Sometims the editor still jumps to line 1 briefly when continue play block.
+  It always happens if I don't continue from the place where playing last stopped.
+
 
 Urgent
 ======
@@ -115,8 +117,6 @@ Urgent
   Options:
     * Refuse to make window smaller
     * Make temponodearea smaller. (better)
-
-* After selecting a menu, doquit is not checked. (must press a key first to quit)
 
 * Trying to connect to ALSA seq port sometimes gives error message "invalid argument":
   "Could not connect to ALSA port 0. (Invalid argument)."
@@ -138,18 +138,8 @@ Urgent
    * show/hide instrument widget
    * show/hide playlist widget
 
-* Play song might not work properly. Not playing all blocks.
-
-* Play Song (AltGr+Space) doesn't seem to use LPB.
-
-* Play Song from Curr waits xx seconds before starting to play, where xx is the
-  the time from the start to the current position.
-
 * PausePlayer and StopPausePlayer has not been implemented. Check out
   what they do.
-
-* Sometims the editor still jumps to line 1 briefly when continue play block.
-  It always happens if I don't continue from the place where playing last stopped.
 
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.
@@ -158,11 +148,26 @@ Urgent
   causes patchdata->midi_port to be NULL. There's no need for that, alsaseq should
   create the port anyway, it doesn't have to connect it anyhwere.
 
-* Page up/down should scroll page up/down
-
 * make install. First get rid of /tmp/radium and put everything that's needed for the program into bin/.
   Then "make install" can do:
 
   mkdir -f $(PREFIX)/lib/radium/
   cp -a bin/* $(PREFIX)/lib/radium/ 
   ln -sf $(PREFX)/lib/radium/start.sh $(PREFIX)/bin/radium.
+
+* Standard velocity in midi preferences is not editable.
+
+* Loading file from command line doesn't work.
+
+* ctrl+m causes track 0 to be selected. In addition, PP_Update is not called.
+
+
+
+Can not reproduce
+=================
+
+* Play Song (AltGr+Space) doesn't seem to use LPB.
+
+* Play Song from Curr waits xx seconds before starting to play, where xx is the
+  the time from the start to the current position.
+

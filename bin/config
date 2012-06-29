@@ -1,4 +1,4 @@
-font = Monospace,14,-1,5,50,0,0,0,0,0
+font = Monospace,12,-1,5,50,0,0,0,0,0
 show_text_border = true
 bottom_slider_height = 14
 left_slider_width = 14
@@ -9,8 +9,8 @@ color2 = #f9f9f9
 color3 = #cc4d3e
 color4 = #9b54ff
 color5 = #01990e
-color6 = #ffa399
-color7 = #031814
+color6 = #ffe100
+color7 = #201f22
 color8 = #2d2d2d
 system_color = #d1d3c9
 color9 = #452220

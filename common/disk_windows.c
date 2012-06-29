@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "reallines_proc.h"
 #include "control_proc.h"
 #include "gfx_op_queue_proc.h"
+#include "settings_proc.h"
 
 #include "disk_windows_proc.h"
 
@@ -195,11 +196,17 @@ end:
 }
 
 
+// Sigh. Most of this is a reimplementation of OpenTrackerWindow.
 
 void DLoadWindows(struct Root *newroot,struct Tracker_Windows *window){
 if(window==NULL) return;
 
+	window->textborder=SETTINGS_read_bool("show_text_border",true);
+	window->minnodesize=SETTINGS_read_int("minimum_node_size",20);
+
+#ifdef USE_GFX_OP_QUEUE
         GFX_create_op_queue(window);
+#endif
 
 	if(GFX_CreateVisual(window)!=0){
 		EndProgram();

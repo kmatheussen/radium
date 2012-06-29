@@ -139,6 +139,7 @@ MyWidget::~MyWidget()
 
 
 extern QApplication *qapplication;
+extern bool doquit;
 
 struct Menues{
   struct Menues *up;
@@ -176,6 +177,8 @@ private:
 public slots:
   void clicked() {
     PyRun_SimpleString(python_command);
+    if(doquit==true)
+      qapplication->quit();
   }
 };
 

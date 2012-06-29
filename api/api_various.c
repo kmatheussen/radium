@@ -73,6 +73,17 @@ void minimizeEditorWindow(int windownum){
 	GFX_MinimizeEditorWindow(window);
 }
 
+void toggleFullScreen(int windownum){
+  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+}
+
+void showHideInstrumentWindow(int windownum){
+  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+}
+void showHidePlaylist(int windownum){
+  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+}
+
 void addFX(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   AddFXNodeLineCurrPos(window);

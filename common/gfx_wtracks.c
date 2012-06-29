@@ -417,22 +417,35 @@ void UpdateWTrack(
 						);
 					}
 					break;
-
+#define USE_TRIANGLE 0
 				case TRE_VELLINEEND:
 #define  dasize (int)GetNodeSize(window)
-					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*2,dasize);
+					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
+#if USE_TRIANGLE 
+                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1);
+                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1);
+                                        GFX_P_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1);
+#else
+                                        //GFX_P_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2);
 					GFX_P_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2);
-					GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+					//GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+#endif
 					break;
 				case TRE_VELLINESTART:
-					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*2,dasize);
+					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
+#if USE_TRIANGLE
+                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2);
+                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2);
+                                        GFX_P_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2);
+#else
 					GFX_P_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2);
-					GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+					//GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+#endif
 					break;
 				case TRE_VELLINENODE:
 					GetNodeBox(window,element,&warea2,&within2,&get);
 					GFX_P_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2);
-					GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+					//GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
 					break;
 				case TRE_VELLINE:
 				  if(wtrack->noteshowtype!=TEXTTYPE){

@@ -56,6 +56,9 @@ class LineParser:
       return items[0]
 
     keykey=string.lstrip(string.rstrip(items[1]))
+    if keykey not in keybindingsdict:
+      return items[0]
+    
     key=keybindingsdict[keykey]
     qualifier=""
     code2read={"CTRL_L":"Left Ctrl",

@@ -153,21 +153,24 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   for(int i=0;i<9;i++)
     QColorDialog::setCustomColor(i, mywidget->colors[i].rgb());
 
-  if(QColorDialog::getColor(mywidget->colors[0]).isValid()==false)
-    goto exit;
+  if(QColorDialog::getColor(mywidget->colors[0]).isValid()==false){
+    // "cancel"
+    setEditorColors(mywidget); // read back from file.
+    system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
+  }else{
+    // "ok"
+    SETTINGS_write_string((char*)"system_color",(char*)system_color->name().ascii());
+    system_color->setRgb(QColorDialog::customColor(9));
 
-  SETTINGS_write_string((char*)"system_color",(char*)system_color->name().ascii());
-  system_color->setRgb(QColorDialog::customColor(9));
-
-  for(int i=0;i<9;i++){
-    mywidget->colors[i].setRgb(QColorDialog::customColor(i));
-    char key[500];
-    sprintf(key,"color%d",i);
-    SETTINGS_write_string(key,(char*)mywidget->colors[i].name().ascii());
+    for(int i=0;i<9;i++){
+      mywidget->colors[i].setRgb(QColorDialog::customColor(i));
+      char key[500];
+      sprintf(key,"color%d",i);
+      SETTINGS_write_string(key,(char*)mywidget->colors[i].name().ascii());
+    }
   }
 
   updateAll();
 
- exit:
   is_running = false;
 }

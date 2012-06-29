@@ -60,6 +60,8 @@ void PlayStopReally(bool doit){
 	pc->isplaying=false;
 	pc->initplaying=false;
 
+        printf("PlayStopReally called: %s\n",doit==true?"true":"false");
+
 	while(pc->peq!=NULL) OS_WaitForAShortTime(20);
 
 	StopAllInstruments();

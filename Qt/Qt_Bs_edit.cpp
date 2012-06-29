@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_common_proc.h"
 #include "../common/player_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/gfx_proc.h"
 
 #include "MyWidget.h"
 #include "Qt_colors_proc.h"
@@ -145,6 +146,16 @@ static int get_remove_button_y2(bool stacked, int width, int height){
   return get_remove_button_y1(stacked,width,height) + button_height;
 }
 
+static int num_visitors;
+
+struct ScopedVisitors{
+  ScopedVisitors(){
+    num_visitors++;
+  }
+  ~ScopedVisitors(){
+    num_visitors--;
+  }
+};
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -239,9 +250,15 @@ private slots:
     if(num==-1)
       return;
     printf("num: %d\n",num);
+
+    if(num_visitors>0) // event created internally
+      return;
+
     struct Tracker_Windows *window=getWindowFromNum(-1);
     struct WBlocks *wblock=getWBlockFromNum(-1,num);
-    SelectWBlock(window,wblock);
+    DO_GFX(SelectWBlock(window,wblock));
+    MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+    my_widget->update();
   }
   void blocklist_selected(int num){
     if(num==-1)
@@ -254,6 +271,10 @@ private slots:
       return;
     if(num==(int)playlist.count()-1)
       return;
+
+    if(num_visitors>0) // event created internally
+      return;
+
     PlayStop();
     root->curr_playlist = num;
   }
@@ -267,13 +288,19 @@ private slots:
 static BlockSelector *bs;
 
 QWidget *create_blockselector(){
+  ScopedVisitors v;
+
   bs = new BlockSelector (NULL);
   return bs;
 }
 
-void BS_resizewindow(void){}
+void BS_resizewindow(void){
+  ScopedVisitors v;
+}
 
 void BS_UpdateBlockList(void){
+  ScopedVisitors v;
+
   int num_blocks=root->song->num_blocks;
   struct Blocks *block=root->song->blocks;
   int lokke;
@@ -297,6 +324,8 @@ void BS_UpdateBlockList(void){
 }
 
 void BS_UpdatePlayList(void){
+  ScopedVisitors v;
+
   int pos = bs->playlist.currentItem();//root->curr_playlist;
 
   while(bs->playlist.count()>0)
@@ -321,10 +350,12 @@ void BS_UpdatePlayList(void){
 }
 
 void BS_SelectBlock(struct Blocks *block){
+  ScopedVisitors v;
   bs->blocklist.setSelected(block->l.num, true);
 }
 
 void BS_SelectPlaylistPos(int pos){
+  ScopedVisitors v;
   printf("selectplaylistpos %d\n",pos);
   if(pos==-1)
     return;
@@ -332,6 +363,8 @@ void BS_SelectPlaylistPos(int pos){
 }
 
 void GFX_PlayListWindowToFront(void){
+  ScopedVisitors v;
+
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   QSplitter *splitter = static_cast<QSplitter*>(main_window->centralWidget());
 
@@ -343,6 +376,8 @@ void GFX_PlayListWindowToFront(void){
 }
 
 void GFX_PlayListWindowToBack(void){
+  ScopedVisitors v;
+
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = static_cast<QSplitter*>(main_window->centralWidget());
