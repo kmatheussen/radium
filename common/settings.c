@@ -75,9 +75,16 @@ static int find_linenum(char *key, char **lines){
 }
 
 static char** get_lines(void){
-  char *filename = OS_get_config_filename();
-  FILE *file = fopen(filename, "r");
+  FILE *file = fopen(OS_get_config_filename(), "r");
 
+  if(file==NULL){
+    char *curr_dir = OS_get_current_directory();
+    char *separator = OS_get_directory_separator();
+    char filename[strlen(curr_dir)+strlen(separator)+strlen("config")+10];
+    sprintf(filename,"%s%s%s",curr_dir,separator,"config");
+    file = fopen(filename,"r");
+  }
+                 
   char **ret = talloc(10000 * sizeof(char*));
 
   if(file==NULL)

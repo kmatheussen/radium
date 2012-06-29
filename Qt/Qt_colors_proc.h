@@ -17,9 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_COLORS_PROC_H
 #define QT_COLORS_PROC_H
 
-void setWidgetColors(QWidget *widget);
-void setApplicationColors(QApplication *app);
-void setEditorColors(MyWidget *mywidget);
-void testColorInRealtime(int num, QColor color);
-
+class MyWidget;
+extern void setWidgetColors(QWidget *widget);
+extern void setApplicationColors(QApplication *app);
+extern void setEditorColors(MyWidget *mywidget);
+extern void testColorInRealtime(int num, QColor color);
 #endif

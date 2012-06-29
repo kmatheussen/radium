@@ -138,12 +138,12 @@ static QRgb cusrgb[2*8];
 static QWellArray *custom_well_array = NULL;
 static int curr_colornum=0;
 static QColor curr_color;
-#include "Qt_color_proc.h"
+#include "Qt_colors_proc.h"
 
-static void update_curr_colornum(int row, int col){
+static void update_curr_colornum(void){
   if(custom_well_array!=NULL){
-    int row = custom_well_array->selRow;
-    int col = custom_well_array->selCol;
+    int row = custom_well_array->selectedRow();
+    int col = custom_well_array->selectedColumn();
     if(row!=-1 && col!=-1)
       curr_colornum = col*2 + row;
     printf("setselected %d/%d. Curr color: %d\n",row, col,curr_colornum);
