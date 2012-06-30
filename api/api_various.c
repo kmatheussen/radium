@@ -74,14 +74,17 @@ void minimizeEditorWindow(int windownum){
 }
 
 void toggleFullScreen(int windownum){
-  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_toggleFullScreen(window);
 }
 
-void showHideInstrumentWindow(int windownum){
-  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+void showHideInstrumentWidget(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_showHideInstrumentWidget(window);
 }
 void showHidePlaylist(int windownum){
-  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_showHidePlaylist(window);
 }
 
 void addFX(int windownum){
@@ -383,6 +386,28 @@ void setBlockNoteShowType(int type,int blocknum,int windownum){
     DrawUpAllWTracks(window,wblock);
   }
   
+}
+
+void switchBlockNoteShowType(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	0
+	);
+
+  if(wtrack==NULL) return;
+
+  int type = wtrack->noteshowtype+1;
+  if(type>MAXTYPE)
+    type = 0;
+
+  setBlockNoteShowType(type, blocknum, windownum);
 }
 
 void addMenuMenu(char* name, char* command){

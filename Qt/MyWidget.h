@@ -67,6 +67,8 @@ private:
 #define XOFFSET 5
 #define YOFFSET 2
 
+class QSplitter;
+
 class MyWidget : public QFrame
 {
 public:
@@ -94,6 +96,9 @@ public:
 
     //QFrame *status_frame;
     QLabel *status_label;
+
+    QSplitter *xsplitter;
+    QSplitter *ysplitter;
 
 protected:
     //    bool        event(QEvent *);

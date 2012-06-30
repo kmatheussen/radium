@@ -264,6 +264,8 @@ int radium_main(char *arg){
 
     {
       QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
+      my_widget->xsplitter = xsplitter;
+
       xsplitter->setOpaqueResize(true);
 
       my_widget->reparent(xsplitter, QPoint(0,0), true);
@@ -273,15 +275,13 @@ int radium_main(char *arg){
 
       {
         QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
+        my_widget->ysplitter = ysplitter;
         ysplitter->setOpaqueResize(true);
 
         QWidget *instruments = createInstrumentsWidget();
-        //instruments->show();
 
         xsplitter->reparent(ysplitter, QPoint(0,0), true);
         instruments->reparent(ysplitter, QPoint(0, main_window->height()-100), true);
-
-        //ysplitter->show();
 
         main_window->setCentralWidget(ysplitter);
       }

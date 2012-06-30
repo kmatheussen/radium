@@ -103,10 +103,12 @@ Non-urgent
 * Trying to select a node close to another can sometimes be frustrating. Seems
   to be missing logic for selecting the node line closest to the mouse pointer.
 
-* Clicking track in blockselector doesn't change track.
-  
 * Sometims the editor still jumps to line 1 briefly when continue play block.
   It always happens if I don't continue from the place where playing last stopped.
+
+* If a track is a part of the ranged area, note names will be written, even
+  if using graphical note view. (Alt+t)
+
 
 
 Urgent
@@ -161,6 +163,12 @@ Urgent
 
 * ctrl+m causes track 0 to be selected. In addition, PP_Update is not called.
 
+* Instrument widget size increases after pressing f12.
+
+* Old pixmaps might not be freed when changing editor window size.
+  (That seems very likely. Holding F9 causes X memory usage to increase many megabytes per second)
+
+* F12: Pressing return instead of selecting anything makes program crash.
 
 
 Can not reproduce

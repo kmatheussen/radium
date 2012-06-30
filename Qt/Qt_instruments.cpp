@@ -38,6 +38,8 @@ extern struct Patch *g_currpatch;
 #include "qstring.h"
 #include "qlineedit.h"
 #include "qspinbox.h"
+#include <qsplitter.h>
+#include <qmainwindow.h>
 
 static int num_focus = 0;
 
@@ -376,9 +378,32 @@ QWidget *createInstrumentsWidget(void){
   return instruments_widget;
 }
 
-void GFX_InstrumentWindowToFront(void){
+static void set_widget_height(int height){
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+  QSplitter *splitter = my_widget->ysplitter;
+
+  QValueList<int> currentSizes = splitter->sizes();
+  currentSizes[0] = main_window->height() - height;
+  currentSizes[1] = height;
+  splitter->setSizes(currentSizes);
 }
 
+void GFX_InstrumentWindowToFront(void){
+  set_widget_height(300);
+}
+
+void GFX_InstrumentWindowToBack(void){
+  set_widget_height(0);
+}
+
+
+void GFX_showHideInstrumentWidget(struct Tracker_Windows *window){
+  if(instruments_widget->height() < 10)
+    GFX_InstrumentWindowToFront();
+  else
+    GFX_InstrumentWindowToBack();
+}
 
 // These functions (MIDIGFX_*) seems to be only used by the GTK1 instrument window when the wrong value
 // was received from the GUI, and the original value must be sent back.

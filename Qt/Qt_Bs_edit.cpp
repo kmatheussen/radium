@@ -180,6 +180,7 @@ public:
     , remove_button("<-",this)
     , playlist(this)
     , blocklist(this)
+    , last_shown_width(0)
   {
     button_width = add_button.width();
     button_height = add_button.height();
@@ -221,6 +222,8 @@ public:
   QPushButton remove_button;
   QListBox playlist;
   QListBox blocklist;
+
+  int last_shown_width;
 
 private slots:
 
@@ -362,34 +365,35 @@ void BS_SelectPlaylistPos(int pos){
   bs->playlist.setSelected(pos, true);
 }
 
+static void set_widget_width(int width){
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+  QSplitter *splitter = my_widget->xsplitter;
+
+  QValueList<int> currentSizes = splitter->sizes();
+  bs->last_shown_width = currentSizes[1];
+  currentSizes[0] = main_window->width()-width;
+  currentSizes[1] = width;
+  splitter->setSizes(currentSizes);
+}
+
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-  QSplitter *splitter = static_cast<QSplitter*>(main_window->centralWidget());
-
-  bs->resize(100,bs->height());
-
-  QValueList<int> currentSizes = splitter->sizes();
-  currentSizes[0] = 200;
-  splitter->setSizes(currentSizes);
+  set_widget_width(bs->last_shown_width > 30 ? bs->last_shown_width : 200);
 }
 
 void GFX_PlayListWindowToBack(void){
   ScopedVisitors v;
 
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
-  QSplitter *splitter = static_cast<QSplitter*>(main_window->centralWidget());
-  int width = bs->width();
+  set_widget_width(0);
+}
 
-  my_widget->resize(my_widget->width() + width, my_widget->height());
-
-  bs->resize(0,bs->height());
-
-  QValueList<int> currentSizes = splitter->sizes();
-  currentSizes[0] = width;
-  splitter->setSizes(currentSizes);
+void GFX_showHidePlaylist(struct Tracker_Windows *window){
+  if(bs->width() < 10)
+    GFX_PlayListWindowToFront();
+  else
+    GFX_PlayListWindowToBack();
 }
 
 #include "mQt_Bs_edit.cpp"

@@ -65,8 +65,14 @@ extern LANGSPEC int GFX_ShutDownVisual(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);
+extern LANGSPEC void GFX_PlayListWindowToBack(void);
 extern LANGSPEC void GFX_InstrumentWindowToFront(void);
+extern LANGSPEC void GFX_InstrumentWindowToBack(void);
 extern LANGSPEC void GFX_HelpWindowToFront(void);
+
+extern LANGSPEC void GFX_toggleFullScreen(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_showHideInstrumentWidget(struct Tracker_Windows *window);
+extern LANGSPEC void GFX_showHidePlaylist(struct Tracker_Windows *window);
 
 extern LANGSPEC void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);
