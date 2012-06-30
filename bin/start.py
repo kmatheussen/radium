@@ -14,10 +14,23 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+import sys,os,traceback
+
+try:
+    print 0
+    sys.path.append(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),
+                                 "packages/dvarrazzo-py-setproctitle-c35a1bf/build/lib."+str(sys.version_info[0])))
+    print 1
+    print sys.path
+    print 2
+    import setproctitle
+    setproctitle.setproctitle('radium')
+except:
+    print "Unable to set proctitle to radium"
+    traceback.print_exc()
 
 
-
-import radium,keybindingsparser,sys,traceback
+import radium,keybindingsparser
 
 from common import *
 
@@ -93,8 +106,22 @@ import eventreceiverparser_generated
 #import os
 #os.system("/usr/bin/givertcap")
 
+
+import os
+pid = os.getpid()
+
+if os.fork()==0:
+    import signal
+    def signal_handler(signalnum, frame):
+        print "You pressed Ctrl+C. As a work-around, I'm going to kill radium with signal.SIGABRT."
+        os.kill(pid,signal.SIGABRT)
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.pause()
+
+
 if len(sys.argv)>2:
     ra.init_radium(sys.argv[2],gotKey)
 else:
     ra.init_radium("",gotKey)
-
+    
