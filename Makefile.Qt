@@ -39,7 +39,7 @@ BUILDTYPE=DEBUG
 
 
 # Dont change these, they are correct.
-GCDIR=/tmp/radium/gc-7.2
+GCDIR=bin/packages/gc-7.2
 PYTHONEXE=${PYQTEXE}
 #PYTHONEXE=/tmp/radium/bin/python
 
@@ -153,7 +153,7 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 #-------------------KARSJK-------------------------------
 
 
-all: check_dependencies /tmp/radium radium/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
+all: check_dependencies /tmp/radium bin/packages/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
 	@echo "Compilation OK".
 
 clean:
@@ -183,9 +183,9 @@ run-gdb:
 /tmp/radium:
 	sh ./link_tmp_radium.sh
 
-radium/deletemetorebuild: radium/build.sh
+bin/packages/deletemetorebuild: bin/packages/build.sh
 	echo "\
-	cd radium;\
+	cd bin/packages;\
 	./build.sh $(PYTHONEXE) no\
 	" >makescript.sh
 	sh makescript.sh

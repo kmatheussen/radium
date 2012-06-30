@@ -73,6 +73,12 @@ cd xmessage-1.0.3
 make
 cd ..
 
+#http://code.google.com/p/py-setproctitle/
+tar xvzf  dvarrazzo-py-setproctitle-version-1.1.6-0-gc35a1bf.tar.gz
+cd dvarrazzo-py-setproctitle-c35a1bf
+make
+cd ..
+
 ln -sf $1 /tmp/radium/bin/python
 
 touch deletemetorebuild
