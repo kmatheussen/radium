@@ -342,10 +342,12 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
 
   //  this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
   //this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
-  this->qpixmap=new QPixmap(this->width(),this->height());
+  //this->qpixmap=new QPixmap(this->width(),this->height());
+  this->qpixmap->resize(this->width(), this->height());
   this->qpixmap->fill( this->colors[0] );		/* grey background */
 
-  this->cursorpixmap=new QPixmap(this->width(),this->height());
+  //this->cursorpixmap=new QPixmap(this->width(),this->height());
+  this->cursorpixmap->resize(this->width(), this->height());
   this->cursorpixmap->fill( this->colors[7] );		/* the xored background color for the cursor.*/
 
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
@@ -358,7 +360,8 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   paint.drawLine(this->width()-99,0,this->width()-99,this->height());
 #endif
 
-  update();
+  //update();
+  repaint(); // Flicker. :-( TODO: Something's not working with update(). Not everything is updated.
 }
 
 void MyWidget::closeEvent(QCloseEvent *ce){

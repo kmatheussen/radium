@@ -399,7 +399,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
 }
 
 struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name){
-  if(name==NULL){
+  while(name==NULL){
     name = MIDIrequestPortName(window,reqtype);
   }
 

@@ -197,6 +197,7 @@ void Ptask2Mtask(void){
 #include "qwidget.h"
 #include "qlistbox.h"
 
+
 //#include "google/profiler.h"
 
 void start_blockselector();
@@ -209,7 +210,7 @@ int radium_main(char *arg){
   int argc=1;
   char *argv[2];
 
-  argv[0] = strdup("Radium");
+  argv[0] = strdup("radium");
   argv[1] = NULL;
 
   //GC_dont_gc = 1;

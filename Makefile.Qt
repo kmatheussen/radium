@@ -153,8 +153,11 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 #-------------------KARSJK-------------------------------
 
 
-all: check_dependencies /tmp/radium bin/packages/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
+all: check_dependencies bin/packages/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
 	@echo "Compilation OK".
+
+very_clean: clean
+	cd bin/packages && ./buildclean.sh
 
 clean:
 	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h
@@ -179,9 +182,6 @@ run-gdb:
 #	" >makeclean.sh
 #	sh makeclean.sh
 #	rm makeclean.sh
-
-/tmp/radium:
-	sh ./link_tmp_radium.sh
 
 bin/packages/deletemetorebuild: bin/packages/build.sh
 	echo "\

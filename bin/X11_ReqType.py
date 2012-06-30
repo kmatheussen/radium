@@ -39,7 +39,7 @@ def GFX_OpenReqType(width,height,title):
                 s.close()
                 s=None
                 
-    xterm_process = subprocess.Popen(["/tmp/radium/bin/xterm",
+    xterm_process = subprocess.Popen(["packages/bin/xterm",
                                       "-geometry",str(width)+"x"+str(height)+"+100+100",
                                       "-title","\""+title+"\"",
                                       "-e","python","X11_ReqType.py",str(port)])

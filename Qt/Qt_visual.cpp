@@ -327,11 +327,9 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   tvisual->os_visual.widget=mywidget;
 
-  if(mywidget->qpixmap==NULL){
-    mywidget->qpixmap=new QPixmap(mywidget->width(),mywidget->height());
-    mywidget->qpixmap->setOptimization(QPixmap::BestOptim);
-    mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
-  }
+  mywidget->qpixmap=new QPixmap(mywidget->width(),mywidget->height());
+  mywidget->qpixmap->setOptimization(QPixmap::BestOptim);
+  mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
 
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
   mywidget->cursorpixmap->setOptimization(QPixmap::BestOptim);

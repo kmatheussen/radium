@@ -87,7 +87,7 @@ char **MIDI_getPortNames(int *retsize){
 	  num++;
 	  printf("gakk %s\n", snd_seq_port_info_get_name(pinfo));
 	  if(num==dasretsize){
-	    fprintf(stderr,"To many midi ports. Contact developers to increase buffer.\n");
+            RError("Too many midi ports.");
 	    goto endwhile;
 	  }
 	}

@@ -109,6 +109,8 @@ Non-urgent
 * If a track is a part of the ranged area, note names will be written, even
   if using graphical note view. (Alt+t)
 
+* jack midi
+
 
 
 Urgent
@@ -164,9 +166,6 @@ Urgent
 * ctrl+m causes track 0 to be selected. In addition, PP_Update is not called.
 
 * Instrument widget size increases after pressing f12.
-
-* Old pixmaps might not be freed when changing editor window size.
-  (That seems very likely. Holding F9 causes X memory usage to increase many megabytes per second)
 
 * F12: Pressing return instead of selecting anything makes program crash.
 
