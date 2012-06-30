@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/nsmtracker.h"
+#include "../common/OS_settings_proc.h"
+
 #include "../common/OS_error_proc.h"
 
 #include <stdio.h>
@@ -54,8 +56,10 @@ static void show_message(int type, char *message){
   {
     char command[1000];
     sprintf(command,
-            "/tmp/radium/xmessage-1.0.3/xmessage -buttons continue:0,quit:1,\"ignore warnings and errors for two seconds\":2,\"ignore warnings and errors for the rest of the program\":3"
+            "%s/packages/"
+            "xmessage-1.0.3/xmessage -buttons continue:0,quit:1,\"ignore warnings and errors for two seconds\":2,\"ignore warnings and errors for the rest of the program\":3"
             "-nearmouse -print -default yes \"%s: %s.\"",
+            OS_get_current_directory(),
             typestring,
             message);
 

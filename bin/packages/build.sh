@@ -2,9 +2,12 @@
 
 set -e
 
-rm -f /tmp/radium
-ln -s `pwd` /tmp/radium
-
+#rm -f /tmp/radium
+#ln -s `pwd` /tmp/radium
+PWD=`pwd`
+PREFIX=`dirname $PWD/$0`
+#echo $PREFIX
+#exit
 
 #http://www.python.org
 #tar xvzf Python-2.2.2.tgz
@@ -32,7 +35,7 @@ if test $2 = "yes" ; then
     #http://www.daa.com.au/~james/software/libglade/
     tar xvzf libglade-0.17.tar.gz
     cd libglade-0.17
-    ./configure --prefix=/tmp/radium
+    ./configure --prefix=$PREFIX
     make
     make install
     cd ..
@@ -42,10 +45,10 @@ if test $2 = "yes" ; then
     tar xvzf pygtk-0.6.11.tar.gz
     cd pygtk-0.6.11
     export PYTHON=$1
-    ./configure --prefix=/tmp/radium --with-libglade-config=/tmp/radium/bin/libglade-config
+    ./configure --prefix=$PREFIX --with-libglade-config=$PREFIX/bin/libglade-config
     make
     make install
-    sed -i s/" as"/" as2"/ /tmp/radium/lib/python2.6/site-packages/gtk-1.2/gtk.py
+    sed -i s/" as"/" as2"/ $PREFIX/lib/python2.6/site-packages/gtk-1.2/gtk.py
     cd ..
 fi
 
@@ -53,7 +56,7 @@ fi
 #http://dickey.his.com/xterm/xterm.htlm
 tar xvzf xterm.tar.gz
 cd xterm-179
-./configure --prefix=/tmp/radium --x-includes=/usr/X11R6/include --x-libraries=/usr/X11R6/lib
+./configure --prefix=$PREFIX --x-includes=/usr/X11R6/include --x-libraries=/usr/X11R6/lib
 make
 strip xterm
 make install
@@ -63,13 +66,13 @@ cd ..
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 tar xvzf gc.tar.gz
 cd gc-7.2
-./configure --prefix=/tmp/radium
+./configure --prefix=$PREFIX
 make
 cd ..
 
 tar xvjf xmessage-1.0.3.tar.bz2
 cd xmessage-1.0.3
-./configure --prefix=/tmp/radium
+./configure --prefix=$PREFIX
 make
 cd ..
 
@@ -79,7 +82,7 @@ cd dvarrazzo-py-setproctitle-c35a1bf
 make
 cd ..
 
-ln -sf $1 /tmp/radium/bin/python
+ln -sf $1 $PREFIX/bin/python
 
 touch deletemetorebuild
 
