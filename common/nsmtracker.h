@@ -618,7 +618,7 @@ struct WBlocks{
 	int tempotrackonoff;				/* 1=on, 0=off */
 	int temponodetrackonoff;		/* 1=on, 0=off */
 
-	TBox a;
+	TBox a; // everything
 //	int x,y,x2,y2;						/* GFX area. */
 
 	TBox t;

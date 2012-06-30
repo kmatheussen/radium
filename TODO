@@ -111,6 +111,10 @@ Non-urgent
 
 * jack midi
 
+* PausePlayer and StopPausePlayer has not been implemented. Check out
+  what they do.
+
+
 
 
 Urgent
@@ -142,9 +146,6 @@ Urgent
    * show/hide instrument widget
    * show/hide playlist widget
 
-* PausePlayer and StopPausePlayer has not been implemented. Check out
-  what they do.
-
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.
 
@@ -167,7 +168,7 @@ Urgent
 
 * Instrument widget size increases after pressing f12.
 
-* F12: Pressing return instead of selecting anything makes program crash.
+* Keyboard up/downs must be reset after loading.
 
 
 Can not reproduce

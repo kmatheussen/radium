@@ -262,6 +262,12 @@ void UpdateWTrack(
 	within.x1=warea.x;
 	within.x2=warea.x2;
 
+#if 0
+        // hack. This function should not be called when this is true.
+        if(wtrack->x >= window->width)
+          return;
+#endif
+
 	NotesTexts=wtrack->notelength==3?NotesTexts3:NotesTexts2;
 
 	if(wtrack->l.num==wblock->left_track){

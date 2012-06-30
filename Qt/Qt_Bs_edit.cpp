@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/gfx_proc.h"
+#include "../common/settings_proc.h"
 
 #include "MyWidget.h"
 #include "Qt_colors_proc.h"
@@ -180,7 +181,7 @@ public:
     , remove_button("<-",this)
     , playlist(this)
     , blocklist(this)
-    , last_shown_width(0)
+    , last_shown_width(SETTINGS_read_int((char*)"blocklist_width",0))
   {
     button_width = add_button.width();
     button_height = add_button.height();
@@ -206,7 +207,7 @@ public:
   }
 
   void resizeEvent(QResizeEvent *qresizeevent){
-    fprintf(stderr,"I am resized\n");
+    //fprintf(stderr,"I am resized\n");
 
     int width = this->width();
     int height = this->height();
@@ -385,6 +386,9 @@ void GFX_PlayListWindowToFront(void){
 
 void GFX_PlayListWindowToBack(void){
   ScopedVisitors v;
+
+  if(bs->width() > 30)
+    SETTINGS_write_int((char*)"blocklist_width",bs->width());
 
   set_widget_width(0);
 }

@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "trackreallineelements_proc.h"
 #include "reallines_proc.h"
 #include "windows_proc.h"
-
+#include "wblocks_proc.h"
+#include "OS_visual_input.h"
 
 
 void IncFontSize_CurrPos(
@@ -40,9 +41,11 @@ void IncFontSize_CurrPos(
 
 	//	while(FreeANotShowedWBlockTREelement());
 
-	window->fontheight+=incnum;
+	//window->fontheight+=incnum;
+        GFX_IncFontSize(window, incnum);
 	//	UpdateReallinesDependens(window,wblock);
 
+        UpdateAllWBlockWidths(window);
 	DrawUpTrackerWindow(window);
 }
 

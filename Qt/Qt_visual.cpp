@@ -244,8 +244,8 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
     tvisual->os_visual.main_window = g_main_window;
     tvisual->os_visual.widget = g_mywidget;
 
-    tvisual->width=g_mywidget->width()-100;
-    tvisual->height=g_mywidget->height()-50;
+    tvisual->width=g_mywidget->get_editor_width();
+    tvisual->height=g_mywidget->get_editor_height();
     
     //g_mywidget->qpixmap=new QPixmap(g_mywidget->width(),mywidget->height());
     //g_mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
@@ -321,8 +321,8 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
  if(tvisual->height==0 || tvisual->width==0){
     tvisual->x=0;
     tvisual->y=0;
-    tvisual->width=mywidget->width()-100;
-    tvisual->height=mywidget->height()-50;
+    tvisual->width=mywidget->get_editor_width();
+    tvisual->height=mywidget->get_editor_height();
   }
 
   tvisual->os_visual.widget=mywidget;
@@ -374,6 +374,14 @@ char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   return talloc_strdup((char*)mywidget->font.toString().ascii());
 }
 
+void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  if(mywidget->font.pixelSize()!=-1)
+    mywidget->font.setPixelSize(mywidget->font.pixelSize()+pixels);
+  else
+    mywidget->font.setPointSize(mywidget->font.pointSize()+pixels);
+  setFontValues(tvisual,mywidget->font);
+}
 
 void QGFX_bouncePoints(MyWidget *mywidget){
   for(int lokke=0;lokke<8;lokke++){

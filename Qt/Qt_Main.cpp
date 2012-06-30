@@ -289,6 +289,7 @@ int radium_main(char *arg){
     }
 
     qapplication->setMainWidget(main_window);
+    GFX_PlayListWindowToFront(); // To provoce setting width to 'blocklist_width'
     main_window->show();
   }
 

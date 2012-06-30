@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC char *GFX_SelectEditFont(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels);
 
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title);
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);

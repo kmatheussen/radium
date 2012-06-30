@@ -395,6 +395,8 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   int num_ports;
   char **portnames=MIDI_getPortNames(&num_ports);
   int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
+  if(sel==-1)
+    return NULL;
   return portnames[sel];
 }
 

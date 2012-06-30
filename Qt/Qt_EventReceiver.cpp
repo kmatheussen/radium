@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/blts_proc.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
+#include "../common/gfx_proc.h"
 
 #include "../common/player_proc.h"
 #include "../common/gfx_op_queue_proc.h"
@@ -90,14 +91,14 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 #ifdef USE_QT4
   static int times = 0;
   if(GFX_get_op_queue_size(this->window) ==0) {
-    Resize_resized(this->window,this->width()-100,this->height()-50,false);
+    Resize_resized(this->window,this->get_editor_width(),this->get_editor_height(),false);
     fprintf(stderr," painting up everything, %d\n",times++);
   }
 #endif
 
 #ifdef USE_QT3
   if(e->erased())
-     Resize_resized(this->window,this->width()-100,this->height()-50,false);
+    Resize_resized(this->window,this->get_editor_width(),this->get_editor_height(),false);
 #endif
 
   if(GFX_get_op_queue_size(this->window) > 0){
@@ -344,24 +345,21 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   //this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
   //this->qpixmap=new QPixmap(this->width(),this->height());
   this->qpixmap->resize(this->width(), this->height());
-  this->qpixmap->fill( this->colors[0] );		/* grey background */
+  //this->qpixmap->fill( this->colors[0] );		/* grey background */
 
   //this->cursorpixmap=new QPixmap(this->width(),this->height());
   this->cursorpixmap->resize(this->width(), this->height());
-  this->cursorpixmap->fill( this->colors[7] );		/* the xored background color for the cursor.*/
+  //this->cursorpixmap->fill( this->colors[7] );		/* the xored background color for the cursor.*/
 
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
-  Resize_resized(this->window,this->width()-100,this->height(),false);
 
 #if 0
-  // What's this?
-  QPainter paint( this );
-  paint.setPen(this->colors[6]);
-  paint.drawLine(this->width()-99,0,this->width()-99,this->height());
+  // TODO: Something's not working with update(). Parts of the screen are not cleared. Even explicitly painting both the widget itself and qpixmap doesn't help. It's really really weird. Does Qt cliprect updates when the widget is resized? In case, why, and where?
+  Resize_resized(this->window,this->width()-XOFFSET,this->height()-YOFFSET,false);
+  update();
+#else
+  repaint(); // Workaround. Flicker. :-(
 #endif
-
-  //update();
-  repaint(); // Flicker. :-( TODO: Something's not working with update(). Not everything is updated.
 }
 
 void MyWidget::closeEvent(QCloseEvent *ce){

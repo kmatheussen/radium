@@ -100,6 +100,14 @@ public:
     QSplitter *xsplitter;
     QSplitter *ysplitter;
 
+    int get_editor_width(){
+      return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (could probably be found be reading frame border width/etc.)
+    }
+
+    int get_editor_height(){
+      return this->height()-(2*YOFFSET)-1; // Fine tuned. No logical reason behind it. (could probably be found be reading frame border width/etc.)
+    }
+
 protected:
     //    bool        event(QEvent *);
     void	paintEvent( QPaintEvent * );
