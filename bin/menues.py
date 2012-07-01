@@ -57,7 +57,9 @@ class LineParser:
 
     keykey=string.lstrip(string.rstrip(items[1]))
     if keykey not in keybindingsdict:
-      return items[0]
+      ret = string.rstrip(items[0])
+      commands[string.lstrip(ret)] = string.lstrip(items[1])
+      return ret
     
     key=keybindingsdict[keykey]
     qualifier=""

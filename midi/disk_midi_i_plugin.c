@@ -30,8 +30,7 @@ void SavePatchData(void *pd){
 	struct PatchData *patchdata=(struct PatchData *)pd;
 DC_start("PATCHDATA");
 
-	if(patchdata->midi_port!=NULL)
-		DC_SSS("clustername",patchdata->midi_port->name);
+        DC_SSS("clustername",patchdata->midi_port->name);
 	DC_SSI("channel",patchdata->channel);
 	DC_SSI("preset",patchdata->preset);
 	DC_SSI("LSB",patchdata->LSB);

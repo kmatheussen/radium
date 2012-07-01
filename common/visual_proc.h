@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
+extern LANGSPEC void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval);
 extern LANGSPEC void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command);
 extern LANGSPEC void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual);

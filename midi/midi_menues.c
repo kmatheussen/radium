@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/visual_proc.h"
 
+#include "midi_menues_proc.h"
+
 
 
 extern struct Patch *g_currpatch;
@@ -39,8 +41,9 @@ extern struct Patch *g_currpatch;
 
 
 
-int CPPWindowResetAllControllers( void )
+int MIDIResetAllControllers( void )
 {
+  printf("midiresetallcontrollers called\n");
 	/* routine when (sub)item "Reset All Controllers" is selected. */
 
 	APP_GetVars()
@@ -62,7 +65,7 @@ int CPPWindowResetAllControllers( void )
 	return 0;
 }
 
-int CPPWindowLocalKeyboardOn( void )
+int MIDILocalKeyboardOn( void )
 {
 	/* routine when (sub)item "Local Keyboard On" is selected. */
 
@@ -82,7 +85,7 @@ int CPPWindowLocalKeyboardOn( void )
 	return 0;
 }
 
-int CPPWindowLocalKeyboardOff( void )
+int MIDILocalKeyboardOff( void )
 {
 	/* routine when (sub)item "Local Keyboard Off" is selected. */
 
@@ -102,7 +105,7 @@ int CPPWindowLocalKeyboardOff( void )
 	return 0;
 }
 
-int CPPWindowAllNotesOff( void )
+int MIDIAllNotesOff( void )
 {
 	/* routine when (sub)item "All Notes Off" is selected. */
 
@@ -123,7 +126,7 @@ int CPPWindowAllNotesOff( void )
 }
 
 
-int CPPWindowAllSoundsOff( void )
+int MIDIAllSoundsOff( void )
 {
 	/* routine when (sub)item "All Sounds Off" is selected. */
 
@@ -148,7 +151,8 @@ extern struct MidiNode *midinode;
 extern struct Root *root;
 extern char *inlinkname;
 
-int CPPWindowSetInputLink( void ){
+int MIDISetInputPort( void ){
+  RWarning("Midi input is not implemented for alsaseq yet.");
 #if 0
 	char *clustername;
 	ReqType reqtype;
@@ -191,7 +195,7 @@ int CPPWindowSetInputLink( void ){
 
 extern bool useOx90ForNoteOff;
 
-int CPPWindowOx90ForNoteOff( void ){
+int MIDIOx90ForNoteOff( void ){
 	useOx90ForNoteOff=useOx90ForNoteOff==false?true:false;
 	return 0;
 }

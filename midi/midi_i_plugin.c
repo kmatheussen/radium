@@ -68,9 +68,6 @@ void MyGoodPutMidi(
                    int data2,
                    int maxbuff
 ){
-  if(midi_port==NULL)
-    return;
-
   GoodPutMidi(midi_port->port,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)),(uint32_t)maxbuff);
   OnOffNotesTrack(midi_port,cc,data1,data2);
 }
@@ -81,9 +78,6 @@ void MyMyPutMidi(
                  int data1,
                  int data2
 ){
-        if(midi_port==NULL)
-          return;
-
 	PutMidi(midi_port->port,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)));	
 	OnOffNotesTrack(midi_port,cc,data1,data2);
 }
@@ -102,9 +96,6 @@ void MyPutMidi(
                int maxbuff,
                int skip
 ){
-        if(midi_port==NULL)
-          return;
-
 	if(cc<0x80 || cc>0xef || (data1&0xff)>0x7f || (data2&0xff)>0x7f){
 		RError("Error. Faulty midi-message. status: %x, data1: %x, data2: %x\n",cc,data1,data2);
 		return;
@@ -128,9 +119,6 @@ void MIDIplaynote(int notenum,
         struct MidiPort *midi_port = patchdata->midi_port;
 	const int channel=patchdata->channel;
 	int maxbuf=70;
-
-        if(midi_port==NULL)
-          return;
 
 	/* Scale the velocity to the volume set by the track.*/
 	if(track->volumeonoff){
@@ -304,10 +292,6 @@ char *MIDIGetPatchData(struct Patch *patch, char *key){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
-    if(getPatchData(patch)->midi_port==NULL) {
-      RWarning("port has not been set");
-      return "";
-    }
     return getPatchData(patch)->midi_port->name;
 
   }else if(!strcasecmp(key,"channel")){
@@ -396,6 +380,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   return portnames[sel];
 }
 
+// This function must never return NULL.
 struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name){
   while(name==NULL){
     name = MIDIrequestPortName(window,reqtype);
@@ -442,7 +427,6 @@ int MIDIgetPatch(
         MIDI_InitPatch(patch);
 
 	struct MidiPort *midi_port = MIDIgetPort(window,reqtype,NULL);
-	if(midi_port==NULL) return PATCH_FAILED;
 
 	struct PatchData *patchdata=getPatchData(patch);
         patchdata->midi_port = midi_port;
@@ -488,16 +472,15 @@ void MIDIStopPlaying(struct Instruments *instrument){
   while(patch!=NULL){
     struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
     struct MidiPort *midi_port = patchdata->midi_port;
+    int ch;
 
-    if(midi_port!=NULL) {
-      int ch;
-      for(ch=0;ch<16;ch++){
-        int notenum;
-        for(notenum=0;notenum<128;notenum++)
-          while(midi_port->num_ons[ch][notenum] > 0)
-            R_PutMidi3(midi_port,0x80|ch,notenum,0x00);
-      }
+    for(ch=0;ch<16;ch++){
+      int notenum;
+      for(notenum=0;notenum<128;notenum++)
+        while(midi_port->num_ons[ch][notenum] > 0)
+          R_PutMidi3(midi_port,0x80|ch,notenum,0x00);
     }
+
     patch=NextPatch(patch);
   }
 }

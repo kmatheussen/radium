@@ -149,34 +149,48 @@ struct Menues{
 
 static struct Menues *current_menu = NULL;
 
-
 class MenuItem : public QWidget
 {
     Q_OBJECT
 public:
-  MenuItem(const char *name, const char *python_command, Q3PopupMenu *menu = NULL){
+  MenuItem(const char *name, const char *python_command, Q3PopupMenu *menu = NULL, bool checkable = false, int checkval = 0){
     this->python_command = strdup(python_command);
+    this->checkable = checkable;
+    this->checkval = checkval;
+
     if(menu!=NULL) {
       if(current_menu->base!=NULL){
-        current_menu->base->insertItem(name, menu, 0);
-        current_menu->base->connectItem(0, this, SLOT(clicked()));
+        int id = current_menu->base->insertItem(name, menu);
+        current_menu->base->connectItem(id, this, SLOT(clicked()));
       }else{
-        current_menu->menu->insertItem(name, menu, 0);
-        current_menu->menu->connectItem(0, this, SLOT(clicked()));
+        int id = current_menu->menu->insertItem(name, menu);
+        current_menu->menu->connectItem(id, this, SLOT(clicked()));
       }
-    }else
-      if(current_menu->base!=NULL)
+    }else{
+      if(current_menu->base!=NULL){
         current_menu->base->insertItem(name, this, SLOT(clicked()));
-      else
-        current_menu->menu->insertItem(name, this, SLOT(clicked()));
+      }else{
+        int id = current_menu->menu->insertItem(name, this, SLOT(clicked()));
+        if(checkable==true)
+          current_menu->menu->setItemChecked(id, checkval);
+      }
+    }
   }
 
 private:
   const char *python_command;
+  bool checkable;
+  int checkval;
 
 public slots:
   void clicked() {
-    PyRun_SimpleString(python_command);
+    if(checkable==true){
+      char temp[500];
+      this->checkval = this->checkval==1?0:1; // switch value.
+      sprintf(temp,python_command,checkval?"1":"0");
+      PyRun_SimpleString(temp);
+    }else
+      PyRun_SimpleString(python_command);
     if(doquit==true)
       qapplication->quit();
   }
@@ -186,6 +200,10 @@ public slots:
 
 void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command){
   new MenuItem(name, python_command);
+}
+
+void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval){
+  new MenuItem(name, python_command, NULL, true, checkval);
 }
 
 void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){

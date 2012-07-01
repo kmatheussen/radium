@@ -136,9 +136,6 @@ Urgent
 
 * Must check what happens if there are no alsaseq ports.
 
-* amiga/midiproperties/amiga_instrprop_camd_menues.c seems to contain mostly
-  portable code. Should be moved to midi/ .
-
 * Midi stuff to menues.
 
 * When changing values in the instrument widget, MIDI signals should be sent.
@@ -166,9 +163,6 @@ Urgent
 * When zooming in a lot, the zoomlevel and linenumber areas are wrongly calculated. Overlapping, etc.
 
 * Midi input might not have been implemented.
-
-* Area between lowest line and bottom slider is not cleared in drawuptrackerwindow.
-  (code doing that was placed in Resize_resized)
 
 * Can several BLT_* macros be called in a row without unwinding the gfx_op queue?
 

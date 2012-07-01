@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_menues_proc.h"
 #include "../common/patch_proc.h"
 
 #include "api_common_proc.h"
@@ -154,3 +155,27 @@ char *getInstrumentData(int instrument_num, char *key) {
   return instrument->getPatchData(patch, key);
 }
 
+void midi_resetAllControllers(void){
+  printf("midi_resetAllControllers called\n");
+  MIDIResetAllControllers();
+}
+
+void midi_localKeyboardOn(void){
+  MIDILocalKeyboardOn();
+}
+
+void midi_localKeyboardOff(void){
+  MIDILocalKeyboardOff();
+}
+
+void midi_allNotesOff(void){
+  MIDIAllNotesOff();
+}
+
+void midi_allSoundsOff(void){
+  MIDIAllSoundsOff();
+}
+
+void midi_setInputPort(void){
+  MIDISetInputPort();
+}

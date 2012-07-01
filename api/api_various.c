@@ -425,6 +425,11 @@ void addMenuItem(char* name, char* command){
   GFX_AddMenuItem(window, name, command);
 }
 
+void addCheckableMenuItem(char* name, char* command, int checkval){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_AddCheckableMenuItem(window, name, command, checkval==1?true:false);
+}
+
 void addMenuSeparator(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuSeparator(window);
