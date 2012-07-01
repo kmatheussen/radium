@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/playerclass.h"
+#include "../common/settings_proc.h"
 
 #include "midi_i_plugin.h"
 
@@ -372,21 +373,16 @@ static struct PatchData *createPatchData(void) {
     patchdata->ccsonoff[lokke2]=false;
   }
 
+  {
+    int num_ports;
+    char *portname = "default";
+    char **portnames=MIDI_getPortNames(&num_ports);
+    if(num_ports>0)
+      portname=portnames[0];
+    patchdata->midi_port = MIDIgetPort(NULL,NULL,portname);
+  }
+
   return patchdata;
-}
-
-void MIDI_InitPatch(struct Patch *patch) {
-  patch->playnote=MIDIplaynote;
-  patch->stopnote=MIDIstopnote;
-  patch->changevelocity=MIDIchangevelocity;
-  patch->closePatch=MIDIclosePatch;
-  patch->changeTrackPan=MIDIchangeTrackPan;
-
-  patch->patchdata = createPatchData();
-
-  patch->minvel=0;
-  patch->maxvel=MIDIgetMaxVelocity(NULL);
-  patch->standardvel=MIDIgetStandardVelocity(NULL);
 }
 
 static struct MidiPort *g_midi_ports = NULL;
@@ -421,6 +417,20 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
   g_midi_ports = midi_port;
 
   return midi_port;
+}
+
+void MIDI_InitPatch(struct Patch *patch) {
+  patch->playnote=MIDIplaynote;
+  patch->stopnote=MIDIstopnote;
+  patch->changevelocity=MIDIchangevelocity;
+  patch->closePatch=MIDIclosePatch;
+  patch->changeTrackPan=MIDIchangeTrackPan;
+
+  patch->patchdata = createPatchData();
+
+  patch->minvel=0;
+  patch->maxvel=MIDIgetMaxVelocity(NULL);
+  patch->standardvel=MIDIgetStandardVelocity(NULL);
 }
 
 int MIDIgetPatch(
@@ -498,6 +508,9 @@ char *inlinkname=NULL;
 
 
 int MIDIinitInstrumentPlugIn(struct Instruments *instrument){
+
+  useOx90ForNoteOff = SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true;
+  SETTINGS_write_int("use_0x90_for_note_off",useOx90ForNoteOff==true?1:0);
 
   if(MIDI_New(instrument)==false){
     return INSTRUMENT_FAILED;
