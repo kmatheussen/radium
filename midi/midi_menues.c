@@ -23,22 +23,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include "../nsmtracker.h"
+#include "../common/nsmtracker.h"
 
-#include <midi/camd.h>
-#include "../plug-ins/minicamd_proc.h"
-#include "../plug-ins/camd_i_plugin.h"
-#include "../plug-ins/camd_i_plugin_proc.h"
-#include "../plug-ins/camd_get_clustername_proc.h"
-#include "../../common/visual_proc.h"
+#include "midi_i_plugin.h"
+#include "midi_i_plugin_proc.h"
+
+#include "../common/visual_proc.h"
 
 
-#include "Amiga_instrprop.h"
 
+extern struct Patch *g_currpatch;
 
-extern struct Patch *currpatch;
-
-#define APP_GetVars() struct Patch *patch=currpatch;
+#define APP_GetVars() struct Patch *patch=g_currpatch;
 
 
 
@@ -49,18 +45,18 @@ int CPPWindowResetAllControllers( void )
 
 	APP_GetVars()
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 
 	for(channel=0;channel<16;channel++){
-		R_PutMidi3(mymidilink,0xb0|channel,121,0);
-		mymidilink->channelspesific[channel].MSB=-1;
-		mymidilink->channelspesific[channel].LSB=-1;
-		mymidilink->channelspesific[channel].preset=-1;
+		R_PutMidi3(midi_port,0xb0|channel,121,0);
+		midi_port->MSB[channel]=-1;
+		midi_port->LSB[channel]=-1;
+		midi_port->preset[channel]=-1;
 	}
 
 	return 0;
@@ -72,15 +68,15 @@ int CPPWindowLocalKeyboardOn( void )
 
 	APP_GetVars()
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 
 	for(channel=0;channel<16;channel++){
-		R_PutMidi3(mymidilink,0xb0|channel,122,127);
+		R_PutMidi3(midi_port,0xb0|channel,122,127);
 	}
 
 	return 0;
@@ -92,15 +88,15 @@ int CPPWindowLocalKeyboardOff( void )
 
 	APP_GetVars()
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 
 	for(channel=0;channel<16;channel++){
-		R_PutMidi3(mymidilink,0xb0|channel,122,0);
+		R_PutMidi3(midi_port,0xb0|channel,122,0);
 	}
 
 	return 0;
@@ -112,15 +108,15 @@ int CPPWindowAllNotesOff( void )
 
 	APP_GetVars()
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 
 	for(channel=0;channel<16;channel++){
-		R_PutMidi3(mymidilink,0xb0|channel,123,0);
+		R_PutMidi3(midi_port,0xb0|channel,123,0);
 	}
 
 	return 0;
@@ -133,15 +129,15 @@ int CPPWindowAllSoundsOff( void )
 
 	APP_GetVars()
 	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink;
+	struct MidiPort *midi_port;
 	int channel;
 
 	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
-	mymidilink=patchdata->mymidilink;
+	midi_port=patchdata->midi_port;
 
 	for(channel=0;channel<16;channel++){
-		R_PutMidi3(mymidilink,0xb0|channel,120,0);
+		R_PutMidi3(midi_port,0xb0|channel,120,0);
 	}
 
 	return 0;
@@ -153,6 +149,7 @@ extern struct Root *root;
 extern char *inlinkname;
 
 int CPPWindowSetInputLink( void ){
+#if 0
 	char *clustername;
 	ReqType reqtype;
 	FILE *file;
@@ -188,7 +185,7 @@ int CPPWindowSetInputLink( void ){
 		fprintf(file,"%s",inlinkname);
 		fclose(file);
 	}
-
+#endif
 	return 0;
 }
 
@@ -198,9 +195,6 @@ int CPPWindowOx90ForNoteOff( void ){
 	useOx90ForNoteOff=useOx90ForNoteOff==false?true:false;
 	return 0;
 }
-
-
-
 
 
 

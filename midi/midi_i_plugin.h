@@ -25,7 +25,7 @@ struct MidiPort{
 
   MidiPortOs port;
 
-  /* Keep track of last used LSB/MSB/preset. If different from the one defined in PatchData, send new value to port. */
+  /* Keep track of last used LSB/MSB/preset. If patchdata has different values than this (when playing a note), new values are sent to the midi port. */
   char LSB[16];
   char MSB[16];
   char preset[16];
