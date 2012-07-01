@@ -353,7 +353,20 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
 #endif
 
   if(this->get_editor_width() > old_width || this->get_editor_height() > old_height){
+#if 1
     repaint(); // I don't know why it's not enough just calling DrawUpTrackerWindow.
+#else
+    // This doesn't really do anything:
+    DO_GFX_BLT({
+        GFX_FilledBox(window,5,
+                      0,old_height-1,
+                      this->window->width, this->window->height);
+        DrawUpTrackerWindow(window);
+                      
+      });
+    update();
+    // Very strange!
+#endif
   }else{
     DO_GFX_BLT(DrawUpTrackerWindow(window));
     update();

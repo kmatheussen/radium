@@ -101,6 +101,7 @@ int GetReallineY2Pos(
 }
 
 
+// Returns the actual Y1 pos. (GetReallineY1Pos returns the pixmap pos)
 int Common_oldGetReallineY1Pos(
 			       struct Tracker_Windows *window,
 			       struct WBlocks *wblock,
@@ -109,6 +110,8 @@ int Common_oldGetReallineY1Pos(
 {
   return ((realline-wblock->top_realline)*window->fontheight)+wblock->t.y1;
 }
+
+// Returns the actual Y2 pos. (GetReallineY2Pos returns the pixmap pos)
 int Common_oldGetReallineY2Pos(
 			       struct Tracker_Windows *window,
 			       struct WBlocks *wblock,

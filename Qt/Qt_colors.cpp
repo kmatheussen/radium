@@ -128,12 +128,12 @@ void testColorInRealtime(int num, QColor color){
     return;
   updateAll();
 
-  if(num==0)
+  if(false && num==0)
     mywidget->repaint(); // todo: fix flicker.
   else{
     // Doesn't draw everything.
     DO_GFX_BLT({
-        DrawUpTrackerWindow(window);//UpdateTrackerWindow(window);
+        DrawUpTrackerWindow(window);
       });
     mywidget->update();
   }
@@ -157,6 +157,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     // "cancel"
     setEditorColors(mywidget); // read back from file.
     system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
+    DrawUpTrackerWindow(root->song->tracker_windows);
   }else{
     // "ok"
     SETTINGS_write_string((char*)"system_color",(char*)system_color->name().ascii());

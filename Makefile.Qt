@@ -142,7 +142,7 @@ OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_co
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
 
 #Midi
-OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o alsaseq_midi.o midi_getEvents.o
+OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o alsaseq_midi.o midi_getEvents.o midi_menues.o
 # disk_midi_mymidilinks.o TODO
 
 OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ14)
@@ -956,6 +956,8 @@ alsaseq_midi.o:  midi/alsaseq/alsaseq_midi.c
 	$(CC)  midi/alsaseq/alsaseq_midi.c $(OPT) 
 midi_getEvents.o:  midi/midi_getEvents.c
 	$(CC)  midi/midi_getEvents.c $(OPT) 
+midi_menues.o:  midi/midi_menues.c
+	$(CC)  midi/midi_menues.c $(OPT) 
 
 
 #.o:  midi/.c

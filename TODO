@@ -170,6 +170,8 @@ Urgent
 * Area between lowest line and bottom slider is not cleared in drawuptrackerwindow.
   (code doing that was placed in Resize_resized)
 
+* Can several BLT_* macros be called in a row without unwinding the gfx_op queue?
+
 
 Can not reproduce
 =================

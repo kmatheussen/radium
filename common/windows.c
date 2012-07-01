@@ -89,7 +89,7 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
   const int color = 0;
   struct WBlocks *wblock = window->wblock;
 
-  // Clears the area Between the header and the first line, if there is space.
+  // Clears the area between the header and the first line, if there is space.
   {
     int top_line_y = Common_oldGetReallineY1Pos(window, wblock, 0);
     //printf("top_line_y: %d. wblock->t.y1: %d\n", top_line_y, wblock->t.y1);
@@ -98,6 +98,15 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
       GFX_FilledBox(window,color,
                     wblock->zoomlevelarea.x2+1, wblock->t.y1,
                     window->width, top_line_y);
+  }
+
+  // Clears the area between the last line and the bottom slider, if there is space.
+  {
+    int bot_line_y2 = Common_oldGetReallineY2Pos(window, wblock, R_MIN(wblock->num_reallines-1,wblock->bot_realline));
+    if(bot_line_y2 < wblock->a.y2)
+      GFX_FilledBox(window,color,
+                    wblock->zoomlevelarea.x2+1, bot_line_y2,
+                    window->width, wblock->a.y2);
   }
 
   // Clear the small area between the temposlider and the bottom slider.
@@ -133,11 +142,11 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
                   );
 
   // Clear the one pixel wide area in the left slider.
-    GFX_Box(
-            window,color,
-            1, wblock->t.y1+1,
-            window->leftslider.width-1, wblock->t.y2
-            );  
+  GFX_Box(
+          window,color,
+          1, wblock->t.y1+1,
+          window->leftslider.width-1, wblock->t.y2
+          );  
 }
 
 

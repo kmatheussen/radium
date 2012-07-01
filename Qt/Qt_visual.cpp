@@ -376,10 +376,23 @@ char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
 void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  if(mywidget->font.pixelSize()!=-1)
+  if(false && mywidget->font.pixelSize()!=-1){
+    // not used
     mywidget->font.setPixelSize(mywidget->font.pixelSize()+pixels);
-  else
-    mywidget->font.setPointSize(mywidget->font.pointSize()+pixels);
+  }else{
+    float org_size = mywidget->font.pointSize();
+    for(int i=1;i<100;i++){
+      mywidget->font.setPointSize(org_size+(i*pixels));
+      if(mywidget->font.pointSize()!=org_size)
+        goto exit;
+    }
+    for(float i=1;i<100;i++){
+      mywidget->font.setPointSize(org_size+(pixels/i));
+      if(mywidget->font.pointSize()!=org_size)
+        goto exit;
+    }
+  }
+ exit:
   setFontValues(tvisual,mywidget->font);
 }
 
