@@ -98,8 +98,6 @@ Non-urgent
 * That graphical column on the left that shows tempo can be replaced with a bar.
   Over 50% of the CPU is used to draw that.
 
-* zoom should change the font itself, not only the window->fontheight value.
-
 * Trying to select a node close to another can sometimes be frustrating. Seems
   to be missing logic for selecting the node line closest to the mouse pointer.
 
@@ -114,6 +112,12 @@ Non-urgent
 * PausePlayer and StopPausePlayer has not been implemented. Check out
   what they do.
 
+* Loading file from command line doesn't work.
+
+* Resizing flickers.
+
+* Should remove the resize box. It hardly made sense even on amiga. Only reason for it
+  was to provide opaque resizing if I remember correctly.
 
 
 
@@ -130,8 +134,6 @@ Urgent
   "Could not connect to ALSA port 0. (Invalid argument)."
   Don't know how to reproduce.
 
-* Resizing doesn't always update everything.
-
 * Must check what happens if there are no alsaseq ports.
 
 * amiga/midiproperties/amiga_instrprop_camd_menues.c seems to contain mostly
@@ -140,11 +142,6 @@ Urgent
 * Midi stuff to menues.
 
 * When changing values in the instrument widget, MIDI signals should be sent.
-
-* Windows menu:
-   * Full screen option.
-   * show/hide instrument widget
-   * show/hide playlist widget
 
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.
@@ -162,13 +159,16 @@ Urgent
 
 * Standard velocity in midi preferences is not editable.
 
-* Loading file from command line doesn't work.
-
-* ctrl+m causes track 0 to be selected. In addition, PP_Update is not called.
-
 * Instrument widget size increases after pressing f12.
 
 * Keyboard up/downs must be reset after loading.
+
+* When zooming in a lot, the zoomlevel and linenumber areas are wrongly calculated. Overlapping, etc.
+
+* Midi input might not have been implemented.
+
+* Area between lowest line and bottom slider is not cleared in drawuptrackerwindow.
+  (code doing that was placed in Resize_resized)
 
 
 Can not reproduce

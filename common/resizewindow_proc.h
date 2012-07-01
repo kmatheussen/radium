@@ -15,10 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+extern void ClearResizeBox(struct Tracker_Windows *window);
 extern void DrawResizeBox(struct Tracker_Windows *window);
 
 extern int FinishedResizing(struct Tracker_Windows *window);
 extern int WindowResize(struct Tracker_Windows *window,int x,int y);
-
-extern LANGSPEC void Resize_resized(struct Tracker_Windows *window,int width,int height,bool iscleared);
 

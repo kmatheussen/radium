@@ -91,14 +91,14 @@ void MyWidget::paintEvent( QPaintEvent *e ){
 #ifdef USE_QT4
   static int times = 0;
   if(GFX_get_op_queue_size(this->window) ==0) {
-    Resize_resized(this->window,this->get_editor_width(),this->get_editor_height(),false);
+    DO_GFX_BLT(DrawUpTrackerWindow(window));
     fprintf(stderr," painting up everything, %d\n",times++);
   }
 #endif
 
 #ifdef USE_QT3
   if(e->erased())
-    Resize_resized(this->window,this->get_editor_width(),this->get_editor_height(),false);
+    DO_GFX_BLT(DrawUpTrackerWindow(window));
 #endif
 
   if(GFX_get_op_queue_size(this->window) > 0){
@@ -338,28 +338,26 @@ void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 }
 
 void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
-  //  this->window->width=this->width()-100;
-  //  this->window->height=this->height();
-
-  //  this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
-  //this->qpixmap=new QPixmap(this->width(),this->height(),-1,QPixmap::BestOptim);
-  //this->qpixmap=new QPixmap(this->width(),this->height());
   this->qpixmap->resize(this->width(), this->height());
-  //this->qpixmap->fill( this->colors[0] );		/* grey background */
-
-  //this->cursorpixmap=new QPixmap(this->width(),this->height());
   this->cursorpixmap->resize(this->width(), this->height());
-  //this->cursorpixmap->fill( this->colors[7] );		/* the xored background color for the cursor.*/
 
-  //Resize_resized(this->window,this->width()-100,this->height()-30,false);
+  int old_width = this->window->width;
+  int old_height = this->window->height;
+
+  this->window->width=this->get_editor_width();
+  this->window->height=this->get_editor_height();
 
 #if 0
-  // TODO: Something's not working with update(). Parts of the screen are not cleared. Even explicitly painting both the widget itself and qpixmap doesn't help. It's really really weird. Does Qt cliprect updates when the widget is resized? In case, why, and where?
-  Resize_resized(this->window,this->width()-XOFFSET,this->height()-YOFFSET,false);
-  update();
-#else
-  repaint(); // Workaround. Flicker. :-(
+  printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
+         this->height(),qresizeevent->size().height());
 #endif
+
+  if(this->get_editor_width() > old_width || this->get_editor_height() > old_height){
+    repaint(); // I don't know why it's not enough just calling DrawUpTrackerWindow.
+  }else{
+    DO_GFX_BLT(DrawUpTrackerWindow(window));
+    update();
+  }
 }
 
 void MyWidget::closeEvent(QCloseEvent *ce){

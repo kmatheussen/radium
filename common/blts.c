@@ -388,7 +388,7 @@ void Blt_clearNotUsedVisible(struct Tracker_Windows *window){
   if(v_x1 > blt->v_x1){
     RError("In function Blt_clearNotUsedVisislbe in file blts.c: v_x1 > blt->v_x1\n");
   }
-  
+
   if(blt->v_x2 > v_x2){
     GFX_FilledBox(
 		  window,

@@ -181,7 +181,7 @@ public:
     , remove_button("<-",this)
     , playlist(this)
     , blocklist(this)
-    , last_shown_width(SETTINGS_read_int((char*)"blocklist_width",0))
+    , last_shown_width(0) // frustrating: SETTINGS_read_int((char*)"blocklist_width",0))
   {
     button_width = add_button.width();
     button_height = add_button.height();
@@ -387,8 +387,11 @@ void GFX_PlayListWindowToFront(void){
 void GFX_PlayListWindowToBack(void){
   ScopedVisitors v;
 
+#if 0
+  // Perhaps a value in percentage of screen would work. But the default size (200) is best anyway.
   if(bs->width() > 30)
     SETTINGS_write_int((char*)"blocklist_width",bs->width());
+#endif
 
   set_widget_width(0);
 }

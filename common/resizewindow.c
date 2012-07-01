@@ -27,6 +27,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "resizewindow_proc.h"
 
 
+void ClearResizeBox(struct Tracker_Windows *window){
+  GFX_FilledBox(window,0,
+		window->resizebox.x1,window->resizebox.y1,
+		window->resizebox.x2-window->resizebox.x1 , window->resizebox.y2-window->resizebox.y1
+                );
+
+}
 
 void DrawResizeBox(struct Tracker_Windows *window){
 /*
@@ -89,75 +96,5 @@ int WindowResize(struct Tracker_Windows *window,int x,int y){
 
 }
 
-void Resize_resized(struct Tracker_Windows *window,int width,int height,bool iscleared){
-  struct WBlocks *wblock;
-  int x2,y2;
-
-  printf("Resize_resized called.\n");
-
-  /* Since resize-events might happen before everything is drawn up, we make some tests. */
-  if(window==NULL) return;
-  if(window->wblock==NULL) return;
-
-  wblock=window->wblock;
-
-  window->width=width;
-  window->height=height;
-
-#undef GFX_FilledBox
-
-  GFX_FilledBox(window,0,
-		0,
-		window->height-window->bottomslider.width-3,
-		window->width,
-		window->height
-		);
-
-  if(iscleared==true){
-    UpdateTrackerWindow(window);
-  }else{
-    DrawUpTrackerWindow(window);
-  }
-  Blt_blt(window);
-
-  Blt_unMarkVisible(window);
-
-
-
-  if(wblock->top_realline<0){
-    y2=Common_oldGetReallineY1Pos(window,wblock,0)-1;
-    x2=window->width;
-    GFX_FilledBox(window,0,
-		  window->leftslider.width,wblock->t.y1,
-		  x2,y2
-		  );
-  }
-
-  if(wblock->bot_realline>=wblock->num_reallines){
-    y2=Common_oldGetReallineY2Pos(window,wblock,wblock->num_reallines-1)+1;
-    x2=window->width;
-    GFX_FilledBox(window,0,
-		  window->leftslider.width,y2,
-		  x2,
-		  window->height - window->bottomslider.width -1
-		  );
-  }else{
-    if(window->height-window->bottomslider.width>Common_oldGetReallineY2Pos(window,wblock,wblock->bot_realline)){
-      GFX_FilledBox(window,0,
-		    window->leftslider.width,Common_oldGetReallineY2Pos(window,wblock,wblock->bot_realline) +1,
-		    window->width,
-		    window->height - window->bottomslider.width -1
-		    );
-    }
-  }
-
-  GFX_FilledBox(window,0,
-		0,wblock->t.y1,
-		wblock->zoomlevelarea.x,
-		window->height-window->bottomslider.width -1
-		);
-
-  DrawLeftSlider(window);
-
-}
-
+//  Use DO_GFX_BLT(DrawUpTrackerWindow(window)) instead.
+//void Resize_resized(struct Tracker_Windows *window,int width,int height,bool iscleared){

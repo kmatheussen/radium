@@ -101,11 +101,11 @@ public:
     QSplitter *ysplitter;
 
     int get_editor_width(){
-      return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (could probably be found be reading frame border width/etc.)
+      return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
     }
 
     int get_editor_height(){
-      return this->height()-(2*YOFFSET)-1; // Fine tuned. No logical reason behind it. (could probably be found be reading frame border width/etc.)
+      return this->height()-YOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
     }
 
 protected:

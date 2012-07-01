@@ -886,12 +886,18 @@ void QGFX_ScrollDown(
 
 
 void QGFX_ClearWindow(struct Tracker_Windows *tvisual){
+  RWarning("GFX_ClearWindow should not be called");
+#if 0
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   //mywidget->fill(mywidget->colors[0]);
   QGFX_bouncePoints(mywidget);
   //  QGFX_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
   QGFX_P_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
+
+  //QGFX_FilledBox(tvisual,0,0,0,mywidget->width(), mywidget->height());
+
   printf("cleared\n");
+#endif
 }
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}

@@ -80,4 +80,4 @@ extern LANGSPEC void Blt_clearNotUsedVisible(struct Tracker_Windows *window);
 
 extern LANGSPEC void Blt_markVisible(struct Tracker_Windows *window);
 
-void Blt_unMarkVisible(struct Tracker_Windows *window);
+extern LANGSPEC void Blt_unMarkVisible(struct Tracker_Windows *window);

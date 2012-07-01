@@ -30,9 +30,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "wblocks_proc.h"
 #include "temponodes_proc.h"
+#include "playerclass.h"
 
 #include "wtracks_proc.h"
 
+extern PlayerClass *pc;
 
 
 
@@ -460,6 +462,13 @@ update:
 	*/
 
 	DrawUpTrackerWindow(window);
+
+	if( ! pc->isplaying){
+		(*wblock->wtrack->track->instrument->PP_Update)(
+			wblock->wtrack->track->instrument,
+			wblock->wtrack->track->patch
+		);
+	}
 }
 
 

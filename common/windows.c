@@ -80,6 +80,67 @@ void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
 
 }
 
+
+/*********************************************************************
+  FUNCTION
+    Is ment to be called instead of GFX_ClearWindow to avoid flicker.
+*********************************************************************/
+void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
+  const int color = 0;
+  struct WBlocks *wblock = window->wblock;
+
+  // Clears the area Between the header and the first line, if there is space.
+  {
+    int top_line_y = Common_oldGetReallineY1Pos(window, wblock, 0);
+    //printf("top_line_y: %d. wblock->t.y1: %d\n", top_line_y, wblock->t.y1);
+
+    if(top_line_y>wblock->t.y1)
+      GFX_FilledBox(window,color,
+                    wblock->zoomlevelarea.x2+1, wblock->t.y1,
+                    window->width, top_line_y);
+  }
+
+  // Clear the small area between the temposlider and the bottom slider.
+  GFX_FilledBox(
+                window,color,
+                wblock->reltempo.x2+1,
+                window->height - window->bottomslider.width+1,
+                window->bottomslider.x-1,
+                window->height-1
+                );
+
+#if 0
+  // Clear the area to the right of the rightmost track.
+  {
+    struct WTracks *last_wtrack = ListLast1(&wblock->wtracks->l);
+
+    if(last_wtrack->fxarea.x2<wblock->a.x2){
+      //GFX_P_FilledBox(window,color,last_wtrack->fxarea.x2+2,wblock->t.y1,wblock->a.x2,wblock->t.y2);
+      GFX_FilledBox(window,color,
+                    last_wtrack->fxarea.x2+2,  0,
+                    wblock->a.x2,              wblock->t.y1);
+    }
+  }
+#endif
+
+  // Clear the area between the Left slider and the line numbers.
+  //printf("sl.x2: %d / %d\n",                window->leftslider.width,wblock->zoomlevelarea.x);
+  if(window->leftslider.width+1 < wblock->zoomlevelarea.x-1)
+    GFX_FilledBox(
+                  window,color,
+                  window->leftslider.width+1, wblock->t.y1,
+                  wblock->zoomlevelarea.x-1, wblock->t.y2
+                  );
+
+  // Clear the one pixel wide area in the left slider.
+    GFX_Box(
+            window,color,
+            1, wblock->t.y1+1,
+            window->leftslider.width-1, wblock->t.y2
+            );  
+}
+
+
 /**************************************************************************
    The general update function.	The spesification for flags is placed
    in windows_proc.h								   
@@ -126,17 +187,14 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 
 /**************************************************************************
   FUNCTION
-    First clears the window, then draw up everything.
+    Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	struct WBlocks *wblock;
-	struct WTracks *wtrack2;
 
 	GFX_P_ClearWindow(window);
 
-#ifndef _AMIGA
-	//	GFX_ClearWindow(window);
-#endif
+        ClearResizeBox(window);
 
 	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
@@ -147,27 +205,17 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	DrawWBlock(window,window->wblock);
 	DrawLeftSlider(window);
 	DrawResizeBox(window);
+
 	window->wblock->isgfxdatahere=true;
 	root->clearall=0;
 
 	wblock=window->wblock;
 
-	GFX_FilledBox(
-			window,0,
-			wblock->reltempo.x2+1,
-			window->height - window->bottomslider.width+1,
-			window->bottomslider.x-1,
-			window->height-1
-	);
+        ClearUnusedWindowsAreas(window);
 
-	wtrack2=ListLast1(&wblock->wtracks->l);
-
-	if(wtrack2->fxarea.x2<wblock->a.x2){
-	   GFX_P_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->t.y1,wblock->a.x2,wblock->t.y2);
-	   GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,0,wblock->a.x2,wblock->t.y1);
-	}
-
+        Blt_unMarkVisible(window); // Need a better name for this function.
 }
+
 
 /**************************************************************************
   FUNCTION
