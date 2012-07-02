@@ -374,9 +374,21 @@ static struct MidiPort *g_midi_ports = NULL;
 char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   int num_ports;
   char **portnames=MIDI_getOutputPortNames(&num_ports);
-  int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
+  char **menusel = talloc(num_ports+1);
+  memcpy(menusel,portnames,num_ports*sizeof(char*));
+  menusel[num_ports] = "Create new port";
+
+  int sel=GFX_Menu(window,reqtype,"Select port",num_ports+1,menusel);
   if(sel==-1)
     return NULL;
+
+  if(sel==num_ports){
+    char *ret=NULL;
+    while(ret==NULL)
+      ret = GFX_GetString(window,reqtype,"Name: ");
+    return ret;
+  }
+
   return portnames[sel];
 }
 
