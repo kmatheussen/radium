@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_block_proc.h"
 #include "disk_playlist_proc.h"
 #include "disk_instrument_proc.h"
+#include "OS_Bs_edit_proc.h"
 
 #include "disk_song_proc.h"
 
@@ -130,4 +131,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 	DLoadWindows(newroot,song->tracker_windows);
 
         DLoadInstrumentGUI(song->instruments);
+
+        BS_UpdateBlockList();
+        BS_UpdatePlayList();
 }

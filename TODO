@@ -128,16 +128,15 @@ Non-urgent
 
 * Midi input has not been implemented.
 
-* Rewrite rtmidi jack midi port list. Now it's slow and unreliable (not very likely, but the 
-  order of portnames can change between calls.). Solution: Add invisible client that updates
-  a separate list of portnames.
-
 * Synchronize rtmidi jack messages. Currently, they are all set to start at frame 0.
 
 * One time: At the call to DO_GFX(ret=EventTreater(in_tevent,window)) in eventreceiver.c caused number of reallines
   to be the wrong value after loading a standard midi file. (crash in TRE garbage collector)
 
+* Window title should contain song title.
 
+* When the block/playlist widget is non-stacked, there could be arrows from blocks in the blocklist to
+  the positions in the playlist where that block is played. The add and remove button can be moved to the bottom.
 
 Urgent
 ======
@@ -166,6 +165,12 @@ Urgent
 
 * When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
   it helps to change size of editor widget.
+
+* Rewrite rtmidi jack midi port list handling. Now it's slow and unreliable (not very likely, but the 
+  order of portnames can change between calls.). Solution: Add invisible client that updates
+  a separate list of portnames.
+  Update: This should probably be prioritized. Loading some songs takes forever.
+
 
 
 Can not reproduce
