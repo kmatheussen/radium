@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "visual_proc.h"
+#include "OS_visual_input.h"
 
 
 int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max){
@@ -137,9 +138,11 @@ int GFX_ReqTypeMenu(
   char temp[500];
   int lokke;
   int ret=0;
+  bool created_reqtype = false;
 
   if(reqtype==NULL){
     reqtype=GFX_OpenReq(tvisual,strlen(seltext)+10,num_sel+5,"title");
+    created_reqtype = true;
   }
 
   GFX_WriteString(reqtype,seltext);
@@ -147,7 +150,7 @@ int GFX_ReqTypeMenu(
   
   if(num_sel<1){
     RWarning("num_sel=%d",num_sel);
-    return 0;
+    goto exit;
   }
 
   for(lokke=0;lokke<num_sel;lokke++){
@@ -158,7 +161,7 @@ int GFX_ReqTypeMenu(
 
   if(num_sel==1){
     GFX_WriteString(reqtype,"> 1\\n");
-    return 0;
+    goto exit;
   }
   
   while(ret<=0 || ret>num_sel){
@@ -170,7 +173,12 @@ int GFX_ReqTypeMenu(
     }
     ret=atoi(temp);
   }
-  
-  return ret-1;
+  ret--;
+
+ exit:
+  if(created_reqtype==true)
+    GFX_CloseReq(tvisual,reqtype);
+
+  return ret;
 }
 

@@ -40,6 +40,10 @@ extern LANGSPEC void MIDIstopnote(int notenum,int velocity, struct Tracks *track
 extern LANGSPEC void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
 extern LANGSPEC void MIDIclosePatch(void);
 extern LANGSPEC void MIDI_InitPatch(struct Patch *patch);
+
+extern LANGSPEC char **MIDI_getInputPortNames(int *retsize);
+extern LANGSPEC char **MIDI_getOutputPortNames(int *retsize);
+
 extern LANGSPEC char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype);
 extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name);
 extern LANGSPEC void MIDISetPatchData(struct Patch *patch, char *key, char *value);

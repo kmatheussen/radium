@@ -149,9 +149,6 @@ Urgent
 
 * When changing values in the instrument widget, MIDI signals should be sent.
 
-* The function that returns the alsaseq portnames only returns the public ones.
-  It should also return the ones created by Radium.
-
 * make install. First get rid of /tmp/radium and put everything that's needed for the program into bin/.
   Then "make install" can do:
 

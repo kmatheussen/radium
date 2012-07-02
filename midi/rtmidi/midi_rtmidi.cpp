@@ -169,17 +169,17 @@ static char **get_port_names(bool use_input_ports, int *retval){
 }
 
 
-char **MIDI_getInputPortNames(int *retsize){
+char **MIDI_getInputPortOsNames(int *retsize){
   return get_port_names(true, retsize);
 }
 
 
-char **MIDI_getOutputPortNames(int *retsize){
+char **MIDI_getOutputPortOsNames(int *retsize){
   return get_port_names(false, retsize);
 }
 
 
-MidiPortOs MIDI_getMidiPortOs(ReqType reqtype,char *name){
+MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name){
   std::vector<RtMidi::Api> apis;
   RtMidi::getCompiledApi(apis);
   RtMidi::Api api;
@@ -210,8 +210,11 @@ MidiPortOs MIDI_getMidiPortOs(ReqType reqtype,char *name){
       for(unsigned int i=0;i<apis.size();i++)
         menu[i] = apis[i]==RtMidi::LINUX_ALSA?"Alsa":"Jack";
       int sel = -1;
-      while(sel==-1)
-        sel = GFX_ReqTypeMenu(NULL, reqtype, (char*)"Select midi API: ",apis.size(),(char**)menu);
+      while(sel==-1){
+        char temp[500];
+        sprintf(temp,"Select midi API for '%s': ",name);
+        sel = GFX_ReqTypeMenu(window, reqtype, temp,apis.size(),(char**)menu);
+      }
       api = apis[sel];
     }
 

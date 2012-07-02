@@ -270,7 +270,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
-    getPatchData(patch)->midi_port = MIDIgetPort(NULL, NULL, !strcmp("",value) ? NULL : value);
+    getPatchData(patch)->midi_port = MIDIgetPort(NULL, NULL, value==NULL ? NULL : !strcmp("",value) ? NULL : value);
 
   }else if(!strcasecmp(key,"channel")){
     getPatchData(patch)->channel = atoi(value);
@@ -371,6 +371,44 @@ static struct PatchData *createPatchData(void) {
 
 static struct MidiPort *g_midi_ports = NULL;
 
+static bool is_member(char *name, char**names){
+  int i=0;
+  while(names[i]!=NULL){
+    if(!strcmp(name,names[i]))
+      return true;
+    i++;
+  }
+  return false;
+}
+
+char **MIDI_getOutputPortNames(int *retsize){
+  int num_os_names;
+  char **os_names = MIDI_getOutputPortOsNames(&num_os_names);
+
+  int num_midi_ports = 0;
+  struct MidiPort *midi_port = g_midi_ports;
+
+  while(midi_port != NULL) {
+    midi_port = midi_port->next;
+    num_midi_ports++;
+  }
+
+  *retsize = num_os_names;
+  char **ret = talloc((num_os_names+num_midi_ports+1)*sizeof(char*));
+  memcpy(ret,os_names,sizeof(char*)*num_os_names);
+
+  midi_port = g_midi_ports;
+  while(midi_port != NULL){
+    if(is_member(midi_port->name, ret)==false){
+      ret[*retsize] = talloc_strdup(midi_port->name);
+      *retsize = *retsize + 1;
+    }
+    midi_port=midi_port->next;
+  }
+
+  return ret;
+}
+
 char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   int num_ports;
   char **portnames=MIDI_getOutputPortNames(&num_ports);
@@ -408,7 +446,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
 
   midi_port = talloc(sizeof(struct MidiPort));
   midi_port->name = talloc_strdup(name);
-  midi_port->port = MIDI_getMidiPortOs(reqtype,name);
+  midi_port->port = MIDI_getMidiPortOs(window,reqtype,name);
 
   midi_port->next = g_midi_ports;
   g_midi_ports = midi_port;

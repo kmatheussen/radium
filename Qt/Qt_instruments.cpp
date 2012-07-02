@@ -91,6 +91,7 @@ class Instrument_widget;
 
 static void tab_selected();
 static Instrument_widget *get_instrument_widget(struct Patch *patch);
+static void updatePortsWidget(Instrument_widget *instrument);
 
 static const char *ccnames[128];
 
@@ -236,9 +237,32 @@ static const char *gm_names[] = {
   "Gunshot"
   };
 
+static void updatePortsWidget(Instrument_widget *instrument){
+  int item_num = 0;
 
-static Instrument_widget *createInstrumentWidget(const char *name, struct PatchData *patchdata){
+  int num_ports;
+  char **portnames = MIDI_getOutputPortNames(&num_ports);
+
+  while(instrument->port->count()>0)
+    instrument->port->removeItem(0);
+
+  for(int i = 0; i<num_ports ; i++){
+    instrument->port->insertItem(portnames[i]);
+    if(!strcmp(portnames[i],instrument->patchdata->midi_port->name))
+      item_num = i;
+  }
+
+  instrument->port->insertItem("<Create new port>");
+
+  instrument->port->setCurrentItem(item_num);
+}
+
+static Instrument_widget *createInstrumentWidget(const char *name, struct Patch *patch){
     Instrument_widget *instrument = new Instrument_widget();
+    instrument->patch = patch;
+
+    struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
+    instrument->patchdata = patchdata;
 
     for(int i=0;i<128;i++)
       ccnames[i] = "";
@@ -308,15 +332,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct PatchD
       }
     }
 
-    {
-      int num_ports;
-      char **portnames = MIDI_getOutputPortNames(&num_ports);
-
-      for(int i = 0; i<num_ports ; i++)
-        instrument->port->insertItem(portnames[i]);
-
-      instrument->port->insertItem("<Create new port>");
-    }
+    updatePortsWidget(instrument);
 
     instrument->name_widget->setText(name);
 
@@ -325,10 +341,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct PatchD
 
 
 void addInstrument(struct Patch *patch){
-  Instrument_widget *instrument = createInstrumentWidget(patch->name, (struct PatchData*)patch->patchdata);
-
-  instrument->patch = patch;
-  instrument->patchdata = (struct PatchData*)patch->patchdata;
+  Instrument_widget *instrument = createInstrumentWidget(patch->name, patch);
 
 #if 0
   //This was a failed attempt to make the no_widget instrument more fancy
@@ -445,6 +458,8 @@ static void update_instrument_widget(Instrument_widget *instrument, struct Patch
 
   instrument->preset->setCurrentItem(patchdata->preset+1);
 
+  updatePortsWidget(instrument);
+
   for(int ccnum=0;ccnum<8;ccnum++){
     Control_change_widget *cc = instrument->cc_widgets[ccnum];
     cc->value_spin->setValue(patchdata->ccvalues[ccnum]);
@@ -509,6 +524,8 @@ static void tab_selected(){
     MyWidget *my_widget = static_cast<MyWidget*>(window->os_visual.widget);
     my_widget->update();
   }
+
+  updatePortsWidget(instrument);
 }
 
 void close_all_instrument_widgets(void){

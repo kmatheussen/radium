@@ -25,8 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <OS_midi_spesific.h>
 
 
-extern LANGSPEC char **MIDI_getOutputPortNames(int *retsize);
-extern LANGSPEC char **MIDI_getInputPortNames(int *retsize);
+extern LANGSPEC char **MIDI_getOutputPortOsNames(int *retsize);
+extern LANGSPEC char **MIDI_getInputPortOsNames(int *retsize);
 
 
 // DeleteMidi(midinode);
@@ -35,7 +35,7 @@ extern LANGSPEC char **MIDI_getInputPortNames(int *retsize);
 //	if(inputsig!=-1) FreeSignal(inputsig);
 extern LANGSPEC void MIDI_Delete(void);
 
-extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(ReqType reqtype,char *name);
+extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name);
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
 extern LANGSPEC void GoodPutMidi(MidiPortOs port,

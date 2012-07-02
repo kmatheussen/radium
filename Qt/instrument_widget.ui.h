@@ -182,7 +182,20 @@ void Instrument_widget::preset_activated( int num)
 
 void Instrument_widget::port_activated( const QString &portname )
 {
-  MIDISetPatchData(patch, (char*)"port", (char*)portname.ascii());
+  if(portname=="<Create new port>"){
+    struct Tracker_Windows *window=root->song->tracker_windows;
+    ReqType reqtype=GFX_OpenReq(window,70,50,(char*)"Create port");
+
+    char *name = GFX_GetString(window,reqtype,(char*)"Name: ");
+    if(name!=NULL)
+      patchdata->midi_port = MIDIgetPort(window,reqtype,name);
+
+    GFX_CloseReq(window,reqtype);
+  }else
+    MIDISetPatchData(patch, (char*)"port", (char*)portname.ascii());
+
   fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.ascii());
+
+  updatePortsWidget(this);
 }
 
