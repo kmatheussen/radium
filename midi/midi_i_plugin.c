@@ -408,7 +408,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
 
   midi_port = talloc(sizeof(struct MidiPort));
   midi_port->name = talloc_strdup(name);
-  midi_port->port = MIDI_getMidiPortOs(name);
+  midi_port->port = MIDI_getMidiPortOs(reqtype,name);
 
   midi_port->next = g_midi_ports;
   g_midi_ports = midi_port;

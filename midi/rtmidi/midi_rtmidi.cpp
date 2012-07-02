@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../../common/nsmtracker.h"
 #include "../../common/memory_proc.h"
+#include "../../common/OS_visual_input.h"
+
 #include "../OS_midi_proc.h"
 
 // (The *PutMidi* API needs to be cleaned up)
@@ -177,7 +179,7 @@ char **MIDI_getOutputPortNames(int *retsize){
 }
 
 
-MidiPortOs MIDI_getMidiPortOs(char *name){
+MidiPortOs MIDI_getMidiPortOs(ReqType reqtype,char *name){
   std::vector<RtMidi::Api> apis;
   RtMidi::getCompiledApi(apis);
   RtMidi::Api api;
@@ -201,8 +203,20 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
 
   {
     RtMidiOut *ret;
+    if(apis.size()==1)
+      api = apis[0];
+    else{
+      const char **menu = (const char**)talloc(apis.size()*sizeof(char*));
+      for(unsigned int i=0;i<apis.size();i++)
+        menu[i] = apis[i]==RtMidi::LINUX_ALSA?"Alsa":"Jack";
+      int sel = -1;
+      while(sel==-1)
+        sel = GFX_ReqTypeMenu(NULL, reqtype, (char*)"Select midi API: ",apis.size(),(char**)menu);
+      api = apis[sel];
+    }
+
     try{
-      ret = new RtMidiOut();
+      ret = new RtMidiOut(api, "Radium");
       ret->openVirtualPort(name);
     }catch ( RtError &error ) {
       RError(error.what());
@@ -214,7 +228,7 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
  gotit:
   RtMidiOut *ret;
   try{
-    ret = new RtMidiOut(api);
+    ret = new RtMidiOut(api, "Radium");
     ret->openPort(portnum, name);
   }catch ( RtError &error ) {
     RError(error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)

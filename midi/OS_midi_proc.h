@@ -35,8 +35,7 @@ extern LANGSPEC char **MIDI_getInputPortNames(int *retsize);
 //	if(inputsig!=-1) FreeSignal(inputsig);
 extern LANGSPEC void MIDI_Delete(void);
 
-extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(char *name);
-
+extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(ReqType reqtype,char *name);
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
 extern LANGSPEC void GoodPutMidi(MidiPortOs port,

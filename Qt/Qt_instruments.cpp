@@ -314,6 +314,8 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct PatchD
 
       for(int i = 0; i<num_ports ; i++)
         instrument->port->insertItem(portnames[i]);
+
+      instrument->port->insertItem("<Create new port>");
     }
 
     instrument->name_widget->setText(name);
