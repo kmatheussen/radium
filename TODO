@@ -167,7 +167,8 @@ Urgent
   order of portnames can change between calls.). Solution: Add invisible client that updates
   a separate list of portnames.
   Update: This should probably be prioritized. Loading some songs takes forever.
-
+  Update 2: Not only that, but opening and closing jack clients can still disturb sound. (although
+  it's not supposed to)
 
 
 Can not reproduce

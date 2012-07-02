@@ -332,7 +332,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct Patch 
       }
     }
 
-    updatePortsWidget(instrument);
+    //updatePortsWidget(instrument);
 
     instrument->name_widget->setText(name);
 
