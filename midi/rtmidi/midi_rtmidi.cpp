@@ -203,7 +203,7 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
     RtMidiOut *ret;
     try{
       ret = new RtMidiOut();
-      ret->openVirtualPort();
+      ret->openVirtualPort(name);
     }catch ( RtError &error ) {
       RError(error.what());
       return NULL;
@@ -215,7 +215,7 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
   RtMidiOut *ret;
   try{
     ret = new RtMidiOut(api);
-    ret->openPort(portnum);
+    ret->openPort(portnum, name);
   }catch ( RtError &error ) {
     RError(error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)
     return NULL;
