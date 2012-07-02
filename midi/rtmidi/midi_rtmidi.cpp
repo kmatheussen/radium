@@ -227,14 +227,19 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
 
 
 bool MIDI_New(struct Instruments *instrument){
-  message1.push_back(0);
+  static bool globals_are_initialized = false;
 
-  message2.push_back(0);
-  message2.push_back(0);
+  if(globals_are_initialized==false){
+    message1.push_back(0);
 
-  message3.push_back(0);
-  message3.push_back(0);
-  message3.push_back(0);
+    message2.push_back(0);
+    message2.push_back(0);
+
+    message3.push_back(0);
+    message3.push_back(0);
+    message3.push_back(0);
+    globals_are_initialized = true;
+  }
 
   return true;
 }
