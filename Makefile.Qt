@@ -46,7 +46,8 @@ PYTHONEXE=${PYQTEXE}
 
 PYPATH=`cat pypath.comp`
 
-MIDIINC=-Imidi/alsaseq
+MIDIINC=-Imidi/rtmidi
+#MIDIINC=-Imidi/alsaseq
 
 
 
@@ -83,6 +84,8 @@ UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)
 
 OPT= $(UPOPT)
 
+CPPOPT = $(OPT)
+
 
 # QT4 opts
 #QTOPTS = -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql
@@ -93,12 +96,16 @@ OPT= $(UPOPT)
 #
 # QT3 opts
 # 
-QTOPTS = -DUSE_QT3 -I$(QTDIR)/include
 MOC = $(QTDIR)/bin/moc
 UIC = $(QTDIR)/bin/uic
 
-CPPOPT=$(OPT) $(QTOPTS)
+QTOPT=$(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include
 
+# rtmidi flags
+RTMIDI_DIR = midi/rtmidi/rtmidi-2.0.0
+RTMIDI_CFLAGS = -D__UNIX_JACK__ -D__LINUX_ALSA__ 
+#-fexceptions
+RTMIDI_LDFLAGS = -lpthread -lasound -ljack
 
 
 #-------------------OBJECT DEFINITIONS-------------------------------
@@ -142,8 +149,8 @@ OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_co
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
 
 #Midi
-OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o alsaseq_midi.o midi_getEvents.o midi_menues.o
-# disk_midi_mymidilinks.o TODO
+OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_getEvents.o midi_menues.o
+# alsaseq_midi.o
 
 OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ14)
 
@@ -192,10 +199,10 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
-	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt -lasound
+	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt $(RTMIDI_LDFLAGS)
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
-
+#  -lasound
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
 	cd bin && python generate_keyboard_sub_ids.py > ../$(CD)keyboard_sub_ids.h
@@ -748,10 +755,10 @@ X11_ClientMessages.o: X11/X11_ClientMessages.c
 
 
 Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h $(P)Qt_instruments_proc.h
-	$(CCC) $(P)Qt_Main.cpp $(CPPOPT) -Wno-error 
+	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
 
 Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(P)mQt_visual.cpp $(CD)visual_op_queue_proc.h
-	$(CCC) $(P)Qt_visual.cpp $(CPPOPT) 
+	$(CCC) $(P)Qt_visual.cpp $(QTOPT) 
 
 $(P)mQt_visual.cpp: $(P)Qt_visual.cpp
 	cd $(P) && $(MOC) Qt_visual.cpp >mQt_visual.cpp
@@ -772,10 +779,10 @@ Qt_Player.o: $(P)Qt_Player.c $(P)MyWidget.h
 	$(CC) $(P)Qt_Player.c $(OPT)
 
 Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)MyWidget.h
-	$(CCC) $(P)Qt_EventReceiver.cpp $(CPPOPT)
+	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 Qt_colors.o: $(P)Qt_colors.cpp
-	$(CCC) $(P)Qt_colors.cpp $(CPPOPT)
+	$(CCC) $(P)Qt_colors.cpp $(QTOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
@@ -784,16 +791,16 @@ QD = $(P)
 # (it was surprisingly simple to do this. I just had to copy the file. No editing or use of custom compiler flags was needed.)
 qcolordialog.o: $(QD)qcolordialog.cpp
 	cd $(QD) && $(MOC) qcolordialog.cpp >qcolordialog.moc
-	$(CCC) $(QD)qcolordialog.cpp $(CPPOPT) -Wno-error
+	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error
 
 Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
-	$(CCC) $(P)Qt_Bs_edit.cpp $(CPPOPT)
+	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT)
 
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
 	cd $(P) && $(MOC) Qt_Bs_edit.cpp >mQt_Bs_edit.cpp
 
 Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
-	$(CCC) $(P)Qt_instruments.cpp $(CPPOPT)
+	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
 
 $(P)Qt_instruments_widget.h: $(P)instruments_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
@@ -952,6 +959,8 @@ disk_midi_i_plugin.o:  midi/disk_midi_i_plugin.c
 	$(CC)  midi/disk_midi_i_plugin.c $(OPT) 
 disk_midi_fx.o:  midi/disk_midi_fx.c
 	$(CC)  midi/disk_midi_fx.c $(OPT) 
+midi_rtmidi.o: midi/rtmidi/midi_rtmidi.cpp
+	$(CCC) midi/rtmidi/midi_rtmidi.cpp $(CPPOPT) $(RTMIDI_CFLAGS)
 alsaseq_midi.o:  midi/alsaseq/alsaseq_midi.c
 	$(CC)  midi/alsaseq/alsaseq_midi.c $(OPT) 
 midi_getEvents.o:  midi/midi_getEvents.c
@@ -959,6 +968,8 @@ midi_getEvents.o:  midi/midi_getEvents.c
 midi_menues.o:  midi/midi_menues.c
 	$(CC)  midi/midi_menues.c $(OPT) 
 
+RtMidi.o: $(RTMIDI_DIR)/RtMidi.cpp
+	$(CCC) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_CFLAGS) $(CPPOPT)
 
 #.o:  midi/.c
 #	$(CC)  midi/.c $(OPT)

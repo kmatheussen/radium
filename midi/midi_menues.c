@@ -152,7 +152,7 @@ extern struct Root *root;
 extern char *inlinkname;
 
 int MIDISetInputPort( void ){
-  RWarning("Midi input is not implemented for alsaseq yet.");
+  RWarning("Midi input has not been implemented for alsa yet.");
 #if 0
 	char *clustername;
 	ReqType reqtype;

@@ -62,6 +62,13 @@ ACKNOWLEDGEMENTS
         to read and write standard midi files.
         https://github.com/vishnubob/python-midi
 
+        * "py-setproctitle" by Daniele Varrazzo is copied into the source. py-setproctitle is used
+        to set the title of the radium process to "radium". If not, the name of the process
+        would have been "python"
+        http://code.google.com/p/py-setproctitle/
+
+        * "rtmidi" by Gary P. Scavone is used to send recieve midi messages.
+        http://www.music.mcgill.ca/~gary/rtmidi/
 
 
 CONTACT

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //#include "../instrprop/Amiga_instrprop_edit_proc.h"
 #include "OS_midi_proc.h"
-
+#include "OS_midigfx_proc.h"
 
 
 
@@ -360,7 +360,7 @@ static struct PatchData *createPatchData(void) {
   {
     int num_ports;
     char *portname = "default";
-    char **portnames=MIDI_getPortNames(&num_ports);
+    char **portnames=MIDI_getOutputPortNames(&num_ports);
     if(num_ports>0)
       portname=portnames[0];
     patchdata->midi_port = MIDIgetPort(NULL,NULL,portname);
@@ -373,7 +373,7 @@ static struct MidiPort *g_midi_ports = NULL;
 
 char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   int num_ports;
-  char **portnames=MIDI_getPortNames(&num_ports);
+  char **portnames=MIDI_getOutputPortNames(&num_ports);
   int sel=GFX_Menu(window,reqtype,"Select port",num_ports,portnames);
   if(sel==-1)
     return NULL;
@@ -511,6 +511,8 @@ int MIDIinitInstrumentPlugIn(struct Instruments *instrument){
   instrument->CopyInstrumentData=MIDI_CopyInstrumentData;
   instrument->PlayFromStartHook=MIDIPlayFromStartHook;
   instrument->LoadFX=MIDILoadFX;
+
+  instrument->PP_Update=MIDIGFX_PP_Update;
 
   instrument->setPatchData=MIDISetPatchData;
   instrument->getPatchData=MIDIGetPatchData;

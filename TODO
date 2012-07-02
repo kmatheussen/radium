@@ -119,6 +119,24 @@ Non-urgent
 * Should remove the resize box. It hardly made sense even on amiga. Only reason for it
   was to provide opaque resizing if I remember correctly.
 
+* Can several BLT_* macros be called in a row without unwinding the gfx_op queue?
+
+* Use 0x90 checkbox in midi menu. (All code is there, except that menues.py doesn't handle
+  syntax for checkboxes yet.)
+
+* When zooming in a lot, the zoomlevel and linenumber areas are wrongly calculated. Overlapping, etc.
+
+* Midi input has not been implemented.
+
+* Rewrite rtmidi jack midi port list. Now it's slow and unreliable (not very likely, but the 
+  order of portnames can change between calls.). Solution: Add invisible client that updates
+  a separate list of portnames.
+
+* Synchronize rtmidi jack messages. Currently, they are all set to start at frame 0.
+
+* One time: At the call to DO_GFX(ret=EventTreater(in_tevent,window)) in eventreceiver.c caused number of reallines
+  to be the wrong value after loading a standard midi file. (crash in TRE garbage collector)
+
 
 
 Urgent
@@ -130,22 +148,10 @@ Urgent
     * Refuse to make window smaller
     * Make temponodearea smaller. (better)
 
-* Trying to connect to ALSA seq port sometimes gives error message "invalid argument":
-  "Could not connect to ALSA port 0. (Invalid argument)."
-  Don't know how to reproduce.
-
-* Must check what happens if there are no alsaseq ports.
-
-* Midi stuff to menues.
-
 * When changing values in the instrument widget, MIDI signals should be sent.
 
 * The function that returns the alsaseq portnames only returns the public ones.
   It should also return the ones created by Radium.
-
-* It could seem like loading a song with an instrument with a non-existant midi-port
-  causes patchdata->midi_port to be NULL. There's no need for that, alsaseq should
-  create the port anyway, it doesn't have to connect it anyhwere.
 
 * make install. First get rid of /tmp/radium and put everything that's needed for the program into bin/.
   Then "make install" can do:
@@ -156,15 +162,10 @@ Urgent
 
 * Standard velocity in midi preferences is not editable.
 
-* Instrument widget size increases after pressing f12.
-
 * Keyboard up/downs must be reset after loading.
 
-* When zooming in a lot, the zoomlevel and linenumber areas are wrongly calculated. Overlapping, etc.
-
-* Midi input might not have been implemented.
-
-* Can several BLT_* macros be called in a row without unwinding the gfx_op queue?
+* When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
+  it helps to change size of editor widget.
 
 
 Can not reproduce
@@ -174,4 +175,7 @@ Can not reproduce
 
 * Play Song from Curr waits xx seconds before starting to play, where xx is the
   the time from the start to the current position.
+
+* Instrument widget size increases after pressing f12.
+
 

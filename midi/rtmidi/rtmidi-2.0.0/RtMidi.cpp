@@ -1056,7 +1056,7 @@ static unsigned int s_numPorts = 0;
 
 // The client name to use when creating the sequencer, which is
 // currently set on the first call to createSequencer.
-static string s_clientName = "RtMidi Client";
+static std::string s_clientName = "RtMidi Client";
 
 // A structure to hold variables related to the ALSA API
 // implementation.
@@ -3397,6 +3397,7 @@ struct JackMidiData {
   jack_ringbuffer_t *buffMessage;
   jack_time_t lastTime;
   MidiInApi :: RtMidiInData *rtMidiIn;
+  const char **portnames;
   };
 
 //*********************************************************************//
@@ -3477,6 +3478,8 @@ void MidiInJack :: initialize( const std::string& clientName )
   data->rtMidiIn = &inputData_;
   data->port = NULL;
 
+  data->portnames = NULL;
+
   jack_set_process_callback( data->client, jackProcessIn, data );
   jack_activate( data->client );
 }
@@ -3485,6 +3488,9 @@ MidiInJack :: ~MidiInJack()
 {
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
   closePort();
+
+  if ( data->portnames != NULL )
+    jack_free( data->portnames );
 
   jack_client_close( data->client );
 }
@@ -3528,13 +3534,14 @@ unsigned int MidiInJack :: getPortCount()
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
 
   // List of available ports
-  const char **ports = jack_get_ports( data->client, NULL, JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput );
+  if ( data->portnames != NULL)
+    jack_free ( data->portnames );
 
-  if ( ports == NULL ) return 0;
-  while ( ports[count] != NULL )
+  data->portnames = jack_get_ports( data->client, NULL, JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput );
+
+  if ( data->portnames == NULL ) return 0;
+  while ( data->portnames[count] != NULL )
     count++;
-
-  free( ports );
 
   return count;
 }
@@ -3546,24 +3553,23 @@ std::string MidiInJack :: getPortName( unsigned int portNumber )
   std::string retStr("");
 
   // List of available ports
-  const char **ports = jack_get_ports( data->client, NULL,
-                                       JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput );
+  if ( data->portnames == NULL)
+    data->portnames = jack_get_ports( data->client, NULL,
+                                      JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput );
 
   // Check port validity
-  if ( ports == NULL ) {
+  if ( data->portnames == NULL ) {
     errorString_ = "MidiInJack::getPortName: no ports available!";
     RtMidi::error( RtError::WARNING, errorString_ );
     return retStr;
   }
 
-  if ( ports[portNumber] == NULL ) {
+  if ( data->portnames[portNumber] == NULL ) {
     ost << "MidiInJack::getPortName: the 'portNumber' argument (" << portNumber << ") is invalid.";
     errorString_ = ost.str();
     RtMidi::error( RtError::WARNING, errorString_ );
   }
-  else retStr.assign( ports[portNumber] );
-
-  free( ports );
+  else retStr.assign( data->portnames[portNumber] );
 
   return retStr;
 }
@@ -3628,6 +3634,8 @@ void MidiOutJack :: initialize( const std::string& clientName )
 
   data->port = NULL;
 
+  data->portnames = NULL;
+
   apiData_ = (void *) data;
 }
 
@@ -3635,6 +3643,9 @@ MidiOutJack :: ~MidiOutJack()
 {
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
   closePort();
+
+  if ( data->portnames != NULL )
+    jack_free( data->portnames );
 
   // Cleanup
   jack_client_close( data->client );
@@ -3683,14 +3694,14 @@ unsigned int MidiOutJack :: getPortCount()
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
 
   // List of available ports
-  const char **ports = jack_get_ports( data->client, NULL,
-    JACK_DEFAULT_MIDI_TYPE, JackPortIsInput );
+  if ( data->portnames != NULL)
+    jack_free ( data->portnames );
 
-  if ( ports == NULL ) return 0;
-  while ( ports[count] != NULL )
+  data->portnames = jack_get_ports( data->client, NULL, JACK_DEFAULT_MIDI_TYPE, JackPortIsInput );
+
+  if ( data->portnames == NULL ) return 0;
+  while ( data->portnames[count] != NULL )
     count++;
-
-  free( ports );
 
   return count;
 }
@@ -3702,24 +3713,23 @@ std::string MidiOutJack :: getPortName( unsigned int portNumber )
   std::string retStr("");
 
   // List of available ports
-  const char **ports = jack_get_ports( data->client, NULL,
-    JACK_DEFAULT_MIDI_TYPE, JackPortIsInput );
+  if ( data->portnames == NULL)
+    data->portnames = jack_get_ports( data->client, NULL,
+                                      JACK_DEFAULT_MIDI_TYPE, JackPortIsInput );
 
   // Check port validity
-  if ( ports == NULL) {
+  if ( data->portnames == NULL) {
     errorString_ = "MidiOutJack::getPortName: no ports available!";
     RtMidi::error( RtError::WARNING, errorString_ );
     return retStr;
   }
 
-  if ( ports[portNumber] == NULL) {
+  if ( data->portnames[portNumber] == NULL) {
     ost << "MidiOutJack::getPortName: the 'portNumber' argument (" << portNumber << ") is invalid.";
     errorString_ = ost.str();
     RtMidi::error( RtError::WARNING, errorString_ );
   }
-  else retStr.assign( ports[portNumber] );
-
-  free( ports );
+  else retStr.assign( data->portnames[portNumber] );
 
   return retStr;
 }

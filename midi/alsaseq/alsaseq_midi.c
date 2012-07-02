@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 /* Some lines of code copy-and-pasted from the seq24 source code. -Kjetil. */
 
 
-
 #include "../../common/nsmtracker.h"
 #include "../../common/visual_proc.h"
 
@@ -108,6 +107,7 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
   snd_seq_port_info_t *pinfo = NULL;
   int client;
   int port;
+  bool got_pinfo = true;
 
   //name="FLUID Synth (3405)";
   //name="FLUID Synth (4081)";
@@ -142,20 +142,22 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
     }
   }
 
+  got_pinfo = false;
+
  gotit:
 
   port = snd_seq_create_simple_port(radium_seq,
-                                        name,
-                                        SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ, // | SND_SEQ_PORT_CAP_SUBS_WRITE,
-                                        SND_SEQ_PORT_TYPE_APPLICATION | SND_SEQ_PORT_TYPE_SPECIFIC
-                                        );
+                                    name,
+                                    SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ, // | SND_SEQ_PORT_CAP_SUBS_WRITE,
+                                    SND_SEQ_PORT_TYPE_APPLICATION | SND_SEQ_PORT_TYPE_SPECIFIC
+                                    );
 
   if(port < 0) {
     RError("Could not create ALSA port (%s)\n", snd_strerror(port));
     return 0;
   }
 
-  {
+  if(got_pinfo){
     int ret = snd_seq_connect_to(
                                  radium_seq, 
                                  port,
@@ -211,6 +213,8 @@ static void alsaseq_PutMidi(
 
 }
 
+// TODO: check alsaseq buffer size against maxbuff, and reject message if alsaseq is bigger.
+// TODO: find better name for function.
 void GoodPutMidi(MidiPortOs port,
                  uint32_t msg,
                  uint32_t maxbuff
@@ -233,8 +237,6 @@ void PutMidi(MidiPortOs port,
 
 
 
-#include "../midi/OS_midigfx_proc.h"
-
 void MIDI_Delete(void){
   snd_seq_event_t ev;
 
@@ -251,8 +253,6 @@ void MIDI_Delete(void){
 
 bool MIDI_New(struct Instruments *instrument){
   printf("ALSASEQ_MIDI_New\n");
-
-  instrument->PP_Update=MIDIGFX_PP_Update;
 
   if(alsaseq_opened==true)
     return true;

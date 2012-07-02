@@ -310,7 +310,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct PatchD
 
     {
       int num_ports;
-      char **portnames = MIDI_getPortNames(&num_ports);
+      char **portnames = MIDI_getOutputPortNames(&num_ports);
 
       for(int i = 0; i<num_ports ; i++)
         instrument->port->insertItem(portnames[i]);
@@ -456,7 +456,7 @@ static bool called_from_pp_update = false;
 void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *patch){
   called_from_pp_update = true;{
 
-    printf("PP update. Instrument name: \"%s\"\n",patch==NULL?"(null)":patch->name);
+    printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
     if(g_currpatch==patch)
       goto exit;
 

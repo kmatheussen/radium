@@ -25,7 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <OS_midi_spesific.h>
 
 
-extern LANGSPEC char **MIDI_getPortNames(int *retsize);
+extern LANGSPEC char **MIDI_getOutputPortNames(int *retsize);
+extern LANGSPEC char **MIDI_getInputPortNames(int *retsize);
 
 
 // DeleteMidi(midinode);
