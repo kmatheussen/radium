@@ -29,14 +29,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "velocities_proc.h"
 #include "undo_notes_proc.h"
 #include "undo_fxs_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "nodeboxes_proc.h"
 
 #include "mouse_fxarea_proc.h"
 
 
-extern char firstringinwindowtitle[32];
+extern char firstringinstatusbar[32];
 
 void SetMouseActionVelocities(
 	struct Tracker_Windows *window,
@@ -80,7 +80,7 @@ void SetMouseActionVelocities(
 							x,y,click
 						);
 						GFX_SetChangeInt(window,wblock,"Velocity",((struct Velocities *)element->pointer)->velocity);
-						GFX_DrawWindowTitle(window,wblock);
+						GFX_DrawStatusBar(window,wblock);
 						return;
 					case TRE_VELLINESTART:
 						SetMouseActionVellineStart(
@@ -91,7 +91,7 @@ void SetMouseActionVelocities(
 							x,y,click
 						);
 						GFX_SetChangeInt(window,wblock,"Velocity Start",((struct Notes *)element->pointer)->velocity);
-						GFX_DrawWindowTitle(window,wblock);
+						GFX_DrawStatusBar(window,wblock);
 						return;
 					case TRE_VELLINEEND:
 						SetMouseActionVellineEnd(
@@ -102,16 +102,16 @@ void SetMouseActionVelocities(
 							x,y,click
 						);
 						GFX_SetChangeInt(window,wblock,"Velocity End",((struct Notes *)element->pointer)->velocity);
-						GFX_DrawWindowTitle(window,wblock);
+						GFX_DrawStatusBar(window,wblock);
 						return;
 				}
 			}
 		}
 		element=element->next;
 	}
-	if(firstringinwindowtitle[0]!=0){
-	   firstringinwindowtitle[0]=0;
-	  GFX_DrawWindowTitle(window,window->wblock);
+	if(firstringinstatusbar[0]!=0){
+	   firstringinstatusbar[0]=0;
+	  GFX_DrawStatusBar(window,window->wblock);
 	}
 }
 
@@ -263,7 +263,7 @@ void SetMouseActionFXarea(
 		);
 
 		GFX_SetChangeInt(window,wblock,fx->name,((fx->max-fx->min)*x/(wtrack->fxwidth-1))+fx->min);
-		GFX_DrawWindowTitle(window,wblock);
+		GFX_DrawStatusBar(window,wblock);
 
 		UpdateFXNodeLines(window,wblock,wtrack);
 
@@ -292,7 +292,7 @@ void SetMouseActionFXarea(
 		);
 
 		GFX_SetChangeInt(window,wblock,"Velocity",(((*wtrack->track->instrument->getMaxVelocity)(wtrack->track))*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack))));
-		GFX_DrawWindowTitle(window,wblock);
+		GFX_DrawStatusBar(window,wblock);
 
 		UpdateTrackReallines(window,wblock,wtrack);
 //		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);

@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "trackreallines_proc.h"
 #include "gfx_wtracks_proc.h"
 #include "undo_notes_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "realline_calc_proc.h"
 
@@ -120,7 +120,7 @@ int MoveVelStart_Mouse(
 	}
 
 	GFX_SetChangeInt(window,wblock,"Velocity Start",note->velocity);
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 
 	return 0;
 }

@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "reltempo_proc.h"
 #include "undo_temponodes_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "blts_proc.h"
 #include "realline_calc_proc.h"
@@ -131,13 +131,13 @@ int MoveTempoNode_Mouse(
 	//	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 	WBLOCK_DrawTempoColor(window,wblock,start_realline,end_realline);
 
 	return 0;
 }
 
-extern char firstringinwindowtitle[32];
+extern char firstringinstatusbar[32];
 
 void SetMouseActionTempoNodes(
 	struct Tracker_Windows *window,
@@ -198,16 +198,16 @@ void SetMouseActionTempoNodes(
 				action->MouseUpFunction= &MoveTempoNode_Mouse;
 				action->pointer1=wtemponode->pointer;
 				GFX_SetChangeFloat(window,wblock,"Reltempo",RelTempo2RealRelTempo(((struct TempoNodes *)wtemponode->pointer)->reltempo));
-				GFX_DrawWindowTitle(window,wblock);
+				GFX_DrawStatusBar(window,wblock);
 				return;
 			}
 		}
 		wtemponode=wtemponode->next;
 	}
 
-	if(firstringinwindowtitle[0]!=0){
-	   firstringinwindowtitle[0]=0;
-	  GFX_DrawWindowTitle(window,window->wblock);
+	if(firstringinstatusbar[0]!=0){
+	   firstringinstatusbar[0]=0;
+	  GFX_DrawStatusBar(window,window->wblock);
 	}
 
 	if(1==click){
@@ -219,7 +219,7 @@ void SetMouseActionTempoNodes(
 		DrawUpWTempoNodes(window,wblock);
 		UpdateSTimes(wblock->block);
 		SetMouseActionTempoNodes(window,action,x,y,0);
-		GFX_DrawWindowTitle(window,wblock);
+		GFX_DrawStatusBar(window,wblock);
 		WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
 	}
 }

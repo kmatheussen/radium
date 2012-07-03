@@ -133,10 +133,11 @@ Non-urgent
 * One time: At the call to DO_GFX(ret=EventTreater(in_tevent,window)) in eventreceiver.c caused number of reallines
   to be the wrong value after loading a standard midi file. (crash in TRE garbage collector)
 
-* Window title should contain song title.
-
 * When the block/playlist widget is non-stacked, there could be arrows from blocks in the blocklist to
   the positions in the playlist where that block is played. The add and remove button can be moved to the bottom.
+
+* Quitting while playing notes makes the program segfault.
+
 
 Urgent
 ======
@@ -147,8 +148,6 @@ Urgent
     * Refuse to make window smaller
     * Make temponodearea smaller. (better)
 
-* When changing values in the instrument widget, MIDI signals should be sent.
-
 * make install. First get rid of /tmp/radium and put everything that's needed for the program into bin/.
   Then "make install" can do:
 
@@ -156,19 +155,10 @@ Urgent
   cp -a bin/* $(PREFIX)/lib/radium/ 
   ln -sf $(PREFX)/lib/radium/start.sh $(PREFIX)/bin/radium.
 
-* Standard velocity in midi preferences is not editable.
-
 * Keyboard up/downs must be reset after loading.
 
 * When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
   it helps to change size of editor widget.
-
-* Rewrite rtmidi jack midi port list handling. Now it's slow and unreliable (not very likely, but the 
-  order of portnames can change between calls.). Solution: Add invisible client that updates
-  a separate list of portnames.
-  Update: This should probably be prioritized. Loading some songs takes forever.
-  Update 2: Not only that, but opening and closing jack clients can still disturb sound. (although
-  it's not supposed to)
 
 
 Can not reproduce

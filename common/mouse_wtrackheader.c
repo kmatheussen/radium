@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tbox_proc.h"
 #include "gfx_wtrackheader_volpan_proc.h"
 #include "undo_trackheader_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "list_proc.h"
 
@@ -52,7 +52,7 @@ int MoveWTrackPan_Mouse(
 	}
 
 	GFX_SetChangeInt(window,wblock,"Track Pan",wtrack->track->pan);
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 
 	UpdatePanSlider(window,wblock,wtrack);
 
@@ -77,7 +77,7 @@ int MoveWTrackVolume_Mouse(
 	);
 
 	GFX_SetChangeInt(window,wblock,"Track RelVolume",wtrack->track->volume);
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 
 	UpdateVolumeSlider(window,wblock,wtrack);
 

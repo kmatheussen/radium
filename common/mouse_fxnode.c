@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "gfx_wtracks_proc.h"
 #include "undo_fxs_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "realline_calc_proc.h"
 
@@ -102,7 +102,7 @@ int MoveFXNode_Mouse(
 		fxnodeline->val=((fx->max-fx->min)*(x-sx1)/(sx2-sx1))+fx->min;
 		fxnodeline->val=R_BOUNDARIES(fx->min,fxnodeline->val,fx->max);
 		GFX_SetChangeInt(window,wblock,fx->name,fxnodeline->val);
-		GFX_DrawWindowTitle(window,wblock);
+		GFX_DrawStatusBar(window,wblock);
 
 		start_realline=R_MIN(start_realline,realline);
 		end_realline=R_MAX(end_realline,realline);
@@ -161,7 +161,7 @@ void SetMouseActionFXNode(
 
 	fx=fxs->fx;
 	GFX_SetChangeInt(window,window->wblock,fx->name,fxnodeline->val);
-	GFX_DrawWindowTitle(window,window->wblock);
+	GFX_DrawStatusBar(window,window->wblock);
 
 	if(click==1){
 		Undo_FXs(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);

@@ -221,6 +221,7 @@ void MIDIstopnote(int notenum,
 void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note){
 	struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
 
+        //printf("Sending aftertouch. channel: %d, note: %d, val: %d\n",patchdata->channel,note->note,velocity);
 	PutMidi3(
 		patchdata->midi_port,
 		0xa0|patchdata->channel,

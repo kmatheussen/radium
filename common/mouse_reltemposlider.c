@@ -2,7 +2,7 @@
 #include "mouse.h"
 #include "undo_reltemposlider_proc.h"
 #include "gfx_wblocks_reltempo_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "gfx_tempocolor_proc.h"
 #include "playerclass.h"
 
@@ -27,7 +27,7 @@ int MoveRelTempoSlider_Mouse(
 
 //	if(pc->isplaying==false){
 		GFX_SetChangeInt(window,wblock,"Block RelTempo 0.001*",(int)(wblock->block->reltempo*1000));
-		GFX_DrawWindowTitle(window,wblock);
+		GFX_DrawStatusBar(window,wblock);
 //	}
 
 	DrawBlockRelTempo(window,wblock);

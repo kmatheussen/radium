@@ -26,9 +26,18 @@ void Instrument_widget::volume_spin_valueChanged( int val )
 {
     if( volume_slider->value() != 127-val)
 	volume_slider->setValue(127-val);
-    fprintf(stderr,"Hepp hepp2 %d\n",val);
+
+    fprintf(stderr,"Volume: %d. channel: %d\n",val,patchdata->channel);
     
     patchdata->volume = val;
+
+    D_PutMidi3(
+               patchdata->midi_port,
+               0xb0|patchdata->channel,
+               7,
+               patchdata->volume
+               );
+
     set_editor_focus();
 }
 
@@ -60,7 +69,6 @@ void Instrument_widget::velocity_spin_valueChanged( int val)
 {
     if( velocity_slider->value() != 127-val)
 	velocity_slider->setValue(127-val);
-    fprintf(stderr,"Hepp hepp3 %d\n",val);
 
     patch->standardvel = val;
     set_editor_focus();
@@ -76,9 +84,6 @@ void Instrument_widget::velocity_onoff_stateChanged( int val)
 	velocity_slider->setEnabled(false);
 	velocity_spin->setEnabled(false);
     }
-    
-    
-    fprintf(stderr,"state changed %d\n",val);
 }
 
 
@@ -93,9 +98,17 @@ void Instrument_widget::panning_spin_valueChanged( int val)
 {
     if( panning_slider->value() != val)
 	panning_slider->setValue(val);
-    fprintf(stderr,"Pan %d\n",val);
+    printf("Pan %d\n",val);
     
     patchdata->pan = val + 63;
+
+    D_PutMidi3(
+               patchdata->midi_port,
+               0xb0|patchdata->channel,
+               10,
+               patchdata->pan
+               );
+
     set_editor_focus();
 }
 

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheaders_proc.h"
 #include "gfx_tempotrackheader_proc.h"
 #include "gfx_upperleft_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "gfx_wblocks_reltempo_proc.h"
 #include "gfx_tempocolor_proc.h"
 #include "blts_proc.h"
@@ -409,7 +409,7 @@ void DrawWBlockSpesific(
 
 void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 
 	DrawTempoTrackHeader(window,wblock);
 

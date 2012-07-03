@@ -363,6 +363,8 @@ void addInstrument(struct Patch *patch){
   instrument->panningBox->setEnabled(true);
   instrument->volumeBox->setEnabled(true);
   instrument->velocityBox->setEnabled(true);
+  instrument->velocity_slider->setEnabled(true);
+  instrument->velocity_spin->setEnabled(true);
   instrument->portBox->setEnabled(true);
   instrument->presetBox->setEnabled(true);
   instrument->channelBox->setEnabled(true);

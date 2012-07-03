@@ -23,7 +23,15 @@ void Control_change_widget::value_spin_valueChanged( int val)
 	value_slider->setValue(val);
     
     patchdata->ccvalues[this->ccnum] = val;
-    printf("num: %d, value: %d\n",this->ccnum,val);
+    printf("num: %d, value: %d\n",patchdata->cc[this->ccnum],val);
+
+    D_PutMidi3(
+               patchdata->midi_port,
+               0xb0|patchdata->channel,
+               patchdata->cc[this->ccnum],
+               val
+               );
+
     set_editor_focus();
 }
 

@@ -11,7 +11,7 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>645</width>
+            <width>659</width>
             <height>164</height>
         </rect>
     </property>
@@ -119,8 +119,14 @@
                     <verstretch>0</verstretch>
                 </sizepolicy>
             </property>
+            <property name="maximumSize">
+                <size>
+                    <width>32767</width>
+                    <height>32767</height>
+                </size>
+            </property>
             <property name="title">
-                <string>Velocity</string>
+                <string>Edit vel.</string>
             </property>
             <grid>
                 <property name="name">

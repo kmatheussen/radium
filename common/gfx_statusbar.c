@@ -27,13 +27,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "blocklist_proc.h"
 
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 
 extern struct Root *root;
 
-char firstringinwindowtitle[32]={0};
+char firstringinstatusbar[32]={0};
 
-void GFX_DrawWindowTitle(
+void GFX_DrawStatusBar(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
@@ -44,7 +44,7 @@ void GFX_DrawWindowTitle(
 	sprintf(
 		wblock->title,
 		"%s%d*(%d~%d) - %d:%02d - %d/%d/%d - %d/%d:%.64s",
-		firstringinwindowtitle,
+		firstringinstatusbar,
 		wblock->block->num_tracks,
 		wblock->block->num_lines,
 		wblock->num_reallines,
@@ -58,7 +58,7 @@ void GFX_DrawWindowTitle(
 		wblock->block->name
 	);
 
-	GFX_SetWindowTitle(window,wblock->title);
+	GFX_SetStatusBar(window,wblock->title);
 }
 
 void GFX_SetChangeInt(
@@ -67,7 +67,7 @@ void GFX_SetChangeInt(
 	char *title,
 	int Int
 ){
-	sprintf(firstringinwindowtitle,"%s%s%d - ",title,title==NULL?"":": ",Int);
+	sprintf(firstringinstatusbar,"%s%s%d - ",title,title==NULL?"":": ",Int);
 }
 
 void GFX_SetChangeFloat(
@@ -77,7 +77,7 @@ void GFX_SetChangeFloat(
 	float Float
 ){
 	sprintf(
-		firstringinwindowtitle,
+		firstringinstatusbar,
 		"%s%s%.2f - ",
 		title,title==NULL?"":": ",
 		Float

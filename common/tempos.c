@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "time_proc.h"
 #include "undo_tempos_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "gfx_tempocolor_proc.h"
 #include "player_proc.h"
 
@@ -97,7 +97,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 	DrawTempos(window,wblock,curr_realline,curr_realline);
 	WBLOCK_DrawTempoColor(window,wblock,curr_realline,wblock->num_reallines);
 
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 }
 
 void RemoveTempos(struct Blocks *block,Place *p1,Place *p2){
@@ -126,7 +126,7 @@ void RemoveTemposCurrPos(struct Tracker_Windows *window){
 
 	WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
 
-	GFX_DrawWindowTitle(window,wblock);
+	GFX_DrawStatusBar(window,wblock);
 }
 
 

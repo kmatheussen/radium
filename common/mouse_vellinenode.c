@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_subtrack_proc.h"
 #include "notes_proc.h"
 #include "undo_notes_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "realline_calc_proc.h"
 
@@ -94,7 +94,7 @@ int MoveVelNode_Mouse(
 		velocity->velocity=R_BOUNDARIES(0,velocity->velocity,maxvel);
 		PlaceCopy(&velocity->l.p,&place);
 		GFX_SetChangeInt(window,wblock,"Velocity",velocity->velocity);
-		GFX_DrawWindowTitle(window,wblock);
+		GFX_DrawStatusBar(window,wblock);
 	}
 
 	UpdateTrackReallines(window,wblock,wtrack);

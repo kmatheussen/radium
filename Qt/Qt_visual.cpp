@@ -830,6 +830,10 @@ void QGFX_V_DrawTrackBorderSingle(
 
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
+  g_main_window->setCaption(title);
+}
+
+void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
   //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //main_window->statusBar()->message(title);
 

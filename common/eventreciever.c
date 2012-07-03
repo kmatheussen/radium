@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "../api/api_support_proc.h"
-
+#include "OS_Player_proc.h"
 
 #include "eventreciever_proc.h"
 
@@ -53,6 +53,8 @@ bool Quit(struct Tracker_Windows *window){
 
 	char temp[200];
 	char *ret=NULL;
+
+        StopPlayer();
 
 	printf("Going to quit\n");
 	if(num_undos>0){

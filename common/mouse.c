@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "mouse_tempoheader_proc.h"
 #include "gfx_tempotrackheader_proc.h"
 #include "mouse_quantitize_proc.h"
-#include "gfx_window_title_proc.h"
+#include "gfx_statusbar_proc.h"
 #include "mouse_reltemposlider_proc.h"
 #include "gfx_upperleft_proc.h"
 #include "gfx_tempotrackheader_proc.h"
@@ -140,7 +140,7 @@ void LeftMouseDown(struct Tracker_Windows *window,int x,int y){
 	SetMouseAction(window,prevaction,x,y,1);
 }
 
-extern char firstringinwindowtitle[32];
+extern char firstringinstatusbar[32];
 
 int LeftMouseUp(struct Tracker_Windows *window,int x,int y){
 	struct MouseAction *prevaction= &window->prevaction;
@@ -151,9 +151,9 @@ int LeftMouseUp(struct Tracker_Windows *window,int x,int y){
 		ret=(*prevaction->MouseUpFunction)(window,x,y);
 	}
 
-	if(firstringinwindowtitle[0]!=0){
-	   firstringinwindowtitle[0]=0;
-	  GFX_DrawWindowTitle(window,window->wblock);
+	if(firstringinstatusbar[0]!=0){
+	   firstringinstatusbar[0]=0;
+	  GFX_DrawStatusBar(window,window->wblock);
 	}
 	return ret;
 

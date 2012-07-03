@@ -27,10 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // (The *PutMidi* API needs to be cleaned up)
 static int midi_msg_len(int m1){
-  if((m1 & 0xf0) == 0xb0)
+  if((m1 & 0xf0) == 0xc0)
     return 2;
 
-  if((m1 & 0xf0) == 0xc0)
+  if((m1 & 0xf0) == 0xd0)
     return 2;
 
   if(m1>=0xf0){
@@ -64,6 +64,35 @@ static std::vector<unsigned char> message1;
 static std::vector<unsigned char> message2;
 static std::vector<unsigned char> message3;
 
+// A scoped Lock class that protects midiout->sendmessage
+class ScopedPutMidiLock{
+public:
+  ScopedPutMidiLock() : is_locked( false ) {
+    lock();
+  }
+  ~ScopedPutMidiLock() {
+    unlock();
+  }
+  void lock() {
+    if ( is_locked == false ) {
+      pthread_mutex_lock( &putmidi_lock );
+      is_locked = true;
+    }
+  }
+  void unlock() {
+    if ( is_locked == true ) {
+      pthread_mutex_unlock( &putmidi_lock );
+      is_locked = false;
+    }
+  }
+
+private:
+  bool is_locked;
+  static pthread_mutex_t putmidi_lock;
+};
+
+pthread_mutex_t ScopedPutMidiLock::putmidi_lock = PTHREAD_MUTEX_INITIALIZER;
+
 
 void PutMidi(MidiPortOs port,
              uint32_t msg
@@ -82,23 +111,28 @@ void PutMidi(MidiPortOs port,
   if(len==0)
     return;
 
-  if(len==1){
-    message1[0]=d1;
-    midiout->sendMessage(&message1);
-    return;
-  }
+  {
+    ScopedPutMidiLock lock; // Sometimes, the GUI wants to send midi signals, and that's why we need a lock here.
+                            // Don't think any effect caused by priority inheritance should be an issue when the user drags sliders, etc.
 
-  if(len==2){
-    message2[0]=d1;
-    message2[1]=d2;
-    midiout->sendMessage(&message2);
-    return;
-  }
+    if(len==1){
+      message1[0]=d1;
+      midiout->sendMessage(&message1);
+      return;
+    }
 
-  message3[0]=d1;
-  message3[1]=d2;
-  message3[2]=d3;
-  midiout->sendMessage(&message3);
+    if(len==2){
+      message2[0]=d1;
+      message2[1]=d2;
+      midiout->sendMessage(&message2);
+      return;
+    }
+
+    message3[0]=d1;
+    message3[1]=d2;
+    message3[2]=d3;
+    midiout->sendMessage(&message3);
+  }
 }
 
 
