@@ -3413,10 +3413,7 @@ static pthread_mutex_t jack_ports_lock = PTHREAD_MUTEX_INITIALIZER;
 static const char **jack_input_ports = NULL;
 static const char **jack_output_ports = NULL;
 
-static void jack_port_registration_callback (jack_port_id_t port, int do_register, void *arg) {
-  jack_client_t *port_client = (jack_client_t*) arg;
-  printf("registred port: %d\n", do_register);
-
+static void register_jack_ports( jack_client_t *port_client) {
   pthread_mutex_lock( &jack_ports_lock );
 
   if ( jack_input_ports != NULL )
@@ -3431,6 +3428,11 @@ static void jack_port_registration_callback (jack_port_id_t port, int do_registe
   pthread_mutex_unlock( &jack_ports_lock );
 }
 
+static void jack_port_registration_callback( jack_port_id_t port, int do_register, void *arg ) {
+  jack_client_t *port_client = (jack_client_t*) arg;
+  register_jack_ports( port_client );
+}
+
 static bool init_jack_port_client(void){
   static jack_client_t *port_client = NULL;
   if ( port_client != NULL)
@@ -3443,6 +3445,8 @@ static bool init_jack_port_client(void){
   jack_set_port_registration_callback( port_client, jack_port_registration_callback, port_client);
 
   jack_activate(port_client);
+
+  register_jack_ports( port_client );
 
   return true;
 }
@@ -3613,16 +3617,28 @@ std::string MidiInJack :: getPortName( unsigned int portNumber )
   std::ostringstream ost;
   std::string retStr("");
 
+  pthread_mutex_lock( &jack_ports_lock );
+
   // Check port validity
   if ( jack_input_ports == NULL ) {
+    pthread_mutex_unlock( &jack_ports_lock );
     errorString_ = "MidiInJack::getPortName: no ports available!";
     RtMidi::error( RtError::WARNING, errorString_ );
     return retStr;
   }
 
-  pthread_mutex_lock( &jack_ports_lock );
-  const char *portname = jack_input_ports == NULL ? NULL : jack_input_ports[portNumber];
-  pthread_mutex_lock( &jack_ports_lock );
+  const char *portname = NULL;
+  unsigned int count = 0;
+
+  while ( jack_input_ports[count] != NULL ) {
+    if ( count == portNumber ) {
+      portname = jack_input_ports[count];
+      break;
+    }
+    count++;
+  }
+
+  pthread_mutex_unlock( &jack_ports_lock );
 
   if ( portname == NULL ) {
     ost << "MidiInJack::getPortName: the 'portNumber' argument (" << portNumber << ") is invalid.";
@@ -3788,23 +3804,35 @@ std::string MidiOutJack :: getPortName( unsigned int portNumber )
   std::ostringstream ost;
   std::string retStr("");
 
+  pthread_mutex_lock( &jack_ports_lock );
+
   // Check port validity
   if ( jack_output_ports == NULL) {
+    pthread_mutex_unlock( &jack_ports_lock );
     errorString_ = "MidiOutJack::getPortName: no ports available!";
     RtMidi::error( RtError::WARNING, errorString_ );
     return retStr;
   }
 
-  pthread_mutex_lock( &jack_ports_lock );
-  const char *portname = jack_output_ports == NULL ? NULL : jack_input_ports[portNumber];
-  pthread_mutex_lock( &jack_ports_lock );
+  const char *portname = NULL;
+  unsigned int count = 0;
+
+  while ( jack_output_ports[count] != NULL ) {
+    if ( count == portNumber ) {
+      portname = jack_output_ports[count];
+      break;
+    }
+    count++;
+  }
+
+  pthread_mutex_unlock( &jack_ports_lock );
 
   if ( portname == NULL ) {
     ost << "MidiOutJack::getPortName: the 'portNumber' argument (" << portNumber << ") is invalid.";
     errorString_ = ost.str();
     RtMidi::error( RtError::WARNING, errorString_ );
   }
-  else retStr.assign( jack_output_ports[portNumber] );
+  else retStr.assign( portname );
 
   return retStr;
 }
