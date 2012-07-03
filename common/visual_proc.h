@@ -63,6 +63,7 @@ extern LANGSPEC void GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,i
 
 extern LANGSPEC int GFX_CreateVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC int GFX_ShutDownVisual(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width);
 
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);

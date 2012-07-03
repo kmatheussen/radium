@@ -53,7 +53,7 @@ DC_start("PATCHDATA");
 DC_end();
 }
 
-void *LoadPatchData(void){
+void LoadPatchData(struct PatchData *patchdata){
 	static char **objs=NULL;
 	static char *vars[10]={
 		"clustername",
@@ -68,7 +68,6 @@ void *LoadPatchData(void){
                 "controlchange"
 	};
 	char *clustername = NULL;
-	struct PatchData *patchdata=DC_alloc(sizeof(struct PatchData));
 
 	GENERAL_LOAD(0,10)
 
@@ -142,7 +141,7 @@ obj6:
 
 error:
 end:
-	return patchdata;
+	return;
 }
 
 

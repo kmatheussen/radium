@@ -81,7 +81,7 @@ var3:
 	goto start;
 
 obj0:
-	patch->patchdata=LoadPatchData();
+	LoadPatchData(patch->patchdata);
 	goto start;
 
 

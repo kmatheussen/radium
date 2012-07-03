@@ -138,27 +138,18 @@ Non-urgent
 
 * Quitting while playing notes makes the program segfault.
 
+* Enable mmd2 loading on non-amiga.
+
+* Import at least one standard tracker module format. (For instance modplugtracker, since modplugtracker can import
+  all sorts of formats.)
+
+* Replace xterm with Qt widget, for instance QTextEdit.
+  (xterm screws up keyboard focus)
+
 
 Urgent
 ======
 
-* If making temponode area very big, and thn make window very small,
-  then there's lots of warnings. Not unlikely to crash.
-  Options:
-    * Refuse to make window smaller
-    * Make temponodearea smaller. (better)
-
-* make install. First get rid of /tmp/radium and put everything that's needed for the program into bin/.
-  Then "make install" can do:
-
-  mkdir -f $(PREFIX)/lib/radium/
-  cp -a bin/* $(PREFIX)/lib/radium/ 
-  ln -sf $(PREFX)/lib/radium/start.sh $(PREFIX)/bin/radium.
-
-* Keyboard up/downs must be reset after loading.
-
-* When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
-  it helps to change size of editor widget.
 
 
 Can not reproduce
@@ -171,4 +162,7 @@ Can not reproduce
 
 * Instrument widget size increases after pressing f12.
 
+* When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
+  it helps to change size of editor widget.
 
+* Keyboard up/downs must be reset after loading.

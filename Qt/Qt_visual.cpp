@@ -381,6 +381,10 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   return 0;
 }
 
+void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->setMinimumWidth(width);
+}
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
 char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){

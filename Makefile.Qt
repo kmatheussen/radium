@@ -6,6 +6,10 @@
 
 #----------------USER SETTINGS-------------------------------
 
+#PREFIX ?= /usr/local
+PREFIX ?= /tmp/test
+bindir = $(PREFIX)/bin
+libdir = $(PREFIX)/lib
 
 
 # Set PYQTEXE to a python binary at least v2.2 that has pyqt.
@@ -75,7 +79,7 @@ DEFINES= -DNOPAUSEPLAY
 # define MEMORY_DEBUG
 # define TRACKER_GB
 
-OPTIMIZE=
+OPTIMIZE= -mtune=native -O3
 #-O3
 #-O
 
@@ -179,6 +183,32 @@ check_dependencies:
 	grep -e "char\ \*" api/protos.conf
 	@echo "All seems good (but everything has probably not been tested)"
 	@echo
+
+install: all
+	install -d $(DESTDIR)$(bindir)
+	install -d $(DESTDIR)$(libdir)/radium
+
+	cp -a bin/* $(DESTDIR)$(libdir)/radium/
+	rm -fr $(DESTDIR)$(libdir)/radium/packages/*.tar.*
+
+	rm -fr $(DESTDIR)$(libdir)/radium/packages/man
+	rm -fr $(DESTDIR)$(libdir)/radium/packages/gc-7.2
+	rm -fr $(DESTDIR)$(libdir)/radium/packages/xterm-179/*
+
+	rm -fr $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/*
+	cp bin/packages/xmessage-1.0.3/xmessage $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/
+
+	chmod -R a+rx bin/*
+
+	echo "#!/bin/sh" >$(DESTDIR)$(bindir)/radium
+	echo "cd " $(DESTDIR)$(libdir)/radium >>$(DESTDIR)$(bindir)/radium
+	echo "python start.py keybindings.conf $@" >>$(DESTDIR)$(bindir)/radium
+
+	chmod a+rx $(DESTDIR)$(bindir)/radium
+
+uninstall:
+	rm -fr $(DESTDIR)$(libdir)/radium
+	rm -f $(DESTDIR)$(bindir)/radium
 
 run-gdb:
 	make -j3 && cd bin && gdb --args python start.py keybindings.conf && cd ..          

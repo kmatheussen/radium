@@ -142,6 +142,11 @@ void UpdateWBlockCoordinates(
 
 	SetWBlock_Top_And_Bot_Realline(window,wblock);
 
+        if(wblock->wtracks==NULL)
+          GFX_SetMinimumWindowWidth(window, wblock->t.x1 + 100);
+        else
+          GFX_SetMinimumWindowWidth(window, R_MIN(wblock->t.x1 + 100, wblock->wtracks->x2 + 20));
+
 	UpdateAllWTracksCoordinates(window,wblock);
 }
 

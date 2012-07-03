@@ -360,7 +360,7 @@ void BS_SelectBlock(struct Blocks *block){
 
 void BS_SelectPlaylistPos(int pos){
   ScopedVisitors v;
-  printf("selectplaylistpos %d\n",pos);
+  //printf("selectplaylistpos %d\n",pos);
   if(pos==-1)
     return;
   bs->playlist.setSelected(pos, true);

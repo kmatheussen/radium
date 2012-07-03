@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern void SavePatchData(void *pd);
-extern void *LoadPatchData(void);
+void LoadPatchData(struct PatchData *patchdata);
 
 #endif
 
