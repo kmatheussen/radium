@@ -71,6 +71,12 @@ ACKNOWLEDGEMENTS
         http://www.music.mcgill.ca/~gary/rtmidi/
 
 
+BUILD DEPENDENCIES
+        qt3-devel
+        libXaw-devel
+        ncurses-devel
+        python-devel
+
 CONTACT
 	k.s.matheussen@notam02.no
 	http://www.notam02.no/radium/

@@ -55,9 +55,9 @@ fi
 
 #http://dickey.his.com/xterm/xterm.htlm
 tar xvzf xterm.tar.gz
-cd xterm-179
+cd xterm-281
 ./configure --prefix=$PREFIX --x-includes=/usr/X11R6/include --x-libraries=/usr/X11R6/lib
-make
+make -j3
 strip xterm
 make install
 cd ..
@@ -67,13 +67,13 @@ cd ..
 tar xvzf gc.tar.gz
 cd gc-7.2
 ./configure --prefix=$PREFIX
-make
+make -j3
 cd ..
 
 tar xvjf xmessage-1.0.3.tar.bz2
 cd xmessage-1.0.3
 ./configure --prefix=$PREFIX
-make
+make -j3
 cd ..
 
 #http://code.google.com/p/py-setproctitle/
