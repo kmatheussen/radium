@@ -150,11 +150,11 @@ Non-urgent
 
 * phaser for instrument widget.
 
+* Get rid if PyQT3 usage.
+
 
 Urgent
 ======
-
-* Keyboard focus is lost after loading.
 
 
 

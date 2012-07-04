@@ -236,6 +236,8 @@ bool Load_CurrPos(struct Tracker_Windows *window){
           ret = Load(filename);
           GFX_SetWindowTitle(root->song->tracker_windows, filename);
 
+          GFX_EditorWindowToFront(root->song->tracker_windows);
+
           fprintf(stderr,"Got here (loading finished)\n");
         }
 

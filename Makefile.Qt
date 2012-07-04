@@ -12,18 +12,11 @@ bindir = $(PREFIX)/bin
 libdir = $(PREFIX)/lib
 
 
-# Set PYQTEXE to a python binary at least v2.2 that has pyqt.
-# (using "/usr/bin/env python" is not allowed)
-
-PYQTEXE=/usr/bin/python
-
-
 
 # If using QT3 (recommended), QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
 
-#QTDIR=/usr/lib/qt-3.3
-#/usr/lib/qt3
-QTDIR=/usr/lib64/qt-3.3
+QTDIR=/usr/lib/qt-3.3
+#QTDIR=/usr/lib64/qt-3.3
 
 
 
@@ -39,14 +32,12 @@ BUILDTYPE=DEBUG
 
 
 
-
 #----------------DEFININTIONS----------------------
 
 
 # Dont change these, they are correct.
 GCDIR=bin/packages/gc-7.2
-PYTHONEXE=${PYQTEXE}
-#PYTHONEXE=/tmp/radium/bin/python
+PYTHONEXE=`which python`
 
 
 PYPATH=`cat pypath.comp`
@@ -255,7 +246,7 @@ bin/common.py: $(API)common.py
 
 bin/X11_Qtstuff.py: X11/X11_Qtstuff.py Makefile
 	rm -f bin/X11_Qtstuff.py
-	echo "#!$(PYQTEXE)" >bin/X11_Qtstuff.py
+	echo "#!$(PYTHONEXE)" >bin/X11_Qtstuff.py
 	echo "" >>bin/X11_Qtstuff.py
 	echo "#Do not edit, this file is automaticly generated." >>bin/X11_Qtstuff.py
 	echo "" >>bin/X11_Qtstuff.py
@@ -1024,7 +1015,7 @@ RtMidi.o: $(RTMIDI_DIR)/RtMidi.cpp
 
 
 pypath.comp:
-	`which $(PYTHONEXE)` -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]" >pypath.comp
+	$(PYTHONEXE) -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]" >pypath.comp
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
