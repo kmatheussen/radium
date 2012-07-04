@@ -146,9 +146,15 @@ Non-urgent
 * Replace xterm with Qt widget, for instance QTextEdit.
   (xterm screws up keyboard focus)
 
+* Line numbers over 999 are not fully shown.
+
+* phaser for instrument widget.
+
 
 Urgent
 ======
+
+* Keyboard focus is lost after loading.
 
 
 
@@ -164,5 +170,3 @@ Can not reproduce
 
 * When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
   it helps to change size of editor widget.
-
-* Keyboard up/downs must be reset after loading.

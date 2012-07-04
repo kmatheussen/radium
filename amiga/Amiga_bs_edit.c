@@ -214,11 +214,11 @@ bool BS_handleevents(struct IntuiMessage *msg){
 					}
 					break;
 				case 2:
-					PlayStop();
-					BL_insert(selto,(struct Blocks *)ListFindElement1(&root->song->blocks->l,selfrom));
 					selto++;
 					root->curr_playlist=selto;
-					BS_UpdatePlayList();
+
+					BL_insertCurrPos(selto,(struct Blocks *)ListFindElement1(&root->song->blocks->l,selfrom));
+
 					GT_SetGadgetAttrs(
 						BlockSelectGadgets[1],BlockSelectWnd,NULL,
 						(GTLV_Selected), selto,
@@ -227,9 +227,7 @@ bool BS_handleevents(struct IntuiMessage *msg){
 					break;
 				case 3:
 					if(selto<root->song->length && root->song->length>1){
-						PlayStop();
-						BL_delete(selto);
-						BS_UpdatePlayList();
+						BL_deleteCurrPos(selto);
 					}
 					break;
 			}

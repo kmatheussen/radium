@@ -18,10 +18,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "nsmtracker.h"
 #include "player_proc.h"
+#include "list_proc.h"
+#include "undo_playlist_proc.h"
+#include "OS_Bs_edit_proc.h"
 
 #include "blocklist_proc.h"
 
 extern struct Root *root;
+
+// Note: talloc_atomic could be used instead of talloc, since the blocks are stored elsewhere.
+// However, in case of bugs, using talloc_atomic here could lead to crashes that would be very hard to find the origin of.
 
 
 void BL_init(void){
@@ -29,7 +35,7 @@ void BL_init(void){
 	int lokke;
 #endif
 
-	root->song->playlist=talloc_atomic(sizeof(struct Blocks *));
+	root->song->playlist=talloc(sizeof(struct Blocks *));
 	root->song->playlist[0]=root->song->blocks;
 	root->song->length=1;
 
@@ -43,16 +49,34 @@ void BL_init(void){
 	*/
 }
 
+int *BL_copy(void){
+  int *playlist = talloc_atomic(sizeof(int)*(root->song->length+1));
+  int pos;
+  playlist[0] = root->song->length;
+  for(pos=0;pos<root->song->length;pos++)
+    playlist[pos+1]=root->song->playlist[pos]->l.num;
+  return playlist;
+}
+
+void BL_paste(int *playlist){
+  int len = playlist[0];
+  struct Blocks **new=talloc(len*sizeof(struct Blocks *));
+  int pos;
+  for(pos=0;pos<len;pos++)
+    new[pos]=(struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos+1]);
+
+  root->song->length = len;
+  root->song->playlist = new;
+}
+
 void BL_insert(int pos,struct Blocks *block){
 	int lokke;
 	struct Blocks **temp;
 	struct Blocks **playlist=root->song->playlist;
 
-	PlayStop();
-
 	root->song->length++;
 
-	temp=talloc_atomic(root->song->length*sizeof(struct Blocks *));
+	temp=talloc(root->song->length*sizeof(struct Blocks *));
 	memcpy(temp,playlist,(root->song->length-1)*sizeof(struct Blocks *));
 
 	temp[pos]=block;
@@ -71,12 +95,17 @@ void BL_insert(int pos,struct Blocks *block){
 #endif
 }
 
+void BL_insertCurrPos(int pos,struct Blocks *block){
+  PlayStop();
+  Undo_Playlist();
+  BL_insert(pos,block);
+  BS_UpdatePlayList();
+}
+
 void BL_delete(int pos){
 	int lokke;
 
 	struct Blocks **playlist=root->song->playlist;
-
-	PlayStop();
 
 	for(lokke=pos;lokke<root->song->length;lokke++){
 		playlist[lokke]=playlist[lokke+1];
@@ -93,8 +122,29 @@ void BL_delete(int pos){
 
 }
 
+void BL_deleteCurrPos(int pos){
+  PlayStop();
+  Undo_Playlist();
+  BL_delete(pos);
+  BS_UpdatePlayList();
+}
+
 struct Blocks *BL_GetBlockFromPos(int pos){
 	if(pos>=root->song->length || pos<0) return NULL;
 	return root->song->playlist[pos];
 }
 
+static int get_first_block_pos(struct Blocks *block){
+  int pos;
+
+  for(pos=0;pos<root->song->length;pos++)
+    if(root->song->playlist[pos]==block)
+      return pos;
+
+  return -1;
+}
+
+void BL_removeBlockFromPlaylist(struct Blocks *block){
+  while(get_first_block_pos(block)!=-1)
+    BL_delete(get_first_block_pos(block));
+}

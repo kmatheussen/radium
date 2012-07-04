@@ -138,7 +138,7 @@ OBJ9= Ptask2Mtask.o player.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PE
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o
 
 #X11 Spesific
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
@@ -198,7 +198,7 @@ install: all
 	rm -fr $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/*
 	cp bin/packages/xmessage-1.0.3/xmessage $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/
 
-	chmod -R a+rx bin/*
+	chmod -R a+rx $(DESTDIR)$(libdir)/radium/*
 
 	echo "#!/bin/sh" >$(DESTDIR)$(bindir)/radium
 	echo "cd " $(DESTDIR)$(libdir)/radium >>$(DESTDIR)$(bindir)/radium
@@ -695,6 +695,9 @@ undo_reltempomax.o: $(CD)undo_reltempomax.c
 
 undo_maintempos.o: $(CD)undo_maintempos.c
 	$(CC) $(CD)undo_maintempos.c $(OPT)
+
+undo_playlist.o: $(CD)undo_playlist.c
+	$(CC) $(CD)undo_playlist.c $(OPT)
 
 gfx_upperleft.o: $(CD)gfx_upperleft.c
 	$(CC) $(CD)gfx_upperleft.c $(OPT)

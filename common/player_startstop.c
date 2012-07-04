@@ -108,7 +108,7 @@ void PlayBlock(
 		pc->block=block;
 
 		root->curr_block=pc->block->l.num;
-		debug("root->curr_block: %d\n",root->curr_block);
+		printf("Play block. root->curr_block: %d. Block: %p\n",root->curr_block,pc->block);
 
 		pc->isplaying=true;
 		(*Ptask2MtaskCallBack)();
@@ -127,16 +127,17 @@ void PlayBlock(
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window){
-	Place place;
-
-	struct WBlocks *wblock=window->wblock;
-
 	PlayStopReally(false);
-	PlaceSetFirstPos(&place);
 
 	root->setfirstpos=true;
 	pc->seqtime=0;
-	PlayBlock(wblock->block,&place);
+
+        {
+          struct WBlocks *wblock=window->wblock;
+          Place place;
+          PlaceSetFirstPos(&place);
+          PlayBlock(wblock->block,&place);
+        }
 }
 
 void PlayBlockCurrPos(struct Tracker_Windows *window){
@@ -181,18 +182,17 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 	PlayBlock(wblock->block,place);
 }
 
+
 void PlaySong(
 	Place *place,
 	int playpos
 ){
-	struct Blocks *block;
-
 	debug("haaasfdfsafsa, root->song->length: %d\n\n\n",root->song->length);
 	pc->initplaying=true;
 
-		block=BL_GetBlockFromPos(playpos);
+		struct Blocks *block=BL_GetBlockFromPos(playpos);
 
-		debug("blocknum:%d\n",block->l.num);
+		printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
 
 		pc->playpos=playpos;
 
@@ -221,11 +221,6 @@ void PlaySong(
 
 
 void PlaySongFromStart(struct Tracker_Windows *window){
-
-	Place place;
-
-	PlaceSetFirstPos(&place);
-
 	PlayStopReally(false);
 
 	BS_SelectPlaylistPos(0);
@@ -235,7 +230,11 @@ void PlaySongFromStart(struct Tracker_Windows *window){
 
 	InitAllInstrumentsForPlaySongFromStart();
 
-	PlaySong(&place,0);
+        {
+          Place place;
+          PlaceSetFirstPos(&place);
+          PlaySong(&place,0);
+        }
 }
 
 void PlaySongCurrPos(struct Tracker_Windows *window){

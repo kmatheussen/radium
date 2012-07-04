@@ -16,9 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "windows_proc.h"
@@ -125,7 +122,13 @@ void Undo(void){
 
 	num_undos--;
 
-	wblock=ListFindElement1_r0(&window->wblocks->l,blocknum);
+        wblock=ListFindElement1_r0(&window->wblocks->l,blocknum);
+        if(wblock==NULL)
+          wblock=ListFindElement1_r0(&window->wblocks->l,blocknum-1);
+        if(wblock==NULL){
+          RError("undo.c: block %d does not exist. Using block 0.",blocknum-1);
+          wblock=window->wblocks;
+        }
 
 	window->wblock=wblock;
 	if(undo->tracknum<0){

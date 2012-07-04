@@ -6,6 +6,7 @@
 #include "OS_Bs_edit_proc.h"
 #include "undo_block_insertdelete_proc.h"
 #include "player_proc.h"
+#include "blocklist_proc.h"
 
 #include "block_delete_proc.h"
 
@@ -17,10 +18,13 @@ void DeleteBlock(
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock;
 	struct Blocks *block=ListFindElement1(&root->song->blocks->l,blockpos);
+	struct Blocks *nextblock=NextBlock(block);
+
+        BL_removeBlockFromPlaylist(block);
 
 	ListRemoveElement1(&root->song->blocks,&block->l);
-	block=NextBlock(block);			//This is safe. Allso if normal unix free() is used in ListRemoveElement1. But, if GC is not used, take care.
 
+	block = nextblock;
 	while(block!=NULL){
 		block->l.num--;
 		block=NextBlock(block);

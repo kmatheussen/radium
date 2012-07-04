@@ -232,8 +232,9 @@ private slots:
     int pos = playlist.currentItem();
     if(pos==-1)
       return;
-    BL_insert(playlist.currentItem(), getBlockFromNum(blocklist.currentItem()));
-    BS_UpdatePlayList();
+
+    BL_insertCurrPos(playlist.currentItem(), getBlockFromNum(blocklist.currentItem()));
+
     playlist.setSelected(pos+1, true);
     if(pos<(int)playlist.count()-1)
       root->curr_playlist = pos;
@@ -245,8 +246,9 @@ private slots:
       return;
     if(playlist.count()<=2)
       return;
-    BL_delete(num);
-    BS_UpdatePlayList();
+
+    BL_deleteCurrPos(num);
+
     printf("remove from playlist\n");
   }
 

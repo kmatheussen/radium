@@ -77,10 +77,6 @@ void InitAllInstrumentsForPlaySongFromStart(void){
 	struct Instruments *instrument=root->song->instruments;
 
 	while(instrument!=NULL){
-		if(instrument->PlayFromStartHook==NULL){
-			RError("Error in function 'InitAllInstrumentsForPlaySongFromStart' in file 'instruments.c'\n");
-			return;
-		}
 		(*instrument->PlayFromStartHook)(instrument);
 		instrument=NextInstrument(instrument);
 	}
