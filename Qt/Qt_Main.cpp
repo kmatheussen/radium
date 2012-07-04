@@ -221,7 +221,7 @@ int radium_main(char *arg){
   QApplication::setStyle( new QMotifPlusStyle() );
   QApplication::setStyle( new QSGIStyle() );
 #endif
-  // QApplication::setStyle( new QWindowsStyle() );
+  QApplication::setStyle( new QWindowsStyle() );
 
 #ifdef USE_QT4
   //QApplication::setGraphicsSystem("native");

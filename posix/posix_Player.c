@@ -91,7 +91,7 @@ bool posix_InitPlayer(void){
     rtparam.sched_priority = 1;
     
     if ((x = pthread_setschedparam (playerthread, SCHED_FIFO, &rtparam)) != 0) {
-      fprintf(stderr,"cannot set thread to real-time priority (FIFO/%d) (%d: %s)", rtparam.sched_priority, x, strerror (errno));
+      RWarning("cannot set thread to real-time priority (FIFO/%d) (%d: %s)", rtparam.sched_priority, x, strerror (errno));
     }
   }
 

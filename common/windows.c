@@ -199,8 +199,6 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
     Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
-	struct WBlocks *wblock;
-
 	GFX_P_ClearWindow(window);
 
         ClearResizeBox(window);
@@ -217,8 +215,6 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 
 	window->wblock->isgfxdatahere=true;
 	root->clearall=0;
-
-	wblock=window->wblock;
 
         ClearUnusedWindowsAreas(window);
 

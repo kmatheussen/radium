@@ -17,8 +17,8 @@ PREFIX=`dirname $PWD/$0`
 #make install
 #cd ..
 
-if [ $# -ne 2 ] ; then
-    echo "Usage: python_bin use_pygtk"
+if [ $# -ne 3 ] ; then
+    echo "Usage: PYTHONBIN use_pygtk(yes/no) QTDIR"
     exit
 fi
 
@@ -52,6 +52,16 @@ if test $2 = "yes" ; then
     cd ..
 fi
 
+#http://www.riverbankcomputing.co.uk/software/pyqt/download3
+if [ ! -f pyqtisbuilt ] ; then
+    tar xvzf PyQt-x11-gpl-3.18.1.tar.gz
+    cd PyQt-x11-gpl-3.18.1/
+    python configure.py -q $3 -d $PREFIX
+    make -j3
+    #make install
+    touch pyqtisbuilt
+    cd ..
+fi
 
 #http://dickey.his.com/xterm/xterm.htlm
 tar xvzf xterm.tar.gz
@@ -66,8 +76,8 @@ cd ..
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 tar xvzf gc.tar.gz
 cd gc-7.2
-./configure --prefix=$PREFIX
-make -j3
+CFLAGS=-fPIC ./configure --prefix=$PREFIX
+CFLAGS=-fPIC make -j3
 cd ..
 
 tar xvjf xmessage-1.0.3.tar.bz2

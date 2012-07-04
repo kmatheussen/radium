@@ -38,11 +38,12 @@ int tmemoryisused=1;
 void *tmemory;
 
 
-int init_memory(void){
+void init_memory(void){
 	tmemory=GC_malloc_atomic(tmemorysize);
 	tmemoryisused=0;
 
-	return (int) tmemory;
+	//return (int) tmemory;
+        return;
 }
 
 

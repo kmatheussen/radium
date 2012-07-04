@@ -66,7 +66,6 @@ SaveTrack(NextTrack(track));
 extern struct Root *root;
 
 struct Tracks *LoadTrack(void){
-	int obsolete; //relvol
 	static char *objs[3]={
 		"NOTE",
 		"STOPS",
@@ -111,7 +110,7 @@ var6:
 	track->panonoff=DC_LoadB();
 	goto start;
 var7:
-	obsolete=DC_LoadI();
+	DC_LoadI(); // relvol is not used anymore
 	goto start;
 
 obj0:

@@ -76,6 +76,9 @@ BUILD DEPENDENCIES
         libXaw-devel
         ncurses-devel
         python-devel
+        alsa-lib-devel
+        jack-audio-connection-kit-devel
+        sip-devel
 
 CONTACT
 	k.s.matheussen@notam02.no

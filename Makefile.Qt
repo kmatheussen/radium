@@ -84,7 +84,7 @@ OPTIMIZE= -mtune=native -O3
 #-O3
 #-O
 
-UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE -I/home/kjetil/site/include
+UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE -I/home/kjetil/site/include -fPIC
 # -pg
 
 OPT= $(UPOPT)
@@ -224,13 +224,14 @@ run-gdb:
 bin/packages/deletemetorebuild: bin/packages/build.sh
 	echo "\
 	cd bin/packages;\
-	./build.sh $(PYTHONEXE) no\
+	./build.sh $(PYTHONEXE) no $(QTDIR) \
 	" >makescript.sh
 	sh makescript.sh
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
-	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt $(RTMIDI_LDFLAGS)
+	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt $(RTMIDI_LDFLAGS) -fPIC
+
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
 #  -lasound
@@ -849,7 +850,7 @@ $(P)Qt_control_change_widget.h: $(P)control_change_widget.ui $(P)create_source_f
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
 Qt_memory.o:  $(P)Qt_memory.cpp
-	$(CCC)  $(P)Qt_memory.cpp $(OPT)
+	$(CCC)  $(P)Qt_memory.cpp $(CPPOPT)
 
 posix_settings.o: posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)

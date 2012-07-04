@@ -86,7 +86,8 @@ def GFX_StartQtstuff():
 
   
 if __name__=="__main__":    
-
+  import sys
+  sys.path.append("packages/PyQt-x11-gpl-3.18.1/qt");
   import qt,string
 
   class MenuWidget( qt.QWidget ):
