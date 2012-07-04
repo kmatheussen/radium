@@ -1,10 +1,10 @@
 
 
-Radium V0.63 Alpha Linux Port 
-Released 15.4.2004
+Radium V0.65
+Released 2012-07-04
 
 
-HOW TO MAKE IT RUN WITHOUT READING THE REST OF THE README FILE
+HOW TO MAKE IT RUN
 
 make
 ./start.sh
@@ -12,63 +12,8 @@ make
 
 
 INTRODUCTION
-	This is the second public, and the first official, release of
-	the linux port of the music editor Radium. The Amiga version
-	has been stable since January 2002.
-
-	Radium is a new type of graphical (currently only) notebased
-	music editor.
-
-	For more info about the program, check out the online manual placed
-	at http://www.notam02.no/radium/ somewhere.
-
-
-
-COMPILE
-	The following packages are currently used to build and run Radium:
-
-	*libgc - http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-	*Python - www.python.org (at least V2.0 and tkinter)
-	*Python development package
-	*pyqt - http://www.gnu.org/directory/devel/specific/PyQT.html
-	*pygtk - http://www.daa.com.au/~james/software/pygtk/ (pygtk1, use pygtk-0.6.11)
-	*xterm - Yupp.
-
-	Most of these things are allready included in the radium/ directory (mainly because
-	of compatibility problems between various versions of gtk, pygtk and
-	libglade), so you only need to get hold of "pyqt".
-
-	"pyqt" is available as package for most linux distributions.
-
-
-CURRENT STATE
-	The biggest problem is that saving does not work. Loading does though.
-	Other things that needs to be fixed is that the playing behaves
-	strange when reaching the end of the blocks, and that the alsa-seq code
-	needs some care (midi/alsaseq/).
-
-
-ABOUT THE CODE
-	The code is a mix between C and Python. The state of some of the code is
-	quite horrible and ununderstandable, but relatively bug-free, eh
-	hopefully. :)
-
-
-ACKNOWLEDGEMENTS
-        * Hans Boehms GC library ("BDW-GC") is used for most memory allocation and deallocation.
-        http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-
-        * "python-midi" by Giles Hall is copied into the source. python-midi is used
-        to read and write standard midi files.
-        https://github.com/vishnubob/python-midi
-
-        * "py-setproctitle" by Daniele Varrazzo is copied into the source. py-setproctitle is used
-        to set the title of the radium process to "radium". If not, the name of the process
-        would have been "python"
-        http://code.google.com/p/py-setproctitle/
-
-        * "rtmidi" by Gary P. Scavone is used to send recieve midi messages.
-        http://www.music.mcgill.ca/~gary/rtmidi/
+        Radium is a free (as in speech) music editor with a novel interface.
+        It's inspired by trackers, but has fewer limitations and uses graphics to show musical data. 
 
 
 BUILD DEPENDENCIES
@@ -83,8 +28,3 @@ BUILD DEPENDENCIES
 CONTACT
 	k.s.matheussen@notam02.no
 	http://www.notam02.no/radium/
-
-
-
-
-
