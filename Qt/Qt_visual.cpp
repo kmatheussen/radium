@@ -137,7 +137,7 @@ MyWidget::~MyWidget()
     */
 }
 
-
+extern struct Root *root;
 extern QApplication *qapplication;
 extern bool doquit;
 
@@ -191,6 +191,7 @@ public slots:
       PyRun_SimpleString(temp);
     }else
       PyRun_SimpleString(python_command);
+    static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     if(doquit==true)
       qapplication->quit();
   }
