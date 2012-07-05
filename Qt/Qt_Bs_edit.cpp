@@ -29,10 +29,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 
 #include "qwidget.h"
-#include "qlistbox.h"
 #include "qpushbutton.h"
 #include "qmainwindow.h"
 #include "qsplitter.h"
+
+#ifdef USE_QT3
+#include "qlistbox.h"
+#endif
+
+#ifdef USE_QT4
+#include <QListWidget>
+class QListBox : public QListWidget{
+public:
+  QListBox(QWidget *parent) : QListWidget(parent) {}
+  void insertItem(const char *text){
+    QListWidget::addItem(text);
+  }
+  int currentItem(){
+    return QListWidget::currentRow();
+  }
+  void setSelected(int pos, bool something){
+    QListWidget::setCurrentRow(pos);
+  }
+  void removeItem(int pos){
+    QListWidget::takeItem(pos);
+  }
+};
+
+#define QValueList QList
+#endif
+
 
 
 extern struct Root *root;
@@ -229,7 +255,11 @@ public:
 private slots:
 
   void add_to_playlist(void){
+#ifdef USE_QT3
     int pos = playlist.currentItem();
+#else
+    int pos = playlist.currentRow();
+#endif
     if(pos==-1)
       return;
 

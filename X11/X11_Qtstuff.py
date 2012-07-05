@@ -108,7 +108,7 @@ if __name__=="__main__":
           self.currentItemChanged.connect(self.listBoxItemSelected)
           fm = QtGui.QFontMetrics(self.font())
           self.setMinimumSize(200,(fm.height()+0)*(len(self.dasitems)+2))
-      
+          
       def listBoxItemSelected( self, current, prev):
           if prev:
               index = self.currentRow()
@@ -147,7 +147,10 @@ if __name__=="__main__":
   def OpenMenuWidget(filename):
       w = MenuWidget(filename)
       #a.setMainWidget( w )
+      w.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
       w.show()
+      w.activateWindow()
+      w.raise_()
       a.exec_()
 
   def GetFileName(type,filename):

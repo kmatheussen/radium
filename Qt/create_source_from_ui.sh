@@ -8,6 +8,9 @@ V=$3
 # * Replace "protected" with "public" in the header files. (to avoid having to make subclasses)
 # * Replace QLineEdit with MyQLineEdit so that we can override focusIn
 
-$UIC $3.ui | sed s/protected/public/ | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ >Qt_$3.h
+#UIFILE=qt4_$3.ui
+UIFILE=$3.ui
+
+$UIC $UIFILE | sed s/protected/public/ | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ >Qt_$3.h
 $UIC -impl Qt_$3.h $3.ui  | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ >Qt_$3.cpp
 $MOC Qt_$3.h >>Qt_$3.cpp

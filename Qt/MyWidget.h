@@ -14,12 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
+#ifdef USE_QT3
 #include <qapplication.h>
 #include <qpixmap.h>
 #include <qmenubar.h>
 #include <qpointarray.h>
 #include <qlabel.h>
+#endif
 
 #ifdef USE_QT4
 //Added by qt3to4:
@@ -32,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWheelEvent>
 #include <QCloseEvent>
 #include <Q3PointArray>
+#include <QFrame>
+#include <QLabel>
+#include <QMenuBar>
+#include <QApplication>
 #endif
 
 #ifdef USE_QT3

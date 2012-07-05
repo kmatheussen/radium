@@ -193,9 +193,10 @@ void Ptask2Mtask(void){
 #endif
 
 
-
+#ifdef USE_QT3
 #include "qwidget.h"
 #include "qlistbox.h"
+#endif
 
 
 //#include "google/profiler.h"

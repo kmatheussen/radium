@@ -20,7 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <qpalette.h>
 #include <qcolordialog.h>
+
+#ifdef USE_QT3
 #include <qobjectlist.h>
+#endif
 
 #include "MyWidget.h"
 #include "Qt_colors_proc.h"
@@ -70,6 +73,7 @@ static void updateApplication(QApplication *app){
 static void updateAll(QWidget *widget){
   updateWidget(widget);
 
+#ifdef USE_QT3
   const QObjectList *l = widget->children();
   if(l==NULL)
     return;
@@ -83,7 +87,7 @@ static void updateAll(QWidget *widget){
     if(widget!=NULL)
       updateAll(widget);
   }
-
+#endif
 }
 
 static void updateAll(){

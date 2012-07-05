@@ -350,11 +350,15 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   tvisual->os_visual.widget=mywidget;
 
   mywidget->qpixmap=new QPixmap(mywidget->width(),mywidget->height());
+#ifdef USE_QT3
   mywidget->qpixmap->setOptimization(QPixmap::BestOptim);
+#endif
   mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
 
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
+#ifdef USE_QT3
   mywidget->cursorpixmap->setOptimization(QPixmap::BestOptim);
+#endif
   mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
 
   //BS_SetX11Window((int)main_window->x11AppRootWindow());

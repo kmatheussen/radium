@@ -38,6 +38,8 @@
 **
 **********************************************************************/
 
+#ifdef USE_QT3
+
 #include "qcolordialog.h"
 
 #ifndef QT_NO_COLORDIALOG
@@ -1693,5 +1695,7 @@ bool QColorDialog::selectColor( const QColor& col )
 }
 
 #include "qcolordialog.moc"
+
+#endif
 
 #endif

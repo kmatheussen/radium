@@ -85,18 +85,21 @@ CPPOPT = $(OPT)
 
 
 # QT4 opts
-#QTOPTS = -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql
+#QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql
 #QTOPTS = -DUSE_QT4 `pkg-config --cflags Qt3Support`
 #MOC = moc
+#UIC = uic
+
 #
 # or:
 #
+
 # QT3 opts
 # 
 MOC = $(QTDIR)/bin/moc
 UIC = $(QTDIR)/bin/uic
-
 QTOPT=$(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include
+
 
 # rtmidi flags
 RTMIDI_DIR = midi/rtmidi/rtmidi-2.0.0
@@ -164,7 +167,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h
+	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt*
 
 check_dependencies:
 	@echo

@@ -3708,6 +3708,7 @@ static int jackProcessOut( jack_nframes_t nframes, void *arg )
     midiData = jack_midi_event_reserve( buff, 0, space );
 
     jack_ringbuffer_read( data->buffMessage, (char *) midiData, (size_t) space );
+
   }
 
   return 0;
@@ -3858,6 +3859,7 @@ void MidiOutJack :: sendMessage( std::vector<unsigned char> *message )
 {
   int nBytes = message->size();
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
+
 
   // Write full message to buffer
   jack_ringbuffer_write( data->buffMessage, ( const char * ) &( *message )[0],
