@@ -23,7 +23,8 @@ BUILD DEPENDENCIES
         python-devel
         alsa-lib-devel
         jack-audio-connection-kit-devel
-        sip-devel
+        PyQt4
+
 
 CONTACT
 	k.s.matheussen@notam02.no

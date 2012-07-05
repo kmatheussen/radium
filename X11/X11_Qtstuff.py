@@ -87,45 +87,38 @@ def GFX_StartQtstuff():
   
 if __name__=="__main__":    
   import sys
-  sys.path.append("packages/PyQt-x11-gpl-3.18.1/qt");
-  import qt,string
+  from PyQt4 import QtGui, QtCore
+  import string
 
-  class MenuWidget( qt.QWidget ):
-    def __init__( self, filename,*args ):
-      apply( qt.QWidget.__init__, (self,) + args )
+  class MenuWidget( QtGui.QListWidget ):
+      def __init__( self, filename, *args ):
+          apply( QtGui.QListWidget.__init__, (self,) + args)
 
-      self.filename=filename
+          self.filename = filename
+          
+          file=open(self.filename,'r')
+          self.dasitems=map(lambda x:string.rstrip(x),file.readlines())
+          file.close()
+
+          reversed = self.dasitems[:]
+          reversed.reverse()
+          for item in reversed:
+              self.insertItem(0,item)
+              
+          self.currentItemChanged.connect(self.listBoxItemSelected)
+          fm = QtGui.QFontMetrics(self.font())
+          self.setMinimumSize(200,(fm.height()+0)*(len(self.dasitems)+2))
       
-      self.topLayout = qt.QVBoxLayout( self, 10 )
-      self.grid = qt.QGridLayout( 0, 0 )
-      self.topLayout.addLayout( self.grid, 10 )
+      def listBoxItemSelected( self, current, prev):
+          if prev:
+              index = self.currentRow()
+              print "Writing to -"+self.filename+"-"
+              file=open(self.filename,'w')
+              file.write(self.dasitems[index])
+              file.close()
+              a.quit()
 
-      # Create a list box
-      self.lb = qt.QListBox( self, "listBox" )
-
-      file=open(self.filename,'r')
-      self.dasitems=map(lambda x:string.rstrip(x),file.readlines())
-      file.close()
-
-      self.setCaption(self.dasitems.pop(0))
-      
-      for item in self.dasitems:
-        self.lb.insertItem(item)
-
-      self.grid.addMultiCellWidget( self.lb, 0, 0, 0, 0 )
-      self.connect( self.lb, qt.SIGNAL("selected(int)"), self.listBoxItemSelected )
-
-      self.topLayout.activate()
-
-      self.setMinimumSize(200,600)
-      
-    def listBoxItemSelected( self, index ):
-        print "Writing to -"+self.filename+"-"
-        file=open(self.filename,'w')
-        file.write(self.dasitems[index])
-        file.close()
-        a.quit()
-
+  # Not tested with qt4
   def OpenColorWidget(filename):
       file=open(filename,'r')
       dasitems=map(lambda x:string.rstrip(x),file.readlines())
@@ -153,32 +146,34 @@ if __name__=="__main__":
       
   def OpenMenuWidget(filename):
       w = MenuWidget(filename)
-      a.setMainWidget( w )
+      #a.setMainWidget( w )
       w.show()
-      a.exec_loop()
+      a.exec_()
 
   def GetFileName(type,filename):
     if type=="open":
-      fn=qt.QFileDialog.getOpenFileName( qt.QString.null, qt.QString.null, qt.QMainWindow() )
+      fn=QtGui.QFileDialog.getOpenFileName() #None, QtCore.QString(), QtCore.QString(), QtGui.QMainWindow() )
     else:
-      fn=qt.QFileDialog.getSaveFileName( qt.QString.null, qt.QString.null, qt.QMainWindow() )
+      fn=QtGui.QFileDialog.getSaveFileName() #None, QtCore.QString(), QtCore.QString(), QtGui.QMainWindow() )
       
     file=open(filename,'w')
     if not fn.isNull():
-      print filename
-      print fn.ascii()
-      print string.rstrip(fn.ascii())
-      file.write(string.rstrip(fn.ascii()))
-    file.close()
+        s = str(fn)
+        print "filename",filename
+        print "fn",s
+        print string.rstrip(s)
+        file.write(string.rstrip(s))
+        file.close()
 
+  # Not tested with qt4
   def GetFont(filename):
       font=qt.QFontDialog.getFont()[0]
       file=open(filename,'w')
       print font.rawName().ascii()
       file.write(font.rawName().ascii())
       file.close()
-        
-  a = qt.QApplication( sys.argv )
+
+  a = QtGui.QApplication( sys.argv )
 
   HOST = ''    # The remote host
   port = int(sys.argv[1])
