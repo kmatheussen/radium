@@ -38,7 +38,8 @@ char *OS_get_directory_separator(void){
 char *OS_get_config_filename(void){
   char temp[500];
   sprintf(temp,"mkdir %s/.radium 2>/dev/null",getenv("HOME"));
-  system(temp);
+  if(system(temp)==-1)
+    RWarning("Unable to create \"$/.radium\" directory",getenv("HOME"));
 
   sprintf(temp,"%s/.radium/config",getenv("HOME"));
   return talloc_strdup(temp);

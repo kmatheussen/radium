@@ -3709,6 +3709,7 @@ static int jackProcessOut( jack_nframes_t nframes, void *arg )
 
     jack_ringbuffer_read( data->buffMessage, (char *) midiData, (size_t) space );
 
+    //printf("jack_process_out. jack_last_frame_time: %d\n", (int)jack_last_frame_time(data->client));
   }
 
   return 0;
@@ -3860,6 +3861,7 @@ void MidiOutJack :: sendMessage( std::vector<unsigned char> *message )
   int nBytes = message->size();
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
 
+  //printf("Frame time: %d\n",(int)jack_frame_time(data->client));
 
   // Write full message to buffer
   jack_ringbuffer_write( data->buffMessage, ( const char * ) &( *message )[0],

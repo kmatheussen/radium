@@ -116,7 +116,8 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 
   printf("Tried to read -%s-\n",ret);
   sprintf(temp,"rm %s",filename);
-  system(temp);
+  if(system(temp)==-1)
+    RWarning("Unable to delete \"%s\"",filename);
   
   return ret;
 }
@@ -147,7 +148,8 @@ void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
   fclose(file);
 
   sprintf(temp,"rm %s",filename);
-  system(temp);
+  if(system(temp)==-1)
+    RWarning("Unable to delete \"%s\"",filename);
 
 #endif
 }
