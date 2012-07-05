@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../X11/X11_Qtstuff_proc.h"
 #include "../X11/X11_ReqType_proc.h"
 
+#include "../common/gfx_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/settings_proc.h"
 
@@ -184,14 +185,16 @@ private:
 
 public slots:
   void clicked() {
+    struct Tracker_Windows *window = root->song->tracker_windows;
     if(checkable==true){
       char temp[500];
       this->checkval = this->checkval==1?0:1; // switch value.
       sprintf(temp,python_command,checkval?"1":"0");
-      PyRun_SimpleString(temp);
+      DO_GFX(PyRun_SimpleString(temp));
     }else
-      PyRun_SimpleString(python_command);
-    static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+      DO_GFX(PyRun_SimpleString(python_command));
+    //static_cast<MyWidget*>(window->os_visual.widget)->update();
+    static_cast<MyWidget*>(window->os_visual.widget)->repaint(); // Why isn't calling update() enough?
     if(doquit==true)
       qapplication->quit();
   }
