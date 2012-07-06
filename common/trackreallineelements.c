@@ -217,6 +217,10 @@ bool TRE_collectGarbage(void){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
 
+        // Something is not working. :-(
+        return false;
+
+
 //	if(1) return false;
 
 /* Make shure this is done first. */
