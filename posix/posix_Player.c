@@ -31,7 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // Try to call PlayerTask 1200 times a second.
-#define PLAYERTASKFREQ 1200
+#define PLAYERTASKFREQ 44100
+//#define PLAYERTASKFREQ 12000
 
 pthread_t playerthread={0};
 
@@ -49,16 +50,16 @@ static void *posix_PlayerThread(void *arg){
 
   while(doexit==false){
     struct timeval tv;
-    struct timespec req={0,1000000000 / PLAYERTASKFREQ};
+    struct timespec req={0,(1000*1000*1000) / PLAYERTASKFREQ};
 
     nanosleep(&req,NULL);
 
     gettimeofday(&tv,NULL);
     //newtime=(((tv.tv_sec*1000000+tv.tv_usec)/100)*PFREQ)/10000;
-    newtime=tv.tv_sec*1000000;
+    newtime=tv.tv_sec*(1000*1000);
     newtime+=tv.tv_usec;
     newtime*=PFREQ;
-    newtime/=1000000;
+    newtime/=(1000*1000);
 
     //printf("newtime: %lld, lasttime: %lld, -: %lld\n",newtime,lasttime,newtime-lasttime);
     PlayerTask(newtime-lasttime);
