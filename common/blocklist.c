@@ -113,11 +113,18 @@ void BL_delete(int pos){
 
 	root->song->length--;
 
+        if(root->song->length==0) { // Illegal with length 0.
+          playlist[0] = root->song->blocks;
+          root->song->length = 1;
+        }
+          
+
 #if 1
-	debug("playlen: %d\n",root->song->length);
+	printf("||||||||||| playlen: %d\n",root->song->length);
 	for(lokke=0;lokke<root->song->length;lokke++){
 	  printf("pos: %d, block: %d\n",lokke,playlist[lokke]->l.num);
 	}
+	printf("||||||||||| playlen: %d\n",root->song->length);
 #endif
 
 }
@@ -145,6 +152,11 @@ static int get_first_block_pos(struct Blocks *block){
 }
 
 void BL_removeBlockFromPlaylist(struct Blocks *block){
-  while(get_first_block_pos(block)!=-1)
+  while(get_first_block_pos(block)!=-1){
+    if(block==root->song->blocks && root->song->length==1){ // special case
+      printf("what?\n");
+      break;
+    }
     BL_delete(get_first_block_pos(block));
+  }
 }

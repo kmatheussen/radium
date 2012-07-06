@@ -149,6 +149,7 @@ static const std::vector<std::string> get_port_names(RtMidi &rtmidi){
   std::vector<std::string> ret;
   unsigned int nPorts = rtmidi.getPortCount();
 
+
   for (unsigned int i=0; i<nPorts; i++ ) {
     std::string portName;
     try {
@@ -175,7 +176,6 @@ static char **vector_to_cstring_array(const std::vector<std::string> &strings, i
 
   return ret;
 }
-
 
 static char **get_port_names(bool use_input_ports, int *retval){
   std::vector<std::string> ret;

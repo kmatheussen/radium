@@ -410,10 +410,13 @@ char **MIDI_getOutputPortNames(int *retsize){
   return ret;
 }
 
+extern struct Root *root;
+
 char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   int num_ports;
+
   char **portnames=MIDI_getOutputPortNames(&num_ports);
-  char **menusel = talloc(num_ports+1);
+  char **menusel = talloc(sizeof(char*)*(num_ports+1));
   memcpy(menusel,portnames,num_ports*sizeof(char*));
   menusel[num_ports] = "Create new port";
 

@@ -17,18 +17,18 @@ void DeleteBlock(
 ){
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock;
-	struct Blocks *block=ListFindElement1(&root->song->blocks->l,blockpos);
-	struct Blocks *nextblock=NextBlock(block);
+	struct Blocks *removed_block=ListFindElement1(&root->song->blocks->l,blockpos);
+	struct Blocks *nextblock=NextBlock(removed_block);
 
-        BL_removeBlockFromPlaylist(block);
+	ListRemoveElement1(&root->song->blocks,&removed_block->l);
 
-	ListRemoveElement1(&root->song->blocks,&block->l);
-
-	block = nextblock;
-	while(block!=NULL){
-		block->l.num--;
-		block=NextBlock(block);
-	}
+        {
+          struct Blocks *block = nextblock;
+          while(block!=NULL){
+            block->l.num--;
+            block=NextBlock(block);
+          }
+        }
 
 	root->song->num_blocks--;
 
@@ -45,6 +45,9 @@ void DeleteBlock(
 		}
 		window=NextWindow(window);
 	}
+
+        // Call BL_removeBlockFromPlaylist after blocklist is updated.
+        BL_removeBlockFromPlaylist(removed_block);
 }
 
 
@@ -74,7 +77,6 @@ void DeleteBlock_CurrPos(
 
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();
-
 }
 
 
