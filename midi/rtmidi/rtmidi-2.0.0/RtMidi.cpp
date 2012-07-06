@@ -3390,10 +3390,15 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
 
 #define JACK_RINGBUFFER_SIZE 16384 // Default size for ringbuffer
 
+struct JackMessageData{
+  jack_nframes_t time;
+  int nBytes;
+};
+
 struct JackMidiData {
   jack_client_t *client;
   jack_port_t *port;
-  jack_ringbuffer_t *buffSize;
+  jack_ringbuffer_t *buffData;
   jack_ringbuffer_t *buffMessage;
   jack_time_t lastTime;
   MidiInApi :: RtMidiInData *rtMidiIn;
@@ -3691,25 +3696,38 @@ void MidiInJack :: closePort()
 //*********************************************************************//
 
 // Jack process callback
-static int jackProcessOut( jack_nframes_t nframes, void *arg )
+static int jackProcessOut( jack_nframes_t nFrames, void *arg )
 {
   JackMidiData *data = (JackMidiData *) arg;
-  jack_midi_data_t *midiData;
-  int space;
 
   // Is port created?
   if ( data->port == NULL ) return 0;
 
-  void *buff = jack_port_get_buffer( data->port, nframes );
+  int lastFrameTime = jack_last_frame_time(data->client);
+
+  void *buff = jack_port_get_buffer( data->port, nFrames );
   jack_midi_clear_buffer( buff );
 
-  while ( jack_ringbuffer_read_space( data->buffSize ) > 0 ) {
-    jack_ringbuffer_read( data->buffSize, (char *) &space, (size_t) sizeof(space) );
-    midiData = jack_midi_event_reserve( buff, 0, space );
+  while ( jack_ringbuffer_read_space( data->buffData ) > 0 ) {
+    JackMessageData messageData;
 
-    jack_ringbuffer_read( data->buffMessage, (char *) midiData, (size_t) space );
+    jack_ringbuffer_peek( data->buffData, (char *) &messageData, (size_t) sizeof(JackMessageData) );
 
-    //printf("jack_process_out. jack_last_frame_time: %d\n", (int)jack_last_frame_time(data->client));
+    int offset = (messageData.time - lastFrameTime) + nFrames;
+
+    // Ensure the event belongs to this callback
+    if ( offset >= (int)nFrames )
+      break;
+
+    // If offset is negative, we missed the deadline, but we send it out the event anyway.
+    if ( offset < 0 )
+      offset = 0;
+
+    jack_ringbuffer_read_advance( data->buffData, (size_t) sizeof(JackMessageData) );
+
+    jack_midi_data_t *midiData = jack_midi_event_reserve( buff, offset, messageData.nBytes );
+
+    jack_ringbuffer_read( data->buffMessage, (char *) midiData, (size_t) messageData.nBytes );
   }
 
   return 0;
@@ -3745,7 +3763,7 @@ MidiOutJack :: ~MidiOutJack()
   // Cleanup
   if ( data->client != NULL ) {
     jack_client_close( data->client );
-    jack_ringbuffer_free( data->buffSize );
+    jack_ringbuffer_free( data->buffData );
     jack_ringbuffer_free( data->buffMessage );
   }
 
@@ -3764,7 +3782,7 @@ void MidiOutJack :: openPort( unsigned int portNumber, const std::string portNam
   }
 
   jack_set_process_callback( data->client, jackProcessOut, data );
-  data->buffSize = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE );
+  data->buffData = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * sizeof(JackMessageData) );
   data->buffMessage = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE );
   jack_activate( data->client );
 
@@ -3795,7 +3813,7 @@ void MidiOutJack :: openVirtualPort( const std::string portName )
   }
 
   jack_set_process_callback( data->client, jackProcessOut, data );
-  data->buffSize = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE );
+  data->buffData = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * sizeof(JackMessageData) );
   data->buffMessage = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE );
   jack_activate( data->client );
 
@@ -3858,15 +3876,16 @@ void MidiOutJack :: closePort()
 
 void MidiOutJack :: sendMessage( std::vector<unsigned char> *message )
 {
-  int nBytes = message->size();
   JackMidiData *data = static_cast<JackMidiData *> (apiData_);
+  JackMessageData messageData;
 
-  //printf("Frame time: %d\n",(int)jack_frame_time(data->client));
+  messageData.time = jack_frame_time(data->client);
+  messageData.nBytes = message->size();
 
   // Write full message to buffer
   jack_ringbuffer_write( data->buffMessage, ( const char * ) &( *message )[0],
                          message->size() );
-  jack_ringbuffer_write( data->buffSize, ( char * ) &nBytes, sizeof( nBytes ) );
+  jack_ringbuffer_write( data->buffData, ( char * ) &messageData, sizeof( JackMessageData ) );
 }
 
 #endif  // __UNIX_JACK__
