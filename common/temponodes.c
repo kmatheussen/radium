@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wblocks_proc.h"
 #include "time_proc.h"
 #include "reltempo_proc.h"
-#include "trackreallineelements_proc.h"
 #include "undo_temponodes_proc.h"
 #include <string.h>
 #include "temponodes_legalize_proc.h"
@@ -46,9 +45,7 @@ void MakeWTempoNodesCallBack(
 	float u_x1,float u_x2
 ){
 	struct TempoNodes *temponode=(struct TempoNodes *)extrainfo;
-	WTempoNodes *wtemponode;
-
-	GetTREelement(wtemponode);
+	WTempoNodes *wtemponode = talloc(sizeof(WTempoNodes));
 
 	wtemponode->type=TEMPONODE_LINE;
 	wtemponode->y1=u_y1;
@@ -61,7 +58,7 @@ void MakeWTempoNodesCallBack(
 	wblock->wtemponodes[realline]=wtemponode;
 
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
-		GetTREelement(wtemponode);
+		WTempoNodes *wtemponode = talloc(sizeof(WTempoNodes));
 
 		wtemponode->type=TEMPONODE_NODE;
 
@@ -77,7 +74,7 @@ void MakeWTempoNodesCallBack(
 
 	if(NextTempoNode(temponode)==wblock->block->lasttemponode){
 		if(firstlast==NODELINE_LAST || firstlast==NODELINE_FIRSTANDLAST){
-			GetTREelement(wtemponode);
+			WTempoNodes *wtemponode = talloc(sizeof(WTempoNodes));
 	
 			wtemponode->type=TEMPONODE_NODE;
 
@@ -92,20 +89,6 @@ void MakeWTempoNodesCallBack(
 	}
 }
 
-void FreeAllWTempoNodes(
-	struct WBlocks *wblock
-){
-	int lokke;
-	if(wblock->wtemponodes==NULL) return;
-
-	for(lokke=0;lokke<wblock->num_reallines_last;lokke++){
-		FreeAllRTEelements_fromroot(
-			&wblock->wtemponodes[lokke]
-		);
-	}
-
-}
-
 void UpdateWTempoNodes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
@@ -113,11 +96,7 @@ void UpdateWTempoNodes(
 	struct TempoNodes *prev=wblock->block->temponodes;
 	struct TempoNodes *temponode=NextTempoNode(prev);
 
-	FreeAllWTempoNodes(wblock);
-	if( wblock->num_reallines!=wblock->num_reallines_last || wblock->wtemponodes==NULL){
-		wblock->wtemponodes=talloc_atomic(sizeof(WTempoNodes *) * wblock->num_reallines);
-		memset(wblock->wtemponodes,0,wblock->num_reallines * sizeof(WTempoNodes *));
-	}
+	wblock->wtemponodes=talloc(sizeof(WTempoNodes *) * wblock->num_reallines);
 
 	while(temponode!=NULL){
 		MakeNodeLines(

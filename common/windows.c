@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "resizewindow_proc.h"
 #include "pixmap_proc.h"
 #include "blts_proc.h"
-#include "trackreallineelements_proc.h"
 #include "gfx_op_queue_proc.h"
 #include "settings_proc.h"
 
@@ -50,7 +49,6 @@ int CloseTrackerWindow(NInt place){
 	GFX_ShutDownVisual(temp);
 
 //	temp->wblock=NULL;
-	while(FreeANotShowedWBlockTREelement()==true);
 
 	ListRemoveElement1(&root->song->tracker_windows,&temp->l);
 

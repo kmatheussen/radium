@@ -66,7 +66,7 @@ typedef uint32_t uint_32;	/* A type that should be 64 bits, but may be 32 if 64 
 typedef int32_t STime;		/* Time can be negative. */
 typedef STime NInt;
 #define PFREQ 48000			/* Subseconds for STime */
-//#define PFREQ 1200
+//#define PFREQ 12000
 
 #define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f

@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_legalize_proc.h"
 #include "reallines_proc.h"
 #include "time_proc.h"
-#include "trackreallineelements_proc.h"
 #include "tracks_proc.h"
 #include "undo_blocks_proc.h"
 #include "wtracks_proc.h"
@@ -194,7 +193,6 @@ void Block_Properties(
 
 	while(window!=NULL){
 		wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
-		FreeASpesifiedWBlockTREelement(window,wblock);
 		window=NextWindow(window);
 	}
 

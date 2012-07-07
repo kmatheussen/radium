@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "t_gc_proc.h"
 #include "nsmtracker.h"
 #include "visual_proc.h"
-#include "trackreallineelements_proc.h"
 #include "control_proc.h"
 #include "OS_memory_proc.h"
 

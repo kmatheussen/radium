@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
-#include "trackreallineelements_proc.h"
 #include "reallines_proc.h"
 #include "windows_proc.h"
 #include "wblocks_proc.h"
@@ -38,8 +37,6 @@ void IncFontSize_CurrPos(
 		window->fontheight+incnum>126 ||
 		(wblock->t.y2-wblock->t.y1)/(window->fontheight+incnum)<4
 	) return;
-
-	//	while(FreeANotShowedWBlockTREelement());
 
 	//window->fontheight+=incnum;
         GFX_IncFontSize(window, incnum);

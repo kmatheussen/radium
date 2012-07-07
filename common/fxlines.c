@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtracks_proc.h"
 #include "visual_proc.h"
 #include "realline_calc_proc.h"
-#include "trackreallineelements_proc.h"
 #include "undo_fxs_proc.h"
 #include <string.h>
 #include "player_proc.h"
@@ -56,7 +55,6 @@ void MakeWFXNodesCallBack(
 	struct FXextrainfo *fxextrainfo=(struct FXextrainfo *)extrainfo;
 	struct WTracks *wtrack=(struct WTracks *)fxextrainfo->wtrack;
 	struct FXNodeLines *fxnodeline1,*fxnodeline2;
-	WFXNodes *wfxnode,*wfxnode2;
 
 	/* To avoid displaying a long vertical line. */
 	if(firstlast==NODELINE_NOTFIRSTORLAST){
@@ -69,7 +67,7 @@ void MakeWFXNodesCallBack(
 	}
 
 
-	GetTREelement(wfxnode2);
+	WFXNodes *wfxnode2 = talloc(sizeof(WFXNodes));
 
 	wfxnode2->type=TRE_FXLINE;
 	wfxnode2->subtype=fxextrainfo->color;
@@ -83,7 +81,7 @@ void MakeWFXNodesCallBack(
 //	wtrack->wfxnodes[realline]=wfxnode2;
 
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
-		GetTREelement(wfxnode);
+		WFXNodes *wfxnode = talloc(sizeof(WFXNodes));
 
 		wfxnode->type=TRE_FXNODE;
 		wfxnode->subtype=fxextrainfo->color;
@@ -105,7 +103,7 @@ void MakeWFXNodesCallBack(
 	){
 
 		if(firstlast==NODELINE_LAST || firstlast==NODELINE_FIRSTANDLAST){
-			GetTREelement(wfxnode);
+			WFXNodes *wfxnode = talloc(sizeof(WFXNodes));
 
 			wfxnode->type=TRE_FXNODE;
 			wfxnode->subtype=fxextrainfo->color;
@@ -125,21 +123,6 @@ void MakeWFXNodesCallBack(
 }
 
 
-void FreeAllWFXnodes(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-){
-	int lokke;
-	if(wtrack->wfxnodes==NULL) return;
-
-	for(lokke=0;lokke<wblock->num_reallines_last;lokke++){
-		FreeAllRTEelements_fromroot(
-			&wtrack->wfxnodes[lokke]
-		);
-	}
-
-}
-
 void UpdateFXNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -153,11 +136,7 @@ void UpdateFXNodeLines(
 	struct FXextrainfo fxextrainfo={0};
 	fxextrainfo.wtrack=wtrack;
 
-	FreeAllWFXnodes(wblock,wtrack);
-	if( wblock->num_reallines!=wblock->num_reallines_last || wtrack->wfxnodes==NULL){
-		wtrack->wfxnodes=talloc_atomic(sizeof(WFXNodes *) * wblock->num_reallines);
-		memset(wtrack->wfxnodes,0,wblock->num_reallines * sizeof(WFXNodes *));
-	}
+        wtrack->wfxnodes=talloc(sizeof(WFXNodes *) * wblock->num_reallines);
 
 	while(fx!=NULL){
 		fxextrainfo.FXs=fx;

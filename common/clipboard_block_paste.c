@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "block_properties_proc.h"
 #include "time_proc.h"
 #include "list_proc.h"
-#include "trackreallineelements_proc.h"
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "OS_Bs_edit_proc.h"
@@ -66,8 +65,6 @@ void CB_PasteBlock(
 	struct ListHeader1 *nextblock=toblock->l.next;
 
 	NInt org_num_tracks=toblock->num_tracks;
-
-	FreeASpesifiedWBlockTREelement(window,towblock);
 
 	memcpy(towblock,wblock,sizeof(struct WBlocks));
 	memcpy(toblock,block,sizeof(struct Blocks));

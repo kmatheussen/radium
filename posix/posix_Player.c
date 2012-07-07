@@ -31,8 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // Try to call PlayerTask 1200 times a second.
-#define PLAYERTASKFREQ 44100
-//#define PLAYERTASKFREQ 12000
+//#define PLAYERTASKFREQ 44100
+#define PLAYERTASKFREQ 1200
 
 pthread_t playerthread={0};
 

@@ -2,7 +2,6 @@
 #define GFX_PROC_H
 
 #include "blts_proc.h"
-#include "trackreallineelements_proc.h"
 #include "../api/api_requesters_proc.h"
 #include "windows_proc.h"
 
@@ -18,9 +17,6 @@
 
 #define DO_GFX(OP) do{                          \
     DO_GFX_BLT(OP);                             \
-    if(collectTREgarbage==true){                \
-      TRE_collectGarbage();                     \
-    }                                           \
     closeRequester();                           \
     checkIfWBlocksAreDirty();                   \
   }while(0)

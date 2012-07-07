@@ -55,7 +55,7 @@ int GFX_Menu(
 	int num_sel,
 	char **menutext
 ){
-  char *temp=talloc(num_sel*500);
+  char *temp=talloc_atomic(num_sel*500);
   char *selectedtext;
   int lokke;
 

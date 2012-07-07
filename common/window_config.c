@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
-#include "trackreallineelements_proc.h"
 #include "windows_proc.h"
 #include "reallines_proc.h"
 #include "wblocks_proc.h"
@@ -41,8 +40,6 @@ void SelectEditFont(
         char *font = GFX_SelectEditFont(window);
 	if(font==NULL)
           return;
-
-	while(FreeANotShowedWBlockTREelement());
 
 	window->leftslider.width=window->fontwidth;
 
@@ -135,8 +132,6 @@ void SelectMinNodeSize(
 	if(newwidth<1) return;
 
 	window->minnodesize=newwidth;
-
-	while(FreeANotShowedWBlockTREelement());
 
 	UpdateReallinesDependens(window,wblock);
 

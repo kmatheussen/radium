@@ -43,7 +43,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nodeboxes_proc.h"
 #include "nodelines.h"
 #include "fxlines_proc.h"
-#include "trackreallineelements_proc.h"
 
 #include "trackreallines_proc.h"
 
@@ -53,28 +52,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct TrackReallineNodeInfo{
 	struct WTracks *wtrack;
 	void *pointer;
-  struct Velocities *velocity;
+	struct Velocities *velocity;
 	int type;
 	int subtype;
 };
-
-
-void FreeAllRTEelements(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-){
-	int lokke;
-	struct TrackRealline *trackrealline;
-	if(wtrack->trackreallines==NULL) return;
-
-	for(lokke=0;lokke<wblock->num_reallines_last;lokke++){
-		trackrealline= &wtrack->trackreallines[lokke];
-		FreeAllRTEelements_fromroot(
-			&trackrealline->trackreallineelements
-		);
-		trackrealline->note=0;
-	}
-}
 
 
 /*******************************************************************
@@ -85,11 +66,7 @@ void NewTrackRealLines(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	FreeAllRTEelements(wblock,wtrack);
-	if( wblock->num_reallines!=wblock->num_reallines_last || wtrack->trackreallines==NULL){
-		wtrack->trackreallines=talloc_atomic(wblock->num_reallines * sizeof(struct TrackRealline));
-		memset(wtrack->trackreallines,0,wblock->num_reallines * sizeof(struct TrackRealline));
-	}
+  wtrack->trackreallines=talloc(wblock->num_reallines * sizeof(struct TrackRealline));
 }
 
 
@@ -114,9 +91,7 @@ __inline void InsertTRLElementS(
 	float x1,float x2,
 	void *pointer
 ){
-	struct TrackReallineElements *element;
-	GetTREelement(element);
-	element->next=NULL;
+	struct TrackReallineElements *element = talloc(sizeof(struct TrackReallineElements));
 	element->type=type;
 	element->subtype=subtype;
 	element->y1=y1;
@@ -172,7 +147,7 @@ __inline void InsertTRLElement(
 	int x1,int x2,
 	void *pointer
 ){
-	struct TrackReallineElements *element;
+	struct TrackReallineElements *element = talloc(sizeof(struct TrackReallineElements));
 
 	//	y1=min(window->fontheight,max(0,y1));
 	//	y2=min(window->fontheight-1,max(0,y2));
@@ -182,8 +157,6 @@ __inline void InsertTRLElement(
 
 	//	if(y1==y2 && x1==x2) return;
 	
-	GetTREelement(element);
-	element->next=NULL;
 	element->type=type;
 	element->subtype=subtype;
 	element->y1=y1;
