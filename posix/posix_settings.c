@@ -22,11 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 
 char *OS_get_current_directory(void){
-  int size=512;
+  int size=128;
   char *ret;
   do{
-    ret=talloc_atomic(size);
     size *= 2;
+    ret=talloc_atomic(size);
   }while(getcwd(ret,size-1)==NULL);
   return ret;
 }
@@ -39,7 +39,7 @@ char *OS_get_config_filename(void){
   char temp[500];
   sprintf(temp,"mkdir %s/.radium 2>/dev/null",getenv("HOME"));
   if(system(temp)==-1)
-    RWarning("Unable to create \"$/.radium\" directory",getenv("HOME"));
+    RWarning("Unable to create \"%s/.radium\" directory",getenv("HOME"));
 
   sprintf(temp,"%s/.radium/config",getenv("HOME"));
   return talloc_strdup(temp);

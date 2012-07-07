@@ -87,7 +87,8 @@ static void add_key(int X11_val, int EVENT_val){
         else
           new_keytable[i] = EVENT_NO;
     }
-    tfree(keytable);
+    if(keytable!=NULL)
+      tfree(keytable);
     keytable = new_keytable;
     keytable_size = new_size;
   }
