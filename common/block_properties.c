@@ -188,18 +188,10 @@ void Block_Properties(
 	NInt num_tracks,
 	int num_lines
 ){
-	struct Tracker_Windows *window=root->song->tracker_windows;
-	struct WBlocks *wblock;
-
-	while(window!=NULL){
-		wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
-		window=NextWindow(window);
-	}
-
 	if(num_tracks!=block->num_tracks){
-		window=root->song->tracker_windows;
+		struct Tracker_Windows *window=root->song->tracker_windows;
 		while(window!=NULL){
-			wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
+			struct WBlocks *wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
 			SetCursorPosConcrete(window,wblock,0,-1);
 			window=NextWindow(window);
 		}
@@ -210,9 +202,9 @@ void Block_Properties(
 		Block_Set_num_lines(block,num_lines);
 	}
 
-	window=root->song->tracker_windows;
+	struct Tracker_Windows *window=root->song->tracker_windows;
 	while(window!=NULL){
-		wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+		struct WBlocks *wblock=ListFindElement1(&window->wblocks->l,block->l.num);
 		if(wblock->curr_realline>=wblock->num_reallines){
 			wblock->curr_realline=wblock->num_reallines-1;
 		}

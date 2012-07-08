@@ -509,13 +509,13 @@ void SwapTrack_CurrPos(
 int WTRACK_getx1(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	NInt track,
+	NInt tracknum,
 	bool onlyfx
 ){
 
 	struct WTracks *wtrack;
 
-	switch(track){
+	switch(tracknum){
 	case LINENUMBTRACK:
 		return wblock->zoomlevelarea.x;
 		break;
@@ -533,12 +533,12 @@ int WTRACK_getx1(
 		break;
 	}
 
-	if(track>wblock->right_track){
+	if(tracknum>wblock->right_track){
 		RError("illegal starttrack at function WTRACK_getx1 in file wtracks.c");
 		return wblock->temponodearea.x2+3;
 	}
 
-	wtrack=ListFindElement1(&wblock->wtracks->l,track);
+	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
 	if(onlyfx==false){
 		return R_BOUNDARIES(wtrack->notearea.x,wblock->t.x1,wblock->t.x2);
@@ -551,12 +551,12 @@ int WTRACK_getx1(
 int WTRACK_getx2(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	NInt track
+	NInt tracknum
 ){
 
 	struct WTracks *wtrack;
 
-	switch(track){
+	switch(tracknum){
 	case LINENUMBTRACK:
 		return wblock->zoomlevelarea.x2;
 		break;
@@ -574,16 +574,19 @@ int WTRACK_getx2(
 		break;
 	}
 
-	if(track > wblock->right_track){
-		RError("illegal starttrack at function WTRACK_getx2 in file wtracks.c");
+#if 0
+        // This can happen if we have deleted tracks.
+	if(tracknum > wblock->right_track){
+		RError("illegal starttrack at function WTRACK_getx2 in file wtracks.c (%d > %d)",tracknum,wblock->right_track);
+		return wblock->t.x2;
+	}
+#endif
+
+	if(tracknum>=wblock->right_track){
 		return wblock->t.x2;
 	}
 
-	if(track==wblock->right_track){
-		return wblock->t.x2;
-	}
-
-	wtrack=ListFindElement1(&wblock->wtracks->l,track);
+	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
 	return R_MAX(wtrack->fxarea.x2,wblock->t.x1);
 

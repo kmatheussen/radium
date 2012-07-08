@@ -212,7 +212,7 @@ run-gdb:
 run-valgrind:
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
 #	make -j3 && cd bin && valgrind --tool=helgrind python start.py keybindings.conf
-	make -j3 && cd bin && valgrind --suppressions=../valgrind-python.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes python -E -tt start.py keybindings.conf
+	make -j3 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes python -E -tt start.py keybindings.conf
 #	make -j3 && cd bin && valgrind gdb --args python start.py keybindings.conf
 	killall -9 X11_Qtstuff.py radium
 

@@ -10,15 +10,22 @@
     Blt_markVisible(window);                    \
     {                                           \
       OP;                                       \
+      closeRequester();                         \
+      checkIfWBlocksAreDirty();                 \
     }                                           \
     Blt_clearNotUsedVisible(window);            \
     Blt_blt(window);                            \
   }while(0)
 
 #define DO_GFX(OP) do{                          \
-    DO_GFX_BLT(OP);                             \
-    closeRequester();                           \
-    checkIfWBlocksAreDirty();                   \
+    Blt_markVisible(window);                    \
+    {                                           \
+      OP;                                       \
+      closeRequester();                         \
+      checkIfWBlocksAreDirty();                 \
+    }                                           \
+    Blt_clearNotUsedVisible(window);            \
+    Blt_blt(window);                            \
   }while(0)
 
 #endif

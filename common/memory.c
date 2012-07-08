@@ -38,9 +38,10 @@ void *tmemory;
 
 
 void init_memory(void){
+#ifndef MEMORY_DEBUG
 	tmemory=GC_malloc_atomic(tmemorysize);
 	tmemoryisused=0;
-
+#endif
 	//return (int) tmemory;
         return;
 }

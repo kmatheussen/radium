@@ -3,3 +3,4 @@
 cd bin
 python start.py keybindings.conf $@
 
+
