@@ -21,13 +21,14 @@ QTDIR=/usr/lib/qt-3.3
 # fedora 64 bit:
 #QTDIR=/usr/lib64/qt-3.3
 
-#debian:
+# debian:
 #QTDIR=/usr/share/qt3
 
 # arch linux:
 #QTDIR=/opt/qt
 
 
+# RELEASE build has not been tested yet.
 BUILDTYPE=DEBUG
 #BUILDTYPE=RELEASE
 
