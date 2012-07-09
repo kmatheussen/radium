@@ -14,23 +14,22 @@ libdir = $(PREFIX)/lib
 
 
 # If using QT3 (recommended), QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
-
-# fedora 32 bit:
+#   fedora 32 bit:
 QTDIR=/usr/lib/qt-3.3
-
-# fedora 64 bit:
+#   fedora 64 bit:
 #QTDIR=/usr/lib64/qt-3.3
-
-# debian:
+#   debian:
 #QTDIR=/usr/share/qt3
-
-# arch linux:
+#   arch linux:
 #QTDIR=/opt/qt
 
 
 # RELEASE build has not been tested yet.
 BUILDTYPE=DEBUG
 #BUILDTYPE=RELEASE
+
+
+PYTHONEXE=`which python2`
 
 
 #----------------END USER SETTINGS---------------------------
@@ -46,8 +45,6 @@ BUILDTYPE=DEBUG
 
 # Dont change these, they are correct.
 GCDIR=bin/packages/gc-7.2
-PYTHONEXE=`which python2`
-
 
 PYPATH=`cat pypath.comp`
 
@@ -177,16 +174,8 @@ very_clean: clean
 clean:
 	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt*
 
-check_dependencies:
-	@echo
-	@echo "Checking dependencies: "
-	which sed
-	which $(PYTHONEXE)
-	which $(MOC)
-	which $(UIC)
-	grep -e "char\ \*" api/protos.conf
-	@echo "All seems good (but everything has probably not been tested)"
-	@echo
+check_dependencies: check_dependencies.sh Makefile
+	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 
 install: all
 	install -d $(DESTDIR)$(bindir)
@@ -952,7 +941,7 @@ radium_wrap.o:  $(API)radium_wrap.c $(API)radium_proc.h
 
 
 $(API)radium_wrap.c: $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
-	cd $(API) ; sh makeradiumwrap_c.sh ; cd ..
+	cd $(API) ; sh makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
 
 # # The following two lines can be uses instead of the two previous.
 # # But I haven't found out how to make swig generate the "PyArg_ParseTupleAndKeywords"
