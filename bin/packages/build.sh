@@ -78,7 +78,7 @@ cd ..
 #http://code.google.com/p/py-setproctitle/
 tar xvzf  dvarrazzo-py-setproctitle-version-1.1.6-0-gc35a1bf.tar.gz
 cd dvarrazzo-py-setproctitle-c35a1bf
-echo "/usr/bin/python3 -c \"import sys; print('2to3'+'-'+sys.version[:3])\"" >twotothree.sh
+echo "$1 -c \"import sys; print('2to3'+'-'+sys.version[:3])\"" >twotothree.sh
 sed -i s:PY2TO3\ \?\=\ 2to3:PY2TO3\ \?\=\ `sh twotothree.sh`: Makefile
 sed -i s:PYTHON\ \?\=\ python:PYTHON\ \?\=\ $1: Makefile
 make
