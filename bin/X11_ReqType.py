@@ -42,7 +42,7 @@ def GFX_OpenReqType(width,height,title):
     xterm_process = subprocess.Popen(["packages/bin/xterm",
                                       "-geometry",str(width)+"x"+str(height)+"+100+100",
                                       "-title","\""+title+"\"",
-                                      "-e","python","X11_ReqType.py",str(port)])
+                                      "-e",sys.executable,"X11_ReqType.py",str(port)])
                      
 #    print "Open Port "+str(port)
         
