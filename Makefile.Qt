@@ -15,10 +15,17 @@ libdir = $(PREFIX)/lib
 
 # If using QT3 (recommended), QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
 
+# fedora 32 bit:
 QTDIR=/usr/lib/qt-3.3
-#QTDIR=/usr/share/qt3
+
+# fedora 64 bit:
 #QTDIR=/usr/lib64/qt-3.3
 
+#debian:
+#QTDIR=/usr/share/qt3
+
+# arch linux:
+#QTDIR=/opt/qt
 
 
 BUILDTYPE=DEBUG
@@ -160,7 +167,7 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 #-------------------KARSJK-------------------------------
 
 
-all: check_dependencies bin/packages/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
+all: check_dependencies bin/packages/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
 	@echo "Compilation OK".
 
 very_clean: clean
@@ -225,6 +232,13 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	./build.sh $(PYTHONEXE) no \
 	" >makescript.sh
 	sh makescript.sh
+
+start.sh:
+	echo "#!/bin/sh" >start.sh
+	echo "cd bin" >>start.sh
+	echo "$(PYTHONEXE) start.py keybindings.conf $@" >>start.sh
+	chmod a+rx start.sh
+
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
@@ -1020,6 +1034,7 @@ RtMidi.o: $(RTMIDI_DIR)/RtMidi.cpp
 
 pypath.comp:
 	$(PYTHONEXE) -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]" >pypath.comp
+#	$(PYTHONEXE) -c "import sysconfig;print(sysconfig.get_path('include'))" >pypath.comp
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
