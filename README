@@ -4,7 +4,7 @@ Radium V0.65.5
 Released 2012-07-09
 
 
-HOW TO MAKE IT RUN
+HOW TO MAKE IT RUN 
 
 make
 ./start.sh
