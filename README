@@ -1,7 +1,7 @@
 
 
-Radium V0.65.4
-Released 2012-07-06
+Radium V0.65.5
+Released 2012-07-09
 
 
 HOW TO MAKE IT RUN
@@ -20,7 +20,7 @@ BUILD DEPENDENCIES
         qt3-devel
         libXaw-devel
         ncurses-devel
-        python-devel
+        python2-devel
         alsa-lib-devel
         jack-audio-connection-kit-devel
         PyQt4
