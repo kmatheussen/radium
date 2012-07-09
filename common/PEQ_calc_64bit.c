@@ -61,9 +61,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _AMIGA
 
 int Mul32Div64_000(const int a,const int b,const int c){
-  long long a2=a;
-  long long b2=b;
-  long long c2=c;
+  int64_t a2=a;
+  int64_t b2=b;
+  int64_t c2=c;
 
   a2=a2*b2;
   return (int)(a2/c2);
