@@ -1,0 +1,16 @@
+*.o
+Qt/Qt_control_change_widget.cpp
+Qt/Qt_control_change_widget.h
+Qt/Qt_instrument_widget.cpp
+Qt/Qt_instrument_widget.h
+Qt/Qt_instruments_widget.cpp
+Qt/Qt_instruments_widget.h
+Qt/Qt_no_instrument_widget.cpp
+Qt/Qt_no_instrument_widget.h
+*~
+a.out
+*/#*
+#*
+bin/protos.conf
+common/keyboard_sub_ids.h
+makescript.sh

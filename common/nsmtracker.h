@@ -37,6 +37,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
+#ifdef RELEASE
+#  error "RELEASE option is not supported. Edit the Makefile."
+#endif
+
+#ifndef DEBUG
+#  error "Missing DEBUG option. Edit the Makefile."
+#endif
+
+
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -64,7 +73,9 @@ typedef uint32_t uint_32;	/* A type that should be 64 bits, but may be 32 if 64 
 #define MAX_UINT32 65534  /* Sqr(max(uint_32))-1 (rounded down)*/
 
 typedef int32_t STime;		/* Time can be negative. */
-typedef STime NInt;
+//typedef int64_t STime;		/* Time can be negative. */
+//typedef STime NInt;
+typedef int32_t NInt;
 #define PFREQ 48000			/* Subseconds for STime */
 //#define PFREQ 12000
 

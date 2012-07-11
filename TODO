@@ -143,6 +143,7 @@ Non-urgent
 
 * Replace xterm with Qt widget, for instance QTextEdit.
   (xterm screws up keyboard focus)
+  Alternatively: Embed xterm in a qt widget.
 
 * Line numbers over 999 are not fully shown.
 
@@ -150,6 +151,10 @@ Non-urgent
 
 * Sample-accurate scheduling of jack midi messages.
 
+* Port to Qt4. Solution for slow graphics: Embed the editor, and use the X11 or Qt3 port to update graphics
+  in that embedded widget.
+
+* Fix program crash if closing xterm window.
 
 
 Urgent
@@ -158,8 +163,8 @@ Urgent
 * The FX selector window very often opens behind the main window in full screen mode in gnome on fedora core 17.
   Sometimes it happens with the file requester as well.
 
-* Up/down qualifier keys are not always resetted after doing something else. Would it be possible to use the
-  state field (I think that was the name) in XEvent?
+* Up/down qualifier keys are not always resetted after doing something else.
+  * Would it work to use the state field (I think that was the name) in XEvent?
   This is a problem for the scroll mouse as well, which are just interpreted as key up/down events.
 
 
