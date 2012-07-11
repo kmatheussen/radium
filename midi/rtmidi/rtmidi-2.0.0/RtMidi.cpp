@@ -3510,7 +3510,6 @@ struct JackClientHolder{
     , client( NULL )
     , portHolders( NULL )
     , messages( jack_ringbuffer_create( 1024 * sizeof(JackClientHolderMessage) ) )
-    , numPorts( 0 )
   {
     MUTEX_INITIALIZE(&lock);
   }
@@ -3524,7 +3523,7 @@ struct JackClientHolder{
   bool addPort( struct JackPortHolder *portHolder, const std::string portName ) {
     ScopedJackPortNamesLock lock(lock);
 
-    if ( numPorts == 0) {
+    if ( portHolders == NULL ) {
 
       // Initialize JACK client
       if (( client = jack_client_open( name.c_str(), JackNullOption, NULL )) == 0)
@@ -3541,7 +3540,6 @@ struct JackClientHolder{
       return false;
 
     portHolder->is_active = true;
-    numPorts ++;
 
     JackClientHolderMessage message;
     message.addOrRemove = JackClientHolderMessage::ADD;
@@ -3553,9 +3551,7 @@ struct JackClientHolder{
   void removePort( struct JackPortHolder *portHolder ) {
     ScopedJackPortNamesLock lock(lock);
 
-    numPorts --;
-
-    if ( numPorts == 0 ) {
+    if ( portHolders->next == NULL ) {
       jack_client_close ( client );
       portHolder->is_active = false;
       return;
@@ -3573,7 +3569,6 @@ struct JackClientHolder{
   }
 
 private:
-  int numPorts;
   StreamMutex lock;
 };
 
