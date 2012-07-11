@@ -3424,7 +3424,10 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
 
 class ScopedJackPortNamesLock{
 public:
-  ScopedJackPortNamesLock() : is_locked( false ) {
+  ScopedJackPortNamesLock( StreamMutex *mutex = &jack_ports_lock )
+    : is_locked( false )
+    , mutex( mutex )
+  {
     lock();
   }
   ~ScopedJackPortNamesLock() {
@@ -3432,31 +3435,32 @@ public:
   }
   void lock() {
     if ( is_locked == false ) {
-      MUTEX_LOCK( &jack_ports_lock );
+      MUTEX_LOCK( mutex );
       is_locked = true;
     }
   }
   void unlock() {
     if ( is_locked == true ) {
-      MUTEX_UNLOCK( &jack_ports_lock );
+      MUTEX_UNLOCK( mutex );
       is_locked = false;
     }
   }
 
-  class InitializeLock{
+  class InitializeDefaultLock{
   public:
-    InitializeLock() {
+    InitializeDefaultLock() {
       MUTEX_INITIALIZE( &ScopedJackPortNamesLock::jack_ports_lock );
     }
   };
 
 private:
   bool is_locked;
+  StreamMutex *mutex;
   static StreamMutex jack_ports_lock;
 };
 
 StreamMutex ScopedJackPortNamesLock::jack_ports_lock;
-static ScopedJackPortNamesLock::InitializeLock initializeLock; // dummy variable.
+static ScopedJackPortNamesLock::InitializeDefaultLock initializeDefaultLock; // dummy variable.
 
 
 
@@ -3507,7 +3511,9 @@ struct JackClientHolder{
     , portHolders( NULL )
     , messages( jack_ringbuffer_create( 1024 * sizeof(JackClientHolderMessage) ) )
     , numPorts( 0 )
-  {}
+  {
+    MUTEX_INITIALIZE(&lock);
+  }
 
   std::string name;
   jack_client_t *client;
@@ -3516,6 +3522,8 @@ struct JackClientHolder{
   jack_ringbuffer_t *messages; // Contains JackClientHolderMessage data.
 
   bool addPort( struct JackPortHolder *portHolder, const std::string portName ) {
+    ScopedJackPortNamesLock lock(lock);
+
     if ( numPorts == 0) {
 
       // Initialize JACK client
@@ -3543,6 +3551,8 @@ struct JackClientHolder{
   }
 
   void removePort( struct JackPortHolder *portHolder ) {
+    ScopedJackPortNamesLock lock(lock);
+
     numPorts --;
 
     if ( numPorts == 0 ) {
@@ -3564,11 +3574,14 @@ struct JackClientHolder{
 
 private:
   int numPorts;
+  StreamMutex lock;
 };
 
 static std::vector<JackClientHolder*> g_clientHolders;
 
 static JackClientHolder *getJackClientHolder(const std::string &name) {
+  ScopedJackPortNamesLock lock;
+
   for ( unsigned int i = 0 ; i < g_clientHolders.size() ; i++ ) {
     if ( name == g_clientHolders[i]->name ) {
       return g_clientHolders[i];
