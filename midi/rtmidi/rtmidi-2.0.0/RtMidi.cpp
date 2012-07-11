@@ -3718,13 +3718,15 @@ static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *jData )
 
   void *buff = jack_port_get_buffer( jData->port, nframes );
 
-  // We have midi events in buffer
   int evCount = jack_midi_get_event_count( buff );
-  if ( evCount > 0 ) {
+
+  // We have midi events in buffer
+  while ( int evNum = 0 ; evNum < evCount ; evNum++ ) {
+
     MidiInApi::MidiMessage message;
     message.bytes.clear();
 
-    jack_midi_event_get( &event, buff, 0 );
+    jack_midi_event_get( &event, buff, evNum );
 
     for (unsigned int i = 0; i < event.size; i++ )
       message.bytes.push_back( event.buffer[i] );
