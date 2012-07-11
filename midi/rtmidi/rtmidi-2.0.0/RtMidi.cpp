@@ -3730,11 +3730,11 @@ static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *jData )
       message.bytes.push_back( event.buffer[i] );
 
     // Compute the delta time.
-    time = jack_get_time();
+    time = jack_last_frame_time( jData->clientHolder->client ) + event.time;
     if ( rtData->firstMessage == true )
       rtData->firstMessage = false;
     else
-      message.timeStamp = ( time - jData->lastTime ) * 0.000001;
+      message.timeStamp = ( time - jData->lastTime ) / (double)jack_get_sample_rate( jData->clientHolder->client );
 
     jData->lastTime = time;
 
