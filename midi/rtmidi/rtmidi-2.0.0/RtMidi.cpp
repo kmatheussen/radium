@@ -3551,12 +3551,6 @@ struct JackClientHolder{
   void removePort( struct JackPortHolder *portHolder ) {
     ScopedJackPortNamesLock lock(lock);
 
-    if ( portHolders->next == NULL ) {
-      jack_client_close ( client );
-      portHolder->is_active = false;
-      return;
-    }
-
     JackClientHolderMessage message;
     message.addOrRemove = JackClientHolderMessage::REMOVE;
     message.portHolder = portHolder;
@@ -3566,6 +3560,9 @@ struct JackClientHolder{
       usleep ( 50 );
 
     jack_port_unregister( client, portHolder->port );
+
+    if ( portHolders == NULL )
+      jack_client_close ( client );
   }
 
 private:
