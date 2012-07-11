@@ -3422,15 +3422,15 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
 
 /************* A scoped Lock class for protecting global variables in a convenient way. *********************/
 
-class ScopedJackPortNamesLock{
+class ScopedJackLock{
 public:
-  ScopedJackPortNamesLock( StreamMutex *mutex = &jack_ports_lock )
+  ScopedJackLock( StreamMutex *mutex )
     : is_locked( false )
     , mutex( mutex )
   {
     lock();
   }
-  ~ScopedJackPortNamesLock() {
+  ~ScopedJackLock() {
     unlock();
   }
   void lock() {
@@ -3446,21 +3446,19 @@ public:
     }
   }
 
-  class InitializeDefaultLock{
-  public:
-    InitializeDefaultLock() {
-      MUTEX_INITIALIZE( &ScopedJackPortNamesLock::jack_ports_lock );
-    }
-  };
-
 private:
   bool is_locked;
   StreamMutex *mutex;
-  static StreamMutex jack_ports_lock;
 };
 
-StreamMutex ScopedJackPortNamesLock::jack_ports_lock;
-static ScopedJackPortNamesLock::InitializeDefaultLock initializeDefaultLock; // dummy variable.
+static StreamMutex jack_ports_lock;
+class InitializeJackPortsLock{
+public:
+  InitializeJackPortsLock() {
+    MUTEX_INITIALIZE( &jack_ports_lock );
+  }
+};
+static InitializeJackPortsLock initializeJackPortsLock; // dummy variable necessary to provoce the constructor to be called during program startup.
 
 
 
@@ -3521,7 +3519,7 @@ struct JackClientHolder{
   jack_ringbuffer_t *messages; // Contains JackClientHolderMessage data.
 
   bool addPort( struct JackPortHolder *portHolder, const std::string portName ) {
-    ScopedJackPortNamesLock lock(lock);
+    ScopedJackLock lock(lock);
 
     if ( portHolders == NULL ) {
 
@@ -3549,7 +3547,7 @@ struct JackClientHolder{
   }
 
   void removePort( struct JackPortHolder *portHolder ) {
-    ScopedJackPortNamesLock lock(lock);
+    ScopedJackLock lock(lock);
 
     JackClientHolderMessage message;
     message.addOrRemove = JackClientHolderMessage::REMOVE;
@@ -3572,7 +3570,7 @@ private:
 static std::vector<JackClientHolder*> g_clientHolders;
 
 static JackClientHolder *getJackClientHolder(const std::string &name) {
-  ScopedJackPortNamesLock lock;
+  ScopedJackLock lock( &jack_ports_lock );
 
   for ( unsigned int i = 0 ; i < g_clientHolders.size() ; i++ ) {
     if ( name == g_clientHolders[i]->name ) {
@@ -3681,14 +3679,14 @@ static void register_jack_ports( jack_client_t *port_client) {
 
 static void jack_port_registration_callback( jack_port_id_t port, int do_register, void *arg ) {
   jack_client_t *port_client = (jack_client_t*) arg;
-  ScopedJackPortNamesLock lock;
+  ScopedJackLock lock( &jack_ports_lock );
 
   register_jack_ports( port_client );
 }
 
 static bool init_jack_port_client(void){
   static jack_client_t *port_client = NULL;
-  ScopedJackPortNamesLock lock;
+  ScopedJackLock lock( &jack_ports_lock );
 
   if ( port_client != NULL)
     return true;
@@ -3816,7 +3814,7 @@ void MidiInJack :: openVirtualPort( const std::string portName )
 
 unsigned int MidiInJack :: getPortCount()
 {
-  ScopedJackPortNamesLock lock;
+  ScopedJackLock lock( &jack_ports_lock );
 
   return getJackPortCount( jack_input_ports );
 }
@@ -3828,7 +3826,7 @@ std::string MidiInJack :: getPortName( unsigned int portNumber )
   const char *portname = NULL;
 
   {
-    ScopedJackPortNamesLock lock;
+    ScopedJackLock lock( &jack_ports_lock );
 
     // Check port validity
     if ( jack_input_ports == NULL ) {
@@ -3959,7 +3957,7 @@ void MidiOutJack :: openVirtualPort( const std::string portName )
 
 unsigned int MidiOutJack :: getPortCount()
 {
-  ScopedJackPortNamesLock lock;
+  ScopedJackLock lock( &jack_ports_lock );
 
   return getJackPortCount( jack_output_ports );
 }
@@ -3971,7 +3969,7 @@ std::string MidiOutJack :: getPortName( unsigned int portNumber )
   const char *portname = NULL;
 
   {
-    ScopedJackPortNamesLock lock;
+    ScopedJackLock lock( &jack_ports_lock );
 
     // Check port validity
     if ( jack_output_ports == NULL) {
