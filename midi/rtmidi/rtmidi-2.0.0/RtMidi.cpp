@@ -3389,6 +3389,76 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
 #include <jack/ringbuffer.h>
 
 
+// Mutex (copied from RtAudio.h and RtAudio.cpp)
+
+#if defined(__WINDOWS_DS__) || defined(__WINDOWS_ASIO__)
+  #include <windows.h>
+  #include <process.h>
+
+  typedef unsigned long ThreadHandle;
+  #define MUTEX_INITIALIZE(A) InitializeCriticalSection(A)
+  #define MUTEX_DESTROY(A)    DeleteCriticalSection(A)
+  #define MUTEX_LOCK(A)       EnterCriticalSection(A)
+  #define MUTEX_UNLOCK(A)     LeaveCriticalSection(A)
+
+#elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+  #include <pthread.h>
+
+  // pthread API
+  typedef pthread_mutex_t StreamMutex;
+  #define MUTEX_INITIALIZE(A) pthread_mutex_init(A, NULL)
+  #define MUTEX_DESTROY(A)    pthread_mutex_destroy(A)
+  #define MUTEX_LOCK(A)       pthread_mutex_lock(A)
+  #define MUTEX_UNLOCK(A)     pthread_mutex_unlock(A)
+
+#else
+  #define __RTAUDIO_DUMMY__
+  typedef int StreamMutex;
+
+  #define MUTEX_INITIALIZE(A) abs(*A) // dummy definitions
+  #define MUTEX_DESTROY(A)    abs(*A) // dummy definitions
+#endif
+
+
+/************* A scoped Lock class for protecting global variables in a convenient way. *********************/
+
+class ScopedJackPortNamesLock{
+public:
+  ScopedJackPortNamesLock() : is_locked( false ) {
+    lock();
+  }
+  ~ScopedJackPortNamesLock() {
+    unlock();
+  }
+  void lock() {
+    if ( is_locked == false ) {
+      MUTEX_LOCK( &jack_ports_lock );
+      is_locked = true;
+    }
+  }
+  void unlock() {
+    if ( is_locked == true ) {
+      MUTEX_UNLOCK( &jack_ports_lock );
+      is_locked = false;
+    }
+  }
+
+  class InitializeLock{
+  public:
+    InitializeLock() {
+      MUTEX_INITIALIZE( &ScopedJackPortNamesLock::jack_ports_lock );
+    }
+  };
+
+private:
+  bool is_locked;
+  static StreamMutex jack_ports_lock;
+};
+
+StreamMutex ScopedJackPortNamesLock::jack_ports_lock;
+static ScopedJackPortNamesLock::InitializeLock initializeLock; // dummy variable.
+
+
 
 /************* Jack Port Holder *********************/
 
@@ -3591,35 +3661,6 @@ static unsigned int getJackPortCount(const char **portnames){
   return count;
 }
 
-
-// A scoped Lock class that protects the global variables jack_input_ports and jack_output_ports.
-class ScopedJackPortNamesLock{
-public:
-  ScopedJackPortNamesLock() : is_locked( false ) {
-    lock();
-  }
-  ~ScopedJackPortNamesLock() {
-    unlock();
-  }
-  void lock() {
-    if ( is_locked == false ) {
-      pthread_mutex_lock( &jack_ports_lock );
-      is_locked = true;
-    }
-  }
-  void unlock() {
-    if ( is_locked == true ) {
-      pthread_mutex_unlock( &jack_ports_lock );
-      is_locked = false;
-    }
-  }
-
-private:
-  bool is_locked;
-  static pthread_mutex_t jack_ports_lock;
-};
-
-pthread_mutex_t ScopedJackPortNamesLock::jack_ports_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 static void register_jack_ports( jack_client_t *port_client) {
