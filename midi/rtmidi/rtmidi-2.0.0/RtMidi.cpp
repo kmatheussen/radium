@@ -3401,6 +3401,8 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
   #define MUTEX_LOCK(A)       EnterCriticalSection(A)
   #define MUTEX_UNLOCK(A)     LeaveCriticalSection(A)
 
+  #define MSLEEP(A)           Sleep(A)
+
 #elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
   #include <pthread.h>
 
@@ -3411,12 +3413,16 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
   #define MUTEX_LOCK(A)       pthread_mutex_lock(A)
   #define MUTEX_UNLOCK(A)     pthread_mutex_unlock(A)
 
+  #define MSLEEP(A)           usleep(A*1000)
+
 #else
   #define __RTAUDIO_DUMMY__
   typedef int StreamMutex;
 
   #define MUTEX_INITIALIZE(A) abs(*A) // dummy definitions
   #define MUTEX_DESTROY(A)    abs(*A) // dummy definitions
+
+  #define MSLEEP(A)           abs(A) // dummy definitions
 #endif
 
 
@@ -3555,7 +3561,7 @@ struct JackClientHolder{
     jack_ringbuffer_write( messages, ( char * ) &message, sizeof( JackClientHolderMessage ) );
 
     while ( portHolder->is_active == true )
-      usleep ( 50 );
+      MSLEEP( 2 );
 
     jack_port_unregister( client, portHolder->port );
 
