@@ -94,7 +94,7 @@ private:
 pthread_mutex_t ScopedPutMidiLock::putmidi_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
-void PutMidi(MidiPortOs port,
+void OS_PutMidi(MidiPortOs port,
              int cc,
              int data1,
              int data2
@@ -136,14 +136,14 @@ void PutMidi(MidiPortOs port,
 }
 
 
-void GoodPutMidi(MidiPortOs port,
+void OS_GoodPutMidi(MidiPortOs port,
                  int cc,
                  int data1,
                  int data2,
                  uint32_t maxbuff
                  )
 {
-  PutMidi(port,cc,data1,data2);
+  OS_PutMidi(port,cc,data1,data2);
 }
 
 

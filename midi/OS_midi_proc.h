@@ -38,14 +38,14 @@ extern LANGSPEC void MIDI_Delete(void);
 extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name);
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
-extern LANGSPEC void GoodPutMidi(MidiPortOs port,
+extern LANGSPEC void OS_GoodPutMidi(MidiPortOs port,
                                  int cc,
                                  int data1,
                                  int data2,
                                  uint32_t maxbuff
                                  );
 
-extern LANGSPEC void PutMidi(MidiPortOs port,
+extern LANGSPEC void OS_PutMidi(MidiPortOs port,
                              int cc,
                              int data1,
                              int data2

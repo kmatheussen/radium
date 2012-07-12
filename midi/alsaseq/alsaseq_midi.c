@@ -213,7 +213,7 @@ static void alsaseq_PutMidi(
 
 // TODO: check alsaseq buffer size against maxbuff, and reject message if alsaseq is bigger.
 // TODO: find better name for function.
-void GoodPutMidi(MidiPortOs port,
+void OS_GoodPutMidi(MidiPortOs port,
                  int cc,
                  int data1,
                  int data2,
@@ -226,7 +226,7 @@ void GoodPutMidi(MidiPortOs port,
 }
 
 
-void PutMidi(MidiPortOs port,
+void OS_PutMidi(MidiPortOs port,
              uint32_t msg
              )
 {

@@ -68,7 +68,7 @@ void MyGoodPutMidi(
                    int data2,
                    int maxbuff
 ){
-  GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
+  OS_GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
   OnOffNotesTrack(midi_port,cc,data1,data2);
 }
 
@@ -78,7 +78,7 @@ void MyMyPutMidi(
                  int data1,
                  int data2
 ){
-  PutMidi(midi_port->port,cc,data1,data2);
+  OS_PutMidi(midi_port->port,cc,data1,data2);
   OnOffNotesTrack(midi_port,cc,data1,data2);
 }
 
@@ -101,7 +101,7 @@ void MyPutMidi(
 		return;
 	}
 
-	GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
+	OS_GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
 
 	OnOffNotesTrack(midi_port,cc,data1,data2);
 }
