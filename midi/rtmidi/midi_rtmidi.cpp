@@ -95,7 +95,9 @@ pthread_mutex_t ScopedPutMidiLock::putmidi_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 void PutMidi(MidiPortOs port,
-             uint32_t msg
+             int cc,
+             int data1,
+             int data2
              )
 {
   if(port==NULL)
@@ -103,11 +105,9 @@ void PutMidi(MidiPortOs port,
 
   RtMidiOut *midiout = static_cast<RtMidiOut*>(port);
 
-  unsigned int d3=(msg>>8)&0xff;
-  unsigned int d2=(msg>>16)&0xff;
-  unsigned int d1=(msg>>24)&0xff;
+  printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
 
-  int len = midi_msg_len(d1);
+  int len = midi_msg_len(cc);
   if(len==0)
     return;
 
@@ -116,32 +116,34 @@ void PutMidi(MidiPortOs port,
                             // Don't think any effect caused by priority inheritance should be an issue when the user drags sliders, etc.
 
     if(len==1){
-      message1[0]=d1;
+      message1[0]=cc;
       midiout->sendMessage(&message1);
       return;
     }
 
     if(len==2){
-      message2[0]=d1;
-      message2[1]=d2;
+      message2[0]=cc;
+      message2[1]=data1;
       midiout->sendMessage(&message2);
       return;
     }
 
-    message3[0]=d1;
-    message3[1]=d2;
-    message3[2]=d3;
+    message3[0]=cc;
+    message3[1]=data1;
+    message3[2]=data2;
     midiout->sendMessage(&message3);
   }
 }
 
 
 void GoodPutMidi(MidiPortOs port,
-                 uint32_t msg,
+                 int cc,
+                 int data1,
+                 int data2,
                  uint32_t maxbuff
                  )
 {
-  PutMidi(port,msg);
+  PutMidi(port,cc,data1,data2);
 }
 
 

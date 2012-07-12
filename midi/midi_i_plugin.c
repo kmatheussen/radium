@@ -68,7 +68,7 @@ void MyGoodPutMidi(
                    int data2,
                    int maxbuff
 ){
-  GoodPutMidi(midi_port->port,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)),(uint32_t)maxbuff);
+  GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
   OnOffNotesTrack(midi_port,cc,data1,data2);
 }
 
@@ -78,8 +78,8 @@ void MyMyPutMidi(
                  int data1,
                  int data2
 ){
-	PutMidi(midi_port->port,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)));	
-	OnOffNotesTrack(midi_port,cc,data1,data2);
+  PutMidi(midi_port->port,cc,data1,data2);
+  OnOffNotesTrack(midi_port,cc,data1,data2);
 }
 
 
@@ -101,7 +101,7 @@ void MyPutMidi(
 		return;
 	}
 
-	GoodPutMidi(midi_port->port,(uint32_t)((cc<<24)|(data1<<16)|(data2<<8)),(uint32_t)maxbuff);
+	GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
 
 	OnOffNotesTrack(midi_port,cc,data1,data2);
 }
@@ -113,7 +113,8 @@ void MyPutMidi(
 void MIDIplaynote(int notenum,
                   int velocity,
                   struct Tracks *track,
-                  struct Notes *note
+                  struct Notes *note,
+                  STime time
 ){
 	const struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
         struct MidiPort *midi_port = patchdata->midi_port;
@@ -196,7 +197,8 @@ bool useOx90ForNoteOff=false;
 void MIDIstopnote(int notenum,
                   int velocity, 
                   struct Tracks *track,
-                  struct Notes *note
+                  struct Notes *note,
+                  STime time
 ){
   struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
 

@@ -183,14 +183,12 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
 
 static void alsaseq_PutMidi(
                             MidiPortOs port,
-			    uint32_t msg
+                            int cc,
+                            int data1,
+                            int data2,
 			    )
 {
-  unsigned int d3=(msg>>8)&0xff;
-  unsigned int d2=(msg>>16)&0xff;
-  unsigned int d1=(msg>>24)&0xff;
-
-  unsigned char buffer[3]={d1,d2,d3};
+  unsigned char buffer[3]={cc,data1,data2};
   snd_seq_event_t ev;
   snd_midi_event_t *midi_ev;
   snd_midi_event_new( 10, &midi_ev );
@@ -216,7 +214,9 @@ static void alsaseq_PutMidi(
 // TODO: check alsaseq buffer size against maxbuff, and reject message if alsaseq is bigger.
 // TODO: find better name for function.
 void GoodPutMidi(MidiPortOs port,
-                 uint32_t msg,
+                 int cc,
+                 int data1,
+                 int data2,
                  uint32_t maxbuff
                  )
 {

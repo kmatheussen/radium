@@ -156,6 +156,13 @@ Non-urgent
 
 * Fix program crash if closing xterm window.
 
+* Remove memory allocation from rtmidi jack inprocess. (Or perhaps use TLSF)
+
+* Fix use of broken ringbuffer implementation in rtmidi. (Atomic operations, or jack_ringbuffer? Maybe the portaudio
+  ringbuffer implementation has a more liberal license than LGPL.)
+
+* Doing undo/redo after loading standard midi can probably crash the program.
+
 
 Urgent
 ======
