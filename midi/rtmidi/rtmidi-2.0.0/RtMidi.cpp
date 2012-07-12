@@ -3451,11 +3451,11 @@ private:
   StreamMutex *mutex;
 };
 
-static StreamMutex jackLock;
+static StreamMutex jackMutex;
 class InitializeJackLock{
 public:
   InitializeJackLock() {
-    MUTEX_INITIALIZE( &jackLock );
+    MUTEX_INITIALIZE( &jackMutex );
   }
 };
 static InitializeJackLock initializeJackLock; // dummy variable necessary to provoce the constructor to be called during program startup.
@@ -3570,7 +3570,7 @@ private:
 static std::vector<JackClientHolder*> g_clientHolders;
 
 static JackClientHolder *getJackClientHolder(const std::string &name) {
-  ScopedJackLock lock( &jackLock );
+  ScopedJackLock lock( &jackMutex );
 
   for ( unsigned int i = 0 ; i < g_clientHolders.size() ; i++ ) {
     if ( name == g_clientHolders[i]->name ) {
@@ -3679,14 +3679,14 @@ static void register_jack_ports( jack_client_t *port_client) {
 
 static void jack_port_registration_callback( jack_port_id_t port, int do_register, void *arg ) {
   jack_client_t *port_client = (jack_client_t*) arg;
-  ScopedJackLock lock( &jackLock );
+  ScopedJackLock lock( &jackMutex );
 
   register_jack_ports( port_client );
 }
 
 static bool init_jack_port_client(void){
   static jack_client_t *port_client = NULL;
-  ScopedJackLock lock( &jackLock );
+  ScopedJackLock lock( &jackMutex );
 
   if ( port_client != NULL)
     return true;
@@ -3816,7 +3816,7 @@ void MidiInJack :: openVirtualPort( const std::string portName )
 
 unsigned int MidiInJack :: getPortCount()
 {
-  ScopedJackLock lock( &jackLock );
+  ScopedJackLock lock( &jackMutex );
 
   return getJackPortCount( jack_input_ports );
 }
@@ -3828,7 +3828,7 @@ std::string MidiInJack :: getPortName( unsigned int portNumber )
   const char *portname = NULL;
 
   {
-    ScopedJackLock lock( &jackLock );
+    ScopedJackLock lock( &jackMutex );
 
     // Check port validity
     if ( jack_input_ports == NULL ) {
@@ -3959,7 +3959,7 @@ void MidiOutJack :: openVirtualPort( const std::string portName )
 
 unsigned int MidiOutJack :: getPortCount()
 {
-  ScopedJackLock lock( &jackLock );
+  ScopedJackLock lock( &jackMutex );
 
   return getJackPortCount( jack_output_ports );
 }
@@ -3971,7 +3971,7 @@ std::string MidiOutJack :: getPortName( unsigned int portNumber )
   const char *portname = NULL;
 
   {
-    ScopedJackLock lock( &jackLock );
+    ScopedJackLock lock( &jackMutex );
 
     // Check port validity
     if ( jack_output_ports == NULL) {
