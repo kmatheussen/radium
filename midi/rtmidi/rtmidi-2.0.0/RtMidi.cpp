@@ -3586,8 +3586,8 @@ static JackClientHolder *getJackClientHolder(const std::string &name) {
 }
 
 
-static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *jData );
-static int jackProcessOut( jack_nframes_t nFrames, JackPortHolder *data );
+static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *portHolder );
+static int jackProcessOut( jack_nframes_t nFrames, JackPortHolder *portHolder );
 
 static int jackProcess( jack_nframes_t nFrames, void *arg ) {
   JackClientHolder *clientHolder = static_cast<JackClientHolder*>( arg );
@@ -3710,13 +3710,13 @@ static bool init_jack_port_client(void){
 //  Class Definitions: MidiInJack
 //*********************************************************************//
 
-static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *jData )
+static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *portHolder )
 {
-  MidiInApi :: RtMidiInData *rtData = jData->rtMidiIn;
+  MidiInApi :: RtMidiInData *rtData = portHolder->rtMidiIn;
   jack_midi_event_t event;
   jack_time_t long long time;
 
-  void *buff = jack_port_get_buffer( jData->port, nframes );
+  void *buff = jack_port_get_buffer( portHolder->port, nframes );
 
   int evCount = jack_midi_get_event_count( buff );
 
@@ -3732,13 +3732,13 @@ static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *jData )
       message.bytes.push_back( event.buffer[i] );
 
     // Compute the delta time.
-    time = jack_last_frame_time( jData->clientHolder->client ) + event.time;
+    time = jack_last_frame_time( portHolder->clientHolder->client ) + event.time;
     if ( rtData->firstMessage == true )
       rtData->firstMessage = false;
     else
-      message.timeStamp = ( time - jData->lastTime ) / (double)jack_get_sample_rate( jData->clientHolder->client );
+      message.timeStamp = ( time - portHolder->lastTime ) / (double)jack_get_sample_rate( portHolder->clientHolder->client );
 
-    jData->lastTime = time;
+    portHolder->lastTime = time;
 
     if ( !rtData->continueSysex ) {
       if ( rtData->usingCallback ) {
@@ -3769,18 +3769,18 @@ MidiInJack :: MidiInJack( const std::string clientName, unsigned int queueSizeLi
 
 void MidiInJack :: initialize( const std::string& clientName )
 {
-  JackPortHolder *data = new JackPortHolder;
-  apiData_ = (void *) data;
+  JackPortHolder *portHolder = new JackPortHolder;
+  apiData_ = (void *) portHolder;
 
   if ( init_jack_port_client() == false ) {
     errorString_ = "MidiInJack::initialize: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
   }
 
-  data->is_input = true;
-  data->rtMidiIn = &inputData_;
-  data->port = NULL;
-  data->clientHolder = getJackClientHolder( clientName );
+  portHolder->is_input = true;
+  portHolder->rtMidiIn = &inputData_;
+  portHolder->port = NULL;
+  portHolder->clientHolder = getJackClientHolder( clientName );
 }
 
 MidiInJack :: ~MidiInJack()
@@ -3790,24 +3790,24 @@ MidiInJack :: ~MidiInJack()
 
 void MidiInJack :: openPort( unsigned int portNumber, const std::string portName )
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
   openVirtualPort( portName );
 
   // Connecting to the output
   std::string name = getPortName( portNumber );
-  jack_connect( data->clientHolder->client, name.c_str(), jack_port_name( data->port ) );
+  jack_connect( portHolder->clientHolder->client, name.c_str(), jack_port_name( portHolder->port ) );
 }
 
 void MidiInJack :: openVirtualPort( const std::string portName )
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
-  if ( data->port != NULL )
+  if ( portHolder->port != NULL )
     return;
 
   // Initialize JACK client
-  if ( data->clientHolder->addPort( data, portName ) == false) {
+  if ( portHolder->clientHolder->addPort( portHolder, portName ) == false) {
     errorString_ = "MidiInJack::initialize: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
     return;
@@ -3854,12 +3854,12 @@ std::string MidiInJack :: getPortName( unsigned int portNumber )
 
 void MidiInJack :: closePort()
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
-  if ( data->port == NULL ) return;
+  if ( portHolder->port == NULL ) return;
 
-  data->clientHolder->removePort( data );
-  data->port = NULL;
+  portHolder->clientHolder->removePort( portHolder );
+  portHolder->port = NULL;
 }
 
 //*********************************************************************//
@@ -3868,17 +3868,17 @@ void MidiInJack :: closePort()
 //*********************************************************************//
 
 // Jack process callback
-static int jackProcessOut( jack_nframes_t nFrames,  JackPortHolder *data )
+static int jackProcessOut( jack_nframes_t nFrames,  JackPortHolder *portHolder )
 {
-  int lastFrameTime = jack_last_frame_time( data->clientHolder->client );
+  int lastFrameTime = jack_last_frame_time( portHolder->clientHolder->client );
 
-  void *buff = jack_port_get_buffer( data->port, nFrames );
+  void *buff = jack_port_get_buffer( portHolder->port, nFrames );
   jack_midi_clear_buffer( buff );
 
-  while ( jack_ringbuffer_read_space( data->buffer ) > 0 ) {
+  while ( jack_ringbuffer_read_space( portHolder->buffer ) > 0 ) {
     JackMessageData messageData;
 
-    jack_ringbuffer_peek( data->buffer, (char *) &messageData, (size_t) sizeof(JackMessageData) );
+    jack_ringbuffer_peek( portHolder->buffer, (char *) &messageData, (size_t) sizeof(JackMessageData) );
 
     int offset = (messageData.time - lastFrameTime) + nFrames;
 
@@ -3891,15 +3891,15 @@ static int jackProcessOut( jack_nframes_t nFrames,  JackPortHolder *data )
       offset = 0;
 
     // Check that the message itself is written to the buffer
-    if ( jack_ringbuffer_read_space( data->buffer ) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
+    if ( jack_ringbuffer_read_space( portHolder->buffer ) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
       break;
 
     // Increase ringbuffer read position
-    jack_ringbuffer_read_advance( data->buffer, (size_t) sizeof(JackMessageData) );
+    jack_ringbuffer_read_advance( portHolder->buffer, (size_t) sizeof(JackMessageData) );
 
     // Write message to jack
     jack_midi_data_t *midiData = jack_midi_event_reserve( buff, offset, messageData.nBytes );
-    jack_ringbuffer_read( data->buffer, (char *) midiData, (size_t) messageData.nBytes );
+    jack_ringbuffer_read( portHolder->buffer, (char *) midiData, (size_t) messageData.nBytes );
   }
 
   return 0;
@@ -3912,45 +3912,45 @@ MidiOutJack :: MidiOutJack( const std::string clientName ) : MidiOutApi()
 
 void MidiOutJack :: initialize( const std::string& clientName )
 {
-  JackPortHolder *data = new JackPortHolder;
-  apiData_ = (void *) data;
+  JackPortHolder *portHolder = new JackPortHolder;
+  apiData_ = (void *) portHolder;
 
   if ( init_jack_port_client() == false ) {
     errorString_ = "MidiOutJack::initialize: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
   }
 
-  data->is_input = false;
-  data->port = NULL;
-  data->clientHolder = getJackClientHolder( clientName );
+  portHolder->is_input = false;
+  portHolder->port = NULL;
+  portHolder->clientHolder = getJackClientHolder( clientName );
 }
 
 MidiOutJack :: ~MidiOutJack()
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
   closePort();
-  delete data;
+  delete portHolder;
 }
 
 void MidiOutJack :: openPort( unsigned int portNumber, const std::string portName )
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
   openVirtualPort( portName );
 
   // Connecting to the output
   std::string name = getPortName( portNumber );
-  jack_connect( data->clientHolder->client, jack_port_name( data->port ), name.c_str() );
+  jack_connect( portHolder->clientHolder->client, jack_port_name( portHolder->port ), name.c_str() );
 }
 
 void MidiOutJack :: openVirtualPort( const std::string portName )
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
-  data->buffer = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * ( 3 + sizeof(JackMessageData) ) );
+  portHolder->buffer = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * ( 3 + sizeof(JackMessageData) ) );
 
   // Initialize JACK client
-  if ( data->clientHolder->addPort( data, portName ) == false ) {
+  if ( portHolder->clientHolder->addPort( portHolder, portName ) == false ) {
     errorString_ = "MidiOutJack::initialize: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
     return;
@@ -3997,31 +3997,31 @@ std::string MidiOutJack :: getPortName( unsigned int portNumber )
 
 void MidiOutJack :: closePort()
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
-  if ( data->port == NULL ) return;
+  if ( portHolder->port == NULL ) return;
 
-  data->clientHolder->removePort( data );
-  data->port = NULL;
+  portHolder->clientHolder->removePort( portHolder );
+  portHolder->port = NULL;
 }
 
 void MidiOutJack :: sendMessage( std::vector<unsigned char> *message )
 {
-  JackPortHolder *data = static_cast<JackPortHolder *> (apiData_);
+  JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
   JackMessageData messageData;
 
-  messageData.time = jack_frame_time(data->clientHolder->client);
+  messageData.time = jack_frame_time(portHolder->clientHolder->client);
   messageData.nBytes = message->size();
 
   // Ensure that there is enough space on the buffer
-  if ( jack_ringbuffer_write_space( data->buffer) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
+  if ( jack_ringbuffer_write_space( portHolder->buffer) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
     return;
 
   // Write message data to buffer
-  jack_ringbuffer_write( data->buffer, ( char * ) &messageData, sizeof( JackMessageData ) );
+  jack_ringbuffer_write( portHolder->buffer, ( char * ) &messageData, sizeof( JackMessageData ) );
 
   // Write message to buffer
-  jack_ringbuffer_write( data->buffer, ( const char * ) &( *message )[0],
+  jack_ringbuffer_write( portHolder->buffer, ( const char * ) &( *message )[0],
                          message->size() );
 }
 
