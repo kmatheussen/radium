@@ -234,6 +234,37 @@ RtMidiOut :: ~RtMidiOut() throw()
   delete rtapi_;
 }
 
+double RtMidiOut :: getCurrentTime( RtMidi::Api api )
+{
+#if defined(__UNIX_JACK__)
+  if ( api == UNIX_JACK )
+    return MidiOutJack::getCurrentTime();
+#endif
+#if defined(__LINUX_ALSA__)
+  if ( api == LINUX_ALSA )
+    return -1.0;
+#endif
+#if defined(__WINDOWS_MM__)
+  if ( api == WINDOWS_MM )
+    return -1.0;
+#endif
+#if defined(__WINDOWS_KS__)
+  if ( api == WINDOWS_KS )
+    return -1.0;
+#endif
+#if defined(__MACOSX_CORE__)
+  if ( api == MACOSX_CORE )
+    return -1.0;
+#endif
+#if defined(__RTMIDI_DUMMY__)
+  if ( api == RTMIDI_DUMMY )
+    return -1.0;
+#endif
+
+  return -1.0;
+}
+
+
 //*********************************************************************//
 //  Common MidiInApi Definitions
 //*********************************************************************//
@@ -941,7 +972,7 @@ void sysexCompletionProc( MIDISysexSendRequest * sreq )
  sysexBuffer = 0;
 }
 
-void MidiOutCore :: sendMessage( std::vector<unsigned char> *message )
+void MidiOutCore :: sendMessage( std::vector<unsigned char> *message, double time )
 {
   // We use the MIDISendSysex() function to asynchronously send sysex
   // messages.  Otherwise, we use a single CoreMidi MIDIPacket.
@@ -1804,7 +1835,7 @@ void MidiOutAlsa :: openVirtualPort( std::string portName )
   }
 }
 
-void MidiOutAlsa :: sendMessage( std::vector<unsigned char> *message )
+void MidiOutAlsa :: sendMessage( std::vector<unsigned char> *message, double time )
 {
   int result;
   AlsaMidiData *data = static_cast<AlsaMidiData *> (apiData_);
@@ -2270,7 +2301,7 @@ void MidiOutWinMM :: openVirtualPort( std::string portName )
   RtMidi::error( RtError::WARNING, errorString_ );
 }
 
-void MidiOutWinMM :: sendMessage( std::vector<unsigned char> *message )
+void MidiOutWinMM :: sendMessage( std::vector<unsigned char> *message, double time )
 {
   unsigned int nBytes = static_cast<unsigned int>(message->size());
   if ( nBytes == 0 ) {
@@ -3327,7 +3358,7 @@ void MidiOutWinKS :: closePort()
   }
 }
 
-void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
+void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage, double time )
 {
   std::vector<unsigned char> const& msg = *pMessage;
   WindowsKsData* data = static_cast<WindowsKsData*>(apiData_);
@@ -3389,7 +3420,7 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
 #include <jack/ringbuffer.h>
 
 
-// Mutex (copied from RtAudio.h and RtAudio.cpp)
+// Mutex and sleeping (copied from RtAudio.h, RtAudio.cpp and tests/qmidiin.cpp)
 
 #if defined(__WINDOWS_DS__) || defined(__WINDOWS_ASIO__)
   #include <windows.h>
@@ -3401,10 +3432,11 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
   #define MUTEX_LOCK(A)       EnterCriticalSection(A)
   #define MUTEX_UNLOCK(A)     LeaveCriticalSection(A)
 
-  #define MSLEEP(A)           Sleep(A)
+  #define SLEEP( milliseconds ) Sleep( (DWORD) milliseconds ) 
 
 #elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
   #include <pthread.h>
+  #include <unistd.h>
 
   // pthread API
   typedef pthread_mutex_t StreamMutex;
@@ -3413,7 +3445,7 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
   #define MUTEX_LOCK(A)       pthread_mutex_lock(A)
   #define MUTEX_UNLOCK(A)     pthread_mutex_unlock(A)
 
-  #define MSLEEP(A)           usleep(A*1000)
+  #define SLEEP( milliseconds ) usleep( (unsigned long) (milliseconds * 1000.0) )
 
 #else
   #define __RTAUDIO_DUMMY__
@@ -3422,7 +3454,7 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage)
   #define MUTEX_INITIALIZE(A) abs(*A) // dummy definitions
   #define MUTEX_DESTROY(A)    abs(*A) // dummy definitions
 
-  #define MSLEEP(A)           abs(A) // dummy definitions
+  #define SLEEP(A)            abs((int)(A)) // dummy definitions
 #endif
 
 
@@ -3486,7 +3518,8 @@ struct JackPortHolder {
   bool is_input;
   JackClientHolder *clientHolder;
   jack_port_t *port;
-  jack_ringbuffer_t *buffer;
+  jack_ringbuffer_t *immediate_ringbuffer;
+  jack_ringbuffer_t *ringbuffer;
   jack_time_t lastTime;
   MidiInApi :: RtMidiInData *rtMidiIn;
   };
@@ -3561,7 +3594,7 @@ struct JackClientHolder{
     jack_ringbuffer_write( messages, ( char * ) &message, sizeof( JackClientHolderMessage ) );
 
     while ( portHolder->is_active == true )
-      MSLEEP( 2 );
+      SLEEP( 2 );
 
     jack_port_unregister( client, portHolder->port );
 
@@ -3690,22 +3723,25 @@ static void jack_port_registration_callback( jack_port_id_t port, int do_registe
   register_jack_ports( port_client );
 }
 
+
+static jack_client_t *jackPortClient = NULL;
+
 static bool init_jack_port_client(void){
-  static jack_client_t *port_client = NULL;
+
   ScopedJackLock lock( &jackMutex );
 
-  if ( port_client != NULL)
+  if ( jackPortClient != NULL)
     return true;
 
-  if (( port_client = jack_client_open( "RtMidi client monitor", JackNullOption, NULL )) == 0) {
+  if (( jackPortClient = jack_client_open( "RtMidi client monitor", JackNullOption, NULL )) == 0) {
     return false;
   }
 
-  jack_set_port_registration_callback( port_client, jack_port_registration_callback, port_client);
+  jack_set_port_registration_callback( jackPortClient, jack_port_registration_callback, jackPortClient);
 
-  jack_activate(port_client);
+  jack_activate(jackPortClient);
 
-  register_jack_ports( port_client );
+  register_jack_ports( jackPortClient );
 
   return true;
 }
@@ -3873,40 +3909,46 @@ void MidiInJack :: closePort()
 //  Class Definitions: MidiOutJack
 //*********************************************************************//
 
-// Jack process callback
-static int jackProcessOut( jack_nframes_t nFrames,  JackPortHolder *portHolder )
-{
-  int lastFrameTime = jack_last_frame_time( portHolder->clientHolder->client );
+static void jackProcessOutRingbuffer( int nFramesInPeriod, int periodStart, jack_ringbuffer_t *ringbuffer, void *jackPortBuffer ) {
+  while ( jack_ringbuffer_read_space( ringbuffer ) > sizeof(JackMessageData) ) {
 
-  void *buff = jack_port_get_buffer( portHolder->port, nFrames );
-  jack_midi_clear_buffer( buff );
-
-  while ( jack_ringbuffer_read_space( portHolder->buffer ) > 0 ) {
     JackMessageData messageData;
 
-    jack_ringbuffer_peek( portHolder->buffer, (char *) &messageData, (size_t) sizeof(JackMessageData) );
+    jack_ringbuffer_peek( ringbuffer, (char *) &messageData, (size_t) sizeof(JackMessageData) );
 
-    int offset = (messageData.time - lastFrameTime) + nFrames;
+    int offset = (messageData.time - periodStart) + nFramesInPeriod; // We add one period to the timestamp
 
     // Ensure the event belongs to this callback
-    if ( offset >= (int)nFrames )
-      break;
+    if ( offset >= (int) nFramesInPeriod )
+      return;
 
-    // If offset is negative, we missed the deadline, but we send it out anyway.
+    // If offset is negative, we either missed the deadline (but we send it out anyway), or it is an immediate message.
     if ( offset < 0 )
       offset = 0;
 
-    // Check that the message itself is written to the buffer
-    if ( jack_ringbuffer_read_space( portHolder->buffer ) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
-      break;
-
     // Increase ringbuffer read position
-    jack_ringbuffer_read_advance( portHolder->buffer, (size_t) sizeof(JackMessageData) );
+    jack_ringbuffer_read_advance( ringbuffer, (size_t) sizeof(JackMessageData) );
 
-    // Write message to jack
-    jack_midi_data_t *midiData = jack_midi_event_reserve( buff, offset, messageData.nBytes );
-    jack_ringbuffer_read( portHolder->buffer, (char *) midiData, (size_t) messageData.nBytes );
+    // Read message from ringbuffer into jack memory.
+    jack_midi_data_t *midiData = jack_midi_event_reserve( jackPortBuffer, offset, messageData.nBytes );
+    if ( midiData != NULL )
+      jack_ringbuffer_read( ringbuffer, (char *) midiData, (size_t) messageData.nBytes );
+    else
+      jack_ringbuffer_read_advance( ringbuffer, (size_t) messageData.nBytes ); // throw it away.
+
   }
+}
+
+// Jack process callback
+static int jackProcessOut( jack_nframes_t nFramesInPeriod,  JackPortHolder *portHolder )
+{
+  int periodStart = jack_last_frame_time( portHolder->clientHolder->client );
+
+  void *jackPortBuffer = jack_port_get_buffer( portHolder->port, nFramesInPeriod );
+  jack_midi_clear_buffer( jackPortBuffer );
+
+  jackProcessOutRingbuffer( nFramesInPeriod, periodStart, portHolder->immediate_ringbuffer, jackPortBuffer );
+  jackProcessOutRingbuffer( nFramesInPeriod, periodStart, portHolder->ringbuffer, jackPortBuffer );
 
   return 0;
 }
@@ -3953,7 +3995,8 @@ void MidiOutJack :: openVirtualPort( const std::string portName )
 {
   JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
 
-  portHolder->buffer = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * ( 3 + sizeof(JackMessageData) ) );
+  portHolder->immediate_ringbuffer = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * ( 3 + sizeof(JackMessageData) ) );
+  portHolder->ringbuffer = jack_ringbuffer_create( JACK_RINGBUFFER_SIZE * ( 3 + sizeof(JackMessageData) ) );
 
   // Initialize JACK client
   if ( portHolder->clientHolder->addPort( portHolder, portName ) == false ) {
@@ -4009,26 +4052,59 @@ void MidiOutJack :: closePort()
 
   portHolder->clientHolder->removePort( portHolder );
   portHolder->port = NULL;
+
+  jack_ringbuffer_free( portHolder->immediate_ringbuffer );
+  jack_ringbuffer_free( portHolder->ringbuffer );
 }
 
-void MidiOutJack :: sendMessage( std::vector<unsigned char> *message )
+
+void MidiOutJack :: sendMessage( std::vector<unsigned char> *message, double time )
 {
   JackPortHolder *portHolder = static_cast<JackPortHolder *> (apiData_);
   JackMessageData messageData;
+  jack_ringbuffer_t *ringbuffer;
 
-  messageData.time = jack_frame_time(portHolder->clientHolder->client);
+  if ( time < 0 ) {
+
+    messageData.time = 0;
+    ringbuffer = portHolder->immediate_ringbuffer;
+
+  } else {
+    messageData.time = (jack_nframes_t) ( time * (double)jack_get_sample_rate( portHolder->clientHolder->client ) );
+    ringbuffer = portHolder->ringbuffer;
+
+  }
+
   messageData.nBytes = message->size();
 
-  // Ensure that there is enough space on the buffer
-  if ( jack_ringbuffer_write_space( portHolder->buffer) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
+  // Ensure there is enough space on the buffer
+  if ( jack_ringbuffer_write_space( ringbuffer ) < (size_t) ( sizeof(JackMessageData) + messageData.nBytes ) )
     return;
 
-  // Write message data to buffer
-  jack_ringbuffer_write( portHolder->buffer, ( char * ) &messageData, sizeof( JackMessageData ) );
+  // Write JackMessageData to buffer
+  jack_ringbuffer_write( ringbuffer, ( char * ) &messageData, sizeof( JackMessageData ) );
 
   // Write message to buffer
-  jack_ringbuffer_write( portHolder->buffer, ( const char * ) &( *message )[0],
-                         message->size() );
+  jack_ringbuffer_write( ringbuffer, ( const char * ) &( *message )[0], message->size() );
 }
+
+
+
+double MidiOutJack :: getCurrentTime() {
+  if ( jackPortClient == NULL) {
+
+    if ( init_jack_port_client() == false ) {
+      std::string errorString_ = "MidiInJack::initialize: JACK server not running?";
+      RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
+    }
+
+    if ( jackPortClient == NULL)
+      return -1.0;
+
+  }
+
+  return jack_frame_time(jackPortClient) / 44100.0;
+}
+
 
 #endif  // __UNIX_JACK__
