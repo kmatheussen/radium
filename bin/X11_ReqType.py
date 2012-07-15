@@ -61,10 +61,9 @@ def GFX_CloseReqType(reqtype):
 def GFX_ReadString(filename):
     reqtype=conn
     reqtype.send('getstring')
-    while 1:
-        data=reqtype.recv(1024)
-        if data:
-            break
+
+    data=reqtype.recv(1024)
+
     file=open(filename,'w')
     data=string.rstrip(data)
     file.write(data)
