@@ -275,8 +275,8 @@ void MyWidget::wheelEvent(QWheelEvent *qwheelevent){
     tevent.SubID=EVENT_DOWNARROW;
   }
 
-  tevent.x=qwheelevent->x();
-  tevent.y=qwheelevent->y();
+  tevent.x=qwheelevent->x()-XOFFSET;
+  tevent.y=qwheelevent->y()-YOFFSET;
 
   for(int lokke=0;lokke<abs(qwheelevent->delta()/120);lokke++){
     EventReciever(&tevent,window);
@@ -298,8 +298,8 @@ void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEDOWN;
     }
   }
-  tevent.x=qmouseevent->x();
-  tevent.y=qmouseevent->y();
+  tevent.x=qmouseevent->x()-XOFFSET;
+  tevent.y=qmouseevent->y()-YOFFSET;
 
   EventReciever(&tevent,this->window);
 
@@ -316,8 +316,8 @@ void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
-  tevent.x=qmouseevent->x();
-  tevent.y=qmouseevent->y();
+  tevent.x=qmouseevent->x()-XOFFSET;
+  tevent.y=qmouseevent->y()-YOFFSET;
 
 
   EventReciever(&tevent,this->window);
@@ -327,8 +327,8 @@ void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 
 void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->x();
-  tevent.y=qmouseevent->y();
+  tevent.x=qmouseevent->x()-XOFFSET;
+  tevent.y=qmouseevent->y()-YOFFSET;
   EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
