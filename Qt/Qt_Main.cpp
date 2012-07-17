@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
+#include "../common/settings_proc.h"
 
 //#include "../X11/X11_Bs_edit_proc.h"
 //#include "../X11/X11_MidiProperties_proc.h"
@@ -198,6 +199,7 @@ void Ptask2Mtask(void){
 #include "qlistbox.h"
 #endif
 
+#include <gc.h>
 
 //#include "google/profiler.h"
 
@@ -214,7 +216,11 @@ int radium_main(char *arg){
   argv[0] = strdup("radium");
   argv[1] = NULL;
 
-  //GC_dont_gc = 1;
+
+
+  //GC_set_all_interior_pointers(0); // crash... (???)
+  //GC_enable_incremental(); // crash.
+  //GC_dont_gc = 1; // testing
 
 #if 0
   QApplication::setStyle( new QPlatinumStyle() );
@@ -222,7 +228,13 @@ int radium_main(char *arg){
   QApplication::setStyle( new QMotifPlusStyle() );
   QApplication::setStyle( new QSGIStyle() );
 #endif
-  QApplication::setStyle( new QWindowsStyle() );
+  {
+    bool override_default_qt_style = SETTINGS_read_bool((char*)"override_default_qt_style",true);
+    SETTINGS_write_bool((char*)"override_default_qt_style",override_default_qt_style);
+
+    if(override_default_qt_style)
+      QApplication::setStyle( new QWindowsStyle() );
+  }
 
 #ifdef USE_QT4
   //QApplication::setGraphicsSystem("native");
@@ -296,8 +308,15 @@ int radium_main(char *arg){
 
   PyRun_SimpleString("import menues");
 
+#if 1
   qapplication->exec();
-  
+#else
+  while(true){
+    qapplication->processEvents();
+    usleep(1000);
+  }
+#endif
+
   posix_EndPlayer();
   //EndGuiThread();
 

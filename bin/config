@@ -14,5 +14,6 @@ color7 = #111111
 color8 = #470086
 system_color = #d4d6bf
 override_default_qt_colors = true
+override_default_qt_style = true
 blocklist_width = 818
 use_0x90_for_note_off = 0
