@@ -42,8 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 
 
-extern STime dastime;
-
 
 /******************** NOTES ******************************
 
@@ -68,7 +66,7 @@ void PlayStopReally(bool doit){
 
 	if(doit) (*Ptask2MtaskCallBack)();
 
-	dastime=0;
+	pc->time=0;
 
 	GFX_UpdateQuantitize(root->song->tracker_windows,root->song->tracker_windows->wblock);
 }

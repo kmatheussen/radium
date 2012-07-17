@@ -87,9 +87,10 @@ typedef struct{
 
 	struct PEventQueue *peq;	// Player events.
 
-	int therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration.
+        STime time;
+	STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration.
 
-        int reltime_to_add;      // Shows how much to add to event time, when taking block->reltempo into consideration.
+        STime reltime_to_add;      // Shows how much to add to event time, when taking block->reltempo into consideration.
 
 	STime seqtime;		/* Time being played at the top of the block that now is playing. */
 

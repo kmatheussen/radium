@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 
-STime dastime=0;
 static STime addreltime=0;
 
 extern LANGSPEC void OS_InitMidiTiming();
@@ -53,7 +52,7 @@ void PlayerTask(STime reltime){
 	addreltime+=reltime;
 	newreltime=addreltime*pc->block->reltempo;
 
-	if(dastime==0){
+	if(pc->time==0){
 		pc->therealtime=reltime;
                 OS_InitMidiTiming();
 	}else{
@@ -65,7 +64,7 @@ void PlayerTask(STime reltime){
 
         {
           int reltime_to_add_now = addreltime - newreltime;
-          if(dastime==0)
+          if(pc->time==0)
             pc->reltime_to_add = reltime_to_add_now;
           else
             pc->reltime_to_add += reltime_to_add_now;
@@ -73,17 +72,17 @@ void PlayerTask(STime reltime){
           printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
                  pc->reltime_to_add,pc->reltime_to_add/(double)PFREQ,
                  reltime_to_add_now,reltime_to_add_now/(double)PFREQ,
-                 (dastime+newreltime+pc->reltime_to_add)/(double)PFREQ
+                 (pc->time+newreltime+pc->reltime_to_add)/(double)PFREQ
                  );
 #endif
         }
 
-	dastime+=newreltime;
+	pc->time+=newreltime;
 
 
 	addreltime=0;
 
-	time=dastime;
+	time=pc->time;
 
 
 	peq=pc->peq;
