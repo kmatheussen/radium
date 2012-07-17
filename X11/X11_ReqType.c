@@ -127,7 +127,7 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 
 void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
 
-  sprintf("%s",buffer,GFX_ReadStringFromPythonCommand("X11_ReqType.GFX_ReadString(\"%s\")"));
+  sprintf(buffer,"%s",GFX_ReadStringFromPythonCommand("X11_ReqType.GFX_ReadString(\"%s\")"));
 
   //printf("resetting keys\n");
   //X11_ResetKeysUpDowns();
