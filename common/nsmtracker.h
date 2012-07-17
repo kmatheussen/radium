@@ -78,7 +78,7 @@ typedef int64_t STime;		/* Time can be negative. */
 typedef int32_t NInt;
 #define PFREQ (48000*8)			/* Subseconds for STime */
 
-#define LATENCY (PFREQ/512)
+#define LATENCY (PFREQ/200)
 
 #define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
