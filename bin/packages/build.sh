@@ -65,6 +65,7 @@ cd ..
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 tar xvzf gc.tar.gz
 cd gc-7.2
+echo "void RADIUM_ensure_bin_packages_gc_is_used(void){}" >>malloc.c
 CFLAGS=-fPIC ./configure --prefix=$PREFIX
 CFLAGS=-fPIC make -j3
 cd ..

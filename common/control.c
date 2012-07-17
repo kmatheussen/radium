@@ -40,9 +40,13 @@ struct Root *root=NULL;
 
 extern PlayerClass *pc;
 
+extern void RADIUM_ensure_bin_packages_gc_is_used();
+
 bool InitProgram(void){
 //	GC_INIT();
   bool ret;
+
+  RADIUM_ensure_bin_packages_gc_is_used();
 
   printf("Initializing...\n");
 
