@@ -76,7 +76,7 @@ void PlayerNewBlockGFX(STime time,struct PEventQueue *peq,int doit){
 	root->curr_block=pc->block->l.num;
 	root->setfirstpos=true;
 	if(doit){
-		Ptask2Mtask();
+		Ptask2Mtask(); // TODO: Add latency compensation. (not done since the code in this file is not quite clear)
 	}
 
 	// Insert next block-change event.

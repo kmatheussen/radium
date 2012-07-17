@@ -47,7 +47,7 @@ def GFX_OpenReqType(width,height,title):
                                           "-title","\""+title+"\"",
                                           "-e",sys.executable,"X11_ReqType.py",str(port)])
     except:
-        print "Error! xterm is not found. Radium has not been installed correctly."
+        print "Error! xterm is not found. Radium has not been installed correctly. You need packages/bin/xterm."
         exit(-1)
                      
 #    print "Open Port "+str(port)

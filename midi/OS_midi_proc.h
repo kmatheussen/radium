@@ -39,17 +39,21 @@ extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, Re
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
 extern LANGSPEC void OS_GoodPutMidi(MidiPortOs port,
-                                 int cc,
-                                 int data1,
-                                 int data2,
-                                 uint32_t maxbuff
+                                    int cc,
+                                    int data1,
+                                    int data2,
+                                    STime time,
+                                    uint32_t maxbuff
                                  );
 
 extern LANGSPEC void OS_PutMidi(MidiPortOs port,
-                             int cc,
-                             int data1,
-                             int data2
+                                int cc,
+                                int data1,
+                                int data2,
+                                STime time
                              );
+
+extern LANGSPEC void OS_PlayFromStart(MidiPortOs port);
 
 extern LANGSPEC bool MIDI_New(struct Instruments *instrument);
 

@@ -25,6 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../OS_midi_proc.h"
 
+struct MyMidiPortOs{
+  RtMidiOut *midiout;
+  double last_time;
+};
+
 // (The *PutMidi* API needs to be cleaned up)
 static int midi_msg_len(int m1){
   if((m1 & 0xf0) == 0xc0)
@@ -93,19 +98,62 @@ private:
 
 pthread_mutex_t ScopedPutMidiLock::putmidi_lock = PTHREAD_MUTEX_INITIALIZER;
 
+static double startup_time = -1.0;
+
+#include "../../common/playerclass.h"
+extern PlayerClass *pc;
+
+
+void OS_PlayFromStart(MidiPortOs port){
+#if 0
+  MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
+  startup_time = RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi());
+#endif
+}
+
+
+extern LANGSPEC void OS_InitMidiTiming();
+
+// quick hack, called from player.c (TODO: find a better API without making spaghetti) (well, maybe this is the cleanest way...)
+void OS_InitMidiTiming(void){
+  startup_time = RtMidiOut::getCurrentTime(RtMidi::UNIX_JACK);
+}
 
 void OS_PutMidi(MidiPortOs port,
-             int cc,
-             int data1,
-             int data2
-             )
+                int cc,
+                int data1,
+                int data2,
+                STime time
+                )
 {
   if(port==NULL)
     return;
 
-  RtMidiOut *midiout = static_cast<RtMidiOut*>(port);
+  MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
 
-  printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
+#if 0
+  if(time<0)
+    printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x\n",
+           ((double)time/(double)PFREQ),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),
+           cc,data1,data2
+           );
+#endif
+
+  //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
+
+  double rtmidi_time;
+
+  if(time<0)
+    rtmidi_time=myport->last_time; // Necessary to ensure midi messages are sent out in the same order as they got in to this function.
+  else{
+    rtmidi_time=startup_time + ((double)(time+LATENCY)/(double)PFREQ);
+    if(rtmidi_time<myport->last_time)
+      rtmidi_time=myport->last_time;  // Necessary to ensure all midi messages are sent in order.
+  }
+
+  myport->last_time = rtmidi_time;
+
+  //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
 
   int len = midi_msg_len(cc);
   if(len==0)
@@ -117,33 +165,34 @@ void OS_PutMidi(MidiPortOs port,
 
     if(len==1){
       message1[0]=cc;
-      midiout->sendMessage(&message1);
+      myport->midiout->sendMessage(&message1,rtmidi_time);
       return;
     }
 
     if(len==2){
       message2[0]=cc;
       message2[1]=data1;
-      midiout->sendMessage(&message2);
+      myport->midiout->sendMessage(&message2,rtmidi_time);
       return;
     }
 
     message3[0]=cc;
     message3[1]=data1;
     message3[2]=data2;
-    midiout->sendMessage(&message3);
+    myport->midiout->sendMessage(&message3,rtmidi_time);
   }
 }
 
 
 void OS_GoodPutMidi(MidiPortOs port,
-                 int cc,
-                 int data1,
-                 int data2,
-                 uint32_t maxbuff
+                    int cc,
+                    int data1,
+                    int data2,
+                    STime time,
+                    uint32_t maxbuff
                  )
 {
-  OS_PutMidi(port,cc,data1,data2);
+  OS_PutMidi(port,cc,data1,data2,time);
 }
 
 
@@ -238,7 +287,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   }
 
   {
-    RtMidiOut *ret;
+    MyMidiPortOs *ret = (MyMidiPortOs*)calloc(1, sizeof(MyMidiPortOs));
     if(apis.size()==1)
       api = apis[0];
     else{
@@ -255,8 +304,8 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     }
 
     try{
-      ret = new RtMidiOut(api, "Radium");
-      ret->openVirtualPort(name);
+      ret->midiout = new RtMidiOut(api, "Radium");
+      ret->midiout->openVirtualPort(name);
     }catch ( RtError &error ) {
       RError(error.what());
       return NULL;
@@ -265,10 +314,10 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   }
 
  gotit:
-  RtMidiOut *ret;
+  MyMidiPortOs *ret = (MyMidiPortOs*)calloc(1, sizeof(MyMidiPortOs));
   try{
-    ret = new RtMidiOut(api, "Radium");
-    ret->openPort(portnum, name);
+    ret->midiout = new RtMidiOut(api, "Radium");
+    ret->midiout->openPort(portnum, name);
   }catch ( RtError &error ) {
     RError(error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)
     return NULL;

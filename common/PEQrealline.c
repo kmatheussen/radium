@@ -61,7 +61,7 @@ void InitPEQrealline(struct Blocks *block,Place *place){
 		peq->wblock=wblock;
 		peq->realline=realline;
 
-		PC_InsertElement2(
+		PC_InsertElement2_latencycompencated(
 			peq, addplaypos,&wblock->reallines[realline]->l.p
 		);
 		Pdebug("time: %d, addplaypos: %d, realline: %d, wblocknum: %d\n",peq->l.time,addplaypos,realline,wblock->l.num);
@@ -109,11 +109,11 @@ void PlayerNewRealline(STime time,struct PEventQueue *peq,int doit){
 	peq->realline=realline;
 
 	if(realline==1){
-	  PC_InsertElement2_a(
+	  PC_InsertElement2_a_latencycompencated(
 			    peq, addplaypos ,&peq->wblock->reallines[realline]->l.p
 			    );
 	}else{
-	  PC_InsertElement2(
+	  PC_InsertElement2_latencycompencated(
 			    peq, addplaypos ,&peq->wblock->reallines[realline]->l.p
 			    );
 	}

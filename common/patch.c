@@ -158,7 +158,7 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window,int notenum){
 
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
-	(*patch->playnote)(notenum,patch->standardvel,track,NULL);
+	(*patch->playnote)(notenum,patch->standardvel,track,NULL,-1);
 }
 
 
@@ -168,6 +168,6 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum){
 
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
-	(*patch->stopnote)(notenum,patch->standardvel,track,NULL);
+	(*patch->stopnote)(notenum,patch->standardvel,track,NULL,-1);
 }
 

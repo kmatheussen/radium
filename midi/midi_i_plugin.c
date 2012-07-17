@@ -68,7 +68,7 @@ void MyGoodPutMidi(
                    int data2,
                    int maxbuff
 ){
-  OS_GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
+  OS_GoodPutMidi(midi_port->port,cc,data1,data2,-1.0,(uint32_t)maxbuff);
   OnOffNotesTrack(midi_port,cc,data1,data2);
 }
 
@@ -78,7 +78,7 @@ void MyMyPutMidi(
                  int data1,
                  int data2
 ){
-  OS_PutMidi(midi_port->port,cc,data1,data2);
+  OS_PutMidi(midi_port->port,cc,data1,data2,-1.0);
   OnOffNotesTrack(midi_port,cc,data1,data2);
 }
 
@@ -93,6 +93,7 @@ void MyPutMidi(
                int cc,
                int data1,
                int data2,
+               STime time,
                int maxbuff,
                int skip
 ){
@@ -101,7 +102,7 @@ void MyPutMidi(
 		return;
 	}
 
-	OS_GoodPutMidi(midi_port->port,cc,data1,data2,(uint32_t)maxbuff);
+	OS_GoodPutMidi(midi_port->port,cc,data1,data2,time,(uint32_t)maxbuff);
 
 	OnOffNotesTrack(midi_port,cc,data1,data2);
 }
@@ -143,6 +144,7 @@ void MIDIplaynote(int notenum,
 				0xb0|channel,
 				32,
 				patchdata->MSB,
+                                time,
 				10
 			);
 			midi_port->MSB[channel] = patchdata->MSB;
@@ -153,6 +155,7 @@ void MIDIplaynote(int notenum,
 			0xb0|channel,
 			32,
 			patchdata->LSB,
+                        time,
 			100000
 		);
 		midi_port->LSB[channel] = patchdata->LSB;
@@ -161,6 +164,7 @@ void MIDIplaynote(int notenum,
 			midi_port,
 			0xc0|channel,
 			patchdata->preset,
+                        time,
 			100000
 		);
 		midi_port->preset[channel] = patchdata->preset;
@@ -175,6 +179,7 @@ void MIDIplaynote(int notenum,
 				midi_port,
 				0xc0|channel,
 				patchdata->preset,
+                                time,
 				10
 			);
 			midi_port->preset[channel] = patchdata->preset;
@@ -187,6 +192,7 @@ void MIDIplaynote(int notenum,
 		0x90|channel,
 		notenum,
 		velocity,
+                time,
 		maxbuf
 	);
 }
@@ -213,6 +219,7 @@ void MIDIstopnote(int notenum,
            (useOx90ForNoteOff==true?0x90:0x80)|patchdata->channel,
            notenum,
            useOx90ForNoteOff==true?0:velocity,
+           time,
            10
            );
 
@@ -220,7 +227,7 @@ void MIDIstopnote(int notenum,
 
 /******************* Velocity *************************/
 
-void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note){
+void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note,STime time){
 	struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
 
         //printf("Sending aftertouch. channel: %d, note: %d, val: %d\n",patchdata->channel,note->note,velocity);
@@ -229,6 +236,7 @@ void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note){
 		0xa0|patchdata->channel,
 		note->note,
 		velocity,
+                time,
 		10
 	);
 }

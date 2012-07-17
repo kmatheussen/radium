@@ -77,7 +77,7 @@ void PC_NewSecond(STime time, struct PEventQueue *peq,int doit);
 void InitPEQclock(void){
 	struct PEventQueue *peq=GetPEQelement();
 
-	peq->l.time=0;
+	peq->l.time=LATENCY;
 
 	peq->TreatMe=PC_NewSecond;
 
@@ -122,6 +122,7 @@ void PC_NewSecond(STime time, struct PEventQueue *peq,int doit){
 //            Main-task part.
 //////////////////////////////////////////////////////////////////
 
+
 void UpdateClock(
 	struct Tracker_Windows *window
 ){
@@ -135,7 +136,7 @@ void UpdateClock(
 	}
 
 	clock_minutes=time/(60*PFREQ);
-	clock_seconds=time/PFREQ-(60*(time/(60*PFREQ)));
+	clock_seconds=time/PFREQ - (60*clock_minutes);
 
 //	ObtainRSemaphore(ClockSemaphore);
 

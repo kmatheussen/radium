@@ -72,12 +72,13 @@ typedef uint32_t uint_32;	/* A type that should be 64 bits, but may be 32 if 64 
                            /* uint_32 is allways loaded/saved as 64, and converted to 64 bit if uint_32 is 32 bit. */
 #define MAX_UINT32 65534  /* Sqr(max(uint_32))-1 (rounded down)*/
 
-typedef int32_t STime;		/* Time can be negative. */
-//typedef int64_t STime;		/* Time can be negative. */
+//typedef int32_t STime;		/* Time can be negative. */
+typedef int64_t STime;		/* Time can be negative. */
 //typedef STime NInt;
 typedef int32_t NInt;
-#define PFREQ 48000			/* Subseconds for STime */
-//#define PFREQ 12000
+#define PFREQ (48000*8)			/* Subseconds for STime */
+
+#define LATENCY (PFREQ/512)
 
 #define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
@@ -207,9 +208,9 @@ struct Patch{
 	int minvel;
 	int maxvel;
 	int standardvel;
-	void (*playnote)(int notenum,int velocity,struct Tracks *track,struct Notes *note);
-	void (*changevelocity)(int velocity,struct Tracks *track,struct Notes *note);
-	void (*stopnote)(int notenum,int velocity,struct Tracks *track,struct Notes *note);
+	void (*playnote)(int notenum,int velocity,struct Tracks *track,struct Notes *note, STime time);
+	void (*changevelocity)(int velocity,struct Tracks *track,struct Notes *note,STime time);
+	void (*stopnote)(int notenum,int velocity,struct Tracks *track,struct Notes *note, STime time);
 	void (*closePatch)(void);
 
 	void *patchdata;		// Free use by the instrument plug-in.
@@ -232,7 +233,7 @@ struct FX{
 	void (*configureFX)(struct FX *fx,struct Tracks *track);
 	int min;
 	int max;
-	void (*treatFX)(struct FX *fx,int val,struct Tracks *track,int skip);
+	void (*treatFX)(struct FX *fx,int val,struct Tracks *track,STime time,int skip);
 	void (*closeFX)(struct FX *fx,struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
 	void (*SaveFX)(struct FX *fx,struct Tracks *track);
@@ -255,7 +256,7 @@ struct Instruments{
 	int (*getMaxVelocity)(struct Tracks *track);
 	int (*getFX)(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx);
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,struct Tracks *track,struct Patch *patch);
-	void (*treatSpecialCommand)(char *command,struct Tracks *track);
+	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*InitTrack)(struct Instruments *instrument,struct Tracks *track);
 	void (*StopPlaying)(struct Instruments *instrument);
@@ -267,8 +268,8 @@ struct Instruments{
 
 	void *(*LoadFX)(struct FX *fx,struct Tracks *track);
 
-  void (*setPatchData)(struct Patch *patch, char *key, char *value);
-  char *(*getPatchData)(struct Patch *patch, char *key);
+	void (*setPatchData)(struct Patch *patch, char *key, char *value);
+	char *(*getPatchData)(struct Patch *patch, char *key);
 };
 #define INSTRUMENT_FAILED 0
 #define INSTRUMENT_SUCCESS 1

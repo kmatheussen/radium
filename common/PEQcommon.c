@@ -67,7 +67,7 @@ struct Blocks *PC_GetPlayBlock(int numfromcurrent){
 }
 
 
-__inline void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before){
+static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
 	int time=pc->seqtime;
 	int playpos;
 
@@ -88,7 +88,8 @@ __inline void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, 
 		}
 	}
 
-	peq->l.time=addtime+time;
+	//peq->l.time=addtime + time + (add_latency ? LATENCY : 0); // This didn't work properly I don't quite understand the code.
+	peq->l.time=addtime + time;
 
 	peq->playpos=pc->playpos+addplaypos;
 
@@ -102,17 +103,23 @@ __inline void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, 
 void PC_InsertElement(
 	struct PEventQueue *peq, int addplaypos, STime addtime
 ){
-	PC_InsertElement_private(peq,addplaypos,addtime,true);
+  PC_InsertElement_private(peq,addplaypos,addtime,true,false);
+}
+
+void PC_InsertElement_latencycompencated(
+	struct PEventQueue *peq, int addplaypos, STime addtime
+){
+  PC_InsertElement_private(peq,addplaypos,addtime,true,true);
 }
 
 void PC_InsertElement_a(
 	struct PEventQueue *peq, int addplaypos, STime addtime
 ){
-	PC_InsertElement_private(peq,addplaypos,addtime,false);
+  PC_InsertElement_private(peq,addplaypos,addtime,false,false);
 }
 
 
-__inline void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos, Place *p, bool before){
+static void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos, Place *p, bool before, bool add_latency){
 
 	PC_InsertElement_private(
 
@@ -123,18 +130,28 @@ __inline void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos,
 			p
 		),
 
-		before
+		before,
+
+		add_latency
 
 	);
 
 }
 
+void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p){
+  PC_InsertElement2_private(peq,addplaypos,p,true,true);
+}
+
 void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, Place *p){
-	PC_InsertElement2_private(peq,addplaypos,p,true);
+  PC_InsertElement2_private(peq,addplaypos,p,true,false);
 }
 
 void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, Place *p){
-	PC_InsertElement2_private(peq,addplaypos,p,false);
+  PC_InsertElement2_private(peq,addplaypos,p,false,false);
+}
+
+void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p){
+  PC_InsertElement2_private(peq,addplaypos,p,false,true);
 }
 
 

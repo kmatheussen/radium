@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQfxs_proc.h"
 
 
+extern PlayerClass *pc;
+
 
 void PE_HandleFirstFX(STime time,struct PEventQueue *peq,int doit);
 void PE_HandleFX(STime time,struct PEventQueue *peq,int doit);
@@ -74,7 +76,7 @@ void InitPEQBlockfxs(
 
 __inline void fxhandle(int x,struct PEventQueue *peq,int skip){
 	if(peq->fxs->fx!=NULL && peq->track->onoff==1){
-		(*peq->fxs->fx->treatFX)(peq->fxs->fx,x,peq->track,skip);
+          (*peq->fxs->fx->treatFX)(peq->fxs->fx,x,peq->track,peq->l.time+pc->reltime_to_add,skip);
 	}
 }
 

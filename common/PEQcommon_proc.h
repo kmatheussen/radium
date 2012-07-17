@@ -22,9 +22,12 @@ extern void PC_RemoveFirst(void);
 extern struct Blocks *PC_GetPlayBlock(int numfromcurrent);
 
 extern void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, Place *p);
+extern void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p);
 extern void PC_InsertElement_a(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, Place *p);
+extern void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p);
 
 extern void PC_ReturnElements(void);
 extern void PC_ReturnElements_fromPlayPos(int playpos);

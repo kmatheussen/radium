@@ -3705,7 +3705,7 @@ static unsigned int getJackPortCount(const char **portnames){
 
 
 
-static void register_jack_ports( jack_client_t *port_client) {
+static void registerJackPorts( jack_client_t *port_client) {
   if ( jack_input_ports != NULL )
     jack_free( jack_input_ports);
 
@@ -3716,17 +3716,17 @@ static void register_jack_ports( jack_client_t *port_client) {
   jack_output_ports = jack_get_ports( port_client, NULL, JACK_DEFAULT_MIDI_TYPE, JackPortIsInput );
 }
 
-static void jack_port_registration_callback( jack_port_id_t port, int do_register, void *arg ) {
+static void jackPortRegistrationCallback( jack_port_id_t port, int do_register, void *arg ) {
   jack_client_t *port_client = (jack_client_t*) arg;
   ScopedJackLock lock( &jackMutex );
 
-  register_jack_ports( port_client );
+  registerJackPorts( port_client );
 }
 
 
 static jack_client_t *jackPortClient = NULL;
 
-static bool init_jack_port_client(void){
+static bool initJackPortClient(void){
 
   ScopedJackLock lock( &jackMutex );
 
@@ -3737,11 +3737,11 @@ static bool init_jack_port_client(void){
     return false;
   }
 
-  jack_set_port_registration_callback( jackPortClient, jack_port_registration_callback, jackPortClient);
+  jack_set_port_registration_callback( jackPortClient, jackPortRegistrationCallback, jackPortClient);
 
   jack_activate(jackPortClient);
 
-  register_jack_ports( jackPortClient );
+  registerJackPorts( jackPortClient );
 
   return true;
 }
@@ -3814,7 +3814,7 @@ void MidiInJack :: initialize( const std::string& clientName )
   JackPortHolder *portHolder = new JackPortHolder;
   apiData_ = (void *) portHolder;
 
-  if ( init_jack_port_client() == false ) {
+  if ( initJackPortClient() == false ) {
     errorString_ = "MidiInJack::initialize: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
   }
@@ -3909,22 +3909,34 @@ void MidiInJack :: closePort()
 //  Class Definitions: MidiOutJack
 //*********************************************************************//
 
-static void jackProcessOutRingbuffer( int nFramesInPeriod, int periodStart, jack_ringbuffer_t *ringbuffer, void *jackPortBuffer ) {
+static void jackProcessOutRingbuffer( int nFramesInPeriod, int periodStart, jack_ringbuffer_t *ringbuffer, bool isImmediate, void *jackPortBuffer ) {
   while ( jack_ringbuffer_read_space( ringbuffer ) > sizeof(JackMessageData) ) {
 
     JackMessageData messageData;
 
     jack_ringbuffer_peek( ringbuffer, (char *) &messageData, (size_t) sizeof(JackMessageData) );
 
-    int offset = (messageData.time - periodStart) + nFramesInPeriod; // We add one period to the timestamp
+    int offset;
 
-    // Ensure the event belongs to this callback
-    if ( offset >= (int) nFramesInPeriod )
-      return;
+    if ( isImmediate ) {
 
-    // If offset is negative, we either missed the deadline (but we send it out anyway), or it is an immediate message.
-    if ( offset < 0 )
       offset = 0;
+
+    } else {
+
+      offset= (messageData.time - periodStart) + nFramesInPeriod; // We add one period to the timestamp
+
+      // Ensure the event belongs to this callback
+      if ( offset >= (int) nFramesInPeriod )
+        return;
+
+      // If offset is negative, we missed the deadline (but we send it out anyway)
+      if ( offset < 0 ) {
+        RtMidi :: error( RtError::DEBUG_WARNING, "jackProcessOutRingbuffer: Missed deadline");
+        offset = 0;
+      }
+
+    }
 
     // Increase ringbuffer read position
     jack_ringbuffer_read_advance( ringbuffer, (size_t) sizeof(JackMessageData) );
@@ -3933,8 +3945,10 @@ static void jackProcessOutRingbuffer( int nFramesInPeriod, int periodStart, jack
     jack_midi_data_t *midiData = jack_midi_event_reserve( jackPortBuffer, offset, messageData.nBytes );
     if ( midiData != NULL )
       jack_ringbuffer_read( ringbuffer, (char *) midiData, (size_t) messageData.nBytes );
-    else
+    else {
       jack_ringbuffer_read_advance( ringbuffer, (size_t) messageData.nBytes ); // throw it away.
+      RtMidi :: error( RtError::DEBUG_WARNING, "jackProcessOutRingbuffer: Lost event");
+    }
 
   }
 }
@@ -3947,8 +3961,8 @@ static int jackProcessOut( jack_nframes_t nFramesInPeriod,  JackPortHolder *port
   void *jackPortBuffer = jack_port_get_buffer( portHolder->port, nFramesInPeriod );
   jack_midi_clear_buffer( jackPortBuffer );
 
-  jackProcessOutRingbuffer( nFramesInPeriod, periodStart, portHolder->immediate_ringbuffer, jackPortBuffer );
-  jackProcessOutRingbuffer( nFramesInPeriod, periodStart, portHolder->ringbuffer, jackPortBuffer );
+  jackProcessOutRingbuffer( nFramesInPeriod, periodStart, portHolder->immediate_ringbuffer, true, jackPortBuffer );
+  jackProcessOutRingbuffer( nFramesInPeriod, periodStart, portHolder->ringbuffer, false, jackPortBuffer );
 
   return 0;
 }
@@ -3963,7 +3977,7 @@ void MidiOutJack :: initialize( const std::string& clientName )
   JackPortHolder *portHolder = new JackPortHolder;
   apiData_ = (void *) portHolder;
 
-  if ( init_jack_port_client() == false ) {
+  if ( initJackPortClient() == false ) {
     errorString_ = "MidiOutJack::initialize: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
   }
@@ -4000,7 +4014,7 @@ void MidiOutJack :: openVirtualPort( const std::string portName )
 
   // Initialize JACK client
   if ( portHolder->clientHolder->addPort( portHolder, portName ) == false ) {
-    errorString_ = "MidiOutJack::initialize: JACK server not running?";
+    errorString_ = "MidiOutJack::openVirtualPort: JACK server not running?";
     RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
     return;
   }
@@ -4093,17 +4107,15 @@ void MidiOutJack :: sendMessage( std::vector<unsigned char> *message, double tim
 double MidiOutJack :: getCurrentTime() {
   if ( jackPortClient == NULL) {
 
-    if ( init_jack_port_client() == false ) {
-      std::string errorString_ = "MidiInJack::initialize: JACK server not running?";
-      RtMidi::error( RtError::DRIVER_ERROR, errorString_ );
-    }
+    if ( initJackPortClient() == false )
+      RtMidi::error( RtError::DRIVER_ERROR, "MidiOutJack::getCurrentTime: JACK server not running?" );
 
     if ( jackPortClient == NULL)
       return -1.0;
 
   }
 
-  return jack_frame_time(jackPortClient) / 44100.0;
+  return jack_frame_time(jackPortClient) / (double)jack_get_sample_rate(jackPortClient);
 }
 
 

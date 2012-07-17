@@ -419,12 +419,6 @@ class MidiOutApi
   std::string errorString_;
 };
 
-class MidiTiming
-{
- public:
-
-  MidiTiming( void );
-};
 
 // **************************************************************** //
 //

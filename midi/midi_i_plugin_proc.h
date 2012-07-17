@@ -35,9 +35,9 @@ extern LANGSPEC void MIDICloseInstrument(struct Instruments *instrument);
 extern LANGSPEC void MIDIStopPlaying(struct Instruments *instrument);
 
 extern LANGSPEC void MIDIchangeTrackPan(int newpan,struct Tracks *track);
-extern LANGSPEC void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note);
-extern LANGSPEC void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
-extern LANGSPEC void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
+extern LANGSPEC void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note,STime time);
+//extern LANGSPEC void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
+//extern LANGSPEC void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
 extern LANGSPEC void MIDIclosePatch(void);
 extern LANGSPEC void MIDI_InitPatch(struct Patch *patch);
 
@@ -68,6 +68,7 @@ extern LANGSPEC void MyPutMidi(
 	int cc,
 	int data1,
 	int data2,
+        STime time,
 	int maxbuff,
 	int skip
 );
@@ -77,14 +78,14 @@ extern LANGSPEC void MyPutMidi(
 
 /***************** General ****************************/
 
-#define PutMidi3(a,b,c,d,s) MyPutMidi(a,b,c,d,s,0)
+#define PutMidi3(a,b,c,d,time,s) MyPutMidi(a,b,c,d,time,s,0)
 //MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)),s,0)
-#define PutMidi2(a,b,c,s) MyPutMidi(a,b,c,0,s,0)
+#define PutMidi2(a,b,c,time,s) MyPutMidi(a,b,c,0,time,s,0)
 //MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)),s,0)
 
-#define PutMidi3_FX(a,b,c,d,s,skip) MyPutMidi(a,b,c,d,s,skip)
+#define PutMidi3_FX(a,b,c,d,time,s,skip) MyPutMidi(a,b,c,d,time,s,skip)
 //MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)),s,skip)
-#define PutMidi2_FX(a,b,c,s,skip) MyPutMidi(a,b,c,0,s,skip)
+#define PutMidi2_FX(a,b,c,time,s,skip) MyPutMidi(a,b,c,0,time,s,skip)
 //MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)),s,skip)
 
 //#define D_PutMidi3(a,b,c,d) GoodPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)),1000)

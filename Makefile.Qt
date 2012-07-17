@@ -6,29 +6,47 @@
 
 #----------------USER SETTINGS-------------------------------
 
-#PREFIX ?= /usr/local
-PREFIX ?= /tmp/test
+# 1. Where to install
+#
+PREFIX ?= /usr/local
 bindir = $(PREFIX)/bin
 libdir = $(PREFIX)/lib
 
 
-
+# 2. Where Qt3 is installed.
+#
 # If using QT3 (recommended), QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
+#
+# It could also be necessary to edit the "QT3 opts" variables as well if compilation fails (these are found a few
+# lines down in this Makefile), but only setting the QTDIR variable should usually be enough.
+#
+#
 #   fedora 32 bit:
 QTDIR=/usr/lib/qt-3.3
+#
 #   fedora 64 bit:
 #QTDIR=/usr/lib64/qt-3.3
+#
 #   debian:
 #QTDIR=/usr/share/qt3
+#
 #   arch linux:
 #QTDIR=/opt/qt
+#
+#   KXStudio:
+#QTDIR=/usr/lib/qt3
 
 
-# RELEASE build is not supported yet. (not tested)
+
+# 3. Release buid or Debug build
+#
+# Dont edit here. RELEASE should not be set yet since it's not been tested.
 BUILDTYPE=DEBUG
 #BUILDTYPE=RELEASE
 
 
+# 4. Full path to a python2 executable.  (Think it needs to be at least V2.4)
+#
 PYTHONEXE=`which python2`
 
 
@@ -78,13 +96,10 @@ DEFINES= -DNOPAUSEPLAY
 # define TRACKER_GB
 
 OPTIMIZE= -mtune=native -O3
-#-O3
 #-O
 
-UPOPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC
+OPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC
 # -pg
-
-OPT= $(UPOPT)
 
 CPPOPT = $(OPT)
 
@@ -103,14 +118,17 @@ CPPOPT = $(OPT)
 # 
 MOC = $(QTDIR)/bin/moc
 UIC = $(QTDIR)/bin/uic
-QTOPT=$(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include
+QTOPT = $(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include
+QTLINKFLAGS = -L$(QTDIR)/lib -lqt-mt
+
 
 
 # rtmidi flags
 RTMIDI_DIR = midi/rtmidi/rtmidi-2.0.0
-RTMIDI_CFLAGS = -D__UNIX_JACK__ -D__LINUX_ALSA__ 
+RTMIDI_CFLAGS = -D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__
 #-fexceptions
 RTMIDI_LDFLAGS = -lpthread -lasound -ljack
+
 
 
 #-------------------OBJECT DEFINITIONS-------------------------------
@@ -177,7 +195,10 @@ clean:
 check_dependencies: check_dependencies.sh Makefile
 	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 
-install: all
+check_install_dependecies: check_install_dependecies.sh Makefile
+	sh check_install_dependecies.sh
+
+install: all check_install_dependecies
 	install -d $(DESTDIR)$(bindir)
 	install -d $(DESTDIR)$(libdir)/radium
 
@@ -232,14 +253,14 @@ start.sh:
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
 #	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
-	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm  -L${QTDIR}/lib -lqt-mt $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
+	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
 
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
 #  -lasound
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
-	cd bin && $(PYTHONEXE) generate_keyboard_sub_ids.py > ../$(CD)keyboard_sub_ids.h
+	cd bin && $(PYTHONEXE) generate_keyboard_sub_ids.py >../$(CD)keyboard_sub_ids.h
 
 bin/protoconfparser.py: $(API)protoconfparser.py
 	echo "#This file is copied from ../api/ during make-process" >bin/protoconfparser.py
@@ -319,13 +340,13 @@ $(CD)visual_op_queue_proc.h: $(CD)gfx_op_queue.scm
 	cd $(CD) && ./gfx_op_queue.scm protos >visual_op_queue_proc.h
 
 eventreciever.o: $(CD)eventreciever.c $(API)radium_proc.h
-	$(CC) $(CD)eventreciever.c $(UPOPT)
+	$(CC) $(CD)eventreciever.c $(OPT)
 
 reallines.o: $(CD)reallines.c
 	$(CC) $(CD)reallines.c $(OPT)
 
 mouse.o: $(CD)mouse.c
-	$(CC) $(CD)mouse.c $(UPOPT)
+	$(CC) $(CD)mouse.c $(OPT)
 
 notestext.o: $(CD)notestext.c
 	$(CC) $(CD)notestext.c $(OPT)
@@ -388,42 +409,42 @@ fxlines.o: $(CD)fxlines.c
 	$(CC) $(CD)fxlines.c $(OPT)
 
 tbox.o: $(CD)tbox.c
-	$(CC) $(CD)tbox.c $(UPOPT)
+	$(CC) $(CD)tbox.c $(OPT)
 
 
 area.o: $(CD)area.c
-	$(CC) $(CD)area.c $(UPOPT)
+	$(CC) $(CD)area.c $(OPT)
 
 mouse_wtrack.o: $(CD)mouse_wtrack.c
-	$(CC) $(CD)mouse_wtrack.c $(UPOPT)
+	$(CC) $(CD)mouse_wtrack.c $(OPT)
 
 
 mouse_temponodes.o: $(CD)mouse_temponodes.c
-	$(CC) $(CD)mouse_temponodes.c $(UPOPT)
+	$(CC) $(CD)mouse_temponodes.c $(OPT)
 
 
 mouse_wtrackborder.o: $(CD)mouse_wtrackborder.c
-	$(CC) $(CD)mouse_wtrackborder.c $(UPOPT)
+	$(CC) $(CD)mouse_wtrackborder.c $(OPT)
 
 
 mouse_temponodeborder.o: $(CD)mouse_temponodeborder.c
-	$(CC) $(CD)mouse_temponodeborder.c $(UPOPT)
+	$(CC) $(CD)mouse_temponodeborder.c $(OPT)
 
 
 mouse_fxarea.o: $(CD)mouse_fxarea.c
-	$(CC) $(CD)mouse_fxarea.c $(UPOPT)
+	$(CC) $(CD)mouse_fxarea.c $(OPT)
 
 mouse_vellinenode.o: $(CD)mouse_vellinenode.c
-	$(CC) $(CD)mouse_vellinenode.c $(UPOPT)
+	$(CC) $(CD)mouse_vellinenode.c $(OPT)
 
 mouse_vellinestart.o: $(CD)mouse_vellinestart.c
-	$(CC) $(CD)mouse_vellinestart.c $(UPOPT)
+	$(CC) $(CD)mouse_vellinestart.c $(OPT)
 
 mouse_vellineend.o: $(CD)mouse_vellineend.c
-	$(CC) $(CD)mouse_vellineend.c $(UPOPT)
+	$(CC) $(CD)mouse_vellineend.c $(OPT)
 
 mouse_fxnode.o: $(CD)mouse_fxnode.c
-	$(CC) $(CD)mouse_fxnode.c $(UPOPT)
+	$(CC) $(CD)mouse_fxnode.c $(OPT)
 
 blocklist.o: $(CD)blocklist.c
 	$(CC) $(CD)blocklist.c $(OPT)
@@ -441,7 +462,7 @@ Ptask2Mtask.o: $(CD)Ptask2Mtask.c $(CD)playerclass.h
 	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
 
 player.o: $(CD)player.c $(CD)playerclass.h
-	$(CC) $(CD)player.c $(UPOPT)
+	$(CC) $(CD)player.c $(OPT)
 
 PEQrealline.o: $(CD)PEQrealline.c $(CD)playerclass.h
 	$(CC) $(CD)PEQrealline.c $(OPT) 
@@ -456,7 +477,7 @@ PEQnotes.o: $(CD)PEQnotes.c $(CD)playerclass.h
 	$(CC) $(CD)PEQnotes.c $(OPT)
 
 PEQcommon.o: $(CD)PEQcommon.c $(CD)playerclass.h
-	$(CC) $(CD)PEQcommon.c $(UPOPT)
+	$(CC) $(CD)PEQcommon.c $(OPT)
 
 playerclass.o: $(CD)playerclass.c $(CD)playerclass.h
 	$(CC) $(CD)playerclass.c $(OPT)
@@ -993,7 +1014,7 @@ disk_midi_i_plugin.o:  midi/disk_midi_i_plugin.c
 	$(CC)  midi/disk_midi_i_plugin.c $(OPT) 
 disk_midi_fx.o:  midi/disk_midi_fx.c
 	$(CC)  midi/disk_midi_fx.c $(OPT) 
-midi_rtmidi.o: midi/rtmidi/midi_rtmidi.cpp
+midi_rtmidi.o: midi/rtmidi/midi_rtmidi.cpp $(RTMIDI_DIR)/RtMidi.h
 	$(CCC) midi/rtmidi/midi_rtmidi.cpp $(CPPOPT) $(RTMIDI_CFLAGS)
 alsaseq_midi.o:  midi/alsaseq/alsaseq_midi.c
 	$(CC)  midi/alsaseq/alsaseq_midi.c $(OPT) 
@@ -1002,23 +1023,8 @@ midi_getEvents.o:  midi/midi_getEvents.c
 midi_menues.o:  midi/midi_menues.c
 	$(CC)  midi/midi_menues.c $(OPT) 
 
-RtMidi.o: $(RTMIDI_DIR)/RtMidi.cpp
+RtMidi.o: $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
 	$(CCC) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_CFLAGS) $(CPPOPT)
-
-#.o:  midi/.c
-#	$(CC)  midi/.c $(OPT)
-
-#.o:  midi/.c
-#	$(CC)  midi/.c $(OPT)
-#.o:  midi/.c
-#	$(CC)  midi/.c $(OPT)
-
-
-#.o:  .c
-#	$(CC)  .c $(OPT)
-
-#.o:  .c
-#	$(CC)  .c $(OPT)
 
 
 

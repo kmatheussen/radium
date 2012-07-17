@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+extern PlayerClass *pc;
 extern struct Root *root;
 
 void PE_StartNote(STime time,struct PEventQueue *peq,int doit);
@@ -240,7 +240,7 @@ void PE_StartNote(STime time,struct PEventQueue *peq,int doit){
 	struct Notes *note=peq->note;
 
 	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
-		(*peq->track->patch->playnote)(note->note,note->velocity,peq->track,note);
+		(*peq->track->patch->playnote)(note->note,note->velocity,peq->track,note, peq->l.time+pc->reltime_to_add);
 	}
 
 	PEQ_FindNextNote(peq);
@@ -257,7 +257,8 @@ void PE_StopNote(STime time,struct PEventQueue *peq,int doit){
 			peq->note->note,
 			peq->note->velocity_end,
 			peq->track,
-			peq->note
+			peq->note,
+                        peq->l.time+pc->reltime_to_add
 		);
 	}
 

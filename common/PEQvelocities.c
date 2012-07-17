@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "PEQvelocities_proc.h"
 
+extern PlayerClass *pc;
 
 
 void PE_ChangeVelocityFromStart(STime time,struct PEventQueue *peq,int doit);
@@ -90,12 +91,13 @@ void InitPEQvelocities(
 }
 
 
-__inline void SendVelocityChange(int x,struct PEventQueue *peq){
+__inline static void SendVelocityChange(int x,struct PEventQueue *peq){
 	if(peq->track->patch!=NULL && peq->track->onoff==1){
 		(*peq->track->patch->changevelocity)(
 			x,
 			peq->track,
-			peq->note
+			peq->note,
+                        peq->l.time+pc->reltime_to_add
 		);
 	}
 }
@@ -142,7 +144,7 @@ void PE_ChangeVelocityFromStart(STime time,struct PEventQueue *peq,int doit){
 
 //	Pdebug("start->vel,Velocity: %d, time: %d, ntime: %d, btime: %d, time1: %d, time2: %d\n",x,time,ntime,btime,peq->time1,peq->time2);
 	if(doit){
-		SendVelocityChange(x,peq);
+          SendVelocityChange(x,peq);
 	}
 
 	PC_InsertElement(peq,0,ntime);

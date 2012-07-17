@@ -152,16 +152,28 @@ Non-urgent
 * Sample-accurate scheduling of jack midi messages.
 
 * Port to Qt4. Solution for slow graphics: Embed the editor, and use the X11 or Qt3 port to update graphics
-  in that embedded widget.
+  in that embedded widget. (Seems like linking with both Qt3 and Qt4 doesn't work, and the X11 port is
+  a lot of work to get up to the standard of the qt3 port. Hmmm.)
 
 * Fix program crash if closing xterm window.
 
 * Remove memory allocation from rtmidi jack inprocess. (Or perhaps use TLSF)
 
-* Fix use of broken ringbuffer implementation in rtmidi. (Atomic operations, or jack_ringbuffer? Maybe the portaudio
-  ringbuffer implementation has a more liberal license than LGPL.)
+* Fix use of broken ringbuffer implementation in rtmidi. (++ and -- on queue.size is very questionable.
+  Doing some 'queue.front - queue.back' arithmetic to find queue size (instead of using queue.size or
+  atomic operations to increase and decrease queue.size) would be a huge
+  improvement, but we are still missing memory barriers.
+
+  Yes, the portaudio license is "AS IS". Including these three files seems to be enough:
+  https://subversion.assembla.com/svn/portaudio/portaudio/trunk/src/common/pa_memorybarrier.h
+  https://subversion.assembla.com/svn/portaudio/portaudio/trunk/src/common/pa_ringbuffer.h
+  https://subversion.assembla.com/svn/portaudio/portaudio/trunk/src/common/pa_ringbuffer.c
+
 
 * Doing undo/redo after loading standard midi can probably crash the program.
+
+* Upgrade gc to gc-7.2c. Incremental collection is fixed there, at least for freebsd 9.
+
 
 
 Urgent
@@ -173,6 +185,8 @@ Urgent
 * Up/down qualifier keys are not always resetted after doing something else.
   * Would it work to use the state field (I think that was the name) in XEvent?
   This is a problem for the scroll mouse as well, which are just interpreted as key up/down events.
+
+* Mouse x/y coordiantes are sligtly skewed.
 
 
 Can not reproduce

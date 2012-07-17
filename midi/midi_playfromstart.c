@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
-
+#include "OS_midi_proc.h"
 
 #include "midi_playfromstart_proc.h"
 
@@ -54,6 +54,8 @@ void MIDIPlayFromStartHook(struct Instruments *instrument){
 				}
 			}
 		}
+
+                OS_PlayFromStart(midi_port);
 
 		patch=NextPatch(patch);
 	}
