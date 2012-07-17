@@ -1,7 +1,7 @@
 
 
-Radium V0.65.5
-Released 2012-07-09
+Radium V0.65.6
+Released 2012-07-17
 
 
 HOW TO MAKE IT RUN
@@ -24,6 +24,22 @@ BUILD DEPENDENCIES
         alsa-lib-devel
         jack-audio-connection-kit-devel
         PyQt4
+
+CHANGES
+Most important changes 0.65.0 -> 0.65.6:
+* Setting port for instrument will not crash the program
+* Many build improvements
+* Blocklist and Playlist are properly updated when loading standard midi file.
+* Sample accurate jack midi
+* Accurate mouse coordinates
+* Closing the xterm window will not lock the program
+* Options to turn off overriding of Qt colors and Qt style
+* Fast jack port probing
+* Only create one jack client
+* Works even if python links to python3 instead of python2
+* Fixed All Sounds Off menu option
+* Graphics fully updated after using menu
+
 
 
 CONTACT
