@@ -37,6 +37,7 @@ extern struct Root *root;
 
 static QApplication *application;
 static QColor *system_color=NULL;
+static bool override_default_qt_colors=true;
 
 static char *SETTINGS_read_string(const char *a,const char *b){
   return SETTINGS_read_string((char*)a,(char*)b);
@@ -45,6 +46,9 @@ static char *SETTINGS_read_string(const char *a,const char *b){
 static void updatePalette(MyWidget *my_widget, QPalette &pal){
   if(system_color==NULL)
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
+
+  if(override_default_qt_colors==false)
+    return;
 
   // Background
   {
@@ -131,7 +135,15 @@ void setWidgetColors(QWidget *widget){
 }
 
 void setApplicationColors(QApplication *app){
+  static bool first_run = true;
   MyWidget *my_widget = root==NULL ? NULL : root->song==NULL ? NULL : static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+
+  if(first_run==true){
+    override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
+    SETTINGS_write_bool((char*)"override_default_qt_colors",override_default_qt_colors);
+    first_run=false;
+  }
+
   application = app;
   updateApplication(my_widget,app);
 }
@@ -183,6 +195,8 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   is_running = true;
 
   MyWidget *my_widget=(MyWidget *)tvisual->os_visual.widget;
+
+  override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
 
   QColorDialog::setCustomColor(9, system_color->rgb());
   for(int i=0;i<9;i++)
