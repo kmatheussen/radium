@@ -97,7 +97,8 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
   ret[0] = '\0';
 
   sprintf(filename,"/tmp/radiumipctempfileXXXXXX");
-  mkstemp(filename);
+  int x1 = mkstemp(filename);
+  (void)x1;
 
   sprintf(temp,pythoncommand,filename);
 
@@ -111,8 +112,9 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
     return ret;
   }
 
-  fgets(ret,strlen(pythoncommand)+499,file);
+  void* x2 = fgets(ret,strlen(pythoncommand)+499,file);
   fclose(file);
+  (void)x2;
 
   printf("Tried to read -%s-\n",ret);
   sprintf(temp,"rm %s",filename);
@@ -125,7 +127,7 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 
 void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
 
-  sprintf(buffer,GFX_ReadStringFromPythonCommand("X11_ReqType.GFX_ReadString(\"%s\")"));
+  sprintf("%s",buffer,GFX_ReadStringFromPythonCommand("X11_ReqType.GFX_ReadString(\"%s\")"));
 
   //printf("resetting keys\n");
   //X11_ResetKeysUpDowns();
