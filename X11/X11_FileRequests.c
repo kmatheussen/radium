@@ -11,7 +11,11 @@ char *GFX_GetLoadFileName(
 	char *seltext,
 	char *dir
 ){
-  return GFX_ReadStringFromPythonCommand("X11_Qtstuff.GFX_OpenFileRequester(\"%s\")");
+  char *ret=GFX_ReadStringFromPythonCommand("X11_Qtstuff.GFX_OpenFileRequester(\"%s\")");
+  if(ret==NULL || strlen(ret)==0)
+    return NULL;
+  else
+    return ret;
 }
 
 
@@ -21,5 +25,9 @@ char *GFX_GetSaveFileName(
 	char *seltext,
 	char *dir
 ){
-  return GFX_ReadStringFromPythonCommand("X11_Qtstuff.GFX_SaveFileRequester(\"%s\")");
+  char *ret = GFX_ReadStringFromPythonCommand("X11_Qtstuff.GFX_SaveFileRequester(\"%s\")");
+  if(ret==NULL || strlen(ret)==0)
+    return NULL;
+  else
+    return ret;
 }

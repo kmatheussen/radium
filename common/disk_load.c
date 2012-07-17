@@ -63,7 +63,7 @@ bool Load(char *filename){
 
 	dc.file=fopen(filename,"r");
 	if(dc.file==NULL){
-		RError("Could not open %s for loading\n",filename);
+		RError("Could not open \"%s\" for loading\n",filename);
 		return false;
 	}
 
