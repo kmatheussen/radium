@@ -763,7 +763,6 @@ struct Tracker_Windows{
 	struct Slider bottomslider;
 	struct Slider leftslider;
 	struct Slider rightslider;
-	TBox resizebox;
 
 	bool playalong;					/* If true, this window allso shows whats being played
 											   if any other window is playing. default=true. */

@@ -134,7 +134,7 @@ void OS_PutMidi(MidiPortOs port,
 
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
 
-#if 1
+#if 0
   if(true || time<0)
     printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x (%d/%d/%d)\n",
            ((double)time/(double)PFREQ),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),

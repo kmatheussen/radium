@@ -41,8 +41,6 @@ struct MouseAction{
 
 #define NOACTION 0
 
-#define WINDOWRESIZE 1
-
 #define LEFTSLIDER 2
 #define BOTTOMSLIDER 3
 

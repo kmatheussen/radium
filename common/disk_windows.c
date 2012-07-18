@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "sliders_proc.h"
-#include "resizewindow_proc.h"
 #include "reallines_proc.h"
 #include "control_proc.h"
 #include "gfx_op_queue_proc.h"
@@ -231,7 +230,6 @@ if(window==NULL) return;
 	newroot->clearall=1;
 	DrawWBlock(window,window->wblock);
 	DrawLeftSlider(window);
-	DrawResizeBox(window);
 	newroot->clearall=0;
 
 DLoadWindows(newroot,NextWindow(window));

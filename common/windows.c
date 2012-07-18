@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sliders_proc.h"
 #include "trackreallines_proc.h"
 #include "gfx_wtracks_proc.h"
-#include "resizewindow_proc.h"
 #include "pixmap_proc.h"
 #include "blts_proc.h"
 #include "gfx_op_queue_proc.h"
@@ -65,17 +64,10 @@ void CloseAllTrackerWindows(void){
 
 /*********************************************************************
   FUNCTION
-    Call after window has been made, resized or fontsize is changed.
+    Call after window has been made, or fontsize is changed.
 *********************************************************************/
 void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
-
-	window->bottomslider.x2=window->width - R_MAX(window->bottomslider.width,10);
-
-	window->resizebox.x1=window->bottomslider.x2+1;
-	window->resizebox.y1=window->height - window->bottomslider.width;
-	window->resizebox.x2=window->width-1;
-	window->resizebox.y2=window->height-1;
-
+  window->bottomslider.x2=window->width-1;
 }
 
 
@@ -185,7 +177,6 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 
 	DrawWBlock(window,window->wblock);
 	DrawLeftSlider(window);
-	DrawResizeBox(window);
 	window->wblock->isgfxdatahere=true;
 	root->clearall=0;
 
@@ -199,8 +190,6 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	GFX_P_ClearWindow(window);
 
-        ClearResizeBox(window);
-
 	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -209,7 +198,6 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 
 	DrawWBlock(window,window->wblock);
 	DrawLeftSlider(window);
-	DrawResizeBox(window);
 
 	window->wblock->isgfxdatahere=true;
 	root->clearall=0;

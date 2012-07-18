@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "visual_proc.h"
 #include "windows_proc.h"
-#include "resizewindow_proc.h"
 #include "tbox_proc.h"
 #include "area_proc.h"
 #include "mouse_wtrack_proc.h"
@@ -57,12 +56,6 @@ void SetMouseAction(
 	if(insideTBox(&window->wblock->reltempo,x,y)){
 		SetMouseActionRelTempoSlider(window,action,x,y,click);
 		return;
-	}
-
-	if(insideTBox(&window->resizebox,x,y)){
-	    action->action=WINDOWRESIZE;
-	    action->MouseUpFunction= &WindowResize; 
-	    return;
 	}
 
 	if(y<wblock->t.y2){
@@ -123,12 +116,6 @@ void MouseMove(struct Tracker_Windows *window,int x,int y){
 				SetNormalPointer(window);
 			}
 			break;
-		case WINDOWRESIZE:
-			if(lastpointer!=WINDOWRESIZE){
-				lastpointer=WINDOWRESIZE;
-				SetResizePointer(window);
-			}
-			break;
 		default:
 			break;
 	}
@@ -157,15 +144,5 @@ int LeftMouseUp(struct Tracker_Windows *window,int x,int y){
 	}
 	return ret;
 
-/*
-	switch(prevaction->action){
-		case WINDOWRESIZE:
-			prevaction->action=NOACTION;
-			return WindowResize(window,x,y);
-	}
-	prevaction-> action=NOACTION;
-	MouseMove(window,x,y);		// Update Mouse Pointer image.
-	return 0;
-*/
 }
 

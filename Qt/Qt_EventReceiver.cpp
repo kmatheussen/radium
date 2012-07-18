@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #endif
 
-#include "../common/resizewindow_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
