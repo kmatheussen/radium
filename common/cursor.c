@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "wblocks_proc.h"
 #include "gfx_wtrackheaders_proc.h"
+#include "../midi/midi_i_input_proc.h"
 
 #include "cursor_proc.h"
 
@@ -190,6 +191,7 @@ void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int
 		  //			DrawUpTrackerWindow(window);
 			break;
 	}
+
 	(*wblock->wtrack->track->instrument->PP_Update)(
 		wblock->wtrack->track->instrument,
 		wblock->wtrack->track->patch

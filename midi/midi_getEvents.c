@@ -32,6 +32,7 @@ extern struct Root *root;
 extern PlayerClass *pc;
 extern bool useOx90ForNoteOff;
 
+// Only used by the gtk1 midi instruments window
 
 void MIDIGetEvents(
 		   struct Instruments *instrument,

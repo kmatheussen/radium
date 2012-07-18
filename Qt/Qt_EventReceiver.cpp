@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
 #include "../common/gfx_proc.h"
+#include "../midi/midi_i_input_proc.h"
 
 #include "../common/player_proc.h"
 #include "../common/gfx_op_queue_proc.h"
@@ -59,12 +60,18 @@ static double get_ms(void){
 
 extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
+#include "../common/playerclass.h"
 
+extern PlayerClass *pc;
 
 void MyWidget::customEvent(QCustomEvent *e){
   {
-    P2MUpdateSongPosCallBack();
-    UpdateClock(this->window);
+    DO_GFX_BLT({
+        if(pc->isplaying)
+          P2MUpdateSongPosCallBack();
+        UpdateClock(this->window);
+        MIDI_HandleInputMessage();
+      });
   }
 
   update();

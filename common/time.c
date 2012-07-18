@@ -573,9 +573,9 @@ void PrintSTimes(struct Blocks *block){
 		timechanges=stime->timechanges;
 		nowtime=stime->time;
 
-		debug("%d. %d. Delta: %d, Ch: %x\n",line,nowtime,nowtime-lasttime,timechanges);
+		printf("%d. %d. Delta: %d, Ch: %p\n",line,nowtime,nowtime-lasttime,timechanges);
 		while(timechanges!=NULL){
-			debug("   place: %f, time: %d, tempo1: %f, rel: %f, deltarel: %f\n",
+                  printf("   place: %f, time: %lld, tempo1: %f, rel: %f, deltarel: %f\n",
 				GetfloatFromPlacement(&timechanges->l.p),
 				timechanges->time,timechanges->tempo1,timechanges->rel,timechanges->deltarel
 			);
@@ -583,7 +583,7 @@ void PrintSTimes(struct Blocks *block){
 		}
 		lasttime=nowtime;
 	}
-	debug("--------reallines:----------\n");
+	printf("--------reallines:----------\n");
 
 	if(root->song->tracker_windows!=NULL){
 		wblock=root->song->tracker_windows->wblock;
@@ -592,7 +592,7 @@ void PrintSTimes(struct Blocks *block){
 			lasttime=0;
 			for(realline=0;realline<wblock->num_reallines;realline++){
 				nowtime=Place2STime(block,&reallines[realline]->l.p);
-				debug("realline: %d, Place: %f, time: %d, delta: %d,\n",realline,GetfloatFromPlacement(&reallines[realline]->l.p),nowtime,nowtime-lasttime);
+				printf("realline: %d, Place: %f, time: %d, delta: %d,\n",realline,GetfloatFromPlacement(&reallines[realline]->l.p),nowtime,nowtime-lasttime);
 				lasttime=nowtime;
 			}
 		}
@@ -620,7 +620,7 @@ void UpdateSTimes(struct Blocks *block){
 	STP_fillinLastSTimeTempos(&stp);
 
 #ifdef TRACKER_DEBUG
-//	PrintSTimes(block);
+	//PrintSTimes(block);
 #endif
 
 }

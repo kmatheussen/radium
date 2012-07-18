@@ -163,16 +163,16 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_ClientMessages.o X11_error.o 
+OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
 
-#X11_MidiProperties.o 
+#X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
 
 #Midi
-OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_getEvents.o midi_menues.o
+OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_i_input.o midi_menues.o
 # alsaseq_midi.o
 
 OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ14)
@@ -802,11 +802,11 @@ X11_instrument.o: X11/X11_instrument.c
 X11_keyboard.o: X11/X11_keyboard.c
 	$(CC) X11/X11_keyboard.c $(OPT)
 
-X11_MidiProperties.o: X11/X11_MidiProperties.c
-	$(CC) X11/X11_MidiProperties.c $(OPT) 
+#X11_MidiProperties.o: X11/X11_MidiProperties.c
+#	$(CC) X11/X11_MidiProperties.c $(OPT) 
 
-X11_ClientMessages.o: X11/X11_ClientMessages.c
-	$(CC) X11/X11_ClientMessages.c $(OPT)
+#X11_ClientMessages.o: X11/X11_ClientMessages.c
+#	$(CC) X11/X11_ClientMessages.c $(OPT)
 
 
 Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h $(P)Qt_instruments_proc.h
@@ -1003,6 +1003,8 @@ midi_playfromstart.o:  midi/midi_playfromstart.c
 	$(CC)  midi/midi_playfromstart.c $(OPT) 
 midi_i_plugin.o:  midi/midi_i_plugin.c
 	$(CC)  midi/midi_i_plugin.c $(OPT) 
+midi_i_input.o:  midi/midi_i_input.c
+	$(CC)  midi/midi_i_input.c $(OPT) 
 midi_fx.o:  midi/midi_fx.c
 	$(CC)  midi/midi_fx.c $(OPT) 
 
@@ -1018,8 +1020,8 @@ midi_rtmidi.o: midi/rtmidi/midi_rtmidi.cpp $(RTMIDI_DIR)/RtMidi.h
 	$(CCC) midi/rtmidi/midi_rtmidi.cpp $(CPPOPT) $(RTMIDI_CFLAGS)
 alsaseq_midi.o:  midi/alsaseq/alsaseq_midi.c
 	$(CC)  midi/alsaseq/alsaseq_midi.c $(OPT) 
-midi_getEvents.o:  midi/midi_getEvents.c
-	$(CC)  midi/midi_getEvents.c $(OPT) 
+#midi_getEvents.o:  midi/midi_getEvents.c
+#	$(CC)  midi/midi_getEvents.c $(OPT) 
 midi_menues.o:  midi/midi_menues.c
 	$(CC)  midi/midi_menues.c $(OPT) 
 

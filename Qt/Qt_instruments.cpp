@@ -25,6 +25,7 @@ extern "C"{
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_i_input_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
 #include "MyWidget.h"
@@ -497,6 +498,7 @@ void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *pat
     }
 
     g_currpatch = patch;
+    MIDI_SetThroughPatch(patch);
 
   }exit: called_from_pp_update = false;
 }
@@ -512,6 +514,8 @@ static void tab_selected(){
 
   Instrument_widget *instrument = static_cast<Instrument_widget*>(instruments_widget->tabs->currentPage());
   g_currpatch = instrument->patch;
+  MIDI_SetThroughPatch(g_currpatch);
+
 
   {
     struct Tracker_Windows *window = root->song->tracker_windows;

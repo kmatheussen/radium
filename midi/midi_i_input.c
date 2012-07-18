@@ -20,56 +20,70 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
-#include <proto/input.h>
-#include <devices/inputevent.h>
 
-#include <midi/midi.h>
-#include "minimidi_proc.h"
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
-#include "../../common/notes_proc.h"
-#include "../../common/blts_proc.h"
+#include "../common/notes_proc.h"
+#include "../common/blts_proc.h"
+#include "../common/OS_Ptask2Mtask_proc.h"
 
 #include "midi_i_input_proc.h"
 
-extern struct MidiLink *inputmidilink;
-extern struct MidiNode *midinode;
-
 extern struct Root *root;
 
-bool GetMidiInput(int *note,int *velocity){
-	struct Patch *patch;
-	struct PatchData *patchdata;
-	ULONG l0;
+// Need memory barriers, or queue here. Generally it's not a very flexible API, but it's just used for editing, not recording.
 
-	MidiMsg msg;
-	BOOL ret;
+static volatile int g_cc=0,g_data1,g_data2;
 
-	for(;;){
-		ret=GetMidi(midinode,&msg);
-		if(ret==FALSE) return false;
+static volatile struct PatchData *g_through_patchdata = NULL;
 
-		msg.mm_Status&=0xf0;
+void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
+  if(cc>=0xf0) // Too much drama
+    return;
 
-		patch=root->song->tracker_windows->wblock->wtrack->track->patch;
+  if(g_cc!=0) // Too quick.
+    return;
 
-		if(patch!=NULL){
-			patchdata=(struct PatchData *)patch->patchdata;
-			l0=msg.l[0]&0xf0ffffff;
-			l0|=patchdata->channel<<24;
-			PutMidi(patchdata->mymidilink->midilink,l0);
-		}
+  //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
 
-		if( ! root->editonoff) continue;
+  // should be a memory barrier here somewhere.
 
-		if(msg.mm_Status==0x90 && msg.mm_Data2!=0){
-			InsertNoteCurrPos(root->song->tracker_windows,msg.mm_Data1,
-				(PeekQualifier())&IEQUALIFIER_LSHIFT?1:0
-			);
-		}
-	}
+  if(g_through_patchdata!=NULL)
+    MyMyPutMidi(g_through_patchdata->midi_port,(g_cc&0xf0)|g_through_patchdata->channel,data1,data2); // send out the message again to the patch and channel specified at the current track
 
-	return true;
+  if((cc&0xf0)==0x90 && data2!=0) {
+    g_cc = cc;
+    g_data1 = data1;
+    g_data2 = data2;
+
+    Ptask2Mtask();
+  }
+}
+
+void MIDI_SetThroughPatch(struct Patch *patch){
+  //printf("Sat new patch %p\n",patch);
+  if(patch!=NULL)
+    g_through_patchdata=(struct PatchData *)patch->patchdata;
+}
+
+void MIDI_HandleInputMessage(void){
+  //int cc = g_cc;
+  int data1 = g_data1;
+  //int data2 = g_data2;
+
+  // should be a memory barrier here somewhere.
+
+  if(g_cc==0)
+    return;
+
+  g_cc = 0;
+
+  //printf("got here %d\n",(int)root->editonoff);
+
+  if( ! root->editonoff)
+    return;
+
+  InsertNoteCurrPos(root->song->tracker_windows,data1,0);
 }
 
 

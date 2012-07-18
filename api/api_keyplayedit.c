@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/gfx_upperleft_proc.h"
+#include "../common/visual_proc.h"
 
 #include "api_common_proc.h"
 
@@ -88,7 +89,11 @@ void decKeyAdd(int decaddnum){
 }
 
 void switchEditOnOff(void){
+	struct Tracker_Windows *window=getWindowFromNum(-1);
 	root->editonoff=root->editonoff?false:true;
+        char temp[1000];
+        sprintf(temp,"Midi Input %s",root->editonoff?"On":"Off");
+        GFX_SetStatusBar(window,temp);
 }
 
 void switchScrollPlayOnOff(void){

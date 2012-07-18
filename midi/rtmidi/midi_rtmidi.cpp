@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../../common/nsmtracker.h"
 #include "../../common/memory_proc.h"
 #include "../../common/OS_visual_input.h"
+#include "../midi_i_input_proc.h"
 
 #include "../OS_midi_proc.h"
 
@@ -64,6 +65,8 @@ static int midi_msg_len(int m1){
   return 3;
 }
 
+static RtMidiIn *inport_jack;
+static RtMidiIn *inport_alsa;
 
 static std::vector<unsigned char> message1;
 static std::vector<unsigned char> message2;
@@ -131,11 +134,11 @@ void OS_PutMidi(MidiPortOs port,
 
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
 
-#if 0
-  if(time<0)
-    printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x\n",
+#if 1
+  if(true || time<0)
+    printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x (%d/%d/%d)\n",
            ((double)time/(double)PFREQ),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),
-           cc,data1,data2
+           cc,data1,data2,cc,data1,data2
            );
 #endif
 
@@ -218,17 +221,19 @@ static const std::vector<std::string> get_port_names(RtMidi &rtmidi){
 }
 
 
-static char **vector_to_cstring_array(const std::vector<std::string> &strings, int *retval){
-  *retval = strings.size();
-  char **ret = (char**)talloc(sizeof(char*)*(*retval));
+static char **vector_to_cstring_array(const std::vector<std::string> &strings, int *num_ports){
+  *num_ports = 0;
+  char **ret = (char**)talloc(sizeof(char*)*strings.size());
 
-  for(int i=0;i<*retval;i++)
-    ret[i] = talloc_strdup((char*)strings[i].c_str());
-
+  for(unsigned int i=0;i<strings.size();i++)
+    if(strings[i] != "Radium:in" && strings[i] != "Radium:0"){
+      ret[*num_ports] = talloc_strdup((char*)strings[i].c_str());
+      *num_ports = *num_ports + 1;
+    }
   return ret;
 }
 
-static char **get_port_names(bool use_input_ports, int *retval){
+static char **get_port_names(bool use_input_ports, int *num_ports){
   std::vector<std::string> ret;
 
   std::vector<RtMidi::Api> apis;
@@ -250,7 +255,7 @@ static char **get_port_names(bool use_input_ports, int *retval){
     }
   }
 
-  return vector_to_cstring_array(ret, retval);
+  return vector_to_cstring_array(ret, num_ports);
 }
 
 
@@ -327,6 +332,15 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   return ret;
 }
 
+void mycallback( double deltatime, std::vector< unsigned char > *message, void *userData ){
+  int len = message->size();
+  if(len==1)
+    MIDI_InputMessageHasBeenReceived((int)message->at(0),0,0);
+  else if(len==2)
+    MIDI_InputMessageHasBeenReceived((int)message->at(0),(int)message->at(1),0);
+  else if(len==3)
+    MIDI_InputMessageHasBeenReceived((int)message->at(0),(int)message->at(1),(int)message->at(2));
+}
 
 bool MIDI_New(struct Instruments *instrument){
   static bool globals_are_initialized = false;
@@ -340,6 +354,23 @@ bool MIDI_New(struct Instruments *instrument){
     message3.push_back(0);
     message3.push_back(0);
     message3.push_back(0);
+
+    {
+      inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,"Radium");
+      if(inport_jack!=NULL){
+        inport_jack->openVirtualPort("in");
+        inport_jack->setCallback(mycallback,NULL);
+      }
+    }
+
+    {
+      inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,"Radium");
+      if(inport_alsa!=NULL){
+        inport_alsa->openVirtualPort("in");
+        inport_alsa->setCallback(mycallback,NULL);
+      }
+    }
+
     globals_are_initialized = true;
   }
 
