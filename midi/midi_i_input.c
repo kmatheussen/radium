@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/notes_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/OS_Ptask2Mtask_proc.h"
+#include "../common/player_proc.h"
 
 #include "midi_i_input_proc.h"
 
@@ -35,7 +36,7 @@ extern struct Root *root;
 
 static volatile int g_cc=0,g_data1,g_data2;
 
-static volatile struct PatchData *g_through_patchdata = NULL;
+static struct PatchData *g_through_patchdata = NULL;
 
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if(cc>=0xf0) // Too much drama
@@ -47,9 +48,6 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
 
   // should be a memory barrier here somewhere.
-
-  if(g_through_patchdata!=NULL)
-    MyMyPutMidi(g_through_patchdata->midi_port,(g_cc&0xf0)|g_through_patchdata->channel,data1,data2); // send out the message again to the patch and channel specified at the current track
 
   if((cc&0xf0)==0x90 && data2!=0) {
     g_cc = cc;
@@ -66,10 +64,11 @@ void MIDI_SetThroughPatch(struct Patch *patch){
     g_through_patchdata=(struct PatchData *)patch->patchdata;
 }
 
+
 void MIDI_HandleInputMessage(void){
-  //int cc = g_cc;
+  int cc = g_cc;
   int data1 = g_data1;
-  //int data2 = g_data2;
+  int data2 = g_data2;
 
   // should be a memory barrier here somewhere.
 
@@ -77,6 +76,14 @@ void MIDI_HandleInputMessage(void){
     return;
 
   g_cc = 0;
+
+  PlayHardStop();
+
+  {
+    struct PatchData *patchdata = g_through_patchdata;
+    if(patchdata!=NULL)
+      MyMyPutMidi(patchdata->midi_port,(cc&0xf0)|patchdata->channel,data1,data2); // send out the message again to the patch and channel specified at the current track
+  }
 
   //printf("got here %d\n",(int)root->editonoff);
 

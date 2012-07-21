@@ -176,6 +176,9 @@ Non-urgent
   sure if the normal player thread is always very O(1), and perhaps it should not run SCHED_FIFO.
   (Best solution would of course be to rewrite the player)
 
+* MyPutmidi/etc. doesnt change preset/MSB/LSB. Only MIDIplaynote does that. Irritating if
+  playing via midi.
+
 
 Urgent
 ======
@@ -188,6 +191,10 @@ Urgent
   This is a problem for the scroll mouse as well, which are just interpreted as key up/down events.
 
 * Radium-xx ports are not ignored.
+
+* The Midi latency is noticable when editing. :-(
+  (No, midi input latency is not noticable. Perhaps the keys are bound to key up instead of key down?)
+
 
 
 

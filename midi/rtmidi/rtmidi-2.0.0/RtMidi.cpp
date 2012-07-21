@@ -3729,7 +3729,7 @@ static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *portHolder )
     if ( rtData->firstMessage == true )
       rtData->firstMessage = false;
     else
-      timeStamp = ( time - portHolder->lastTime ) / (double)jack_get_sample_rate( portHolder->clientHolder->client );
+      timeStamp = ( time - portHolder->lastTime ) / (double)jack_get_sample_rate( portHolder->clientHolder->client ); // TODO: This is inaccurate.
 
     portHolder->lastTime = time;
 
