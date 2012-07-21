@@ -1,7 +1,7 @@
 
 
-Radium V0.65.8
-Released 2012-07-18
+Radium V0.65.9
+Released 2012-07-21
 
 
 HOW TO MAKE IT RUN
@@ -28,6 +28,14 @@ BUILD DEPENDENCIES
 
 CHANGES
 =======
+
+Most important changes 0.65.8 -> 0.65.9:
+* Fix race condition for midi input
+* Remove memory allocation in the rtmidi jack process
+* Fix broken ringbuffer implementation in rtmidi. (Quick fix, it's probably still
+  broken on some (or all) platforms. Planning to use the portaudio ringbuffer implementation
+  in a later commit.)
+
 
 Most important changes 0.65.6 -> 0.65.8:
 * Midi input editing.
