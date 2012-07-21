@@ -272,16 +272,11 @@ double RtMidiOut :: getCurrentTime( RtMidi::Api api )
 MidiInApi :: MidiInApi( unsigned int queueSizeLimit )
   : apiData_( 0 ), connected_( false )
 {
-  // Allocate the MIDI queue.
-  inputData_.queue.ringSize = queueSizeLimit;
-  if ( inputData_.queue.ringSize > 0 )
-    inputData_.queue.ring = new MidiMessage[ inputData_.queue.ringSize ];
+  inputData_.queue.init( queueSizeLimit );
 }
 
 MidiInApi :: ~MidiInApi( void )
 {
-  // Delete the MIDI queue.
-  if ( inputData_.queue.ringSize > 0 ) delete [] inputData_.queue.ring;
 }
 
 void MidiInApi :: setCallback( RtMidiIn::RtMidiCallback callback, void *userData )
@@ -334,16 +329,13 @@ double MidiInApi :: getMessage( std::vector<unsigned char> *message )
     return 0.0;
   }
 
-  if ( inputData_.queue.size == 0 ) return 0.0;
+  if ( inputData_.queue.isEmpty() ) return 0.0;
 
   // Copy queued message to the vector pointer argument and then "pop" it.
-  std::vector<unsigned char> *bytes = &(inputData_.queue.ring[inputData_.queue.front].bytes);
+  MidiMessage popped = inputData_.queue.pop();
+  std::vector<unsigned char> *bytes = &(popped.bytes);
   message->assign( bytes->begin(), bytes->end() );
-  double deltaTime = inputData_.queue.ring[inputData_.queue.front].timeStamp;
-  inputData_.queue.size--;
-  inputData_.queue.front++;
-  if ( inputData_.queue.front == inputData_.queue.ringSize )
-    inputData_.queue.front = 0;
+  double deltaTime = popped.timeStamp;
 
   return deltaTime;
 }
@@ -460,15 +452,7 @@ void midiInputCallback( const MIDIPacketList *list, void *procRef, void *srcRef 
           callback( message.timeStamp, &message.bytes, data->userData );
         }
         else {
-          // As long as we haven't reached our queue size limit, push the message.
-          if ( data->queue.size < data->queue.ringSize ) {
-            data->queue.ring[data->queue.back++] = message;
-            if ( data->queue.back == data->queue.ringSize )
-              data->queue.back = 0;
-            data->queue.size++;
-          }
-          else
-            std::cerr << "\nMidiInCore: message queue limit reached!!\n\n";
+          data->queue.push( message );
         }
         message.bytes.clear();
       }
@@ -523,17 +507,9 @@ void midiInputCallback( const MIDIPacketList *list, void *procRef, void *srcRef 
               RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) data->userCallback;
               callback( message.timeStamp, &message.bytes, data->userData );
             }
-            else {
-              // As long as we haven't reached our queue size limit, push the message.
-              if ( data->queue.size < data->queue.ringSize ) {
-                data->queue.ring[data->queue.back++] = message;
-                if ( data->queue.back == data->queue.ringSize )
-                  data->queue.back = 0;
-                data->queue.size++;
-              }
-              else
-                std::cerr << "\nMidiInCore: message queue limit reached!!\n\n";
-            }
+            else
+              data->queue.push(message);
+
             message.bytes.clear();
           }
           iByte += size;
@@ -1310,19 +1286,10 @@ extern "C" void *alsaMidiHandler( void *ptr )
 
     if ( data->usingCallback ) {
       RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) data->userCallback;
-      callback( message.timeStamp, &message.bytes, data->userData );
+      callback( message.timeStamp, message.bytes.size(), &message.bytes[0], data->userData );
     }
-    else {
-      // As long as we haven't reached our queue size limit, push the message.
-      if ( data->queue.size < data->queue.ringSize ) {
-        data->queue.ring[data->queue.back++] = message;
-        if ( data->queue.back == data->queue.ringSize )
-          data->queue.back = 0;
-        data->queue.size++;
-      }
-      else
-        std::cerr << "\nMidiInAlsa: message queue limit reached!!\n\n";
-    }
+    else
+      data->queue.push(message);
   }
 
   if ( buffer ) free( buffer );
@@ -1998,17 +1965,8 @@ static void CALLBACK midiInputCallback( HMIDIIN hmin,
     RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) data->userCallback;
     callback( apiData->message.timeStamp, &apiData->message.bytes, data->userData );
   }
-  else {
-    // As long as we haven't reached our queue size limit, push the message.
-    if ( data->queue.size < data->queue.ringSize ) {
-      data->queue.ring[data->queue.back++] = apiData->message;
-      if ( data->queue.back == data->queue.ringSize )
-        data->queue.back = 0;
-      data->queue.size++;
-    }
-    else
-      std::cerr << "\nRtMidiIn: message queue limit reached!!\n\n";
-  }
+  else
+    data->queue.push(apiData->message);
 
   // Clear the vector for the next input message.
   apiData->message.bytes.clear();
@@ -3118,17 +3076,8 @@ DWORD WINAPI midiKsInputThread(VOID* pUser)
           RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback)data->userCallback;
           callback(message.timeStamp, &message.bytes, data->userData);
         }
-        else {
-          // As long as we haven't reached our queue size limit, push the message.
-          if ( data->queue.size < data->queue.ringSize ) {
-            data->queue.ring[data->queue.back++] = message;
-            if(data->queue.back == data->queue.ringSize)
-              data->queue.back = 0;
-            data->queue.size++;
-          }
-          else
-            std::cerr << "\nRtMidiIn: message queue limit reached!!\n\n";
-        }
+        else 
+          data->queue.push(message);
 
         iOffset += pMusic->ByteCount;
 
@@ -3765,39 +3714,32 @@ static int jackProcessIn( jack_nframes_t nframes, JackPortHolder *portHolder )
   // We have midi events in buffer
   for ( int evNum = 0 ; evNum < evCount ; evNum++ ) {
 
-    MidiInApi::MidiMessage message;
-    message.bytes.clear();
+    //MidiInApi::MidiMessage message;
+    //message.bytes.clear();
 
     jack_midi_event_get( &event, buff, evNum );
 
-    for (unsigned int i = 0; i < event.size; i++ )
-      message.bytes.push_back( event.buffer[i] );
+    //for (unsigned int i = 0; i < event.size; i++ )
+    //  message.bytes.push_back( event.buffer[i] ); // Arrgh. We can not do this in realtime code.
+
+    double timeStamp = 0.0;
 
     // Compute the delta time.
     time = jack_last_frame_time( portHolder->clientHolder->client ) + event.time;
     if ( rtData->firstMessage == true )
       rtData->firstMessage = false;
     else
-      message.timeStamp = ( time - portHolder->lastTime ) / (double)jack_get_sample_rate( portHolder->clientHolder->client );
+      timeStamp = ( time - portHolder->lastTime ) / (double)jack_get_sample_rate( portHolder->clientHolder->client );
 
     portHolder->lastTime = time;
 
     if ( !rtData->continueSysex ) {
       if ( rtData->usingCallback ) {
         RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) rtData->userCallback;
-        callback( message.timeStamp, &message.bytes, rtData->userData );
+        callback( timeStamp, event.size, event.buffer, rtData->userData );
       }
-      else {
-        // As long as we haven't reached our queue size limit, push the message.
-        if ( rtData->queue.size < rtData->queue.ringSize ) {
-          rtData->queue.ring[rtData->queue.back++] = message;
-          if ( rtData->queue.back == rtData->queue.ringSize )
-            rtData->queue.back = 0;
-          rtData->queue.size++;
-        }
-        else
-          std::cerr << "\nMidiInJack: message queue limit reached!!\n\n";
-      }
+      //else
+      //   rtData->queue.push(message);
     }
   }
 

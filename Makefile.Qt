@@ -120,6 +120,7 @@ MOC = $(QTDIR)/bin/moc
 UIC = $(QTDIR)/bin/uic
 QTOPT = $(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include
 QTLINKFLAGS = -L$(QTDIR)/lib -lqt-mt
+//QTLINKFLAGS = /home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a -static -lX11 -lXext -lXft -lXcursor -lXinerama -lXrandr -lSM
 
 
 

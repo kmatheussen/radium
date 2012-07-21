@@ -136,7 +136,7 @@ class RtMidiIn : public RtMidi
  public:
 
   //! User callback function type definition.
-  typedef void (*RtMidiCallback)( double timeStamp, std::vector<unsigned char> *message, void *userData);
+  typedef void (*RtMidiCallback)( double timeStamp, unsigned int length, unsigned char *message, void *userData);
 
   //! Default constructor that allows an optional api, client name and queue size.
   /*!
@@ -355,16 +355,72 @@ class MidiInApi
   :bytes(0), timeStamp(0.0) {}
   };
 
-  struct MidiQueue {
+  class MidiQueue {
+  public:
+
+    // Default constructor.
+    MidiQueue()
+      :front(0), back(0), ringSize(0)
+    {
+
+    }
+
+    ~MidiQueue() {
+      if ( ringSize > 0 ) 
+        delete [] ring;
+    }
+
+    void init( unsigned int size) {
+      ringSize = size;
+      ring = new MidiMessage[ ringSize ];
+    }
+
+    bool isFull() {
+      if ( front == 0 && back == ringSize-1 )
+        return true;
+      else if ( ( front > back ) && ( front - back == 1 )  )
+        return true;
+      else
+        return false;
+    }
+    
+    bool isEmpty() {
+      return front == back;
+    }
+
+    void push ( const MidiMessage &message ) {
+      // As long as we haven't reached our queue size limit, push the message.
+      if ( ! isFull() ) {
+        ring[back] = message;
+        if ( back == ringSize-1 )
+          back = 0;
+        else
+          back++;
+      }
+      else
+        std::cerr << "\nMidiInCore: message queue limit reached!!\n\n";
+    }
+    
+    MidiMessage pop () {
+      if ( isEmpty() )
+        return MidiMessage();
+
+      MidiMessage ret = ring[front];
+
+      if ( front == ringSize-1 )
+        front = 0;
+      else
+        front++;
+
+      return ret;
+    }
+
+  private:
     unsigned int front;
     unsigned int back;
-    unsigned int size;
     unsigned int ringSize;
     MidiMessage *ring;
 
-    // Default constructor.
-  MidiQueue()
-  :front(0), back(0), size(0), ringSize(0) {}
   };
 
   // The RtMidiInData structure is used to pass private class data to
