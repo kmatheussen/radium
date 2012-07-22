@@ -110,8 +110,8 @@ void WBLOCK_DrawTempoColor(
 
   //const int numcolors=3;
   //const int colors[3]={1,4,2};
-  const int numcolors=7;
-  const int colors[7]={1,2,3,4,5,6,7};
+  const int numcolors=6;
+  const int colors[6]={1,3,4,5,6,7};
   const int maxtime=6300;
   const int mintime=200;
 
