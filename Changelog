@@ -1,3 +1,8 @@
+Most important changes 0.65.9 -> 0.65.10:
+* Antialiased lines
+* Adjusted tempo colors
+
+
 Most important changes 0.65.8 -> 0.65.9:
 * Fix race condition for midi input
 * Remove memory allocation in the rtmidi jack process
