@@ -530,21 +530,154 @@ void QGFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
 }
 
 
-void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-//  QColor *qcolor=mywidget->colors[color];
-
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-
 #if 0
-  QPen pen(mywidget->colors[color],4,Qt::SolidLine);  
-  pen.setCapStyle(Qt::RoundCap);
-  pen.setJoinStyle(Qt::RoundJoin);
-  mywidget->qpixmap_painter->setPen(pen);
+var rgbaSum = function(c1, c2){
+       var a = c1.a + c2.a*(1-c1.a);
+       return {
+         r: (c1.r * c1.a  + c2.r * c2.a * (1 - c1.a)) / a,
+         g: (c1.g * c1.a  + c2.g * c2.a * (1 - c1.a)) / a,
+         b: (c1.b * c1.a  + c2.b * c2.a * (1 - c1.a)) / a,
+         a: a
+       }
+     } 
 #endif
 
-  mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
-//  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
+static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+  float a1 = how_much;
+  float a2 = 1.0f-a1;
+  int r = c1.red()*a1 + c2.red()*a2;
+  int g = c1.green()*a1 + c2.green()*a2;
+  int b = c1.blue()*a1 + c2.blue()*a2;
+
+  return QColor(r,g,b);
+}
+
+
+// Xiaolin Wu's line algorithm (antialized lines)
+//
+// Code copied from http://rosettacode.org/wiki/Xiaolin_Wu's_line_algorithm and slightly modified
+
+static void plot(int x, int y, QPainter *painter, const QColor &background, const QColor &foreground, float brightness){
+  if(brightness>1.0f)
+    brightness=1.0f;
+
+  painter->setPen(mix_colors(background, foreground, brightness));
+  painter->drawPoint(x,y);
+}
+
+#define ipart_(X) ((int)(X))
+#define round_(X) ((int)(((double)(X))+0.5))
+#define fpart_(X) (((double)(X))-(double)ipart_(X))
+#define rfpart_(X) (1.0-fpart_(X)) 
+#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; }while(0)
+
+static void draw_line_antialias(
+                                QPainter *painter,
+                                unsigned int x1, unsigned int y1,
+                                unsigned int x2, unsigned int y2,
+                                const QColor &background,
+                                const QColor &foreground
+                                )
+{
+  double dx = (double)x2 - (double)x1;
+  double dy = (double)y2 - (double)y1;
+
+  if ( fabs(dx) > fabs(dy) ) {
+
+    if ( x2 < x1 ) {
+      swap_(x1, x2);
+      swap_(y1, y2);
+    }
+
+
+    double gradient = dy / dx;
+    double xend = round_(x1);
+    double yend = y1 + gradient*(xend - x1);
+    double xgap = rfpart_(x1 + 0.5);
+    int xpxl1 = xend;
+    int ypxl1 = ipart_(yend);
+    plot(xpxl1, ypxl1, painter, foreground, background, rfpart_(yend)*xgap);
+    plot(xpxl1, ypxl1+1, painter, foreground, background, fpart_(yend)*xgap);
+    double intery = yend + gradient;
+ 
+    xend = round_(x2);
+    yend = y2 + gradient*(xend - x2);
+    xgap = fpart_(x2+0.5);
+    int xpxl2 = xend;
+    int ypxl2 = ipart_(yend);
+    plot(xpxl2, ypxl2, painter, foreground, background, rfpart_(yend) * xgap);
+    plot(xpxl2, ypxl2 + 1, painter, foreground, background, fpart_(yend) * xgap);
+ 
+    int x;
+    for(x=xpxl1+1; x <= (xpxl2-1); x++) {
+      plot(x, ipart_(intery), painter, foreground, background, rfpart_(intery));
+      plot(x, ipart_(intery) + 1, painter, foreground, background, fpart_(intery));
+      intery += gradient;
+    }
+
+  } else {
+
+    if ( y2 < y1 ) {
+      swap_(x1, x2);
+      swap_(y1, y2);
+    }
+
+    double gradient = dx / dy;
+    double yend = round_(y1);
+    double xend = x1 + gradient*(yend - y1);
+    double ygap = rfpart_(y1 + 0.5);
+    int ypxl1 = yend;
+    int xpxl1 = ipart_(xend);
+    plot(xpxl1, ypxl1, painter, foreground, background, rfpart_(xend)*ygap);
+    plot(xpxl1, ypxl1+1, painter, foreground, background, fpart_(xend)*ygap);
+    double interx = xend + gradient;
+ 
+    yend = round_(y2);
+    xend = x2 + gradient*(yend - y2);
+    ygap = fpart_(y2+0.5);
+    int ypxl2 = yend;
+    int xpxl2 = ipart_(xend);
+    plot(xpxl2, ypxl2, painter, foreground, background, rfpart_(xend) * ygap);
+    plot(xpxl2, ypxl2 + 1, painter, foreground, background, fpart_(xend) * ygap);
+ 
+    int y;
+    for(y=ypxl1; y <= (ypxl2); y++) {
+      plot(ipart_(interx), y, painter, foreground, background, rfpart_(interx));
+      plot(ipart_(interx) + 1, y, painter, foreground, background, fpart_(interx));
+      interx += gradient;
+    }
+  }
+}
+#undef swap_
+#undef plot_
+#undef ipart_
+#undef fpart_
+#undef round_
+#undef rfpart_
+
+
+void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+
+  if(x!=x2 && y!=y2){
+
+    draw_line_antialias(mywidget->qpixmap_painter,x,y,x2,y2,mywidget->colors[0],mywidget->colors[color]);
+
+  }else{
+
+    mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+
+#if 0
+    QPen pen(mywidget->colors[color],4,Qt::SolidLine);  
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setJoinStyle(Qt::RoundJoin);
+    mywidget->qpixmap_painter->setPen(pen);
+#endif
+
+    mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
+    //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
+  }
+
 }
 
 void QGFX_P_Point(
