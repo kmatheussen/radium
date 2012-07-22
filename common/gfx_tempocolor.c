@@ -92,6 +92,15 @@ void WBLOCK_DrawNotMixedTempoColor(
 
 }
 
+#if 0
+float scale(float x, float x1, float x2, float y1, float y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+#endif
+
 void WBLOCK_DrawTempoColor(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -99,12 +108,12 @@ void WBLOCK_DrawTempoColor(
 	int end_realline
 ){
 
-  const int numcolors=3;
-  const int colors[3]={1,4,2};
-//  const int numcolors=7;
-//  const int colors[7]={1,2,3,4,5,6,7};
-  const int maxtime=800;
-  const int mintime=0;
+  //const int numcolors=3;
+  //const int colors[3]={1,4,2};
+  const int numcolors=7;
+  const int colors[7]={1,2,3,4,5,6,7};
+  const int maxtime=6300;
+  const int mintime=200;
 
   int realline,line;
   const int fontheight=window->fontheight;
@@ -159,25 +168,17 @@ void WBLOCK_DrawTempoColor(
     
 
     for(line=0;line<fontheight;line++){
+      int delta = (int) ( (double)(stimes[line+1]-stimes[line]) / wblock->block->reltempo);
+      //printf("line: %d, delta: %d (%d - %d)\n",line,delta,mintime, maxtime);
       colortouse=(
-							(numcolors-1)*
-							(
-								(
-									(
-										stimes[line+1]-stimes[line]
-									)/
-									wblock->block->reltempo
-								)-
-								mintime
-							)
-						);
+                  (numcolors-1)* (delta-mintime)
+                  );
 
       colortouse/=(maxtime-mintime);
       colortousebase=R_BOUNDARIES(0,(int)colortouse,numcolors-1);
       colortousefloor=1.0f-(colortouse-(float)colortousebase);
 
       //	WBLOCK_DrawLineTempoColor(
-
       WBLOCK_DrawMixedTempoColor(
       //      WBLOCK_DrawNotMixedTempoColor(
 				    window,
