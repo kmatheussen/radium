@@ -131,5 +131,21 @@ void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual){
 void initMenues(QMenuBar *base_menu){
   current_menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   current_menu->base = base_menu;
+
+#if 0
+  GFX_AddMenuItem(NULL, "item1", "dosomething");
+  GFX_AddMenuItem(NULL, "item2", "");
+  GFX_AddMenuMenu(NULL, "menu1");
+  GFX_AddMenuItem(NULL, "menu1 - item1", "");
+  GFX_AddMenuSeparator(NULL);
+  GFX_AddMenuItem(NULL, "menu1 - item2", "");
+  GFX_GoPreviousMenuLevel(NULL);
+  GFX_AddMenuItem(NULL, "item3", "");
+  GFX_AddMenuMenu(NULL, "menu2");
+  GFX_AddMenuMenu(NULL, "menu2 -> menu1");
+  GFX_AddMenuItem(NULL, "menu2 -> menu1 -> item1", "");
+  GFX_GoPreviousMenuLevel(NULL);
+  GFX_AddMenuItem(NULL, "item2 -> item1", "");
+#endif
 }
 
