@@ -71,12 +71,12 @@ int MoveTempoNodeBorder_Mouse(
 	//	  DrawUpTrackerWindow(window);
 	//	}else{
 	  //	  UpdateTrackerWindow(window);
-	  GFX_P_Scroll(window,wblock->temponodearea.width-oldwidth,0,
+	  GFX_BitBlt(window,wblock->temponodearea.width-oldwidth,0,
 		       wblock->temponodearea.x2-2,wblock->a.y1,
 		       wblock->a.x2,wblock->t.y2
 		       );
 	  /*
-	  GFX_P_Scroll(window,wblock->temponodearea.width-oldwidth,0,
+	  GFX_BitBlt(window,wblock->temponodearea.width-oldwidth,0,
 		       wblock->temponodearea.x2-2,wblock->a.y1,
 		       wblock->a.x2,wblock->t.y1
 		       );

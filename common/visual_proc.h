@@ -128,7 +128,7 @@ extern LANGSPEC void GFX_P_DrawTrackBorderDouble(
 	int x, int y, int y2
 );
 
-extern LANGSPEC void GFX_P_Scroll(
+extern LANGSPEC void GFX_BitBlt(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
 	int x,int y,
@@ -193,7 +193,7 @@ void GFXS_BorderType2(
 		     int x, int y, int y2
 		     );
 
-void GFXS_ScrollType(
+void GFXS_BitBltType(
 		     void (*GFX_P_OSFunc)(
 					  struct Tracker_Windows *tvisual,
 					  int dx,int dy,
@@ -273,7 +273,7 @@ void GFXST_BorderType2(
 #define GFX_P_DrawTrackBorderSingle(a,b,c,d) GFXS_BorderType(GFX_P_DrawTrackBorderSingle,a,b,c,d)
 #define GFX_P_DrawTrackBorderDouble(a,b,c,d) GFXS_BorderType2(GFX_P_DrawTrackBorderDouble,a,b,c,d)
 
-#define GFX_P_Scroll(a,b,c,d,e,f,g) GFXS_ScrollType(GFX_P_Scroll,a,b,c,d,e,f,g)
+#define GFX_BitBlt(a,b,c,d,e,f,g) GFXS_BitBltType(GFX_BitBlt,a,b,c,d,e,f,g)
 
 #define GFX_P_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_P_FilledBox,a,b,c,d,e,f)
 #define GFX_P_T_Box(a,b,c,d,e,f) GFXST_BoxType(GFX_P_Box,a,b,c,d,e,f)

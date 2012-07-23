@@ -244,7 +244,7 @@ void GFXS_BorderType2(
 }
 
 
-void GFXS_ScrollType(
+void GFXS_BitBltType(
 		     void (*GFX_P_OSFunc)(
 					  struct Tracker_Windows *window,
 					  int dx,int dy,
@@ -259,7 +259,7 @@ void GFXS_ScrollType(
 {
   struct WBlocks *wblock=window->wblock;
 
-  if(GFXS_EnsureBoundaries(window,"GFXS_ScrollType",x,y,x2,y2)==false){
+  if(GFXS_EnsureBoundaries(window,"GFXS_BitBltType",x,y,x2,y2)==false){
     return;
   }
 
@@ -267,12 +267,12 @@ void GFXS_ScrollType(
     x=dx;
   }
   if(x+dx>=wblock->a.x2){
-    RError("Error in function GFXS_ScrollType. x+dx>wblock->a.x2: %d,%d,%d\n",x,dx,wblock->a.x2);
+    RError("Error in function GFXS_BitBltType. x+dx>wblock->a.x2: %d,%d,%d\n",x,dx,wblock->a.x2);
     return;
   }
 
   if(x2+dx<0){
-    RError("Error in function GFXS_ScrollType. x2+dx<0: %d,%d\n",x2,dx);
+    RError("Error in function GFXS_BitBltType. x2+dx<0: %d,%d\n",x2,dx);
     return;
   }
 
@@ -281,7 +281,7 @@ void GFXS_ScrollType(
   }
 
 
-  if(GFXS_EnsureBoundaries(window,"GFXS_ScrollType2",x,y,x2,y2)==false){
+  if(GFXS_EnsureBoundaries(window,"GFXS_BitBltType2",x,y,x2,y2)==false){
     return;
   }
   

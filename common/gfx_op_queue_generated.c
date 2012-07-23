@@ -13,7 +13,7 @@ ENUM_GFX_Line,
 ENUM_GFX_Box, 
 ENUM_GFX_FilledBox, 
 ENUM_GFX_Text, 
-ENUM_GFX_P_Scroll, 
+ENUM_GFX_BitBlt, 
 #endif 
 
 #ifdef OP_CASES 
@@ -29,7 +29,7 @@ case ENUM_GFX_Line: OS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5);
 case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_FilledBox: OS_GFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Text: OS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_P_Scroll: OS_GFX_P_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 #endif 
 
 #ifdef OP_FUNCS 
@@ -219,7 +219,7 @@ void GFX_Text(
 
 
 
-void GFX_P_Scroll(
+void GFX_BitBlt(
 	struct Tracker_Windows* tvisual,
 	int dx,int dy,
 	int x,int y,
@@ -227,7 +227,7 @@ void GFX_P_Scroll(
 	) 
 { 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_Scroll ; 
+  el->type = ENUM_GFX_BitBlt ; 
   el->i1 = dx ; 
   el->i2 = dy ; 
   el->i3 = x ; 

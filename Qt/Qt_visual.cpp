@@ -641,7 +641,7 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
 #endif
 }
 
-void OS_GFX_P_Scroll(
+void OS_GFX_BitBlt(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
 	int x,int y,

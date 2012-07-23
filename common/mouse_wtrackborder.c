@@ -64,7 +64,7 @@ int MoveWTrackBorder_Mouse(
 	  return 0;
 	}
 
-	GFX_P_Scroll(window,wtrack->fxwidth-oldfxwidth,0,
+	GFX_BitBlt(window,wtrack->fxwidth-oldfxwidth,0,
 		     wtrack->fxarea.x2-2,wblock->a.y1,
 		     wblock->a.x2,wblock->t.y2
 		     );

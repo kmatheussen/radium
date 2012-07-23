@@ -15,6 +15,6 @@ extern LANGSPEC void OS_GFX_Line(struct Tracker_Windows* tvisual,int color,int x
 extern LANGSPEC void OS_GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void OS_GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void OS_GFX_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,int width,int flags); 
-extern LANGSPEC void OS_GFX_P_Scroll(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
+extern LANGSPEC void OS_GFX_BitBlt(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
 
 #endif 

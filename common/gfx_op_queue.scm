@@ -84,7 +84,7 @@ void GFX_Text(
 	int flags
 );
 
-void GFX_P_Scroll(
+void GFX_BitBlt(
 	struct Tracker_Windows* tvisual,
 	int dx,int dy,
 	int x,int y,
