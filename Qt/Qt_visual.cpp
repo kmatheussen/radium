@@ -924,7 +924,7 @@ char *QGFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text)
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual.main_window);
 
-  GFX_PlayListWindowToBack();
+  //GFX_PlayListWindowToBack();
   main_window->raise();
 
   XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
