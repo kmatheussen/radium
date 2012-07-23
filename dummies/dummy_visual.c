@@ -38,29 +38,6 @@ void GFX_P_Text(
 	)
 {}
 
-void GFX_P_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-}
-
-void GFX_P_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-}
-
-void GFX_V_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-}
-void GFX_V_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-}
-
 void GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
@@ -123,11 +100,6 @@ void GFX_Text_noborder(
 	char *text,
 	int x,
 	int y
-){return ;}
-
-void GFX_DrawTrackBorder(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
 ){return ;}
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){return ;}

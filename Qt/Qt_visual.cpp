@@ -633,47 +633,6 @@ void QGFX_Text(
   draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
 }
 
-static void Qt_BLine(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-
-//  QColor *qcolor=mywidget->colors[color];
-
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
-//  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
-}
-
-void QGFX_P_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  Qt_BLine(tvisual,1,x,y,x,y2);
-  Qt_BLine(tvisual,2,x+1,y,x+1,y2);
-}
-
-void QGFX_P_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  Qt_BLine(tvisual,2,x,y,x,y2);
-}
-
-void QGFX_V_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  //  Qt_BLine(tvisual,2,x,y,x,y2);
-  //Qt_BLine(tvisual,2,x+1,y,x+1,y2);
-}
-
-void QGFX_V_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  //  Qt_BLine(tvisual,2,x,y,x,y2);
-}
-
-
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
   g_main_window->setCaption(title);
 }

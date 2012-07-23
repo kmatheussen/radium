@@ -18,10 +18,6 @@ extern LANGSPEC void QGFX_FilledBox(struct Tracker_Windows* tvisual,int color,in
 extern LANGSPEC void QGFX_Slider_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_All_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,int width,int flags); 
-extern LANGSPEC void QGFX_P_DrawTrackBorderSingle(struct Tracker_Windows* tvisual,int x,int y,int y2); 
-extern LANGSPEC void QGFX_P_DrawTrackBorderDouble(struct Tracker_Windows* tvisual,int x,int y,int y2); 
-extern LANGSPEC void QGFX_V_DrawTrackBorderSingle(struct Tracker_Windows* tvisual,int x,int y,int y2); 
-extern LANGSPEC void QGFX_V_DrawTrackBorderDouble(struct Tracker_Windows* tvisual,int x,int y,int y2); 
 extern LANGSPEC void QGFX_Scroll(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_P_Scroll(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_ScrollDown(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 

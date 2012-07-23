@@ -415,13 +415,6 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	GFX_DrawUpLeft(window,wblock);
 
-	GFX_V_DrawTrackBorderDouble(
-		window,
-		wblock->zoomlevelarea.x2+1,
-		wblock->t.y1,
-		wblock->a.y2
-	);
-
 /*
 	GFX_Line(
 		window,1,
@@ -431,34 +424,6 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		wblock->t.y1-1
 	);
 */
-
-	GFX_V_DrawTrackBorderDouble(
-		window,
-		wblock->linenumarea.x2+1,
-		wblock->a.y1,
-		wblock->a.y2
-	);
-
-	GFX_V_DrawTrackBorderDouble(
-		window,
-		wblock->lpbarea.x2+1,
-		wblock->a.y1,
-		wblock->a.y2
-	);
-
-	GFX_V_DrawTrackBorderSingle(
-		window,
-		wblock->tempoarea.x2+1,
-		wblock->a.y1,
-		wblock->a.y2
-	);
-
-	GFX_V_DrawTrackBorderDouble(
-		window,
-		wblock->temponodearea.x2+1,
-		wblock->a.y1,
-		wblock->a.y2
-	);
 
 	GFX_Line(
 		window,1,
@@ -475,11 +440,8 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		wblock->top_realline,
 		wblock->bot_realline
 	);
-
 	
 	UpdateAllWTracks(window,wblock,wblock->top_realline,wblock->bot_realline);
-
-	DrawAllWTracksBorders(window,wblock);
 
 	SetCursorPos(window);
 

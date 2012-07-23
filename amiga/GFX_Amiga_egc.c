@@ -761,34 +761,6 @@ void GFX_Text(
 }
 
 
-void GFX_P_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-	GFX_P_Line(tvisual,2,x,y,x,y2);
-	GFX_P_Line(tvisual,1,x+1,y,x+1,y2);
-}
-
-void GFX_P_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-	GFX_P_Line(tvisual,2,x,y,x,y2);
-}
-
-void GFX_V_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-}
-
-void GFX_V_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-}
-
-
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
 	SetWindowTitles(tvisual->os_visual->window,title,(UBYTE *)-1);
 }

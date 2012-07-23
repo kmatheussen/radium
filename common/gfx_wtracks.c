@@ -54,46 +54,6 @@ static const int Col[4]={0,1,2,3};
 static const int NCol[11]={1,1,1,2,3,4,5,6,7,7,7};
 
 
-void DrawWTrackBorder(struct Tracker_Windows *window,struct WBlocks *wblock,struct WTracks *wtrack){
-
-	if(wtrack->x2>wblock->temponodearea.x2 && wtrack->x2+2<wblock->a.x2)
-		GFX_V_DrawTrackBorderDouble(
-			window,
-			wtrack->x2+1,
-			wtrack->y,
-			wblock->a.y2
-		);
-
-	if(wtrack->notearea.x2>wblock->temponodearea.x2 && wtrack->notearea.x2+1<wblock->a.x2)
-		GFX_V_DrawTrackBorderSingle(
-			window,
-			wtrack->notearea.x2+1,
-			wblock->t.y1,
-			wblock->a.y2
-		);
-	/*
-	GFX_T_Line(
-		window,Col[1],
-		wtrack->x,
-		wblock->t.y1-1,
-		R_MIN(wtrack->x2-1,wblock->a.x2),
-		wblock->t.y1-1
-	);
-	*/
-}
-
-
-void DrawAllWTracksBorders(struct Tracker_Windows *window,struct WBlocks *wblock){
-	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-
-	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-		if(wtrack->notearea.x2+1<wblock->a.x2){
-			DrawWTrackBorder(window,wblock,wtrack);
-		}
-		wtrack=NextWTrack(wtrack);
-	}
-}
-
 void ClearTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -118,65 +78,6 @@ void ClearTrack(
 	}
 	//	SetCursorPos(window);
 }
-
-void ClearAllTrack(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int start_realline,
-	int end_realline,
-	int start_subtrack,
-	int end_subtrack
-){
-//	int lokke;
-
-	printf("ca1. note.x: %d, note.x2-1: %d\n",wtrack->notearea.x,wtrack->notearea.x2-1);
-	printf("%d - %d\n",start_realline,end_realline);
-
-/*
-	if(start_subtrack==-1)
-		GFX_P_FilledBox(
-			window,Col[0],
-			wtrack->notearea.x,
-			GetReallineY1Pos(window,wblock,start_realline),
-			wtrack->notearea.x2-1,
-			GetReallineY2Pos(window,wblock,end_realline)
-		);
-
-	printf("ca2\n");
-	GFX_P_FilledBox(
-		window,Col[0],
-		R_MAX(wtrack->fxarea.x,wblock->temponodearea.x2+2),
-		wblock->t.y1,
-		R_MIN(wtrack->fxarea.x2,wblock->a.x2),
-		wblock->t.y2
-	);
-
-	printf("ca3\n");
-	for(lokke=start_subtrack>0 ? start_subtrack : 1;lokke<=end_subtrack;lokke++){
-	printf("ca4\n");
-		GFX_V_DrawTrackBorderSingle(
-			 window,
-			 GetXSubTrack1(wtrack,lokke)-1,
-			 wblock->t.y1,
-			 wblock->t.y2
-		);
-	}
-
-	printf("ca5\n");
-	if(wtrack->track->onoff==0){
-	printf("ca6\n");
-		GFX_P_FilledBox(window,Col[2],
-			wtrack->x+window->fontwidth,wblock->t.y1+window->fontheight,
-			wtrack->x2-window->fontwidth,wtrack->y2-window->fontheight
-		);
-	}
-	printf("ca7\n");
-*/
-	//	SetCursorPos(window);
-}
-
-
 
 void WTRACK_DrawTrackBorders(
 			       struct Tracker_Windows *window,

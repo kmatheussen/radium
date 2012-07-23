@@ -16,10 +16,6 @@ ENUM_GFX_FilledBox,
 ENUM_GFX_Slider_FilledBox, 
 ENUM_GFX_All_FilledBox, 
 ENUM_GFX_Text, 
-ENUM_GFX_P_DrawTrackBorderSingle, 
-ENUM_GFX_P_DrawTrackBorderDouble, 
-ENUM_GFX_V_DrawTrackBorderSingle, 
-ENUM_GFX_V_DrawTrackBorderDouble, 
 ENUM_GFX_Scroll, 
 ENUM_GFX_P_Scroll, 
 ENUM_GFX_ScrollDown, 
@@ -41,10 +37,6 @@ case ENUM_GFX_FilledBox: QGFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, 
 case ENUM_GFX_Slider_FilledBox: QGFX_Slider_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_All_FilledBox: QGFX_All_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Text: QGFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_P_DrawTrackBorderSingle: QGFX_P_DrawTrackBorderSingle(window, el->i1, el->i2, el->i3); break; 
-case ENUM_GFX_P_DrawTrackBorderDouble: QGFX_P_DrawTrackBorderDouble(window, el->i1, el->i2, el->i3); break; 
-case ENUM_GFX_V_DrawTrackBorderSingle: QGFX_V_DrawTrackBorderSingle(window, el->i1, el->i2, el->i3); break; 
-case ENUM_GFX_V_DrawTrackBorderDouble: QGFX_V_DrawTrackBorderDouble(window, el->i1, el->i2, el->i3); break; 
 case ENUM_GFX_Scroll: QGFX_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_P_Scroll: QGFX_P_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_ScrollDown: QGFX_ScrollDown(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
@@ -269,62 +261,6 @@ void GFX_Text(
   el->i4 = y ; 
   el->i5 = width ; 
   el->i6 = flags ; 
-} 
-
-
-
-void GFX_P_DrawTrackBorderSingle(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_DrawTrackBorderSingle ; 
-  el->i1 = x ; 
-  el->i2 = y ; 
-  el->i3 = y2 ; 
-} 
-
-
-
-void GFX_P_DrawTrackBorderDouble(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_DrawTrackBorderDouble ; 
-  el->i1 = x ; 
-  el->i2 = y ; 
-  el->i3 = y2 ; 
-} 
-
-
-
-void GFX_V_DrawTrackBorderSingle(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_V_DrawTrackBorderSingle ; 
-  el->i1 = x ; 
-  el->i2 = y ; 
-  el->i3 = y2 ; 
-} 
-
-
-
-void GFX_V_DrawTrackBorderDouble(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_V_DrawTrackBorderDouble ; 
-  el->i1 = x ; 
-  el->i2 = y ; 
-  el->i3 = y2 ; 
 } 
 
 

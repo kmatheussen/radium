@@ -30,10 +30,6 @@ extern void UpdateAllWTracks(
 
 #include "nsmtracker.h"
 
-extern void DrawWTrackBorder(struct Tracker_Windows *window,struct WBlocks *wblock,struct WTracks *wtrack);
-
-extern void DrawAllWTracksBorders(struct Tracker_Windows *window,struct WBlocks *wblock);
-
 extern void UpdateWTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

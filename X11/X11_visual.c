@@ -342,37 +342,6 @@ static void X11_BLine(struct Tracker_Windows *tvisual,int color,int x,int y,int 
 F
 }
 
-void GFX_P_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  X11_BLine(tvisual,1,x,y,x,y2);
-  X11_BLine(tvisual,2,x+1,y,x+1,y2);
-}
-
-void GFX_P_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  X11_BLine(tvisual,2,x,y,x,y2);
-}
-
-void GFX_V_DrawTrackBorderDouble(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  //  GC gc=tvisual->os_visual->gcs[color];
-  //Pixmap pixmap=tvisual->os_visual->pixmap;
-}
-
-void GFX_V_DrawTrackBorderSingle(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int y2
-){
-  //  GC gc=tvisual->os_visual->gcs[color];
-  //Pixmap pixmap=tvisual->os_visual->pixmap;
-}
-
 void GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,

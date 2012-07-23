@@ -87,26 +87,6 @@ void GFX_Text(
 	int flags
 );
 
-void GFX_P_DrawTrackBorderSingle(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-);
-
-void GFX_P_DrawTrackBorderDouble(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-);
-
-void GFX_V_DrawTrackBorderSingle(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-);
-
-void GFX_V_DrawTrackBorderDouble(
-	struct Tracker_Windows* tvisual,
-	int x, int y, int y2
-);
-
 void GFX_Scroll(
 	struct Tracker_Windows* tvisual,
 	int dx,int dy,
