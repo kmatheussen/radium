@@ -164,7 +164,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
+OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -810,11 +810,8 @@ X11_keyboard.o: X11/X11_keyboard.c
 Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
 
-Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(P)mQt_visual.cpp $(CD)visual_op_queue_proc.h
+Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT) 
-
-$(P)mQt_visual.cpp: $(P)Qt_visual.cpp
-	cd $(P) && $(MOC) Qt_visual.cpp >mQt_visual.cpp
 
 Qt_error.o: $(P)Qt_error.c $(P)MyWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
@@ -836,6 +833,13 @@ Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)MyWidget.h
 
 Qt_colors.o: $(P)Qt_colors.cpp
 	$(CCC) $(P)Qt_colors.cpp $(QTOPT)
+
+Qt_Menues.o: $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
+	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)
+
+$(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp
+	cd $(P) && $(MOC) Qt_Menues.cpp >mQt_Menues.cpp
+
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
