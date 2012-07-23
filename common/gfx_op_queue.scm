@@ -73,8 +73,6 @@ void GFX_P_Text(
 void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
 void GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
 void GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-void GFX_Slider_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-void GFX_All_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
 
 void GFX_Text(
 	struct Tracker_Windows* tvisual,

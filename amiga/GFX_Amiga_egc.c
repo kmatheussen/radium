@@ -695,24 +695,6 @@ void GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,
 	RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
 }
 
-void GFX_Slider_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-	x+=tvisual->os_visual->xpluss;
-	x2+=tvisual->os_visual->xpluss;
-	y+=tvisual->os_visual->ypluss;
-	y2+=tvisual->os_visual->ypluss;
-	SetAPen(tvisual->os_visual->window->RPort,(ULONG)color);
-	RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
-}
-
-void GFX_All_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-	x+=tvisual->os_visual->xpluss;
-	x2+=tvisual->os_visual->xpluss;
-	y+=tvisual->os_visual->ypluss;
-	y2+=tvisual->os_visual->ypluss;
-	SetAPen(tvisual->os_visual->window->RPort,(ULONG)color);
-	RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
-}
-
 void GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,

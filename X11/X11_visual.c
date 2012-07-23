@@ -533,17 +533,6 @@ void GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,
 F
 }
 
-void GFX_Slider_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  GFX_FilledBox(tvisual,color,x,y,x2,y2);
-F
-}
-
-void GFX_All_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  GFX_FilledBox(tvisual,color,x,y,x2,y2);
-F
-}
-
-
 void GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,

@@ -107,8 +107,6 @@ extern LANGSPEC void GFX_P_Text(
 extern LANGSPEC void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 extern LANGSPEC void GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 extern LANGSPEC void GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
-extern LANGSPEC void GFX_Slider_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
-extern LANGSPEC void GFX_All_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
 extern LANGSPEC void GFX_Text(
 	struct Tracker_Windows *tvisual,
@@ -282,7 +280,6 @@ void GFXST_BorderType2(
 #define GFX_Line(a,b,c,d,e,f) GFXS_LineType(GFX_Line,a,b,c,d,e,f)
 #define GFX_Box(a,b,c,d,e,f) GFXS_BoxType(GFX_Box,a,b,c,d,e,f)
 #define GFX_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_FilledBox,a,b,c,d,e,f)
-#define GFX_All_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_All_FilledBox,a,b,c,d,e,f)
 
 #define GFX_P_Text(a,b,c,d,e,f,g) GFXS_TextType(GFX_P_Text,a,b,c,d,e,f,g)
 #define GFX_Text(a,b,c,d,e,f,g) GFXS_TextType(GFX_Text,a,b,c,d,e,f,g)
@@ -299,7 +296,6 @@ void GFXST_BorderType2(
 #define GFX_T_Line(a,b,c,d,e,f) GFXST_LineType(GFX_Line,a,b,c,d,e,f)
 #define GFX_T_Box(a,b,c,d,e,f) GFXST_BoxType(GFX_Box,a,b,c,d,e,f)
 #define GFX_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_FilledBox,a,b,c,d,e,f)
-#define GFX_T_All_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_All_FilledBox,a,b,c,d,e,f)
 
 #define GFX_P_T_Text(a,b,c,d,e,f,g) GFXST_TextType(GFX_P_Text,a,b,c,d,e,f,g)
 #define GFX_T_Text(a,b,c,d,e,f,g) GFXST_TextType(GFX_Text,a,b,c,d,e,f,g)

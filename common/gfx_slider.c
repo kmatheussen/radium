@@ -157,13 +157,13 @@ void DrawSlider(
 	);
 
 	if(!onoff){
-		GFX_All_FilledBox(
+		GFX_FilledBox(
 			window,0,
 			box->x1+1,y1,
 			box->x2-1,y2
 
 		);
-		GFX_All_FilledBox(
+		GFX_FilledBox(
 			window,3,
 			R_BOUNDARIES(
 				box->x1+1,
@@ -178,7 +178,7 @@ void DrawSlider(
 			),
 			y2
 		);
-		GFX_All_FilledBox(
+		GFX_FilledBox(
 			window,1,
 			R_BOUNDARIES(
 				box->x1+1,
@@ -196,14 +196,14 @@ void DrawSlider(
 		return;
 	}
 
-	GFX_All_FilledBox(
+	GFX_FilledBox(
 		window,2,
 		box->x1+1,y1,
 		box->x2-1,y2
 
 	);
 
-	GFX_All_FilledBox(
+	GFX_FilledBox(
 		window,3,
 		R_BOUNDARIES(
 			box->x1+1,
@@ -219,7 +219,7 @@ void DrawSlider(
 		y2
 	);
 
-	GFX_All_FilledBox(
+	GFX_FilledBox(
 		window,1,
 		R_BOUNDARIES(
 			box->x1+1,
@@ -235,7 +235,7 @@ void DrawSlider(
 		y2
 	);
 
-	GFX_All_FilledBox(
+	GFX_FilledBox(
 		window,2,
 		R_BOUNDARIES(
 			box->x1+1,

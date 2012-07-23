@@ -81,8 +81,6 @@ bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
 void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
 void GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
 void GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
-void GFX_Slider_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
-void GFX_All_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
 
 void GFX_Text(
 	struct Tracker_Windows *tvisual,
@@ -91,14 +89,6 @@ void GFX_Text(
 	int x,
 	int y,
 	bool clear
-){return ;}
-
-void GFX_Text_noborder(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y
 ){return ;}
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){return ;}

@@ -606,15 +606,6 @@ void QGFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2
 }
 
 
-void QGFX_Slider_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  QGFX_FilledBox(tvisual,color,x,y,x2,y2);
-}
-
-
-void QGFX_All_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  QGFX_FilledBox(tvisual,color,x,y,x2,y2);
-}
-
 void QGFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
