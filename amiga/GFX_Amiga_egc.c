@@ -761,47 +761,6 @@ void GFX_Text(
 }
 
 
-void GFX_P_InvertText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-	bool clear
-){
-	x+=tvisual->os_visual->xpluss;
-	y+=tvisual->os_visual->ypluss;
-
-	SetColor(tvisual->os_visual->RPort,0);
-	SetBPen(tvisual->os_visual->RPort,(ULONG)color);
-
-	Move(
-		tvisual->os_visual->RPort,
-		(LONG)x,
-		(LONG)y+edittextfont->tf_Baseline +1
-	);
-
-	Text(tvisual->os_visual->RPort,text,(LONG)strlen(text));
-
-	SetBPen(tvisual->os_visual->RPort,0L);
-}
-
-void GFX_P_InvertTextNoText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
-){
-
-	GFX_P_FilledBox(tvisual,color,x,y,
-		x+(len*tvisual->fontwidth),
-		y+tvisual->fontheight
-	);
-}
-
-
 void GFX_InitDrawCurrentLine(
 	struct Tracker_Windows *tvisual,
 	int x, int y, int x2, int y2

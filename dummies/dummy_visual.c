@@ -61,27 +61,6 @@ void GFX_V_DrawTrackBorderSingle(
 ){
 }
 
-void GFX_P_InvertText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-	bool clear
-){
-}
-
-
-void GFX_P_InvertTextNoText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
-){
-}
-
 void GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
@@ -142,22 +121,6 @@ void GFX_Text_noborder(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
-	int x,
-	int y
-){return ;}
-
-void GFX_InvertText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y
-){return ;}
-
-
-void GFX_InvertTextNoText(
-	struct Tracker_Windows *tvisual,
-	int color,
 	int x,
 	int y
 ){return ;}

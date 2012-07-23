@@ -373,48 +373,6 @@ void GFX_V_DrawTrackBorderSingle(
   //Pixmap pixmap=tvisual->os_visual->pixmap;
 }
 
-void GFX_P_InvertText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-	bool clear
-){
-  GFX_P_FilledBox(tvisual,color,x,y,
-		  x+(strlen(text)*tvisual->fontwidth),
-		  y+tvisual->fontheight
-		  );
-
-  GFX_P_Text(tvisual,2,text,x,y,clear);
-  //  GC gc=tvisual->os_visual->gcs[color];
-  //Pixmap pixmap=tvisual->os_visual->pixmap;
-}
-
-
-void GFX_P_InvertTextNoText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
-){
-#if 0
-  GFX_All_FilledBox(tvisual,1,x,y,
-		    x+(len*tvisual->fontwidth),
-		    y+tvisual->fontheight
-		    );
-#endif
-  GFX_P_FilledBox(tvisual,color,x,y,
-		  x+(len*tvisual->fontwidth),
-		  y+tvisual->fontheight
-		  );
-
-  //  GC gc=tvisual->os_visual->gcs[color];
-  //Pixmap pixmap=tvisual->os_visual->pixmap;
-}
-
 void GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,

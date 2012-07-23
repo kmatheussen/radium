@@ -346,18 +346,6 @@ void QGFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
 }
 
 
-#if 0
-var rgbaSum = function(c1, c2){
-       var a = c1.a + c2.a*(1-c1.a);
-       return {
-         r: (c1.r * c1.a  + c2.r * c2.a * (1 - c1.a)) / a,
-         g: (c1.g * c1.a  + c2.g * c2.a * (1 - c1.a)) / a,
-         b: (c1.b * c1.a  + c2.b * c2.a * (1 - c1.a)) / a,
-         a: a
-       }
-     } 
-#endif
-
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
   float a1 = how_much;
   float a2 = 1.0f-a1;
@@ -644,34 +632,6 @@ void QGFX_Text(
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
 }
-
-#if 0
-void QGFX_P_InvertText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-	bool clear
-){
-  QGFX_P_InvertTextNoText(tvisual, color, strlen(text), x, y, clear);
-  QGFX_P_Text(tvisual, 0, text, x ,y, clear);
-}
-
-void QGFX_P_InvertTextNoText(
-	struct Tracker_Windows *tvisual,
-	int color,
-	int len,
-	int x,
-	int y,
-	bool clear
-){
-	QGFX_P_FilledBox(tvisual,color,x,y,
-		x+(len*tvisual->fontwidth),
-		y+tvisual->fontheight
-	);
-}
-#endif
 
 void QGFX_InitDrawCurrentLine(
 	struct Tracker_Windows *tvisual,
