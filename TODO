@@ -42,6 +42,9 @@ Non-urgent
 
 * Loading standard midi file doesn't ask yes/no if current song is modified.
 
+* Undo stack is not resetted after loading standard midi file.
+  Doing undo/redo after loading standard midi can probably crash the program.
+
 * Not unlikely that altGr, and possibly other qualifier keys, are autorepeating. Check if it is possible
   to check this, and manually autorepeat if autorepeat is turned on for any of the qualifier keys.
   If it is not possible (or very simple) to check this, just handle autorepeat manually for everyone.
@@ -49,10 +52,6 @@ Non-urgent
 * Rewrite qualifier key handling. Total mess.
 
 * Thicker lines
-
-* Anti aliasing, etc.
-  QT4: painter.setRenderHints(QPainter::Antialiasing);
-  QT: http://twinlib.roard.com/
 
 * Would be convenient with a realloc function.
 
@@ -72,6 +71,8 @@ Non-urgent
   in the list boxes. And maybe not even then, since it looks bad and limits the number of characters to display.
 
 * Delete instrument. (right click tab could bring a popup menu)
+  Radium doesn't have to actually delete the instrument (which could slightly complicate the backend).
+  It's enough if the tab widget is removed and the instrument is marked as inactive so that it's not saved or can be selected.
 
 * Perform gc_a_little between events, similar to amiga. Subclassing QEventLoop
   seems like the simplest solution. (with incremental gc, it probably makes no difference though)
@@ -86,7 +87,7 @@ Non-urgent
 
 * Moving note by clicking on the note name.
 
-* Remove all usages of strlen to find text width.
+* Remove all usages of strlen to find graphical text width. (dont use fixed sized fonts anymore)
 
 * Note name flickering if using very big fonts. (don't see it anymore)
 
@@ -99,11 +100,13 @@ Non-urgent
 * That graphical column on the left that shows tempo can be replaced with a bar.
   Over 50% of the CPU is used to draw that.
 
-* Trying to select a node close to another can sometimes be frustrating. Seems
-  to be missing logic for selecting the node line closest to the mouse pointer.
-
 * Sometims the editor still jumps to line 1 briefly when continue play block.
   It always happens if I don't continue from the place where playing last stopped.
+  How to reproduce:
+  1. Play song (song, not block!)
+  2. Stop playing after a few lines.
+  3. Scroll down a couple of lines
+  4. Continue block (block, not song!)
 
 * If a track is a part of the ranged area, note names will be written, even
   if using graphical note view. (Alt+t)
@@ -115,22 +118,15 @@ Non-urgent
 
 * Resizing flickers.
 
-* Should remove the resize box. It hardly made sense even on amiga. Only reason for it
-  was to provide opaque resizing if I remember correctly.
-
 * Can several BLT_* macros be called in a row without unwinding the gfx_op queue?
 
 * Use 0x90 checkbox in midi menu. (All code is there, except that menues.py doesn't handle
   syntax for checkboxes yet.)
 
+* When selecting Midi Input On/Off from the menu (i.e. not pressing ESC), the status bar
+  is not updated. Maybe it's because repaint() is called after selecting something from the menu...
+
 * When zooming in a lot, the zoomlevel and linenumber areas are wrongly calculated. Overlapping, etc.
-
-* Midi input has not been implemented.
-
-* Synchronize rtmidi jack messages. Currently, they are all set to start at frame 0.
-
-* One time: At the call to DO_GFX(ret=EventTreater(in_tevent,window)) in eventreceiver.c caused number of reallines
-  to be the wrong value after loading a standard midi file. (crash in TRE garbage collector)
 
 * When the block/playlist widget is non-stacked, there could be arrows from blocks in the blocklist to
   the positions in the playlist where that block is played. The add and remove button can be moved to the bottom.
@@ -140,7 +136,9 @@ Non-urgent
 * Enable mmd2 loading on non-amiga.
 
 * Import at least one standard tracker module format. (For instance modplugtracker, since modplugtracker can import
-  all sorts of formats.)
+  all sorts of formats.).
+  Impulse tracker seems to be more standard, and modplugtracker can export impulse tracker modules.
+  Format: http://16-bits.org/it/
 
 * Replace xterm with Qt widget, for instance QTextEdit.
   (xterm screws up keyboard focus)
@@ -151,10 +149,11 @@ Non-urgent
 * phaser for instrument widget.
 
 * Port to Qt4. Solution for slow graphics: Embed the editor, and use the X11 or Qt3 port to update graphics
-  in that embedded widget. (Seems like linking with both Qt3 and Qt4 doesn't work, and the X11 port is
+  in that embedded widget. (Seems like linking with both Qt3 and Qt4 doesn't work, and the xlib port is
   a lot of work to get up to the standard of the qt3 port. Hmmm.)
-
-* Remove memory allocation from rtmidi jack inprocess. (Or perhaps use TLSF)
+  Solution: Reduce the number of visual functions down to the minimum (maybe around 10 functions), and then
+  port it to gdk2. Just using the xlib port is also an option, but gdk is more portable and probably
+  less work to get antialiased fonts with.
 
 * Fix use of broken ringbuffer implementation in rtmidi. (++ and -- on queue.size is very questionable.
   Doing some 'queue.front - queue.back' arithmetic to find queue size (instead of using queue.size or
@@ -166,7 +165,8 @@ Non-urgent
   https://subversion.assembla.com/svn/portaudio/portaudio/trunk/src/common/pa_ringbuffer.h
   https://subversion.assembla.com/svn/portaudio/portaudio/trunk/src/common/pa_ringbuffer.c
 
-* Doing undo/redo after loading standard midi can probably crash the program.
+  A quick fix for the ringbuffer has been done (gotten rid of ++ and --), but it's probably
+  best to use a proper ringbuffer implementation.
 
 * Can the files generated by moc and uic be included? That would simplify a bit.
 
@@ -195,7 +195,6 @@ Urgent
 * The Midi latency is noticable when editing. :-(
   (No, midi input latency is not noticable. Perhaps the keys are bound to key up instead of key down?)
 
-* Hitting right node/nodeline to edit must be fixed.
 
 
 Can not reproduce
