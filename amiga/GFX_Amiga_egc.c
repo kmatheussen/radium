@@ -761,20 +761,6 @@ void GFX_Text(
 }
 
 
-void GFX_InitDrawCurrentLine(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int x2, int y2
-){
-//	GFX_FilledBox(tvisual,2,x,y,x2,y2);
-}
-
-void GFX_InitDrawCurrentLine2(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int x2, int y2
-){
-	return;
-}
- 
 void GFX_DrawCursorPos(
 	struct Tracker_Windows *tvisual,
 	int fx, int fy, int fx2, int fy2,

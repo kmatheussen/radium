@@ -121,15 +121,6 @@ extern LANGSPEC void GFX_Text(
 	int flags
 );
 
-extern LANGSPEC void GFX_InitDrawCurrentLine(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int x2, int y2
-);
-extern LANGSPEC void GFX_InitDrawCurrentLine2(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int x2, int y2
-);
-
 extern LANGSPEC void GFX_DrawCursorPos(
 	struct Tracker_Windows *tvisual,
 	int fx, int fy, int fx2, int fy2,

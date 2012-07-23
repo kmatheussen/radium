@@ -633,18 +633,6 @@ void QGFX_Text(
   draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
 }
 
-void QGFX_InitDrawCurrentLine(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int x2, int y2
-){
-  //  QGFX_FilledBox(tvisual,2,x,y,x2,y2);
-}
-
-void QGFX_InitDrawCurrentLine2(
-	struct Tracker_Windows *tvisual,
-	int x, int y, int x2, int y2
-){return ;}
-
 void QGFX_DrawCursorPos(
 	struct Tracker_Windows *tvisual,
 	int fx, int fy, int fx2, int fy2,
