@@ -739,25 +739,6 @@ void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
 
 
 
-void GFX_Scroll(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-){
-	x+=tvisual->os_visual->xpluss;
-	x2+=tvisual->os_visual->xpluss;
-	y+=tvisual->os_visual->ypluss;
-	y2+=tvisual->os_visual->ypluss;
-	ClipBlit(
-		tvisual->os_visual->window->RPort,
-		(long)x,(long)y,
-		tvisual->os_visual->window->RPort,
-		(long)(x+dx),(long)(y+dy),
-		(long)(x2-x+1),(long)(y2-y+1),
-		0xc0
-	);
-}
 void GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,

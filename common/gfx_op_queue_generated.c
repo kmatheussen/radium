@@ -13,9 +13,7 @@ ENUM_GFX_Line,
 ENUM_GFX_Box, 
 ENUM_GFX_FilledBox, 
 ENUM_GFX_Text, 
-ENUM_GFX_Scroll, 
 ENUM_GFX_P_Scroll, 
-ENUM_GFX_ScrollDown, 
 #endif 
 
 #ifdef OP_CASES 
@@ -31,9 +29,7 @@ case ENUM_GFX_Line: QGFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); b
 case ENUM_GFX_Box: QGFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_FilledBox: QGFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Text: QGFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_Scroll: QGFX_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_P_Scroll: QGFX_P_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_ScrollDown: QGFX_ScrollDown(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 #endif 
 
 #ifdef OP_FUNCS 
@@ -223,25 +219,6 @@ void GFX_Text(
 
 
 
-void GFX_Scroll(
-	struct Tracker_Windows* tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_Scroll ; 
-  el->i1 = dx ; 
-  el->i2 = dy ; 
-  el->i3 = x ; 
-  el->i4 = y ; 
-  el->i5 = x2 ; 
-  el->i6 = y2 ; 
-} 
-
-
-
 void GFX_P_Scroll(
 	struct Tracker_Windows* tvisual,
 	int dx,int dy,
@@ -251,25 +228,6 @@ void GFX_P_Scroll(
 { 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Scroll ; 
-  el->i1 = dx ; 
-  el->i2 = dy ; 
-  el->i3 = x ; 
-  el->i4 = y ; 
-  el->i5 = x2 ; 
-  el->i6 = y2 ; 
-} 
-
-
-
-void GFX_ScrollDown(
-	struct Tracker_Windows* tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_ScrollDown ; 
   el->i1 = dx ; 
   el->i2 = dy ; 
   el->i3 = x ; 

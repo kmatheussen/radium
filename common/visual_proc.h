@@ -128,26 +128,12 @@ extern LANGSPEC void GFX_P_DrawTrackBorderDouble(
 	int x, int y, int y2
 );
 
-extern LANGSPEC void GFX_Scroll(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-);
-
 extern LANGSPEC void GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
 	int x,int y,
 	int x2,int y2
 	);
-
-extern LANGSPEC void GFX_ScrollDown(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-);
 
 extern LANGSPEC int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y);
 
@@ -287,7 +273,6 @@ void GFXST_BorderType2(
 #define GFX_P_DrawTrackBorderSingle(a,b,c,d) GFXS_BorderType(GFX_P_DrawTrackBorderSingle,a,b,c,d)
 #define GFX_P_DrawTrackBorderDouble(a,b,c,d) GFXS_BorderType2(GFX_P_DrawTrackBorderDouble,a,b,c,d)
 
-#define GFX_Scroll(a,b,c,d,e,f,g) GFXS_ScrollType(GFX_Scroll,a,b,c,d,e,f,g)
 #define GFX_P_Scroll(a,b,c,d,e,f,g) GFXS_ScrollType(GFX_P_Scroll,a,b,c,d,e,f,g)
 
 #define GFX_P_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_P_FilledBox,a,b,c,d,e,f)

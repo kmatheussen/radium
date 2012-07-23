@@ -563,30 +563,6 @@ F
 }
 
 
-void GFX_Scroll(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-){
-  Window window=tvisual->os_visual->window;
-
-  GFX_P_bouncePoints(tvisual->os_visual);
-
-  XCopyArea(
-	    x11_display,
-	    window,
-	    window,
-	    DefaultGC(x11_display,x11_screen),
-	    x,y,
-	    x2-x+1,y2-y+1,
-	    x+dx,y+dy
-	    );
-F
-}
-
-
-
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
 void SetNormalPointer(struct Tracker_Windows *tvisual){return ;}

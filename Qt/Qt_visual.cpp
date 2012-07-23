@@ -641,36 +641,6 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
 #endif
 }
 
-void QGFX_Scroll(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-){
-  RWarning("QGFX_Scroll is not implemented. (Should not be needed).\n");
-#if 0
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  //  const QPaintDevice *ai=(QPaintDevice *)mywidget;
-
-  QGFX_bouncePoints(mywidget);
-
-  mywidget->painter->drawPixmap(
-		   x+dx,y+dy,
-		   *mywidget,
-		   x,y,x2-x+1,y2-y+1
-		   );
-#endif
-  /*
-	if(dy<0){
-	  //RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
-		QGFX_FilledBox(tvisual,0,x,y2+dy,x2,y2);
-	}else{
-	  //		RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y+dy);
-		QGFX_FilledBox(tvisual,0,x,y,x2,y+dy-1);
-	}
-  */
-}
-
 void QGFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
@@ -678,7 +648,6 @@ void QGFX_P_Scroll(
 	int x2,int y2
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  //  const QPaintDevice *ai=(QPaintDevice *)mywidget;
 
   QGFX_bouncePoints(mywidget);
 
@@ -688,25 +657,5 @@ void QGFX_P_Scroll(
                         mywidget->qpixmap,
                         x,y,x2-x+1,y2-y+1
                         );
-
-
-  /*
-	if(dy<0){
-	  //RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y2+dy,(LONG)x2,(LONG)y2);
-		QGFX_FilledBox(tvisual,0,x,y2+dy,x2,y2);
-	}else{
-	  //		RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y+dy);
-		QGFX_FilledBox(tvisual,0,x,y,x2,y+dy-1);
-	}
-  */
 }
-
-
-void QGFX_ScrollDown(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-){return ;}
-
 

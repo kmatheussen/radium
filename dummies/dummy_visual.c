@@ -93,20 +93,6 @@ void GFX_Text(
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){return ;}
 
-void GFX_Scroll(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-){return ;}
-
-void GFX_ScrollDown(
-	struct Tracker_Windows *tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-){return ;}
-
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
 void SetNormalPointer(struct Tracker_Windows *tvisual){return ;}

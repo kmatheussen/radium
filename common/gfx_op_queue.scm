@@ -84,26 +84,12 @@ void GFX_Text(
 	int flags
 );
 
-void GFX_Scroll(
-	struct Tracker_Windows* tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-);
-
 void GFX_P_Scroll(
 	struct Tracker_Windows* tvisual,
 	int dx,int dy,
 	int x,int y,
 	int x2,int y2
 	);
-
-void GFX_ScrollDown(
-	struct Tracker_Windows* tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-);
 ")
 
 
