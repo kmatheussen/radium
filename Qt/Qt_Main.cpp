@@ -184,6 +184,39 @@ void Ptask2Mtask(void){
 }
 
 
+
+int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
+
+void SetNormalPointer(struct Tracker_Windows *tvisual){return ;}
+void SetResizePointer(struct Tracker_Windows *tvisual){return ;}
+
+
+void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+
+  if(main_window->isFullScreen()){
+    main_window->showNormal();
+  }else{
+    main_window->showFullScreen();
+  }
+}
+
+
+
+void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual.main_window);
+
+  //GFX_PlayListWindowToBack();
+  main_window->raise();
+
+  XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
+  X11_ResetKeysUpDowns();
+}
+
+
+
+
+
 #include <qwindowsstyle.h>
 //#include <qmacstyle_mac.h>
 #if 0

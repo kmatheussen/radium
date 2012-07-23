@@ -102,22 +102,7 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
     this->rpoints[lokke]=new RPoints();
   }
 
-  setBackgroundColor( this->colors[0] );		/* grey background */
-
   this->setMouseTracking(true);
-
-  //startTimer(2);
-
-
-  //  this->grabKeyboard();
-    /*
-    count = 0;
-    down = FALSE;
-    points = new QPoint[MAXPOINTS];
-    colors = new QColor[MAXCOLORS];
-    for ( int i=0; i<MAXCOLORS; i++ )		// init color array
-	colors[i] = QColor( rand()&255, rand()&255, rand()&255 );
-	*/
 
   //this->setFrameStyle(QFrame::Raised );
   this->setFrameStyle(QFrame::Sunken );
@@ -128,10 +113,6 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
 
 MyWidget::~MyWidget()
 {
-  /*
-    delete[] points;				// cleanup
-    delete[] colors;
-    */
 }
 
 static QMainWindow *g_main_window = NULL;;
@@ -890,66 +871,6 @@ void QGFX_ClearWindow(struct Tracker_Windows *tvisual){
 #endif
 }
 
-int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
-
-void SetNormalPointer(struct Tracker_Windows *tvisual){return ;}
-void SetResizePointer(struct Tracker_Windows *tvisual){return ;}
-
-
-void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-
-  if(main_window->isFullScreen()){
-    main_window->showNormal();
-  }else{
-    main_window->showFullScreen();
-  }
-}
-
-
-
-#if 0
-ReqType QGFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *title){return NULL;}
-void QGFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtype){return ;}
-
-int QGFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max){return max;}
-
-float QGFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,float min,float max){return max;}
-
-char *QGFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){return "null";}
-#endif
-
-
-
-void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual.main_window);
-
-  //GFX_PlayListWindowToBack();
-  main_window->raise();
-
-  XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
-  X11_ResetKeysUpDowns();
-}
-
-
-
-#if 0
-char *GFX_GetLoadFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir
-){return NULL;}
-
-char *GFX_GetSaveFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir
-){return NULL;}
-
-
-#endif
 
 
 
