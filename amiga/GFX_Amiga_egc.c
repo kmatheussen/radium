@@ -667,16 +667,6 @@ void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y
 	Draw(tvisual->os_visual->window->RPort,(long)x2,(long)y2);
 }
 
-void GFX_All_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-	x+=tvisual->os_visual->xpluss;
-	x2+=tvisual->os_visual->xpluss;
-	y+=tvisual->os_visual->ypluss;
-	y2+=tvisual->os_visual->ypluss;
-	SetAPen(tvisual->os_visual->window->RPort,(ULONG)color);
-	Move(tvisual->os_visual->window->RPort,(long)x,(long)y);
-	Draw(tvisual->os_visual->window->RPort,(long)x2,(long)y2);
-}
-
 void GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
 	WORD box[8];
 	x+=tvisual->os_visual->xpluss;

@@ -517,10 +517,6 @@ void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y
 F
 }
 
-void GFX_All_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  GFX_Line(tvisual,color,x,y,x2,y2);
-}
-
 void GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   GC gc=tvisual->os_visual->gcs[color];
   Window window=tvisual->os_visual->window;

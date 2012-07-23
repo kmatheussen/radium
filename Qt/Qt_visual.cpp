@@ -590,11 +590,6 @@ void QGFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int 
 }
 
 
-void QGFX_All_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  QGFX_Line(tvisual,color,x,y,x2,y2);
-}
-
-
 void QGFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   mywidget->painter->setPen(mywidget->colors[color]);

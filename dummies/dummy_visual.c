@@ -79,7 +79,6 @@ void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual){}
 bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
 
 void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
-void GFX_All_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
 void GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
 void GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
 void GFX_Slider_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){return ;}
