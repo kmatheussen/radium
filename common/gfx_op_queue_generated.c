@@ -16,7 +16,6 @@ ENUM_GFX_FilledBox,
 ENUM_GFX_Slider_FilledBox, 
 ENUM_GFX_All_FilledBox, 
 ENUM_GFX_Text, 
-ENUM_GFX_DrawCursorPos, 
 ENUM_GFX_P_DrawTrackBorderSingle, 
 ENUM_GFX_P_DrawTrackBorderDouble, 
 ENUM_GFX_V_DrawTrackBorderSingle, 
@@ -42,7 +41,6 @@ case ENUM_GFX_FilledBox: QGFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, 
 case ENUM_GFX_Slider_FilledBox: QGFX_Slider_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_All_FilledBox: QGFX_All_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Text: QGFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_DrawCursorPos: QGFX_DrawCursorPos(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6, el->i7, el->i8); break; 
 case ENUM_GFX_P_DrawTrackBorderSingle: QGFX_P_DrawTrackBorderSingle(window, el->i1, el->i2, el->i3); break; 
 case ENUM_GFX_P_DrawTrackBorderDouble: QGFX_P_DrawTrackBorderDouble(window, el->i1, el->i2, el->i3); break; 
 case ENUM_GFX_V_DrawTrackBorderSingle: QGFX_V_DrawTrackBorderSingle(window, el->i1, el->i2, el->i3); break; 
@@ -271,26 +269,6 @@ void GFX_Text(
   el->i4 = y ; 
   el->i5 = width ; 
   el->i6 = flags ; 
-} 
-
-
-
-void GFX_DrawCursorPos(
-	struct Tracker_Windows* tvisual,
-	int fx, int fy, int fx2, int fy2,
-	int x, int y, int x2, int y2
-) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_DrawCursorPos ; 
-  el->i1 = fx ; 
-  el->i2 = fy ; 
-  el->i3 = fx2 ; 
-  el->i4 = fy2 ; 
-  el->i5 = x ; 
-  el->i6 = y ; 
-  el->i7 = x2 ; 
-  el->i8 = y2 ; 
 } 
 
 

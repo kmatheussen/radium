@@ -125,12 +125,6 @@ void GFX_Text_noborder(
 	int y
 ){return ;}
 
-void GFX_DrawCursorPos(
-	struct Tracker_Windows *tvisual,
-	int fx, int fy, int fx2, int fy2,
-	int x, int y, int x2, int y2
-){return ;}
-
 void GFX_DrawTrackBorder(
 	struct Tracker_Windows *tvisual,
 	int x, int y, int y2

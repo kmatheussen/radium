@@ -633,41 +633,6 @@ void QGFX_Text(
   draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
 }
 
-void QGFX_DrawCursorPos(
-	struct Tracker_Windows *tvisual,
-	int fx, int fy, int fx2, int fy2,
-	int x, int y, int x2, int y2
-){
-  //  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  //QPainter paint( mywidget );
-
-  //  paint.setRasterOp(Qt::AndROP);
-
-
-
-
-
-  //  QGFX_FilledBox(tvisual,2,fx,fy,fx2,fy2);
-  // QGFX_FilledBox(tvisual,0,x,y,x2,y2);
-
-  //  QGFX_C_DrawCursor(tvisual,fx,x,x2,fx2,tvisual->fontheight,fy);
-
-
-  /*
-  paint.fillRect(fx,fy,x-fx,fy2-fy+1,mywidget->colors[2]);
-  paint.fillRect(x2+1,fy,fx2-x2,fy2-fy+1,mywidget->colors[2]);
-  */
-  //  paint.fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[0]);
-
-  //  paint.setRasterOp(Qt::CopyROP);
-  /*
-	RectFill(tvisual->os_visual.window->RPort,(LONG)fx,(LONG)fy,(LONG)fx2,(LONG)fy2);
-	SetAPen(tvisual->os_visual.window->RPort,0);
-	SetWrMsk(tvisual->os_visual.window->RPort,2);
-	RectFill(tvisual->os_visual.window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
-	*/
-}
-
 static void Qt_BLine(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 

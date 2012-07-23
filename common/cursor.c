@@ -37,25 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 void SetCursorPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
-	//	NInt track=window->curr_track;
-	//	int subtrack=window->curr_track_sub;
 
 	Blt_markAll(window,LINENUMBTRACK,wblock->right_track,wblock->curr_realline,wblock->curr_realline);
-	/*
-	GFX_DrawCursorPos(
-		window,
-
-		wblock->a.x1,
-		GetCursorY1Pos(window,wblock),
-		wblock->a.x2,
-		GetCursorY2Pos(window,wblock),
-
-		GetXSubTrack_B1(wblock,track,subtrack),
-		GetCursorY1Pos(window,wblock),
-		GetXSubTrack_B2(wblock,track,subtrack),
-		GetCursorY2Pos(window,wblock)
-	);
-	*/
 }
 
 

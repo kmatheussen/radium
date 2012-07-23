@@ -761,29 +761,6 @@ void GFX_Text(
 }
 
 
-void GFX_DrawCursorPos(
-	struct Tracker_Windows *tvisual,
-	int fx, int fy, int fx2, int fy2,
-	int x, int y, int x2, int y2
-){
-/*
-	x+=tvisual->os_visual->xpluss;
-	x2+=tvisual->os_visual->xpluss;
-	y+=tvisual->os_visual->ypluss;
-	y2+=tvisual->os_visual->ypluss;
-	fx+=tvisual->os_visual->xpluss;
-	fx2+=tvisual->os_visual->xpluss;
-	fy+=tvisual->os_visual->ypluss;
-	fy2+=tvisual->os_visual->ypluss;
-
-	SetColor(tvisual->os_visual->window->RPort,2);
-	RectFill(tvisual->os_visual->window->RPort,(LONG)fx,(LONG)fy,(LONG)fx2,(LONG)fy2);
-	SetAPen(tvisual->os_visual->window->RPort,0);
-	RectFill(tvisual->os_visual->window->RPort,(LONG)x,(LONG)y,(LONG)x2,(LONG)y2);
-*/
-}
-
-
 void GFX_P_DrawTrackBorderDouble(
 	struct Tracker_Windows *tvisual,
 	int x, int y, int y2

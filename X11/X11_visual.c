@@ -599,13 +599,6 @@ F
 }
 
 
-void GFX_DrawCursorPos(
-	struct Tracker_Windows *tvisual,
-	int fx, int fy, int fx2, int fy2,
-	int x, int y, int x2, int y2
-){return ;}
-
-
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
 #if 0
   Window window=tvisual->os_visual->window;
