@@ -246,21 +246,21 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 }
 
 
-static void QGFX_bouncePoints(MyWidget *mywidget){
+static void OS_GFX_bouncePoints(MyWidget *mywidget){
   for(int lokke=0;lokke<8;lokke++){
     mywidget->qpixmap_painter->setPen(mywidget->colors[lokke]);
     mywidget->rpoints[lokke]->drawPoints(mywidget->qpixmap_painter);
   }
 }
 
-void QGFX_C2V_bitBlt(
+void OS_GFX_C2V_bitBlt(
 		    struct Tracker_Windows *window,
 		    int from_x1,int from_x2,
 		    int to_y
 		    ){
   MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
-  QGFX_bouncePoints(mywidget);
+  OS_GFX_bouncePoints(mywidget);
 
   DRAW_PIXMAP_ON_WIDGET(mywidget,
  	 from_x1,to_y,
@@ -276,14 +276,14 @@ void QGFX_C2V_bitBlt(
 
 
 /* window,x1,x2,x3,x4,height, y pixmap */
-void QGFX_C_DrawCursor(
+void OS_GFX_C_DrawCursor(
 				      struct Tracker_Windows *window,
 				      int x1,int x2,int x3,int x4,int height,
 				      int y_pixmap
 				      ){
   MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
-  QGFX_bouncePoints(mywidget);
+  OS_GFX_bouncePoints(mywidget);
 
   mywidget->cursorpixmap_painter->fillRect(x1,0,x4,height,mywidget->colors[7]);
   mywidget->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,mywidget->colors[1]);
@@ -304,7 +304,7 @@ void QGFX_C_DrawCursor(
 }
 
 
-void QGFX_P2V_bitBlt(
+void OS_GFX_P2V_bitBlt(
 		    struct Tracker_Windows *window,
 		    int from_x,int from_y,
 		    int to_x,int to_y,
@@ -313,7 +313,7 @@ void QGFX_P2V_bitBlt(
   
   MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
-  QGFX_bouncePoints(mywidget);
+  OS_GFX_bouncePoints(mywidget);
 
   DRAW_PIXMAP_ON_WIDGET(
                         mywidget,
@@ -324,7 +324,7 @@ void QGFX_P2V_bitBlt(
                         );
 
   /*
-  QGFX_C2V_bitBlt(
+  OS_GFX_C2V_bitBlt(
 		 window,
 		 from_x,width,
 		 (window->wblock->curr_realline-window->wblock->top_realline)*window->fontheight+window->wblock->t.y1
@@ -334,12 +334,12 @@ void QGFX_P2V_bitBlt(
 
 static void draw_filled_box(MyWidget *mywidget,QPainter *painter,int color,int x,int y,int x2,int y2);
 
-void QGFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   draw_filled_box(mywidget,mywidget->qpixmap_painter,color,x,y,x2,y2);
 }
 
-void QGFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
   mywidget->qpixmap_painter->drawRect(x,y,x2-x+1,y2-y+1);
@@ -470,7 +470,7 @@ static void draw_line_antialias(
 #undef rfpart_
 
 
-void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
   if(x!=x2 && y!=y2){
@@ -494,7 +494,7 @@ void QGFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
 
 }
 
-void QGFX_P_Point(
+void OS_GFX_P_Point(
 	struct Tracker_Windows *tvisual,
 	int color,
 	int x,int y
@@ -565,7 +565,7 @@ static void draw_text(struct Tracker_Windows *tvisual,
   }
 }                      
 
-void QGFX_P_Text(
+void OS_GFX_P_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
@@ -578,7 +578,7 @@ void QGFX_P_Text(
   draw_text(tvisual,mywidget->qpixmap_painter,color,text,x,y,width,flags);
 }
 
-void QGFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 //  QColor *qcolor=mywidget->colors[color];
@@ -590,7 +590,7 @@ void QGFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int 
 }
 
 
-void QGFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   mywidget->painter->setPen(mywidget->colors[color]);
   mywidget->painter->drawRect(x,y,x2-x+1,y2-y+1);
@@ -600,13 +600,13 @@ static void draw_filled_box(MyWidget *mywidget, QPainter *painter,int color,int 
   painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
 }
 
-void QGFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   draw_filled_box(mywidget,mywidget->painter,color,x,y,x2,y2);
 }
 
 
-void QGFX_Text(
+void OS_GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
@@ -641,7 +641,7 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
 #endif
 }
 
-void QGFX_P_Scroll(
+void OS_GFX_P_Scroll(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
 	int x,int y,
@@ -649,7 +649,7 @@ void QGFX_P_Scroll(
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
-  QGFX_bouncePoints(mywidget);
+  OS_GFX_bouncePoints(mywidget);
 
   DRAW_PIXMAP_ON_PIXMAP(
                         mywidget->qpixmap,

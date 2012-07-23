@@ -17,19 +17,19 @@ ENUM_GFX_P_Scroll,
 #endif 
 
 #ifdef OP_CASES 
-case ENUM_GFX_C2V_bitBlt: QGFX_C2V_bitBlt(window, el->i1, el->i2, el->i3); break; 
-case ENUM_GFX_C_DrawCursor: QGFX_C_DrawCursor(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_P2V_bitBlt: QGFX_P2V_bitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_P_FilledBox: QGFX_P_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Box: QGFX_P_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Line: QGFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Point: QGFX_P_Point(window, el->i1, el->i2, el->i3); break; 
-case ENUM_GFX_P_Text: QGFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_Line: QGFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_Box: QGFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_FilledBox: QGFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_Text: QGFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_P_Scroll: QGFX_P_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_C2V_bitBlt: OS_GFX_C2V_bitBlt(window, el->i1, el->i2, el->i3); break; 
+case ENUM_GFX_C_DrawCursor: OS_GFX_C_DrawCursor(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_P2V_bitBlt: OS_GFX_P2V_bitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_P_FilledBox: OS_GFX_P_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_P_Box: OS_GFX_P_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_P_Line: OS_GFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_P_Point: OS_GFX_P_Point(window, el->i1, el->i2, el->i3); break; 
+case ENUM_GFX_P_Text: OS_GFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_Line: OS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_FilledBox: OS_GFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_Text: OS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_P_Scroll: OS_GFX_P_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 #endif 
 
 #ifdef OP_FUNCS 

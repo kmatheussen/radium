@@ -172,7 +172,7 @@ void GFX_P_Scroll(
 (define (create-play-op-queue-case funcdef)
   (parse-c-proto funcdef
                  (lambda (rettype name args)
-                   (display (<-> "case ENUM_" name ": Q" name "(window"))
+                   (display (<-> "case ENUM_" name ": OS_" name "(window"))
                    (for-each (lambda (arg n)
                                (display (<-> ", el->" (get-element-slot-name (car arg) n))))
                              (cdr args)
@@ -220,7 +220,7 @@ void GFX_P_Scroll(
   (for-each (lambda (funcdef)
               (parse-c-proto funcdef
                              (lambda (rettype name args)
-                               (display (<-> "extern LANGSPEC " rettype " Q" name "("))
+                               (display (<-> "extern LANGSPEC " rettype " OS_" name "("))
                                (for-each (lambda (arg n)
                                            (if (> n 0)
                                                (display ","))
