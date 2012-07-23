@@ -426,7 +426,7 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   setFontValues(tvisual,mywidget->font);
 }
 
-void QGFX_bouncePoints(MyWidget *mywidget){
+static void QGFX_bouncePoints(MyWidget *mywidget){
   for(int lokke=0;lokke<8;lokke++){
     mywidget->qpixmap_painter->setPen(mywidget->colors[lokke]);
     mywidget->rpoints[lokke]->drawPoints(mywidget->qpixmap_painter);
@@ -700,10 +700,12 @@ void QGFX_P_Point(
 
   color=color>7?7:color<0?0:color;
 
+#if 1
   mywidget->rpoints[color]->addPoint(x,y);
-
-  //  paint.setPen(mywidget->colors[color>7?7:color<0?0:color]);
-  //  paint.drawPoint(x,y);
+#else
+  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  mywidget->qpixmap_painter->drawPoint(x,y);
+#endif
 }
 
 

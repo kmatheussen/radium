@@ -219,8 +219,8 @@ void DrawWTempoNodes(
 	  return;
 	}
 
-	within.x1=temponodearea->x;
-	within.x2=temponodearea->x2;
+	within.x1=temponodearea->x+1;
+	within.x2=temponodearea->x2-1;
 
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 	  within.y1=GetReallineY1Pos(window,wblock,lokke);
