@@ -22,8 +22,8 @@ case ENUM_GFX_C_DrawCursor: OS_GFX_C_DrawCursor(window, el->i1, el->i2, el->i3, 
 case ENUM_GFX_P2V_bitBlt: OS_GFX_P2V_bitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_P_FilledBox: OS_GFX_P_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_P_Box: OS_GFX_P_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Line: OS_GFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Point: OS_GFX_P_Point(window, el->i1, el->i2, el->i3); break; 
+case ENUM_GFX_P_Line: PREOS_GFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
+case ENUM_GFX_P_Point: OS_GFX_P_Point(window, el->i1, el->i2, el->i3, el->i4); break; 
 case ENUM_GFX_P_Text: OS_GFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_Line: OS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
@@ -127,13 +127,14 @@ void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int
 } 
 
 
-void GFX_P_Point(struct Tracker_Windows* tvisual,int color,int x,int y) 
+void GFX_P_Point(struct Tracker_Windows* tvisual,int color,int brightness,int x,int y) 
 { 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Point ; 
   el->i1 = color ; 
-  el->i2 = x ; 
-  el->i3 = y ; 
+  el->i2 = brightness ; 
+  el->i3 = x ; 
+  el->i4 = y ; 
 } 
 
 

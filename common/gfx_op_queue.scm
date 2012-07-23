@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	     (ice-9 rdelim)
 	     (ice-9 pretty-print))
 
+;; Functions which are called from the queue, but are not OS specific.
+(define pre-os-funcs '(GFX_P_Line))
+(define pre-os-includes '("gfx_lines_proc.h"))
 
 (define protos-in-one-string "
 
@@ -58,7 +61,7 @@ void GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int 
 
 
 void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-void GFX_P_Point(struct Tracker_Windows* tvisual,int color,int x,int y);
+void GFX_P_Point(struct Tracker_Windows* tvisual,int color,int brightness,int x,int y);
 
 void GFX_P_Text(
 	struct Tracker_Windows* tvisual,
@@ -168,11 +171,15 @@ void GFX_BitBlt(
 (define (create-gfx-funcs)
   (for-each create-gfx-func protos))
 
+(define (get-queue-func-name name)
+  (if (memq (string->symbol name) pre-os-funcs)
+      (<-> "PREOS_" name)
+      (<-> "OS_" name)))
 
 (define (create-play-op-queue-case funcdef)
   (parse-c-proto funcdef
                  (lambda (rettype name args)
-                   (display (<-> "case ENUM_" name ": OS_" name "(window"))
+                   (display (<-> "case ENUM_" name ": " (get-queue-func-name name) "(window"))
                    (for-each (lambda (arg n)
                                (display (<-> ", el->" (get-element-slot-name (car arg) n))))
                              (cdr args)
@@ -216,6 +223,10 @@ void GFX_BitBlt(
   (c-display "#ifndef VISUAL_OP_QUEUE_PROC_H")
   (c-display "#define VISUAL_OP_QUEUE_PROC_H")
   (newline)
+
+  (for-each (lambda (pre-os-include)
+              (c-display (<-> "#include \"" pre-os-include "\"")))
+            pre-os-includes)
 
   (for-each (lambda (funcdef)
               (parse-c-proto funcdef

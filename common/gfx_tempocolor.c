@@ -35,9 +35,9 @@ void WBLOCK_DrawLineTempoColor(
 				)
 {
 	GFX_P_Point(
-	       window,color1,
-	       x+(int)(mixfactor*width),
-	       y
+                    window,color1,256,
+                    x+(int)(mixfactor*width),
+                    y
 	);
 }
 
@@ -57,10 +57,10 @@ void WBLOCK_DrawMixedTempoColor(
   for(lokke=0;lokke<width;lokke++){
     //       printf("random: %f, max: %d\n",(rand()*1000/RAND_MAX,RAND_MAX);
     GFX_P_Point(
-	       window,(float)rand()/(float)RAND_MAX>mixfactor?color2:color1,
-	       x+lokke,
-	       y
-	       );
+                window,(float)rand()/(float)RAND_MAX>mixfactor?color2:color1,256,
+                x+lokke,
+                y
+                );
     
   }
 }

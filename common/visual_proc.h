@@ -89,7 +89,7 @@ extern LANGSPEC void GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,i
 
 
 extern LANGSPEC void GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
-extern LANGSPEC void GFX_P_Point(struct Tracker_Windows *tvisual,int color,int x,int y);
+extern LANGSPEC void GFX_P_Point(struct Tracker_Windows *tvisual,int color,int brightness,int x,int y); // brigtness is between 0 and 256. Used by aa lines.
 
 extern LANGSPEC int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text);
 extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width);
