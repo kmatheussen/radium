@@ -545,11 +545,21 @@ var rgbaSum = function(c1, c2){
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
   float a1 = how_much;
   float a2 = 1.0f-a1;
-  int r = c1.red()*a1 + c2.red()*a2;
-  int g = c1.green()*a1 + c2.green()*a2;
-  int b = c1.blue()*a1 + c2.blue()*a2;
 
-  return QColor(r,g,b);
+  if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
+    int r = 34*a1 + c2.red()*a2;
+    int g = 34*a1 + c2.green()*a2;
+    int b = 34*a1 + c2.blue()*a2;
+
+    return QColor(r,g,b);
+  }else{
+
+    int r = c1.red()*a1 + c2.red()*a2;
+    int g = c1.green()*a1 + c2.green()*a2;
+    int b = c1.blue()*a1 + c2.blue()*a2;
+
+    return QColor(r,g,b);
+  }
 }
 
 
@@ -565,7 +575,7 @@ static void plot(int x, int y, QPainter *painter, const QColor &background, cons
   painter->drawPoint(x,y);
 }
 
-#define ipart_(X) ((int)(X))
+#define ipart_(X) ((int)(X)) // Note, for negative numbers, floor must be used instead. (no negative numbers used here though)
 #define round_(X) ((int)(((double)(X))+0.5))
 #define fpart_(X) (((double)(X))-(double)ipart_(X))
 #define rfpart_(X) (1.0-fpart_(X)) 

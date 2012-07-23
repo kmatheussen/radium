@@ -113,6 +113,8 @@ typedef int32_t NInt;
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
+#define abs DONT_USE_ABS_ITS_JUST_TROUBLE
+
 
 /*********************************************************************
 	placement.h

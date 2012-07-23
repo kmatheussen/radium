@@ -284,7 +284,7 @@ void MyWidget::wheelEvent(QWheelEvent *qwheelevent){
   tevent.x=qwheelevent->x()-XOFFSET;
   tevent.y=qwheelevent->y()-YOFFSET;
 
-  for(int lokke=0;lokke<abs(qwheelevent->delta()/120);lokke++){
+  for(int lokke=0;lokke<R_ABS(qwheelevent->delta()/120);lokke++){
     EventReciever(&tevent,window);
   }
 

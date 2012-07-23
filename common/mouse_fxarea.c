@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include "nsmtracker.h"
 #include "common_proc.h"
 #include "area_proc.h"
@@ -177,7 +176,6 @@ void SetMouseActionFXarea(
 	struct FX *fx;
 	int subtrack;
 	int mintype=0;
-	float tempdist;
 	float mindist=-1.0f;
 	int realline;
 	float rel_y;
@@ -193,11 +191,13 @@ void SetMouseActionFXarea(
 	if(
 		action->action==TRE_VELLINESTART ||
 		action->action==TRE_VELLINEEND
-	)return;
+	)
+          return;
 
 	SetMouseActionFXNodes(window,action,wtrack,x,y,realline,click);
 
-	if(action->action!=NOACTION || 0==click) return;
+	if(action->action!=NOACTION || 0==click)
+          return;
 
 	y-=Common_oldGetReallineY1Pos(window,wblock,realline);
 	x-=wtrack->fxarea.x;
@@ -211,8 +211,8 @@ void SetMouseActionFXarea(
 		if(wfxnode->type==TRE_FXLINE){
 			if(wfxnode->y1<=rel_y && wfxnode->y2>=rel_y){
 				if(wfxnode->y2!=wfxnode->y1){
-					tempdist=rel_x-((rel_y-wfxnode->y1)*(wfxnode->x2-wfxnode->x1)/(wfxnode->y2-wfxnode->y1)+wfxnode->x1);
-					tempdist=abs(tempdist);
+					float tempdist=rel_x-((rel_y-wfxnode->y1)*(wfxnode->x2-wfxnode->x1)/(wfxnode->y2-wfxnode->y1)+wfxnode->x1);
+					tempdist=R_ABS(tempdist);
 					if(tempdist<mindist || mindist==-1.0f){
 						mindist=tempdist;
 						wfxnodemin=wfxnode;
@@ -231,8 +231,8 @@ void SetMouseActionFXarea(
 			if(element->type==TRE_VELLINE){
 				if(element->subtype==subtrack && element->y1<=rel_y && element->y2>=rel_y){
 					if(element->y2!=element->y1){
-						tempdist=rel_x-((rel_y-element->y1)*(element->x2-element->x1)/(element->y2-element->y1)+element->x1);
-						tempdist=abs(tempdist);
+						float tempdist=rel_x-((rel_y-element->y1)*(element->x2-element->x1)/(element->y2-element->y1)+element->x1);
+						tempdist=R_ABS(tempdist);
 						if(tempdist<mindist || mindist==-1.0f){
 							mindist=tempdist;
 							mintype=1;

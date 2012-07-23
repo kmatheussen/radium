@@ -195,7 +195,7 @@ Urgent
 * The Midi latency is noticable when editing. :-(
   (No, midi input latency is not noticable. Perhaps the keys are bound to key up instead of key down?)
 
-
+* Hitting right node/nodeline to edit must be fixed.
 
 
 Can not reproduce

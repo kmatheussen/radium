@@ -39,7 +39,7 @@ void Glissando(
 
 	if(note2==NULL) return;
 
-	notediff=abs(note2->note-note1->note);
+	notediff=R_ABS(note2->note-note1->note);
 	if(notediff==0 || notediff==1) return;
 
 	f1=GetfloatFromPlacement(&note1->l.p);
@@ -50,7 +50,7 @@ void Glissando(
 		if(notenote==note2->note) break;
 
 		f=f1+(
-				abs(note1->note-notenote)*(f2-f1)
+				R_ABS(note1->note-notenote)*(f2-f1)
 				/
 				notediff
 				);
