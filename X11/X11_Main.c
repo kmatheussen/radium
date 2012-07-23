@@ -301,7 +301,6 @@ int radium_main(char *arg){
 	case Expose:
 	  printf("Expose\n");
 	  //GFX_FilledBox(window,0,0,0,window->width,window->height);
-	  GFX_ClearWindow(window);
 	  //DrawUpTrackerWindow(root->song->tracker_windows);
 	  Resize_resized(window,window->width,window->height,false);
 	  //XFlush(x11_display);

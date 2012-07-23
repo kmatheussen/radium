@@ -28,7 +28,5 @@ extern LANGSPEC void QGFX_V_DrawTrackBorderDouble(struct Tracker_Windows* tvisua
 extern LANGSPEC void QGFX_Scroll(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_P_Scroll(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
 extern LANGSPEC void QGFX_ScrollDown(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 
-extern LANGSPEC void QGFX_P_ClearWindow(struct Tracker_Windows* tvisual); 
-extern LANGSPEC void QGFX_ClearWindow(struct Tracker_Windows* tvisual); 
 
 #endif 

@@ -177,10 +177,6 @@ extern LANGSPEC void GFX_ScrollDown(
 	int x2,int y2
 );
 
-extern LANGSPEC void GFX_P_ClearWindow(struct Tracker_Windows *tvisual);
-
-extern LANGSPEC void GFX_ClearWindow(struct Tracker_Windows *tvisual);
-
 extern LANGSPEC int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y);
 
 

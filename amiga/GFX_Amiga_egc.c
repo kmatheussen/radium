@@ -912,37 +912,6 @@ void GFX_P_Scroll(
 	);
 }
 
-void GFX_P_ClearWindow(struct Tracker_Windows *tvisual){
-	SetAPen(tvisual->os_visual->RPort,0);
-	RectFill(tvisual->os_visual->RPort,
-		(long)tvisual->os_visual->xpluss,
-		(long)tvisual->os_visual->ypluss,
-		(long)(tvisual->width+tvisual->os_visual->xpluss),
-		(long)(tvisual->height+tvisual->os_visual->ypluss)
-	);
-}
-
-void GFX_ClearWindow(struct Tracker_Windows *tvisual){
-
-	SetAPen(tvisual->os_visual->window->RPort,0);
-	RectFill(tvisual->os_visual->window->RPort,
-		(long)tvisual->os_visual->xpluss,
-		(long)tvisual->os_visual->ypluss,
-		(long)(tvisual->width+tvisual->os_visual->xpluss),
-		(long)(tvisual->height+tvisual->os_visual->ypluss)
-	);
-
-/*
-	SetAPen(tvisual->os_visual->RPort,0);
-	RectFill(tvisual->os_visual->RPort,
-		(long)tvisual->os_visual->xpluss,
-		(long)tvisual->os_visual->ypluss,
-		(long)(tvisual->width+tvisual->os_visual->xpluss),
-		(long)(tvisual->height+tvisual->os_visual->ypluss)
-	);
-*/ 
-}
-
 int GFX_IDCMP_NEWSIZE(struct Tracker_Windows *window){
 	if(window->os_visual->dowaitfor_IDCMP_NEWSIZE==1){
 		window->os_visual->dowaitfor_IDCMP_NEWSIZE=0;

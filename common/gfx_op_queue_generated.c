@@ -26,8 +26,6 @@ ENUM_GFX_V_DrawTrackBorderDouble,
 ENUM_GFX_Scroll, 
 ENUM_GFX_P_Scroll, 
 ENUM_GFX_ScrollDown, 
-ENUM_GFX_P_ClearWindow, 
-ENUM_GFX_ClearWindow, 
 #endif 
 
 #ifdef OP_CASES 
@@ -56,8 +54,6 @@ case ENUM_GFX_V_DrawTrackBorderDouble: QGFX_V_DrawTrackBorderDouble(window, el->
 case ENUM_GFX_Scroll: QGFX_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_P_Scroll: QGFX_P_Scroll(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_ScrollDown: QGFX_ScrollDown(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
-case ENUM_GFX_P_ClearWindow: QGFX_P_ClearWindow(window); break; 
-case ENUM_GFX_ClearWindow: QGFX_ClearWindow(window); break; 
 #endif 
 
 #ifdef OP_FUNCS 
@@ -176,11 +172,6 @@ void GFX_P_Text(
 	int flags
 	) 
 { 
-  if(flags & TEXT_CLIPRECT){
-    if(width==TEXT_IGNORE_WIDTH){
-      RError("width can not be TEXT_IGNORE_WIDTH when using the TEXT_CLIPRECT flag");
-    }
-  }
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Text ; 
   el->i1 = color ; 
@@ -446,22 +437,6 @@ void GFX_ScrollDown(
   el->i4 = y ; 
   el->i5 = x2 ; 
   el->i6 = y2 ; 
-} 
-
-
-
-void GFX_P_ClearWindow(struct Tracker_Windows* tvisual) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_ClearWindow ; 
-} 
-
-
-
-void GFX_ClearWindow(struct Tracker_Windows* tvisual) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_ClearWindow ; 
 } 
 
 #endif 

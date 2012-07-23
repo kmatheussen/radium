@@ -332,10 +332,6 @@ void QGFX_P2V_bitBlt(
   */
 }
 
-void QGFX_P_ClearWindow(struct Tracker_Windows *tvisual){
-  QGFX_P_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
-}
-
 static void draw_filled_box(MyWidget *mywidget,QPainter *painter,int color,int x,int y,int x2,int y2);
 
 void QGFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
@@ -854,23 +850,5 @@ void QGFX_ScrollDown(
 	int x,int y,
 	int x2,int y2
 ){return ;}
-
-
-void QGFX_ClearWindow(struct Tracker_Windows *tvisual){
-  RWarning("GFX_ClearWindow should not be called");
-#if 0
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  //mywidget->fill(mywidget->colors[0]);
-  QGFX_bouncePoints(mywidget);
-  //  QGFX_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
-  QGFX_P_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
-
-  //QGFX_FilledBox(tvisual,0,0,0,mywidget->width(), mywidget->height());
-
-  printf("cleared\n");
-#endif
-}
-
-
 
 

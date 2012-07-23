@@ -73,7 +73,7 @@ void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
 
 /*********************************************************************
   FUNCTION
-    Is ment to be called instead of GFX_ClearWindow to avoid flicker.
+    Is ment to be called instead of clearing all of the window, to avoid flicker.
 *********************************************************************/
 void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
   const int color = 0;
@@ -188,8 +188,7 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
     Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
-	GFX_P_ClearWindow(window);
-
+	GFX_P_FilledBox(window,0,0,0,window->width-1,window->height-1);
 	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,window->wblock);

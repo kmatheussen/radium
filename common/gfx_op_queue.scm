@@ -142,10 +142,6 @@ void GFX_ScrollDown(
 	int x,int y,
 	int x2,int y2
 );
-
-void GFX_P_ClearWindow(struct Tracker_Windows* tvisual);
-
-void GFX_ClearWindow(struct Tracker_Windows* tvisual);
 ")
 
 

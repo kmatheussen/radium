@@ -268,17 +268,6 @@ void GFX_P_bouncePoints(struct OS_visual *os_visual){
 }
 
 
-void GFX_P_ClearWindow(struct Tracker_Windows *tvisual){
-  GC gc=tvisual->os_visual->gcs[0];
-  Pixmap pixmap=tvisual->os_visual->pixmap;
-
-  GFX_P_bouncePoints(tvisual->os_visual);
-
-  XFillRectangle(x11_display, pixmap, gc, 0, 0, tvisual->width, tvisual->height);  
-}
-
-
-
 void GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   GC gc=tvisual->os_visual->gcs[X11_GetLegalColor(color)];
   Pixmap pixmap=tvisual->os_visual->pixmap;
@@ -701,11 +690,6 @@ void GFX_Scroll(
 F
 }
 
-
-
-void GFX_ClearWindow(struct Tracker_Windows *tvisual){
-  GFX_FilledBox(tvisual,0,0,0,tvisual->width,tvisual->height);
-}
 
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}

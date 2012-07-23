@@ -47,7 +47,7 @@ void SelectEditFont(
 
 	UpdateReallinesDependens(window,wblock);
 
-	GFX_ClearWindow(window);window->blt.clear_do=false;
+        window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
 
         printf("font: -%s-\n",font);
@@ -77,7 +77,7 @@ void SelectLeftSliderWidth(
 
 	UpdateAllWBlockCoordinates(window);
 
-	GFX_ClearWindow(window);window->blt.clear_do=false;
+        window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
 
         SETTINGS_write_int("left_slider_width",newwidth);
@@ -105,7 +105,7 @@ void SelectBottomSliderHeight(
 
 	UpdateAllWBlockCoordinates(window);
 
-	GFX_ClearWindow(window);window->blt.clear_do=false;
+        window->blt.clear_do=false;
 	DrawUpTrackerWindow(window);
 
         SETTINGS_write_int("bottom_slider_height",newwidth);
