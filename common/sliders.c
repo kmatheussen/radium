@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 *********************************************************/
 #define BottomSliderBox(a,b,c) \
 	GFX_FilledBox( \
-		window,a,b,y1,c,y2 \
+                      window,a,b,y1,c,y2,PAINT_DIRECTLY       \
 	)
 
 void UpdateBottomSlider(struct Tracker_Windows *window){
@@ -81,7 +81,8 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 		BottomSliderBox(0,lx,lx2);
 		//		BottomSliderBox(2,x,x2);
 		GFX_FilledBox( 
-                              window,2,x,y1+1,x2,y2-1
+                              window,2,x,y1+1,x2,y2-1,
+                              PAINT_DIRECTLY
                                );
 
 		window->bottomslider.lx=x;
@@ -91,11 +92,11 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 
 	if(lx<x) BottomSliderBox(0,lx,x-1);
 	else if(lx>x) // BottomSliderBox(2,x,lx-1);
-	  GFX_FilledBox(window,2,x,y1+1,lx-1,y2-1);
+	  GFX_FilledBox(window,2,x,y1+1,lx-1,y2-1,PAINT_DIRECTLY);
 
 	if(lx2>x2) BottomSliderBox(0,x2+1,lx2);
 	else if(lx2<x2) // BottomSliderBox(2,lx2+1,x2);
-	  GFX_FilledBox(window,2,lx2+1,y1+1,x2,y2-1);
+	  GFX_FilledBox(window,2,lx2+1,y1+1,x2,y2-1,PAINT_DIRECTLY);
 
 
 	window->bottomslider.lx=x;
@@ -119,7 +120,8 @@ void DrawBottomSlider(struct Tracker_Windows *window){
 		window->bottomslider.x,
 		window->height - window->bottomslider.width,
 		window->bottomslider.x2,
-		window->height-1
+		window->height-1,
+                PAINT_DIRECTLY
 	);
 
 	GFX_Box(
@@ -128,7 +130,8 @@ void DrawBottomSlider(struct Tracker_Windows *window){
 		window->bottomslider.x+1,
 		window->height - window->bottomslider.width+1,
 		window->bottomslider.x2-1,
-		window->height-2
+		window->height-2,
+                PAINT_DIRECTLY
 	);
 
 	y1=window->height - window->bottomslider.width + 2;
@@ -148,7 +151,8 @@ void DrawBottomSlider(struct Tracker_Windows *window){
 		window->bottomslider.lx,
 		y1,
 		window->bottomslider.lx2,
-		y2
+		y2,
+                PAINT_DIRECTLY
 	);
 
 	UpdateBottomSlider(window);
@@ -162,7 +166,7 @@ void DrawBottomSlider(struct Tracker_Windows *window){
     Updates the left slider. Call whenever necesarry.
 *********************************************************/
 
-#define LeftSliderBox(color,b,c) GFX_FilledBox(window,color,2,b,window->leftslider.width-2,c)
+#define LeftSliderBox(color,b,c) GFX_FilledBox(window,color,2,b,window->leftslider.width-2,c,PAINT_DIRECTLY)
 void UpdateLeftSlider(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 
@@ -213,7 +217,8 @@ void DrawLeftSlider(struct Tracker_Windows *window){
 		0,
 		window->leftslider.x,
 		window->leftslider.width,
-		window->leftslider.x2
+		window->leftslider.x2,
+                PAINT_DIRECTLY
 	);
 
 
@@ -226,7 +231,8 @@ void DrawLeftSlider(struct Tracker_Windows *window){
 		2,
 		window->leftslider.lx,
 		window->leftslider.width - 2,
-		window->leftslider.lx2
+		window->leftslider.lx2,
+                PAINT_DIRECTLY
 	);
 
 

@@ -23,16 +23,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-static void draw_text(
-                      struct Tracker_Windows *tvisual,
-                      int color,
-                      char *text,
-                      int x,
-                      int y,
-                      int width,
-                      int flags,
-                      bool is_pixmap
-                      )
+void PREOS_GFX_Text(
+                    struct Tracker_Windows *tvisual,
+                    int color,
+                    char *text,
+                    int x,
+                    int y,
+                    int width,
+                    int flags,
+                    int where
+                    )
 {
 
   // Cliprect on
@@ -42,68 +42,27 @@ static void draw_text(
     }else{
       if(width<=0)
         return;
-      if(is_pixmap)
-        OS_GFX_P_SetClipRect(tvisual,x,y,x+width,y+(tvisual->fontheight+20));
-      else
-        OS_GFX_SetClipRect(tvisual,x,y,x+width,y+(tvisual->fontheight+20));
+      OS_GFX_SetClipRect(tvisual,x,y,x+width,y+(tvisual->fontheight+20),where);
     }
   }
 
 
   // Fill background color
   if(flags & TEXT_INVERT){
-    if(is_pixmap)
-      OS_GFX_P_FilledBox(tvisual,color,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-    else
-      OS_GFX_FilledBox(tvisual,color,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
+    OS_GFX_FilledBox(tvisual,color,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight,where);
   }else if(flags & TEXT_CLEAR){
-    if(is_pixmap)
-      OS_GFX_P_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-    else
-      OS_GFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
+    OS_GFX_FilledBox(tvisual,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight,where);
   }
 
   // Draw text
   {
     int text_color = (flags & TEXT_INVERT) ? 0 : color;
-    if(is_pixmap)
-      OS_GFX_P_Text(tvisual,text_color,text,x,y,width,flags);
-    else
-      OS_GFX_Text(tvisual,text_color,text,x,y,width,flags);
+    OS_GFX_Text(tvisual,text_color,text,x,y,width,flags,where);
   }
 
   // Cliprect off
-  if(flags & TEXT_CLIPRECT){
-    if(is_pixmap)
-      OS_GFX_P_CancelClipRect(tvisual);
-    else
-      OS_GFX_CancelClipRect(tvisual);
-  }
+  if(flags & TEXT_CLIPRECT)
+    OS_GFX_CancelClipRect(tvisual,where);
 
 }
 
-void PREOS_GFX_Text(
-                    struct Tracker_Windows *tvisual,
-                    int color,
-                    char *text,
-                    int x,
-                    int y,
-                    int width,
-                    int flags
-                    )
-{
-  draw_text(tvisual,color,text,x,y,width,flags,false);
-}
-
-void PREOS_GFX_P_Text(
-                      struct Tracker_Windows *tvisual,
-                      int color,
-                      char *text,
-                      int x,
-                      int y,
-                      int width,
-                      int flags
-                      )
-{
-  draw_text(tvisual,color,text,x,y,width,flags,true);
-}

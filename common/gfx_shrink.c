@@ -64,11 +64,13 @@ void GFXS_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				int color,
-				int x,int y,int x2,int y2
+				int x,int y,int x2,int y2,
+                                int where
 				),
 	     struct Tracker_Windows *window,
 	     int color,
-	     int x,int y,int x2,int y2
+	     int x,int y,int x2,int y2,
+             int where
 	     )
 {
   int maxx=window->wblock->t.x2;
@@ -98,7 +100,7 @@ void GFXS_LineType(
     return;
   }
 
-  (*GFX_OSFunc)(window,color,x,y,x2,y2);
+  (*GFX_OSFunc)(window,color,x,y,x2,y2,where);
 
 
 }
@@ -108,11 +110,13 @@ void GFXS_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				int color,
-				int x,int y,int x2,int y2
+				int x,int y,int x2,int y2,
+                                int where
 				),
 	     struct Tracker_Windows *window,
 	     int color,
-	     int x,int y,int x2,int y2
+	     int x,int y,int x2,int y2,
+             int where
 	     )
 {
   int maxx=window->wblock->t.x2;
@@ -126,7 +130,7 @@ void GFXS_BoxType(
     return;
   }
 
-  (*GFX_OSFunc)(window,color,x,y,R_MIN(x2,maxx),y2);
+  (*GFX_OSFunc)(window,color,x,y,R_MIN(x2,maxx),y2,where);
 
 }
 
@@ -137,13 +141,15 @@ void GFXS_TextType(
 				int color,char *text,
 				int x,int y,
                                 int width,
-                                int flags
+                                int flags,
+                                int where
 				),
 	     struct Tracker_Windows *window,
 	     int color,char *text,
 	     int x,int y,
              int width,
-             int flags
+             int flags,
+             int where
 	     )
 {
   if(flags & TEXT_NOTEXT){
@@ -165,7 +171,7 @@ void GFXS_TextType(
       return;
     }
     
-    (*GFX_OSFunc)(window,color,text,x,y,width,flags);
+    (*GFX_OSFunc)(window,color,text,x,y,width,flags,where);
     
   }else{
 
@@ -199,18 +205,20 @@ void GFXS_TextType(
       return;
     }
 
-    (*GFX_OSFunc)(window,color,text,x,y,width,flags);
+    (*GFX_OSFunc)(window,color,text,x,y,width,flags,where);
   }
 }
 
 
 void GFXS_BorderType(
 		     void (*GFX_P_OSFunc)(
-							 struct Tracker_Windows *window,
-							 int x, int y, int y2
-							 ),
+                                          struct Tracker_Windows *window,
+                                          int x, int y, int y2,
+                                          int where
+                                          ),
 		     struct Tracker_Windows *window,
-		     int x, int y, int y2
+		     int x, int y, int y2,
+                     int where
 		     )
 {
   int maxx=window->wblock->t.x2;
@@ -220,16 +228,18 @@ void GFXS_BorderType(
   if(GFXS_EnsureBoundaries(window,"GFXS_BorderType",x,y,x,y2)==false){
     return;
   }
-  (*GFX_P_OSFunc)(window,x,y,y2);
+  (*GFX_P_OSFunc)(window,x,y,y2,where);
 }
 
 void GFXS_BorderType2(
 		     void (*GFX_P_OSFunc)(
-							 struct Tracker_Windows *window,
-							 int x, int y, int y2
-							 ),
+                                          struct Tracker_Windows *window,
+                                          int x, int y, int y2,
+                                          int where
+                                          ),
 		     struct Tracker_Windows *window,
-		     int x, int y, int y2
+		     int x, int y, int y2,
+                     int where
 		     )
 {
 
@@ -240,7 +250,7 @@ void GFXS_BorderType2(
   if(GFXS_EnsureBoundaries(window,"GFXS_BorderType",x,y,x+1,y2)==false){
     return;
   }
-  (*GFX_P_OSFunc)(window,x,y,y2);
+  (*GFX_P_OSFunc)(window,x,y,y2,where);
 }
 
 

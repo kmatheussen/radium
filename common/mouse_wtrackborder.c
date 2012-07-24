@@ -94,7 +94,7 @@ int MoveWTrackBorder_Mouse(
 	
 	wtrack2=ListLast1(&wblock->wtracks->l);
 	if(wtrack2->fxarea.x2<wblock->a.x2){
-	  GFX_P_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->a.y1,wblock->a.x2,wblock->t.y2);
+	  GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->a.y1,wblock->a.x2,wblock->t.y2,PAINT_BUFFER);
 	}
 
 	UpdateBottomSlider(window);

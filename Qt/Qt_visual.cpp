@@ -82,25 +82,17 @@ MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *
   this->setFrameStyle(QFrame::Sunken );
   this->setFrameShape(QFrame::Panel);
   this->setLineWidth(2);
-
 }
 
 MyWidget::~MyWidget()
 {
 }
 
-static QMainWindow *g_main_window = NULL;;
-static MyWidget *g_mywidget = NULL;
 
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
-  QFont font = QFont("Monospace");
-
-  char *fontstring = SETTINGS_read_string((char*)"font",NULL);
-  if(fontstring!=NULL)
-    font.fromString(fontstring);
-
-  setFontValues(tvisual, font);
+  static QMainWindow *g_main_window = NULL;;
+  static MyWidget *g_mywidget = NULL;
 
   if(g_main_window!=NULL){
     tvisual->os_visual.main_window = g_main_window;
@@ -109,13 +101,13 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
     tvisual->width=g_mywidget->get_editor_width();
     tvisual->height=g_mywidget->get_editor_height();
     
-    //g_mywidget->qpixmap=new QPixmap(g_mywidget->width(),mywidget->height());
-    //g_mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
-
     g_mywidget->window = tvisual;
+
+    setFontValues(tvisual, g_mywidget->font);
 
     return 0;
   }
+
 
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
   QMainWindow *main_window = new QMainWindow(NULL, "Radium");
@@ -157,13 +149,22 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
     status_bar->addWidget(mywidget->status_label, 1, true);
   }
 
-  // helvetica
-  mywidget->font = font;
-
-  //mywidget->font->setStyleHint(QFont::TypeWriter);
-  //mywidget->font->setFixedPitch(false);
-
   initMenues(main_window->menuBar());
+
+  {
+    QFont font = QFont("Monospace");
+
+    char *fontstring = SETTINGS_read_string((char*)"font",NULL);
+    if(fontstring!=NULL)
+      font.fromString(fontstring);
+
+    setFontValues(tvisual, font);
+
+    mywidget->font = font;
+
+    //mywidget->font->setStyleHint(QFont::TypeWriter);
+    //mywidget->font->setFixedPitch(false);
+  }
 
  if(tvisual->height==0 || tvisual->width==0){
     tvisual->x=0;
@@ -178,16 +179,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 #ifdef USE_QT3
   mywidget->qpixmap->setOptimization(QPixmap::BestOptim);
 #endif
-  mywidget->qpixmap->fill( mywidget->colors[0] );		/* grey background */
 
   mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
 #ifdef USE_QT3
   mywidget->cursorpixmap->setOptimization(QPixmap::BestOptim);
 #endif
-  mywidget->cursorpixmap->fill( mywidget->colors[7] );		/* the xored background color for the cursor.*/
 
-  //BS_SetX11Window((int)main_window->x11AppRootWindow());
-  //X11_MidiProperties_SetX11Window((int)main_window->x11AppRootWindow());
 
   g_main_window = main_window;
   g_mywidget = mywidget;
@@ -221,7 +218,8 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
-  g_main_window->setCaption(title);
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCaption(title);
 }
 
 void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
@@ -311,36 +309,23 @@ void OS_GFX_P2V_bitBlt(
   */
 }
 
-static void draw_filled_box(MyWidget *mywidget, QPainter *painter,int color,int x,int y,int x2,int y2){
-  painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+#define GET_QPAINTER(mywidget,where) (where==PAINT_DIRECTLY ? mywidget->painter : mywidget->qpixmap_painter)
+
+void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  GET_QPAINTER(mywidget,where)->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
 }
 
-void OS_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  draw_filled_box(mywidget,mywidget->qpixmap_painter,color,x,y,x2,y2);
+  GET_QPAINTER(mywidget,where)->setPen(mywidget->colors[color]);
+  GET_QPAINTER(mywidget,where)->drawRect(x,y,x2-x+1,y2-y+1);
 }
 
-void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  draw_filled_box(mywidget,mywidget->painter,color,x,y,x2,y2);
-}
-
-void OS_GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->qpixmap_painter->drawRect(x,y,x2-x+1,y2-y+1);
-}
-
-void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->painter->setPen(mywidget->colors[color]);
-  mywidget->painter->drawRect(x,y,x2-x+1,y2-y+1);
-}
-
-void OS_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
+  GET_QPAINTER(mywidget,where)->setPen(mywidget->colors[color]);
 
 #if 0
   QPen pen(mywidget->colors[color],4,Qt::SolidLine);  
@@ -349,24 +334,12 @@ void OS_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,
   mywidget->qpixmap_painter->setPen(pen);
 #endif
 
-  mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
+  GET_QPAINTER(mywidget,where)->drawLine(x,y,x2,y2);
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
 
-void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-//  QColor *qcolor=mywidget->colors[color];
-
-  mywidget->painter->setPen(mywidget->colors[color]);
-  mywidget->painter->drawLine(x,y,x2,y2);
-//  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
-  
-}
-
-
-
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+
   float a1 = how_much;
   float a2 = 1.0f-a1;
 
@@ -387,35 +360,36 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 }
 
 
-void OS_GFX_P_Point(
+void OS_GFX_Point(
 	struct Tracker_Windows *tvisual,
 	int color,
         int brightness,
-	int x,int y
+	int x,int y,
+        int where
 	)
 {
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  QPainter *painter=mywidget->qpixmap_painter;
 
   if(brightness==MAX_BRIGHTNESS && color!=1){
-    painter->setPen(mywidget->colors[color]);
+    GET_QPAINTER(mywidget,where)->setPen(mywidget->colors[color]);
   }else{
-    painter->setPen(mix_colors(mywidget->colors[color], mywidget->colors[0], brightness/(float)MAX_BRIGHTNESS));
+    GET_QPAINTER(mywidget,where)->setPen(mix_colors(mywidget->colors[color], mywidget->colors[0], brightness/(float)MAX_BRIGHTNESS));
   }
 
-  painter->drawPoint(x,y);
+  GET_QPAINTER(mywidget,where)->drawPoint(x,y);
 }
 
-void OS_GFX_P_Points(
-                     struct Tracker_Windows *tvisual,
-                     int color,
-                     int brightness,
-                     int num_points,
-                     uint16_t *x,uint16_t *y
-                     )
+void OS_GFX_Points(
+                   struct Tracker_Windows *tvisual,
+                   int color,
+                   int brightness,
+                   int num_points,
+                   uint16_t *x,uint16_t *y,
+                   int where
+                   )
 {
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  QPainter *painter=mywidget->qpixmap_painter;
+  QPainter *painter=GET_QPAINTER(mywidget,where);
 
   if(brightness==MAX_BRIGHTNESS && color!=1){
     painter->setPen(mywidget->colors[color]);
@@ -433,50 +407,37 @@ void OS_GFX_P_Points(
 }
 
 
-void OS_GFX_P_SetClipRect(
-                          struct Tracker_Windows *tvisual,
-                          int x,int y,
-                          int x2,int y2
-                          )
-{
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->qpixmap_painter->setClipRect(x,y,x2-x,y2-y);
-  mywidget->qpixmap_painter->setClipping(true);
-}
-
-void OS_GFX_P_CancelClipRect(struct Tracker_Windows *tvisual){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->qpixmap_painter->setClipping(false);
-}
-
-
 void OS_GFX_SetClipRect(
                         struct Tracker_Windows *tvisual,
                         int x,int y,
-                        int x2,int y2
+                        int x2,int y2,
+                        int where
                         )
 {
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->painter->setClipRect(x,y,x2-x,y2-y);
-  mywidget->painter->setClipping(true);
+  QPainter *painter=GET_QPAINTER(mywidget,where);
+  painter->setClipRect(x,y,x2-x,y2-y);
+  painter->setClipping(true);
 }
 
-void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual){
+void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual,int where){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->painter->setClipping(false);
+  QPainter *painter=GET_QPAINTER(mywidget,where);
+  painter->setClipping(false);
 }
 
-
-static void draw_text(struct Tracker_Windows *tvisual,
-                      QPainter *painter,
-                      int color,
-                      char *text,
-                      int x,
-                      int y,
-                      int width,
-                      int flags
+void OS_GFX_Text(
+                 struct Tracker_Windows *tvisual,
+                 int color,
+                 char *text,
+                 int x,
+                 int y,
+                 int width,
+                 int flags,
+                 int where
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  QPainter *painter=GET_QPAINTER(mywidget,where);
 
   painter->setPen(mywidget->colors[color]);
     
@@ -497,32 +458,6 @@ static void draw_text(struct Tracker_Windows *tvisual,
     painter->setFont(mywidget->font);
   }
 }                      
-
-void OS_GFX_P_Text(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-        int width,
-	int flags
-){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  draw_text(tvisual,mywidget->qpixmap_painter,color,text,x,y,width,flags);
-}
-
-void OS_GFX_Text(
-	struct Tracker_Windows *tvisual,
-	int color,
-	char *text,
-	int x,
-	int y,
-        int width,
-        int flags
-){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
-}
 
 void OS_GFX_BitBlt(
 	struct Tracker_Windows *tvisual,

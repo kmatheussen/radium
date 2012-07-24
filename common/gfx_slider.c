@@ -49,20 +49,21 @@ void DrawSlider(
 	}
 
 	if(t){
-	GFX_P_T_Box(
+	GFX_T_Box(
 		window,1,
 		box->x1,box->y1,
-		box->x2,box->y2
+		box->x2,box->y2,
+                PAINT_BUFFER
 	);
 
 	if(!onoff){
-		GFX_P_T_FilledBox(
+		GFX_T_FilledBox(
 			window,0,
 			box->x1+1,y1,
-			box->x2-1,y2
-
+			box->x2-1,y2,
+                        PAINT_BUFFER
 		);
-		GFX_P_T_FilledBox(
+		GFX_T_FilledBox(
 			window,3,
 			R_BOUNDARIES(
 				box->x1+1,
@@ -75,9 +76,10 @@ void DrawSlider(
 				box->x1+((box->x2-box->x1)*val/max)+3,
 				box->x2-1
 			),
-			y2
+			y2,
+                        PAINT_BUFFER
 		);
-		GFX_P_T_FilledBox(
+		GFX_T_FilledBox(
 			window,1,
 			R_BOUNDARIES(
 				box->x1+1,
@@ -90,19 +92,20 @@ void DrawSlider(
 				box->x1+((box->x2-box->x1)*val/max),
 				box->x2-1
 			),
-			y2
+			y2,
+                        PAINT_BUFFER
 		);
 		return;
 	}
 
-	GFX_P_T_FilledBox(
+	GFX_T_FilledBox(
 		window,2,
 		box->x1+1,y1,
-		box->x2-1,y2
-
+		box->x2-1,y2,
+                PAINT_BUFFER
 	);
 
-	GFX_P_T_FilledBox(
+	GFX_T_FilledBox(
 		window,3,
 		R_BOUNDARIES(
 			box->x1+1,
@@ -115,10 +118,11 @@ void DrawSlider(
 			box->x1+((box->x2-box->x1)*val/max)+9,
 			box->x2-1
 		),
-		y2
+		y2,
+                PAINT_BUFFER
 	);
 
-	GFX_P_T_FilledBox(
+	GFX_T_FilledBox(
 		window,1,
 		R_BOUNDARIES(
 			box->x1+1,
@@ -131,10 +135,11 @@ void DrawSlider(
 			box->x1+((box->x2-box->x1)*val/max)+3,
 			box->x2-1
 		),
-		y2
+		y2,
+                PAINT_BUFFER
 	);
 
-	GFX_P_T_FilledBox(
+	GFX_T_FilledBox(
 		window,2,
 		R_BOUNDARIES(
 			box->x1+1,
@@ -147,20 +152,23 @@ void DrawSlider(
 			box->x1+((box->x2-box->x1)*val/max),
 			box->x2-1
 		),
-		y2
-	);
+		y2,
+                PAINT_BUFFER
+                          );
 	}else{
 	GFX_Box(
 		window,1,
 		box->x1,box->y1,
-		box->x2,box->y2
+		box->x2,box->y2,
+                PAINT_DIRECTLY
 	);
 
 	if(!onoff){
 		GFX_FilledBox(
 			window,0,
 			box->x1+1,y1,
-			box->x2-1,y2
+			box->x2-1,y2,
+                        PAINT_DIRECTLY
 
 		);
 		GFX_FilledBox(
@@ -176,7 +184,8 @@ void DrawSlider(
 				box->x1+((box->x2-box->x1)*val/max)+3,
 				box->x2-1
 			),
-			y2
+			y2,
+                        PAINT_DIRECTLY
 		);
 		GFX_FilledBox(
 			window,1,
@@ -191,7 +200,8 @@ void DrawSlider(
 				box->x1+((box->x2-box->x1)*val/max),
 				box->x2-1
 			),
-			y2
+			y2,
+                        PAINT_DIRECTLY
 		);
 		return;
 	}
@@ -199,7 +209,8 @@ void DrawSlider(
 	GFX_FilledBox(
 		window,2,
 		box->x1+1,y1,
-		box->x2-1,y2
+		box->x2-1,y2,
+                PAINT_DIRECTLY
 
 	);
 
@@ -216,7 +227,8 @@ void DrawSlider(
 			box->x1+((box->x2-box->x1)*val/max)+9,
 			box->x2-1
 		),
-		y2
+		y2,
+                PAINT_DIRECTLY
 	);
 
 	GFX_FilledBox(
@@ -232,7 +244,8 @@ void DrawSlider(
 			box->x1+((box->x2-box->x1)*val/max)+3,
 			box->x2-1
 		),
-		y2
+		y2,
+                PAINT_DIRECTLY
 	);
 
 	GFX_FilledBox(
@@ -248,7 +261,8 @@ void DrawSlider(
 			box->x1+((box->x2-box->x1)*val/max),
 			box->x2-1
 		),
-		y2
+		y2,
+                PAINT_DIRECTLY
 	);
 	}
 }

@@ -381,7 +381,8 @@ void Blt_clearNotUsedVisible(struct Tracker_Windows *window){
 		  blt->v_x1,
 		  blt->v_y1,
 		  blt->v_x2,
-		  v_y1-1
+		  v_y1-1,
+                  PAINT_DIRECTLY
 		  );
   }
 
@@ -396,7 +397,8 @@ void Blt_clearNotUsedVisible(struct Tracker_Windows *window){
 		  v_x2+1,
 		  blt->v_y1,
 		  blt->v_x2,
-		  blt->v_y2
+		  blt->v_y2,
+                  PAINT_DIRECTLY
 		  );
   }
 
@@ -407,7 +409,8 @@ void Blt_clearNotUsedVisible(struct Tracker_Windows *window){
 		  blt->v_x1,
 		  v_y2+1,
 		  blt->v_x2,
-		  blt->v_y2
+		  blt->v_y2,
+                  PAINT_DIRECTLY
 		  );
   }
   blt->clear_do=false;

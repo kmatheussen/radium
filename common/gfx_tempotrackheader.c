@@ -53,30 +53,35 @@ void UpdateTempoTrackHeader_reltempo(
 		);
 	}
 
-	GFX_P_FilledBox(
+	GFX_FilledBox(
 		window,0,
 		wblock->temponodearea.x+1,
 		wblock->a.y1,
 		wblock->temponodearea.x2,
-		wblock->t.y1-2
+		wblock->t.y1-2,
+                PAINT_BUFFER
 	);
 
-	GFX_P_Text(
+	GFX_Text(
 		window,color,temp,
 		wblock->temponodearea.x+1,
 		wblock->a.y1+window->org_fontheight,
-                width,TEXT_CLIPRECT
+                width,
+                TEXT_CLIPRECT,
+                PAINT_BUFFER
 	);
 
-	GFX_P_Text(
+	GFX_Text(
                    window,1,name,
                    wblock->temponodearea.x+1,
                    wblock->a.y1,
-                   width,TEXT_CLIPRECT
+                   width,
+                   TEXT_CLIPRECT,
+                   PAINT_BUFFER
 	);
 
-	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1);
-	GFX_P_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1);
+	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1,PAINT_DIRECTLY);
+	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1,PAINT_BUFFER);
 
 	Blt_marktrackheader(window,TEMPONODETRACK,TEMPONODETRACK);
 }
@@ -94,14 +99,17 @@ void UpdateTempoTrackHeader_LPB(
 		wblock->lpbTypearea.x+1,
 		wblock->a.y1,
 		wblock->lpbTypearea.x2,
-		wblock->t.y1-2
+		wblock->t.y1-2,
+                PAINT_DIRECTLY
 	);
 
 	GFX_Text(
 		window,1,"LPB",
 		wblock->lpbTypearea.x+1,
 		wblock->a.y1,
-                width,TEXT_NOFLAGS
+                width,
+                TEXT_NOFLAGS,
+                PAINT_DIRECTLY
 	);
 
 	sprintf(temp,"%3d",root->lpb);
@@ -109,9 +117,11 @@ void UpdateTempoTrackHeader_LPB(
 		window,color,temp,
 		wblock->lpbTypearea.x+1,
 		wblock->a.y1+window->org_fontheight,
-                width,TEXT_NOFLAGS
+                width,
+                TEXT_NOFLAGS,
+                PAINT_DIRECTLY
 	);
-//	GFX_Line(window,1,wblock->lpbTypearea.x+1,wblock->t.y1-1,wblock->lpbTypearea.x2+1,wblock->t.y1-1);
+//	GFX_Line(window,1,wblock->lpbTypearea.x+1,wblock->t.y1-1,wblock->lpbTypearea.x2+1,wblock->t.y1-1,PAINT_DIRECTLY);
 }
 
 
@@ -129,14 +139,17 @@ void UpdateTempoTrackHeader_BPM(
 		wblock->a.y1,
 		wblock->tempoarea.x2+3,
 		//wblock->temponodearea.x2+3,
-		wblock->t.y1-2
+		wblock->t.y1-2,
+                PAINT_DIRECTLY
 	);
 
 	GFX_Text(
 		window,1,"BPM",
 		wblock->tempoTypearea.x+1,
 		wblock->a.y1,
-                width,TEXT_NOFLAGS
+                width,
+                TEXT_NOFLAGS,
+                PAINT_DIRECTLY
 	);
 
 	sprintf(temp,"%3d",root->tempo);
@@ -144,7 +157,9 @@ void UpdateTempoTrackHeader_BPM(
 		window,2,temp,
 		wblock->tempoTypearea.x+1,
 		wblock->a.y1+window->org_fontheight,
-                width,TEXT_NOFLAGS
+                width,
+                TEXT_NOFLAGS,
+                PAINT_DIRECTLY
 	);
 }
 
@@ -174,7 +189,8 @@ void DrawTempoTrackHeader(
 		wblock->a.y1,
 		wblock->tempoarea.x2+3,
 		//wblock->temponodearea.x2+3,
-		wblock->t.y1-2
+		wblock->t.y1-2,
+                PAINT_DIRECTLY
 	);
 
 	UpdateTempoTrackHeader_LPB(window,wblock,2);

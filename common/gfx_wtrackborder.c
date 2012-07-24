@@ -20,18 +20,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 
 
-void GFX_P_DrawTrackBorderDouble(
-                                 struct Tracker_Windows *window,
-                                 int x, int y, int y2
-                                 )
+void GFX_DrawTrackBorderDouble(
+                               struct Tracker_Windows *window,
+                               int x, int y, int y2,
+                               int where
+                               )
 {
-  QUEUE_GFX_P_Line(window,1,x,y,x,y2);
-  QUEUE_GFX_P_Line(window,2,x+1,y,x+1,y2);
+  QUEUE_GFX_Line(window,1,x,y,x,y2,where);
+  QUEUE_GFX_Line(window,2,x+1,y,x+1,y2,where);
 }
 
-void GFX_P_DrawTrackBorderSingle(
-                                 struct Tracker_Windows *tvisual,
-                                 int x, int y, int y2
+void GFX_DrawTrackBorderSingle(
+                               struct Tracker_Windows *tvisual,
+                               int x, int y, int y2,
+                               int where
 ){
-  QUEUE_GFX_P_Line(tvisual,2,x,y,x,y2);
+  QUEUE_GFX_Line(tvisual,2,x,y,x,y2,where);
 }

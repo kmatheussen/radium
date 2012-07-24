@@ -68,12 +68,13 @@ void ClearTrack(
 	}
 
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
-	  GFX_P_T_FilledBox(
+	  GFX_T_FilledBox(
 			  window,Col[0],
 			  R_MAX(wtrack->notearea.x,wblock->temponodearea.x2+2),
 			  GetReallineY1Pos(window,wblock,lokke),
 			  R_MIN(wtrack->fxarea.x2,wblock->a.x2),
-			  GetReallineY2Pos(window,wblock,lokke)
+			  GetReallineY2Pos(window,wblock,lokke),
+                          PAINT_BUFFER
 			  );
 	}
 	//	SetCursorPos(window);
@@ -92,27 +93,30 @@ void WTRACK_DrawTrackBorders(
   int y2=GetReallineY2Pos(window,wblock,realline);
 
   if(wtrack->x2>wblock->temponodearea.x2+3 && wtrack->x2+2<wblock->a.x2)
-    GFX_P_T_DrawTrackBorderDouble(
+    GFX_T_DrawTrackBorderDouble(
 				window,
 				wtrack->x2+1,
 				y1,
-				y2
+				y2,
+                                PAINT_BUFFER
 				);
 
   if(wtrack->notearea.x2>wblock->temponodearea.x2 && wtrack->notearea.x2+1<wblock->a.x2)
-    GFX_P_T_DrawTrackBorderSingle(
+    GFX_T_DrawTrackBorderSingle(
 				window,
 				wtrack->notearea.x2+1,
 				y1,
-				y2
+				y2,
+                                PAINT_BUFFER
 				);
 
   for(lokke=start_subtrack>0 ? start_subtrack : 1;lokke<=end_subtrack;lokke++){
-    GFX_P_T_DrawTrackBorderSingle(
+    GFX_T_DrawTrackBorderSingle(
 				window,
 				GetXSubTrack1(wtrack,lokke)-1,
 				y1,
-				y2
+				y2,
+                                PAINT_BUFFER
 				);
   }
 }
@@ -315,12 +319,13 @@ void UpdateWTrack(
 				case TRE_THISNOTELINES:
 				  //					if(start_subtrack<=0)
 					if(wtrack->noteshowtype==TEXTTYPE){
-						GFX_P_T_Line(
+						GFX_T_Line(
 							window,Col[3],
 							(int)(wtrack->fxarea.x+element->x1),
 							(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
 							R_MIN(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
-							(int)(within2.y1+(element->y2*(within2.y2-within2.y1)))
+							(int)(within2.y1+(element->y2*(within2.y2-within2.y1))),
+                                                        PAINT_BUFFER
 						);
 					}
 					break;
@@ -329,67 +334,70 @@ void UpdateWTrack(
 #define  dasize (int)GetNodeSize(window)
 					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
 #if USE_TRIANGLE 
-                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1);
-                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1);
-                                        GFX_P_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1);
+                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_BUFFER);
+                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_BUFFER);
+                                        GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
 #else
-                                        //GFX_P_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2);
-					GFX_P_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2);
-					//GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+                                        //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
+					GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+					//GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
 					break;
 				case TRE_VELLINESTART:
 					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
 #if USE_TRIANGLE
-                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2);
-                                        GFX_P_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2);
-                                        GFX_P_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2);
+                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_BUFFER);
+                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
+                                        GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
 #else
-					GFX_P_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2);
-					//GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+					GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+					//GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
 					break;
 				case TRE_VELLINENODE:
 					GetNodeBox(window,element,&warea2,&within2,&get);
-					GFX_P_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2);
-					//GFX_P_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1);
+					GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+					//GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 					break;
 				case TRE_VELLINE:
 				  if(wtrack->noteshowtype!=TEXTTYPE){
 					note=(struct Notes *)element->pointer;
 
-					GFX_P_T_Line(
+					GFX_T_Line(
 						window,
 						NCol[note->note/12],
 						(int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
 						(int)(within.y1+(element->y1*(within.y2-within.y1))),
 						(int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
-						(int)(within.y1+(element->y2*(within.y2-within.y1)))
+						(int)(within.y1+(element->y2*(within.y2-within.y1))),
+                                                PAINT_BUFFER
 					);
 				  }
 
 				  GetNodeLine(element,&warea2,&within2,&get);
-				  GFX_P_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2);
+				  GFX_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
 				  break;
 				case TRE_STOPLINE:
-					GFX_P_T_Line(
+					GFX_T_Line(
 						window,Col[1],
 						wtrack->fxarea.x,
 						(int)(within.y1+element->y1),
 						wtrack->fxarea.x2,
-						(int)(within.y1+element->y1)
+						(int)(within.y1+element->y1),
+                                                PAINT_BUFFER
 					);
 					break;
 			case TRE_REALSTARTSTOP:
 					note=(struct Notes *)element->pointer;
-					GFX_P_T_Line(
+					GFX_T_Line(
 						window,Col[2],
 						wtrack->noteshowtype==TEXTTYPE?
 						  within2.x1:
 						  wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12,
 						(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
 						within2.x2,
-						(int)(within2.y1+(element->y1*(within2.y2-within2.y1)))
+						(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
+                                                PAINT_BUFFER
 					);
 					break;
 			}
@@ -402,39 +410,42 @@ void UpdateWTrack(
 			switch(wfxnode->type){
 				case TRE_FXLINE:
 				  GetNodeLine(wfxnode,&warea,&within,&get);
-				  GFX_P_T_Line(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2);
+				  GFX_T_Line(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
 
 				  /*
-				  GFX_P_T_Line(
+				  GFX_T_Line(
 					       window,wfxnode->subtype, //Col[2],
 					       wtrack->fxarea.x+wfxnode->x1,
 					       GetReallineY1Pos(window,wblock,lokke)+wfxnode->y1,
 					       wtrack->fxarea.x+wfxnode->x2,
-					       GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2
+					       GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2,
+                                               PAINT_BUFFER
 					       );
 				  */
 				  break;
 				case TRE_FXNODE:
 /*
-					GFX_P_T_FilledBox(
+					GFX_T_FilledBox(
 						window,0,//wfxnode->subtype, //Col[3],
 						wtrack->fxarea.x+wfxnode->x1+1,
 						GetReallineY1Pos(window,wblock,lokke)+wfxnode->y1+1,
 						wtrack->fxarea.x+wfxnode->x2-1,
-						GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2-1
+						GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2-1,
+                                                PAINT_BUFFER
 					);
 */
 				  GetNodeBox(window,wfxnode,&warea,&within,&get);
-				  GFX_P_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2);
+				  GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
 				  /*
-				  GFX_P_T_Box(
+				  GFX_T_Box(
 //						window,wfxnode->subtype==1?2:wfxnode->subtype>=4?wfxnode->subtype%3+1==1?2:Col[1]:Col[1],
 						window,wfxnode->subtype,
 //						window,1,
 						wtrack->fxarea.x+wfxnode->x1,
 						GetReallineY1Pos(window,wblock,lokke)+wfxnode->y1,
 						wtrack->fxarea.x+wfxnode->x2,
-						GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2
+						GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2,
+                                                PAINT_BUFFER
 					);
 				  */
 					break;

@@ -361,19 +361,20 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	}else{
 	  PixMap_reset(window);
 
-	  //	  GFX_P_FilledBox(window,0,0,0,window->width-1,window->height-1);
+	  //	  GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFEr);
 	  
 	  UpdateReallinesDependens(window,wblock);
 	  DrawUpAllWTracks(window,wblock);
 	  UpdateLeftSlider(window);
 
-	  GFX_P_FilledBox(
-			  window,0,
-			  wblock->zoomlevelarea.x,
-			  wblock->t.y1,
-			  wblock->temponodearea.x2,
-			  wblock->t.y2
-			  );
+	  GFX_FilledBox(
+                        window,0,
+                        wblock->zoomlevelarea.x,
+                        wblock->t.y1,
+                        wblock->temponodearea.x2,
+                        wblock->t.y2,
+                        PAINT_BUFFER
+                        );
 
 	  DrawWBlockSpesific(
 			     window,

@@ -37,38 +37,40 @@ void GWT_P_Text(
 	int y2=y+window->fontheight-1;
 
 	if(t){
-	  GFX_P_T_Text(
+	  GFX_T_Text(
 		     window,
 		     color,
 		     text,
 		     x,
 		     y,
                      x2-x,
-                     TEXT_CENTER
+                     TEXT_CENTER,
+                     PAINT_BUFFER
 		     );
 	  
 	  if(window->textborder){
-	    GFX_P_T_Line(window,2,x,y,x,y2);
-	    GFX_P_T_Line(window,2,x,y,x2,y);
-	    GFX_P_T_Line(window,1,x2,y,x2,y2);
-	    GFX_P_T_Line(window,1,x,y2,x2,y2);
+	    GFX_T_Line(window,2,x,y,x,y2,PAINT_BUFFER);
+	    GFX_T_Line(window,2,x,y,x2,y,PAINT_BUFFER);
+	    GFX_T_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
+	    GFX_T_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
 	  }
 	}else{
-	  GFX_P_Text(
+	  GFX_Text(
 		     window,
 		     color,
 		     text,
 		     x,
 		     y,
                      x2-x,
-                     TEXT_CENTER
+                     TEXT_CENTER,
+                     PAINT_BUFFER
 		     );
 	  
 	  if(window->textborder){
-	    GFX_P_Line(window,2,x,y,x,y2);
-	    GFX_P_Line(window,2,x,y,x2,y);
-	    GFX_P_Line(window,1,x2,y,x2,y2);
-	    GFX_P_Line(window,1,x,y2,x2,y2);
+	    GFX_Line(window,2,x,y,x,y2,PAINT_BUFFER);
+	    GFX_Line(window,2,x,y,x2,y,PAINT_BUFFER);
+	    GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
+	    GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
 	  }
 	}
 }
@@ -177,24 +179,26 @@ int SetInvertTextLine(
   int x2=x+(strlen(text)*window->fontwidth);
 
   if(t){
-	GFX_P_T_Text(
+	GFX_T_Text(
 		window,
 		color,
 		text,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
-                TEXT_CENTER | TEXT_INVERT
+                TEXT_CENTER | TEXT_INVERT,
+                PAINT_BUFFER
 	);
   }else{
-	GFX_P_Text(
+	GFX_Text(
 		window,
 		color,
 		text,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
-                TEXT_CENTER | TEXT_INVERT
+                TEXT_CENTER | TEXT_INVERT,
+                PAINT_BUFFER
 	);
   }
 	return 0;
@@ -216,24 +220,26 @@ int SetInvertTextLineNotext(
   int x2=x+(len*window->fontwidth);
 
   if(t){
-	GFX_P_T_Text(
+	GFX_T_Text(
 		window,
 		color,
                 temp,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
-                TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT
+                TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT,
+                PAINT_BUFFER
 	);
   }else{
-	GFX_P_Text(
+	GFX_Text(
 		window,
 		color,
                 temp,
 		x,
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
-                TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT
+                TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT,
+                PAINT_BUFFER
 	);
   }
 	return 0;

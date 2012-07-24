@@ -83,7 +83,7 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
        || el->type==ENUM_GFX_C_DrawCursor
        || el->type==ENUM_GFX_P2V_bitBlt 
        || el->type==ENUM_GFX_BitBlt)
-      GFX_P_BouncePoints(window);
+      GFX_BouncePoints(window);
 
     switch(el->type){
 #     define OP_CASES
@@ -95,9 +95,6 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
   }
 
   queue->pos = 0;
-
-
-  //GFX_P_BouncePoints(window);
 }
 
 void GFX_create_op_queue(struct Tracker_Windows *window){

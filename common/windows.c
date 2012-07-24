@@ -87,7 +87,9 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
     if(top_line_y>wblock->t.y1)
       GFX_FilledBox(window,color,
                     wblock->zoomlevelarea.x2+1, wblock->t.y1,
-                    window->width, top_line_y);
+                    window->width, top_line_y,
+                    PAINT_DIRECTLY
+                    );
   }
 
   // Clears the area between the last line and the bottom slider, if there is space.
@@ -96,7 +98,9 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
     if(bot_line_y2 < wblock->a.y2)
       GFX_FilledBox(window,color,
                     wblock->zoomlevelarea.x2+1, bot_line_y2,
-                    window->width, wblock->a.y2);
+                    window->width, wblock->a.y2,
+                    PAINT_DIRECTLY
+                    );
   }
 
   // Clear the small area between the temposlider and the bottom slider.
@@ -105,7 +109,8 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
                 wblock->reltempo.x2+1,
                 window->height - window->bottomslider.width+1,
                 window->bottomslider.x-1,
-                window->height-1
+                window->height-1,
+                PAINT_DIRECTLY
                 );
 
 #if 0
@@ -117,7 +122,9 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
       //GFX_P_FilledBox(window,color,last_wtrack->fxarea.x2+2,wblock->t.y1,wblock->a.x2,wblock->t.y2);
       GFX_FilledBox(window,color,
                     last_wtrack->fxarea.x2+2,  0,
-                    wblock->a.x2,              wblock->t.y1);
+                    wblock->a.x2,              wblock->t.y1,
+                    PAINT_DIRECTLY
+                    );
     }
   }
 #endif
@@ -128,14 +135,16 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
     GFX_FilledBox(
                   window,color,
                   window->leftslider.width+1, wblock->t.y1,
-                  wblock->zoomlevelarea.x-1, wblock->t.y2
+                  wblock->zoomlevelarea.x-1, wblock->t.y2,
+                  PAINT_DIRECTLY
                   );
 
   // Clear the one pixel wide area in the left slider.
   GFX_Box(
           window,color,
           1, wblock->t.y1+1,
-          window->leftslider.width-1, wblock->t.y2
+          window->leftslider.width-1, wblock->t.y2,
+          PAINT_DIRECTLY
           );  
 }
 
@@ -179,7 +188,6 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 	DrawLeftSlider(window);
 	window->wblock->isgfxdatahere=true;
 	root->clearall=0;
-
 }
 
 
@@ -188,7 +196,7 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
     Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
-	GFX_P_FilledBox(window,0,0,0,window->width-1,window->height-1);
+	GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFER);
 	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,window->wblock);

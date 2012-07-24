@@ -48,7 +48,8 @@ void GFX_UpdateQuantitize(
 	GFX_Text(
 		 window,2,temp,0,0,
                  wblock->linenumarea.x2 - 2,
-                 TEXT_CLEAR
+                 TEXT_CLEAR,
+                 PAINT_DIRECTLY
 	);
 
 }
@@ -64,7 +65,8 @@ void GFX_UpdateKeyOctave(
 	GFX_Text(
 		 window,3,temp,0,window->org_fontheight+1,
                  wblock->lpbTypearea.x - 2,
-                 TEXT_CLEAR
+                 TEXT_CLEAR,
+                 PAINT_DIRECTLY
 	);
 }
 
@@ -80,7 +82,8 @@ void GFX_UpdateCurrLine(
 		 window,1,temp+(line>99?2:line>9?1:0),wblock->linenumarea.x,
                  window->org_fontheight+1,
                  wblock->linenumarea.x2-wblock->linenumarea.x,
-                 TEXT_CLEAR
+                 TEXT_CLEAR,
+                 PAINT_DIRECTLY
 	);
 }
 
@@ -105,7 +108,8 @@ void GFX_DrawUpLeft(
 		0,
 		wblock->a.y1,
 		wblock->lpbTypearea.x-1,
-		wblock->t.y1-2
+		wblock->t.y1-2,
+                PAINT_DIRECTLY
 	);
 #endif
 	GFX_UpdateKeyOctave(window,wblock);

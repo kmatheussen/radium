@@ -117,13 +117,14 @@ int MoveTempoNode_Mouse(
 //	printf("start: %d,end: %d\n",start_realline,end_realline);
 	
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
-	  GFX_P_FilledBox(
-			  window,0,
-			  wblock->temponodearea.x,
-			  GetReallineY1Pos(window,wblock,lokke),
-			  wblock->temponodearea.x2,
-			  GetReallineY2Pos(window,wblock,lokke)
-			  );
+	  GFX_FilledBox(
+                        window,0,
+                        wblock->temponodearea.x,
+                        GetReallineY1Pos(window,wblock,lokke),
+                        wblock->temponodearea.x2,
+                        GetReallineY2Pos(window,wblock,lokke),
+                        PAINT_BUFFER
+                        );
 	}
 
 	DrawWTempoNodes(window,wblock,start_realline,end_realline);

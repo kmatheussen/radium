@@ -56,36 +56,40 @@ void UpdateWTrackHeader(
 #endif
 
 	sprintf(temp,"%d:",wtrack->l.num);
-	GFX_P_T_Text(
-		window,1,temp,
-		wtrack->x+window->fontwidth/2,
-		wtrack->y,
-                wtrack->x2-wtrack->x-1,
-                TEXT_CLIPRECT|TEXT_BOLD
+	GFX_T_Text(
+                   window,1,temp,
+                   wtrack->x+window->fontwidth/2,
+                   wtrack->y,
+                   wtrack->x2-wtrack->x-1,
+                   TEXT_CLIPRECT|TEXT_BOLD,
+                   PAINT_BUFFER
 	);
 
         int name_x = wtrack->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
-	GFX_P_T_Text(
+	GFX_T_Text(
                      window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
                      name_x,
                      wtrack->y,
                      (wtrack->x2-window->fontwidth/2) - name_x,
-                     TEXT_CLIPRECT
+                     TEXT_CLIPRECT,
+                     PAINT_BUFFER
                      );
 	UpdatePanSlider(window,wblock,wtrack);
 	UpdateVolumeSlider(window,wblock,wtrack);
 
 	if(wtrack->track->onoff==0){
-		GFX_P_T_Line(window,2,
-			wtrack->x+2,wtrack->y+1,
-			wtrack->x2-2,wtrack->y+(window->org_fontheight*2)-1
+		GFX_T_Line(window,2,
+                           wtrack->x+2,wtrack->y+1,
+                           wtrack->x2-2,wtrack->y+(window->org_fontheight*2)-1,
+                           PAINT_BUFFER
 		);
-		GFX_P_T_Line(window,2,
-			wtrack->x2-2,wtrack->y+1,
-			wtrack->x+2,wtrack->y+(window->org_fontheight*2)-1
+		GFX_T_Line(window,2,
+                           wtrack->x2-2,wtrack->y+1,
+                           wtrack->x+2,wtrack->y+(window->org_fontheight*2)-1,
+                           PAINT_BUFFER
 		);
 	}
-	GFX_P_T_Line(window,1,wtrack->x,wblock->t.y1-1,wtrack->x2,wblock->t.y1-1);
+	GFX_T_Line(window,1,wtrack->x,wblock->t.y1-1,wtrack->x2,wblock->t.y1-1,PAINT_BUFFER);
 
 	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
 }
@@ -99,10 +103,11 @@ void DrawWTrackHeader(
 	struct WTracks *wtrack
 ){
 
-	GFX_P_T_FilledBox(
-		window,0,
-		wtrack->x-1,wtrack->y,
-		wtrack->x2+1,wtrack->y-1+(window->org_fontheight*2)
+	GFX_T_FilledBox(
+                        window,0,
+                        wtrack->x-1,wtrack->y,
+                        wtrack->x2+1,wtrack->y-1+(window->org_fontheight*2),
+                        PAINT_BUFFER
 	);
 
 	UpdateWTrackHeader(window,wblock,wtrack);
@@ -151,10 +156,11 @@ void DrawUpAllWTrackHeaders(
 	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 
 /*
-	GFX_P_T_FilledBox(
+	GFX_T_FilledBox(
 		window,0,
 		wblock->temponodearea.x2+3,wtrack->y,
-		wblock->a.x2,wtrack->y-1+(window->org_fontheight*2)
+		wblock->a.x2,wtrack->y-1+(window->org_fontheight*2),
+                PAINT_BUFFER
 	);
 */
 

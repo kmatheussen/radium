@@ -37,11 +37,13 @@ void GFXST_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				int color,
-				int x,int y,int x2,int y2
+				int x,int y,int x2,int y2,
+                                int where
 				),
 	     struct Tracker_Windows *window,
 	     int color,
-	     int x,int y,int x2,int y2
+	     int x,int y,int x2,int y2,
+             int where
 	     )
 {
   int minx=getMinX(window);
@@ -62,7 +64,7 @@ void GFXST_LineType(
   }
 
 
-  GFXS_LineType(GFX_OSFunc,window,color,x,y,x2,y2);
+  GFXS_LineType(GFX_OSFunc,window,color,x,y,x2,y2,where);
 
 }
 
@@ -71,20 +73,22 @@ void GFXST_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
 				int color,
-				int x,int y,int x2,int y2
+				int x,int y,int x2,int y2,
+                                int where
 				),
 	     struct Tracker_Windows *window,
 	     int color,
-	     int x,int y,int x2,int y2
+	     int x,int y,int x2,int y2,
+             int where
 	     )
 {
   int minx=getMinX(window);
 
   if(x2<minx) return;
-	if(x>x2) return;
-	if(y>y2) return;
+  if(x>x2) return;
+  if(y>y2) return;
 
-  GFXS_BoxType(GFX_OSFunc,window,color,R_MAX(minx,x),y,x2,y2);
+  GFXS_BoxType(GFX_OSFunc,window,color,R_MAX(minx,x),y,x2,y2,where);
 }
 
 
@@ -94,18 +98,20 @@ void GFXST_TextType(
 				int color,char *text,
 				int x,int y,
                                 int width,
-                                int flags
+                                int flags,
+                                int where
 				),
 	     struct Tracker_Windows *window,
 	     int color,char *text,
 	     int x,int y,
              int width,
-             int flags
+             int flags,
+             int where
 	     )
 {
   if(flags & TEXT_NOTEXT){
     int minx=getMinX(window);
-    GFXS_TextType(GFX_OSFunc,window,color,text,R_MAX(minx,x),y,width,flags);
+    GFXS_TextType(GFX_OSFunc,window,color,text,R_MAX(minx,x),y,width,flags,where);
   }else{
     int minx=getMinX(window);
     char temp[600];
@@ -114,16 +120,16 @@ void GFXST_TextType(
       if(x<minx){
         x=minx;
         sprintf(temp,"<--%s",text);
-        GFXS_TextType(GFX_OSFunc,window,color,temp,x,y,width,flags);
+        GFXS_TextType(GFX_OSFunc,window,color,temp,x,y,width,flags,where);
       }else
-        GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags);
+        GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags,where);
     }else{
       if(x<minx){
         if((strlen(text)+1)*window->fontwidth<minx) return;
         text+=(minx-x)/window->fontwidth;
         x=minx;
       }
-      GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags);
+      GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags,where);
     }
   }
 }
@@ -131,32 +137,36 @@ void GFXST_TextType(
 
 void GFXST_BorderType(
 		     void (*GFX_P_OSFunc)(
-							 struct Tracker_Windows *window,
-							 int x, int y, int y2
-							 ),
+                                          struct Tracker_Windows *window,
+                                          int x, int y, int y2,
+                                          int where
+                                          ),
 		     struct Tracker_Windows *window,
-		     int x, int y, int y2
+		     int x, int y, int y2,
+                     int where
 		     )
 {
   int minx=getMinX(window);
   if(x<minx) return;
 
-  GFXS_BorderType(GFX_P_OSFunc,window,x,y,y2);
+  GFXS_BorderType(GFX_P_OSFunc,window,x,y,y2,where);
 }
 
 void GFXST_BorderType2(
 		     void (*GFX_P_OSFunc)(
-							 struct Tracker_Windows *window,
-							 int x, int y, int y2
-							 ),
+                                          struct Tracker_Windows *window,
+                                          int x, int y, int y2,
+                                          int where
+                                          ),
 		     struct Tracker_Windows *window,
-		     int x, int y, int y2
+		     int x, int y, int y2,
+                     int where
 		     )
 {
   int minx=getMinX(window);
   if(x<minx) return;
 
-  GFXS_BorderType2(GFX_P_OSFunc,window,x,y,y2);
+  GFXS_BorderType2(GFX_P_OSFunc,window,x,y,y2,where);
 }
 
 

@@ -168,13 +168,14 @@ void PixMap_erase(
 	for(lokke=start_visible;lokke<=end_visible;lokke++){
 		realvisible=PixMap_getVisibleFromVisual(window,lokke);
 		if(realvisible!=-1){
-			GFX_P_FilledBox(
+			GFX_FilledBox(
 				window,
 				0,
 				window->wblock->t.x1,
 				PixMap_getY1(window,lokke),
 				window->wblock->t.x2,
-				PixMap_getY2(window,lokke)
+				PixMap_getY2(window,lokke),
+                                PAINT_BUFFER
 			);
 			window->pixmapdefs[realvisible]=-1;
 		}
@@ -204,13 +205,14 @@ void PixMap_makeNewDefs(
       
       window->pixmapdefs[curr]=lokke;
 
-      GFX_P_FilledBox(
+      GFX_FilledBox(
 		      window,
 		      0,
 		      wblock->a.x1,
 		      PixMap_getY1(window,curr),
 		      wblock->t.x2,
-		      PixMap_getY2(window,curr)
+		      PixMap_getY2(window,curr),
+                      PAINT_BUFFER
 		      );
 //      printf("clear: curr: %d, pixdef: %d\n",curr,lokke);
 

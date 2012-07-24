@@ -71,11 +71,12 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 			PixMap_reset(window);
 
 
-			GFX_P_FilledBox(
+			GFX_FilledBox(
 				window,
 				0,
 				wblock->a.x1,wblock->t.y1,
-				wblock->t.x2,wblock->t.y2
+				wblock->t.x2,wblock->t.y2,
+                                PAINT_BUFFER
 			);
 
 			DrawWBlockSpesific(
@@ -139,11 +140,12 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 
 			PixMap_reset(window);
 
-			GFX_P_FilledBox(
+			GFX_FilledBox(
 				window,
 				0,
 				wblock->a.x1,wblock->t.y1,
-				wblock->t.x2,wblock->t.y2
+				wblock->t.x2,wblock->t.y2,
+                                PAINT_BUFFER
 			);
 			DrawWBlockSpesific(
 				window,

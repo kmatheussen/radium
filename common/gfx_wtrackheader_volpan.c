@@ -50,10 +50,11 @@ void UpdateVolumeSlider(
 
 	/* On/off box stuff. */
 
-	GFX_P_T_Box(
-		window,1,
-		wtrack->volumeonoff.x1,wtrack->volumeonoff.y1,
-		wtrack->volumeonoff.x2,wtrack->volumeonoff.y2
+	GFX_T_Box(
+                  window,1,
+                  wtrack->volumeonoff.x1,wtrack->volumeonoff.y1,
+                  wtrack->volumeonoff.x2,wtrack->volumeonoff.y2,
+                  PAINT_BUFFER
 	);
 
 	x1=wtrack->volumeonoff.x1+2;
@@ -70,16 +71,18 @@ void UpdateVolumeSlider(
 	}
 
 	if(wtrack->track->volumeonoff){
-		GFX_P_T_FilledBox(
-			window,2,
-			x1,y1,
-			x2,y2
-		);
+		GFX_T_FilledBox(
+                                window,2,
+                                x1,y1,
+                                x2,y2,
+                                PAINT_BUFFER
+                                );
 	}else{
-		GFX_P_T_FilledBox(
-			window,0,
-			x1,y1,
-			x2,y2
+		GFX_T_FilledBox(
+                                window,0,
+                                x1,y1,
+                                x2,y2,
+                                PAINT_BUFFER
 		);
 	}
 	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
@@ -105,10 +108,11 @@ void UpdatePanSlider(
 
 	/* On/off box stuff. */
 
-	GFX_P_T_Box(
-		window,1,
-		wtrack->panonoff.x1,wtrack->panonoff.y1,
-		wtrack->panonoff.x2,wtrack->panonoff.y2
+	GFX_T_Box(
+                  window,1,
+                  wtrack->panonoff.x1,wtrack->panonoff.y1,
+                  wtrack->panonoff.x2,wtrack->panonoff.y2,
+                  PAINT_BUFFER
 	);
 
 	x1=wtrack->panonoff.x1+2;
@@ -126,17 +130,19 @@ void UpdatePanSlider(
 	}
 
 	if(wtrack->track->panonoff){
-		GFX_P_T_FilledBox(
-			window,2,
-			x1,y1,
-			x2,y2
-		);
+          GFX_T_FilledBox(
+                          window,2,
+                          x1,y1,
+                          x2,y2,
+                          PAINT_BUFFER
+                          );
 	}else{
-		GFX_P_T_FilledBox(
-			window,0,
-			x1,y1,
-			x2,y2
-		);
+          GFX_T_FilledBox(
+                          window,0,
+                          x1,y1,
+                          x2,y2,
+                          PAINT_BUFFER
+                          );
 	}
 	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
 }

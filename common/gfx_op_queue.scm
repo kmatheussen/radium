@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	     (ice-9 pretty-print))
 
 ;; Functions which are called from the queue, but are not OS specific.
-(define pre-os-funcs '(GFX_P_Line GFX_P_Text GFX_Text))
+(define pre-os-funcs '(GFX_Line GFX_Text))
 (define pre-os-includes '())
 
 ;;(define pre-os-funcs '())
@@ -59,38 +59,19 @@ void GFX_P2V_bitBlt(
 				int width,int height
 			);
 
-void GFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
+void GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where);
 
-void GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
+void GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2, int where);
 
-void GFX_P_SetClipRect(
+void GFX_SetClipRect(
                                           struct Tracker_Windows* tvisual,
                                           int x,int y,
-                                          int x2,int y2
+                                          int x2,int y2,
+                                          int where
                                           );
-void GFX_P_CancelClipRect(struct Tracker_Windows* tvisual);
-void GFX_SetClipRect(
-                                           struct Tracker_Windows* tvisual,
-                                           int x,int y,
-                                           int x2,int y2
-                                           );
-void GFX_CancelClipRect(struct Tracker_Windows* tvisual);
+void GFX_CancelClipRect(struct Tracker_Windows* tvisual,int where);
 
-void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-
-void GFX_P_Text(
-	struct Tracker_Windows* tvisual,
-	int color,
-	char* text,
-	int x,
-	int y,
-	int width,
-	int flags
-	);
-
-void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-void GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-void GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
+void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where);
 
 void GFX_Text(
 	struct Tracker_Windows* tvisual,
@@ -99,8 +80,9 @@ void GFX_Text(
 	int x,
 	int y,
 	int width,
-	int flags
-);
+	int flags,
+        int where
+	);
 
 void GFX_BitBlt(
 	struct Tracker_Windows* tvisual,

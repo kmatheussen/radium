@@ -27,11 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //
 // Code copied from http://rosettacode.org/wiki/Xiaolin_Wu's_line_algorithm and slightly modified
 
-static void plot(int x, int y, struct Tracker_Windows *window, int color, float brightness){
+static void plot(int x, int y, struct Tracker_Windows *window, int color, float brightness, int where){
   if(brightness>1.0f)
     brightness=1.0f;
 
-  GFX_P_Point(window, color, brightness*MAX_BRIGHTNESS, x, y);
+  GFX_Point(window, color, brightness*MAX_BRIGHTNESS, x, y, where);
 }
 
 #define ipart_(X) ((int)(X)) // Note, for negative numbers, floor must be used instead. (no negative numbers used here though)
@@ -46,7 +46,8 @@ static void draw_line_aa(
                          struct Tracker_Windows *window,
                          int color,
                          unsigned int x1, unsigned int y1,
-                         unsigned int x2, unsigned int y2
+                         unsigned int x2, unsigned int y2,
+                         int where
                          )
 {
   double dx = (double)x2 - (double)x1;
@@ -67,8 +68,8 @@ static void draw_line_aa(
     int xpxl1 = xend;
 #if USE_ENDPOINTS
     int ypxl1 = ipart_(yend);
-    plot(xpxl1, ypxl1, window, color, rfpart_(yend)*xgap);
-    plot(xpxl1, ypxl1+1, window, color, fpart_(yend)*xgap);
+    plot(xpxl1, ypxl1, window, color, rfpart_(yend)*xgap,where);
+    plot(xpxl1, ypxl1+1, window, color, fpart_(yend)*xgap,where);
 #endif
     double intery = yend + gradient;
  
@@ -78,13 +79,13 @@ static void draw_line_aa(
     int xpxl2 = xend;
 #if USE_ENDPOINTS
     int ypxl2 = ipart_(yend);
-    plot(xpxl2, ypxl2, window, color, rfpart_(yend) * xgap);
-    plot(xpxl2, ypxl2 + 1, window, color, fpart_(yend) * xgap);
+    plot(xpxl2, ypxl2, window, color, rfpart_(yend) * xgap,where);
+    plot(xpxl2, ypxl2 + 1, window, color, fpart_(yend) * xgap,where);
  #endif
     int x;
     for(x=xpxl1; x <= (xpxl2); x++) {
-      plot(x, ipart_(intery), window, color, rfpart_(intery));
-      plot(x, ipart_(intery) + 1, window, color, fpart_(intery));
+      plot(x, ipart_(intery), window, color, rfpart_(intery),where);
+      plot(x, ipart_(intery) + 1, window, color, fpart_(intery),where);
       intery += gradient;
     }
 
@@ -102,8 +103,8 @@ static void draw_line_aa(
     int ypxl1 = yend;
 #if USE_ENDPOINTS
     int xpxl1 = ipart_(xend);
-    plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap);
-    plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap);
+    plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap,where);
+    plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap,where);
 #endif
     double interx = xend + gradient;
  
@@ -113,13 +114,13 @@ static void draw_line_aa(
     int ypxl2 = yend;
 #if USE_ENDPOINTS
     int xpxl2 = ipart_(xend);
-    plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap);
-    plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap);
+    plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap,where);
+    plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap,where);
 #endif
     int y;
     for(y=ypxl1; y <= (ypxl2); y++) {
-      plot(ipart_(interx), y, window, color, rfpart_(interx));
-      plot(ipart_(interx) + 1, y, window, color, fpart_(interx));
+      plot(ipart_(interx), y, window, color, rfpart_(interx),where);
+      plot(ipart_(interx) + 1, y, window, color, fpart_(interx),where);
       interx += gradient;
     }
   }
@@ -133,11 +134,11 @@ static void draw_line_aa(
 
 
 
-void PREOS_GFX_P_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2){
+void PREOS_GFX_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2,int where){
   if(x!=x2 && y!=y2){
-    draw_line_aa(window,color,x,y,x2,y2);
-    //OS_GFX_P_BouncePoints(window); // doesn't seem necessary
+    draw_line_aa(window,color,x,y,x2,y2,where);
+    //OS_GFX_BouncePoints(window); // doesn't seem necessary
   }else{
-    OS_GFX_P_Line(window,color,x,y,x2,y2);
+    OS_GFX_Line(window,color,x,y,x2,y2,where);
   }
 }

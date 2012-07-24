@@ -82,7 +82,8 @@ void SetMouseAction(
 			wblock->lpbTypearea.x+1,
 			wblock->a.y1,
 			wblock->tempoTypearea.x2+3,
-			wblock->t.y1-2
+			wblock->t.y1-2,
+                        PAINT_DIRECTLY
 			);
 
 		wblock->tempocolorarea.width=0;

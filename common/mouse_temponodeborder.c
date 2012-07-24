@@ -106,7 +106,7 @@ int MoveTempoNodeBorder_Mouse(
 
 	  wtrack2=ListLast1(&wblock->wtracks->l);
 	  if(wtrack2->fxarea.x2<wblock->a.x2){
-	    GFX_P_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->a.y1,wblock->a.x2,wblock->t.y2);
+	    GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->a.y1,wblock->a.x2,wblock->t.y2,PAINT_BUFFER);
 	    //	    GFX_P_FilledBox(window,0,wtrack2->fxarea.x2+2,0           ,wblock->a.x2,wblock->t.y1);
 	  }
 
@@ -119,7 +119,9 @@ int MoveTempoNodeBorder_Mouse(
 			wblock->reltempo.x2+1,
 			window->height - window->bottomslider.width+1,
 			window->bottomslider.x-1,
-			window->height-1);
+			window->height-1,
+                        PAINT_DIRECTLY
+                        );
 	  
 	  
 	  Blt_mark(window,wblock->top_realline,wblock->bot_realline,

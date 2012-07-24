@@ -1,1 +1,1 @@
-void GFX_P_BouncePoints(struct Tracker_Windows *window);
+void GFX_BouncePoints(struct Tracker_Windows *window);
