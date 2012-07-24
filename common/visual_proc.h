@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "OS_visual_input.h"
 
-
 #define TEXT_IGNORE_WIDTH -99999 // Can be used instead of width, not a flag
 // flags:
 #define TEXT_NOFLAGS 0
@@ -38,7 +37,7 @@ extern LANGSPEC void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char
 extern LANGSPEC void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual);
 
 
-extern LANGSPEC void GFX_C2V_bitBlt(
+extern LANGSPEC void QUEUE_GFX_C2V_bitBlt(
 				    struct Tracker_Windows *window,
 				    int from_x1,int from_x2,
 				    int to_y
@@ -46,20 +45,20 @@ extern LANGSPEC void GFX_C2V_bitBlt(
 
 
 /* window,x1,x2,x3,x4,height, y pixmap */
-extern LANGSPEC void GFX_C_DrawCursor(
+extern LANGSPEC void QUEUE_GFX_C_DrawCursor(
 				      struct Tracker_Windows *window,
 				      int x1,int x2,int x3,int x4,int height,
 				      int y_pixmap
 				      );
 
-extern LANGSPEC void GFX_P2V_bitBlt(
+extern LANGSPEC void QUEUE_GFX_P2V_bitBlt(
 				struct Tracker_Windows *window,
 				int from_x,int from_y,
 				int to_x,int to_y,
 				int width,int height
 			);
 
-extern LANGSPEC void GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
 extern LANGSPEC int GFX_CreateVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC int GFX_ShutDownVisual(struct Tracker_Windows *tvisual);
@@ -83,18 +82,36 @@ extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
-extern LANGSPEC void GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
-extern LANGSPEC void GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
 
-extern LANGSPEC void GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
-extern LANGSPEC void GFX_P_Point(struct Tracker_Windows *tvisual,int color,int brightness,int x,int y); // brigtness is between 0 and 256. Used by aa lines.
+extern LANGSPEC void PREOS_GFX_P_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+
+extern LANGSPEC void GFX_P_Point(struct Tracker_Windows *tvisual,int color,int brightness,int x,int y); // brigtness is between 0 and MAX_BRIGHTNESS. Used by aa lines.
+extern LANGSPEC void QUEUE_GFX_P_Point(struct Tracker_Windows* tvisual,int color,int brightness,int x,int y);
+extern LANGSPEC void QUEUE_GFX_P_Points(struct Tracker_Windows* tvisual,int color,int brightness,int num_points, uint16_t *x,uint16_t *y);
+extern LANGSPEC void OS_GFX_P_Point(
+                                    struct Tracker_Windows *tvisual,
+                                    int color,
+                                    int brightness,
+                                    int x,int y
+                                    );
+extern LANGSPEC void OS_GFX_P_Points(
+                                     struct Tracker_Windows *tvisual,
+                                     int color,
+                                     int brightness,
+                                     int num_points,
+                                     uint16_t *x,uint16_t *y
+                                     );
+
 
 extern LANGSPEC int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text);
 extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width);
 
-extern LANGSPEC void GFX_P_Text(
+extern LANGSPEC void QUEUE_GFX_P_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
@@ -104,11 +121,11 @@ extern LANGSPEC void GFX_P_Text(
         int flags
 	);
 
-extern LANGSPEC void GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
-extern LANGSPEC void GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
-extern LANGSPEC void GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
-extern LANGSPEC void GFX_Text(
+extern LANGSPEC void QUEUE_GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
 	char *text,
@@ -128,7 +145,7 @@ extern LANGSPEC void GFX_P_DrawTrackBorderDouble(
 	int x, int y, int y2
 );
 
-extern LANGSPEC void GFX_BitBlt(
+extern LANGSPEC void QUEUE_GFX_BitBlt(
 	struct Tracker_Windows *tvisual,
 	int dx,int dy,
 	int x,int y,
@@ -260,30 +277,30 @@ void GFXST_BorderType2(
 
 #ifndef GFX_DONTSHRINK
 
-#define GFX_P_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_P_FilledBox,a,b,c,d,e,f)
-#define GFX_P_Box(a,b,c,d,e,f) GFXS_BoxType(GFX_P_Box,a,b,c,d,e,f)
-#define GFX_P_Line(a,b,c,d,e,f) GFXS_LineType(GFX_P_Line,a,b,c,d,e,f)
-#define GFX_Line(a,b,c,d,e,f) GFXS_LineType(GFX_Line,a,b,c,d,e,f)
-#define GFX_Box(a,b,c,d,e,f) GFXS_BoxType(GFX_Box,a,b,c,d,e,f)
-#define GFX_FilledBox(a,b,c,d,e,f) GFXS_BoxType(GFX_FilledBox,a,b,c,d,e,f)
+#define GFX_P_FilledBox(a,b,c,d,e,f) GFXS_BoxType(QUEUE_GFX_P_FilledBox,a,b,c,d,e,f)
+#define GFX_P_Box(a,b,c,d,e,f) GFXS_BoxType(QUEUE_GFX_P_Box,a,b,c,d,e,f)
+#define GFX_P_Line(a,b,c,d,e,f) GFXS_LineType(QUEUE_GFX_P_Line,a,b,c,d,e,f)
+#define GFX_Line(a,b,c,d,e,f) GFXS_LineType(QUEUE_GFX_Line,a,b,c,d,e,f)
+#define GFX_Box(a,b,c,d,e,f) GFXS_BoxType(QUEUE_GFX_Box,a,b,c,d,e,f)
+#define GFX_FilledBox(a,b,c,d,e,f) GFXS_BoxType(QUEUE_GFX_FilledBox,a,b,c,d,e,f)
 
-#define GFX_P_Text(a,b,c,d,e,f,g) GFXS_TextType(GFX_P_Text,a,b,c,d,e,f,g)
-#define GFX_Text(a,b,c,d,e,f,g) GFXS_TextType(GFX_Text,a,b,c,d,e,f,g)
+#define GFX_P_Text(a,b,c,d,e,f,g) GFXS_TextType(QUEUE_GFX_P_Text,a,b,c,d,e,f,g)
+#define GFX_Text(a,b,c,d,e,f,g) GFXS_TextType(QUEUE_GFX_Text,a,b,c,d,e,f,g)
 
 #define GFX_P_DrawTrackBorderSingle(a,b,c,d) GFXS_BorderType(GFX_P_DrawTrackBorderSingle,a,b,c,d)
 #define GFX_P_DrawTrackBorderDouble(a,b,c,d) GFXS_BorderType2(GFX_P_DrawTrackBorderDouble,a,b,c,d)
 
-#define GFX_BitBlt(a,b,c,d,e,f,g) GFXS_BitBltType(GFX_BitBlt,a,b,c,d,e,f,g)
+#define GFX_BitBlt(a,b,c,d,e,f,g) GFXS_BitBltType(QUEUE_GFX_BitBlt,a,b,c,d,e,f,g)
 
-#define GFX_P_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_P_FilledBox,a,b,c,d,e,f)
-#define GFX_P_T_Box(a,b,c,d,e,f) GFXST_BoxType(GFX_P_Box,a,b,c,d,e,f)
-#define GFX_P_T_Line(a,b,c,d,e,f) GFXST_LineType(GFX_P_Line,a,b,c,d,e,f)
-#define GFX_T_Line(a,b,c,d,e,f) GFXST_LineType(GFX_Line,a,b,c,d,e,f)
-#define GFX_T_Box(a,b,c,d,e,f) GFXST_BoxType(GFX_Box,a,b,c,d,e,f)
-#define GFX_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(GFX_FilledBox,a,b,c,d,e,f)
+#define GFX_P_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(QUEUE_GFX_P_FilledBox,a,b,c,d,e,f)
+#define GFX_P_T_Box(a,b,c,d,e,f) GFXST_BoxType(QUEUE_GFX_P_Box,a,b,c,d,e,f)
+#define GFX_P_T_Line(a,b,c,d,e,f) GFXST_LineType(QUEUE_GFX_P_Line,a,b,c,d,e,f)
+#define GFX_T_Line(a,b,c,d,e,f) GFXST_LineType(QUEUE_GFX_Line,a,b,c,d,e,f)
+#define GFX_T_Box(a,b,c,d,e,f) GFXST_BoxType(QUEUE_GFX_Box,a,b,c,d,e,f)
+#define GFX_T_FilledBox(a,b,c,d,e,f) GFXST_BoxType(QUEUE_GFX_FilledBox,a,b,c,d,e,f)
 
-#define GFX_P_T_Text(a,b,c,d,e,f,g) GFXST_TextType(GFX_P_Text,a,b,c,d,e,f,g)
-#define GFX_T_Text(a,b,c,d,e,f,g) GFXST_TextType(GFX_Text,a,b,c,d,e,f,g)
+#define GFX_P_T_Text(a,b,c,d,e,f,g) GFXST_TextType(QUEUE_GFX_P_Text,a,b,c,d,e,f,g)
+#define GFX_T_Text(a,b,c,d,e,f,g) GFXST_TextType(QUEUE_GFX_Text,a,b,c,d,e,f,g)
 
 #define GFX_P_T_DrawTrackBorderSingle(a,b,c,d) GFXST_BorderType(GFX_P_DrawTrackBorderSingle,a,b,c,d)
 #define GFX_P_T_DrawTrackBorderDouble(a,b,c,d) GFXST_BorderType2(GFX_P_DrawTrackBorderDouble,a,b,c,d)

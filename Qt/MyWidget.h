@@ -53,21 +53,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_op_queue_proc.h"
 
 
-#define INITIALPOOLSIZE 64
-
-class RPoints{
-public:
-  RPoints();
-  ~RPoints();
-
-  void addPoint(int x,int y);
-  void drawPoints(QPainter *qp);
-
-private:
-  Q3PointArray *qpa;
-  uint num_points;
-};
-
 // Don't paint on the frame.
 #define XOFFSET 5
 #define YOFFSET 2
@@ -85,7 +70,6 @@ public:
 #endif
 
     QColor     colors[16];				// color array
-    RPoints    *rpoints[8];
     QPixmap    *qpixmap;
     QPixmap    *cursorpixmap;
 
@@ -113,6 +97,8 @@ public:
       return this->height()-YOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
     }
 
+    QPointArray qpa;
+
 protected:
     //    bool        event(QEvent *);
     void	paintEvent( QPaintEvent * );
@@ -127,10 +113,5 @@ protected:
     void        closeEvent(QCloseEvent *);
     void        wheelEvent(QWheelEvent *);
     void        customEvent(QCustomEvent *);
-private:
-    QPoint     *points;				// point array
-
-    int		count;				// count = number of points
-    bool	down;				// TRUE if mouse down
 };
 

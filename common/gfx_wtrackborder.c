@@ -25,13 +25,13 @@ void GFX_P_DrawTrackBorderDouble(
                                  int x, int y, int y2
                                  )
 {
-  GFX_P_Line(window,1,x,y,x,y2);
-  GFX_P_Line(window,2,x+1,y,x+1,y2);
+  QUEUE_GFX_P_Line(window,1,x,y,x,y2);
+  QUEUE_GFX_P_Line(window,2,x+1,y,x+1,y2);
 }
 
 void GFX_P_DrawTrackBorderSingle(
                                  struct Tracker_Windows *tvisual,
                                  int x, int y, int y2
 ){
-  GFX_P_Line(tvisual,2,x,y,x,y2);
+  QUEUE_GFX_P_Line(tvisual,2,x,y,x,y2);
 }

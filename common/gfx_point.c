@@ -1,0 +1,86 @@
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+#include "nsmtracker.h"
+
+#define GFX_DONTSHRINK
+#include "visual_proc.h"
+#include "visual_op_queue_proc.h"
+
+#include "gfx_point_proc.h"
+
+
+struct Points{
+  int pos;
+  int size;
+  uint16_t *x;
+  uint16_t *y;
+};
+
+static struct Points points[8][MAX_BRIGHTNESS+1];
+
+static bool is_dirty=false;
+
+void GFX_P_Point(
+                 struct Tracker_Windows *window,
+                 int color,
+                 int brightness,
+                 int x,int y
+                 )
+{
+  brightness = R_BOUNDARIES(0, brightness, MAX_BRIGHTNESS);
+  struct Points *point=&points[color][brightness];
+  int pos = point->pos;
+
+  if(point->pos==point->size){
+    point->size = R_MAX(128,point->size*2);
+    point->x=realloc(point->x,point->size*sizeof(uint16_t));
+    point->y=realloc(point->y,point->size*sizeof(uint16_t));
+  }
+
+  point->x[pos] = x;
+  point->y[pos] = y;
+  point->pos = pos+1;
+
+  is_dirty=true;
+}
+
+void GFX_P_BouncePoints(struct Tracker_Windows *window){
+  int color;
+  int bright;
+
+  if(is_dirty==false)
+    return;
+
+  //printf("Bouncing points\n");
+  for(color=0;color<8;color++){
+    for(bright=0;bright<=MAX_BRIGHTNESS;bright++){
+      struct Points *point=&points[color][bright];
+      if(point->pos==1){
+        OS_GFX_P_Point(window,color,bright,point->x[0],point->y[0]);
+        //printf("single point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
+        point->pos=0;
+      }else if(point->pos>1){
+        OS_GFX_P_Points(window,color,bright,point->pos,point->x,point->y);
+        //printf("point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
+        point->pos=0;
+      }
+    }
+  }
+
+  is_dirty=false;
+}
+

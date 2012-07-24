@@ -270,18 +270,18 @@ void PixMap_makeCursor(
 
 	/* window,x1,x2,x3,x4,height, y pixmap */
 
-	GFX_C_DrawCursor(
-		window,
+	QUEUE_GFX_C_DrawCursor(
+                               window,
 
-		wblock->a.x1,
+                               wblock->a.x1,
 
-		xb1,xb2,
+                               xb1,xb2,
 
-		wblock->a.x2,
+                               wblock->a.x2,
 
-		window->fontheight,
+                               window->fontheight,
 
-		PixMap_getY1(window,wblock->curr_realline-wblock->top_realline)
+                               PixMap_getY1(window,wblock->curr_realline-wblock->top_realline)
 		//		GetCursorY1Pos(window,wblock)
 	);
 }
@@ -312,7 +312,7 @@ void PixMap_private_bltLines(
 	       )
 	      {
 	      
-		GFX_P2V_bitBlt(
+		QUEUE_GFX_P2V_bitBlt(
 			       window,
 			       x1,PixMap_getY1(window,lokke1),
 			       x1,(window->fontheight*lokke1)+window->wblock->t.y1,
@@ -345,7 +345,7 @@ void PixMap_bltLines(
     PixMap_makeCursor(window);
     if(currvisibleline==startvisibleline){
 
-      GFX_C2V_bitBlt(window,x1,x2,GetCursorY1Pos(window,wblock));
+      QUEUE_GFX_C2V_bitBlt(window,x1,x2,GetCursorY1Pos(window,wblock));
 
       if(endvisibleline>=startvisibleline+1){
 	PixMap_private_bltLines(window,startvisibleline+1,endvisibleline,x1,x2);      
@@ -355,7 +355,7 @@ void PixMap_bltLines(
 
       PixMap_private_bltLines(window,startvisibleline,currvisibleline-1,x1,x2);
 
-      GFX_C2V_bitBlt(window,x1,x2,GetCursorY1Pos(window,wblock));
+      QUEUE_GFX_C2V_bitBlt(window,x1,x2,GetCursorY1Pos(window,wblock));
 
       if(currvisibleline<endvisibleline){
 	PixMap_private_bltLines(window,currvisibleline+1,endvisibleline,x1,x2);      

@@ -18,7 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
+#include "visual_proc.h"
 #include "visual_op_queue_proc.h"
+#include "gfx_point_proc.h"
 
 
 // Xiaolin Wu's line algorithm (antialized lines)
@@ -29,7 +31,7 @@ static void plot(int x, int y, struct Tracker_Windows *window, int color, float 
   if(brightness>1.0f)
     brightness=1.0f;
 
-  OS_GFX_P_Point(window, color, 256*brightness, x, y);
+  GFX_P_Point(window, color, brightness*MAX_BRIGHTNESS, x, y);
 }
 
 #define ipart_(X) ((int)(X)) // Note, for negative numbers, floor must be used instead. (no negative numbers used here though)
@@ -61,21 +63,24 @@ static void draw_line_aa(
     double yend = y1 + gradient*(xend - x1);
     double xgap = rfpart_(x1 + 0.5);
     int xpxl1 = xend;
+#if 1
     int ypxl1 = ipart_(yend);
     plot(xpxl1, ypxl1, window, color, rfpart_(yend)*xgap);
     plot(xpxl1, ypxl1+1, window, color, fpart_(yend)*xgap);
+#endif
     double intery = yend + gradient;
  
     xend = round_(x2);
     yend = y2 + gradient*(xend - x2);
     xgap = fpart_(x2+0.5);
     int xpxl2 = xend;
+#if 1
     int ypxl2 = ipart_(yend);
     plot(xpxl2, ypxl2, window, color, rfpart_(yend) * xgap);
     plot(xpxl2, ypxl2 + 1, window, color, fpart_(yend) * xgap);
- 
+ #endif
     int x;
-    for(x=xpxl1+1; x <= (xpxl2-1); x++) {
+    for(x=xpxl1; x <= (xpxl2); x++) {
       plot(x, ipart_(intery), window, color, rfpart_(intery));
       plot(x, ipart_(intery) + 1, window, color, fpart_(intery));
       intery += gradient;
@@ -93,18 +98,18 @@ static void draw_line_aa(
     double xend = x1 + gradient*(yend - y1);
     double ygap = rfpart_(y1 + 0.5);
     int ypxl1 = yend;
-    int xpxl1 = ipart_(xend);
-    plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap);
-    plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap);
+    //int xpxl1 = ipart_(xend);
+    //plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap);
+    //plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap);
     double interx = xend + gradient;
  
     yend = round_(y2);
     xend = x2 + gradient*(yend - y2);
     ygap = fpart_(y2+0.5);
     int ypxl2 = yend;
-    int xpxl2 = ipart_(xend);
-    plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap);
-    plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap);
+    //int xpxl2 = ipart_(xend);
+    //plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap);
+    //plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap);
  
     int y;
     for(y=ypxl1; y <= (ypxl2); y++) {
@@ -126,9 +131,8 @@ static void draw_line_aa(
 void PREOS_GFX_P_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2){
   if(x!=x2 && y!=y2){
     draw_line_aa(window,color,x,y,x2,y2);
+    //OS_GFX_P_BouncePoints(window); // doesn't seem necessary
   }else{
     OS_GFX_P_Line(window,color,x,y,x2,y2);
   }
-
 }
-

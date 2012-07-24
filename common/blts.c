@@ -53,7 +53,7 @@ void Blt_blt(struct Tracker_Windows *window){
   if(blt->blt_doheader==true){
     x1=WTRACK_getx1(window,wblock,blt->starttrack,false);
     x2=WTRACK_getx2(window,wblock,blt->endtrack);
-    GFX_P2V_bitBlt(
+    QUEUE_GFX_P2V_bitBlt(
 		   window,
 		   x1,wblock->a.y1,
 		   x1,wblock->a.y1,

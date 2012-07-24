@@ -7,7 +7,6 @@ ENUM_GFX_P2V_bitBlt,
 ENUM_GFX_P_FilledBox, 
 ENUM_GFX_P_Box, 
 ENUM_GFX_P_Line, 
-ENUM_GFX_P_Point, 
 ENUM_GFX_P_Text, 
 ENUM_GFX_Line, 
 ENUM_GFX_Box, 
@@ -23,7 +22,6 @@ case ENUM_GFX_P2V_bitBlt: OS_GFX_P2V_bitBlt(window, el->i1, el->i2, el->i3, el->
 case ENUM_GFX_P_FilledBox: OS_GFX_P_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_P_Box: OS_GFX_P_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_P_Line: PREOS_GFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Point: OS_GFX_P_Point(window, el->i1, el->i2, el->i3, el->i4); break; 
 case ENUM_GFX_P_Text: OS_GFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_Line: OS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
@@ -33,14 +31,7 @@ case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->
 #endif 
 
 #ifdef OP_FUNCS 
-
-
-void GFX_C2V_bitBlt(
-				    struct Tracker_Windows* window,
-				    int from_x1,int from_x2,
-				    int to_y
-                    ) 
-{ 
+void QUEUE_GFX_C2V_bitBlt(struct Tracker_Windows* window, int from_x1, int from_x2, int to_y){ 
   queue_element_t *el = get_next_element(window->op_queue); 
   el->type = ENUM_GFX_C2V_bitBlt ; 
   el->i1 = from_x1 ; 
@@ -48,15 +39,7 @@ void GFX_C2V_bitBlt(
   el->i3 = to_y ; 
 } 
 
-
-
-
-void GFX_C_DrawCursor(
-				      struct Tracker_Windows* window,
-				      int x1,int x2,int x3,int x4,int height,
-				      int y_pixmap
-				      ) 
-{ 
+void QUEUE_GFX_C_DrawCursor(struct Tracker_Windows* window, int x1, int x2, int x3, int x4, int height, int y_pixmap){ 
   queue_element_t *el = get_next_element(window->op_queue); 
   el->type = ENUM_GFX_C_DrawCursor ; 
   el->i1 = x1 ; 
@@ -67,15 +50,7 @@ void GFX_C_DrawCursor(
   el->i6 = y_pixmap ; 
 } 
 
-
-
-void GFX_P2V_bitBlt(
-				struct Tracker_Windows* window,
-				int from_x,int from_y,
-				int to_x,int to_y,
-				int width,int height
-			) 
-{ 
+void QUEUE_GFX_P2V_bitBlt(struct Tracker_Windows* window, int from_x, int from_y, int to_x, int to_y, int width, int height){ 
   queue_element_t *el = get_next_element(window->op_queue); 
   el->type = ENUM_GFX_P2V_bitBlt ; 
   el->i1 = from_x ; 
@@ -86,10 +61,7 @@ void GFX_P2V_bitBlt(
   el->i6 = height ; 
 } 
 
-
-
-void GFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2) 
-{ 
+void QUEUE_GFX_P_FilledBox(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_FilledBox ; 
   el->i1 = color ; 
@@ -99,10 +71,7 @@ void GFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x
   el->i5 = y2 ; 
 } 
 
-
-
-void GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2) 
-{ 
+void QUEUE_GFX_P_Box(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Box ; 
   el->i1 = color ; 
@@ -112,11 +81,7 @@ void GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int 
   el->i5 = y2 ; 
 } 
 
-
-
-
-void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2) 
-{ 
+void QUEUE_GFX_P_Line(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Line ; 
   el->i1 = color ; 
@@ -126,29 +91,7 @@ void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int
   el->i5 = y2 ; 
 } 
 
-
-void GFX_P_Point(struct Tracker_Windows* tvisual,int color,int brightness,int x,int y) 
-{ 
-  queue_element_t *el = get_next_element(tvisual->op_queue); 
-  el->type = ENUM_GFX_P_Point ; 
-  el->i1 = color ; 
-  el->i2 = brightness ; 
-  el->i3 = x ; 
-  el->i4 = y ; 
-} 
-
-
-
-void GFX_P_Text(
-	struct Tracker_Windows* tvisual,
-	int color,
-	char* text,
-	int x,
-	int y,
-	int width,
-	int flags
-	) 
-{ 
+void QUEUE_GFX_P_Text(struct Tracker_Windows* tvisual, int color, char* text, int x, int y, int width, int flags){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_P_Text ; 
   el->i1 = color ; 
@@ -159,10 +102,7 @@ void GFX_P_Text(
   el->i6 = flags ; 
 } 
 
-
-
-void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2) 
-{ 
+void QUEUE_GFX_Line(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Line ; 
   el->i1 = color ; 
@@ -172,9 +112,7 @@ void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y
   el->i5 = y2 ; 
 } 
 
-
-void GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2) 
-{ 
+void QUEUE_GFX_Box(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Box ; 
   el->i1 = color ; 
@@ -184,9 +122,7 @@ void GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2
   el->i5 = y2 ; 
 } 
 
-
-void GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2) 
-{ 
+void QUEUE_GFX_FilledBox(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_FilledBox ; 
   el->i1 = color ; 
@@ -196,18 +132,7 @@ void GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,
   el->i5 = y2 ; 
 } 
 
-
-
-void GFX_Text(
-	struct Tracker_Windows* tvisual,
-	int color,
-	char* text,
-	int x,
-	int y,
-	int width,
-	int flags
-) 
-{ 
+void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, int color, char* text, int x, int y, int width, int flags){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Text ; 
   el->i1 = color ; 
@@ -218,15 +143,7 @@ void GFX_Text(
   el->i6 = flags ; 
 } 
 
-
-
-void GFX_BitBlt(
-	struct Tracker_Windows* tvisual,
-	int dx,int dy,
-	int x,int y,
-	int x2,int y2
-	) 
-{ 
+void QUEUE_GFX_BitBlt(struct Tracker_Windows* tvisual, int dx, int dy, int x, int y, int x2, int y2){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_BitBlt ; 
   el->i1 = dx ; 

@@ -15,7 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdbool.h>
-#include <math.h>
 
 #include "MyWidget.h"
 #include "Qt_Bs_edit_proc.h"
@@ -58,7 +57,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
      dst_widget->painter->drawPixmap(x,y,*(src_pixmap),from_x,from_y,width,height)
 #  define DRAW_PIXMAP_ON_PIXMAP(dst_pixmap, x, y, src_pixmap, from_x, from_y, width, height) \
      dst_pixmap##_painter->drawPixmap(x,y,*(src_pixmap),from_x,from_y,width,height)
-#else
+#endif
+
+#if USE_QT3
 #  define DRAW_PIXMAP_ON_WIDGET(dst_widget, x, y, src_pixmap, from_x, from_y, width, height) \
      bitBlt(dst_widget,x+XOFFSET,y+YOFFSET,src_pixmap,from_x,from_y,width,height)
 #  define DRAW_PIXMAP_ON_PIXMAP(dst_pixmap, x, y, src_pixmap, from_x, from_y, width, height) \
@@ -66,43 +67,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
-RPoints::RPoints() {
-  this->qpa=new Q3PointArray(INITIALPOOLSIZE);
-
-  this->num_points=0;
-
-  //  super(0);
-}
-
-void RPoints::addPoint(int x,int y){
-  if((int)this->qpa->size() <= (int)this->num_points){
-    this->qpa->resize(this->qpa->size()*2);
-  }
-  this->qpa->setPoint(this->num_points,x,y);
-  this->num_points++;
-}
-
-void RPoints::drawPoints(QPainter *qp){
-
-  if(this->num_points==0) return;
-
-  qp->drawPoints(*this->qpa,0,this->num_points);
-
-  this->num_points=0;
-}
-
-
 MyWidget::MyWidget( struct Tracker_Windows *window,QWidget *parent, const char *name )
   : QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+  , qpa(256)
 {
   this->qpixmap=NULL;
   this->window=window;
 
   setEditorColors(this);
-
-  for(int lokke=0;lokke<8;lokke++){
-    this->rpoints[lokke]=new RPoints();
-  }
 
   this->setMouseTracking(true);
 
@@ -248,13 +220,6 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 }
 
 
-static void OS_GFX_bouncePoints(MyWidget *mywidget){
-  for(int lokke=0;lokke<8;lokke++){
-    mywidget->qpixmap_painter->setPen(mywidget->colors[lokke]);
-    mywidget->rpoints[lokke]->drawPoints(mywidget->qpixmap_painter);
-  }
-}
-
 void OS_GFX_C2V_bitBlt(
 		    struct Tracker_Windows *window,
 		    int from_x1,int from_x2,
@@ -262,17 +227,11 @@ void OS_GFX_C2V_bitBlt(
 		    ){
   MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
 
-  OS_GFX_bouncePoints(mywidget);
-
   DRAW_PIXMAP_ON_WIDGET(mywidget,
- 	 from_x1,to_y,
-	 mywidget->cursorpixmap,
-	 // The next two lines are the ones that should be used.
-	 //	 from_x1,0,
-	 //	 from_x2-from_x1+1,window->fontheight
-	 // The next two lines are for debugging.
-	 from_x1,0,
-	 window->wblock->a.x2+-from_x1+1+100,window->fontheight
+                        from_x1,to_y,
+                        mywidget->cursorpixmap,
+                        from_x1,0,
+                        from_x2-from_x1+1,window->fontheight
 	 );
 }
 
@@ -284,8 +243,6 @@ void OS_GFX_C_DrawCursor(
 				      int y_pixmap
 				      ){
   MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
-
-  OS_GFX_bouncePoints(mywidget);
 
   mywidget->cursorpixmap_painter->fillRect(x1,0,x4,height,mywidget->colors[7]);
   mywidget->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,mywidget->colors[1]);
@@ -314,8 +271,6 @@ void OS_GFX_P2V_bitBlt(
 		    ){
   
   MyWidget *mywidget=(MyWidget *)window->os_visual.widget;
-
-  OS_GFX_bouncePoints(mywidget);
 
   DRAW_PIXMAP_ON_WIDGET(
                         mywidget,
@@ -369,9 +324,9 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
   float a2 = 1.0f-a1;
 
   if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
-    int r = 34*a1 + c2.red()*a2;
-    int g = 34*a1 + c2.green()*a2;
-    int b = 34*a1 + c2.blue()*a2;
+    int r = 74*a1 + c2.red()*a2;
+    int g = 74*a1 + c2.green()*a2;
+    int b = 74*a1 + c2.blue()*a2;
 
     return QColor(r,g,b);
   }else{
@@ -393,21 +348,43 @@ void OS_GFX_P_Point(
 	)
 {
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  QPainter *painter=mywidget->qpixmap_painter;
 
-  color=color>7?7:color<0?0:color;
-
-  if(brightness==256){
-    mywidget->rpoints[color]->addPoint(x,y);
+  if(brightness==MAX_BRIGHTNESS && color!=1){
+    painter->setPen(mywidget->colors[color]);
   }else{
-    QPainter *painter=mywidget->qpixmap_painter;
-    painter->setPen(mix_colors(mywidget->colors[color],mywidget->colors[0], brightness/256.0f));
-    painter->drawPoint(x,y);
+    painter->setPen(mix_colors(mywidget->colors[color], mywidget->colors[0], brightness/(float)MAX_BRIGHTNESS));
   }
 
-#if 0
-  mywidget->qpixmap_painter->setPen(mywidget->colors[color]);
-  mywidget->qpixmap_painter->drawPoint(x,y);
-#endif
+  painter->drawPoint(x,y);
+}
+
+
+
+void OS_GFX_P_Points(
+                     struct Tracker_Windows *tvisual,
+                     int color,
+                     int brightness,
+                     int num_points,
+                     uint16_t *x,uint16_t *y
+                     )
+{
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  QPainter *painter=mywidget->qpixmap_painter;
+
+  if(brightness==MAX_BRIGHTNESS && color!=1){
+    painter->setPen(mywidget->colors[color]);
+  }else{
+    painter->setPen(mix_colors(mywidget->colors[color], mywidget->colors[0], brightness/(float)MAX_BRIGHTNESS));
+  }
+
+  while(mywidget->qpa.size() <= (unsigned int)num_points)
+    mywidget->qpa.resize(mywidget->qpa.size()*2);
+  
+  for(int i=0;i<num_points;i++)
+    mywidget->qpa.setPoint(i,x[i],y[i]);
+
+  painter->drawPoints(mywidget->qpa,0,num_points);
 }
 
 
@@ -550,8 +527,6 @@ void OS_GFX_BitBlt(
 	int x2,int y2
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-
-  OS_GFX_bouncePoints(mywidget);
 
   DRAW_PIXMAP_ON_PIXMAP(
                         mywidget->qpixmap,

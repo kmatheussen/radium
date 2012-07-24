@@ -83,6 +83,9 @@ typedef int32_t NInt;
 #define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
 
+// Higher than 255 is no point.
+#define MAX_BRIGHTNESS 63
+
 #include <OS_Visual.h>
 
 

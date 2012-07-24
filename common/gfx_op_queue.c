@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_op_queue_proc.h"
 
 #include "visual_proc.h"
+#include "gfx_point_proc.h"
 
 #include "gfx_op_queue_proc.h"
 
@@ -72,8 +73,18 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
 
   //fprintf(stderr,"queue size: %d\n",queue->pos);
 
+
+
   for(i=0;i<queue->pos;i++){
     queue_element_t *el = &queue->elements[i];
+
+    if(false                                 // Ugly, but this is exactly what happened in Qt/Qt_visual.cpp, and there hasn't been problems with it.
+       || el->type==ENUM_GFX_C2V_bitBlt
+       || el->type==ENUM_GFX_C_DrawCursor
+       || el->type==ENUM_GFX_P2V_bitBlt 
+       || el->type==ENUM_GFX_BitBlt)
+      GFX_P_BouncePoints(window);
+
     switch(el->type){
 #     define OP_CASES
 #     include "gfx_op_queue_generated.c"
@@ -84,6 +95,9 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
   }
 
   queue->pos = 0;
+
+
+  //GFX_P_BouncePoints(window);
 }
 
 void GFX_create_op_queue(struct Tracker_Windows *window){

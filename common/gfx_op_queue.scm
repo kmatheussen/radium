@@ -31,7 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 ;; Functions which are called from the queue, but are not OS specific.
 (define pre-os-funcs '(GFX_P_Line))
-(define pre-os-includes '("gfx_lines_proc.h"))
+(define pre-os-includes '())
+
+;;(define pre-os-funcs '())
+;;(define pre-os-includes '())
+
 
 (define protos-in-one-string "
 
@@ -59,9 +63,7 @@ void GFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x
 
 void GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
 
-
 void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
-void GFX_P_Point(struct Tracker_Windows* tvisual,int color,int brightness,int x,int y);
 
 void GFX_P_Text(
 	struct Tracker_Windows* tvisual,
@@ -153,8 +155,13 @@ void GFX_BitBlt(
   (parse-c-proto funcdef
                  (lambda (rettype name args)
                    (let ((window-name (last (car args))))
-                     (c-display funcdef)
-                     (c-display "{")
+                     (display (<-> rettype " QUEUE_" name "("))
+                     (for-each (lambda (arg)
+                                 (display (car arg))(display " ") (display (cadr arg))
+                                 (if (equal? arg (last args))
+                                     (c-display "){")
+                                     (display ", ")))
+                               args)
                      (c-display (<-> "  queue_element_t *el = get_next_element(" window-name "->op_queue);"))
                      (c-display (<-> "  el->type = ENUM_" name) ";")
                      (for-each (lambda (arg n)

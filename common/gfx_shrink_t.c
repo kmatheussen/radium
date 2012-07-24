@@ -110,7 +110,7 @@ void GFXST_TextType(
     int minx=getMinX(window);
     char temp[600];
 
-    if(GFX_OSFunc==GFX_Text){
+    if(GFX_OSFunc==QUEUE_GFX_Text){
       if(x<minx){
         x=minx;
         sprintf(temp,"<--%s",text);

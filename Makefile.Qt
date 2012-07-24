@@ -136,7 +136,7 @@ RTMIDI_LDFLAGS = -lpthread -lasound -ljack
 
 OBJ1= windows.o window_config.o list.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o
 
-OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_lines.o gfx_op_queue.o
+OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
@@ -336,6 +336,9 @@ gfx_wtext.o: $(CD)gfx_wtext.c
 
 gfx_lines.o: $(CD)gfx_lines.c $(CD)visual_op_queue_proc.h
 	$(CC) $(CD)gfx_lines.c $(OPT)
+
+gfx_point.o: $(CD)gfx_point.c $(CD)visual_op_queue_proc.h
+	$(CC) $(CD)gfx_point.c $(OPT)
 
 gfx_op_queue.o: $(CD)gfx_op_queue_generated.c $(CD)visual_op_queue_proc.h $(CD)gfx_op_queue.c
 	$(CC) $(CD)gfx_op_queue.c $(OPT)
