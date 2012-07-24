@@ -175,8 +175,8 @@ void Instrument_widget::name_widget_returnPressed()
              patch->name = talloc_strdup((char*)name_widget->text().ascii());
              DrawWTrackHeader(window,wblock,wtrack);
              );
-      MyWidget *my_widget = static_cast<MyWidget*>(window->os_visual.widget);
-      my_widget->update();
+      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+      editor->update();
     }
 
     set_editor_focus();

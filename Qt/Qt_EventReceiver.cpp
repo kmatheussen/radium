@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include "MyWidget.h"
+#include "EditorWidget.h"
 
 #include <qpainter.h>
 
@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #if 0
-void MyWidget::timerEvent(QTimerEvent *){
+void EditorWidget::timerEvent(QTimerEvent *){
   PlayerTask(40);
 }
 #endif
@@ -62,7 +62,7 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 extern PlayerClass *pc;
 
-void MyWidget::customEvent(QCustomEvent *e){
+void EditorWidget::customEvent(QCustomEvent *e){
   {
     DO_GFX_BLT({
         if(pc->isplaying)
@@ -77,13 +77,13 @@ void MyWidget::customEvent(QCustomEvent *e){
 
 
 #ifdef USE_QT4
-const QPaintEngine* MyWidget::paintEngine(){     
+const QPaintEngine* EditorWidget::paintEngine(){     
   //qDebug()<<"Paint Engine";
   return NULL;
 }
 #endif
 
-void MyWidget::paintEvent( QPaintEvent *e ){
+void EditorWidget::paintEvent( QPaintEvent *e ){
 
 //  setBackgroundColor( this->colors[0] );		/* white background */
 
@@ -179,7 +179,7 @@ const unsigned int Qt2SubId[0x2000]={
   EVENT_Z
 };
 
-//bool MyWidget::event(QEvent *event){
+//bool EditorWidget::event(QEvent *event){
 //  printf("type: %d\n",event->type());
 //  return true;
 //}
@@ -187,7 +187,7 @@ const unsigned int Qt2SubId[0x2000]={
 
 
 
-void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
+void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
   RWarning("keyPressEvent should not be called.\n");
 
   printf("ascii    : %d\n",qkeyevent->ascii());
@@ -258,7 +258,7 @@ void MyWidget::keyPressEvent(QKeyEvent *qkeyevent){
    update();
 }
 
-void MyWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
+void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
   RWarning("keyReleaseEvent should not be called.\n");
 
   //  printf("key release: %d\n",qkeyevent->ascii());
@@ -270,7 +270,7 @@ void MyWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 #endif
 
 
-void MyWidget::wheelEvent(QWheelEvent *qwheelevent){
+void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 
   tevent.ID=TR_KEYBOARD;
 
@@ -291,7 +291,7 @@ void MyWidget::wheelEvent(QWheelEvent *qwheelevent){
 }
 
 
-void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
+void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   if(qmouseevent->button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEDOWN;
@@ -311,7 +311,7 @@ void MyWidget::mousePressEvent( QMouseEvent *qmouseevent){
   update();
 }
 
-void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
+void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   if(qmouseevent->button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEUP;
   }else{
@@ -330,7 +330,7 @@ void MyWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   update();
 }
 
-void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
+void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.ID=TR_MOUSEMOVE;
   tevent.x=qmouseevent->x()-XOFFSET;
   tevent.y=qmouseevent->y()-YOFFSET;
@@ -342,7 +342,7 @@ void MyWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
 }
 
-void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
+void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
   this->qpixmap->resize(this->width(), this->height());
   this->cursorpixmap->resize(this->width(), this->height());
 
@@ -378,6 +378,6 @@ void MyWidget::resizeEvent( QResizeEvent *qresizeevent){
   }
 }
 
-void MyWidget::closeEvent(QCloseEvent *ce){
+void EditorWidget::closeEvent(QCloseEvent *ce){
   //  ce->accept();
 }

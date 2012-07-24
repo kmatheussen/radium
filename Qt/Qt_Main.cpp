@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCustomEvent>
 #endif
 
-#include "MyWidget.h"
+#include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
 #include <X11/Xlib.h>
@@ -88,13 +88,13 @@ bool MyApplication::x11EventFilter(XEvent *event){
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       this->quit();
     }
-    static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+    static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     return true;
   case KeyRelease:
     if(instrumentWidgetUsesKeyboard())
       return false;
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
-    static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+    static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
     return true;
   case EnterNotify:
     {
@@ -310,22 +310,22 @@ int radium_main(char *arg){
 
   {
     QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-    MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
     {
       QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
-      my_widget->xsplitter = xsplitter;
+      editor->xsplitter = xsplitter;
 
       xsplitter->setOpaqueResize(true);
 
-      my_widget->reparent(xsplitter, QPoint(0,0), true);
+      editor->reparent(xsplitter, QPoint(0,0), true);
       block_selector->reparent(xsplitter, QPoint(main_window->width()-100,0), true);
 
       block_selector->resize(100,block_selector->height());
 
       {
         QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
-        my_widget->ysplitter = ysplitter;
+        editor->ysplitter = ysplitter;
         ysplitter->setOpaqueResize(true);
 
         QWidget *instruments = createInstrumentsWidget();

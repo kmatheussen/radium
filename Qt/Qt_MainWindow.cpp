@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qstatusbar.h>
 #include <qmainwindow.h>
 
-#include "MyWidget.h"
+#include "EditorWidget.h"
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 
 
-MyWidget::MyWidget(QWidget *parent, const char *name )
+EditorWidget::EditorWidget(QWidget *parent, const char *name )
   : QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   , qpa(256)
 {
@@ -45,13 +45,13 @@ MyWidget::MyWidget(QWidget *parent, const char *name )
   this->setLineWidth(2);
 }
 
-MyWidget::~MyWidget()
+EditorWidget::~EditorWidget()
 {
 }
 
 
 
-MyWidget *g_mywidget = NULL;
+EditorWidget *g_editor = NULL;
 
 void SetupMainWindow(void){
 
@@ -71,30 +71,30 @@ void SetupMainWindow(void){
   //main_window->setPalette(pal);
   //main_window->menuBar()->setPalette(pal);
 
-  MyWidget *mywidget=new MyWidget(main_window,"name");
-  mywidget->setFocus();
+  EditorWidget *editor=new EditorWidget(main_window,"name");
+  editor->setFocus();
 #ifdef USE_QT4
-  mywidget->setAttribute(Qt::WA_PaintOnScreen);
-  mywidget->setAttribute(Qt::WA_OpaquePaintEvent);
-  mywidget->setAttribute(Qt::WA_NoSystemBackground);
+  editor->setAttribute(Qt::WA_PaintOnScreen);
+  editor->setAttribute(Qt::WA_OpaquePaintEvent);
+  editor->setAttribute(Qt::WA_NoSystemBackground);
 #endif
-  mywidget->main_window = main_window;
+  editor->main_window = main_window;
 
   main_window->setBackgroundMode(Qt::NoBackground);
 
   main_window->resize(800,400);
-  mywidget->setMinimumWidth(400);
-  mywidget->setMinimumHeight(200);
+  editor->setMinimumWidth(400);
+  editor->setMinimumHeight(200);
 
   main_window->setCaption("Radium editor window");
   main_window->statusBar()->message( "Ready", 2000 );
 
   {
     QStatusBar *status_bar = main_window->statusBar();
-    mywidget->status_label = new QLabel(status_bar);//"");
-    mywidget->status_label->setFrameStyle(QFrame::Sunken);
-    //mywidget->status_frame->
-    status_bar->addWidget(mywidget->status_label, 1, true);
+    editor->status_label = new QLabel(status_bar);//"");
+    editor->status_label->setFrameStyle(QFrame::Sunken);
+    //editor->status_frame->
+    status_bar->addWidget(editor->status_label, 1, true);
   }
 
   initMenues(main_window->menuBar());
@@ -106,28 +106,28 @@ void SetupMainWindow(void){
     if(fontstring!=NULL)
       font.fromString(fontstring);
 
-    mywidget->font = font;
+    editor->font = font;
 
-    //mywidget->font->setStyleHint(QFont::TypeWriter);
-    //mywidget->font->setFixedPitch(false);
+    //editor->font->setStyleHint(QFont::TypeWriter);
+    //editor->font->setFixedPitch(false);
   }
 
-  mywidget->qpixmap=new QPixmap(mywidget->width(),mywidget->height());
+  editor->qpixmap=new QPixmap(editor->width(),editor->height());
 #ifdef USE_QT3
-  mywidget->qpixmap->setOptimization(QPixmap::BestOptim);
+  editor->qpixmap->setOptimization(QPixmap::BestOptim);
 #endif
 
-  mywidget->cursorpixmap=new QPixmap(mywidget->width(),mywidget->height());
+  editor->cursorpixmap=new QPixmap(editor->width(),editor->height());
 #ifdef USE_QT3
-  mywidget->cursorpixmap->setOptimization(QPixmap::BestOptim);
+  editor->cursorpixmap->setOptimization(QPixmap::BestOptim);
 #endif
 
-  g_mywidget = mywidget;
+  g_editor = editor;
 }
 
 void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->setMinimumWidth(width);
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->setMinimumWidth(width);
 }
 
 
@@ -140,8 +140,8 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
   //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //main_window->statusBar()->message(title);
 
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->status_label->setText(title);
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->status_label->setText(title);
 }
 
 

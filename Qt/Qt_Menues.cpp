@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/gfx_proc.h"
-#include "MyWidget.h"
+#include "EditorWidget.h"
 
 #include "Qt_Menues_proc.h"
 
@@ -85,8 +85,8 @@ public slots:
       DO_GFX(PyRun_SimpleString(temp));
     }else
       DO_GFX(PyRun_SimpleString(python_command));
-    //static_cast<MyWidget*>(window->os_visual.widget)->update();
-    static_cast<MyWidget*>(window->os_visual.widget)->repaint(); // Why isn't calling update() enough?
+    //static_cast<EditorWidget*>(window->os_visual.widget)->update();
+    static_cast<EditorWidget*>(window->os_visual.widget)->repaint(); // Why isn't calling update() enough?
     if(doquit==true)
       qapplication->quit();
   }

@@ -819,28 +819,28 @@ X11_keyboard.o: X11/X11_keyboard.c
 #	$(CC) X11/X11_ClientMessages.c $(OPT)
 
 
-Qt_Main.o: $(P)Qt_Main.cpp $(P)MyWidget.h $(P)Qt_instruments_proc.h
+Qt_Main.o: $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
 
-Qt_visual.o: $(P)Qt_visual.cpp $(P)MyWidget.h $(CD)visual_op_queue_proc.h
+Qt_visual.o: $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT) 
 
-Qt_error.o: $(P)Qt_error.c $(P)MyWidget.h
+Qt_error.o: $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
 
-Qt_Ptask2Mtask.o: $(P)Qt_Ptask2Mtask.cpp $(P)MyWidget.h
+Qt_Ptask2Mtask.o: $(P)Qt_Ptask2Mtask.cpp $(P)EditorWidget.h
 	$(CC) $(P)Qt_Ptask2Mtask.cpp $(OPT)
 
-Qt_endprogram.o: $(P)Qt_endprogram.c $(P)MyWidget.h
+Qt_endprogram.o: $(P)Qt_endprogram.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_endprogram.c $(OPT)
 
-Qt_disk.o: $(P)Qt_disk.c $(P)MyWidget.h
+Qt_disk.o: $(P)Qt_disk.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_disk.c $(OPT)
 
-Qt_Player.o: $(P)Qt_Player.c $(P)MyWidget.h
+Qt_Player.o: $(P)Qt_Player.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_Player.c $(OPT)
 
-Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)MyWidget.h
+Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 Qt_colors.o: $(P)Qt_colors.cpp

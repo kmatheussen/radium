@@ -28,7 +28,7 @@ extern "C"{
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
-#include "MyWidget.h"
+#include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 #include "Qt_instruments_proc.h"
 
@@ -45,8 +45,8 @@ extern struct Patch *g_currpatch;
 static int num_focus = 0;
 
 void set_editor_focus(void){
-  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
-  my_widget->setFocus();
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  editor->setFocus();
 }
 
 
@@ -398,8 +398,8 @@ QWidget *createInstrumentsWidget(void){
 
 static void set_widget_height(int height){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
-  QSplitter *splitter = my_widget->ysplitter;
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  QSplitter *splitter = editor->ysplitter;
 
   QValueList<int> currentSizes = splitter->sizes();
   currentSizes[0] = main_window->height() - height;
@@ -527,8 +527,8 @@ static void tab_selected(){
            DrawWTrackHeader(window,wblock,wtrack);
            );
 
-    MyWidget *my_widget = static_cast<MyWidget*>(window->os_visual.widget);
-    my_widget->update();
+    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+    editor->update();
   }
 
   updatePortsWidget(instrument);

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qfontdialog.h>
 
 #include "../common/nsmtracker.h"
-#include "MyWidget.h"
+#include "EditorWidget.h"
 
 #include "Qt_Fonts_proc.h"
 
@@ -35,40 +35,40 @@ void setFontValues(struct Tracker_Windows *tvisual, const QFont &font){
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
 char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->font = QFontDialog::getFont( 0, mywidget->font ) ;
-  mywidget->setFont(mywidget->font);
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->font = QFontDialog::getFont( 0, editor->font ) ;
+  editor->setFont(editor->font);
 
-  setFontValues(tvisual, mywidget->font);
-  return talloc_strdup((char*)mywidget->font.toString().ascii());
+  setFontValues(tvisual, editor->font);
+  return talloc_strdup((char*)editor->font.toString().ascii());
 }
 
 void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  if(false && mywidget->font.pixelSize()!=-1){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  if(false && editor->font.pixelSize()!=-1){
     // not used
-    mywidget->font.setPixelSize(mywidget->font.pixelSize()+pixels);
+    editor->font.setPixelSize(editor->font.pixelSize()+pixels);
   }else{
-    float org_size = mywidget->font.pointSize();
+    float org_size = editor->font.pointSize();
     for(int i=1;i<100;i++){
-      mywidget->font.setPointSize(org_size+(i*pixels));
-      if(mywidget->font.pointSize()!=org_size)
+      editor->font.setPointSize(org_size+(i*pixels));
+      if(editor->font.pointSize()!=org_size)
         goto exit;
     }
     for(float i=1;i<100;i++){
-      mywidget->font.setPointSize(org_size+(pixels/i));
-      if(mywidget->font.pointSize()!=org_size)
+      editor->font.setPointSize(org_size+(pixels/i));
+      if(editor->font.pointSize()!=org_size)
         goto exit;
     }
   }
  exit:
-  setFontValues(tvisual,mywidget->font);
+  setFontValues(tvisual,editor->font);
 }
 
 
 int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  const QFontMetrics fn = QFontMetrics(mywidget->font);
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  const QFontMetrics fn = QFontMetrics(editor->font);
   return fn.width(text);
 }
 
@@ -94,8 +94,8 @@ static int find_text_length(const QFontMetrics &fn, const QString &text, int max
 }
 
 int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  const QFontMetrics fn = QFontMetrics(mywidget->font);
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  const QFontMetrics fn = QFontMetrics(editor->font);
   int len = strlen(text);
   QString string(text);
 

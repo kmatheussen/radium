@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
 
-#include "MyWidget.h"
+#include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
 #include "qwidget.h"
@@ -293,8 +293,8 @@ private slots:
     struct Tracker_Windows *window=getWindowFromNum(-1);
     struct WBlocks *wblock=getWBlockFromNum(-1,num);
     DO_GFX(SelectWBlock(window,wblock));
-    MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
-    my_widget->update();
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    editor->update();
   }
   void blocklist_selected(int num){
     if(num==-1)
@@ -400,8 +400,8 @@ void BS_SelectPlaylistPos(int pos){
 
 static void set_widget_width(int width){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
-  QSplitter *splitter = my_widget->xsplitter;
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  QSplitter *splitter = editor->xsplitter;
 
   QValueList<int> currentSizes = splitter->sizes();
   bs->last_shown_width = currentSizes[1];

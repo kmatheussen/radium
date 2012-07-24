@@ -60,11 +60,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 class QMainWindow;
 class QSplitter;
 
-class MyWidget : public QFrame
+class EditorWidget : public QFrame
 {
 public:
-  MyWidget(QWidget *parent=0, const char *name=0 );
-  ~MyWidget();
+  EditorWidget(QWidget *parent=0, const char *name=0 );
+  ~EditorWidget();
 
 #if USE_QT4
   const QPaintEngine* paintEngine();

@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qobjectlist.h>
 #endif
 
-#include "MyWidget.h"
+#include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
 #include "../common/settings_proc.h"
@@ -43,7 +43,7 @@ static char *SETTINGS_read_string(const char *a,const char *b){
   return SETTINGS_read_string((char*)a,(char*)b);
 }
 
-static void updatePalette(MyWidget *my_widget, QPalette &pal){
+static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   if(system_color==NULL)
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
 
@@ -92,19 +92,19 @@ static void updatePalette(MyWidget *my_widget, QPalette &pal){
   }
 }
 
-static void updateWidget(MyWidget *my_widget,QWidget *widget){
+static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   QPalette pal(widget->palette());
   updatePalette(my_widget,pal);
   widget->setPalette(pal);
 }
 
-static void updateApplication(MyWidget *my_widget,QApplication *app){
+static void updateApplication(EditorWidget *my_widget,QApplication *app){
   QPalette pal(app->palette());
   updatePalette(my_widget,pal);
   app->setPalette(pal);
 }
 
-static void updateAll(MyWidget *my_widget, QWidget *widget){
+static void updateAll(EditorWidget *my_widget, QWidget *widget){
   updateWidget(my_widget, widget);
 
 #ifdef USE_QT3
@@ -124,19 +124,19 @@ static void updateAll(MyWidget *my_widget, QWidget *widget){
 #endif
 }
 
-static void updateAll(MyWidget *my_widget){
+static void updateAll(EditorWidget *my_widget){
   updateAll(my_widget,application->mainWidget());
   updateApplication(my_widget,application);
 }
 
 void setWidgetColors(QWidget *widget){
-  MyWidget *my_widget = static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+  EditorWidget *my_widget = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   updateAll(my_widget,widget);
 }
 
 void setApplicationColors(QApplication *app){
   static bool first_run = true;
-  MyWidget *my_widget = root==NULL ? NULL : root->song==NULL ? NULL : static_cast<MyWidget*>(root->song->tracker_windows->os_visual.widget);
+  EditorWidget *my_widget = root==NULL ? NULL : root->song==NULL ? NULL : static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
   if(first_run==true){
     override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
@@ -148,7 +148,7 @@ void setApplicationColors(QApplication *app){
   updateApplication(my_widget,app);
 }
 
-void setEditorColors(MyWidget *my_widget){
+void setEditorColors(EditorWidget *my_widget){
   my_widget->colors[0]=QColor(SETTINGS_read_string("color0","#d0d5d0"));
   my_widget->colors[1]=QColor(SETTINGS_read_string("color1","black"));
   my_widget->colors[2]=QColor(SETTINGS_read_string("color2","white"));
@@ -166,7 +166,7 @@ void setEditorColors(MyWidget *my_widget){
 
 void testColorInRealtime(int num, QColor color){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  MyWidget *my_widget=(MyWidget *)window->os_visual.widget;
+  EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
   if(num<9)
     my_widget->colors[num].setRgb(color.rgb());
   else if(num==9)
@@ -194,7 +194,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     return;
   is_running = true;
 
-  MyWidget *my_widget=(MyWidget *)tvisual->os_visual.widget;
+  EditorWidget *my_widget=(EditorWidget *)tvisual->os_visual.widget;
 
   override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
 
