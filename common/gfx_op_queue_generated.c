@@ -30,11 +30,11 @@ case ENUM_GFX_P_CancelClipRect: OS_GFX_P_CancelClipRect(window); break;
 case ENUM_GFX_SetClipRect: OS_GFX_SetClipRect(window, el->i1, el->i2, el->i3, el->i4); break; 
 case ENUM_GFX_CancelClipRect: OS_GFX_CancelClipRect(window); break; 
 case ENUM_GFX_P_Line: PREOS_GFX_P_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_P_Text: OS_GFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_P_Text: PREOS_GFX_P_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_Line: OS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_FilledBox: OS_GFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
-case ENUM_GFX_Text: OS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_Text: PREOS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 #endif 
 

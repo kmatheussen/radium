@@ -124,6 +124,15 @@ extern LANGSPEC void OS_GFX_P_Points(
 extern LANGSPEC int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text);
 extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width);
 
+extern LANGSPEC void PREOS_GFX_P_Text(
+	struct Tracker_Windows *tvisual,
+	int color,
+	char *text,
+	int x,
+	int y,
+        int width,
+        int flags
+	);
 extern LANGSPEC void QUEUE_GFX_P_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
@@ -138,6 +147,15 @@ extern LANGSPEC void QUEUE_GFX_Line(struct Tracker_Windows *tvisual,int color,in
 extern LANGSPEC void QUEUE_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 extern LANGSPEC void QUEUE_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
+extern LANGSPEC void PREOS_GFX_Text(
+	struct Tracker_Windows *tvisual,
+	int color,
+	char *text,
+	int x,
+	int y,
+        int width,
+	int flags
+);
 extern LANGSPEC void QUEUE_GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,

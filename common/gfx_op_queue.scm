@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	     (ice-9 pretty-print))
 
 ;; Functions which are called from the queue, but are not OS specific.
-(define pre-os-funcs '(GFX_P_Line))
+(define pre-os-funcs '(GFX_P_Line GFX_P_Text GFX_Text))
 (define pre-os-includes '())
 
 ;;(define pre-os-funcs '())

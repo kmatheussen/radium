@@ -390,6 +390,7 @@ void OS_GFX_P_SetClipRect(
 {
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   mywidget->qpixmap_painter->setClipRect(x,y,x2-x,y2-y);
+  mywidget->qpixmap_painter->setClipping(true);
 }
 
 void OS_GFX_P_CancelClipRect(struct Tracker_Windows *tvisual){
@@ -406,6 +407,7 @@ void OS_GFX_SetClipRect(
 {
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   mywidget->painter->setClipRect(x,y,x2-x,y2-y);
+  mywidget->painter->setClipping(true);
 }
 
 void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual){
@@ -452,48 +454,23 @@ static void draw_text(struct Tracker_Windows *tvisual,
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
 
-  if(flags & TEXT_CLIPRECT){
-    if(width==TEXT_IGNORE_WIDTH){
-      RError("width can not be TEXT_IGNORE_WIDTH when using the TEXT_CLIPRECT flag");
+  painter->setPen(mywidget->colors[color]);
+    
+  if(flags & TEXT_BOLD){
+    mywidget->font.setBold(true);
+    painter->setFont(mywidget->font);
+  }
+  {  
+    if(flags & TEXT_CENTER){
+      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+      painter->drawText(rect, Qt::AlignVCenter, text);
     }else{
-      if(width<=0)
-        return;
-      painter->setClipRect(x,y,width,tvisual->fontheight+20);
+      painter->drawText(x,y+tvisual->org_fontheight-1,text);
     }
-    painter->setClipping(true);
   }
-  {
-
-    if(flags & TEXT_INVERT){
-      draw_filled_box(mywidget,painter,color,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-    }else if(flags & TEXT_CLEAR){
-      draw_filled_box(mywidget,painter,0,x,y,x+(tvisual->fontwidth*strlen(text)),y+tvisual->fontheight);
-    }
-    
-    painter->setPen(mywidget->colors[(flags&TEXT_INVERT) ? 0 : color]);
-    
-    if(flags & TEXT_BOLD){
-      mywidget->font.setBold(true);
-      painter->setFont(mywidget->font);
-    }
-    {
-    
-      if(flags & TEXT_CENTER){
-        QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
-        painter->drawText(rect, Qt::AlignVCenter, text);
-      }else{
-        painter->drawText(x,y+tvisual->org_fontheight-1,text);
-      }
-
-    }
-    if(flags & TEXT_BOLD){
-      mywidget->font.setBold(false);
-      painter->setFont(mywidget->font);
-    }
-
-  }
-  if(flags & TEXT_CLIPRECT){
-    painter->setClipping(false);
+  if(flags & TEXT_BOLD){
+    mywidget->font.setBold(false);
+    painter->setFont(mywidget->font);
   }
 }                      
 
