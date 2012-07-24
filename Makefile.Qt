@@ -164,7 +164,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
+OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -855,6 +855,8 @@ $(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp
 Qt_Fonts.o: $(P)Qt_Fonts.cpp
 	$(CCC) $(P)Qt_Fonts.cpp $(QTOPT)
 
+Qt_MainWindow.o: $(P)Qt_MainWindow.cpp
+	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)

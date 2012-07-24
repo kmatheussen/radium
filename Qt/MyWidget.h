@@ -57,12 +57,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define XOFFSET 5
 #define YOFFSET 2
 
+class QMainWindow;
 class QSplitter;
 
 class MyWidget : public QFrame
 {
 public:
-  MyWidget(struct Tracker_Windows *window, QWidget *parent=0, const char *name=0 );
+  MyWidget(QWidget *parent=0, const char *name=0 );
   ~MyWidget();
 
 #if USE_QT4
@@ -75,7 +76,9 @@ public:
 
     //void timerEvent(QTimerEvent *);
 
-    struct Tracker_Windows *window;
+    struct Tracker_Windows *window; // Not sure if this one is used.
+
+    QMainWindow *main_window;
 
     QPainter *painter; // Set in paintEvent
     QPainter *qpixmap_painter; // Set in paintEvent

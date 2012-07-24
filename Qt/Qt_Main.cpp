@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_instruments_proc.h"
+#include "Qt_MainWindow_proc.h"
 
 
 extern struct Root *root;
@@ -279,6 +280,8 @@ int radium_main(char *arg){
   setApplicationColors(qapplication);
 
   X11_init_keyboard();
+
+  SetupMainWindow();
 
   //X11_StartBlockSelector();
   //X11_StartMidiProperties();
