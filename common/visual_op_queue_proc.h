@@ -8,6 +8,10 @@ extern LANGSPEC void OS_GFX_C_DrawCursor(struct Tracker_Windows* window,int x1,i
 extern LANGSPEC void OS_GFX_P2V_bitBlt(struct Tracker_Windows* window,int from_x,int from_y,int to_x,int to_y,int width,int height); 
 extern LANGSPEC void OS_GFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void OS_GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
+extern LANGSPEC void OS_GFX_P_SetClipRect(struct Tracker_Windows* tvisual,int x,int y,int x2,int y2); 
+extern LANGSPEC void OS_GFX_P_CancelClipRect(struct Tracker_Windows* tvisual); 
+extern LANGSPEC void OS_GFX_SetClipRect(struct Tracker_Windows* tvisual,int x,int y,int x2,int y2); 
+extern LANGSPEC void OS_GFX_CancelClipRect(struct Tracker_Windows* tvisual); 
 extern LANGSPEC void OS_GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 
 extern LANGSPEC void OS_GFX_P_Text(struct Tracker_Windows* tvisual,int color,char* text,int x,int y,int width,int flags); 
 extern LANGSPEC void OS_GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2); 

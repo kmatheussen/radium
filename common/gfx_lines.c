@@ -40,6 +40,8 @@ static void plot(int x, int y, struct Tracker_Windows *window, int color, float 
 #define rfpart_(X) (1.0-fpart_(X)) 
 #define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; }while(0)
 
+#define USE_ENDPOINTS 0
+
 static void draw_line_aa(
                          struct Tracker_Windows *window,
                          int color,
@@ -63,7 +65,7 @@ static void draw_line_aa(
     double yend = y1 + gradient*(xend - x1);
     double xgap = rfpart_(x1 + 0.5);
     int xpxl1 = xend;
-#if 1
+#if USE_ENDPOINTS
     int ypxl1 = ipart_(yend);
     plot(xpxl1, ypxl1, window, color, rfpart_(yend)*xgap);
     plot(xpxl1, ypxl1+1, window, color, fpart_(yend)*xgap);
@@ -74,7 +76,7 @@ static void draw_line_aa(
     yend = y2 + gradient*(xend - x2);
     xgap = fpart_(x2+0.5);
     int xpxl2 = xend;
-#if 1
+#if USE_ENDPOINTS
     int ypxl2 = ipart_(yend);
     plot(xpxl2, ypxl2, window, color, rfpart_(yend) * xgap);
     plot(xpxl2, ypxl2 + 1, window, color, fpart_(yend) * xgap);
@@ -98,19 +100,22 @@ static void draw_line_aa(
     double xend = x1 + gradient*(yend - y1);
     double ygap = rfpart_(y1 + 0.5);
     int ypxl1 = yend;
-    //int xpxl1 = ipart_(xend);
-    //plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap);
-    //plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap);
+#if USE_ENDPOINTS
+    int xpxl1 = ipart_(xend);
+    plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap);
+    plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap);
+#endif
     double interx = xend + gradient;
  
     yend = round_(y2);
     xend = x2 + gradient*(yend - y2);
     ygap = fpart_(y2+0.5);
     int ypxl2 = yend;
-    //int xpxl2 = ipart_(xend);
-    //plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap);
-    //plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap);
- 
+#if USE_ENDPOINTS
+    int xpxl2 = ipart_(xend);
+    plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap);
+    plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap);
+#endif
     int y;
     for(y=ypxl1; y <= (ypxl2); y++) {
       plot(ipart_(interx), y, window, color, rfpart_(interx));

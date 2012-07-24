@@ -86,6 +86,19 @@ extern LANGSPEC void QUEUE_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int c
 
 extern LANGSPEC void QUEUE_GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
+extern LANGSPEC void QUEUE_GFX_P_SetClipRect(
+                                          struct Tracker_Windows *tvisual,
+                                          int x,int y,
+                                          int x2,int y2
+                                          );
+extern LANGSPEC void QUEUE_GFX_P_CancelClipRect(struct Tracker_Windows *tvisual);
+extern LANGSPEC void QUEUE_GFX_SetClipRect(
+                                           struct Tracker_Windows *tvisual,
+                                           int x,int y,
+                                           int x2,int y2
+                                           );
+extern LANGSPEC void QUEUE_GFX_CancelClipRect(struct Tracker_Windows *tvisual);
+
 
 extern LANGSPEC void PREOS_GFX_P_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2);
 extern LANGSPEC void QUEUE_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);

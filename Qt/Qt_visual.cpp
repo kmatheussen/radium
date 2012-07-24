@@ -220,6 +220,28 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 }
 
 
+void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
+  g_main_window->setCaption(title);
+}
+
+void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //main_window->statusBar()->message(title);
+
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->status_label->setText(title);
+
+#if 0
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  //mywidget->setCaption(title);
+
+  mywidget->painter->fillRect(0,mywidget->height()-28,mywidget->width(),mywidget->height(),mywidget->colors[0]);
+
+  mywidget->painter->setPen(mywidget->colors[1]);
+  mywidget->painter->drawText(0,mywidget->height()-28+tvisual->org_fontheight+2,title);
+#endif
+}
+
 void OS_GFX_C2V_bitBlt(
 		    struct Tracker_Windows *window,
 		    int from_x1,int from_x2,
@@ -360,6 +382,37 @@ void OS_GFX_P_Point(
 }
 
 
+void OS_GFX_P_SetClipRect(
+                          struct Tracker_Windows *tvisual,
+                          int x,int y,
+                          int x2,int y2
+                          )
+{
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->qpixmap_painter->setClipRect(x,y,x2-x,y2-y);
+}
+
+void OS_GFX_P_CancelClipRect(struct Tracker_Windows *tvisual){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->qpixmap_painter->setClipping(false);
+}
+
+
+void OS_GFX_SetClipRect(
+                        struct Tracker_Windows *tvisual,
+                        int x,int y,
+                        int x2,int y2
+                        )
+{
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->painter->setClipRect(x,y,x2-x,y2-y);
+}
+
+void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->painter->setClipping(false);
+}
+
 
 void OS_GFX_P_Points(
                      struct Tracker_Windows *tvisual,
@@ -496,28 +549,6 @@ void OS_GFX_Text(
 ){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   draw_text(tvisual,mywidget->painter,color,text,x,y,width,flags);
-}
-
-void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
-  g_main_window->setCaption(title);
-}
-
-void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  //main_window->statusBar()->message(title);
-
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->status_label->setText(title);
-
-#if 0
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  //mywidget->setCaption(title);
-
-  mywidget->painter->fillRect(0,mywidget->height()-28,mywidget->width(),mywidget->height(),mywidget->colors[0]);
-
-  mywidget->painter->setPen(mywidget->colors[1]);
-  mywidget->painter->drawText(0,mywidget->height()-28+tvisual->org_fontheight+2,title);
-#endif
 }
 
 void OS_GFX_BitBlt(

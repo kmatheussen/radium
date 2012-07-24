@@ -63,6 +63,19 @@ void GFX_P_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x
 
 void GFX_P_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
 
+void GFX_P_SetClipRect(
+                                          struct Tracker_Windows* tvisual,
+                                          int x,int y,
+                                          int x2,int y2
+                                          );
+void GFX_P_CancelClipRect(struct Tracker_Windows* tvisual);
+void GFX_SetClipRect(
+                                           struct Tracker_Windows* tvisual,
+                                           int x,int y,
+                                           int x2,int y2
+                                           );
+void GFX_CancelClipRect(struct Tracker_Windows* tvisual);
+
 void GFX_P_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2);
 
 void GFX_P_Text(
