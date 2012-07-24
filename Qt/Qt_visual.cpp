@@ -311,11 +311,18 @@ void OS_GFX_P2V_bitBlt(
   */
 }
 
-static void draw_filled_box(MyWidget *mywidget,QPainter *painter,int color,int x,int y,int x2,int y2);
+static void draw_filled_box(MyWidget *mywidget, QPainter *painter,int color,int x,int y,int x2,int y2){
+  painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
+}
 
 void OS_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   draw_filled_box(mywidget,mywidget->qpixmap_painter,color,x,y,x2,y2);
+}
+
+void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  draw_filled_box(mywidget,mywidget->painter,color,x,y,x2,y2);
 }
 
 void OS_GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
@@ -324,6 +331,11 @@ void OS_GFX_P_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,i
   mywidget->qpixmap_painter->drawRect(x,y,x2-x+1,y2-y+1);
 }
 
+void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  mywidget->painter->setPen(mywidget->colors[color]);
+  mywidget->painter->drawRect(x,y,x2-x+1,y2-y+1);
+}
 
 void OS_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
@@ -340,6 +352,19 @@ void OS_GFX_P_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,
   mywidget->qpixmap_painter->drawLine(x,y,x2,y2);
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 }
+
+void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
+  
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+//  QColor *qcolor=mywidget->colors[color];
+
+  mywidget->painter->setPen(mywidget->colors[color]);
+  mywidget->painter->drawLine(x,y,x2,y2);
+//  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
+  
+}
+
+
 
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
   float a1 = how_much;
@@ -381,6 +406,32 @@ void OS_GFX_P_Point(
   painter->drawPoint(x,y);
 }
 
+void OS_GFX_P_Points(
+                     struct Tracker_Windows *tvisual,
+                     int color,
+                     int brightness,
+                     int num_points,
+                     uint16_t *x,uint16_t *y
+                     )
+{
+  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
+  QPainter *painter=mywidget->qpixmap_painter;
+
+  if(brightness==MAX_BRIGHTNESS && color!=1){
+    painter->setPen(mywidget->colors[color]);
+  }else{
+    painter->setPen(mix_colors(mywidget->colors[color], mywidget->colors[0], brightness/(float)MAX_BRIGHTNESS));
+  }
+
+  while(mywidget->qpa.size() <= (unsigned int)num_points)
+    mywidget->qpa.resize(mywidget->qpa.size()*2);
+  
+  for(int i=0;i<num_points;i++)
+    mywidget->qpa.setPoint(i,x[i],y[i]);
+
+  painter->drawPoints(mywidget->qpa,0,num_points);
+}
+
 
 void OS_GFX_P_SetClipRect(
                           struct Tracker_Windows *tvisual,
@@ -413,33 +464,6 @@ void OS_GFX_SetClipRect(
 void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual){
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   mywidget->painter->setClipping(false);
-}
-
-
-void OS_GFX_P_Points(
-                     struct Tracker_Windows *tvisual,
-                     int color,
-                     int brightness,
-                     int num_points,
-                     uint16_t *x,uint16_t *y
-                     )
-{
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  QPainter *painter=mywidget->qpixmap_painter;
-
-  if(brightness==MAX_BRIGHTNESS && color!=1){
-    painter->setPen(mywidget->colors[color]);
-  }else{
-    painter->setPen(mix_colors(mywidget->colors[color], mywidget->colors[0], brightness/(float)MAX_BRIGHTNESS));
-  }
-
-  while(mywidget->qpa.size() <= (unsigned int)num_points)
-    mywidget->qpa.resize(mywidget->qpa.size()*2);
-  
-  for(int i=0;i<num_points;i++)
-    mywidget->qpa.setPoint(i,x[i],y[i]);
-
-  painter->drawPoints(mywidget->qpa,0,num_points);
 }
 
 
@@ -486,34 +510,6 @@ void OS_GFX_P_Text(
   MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
   draw_text(tvisual,mywidget->qpixmap_painter,color,text,x,y,width,flags);
 }
-
-void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-//  QColor *qcolor=mywidget->colors[color];
-
-  mywidget->painter->setPen(mywidget->colors[color]);
-  mywidget->painter->drawLine(x,y,x2,y2);
-//  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
-  
-}
-
-
-void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  mywidget->painter->setPen(mywidget->colors[color]);
-  mywidget->painter->drawRect(x,y,x2-x+1,y2-y+1);
-}
-
-static void draw_filled_box(MyWidget *mywidget, QPainter *painter,int color,int x,int y,int x2,int y2){
-  painter->fillRect(x,y,x2-x+1,y2-y+1,mywidget->colors[color]);
-}
-
-void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2){
-  MyWidget *mywidget=(MyWidget *)tvisual->os_visual.widget;
-  draw_filled_box(mywidget,mywidget->painter,color,x,y,x2,y2);
-}
-
 
 void OS_GFX_Text(
 	struct Tracker_Windows *tvisual,
