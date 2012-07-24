@@ -53,6 +53,9 @@ void WBLOCK_DrawMixedTempoColor(
   int lokke;
   //  int mf=mixfactor*1000;
 
+  color1 = color1 % 8;
+  color2 = color2 % 8;
+
   srand(y);
 
   for(lokke=0;lokke<width;lokke++){

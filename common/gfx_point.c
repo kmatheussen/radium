@@ -47,6 +47,11 @@ void GFX_Point(
     return;
   }
 
+  if(color>7){    
+    RError("Illegal color: %d",color);
+    color = color % 8;
+  }
+
   brightness = R_BOUNDARIES(0, brightness, MAX_BRIGHTNESS);
   struct Points *point=&points[color][brightness];
   int pos = point->pos;
