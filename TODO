@@ -32,6 +32,13 @@ Non-urgent
   At least, it should not quit the editor.
 
 * When playing very fast, it probably looks better NOT to scroll 1 and 1 line at the time
+  * It seems like an update period of less than around 150ms is tiresome to look at.
+    However, just limiting to 150ms doesn't quite work either, since a fixed number causes scrolling to switch between
+    progressing x and x+y lines at the time. If x is low, this makes the scrolling jumpy, like the program sleeps now and then.
+    So scrolling should progress exactly x lines every time (where x depends on the tempo).
+    * This update logic needs to be baked into the player, probably common/PEQrealline.c.
+    * Also, the update period time should be configurable in ~/.radium/config
+      (two variables: min period and max period) 
 
 * The player should detect when using too much time (must add a time interface to OS),
   and then only update each second line. If still using too much time, only
@@ -179,6 +186,11 @@ Non-urgent
 * MyPutmidi/etc. doesnt change preset/MSB/LSB. Only MIDIplaynote does that. Irritating if
   playing via midi.
 
+* The two noteview modes can be combined. I.e. showing both graphical note height + note name at the
+  same time.
+
+* Midi input stops inputting after a short while, after playing fast on the keyboard.
+
 
 Urgent
 ======
@@ -193,7 +205,13 @@ Urgent
 * Radium-xx ports are not ignored.
 
 * The Midi latency is noticable when editing. :-(
-  (No, midi input latency is not noticable. Perhaps the keys are bound to key up instead of key down?)
+  (No, latency is not noticable when input comes from midi. Perhaps the keys are bound to key up instead of key down?)
+
+* -Werror must be removed when distributing the source. Or better, introduce RELEASE build, and remove -Werror
+  when built as RELEASE.
+
+* Fonts ignore CENTER flag
+
 
 
 
@@ -201,6 +219,3 @@ Can not reproduce
 =================
 
 * Instrument widget size increases after pressing f12.
-
-* When zooming in too much, it suddenly becomes very hard to zoom in or out again. Usually,
-  it helps to change size of editor widget.

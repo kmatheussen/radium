@@ -1,7 +1,7 @@
 
 
-Radium V0.65.11
-Released 2012-07-23
+Radium V0.65.12
+Released 2012-08-02
 
 
 HOW TO MAKE IT RUN
@@ -24,6 +24,7 @@ BUILD DEPENDENCIES
         alsa-lib-devel
         jack-audio-connection-kit-devel
         PyQt4
+        gtk2-devel
 
 
 CONTACT
