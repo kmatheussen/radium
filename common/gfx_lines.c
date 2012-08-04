@@ -63,10 +63,10 @@ static void draw_line_aa(
 
     double gradient = dy / dx;
     double xend = round_(x1);
-    double yend = y1 + gradient*(xend - x1);
-    double xgap = rfpart_(x1 + 0.5);
+    double yend = y1 + gradient*(xend - x1);    
     int xpxl1 = xend;
 #if USE_ENDPOINTS
+    double xgap = rfpart_(x1 + 0.5);
     int ypxl1 = ipart_(yend);
     plot(xpxl1, ypxl1, window, color, rfpart_(yend)*xgap,where);
     plot(xpxl1, ypxl1+1, window, color, fpart_(yend)*xgap,where);
@@ -75,9 +75,9 @@ static void draw_line_aa(
  
     xend = round_(x2);
     yend = y2 + gradient*(xend - x2);
-    xgap = fpart_(x2+0.5);
     int xpxl2 = xend;
 #if USE_ENDPOINTS
+    xgap = fpart_(x2+0.5);
     int ypxl2 = ipart_(yend);
     plot(xpxl2, ypxl2, window, color, rfpart_(yend) * xgap,where);
     plot(xpxl2, ypxl2 + 1, window, color, fpart_(yend) * xgap,where);
@@ -99,9 +99,9 @@ static void draw_line_aa(
     double gradient = dx / dy;
     double yend = round_(y1);
     double xend = x1 + gradient*(yend - y1);
-    double ygap = rfpart_(y1 + 0.5);
     int ypxl1 = yend;
 #if USE_ENDPOINTS
+    double ygap = rfpart_(y1 + 0.5);
     int xpxl1 = ipart_(xend);
     plot(xpxl1, ypxl1, window, color, rfpart_(xend)*ygap,where);
     plot(xpxl1, ypxl1+1, window, color, fpart_(xend)*ygap,where);
@@ -110,9 +110,9 @@ static void draw_line_aa(
  
     yend = round_(y2);
     xend = x2 + gradient*(yend - y2);
-    ygap = fpart_(y2+0.5);
     int ypxl2 = yend;
 #if USE_ENDPOINTS
+    ygap = fpart_(y2+0.5);
     int xpxl2 = ipart_(xend);
     plot(xpxl2, ypxl2, window, color, rfpart_(xend) * ygap,where);
     plot(xpxl2, ypxl2 + 1, window, color, fpart_(xend) * ygap,where);

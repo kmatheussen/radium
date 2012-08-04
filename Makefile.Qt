@@ -22,10 +22,10 @@ libdir = $(PREFIX)/lib
 #
 #
 #   fedora 32 bit:
-QTDIR=/usr/lib/qt-3.3
+#QTDIR=/usr/lib/qt-3.3
 #
 #   fedora 64 bit:
-#QTDIR=/usr/lib64/qt-3.3
+QTDIR=/usr/lib64/qt-3.3
 #
 #   debian:
 #QTDIR=/usr/share/qt3
@@ -829,6 +829,7 @@ X11_keyboard.o: X11/X11_keyboard.c
 #X11_ClientMessages.o: X11/X11_ClientMessages.c
 #	$(CC) X11/X11_ClientMessages.c $(OPT)
 
+$(P)EditorWidget.h: $(P)qtxembed-1.3-free/src/qtxembed.cpp
 
 Qt_Main.o: $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
@@ -840,7 +841,7 @@ GTK_visual.o: $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
 	$(CC) $(P)GTK_visual.c $(OPT) `pkg-config --cflags gtk+-2.0`
 
 qtxembed.o: $(P)qtxembed-1.3-free/src/qtxembed.cpp
-	$(CCC) $(P)qtxembed-1.3-free/src/qtxembed.cpp $(QTOPT)
+	$(CCC) $(P)qtxembed-1.3-free/src/qtxembed.cpp $(QTOPT) -Wno-error
 
 $(P)qtxembed-1.3-free/src/qtxembed.cpp: Makefile
 	cd $(P) && tar xvzf qtxembed-1.3-free.tar.gz

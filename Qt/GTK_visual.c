@@ -547,7 +547,7 @@ int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text){
 
 static bool does_text_fit(char *text, int pos, int max_width){
   char temp[pos+1];
-  memcpy(temp,text,pos-1);
+  memcpy(temp,text,pos);
   temp[pos]=0;
   return get_text_width(temp) <= max_width;
 }

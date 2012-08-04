@@ -192,19 +192,19 @@ typedef struct{
 	/******** private methods *******/
 
 
-__inline void STP_cNextLPB(STimePlace *stp){
+static void STP_cNextLPB(STimePlace *stp){
 	stp->blpb=true;
 }
 
-__inline void STP_cNextTempo(STimePlace *stp){
+static void STP_cNextTempo(STimePlace *stp){
 	stp->btempo=true;
 }
 
-__inline void STP_cNextTempoNode(STimePlace *stp){
+static void STP_cNextTempoNode(STimePlace *stp){
 	stp->breltempo=true;
 }
 
-__inline void STP_NextLPB(STimePlace *stp){
+static void STP_NextLPB(STimePlace *stp){
 	STP_cNextLPB(stp);
 	if(stp->slpb!=NULL){
 		stp->p2= &stp->slpb->l.p;
@@ -213,7 +213,7 @@ __inline void STP_NextLPB(STimePlace *stp){
 	}
 }
 
-__inline void STP_NextTempo(STimePlace *stp){
+static void STP_NextTempo(STimePlace *stp){
 	STP_cNextTempo(stp);
 	if(stp->stempo!=NULL){
 		stp->p2= &stp->stempo->l.p;
@@ -222,7 +222,7 @@ __inline void STP_NextTempo(STimePlace *stp){
 	}
 }
 
-__inline void STP_NextTempoNode(STimePlace *stp){
+static void STP_NextTempoNode(STimePlace *stp){
 	STP_cNextTempoNode(stp);
 
 	if(stp->temponode!=NULL){
@@ -234,7 +234,7 @@ __inline void STP_NextTempoNode(STimePlace *stp){
 
 
 
-__inline void STP_fillinSTimes2(
+static void STP_fillinSTimes2(
 	STimePlace *stp,
 	Place *p1,
 	Place *p2
@@ -307,7 +307,7 @@ __inline void STP_fillinSTimes2(
 	}
 }
 
-__inline void STP_fillinLastSTimeTempos(STimePlace *stp){
+static void STP_fillinLastSTimeTempos(STimePlace *stp){
 		stp->times[stp->lastplace.line+1].time=stp->nexttime;	
 }
 
@@ -315,7 +315,7 @@ __inline void STP_fillinLastSTimeTempos(STimePlace *stp){
 	/******** public methods ********/
 
 
-__inline bool STP_getNextTimePlace(STimePlace *stp){
+static bool STP_getNextTimePlace(STimePlace *stp){
 
 	stp->p1=stp->p2;
 
@@ -463,7 +463,7 @@ __inline bool STP_getNextTimePlace(STimePlace *stp){
 
 
 
-__inline void STP_Constructor(STimePlace *stp,struct Blocks *block){
+static void STP_Constructor(STimePlace *stp,struct Blocks *block){
 
 	/* Misc */
 	PlaceSetFirstPos(&stp->firstplace);
@@ -526,7 +526,7 @@ __inline void STP_Constructor(STimePlace *stp,struct Blocks *block){
 
 
 
-__inline void STP_fillinSTimeTempos(STimePlace *stp){
+static void STP_fillinSTimeTempos(STimePlace *stp){
 	int line;
 	Place p1,p2;
 
