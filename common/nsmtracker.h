@@ -37,10 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
-#ifdef RELEASE
-#  error "RELEASE option is not supported. Edit the Makefile."
-#endif
-
 #ifndef DEBUG
 #  error "Missing DEBUG option. Edit the Makefile."
 #endif

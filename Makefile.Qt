@@ -22,10 +22,10 @@ libdir = $(PREFIX)/lib
 #
 #
 #   fedora 32 bit:
-#QTDIR=/usr/lib/qt-3.3
+QTDIR=/usr/lib/qt-3.3
 #
 #   fedora 64 bit:
-QTDIR=/usr/lib64/qt-3.3
+#QTDIR=/usr/lib64/qt-3.3
 #
 #   debian:
 #QTDIR=/usr/share/qt3
@@ -40,7 +40,6 @@ QTDIR=/usr/lib64/qt-3.3
 
 # 3. Release buid or Debug build
 #
-# Dont edit here. RELEASE should not be set yet since it's not been tested.
 BUILDTYPE=DEBUG
 #BUILDTYPE=RELEASE
 
@@ -106,7 +105,7 @@ OPTIMIZE= -mtune=native -O3
 VISUAL=-DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 
 
-OPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
+OPT=-c $(OPTIMIZE) $(DEBUG) -Wall `cat werror.opt` $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
 # -pg
 
 CPPOPT = $(OPT)
@@ -195,7 +194,7 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 #-------------------KARSJK-------------------------------
 
 
-all: check_dependencies bin/packages/deletemetorebuild pypath.comp $(CD)keyboard_sub_ids.h start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_XSendEvent bin/X11_Qtstuff.py
+all: check_dependencies bin/packages/deletemetorebuild pypath.comp werror.opt $(CD)keyboard_sub_ids.h start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
 	@echo "Compilation OK".
 
 very_clean: clean
@@ -1078,5 +1077,10 @@ pypath.comp:
 	$(PYTHONEXE) -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]" >pypath.comp
 #	$(PYTHONEXE) -c "import sysconfig;print(sysconfig.get_path('include'))" >pypath.comp
 
+
+werror.opt: Makefile
+	if [ $(BUILDTYPE) = DEBUG ] ; then echo "-Werror" >werror.opt ; else echo "-DDEBUG" >werror.opt ; fi
+
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
+
