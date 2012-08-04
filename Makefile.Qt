@@ -1,9 +1,5 @@
 
 
-#export QT_FATAL_WARNINGS=1
-
-
-
 #----------------USER SETTINGS-------------------------------
 
 # 1. Where to install
@@ -14,12 +10,6 @@ libdir = $(PREFIX)/lib
 
 
 # 2. Where Qt3 is installed.
-#
-# If using QT3 (recommended), QTDIR must point to a directory containing Qt at least V3. (no trailing slash!)
-#
-# It could also be necessary to edit the "QT3 opts" variables as well if compilation fails (these are found a few
-# lines down in this Makefile), but only setting the QTDIR variable should usually be enough.
-#
 #
 #   fedora 32 bit:
 QTDIR=/usr/lib/qt-3.3
@@ -38,15 +28,31 @@ QTDIR=/usr/lib/qt-3.3
 
 
 
-# 3. Release buid or Debug build
+# 3. Qt settings.
 #
-BUILDTYPE=DEBUG
-#BUILDTYPE=RELEASE
+# The default ones should normally work fine.
+MOC        = $(QTDIR)/bin/moc
+UIC        = $(QTDIR)/bin/uic
+QT_CFLAGS  = -I$(QTDIR)/include
+QT_LDFLAGS = -L$(QTDIR)/lib -lqt-mt
 
 
-# 4. Full path to a python2 executable.  (Think it needs to be at least V2.4)
+
+# 4. Release buid or Debug build
+#
+#BUILDTYPE=DEBUG
+BUILDTYPE=RELEASE
+
+
+
+# 5. Full path to a python2 executable.  (Think it needs to be at least V2.4)
 #
 PYTHONEXE=`which python2`
+
+
+
+# 6. Opimization options. Only enabled in RELEASE build
+OPTIMIZE= -mtune=native -O3
 
 
 #----------------END USER SETTINGS---------------------------
@@ -84,7 +90,6 @@ CCC=g++
 CC=gcc
 LINKER=g++
 
-DEBUG=-g
 
 
 
@@ -95,9 +100,6 @@ DEFINES= -DNOPAUSEPLAY
 # define MEMORY_DEBUG
 # define TRACKER_GB
 
-OPTIMIZE= -mtune=native -O3
-#-O
-
 # If you want QT visual: (not supported, probably not working)
 # VISUAL=-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
@@ -105,10 +107,15 @@ OPTIMIZE= -mtune=native -O3
 VISUAL=-DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 
 
-OPT=-c $(OPTIMIZE) $(DEBUG) -Wall `cat werror.opt` $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
+DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
+RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -g $(OPTIMIZE)
+
+
+OPT=-c `cat buildtype.opt` $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
 # -pg
 
 CPPOPT = $(OPT)
+
 
 # Common QT opts (both 3 and 4)
 COMMON_QTOPTS =
@@ -116,8 +123,6 @@ COMMON_QTOPTS =
 # QT4 opts
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
 #QTOPTS = -DUSE_QT4 `pkg-config --cflags Qt3Support` $(COMMON_QTOPTS)
-#MOC = moc
-#UIC = uic
 #QTLINKFLAGS = `pkg-config --libs Qt3Support` `pkg-config --libs gtk+-2.0`
 
 #
@@ -126,10 +131,8 @@ COMMON_QTOPTS =
 
 # QT3 opts
 # 
-MOC = $(QTDIR)/bin/moc
-UIC = $(QTDIR)/bin/uic
-QTOPT = $(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include $(COMMON_QTOPTS)
-QTLINKFLAGS = -L$(QTDIR)/lib -lqt-mt `pkg-config --libs gtk+-2.0`
+QTOPT = $(CPPOPT) -DUSE_QT3 $(QT_CFLAGS) $(COMMON_QTOPTS)
+QTLINKFLAGS = $(QT_LDFLAGS) `pkg-config --libs gtk+-2.0`
 #QTLINKFLAGS = /home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a -static -lX11 -lXext -lXft -lXcursor -lXinerama -lXrandr -lSM
 
 
@@ -194,7 +197,7 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 #-------------------KARSJK-------------------------------
 
 
-all: check_dependencies bin/packages/deletemetorebuild pypath.comp werror.opt $(CD)keyboard_sub_ids.h start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
+all: check_dependencies bin/packages/deletemetorebuild pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
 	@echo "Compilation OK".
 
 very_clean: clean
@@ -236,7 +239,7 @@ uninstall:
 	rm -f $(DESTDIR)$(bindir)/radium
 
 run-gdb:
-	make -j3 && cd bin && G_DEBUG=fatal-criticals gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
+	make -j3 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
 
 run-valgrind:
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
@@ -1078,8 +1081,8 @@ pypath.comp:
 #	$(PYTHONEXE) -c "import sysconfig;print(sysconfig.get_path('include'))" >pypath.comp
 
 
-werror.opt: Makefile
-	if [ $(BUILDTYPE) = DEBUG ] ; then echo "-Werror" >werror.opt ; else echo "-DDEBUG" >werror.opt ; fi
+buildtype.opt: Makefile
+	if [ $(BUILDTYPE) = DEBUG ] ; then echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; else echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; fi
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
