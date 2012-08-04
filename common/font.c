@@ -33,9 +33,9 @@ void IncFontSize_CurrPos(
 
 	if(
 		incnum==0 ||
-		window->fontheight+incnum<5 ||
-		window->fontheight+incnum>126 ||
-		(wblock->t.y2-wblock->t.y1)/(window->fontheight+incnum)<4
+		(window->fontheight<5 && incnum<0) ||
+		(window->fontheight>126 && incnum>0) ||
+		((wblock->t.y2-wblock->t.y1)/(window->fontheight+incnum)<4 && incnum>0)
 	) return;
 
 	//window->fontheight+=incnum;
@@ -49,6 +49,9 @@ void IncFontSize_CurrPos(
 void SetFontSizeNormal_CurrPos(
 	struct Tracker_Windows *window
 ){
-	IncFontSize_CurrPos(window,window->org_fontheight-window->fontheight+2);
+  //IncFontSize_CurrPos(window,window->org_fontheight-window->fontheight+2);
+  GFX_ResetFontSize(window);
+  UpdateAllWBlockWidths(window);
+  DrawUpTrackerWindow(window);
 }
 

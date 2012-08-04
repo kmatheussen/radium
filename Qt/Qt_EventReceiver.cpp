@@ -41,6 +41,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 
+#if USE_GTK_VISUAL
+#  include "qtxembed-1.3-free/src/qtxembed.h"
+#  include "GTK_visual_proc.h"
+extern QtXEmbedContainer *g_embed_container;
+#endif
 
 #if 0
 void EditorWidget::timerEvent(QTimerEvent *){
@@ -72,7 +77,13 @@ void EditorWidget::customEvent(QCustomEvent *e){
       });
   }
 
+#if USE_GTK_VISUAL
+  GFX_play_op_queue(this->window);
+#endif
+
+#if USE_QT_VISUAL
   update();
+#endif
 }
 
 
@@ -83,6 +94,18 @@ const QPaintEngine* EditorWidget::paintEngine(){
 }
 #endif
 
+#if USE_GTK_VISUAL
+void EditorWidget::paintEvent( QPaintEvent *e ){
+  //printf("got paint event\n");
+#if 1
+  //DO_GFX_BLT(DrawUpTrackerWindow(window));
+  GFX_play_op_queue(window);
+  GTK_HandleEvents();
+#endif
+}
+#endif
+
+#if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
 
 //  setBackgroundColor( this->colors[0] );		/* white background */
@@ -141,14 +164,18 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 //  QPainter paint( this );
 //  paint.drawLine(0,0,50,50);
 
-  QFrame::paintEvent(e);
+  //QFrame::paintEvent(e);
+  //QWidget::paintEvent(e);
 
 }
+#endif
+
 
 struct TEvent tevent={0};
 
 
-#if 0
+
+#if 0 // Old QT keyboard code. Not used, put everything through X11 instead.
 
 const unsigned int Qt2SubId[0x2000]={
   EVENT_A,
@@ -270,9 +297,11 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 #endif
 
 
+// Enable this for GTK_VISUAL as well, in case the mouse pointer is placed in QT GUI area, we may want wheel events.
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 
   tevent.ID=TR_KEYBOARD;
+  tevent.keyswitch=0;
 
   if(qwheelevent->delta()>0){
     tevent.SubID=EVENT_UPARROW;
@@ -290,6 +319,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
   update();
 }
 
+#if USE_QT_VISUAL
 
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
@@ -342,7 +372,23 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
 }
 
-void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
+#endif // USE_QT_VISUAL
+
+
+#if USE_GTK_VISUAL
+void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
+  //printf("got resize event\n");
+  this->window->width=this->get_editor_width();
+  this->window->height=this->get_editor_height();
+
+  g_embed_container->resize(this->get_editor_width(),this->get_editor_height());
+}
+#endif // USE_GTK_VISUAL
+
+
+
+#if USE_QT_VISUAL
+void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->qpixmap->resize(this->width(), this->height());
   this->cursorpixmap->resize(this->width(), this->height());
 
@@ -352,14 +398,17 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
   this->window->width=this->get_editor_width();
   this->window->height=this->get_editor_height();
 
+
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
          this->height(),qresizeevent->size().height());
 #endif
 
+
   if(this->get_editor_width() > old_width || this->get_editor_height() > old_height){
 #if 1
     repaint(); // I don't know why it's not enough just calling DrawUpTrackerWindow.
+    //update();
 #else
     // This doesn't really do anything:
     DO_GFX_BLT({
@@ -377,7 +426,10 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
     update();
   }
 }
+#endif // USE_QT_VISUAL
+
 
 void EditorWidget::closeEvent(QCloseEvent *ce){
+  printf("Close event\n");
   //  ce->accept();
 }

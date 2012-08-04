@@ -14,10 +14,21 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef EDITOR_WIDGET_H
+#define EDITOR_WIDGET_H
+
 #ifdef USE_QT3
+#include <qmenubar.h>
+#include <qmainwindow.h>
+#include <qslider.h>
+#include <qtimer.h>
+
+#  if USE_GTK_VISUAL
+#    include "qtxembed-1.3-free/src/qtxembed.h"
+#  endif
+
 #include <qapplication.h>
 #include <qpixmap.h>
-#include <qmenubar.h>
 #include <qpointarray.h>
 #include <qlabel.h>
 #endif
@@ -44,7 +55,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 # define Q3PopupMenu QPopupMenu
 #endif
 
-
 #define GFX_DONTSHRINK
 #include "../common/nsmtracker.h"
 #include "../common/windows_proc.h"
@@ -60,7 +70,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 class QMainWindow;
 class QSplitter;
 
-class EditorWidget : public QFrame
+class EditorWidget : public QWidget //QFrame
+//class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
 {
 public:
   EditorWidget(QWidget *parent=0, const char *name=0 );
@@ -80,11 +91,13 @@ public:
 
     QMainWindow *main_window;
 
+#if USE_QT_VISUAL
     QPainter *painter; // Set in paintEvent
     QPainter *qpixmap_painter; // Set in paintEvent
     QPainter *cursorpixmap_painter; // Set in paintEvent
 
     QFont font;
+#endif
 
     //QFrame *status_frame;
     QLabel *status_label;
@@ -93,28 +106,39 @@ public:
     QSplitter *ysplitter;
 
     int get_editor_width(){
-      return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
+      //return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
+      return this->width();
     }
 
     int get_editor_height(){
-      return this->height()-YOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
+      //return this->height()-YOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
+      return this->height();
     }
 
     QPointArray qpa;
 
 protected:
     //    bool        event(QEvent *);
+#if 1 //USE_QT_VISUAL
     void	paintEvent( QPaintEvent * );
-#if 0
+#endif
+
+#if 0 // Using X11filter for keys
     void        keyPressEvent(QKeyEvent *);
     void        keyReleaseEvent(QKeyEvent *qkeyevent);
 #endif
+
+    void        wheelEvent(QWheelEvent *);
+
+#if USE_QT_VISUAL
     void	mousePressEvent( QMouseEvent *);
     void	mouseReleaseEvent( QMouseEvent *);
     void	mouseMoveEvent( QMouseEvent *);
+#endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
-    void        wheelEvent(QWheelEvent *);
     void        customEvent(QCustomEvent *);
 };
+
+#endif
 

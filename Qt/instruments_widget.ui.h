@@ -17,5 +17,5 @@
 
 void Instruments_widget::tabs_selected( const QString &tabname)
 {
-  tab_selected();
+    tab_selected();
 }

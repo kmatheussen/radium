@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "window_config_proc.h"
 
 
+#if 0
 void SelectEditFont(
 	struct Tracker_Windows *window
 ){
@@ -54,6 +55,7 @@ void SelectEditFont(
         // Saved last in case the font crashes radium
         SETTINGS_write_string("font",font);
 }
+#endif
 
 void SelectLeftSliderWidth(
 	struct Tracker_Windows *window,
@@ -162,7 +164,7 @@ void Window_config(
 	ReqType reqtype;
 
 	char *menutext[6]={
-		"Select Edit Font",
+		//"Select Edit Font",
 		"Text Border on",
 		"Text Border off",
 		"Left Slider width",
@@ -174,26 +176,28 @@ void Window_config(
 
 	reqtype=GFX_OpenReq(window,30,12,"Window Config");
 
-	sel=GFX_Menu(window,reqtype,"Select operation",6,menutext);
+	sel=GFX_Menu(window,reqtype,"Select operation",5,menutext);
 
 	switch(sel){
 		case -1: break;
+#if 0
 		case 0:
 			SelectEditFont(window);
 			break;
-		case 1:
+#endif
+		case 0:
 			TextBorderOn(window);
 			break;
-		case 2:
+		case 1:
 			TextBorderOff(window);
 			break;
-		case 3:
+		case 2:
 			SelectLeftSliderWidth(window,reqtype);
 			break;
-		case 4:
+		case 3:
 			SelectBottomSliderHeight(window,reqtype);
 			break;
-		case 5:
+		case 4:
 			SelectMinNodeSize(window,reqtype);
 			break;
 	}

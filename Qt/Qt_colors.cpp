@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <qpalette.h>
 #include <qcolordialog.h>
+#include <qtimer.h>
 
 #ifdef USE_QT3
 #include <qobjectlist.h>
@@ -31,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/gfx_proc.h"
+#include "GTK_visual_proc.h"
 
 
 extern struct Root *root;
@@ -148,6 +150,7 @@ void setApplicationColors(QApplication *app){
   updateApplication(my_widget,app);
 }
 
+
 void setEditorColors(EditorWidget *my_widget){
   my_widget->colors[0]=QColor(SETTINGS_read_string("color0","#d0d5d0"));
   my_widget->colors[1]=QColor(SETTINGS_read_string("color1","black"));
@@ -161,18 +164,38 @@ void setEditorColors(EditorWidget *my_widget){
   my_widget->colors[7]=QColor(SETTINGS_read_string("color7","#101812"));
 
   my_widget->colors[8]=QColor(SETTINGS_read_string("color8","#452220"));
+
+  my_widget->colors[9]=QColor(SETTINGS_read_string("system_color","#123456"));
+
+  my_widget->colors[10]=QColor(SETTINGS_read_string("color10","#777777"));
+
+  for(int i=0 ; i<=10 ; i++)
+    GTK_SetColor(i,
+                 my_widget->colors[i].red(),
+                 my_widget->colors[i].green(),
+                 my_widget->colors[i].blue()
+                 );
 }
 
+static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
+  if(num>10)
+    return;
+
+  GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
+
+  if(num!=9){
+    my_widget->colors[num].setRgb(rgb);
+  }else
+    system_color->setRgb(rgb);
+}
 
 void testColorInRealtime(int num, QColor color){
+  if(num>10)
+    return;
+
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
-  if(num<9)
-    my_widget->colors[num].setRgb(color.rgb());
-  else if(num==9)
-    system_color->setRgb(color.rgb());
-  else
-    return;
+  setColor(my_widget,num,color.rgb());
   updateAll(my_widget);
 
   if(false && num==0)
@@ -187,6 +210,29 @@ void testColorInRealtime(int num, QColor color){
 
 }
 
+// Workaround, expose events are not sent when the qcolor dialog blocks it. Only happens when using the GTK visual.
+// Don't think it's a bug, it's just that Qt only calls qapplication->processEvents() (somehow), and not gtk_main_iteration_do(),
+// from the QDialog exec loop.
+class Scoped_GTK_EventHandler_Timer : public QTimer{
+  Q_OBJECT
+
+public:
+  Scoped_GTK_EventHandler_Timer(){
+#if USE_GTK_VISUAL
+    connect( this, SIGNAL(timeout()), this, SLOT(call_GTK_HandleEvents()));
+    start( 10, FALSE );
+#endif
+  }
+public slots:
+  void call_GTK_HandleEvents(){
+#if USE_GTK_VISUAL
+    GTK_HandleEvents();
+#endif
+  }
+};
+
+#include "mQt_colors.cpp"
+
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   static bool is_running = false;
 
@@ -194,17 +240,20 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     return;
   is_running = true;
 
-  EditorWidget *my_widget=(EditorWidget *)tvisual->os_visual.widget;
+  EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
 
   override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
 
   QColorDialog::setCustomColor(9, system_color->rgb());
-  for(int i=0;i<9;i++)
-    QColorDialog::setCustomColor(i, my_widget->colors[i].rgb());
+  for(int i=0;i<16;i++)
+    if(i!=9)
+      QColorDialog::setCustomColor(i, editorwidget->colors[i].rgb());
 
-  if(QColorDialog::getColor(my_widget->colors[0]).isValid()==false){
+  Scoped_GTK_EventHandler_Timer eventhandler;
+
+  if(QColorDialog::getColor(editorwidget->colors[0],editorwidget).isValid()==false){
     // "cancel"
-    setEditorColors(my_widget); // read back from file.
+    setEditorColors(editorwidget); // read back from file.
     system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
     DrawUpTrackerWindow(root->song->tracker_windows);
   }else{
@@ -212,15 +261,15 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     SETTINGS_write_string((char*)"system_color",(char*)system_color->name().ascii());
     system_color->setRgb(QColorDialog::customColor(9));
 
-    for(int i=0;i<9;i++){
-      my_widget->colors[i].setRgb(QColorDialog::customColor(i));
+    for(int i=0;i<16;i++){
+      setColor(editorwidget,i,QColorDialog::customColor(i));
       char key[500];
       sprintf(key,"color%d",i);
-      SETTINGS_write_string(key,(char*)my_widget->colors[i].name().ascii());
+      SETTINGS_write_string(key,(char*)editorwidget->colors[i].name().ascii());
     }
   }
 
-  updateAll(my_widget);
+  updateAll(editorwidget);
 
   is_running = false;
 }

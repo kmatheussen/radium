@@ -1,3 +1,4 @@
+
 /* Copyright 2003 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -69,6 +70,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
  */
 
+extern bool doquit;
+extern struct Root *root;
 
 static int keytable_size = 0;
 static int *keytable = NULL;
@@ -164,6 +167,10 @@ static void init_keytable(void) {
 
 # undef T
 # undef S
+}
+
+void X11_init_keyboard(void) {
+  init_keytable();
 }
 
 static int keyupdowns[EVENT_MAX+1]={0};
@@ -272,7 +279,50 @@ int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window){
   return X11Event_KeyRelease(keytable[sym],event->state,window);
 }
 
+bool X11_KeyboardFilter(XEvent *event){
+  static int num=0;
+  //printf("Got event %d\n",num++);
+  switch(event->type){
+  case KeyPress:
+    printf("Got keypress event %d.\n",num++);
+    if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
+      //this->quit();
+      //doquit = true;
+    }
+    return true;
+  case KeyRelease:
+    X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
+    return true;
+  case EnterNotify:
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        X11_ResetKeysUpDowns();
+    }
+    break;
+  case LeaveNotify:
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        X11_ResetKeysUpDowns();
+    }
+    break;
+  case ClientMessage:
+#if 0
+    if(X11Event_ClientMessage((XClientMessageEvent *)&event,root->song->tracker_windows)==false){
+      this->quit();
+    }
+#endif
+    break;
+  default:
+    //printf("Got unknwon event %d. %d %d\n",num++,instrumentWidgetUsesKeyboard(),event->type);
 
-void X11_init_keyboard(void) {
-  init_keytable();
+    //fprintf(stderr, "got Unknown x11 event\n");
+    break;
+  }
+
+  return false;
 }
+

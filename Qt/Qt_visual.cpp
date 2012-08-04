@@ -16,21 +16,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdbool.h>
 
+#include "EditorWidget.h"
+
 #include <qpainter.h>
 #include <qmainwindow.h>
 
-#include "EditorWidget.h"
 #include "Qt_instruments_proc.h"
-#include "Qt_Fonts_proc.h"
+
+#if USE_QT_VISUAL
+#  include "Qt_Fonts_proc.h" // For setFontValues, etc.
+#endif
+
+#include "GTK_visual_proc.h" // For setFontValues
 
 
-#ifdef USE_QT4
-#  include <Q3PointArray>
-#  include <QPixmap>
+#if 0
+#if USE_GTK_VISUAL
+#  include "qtxembed-1.3-free/src/qtxembed.h"
+#  include "GTK_visual_proc.h"
+QtXEmbedContainer *g_embed_container;
+#endif
 #endif
 
 #include "../common/visual_op_queue_proc.h"
-
 
 extern EditorWidget *g_editor;
 
@@ -40,14 +48,40 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = g_editor->main_window;
 
   tvisual->os_visual.main_window = main_window;
-  tvisual->os_visual.widget = g_editor;
+  tvisual->os_visual.widget      = g_editor;
 
   tvisual->width  = g_editor->get_editor_width();
   tvisual->height = g_editor->get_editor_height();
     
   g_editor->window = tvisual;
 
-  setFontValues(tvisual, g_editor->font);
+  setFontValues(tvisual);
+
+
+#if 0
+#if USE_GTK_VISUAL
+  if(sizeof(int64_t) < sizeof(WId))
+    abort();
+
+  if(g_embed_container==NULL){
+    g_embed_container = new QtXEmbedContainer(g_editor);
+
+    g_embed_container->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Maximum);
+    g_embed_container->show();
+
+    GTK_CreateVisual(g_embed_container->winId());
+    //g_embed_container->embed(GTK_CreateVisual(g_embed_container->winId()),false);
+    //g_embed_container->grabKeyboard();
+
+    //g_embed_container->moveInputToProxy();
+
+    int width=600;
+    int height=600;
+    g_embed_container->resize(width,height);
+    GTK_SetSize(width,height);
+  }
+#endif
+#endif
 
   return 0;
 }
@@ -56,6 +90,23 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
   close_all_instrument_widgets();
   return 0;
 }
+
+extern LANGSPEC void QT_UpdateEditor(struct Tracker_Windows *window);
+void QT_UpdateEditor(struct Tracker_Windows *window){
+  EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+  editor->update();
+}
+
+extern LANGSPEC void QT_RepaintEditor(struct Tracker_Windows *window);
+void QT_RepaintEditor(struct Tracker_Windows *window){
+  EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+  editor->repaint();
+}
+
+
+
+
+#if USE_QT_VISUAL
 
 
 #ifdef USE_QT4
@@ -72,10 +123,8 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
      bitBlt(dst_pixmap,x,y,src_pixmap,from_x,from_y,width,height)
 #endif
 
-
-
 void OS_GFX_C2V_bitBlt(
-		    struct Tracker_Windows *window,
+                       struct Tracker_Windows *window,
 		    int from_x1,int from_x2,
 		    int to_y
 		    ){
@@ -163,14 +212,12 @@ void OS_GFX_BitBlt(
 
 #define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : editor->qpixmap_painter)
 
-
 void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
   painter->fillRect(x,y,x2-x+1,y2-y+1,editor->colors[color]);
 }
-
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
@@ -324,5 +371,7 @@ void OS_GFX_Text(
     painter->setFont(editor->font);
   }
 }                      
+
+#endif // USE_QT_VISUAL
 
 

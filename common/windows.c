@@ -86,8 +86,8 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
 
     if(top_line_y>wblock->t.y1)
       GFX_FilledBox(window,color,
-                    wblock->zoomlevelarea.x2+1, wblock->t.y1,
-                    window->width, top_line_y,
+                    window->leftslider.width+1, wblock->t.y1,
+                    window->width, top_line_y-1,
                     PAINT_DIRECTLY
                     );
   }
@@ -97,7 +97,7 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
     int bot_line_y2 = Common_oldGetReallineY2Pos(window, wblock, R_MIN(wblock->num_reallines-1,wblock->bot_realline));
     if(bot_line_y2 < wblock->a.y2)
       GFX_FilledBox(window,color,
-                    wblock->zoomlevelarea.x2+1, bot_line_y2,
+                    window->leftslider.width+1, bot_line_y2,
                     window->width, wblock->a.y2,
                     PAINT_DIRECTLY
                     );
@@ -130,14 +130,17 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
 #endif
 
   // Clear the area between the Left slider and the line numbers.
-  //printf("sl.x2: %d / %d\n",                window->leftslider.width,wblock->zoomlevelarea.x);
-  if(window->leftslider.width+1 < wblock->zoomlevelarea.x-1)
-    GFX_FilledBox(
-                  window,color,
-                  window->leftslider.width+1, wblock->t.y1,
-                  wblock->zoomlevelarea.x-1, wblock->t.y2,
-                  PAINT_DIRECTLY
-                  );
+  //printf("sl.x2: %d / %d\n",                window->leftslider.width+1,wblock->zoomlevelarea.x-1);
+  //if(window->leftslider.width+1 < wblock->zoomlevelarea.x-1)
+  GFX_FilledBox(
+                window,color,
+                window->leftslider.width+1, wblock->t.y1,
+                wblock->zoomlevelarea.x, wblock->t.y2+1,
+                PAINT_DIRECTLY
+                );
+
+  //printf("%d/%d -> %d/%d\n",window->leftslider.width+1, wblock->t.y1,
+  //       wblock->zoomlevelarea.x-1, wblock->t.y2);
 
   // Clear the one pixel wide area in the left slider.
   GFX_Box(

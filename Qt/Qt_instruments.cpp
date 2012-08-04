@@ -19,7 +19,15 @@ extern "C"{
 #include "../api/radium_proc.h"
 }
 
+#include <qspinbox.h>
+
+#include <qstring.h>
+#include <qlineedit.h>
+#include <qsplitter.h>
+#include <qmainwindow.h>
+
 #include "../common/nsmtracker.h"
+
 #include "../common/visual_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
@@ -28,7 +36,6 @@ extern "C"{
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
-#include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 #include "Qt_instruments_proc.h"
 
@@ -36,19 +43,9 @@ extern "C"{
 extern struct Root *root;
 extern struct Patch *g_currpatch;
 
-#include "qstring.h"
-#include "qlineedit.h"
-#include "qspinbox.h"
-#include <qsplitter.h>
-#include <qmainwindow.h>
-
 static int num_focus = 0;
 
-void set_editor_focus(void){
-  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-  editor->setFocus();
-}
-
+void set_editor_focus(void);
 
 #define MakeFocusOverrideClass(Class)                    \
   class My##Class : public Class {                       \
@@ -81,6 +78,16 @@ void set_editor_focus(void){
 
 MakeFocusOverrideClass(QSpinBox);
 MakeFocusOverrideClass(QLineEdit);
+
+
+#include "EditorWidget.h"
+
+void set_editor_focus(void){
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  editor->setFocus();
+}
+
+
 
 class Instruments_widget;
 static Instruments_widget *instruments_widget;

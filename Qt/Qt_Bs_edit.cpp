@@ -28,10 +28,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
-#include "qwidget.h"
-#include "qpushbutton.h"
-#include "qmainwindow.h"
-#include "qsplitter.h"
+#include <qpushbutton.h>
+#include <qsplitter.h>
+
+#if 0
+#include <qwidget.h>
+#include <qmainwindow.h>
+#endif
 
 #ifdef USE_QT3
 #include "qlistbox.h"
@@ -399,7 +402,7 @@ void BS_SelectPlaylistPos(int pos){
 }
 
 static void set_widget_width(int width){
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->xsplitter;
 

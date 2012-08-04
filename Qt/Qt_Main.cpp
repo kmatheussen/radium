@@ -54,7 +54,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_instruments_proc.h"
 #include "Qt_MainWindow_proc.h"
 
+#if USE_GTK_VISUAL
+#  include "GTK_visual_proc.h"
+#endif
 
+#include "Qt_Main_proc.h"
+
+
+extern bool doquit;
 extern struct Root *root;
 
 
@@ -81,50 +88,24 @@ int MyApplication::x11ProcessEvent(XEvent *event){
 #endif
 
 bool MyApplication::x11EventFilter(XEvent *event){
+
   switch(event->type){
   case KeyPress:
     if(instrumentWidgetUsesKeyboard())
       return false;
-    if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
-      this->quit();
-    }
-    static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
-    return true;
   case KeyRelease:
     if(instrumentWidgetUsesKeyboard())
       return false;
-    X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
-    static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
-    return true;
-  case EnterNotify:
-    {
-      XCrossingEvent *e = (XCrossingEvent*) event;
-      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
-      if(e->focus==False)
-        X11_ResetKeysUpDowns();
-    }
-    break;
-  case LeaveNotify:
-    {
-      XCrossingEvent *e = (XCrossingEvent*) event;
-      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
-      if(e->focus==False)
-        X11_ResetKeysUpDowns();
-    }
-    break;
-  case ClientMessage:
-#if 0
-    if(X11Event_ClientMessage((XClientMessageEvent *)&event,root->song->tracker_windows)==false){
-      this->quit();
-    }
-#endif
-    break;
-  default:
-    //fprintf(stderr, "got Unknown x11 event\n");
-    break;
   }
 
-  return FALSE;
+  {
+    bool ret = X11_KeyboardFilter(event);
+
+    if(ret==true)
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+
+    return ret;
+  }
 }
 
 
@@ -171,6 +152,7 @@ void Ptask2Mtask(void){
   {
     static double last_time = 0.0;
     double time = get_ms();
+    //if(time-last_time < 150) // this looks much better! (but it needs to be configurable)
     if(time-last_time < 5)
       return;
     last_time = time;
@@ -243,6 +225,18 @@ void start_blockselector();
 extern LANGSPEC int radium_main(char *arg);
 extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
+
+
+// Called from gtk main loop
+void Qt_EventHandler(void){
+  qapplication->processEvents();
+#if 0
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  if(main_window->isVisible()==false)
+    doquit=true;
+#endif
+}
+
 int radium_main(char *arg){
   int argc=1;
   char *argv[2];
@@ -250,7 +244,9 @@ int radium_main(char *arg){
   argv[0] = strdup("radium");
   argv[1] = NULL;
 
-
+#if USE_GTK_VISUAL
+  GTK_Init(argc,argv);
+#endif
 
   //GC_set_all_interior_pointers(0); // crash... (???)
   //GC_enable_incremental(); // crash.
@@ -344,13 +340,19 @@ int radium_main(char *arg){
 
   PyRun_SimpleString("import menues");
 
-#if 1
+#if USE_QT_VISUAL
   qapplication->exec();
 #else
-  while(true){
-    qapplication->processEvents();
+  GTK_MainLoop();
+#if 0
+  while(doquit==false){
+    while(GTK_HasPendingEvents() || qapplication->hasPendingEvents()){
+      GTK_HandleEvents();
+      qapplication->processEvents();
+    }
     usleep(1000);
   }
+#endif
 #endif
 
   posix_EndPlayer();

@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#if USE_QT_VISUAL
+
 #include <math.h>
 
 #include <qfontdialog.h>
@@ -24,7 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Fonts_proc.h"
 
 
-void setFontValues(struct Tracker_Windows *tvisual, const QFont &font){
+void setFontValues(struct Tracker_Windows *tvisual){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  const QFont &font=editor->font;
+
   QFontMetrics fm(font);
 
   double width3 = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
@@ -39,7 +44,9 @@ char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   editor->font = QFontDialog::getFont( 0, editor->font ) ;
   editor->setFont(editor->font);
 
-  setFontValues(tvisual, editor->font);
+  printf("Raw font name: \"%s\"\n",editor->font.rawName().ascii());
+
+  setFontValues(tvisual);
   return talloc_strdup((char*)editor->font.toString().ascii());
 }
 
@@ -62,7 +69,7 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
     }
   }
  exit:
-  setFontValues(tvisual,editor->font);
+  setFontValues(tvisual);
 }
 
 
@@ -107,3 +114,4 @@ int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_
     return find_text_length(fn, string, max_width, 0, len-1);
 }
 
+#endif // USE_QT_VISUAL

@@ -22,27 +22,96 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
-#include "Qt_Fonts_proc.h"
+
+
+#if USE_GTK_VISUAL
+#  include "qtxembed-1.3-free/src/qtxembed.h"
+#  include "GTK_visual_proc.h"
+   QtXEmbedContainer *g_embed_container;
+#endif  // USE_GTK_VISUAL
+
+#if USE_QT_VISUAL
+#  include "Qt_Fonts_proc.h"
+#endif
 
 #include "../common/settings_proc.h"
+#include "../common/eventreciever_proc.h"
 
 #include "Qt_MainWindow_proc.h"
 
+#if 1
+class MyQtXEmbedContainer : public QtXEmbedContainer{
+public:
+  MyQtXEmbedContainer(QWidget *widget)
+    : QtXEmbedContainer(widget)
+  {
+    setWFlags(Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase);
+  }
+  void paintEvent( QPaintEvent *e ){
+    printf("got emb paint event\n");
+  }
+};
+#endif
+
 
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
-  : QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+  //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+  : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+    //: QtXEmbedContainer( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   , qpa(256)
 {
   this->qpixmap=NULL;
 
+#if USE_GTK_VISUAL
+  if(sizeof(int64_t) < sizeof(WId))
+    abort();
+
+  if(g_embed_container==NULL){
+    //g_embed_container = this;
+    g_embed_container = new MyQtXEmbedContainer(this);
+    //g_embed_container = new QtXEmbedContainer(this);
+    g_embed_container->setBackgroundMode(Qt::NoBackground);
+    g_embed_container->show();
+
+    //g_embed_container->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Maximum);
+
+    //usleep(1*1000*1000);
+
+    //GTK_CreateVisual(g_embed_container->winId());
+
+    // g_embed_container is not visible now (it's complicated), but by calling embed(), the gdk widget still shows up, for some reason.
+    // Don't know if this is an okay workaround (or why it even is a workaround). Going to clean up this mess later, hopefully.
+    g_embed_container->embed(GTK_CreateVisual(g_embed_container->winId()),true);
+
+    //g_embed_container->grabKeyboard();
+
+    //g_embed_container->moveInputToProxy();
+
+    //g_embed_container->show();
+
+    //usleep(1*1000*1000);
+#if 1
+    int width=600;
+    int height=600;
+    g_embed_container->resize(width,height);
+    GTK_SetSize(width,height);
+#endif
+  }
+#endif
+
   setEditorColors(this);
 
+#if USE_QT_VISUAL
   this->setMouseTracking(true);
+  //g_embed_container->setMouseTracking(true);
+#endif
 
+#if 0
   //this->setFrameStyle(QFrame::Raised );
   this->setFrameStyle(QFrame::Sunken );
   this->setFrameShape(QFrame::Panel);
   this->setLineWidth(2);
+#endif
 }
 
 EditorWidget::~EditorWidget()
@@ -50,13 +119,24 @@ EditorWidget::~EditorWidget()
 }
 
 
+extern bool doquit;
+extern struct Root *root;
 
 EditorWidget *g_editor = NULL;
+
+class MyQMainWindow : public QMainWindow{
+public:
+  MyQMainWindow() : QMainWindow(NULL,"Radium") {}
+  void closeEvent(QCloseEvent *ce){
+    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+    doquit = Quit(window);
+  }
+};
 
 void SetupMainWindow(void){
 
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
-  QMainWindow *main_window = new QMainWindow(NULL, "Radium");
+  QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
 
 #ifdef USE_QT4
   main_window->setAttribute(Qt::WA_PaintOnScreen);
@@ -72,7 +152,10 @@ void SetupMainWindow(void){
   //main_window->menuBar()->setPalette(pal);
 
   EditorWidget *editor=new EditorWidget(main_window,"name");
-  editor->setFocus();
+#if USE_QT_VISUAL
+  editor->setFocus(); // Lots of trouble with focus with the qt_visual backend.
+#endif
+
 #ifdef USE_QT4
   editor->setAttribute(Qt::WA_PaintOnScreen);
   editor->setAttribute(Qt::WA_OpaquePaintEvent);
@@ -99,6 +182,8 @@ void SetupMainWindow(void){
 
   initMenues(main_window->menuBar());
 
+#if USE_QT_VISUAL
+
   {
     QFont font = QFont("Monospace");
 
@@ -112,6 +197,7 @@ void SetupMainWindow(void){
     //editor->font->setFixedPitch(false);
   }
 
+
   editor->qpixmap=new QPixmap(editor->width(),editor->height());
 #ifdef USE_QT3
   editor->qpixmap->setOptimization(QPixmap::BestOptim);
@@ -121,6 +207,9 @@ void SetupMainWindow(void){
 #ifdef USE_QT3
   editor->cursorpixmap->setOptimization(QPixmap::BestOptim);
 #endif
+
+#endif // USE_QT_VISUAL
+
 
   g_editor = editor;
 }

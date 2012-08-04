@@ -274,15 +274,10 @@ void PixMap_makeCursor(
 
 	QUEUE_GFX_C_DrawCursor(
                                window,
-
                                wblock->a.x1,
-
                                xb1,xb2,
-
                                wblock->a.x2,
-
                                window->fontheight,
-
                                PixMap_getY1(window,wblock->curr_realline-wblock->top_realline)
 		//		GetCursorY1Pos(window,wblock)
 	);

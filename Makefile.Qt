@@ -60,8 +60,9 @@ PYTHONEXE=`which python2`
 
 #----------------DEFININTIONS----------------------
 
+# Packagers: Don't change anything below here unless things don't work.
 
-# Dont change these, they are correct.
+
 GCDIR=bin/packages/gc-7.2
 
 PYPATH=`cat pypath.comp`
@@ -98,17 +99,27 @@ DEFINES= -DNOPAUSEPLAY
 OPTIMIZE= -mtune=native -O3
 #-O
 
-OPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC
+# If you want QT visual: (not supported, probably not working)
+# VISUAL=-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
+
+# Or, if you want GTK visual:
+VISUAL=-DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
+
+
+OPT=-c $(OPTIMIZE) $(DEBUG) -Wall -Werror $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
 # -pg
 
 CPPOPT = $(OPT)
 
+# Common QT opts (both 3 and 4)
+COMMON_QTOPTS =
 
 # QT4 opts
-#QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql
-#QTOPTS = -DUSE_QT4 `pkg-config --cflags Qt3Support`
+#QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
+#QTOPTS = -DUSE_QT4 `pkg-config --cflags Qt3Support` $(COMMON_QTOPTS)
 #MOC = moc
 #UIC = uic
+#QTLINKFLAGS = `pkg-config --libs Qt3Support` `pkg-config --libs gtk+-2.0`
 
 #
 # or:
@@ -118,9 +129,9 @@ CPPOPT = $(OPT)
 # 
 MOC = $(QTDIR)/bin/moc
 UIC = $(QTDIR)/bin/uic
-QTOPT = $(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include
-QTLINKFLAGS = -L$(QTDIR)/lib -lqt-mt
-//QTLINKFLAGS = /home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a -static -lX11 -lXext -lXft -lXcursor -lXinerama -lXrandr -lSM
+QTOPT = $(CPPOPT) -DUSE_QT3 -I$(QTDIR)/include $(COMMON_QTOPTS)
+QTLINKFLAGS = -L$(QTDIR)/lib -lqt-mt `pkg-config --libs gtk+-2.0`
+#QTLINKFLAGS = /home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a -static -lX11 -lXext -lXft -lXcursor -lXinerama -lXrandr -lSM
 
 
 
@@ -164,7 +175,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
+OBJ12= Qt_visual.o GTK_visual.o qtxembed.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -226,7 +237,7 @@ uninstall:
 	rm -f $(DESTDIR)$(bindir)/radium
 
 run-gdb:
-	make -j3 && cd bin && gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
+	make -j3 && cd bin && G_DEBUG=fatal-criticals gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
 
 run-valgrind:
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
@@ -823,7 +834,17 @@ Qt_Main.o: $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
 
 Qt_visual.o: $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
-	$(CCC) $(P)Qt_visual.cpp $(QTOPT) 
+	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
+
+GTK_visual.o: $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
+	$(CC) $(P)GTK_visual.c $(OPT) `pkg-config --cflags gtk+-2.0`
+
+qtxembed.o: $(P)qtxembed-1.3-free/src/qtxembed.cpp
+	$(CCC) $(P)qtxembed-1.3-free/src/qtxembed.cpp $(QTOPT)
+
+$(P)qtxembed-1.3-free/src/qtxembed.cpp: Makefile
+	cd $(P) && tar xvzf qtxembed-1.3-free.tar.gz
+	cd $(P)qtxembed-1.3-free/src/ && $(MOC) qtxembed.h >>qtxembed.cpp
 
 Qt_error.o: $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
@@ -843,8 +864,11 @@ Qt_Player.o: $(P)Qt_Player.c $(P)EditorWidget.h
 Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
-Qt_colors.o: $(P)Qt_colors.cpp
+Qt_colors.o: $(P)Qt_colors.cpp $(P)mQt_colors.cpp
 	$(CCC) $(P)Qt_colors.cpp $(QTOPT)
+
+$(P)mQt_colors.cpp: $(P)Qt_colors.cpp 
+	cd $(P) && $(MOC) Qt_colors.cpp >mQt_colors.cpp
 
 Qt_Menues.o: $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
 	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)

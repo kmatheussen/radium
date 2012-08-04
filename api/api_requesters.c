@@ -43,6 +43,11 @@ void configColors(int windownum){
 #endif
 }
 
+void configFonts(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_ConfigFonts(window);
+}
+
 void configWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   Window_config(window);
