@@ -229,7 +229,8 @@ extern LANGSPEC int GC_dont_gc;
 
 // Called from gtk main loop
 void Qt_EventHandler(void){
-  qapplication->processEvents();
+  while(qapplication->hasPendingEvents() && doquit==false)
+    qapplication->processEvents();
 #if 0
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   if(main_window->isVisible()==false)

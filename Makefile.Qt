@@ -31,6 +31,7 @@ QTDIR=/usr/lib/qt-3.3
 # 3. Qt settings.
 #
 # The default ones should normally work fine.
+#
 MOC        = $(QTDIR)/bin/moc
 UIC        = $(QTDIR)/bin/uic
 QT_CFLAGS  = -I$(QTDIR)/include
@@ -40,8 +41,8 @@ QT_LDFLAGS = -L$(QTDIR)/lib -lqt-mt
 
 # 4. Release buid or Debug build
 #
-#BUILDTYPE=DEBUG
-BUILDTYPE=RELEASE
+BUILDTYPE=DEBUG
+#BUILDTYPE=RELEASE
 
 
 
@@ -266,7 +267,6 @@ start.sh:
 
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)
-#	$(LINKER) $(OBJ) -o radium -g -lm -L$(QTDIR)/lib -lqt -L$(GCDIR) -lgc -pg
 	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
 
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler

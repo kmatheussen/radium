@@ -30,7 +30,7 @@ struct Points{
   uint16_t *y;
 };
 
-static struct Points points[8][MAX_BRIGHTNESS+1];
+static struct Points *points[16][MAX_BRIGHTNESS+1] = {{0}};
 
 static bool is_dirty=false;
 
@@ -53,7 +53,11 @@ void GFX_Point(
   }
 
   brightness = R_BOUNDARIES(0, brightness, MAX_BRIGHTNESS);
-  struct Points *point=&points[color][brightness];
+
+  struct Points *point=points[color][brightness];
+  if(point==NULL)
+    points[color][brightness] = point = calloc(1,sizeof(struct Points));
+
   int pos = point->pos;
 
   if(point->pos==point->size){
@@ -79,15 +83,17 @@ void GFX_BouncePoints(struct Tracker_Windows *window){
   //printf("Bouncing points\n");
   for(color=0;color<8;color++){
     for(bright=0;bright<=MAX_BRIGHTNESS;bright++){
-      struct Points *point=&points[color][bright];
-      if(point->pos==1){
-        OS_GFX_Point(window,color,bright,point->x[0],point->y[0],PAINT_BUFFER);
-        //printf("single point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
-        point->pos=0;
-      }else if(point->pos>1){
-        OS_GFX_Points(window,color,bright,point->pos,point->x,point->y,PAINT_BUFFER);
-        //printf("point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
-        point->pos=0;
+      struct Points *point=points[color][bright];
+      if(point!=NULL){
+        if(point->pos==1){
+          OS_GFX_Point(window,color,bright,point->x[0],point->y[0],PAINT_BUFFER);
+          //printf("single point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
+          point->pos=0;
+        }else if(point->pos>1){
+          OS_GFX_Points(window,color,bright,point->pos,point->x,point->y,PAINT_BUFFER);
+          //printf("point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
+          point->pos=0;
+        }
       }
     }
   }

@@ -189,8 +189,6 @@ Non-urgent
 * The two noteview modes can be combined. I.e. showing both graphical note height + note name at the
   same time.
 
-* Midi input stops inputting after a short while, after playing fast on the keyboard.
-
 
 Urgent
 ======
@@ -207,11 +205,10 @@ Urgent
 * The Midi latency is noticable when editing. :-(
   (No, latency is not noticable when input comes from midi. Perhaps the keys are bound to key up instead of key down?)
 
-* -Werror must be removed when distributing the source. Or better, introduce RELEASE build, and remove -Werror
-  when built as RELEASE.
-
 * Fonts ignore CENTER flag
 
+* Midi input stops inputting after a short while, after playing fast on the keyboard.
+  Seems to be alsa only. Probably my untested ringbuffer implementation.
 
 
 
