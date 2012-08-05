@@ -1,3 +1,14 @@
+Most important changes 0.65.12 -> 0.65.14:
+* New GTK2 visual backend. (enabled by default)
+  * Looks better and has less focus problems.
+  * Makes it possible to port the rest of the program
+    to QT4 without losing graphical performance. (QT4 is very slow.)
+    (Mixing QT3 and QT4 in the same binary doesn't work.)
+* RELEASE buildtype.
+* Various build fixes
+* Various bug fixes and improvements
+
+
 Most important changes 0.65.11 -> 0.65.12:
 * Include the gc-7.2c.tar.gz file.
 
