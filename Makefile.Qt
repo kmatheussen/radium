@@ -41,8 +41,8 @@ QT_LDFLAGS = -L$(QTDIR)/lib -lqt-mt
 
 # 4. Release buid or Debug build
 #
-BUILDTYPE=DEBUG
-#BUILDTYPE=RELEASE
+#BUILDTYPE=DEBUG
+BUILDTYPE=RELEASE
 
 
 
