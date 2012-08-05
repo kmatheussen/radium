@@ -38,14 +38,18 @@ static volatile int g_cc=0,g_data1,g_data2;
 
 static struct PatchData *g_through_patchdata = NULL;
 
+// TODO: This isn't always working properly. Going to change rtmidi API.
+
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
+  //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
+
   if(cc>=0xf0) // Too much drama
     return;
 
   if(g_cc!=0) // Too quick.
     return;
 
-  //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
+
 
   // should be a memory barrier here somewhere.
 

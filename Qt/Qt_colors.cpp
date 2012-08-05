@@ -210,9 +210,8 @@ void testColorInRealtime(int num, QColor color){
 
 }
 
-// Workaround, expose events are not sent when the qcolor dialog blocks it. Only happens when using the GTK visual.
-// Don't think it's a bug, it's just that Qt only calls qapplication->processEvents() (somehow), and not gtk_main_iteration_do(),
-// from the QDialog exec loop.
+// Workaround, expose events are not sent when the qcolor dialog blocks it. Only necessary when using the GTK visual.
+// Qt only calls qapplication->processEvents() (somehow), and not gtk_main_iteration_do(), so we do that manually here.
 class Scoped_GTK_EventHandler_Timer : public QTimer{
   Q_OBJECT
 

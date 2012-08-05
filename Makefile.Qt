@@ -134,7 +134,13 @@ COMMON_QTOPTS =
 # 
 QTOPT = $(CPPOPT) -DUSE_QT3 $(QT_CFLAGS) $(COMMON_QTOPTS)
 QTLINKFLAGS = $(QT_LDFLAGS) `pkg-config --libs gtk+-2.0`
-#QTLINKFLAGS = /home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a -static -lX11 -lXext -lXft -lXcursor -lXinerama -lXrandr -lSM
+#QTLINKFLAGS = $(QT_LDFLAGS) -static `pkg-config --static --libs gtk+-2.0`
+#QTLINKFLAGS = $(QT_LDFLAGS) /tmp/radium/lib/libgtk-x11-2.0.a /tmp/radium/lib/libgdk-x11-2.0.a -L/tmp/radium/lib -latk-1.0 -lpangocairo-1.0 -lXext -lXrender -lXinerama -lXrandr -lXcursor -lXcomposite -lXdamage -lgdk_pixbuf-2.0 -lpangoft2-1.0 -lgio-2.0 -lXfixes -lcairo -lX11 -lpango-1.0 -lm -lfreetype -lfontconfig -lgobject-2.0 -lglib-2.0
+
+#/home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a 
+
+#`pkg-config --libs gtk+-2.0`
+#/tmp/radium/lib/ -static -lX11 -lXext -lXft -lXcursor -lXinerama -lXrandr -lSM
 
 
 
@@ -264,6 +270,13 @@ start.sh:
 	echo "cd bin" >>start.sh
 	echo "$(PYTHONEXE) start.py keybindings.conf $@" >>start.sh
 	chmod a+rx start.sh
+
+
+start_bin.sh:
+	echo "#!/bin/sh" >start_bin.sh
+	echo "cd bin" >>start_bin.sh
+	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
+	chmod a+rx start_bin.sh
 
 
 bin/radiummodule.so: $(OBJ) $(MAKEFILE)

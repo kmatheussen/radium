@@ -208,8 +208,25 @@ Urgent
 * Fonts ignore CENTER flag
 
 * Midi input stops inputting after a short while, after playing fast on the keyboard.
-  Seems to be alsa only. Probably my untested ringbuffer implementation.
+  The problem is that g_cc!=0 (for a long time, for some reason). That quick and bad temporary code
+  should definitely be done properly.
 
+  Hmm, think the best solution is to change the rtmidi API. No need for two types of input; either callback or getmessage.
+  It's enough to have a callback telling that there are messages to receive, and then you
+  can chose whether to pick up message directly from the callback, or do it from another thread.
+
+  Or perhaps better: The callback can receive the message, and then the callback can return TRUE if it wants to handle
+  the message directly, or FALSE to say that the message should be buffered instead. This way the callback can also act
+  as a filter.
+
+  Must get rid of rtmidi's use of std::vector though, which is a bit work. (What a horrible decision to use std::vector
+  in realtime code!)
+
+  New API:
+
+  typedef bool (*RtMidiCallback)(double timeStamp, unsinged int length, unsigned char *message, void *userData);
+  void setCallback (RtMidiCallback callback, void *userData=0);
+  bool getMessage (double *timeStamp, unsigned int *length, unsigned char **message);
 
 
 Can not reproduce

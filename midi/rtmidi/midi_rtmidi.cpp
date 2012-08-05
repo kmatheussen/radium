@@ -332,7 +332,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   return ret;
 }
 
-void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
+static void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
   //printf("Got data: %d (%x)\n",length,message[0]);
   if(length==1)
     MIDI_InputMessageHasBeenReceived(message[0],0,0);
