@@ -7,13 +7,16 @@ if [ -f /etc/fedora-release ] ; then
         PATH=/usr/lib/qt-3.3/bin/
     fi
 
-elif grep -i ubuntu /etc/lsb-release >/dev/null ; then
+elif grep -i ubuntu /etc/lsb-release >/dev/null 2>/dev/null ; then
     PATH=/usr/share/qt3/bin/
 
-elif grep -i debian /etc/lsb-release >/dev/null ; then
+elif grep -i debian /etc/lsb-release >/dev/null 2>/dev/null ; then
     PATH=/usr/share/qt3/bin/
 
-elif grep -i arch /etc/lsb-release >/dev/null ; then
+elif grep -i mint /etc/lsb-release >/dev/null 2>/dev/null ; then
+    PATH=/usr/share/qt3/bin/
+
+elif grep -i arch /etc/lsb-release >/dev/null 2>/dev/null ; then
     PATH=/opt/qt/bin/
 
 else
