@@ -20,23 +20,24 @@ INTRODUCTION
 BUILD DEPENDENCIES FEDORA:
         qt3-devel
         libXaw-devel
-        ncurses-devel
         python2-devel
         alsa-lib-devel
         jack-audio-connection-kit-devel
         PyQt4
         gtk2-devel
+        xterm
 
 
-BUILD DEPENDENCIES UBUNTU: (might be incomplete)
-      libxaw7-dev
-      ncurses-dev
-      libjack-jackd2-dev
-      python-dev
+BUILD DEPENDENCIES UBUNTU:
       libqt3-mt-dev
       qt3-dev-tools
+      libxaw7-dev
+      python2-dev
       libasound-dev
+      libjack-jackd2-dev or libjack-jackd1-dev
       python-qt4
+      libgtk2.0-dev
+      xterm
 
 CONTACT
 	k.s.matheussen@notam02.no

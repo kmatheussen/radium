@@ -52,16 +52,6 @@ if test $2 = "yes" ; then
     cd ..
 fi
 
-#http://dickey.his.com/xterm/xterm.htlm
-tar xvzf xterm.tar.gz
-cd xterm-281
-./configure --prefix=$PREFIX --x-includes=/usr/X11R6/include --x-libraries=/usr/X11R6/lib
-make -j3
-strip xterm
-make install
-cd ..
-
-
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 tar xvzf gc.tar.gz
 cd gc-7.2

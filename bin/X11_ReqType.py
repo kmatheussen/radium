@@ -39,7 +39,7 @@ def GFX_OpenReqType(width,height,title):
                 s.close()
                 s=None
                 
-    xterm_filename = "packages/bin/xterm" if os.path.exists("packages/bin/xterm") else "xterm"
+    xterm_filename = "xterm"
 
     try:
         xterm_process = subprocess.Popen([xterm_filename,
@@ -47,7 +47,7 @@ def GFX_OpenReqType(width,height,title):
                                           "-title","\""+title+"\"",
                                           "-e",sys.executable,"X11_ReqType.py",str(port)])
     except:
-        print "Error! xterm is not found. Radium has not been installed correctly. You need packages/bin/xterm."
+        print "Error! xterm is not found. Please install xterm"
         exit(-1)
                      
 #    print "Open Port "+str(port)

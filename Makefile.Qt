@@ -181,12 +181,16 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = dependencies_ok bin/packages/deletemetorebuild pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h
+BUILD_DEPENDENCIES = dependencies_ok pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h
 PROGRAM_MODULES = start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
 
 all: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 	rm -f /tmp/moc_path /tmp/uic_path
-	@echo "Compilation OK".
+	@echo
+	@echo "Compilation OK."
+	@echo
+	@echo "Run './start.sh' to start radium"
+	@echo "Run 'make install' to install radium"
 
 very_clean: clean
 	cd bin/packages && ./buildclean.sh
@@ -249,8 +253,8 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	./build.sh $(PYTHONEXE) no \
 	" >makescript.sh
 	sh makescript.sh
-	echo
-	echo "packages successfully built. Now run make"
+	@echo
+	@echo "packages successfully built. Now run make"
 
 start.sh:
 	echo "#!/bin/sh" >start.sh
@@ -1088,9 +1092,9 @@ buildtype.opt: Makefile
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
 
-/tmp/moc_path: find_moc_and_uic_paths.sh Makefile dependencies_ok
+/tmp/moc_path: find_moc_and_uic_paths.sh Makefile
 	./find_moc_and_uic_paths.sh moc >/tmp/moc_path
 
-/tmp/uic_path: find_moc_and_uic_paths.sh Makefile dependencies_ok
+/tmp/uic_path: find_moc_and_uic_paths.sh Makefile
 	./find_moc_and_uic_paths.sh uic >/tmp/uic_path
 
