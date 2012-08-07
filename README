@@ -6,6 +6,7 @@ Released 2012-08-05
 
 HOW TO MAKE IT RUN
 
+make packages
 make
 ./start.sh
 
@@ -16,7 +17,7 @@ INTRODUCTION
         It's inspired by trackers, but has fewer limitations and uses graphics to show musical data. 
 
 
-BUILD DEPENDENCIES
+BUILD DEPENDENCIES FEDORA:
         qt3-devel
         libXaw-devel
         ncurses-devel
@@ -26,6 +27,16 @@ BUILD DEPENDENCIES
         PyQt4
         gtk2-devel
 
+
+BUILD DEPENDENCIES UBUNTU: (might be incomplete)
+      libxaw7-dev
+      ncurses-dev
+      libjack-jackd2-dev
+      python-dev
+      libqt3-mt-dev
+      qt3-dev-tools
+      libasound-dev
+      python-qt4
 
 CONTACT
 	k.s.matheussen@notam02.no

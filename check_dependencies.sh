@@ -56,17 +56,24 @@ fi
 rm temp$$.c
 
 
-echo "#include <ncurses/curses.h>" >temp$$.c
-echo "#include <curses.h>" >>temp$$.c
-echo "#include <ncurses/term.h>" >>temp$$.c
-echo "main(){return 0;}" >>temp$$.c
-echo >>temp$$.c
-if ! gcc temp$$.c ; then
-    echo "Might be missing curses-devel"
-    rm temp$$.c
+#echo "#include <ncurses/curses.h>" >temp$$.c
+#echo "#include <curses.h>" >>temp$$.c
+#echo "#include <ncurses/term.h>" >>temp$$.c
+#echo "main(){return 0;}" >>temp$$.c
+#echo >>temp$$.c
+#if ! gcc temp$$.c ; then
+#    echo "Might be missing curses-devel"
+#    rm temp$$.c
+#    exit -1
+#fi
+#rm temp$$.c
+
+
+if [ ! -f bin/packages/deletemetorebuild ] ; then
+    echo
+    echo "Packages not build. First run \"make packages\""
     exit -1
 fi
-rm temp$$.c
 
 echo "All seems good"
 echo

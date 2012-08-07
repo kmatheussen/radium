@@ -9,33 +9,11 @@ bindir = $(PREFIX)/bin
 libdir = $(PREFIX)/lib
 
 
-# 2. Where Qt3 is installed.
+# 2. Where moc and uic for QT3 is installed.
+# If you use Fedora, debian, ubuntu or arch Linux, the default values should work.
 #
-#   fedora 32 bit:
-QTDIR=/usr/lib/qt-3.3
-#
-#   fedora 64 bit:
-#QTDIR=/usr/lib64/qt-3.3
-#
-#   debian:
-#QTDIR=/usr/share/qt3
-#
-#   arch linux:
-#QTDIR=/opt/qt
-#
-#   KXStudio:
-#QTDIR=/usr/lib/qt3
-
-
-
-# 3. Qt settings.
-#
-# The default ones should normally work fine.
-#
-MOC        = $(QTDIR)/bin/moc
-UIC        = $(QTDIR)/bin/uic
-QT_CFLAGS  = -I$(QTDIR)/include
-QT_LDFLAGS = -L$(QTDIR)/lib -lqt-mt
+MOC = `cat /tmp/moc_path`
+UIC = `cat /tmp/uic_path`
 
 
 
@@ -112,7 +90,7 @@ DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
 RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -g $(OPTIMIZE)
 
 
-OPT=-c `cat buildtype.opt` $(DEFINES) -D$(BUILDTYPE) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
+OPT=-c `cat buildtype.opt` $(DEFINES) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
 # -pg
 
 CPPOPT = $(OPT)
@@ -132,8 +110,8 @@ COMMON_QTOPTS =
 
 # QT3 opts
 # 
-QTOPT = $(CPPOPT) -DUSE_QT3 $(QT_CFLAGS) $(COMMON_QTOPTS)
-QTLINKFLAGS = $(QT_LDFLAGS) `pkg-config --libs gtk+-2.0`
+QTOPT = $(CPPOPT) -DUSE_QT3 `pkg-config --cflags qt-mt` $(COMMON_QTOPTS)
+QTLINKFLAGS = `pkg-config --libs qt-mt` `pkg-config --libs gtk+-2.0`
 #QTLINKFLAGS = $(QT_LDFLAGS) -static `pkg-config --static --libs gtk+-2.0`
 #QTLINKFLAGS = $(QT_LDFLAGS) /tmp/radium/lib/libgtk-x11-2.0.a /tmp/radium/lib/libgdk-x11-2.0.a -L/tmp/radium/lib -latk-1.0 -lpangocairo-1.0 -lXext -lXrender -lXinerama -lXrandr -lXcursor -lXcomposite -lXdamage -lgdk_pixbuf-2.0 -lpangoft2-1.0 -lgio-2.0 -lXfixes -lcairo -lX11 -lpango-1.0 -lm -lfreetype -lfontconfig -lgobject-2.0 -lglib-2.0
 
@@ -203,18 +181,23 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 
 #-------------------KARSJK-------------------------------
 
+BUILD_DEPENDENCIES = dependencies_ok bin/packages/deletemetorebuild pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h
+PROGRAM_MODULES = start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
 
-all: check_dependencies bin/packages/deletemetorebuild pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
+all: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
+	rm -f /tmp/moc_path /tmp/uic_path
 	@echo "Compilation OK".
 
 very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt* a.out common/keyboard_sub_ids.h w
+	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt* a.out common/keyboard_sub_ids.h w /tmp/moc_path /tmp/uic_path dependencies_ok
+	rm -fr $(P)/qtxembed-1.3-free
 
-check_dependencies: check_dependencies.sh Makefile
+dependencies_ok: check_dependencies.sh Makefile /tmp/moc_path /tmp/uic_path 
 	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
+	touch dependencies_ok
 
 check_install_dependecies: check_install_dependecies.sh Makefile
 	sh check_install_dependecies.sh
@@ -258,12 +241,16 @@ run-valgrind:
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 
 
+packages: bin/packages/deletemetorebuild
+
 bin/packages/deletemetorebuild: bin/packages/build.sh
 	echo "\
 	cd bin/packages;\
 	./build.sh $(PYTHONEXE) no \
 	" >makescript.sh
 	sh makescript.sh
+	echo
+	echo "packages successfully built. Now run make"
 
 start.sh:
 	echo "#!/bin/sh" >start.sh
@@ -859,6 +846,7 @@ qtxembed.o: $(P)qtxembed-1.3-free/src/qtxembed.cpp
 	$(CCC) $(P)qtxembed-1.3-free/src/qtxembed.cpp $(QTOPT) -Wno-error
 
 $(P)qtxembed-1.3-free/src/qtxembed.cpp: Makefile
+	rm -fr $(P)/qtxembed-1.3-free
 	cd $(P) && tar xvzf qtxembed-1.3-free.tar.gz
 	cd $(P)qtxembed-1.3-free/src/ && $(MOC) qtxembed.h >>qtxembed.cpp
 
@@ -884,13 +872,13 @@ Qt_colors.o: $(P)Qt_colors.cpp $(P)mQt_colors.cpp
 	$(CCC) $(P)Qt_colors.cpp $(QTOPT)
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp 
-	cd $(P) && $(MOC) Qt_colors.cpp >mQt_colors.cpp
+	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
 
 Qt_Menues.o: $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
 	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)
 
 $(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp
-	cd $(P) && $(MOC) Qt_Menues.cpp >mQt_Menues.cpp
+	$(MOC) $(P)Qt_Menues.cpp >$(P)mQt_Menues.cpp
 
 Qt_Fonts.o: $(P)Qt_Fonts.cpp
 	$(CCC) $(P)Qt_Fonts.cpp $(QTOPT)
@@ -904,14 +892,14 @@ QD = $(P)
 # Compile our own (modified) version of the qcolordialog in order to show real time update of colors.
 # (it was surprisingly simple to do this. I just had to copy the file. No editing or use of custom compiler flags was needed.)
 qcolordialog.o: $(QD)qcolordialog.cpp
-	cd $(QD) && $(MOC) qcolordialog.cpp >qcolordialog.moc
+	$(MOC) $(QD)qcolordialog.cpp >$(QD)qcolordialog.moc
 	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error
 
 Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT)
 
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
-	cd $(P) && $(MOC) Qt_Bs_edit.cpp >mQt_Bs_edit.cpp
+	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
@@ -1099,4 +1087,10 @@ buildtype.opt: Makefile
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
+
+/tmp/moc_path: find_moc_and_uic_paths.sh Makefile dependencies_ok
+	./find_moc_and_uic_paths.sh moc >/tmp/moc_path
+
+/tmp/uic_path: find_moc_and_uic_paths.sh Makefile dependencies_ok
+	./find_moc_and_uic_paths.sh uic >/tmp/uic_path
 
