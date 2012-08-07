@@ -183,6 +183,7 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 
 BUILD_DEPENDENCIES = dependencies_ok pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h
 PROGRAM_MODULES = start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
+OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 	rm -f /tmp/moc_path /tmp/uic_path
@@ -306,61 +307,61 @@ bin/X11_Qtstuff.py: X11/X11_Qtstuff.py Makefile
 
 #-----------------COMPILING-----------------------------
 
-windows.o: $(CD)windows.c 
+windows.o:  $(BUILD_DEPENDENCIES) $(CD)windows.c 
 	$(CC) $(CD)windows.c $(OPT)
 
-list.o: $(CD)list.c 
+list.o:  $(BUILD_DEPENDENCIES) $(CD)list.c 
 	$(CC) $(CD)list.c $(OPT)
 
-song.o: $(CD)song.c 
+song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
 	$(CC) $(CD)song.c $(OPT)
 
-blocks.o: $(CD)blocks.c 
+blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.c 
 	$(CC) $(CD)blocks.c $(OPT)
 
-tracks.o: $(CD)tracks.c 
+tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c 
 	$(CC) $(CD)tracks.c $(OPT)
 
-localzooms.o: $(CD)localzooms.c 
+localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
 	$(CC) $(CD)localzooms.c $(OPT)
 
-notes.o: $(CD)notes.c 
+notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.c 
 	$(CC) $(CD)notes.c $(OPT)
 
-wblocks.o: $(CD)wblocks.c 
+wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)wblocks.c 
 	$(CC) $(CD)wblocks.c $(OPT)
 
-wtracks.o: $(CD)wtracks.c 
+wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)wtracks.c 
 	$(CC) $(CD)wtracks.c $(OPT)
 
-sliders.o: $(CD)sliders.c 
+sliders.o:  $(BUILD_DEPENDENCIES) $(CD)sliders.c 
 	$(CC) $(CD)sliders.c $(OPT)
 
-gfx_wblocks.o: $(CD)gfx_wblocks.c 
+gfx_wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wblocks.c 
 	$(CC) $(CD)gfx_wblocks.c $(OPT)
 
-common.o: $(CD)common.c 
+common.o:  $(BUILD_DEPENDENCIES) $(CD)common.c 
 	$(CC) $(CD)common.c $(OPT)
 
-gfx_wtracks.o: $(CD)gfx_wtracks.c 
+gfx_wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtracks.c 
 	$(CC) $(CD)gfx_wtracks.c $(OPT)
 
-gfx_wtrackborder.o: $(CD)gfx_wtrackborder.c
+gfx_wtrackborder.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackborder.c
 	$(CC) $(CD)gfx_wtrackborder.c $(OPT)
 
-gfx_wtext.o: $(CD)gfx_wtext.c 
+gfx_wtext.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtext.c 
 	$(CC) $(CD)gfx_wtext.c $(OPT)
 
-gfx_text.o: $(CD)gfx_text.c  $(CD)visual_op_queue_proc.h
+gfx_text.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_text.c  $(CD)visual_op_queue_proc.h
 	$(CC) $(CD)gfx_text.c $(OPT)
 
-gfx_lines.o: $(CD)gfx_lines.c $(CD)visual_op_queue_proc.h
+gfx_lines.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_lines.c $(CD)visual_op_queue_proc.h
 	$(CC) $(CD)gfx_lines.c $(OPT)
 
-gfx_point.o: $(CD)gfx_point.c $(CD)visual_op_queue_proc.h
+gfx_point.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_point.c $(CD)visual_op_queue_proc.h
 	$(CC) $(CD)gfx_point.c $(OPT)
 
-gfx_op_queue.o: $(CD)gfx_op_queue_generated.c $(CD)visual_op_queue_proc.h $(CD)gfx_op_queue.c
+gfx_op_queue.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_op_queue_generated.c $(CD)visual_op_queue_proc.h $(CD)gfx_op_queue.c
 	$(CC) $(CD)gfx_op_queue.c $(OPT)
 
 $(CD)gfx_op_queue_generated.c: $(CD)gfx_op_queue.scm $(CD)gfx_op_queue.c
@@ -369,525 +370,525 @@ $(CD)gfx_op_queue_generated.c: $(CD)gfx_op_queue.scm $(CD)gfx_op_queue.c
 $(CD)visual_op_queue_proc.h: $(CD)gfx_op_queue.scm 
 	cd $(CD) && ./gfx_op_queue.scm protos >visual_op_queue_proc.h
 
-eventreciever.o: $(CD)eventreciever.c $(API)radium_proc.h
+eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c $(API)radium_proc.h
 	$(CC) $(CD)eventreciever.c $(OPT)
 
-reallines.o: $(CD)reallines.c
+reallines.o:  $(BUILD_DEPENDENCIES) $(CD)reallines.c
 	$(CC) $(CD)reallines.c $(OPT)
 
-mouse.o: $(CD)mouse.c
+mouse.o:  $(BUILD_DEPENDENCIES) $(CD)mouse.c
 	$(CC) $(CD)mouse.c $(OPT)
 
-notestext.o: $(CD)notestext.c
+notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
 	$(CC) $(CD)notestext.c $(OPT)
 
-trackreallines.o: $(CD)trackreallines.c
+trackreallines.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines.c
 	$(CC) $(CD)trackreallines.c $(OPT)
 
-debug.o: $(CD)debug.c
+debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 	$(CC) $(CD)debug.c $(OPT) 
 
-memory.o: $(CD)memory.c
+memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
 	$(CC) $(CD)memory.c $(OPT)
 
-placement.o: $(CD)placement.c
+placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
 	$(CC) $(CD)placement.c $(OPT)
 
-t_gc.o: $(CD)t_gc.c
+t_gc.o:  $(BUILD_DEPENDENCIES) $(CD)t_gc.c
 	$(CC) $(CD)t_gc.c $(OPT)
 
-cursor.o: $(CD)cursor.c
+cursor.o:  $(BUILD_DEPENDENCIES) $(CD)cursor.c
 	$(CC) $(CD)cursor.c $(OPT)
 
-cursor_updown.o: $(CD)cursor_updown.c
+cursor_updown.o:  $(BUILD_DEPENDENCIES) $(CD)cursor_updown.c
 	$(CC) $(CD)cursor_updown.c $(OPT)
 
-subtrack.o: $(CD)subtrack.c
+subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)subtrack.c
 	$(CC) $(CD)subtrack.c $(OPT)
 
-velocities.o: $(CD)velocities.c
+velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.c
 	$(CC) $(CD)velocities.c $(OPT)
 
-realline_calc.o: $(CD)realline_calc.c
+realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
 	$(CC) $(CD)realline_calc.c $(OPT)
 
-gfx_subtrack.o: $(CD)gfx_subtrack.c
+gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c
 	$(CC) $(CD)gfx_subtrack.c $(OPT)
 
-tempos.o: $(CD)tempos.c
+tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.c
 	$(CC) $(CD)tempos.c $(OPT)
 
-LPB.o: $(CD)LPB.c
+LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.c
 	$(CC) $(CD)LPB.c $(OPT)
 
-gfx_wtrackheaders.o: $(CD)gfx_wtrackheaders.c
+gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.c
 	$(CC) $(CD)gfx_wtrackheaders.c $(OPT)
 
-nodelines.o: $(CD)nodelines.c
+nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.c
 	$(CC) $(CD)nodelines.c $(OPT)
 
-temponodes.o: $(CD)temponodes.c
+temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
 	$(CC) $(CD)temponodes.c $(OPT)
 
-instruments.o: $(CD)instruments.c
+instruments.o:  $(BUILD_DEPENDENCIES) $(CD)instruments.c
 	$(CC) $(CD)instruments.c $(OPT)
 
-fxlines.o: $(CD)fxlines.c
+fxlines.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines.c
 	$(CC) $(CD)fxlines.c $(OPT)
 
-tbox.o: $(CD)tbox.c
+tbox.o:  $(BUILD_DEPENDENCIES) $(CD)tbox.c
 	$(CC) $(CD)tbox.c $(OPT)
 
 
-area.o: $(CD)area.c
+area.o:  $(BUILD_DEPENDENCIES) $(CD)area.c
 	$(CC) $(CD)area.c $(OPT)
 
-mouse_wtrack.o: $(CD)mouse_wtrack.c
+mouse_wtrack.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_wtrack.c
 	$(CC) $(CD)mouse_wtrack.c $(OPT)
 
 
-mouse_temponodes.o: $(CD)mouse_temponodes.c
+mouse_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_temponodes.c
 	$(CC) $(CD)mouse_temponodes.c $(OPT)
 
 
-mouse_wtrackborder.o: $(CD)mouse_wtrackborder.c
+mouse_wtrackborder.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_wtrackborder.c
 	$(CC) $(CD)mouse_wtrackborder.c $(OPT)
 
 
-mouse_temponodeborder.o: $(CD)mouse_temponodeborder.c
+mouse_temponodeborder.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_temponodeborder.c
 	$(CC) $(CD)mouse_temponodeborder.c $(OPT)
 
 
-mouse_fxarea.o: $(CD)mouse_fxarea.c
+mouse_fxarea.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_fxarea.c
 	$(CC) $(CD)mouse_fxarea.c $(OPT)
 
-mouse_vellinenode.o: $(CD)mouse_vellinenode.c
+mouse_vellinenode.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_vellinenode.c
 	$(CC) $(CD)mouse_vellinenode.c $(OPT)
 
-mouse_vellinestart.o: $(CD)mouse_vellinestart.c
+mouse_vellinestart.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_vellinestart.c
 	$(CC) $(CD)mouse_vellinestart.c $(OPT)
 
-mouse_vellineend.o: $(CD)mouse_vellineend.c
+mouse_vellineend.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_vellineend.c
 	$(CC) $(CD)mouse_vellineend.c $(OPT)
 
-mouse_fxnode.o: $(CD)mouse_fxnode.c
+mouse_fxnode.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_fxnode.c
 	$(CC) $(CD)mouse_fxnode.c $(OPT)
 
-blocklist.o: $(CD)blocklist.c
+blocklist.o:  $(BUILD_DEPENDENCIES) $(CD)blocklist.c
 	$(CC) $(CD)blocklist.c $(OPT)
 
-time.o: $(CD)time.c
+time.o:  $(BUILD_DEPENDENCIES) $(CD)time.c
 	$(CC) $(CD)time.c $(OPT) 
 
-reltempo.o: $(CD)reltempo.c
+reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
 	$(CC) $(CD)reltempo.c $(OPT)
 
 
 #player source-files.
 
-Ptask2Mtask.o: $(CD)Ptask2Mtask.c $(CD)playerclass.h
+Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
 	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
 
-player.o: $(CD)player.c $(CD)playerclass.h
+player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h
 	$(CC) $(CD)player.c $(OPT)
 
-PEQrealline.o: $(CD)PEQrealline.c $(CD)playerclass.h
+PEQrealline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQrealline.c $(CD)playerclass.h
 	$(CC) $(CD)PEQrealline.c $(OPT) 
 
-PEQmempool.o: $(CD)PEQmempool.c $(CD)playerclass.h
+PEQmempool.o:  $(BUILD_DEPENDENCIES) $(CD)PEQmempool.c $(CD)playerclass.h
 	$(CC) $(CD)PEQmempool.c $(OPT) 
 
-PEQblock.o: $(CD)PEQblock.c $(CD)playerclass.h
+PEQblock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQblock.c $(CD)playerclass.h
 	$(CC) $(CD)PEQblock.c $(OPT)
 
-PEQnotes.o: $(CD)PEQnotes.c $(CD)playerclass.h
+PEQnotes.o:  $(BUILD_DEPENDENCIES) $(CD)PEQnotes.c $(CD)playerclass.h
 	$(CC) $(CD)PEQnotes.c $(OPT)
 
-PEQcommon.o: $(CD)PEQcommon.c $(CD)playerclass.h
+PEQcommon.o:  $(BUILD_DEPENDENCIES) $(CD)PEQcommon.c $(CD)playerclass.h
 	$(CC) $(CD)PEQcommon.c $(OPT)
 
-playerclass.o: $(CD)playerclass.c $(CD)playerclass.h
+playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
 	$(CC) $(CD)playerclass.c $(OPT)
 
-player_startstop.o: $(CD)player_startstop.c $(CD)playerclass.h
+player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playerclass.h
 	$(CC) $(CD)player_startstop.c $(OPT)
 
-PEQvelocities.o: $(CD)PEQvelocities.c
+PEQvelocities.o:  $(BUILD_DEPENDENCIES) $(CD)PEQvelocities.c
 	$(CC) $(CD)PEQvelocities.c $(OPT)
 
-PEQ_calc.o: $(CD)PEQ_calc.c
+PEQ_calc.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc.c
 	$(CC) $(CD)PEQ_calc.c $(OPT)
 
-PEQfxs.o: $(CD)PEQfxs.c
+PEQfxs.o:  $(BUILD_DEPENDENCIES) $(CD)PEQfxs.c
 	$(CC) $(CD)PEQfxs.c $(OPT)
 
-patch.o: $(CD)patch.c
+patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.c
 	$(CC) $(CD)patch.c $(OPT)
 
-clipboard_range.o: $(CD)clipboard_range.c $(CD)clipboard_range.h
+clipboard_range.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range.c $(CD)clipboard_range.h
 	$(CC) $(CD)clipboard_range.c $(OPT)
 
-clipboard_range_calc.o: $(CD)clipboard_range_calc.c $(CD)clipboard_range.h
+clipboard_range_calc.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_calc.c $(CD)clipboard_range.h
 	$(CC) $(CD)clipboard_range_calc.c $(OPT)
 
-clipboard_range_copy.o: $(CD)clipboard_range_copy.c $(CD)clipboard_range.h
+clipboard_range_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_copy.c $(CD)clipboard_range.h
 	$(CC) $(CD)clipboard_range_copy.c $(OPT)
 
-clipboard_range_paste.o: $(CD)clipboard_range_paste.c $(CD)clipboard_range.h
+clipboard_range_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_paste.c $(CD)clipboard_range.h
 	$(CC) $(CD)clipboard_range_paste.c $(OPT)
 
-clipboard_range_cut.o: $(CD)clipboard_range_cut.c $(CD)clipboard_range.h
+clipboard_range_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_cut.c $(CD)clipboard_range.h
 	$(CC) $(CD)clipboard_range_cut.c $(OPT)
 
-player_pause.o: $(CD)player_pause.c $(CD)playerclass.h
+player_pause.o:  $(BUILD_DEPENDENCIES) $(CD)player_pause.c $(CD)playerclass.h
 	$(CC) $(CD)player_pause.c $(OPT)
 
-PEQ_type.o: $(CD)PEQ_type.c $(CD)playerclass.h
+PEQ_type.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_type.c $(CD)playerclass.h
 	$(CC) $(CD)PEQ_type.c $(OPT)
 
 
-transpose.o: $(CD)transpose.c
+transpose.o:  $(BUILD_DEPENDENCIES) $(CD)transpose.c
 	$(CC) $(CD)transpose.c $(OPT)
 
 
 
-disk_wblock.o: $(CD)disk_wblock.c $(CD)disk.h
+disk_wblock.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wblock.c $(CD)disk.h
 	$(CC) $(CD)disk_wblock.c $(OPT)
 
 
-disk_localzooms.o: $(CD)disk_localzooms.c $(CD)disk.h
+disk_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)disk_localzooms.c $(CD)disk.h
 	$(CC) $(CD)disk_localzooms.c $(OPT)
 
 
-disk_track.o: $(CD)disk_track.c $(CD)disk.h
+disk_track.o:  $(BUILD_DEPENDENCIES) $(CD)disk_track.c $(CD)disk.h
 	$(CC) $(CD)disk_track.c $(OPT)
 
-disk_fx.o: $(CD)disk_fx.c $(CD)disk.h
+disk_fx.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fx.c $(CD)disk.h
 	$(CC) $(CD)disk_fx.c $(OPT)
 
-disk_fxnodelines.o: $(CD)disk_fxnodelines.c $(CD)disk.h
+disk_fxnodelines.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxnodelines.c $(CD)disk.h
 	$(CC) $(CD)disk_fxnodelines.c $(OPT)
 
-disk_wtrack.o: $(CD)disk_wtrack.c $(CD)disk.h
+disk_wtrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wtrack.c $(CD)disk.h
 	$(CC) $(CD)disk_wtrack.c $(OPT)
 
-disk_temponodes.o: $(CD)disk_temponodes.c $(CD)disk.h
+disk_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_temponodes.c $(CD)disk.h
 	$(CC) $(CD)disk_temponodes.c $(OPT)
 
-disk_tempos.o: $(CD)disk_tempos.c $(CD)disk.h
+disk_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)disk_tempos.c $(CD)disk.h
 	$(CC) $(CD)disk_tempos.c $(OPT)
 
-disk_song.o: $(CD)disk_song.c $(CD)disk.h
+disk_song.o:  $(BUILD_DEPENDENCIES) $(CD)disk_song.c $(CD)disk.h
 	$(CC) $(CD)disk_song.c $(OPT)
 
-disk_velocities.o: $(CD)disk_velocities.c $(CD)disk.h
+disk_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)disk_velocities.c $(CD)disk.h
 	$(CC) $(CD)disk_velocities.c $(OPT)
 
-disk_block.o: $(CD)disk_block.c $(CD)disk.h
+disk_block.o:  $(BUILD_DEPENDENCIES) $(CD)disk_block.c $(CD)disk.h
 	$(CC) $(CD)disk_block.c $(OPT)
 
-disk_placement.o: $(CD)disk_placement.c $(CD)disk.h
+disk_placement.o:  $(BUILD_DEPENDENCIES) $(CD)disk_placement.c $(CD)disk.h
 	$(CC) $(CD)disk_placement.c $(OPT)
 
-disk_stops.o: $(CD)disk_stops.c $(CD)disk.h
+disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.c $(CD)disk.h
 	$(CC) $(CD)disk_stops.c $(OPT)
 
-disk_playlist.o: $(CD)disk_playlist.c $(CD)disk.h
+disk_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)disk_playlist.c $(CD)disk.h
 	$(CC) $(CD)disk_playlist.c $(OPT)
 
-disk_root.o: $(CD)disk_root.c $(CD)disk.h
+disk_root.o:  $(BUILD_DEPENDENCIES) $(CD)disk_root.c $(CD)disk.h
 	$(CC) $(CD)disk_root.c $(OPT)
 
-disk_notes.o: $(CD)disk_notes.c $(CD)disk.h
+disk_notes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_notes.c $(CD)disk.h
 	$(CC) $(CD)disk_notes.c $(OPT)
 
-disk_lpbs.o: $(CD)disk_lpbs.c $(CD)disk.h
+disk_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_lpbs.c $(CD)disk.h
 	$(CC) $(CD)disk_lpbs.c $(OPT)
 
-disk_windows.o: $(CD)disk_windows.c $(CD)disk.h
+disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
 	$(CC) $(CD)disk_windows.c $(OPT)
 
-disk_fxs.o: $(CD)disk_fxs.c $(CD)disk.h
+disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
 	$(CC) $(CD)disk_fxs.c $(OPT)
 
-disk.o: $(CD)disk.c $(CD)disk.h
+disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
 	$(CC) $(CD)disk.c $(OPT)
 
-disk_warea.o: $(CD)disk_warea.c $(CD)disk.h
+disk_warea.o:  $(BUILD_DEPENDENCIES) $(CD)disk_warea.c $(CD)disk.h
 	$(CC) $(CD)disk_warea.c $(OPT)
 
-disk_save.o: $(CD)disk_save.c config/config.h
+disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h
 	$(CC) $(CD)disk_save.c $(OPT)
 
-disk_load.o: $(CD)disk_load.c config/config.h
+disk_load.o:  $(BUILD_DEPENDENCIES) $(CD)disk_load.c config/config.h
 	$(CC) $(CD)disk_load.c $(OPT)
 
-control.o: $(CD)control.c
+control.o:  $(BUILD_DEPENDENCIES) $(CD)control.c
 	$(CC) $(CD)control.c $(OPT)
 
-disk_instrument.o: $(CD)disk_instrument.c $(CD)disk.h
+disk_instrument.o:  $(BUILD_DEPENDENCIES) $(CD)disk_instrument.c $(CD)disk.h
 	$(CC) $(CD)disk_instrument.c $(OPT)
 
-disk_patches.o: $(CD)disk_patches.c $(CD)disk.h
+disk_patches.o:  $(BUILD_DEPENDENCIES) $(CD)disk_patches.c $(CD)disk.h
 	$(CC) $(CD)disk_patches.c $(OPT)
 
-disk_slider.o: $(CD)disk_slider.c
+disk_slider.o:  $(BUILD_DEPENDENCIES) $(CD)disk_slider.c
 	$(CC) $(CD)disk_slider.c $(OPT)
 
-clipboard_track_copy.o: $(CD)clipboard_track_copy.c
+clipboard_track_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_copy.c
 	$(CC) $(CD)clipboard_track_copy.c $(OPT)
 
-clipboard_track_paste.o: $(CD)clipboard_track_paste.c
+clipboard_track_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_paste.c
 	$(CC) $(CD)clipboard_track_paste.c $(OPT)
 
-clipboard_track_cut.o: $(CD)clipboard_track_cut.c
+clipboard_track_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_cut.c
 	$(CC) $(CD)clipboard_track_cut.c $(OPT)
 
-lines.o: $(CD)lines.c
+lines.o:  $(BUILD_DEPENDENCIES) $(CD)lines.c
 	$(CC) $(CD)lines.c $(OPT)
 
-notes_legalize.o: $(CD)notes_legalize.c
+notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.c
 	$(CC) $(CD)notes_legalize.c $(OPT)
 
-temponodes_legalize.o: $(CD)temponodes_legalize.c
+temponodes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes_legalize.c
 	$(CC) $(CD)temponodes_legalize.c $(OPT)
 
-fxlines_legalize.o: $(CD)fxlines_legalize.c
+fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.c
 	$(CC) $(CD)fxlines_legalize.c $(OPT)
 
-reallines_insert.o: $(CD)reallines_insert.c
+reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.c
 	$(CC) $(CD)reallines_insert.c $(OPT)
 
-block_properties.o: $(CD)block_properties.c
+block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.c
 	$(CC) $(CD)block_properties.c $(OPT)
 
-clipboard_tempos_copy.o: $(CD)clipboard_tempos_copy.c
+clipboard_tempos_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_tempos_copy.c
 	$(CC) $(CD)clipboard_tempos_copy.c $(OPT)
 
-font.o: $(CD)font.c
+font.o:  $(BUILD_DEPENDENCIES) $(CD)font.c
 	$(CC) $(CD)font.c $(OPT)
 
-clipboard_localzooms.o: $(CD)clipboard_localzooms.c
+clipboard_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_localzooms.c
 	$(CC) $(CD)clipboard_localzooms.c $(OPT)
 
-clipboard_block_copy.o: $(CD)clipboard_block_copy.c
+clipboard_block_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_copy.c
 	$(CC) $(CD)clipboard_block_copy.c $(OPT)
 
-clipboard_block_paste.o: $(CD)clipboard_block_paste.c
+clipboard_block_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_paste.c
 	$(CC) $(CD)clipboard_block_paste.c $(OPT)
 
-undo.o: $(CD)undo.c $(CD)undo.h
+undo.o:  $(BUILD_DEPENDENCIES) $(CD)undo.c $(CD)undo.h
 	$(CC) $(CD)undo.c $(OPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
 
-undo_notes.o: $(CD)undo_notes.c $(CD)undo.h
+undo_notes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notes.c $(CD)undo.h
 	$(CC) $(CD)undo_notes.c $(OPT)
 
-undo_fxs.o: $(CD)undo_fxs.c $(CD)undo.h
+undo_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_fxs.c $(CD)undo.h
 	$(CC) $(CD)undo_fxs.c $(OPT)
 
-undo_temponodes.o: $(CD)undo_temponodes.c $(CD)undo.h
+undo_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_temponodes.c $(CD)undo.h
 	$(CC) $(CD)undo_temponodes.c $(OPT)
 
-undo_tempos.o: $(CD)undo_tempos.c $(CD)undo.h
+undo_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tempos.c $(CD)undo.h
 	$(CC) $(CD)undo_tempos.c $(OPT)
 
-undo_lpbs.o: $(CD)undo_lpbs.c $(CD)undo.h
+undo_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_lpbs.c $(CD)undo.h
 	$(CC) $(CD)undo_lpbs.c $(OPT)
 
-undo_notesandfxs.o: $(CD)undo_notesandfxs.c $(CD)undo.h
+undo_notesandfxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notesandfxs.c $(CD)undo.h
 	$(CC) $(CD)undo_notesandfxs.c $(OPT)
 
-undo_reallines.o: $(CD)undo_reallines.c $(CD)undo.h
+undo_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reallines.c $(CD)undo.h
 	$(CC) $(CD)undo_reallines.c $(OPT)
 
-undo_tracks.o: $(CD)undo_tracks.c $(CD)undo.h
+undo_tracks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tracks.c $(CD)undo.h
 	$(CC) $(CD)undo_tracks.c $(OPT)
 
-undo_range.o: $(CD)undo_range.c
+undo_range.o:  $(BUILD_DEPENDENCIES) $(CD)undo_range.c
 	$(CC) $(CD)undo_range.c $(OPT)
 
-undo_blocks.o: $(CD)undo_blocks.c
+undo_blocks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_blocks.c
 	$(CC) $(CD)undo_blocks.c $(OPT)
 
-time2place.o: $(CD)time2place.c
+time2place.o:  $(BUILD_DEPENDENCIES) $(CD)time2place.c
 	$(CC) $(CD)time2place.c $(OPT)
 
-nodeboxes.o: $(CD)nodeboxes.c
+nodeboxes.o:  $(BUILD_DEPENDENCIES) $(CD)nodeboxes.c
 	$(CC) $(CD)nodeboxes.c $(OPT)
 
-PEQ_calc_64bit.o: $(CD)PEQ_calc_64bit.c
+PEQ_calc_64bit.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc_64bit.c
 	$(CC) $(CD)PEQ_calc_64bit.c $(OPT)
 
-track_insert.o: $(CD)track_insert.c
+track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.c
 	$(CC) $(CD)track_insert.c $(OPT)
 
-quantitize.o: $(CD)quantitize.c
+quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
 	$(CC) $(CD)quantitize.c $(OPT)
 
-gfx_wtrackheader_volpan.o: $(CD)gfx_wtrackheader_volpan.c
+gfx_wtrackheader_volpan.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheader_volpan.c
 	$(CC) $(CD)gfx_wtrackheader_volpan.c $(OPT)
 
-mouse_wtrackheader.o: $(CD)mouse_wtrackheader.c
+mouse_wtrackheader.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_wtrackheader.c
 	$(CC) $(CD)mouse_wtrackheader.c $(OPT)
 
-gfx_tempotrackheader.o: $(CD)gfx_tempotrackheader.c
+gfx_tempotrackheader.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_tempotrackheader.c
 	$(CC) $(CD)gfx_tempotrackheader.c $(OPT)
 
-undo_trackheader.o: $(CD)undo_trackheader.c
+undo_trackheader.o:  $(BUILD_DEPENDENCIES) $(CD)undo_trackheader.c
 	$(CC) $(CD)undo_trackheader.c $(OPT)
 
-mouse_tempoheader.o: $(CD)mouse_tempoheader.c
+mouse_tempoheader.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_tempoheader.c
 	$(CC) $(CD)mouse_tempoheader.c $(OPT)
 
-undo_reltempomax.o: $(CD)undo_reltempomax.c
+undo_reltempomax.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltempomax.c
 	$(CC) $(CD)undo_reltempomax.c $(OPT)
 
-undo_maintempos.o: $(CD)undo_maintempos.c
+undo_maintempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_maintempos.c
 	$(CC) $(CD)undo_maintempos.c $(OPT)
 
-undo_playlist.o: $(CD)undo_playlist.c
+undo_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)undo_playlist.c
 	$(CC) $(CD)undo_playlist.c $(OPT)
 
-gfx_upperleft.o: $(CD)gfx_upperleft.c
+gfx_upperleft.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_upperleft.c
 	$(CC) $(CD)gfx_upperleft.c $(OPT)
 
-mouse_quantitize.o: $(CD)mouse_quantitize.c
+mouse_quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_quantitize.c
 	$(CC) $(CD)mouse_quantitize.c $(OPT)
 
-gfx_statusbar.o: $(CD)gfx_statusbar.c
+gfx_statusbar.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_statusbar.c
 	$(CC) $(CD)gfx_statusbar.c $(OPT)
 
-window_config.o: $(CD)window_config.c
+window_config.o:  $(BUILD_DEPENDENCIES) $(CD)window_config.c
 	$(CC) $(CD)window_config.c $(OPT)
 
-PEQ_clock.o: $(CD)PEQ_clock.c $(CD)playerclass.h
+PEQ_clock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_clock.c $(CD)playerclass.h
 	$(CC) $(CD)PEQ_clock.c $(OPT)
 
-block_insert.o: $(CD)block_insert.c
+block_insert.o:  $(BUILD_DEPENDENCIES) $(CD)block_insert.c
 	$(CC) $(CD)block_insert.c $(OPT)
 
-block_delete.o: $(CD)block_delete.c
+block_delete.o:  $(BUILD_DEPENDENCIES) $(CD)block_delete.c
 	$(CC) $(CD)block_delete.c $(OPT)
 
-undo_block_insertdelete.o: $(CD)undo_block_insertdelete.c
+undo_block_insertdelete.o:  $(BUILD_DEPENDENCIES) $(CD)undo_block_insertdelete.c
 	$(CC) $(CD)undo_block_insertdelete.c $(OPT)
 
-track_onoff.o: $(CD)track_onoff.c
+track_onoff.o:  $(BUILD_DEPENDENCIES) $(CD)track_onoff.c
 	$(CC) $(CD)track_onoff.c $(OPT)
 
-backwards.o: $(CD)new/backwards.c
+backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.c
 	$(CC) $(CD)new/backwards.c $(OPT)
 
-invert.o: $(CD)new/invert.c
+invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.c
 	$(CC) $(CD)new/invert.c $(OPT)
 
-gfx_slider.o: $(CD)gfx_slider.c
+gfx_slider.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_slider.c
 	$(CC) $(CD)gfx_slider.c $(OPT)
 
-gfx_wblocks_reltempo.o: $(CD)gfx_wblocks_reltempo.c
+gfx_wblocks_reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wblocks_reltempo.c
 	$(CC) $(CD)gfx_wblocks_reltempo.c $(OPT)
 
-undo_reltemposlider.o: $(CD)undo_reltemposlider.c
+undo_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltemposlider.c
 	$(CC) $(CD)undo_reltemposlider.c $(OPT)
 
-mouse_reltemposlider.o: $(CD)mouse_reltemposlider.c
+mouse_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_reltemposlider.c
 	$(CC) $(CD)mouse_reltemposlider.c $(OPT)
 
-X11_Main.o: $(P)X11_Main.c 
+X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
 	$(CC) $(P)X11_Main.c $(OPT)
 
-X11_visual.o: $(P)X11_visual.c 
+X11_visual.o:  $(BUILD_DEPENDENCIES) $(P)X11_visual.c 
 	$(CC) $(P)X11_visual.c $(OPT) 
 
-X11_error.o: X11/X11_error.c 
+X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c 
 	$(CC) X11/X11_error.c $(OPT)
 
-X11_Ptask2Mtask.o: X11/X11_Ptask2Mtask.c 
+X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC) X11/X11_Ptask2Mtask.c $(OPT)
 
-X11_Bs_edit.o: X11/X11_Bs_edit.c 
+X11_Bs_edit.o:  $(BUILD_DEPENDENCIES) X11/X11_Bs_edit.c 
 	$(CC) X11/X11_Bs_edit.c $(OPT)
 
-X11_endprogram.o: $(P)X11_endprogram.c 
+X11_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)X11_endprogram.c 
 	$(CC) $(P)X11_endprogram.c $(OPT)
 
-X11_disk.o: X11/X11_disk.c 
+X11_disk.o:  $(BUILD_DEPENDENCIES) X11/X11_disk.c 
 	$(CC) X11/X11_disk.c $(OPT)
 
-posix_Player.o: posix/posix_Player.c 
+posix_Player.o:  $(BUILD_DEPENDENCIES) posix/posix_Player.c 
 	$(CC) posix/posix_Player.c $(OPT)
 
-X11_ReqType.o: X11/X11_ReqType.c 
+X11_ReqType.o:  $(BUILD_DEPENDENCIES) X11/X11_ReqType.c 
 	$(CC) X11/X11_ReqType.c $(OPT)
 
-X11_Qtstuff.o: X11/X11_Qtstuff.c 
+X11_Qtstuff.o:  $(BUILD_DEPENDENCIES) X11/X11_Qtstuff.c 
 	$(CC) X11/X11_Qtstuff.c $(OPT)
 
-X11_instrument.o: X11/X11_instrument.c
+X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
 	$(CC) X11/X11_instrument.c $(OPT)
 
-X11_keyboard.o: X11/X11_keyboard.c
+X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.c
 	$(CC) X11/X11_keyboard.c $(OPT)
 
-#X11_MidiProperties.o: X11/X11_MidiProperties.c
+#X11_MidiProperties.o:  $(BUILD_DEPENDENCIES) X11/X11_MidiProperties.c
 #	$(CC) X11/X11_MidiProperties.c $(OPT) 
 
-#X11_ClientMessages.o: X11/X11_ClientMessages.c
+#X11_ClientMessages.o:  $(BUILD_DEPENDENCIES) X11/X11_ClientMessages.c
 #	$(CC) X11/X11_ClientMessages.c $(OPT)
 
-$(P)EditorWidget.h: $(P)qtxembed-1.3-free/src/qtxembed.cpp
+$(P)EditorWidget.h: $(P)qtxembed-1.3-free/src/qtxembed.cpp $(BUILD_DEPENDENCIES)
 
-Qt_Main.o: $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
 
-Qt_visual.o: $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
+Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
 
-GTK_visual.o: $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
+GTK_visual.o:  $(BUILD_DEPENDENCIES) $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
 	$(CC) $(P)GTK_visual.c $(OPT) `pkg-config --cflags gtk+-2.0`
 
-qtxembed.o: $(P)qtxembed-1.3-free/src/qtxembed.cpp
+qtxembed.o:  $(BUILD_DEPENDENCIES) $(P)qtxembed-1.3-free/src/qtxembed.cpp
 	$(CCC) $(P)qtxembed-1.3-free/src/qtxembed.cpp $(QTOPT) -Wno-error
 
-$(P)qtxembed-1.3-free/src/qtxembed.cpp: Makefile
+$(P)qtxembed-1.3-free/src/qtxembed.cpp: Makefile $(BUILD_DEPENDENCIES)
 	rm -fr $(P)/qtxembed-1.3-free
 	cd $(P) && tar xvzf qtxembed-1.3-free.tar.gz
 	cd $(P)qtxembed-1.3-free/src/ && $(MOC) qtxembed.h >>qtxembed.cpp
 
-Qt_error.o: $(P)Qt_error.c $(P)EditorWidget.h
+Qt_error.o:  $(BUILD_DEPENDENCIES) $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
 
-Qt_Ptask2Mtask.o: $(P)Qt_Ptask2Mtask.cpp $(P)EditorWidget.h
+Qt_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Ptask2Mtask.cpp $(P)EditorWidget.h
 	$(CC) $(P)Qt_Ptask2Mtask.cpp $(OPT)
 
-Qt_endprogram.o: $(P)Qt_endprogram.c $(P)EditorWidget.h
+Qt_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)Qt_endprogram.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_endprogram.c $(OPT)
 
-Qt_disk.o: $(P)Qt_disk.c $(P)EditorWidget.h
+Qt_disk.o:  $(BUILD_DEPENDENCIES) $(P)Qt_disk.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_disk.c $(OPT)
 
-Qt_Player.o: $(P)Qt_Player.c $(P)EditorWidget.h
+Qt_Player.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Player.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_Player.c $(OPT)
 
-Qt_EventReceiver.o: $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
+Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
-Qt_colors.o: $(P)Qt_colors.cpp $(P)mQt_colors.cpp
+Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp
 	$(CCC) $(P)Qt_colors.cpp $(QTOPT)
 
-$(P)mQt_colors.cpp: $(P)Qt_colors.cpp 
+$(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
 
-Qt_Menues.o: $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
+Qt_Menues.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
 	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)
 
-$(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp
+$(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Menues.cpp >$(P)mQt_Menues.cpp
 
-Qt_Fonts.o: $(P)Qt_Fonts.cpp
+Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
 	$(CCC) $(P)Qt_Fonts.cpp $(QTOPT)
 
-Qt_MainWindow.o: $(P)Qt_MainWindow.cpp
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
@@ -895,124 +896,124 @@ QD = $(P)
 
 # Compile our own (modified) version of the qcolordialog in order to show real time update of colors.
 # (it was surprisingly simple to do this. I just had to copy the file. No editing or use of custom compiler flags was needed.)
-qcolordialog.o: $(QD)qcolordialog.cpp
+qcolordialog.o:  $(BUILD_DEPENDENCIES) $(QD)qcolordialog.cpp
 	$(MOC) $(QD)qcolordialog.cpp >$(QD)qcolordialog.moc
 	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error
 
-Qt_Bs_edit.o : $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
+Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT)
 
-$(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp
+$(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
-Qt_instruments.o: $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
+Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
 
-$(P)Qt_instruments_widget.h: $(P)instruments_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_instruments_widget.h: $(BUILD_DEPENDENCIES) $(P)instruments_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
 
-$(P)Qt_instrument_widget.h: $(P)instrument_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)instrument_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instrument_widget
 
-$(P)Qt_no_instrument_widget.h: $(P)no_instrument_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_no_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)no_instrument_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) no_instrument_widget
 
-$(P)Qt_control_change_widget.h: $(P)control_change_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)control_change_widget.ui $(P)create_source_from_ui.sh
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
-Qt_memory.o:  $(P)Qt_memory.cpp
+Qt_memory.o:  $(BUILD_DEPENDENCIES)  $(P)Qt_memory.cpp
 	$(CCC)  $(P)Qt_memory.cpp $(CPPOPT)
 
-posix_settings.o: posix/posix_settings.c
+posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)
 
-settings.o: $(CD)settings.c
+settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.c
 	$(CC) $(CD)settings.c $(OPT)
 
-scroll.o: $(CD)scroll.c
+scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c
 	$(CC) $(CD)scroll.c $(OPT)
 
 
-pixmap.o:  $(CD)pixmap.c
+pixmap.o:  $(BUILD_DEPENDENCIES)  $(CD)pixmap.c
 	$(CC)  $(CD)pixmap.c $(OPT)
 
-blts.o:  $(CD)blts.c
+blts.o:  $(BUILD_DEPENDENCIES)  $(CD)blts.c
 	$(CC)  $(CD)blts.c $(OPT)
 
-X11_memory.o:  $(P)X11_memory.c 
+X11_memory.o:  $(BUILD_DEPENDENCIES)  $(P)X11_memory.c 
 	$(CC)  $(P)X11_memory.c $(OPT)
 
-gfx_shrink.o:  $(CD)gfx_shrink.c
+gfx_shrink.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink.c
 	$(CC)  $(CD)gfx_shrink.c $(OPT)
 
-gfx_shrink_t.o:  $(CD)gfx_shrink_t.c
+gfx_shrink_t.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink_t.c
 	$(CC)  $(CD)gfx_shrink_t.c $(OPT)
 
-scroll_play.o:  $(CD)scroll_play.c
+scroll_play.o:  $(BUILD_DEPENDENCIES)  $(CD)scroll_play.c
 	$(CC)  $(CD)scroll_play.c $(OPT)
 
-gfx_tempocolor.o:  $(CD)gfx_tempocolor.c
+gfx_tempocolor.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_tempocolor.c
 	$(CC)  $(CD)gfx_tempocolor.c $(OPT)
 
-block_split.o:  $(CD)block_split.c
+block_split.o:  $(BUILD_DEPENDENCIES)  $(CD)block_split.c
 	$(CC)  $(CD)block_split.c $(OPT)
 
-undo_block_mergesplit.o:  $(CD)undo_block_mergesplit.c
+undo_block_mergesplit.o:  $(BUILD_DEPENDENCIES)  $(CD)undo_block_mergesplit.c
 	$(CC)  $(CD)undo_block_mergesplit.c $(OPT)
 
-glissando.o:  $(CD)new/glissando.c
+glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.c
 	$(CC)  $(CD)new/glissando.c $(OPT)
 
-pitchexpand.o:  $(CD)new/pitchexpand.c
+pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.c
 	$(CC)  $(CD)new/pitchexpand.c $(OPT)
 
-api_common.o:  $(API)api_common.c
+api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.c
 	$(CC)  $(API)api_common.c $(OPT)
 
-api_keyplay.o:  $(API)api_keyplay.c $(API)radium_proc.h
+api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c $(API)radium_proc.h
 	$(CC)  $(API)api_keyplay.c $(OPT)
 
-api_keyplayedit.o:  $(API)api_keyplayedit.c $(API)radium_proc.h
+api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c $(API)radium_proc.h
 	$(CC)  $(API)api_keyplayedit.c $(OPT)
 
-api_navigate.o:  $(API)api_navigate.c $(API)radium_proc.h
+api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c $(API)radium_proc.h
 	$(CC)  $(API)api_navigate.c $(OPT)
 
-api_noteedit.o:  $(API)api_noteedit.c $(API)radium_proc.h
+api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.c $(API)radium_proc.h
 	$(CC)  $(API)api_noteedit.c $(OPT)
 
-api_trackonoff.o:  $(API)api_trackonoff.c $(API)radium_proc.h
+api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c $(API)radium_proc.h
 	$(CC)  $(API)api_trackonoff.c $(OPT)
 
-api_zoom.o:  $(API)api_zoom.c $(API)radium_proc.h
+api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.c $(API)radium_proc.h
 	$(CC)  $(API)api_zoom.c $(OPT)
 
-api_notemanipulate.o:  $(API)api_notemanipulate.c $(API)radium_proc.h
+api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c $(API)radium_proc.h
 	$(CC)  $(API)api_notemanipulate.c $(OPT)
 
-api_play.o:  $(API)api_play.c $(API)radium_proc.h
+api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.c $(API)radium_proc.h
 	$(CC)  $(API)api_play.c $(OPT)
 
-api_clipboard.o:  $(API)api_clipboard.c $(API)radium_proc.h
+api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c $(API)radium_proc.h
 	$(CC)  $(API)api_clipboard.c $(OPT)
 
-api_undo.o:  $(API)api_undo.c $(API)radium_proc.h
+api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
 	$(CC)  $(API)api_undo.c $(OPT)
 
-api_various.o:  $(API)api_various.c $(API)radium_proc.h
+api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.c $(API)radium_proc.h
 	$(CC)  $(API)api_various.c $(OPT)
 
-api_instruments.o:  $(API)api_instruments.c $(API)radium_proc.h
+api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.c $(API)radium_proc.h
 	$(CC)  $(API)api_instruments.c $(OPT)
 
-api_requesters.o:  $(API)api_requesters.c $(API)radium_proc.h
+api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_proc.h
 	$(CC)  $(API)api_requesters.c $(OPT)
 
-radium_wrap.o:  $(API)radium_wrap.c $(API)radium_proc.h
+radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
 	$(CC)  $(API)radium_wrap.c $(OPT) -w
 
 
-$(API)radium_wrap.c: $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
+$(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; sh makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
 
 # # The following two lines can be uses instead of the two previous.
@@ -1022,20 +1023,20 @@ $(API)radium_wrap.c: $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wr
 #$(API)radium_wrap.c: $(API)radium.i
 #	swig -python $(API)radium.i
 
-api_support.o:  $(API)api_support.c
+api_support.o:  $(BUILD_DEPENDENCIES)  $(API)api_support.c
 	$(CC)  $(API)api_support.c $(OPT)
 
-ad_noteadd.o:  advanced/ad_noteadd.c
+ad_noteadd.o:  $(BUILD_DEPENDENCIES)  advanced/ad_noteadd.c
 	$(CC)  advanced/ad_noteadd.c $(OPT)
 
-wrapfunclist.o: $(API)wrapfunclist.c
+wrapfunclist.o:  $(BUILD_DEPENDENCIES) $(API)wrapfunclist.c
 	$(CC) $(API)wrapfunclist.c $(OPT)
 
-$(API)wrapfunclist.c: $(API)protos.conf $(API)protoconfparser.py
+$(API)wrapfunclist.c: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py
 	@echo "$(PYTHONEXE) protoconfparser.py wrapfunclist.c"
 	cd $(API) ; $(PYTHONEXE) protoconfparser.py wrapfunclist.c ; cd ..
 
-$(API)radium.i: $(API)protos.conf $(API)protoconfparser.py
+$(API)radium.i: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py
 	@echo "$(PYTHONEXE) protoconfparser.py radium.i"
 	cd $(API) ; $(PYTHONEXE) protoconfparser.py radium.i ; cd ..
 
@@ -1043,40 +1044,40 @@ $(API)radium_proc.h: $(API)protos.conf $(API)protoconfparser.py
 	@echo "$(PYTHONEXE) protoconfparser.py radium_proc.h"
 	cd $(API) ; $(PYTHONEXE) protoconfparser.py radium_proc.h ; cd ..
 
-gfx_request.o:  $(CD)gfx_request.c
+gfx_request.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_request.c
 	$(CC)  $(CD)gfx_request.c $(OPT)
 
 
 
 
 
-midi_playfromstart.o:  midi/midi_playfromstart.c
+midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 	$(CC)  midi/midi_playfromstart.c $(OPT) 
-midi_i_plugin.o:  midi/midi_i_plugin.c
+midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_plugin.c
 	$(CC)  midi/midi_i_plugin.c $(OPT) 
-midi_i_input.o:  midi/midi_i_input.c
+midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.c
 	$(CC)  midi/midi_i_input.c $(OPT) 
-midi_fx.o:  midi/midi_fx.c
+midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
 	$(CC)  midi/midi_fx.c $(OPT) 
 
-#disk_midi_mymidilinks.o:  midi/disk_midi_mymidilinks.c
+#disk_midi_mymidilinks.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_mymidilinks.c
 #	$(CC)  midi/disk_midi_mymidilinks.c $(OPT) 
 # TODO
 
-disk_midi_i_plugin.o:  midi/disk_midi_i_plugin.c
+disk_midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_i_plugin.c
 	$(CC)  midi/disk_midi_i_plugin.c $(OPT) 
-disk_midi_fx.o:  midi/disk_midi_fx.c
+disk_midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_fx.c
 	$(CC)  midi/disk_midi_fx.c $(OPT) 
-midi_rtmidi.o: midi/rtmidi/midi_rtmidi.cpp $(RTMIDI_DIR)/RtMidi.h
+midi_rtmidi.o:  $(BUILD_DEPENDENCIES) midi/rtmidi/midi_rtmidi.cpp $(RTMIDI_DIR)/RtMidi.h
 	$(CCC) midi/rtmidi/midi_rtmidi.cpp $(CPPOPT) $(RTMIDI_CFLAGS)
-alsaseq_midi.o:  midi/alsaseq/alsaseq_midi.c
+alsaseq_midi.o:  $(BUILD_DEPENDENCIES)  midi/alsaseq/alsaseq_midi.c
 	$(CC)  midi/alsaseq/alsaseq_midi.c $(OPT) 
-#midi_getEvents.o:  midi/midi_getEvents.c
+#midi_getEvents.o:  $(BUILD_DEPENDENCIES)  midi/midi_getEvents.c
 #	$(CC)  midi/midi_getEvents.c $(OPT) 
-midi_menues.o:  midi/midi_menues.c
+midi_menues.o:  $(BUILD_DEPENDENCIES)  midi/midi_menues.c
 	$(CC)  midi/midi_menues.c $(OPT) 
 
-RtMidi.o: $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
+RtMidi.o:  $(BUILD_DEPENDENCIES) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
 	$(CCC) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_CFLAGS) $(CPPOPT)
 
 

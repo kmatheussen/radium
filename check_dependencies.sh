@@ -11,6 +11,7 @@ echo "Checking dependencies: "
 which sed
 which $PYTHONEXE
 
+
 if $1 -c "import sys ; sys.exit(sys.version[:1] == \"2\")" ; then
     echo "Only Python 2 is supported:"
     $1 --version

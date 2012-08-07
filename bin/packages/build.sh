@@ -76,8 +76,6 @@ make
 cd ..
 
 
-ln -sf $1 $PREFIX/bin/python
-
 touch deletemetorebuild
 
 
