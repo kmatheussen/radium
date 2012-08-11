@@ -17,20 +17,20 @@ UIC = `cat /tmp/uic_path`
 
 
 
-# 4. Release buid or Debug build
+# 3. Release build or Debug build
 #
 #BUILDTYPE=DEBUG
 BUILDTYPE=RELEASE
 
 
 
-# 5. Full path to a python2 executable.  (Think it needs to be at least V2.4)
+# 4. Full path to a python2 executable.  (Think it needs to be at least V2.4)
 #
 PYTHONEXE=`which python2`
 
 
 
-# 6. Opimization options. Only enabled in RELEASE build
+# 5. Opimization options. Only enabled in RELEASE build
 OPTIMIZE= -mtune=native -O3
 
 
