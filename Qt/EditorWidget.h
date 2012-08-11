@@ -74,14 +74,16 @@ class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
 {
 public:
-  EditorWidget(QWidget *parent=0, const char *name=0 );
+  EditorWidget(QWidget *parent=0, const char *name="no name" );
   ~EditorWidget();
 
-#if USE_QT4
+#if USE_QT_VISUAL && USE_QT4
   const QPaintEngine* paintEngine();
 #endif
 
     QColor     colors[16];				// color array
+
+    // TODO: These wtwo can probably removed for !USE_QT_VISUAL
     QPixmap    *qpixmap;
     QPixmap    *cursorpixmap;
 
@@ -115,7 +117,7 @@ public:
       return this->height();
     }
 
-    QPointArray qpa;
+    Q3PointArray qpa;
 
 protected:
     //    bool        event(QEvent *);

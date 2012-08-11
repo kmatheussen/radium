@@ -224,10 +224,13 @@ public:
 
     resizeEvent(NULL);
 
+#if USE_QT3
+    // TODO: Fix. Implement for qt4
     connect(&blocklist, SIGNAL(highlighted(int)), this, SLOT(blocklist_highlighted(int)));
     connect(&blocklist, SIGNAL(selected(int)), this, SLOT(blocklist_selected(int)));
     connect(&playlist, SIGNAL(highlighted(int)), this, SLOT(playlist_highlighted(int)));
     connect(&playlist, SIGNAL(selected(int)), this, SLOT(playlist_selected(int)));
+#endif
 
     connect(&add_button, SIGNAL(pressed()), this, SLOT(add_to_playlist()));
     connect(&remove_button, SIGNAL(pressed()), this, SLOT(remove_from_playlist()));
@@ -241,7 +244,12 @@ public:
     int width = this->width();
     int height = this->height();
     bool stacked = do_stack(width, height);
-    
+
+    if(width<=0 || height<=0){
+      printf("Warning: %d<=0 || %d<=0\n",width,height);
+      return;
+    }
+
     MOVE_WIDGET(blocklist);
     MOVE_WIDGET(playlist);
     MOVE_WIDGET(add_button);
@@ -402,6 +410,7 @@ void BS_SelectPlaylistPos(int pos){
 }
 
 static void set_widget_width(int width){
+#if USE_QT3
   QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->xsplitter;
@@ -411,6 +420,10 @@ static void set_widget_width(int width){
   currentSizes[0] = main_window->width()-width;
   currentSizes[1] = width;
   splitter->setSizes(currentSizes);
+#endif
+#if USE_QT4
+  // TODO: Fix. Doesn't quite work the same way as QT3.
+#endif
 }
 
 void GFX_PlayListWindowToFront(void){

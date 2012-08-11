@@ -824,15 +824,78 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int 
                      );
 }
 
+#if 0
+// algorithm copied from http://www.geekpedia.com/code112_Draw-Rounded-Corner-Rectangles-Using-Csharp.html
+static void draw_rounded_rect_hmm(GdkDrawable *drawable, GdkGC *gc, float x, float y, float width, float height, float radius){
+  gdk_draw_line(drawable,gc,
+                x + radius, y, x + width - (radius * 2), y); // Line
+
+  gdk_draw_arc(drawable,gc,false,
+               x + width - (radius * 2), y, radius * 2, radius * 2, 270*64, 90*64); // Corner
+
+  gdk_draw_line(drawable,gc,
+                x + width, y + radius, x + width, y + height - (radius * 2)); // Line
+
+  gdk_draw_arc(drawable,gc,false,
+               x + width - (radius * 2), y + height - (radius * 2), radius * 2, radius * 2, 0*64, 90*64); // Corner
+
+  gdk_draw_line(drawable,gc,
+                x + width - (radius * 2), y + height, x + radius, y + height); // Line
+
+  gdk_draw_arc(drawable,gc,false,
+               x, y + height - (radius * 2), radius * 2, radius * 2, 90*64, 90*64); // Corner
+  
+  gdk_draw_line(drawable,gc,
+                x, y + height - (radius * 2), x, y + radius); // Line
+  
+  gdk_draw_arc(drawable,gc,false,
+               x, y, radius * 2, radius * 2, 180*64, 90*64); // Corner
+}
+#endif
+
+#if 0
+static void draw_rounded_rect(GdkDrawable *drawable, int color, float x, float y, float width, float height, float radius, int where){
+  GdkGC *gc = getColorGC(color,where);
+  //GdkGC *m = getMixedColor(color,MAX_BRIGHTNESS/2,where);
+
+  gdk_draw_point(drawable,gc,
+                 x+1,y+1);
+  gdk_draw_point(drawable,gc,
+                 x+width-1,y+1);
+  gdk_draw_point(drawable,gc,
+                 x+1,y+height-1);
+  gdk_draw_point(drawable,gc,
+                 x+width-1,y+height-1);
+
+  gdk_draw_line(drawable,gc,
+                x+2,y,
+                x+width-2,y);
+  gdk_draw_line(drawable,gc,
+                x+2,y+height,
+                x+width-2,y+height);
+
+  gdk_draw_line(drawable,gc,
+                x,y+2,
+                x,y+height-2);
+  gdk_draw_line(drawable,gc,
+                x+width,y+2,
+                x+width,y+height-2);
+
+}
+#endif
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   GdkDrawable *drawable = getDrawable(where);
+#if 0
+  draw_rounded_rect(drawable,color,x,y,x2-x,y2-y,2,where);
+#else
   gdk_draw_rectangle(drawable,
                      getColorGC(color,where),
                      false,
                      x,y,
                      x2-x,y2-y
                      );
+#endif
 }
 
 
@@ -962,15 +1025,37 @@ void GTK_HandleEvents(void){
 
 extern bool doquit;
 
+extern LANGSPEC void P2MUpdateSongPosCallBack(void);
+#include "../common/PEQ_clock_proc.h"
+#include "../midi/midi_i_input_proc.h"
+#include "../common/OS_Ptask2Mtask_proc.h"
+
+#include "../common/playerclass.h"
+extern PlayerClass *pc;
+
+// No-op. We're just polling P2MUpdateSongPosCallback periodically instead.
+void Ptask2Mtask(void){
+}
+
 static gboolean called_periodicly(gpointer user_data){
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  DO_GFX_BLT({
+      if(pc->isplaying)
+        P2MUpdateSongPosCallBack();
+      UpdateClock(window);
+      MIDI_HandleInputMessage();
+    });
+  GFX_play_op_queue(window);
+
   Qt_EventHandler();
+
   if(doquit==true)
     gtk_main_quit();
   return TRUE;
 }
 
 void GTK_MainLoop(void){
-  g_timeout_add(2,called_periodicly,NULL);
+  g_timeout_add(2,called_periodicly,NULL); // Something's wrong with (at least my) glib here. Using an interval value of 1 causes 100% CPU.
   gtk_main();
 }
 

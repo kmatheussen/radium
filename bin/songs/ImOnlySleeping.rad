@@ -50,10 +50,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1423
+1262
 
 ?height
-643
+489
 
 ?fontID
 0
@@ -122,7 +122,7 @@ WBLOCK
 30
 
 ?temponodearea
-45
+70
 
 ?maxwtracksize
 0
@@ -526,7 +526,7 @@ WBLOCK
 30
 
 ?temponodearea
-111
+70
 
 ?maxwtracksize
 0
@@ -743,7 +743,7 @@ WBLOCK
 30
 
 ?temponodearea
-110
+70
 
 ?maxwtracksize
 0
@@ -960,7 +960,7 @@ WBLOCK
 30
 
 ?temponodearea
-100
+70
 
 ?maxwtracksize
 0
@@ -1194,7 +1194,7 @@ WBLOCK
 30
 
 ?temponodearea
-110
+70
 
 ?maxwtracksize
 0
@@ -1411,7 +1411,7 @@ WBLOCK
 30
 
 ?temponodearea
-111
+70
 
 ?maxwtracksize
 0

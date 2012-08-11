@@ -12,25 +12,27 @@ libdir = $(PREFIX)/lib
 # 2. Where moc and uic for QT3 is installed.
 # If you use Fedora, debian, ubuntu or arch Linux, the default values should work.
 #
-MOC = `cat /tmp/moc_path`
-UIC = `cat /tmp/uic_path`
+MOC = moc
+#`cat /tmp/moc_path`
+UIC = uic
+#`cat /tmp/uic_path`
 
 
 
-# 3. Release build or Debug build
+# 4. Release buid or Debug build
 #
-#BUILDTYPE=DEBUG
-BUILDTYPE=RELEASE
+BUILDTYPE=DEBUG
+#BUILDTYPE=RELEASE
 
 
 
-# 4. Full path to a python2 executable.  (Think it needs to be at least V2.4)
+# 5. Full path to a python2 executable.  (Think it needs to be at least V2.4)
 #
 PYTHONEXE=`which python2`
 
 
 
-# 5. Opimization options. Only enabled in RELEASE build
+# 6. Opimization options. Only enabled in RELEASE build
 OPTIMIZE= -mtune=native -O3
 
 
@@ -100,9 +102,10 @@ CPPOPT = $(OPT)
 COMMON_QTOPTS =
 
 # QT4 opts
+QTOPT = $(CPPOPT) -DUSE_QT4 `pkg-config --cflags Qt3Support` $(COMMON_QTOPTS)
+QTLINKFLAGS = `pkg-config --libs Qt3Support` `pkg-config --libs gtk+-2.0`
+
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
-#QTOPTS = -DUSE_QT4 `pkg-config --cflags Qt3Support` $(COMMON_QTOPTS)
-#QTLINKFLAGS = `pkg-config --libs Qt3Support` `pkg-config --libs gtk+-2.0`
 
 #
 # or:
@@ -110,8 +113,9 @@ COMMON_QTOPTS =
 
 # QT3 opts
 # 
-QTOPT = $(CPPOPT) -DUSE_QT3 `pkg-config --cflags qt-mt` $(COMMON_QTOPTS)
-QTLINKFLAGS = `pkg-config --libs qt-mt` `pkg-config --libs gtk+-2.0`
+#QTOPT = $(CPPOPT) -DUSE_QT3 `pkg-config --cflags qt-mt` $(COMMON_QTOPTS)
+#QTLINKFLAGS = `pkg-config --libs qt-mt` `pkg-config --libs gtk+-2.0`
+
 #QTLINKFLAGS = $(QT_LDFLAGS) -static `pkg-config --static --libs gtk+-2.0`
 #QTLINKFLAGS = $(QT_LDFLAGS) /tmp/radium/lib/libgtk-x11-2.0.a /tmp/radium/lib/libgdk-x11-2.0.a -L/tmp/radium/lib -latk-1.0 -lpangocairo-1.0 -lXext -lXrender -lXinerama -lXrandr -lXcursor -lXcomposite -lXdamage -lgdk_pixbuf-2.0 -lpangoft2-1.0 -lgio-2.0 -lXfixes -lcairo -lX11 -lpango-1.0 -lm -lfreetype -lfontconfig -lgobject-2.0 -lglib-2.0
 
@@ -162,7 +166,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o qtxembed.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -181,12 +185,12 @@ OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = dependencies_ok pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h
+BUILD_DEPENDENCIES =  pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h dependencies_ok
+
 PROGRAM_MODULES = start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
-	rm -f /tmp/moc_path /tmp/uic_path
 	@echo
 	@echo "Compilation OK."
 	@echo
@@ -198,7 +202,6 @@ very_clean: clean
 
 clean:
 	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt* a.out common/keyboard_sub_ids.h w /tmp/moc_path /tmp/uic_path dependencies_ok
-	rm -fr $(P)/qtxembed-1.3-free
 
 dependencies_ok: check_dependencies.sh Makefile /tmp/moc_path /tmp/uic_path 
 	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
@@ -836,7 +839,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.c
 #X11_ClientMessages.o:  $(BUILD_DEPENDENCIES) X11/X11_ClientMessages.c
 #	$(CC) X11/X11_ClientMessages.c $(OPT)
 
-$(P)EditorWidget.h: $(P)qtxembed-1.3-free/src/qtxembed.cpp $(BUILD_DEPENDENCIES)
+$(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error 
@@ -846,14 +849,6 @@ Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)vi
 
 GTK_visual.o:  $(BUILD_DEPENDENCIES) $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
 	$(CC) $(P)GTK_visual.c $(OPT) `pkg-config --cflags gtk+-2.0`
-
-qtxembed.o:  $(BUILD_DEPENDENCIES) $(P)qtxembed-1.3-free/src/qtxembed.cpp
-	$(CCC) $(P)qtxembed-1.3-free/src/qtxembed.cpp $(QTOPT) -Wno-error
-
-$(P)qtxembed-1.3-free/src/qtxembed.cpp: Makefile $(BUILD_DEPENDENCIES)
-	rm -fr $(P)/qtxembed-1.3-free
-	cd $(P) && tar xvzf qtxembed-1.3-free.tar.gz
-	cd $(P)qtxembed-1.3-free/src/ && $(MOC) qtxembed.h >>qtxembed.cpp
 
 Qt_error.o:  $(BUILD_DEPENDENCIES) $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
@@ -897,7 +892,8 @@ QD = $(P)
 # Compile our own (modified) version of the qcolordialog in order to show real time update of colors.
 # (it was surprisingly simple to do this. I just had to copy the file. No editing or use of custom compiler flags was needed.)
 qcolordialog.o:  $(BUILD_DEPENDENCIES) $(QD)qcolordialog.cpp
-	$(MOC) $(QD)qcolordialog.cpp >$(QD)qcolordialog.moc
+	$(MOC) $(QD)qcolordialog.h >$(QD)qcolordialog.moc
+	$(MOC) $(QD)qcolordialog.cpp >>$(QD)qcolordialog.moc
 	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error
 
 Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
@@ -909,16 +905,16 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
 
-$(P)Qt_instruments_widget.h: $(BUILD_DEPENDENCIES) $(P)instruments_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_instruments_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
 
-$(P)Qt_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)instrument_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instrument_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instrument_widget
 
-$(P)Qt_no_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)no_instrument_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_no_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_no_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_no_instrument_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) no_instrument_widget
 
-$(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)control_change_widget.ui $(P)create_source_from_ui.sh
+$(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_widget.ui $(P)create_source_from_ui.sh $(P)Qt_control_change_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
 Qt_memory.o:  $(BUILD_DEPENDENCIES)  $(P)Qt_memory.cpp
@@ -1093,9 +1089,9 @@ buildtype.opt: Makefile
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
 
-/tmp/moc_path: find_moc_and_uic_paths.sh Makefile
+/tmp/moc_path: find_moc_and_uic_paths.sh
 	./find_moc_and_uic_paths.sh moc >/tmp/moc_path
 
-/tmp/uic_path: find_moc_and_uic_paths.sh Makefile
+/tmp/uic_path: find_moc_and_uic_paths.sh
 	./find_moc_and_uic_paths.sh uic >/tmp/uic_path
 

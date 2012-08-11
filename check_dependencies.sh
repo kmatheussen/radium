@@ -31,14 +31,14 @@ if ! which $UIC ; then
     exit -1
 fi
 
-if $MOC -v 2>&1 |grep Qt\ 4 ; then
-    echo $MOC "is for QT4. Need moc for QT3. Make sure QTDIR and/or MOC is set correctly in the Makefile."
+if $MOC -v 2>&1 |grep Qt\ 3 ; then
+    echo $MOC "is for QT3. Need moc for QT4. Make sure MOC is set correctly in the Makefile."
     echo
     exit -1
 fi
 
-if $UIC -v 2>&1 |grep Qt\ 4 ; then
-    echo $UIC "is for QT4. Need uic for QT3. Make sure QTDIR and/or UIC is set correctly in the Makefile."
+if $UIC -v 2>&1 |grep Qt\ 3 ; then
+    echo $UIC "is for QT3. Need uic for QT4. Make sure UIC is set correctly in the Makefile."
     echo
     exit -1
 fi

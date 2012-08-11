@@ -42,9 +42,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 
 #if USE_GTK_VISUAL
-#  include "qtxembed-1.3-free/src/qtxembed.h"
+#  if USE_QT3
+#    include "qtxembed-1.3-free/src/qtxembed.h"
+#  endif
+#  if USE_QT4
+#    include <QX11EmbedContainer>
+#    define QtXEmbedContainer QX11EmbedContainer
+#  endif
+   extern QtXEmbedContainer *g_embed_container;
 #  include "GTK_visual_proc.h"
-extern QtXEmbedContainer *g_embed_container;
 #endif
 
 #if 0
@@ -87,7 +93,7 @@ void EditorWidget::customEvent(QCustomEvent *e){
 }
 
 
-#ifdef USE_QT4
+#if USE_QT_VISUAL && USE_QT4
 const QPaintEngine* EditorWidget::paintEngine(){     
   //qDebug()<<"Paint Engine";
   return NULL;
@@ -100,7 +106,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #if 1
   //DO_GFX_BLT(DrawUpTrackerWindow(window));
   GFX_play_op_queue(window);
-  GTK_HandleEvents();
+  //GTK_HandleEvents();
 #endif
 }
 #endif

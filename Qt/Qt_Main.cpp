@@ -114,6 +114,8 @@ bool MyApplication::x11EventFilter(XEvent *event){
 MyApplication *qapplication;
 
 
+#if USE_QT_VISUAL
+
 static double get_ms(void){
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -166,6 +168,7 @@ void Ptask2Mtask(void){
   }
 }
 
+#endif // USE_QT_VISUAL
 
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
@@ -207,8 +210,14 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 #include <qcdestyle.h>
 #include <qmotifplusstyle.h>
 #include <qsgistyle.h>
+#include <gtkstyle.h>
 #endif
 
+#if USE_QT4
+//#include <QCleanlooksStyle>
+//#include <QOxygenStyle>
+#include <QPlastiqueStyle>
+#endif
 
 #ifdef USE_QT3
 #include "qwidget.h"
@@ -253,6 +262,14 @@ int radium_main(char *arg){
   //GC_enable_incremental(); // crash.
   //GC_dont_gc = 1; // testing
 
+  {
+    int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
+    if(system_font_size>=0){
+      QFont font=QFont(QApplication::font().family(),system_font_size);
+      QApplication::setFont(font);
+    }
+  }
+
 #if 0
   QApplication::setStyle( new QPlatinumStyle() );
   QApplication::setStyle( new QCDEStyle() );
@@ -263,9 +280,16 @@ int radium_main(char *arg){
     bool override_default_qt_style = SETTINGS_read_bool((char*)"override_default_qt_style",true);
     SETTINGS_write_bool((char*)"override_default_qt_style",override_default_qt_style);
 
+#if 1
     if(override_default_qt_style)
-      QApplication::setStyle( new QWindowsStyle() );
+      //QApplication::setStyle( new QOxygenStyle());
+      QApplication::setStyle( new QPlastiqueStyle());
+    //QApplication::setStyle( new QCleanlooksStyle() );
+    //QApplication::setStyle( new QWindowsStyle() );
+#endif
   }
+
+
 
 #ifdef USE_QT4
   //QApplication::setGraphicsSystem("native");
@@ -315,7 +339,13 @@ int radium_main(char *arg){
 
       xsplitter->setOpaqueResize(true);
 
+#if USE_QT3
+      // Fix. Why does this crash QT4?
       editor->reparent(xsplitter, QPoint(0,0), true);
+#endif
+      xsplitter->show();
+      editor->reparent(xsplitter, QPoint(0,0), false);
+
       block_selector->reparent(xsplitter, QPoint(main_window->width()-100,0), true);
 
       block_selector->resize(100,block_selector->height());

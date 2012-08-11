@@ -84,7 +84,8 @@ void P2MUpdateSongPosCallBack(void){
 			}
 
 			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
-			ScrollEditorToRealLine(window,wblock,till_curr_realline);
+                        if(wblock->curr_realline != till_curr_realline)
+                          ScrollEditorToRealLine(window,wblock,till_curr_realline);
 
                     });
 		}

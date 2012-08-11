@@ -25,9 +25,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #if USE_GTK_VISUAL
-#  include "qtxembed-1.3-free/src/qtxembed.h"
-#  include "GTK_visual_proc.h"
+#  if USE_QT3
+#    include "qtxembed-1.3-free/src/qtxembed.h"
+#  endif
+#  if USE_QT4
+#    include <QX11EmbedContainer>
+#    define QtXEmbedContainer QX11EmbedContainer
+#  endif
    QtXEmbedContainer *g_embed_container;
+#  include "GTK_visual_proc.h"
 #endif  // USE_GTK_VISUAL
 
 #if USE_QT_VISUAL
@@ -45,7 +51,9 @@ public:
   MyQtXEmbedContainer(QWidget *widget)
     : QtXEmbedContainer(widget)
   {
+#if USE_QT3
     setWFlags(Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase);
+#endif
   }
   void paintEvent( QPaintEvent *e ){
     printf("got emb paint event\n");
@@ -71,7 +79,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     g_embed_container = new MyQtXEmbedContainer(this);
     //g_embed_container = new QtXEmbedContainer(this);
     g_embed_container->setBackgroundMode(Qt::NoBackground);
-    g_embed_container->show();
+    //g_embed_container->show();
 
     //g_embed_container->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Maximum);
 
@@ -81,7 +89,13 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
     // g_embed_container is not visible now (it's complicated), but by calling embed(), the gdk widget still shows up, for some reason.
     // Don't know if this is an okay workaround (or why it even is a workaround). Going to clean up this mess later, hopefully.
+#if USE_QT3
     g_embed_container->embed(GTK_CreateVisual(g_embed_container->winId()),true);
+#endif
+#if USE_QT4
+    GTK_CreateVisual(g_embed_container->winId());
+    //g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
+#endif
 
     //g_embed_container->grabKeyboard();
 
@@ -139,11 +153,15 @@ void SetupMainWindow(void){
   QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
 
 #ifdef USE_QT4
-  main_window->setAttribute(Qt::WA_PaintOnScreen);
-  main_window->setAttribute(Qt::WA_OpaquePaintEvent);
-  main_window->setAttribute(Qt::WA_NoSystemBackground);
+  //main_window->setAttribute(Qt::WA_PaintOnScreen);
+  //main_window->setAttribute(Qt::WA_OpaquePaintEvent);
+  //main_window->setAttribute(Qt::WA_NoSystemBackground);
+  //main_window->setBackgroundMode(Qt::NoBackground);
 #endif
+
+#ifdef USE_QT3
   main_window->setBackgroundMode(Qt::NoBackground);
+#endif
 
   //QPalette pal = QPalette(main_window->palette());
   //pal.setColor( QPalette::Active, QColorGroup::Background, Qt::green);
@@ -163,7 +181,9 @@ void SetupMainWindow(void){
 #endif
   editor->main_window = main_window;
 
+#ifdef USE_QT3
   main_window->setBackgroundMode(Qt::NoBackground);
+#endif
 
   main_window->resize(800,400);
   editor->setMinimumWidth(400);

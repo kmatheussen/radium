@@ -129,11 +129,18 @@ void UpdateClock(
 	int clock_minutes,clock_seconds;
 	char temp[52];
 	int time=clock_time;
+        static int last_time = -1;
 
 	if( ! pc->isplaying){
-		GFX_UpdateQuantitize(window,window->wblock);
-		return;
+          if(last_time==-2)
+            return;
+          GFX_UpdateQuantitize(window,window->wblock);
+          last_time = -2;
+          return;
 	}
+
+        if(last_time==time)
+          return;
 
 	clock_minutes=time/(60*PFREQ);
 	clock_seconds=time/PFREQ - (60*clock_minutes);
@@ -145,6 +152,8 @@ void UpdateClock(
 	GFX_Text(
 		 window,2,temp,0,0,TEXT_IGNORE_WIDTH,TEXT_CLEAR,PAINT_DIRECTLY
 	);
+
+        last_time = time;
 
 //	ReleaseRSemaphore(ClockSemaphore);
 }

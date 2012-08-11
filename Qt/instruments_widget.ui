@@ -1,61 +1,55 @@
-<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>Instruments_widget</class>
-<widget class="QWidget">
-    <property name="name">
-        <cstring>Instruments_widget</cstring>
-    </property>
-    <property name="geometry">
-        <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>780</width>
-            <height>197</height>
-        </rect>
-    </property>
-    <property name="caption">
-        <string>Instruments_widget</string>
-    </property>
-    <grid>
-        <property name="name">
-            <cstring>unnamed</cstring>
-        </property>
-        <property name="margin">
-            <number>0</number>
-        </property>
-        <property name="spacing">
-            <number>0</number>
-        </property>
-        <widget class="QTabWidget" row="0" column="1">
-            <property name="name">
-                <cstring>tabs</cstring>
-            </property>
-            <property name="tabPosition">
-                <enum>Bottom</enum>
-            </property>
-            <widget class="QWidget">
-                <property name="name">
-                    <cstring>tab</cstring>
-                </property>
-                <attribute name="title">
-                    <string>&lt;New Instrument&gt;</string>
-                </attribute>
-            </widget>
-        </widget>
-    </grid>
-</widget>
-<connections>
-    <connection>
-        <sender>tabs</sender>
-        <signal>selected(const QString&amp;)</signal>
-        <receiver>Instruments_widget</receiver>
-        <slot>tabs_selected(const QString&amp;)</slot>
-    </connection>
-</connections>
-<includes>
-    <include location="local" impldecl="in implementation">instruments_widget.ui.h</include>
-</includes>
-<slots>
-    <slot>tabs_selected( const QString &amp; tabname )</slot>
-</slots>
-<layoutdefaults spacing="6" margin="11"/>
-</UI>
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Instruments_widget</class>
+ <widget class="QWidget" name="Instruments_widget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>780</width>
+    <height>197</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Instruments_widget</string>
+  </property>
+  <layout class="QGridLayout">
+   <property name="margin">
+    <number>0</number>
+   </property>
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <item row="0" column="1">
+    <widget class="QTabWidget" name="tabs">
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>&lt;New Instrument&gt;</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>tabs</sender>
+   <signal>selected(QString)</signal>
+   <receiver>Instruments_widget</receiver>
+   <slot>tabs_selected(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

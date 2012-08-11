@@ -25,6 +25,7 @@ extern "C"{
 #include <qlineedit.h>
 #include <qsplitter.h>
 #include <qmainwindow.h>
+#include <qevent.h>
 
 #include "../common/nsmtracker.h"
 
@@ -50,7 +51,7 @@ void set_editor_focus(void);
 #define MakeFocusOverrideClass(Class)                    \
   class My##Class : public Class {                       \
   public:                                                \
-  My##Class(QWidget *parent, const char *name)           \
+  My##Class(QWidget *parent, const char *name = "gakk")           \
   : Class(parent, name)                                  \
     {                                                    \
     }                                                    \
@@ -104,11 +105,19 @@ static void updatePortsWidget(Instrument_widget *instrument);
 static const char *ccnames[128];
 
 //#define protected public
+#if USE_QT3
 #include "Qt_instruments_widget.cpp"
 #include "Qt_control_change_widget.cpp"
 #include "Qt_instrument_widget.cpp"
 #include "Qt_no_instrument_widget.cpp"
+#endif
 
+#if USE_QT4
+#include "mQt_instruments_widget_callbacks.h"
+#include "mQt_control_change_widget_callbacks.h"
+#include "mQt_instrument_widget_callbacks.h"
+#include "mQt_no_instrument_widget_callbacks.h"
+#endif
 
 bool instrumentWidgetUsesKeyboard(void){
   return num_focus>0;
@@ -307,9 +316,9 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct Patch 
 
     {
       int ccnum = 0;
-      for(int x=0;x<4;x++){
-        for(int y=0;y<2;y++){
-          Control_change_widget *cc = new Control_change_widget(instrument->control_change_group, "hepp");
+      for(int y=0;y<2;y++){
+        for(int x=0;x<4;x++){
+          Control_change_widget *cc = new Control_change_widget(instrument, "hepp");
 
           for(int i=0;i<128;i++){
             char temp[500];
@@ -326,7 +335,12 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct Patch 
           instrument->cc_widgets[ccnum] = cc;
           cc->ccnum = ccnum++;
 
-          instrument->control_change_groupLayout->addWidget(cc,y,x);
+          cc->groupBox->setTitle(" cc " + QString::number(ccnum));
+
+          // todo: fix
+          //instrument->control_change_groupLayout->addWidget(cc,y,x);
+          instrument->control_change_layout->addWidget(cc,y,x);
+          //instrument->control_change_layout->addWidget(cc,0,ccnum-1);
         }
       }
     }
@@ -367,18 +381,20 @@ void addInstrument(struct Patch *patch){
   }
 #endif
 
-  instrument->nameBox->setEnabled(true);
+  //instrument->nameBox->setEnabled(true);
   instrument->panningBox->setEnabled(true);
   instrument->volumeBox->setEnabled(true);
   instrument->velocityBox->setEnabled(true);
   instrument->velocity_slider->setEnabled(true);
   instrument->velocity_spin->setEnabled(true);
-  instrument->portBox->setEnabled(true);
+  instrument->voiceBox->setEnabled(true);
+#if 0
   instrument->presetBox->setEnabled(true);
   instrument->channelBox->setEnabled(true);
   instrument->MSBBox->setEnabled(true);
   instrument->LSBBox->setEnabled(true);
-  instrument->control_change_group->setEnabled(true);
+  //instrument->control_change_group->setEnabled(true);
+#endif
 
   instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count()-1);
   //instruments_widget->tabs->showPage(instrument);
@@ -408,10 +424,17 @@ static void set_widget_height(int height){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->ysplitter;
 
+#if USE_QT3
   QValueList<int> currentSizes = splitter->sizes();
   currentSizes[0] = main_window->height() - height;
   currentSizes[1] = height;
   splitter->setSizes(currentSizes);
+#endif
+
+#if USE_QT4
+  // TODO: Fix
+  printf("set_widghet_height. main_window->height(): %d, splitter: %p\n",main_window->height(),splitter);
+#endif
 }
 
 void GFX_InstrumentWindowToFront(void){
@@ -463,8 +486,9 @@ static void update_instrument_widget(Instrument_widget *instrument, struct Patch
   instrument->msb->setValue(patchdata->MSB);
   instrument->lsb->setValue(patchdata->LSB);
 
-  instrument->volume_onoff->setChecked(patchdata->volumeonoff);
-  instrument->panning_onoff->setChecked(patchdata->panonoff);
+  // fix
+  //instrument->volume_onoff->setChecked(patchdata->volumeonoff);
+  //instrument->panning_onoff->setChecked(patchdata->panonoff);
 
   instrument->preset->setCurrentItem(patchdata->preset+1);
 
@@ -473,7 +497,7 @@ static void update_instrument_widget(Instrument_widget *instrument, struct Patch
   for(int ccnum=0;ccnum<8;ccnum++){
     Control_change_widget *cc = instrument->cc_widgets[ccnum];
     cc->value_spin->setValue(patchdata->ccvalues[ccnum]);
-    cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
+    //cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
     cc->cctype->setCurrentItem(patchdata->cc[ccnum]);
   }
 }

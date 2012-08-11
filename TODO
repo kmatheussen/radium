@@ -228,6 +228,10 @@ Urgent
   void setCallback (RtMidiCallback callback, void *userData=0);
   bool getMessage (double *timeStamp, unsigned int *length, unsigned char **message);
 
+* Seems like menues don't show in Gnome 3.
+
+* F9 and F10 don't work. (grep FIX !)
+
 
 Can not reproduce
 =================

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qcolor.h>
 #include <qapplication.h>
 #include <qpalette.h>
-#include <qcolordialog.h>
+#include "qcolordialog.h"
 #include <qtimer.h>
 
 #ifdef USE_QT3
@@ -39,11 +39,18 @@ extern struct Root *root;
 
 static QApplication *application;
 static QColor *system_color=NULL;
+static QColor *button_color=NULL;
 static bool override_default_qt_colors=true;
 
 static void updatePalette(EditorWidget *my_widget, QPalette &pal){
-  if(system_color==NULL)
+  if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
+    SETTINGS_write_string("system_color",system_color->name().ascii());
+  }
+  if(button_color==NULL){
+    button_color=new QColor(SETTINGS_read_string("button_color","#c1f1e3"));
+    SETTINGS_write_string("button_color",button_color->name().ascii());
+  }
 
   if(override_default_qt_colors==false)
     return;
@@ -52,41 +59,72 @@ static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   {
     //QColor c(0xe5, 0xe5, 0xe5);
     QColor c(*system_color);
-    pal.setColor( QPalette::Active, QColorGroup::Background, c);
-    pal.setColor( QPalette::Active, QColorGroup::Button, c);
-    pal.setColor( QPalette::Inactive, QColorGroup::Background, c);
-    pal.setColor( QPalette::Inactive, QColorGroup::Button, c);
+    QColor b(*button_color);
+    pal.setColor( QPalette::Active, QColorGroup::Background, b);
+    pal.setColor( QPalette::Inactive, QColorGroup::Background, b);
+    pal.setColor( QPalette::Disabled, QColorGroup::Background, b.light(95));
 
-    pal.setColor( QPalette::Disabled, QColorGroup::Background, c.light(97));
-    pal.setColor( QPalette::Disabled, QColorGroup::Button, c.light(90));
+    pal.setColor( QPalette::Active, QColorGroup::Button, c);
+    pal.setColor( QPalette::Inactive, QColorGroup::Button, c);
+    pal.setColor( QPalette::Disabled, QColorGroup::Button, c.light(80));
 
     pal.setColor(QPalette::Active, QColorGroup::Base, c);
     pal.setColor(QPalette::Inactive, QColorGroup::Base, c);
+    pal.setColor(QPalette::Disabled, QColorGroup::Base, c.light(80));
+
+    pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(b.light(85)));
+
+    pal.setColor(QPalette::Disabled, QPalette::Light, c.light(80));
+
+    //pal.setBrush((QPalette::ColorGroup)QColorGroup::Button, QPalette::Highlight, (const QBrush&)QBrush(b.light(95)));
+    //pal.setBrush(QPalette::Highlight, QColorGroup::Button, QBrush(c.light(80)));
+    //pal.setBrush(QPalette::Highlight, QColorGroup::Base, QBrush(c.light(80)));
+
+
+#if 0
+    pal.setColor(QPalette::Active, QColorGroup::Window, c);
+    pal.setColor(QPalette::Inactive, QColorGroup::Window, c);
+    pal.setColor(QPalette::Disabled, QColorGroup::Window, c.light(80));
+#endif
+
+#if 0
+    pal.setColor(QPalette::Active, QColorGroup::BrightText, c);
+    pal.setColor(QPalette::Inactive, QColorGroup::BrightText, c);
+    pal.setColor(QPalette::Disabled, QColorGroup::BrightText, c.light(80));
+#endif
+
   }
 
   // Foreground, text, etc. (everything blackish)
   {
     QColor c(my_widget==NULL ? QColor(SETTINGS_read_string("color1","black")) : my_widget->colors[1]);
     pal.setColor(QPalette::Active, QColorGroup::Foreground, c);
-    pal.setColor(QPalette::Inactive, QColorGroup::Foreground, c.light(97));
-    pal.setColor(QPalette::Disabled, QColorGroup::Foreground, c.light(90));
+    pal.setColor(QPalette::Inactive, QColorGroup::Foreground, c.light(93));
+    pal.setColor(QPalette::Disabled, QColorGroup::Foreground, c.light(80));
+
     pal.setColor(QPalette::Active, QColorGroup::Foreground, c);
-    pal.setColor(QPalette::Inactive, QColorGroup::Foreground, c.light(97));
-    pal.setColor(QPalette::Disabled, QColorGroup::Foreground, c.light(90));
+    pal.setColor(QPalette::Inactive, QColorGroup::Foreground, c.light(93));
+    pal.setColor(QPalette::Disabled, QColorGroup::Foreground, c.light(80));
 
     pal.setColor(QPalette::Active, QColorGroup::ButtonText, c);
-    pal.setColor(QPalette::Inactive, QColorGroup::ButtonText, c.light(97));
-    pal.setColor(QPalette::Disabled, QColorGroup::ButtonText, c.light(90));
+    pal.setColor(QPalette::Inactive, QColorGroup::ButtonText, c.light(93));
+    pal.setColor(QPalette::Disabled, QColorGroup::ButtonText, c.light(80));
+
     pal.setColor(QPalette::Active, QColorGroup::ButtonText, c);
-    pal.setColor(QPalette::Inactive, QColorGroup::ButtonText, c.light(97));
-    pal.setColor(QPalette::Disabled, QColorGroup::ButtonText, c.light(90));
+    pal.setColor(QPalette::Inactive, QColorGroup::ButtonText, c.light(93));
+    pal.setColor(QPalette::Disabled, QColorGroup::ButtonText, c.light(80));
 
     pal.setColor(QPalette::Active, QColorGroup::Text, c);
-    pal.setColor(QPalette::Inactive, QColorGroup::Text, c.light(97));
-    pal.setColor(QPalette::Disabled, QColorGroup::Text, c.light(90));
+    pal.setColor(QPalette::Inactive, QColorGroup::Text, c.light(90));
+    pal.setColor(QPalette::Disabled, QColorGroup::Text, c.light(80));
+
+    pal.setColor(QPalette::Active, QColorGroup::HighlightedText, c.light(100));
+    pal.setColor(QPalette::Inactive, QColorGroup::HighlightedText, c.light(90));
+    pal.setColor(QPalette::Disabled, QColorGroup::HighlightedText, c.light(80));
+
     pal.setColor(QPalette::Active, QColorGroup::Text, c);
-    pal.setColor(QPalette::Inactive, QColorGroup::Text, c.light(97));
-    pal.setColor(QPalette::Disabled, QColorGroup::Text, c.light(90));
+    pal.setColor(QPalette::Inactive, QColorGroup::Text, c.light(90));
+    pal.setColor(QPalette::Disabled, QColorGroup::Text, c.light(80));
   }
 }
 
@@ -105,17 +143,13 @@ static void updateApplication(EditorWidget *my_widget,QApplication *app){
 static void updateAll(EditorWidget *my_widget, QWidget *widget){
   updateWidget(my_widget, widget);
 
-#ifdef USE_QT3
-  const QObjectList *l = widget->children();
-  if(l==NULL)
+#if 1 // USE_QT3
+  const QList<QObject*> list = widget->children();
+  if(list.empty()==true)
     return;
 
-  QObjectListIt it( *l );
-  QObject *obj;
-
-  while ( (obj = it.current()) != 0 ) {
-    ++it;
-    QWidget *widget = dynamic_cast<QWidget*>(obj);
+  for (int i = 0; i < list.size(); ++i) {
+    QWidget *widget = dynamic_cast<QWidget*>(list.at(i));
     if(widget!=NULL)
       updateAll(my_widget,widget);
   }
@@ -165,7 +199,14 @@ void setEditorColors(EditorWidget *my_widget){
 
   my_widget->colors[10]=QColor(SETTINGS_read_string("color10","#777777"));
 
-  for(int i=0 ; i<=10 ; i++)
+  my_widget->colors[11]=QColor(SETTINGS_read_string("button_color","#c1f1e3"));
+
+  my_widget->colors[12]=QColor(SETTINGS_read_string("color12","black"));
+  my_widget->colors[13]=QColor(SETTINGS_read_string("color13","black"));
+  my_widget->colors[14]=QColor(SETTINGS_read_string("color14","black"));
+  my_widget->colors[15]=QColor(SETTINGS_read_string("color15","black"));
+
+  for(int i=0 ; i<16 ; i++)
     GTK_SetColor(i,
                  my_widget->colors[i].red(),
                  my_widget->colors[i].green(),
@@ -174,19 +215,21 @@ void setEditorColors(EditorWidget *my_widget){
 }
 
 static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
-  if(num>10)
+  if(num>=16)
     return;
 
   GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
 
-  if(num!=9){
-    my_widget->colors[num].setRgb(rgb);
-  }else
+  my_widget->colors[num].setRgb(rgb);
+
+  if(num==9)
     system_color->setRgb(rgb);
+  else if(num==11)
+    button_color->setRgb(rgb);
 }
 
 void testColorInRealtime(int num, QColor color){
-  if(num>10)
+  if(num>=16)
     return;
 
   struct Tracker_Windows *window = root->song->tracker_windows;
@@ -206,6 +249,8 @@ void testColorInRealtime(int num, QColor color){
 
 }
 
+#include "Qt_Main_proc.h"
+
 // Workaround, expose events are not sent when the qcolor dialog blocks it. Only necessary when using the GTK visual.
 // Qt only calls qapplication->processEvents() (somehow), and not gtk_main_iteration_do(), so we do that manually here.
 class Scoped_GTK_EventHandler_Timer : public QTimer{
@@ -222,6 +267,7 @@ public slots:
   void call_GTK_HandleEvents(){
 #if USE_GTK_VISUAL
     GTK_HandleEvents();
+    //Qt_EventHandler();
 #endif
   }
 };
@@ -239,25 +285,30 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
 
   override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
 
-  QColorDialog::setCustomColor(9, system_color->rgb());
   for(int i=0;i<16;i++)
-    if(i!=9)
-      QColorDialog::setCustomColor(i, editorwidget->colors[i].rgb());
+    QColorDialog3::setCustomColor(i, editorwidget->colors[i].rgb());
 
   Scoped_GTK_EventHandler_Timer eventhandler;
 
-  if(QColorDialog::getColor(editorwidget->colors[0],editorwidget).isValid()==false){
+  if(QColorDialog3::getColor(editorwidget->colors[0],editorwidget).isValid()==false){
     // "cancel"
+    printf("Got CANCEL!\n");
     setEditorColors(editorwidget); // read back from file.
     system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
+    button_color->setRgb(QColor(SETTINGS_read_string("button_color","#c1f1e3")).rgb());
     DrawUpTrackerWindow(root->song->tracker_windows);
   }else{
     // "ok"
+    printf("Got OK!\n");
+
     SETTINGS_write_string((char*)"system_color",(char*)system_color->name().ascii());
-    system_color->setRgb(QColorDialog::customColor(9));
+    system_color->setRgb(QColorDialog3::customColor(9));
+
+    SETTINGS_write_string((char*)"button_color",(char*)button_color->name().ascii());
+    button_color->setRgb(QColorDialog3::customColor(11));
 
     for(int i=0;i<16;i++){
-      setColor(editorwidget,i,QColorDialog::customColor(i));
+      setColor(editorwidget,i,QColorDialog3::customColor(i));
       char key[500];
       sprintf(key,"color%d",i);
       SETTINGS_write_string(key,(char*)editorwidget->colors[i].name().ascii());

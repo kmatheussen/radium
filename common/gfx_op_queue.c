@@ -71,7 +71,8 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
   queue_t *queue = window->op_queue;
   int i;
 
-  //fprintf(stderr,"queue size: %d\n",queue->pos);
+  if(queue->pos>0)
+    fprintf(stderr,"queue size: %d\n",queue->pos);
 
 
 
