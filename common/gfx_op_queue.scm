@@ -1,6 +1,6 @@
 #!/bin/sh
 # -*- scheme -*-
-exec guile -e main -s $0 $*
+exec guile-1.8 -e main -s $0 $*
 !#
 
 
