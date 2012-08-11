@@ -41,10 +41,6 @@ static QApplication *application;
 static QColor *system_color=NULL;
 static bool override_default_qt_colors=true;
 
-static char *SETTINGS_read_string(const char *a,const char *b){
-  return SETTINGS_read_string((char*)a,(char*)b);
-}
-
 static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   if(system_color==NULL)
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
