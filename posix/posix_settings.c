@@ -45,3 +45,9 @@ char *OS_get_config_filename(void){
   return talloc_strdup(temp);
 }
 
+void OS_make_config_file_expired(void){
+  char *config_file = OS_get_config_filename();
+  char temp[500];
+  sprintf(temp,"mv %s %s_bu",config_file,config_file);
+  system(temp);
+}

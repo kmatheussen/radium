@@ -21,5 +21,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC char *OS_get_config_filename(void);
 extern LANGSPEC char *OS_get_current_directory(void);
 extern LANGSPEC char *OS_get_directory_separator(void);
-
+extern LANGSPEC void OS_make_config_file_expired(void);
 #endif

@@ -19,10 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "nsmtracker.h"
-#include "settings_proc.h"
 #include "OS_settings_proc.h"
+#include "../config/config.h"
+
+#include "settings_proc.h"
+
 
 static const char* get_value(const char* line){
   int pos=0;
@@ -75,7 +79,8 @@ static int find_linenum(const char* key, const char** lines){
 }
 
 static const char** get_lines(void){
-  FILE *file = fopen(OS_get_config_filename(), "r");
+  FILE *user_file = fopen(OS_get_config_filename(), "r");
+  FILE *file = user_file;
 
   if(file==NULL){
     const char* curr_dir = OS_get_current_directory();
@@ -100,6 +105,22 @@ static const char** get_lines(void){
   }
 
   fclose(file);
+
+  // Check that the file is not too old.
+  int version_linenum = find_linenum("settings_version",ret);
+  if(user_file != NULL){
+    if(version_linenum==-1 || atof(get_value(ret[version_linenum])) < SETTINGSVERSION){
+      OS_make_config_file_expired();
+      if(access(OS_get_config_filename(),F_OK)==0)
+        RWarning("\"%s\" still exists",OS_get_config_filename());
+      else
+        return get_lines();
+    }
+  }
+
+  char version_string[500];
+  sprintf(version_string,"settings_version = %f # dont change this one",SETTINGSVERSION);
+  ret[version_linenum] = talloc_strdup(version_string);
 
   return ret;
 }
@@ -130,7 +151,7 @@ static void SETTINGS_put(const char* key, const char* val){
   const char** lines = get_lines();
   int linenum = find_linenum(key,lines);
 
-  char*temp = talloc_atomic(strlen(key)+strlen(val)+10);
+  char *temp = talloc_atomic(strlen(key)+strlen(val)+10);
   sprintf(temp,"%s = %s",key,val);
 
   if(linenum==-1)

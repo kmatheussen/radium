@@ -1,31 +1,35 @@
+settings_version = 0.670000 # dont change this one
+
 font = Monospace 11
+system_font_size = 8
+
 show_text_border = true
 bottom_slider_height = 14
 left_slider_width = 14
 minimum_node_size = 20
-color0 = #abaa92
+
+color0 = #a4a08c
 color1 = #000000
-color2 = #f5f5f5
+color2 = #f1ece6
 color3 = #98006d
 color4 = #6437a7
 color5 = #002491
 color6 = #ffe100
-color7 = #f6ffee
+color7 = #e3e3d3
 color8 = #470086
-#system_color = #d4d6bf
-system_color = #b0b19c
-#button_color = #a3b6d3
-button_color = #959d89
-override_default_qt_colors = true
-override_default_qt_style = true
-blocklist_width = 818
-use_0x90_for_note_off = 0
 color9 = #b0b19c
-color10 = #7e7e7e
+color10 = #7a7a7a
 color11 = #959d89
-color12 = #191919
+color12 = #2411ff
 color13 = #13511f
-color14 = #585858
+color14 = #d18409
 color15 = #000000
 
-system_font_size = 8
+system_color = #b0b19c
+button_color = #959d89
+
+override_default_qt_colors = true
+override_default_qt_style = true
+
+blocklist_width = 818
+use_0x90_for_note_off = 0
