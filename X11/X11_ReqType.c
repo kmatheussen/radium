@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+//#ifdef __linux__
+
 #include <Python.h>
 
 #include "../common/nsmtracker.h"
@@ -22,7 +24,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 
 #include "X11_ReqType_proc.h"
-#include "X11_keyboard_proc.h"
+//#include "X11_keyboard_proc.h"
+
+
+
+#ifdef FOR_WINDOWS
+// TODO: Fix
+int mkstemp(char *tmpl){
+  return 0;
+}
+#endif // FOR_WINDOWS
 
 
 void GFX_WriteString_Do(ReqType reqtype,char *text){
@@ -156,3 +167,4 @@ void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
 #endif
 }
 
+//#endif // __linux__

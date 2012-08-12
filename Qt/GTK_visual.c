@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <gtk/gtk.h>
 //#include <gdk/gdk.h>
 //#include <gdk/gdkx.h>
-#include <X11/Xlib.h>
+
 
 #include "../common/nsmtracker.h"
 #include "../common/blts_proc.h"
@@ -33,7 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/eventreciever_proc.h"
 
+#ifdef __linux__
 #include "../X11/X11_keyboard_proc.h"
+#include <X11/Xlib.h>
+#endif
 
 #include "../common/visual_op_queue_proc.h"
 #include "../common/visual_proc.h"
@@ -100,6 +103,7 @@ static int get_text_height(const char *text){
   return height;
 }
 
+#ifdef __linux__
 static bool font_has_changed(void){
   if(GTK_WIDGET_VISIBLE(font_selector)==true){
     const char *new_font_name = gtk_font_selection_dialog_get_font_name((GtkFontSelectionDialog*)font_selector);
@@ -108,6 +112,7 @@ static bool font_has_changed(void){
   }
   return false;
 }
+#endif
 
 void setFontValues(struct Tracker_Windows *window){
   double width3 = R_MAX(get_text_width("D#6"), R_MAX(get_text_width("MUL"), get_text_width("STP")));
@@ -136,6 +141,7 @@ static void update_font(void){
   GFX_play_op_queue(window);
 }
 
+#ifdef __linux__
 GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 {
   if(font_has_changed())
@@ -151,6 +157,7 @@ GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 #endif
   return ret;
 }
+#endif
 
 
 static void create_font_dialog(void);
@@ -364,12 +371,21 @@ static gint delete_event( GtkWidget *widget,
   return TRUE;
 }
 
+#ifdef FOR_WINDOWS
+#  include <windows.h>
+#endif
 
-int GTK_CreateVisual(int64_t socket_id){
-  if(sizeof(int64_t) < sizeof(GdkNativeWindow))
+socket_type_t GTK_CreateVisual(socket_type_t socket_id){
+  if(sizeof(socket_type_t) < sizeof(GdkNativeWindow))
     abort();
 
-  plug = gtk_plug_new(socket_id);
+#ifdef FOR_WINDOWS
+  plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+#endif
+
+#ifdef __linux__
+  plug = gtk_plug_new((GdkNativeWindow)socket_id);
+#endif
   //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   //plug = gtk_hbox_new(TRUE,0);
   
@@ -383,16 +399,16 @@ int GTK_CreateVisual(int64_t socket_id){
     pango_context = gdk_pango_context_get();
     pango_layout = pango_layout_new(pango_context);
 
-    font_name = SETTINGS_read_string((char*)"font",(char*)"Monospace 12");
+    font_name = SETTINGS_read_string((char*)"font",(char*)"Monospace 11");
     font_description = pango_font_description_from_string(font_name);
     if(pango_font_description_get_size(font_description)==0){
-      font_name = "Monospace 12";
+      font_name = "Monospace 11";
       pango_font_description_free(font_description);
       font_description = pango_font_description_from_string(font_name);
       if(pango_font_description_get_size(font_description)==0){
         pango_font_description_free(font_description);
         font_description = pango_font_description_new(); // Fallback: Using pango default font.
-        font_name=pango_font_description_to_string(font_description);
+        font_name = pango_font_description_to_string(font_description); // Make sure 'font_name' is valid.
       }
     }
     pango_layout_set_font_description (pango_layout, font_description);
@@ -417,6 +433,9 @@ int GTK_CreateVisual(int64_t socket_id){
 #endif
 
   //return GDK_WINDOW_XWINDOW(plug->window);
+#ifdef FOR_WINDOWS
+  SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id);
+#endif
   return gtk_plug_get_id((GtkPlug*)plug);
 }
 
@@ -457,7 +476,10 @@ void GTK_SetSize(int width, int height){
     //gdk_window_add_filter(gtk_widget_get_parent_window(vbox),(GdkFilterFunc)FilterFunc,0);
     //gdk_window_add_filter(gtk_widget_get_parent_window(plug),(GdkFilterFunc)FilterFunc,0);
 
+#ifdef __linux__
     gdk_window_add_filter(NULL,(GdkFilterFunc)FilterFunc,0);
+#endif
+
 #if 0
     g_signal_connect (plug, "key_press_event",
                       G_CALLBACK (keyboard_input), NULL);

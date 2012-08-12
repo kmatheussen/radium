@@ -45,6 +45,8 @@ static bool isplaying=false;
 //#include "google/profiler.h"
 
 static void *posix_PlayerThread(void *arg){
+#ifdef __linux__
+  // TODO: Fix windows
   int64_t newtime;
   int64_t lasttime=0;
 
@@ -68,6 +70,7 @@ static void *posix_PlayerThread(void *arg){
   }
 
   //ProfilerStop();
+#endif
 
   return NULL;
 }

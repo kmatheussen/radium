@@ -15,6 +15,7 @@
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 import sys,os,traceback
+print sys
 
 try:
     print 0
@@ -29,8 +30,11 @@ except:
     print "Unable to set proctitle to radium"
     traceback.print_exc()
 
+print sys.argv[0]
 
+sys.path.append(os.path.abspath(os.path.dirname(sys.argv[0])))
 import radium,keybindingsparser
+#import keybindingsparser
 
 from common import *
 
@@ -110,7 +114,7 @@ import eventreceiverparser_generated
 import os
 pid = os.getpid()
 
-if os.fork()==0:
+if hasattr(os,'fork') and os.fork()==0:
     import signal
     def signal_handler(signalnum, frame):
         print "You pressed Ctrl+C. As a work-around, I'm going to kill radium with signal.SIGABRT."

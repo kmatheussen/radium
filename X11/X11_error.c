@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifdef __linux__
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
@@ -99,3 +100,5 @@ void RWarning(const char *fmt,...){
 }
 
 void Error_uninit(void){}
+
+#endif // __linux__

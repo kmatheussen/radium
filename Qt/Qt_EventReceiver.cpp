@@ -42,12 +42,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 
 #if USE_GTK_VISUAL
-#  if USE_QT3
-#    include "qtxembed-1.3-free/src/qtxembed.h"
-#  endif
-#  if USE_QT4
-#    include <QX11EmbedContainer>
-#    define QtXEmbedContainer QX11EmbedContainer
+#  ifdef __linux__
+#    if USE_QT3
+#      include "qtxembed-1.3-free/src/qtxembed.h"
+#    endif
+#    if USE_QT4
+#      include <QX11EmbedContainer>
+#      define QtXEmbedContainer QX11EmbedContainer
+#    endif
+#  else
+#    define QtXEmbedContainer QWidget
 #  endif
    extern QtXEmbedContainer *g_embed_container;
 #  include "GTK_visual_proc.h"

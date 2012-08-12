@@ -33,18 +33,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
-#include <X11/Xlib.h>
-
 #include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
 
+#ifdef __linux__
+#include <X11/Xlib.h>
 //#include "../X11/X11_Bs_edit_proc.h"
 //#include "../X11/X11_MidiProperties_proc.h"
 #include "../X11/X11_keyboard_proc.h"
 #include "../X11/X11_ClientMessages_proc.h"
 #include "../X11/X11_Qtstuff_proc.h"
+#endif
+
 #include "../common/OS_Bs_edit_proc.h"
 //#include "../X11/X11_Ptask2Mtask_proc.h"
 #include "../posix/posix_Player_proc.h"
@@ -69,8 +71,10 @@ class MyApplication : public QApplication{
 public:
   MyApplication(int argc,char **argv);
 protected:
+#ifdef __linux__
   bool x11EventFilter(XEvent*);
   //int x11ProcessEvent(XEvent*);
+#endif
 };
 
 MyApplication::MyApplication(int argc,char **argv)
@@ -78,6 +82,7 @@ MyApplication::MyApplication(int argc,char **argv)
 {
 }
 
+#ifdef __linux__
 
 #if 0
 int MyApplication::x11ProcessEvent(XEvent *event){
@@ -107,7 +112,7 @@ bool MyApplication::x11EventFilter(XEvent *event){
     return ret;
   }
 }
-
+#endif // __linux__
 
 
   //QApplication *qapplication;
@@ -195,8 +200,10 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   //GFX_PlayListWindowToBack();
   main_window->raise();
 
+#ifdef __linux__
   XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
   X11_ResetKeysUpDowns();
+#endif
 }
 
 
@@ -300,7 +307,9 @@ int radium_main(char *arg){
 
   setApplicationColors(qapplication);
 
+#ifdef __linux__
   X11_init_keyboard();
+#endif
 
   SetupMainWindow();
 
@@ -320,7 +329,9 @@ int radium_main(char *arg){
 
   posix_InitPlayer();
 
+#ifdef __linux__
   X11_StartQtStuff();
+#endif
 
   QWidget *block_selector = create_blockselector();
 
@@ -392,4 +403,11 @@ int radium_main(char *arg){
   return 0;
 
 }
-
+extern "C" void initradium(void);
+int main(int argc, char **argv){
+  Py_Initialize();
+  PyRun_SimpleString("import sys;sys.argv=[\"/home/kjetil/radium-qt4/bin/radium\",\"keybindings.conf\"]");
+  initradium();
+  PyRun_SimpleString("execfile(\"start.py\")"); // keybindings.conf start.sh\")");
+  Py_Finalize();
+}

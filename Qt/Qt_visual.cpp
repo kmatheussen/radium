@@ -60,7 +60,7 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
 #if 0
 #if USE_GTK_VISUAL
-  if(sizeof(int64_t) < sizeof(WId))
+  if(sizeof(socket_type_t) < sizeof(WId))
     abort();
 
   if(g_embed_container==NULL){

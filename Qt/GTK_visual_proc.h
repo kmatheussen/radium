@@ -17,11 +17,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef USE_GTK_VISUAL
 
+#ifdef __linux__
+# define socket_type_t int64_t
+#else
+# define socket_type_t void*
+#endif
+
 extern LANGSPEC void setFontValues(struct Tracker_Windows *window);
 
 extern LANGSPEC void GTK_SetColor(int colornum, int red, int green, int blue);
 
-extern LANGSPEC int GTK_CreateVisual(int64_t socket_id);
+extern LANGSPEC socket_type_t GTK_CreateVisual(socket_type_t socket_id);
 
 extern LANGSPEC void GTK_SetSize(int width, int height);
 

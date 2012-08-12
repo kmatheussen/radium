@@ -1,3 +1,6 @@
+#
+# Users and packagers: Edit build_*.sh instead.
+#
 
 
 #----------------USER SETTINGS-------------------------------
@@ -9,31 +12,28 @@ bindir = $(PREFIX)/bin
 libdir = $(PREFIX)/lib
 
 
-# 2. Where moc and uic for QT3 is installed.
+# 2. Where moc and uic for QT4 is installed.
 # If you use Fedora, debian, ubuntu or arch Linux, the default values should work.
 #
-MOC = moc
-#`cat /tmp/moc_path`
-UIC = uic
-#`cat /tmp/uic_path`
-
+MOC ?= moc
+UIC ?= uic
 
 
 # 4. Release buid or Debug build
 #
-BUILDTYPE=DEBUG
+BUILDTYPE ?= DEBUG
 #BUILDTYPE=RELEASE
 
 
 
 # 5. Full path to a python2 executable.  (Think it needs to be at least V2.4)
 #
-PYTHONEXE=`which python2`
+PYTHONEXE ?= `which python2`
 
 
 
 # 6. Opimization options. Only enabled in RELEASE build
-OPTIMIZE= -mtune=native -O3
+OPTIMIZE ?= -mtune=native -O3
 
 
 #----------------END USER SETTINGS---------------------------
@@ -51,8 +51,6 @@ OPTIMIZE= -mtune=native -O3
 
 GCDIR=bin/packages/gc-7.2
 
-PYPATH=`cat pypath.comp`
-
 MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
 
@@ -67,12 +65,13 @@ MAX_NUM_UNDOS=800
 
 CD=common/
 
-CCC=g++
-CC=gcc
-LINKER=g++
-
-
-
+CCC ?= g++
+CC ?= gcc
+LINKER ?= g++
+PKG ?= pkg-config
+PYPATH ?= 
+QT_CFLAGS ?= `$(PKG) --cflags Qt3Support`
+QT_LDFLAGS ?= `$(PKG) --libs Qt3Support`
 
 DEFINES= -DNOPAUSEPLAY
 # -DMEMORY_DEBUG
@@ -91,8 +90,13 @@ VISUAL=-DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
 RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -g $(OPTIMIZE)
 
+OS_OPTS ?= 
+#OS_OPTS = -fPIC -I/usr/X11R6/include
+OS_LDFLAGS ?=
 
-OPT=-c `cat buildtype.opt` $(DEFINES) -I$(GCDIR)/include -I/usr/X11R6/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) -fPIC $(VISUAL)
+OPT=-c `cat buildtype.opt` $(DEFINES) -I$(GCDIR)/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) $(OS_OPTS) $(VISUAL)
+
+
 # -pg
 
 CPPOPT = $(OPT)
@@ -102,8 +106,8 @@ CPPOPT = $(OPT)
 COMMON_QTOPTS =
 
 # QT4 opts
-QTOPT = $(CPPOPT) -DUSE_QT4 `pkg-config --cflags Qt3Support` $(COMMON_QTOPTS)
-QTLINKFLAGS = `pkg-config --libs Qt3Support` `pkg-config --libs gtk+-2.0`
+QTOPT = $(CPPOPT) -DUSE_QT4 $(QT_CFLAGS) $(COMMON_QTOPTS)
+QTLINKFLAGS = $(QT_LDFLAGS) `$(PKG) --libs gtk+-2.0`
 
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
 
@@ -128,9 +132,9 @@ QTLINKFLAGS = `pkg-config --libs Qt3Support` `pkg-config --libs gtk+-2.0`
 
 # rtmidi flags
 RTMIDI_DIR = midi/rtmidi/rtmidi-2.0.0
-RTMIDI_CFLAGS = -D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__
+RTMIDI_CFLAGS ?= -D__DUMMY__
 #-fexceptions
-RTMIDI_LDFLAGS = -lpthread -lasound -ljack
+RTMIDI_LDFLAGS ?= 
 
 
 
@@ -166,10 +170,16 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o posix_settings.o posix_Player.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o X11_ReqType.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
+
+#Posix
+OBJ_POSIX=posix_settings.o posix_Player.o 
+
+#Windows
+OBJ_WIN=W_Error.o
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
@@ -178,19 +188,25 @@ OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o 
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_i_input.o midi_menues.o
 # alsaseq_midi.o
 
-OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ14)
+OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_WIN) $(OBJ14)
 
 
 
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES =  pypath.comp buildtype.opt $(CD)keyboard_sub_ids.h dependencies_ok
+BUILD_DEPENDENCIES =  buildtype.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = start.sh bin/radiummodule.so bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
+PROGRAM_MODULES = bin/radium bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
-all: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
+all:
+	@echo
+	@echo "Use one of the ./build_* scripts to build Radium."
+	@echo
+
+
+radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 	@echo
 	@echo "Compilation OK."
 	@echo
@@ -201,10 +217,11 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f pypath.comp *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radiummodule.so python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt* a.out common/keyboard_sub_ids.h w /tmp/moc_path /tmp/uic_path dependencies_ok
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt* a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt
 
-dependencies_ok: check_dependencies.sh Makefile /tmp/moc_path /tmp/uic_path 
-	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
+dependencies_ok: check_dependencies.sh Makefile
+	sh check_dependencies.sh /usr/bin/python $(MOC) $(UIC)
+#	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
 
 check_install_dependecies: check_install_dependecies.sh Makefile
@@ -260,13 +277,6 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	@echo
 	@echo "packages successfully built. Now run make"
 
-start.sh:
-	echo "#!/bin/sh" >start.sh
-	echo "cd bin" >>start.sh
-	echo "$(PYTHONEXE) start.py keybindings.conf $@" >>start.sh
-	chmod a+rx start.sh
-
-
 start_bin.sh:
 	echo "#!/bin/sh" >start_bin.sh
 	echo "cd bin" >>start_bin.sh
@@ -274,8 +284,9 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 
-bin/radiummodule.so: $(OBJ) $(MAKEFILE)
-	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
+bin/radium: $(OBJ) $(MAKEFILE)
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
+#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
 
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
@@ -806,6 +817,9 @@ X11_visual.o:  $(BUILD_DEPENDENCIES) $(P)X11_visual.c
 X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c 
 	$(CC) X11/X11_error.c $(OPT)
 
+W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c 
+	$(CC) windows/W_Error.c $(OPT)
+
 X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC) X11/X11_Ptask2Mtask.c $(OPT)
 
@@ -848,7 +862,7 @@ Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)vi
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
 
 GTK_visual.o:  $(BUILD_DEPENDENCIES) $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
-	$(CC) $(P)GTK_visual.c $(OPT) `pkg-config --cflags gtk+-2.0`
+	$(CC) $(P)GTK_visual.c $(OPT) `$(PKG) --cflags gtk+-2.0`
 
 Qt_error.o:  $(BUILD_DEPENDENCIES) $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
@@ -1078,20 +1092,8 @@ RtMidi.o:  $(BUILD_DEPENDENCIES) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
 
 
 
-pypath.comp:
-	$(PYTHONEXE) -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]" >pypath.comp
-#	$(PYTHONEXE) -c "import sysconfig;print(sysconfig.get_path('include'))" >pypath.comp
-
-
 buildtype.opt: Makefile
 	if [ $(BUILDTYPE) = DEBUG ] ; then echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; else echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; fi
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
-
-/tmp/moc_path: find_moc_and_uic_paths.sh
-	./find_moc_and_uic_paths.sh moc >/tmp/moc_path
-
-/tmp/uic_path: find_moc_and_uic_paths.sh
-	./find_moc_and_uic_paths.sh uic >/tmp/uic_path
-
