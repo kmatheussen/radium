@@ -424,16 +424,16 @@ static void set_widget_height(int height){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->ysplitter;
 
-#if USE_QT3
+#if USE_QT4
+#  define QValueList QList
+#endif
+  //printf("set_widghet_height. main_window->height(): %d, splitter: %p\n",main_window->height(),splitter);
   QValueList<int> currentSizes = splitter->sizes();
   currentSizes[0] = main_window->height() - height;
   currentSizes[1] = height;
   splitter->setSizes(currentSizes);
-#endif
-
 #if USE_QT4
-  // TODO: Fix
-  printf("set_widghet_height. main_window->height(): %d, splitter: %p\n",main_window->height(),splitter);
+#  undef QValueList
 #endif
 }
 

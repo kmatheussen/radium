@@ -230,7 +230,7 @@ Urgent
 
 * Seems like menues don't show in Gnome 3.
 
-* F9 and F10 don't work. (grep FIX !)
+* Changing block doesn't always clear old graphics. Especially after loading a new song.
 
 
 Can not reproduce

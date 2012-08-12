@@ -73,7 +73,9 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     //: QtXEmbedContainer( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   , qpa(256)
 {
+#if USE_QT_VISUAL
   this->qpixmap=NULL;
+#endif
 
 #if USE_GTK_VISUAL
   if(sizeof(int64_t) < sizeof(WId))

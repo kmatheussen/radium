@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
@@ -42,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef USE_QT4
 #include <QListWidget>
+#include <QListWidgetItem>
+
 class QListBox : public QListWidget{
 public:
   QListBox(QWidget *parent) : QListWidget(parent) {}
@@ -225,11 +226,17 @@ public:
     resizeEvent(NULL);
 
 #if USE_QT3
-    // TODO: Fix. Implement for qt4
     connect(&blocklist, SIGNAL(highlighted(int)), this, SLOT(blocklist_highlighted(int)));
     connect(&blocklist, SIGNAL(selected(int)), this, SLOT(blocklist_selected(int)));
     connect(&playlist, SIGNAL(highlighted(int)), this, SLOT(playlist_highlighted(int)));
     connect(&playlist, SIGNAL(selected(int)), this, SLOT(playlist_selected(int)));
+#endif
+
+#if USE_QT4
+    connect(&blocklist, SIGNAL(currentRowChanged(int)), this, SLOT(blocklist_highlighted(int)));
+    connect(&blocklist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(blocklist_doubleclicked(QListWidgetItem*)));
+    connect(&playlist, SIGNAL(currentRowChanged(int)), this, SLOT(playlist_highlighted(int)));
+    connect(&playlist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(playlist_doubleclicked(QListWidgetItem*)));
 #endif
 
     connect(&add_button, SIGNAL(pressed()), this, SLOT(add_to_playlist()));
@@ -307,9 +314,8 @@ private slots:
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     editor->update();
   }
-  void blocklist_selected(int num){
-    if(num==-1)
-      return;
+
+  void blocklist_doubleclicked(QListWidgetItem *item){
     add_to_playlist();
   }
 
@@ -327,6 +333,10 @@ private slots:
   }
 
   void playlist_selected(int num){
+    remove_from_playlist();
+  }
+
+  void playlist_doubleclicked(QListWidgetItem *item){
     remove_from_playlist();
   }
 };
@@ -410,7 +420,6 @@ void BS_SelectPlaylistPos(int pos){
 }
 
 static void set_widget_width(int width){
-#if USE_QT3
   QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->xsplitter;
@@ -420,10 +429,6 @@ static void set_widget_width(int width){
   currentSizes[0] = main_window->width()-width;
   currentSizes[1] = width;
   splitter->setSizes(currentSizes);
-#endif
-#if USE_QT4
-  // TODO: Fix. Doesn't quite work the same way as QT3.
-#endif
 }
 
 void GFX_PlayListWindowToFront(void){

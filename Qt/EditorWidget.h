@@ -83,9 +83,10 @@ public:
 
     QColor     colors[16];				// color array
 
-    // TODO: These wtwo can probably removed for !USE_QT_VISUAL
+#if USE_QT_VISUAL
     QPixmap    *qpixmap;
     QPixmap    *cursorpixmap;
+#endif
 
     //void timerEvent(QTimerEvent *);
 
