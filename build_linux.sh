@@ -14,8 +14,8 @@ export LINKER=g++
 export PKG=pkg-config
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
-export QT_CFLAGS=`$PKG --cflags Qt3Support`
-export QT_LDFLAGS=`$PKG --libs Qt3Support`
+export QT_CFLAGS="`$PKG --cflags Qt3Support`"
+export QT_LDFLAGS="`$PKG --libs Qt3Support`"
 
 export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"

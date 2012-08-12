@@ -18,7 +18,7 @@ INTRODUCTION
 
 
 BUILD DEPENDENCIES FEDORA:
-        qt3-devel
+        qt4-devel
         libXaw-devel
         python2-devel
         alsa-lib-devel
@@ -29,8 +29,8 @@ BUILD DEPENDENCIES FEDORA:
 
 
 BUILD DEPENDENCIES UBUNTU:
-      libqt3-mt-dev
-      qt3-dev-tools
+      libqt4-dev
+      qt4-dev-tools
       libxaw7-dev
       python2-dev
       libasound-dev
