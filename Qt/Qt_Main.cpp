@@ -406,7 +406,9 @@ int radium_main(char *arg){
 extern "C" void initradium(void);
 int main(int argc, char **argv){
   Py_Initialize();
-  PyRun_SimpleString("import sys;sys.argv=[\"/home/kjetil/radium-qt4/bin/radium\",\"keybindings.conf\"]");
+  char temp[500];
+  sprintf(temp,"import sys;sys.argv=[\"%s\",\"keybindings.conf\"]",argv[0]);
+  PyRun_SimpleString(temp);
   initradium();
   PyRun_SimpleString("execfile(\"start.py\")"); // keybindings.conf start.sh\")");
   Py_Finalize();

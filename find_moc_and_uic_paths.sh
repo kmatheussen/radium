@@ -2,28 +2,23 @@
 
 if [ -f /etc/fedora-release ] ; then
     if uname -a |grep x86_64 >/dev/null ; then
-        PATH=/usr/lib64/qt-3.3/bin/
+        echo /usr/bin/$1-qt4
     else
-        PATH=/usr/lib/qt-3.3/bin/
+        echo /usr/bin/$1-qt4
     fi
 
 elif grep -i ubuntu /etc/lsb-release >/dev/null 2>/dev/null ; then
-    PATH=/usr/share/qt3/bin/
+    echo $1-qt4
 
 elif grep -i debian /etc/lsb-release >/dev/null 2>/dev/null ; then
-    PATH=/usr/share/qt3/bin/
+    echo $1-qt4
 
 elif grep -i mint /etc/lsb-release >/dev/null 2>/dev/null ; then
-    PATH=/usr/share/qt3/bin/
+    echo $1-qt4
 
 elif grep -i arch /etc/lsb-release >/dev/null 2>/dev/null ; then
-    PATH=/opt/qt/bin/
+    echo $1
 
 else
-    PATH=
-
+    echo $1
 fi
-
-echo $PATH$1
-
-

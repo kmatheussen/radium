@@ -10,6 +10,7 @@ echo
 echo "Checking dependencies: "
 which sed
 which $PYTHONEXE
+#which guile-1.8
 
 
 if $1 -c "import sys ; sys.exit(sys.version[:1] == \"2\")" ; then

@@ -275,7 +275,7 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	" >makescript.sh
 	sh makescript.sh
 	@echo
-	@echo "packages successfully built. Now run make"
+	@echo "packages successfully built. Now run ./build_linux.sh -j7"
 
 start_bin.sh:
 	echo "#!/bin/sh" >start_bin.sh
