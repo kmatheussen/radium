@@ -62,6 +62,8 @@ public:
   }
   void paintEvent( QPaintEvent *e ){
     printf("got emb paint event\n");
+    // Shouldn't we call the super method here?
+    QtXEmbedContainer::paintEvent(e);
   }
 };
 #endif
@@ -100,8 +102,10 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     g_embed_container->embed(GTK_CreateVisual(g_embed_container->winId()),true);
 #endif
 #if USE_QT4
-    //GTK_CreateVisual(g_embed_container->winId());
-    g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
+    if(getenv("KDE_FULL_SESSION")!=NULL)
+      g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
+    else
+      GTK_CreateVisual(g_embed_container->winId());
 #endif
 
     //g_embed_container->grabKeyboard();
@@ -123,7 +127,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   setEditorColors(this);
 
 #if USE_QT_VISUAL
-  this->setMouseTracking(true);
+  //this->setMouseTracking(true);
   //g_embed_container->setMouseTracking(true);
 #endif
 
