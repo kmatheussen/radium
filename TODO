@@ -230,6 +230,8 @@ Urgent
 
 * Changing block doesn't always clear old graphics. Especially after loading a new song.
 
+* Too verbose console when pressing keys.
+
 
 
 Can not reproduce
