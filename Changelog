@@ -1,3 +1,13 @@
+Most important changes 0.60.1 -> 0.67.0:
+* Ported GUI to Qt4
+  (Editor graphics is still written in GTK2, running in an embedded wiget.)
+* More colorful default colors
+* Fix left mouse in KDE
+* Various build fixes
+* Compiles under mingw.
+  (Tested in wine and Windows7, but it doesn't work very well yet.)
+
+
 Most important changes 0.60.0 -> 0.66.1:
 * Various build fixes
 
