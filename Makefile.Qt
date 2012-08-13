@@ -254,7 +254,8 @@ uninstall:
 	rm -f $(DESTDIR)$(bindir)/radium
 
 run-gdb:
-	make -j3 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
+	./build_linux.sh -j3 && cd bin && gdb ./radium
+#	make -j3 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
 
 run-valgrind:
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)

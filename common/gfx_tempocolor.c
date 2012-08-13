@@ -122,8 +122,8 @@ void WBLOCK_DrawTempoColor(
 
   //const int numcolors=3;
   //const int colors[3]={1,4,2};
-  const int numcolors=6;
-  const int colors[6]={1,3,4,5,6,7};
+  const int numcolors=11;
+  const int colors[11]={1,2,3,4,5,6,8,12,13,14,15};
   const int maxtime=6300;
   const int mintime=200;
 
@@ -187,7 +187,7 @@ void WBLOCK_DrawTempoColor(
                   );
 
       colortouse/=(maxtime-mintime);
-      colortousebase=R_BOUNDARIES(0,(int)colortouse,numcolors-1);
+      colortousebase=R_BOUNDARIES(0,(int)colortouse,numcolors-2);
       colortousefloor=1.0f-(colortouse-(float)colortousebase);
 
       //	WBLOCK_DrawLineTempoColor(
