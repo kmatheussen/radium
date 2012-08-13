@@ -53,8 +53,13 @@ void WBLOCK_DrawMixedTempoColor(
   int lokke;
   //  int mf=mixfactor*1000;
 
-  color1 = color1 % 8;
-  color2 = color2 % 8;
+  color1 = color1 % 16;
+  color2 = color2 % 16;
+
+  if(color1==0)
+    color1=1;
+  if(color2==0)
+    color2=2;
 
   if(color1==color2){
     color1=1;
@@ -122,9 +127,9 @@ void WBLOCK_DrawTempoColor(
 
   //const int numcolors=3;
   //const int colors[3]={1,4,2};
-  const int numcolors=11;
-  const int colors[11]={1,2,3,4,5,6,8,12,13,14,15};
-  const int maxtime=6300;
+  const int numcolors=10;
+  const int colors[11]={1,3,4,5,6,8,12,13,14,15};
+  const int maxtime=10300;
   const int mintime=200;
 
   int realline,line;
@@ -154,6 +159,8 @@ void WBLOCK_DrawTempoColor(
     realline=69
     num_reallines=70
    */
+
+  //printf("start: %d end_realline: %d\n",start_realline,end_realline);
 
   for(realline=start_realline;realline<=end_realline;realline++){
     fp1=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
@@ -191,6 +198,9 @@ void WBLOCK_DrawTempoColor(
       colortousefloor=1.0f-(colortouse-(float)colortousebase);
 
       //	WBLOCK_DrawLineTempoColor(
+      //if(colors[colortousebase]==0 || colors[colortousebase+1]==0)
+      //  abort();
+
       WBLOCK_DrawMixedTempoColor(
       //      WBLOCK_DrawNotMixedTempoColor(
 				    window,

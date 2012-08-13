@@ -202,9 +202,9 @@ void setEditorColors(EditorWidget *my_widget){
   my_widget->colors[11]=QColor(SETTINGS_read_string("button_color","#c1f1e3"));
 
   my_widget->colors[12]=QColor(SETTINGS_read_string("color12","black"));
-  my_widget->colors[13]=QColor(SETTINGS_read_string("color13","black"));
-  my_widget->colors[14]=QColor(SETTINGS_read_string("color14","black"));
-  my_widget->colors[15]=QColor(SETTINGS_read_string("color15","black"));
+  my_widget->colors[13]=QColor(SETTINGS_read_string("color13","green"));
+  my_widget->colors[14]=QColor(SETTINGS_read_string("color14","blue"));
+  my_widget->colors[15]=QColor(SETTINGS_read_string("color15","red"));
 
   for(int i=0 ; i<16 ; i++)
     GTK_SetColor(i,

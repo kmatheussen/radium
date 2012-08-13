@@ -8,7 +8,7 @@ bottom_slider_height = 14
 left_slider_width = 14
 minimum_node_size = 20
 
-color0 = #a4a08c
+color0 = #a4a38a
 color1 = #000000
 color2 = #f1ece6
 color3 = #98006d
@@ -17,16 +17,16 @@ color5 = #002491
 color6 = #ffe100
 color7 = #e3e3d3
 color8 = #470086
-color9 = #b0b19c
+color9 = #bcbca7
 color10 = #7a7a7a
-color11 = #959d89
+color11 = #999d87
 color12 = #2411ff
 color13 = #13511f
 color14 = #d18409
-color15 = #000000
+color15 = #5d0000
 
-system_color = #b0b19c
-button_color = #959d89
+system_color = #bcbca7
+button_color = #999d87
 
 override_default_qt_colors = true
 override_default_qt_style = true

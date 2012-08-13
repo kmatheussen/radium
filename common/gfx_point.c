@@ -47,9 +47,9 @@ void GFX_Point(
     return;
   }
 
-  if(color>7){    
+  if(color>=16 || color<0){
     RError("Illegal color: %d",color);
-    color = color % 8;
+    color = R_ABS(color) % 16;
   }
 
   brightness = R_BOUNDARIES(0, brightness, MAX_BRIGHTNESS);
@@ -81,7 +81,7 @@ void GFX_BouncePoints(struct Tracker_Windows *window){
     return;
 
   //printf("Bouncing points\n");
-  for(color=0;color<8;color++){
+  for(color=0;color<16;color++){
     for(bright=0;bright<=MAX_BRIGHTNESS;bright++){
       struct Points *point=points[color][bright];
       if(point!=NULL){
