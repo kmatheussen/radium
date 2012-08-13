@@ -228,11 +228,8 @@ Urgent
   void setCallback (RtMidiCallback callback, void *userData=0);
   bool getMessage (double *timeStamp, unsigned int *length, unsigned char **message);
 
-* Seems like menues don't show in Gnome 3.
-
 * Changing block doesn't always clear old graphics. Especially after loading a new song.
 
-* Left mouse button doesn't work in KDE under ubuntu 12. (mouse seems to work though)
 
 
 Can not reproduce

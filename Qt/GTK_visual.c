@@ -375,6 +375,10 @@ static gint delete_event( GtkWidget *widget,
 #  include <windows.h>
 #endif
 
+#ifdef __linux__
+#  include <gdk/gdkx.h>
+#endif
+
 socket_type_t GTK_CreateVisual(socket_type_t socket_id){
   if(sizeof(socket_type_t) < sizeof(GdkNativeWindow))
     abort();
@@ -384,7 +388,8 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 
 #ifdef __linux__
-  plug = gtk_plug_new((GdkNativeWindow)socket_id);
+  //plug = gtk_plug_new((GdkNativeWindow)socket_id);
+  plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 #endif
   //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   //plug = gtk_hbox_new(TRUE,0);
@@ -432,11 +437,16 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
   gtk_widget_show(vbox);
 #endif
 
-  //return GDK_WINDOW_XWINDOW(plug->window);
+  
 #ifdef FOR_WINDOWS
-  SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id);
-#endif
+  SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id); // doesn't work.
   return gtk_plug_get_id((GtkPlug*)plug);
+#endif
+
+#ifdef __linux
+  return GDK_WINDOW_XID(plug->window);
+  //return gtk_plug_get_id((GtkPlug*)plug);
+#endif
 }
 
 void GTK_SetSize(int width, int height){

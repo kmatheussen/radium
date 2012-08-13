@@ -100,8 +100,8 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     g_embed_container->embed(GTK_CreateVisual(g_embed_container->winId()),true);
 #endif
 #if USE_QT4
-    GTK_CreateVisual(g_embed_container->winId());
-    //g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
+    //GTK_CreateVisual(g_embed_container->winId());
+    g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
 #endif
 
     //g_embed_container->grabKeyboard();
