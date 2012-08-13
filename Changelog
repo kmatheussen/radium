@@ -1,4 +1,8 @@
-Most important changes 0.60.1 -> 0.67.0:
+Most important changes 0.67.0 -> 0.67.1:
+* Fix colors
+
+
+Most important changes 0.66.1 -> 0.67.0:
 * Ported GUI to Qt4
   (Editor graphics is still written in GTK2, running in an embedded wiget.)
 * More colorful default colors
@@ -8,7 +12,7 @@ Most important changes 0.60.1 -> 0.67.0:
   (Tested in wine and Windows7, but it doesn't work very well yet.)
 
 
-Most important changes 0.60.0 -> 0.66.1:
+Most important changes 0.66.0 -> 0.66.1:
 * Various build fixes
 
 
