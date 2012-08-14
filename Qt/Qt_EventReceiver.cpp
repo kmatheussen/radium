@@ -78,6 +78,7 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 extern PlayerClass *pc;
 
 void EditorWidget::customEvent(QCustomEvent *e){
+  printf("Got customEvent\n");
   {
     DO_GFX_BLT({
         if(pc->isplaying)
@@ -387,11 +388,16 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
 #if USE_GTK_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
-  //printf("got resize event\n");
+  printf("got resize event\n");
   this->window->width=this->get_editor_width();
   this->window->height=this->get_editor_height();
 
+  // TODO: Is this really necessary? (Yes, with MINGW it is, at least)
   g_embed_container->resize(this->get_editor_width(),this->get_editor_height());
+
+#if FOR_WINDOWS
+  GTK_SetPlugSize(this->get_editor_width(),this->get_editor_height());
+#endif
 }
 #endif // USE_GTK_VISUAL
 

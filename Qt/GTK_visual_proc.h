@@ -29,6 +29,7 @@ extern LANGSPEC void GTK_SetColor(int colornum, int red, int green, int blue);
 
 extern LANGSPEC socket_type_t GTK_CreateVisual(socket_type_t socket_id);
 
+extern LANGSPEC void GTK_SetPlugSize(int width, int height);
 extern LANGSPEC void GTK_SetSize(int width, int height);
 
 extern LANGSPEC void GTK_Init(int argc, char **argv);

@@ -50,6 +50,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_MainWindow_proc.h"
 
+#ifdef FOR_WINDOWS
+#  include <windows.h>
+static HWND gtk_hwnd = NULL;
+#endif
+
+
 #if 1
 class MyQtXEmbedContainer : public QtXEmbedContainer{
 public:
@@ -61,12 +67,23 @@ public:
 #endif
   }
   void paintEvent( QPaintEvent *e ){
-    printf("got emb paint event\n");
+    //printf("got emb paint event %p\n",gtk_hwnd);
     // Shouldn't we call the super method here?
     QtXEmbedContainer::paintEvent(e);
+
+#if 0
+#if FOR_WINDOWS
+    if(gtk_hwnd!=NULL){
+      //SetParent((HWND)gtk_hwnd,g_embed_container->winId());
+      printf("Trying: %p\n",SetParent((HWND)gtk_hwnd,g_embed_container->effectiveWinId()));
+    }
+#endif
+#endif
+
   }
 };
 #endif
+
 
 
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
@@ -101,11 +118,20 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #if USE_QT3
     g_embed_container->embed(GTK_CreateVisual(g_embed_container->winId()),true);
 #endif
+
+#if __linux__
 #if USE_QT4
     if(getenv("KDE_FULL_SESSION")!=NULL)
       g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
     else
       GTK_CreateVisual(g_embed_container->winId());
+#endif
+#endif
+
+#if FOR_WINDOWS
+    g_embed_container->show();
+    gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->winId());
+    //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->nativeParentWidget());
 #endif
 
     //g_embed_container->grabKeyboard();
@@ -121,6 +147,15 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     g_embed_container->resize(width,height);
     GTK_SetSize(width,height);
 #endif
+
+#if 0
+#if FOR_WINDOWS
+    g_embed_container->show();
+    SetParent((HWND)gtk_hwnd,g_embed_container->winId());
+    SetParent(g_embed_container->winId(),(HWND)gtk_hwnd);
+#endif
+#endif
+
   }
 #endif
 

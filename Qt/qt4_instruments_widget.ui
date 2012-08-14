@@ -19,6 +19,9 @@
   <property name="windowTitle">
    <string>Instruments_widget</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <layout class="QGridLayout">
    <property name="margin">
     <number>0</number>
@@ -72,6 +75,9 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
- <resources/>
+ <resources>
+  <include location="../web/perspective4.png"/>
+  <include location="../web/res.qrc"/>
+ </resources>
  <connections/>
 </ui>

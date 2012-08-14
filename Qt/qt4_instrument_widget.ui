@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>733</width>
-    <height>225</height>
+    <height>236</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,7 +31,7 @@
    <string>Inasdf</string>
   </property>
   <property name="autoFillBackground">
-   <bool>true</bool>
+   <bool>false</bool>
   </property>
   <property name="styleSheet">
    <string notr="true"/>

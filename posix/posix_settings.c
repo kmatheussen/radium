@@ -36,6 +36,7 @@ char *OS_get_directory_separator(void){
 }
 
 char *OS_get_config_filename(void){
+#if __linux__
   char temp[500];
   sprintf(temp,"mkdir %s/.radium 2>/dev/null",getenv("HOME"));
   if(system(temp)==-1)
@@ -43,11 +44,18 @@ char *OS_get_config_filename(void){
 
   sprintf(temp,"%s/.radium/config",getenv("HOME"));
   return talloc_strdup(temp);
+#endif // __linux__
+
+#if FOR_WINDOWS
+  return talloc_strdup("config");
+#endif
 }
 
 void OS_make_config_file_expired(void){
+#if __linux__
   char *config_file = OS_get_config_filename();
   char temp[500];
   sprintf(temp,"mv %s %s_bu",config_file,config_file);
   system(temp);
+#endif
 }

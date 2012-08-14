@@ -103,7 +103,6 @@ static int get_text_height(const char *text){
   return height;
 }
 
-#ifdef __linux__
 static bool font_has_changed(void){
   if(GTK_WIDGET_VISIBLE(font_selector)==true){
     const char *new_font_name = gtk_font_selection_dialog_get_font_name((GtkFontSelectionDialog*)font_selector);
@@ -112,7 +111,6 @@ static bool font_has_changed(void){
   }
   return false;
 }
-#endif
 
 void setFontValues(struct Tracker_Windows *window){
   double width3 = R_MAX(get_text_width("D#6"), R_MAX(get_text_width("MUL"), get_text_width("STP")));
@@ -144,9 +142,6 @@ static void update_font(void){
 #ifdef __linux__
 GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 {
-  if(font_has_changed())
-    update_font();
-
   GdkFilterReturn ret = X11_KeyboardFilter(xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
 
 #if 1
@@ -204,7 +199,7 @@ static void create_font_dialog(void){
 }
 
 
-#if 0
+#ifdef FOR_WINDOWS
 static gint keyboard_input( GtkWidget *widget,
                             GdkEvent  *event,
                             gpointer   callback_data )
@@ -220,8 +215,8 @@ static gint expose_event( GtkWidget *widget,
 {
   struct Tracker_Windows *window=root->song->tracker_windows;
 
-  //static int num=0;
-  //printf("got exposed event %d. width: %d, height: %d\n",num++,window->width,window->height);
+  static int num=0;
+  printf("got exposed event %d. width: %d, height: %d\n",num++,window->width,window->height);
 
   DO_GFX_BLT(DrawUpTrackerWindow(window));
   GFX_play_op_queue(window);
@@ -256,7 +251,7 @@ static gint mouse_pressrelease_event(GdkEvent  *event, bool is_press_event){
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventButton *button = &event->button;
 
-  //printf("got mouse press/release event %f %f. Button: %d\n",(float)button->x,(float)button->y,button->button);
+  printf("got mouse press/release event %f %f. Button: %d\n",(float)button->x,(float)button->y,button->button);
 
   {
     struct TEvent tevent;
@@ -303,7 +298,7 @@ static gint mouse_scroll_event( GtkWidget *widget,
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventScroll *scroll = &event->scroll;
 
-  //printf("got mouse scroll event %f %f. Direction: %d\n",(float)scroll->x,(float)scroll->y,  scroll->direction==GDK_SCROLL_DOWN ? 10 : scroll->direction==GDK_SCROLL_UP ? 20 : 30);
+  printf("got mouse scroll event %f %f. Direction: %d\n",(float)scroll->x,(float)scroll->y,  scroll->direction==GDK_SCROLL_DOWN ? 10 : scroll->direction==GDK_SCROLL_UP ? 20 : 30);
 
   if(scroll->direction!=GDK_SCROLL_UP && scroll->direction!=GDK_SCROLL_DOWN)
     return FALSE;
@@ -336,7 +331,7 @@ static gint resize_event( GtkWidget *widget,
 {
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventConfigure *configure = &event->configure;
-  //printf("got configure event. width: %d, height: %d\n",configure->width,configure->height);
+  printf("got configure event. width: %d, height: %d\n",configure->width,configure->height);
 
   window->width = configure->width;
   window->height = configure->height;
@@ -373,6 +368,7 @@ static gint delete_event( GtkWidget *widget,
 
 #ifdef FOR_WINDOWS
 #  include <windows.h>
+#  include <gdk/gdkwin32.h>
 #endif
 
 #ifdef __linux__
@@ -384,7 +380,9 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
     abort();
 
 #ifdef FOR_WINDOWS
-  plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  plug = gtk_window_new(GTK_WINDOW_POPUP);//GTK_WINDOW_TOPLEVEL);
+  //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  //plug = gtk_plug_new((GdkNativeWindow)socket_id);
 #endif
 
 #ifdef __linux__
@@ -440,8 +438,11 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 
 #ifdef FOR_WINDOWS
-  SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id); // doesn't work.
-  return gtk_plug_get_id((GtkPlug*)plug);
+  //SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id); // doesn't work.
+  SetParent(GDK_WINDOW_HWND(plug->window),socket_id); // doesn't work.
+  
+  //return gtk_plug_get_id((GtkPlug*)plug);
+  return GDK_WINDOW_HWND(plug->window);
 #endif
 
 #ifdef __linux
@@ -452,11 +453,19 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 }
 
+// Only used for windows
+void GTK_SetPlugSize(int width, int height){
+  gtk_window_resize((GtkWindow*)plug,width,height);
+}
+
 void GTK_SetSize(int width, int height){
   //gtk_widget_show(plug);
   //gtk_widget_show(vbox);
+
+#if FOR_WINDOWS
   //gtk_window_resize((GtkWindow*)plug,width,height);
   //gtk_window_resize((GtkWindow*)vbox,width,height);
+#endif
 
   static bool first_time = true;
   //bool was_first_time = first_time;
@@ -496,7 +505,7 @@ void GTK_SetSize(int width, int height){
     gdk_window_add_filter(NULL,(GdkFilterFunc)FilterFunc,0);
 #endif
 
-#if 0
+#ifdef FOR_WINDOWS
     g_signal_connect (plug, "key_press_event",
                       G_CALLBACK (keyboard_input), NULL);
     g_signal_connect (vbox, "key_press_event",
@@ -1071,11 +1080,16 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 #include "../common/playerclass.h"
 extern PlayerClass *pc;
 
+#if 1
 // No-op. We're just polling P2MUpdateSongPosCallback periodically instead.
 void Ptask2Mtask(void){
 }
+#endif
 
-static gboolean called_periodicly(gpointer user_data){
+#if 1
+static gboolean called_periodically(gpointer user_data){
+  return TRUE;
+#if 1
   struct Tracker_Windows *window=root->song->tracker_windows;
   DO_GFX_BLT({
       if(pc->isplaying)
@@ -1084,16 +1098,25 @@ static gboolean called_periodicly(gpointer user_data){
       MIDI_HandleInputMessage();
     });
   GFX_play_op_queue(window);
+#endif
+  if(font_has_changed())
+    update_font();
 
+  // Regarding call to Qt_EventHandler() (which calls qapplication->processEvents()):
+  //
+  // It is not needed! Seems like Qt manages by itself somehow. Quite baffling.
+  //
+  // However, we call it anyway. It doesn't seem to hurt.
   Qt_EventHandler();
 
   if(doquit==true)
     gtk_main_quit();
   return TRUE;
 }
+#endif
 
 void GTK_MainLoop(void){
-  g_timeout_add(2,called_periodicly,NULL); // Something's wrong with (at least my) glib here. Using an interval value of 1 causes 100% CPU.
+  g_timeout_add(2,called_periodically,NULL); // Something's wrong with (at least my) glib here. //Using an interval value of 1 causes 100% CPU.
   gtk_main();
 }
 
