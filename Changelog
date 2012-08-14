@@ -1,3 +1,8 @@
+Most important changes 0.67.1 -> 0.67.2:
+* Fix make install
+* Mingw fixes
+
+
 Most important changes 0.67.0 -> 0.67.1:
 * Fix colors
 
