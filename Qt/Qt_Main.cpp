@@ -243,7 +243,7 @@ extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
 
 
-// Called from gtk main loop (no, not anymore. Seems like it is unncessary and sometimes even causes LOTS of CPU usage).
+// Called from gtk main loop
 void Qt_EventHandler(void){
 #if 1 // At least on windows, qapplication->hasPendingEvents() never returns false.
   qapplication->processEvents();

@@ -383,6 +383,7 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
   plug = gtk_window_new(GTK_WINDOW_POPUP);//GTK_WINDOW_TOPLEVEL);
   //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   //plug = gtk_plug_new((GdkNativeWindow)socket_id);
+  gtk_window_resize((GtkWindow*)plug,600,600);
 #endif
 
 #ifdef __linux__
@@ -438,8 +439,8 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 
 #ifdef FOR_WINDOWS
-  //SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id); // doesn't work.
-  SetParent(GDK_WINDOW_HWND(plug->window),socket_id); // doesn't work.
+  //SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id);
+  SetParent(GDK_WINDOW_HWND(plug->window),socket_id); // Embed it.
   
   //return gtk_plug_get_id((GtkPlug*)plug);
   return GDK_WINDOW_HWND(plug->window);
@@ -1088,7 +1089,6 @@ void Ptask2Mtask(void){
 
 #if 1
 static gboolean called_periodically(gpointer user_data){
-  return TRUE;
 #if 1
   struct Tracker_Windows *window=root->song->tracker_windows;
   DO_GFX_BLT({

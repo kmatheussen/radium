@@ -129,7 +129,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
 #if FOR_WINDOWS
-    g_embed_container->show();
+    //g_embed_container->show();
     gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->winId());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->nativeParentWidget());
 #endif
