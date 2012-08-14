@@ -13,7 +13,8 @@ if grep ^OPTIMIZE Makefile |grep -v -e "-O3" ; then
     exit -1
 fi
 
-if grep ^BUILDTYPE\= Makefile |grep -v -e ^BUILDTYPE\=DEBUG ; then
-    echo "BUILDTYPE=RELEASE is not supported"
+if grep ^export\ BUILDTYPE\= build_linux.sh |grep -v -e RELEASE ; then
+    echo
+    echo "Missing BUILDTYPE=RELEASE."
     exit -1
 fi
