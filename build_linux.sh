@@ -14,6 +14,9 @@ export LINKER=g++
 export PKG=pkg-config
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
+export GTK_CFLAGS="`pkg-config --cflags gtk+-2.0`"
+export GTK_LDFLAGS="`pkg-config --libs gtk+-2.0`"
+
 export QT_CFLAGS="`$PKG --cflags Qt3Support`"
 export QT_LDFLAGS="`$PKG --libs Qt3Support`"
 

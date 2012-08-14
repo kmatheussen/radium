@@ -24,6 +24,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include <gdk/gdk.h>
 //#include <gdk/gdkx.h>
 
+#ifdef FOR_WINDOWS
+#  include <windows.h>
+#  include <gdk/gdkwin32.h>
+#endif
+
+#ifdef __linux__
+#  include <gdk/gdkx.h>
+#endif
+
 
 #include "../common/nsmtracker.h"
 #include "../common/blts_proc.h"
@@ -154,6 +163,37 @@ GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 }
 #endif
 
+#ifdef FOR_WINDOWS
+GdkFilterReturn FilterFunc(MSG *msg, GdkEvent *event,gpointer data)
+{
+  struct TEvent tevent;
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  static int num=0;
+  //printf("Got something %d %d/%d. Num: %d\n",(int)msg->message,WM_KEYDOWN,WM_KEYUP,num++);
+  switch(msg->message){
+    case WM_KEYDOWN: 
+      tevent.ID=TR_KEYBOARD;
+      tevent.SubID=EVENT_Q;
+      tevent.keyswitch=0;
+      EventReciever(&tevent,window);
+      GFX_play_op_queue(window);
+      printf("Got something down.... %d %d\n",(int)msg->wParam,num++);
+      return TRUE;
+      break;
+    case WM_KEYUP: 
+      tevent.ID=TR_KEYBOARDUP;
+      tevent.SubID=EVENT_Q;
+      tevent.keyswitch=0;
+      EventReciever(&tevent,window);
+      GFX_play_op_queue(window);
+      printf("Got something up.... %d %d\n",(int)msg->wParam,num++);
+    default:
+      break;
+  }
+  fflush(stdout);
+  return false;
+}
+#endif
 
 static void create_font_dialog(void);
 static void font_selector_destroyed(GtkWidget *widget, gpointer window){
@@ -205,7 +245,7 @@ static gint keyboard_input( GtkWidget *widget,
                             gpointer   callback_data )
 {
   printf("got key. state: %x\n",(int)event->key.state);
-  return TRUE;
+  return FALSE;
 }
 #endif
 
@@ -366,15 +406,6 @@ static gint delete_event( GtkWidget *widget,
   return TRUE;
 }
 
-#ifdef FOR_WINDOWS
-#  include <windows.h>
-#  include <gdk/gdkwin32.h>
-#endif
-
-#ifdef __linux__
-#  include <gdk/gdkx.h>
-#endif
-
 socket_type_t GTK_CreateVisual(socket_type_t socket_id){
   if(sizeof(socket_type_t) < sizeof(GdkNativeWindow))
     abort();
@@ -384,6 +415,7 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
   //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   //plug = gtk_plug_new((GdkNativeWindow)socket_id);
   gtk_window_resize((GtkWindow*)plug,600,600);
+  MoveWindow(GDK_WINDOW_HWND(plug->window), 0, 0, 600, 600, true);
 #endif
 
 #ifdef __linux__
@@ -441,7 +473,10 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #ifdef FOR_WINDOWS
   //SetParent(gtk_plug_get_id((GtkPlug*)plug),socket_id);
   SetParent(GDK_WINDOW_HWND(plug->window),socket_id); // Embed it.
-  
+  MoveWindow(GDK_WINDOW_HWND(plug->window), 0, 0, 600,600,true);
+
+  SetFocus(GDK_WINDOW_HWND(plug->window));
+
   //return gtk_plug_get_id((GtkPlug*)plug);
   return GDK_WINDOW_HWND(plug->window);
 #endif
@@ -456,7 +491,18 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 
 // Only used for windows
 void GTK_SetPlugSize(int width, int height){
+#if FOR_WINDOWS
   gtk_window_resize((GtkWindow*)plug,width,height);
+  //SetParent(GDK_WINDOW_HWND(plug->window),socket_id); // Embed it.
+  MoveWindow(GDK_WINDOW_HWND(plug->window), 0, 0, width, height, true);
+  SetFocus(GDK_WINDOW_HWND(plug->window));
+#endif
+}
+
+void GTK_SetFocus(void){
+#ifdef FOR_WINDOWS
+  SetFocus(GDK_WINDOW_HWND(plug->window));
+#endif
 }
 
 void GTK_SetSize(int width, int height){
@@ -502,9 +548,9 @@ void GTK_SetSize(int width, int height){
     //gdk_window_add_filter(gtk_widget_get_parent_window(vbox),(GdkFilterFunc)FilterFunc,0);
     //gdk_window_add_filter(gtk_widget_get_parent_window(plug),(GdkFilterFunc)FilterFunc,0);
 
-#ifdef __linux__
+    //#ifdef __linux__
     gdk_window_add_filter(NULL,(GdkFilterFunc)FilterFunc,0);
-#endif
+    //#endif
 
 #ifdef FOR_WINDOWS
     g_signal_connect (plug, "key_press_event",
@@ -566,6 +612,10 @@ void GTK_SetSize(int width, int height){
                      true,
                      0,0,
                      width,height);
+
+#if FOR_WINDOWS
+  SetFocus(GDK_WINDOW_HWND(plug->window));
+#endif
 }
 
 void GFX_ConfigFonts(struct Tracker_Windows *tvisual){

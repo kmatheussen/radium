@@ -82,10 +82,14 @@ MakeFocusOverrideClass(QLineEdit);
 
 
 #include "EditorWidget.h"
+#include "GTK_visual_proc.h"
 
 void set_editor_focus(void){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   editor->setFocus();
+#ifdef USE_GTK_VISUAL
+  //GTK_SetFocus();
+#endif
 }
 
 

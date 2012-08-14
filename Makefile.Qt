@@ -72,6 +72,9 @@ PKG ?= pkg-config
 PYPATH ?= 
 QT_CFLAGS ?= `$(PKG) --cflags Qt3Support`
 QT_LDFLAGS ?= `$(PKG) --libs Qt3Support`
+GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
+GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
+
 
 DEFINES= -DNOPAUSEPLAY
 # -DMEMORY_DEBUG
@@ -107,7 +110,7 @@ COMMON_QTOPTS =
 
 # QT4 opts
 QTOPT = $(CPPOPT) -DUSE_QT4 $(QT_CFLAGS) $(COMMON_QTOPTS)
-QTLINKFLAGS = $(QT_LDFLAGS) `$(PKG) --libs gtk+-2.0`
+QTLINKFLAGS = $(QT_LDFLAGS) $(GTK_LDFLAGS)
 
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
 
@@ -861,7 +864,7 @@ Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)vi
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
 
 GTK_visual.o:  $(BUILD_DEPENDENCIES) $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
-	$(CC) $(P)GTK_visual.c $(OPT) `$(PKG) --cflags gtk+-2.0`
+	$(CC) $(P)GTK_visual.c $(OPT) $(GTK_CFLAGS)
 
 Qt_error.o:  $(BUILD_DEPENDENCIES) $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)
