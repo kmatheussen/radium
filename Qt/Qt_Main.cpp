@@ -92,14 +92,16 @@ int MyApplication::x11ProcessEvent(XEvent *event){
 }
 #endif
 
+int num_users_of_keyboard = 0;
+
 bool MyApplication::x11EventFilter(XEvent *event){
 
   switch(event->type){
   case KeyPress:
-    if(instrumentWidgetUsesKeyboard())
+    if(num_users_of_keyboard>0)
       return false;
   case KeyRelease:
-    if(instrumentWidgetUsesKeyboard())
+    if(num_users_of_keyboard>0)
       return false;
   }
 

@@ -8,12 +8,13 @@
 
 #include "X11_Qtstuff_proc.h"
 
-
 void X11_StartQtStuff(void){
   PyRun_SimpleString("import X11_Qtstuff");
   PyRun_SimpleString("X11_Qtstuff.GFX_StartQtstuff()");
 }
 
+
+#ifndef GUIISQT
 
 char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
@@ -33,6 +34,9 @@ char *GFX_GetSaveFileName(
 ){
   return GFX_ReadStringFromPythonCommand("X11_Qtstuff.GFX_SaveFileRequester(\"%s\")");
 }
+
+#endif
+
 
 #ifndef GUIISQT
 void GFX_PlayListWindowToFront(void){

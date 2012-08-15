@@ -44,7 +44,7 @@ extern "C"{
 extern struct Root *root;
 extern struct Patch *g_currpatch;
 
-static int num_focus = 0;
+extern int num_users_of_keyboard;
 
 void set_editor_focus(void);
 
@@ -58,19 +58,19 @@ void set_editor_focus(void);
                                                          \
   void focusInEvent ( QFocusEvent *e ){                  \
     fprintf(stderr," oh yeah, i got fokus\n");           \
-    num_focus++;                                         \
+    num_users_of_keyboard++;                                         \
     Class::focusInEvent(e);                              \
   }                                                      \
   void focusOutEvent ( QFocusEvent *e ){                 \
     fprintf(stderr," lsot focus\n");                     \
-    num_focus--;                                         \
+    num_users_of_keyboard--;                                         \
     Class::focusOutEvent(e);                             \
   }                                                                     \
   bool eventFilter ( QObject * o, QEvent * ev ) {                       \
     if(ev->type()==QEvent::FocusIn)                                     \
-      num_focus++;                                                      \
+      num_users_of_keyboard++;                                                      \
     if(ev->type()==QEvent::FocusOut)                                    \
-      num_focus--;                                                      \
+      num_users_of_keyboard--;                                                      \
     if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) \
       set_editor_focus();                                               \
     return Class::eventFilter(o,ev);                                    \
@@ -122,10 +122,6 @@ static const char *ccnames[128];
 #include "mQt_instrument_widget_callbacks.h"
 #include "mQt_no_instrument_widget_callbacks.h"
 #endif
-
-bool instrumentWidgetUsesKeyboard(void){
-  return num_focus>0;
-}
 
 static const char *gm_names[] = {
   "Acoustic Grand Piano",

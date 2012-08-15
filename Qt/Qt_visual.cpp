@@ -372,6 +372,7 @@ void OS_GFX_Text(
   }
 }                      
 
+
 #endif // USE_QT_VISUAL
 
 

@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define QT_INSTRUMENTS_PROC_H
 
 QWidget *createInstrumentsWidget(void);
-bool instrumentWidgetUsesKeyboard(void);
 void addInstrument(struct Patch *patch);
 void close_all_instrument_widgets(void);
 

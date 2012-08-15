@@ -41,6 +41,7 @@ def GFX_OpenReqType(width,height,title):
                 
     xterm_filename = "xterm"
 
+    print "exe:",sys.executable
     try:
         xterm_process = subprocess.Popen([xterm_filename,
                                           "-geometry",str(width)+"x"+str(height)+"+100+100",

@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qstatusbar.h>
 #include <qmainwindow.h>
+#include <qfiledialog.h>
 
 #include "EditorWidget.h"
 
@@ -304,6 +305,32 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->status_label->setText(title);
+}
+
+extern int num_users_of_keyboard;
+
+char *GFX_GetLoadFileName(
+	struct Tracker_Windows *tvisual,
+	ReqType reqtype,
+	char *seltext,
+	char *dir
+){
+  num_users_of_keyboard++;
+  char *ret = talloc_strdup((char*)QFileDialog::getOpenFileName().ascii());
+  num_users_of_keyboard--;
+  return ret;
+}
+
+char *GFX_GetSaveFileName(
+	struct Tracker_Windows *tvisual,
+	ReqType reqtype,
+	char *seltext,
+	char *dir
+){
+  num_users_of_keyboard++;
+  char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName().ascii());
+  num_users_of_keyboard--;
+  return ret;
 }
 
 
