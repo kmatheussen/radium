@@ -40,6 +40,10 @@ public slots:
                val
                );
 
+    //set_editor_focus();
+  }
+
+  void on_value_spin_editingFinished (){
     set_editor_focus();
   }
 

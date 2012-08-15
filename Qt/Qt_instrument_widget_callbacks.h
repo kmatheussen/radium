@@ -40,7 +40,9 @@ public slots:
                7,
                patchdata->volume
                );
+  }
 
+  void on_volume_spin_editingFinished (){
     set_editor_focus();
   }
 
@@ -73,9 +75,12 @@ public slots:
       velocity_slider->setValue(val);
 
     patch->standardvel = val;
-    set_editor_focus();
+    //set_editor_focus();
   }
 
+  void on_velocity_spin_editingFinished (){
+    set_editor_focus();
+  }
 
 #if 0
   void on_velocity_onoff_stateChanged( int val)
@@ -112,6 +117,10 @@ public slots:
                patchdata->pan
                );
 
+    //set_editor_focus();
+  }
+
+  void on_panning_spin_editingFinished (){
     set_editor_focus();
   }
 
@@ -133,13 +142,20 @@ public slots:
   void on_channel_valueChanged( int val)
   {
     patchdata->channel = val;
-    set_editor_focus();                                               
+    //set_editor_focus();                                               
   }
 
+  void on_channel_editingFinished (){
+    set_editor_focus();
+  }
 
   void on_msb_valueChanged( int val)
   {
     patchdata->MSB = val;
+    //set_editor_focus();
+  }
+
+  void on_msb_editingFinished (){
     set_editor_focus();
   }
 
@@ -147,6 +163,10 @@ public slots:
   void on_lsb_valueChanged( int val)
   {
     patchdata->LSB = val;
+    //set_editor_focus();
+  }
+
+  void on_lsb_editingFinished (){
     set_editor_focus();
   }
 
