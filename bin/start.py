@@ -19,8 +19,9 @@ print sys
 
 try:
     print 0
-    sys.path.append(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),
-                                 "packages/dvarrazzo-py-setproctitle-c35a1bf/build/lib."+str(sys.version_info[0])))
+    sys.path = [os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),
+                             "packages/dvarrazzo-py-setproctitle-c35a1bf/build/lib."+str(sys.version_info[0]))
+                ] + sys.path
     print 1
     print sys.path
     print 2
@@ -32,7 +33,7 @@ except:
 
 print sys.argv[0]
 
-sys.path.append(os.path.abspath(os.path.dirname(sys.argv[0])))
+sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path
 import radium,keybindingsparser
 #import keybindingsparser
 
