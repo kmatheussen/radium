@@ -61,12 +61,20 @@ void configBlock(int windownum){
 
 char *getLoadFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  return GFX_GetLoadFileName(window, NULL, text, dir);
+  char *ret = GFX_GetLoadFileName(window, NULL, text, dir);
+  if(ret==NULL)
+    return "";
+  else
+    return ret;
 }
 
 char *getSaveFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  return GFX_GetSaveFileName(window, NULL, text, dir);
+  char *ret = GFX_GetSaveFileName(window, NULL, text, dir);
+  if(ret==NULL)
+    return "";
+  else
+    return ret;
 }
 
 
