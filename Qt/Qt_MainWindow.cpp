@@ -309,28 +309,32 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
 
 extern int num_users_of_keyboard;
 
-char *GFX_GetLoadFileName(
+const char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
 	char *dir
 ){
   num_users_of_keyboard++;
-  char *ret = talloc_strdup((char*)QFileDialog::getOpenFileName().ascii());
+  const char *ret = talloc_strdup((char*)QFileDialog::getOpenFileName().ascii());
   num_users_of_keyboard--;
-  return ret;
+  return ret==NULL || strlen(ret)==0 
+    ? NULL 
+    : ret;
 }
 
-char *GFX_GetSaveFileName(
+const char *GFX_GetSaveFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
 	char *dir
 ){
   num_users_of_keyboard++;
-  char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName().ascii());
+  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName().ascii());
   num_users_of_keyboard--;
-  return ret;
+  return ret==NULL || strlen(ret)==0 
+    ? NULL 
+    : ret;
 }
 
 

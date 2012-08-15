@@ -57,7 +57,7 @@ extern NInt currpatch;
 
 struct Instruments *def_instrument;
 
-bool Load(char *filename){
+bool Load(const char *filename){
 	float version;
 	struct Root *newroot;
 
@@ -165,13 +165,13 @@ extern int num_undos;
 extern int max_num_undos;
 
 #ifdef _AMIGA
-extern char *mmp2filename;
+extern const char *mmp2filename;
 #endif
 
 
 bool Load_CurrPos(struct Tracker_Windows *window){
 	bool ret = false;
-	char *filename;
+	const char *filename;
 	char temp[200];
 
         // So many things happen here, that we should turn off garbage collection while loading.

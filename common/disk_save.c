@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "../config/config.h"
 
-void Save_Clean(char *filename,struct Root *theroot){
+void Save_Clean(const char *filename,struct Root *theroot){
 	int length1,length2;
 
 	dc.success=true;
@@ -66,7 +66,7 @@ void Save_Clean(char *filename,struct Root *theroot){
 }
 
 void SaveAs(struct Root *theroot){
-	char *filename;
+	const char *filename;
 	char *ret=NULL;
 
 	PlayStop();

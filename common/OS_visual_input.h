@@ -51,14 +51,14 @@ extern LANGSPEC int GFX_Menu(
 	char **menutext
 );
 
-extern LANGSPEC char *GFX_GetLoadFileName(
+extern LANGSPEC const char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
 	char *dir
 );
 
-extern LANGSPEC char *GFX_GetSaveFileName(
+extern LANGSPEC const char *GFX_GetSaveFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,

@@ -41,7 +41,7 @@ struct PatchNumHolder{
 
 typedef struct{
 	FILE *file;
-	char *filename;
+	const char *filename;
 	bool success;
 	int type;
 	char *ls;
