@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+// Sometimes, setting this to 1 helps the window to embed. (TODO. need proper solution)
+//#define USE_EMBED_WORKAROUND 0
+
+// KDE for Ubuntu 12 usually needs the workaround.
+#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
 
 #if USE_GTK_VISUAL
 
@@ -419,9 +424,10 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 
 #ifdef __linux__
-  if(getenv("KDE_FULL_SESSION")!=NULL)
+  if(USE_EMBED_WORKAROUND){
     plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  else
+    gtk_window_resize((GtkWindow*)plug,600,600);
+  }else
     plug = gtk_plug_new((GdkNativeWindow)socket_id);
 #endif
   //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -482,7 +488,7 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 
 #ifdef __linux
-  if(getenv("KDE_FULL_SESSION")!=NULL)
+  if(USE_EMBED_WORKAROUND)
     return GDK_WINDOW_XID(plug->window);
   else
     return gtk_plug_get_id((GtkPlug*)plug);
