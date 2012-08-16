@@ -52,29 +52,31 @@ extern int num_users_of_keyboard;
 
 void set_editor_focus(void);
 
-#define MakeFocusOverrideClass(Class)                    \
-  class My##Class : public Class {                       \
-  public:                                                \
+#define MakeFocusOverrideClass(Class)                             \
+  class My##Class : public Class {                                \
+  public:                                                         \
   My##Class(QWidget *parent, const char *name = "gakk")           \
-  : Class(parent, name)                                  \
-    {                                                    \
-    }                                                    \
-                                                         \
-  void focusInEvent ( QFocusEvent *e ){                  \
-    fprintf(stderr," oh yeah, i got fokus\n");           \
-    num_users_of_keyboard++;                                         \
-    Class::focusInEvent(e);                              \
-  }                                                      \
-  void focusOutEvent ( QFocusEvent *e ){                 \
-    fprintf(stderr," lsot focus\n");                     \
-    num_users_of_keyboard--;                                         \
-    Class::focusOutEvent(e);                             \
+  : Class(parent, name)                                           \
+    {                                                             \
+    }                                                             \
+                                                                  \
+  void focusInEvent ( QFocusEvent *e ){                                 \
+    num_users_of_keyboard++;                                            \
+    fprintf(stderr," oh yeah, i got fokus. Now: %d\n",num_users_of_keyboard); \
+    Class::focusInEvent(e);                                             \
+  }                                                                     \
+  void focusOutEvent ( QFocusEvent *e ){                                \
+    num_users_of_keyboard--;                                            \
+    if(num_users_of_keyboard<0)                                         \
+      num_users_of_keyboard = 0;                                        \
+    fprintf(stderr," lsot focus. Now: %d\n",num_users_of_keyboard);     \
+    Class::focusOutEvent(e);                                            \
   }                                                                     \
   bool eventFilter ( QObject * o, QEvent * ev ) {                       \
     if(ev->type()==QEvent::FocusIn)                                     \
-      num_users_of_keyboard++;                                                      \
+      num_users_of_keyboard++;                                          \
     if(ev->type()==QEvent::FocusOut)                                    \
-      num_users_of_keyboard--;                                                      \
+      num_users_of_keyboard--;                                          \
     if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) \
       set_editor_focus();                                               \
     return Class::eventFilter(o,ev);                                    \

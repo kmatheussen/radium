@@ -42,8 +42,6 @@ static QColor *system_color=NULL;
 static QColor *button_color=NULL;
 static bool override_default_qt_colors=true;
 
-#include <qtreeview.h>
-
 static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
@@ -140,14 +138,10 @@ static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   QPalette pal(widget->palette());
   updatePalette(my_widget,pal);
 
-  if(override_default_qt_colors){
+  if(override_default_qt_colors)
     widget->setPalette(pal);
-  }else{
-    QTreeView t;
-    //widget->setPalette(t.style()->standardPalette());
+  else
     widget->setPalette(sys_palette);
-    printf("Setting palette\n");
-  }
 }
 
 static void updateApplication(EditorWidget *my_widget,QApplication *app){
