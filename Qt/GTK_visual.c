@@ -15,10 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // Sometimes, setting this to 1 helps the window to embed. (TODO. need proper solution)
-//#define USE_EMBED_WORKAROUND 0
+// (Note, must edit in Qt_MainWindow.cpp.
+// Update: Calling g_embed_container->show() before calling CreateVisual seems to fix the problem.
+#define USE_EMBED_WORKAROUND 0
 
 // KDE for Ubuntu 12 usually needs the workaround.
-#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
+//#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
+
 
 #if USE_GTK_VISUAL
 

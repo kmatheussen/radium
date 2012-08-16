@@ -127,7 +127,8 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
 #if __linux__
 #if USE_QT4
-    if(getenv("KDE_FULL_SESSION")!=NULL)
+    g_embed_container->show();
+    if(0)//getenv("KDE_FULL_SESSION")!=NULL)
       g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
     else
       GTK_CreateVisual(g_embed_container->winId());
