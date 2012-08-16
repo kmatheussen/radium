@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>514</width>
-    <height>279</height>
+    <width>566</width>
+    <height>151</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,50 +19,93 @@
   <property name="windowTitle">
    <string>Form1</string>
   </property>
-  <layout class="QFormLayout" name="formLayout_2">
-   <item row="0" column="0">
-    <widget class="Q3GroupBox" name="midi">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="title">
-      <string>MIDI</string>
-     </property>
-     <property name="frameShape">
-      <enum>Q3GroupBox::LineEditPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>Q3GroupBox::MShadow</enum>
-     </property>
-     <layout class="QFormLayout" name="formLayout">
-      <item row="0" column="0">
-       <widget class="QPushButton" name="create_instrument">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>30</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>9</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Create new instrument</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-  </layout>
-  <zorder>midi</zorder>
-  <zorder>create_instrument</zorder>
+  <widget class="Q3GroupBox" name="midi">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>9</y>
+     <width>174</width>
+     <height>54</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="title">
+    <string>MIDI</string>
+   </property>
+   <property name="frameShape">
+    <enum>Q3GroupBox::LineEditPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>Q3GroupBox::MShadow</enum>
+   </property>
+   <layout class="QFormLayout" name="formLayout">
+    <item row="0" column="0">
+     <widget class="QPushButton" name="create_instrument">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>30</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>9</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Create new instrument</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="Q3GroupBox" name="guiGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>20</y>
+     <width>162</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="title">
+    <string>GUI</string>
+   </property>
+   <property name="frameShape">
+    <enum>Q3GroupBox::LineEditPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>Q3GroupBox::MShadow</enum>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QCheckBox" name="use_system_colors">
+      <property name="text">
+       <string>Use System Colors</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QCheckBox" name="use_system_style">
+      <property name="text">
+       <string>Use System Style</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>

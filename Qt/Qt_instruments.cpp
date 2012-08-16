@@ -26,12 +26,15 @@ extern "C"{
 #include <qsplitter.h>
 #include <qmainwindow.h>
 #include <qevent.h>
+#include <qtreeview.h>
+
 
 #include "../common/nsmtracker.h"
 
 #include "../common/visual_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
+#include "../common/settings_proc.h"
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -40,6 +43,7 @@ extern "C"{
 #include "Qt_colors_proc.h"
 #include "Qt_instruments_proc.h"
 
+extern QApplication *qapplication;
 
 extern struct Root *root;
 extern struct Patch *g_currpatch;

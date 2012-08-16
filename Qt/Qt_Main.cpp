@@ -244,6 +244,7 @@ extern LANGSPEC int radium_main(char *arg);
 extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
 
+QString default_style_name;
 
 // Called from gtk main loop
 void Qt_EventHandler(void){
@@ -283,6 +284,12 @@ int radium_main(char *arg){
     }
   }
 
+  // Create application here in order to get default style. (not recommended, but can't find another way)
+  qapplication=new MyApplication(argc,argv);
+
+  default_style_name = QApplication::style()->objectName();
+
+
 #if 0
   QApplication::setStyle( new QPlatinumStyle() );
   QApplication::setStyle( new QCDEStyle() );
@@ -309,7 +316,6 @@ int radium_main(char *arg){
   //QApplication::setGraphicsSystem("raster");
 #endif
 
-  qapplication=new MyApplication(argc,argv);
 
   setApplicationColors(qapplication);
 

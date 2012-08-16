@@ -42,6 +42,8 @@ static QColor *system_color=NULL;
 static QColor *button_color=NULL;
 static bool override_default_qt_colors=true;
 
+#include <qtreeview.h>
+
 static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
@@ -52,8 +54,12 @@ static void updatePalette(EditorWidget *my_widget, QPalette &pal){
     SETTINGS_write_string("button_color",button_color->name().ascii());
   }
 
-  if(override_default_qt_colors==false)
+  if(override_default_qt_colors==false){
+    //qapplication->setPalette(t.palette());
+
+    //my_widget->setPalette( QApplication::palette( my_widget ) );
     return;
+  }
 
   // Background
   {
@@ -128,10 +134,20 @@ static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   }
 }
 
+static QPalette sys_palette;
+
 static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   QPalette pal(widget->palette());
   updatePalette(my_widget,pal);
-  widget->setPalette(pal);
+
+  if(override_default_qt_colors){
+    widget->setPalette(pal);
+  }else{
+    QTreeView t;
+    //widget->setPalette(t.style()->standardPalette());
+    widget->setPalette(sys_palette);
+    printf("Setting palette\n");
+  }
 }
 
 static void updateApplication(EditorWidget *my_widget,QApplication *app){
@@ -143,7 +159,6 @@ static void updateApplication(EditorWidget *my_widget,QApplication *app){
 static void updateAll(EditorWidget *my_widget, QWidget *widget){
   updateWidget(my_widget, widget);
 
-#if 1 // USE_QT3
   const QList<QObject*> list = widget->children();
   if(list.empty()==true)
     return;
@@ -153,7 +168,6 @@ static void updateAll(EditorWidget *my_widget, QWidget *widget){
     if(widget!=NULL)
       updateAll(my_widget,widget);
   }
-#endif
 }
 
 static void updateAll(EditorWidget *my_widget){
@@ -167,17 +181,24 @@ void setWidgetColors(QWidget *widget){
 }
 
 void setApplicationColors(QApplication *app){
-  static bool first_run = true;
   EditorWidget *my_widget = root==NULL ? NULL : root->song==NULL ? NULL : static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
+  override_default_qt_colors = SETTINGS_read_bool("override_default_qt_colors",true);
+
+#if 1
+  static bool first_run = true;
   if(first_run==true){
-    override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
-    SETTINGS_write_bool((char*)"override_default_qt_colors",override_default_qt_colors);
+    sys_palette = QApplication::palette();
+    SETTINGS_write_bool("override_default_qt_colors",override_default_qt_colors);
     first_run=false;
   }
-
+#endif
+  printf("here\n");
   application = app;
-  updateApplication(my_widget,app);
+  if(my_widget==NULL)
+    updateApplication(my_widget,app);
+  else
+    updateAll(my_widget);
 }
 
 
