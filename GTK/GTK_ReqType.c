@@ -1,4 +1,4 @@
-/* Copyright 2000 Kjetil S. Matheussen
+/* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -14,14 +14,25 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "../common/nsmtracker.h"
 
-struct OS_visual{
-  void *widget;
-  void *main_window;
-};
+#include "GTK_ReqType.h"
 
-#ifdef USE_GTK_VISUAL
-#  include "../GTK/GTK_ReqType.h"
-#else
-#  include "../X11/X11_ReqType.h"
-#endif
+#include "../common/OS_visual_input.h"
+
+
+
+ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *title){
+}
+
+void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtype){
+}
+
+
+void GFX_WriteString(ReqType reqtype,char *text){
+}
+
+
+void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
+}
+

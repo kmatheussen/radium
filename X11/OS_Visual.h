@@ -35,5 +35,5 @@ struct OS_visual{
   XPoint *xpoints[NUM_COLORS];
 };
 
+#include "X11_ReqType.h"
 
-typedef int* ReqType;

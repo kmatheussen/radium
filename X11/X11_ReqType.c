@@ -14,8 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-//#ifdef __linux__
-
 #include <Python.h>
 
 #include "../common/nsmtracker.h"
@@ -72,8 +70,7 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 }
 
 
-
-void GFX_WriteString_Do(ReqType reqtype,char *text){
+static void GFX_WriteString_Do(ReqType reqtype,char *text){
   char temp[500];
   sprintf(temp,"X11_ReqType.GFX_WriteString(0,\"%s\")",text);
   PyRun_SimpleString(temp);
@@ -140,5 +137,3 @@ void GFX_WriteString(ReqType reqtype,char *text){
 void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength){
   sprintf(buffer,"%s",GFX_ReadStringFromPythonCommand("X11_ReqType.GFX_ReadString(\"%s\")"));
 }
-
-//#endif // __linux__
