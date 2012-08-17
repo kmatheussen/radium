@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/gfx_proc.h"
-#include "GTK_visual_proc.h"
+#include "../GTK/GTK_visual_proc.h"
 
 
 extern struct Root *root;

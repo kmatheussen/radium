@@ -863,8 +863,8 @@ Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_inst
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
 
-GTK_visual.o:  $(BUILD_DEPENDENCIES) $(P)GTK_visual.c  $(CD)visual_op_queue_proc.h
-	$(CC) $(P)GTK_visual.c $(OPT) $(GTK_CFLAGS)
+GTK_visual.o:  $(BUILD_DEPENDENCIES) GTK/GTK_visual.c  $(CD)visual_op_queue_proc.h
+	$(CC) GTK/GTK_visual.c $(OPT) $(GTK_CFLAGS)
 
 Qt_error.o:  $(BUILD_DEPENDENCIES) $(P)Qt_error.c $(P)EditorWidget.h
 	$(CC) $(P)Qt_error.c $(OPT)

@@ -27,8 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include "Qt_Fonts_proc.h" // For setFontValues, etc.
 #endif
 
-#include "GTK_visual_proc.h" // For setFontValues
-
+#if USE_GTK_VISUAL
+#  include "../GTK/GTK_visual_proc.h" // For setFontValues
+#endif
 
 #if 0
 #if USE_GTK_VISUAL

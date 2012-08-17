@@ -57,7 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 
 #if USE_GTK_VISUAL
-#  include "GTK_visual_proc.h"
+#  include "../GTK/GTK_visual_proc.h"
 #endif
 
 #include "Qt_Main_proc.h"

@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #    define QtXEmbedContainer QWidget
 #  endif
    extern QtXEmbedContainer *g_embed_container;
-#  include "GTK_visual_proc.h"
+#  include "../GTK/GTK_visual_proc.h"
 #endif
 
 #if 0
