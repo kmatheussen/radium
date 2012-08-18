@@ -49,6 +49,8 @@ public slots:
       override = true;
     else if(state==Qt::Checked)
       override = false;
+    else
+      return;
 
     SETTINGS_write_bool("override_default_qt_colors",override);
 
@@ -65,6 +67,8 @@ public slots:
       override = true;
     else if(state==Qt::Checked)
       override = false;
+    else
+      return;
 
     SETTINGS_write_bool("override_default_qt_style",override);
 

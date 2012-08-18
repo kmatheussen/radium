@@ -174,7 +174,7 @@ void X11_init_keyboard(void) {
   init_keytable();
 }
 
-static int keyupdowns[EVENT_MAX+1]={0};
+static int keyupdowns[EVENT_DASMAX+1]={0};
 
 
 extern struct TEvent tevent;
@@ -248,7 +248,7 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
 }
 
 void X11_ResetKeysUpDowns(void){
-  memset(keyupdowns,0,sizeof(int)*EVENT_MAX);
+  memset(keyupdowns,0,sizeof(int)*EVENT_DASMAX);
 }
 
 int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){

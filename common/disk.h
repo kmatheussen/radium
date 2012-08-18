@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
-extern int errno;
+//extern int errno;
 
 struct PlayListHolder{
 	struct ListHeader1 l;

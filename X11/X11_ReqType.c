@@ -26,14 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#ifdef FOR_WINDOWS
-// TODO: Fix
-int mkstemp(char *tmpl){
-  return 0;
-}
-#endif // FOR_WINDOWS
-
-
 static void GFX_WriteString_Do(ReqType reqtype,char *text){
   char temp[500];
   sprintf(temp,"X11_ReqType.GFX_WriteString(0,\"%s\")",text);

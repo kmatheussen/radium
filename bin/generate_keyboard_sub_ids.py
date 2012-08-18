@@ -25,7 +25,7 @@ print
 print "enum SubIds {"
 for k in keysub:
     print "EVENT_"+k+","
-print "EVENT_MAX"
+print "EVENT_DASMAX"
 print "};"
 print
 print "#endif //TRACKER_SUBIDS"

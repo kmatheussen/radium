@@ -117,7 +117,7 @@ struct KeyConfigs{
 	int *args;
 };
 
-struct KeyConfigs *keyconfigs[EVENT_MAX+1]={0};
+struct KeyConfigs *keyconfigs[EVENT_DASMAX+1]={0};
 
 
 /* This is a function that is quite equialent to the addKey function
@@ -233,7 +233,7 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 	switch(in_tevent->ID){
 		case TR_KEYBOARDUP:
 		case TR_KEYBOARD:
-		  if(in_tevent->SubID<0 || in_tevent->SubID>=EVENT_MAX) {
+		  if(in_tevent->SubID<0 || in_tevent->SubID>=EVENT_DASMAX) {
 		    RError("Warning, Unknown TR_KEYBOARD; TR_SUB event: %d. \n",in_tevent->SubID);
 		    break;
 		  }

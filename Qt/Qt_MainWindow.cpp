@@ -302,12 +302,12 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 }
 
 
-void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *title){
+void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCaption(title);
 }
 
-void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
+void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //main_window->statusBar()->message(title);
 
@@ -315,7 +315,7 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,char *title){
   editor->status_label->setText(title);
 }
 
-extern int num_users_of_keyboard;
+extern "C" int num_users_of_keyboard;
 
 const char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,

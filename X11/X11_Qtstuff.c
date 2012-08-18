@@ -8,6 +8,15 @@
 
 #include "X11_Qtstuff_proc.h"
 
+#ifdef FOR_WINDOWS
+// TODO: Fix
+int mkstemp(char *tmpl){
+  return 0;
+}
+#endif // FOR_WINDOWS
+
+
+
 void X11_StartQtStuff(void){
   PyRun_SimpleString("import X11_Qtstuff");
   PyRun_SimpleString("X11_Qtstuff.GFX_StartQtstuff()");

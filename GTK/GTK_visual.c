@@ -156,9 +156,10 @@ static void update_font(void){
   GFX_play_op_queue(window);
 }
 
-#ifdef __linux__
 
-extern int num_users_of_keyboard = 0;
+int num_users_of_keyboard = 0;
+
+#ifdef __linux__
 
 GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 {
@@ -180,6 +181,9 @@ GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 #ifdef FOR_WINDOWS
 GdkFilterReturn FilterFunc(MSG *msg, GdkEvent *event,gpointer data)
 {
+  if(num_users_of_keyboard>0)
+    return FALSE;
+
   struct TEvent tevent;
   struct Tracker_Windows *window=root->song->tracker_windows;
   static int num=0;

@@ -69,6 +69,11 @@ STime Place2STime(
 
 //	printf("P2ST, block: %x, stime: %x, line: %d\n",block,stime,line);
 
+        if(stime==NULL){
+          RError("Oh no\n");
+          abort();
+        }
+
 	time1=stime->time;
 
 	if(0==p->counter) return time1;

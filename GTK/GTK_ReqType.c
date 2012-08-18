@@ -114,6 +114,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *t
 
   gtk_window_resize((GtkWindow*)reqtype->window,pixelwidth,pixelheight);
 
+  gtk_widget_show(reqtype->window);
   gtk_widget_show(reqtype->text_view);
 
   return reqtype;
@@ -123,7 +124,9 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   reqtype_t *reqtype=das_reqtype;
   gtk_widget_destroy(GTK_WIDGET(reqtype->window));
   num_users_of_keyboard--;
+#ifdef __linux__
   X11_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
+#endif
 }
 
 
