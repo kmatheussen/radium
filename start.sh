@@ -1,3 +1,3 @@
 #!/bin/sh
 cd bin
-./radium 
+QT_NO_GLIB=1 ./radium 

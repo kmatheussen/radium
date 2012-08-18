@@ -24,6 +24,7 @@ extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,char *ti
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetResizePointer(struct Tracker_Windows *tvisual);
 
+// Note that For the ReqType functions, tvisual might be NULL. The reasons is that it can be called when loading, or when starting up.
 extern LANGSPEC ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *title);
 extern LANGSPEC void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtype);
 

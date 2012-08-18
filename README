@@ -25,7 +25,6 @@ BUILD DEPENDENCIES FEDORA:
         jack-audio-connection-kit-devel
         PyQt4
         gtk2-devel
-        xterm
 
 
 BUILD DEPENDENCIES UBUNTU:
@@ -37,7 +36,7 @@ BUILD DEPENDENCIES UBUNTU:
       libjack-jackd2-dev or libjack-jackd1-dev
       python-qt4
       libgtk2.0-dev
-      xterm
+
 
 CONTACT
 	k.s.matheussen@notam02.no

@@ -92,9 +92,11 @@ int MyApplication::x11ProcessEvent(XEvent *event){
 }
 #endif
 
-int num_users_of_keyboard = 0;
+extern int num_users_of_keyboard;
 
 bool MyApplication::x11EventFilter(XEvent *event){
+
+  //printf("Num users of keyboard: %d\n",num_users_of_keyboard);
 
   switch(event->type){
   case KeyPress:

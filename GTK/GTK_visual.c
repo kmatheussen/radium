@@ -73,8 +73,8 @@ extern struct Root *root;
 // into a new struct, and put that struct again into the os_visual slot of the Tracker_Windows struct.
 
 
-static GtkWidget *plug;
-static GtkWidget *vbox;
+GtkWidget *plug;
+GtkWidget *vbox;
 
 static GdkPixmap *pixmap;
 static GdkPixmap *cursor_pixmap;
@@ -157,8 +157,14 @@ static void update_font(void){
 }
 
 #ifdef __linux__
+
+extern int num_users_of_keyboard = 0;
+
 GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 {
+  if(num_users_of_keyboard>0)
+    return GDK_FILTER_CONTINUE;
+
   GdkFilterReturn ret = X11_KeyboardFilter(xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
 
 #if 1
@@ -1161,11 +1167,13 @@ static gboolean called_periodically(gpointer user_data){
   if(font_has_changed())
     update_font();
 
-  // Regarding call to Qt_EventHandler() (which calls qapplication->processEvents()):
+  // In radium, Using Glib for event loop has been disabled with QT_NO_GLIB=1.
+  // Instead, we call qapplication->processEvents() regularly. (The call to Qt_EventHandler() calls qapplication->processEvents()))
   //
-  // It is not needed! Seems like Qt manages by itself somehow. Quite baffling.
+  // There's two reasons for this:
+  // 1. In windows, we have to do this anyway (At least I'm pretty sure we have to do that)
+  // 2. Modal gtk widgets aren't very modals when the Qt events are handled.
   //
-  // However, we call it anyway. It doesn't seem to hurt.
   Qt_EventHandler();
 
   if(doquit==true)

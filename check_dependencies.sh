@@ -65,13 +65,6 @@ fi
 rm temp$$.c
 
 
-if ! xterm -e echo ; then
-    echo
-    echo "xterm not found in path. xterm must be installed."
-    echo
-    exit -1
-fi
-
 if [ ! -f bin/packages/deletemetorebuild ] ; then
     echo
     echo "Packages not build. First run 'make packages'"

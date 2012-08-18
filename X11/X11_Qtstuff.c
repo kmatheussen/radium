@@ -14,6 +14,43 @@ void X11_StartQtStuff(void){
 }
 
 
+char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
+  FILE *file;
+  char filename[50];
+  char temp[strlen(pythoncommand)+500];
+  char *ret=talloc_atomic(strlen(pythoncommand)+500);
+  ret[0] = '\0';
+
+  sprintf(filename,"/tmp/radiumipctempfileXXXXXX");
+  int x1 = mkstemp(filename);
+  (void)x1;
+
+  sprintf(temp,pythoncommand,filename);
+
+
+  PyRun_SimpleString(temp);
+
+
+  file=fopen(filename,"r");
+  if(file==NULL) {
+    RError("GFX_ReadStringFromPythonCommand: File is null -%s-.\n",filename);
+    return ret;
+  }
+
+  void* x2 = fgets(ret,strlen(pythoncommand)+499,file);
+  fclose(file);
+  (void)x2;
+
+  printf("Tried to read -%s-\n",ret);
+  sprintf(temp,"rm %s",filename);
+  if(system(temp)==-1)
+    RWarning("Unable to delete \"%s\"",filename);
+  
+  return ret;
+}
+
+
+
 #ifndef GUIISQT
 
 char *GFX_GetLoadFileName(

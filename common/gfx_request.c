@@ -146,7 +146,7 @@ int GFX_ReqTypeMenu(
   }
 
   GFX_WriteString(reqtype,seltext);
-  GFX_WriteString(reqtype,"\\n");
+  GFX_WriteString(reqtype,"\n");
   
   if(num_sel<1){
     RWarning("num_sel=%d",num_sel);
@@ -160,7 +160,8 @@ int GFX_ReqTypeMenu(
   GFX_WriteString(reqtype,"\n");
 
   if(num_sel==1){
-    GFX_WriteString(reqtype,"> 1\\n");
+    // TODO: What?
+    GFX_WriteString(reqtype,"> 1\n");
     goto exit;
   }
   
