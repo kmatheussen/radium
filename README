@@ -7,7 +7,7 @@ Released 2012-08-16
 HOW TO MAKE IT RUN
 
 make packages
-./build_linux -j7
+./build_linux.sh -j7
 ./start.sh
 
 
@@ -26,16 +26,21 @@ BUILD DEPENDENCIES FEDORA:
         PyQt4
         gtk2-devel
 
+        (tested On Fedora 11 and 17)
+
 
 BUILD DEPENDENCIES UBUNTU:
       libqt4-dev
       qt4-dev-tools
       libxaw7-dev
       python2-dev
-      libasound-dev
+      libasound2-dev
       libjack-jackd2-dev or libjack-jackd1-dev
       python-qt4
       libgtk2.0-dev
+
+      (Tested on Ubuntu 12 and Mint 13)
+      (On Ubuntu 11, python2-dev is called python-dev)
 
 
 CONTACT
