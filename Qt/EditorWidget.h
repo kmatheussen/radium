@@ -140,7 +140,7 @@ protected:
 #endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
-    void        customEvent(QCustomEvent *);
+    void        customEvent(QEvent *);
 };
 
 #endif

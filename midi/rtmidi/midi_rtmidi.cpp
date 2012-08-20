@@ -357,7 +357,7 @@ bool MIDI_New(struct Instruments *instrument){
     message3.push_back(0);
 
     {
-      inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,"Radium");
+      inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,std::string("Radium"));
       if(inport_jack!=NULL){
         inport_jack->openVirtualPort("in");
         inport_jack->setCallback(mycallback,NULL);
@@ -365,7 +365,7 @@ bool MIDI_New(struct Instruments *instrument){
     }
 
     {
-      inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,"Radium");
+      inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,std::string("Radium"));
       if(inport_alsa!=NULL){
         inport_alsa->openVirtualPort("in");
         inport_alsa->setCallback(mycallback,NULL);

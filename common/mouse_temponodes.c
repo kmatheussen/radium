@@ -114,7 +114,7 @@ int MoveTempoNode_Mouse(
 	
 	WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline);
 
-//	printf("start: %d,end: %d\n",start_realline,end_realline);
+        //	printf("start: %d,end: %d\n",start_realline,end_realline);
 	
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 	  GFX_FilledBox(
@@ -139,6 +139,7 @@ int MoveTempoNode_Mouse(
 }
 
 extern char firstringinstatusbar[32];
+
 
 void SetMouseActionTempoNodes(
 	struct Tracker_Windows *window,
@@ -173,6 +174,7 @@ void SetMouseActionTempoNodes(
 	wtemponode=wblock->wtemponodes[realline];
 
 	while(wtemponode!=NULL){
+
 		if(wtemponode->type==TEMPONODE_NODE){
 			if(
 			   /*
@@ -194,6 +196,7 @@ void SetMouseActionTempoNodes(
 			   // && 
 			   // y<Common_oldGetReallineY1Pos(window,wblock,realline)+wtemponode->y1+5
 			){
+
 				if(1==click) Undo_TempoNodes_CurrPos(window);
 				action->action=TEMPONODE;
 				action->MouseUpFunction= &MoveTempoNode_Mouse;

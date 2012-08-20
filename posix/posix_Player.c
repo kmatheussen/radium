@@ -43,18 +43,26 @@ extern struct Root *root;
 static bool isplaying=false;
 
 //#include "google/profiler.h"
+//#include <windows.h>
 
 static void *posix_PlayerThread(void *arg){
-#ifdef __linux__
+#if 1 //__linux__
   // TODO: Fix windows
   int64_t newtime;
   int64_t lasttime=0;
 
   while(doexit==false){
     struct timeval tv;
-    struct timespec req={0,(1000*1000*1000) / PLAYERTASKFREQ};
 
+
+#ifdef __linux__
+    struct timespec req={0,(1000*1000*1000) / PLAYERTASKFREQ};
     nanosleep(&req,NULL);
+#endif
+
+#ifdef _FOR_WINDOWS
+    usleep(20*1000);
+#endif
 
     gettimeofday(&tv,NULL);
     //newtime=(((tv.tv_sec*1000000+tv.tv_usec)/100)*PFREQ)/10000;
@@ -63,7 +71,10 @@ static void *posix_PlayerThread(void *arg){
     newtime*=PFREQ;
     newtime/=(1000*1000);
 
-    //printf("newtime: %lld, lasttime: %lld, -: %lld\n",newtime,lasttime,newtime-lasttime);
+    //printf("Gakk player %d\n",getpid());
+
+    //printf("newtime: %d, lasttime: %d, -: %d\n",(int)newtime,(int)lasttime,(int)(newtime-lasttime));
+    //fflush(stdout);
     PlayerTask(newtime-lasttime);
 
     lasttime=newtime;

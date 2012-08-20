@@ -17,20 +17,6 @@
 import sys,os,traceback
 print sys
 
-try:
-    print 0
-    sys.path = [os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),
-                             "packages/dvarrazzo-py-setproctitle-c35a1bf/build/lib."+str(sys.version_info[0]))
-                ] + sys.path
-    print 1
-    print sys.path
-    print 2
-    import setproctitle
-    setproctitle.setproctitle('radium')
-except:
-    print "Unable to set proctitle to radium"
-    traceback.print_exc()
-
 print sys.argv[0]
 
 sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path

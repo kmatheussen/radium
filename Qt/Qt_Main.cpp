@@ -60,6 +60,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include "../GTK/GTK_visual_proc.h"
 #endif
 
+#if FOR_WINDOWS
+#  include <windows.h>
+#endif
+
 #include "Qt_Main_proc.h"
 
 
@@ -74,6 +78,13 @@ protected:
 #ifdef __linux__
   bool x11EventFilter(XEvent*);
   //int x11ProcessEvent(XEvent*);
+#endif
+#ifdef FOR_WINDOWS
+  bool 	winEventFilter ( MSG * msg, long * result ){
+    if(msg->message==WM_KEYDOWN)
+      printf("got key event\n");
+    return false;
+  }
 #endif
 };
 
@@ -123,14 +134,15 @@ bool MyApplication::x11EventFilter(XEvent *event){
 MyApplication *qapplication;
 
 
-#if USE_QT_VISUAL
+#if 1 //USE_QT_VISUAL
 
+#if __linux__
 static double get_ms(void){
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
 }
-
+#endif
 
 // Should ideally be atomic, but read and write are usually atomic anyway.
 static volatile int using_the_event;
@@ -156,10 +168,12 @@ public:
 
 
 void Ptask2Mtask(void){
+
   if(using_the_event==1)
     return;
 
   // Check that we're not overflowing the Qt Event system.
+#if __linux__
   {
     static double last_time = 0.0;
     double time = get_ms();
@@ -168,6 +182,7 @@ void Ptask2Mtask(void){
       return;
     last_time = time;
   }
+#endif
 
   {
     QObject *qobject=(QObject *)root->song->tracker_windows->os_visual.widget;
@@ -368,7 +383,7 @@ int radium_main(char *arg){
       // Fix. Why does this crash QT4?
       editor->reparent(xsplitter, QPoint(0,0), true);
 #endif
-      xsplitter->show();
+      //xsplitter->show();
       editor->reparent(xsplitter, QPoint(0,0), false);
 
       block_selector->reparent(xsplitter, QPoint(main_window->width()-100,0), true);
@@ -400,6 +415,8 @@ int radium_main(char *arg){
   qapplication->exec();
 #else
   GTK_MainLoop();
+#endif
+
 #if 0
   while(doquit==false){
     while(GTK_HasPendingEvents() || qapplication->hasPendingEvents()){
@@ -409,7 +426,6 @@ int radium_main(char *arg){
     usleep(1000);
   }
 #endif
-#endif
 
   posix_EndPlayer();
   //EndGuiThread();
@@ -417,13 +433,20 @@ int radium_main(char *arg){
   return 0;
 
 }
+
 extern "C" void initradium(void);
 int main(int argc, char **argv){
+  GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
+
   Py_Initialize();
+
   char temp[500];
   sprintf(temp,"import sys;sys.argv=[\"%s\",\"keybindings.conf\"]",argv[0]);
   PyRun_SimpleString(temp);
+
   initradium();
+
   PyRun_SimpleString("execfile(\"start.py\")"); // keybindings.conf start.sh\")");
+
   Py_Finalize();
 }

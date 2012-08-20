@@ -60,6 +60,9 @@ extern LANGSPEC void QUEUE_GFX_P2V_bitBlt(
 
 extern LANGSPEC void QUEUE_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
 
+extern LANGSPEC void GFX_disable_mouse_keyboard(void);
+extern LANGSPEC void GFX_enable_mouse_keyboard(void);
+
 extern LANGSPEC int GFX_CreateVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC int GFX_ShutDownVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width);

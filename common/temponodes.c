@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 
 
-
-
 void MakeWTempoNodesCallBack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -69,7 +67,6 @@ void MakeWTempoNodesCallBack(
 		wtemponode->pointer=temponode;
 		wtemponode->next=wblock->wtemponodes[realline];
 		wblock->wtemponodes[realline]=wtemponode;
-
 	}
 
 	if(NextTempoNode(temponode)==wblock->block->lasttemponode){
@@ -99,6 +96,7 @@ void UpdateWTempoNodes(
 	wblock->wtemponodes=talloc(sizeof(WTempoNodes *) * wblock->num_reallines);
 
 	while(temponode!=NULL){
+
 		MakeNodeLines(
 			window,
 			wblock,
@@ -110,6 +108,7 @@ void UpdateWTempoNodes(
 			prev,
 			&MakeWTempoNodesCallBack
 		);
+
 		prev=temponode;
 		temponode=NextTempoNode(temponode);
 	}

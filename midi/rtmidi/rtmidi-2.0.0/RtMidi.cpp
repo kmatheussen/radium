@@ -3471,7 +3471,7 @@ struct JackPortHolder {
   jack_ringbuffer_t *ringbuffer;
   jack_time_t lastTime;
   MidiInApi :: RtMidiInData *rtMidiIn;
-  };
+};
 
 
 
@@ -3579,7 +3579,6 @@ static int jackProcessOut( jack_nframes_t nFrames, JackPortHolder *portHolder );
 
 static int jackProcess( jack_nframes_t nFrames, void *arg ) {
   JackClientHolder *clientHolder = static_cast<JackClientHolder*>( arg );
-
   while ( jack_ringbuffer_read_space( clientHolder->messages ) > 0) {
     JackClientHolderMessage message;
     jack_ringbuffer_read( clientHolder->messages, (char*) &message, sizeof( JackClientHolderMessage ));

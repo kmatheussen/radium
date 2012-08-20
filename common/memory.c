@@ -99,7 +99,8 @@ void *tracker_alloc(size_t size,void *(*AllocFunction)(size_t size2)){
 #	ifdef _AMIGA
 		return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
 #	else
-		return (*AllocFunction)(size);
+		void *ret = (*AllocFunction)(size);
+                return ret;
 #	endif
 #else
 	return OS_getmem(size);		// For debugging. (wrong use of GC_malloced memory could be very difficult to trace)
@@ -218,7 +219,7 @@ void *talloc_atomic_uncollectable(size_t size){
 	return NULL;
 }
 
-char *talloc_strdup(char *input) {
+char *talloc_strdup(const char *input) {
   if(input==NULL)
     return NULL;
   char *ret = talloc_atomic(strlen(input) + 1);

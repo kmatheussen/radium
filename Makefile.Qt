@@ -260,7 +260,7 @@ run-gdb:
 run-valgrind:
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
 #	make -j3 && cd bin && valgrind --tool=helgrind $(PYTHONEXE) start.py keybindings.conf
-	make -j3 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes $(PYTHONEXE) -E -tt start.py keybindings.conf
+	./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes ./radium
 #	make -j3 && cd bin && valgrind gdb --args $(PYTHONEXE) start.py keybindings.conf
 	killall -9 X11_Qtstuff.py radium
 

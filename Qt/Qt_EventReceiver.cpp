@@ -57,36 +57,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include "../GTK/GTK_visual_proc.h"
 #endif
 
-#if 0
-void EditorWidget::timerEvent(QTimerEvent *){
-  PlayerTask(40);
-}
-#endif
-
-#if 0
-static double get_ms(void){
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
-}
-#endif
-
 extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 #include "../common/playerclass.h"
 
 extern PlayerClass *pc;
 
-void EditorWidget::customEvent(QCustomEvent *e){
-  printf("Got customEvent\n");
-  {
-    DO_GFX_BLT({
-        if(pc->isplaying)
-          P2MUpdateSongPosCallBack();
-        UpdateClock(this->window);
-        MIDI_HandleInputMessage();
-      });
-  }
+void EditorWidget::customEvent(QEvent *e){
+  //printf("Got customEvent\n");
+  DO_GFX_BLT({
+      if(pc->isplaying)
+        P2MUpdateSongPosCallBack();
+      UpdateClock(this->window);
+      //MIDI_HandleInputMessage();
+    });
 
 #if USE_GTK_VISUAL
   GFX_play_op_queue(this->window);
@@ -109,9 +93,7 @@ const QPaintEngine* EditorWidget::paintEngine(){
 void EditorWidget::paintEvent( QPaintEvent *e ){
   //printf("got paint event\n");
 #if 1
-  //DO_GFX_BLT(DrawUpTrackerWindow(window));
   GFX_play_op_queue(window);
-  //GTK_HandleEvents();
 #endif
 }
 #endif
@@ -166,18 +148,6 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     this->qpixmap_painter = NULL;
     this->cursorpixmap_painter = NULL;
   }
-
-
-  //    UpdateTrackerWindow(this->window);
-
-    //    QPainter paint(this);
-
-//  QPainter paint( this );
-//  paint.drawLine(0,0,50,50);
-
-  //QFrame::paintEvent(e);
-  //QWidget::paintEvent(e);
-
 }
 #endif
 

@@ -58,7 +58,9 @@ static HWND gtk_hwnd = NULL;
 
 
 #if 1
+#if FOR_WINDOWS
 static bool sat=false;
+#endif
 
 class MyQtXEmbedContainer : public QtXEmbedContainer{
 public:
@@ -191,12 +193,23 @@ extern struct Root *root;
 
 EditorWidget *g_editor = NULL;
 
-#if 0
+#if 1
 // dangerous stuff
 extern "C" void grabKeyboard(void);
 void grabKeyboard(void){
   //g_embed_container->grabKeyboard();
-  g_editor->main_window->grabKeyboard();
+  //g_editor->main_window->grabKeyboard();
+  //abort(); // This function should not be used.
+  g_editor->setFocus();
+}
+
+void Qt_DisableAllWidgets(void){
+  //g_embed_container->grabKeyboard();
+  g_editor->main_window->setEnabled(false);
+}
+void Qt_EnableAllWidgets(void){
+  //g_embed_container->grabKeyboard();
+  g_editor->main_window->setEnabled(true);
 }
 #endif
 
@@ -323,12 +336,22 @@ const char *GFX_GetLoadFileName(
 	char *seltext,
 	char *dir
 ){
+  const char *ret;
+
   num_users_of_keyboard++;
-  const char *ret = talloc_strdup((char*)QFileDialog::getOpenFileName().ascii());
+
+  QString filename = QFileDialog::getOpenFileName();
+
+  if(filename == ""){
+    ret=NULL;
+    goto exit;
+  }
+
+  ret = talloc_strdup(filename.ascii());
+
+ exit:
   num_users_of_keyboard--;
-  return ret==NULL || strlen(ret)==0 
-    ? NULL 
-    : ret;
+  return ret;
 }
 
 const char *GFX_GetSaveFileName(

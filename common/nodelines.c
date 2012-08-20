@@ -79,6 +79,7 @@ void FillInLineRealLine(
                          For the parameter 'firstlast', check out nodelines.h.
 **********************************************************************/
 
+
 void MakeNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -135,6 +136,7 @@ void MakeNodeLines(
 		       ReturnNodeLineData,
 		       NODELINE_FIRSTANDLAST
 		       );		
+
   }else{
 
     int lokke;
@@ -186,6 +188,7 @@ void MakeNodeLines(
 			 );
     }
 
+
     ry1=ry2;
 
     if(realline2==wblock->num_reallines-1){
@@ -209,7 +212,6 @@ void MakeNodeLines(
 		       NODELINE_LAST
 		       );
   }
-
 }
 
 

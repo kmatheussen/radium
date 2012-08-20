@@ -62,6 +62,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "GTK_visual_proc.h"
 
+//#define SetFocus(a) /* */
+
 extern struct Root *root;
 
 // I'm using only global variables for GTK data. So far, the code is quite straight forward, and it's so little data here,
@@ -157,6 +159,17 @@ static void update_font(void){
 }
 
 
+static bool mouse_keyboard_disabled = false;
+
+void GFX_disable_mouse_keyboard(void){
+  mouse_keyboard_disabled = true;
+}
+
+void GFX_enable_mouse_keyboard(void){
+  mouse_keyboard_disabled = false;
+}
+
+
 int num_users_of_keyboard = 0;
 
 #ifdef __linux__
@@ -164,6 +177,8 @@ int num_users_of_keyboard = 0;
 GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 {
   if(num_users_of_keyboard>0)
+    return GDK_FILTER_CONTINUE;
+  if(mouse_keyboard_disabled==true)
     return GDK_FILTER_CONTINUE;
 
   GdkFilterReturn ret = X11_KeyboardFilter(xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
@@ -182,21 +197,23 @@ GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
 GdkFilterReturn FilterFunc(MSG *msg, GdkEvent *event,gpointer data)
 {
   if(num_users_of_keyboard>0)
-    return FALSE;
+    return GDK_FILTER_CONTINUE;
+  if(mouse_keyboard_disabled==true)
+    return GDK_FILTER_CONTINUE;
 
   struct TEvent tevent;
   struct Tracker_Windows *window=root->song->tracker_windows;
   static int num=0;
   //printf("Got something %d %d/%d. Num: %d\n",(int)msg->message,WM_KEYDOWN,WM_KEYUP,num++);
   switch(msg->message){
-    case WM_KEYDOWN: 
+    case WM_KEYDOWN:
       tevent.ID=TR_KEYBOARD;
       tevent.SubID=EVENT_Q;
       tevent.keyswitch=0;
       EventReciever(&tevent,window);
       GFX_play_op_queue(window);
       printf("Got something down.... %d %d\n",(int)msg->wParam,num++);
-      return TRUE;
+      return GDK_FILTER_REMOVE;
       break;
     case WM_KEYUP: 
       tevent.ID=TR_KEYBOARDUP;
@@ -209,7 +226,7 @@ GdkFilterReturn FilterFunc(MSG *msg, GdkEvent *event,gpointer data)
       break;
   }
   fflush(stdout);
-  return false;
+  return GDK_FILTER_CONTINUE;
 }
 #endif
 
@@ -258,7 +275,7 @@ static void create_font_dialog(void){
 
 
 #ifdef FOR_WINDOWS
-static gint keyboard_input( GtkWidget *widget,
+static gboolean keyboard_input( GtkWidget *widget,
                             GdkEvent  *event,
                             gpointer   callback_data )
 {
@@ -267,7 +284,7 @@ static gint keyboard_input( GtkWidget *widget,
 }
 #endif
 
-static gint expose_event( GtkWidget *widget,
+static gboolean expose_event( GtkWidget *widget,
                           GdkEvent  *event,
                           gpointer   callback_data )
 {
@@ -283,10 +300,13 @@ static gint expose_event( GtkWidget *widget,
 }
 
 
-static gint mouse_move_event( GtkWidget *widget,
+static gboolean mouse_move_event( GtkWidget *widget,
                           GdkEvent  *event,
                           gpointer   callback_data )
 {
+  if(mouse_keyboard_disabled==true)
+    return FALSE;
+
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventMotion *motion = &event->motion;
 
@@ -304,8 +324,11 @@ static gint mouse_move_event( GtkWidget *widget,
 
   return TRUE;
 }
-#
-static gint mouse_pressrelease_event(GdkEvent  *event, bool is_press_event){
+
+static gboolean mouse_pressrelease_event(GdkEvent  *event, bool is_press_event){
+  if(mouse_keyboard_disabled==true)
+    return FALSE;
+
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventButton *button = &event->button;
 
@@ -334,14 +357,14 @@ static gint mouse_pressrelease_event(GdkEvent  *event, bool is_press_event){
   return TRUE;
 }
 
-static gint mouse_press_event( GtkWidget *widget,
+static gboolean mouse_press_event( GtkWidget *widget,
                                GdkEvent  *event,
                                gpointer   callback_data )
 {
   return mouse_pressrelease_event(event, true);
 }
 
-static gint mouse_release_event( GtkWidget *widget,
+static gboolean mouse_release_event( GtkWidget *widget,
                                  GdkEvent  *event,
                                  gpointer   callback_data )
 {
@@ -349,10 +372,13 @@ static gint mouse_release_event( GtkWidget *widget,
 }
 
 
-static gint mouse_scroll_event( GtkWidget *widget,
+static gboolean mouse_scroll_event( GtkWidget *widget,
                                 GdkEvent  *event,
                                 gpointer   callback_data )
 {
+  if(mouse_keyboard_disabled==true)
+    return FALSE;
+
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventScroll *scroll = &event->scroll;
 
@@ -382,7 +408,6 @@ static gint mouse_scroll_event( GtkWidget *widget,
   return TRUE;
 }
 
-#if 1
 static gint resize_event( GtkWidget *widget,
                           GdkEvent  *event,
                           gpointer   callback_data )
@@ -413,7 +438,6 @@ static gint resize_event( GtkWidget *widget,
   //return TRUE; // Does not work. Seems like a window rect size is not updated if returning TRUE
   return FALSE;
 }
-#endif
 
 static gint delete_event( GtkWidget *widget,
                            GdkEvent  *event,
@@ -512,7 +536,6 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 void GTK_SetPlugSize(int width, int height){
 #if FOR_WINDOWS
   gtk_window_resize((GtkWindow*)plug,width,height);
-  //SetParent(GDK_WINDOW_HWND(plug->window),socket_id); // Embed it.
   MoveWindow(GDK_WINDOW_HWND(plug->window), 0, 0, width, height, true);
   SetFocus(GDK_WINDOW_HWND(plug->window));
 #endif
@@ -525,19 +548,9 @@ void GTK_SetFocus(void){
 }
 
 void GTK_SetSize(int width, int height){
-  //gtk_widget_show(plug);
-  //gtk_widget_show(vbox);
-
-#if FOR_WINDOWS
-  //gtk_window_resize((GtkWindow*)plug,width,height);
-  //gtk_window_resize((GtkWindow*)vbox,width,height);
-#endif
-
   static bool first_time = true;
-  //bool was_first_time = first_time;
 
   if(first_time){
-
     create_font_dialog();
     first_time=false;
   }else{
@@ -579,6 +592,8 @@ void GTK_SetSize(int width, int height){
 #endif
     g_signal_connect (vbox, "expose_event",
                       G_CALLBACK (expose_event), NULL);
+    //g_signal_connect (plug, "expose_event",
+    //                  G_CALLBACK (expose_event), NULL);
     //g_signal_connect (vbox, "motion-notify-event",
     //                  G_CALLBACK (mouse_move_event), NULL);
     g_signal_connect (plug, "motion-notify-event",
@@ -1064,7 +1079,6 @@ void OS_GFX_Points(
                   num_points);
 }
 
-//static int clip_x=-1,clip_y,clip_x2,clip_y2;
 static GdkRectangle clip;
 
 void OS_GFX_SetClipRect(
@@ -1150,44 +1164,29 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 #include "../common/playerclass.h"
 extern PlayerClass *pc;
 
-#if 1
-// No-op. We're just polling P2MUpdateSongPosCallback periodically instead.
-void Ptask2Mtask(void){
-}
-#endif
-
-#if 1
 static gboolean called_periodically(gpointer user_data){
-#if 1
   struct Tracker_Windows *window=root->song->tracker_windows;
   DO_GFX_BLT({
-      if(pc->isplaying)
-        P2MUpdateSongPosCallBack();
-      UpdateClock(window);
       MIDI_HandleInputMessage();
     });
   GFX_play_op_queue(window);
-#endif
+
   if(font_has_changed())
     update_font();
-
-  // In radium, Using Glib for event loop has been disabled with QT_NO_GLIB=1.
-  // Instead, we call qapplication->processEvents() regularly. (The call to Qt_EventHandler() calls qapplication->processEvents()))
-  //
-  // There's two reasons for this:
-  // 1. In windows, we have to do this anyway (At least I'm pretty sure we have to do that)
-  // 2. Modal gtk widgets aren't very modals when the Qt events are handled.
-  //
-  Qt_EventHandler();
 
   if(doquit==true)
     gtk_main_quit();
   return TRUE;
 }
-#endif
 
 void GTK_MainLoop(void){
-  g_timeout_add(2,called_periodically,NULL); // Something's wrong with (at least my) glib here. //Using an interval value of 1 causes 100% CPU.
+#if FOR_WINDOWS
+  const int timeout = 20;
+#endif
+#ifdef __linux__
+  const int timeout = 20;
+#endif
+  g_timeout_add(timeout,called_periodically,NULL); // Something's wrong with (at least my) glib here. //Using an interval value of 1 causes 100% CPU.
   gtk_main();
 }
 

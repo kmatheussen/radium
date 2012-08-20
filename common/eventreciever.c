@@ -212,7 +212,6 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 	return false;
 }
 
-
 static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
 	uint32_t a=in_tevent->keyswitch;
 	static bool isPyObjects=false;
