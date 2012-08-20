@@ -18,10 +18,14 @@ int mkstemp(char *tmpl){
 
 
 void X11_StartQtStuff(void){
+#if !USE_GTK_VISUAL
   PyRun_SimpleString("import X11_Qtstuff");
   PyRun_SimpleString("X11_Qtstuff.GFX_StartQtstuff()");
+#endif
 }
 
+
+#if !USE_GTK_VISUAL
 
 char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
   FILE *file;
@@ -57,6 +61,7 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
   
   return ret;
 }
+#endif
 
 
 

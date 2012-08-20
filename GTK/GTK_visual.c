@@ -158,7 +158,6 @@ static void update_font(void){
   GFX_play_op_queue(window);
 }
 
-
 static bool mouse_keyboard_disabled = false;
 
 void GFX_disable_mouse_keyboard(void){
