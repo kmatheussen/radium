@@ -116,13 +116,20 @@ import os
 pid = os.getpid()
 
 if hasattr(os,'fork') and os.fork()==0:
-    import signal
+    import signal,time
     def signal_handler(signalnum, frame):
         print "You pressed Ctrl+C. As a work-around, I'm going to kill radium with signal.SIGABRT."
         os.kill(pid,signal.SIGABRT)
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
-    signal.pause()
+    while True:
+        #print os.getppid(),pid,"hmm"
+        #sys.stdout.flush()
+        if os.getppid() != pid:
+            #print "Seems like parent process died. Exiting Ctrl+C process"
+            sys.exit(0)
+        time.sleep(1)
+    #signal.pause()
 
 
 if len(sys.argv)>2:
