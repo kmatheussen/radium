@@ -21,8 +21,8 @@ export GTK_LDFLAGS="`pkg-config --libs gtk+-2.0`"
 export QT_CFLAGS="`$PKG --cflags Qt3Support`"
 export QT_LDFLAGS="`$PKG --libs Qt3Support`"
 
-#export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
-#export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
+export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
+export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 export OS_OPTS=
 
