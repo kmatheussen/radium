@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include "../GTK/GTK_visual_proc.h"
 #endif
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 #  include <windows.h>
 #endif
 

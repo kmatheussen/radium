@@ -98,6 +98,8 @@ void GFX_HelpWindowToFront(void){}
 void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual){}
 void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual){}
 
+#if !USE_GTK_VISUAL
+
 int GFX_Menu(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
@@ -133,3 +135,5 @@ int GFX_Menu(
     return GFX_ReqTypeMenu(tvisual,reqtype,seltext,num_sel,menutext);
   }
 }
+
+#endif
