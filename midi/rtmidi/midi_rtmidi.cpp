@@ -73,6 +73,7 @@ static RtMidiIn *inport_alsa;
 
 #ifdef FOR_WINDOWS
 static RtMidiIn *inport_winmm;
+static RtMidiIn *inport_winks;
 #endif
 
 static std::vector<unsigned char> message1;
@@ -305,7 +306,11 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     else{
       const char **menu = (const char**)talloc(apis.size()*sizeof(char*));
       for(unsigned int i=0;i<apis.size();i++)
-        menu[i] = apis[i]==RtMidi::LINUX_ALSA?"Alsa":"Jack";
+        menu[i] = apis[i]==RtMidi::LINUX_ALSA ? "Alsa"
+                : apis[i]==RtMidi::UNIX_JACK  ? "Jack"
+                : apis[i]==RtMidi::WINDOWS_MM ? "Multimedia Library"
+                : apis[i]==RtMidi::WINDOWS_KS ? "Kernel Streaming"
+                : "Unknown type";
       int sel = -1;
       while(sel==-1){
         char temp[500];
@@ -317,7 +322,17 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
 
     try{
       ret->midiout = new RtMidiOut(api, "Radium");
+#ifdef __linux__
       ret->midiout->openVirtualPort(name);
+#endif
+#ifdef FOR_WINDOWS
+      if(ret->midiout->getPortCount()>0)
+        ret->midiout->openPort(0);
+      else{
+        RWarning("No ports available.");
+        return NULL;
+      }
+#endif
     }catch ( RtError &error ) {
       RError(error.what());
       return NULL;
@@ -381,12 +396,44 @@ bool MIDI_New(struct Instruments *instrument){
 #endif
 
 #ifdef FOR_WINDOWS
-    {
+    try{
       inport_winmm = new RtMidiIn(RtMidi::WINDOWS_MM,std::string("Radium"));
-      if(inport_winmm!=NULL){
-        inport_winmm->openVirtualPort("in");
-        inport_winmm->setCallback(mycallback,NULL);
+    }catch ( RtError &error ) {
+      RError(error.what());
+    }
+    if(inport_winmm!=NULL){
+      //inport_winmm->openVirtualPort("in");
+      try{
+        if(inport_winmm->getPortCount()>0)
+          inport_winmm->openPort(0);
+        else{
+          printf("No Windows Multimedia Library MIDI Input ports.\n");
+          fflush(stdout);
+        }
+      }catch ( RtError &error ) {
+        RError(error.what());
       }
+      inport_winmm->setCallback(mycallback,NULL);
+    }
+
+    try{
+      inport_winks = new RtMidiIn(RtMidi::WINDOWS_KS,std::string("Radium"));
+    }catch ( RtError &error ) {
+      RError(error.what());
+    }
+    if(inport_winks!=NULL){
+      //inport_winks->openVirtualPort("in");
+      try{
+        if(inport_winks->getPortCount()>0)
+          inport_winks->openPort(0);
+        else{
+          printf("No Windows Kernel Streaming MIDI Input ports.\n");
+          fflush(stdout);
+        }
+      }catch ( RtError &error ) {
+        RError(error.what());
+      }
+      inport_winks->setCallback(mycallback,NULL);
     }
 #endif
 

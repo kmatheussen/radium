@@ -104,6 +104,7 @@ bool posix_InitPlayer(void){
     return false;
   } 
 
+#ifdef __linux__
   {
     struct sched_param rtparam;
     int x;
@@ -115,6 +116,7 @@ bool posix_InitPlayer(void){
       RWarning("cannot set thread to real-time priority (FIFO/%d) (%d: %s)", rtparam.sched_priority, x, strerror (errno));
     }
   }
+#endif
 
   return true;
 }
