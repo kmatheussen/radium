@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <pthread.h>
 #include <unistd.h>
 
+#ifdef FOR_WINDOWS
+#  include <windows.h>
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_Player_proc.h"
@@ -43,13 +46,16 @@ extern struct Root *root;
 static bool isplaying=false;
 
 //#include "google/profiler.h"
-//#include <windows.h>
 
 static void *posix_PlayerThread(void *arg){
-#if 1 //__linux__
   // TODO: Fix windows
   int64_t newtime;
   int64_t lasttime=0;
+
+#ifdef _FOR_WINDOWS
+  if(SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_TIME_CRITICAL)==false)
+    RError("Could not set high priority for player thread.\n");
+#endif
 
   while(doexit==false){
     struct timeval tv;
@@ -60,8 +66,9 @@ static void *posix_PlayerThread(void *arg){
     nanosleep(&req,NULL);
 #endif
 
-#ifdef _FOR_WINDOWS
-    usleep(20*1000);
+#ifdef FOR_WINDOWS
+    //usleep(40*1000);
+    Sleep(1);
 #endif
 
     gettimeofday(&tv,NULL);
@@ -81,7 +88,6 @@ static void *posix_PlayerThread(void *arg){
   }
 
   //ProfilerStop();
-#endif
 
   return NULL;
 }

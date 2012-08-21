@@ -70,10 +70,11 @@ void PlayerTask(STime reltime){
             pc->reltime_to_add += reltime_to_add_now;
 #if 0
           printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
-                 pc->reltime_to_add,pc->reltime_to_add/(double)PFREQ,
+                 (int)pc->reltime_to_add,pc->reltime_to_add/(double)PFREQ,
                  reltime_to_add_now,reltime_to_add_now/(double)PFREQ,
                  (pc->time+newreltime+pc->reltime_to_add)/(double)PFREQ
                  );
+          fflush(stdout);
 #endif
         }
 
@@ -84,6 +85,8 @@ void PlayerTask(STime reltime){
 
 	time=pc->time;
 
+        //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
+        //fflush(stdout);
 
 	peq=pc->peq;
 
@@ -96,7 +99,8 @@ void PlayerTask(STime reltime){
 		&& peq->l.time<time+(PFREQ*2)  // Dont want to run for more than two seconds.
 		&& pc->isplaying // Dont remove this check.
 	){
-	  //	  printf("time: %d, peq->l.time: %d\n",time,peq->l.time);
+          //printf("time: %d, peq->l.time: %d\n",(int)time,(int)peq->l.time);
+          //fflush(stdout);
 		PC_RemoveFirst();
 		(*peq->TreatMe)(time,peq,1);
 		pc->pausetime=peq->l.time;

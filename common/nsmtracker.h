@@ -115,7 +115,6 @@ typedef struct Placement Place;
 	list.h
 *********************************************************************/
 
-
 struct ListHeader1{
 	struct ListHeader1 *next;
    SDB

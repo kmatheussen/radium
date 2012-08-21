@@ -101,7 +101,6 @@ void PC_NewSecond(STime time, struct PEventQueue *peq,int doit){
 #ifdef _AMIGA
 	Signal(mytask,1L<<clocksig);
 #else
-	//printf("gakkgakkgakk\n");
 	Ptask2Mtask();
 #endif
 
