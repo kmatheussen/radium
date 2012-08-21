@@ -131,8 +131,6 @@ protected:
     void        keyReleaseEvent(QKeyEvent *qkeyevent);
 #endif
 
-    void        wheelEvent(QWheelEvent *);
-
 #if USE_QT_VISUAL
     void	mousePressEvent( QMouseEvent *);
     void	mouseReleaseEvent( QMouseEvent *);

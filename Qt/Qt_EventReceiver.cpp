@@ -277,29 +277,6 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 
 #endif
 
-
-// Enable this for GTK_VISUAL as well, in case the mouse pointer is placed in QT GUI area, we may want wheel events.
-void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
-
-  tevent.ID=TR_KEYBOARD;
-  tevent.keyswitch=0;
-
-  if(qwheelevent->delta()>0){
-    tevent.SubID=EVENT_UPARROW;
-  }else{
-    tevent.SubID=EVENT_DOWNARROW;
-  }
-
-  tevent.x=qwheelevent->x()-XOFFSET;
-  tevent.y=qwheelevent->y()-YOFFSET;
-
-  for(int lokke=0;lokke<R_ABS(qwheelevent->delta()/120);lokke++){
-    EventReciever(&tevent,window);
-  }
-
-  update();
-}
-
 #if USE_QT_VISUAL
 
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){

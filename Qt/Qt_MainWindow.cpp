@@ -220,6 +220,29 @@ public:
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
     doquit = Quit(window);
   }
+
+  // Want the wheel to work from everywhere.
+  void wheelEvent(QWheelEvent *qwheelevent){
+    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+    struct TEvent tevent={0};
+    tevent.ID=TR_KEYBOARD;
+    tevent.keyswitch=0;
+
+    if(qwheelevent->delta()>0){
+      tevent.SubID=EVENT_UPARROW;
+    }else{
+      tevent.SubID=EVENT_DOWNARROW;
+    }
+
+    tevent.x=qwheelevent->x()-XOFFSET;
+    tevent.y=qwheelevent->y()-YOFFSET;
+
+    for(int lokke=0;lokke<R_ABS(qwheelevent->delta()/120);lokke++){
+      EventReciever(&tevent,window);
+    }
+
+    update();
+  }
 };
 
 void SetupMainWindow(void){
