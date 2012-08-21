@@ -32,9 +32,19 @@ extern void ListAddElement1(
 	struct ListHeader1 *element
 );
 
+extern void ListAddElementP(
+	void *listroot,
+	struct ListHeaderP *element
+);
+
 extern void ListAddElement1_a(
 	void *voidlistroot,
 	struct ListHeader1 *element
+);
+
+extern void ListAddElementP_a(
+	void *voidlistroot,
+	struct ListHeaderP *element
 );
 
 
@@ -161,8 +171,6 @@ extern void List_InsertPlaceLen3(
 #ifndef TRACKER_LIST_PROC_MACROS
 #define TRACKER_LIST_PROC_MACROS
 
-#define ListAddElementP(a,b) ListAddElement1((a),(struct ListHeader1 *)(b));
-#define ListAddElementP_a(a,b) ListAddElement1_a((a),(struct ListHeader1 *)(b));
 #define ListRemoveElementP(a,b) ListRemoveElement1((a),(struct ListHeader1 *)(b));
 #define isInListP(a,b) isInList1((struct ListHeaderP *)(a),(struct ListHeader1 *)(b));
 #define ListPrevElementP(a,b) ListPrevElement1((struct ListHeader1 *)(a),(struct ListHeaderP *)(b));
