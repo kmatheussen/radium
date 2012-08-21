@@ -66,8 +66,14 @@ static int midi_msg_len(int m1){
   return 3;
 }
 
+#ifdef __linux__
 static RtMidiIn *inport_jack;
 static RtMidiIn *inport_alsa;
+#endif
+
+#ifdef FOR_WINDOWS
+static RtMidiIn *inport_winmm;
+#endif
 
 static std::vector<unsigned char> message1;
 static std::vector<unsigned char> message2;
@@ -356,6 +362,7 @@ bool MIDI_New(struct Instruments *instrument){
     message3.push_back(0);
     message3.push_back(0);
 
+#ifdef __linux__
     {
       inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,std::string("Radium"));
       if(inport_jack!=NULL){
@@ -371,6 +378,17 @@ bool MIDI_New(struct Instruments *instrument){
         inport_alsa->setCallback(mycallback,NULL);
       }
     }
+#endif
+
+#ifdef FOR_WINDOWS
+    {
+      inport_winmm = new RtMidiIn(RtMidi::WINDOWS_MM,std::string("Radium"));
+      if(inport_winmm!=NULL){
+        inport_winmm->openVirtualPort("in");
+        inport_winmm->setCallback(mycallback,NULL);
+      }
+    }
+#endif
 
     globals_are_initialized = true;
   }

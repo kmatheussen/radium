@@ -25,6 +25,9 @@ export QT_LDFLAGS="`mingw32-pkg-config --libs Qt3Support`"
 export OS_OPTS="-DFOR_WINDOWS -DMEMORY_DEBUG"
 export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread"
 
+export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
+export RTMIDI_LDFLAGS="-lwinmm"
+
 # To build gc for mingw32:
 #
 # cd bin/packages/gc-7.2
