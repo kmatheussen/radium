@@ -1963,7 +1963,7 @@ static void CALLBACK midiInputCallback( HMIDIIN hmin,
 
   if ( data->usingCallback ) {
     RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) data->userCallback;
-    callback( apiData->message.timeStamp, &apiData->message.bytes, data->userData );
+    callback( apiData->message.timeStamp, apiData->message.bytes.size(), &apiData->message.bytes[0], data->userData );
   }
   else
     data->queue.push(apiData->message);
@@ -3074,7 +3074,7 @@ DWORD WINAPI midiKsInputThread(VOID* pUser)
 
         if ( data->usingCallback ) {
           RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback)data->userCallback;
-          callback(message.timeStamp, &message.bytes, data->userData);
+          callback(message.timeStamp, message.bytes.size(), &message.bytes[0], data->userData);
         }
         else 
           data->queue.push(message);
