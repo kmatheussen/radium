@@ -1,6 +1,6 @@
 settings_version = 0.670000 # dont change this one
 
-font = Monospace 11
+font = Monospace Bold 11
 system_font_size = 8
 
 show_text_border = true
