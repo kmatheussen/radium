@@ -1,3 +1,16 @@
+Most important changes 0.67.3 -> 0.68.0:
+* Use GTK popup menu for selecting FX
+* Replaced use of xterm with GTK widget.
+* The "X11_Qtstuff" is not needed anymore
+* Windows version is fully functional, except keyboard handling.
+* Various keyboard focus fixes.
+* Qt: Move wheel event handler to the main window. Make the mouse wheel work everywhere.
+* Fixed nasty list bug which caused player bugs.
+* Removed setproctitle. Radium is now a normal executable.
+* End Ctrl+C process when main process dies
+* Various tweaks and fixes.
+
+
 Most important changes 0.67.2 -> 0.67.3:
 * Checkbuttons for system style and system color
 * Fix embedding
