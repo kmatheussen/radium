@@ -37,9 +37,14 @@ struct ListHeaderPointer1{
 	struct ListHeader1 *root;
 };
 
+struct ListHeaderPointerP{
+	struct ListHeaderP *root;
+};
+
 struct ListHeaderPointer3{
 	struct ListHeader3 *root;
 };
+
 
 
 
@@ -152,7 +157,32 @@ void ListAddElement1(
 	if(element==NULL) return;
 
 	while(temp!=NULL){
-		if(temp->num>=element->num) break;
+		if(temp->num >= element->num) break;
+		prev=temp;
+		temp=temp->next;
+	}
+
+	if(prev==NULL){
+		element->next=listroot->root;
+		listroot->root=element;
+	}else{
+		element->next=prev->next;
+		prev->next=element;
+	}
+}
+
+void ListAddElementP(
+	void *voidlistroot,
+	struct ListHeaderP *element
+){
+	struct ListHeaderPointerP *listroot=voidlistroot;
+	struct ListHeaderP *temp=listroot->root;
+	struct ListHeaderP *prev=NULL;
+
+	if(element==NULL) return;
+
+	while(temp!=NULL){
+		if(temp->time >= element->time) break;
 		prev=temp;
 		temp=temp->next;
 	}
@@ -187,7 +217,32 @@ void ListAddElement1_a(
 	if(element==NULL) return;
 
 	while(temp!=NULL){
-		if(temp->num>element->num) break;
+		if(temp->num > element->num) break;
+		prev=temp;
+		temp=temp->next;
+	}
+
+	if(prev==NULL){
+		element->next=listroot->root;
+		listroot->root=element;
+	}else{
+		element->next=prev->next;
+		prev->next=element;
+	}
+}
+
+void ListAddElementP_a(
+	void *voidlistroot,
+	struct ListHeaderP *element
+){
+	struct ListHeaderPointerP *listroot=voidlistroot;
+	struct ListHeaderP *temp=listroot->root;
+	struct ListHeaderP *prev=NULL;
+
+	if(element==NULL) return;
+
+	while(temp!=NULL){
+		if(temp->time > element->time) break;
 		prev=temp;
 		temp=temp->next;
 	}

@@ -59,7 +59,7 @@ Place *PlaceCreate(int line, int counter, int dividor) {
     Returns 0 if placement1 is the same as placement2,
     -1 if placement1 is before placement2, and 1 if after.
   NOTE
-    See allso placement_proc.h for macros that makes use of this
+    See also placement_proc.h for macros that makes use of this
     function.
 *************************************************************/
 int PlaceCmp(  Place *p1,  Place *p2){
