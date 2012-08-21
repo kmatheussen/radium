@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef FOR_WINDOWS
 #  include <windows.h>
+#  include "../windows/W_Keyboard_proc.h"
 #endif
 
 #include "Qt_Main_proc.h"
@@ -81,9 +82,12 @@ protected:
 #endif
 #ifdef FOR_WINDOWS
   bool 	winEventFilter ( MSG * msg, long * result ){
-    if(msg->message==WM_KEYDOWN)
-      printf("got key event\n");
-    return false;
+    bool ret = W_KeyboardFilter(msg);
+
+    if(ret==true)
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+
+    return ret;
   }
 #endif
 };

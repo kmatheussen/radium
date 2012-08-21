@@ -182,7 +182,7 @@ OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventRec
 OBJ_POSIX=posix_settings.o posix_Player.o 
 
 #Windows
-OBJ_WIN=W_Error.o
+OBJ_WIN=W_Error.o W_Keyboard.o
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
@@ -820,6 +820,9 @@ X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c
 
 W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c 
 	$(CC) windows/W_Error.c $(OPT)
+
+W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c 
+	$(CC) windows/W_Keyboard.c $(OPT)
 
 X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC) X11/X11_Ptask2Mtask.c $(OPT)

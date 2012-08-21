@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #ifdef __linux__
+#  include <X11/Xlib.h>
 #  include <gdk/gdkx.h>
 #endif
 
@@ -52,7 +53,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __linux__
 #include "../X11/X11_keyboard_proc.h"
-#include <X11/Xlib.h>
+#endif
+
+#ifdef FOR_WINDOWS
+#  include "../windows/W_Keyboard_proc.h"
 #endif
 
 #include "../common/visual_op_queue_proc.h"
@@ -171,63 +175,28 @@ void GFX_enable_mouse_keyboard(void){
 
 int num_users_of_keyboard = 0;
 
-#ifdef __linux__
 
-GdkFilterReturn FilterFunc(XEvent *xevent, GdkEvent *event,gpointer data)
+GdkFilterReturn FilterFunc(GdkXEvent *xevent,GdkEvent *event,gpointer data)
 {
   if(num_users_of_keyboard>0)
     return GDK_FILTER_CONTINUE;
   if(mouse_keyboard_disabled==true)
     return GDK_FILTER_CONTINUE;
 
-  GdkFilterReturn ret = X11_KeyboardFilter(xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
+#ifdef __linux__
+  GdkFilterReturn ret = X11_KeyboardFilter((XEvent *)xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
+#endif
 
-#if 1
+#ifdef FOR_WINDOWS
+  GdkFilterReturn ret = W_KeyboardFilter((MSG *)xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
+#endif
+
   if(ret==GDK_FILTER_REMOVE){
     struct Tracker_Windows *window=root->song->tracker_windows;
     GFX_play_op_queue(window);
   }
-#endif
   return ret;
 }
-#endif
-
-#ifdef FOR_WINDOWS
-GdkFilterReturn FilterFunc(MSG *msg, GdkEvent *event,gpointer data)
-{
-  if(num_users_of_keyboard>0)
-    return GDK_FILTER_CONTINUE;
-  if(mouse_keyboard_disabled==true)
-    return GDK_FILTER_CONTINUE;
-
-  struct TEvent tevent;
-  struct Tracker_Windows *window=root->song->tracker_windows;
-  static int num=0;
-  //printf("Got something %d %d/%d. Num: %d\n",(int)msg->message,WM_KEYDOWN,WM_KEYUP,num++);
-  switch(msg->message){
-    case WM_KEYDOWN:
-      tevent.ID=TR_KEYBOARD;
-      tevent.SubID=EVENT_Q;
-      tevent.keyswitch=0;
-      EventReciever(&tevent,window);
-      GFX_play_op_queue(window);
-      printf("Got something down.... %d %d\n",(int)msg->wParam,num++);
-      return GDK_FILTER_REMOVE;
-      break;
-    case WM_KEYUP: 
-      tevent.ID=TR_KEYBOARDUP;
-      tevent.SubID=EVENT_Q;
-      tevent.keyswitch=0;
-      EventReciever(&tevent,window);
-      GFX_play_op_queue(window);
-      printf("Got something up.... %d %d\n",(int)msg->wParam,num++);
-    default:
-      break;
-  }
-  fflush(stdout);
-  return GDK_FILTER_CONTINUE;
-}
-#endif
 
 static void create_font_dialog(void);
 static void font_selector_destroyed(GtkWidget *widget, gpointer window){
