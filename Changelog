@@ -1,4 +1,8 @@
-Most important changes 0.67.3 -> 0.68.1:
+Most important changes 0.68.1 -> 0.68.2:
+* Fix left mouse down when selecting font or FX.
+
+
+Most important changes 0.68.0 -> 0.68.1:
 * Clean up jack when exiting
 * Proper fix for lost KDE left mouse events in Ubuntu 12.
 * Requester focus fixes
