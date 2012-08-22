@@ -107,6 +107,8 @@ static void open_dialog(reqtype_t *reqtype){
   reqtype->x = 0;
 
   reqtype->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_position(GTK_WINDOW(reqtype->window),GTK_WIN_POS_MOUSE);
+  gtk_window_set_keep_above(GTK_WINDOW(reqtype->window),true);
 
   reqtype->text_view = gtk_text_view_new_with_buffer(NULL);
   gtk_widget_set_can_focus(reqtype->text_view,true);
