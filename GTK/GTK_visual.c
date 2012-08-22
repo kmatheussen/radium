@@ -17,10 +17,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // Sometimes, setting this to 1 helps the window to embed. (TODO. need proper solution)
 // (Note, must edit in Qt_MainWindow.cpp.
 // Update: Calling g_embed_container->show() before calling CreateVisual seems to fix the problem.
-//#define USE_EMBED_WORKAROUND 0
+#define USE_EMBED_WORKAROUND 0
 
 // KDE for Ubuntu 12 usually needs the workaround.
-#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
+//#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
 
 
 #if USE_GTK_VISUAL
@@ -184,6 +184,23 @@ GdkFilterReturn FilterFunc(GdkXEvent *xevent,GdkEvent *event,gpointer data)
     return GDK_FILTER_CONTINUE;
 
 #ifdef __linux__
+  {
+    XEvent *event = (XEvent*)xevent;
+    if(event->type==ButtonPress){
+      if(((XButtonEvent *)event)->button==TR_LEFTMOUSEDOWN){ // When running in KDE on Ubuntu 12, the left mouse button down is always lost. This is a workaround.
+        printf("x/y: %d/%d\n",(int)((XButtonEvent *)event)->x,(int)((XButtonEvent *)event)->y);
+        struct Tracker_Windows *window=root->song->tracker_windows;
+        struct TEvent tevent;
+        tevent.ID=TR_LEFTMOUSEDOWN;
+        tevent.x = (int)((XButtonEvent *)event)->x;
+        tevent.y = (int)((XButtonEvent *)event)->y;
+        EventReciever(&tevent,window);
+        GFX_play_op_queue(window);
+        return GDK_FILTER_REMOVE;
+      }
+    }
+  }
+
   GdkFilterReturn ret = X11_KeyboardFilter((XEvent *)xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
 #endif
 
