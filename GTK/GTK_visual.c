@@ -17,10 +17,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // Sometimes, setting this to 1 helps the window to embed. (TODO. need proper solution)
 // (Note, must edit in Qt_MainWindow.cpp.
 // Update: Calling g_embed_container->show() before calling CreateVisual seems to fix the problem.
-#define USE_EMBED_WORKAROUND 0
+//#define USE_EMBED_WORKAROUND 0
 
 // KDE for Ubuntu 12 usually needs the workaround.
-//#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
+#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
 
 
 #if USE_GTK_VISUAL
@@ -329,6 +329,7 @@ static gboolean mouse_press_event( GtkWidget *widget,
                                GdkEvent  *event,
                                gpointer   callback_data )
 {
+  printf("gtk: got mouse press event\n");
   return mouse_pressrelease_event(event, true);
 }
 
