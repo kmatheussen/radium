@@ -107,7 +107,7 @@ static void open_dialog(reqtype_t *reqtype){
   reqtype->x = 0;
 
   reqtype->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_position(GTK_WINDOW(reqtype->window),GTK_WIN_POS_MOUSE);
+  gtk_window_set_position(GTK_WINDOW(reqtype->window),GTK_WIN_POS_MOUSE); // Trying to put it above 'plug' doesn't work very well. Maybe the position of a GtkPlug "window" is somewhat complicated to figure out.
   gtk_window_set_keep_above(GTK_WINDOW(reqtype->window),true);
 
   reqtype->text_view = gtk_text_view_new_with_buffer(NULL);
@@ -196,10 +196,10 @@ void GFX_WriteString(ReqType das_reqtype,char *text){
 void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   reqtype_t *reqtype = das_reqtype;
 
-  gtk_widget_grab_focus(reqtype->text_view);
-  //gtk_widget_grab_focus(reqtype->window);
-  //gtk_widget_activate(reqtype->text_view);
+ //gtk_widget_grab_focus(reqtype->window);
+  gtk_widget_activate(reqtype->text_view);
   gtk_window_present( GTK_WINDOW(reqtype->window));
+  gtk_widget_grab_focus(reqtype->text_view);
 
   printf("wating\n");
   fflush(stdout);
