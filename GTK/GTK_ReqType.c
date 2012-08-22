@@ -30,18 +30,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 
 #ifdef TEST_MAIN
+
 int num_users_of_keyboard = 0;
 void X11_ResetKeysUpDowns(void){}
 GtkWidget *vbox=NULL;
 void *talloc_atomic(size_t size){return malloc(size);}
-#else
+
+#else //  TEST_MAIN
+
 extern int num_users_of_keyboard;
-#endif
+
+#endif //  TEST_MAIN
+
 
 typedef struct{
   GtkWidget *window;
   GtkWidget *text_view;
   int x,y;
+  int pixelwidth,pixelheight;
+  GMainLoop* gloop;
 } reqtype_t;
 
 
@@ -58,6 +65,10 @@ static int get_curr_len(reqtype_t *reqtype){
   gtk_text_iter_forward_to_line_end(&iter_end);
   
   return strlen(gtk_text_buffer_get_text(text_buffer,&iter_start,&iter_end,true));
+}
+
+static gboolean window_hidden(GtkWidget *widget, GdkEvent *event, gpointer callback_data){
+  return TRUE; // Oh no you can't.
 }
 
 static gint keyboard_input( GtkWidget *widget,
@@ -81,7 +92,7 @@ static gint keyboard_input( GtkWidget *widget,
     else
       break;
   case GDK_Return:
-    gtk_dialog_response(GTK_DIALOG(reqtype->window),0);
+    g_main_loop_quit(reqtype->gloop);
     break;
   }
 
@@ -91,18 +102,11 @@ static gint keyboard_input( GtkWidget *widget,
 extern GtkWidget *plug; // plug is not a normal widget. Not sure if it works very logically for focus.
 extern GtkWidget *vbox;
 
-ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *title){
-  num_users_of_keyboard++; // disable X11 keyboard sniffer
-
-  reqtype_t *reqtype = talloc_atomic(sizeof(reqtype_t));
+static void open_dialog(reqtype_t *reqtype){
   reqtype->y = 0;
   reqtype->x = 0;
 
-  reqtype->window = gtk_dialog_new_with_buttons(title,
-                                                GTK_WINDOW(plug),
-                                                //NULL,
-                                                GTK_DIALOG_MODAL, // | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                NULL);
+  reqtype->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
   reqtype->text_view = gtk_text_view_new_with_buffer(NULL);
   gtk_widget_set_can_focus(reqtype->text_view,true);
@@ -112,16 +116,29 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *t
                     G_CALLBACK (keyboard_input),
                     reqtype);
 
-  gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(reqtype->window))), reqtype->text_view);
-  //gtk_container_add(GTK_CONTAINER(vbox), text_view);
+  g_signal_connect(reqtype->window,
+                   "delete-event",
+                   G_CALLBACK(window_hidden),
+                   reqtype);
 
-  int pixelwidth = tvisual==NULL ? 10*width : width*tvisual->fontwidth;
-  int pixelheight = tvisual==NULL ? 16*height : height*tvisual->fontwidth;
+  gtk_container_add(GTK_CONTAINER(reqtype->window), reqtype->text_view);
 
-  gtk_window_resize((GtkWindow*)reqtype->window,pixelwidth,pixelheight);
+  gtk_window_resize((GtkWindow*)reqtype->window,reqtype->pixelwidth,reqtype->pixelheight);
 
   gtk_widget_show(reqtype->window);
   gtk_widget_show(reqtype->text_view);
+}
+
+ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *title){
+  num_users_of_keyboard++; // disable X11 keyboard sniffer
+
+  reqtype_t *reqtype = talloc_atomic(sizeof(reqtype_t));
+  reqtype->pixelwidth = tvisual==NULL ? 10*width : width*tvisual->fontwidth;
+  reqtype->pixelheight = tvisual==NULL ? 16*height : height*tvisual->fontwidth;
+
+  reqtype->gloop = g_main_loop_new (NULL, FALSE);
+
+  open_dialog(reqtype);
 
   Qt_DisableAllWidgets();
   GFX_disable_mouse_keyboard();
@@ -132,32 +149,23 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *t
 extern void GTK_SetFocus(void);
 extern void grabKeyboard(void);
 
-//#include <windows.h>
 
 void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   reqtype_t *reqtype=das_reqtype;
+
   gtk_widget_destroy(GTK_WIDGET(reqtype->window));
+  g_main_loop_unref(reqtype->gloop);
+
   num_users_of_keyboard--;
+
 #ifdef __linux__
   X11_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 #endif
+
   Qt_EnableAllWidgets();
   GFX_enable_mouse_keyboard();
 
   GTK_SetFocus();
-
-#if 0
-  // Various attempts to get focus right below. (turned out to be an fvwm configuration thing, focus must now be sloppy by default for programs to behave as before. Still doesn't work in wine though, but hopefully it does in windows, I haven't tested.)
-  //
-  gtk_widget_grab_focus(vbox);
-  //gtk_widget_grab_focus(plug);
-  gtk_window_present( GTK_WINDOW(plug));
-  //gtk_window_present_with_time(GTK_WINDOW(plug),1);
-  //Sleep(1);
-  grabKeyboard();
-  //gtk_widget_hide(plug);
-  //gtk_widget_show(plug);
-#endif
 }
 
 
@@ -193,23 +201,11 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
 
   printf("wating\n");
   fflush(stdout);
-  if(gtk_dialog_run (GTK_DIALOG (reqtype->window))==GTK_RESPONSE_DELETE_EVENT){
-    GtkTextIter iter_end;
 
-    GtkTextBuffer *text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(reqtype->text_view));
+  g_main_loop_run(reqtype->gloop);
 
-    gtk_text_buffer_get_iter_at_line(text_buffer,&iter_end,reqtype->y);
-    gtk_text_iter_forward_to_line_end(&iter_end);
-
-    gtk_text_buffer_insert(text_buffer,
-                           &iter_end,
-                           "\n",
-                           -1);
-
-    buffer[0]=0;
-    reqtype->y++;
-    return;
-  }
+  printf("wating over\n");
+  fflush(stdout);
 
   {
     GtkTextIter iter_start;
