@@ -292,7 +292,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
         if(port_names[i2] == std::string(name)){
           api = apis[i1];
           portnum = i2;
-          goto gotit;
+          goto got_portnum;
         }
     }catch ( RtError &error ) {
       RError(error.what());
@@ -340,7 +340,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     return ret;
   }
 
- gotit:
+ got_portnum:
   MyMidiPortOs *ret = (MyMidiPortOs*)calloc(1, sizeof(MyMidiPortOs));
   try{
     ret->midiout = new RtMidiOut(api, "Radium");
@@ -445,5 +445,17 @@ bool MIDI_New(struct Instruments *instrument){
 
 
 void MIDI_Delete(void){
+  printf("Ending MIDI instrument\n");
+
+#ifdef __linux__
+  delete inport_jack;
+  delete inport_alsa;
+#endif
+
+#ifdef FOR_WINDOWS
+  delete inport_winmm;
+  delete inport_winks;
+#endif
+
 }
 

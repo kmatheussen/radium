@@ -3358,6 +3358,7 @@ void MidiOutWinKS :: sendMessage(std::vector<unsigned char>* pMessage, double ti
 //
 //  Written primarily by Alexander Svetalkin, with updates for delta
 //  time by Gary Scavone, April 2011.
+//  Rewritten by Kjetil Matheussen, July 2012.
 //
 //  *********************************************************************//
 

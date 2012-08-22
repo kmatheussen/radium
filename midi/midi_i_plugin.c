@@ -520,6 +520,12 @@ int MIDIgetMaxVelocity(struct Tracks *track){
 
 
 void MIDICloseInstrument(struct Instruments *instrument){
+  struct MidiPort *midi_port = g_midi_ports;
+  while(midi_port != NULL){
+    MIDI_closeMidiPortOs(midi_port->port);
+    midi_port=midi_port->next;
+  }
+
   MIDI_Delete();
 }
 

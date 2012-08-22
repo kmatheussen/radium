@@ -431,6 +431,7 @@ int radium_main(char *arg){
   }
 #endif
 
+  EndProgram();
   posix_EndPlayer();
   //EndGuiThread();
 

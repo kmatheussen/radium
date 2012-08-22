@@ -22,8 +22,7 @@ BUILD DEPENDENCIES FEDORA:
         libXaw-devel
         python2-devel
         alsa-lib-devel
-        jack-audio-connection-kit-devel
-        PyQt4
+        jacke-audio-connection-kit-devel
         gtk2-devel
 
         (tested On Fedora 11 and 17)
@@ -36,7 +35,6 @@ BUILD DEPENDENCIES UBUNTU:
       python2-dev
       libasound2-dev
       libjack-jackd2-dev or libjack-jackd1-dev
-      python-qt4
       libgtk2.0-dev
 
       (Tested on Ubuntu 12 and Mint 13)
