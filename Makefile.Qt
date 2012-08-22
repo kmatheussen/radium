@@ -233,12 +233,8 @@ install:
 	install -d $(DESTDIR)$(libdir)/radium
 
 	cp -a bin/* $(DESTDIR)$(libdir)/radium/
-	rm -fr $(DESTDIR)$(libdir)/radium/packages/*.tar.*
-
-	rm -fr $(DESTDIR)$(libdir)/radium/packages/man
-	rm -fr $(DESTDIR)$(libdir)/radium/packages/gc-7.2
-
-	rm -fr $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/*
+	rm -fr $(DESTDIR)$(libdir)/radium/packages/*
+	mkdir $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/
 	cp bin/packages/xmessage-1.0.3/xmessage $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/
 
 	chmod -R a+rx $(DESTDIR)$(libdir)/radium/*
