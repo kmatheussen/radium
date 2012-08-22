@@ -277,6 +277,11 @@ char **MIDI_getOutputPortOsNames(int *retsize){
 }
 
 
+void MIDI_closeMidiPortOs(MidiPortOs port){
+  MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
+  delete myport->midiout;
+}
+
 MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name){
   std::vector<RtMidi::Api> apis;
   RtMidi::getCompiledApi(apis);
