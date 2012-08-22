@@ -1,3 +1,10 @@
+Most important changes 0.67.3 -> 0.68.1:
+* Clean up jack when exiting
+* Proper fix for lost KDE left mouse events in Ubuntu 12.
+* Requester focus fixes
+* Use bold font by default
+
+
 Most important changes 0.67.3 -> 0.68.0:
 * Use GTK popup menu for selecting FX
 * Replaced use of xterm with GTK widget.
