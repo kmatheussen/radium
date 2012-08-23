@@ -156,9 +156,14 @@ static void init_keymap(void){
   keymap_initialized=true;
 }
 
+#if 0
+// Didn't work. GetKeyNameText returned something else on XP and windows 7
 static int get_keypad_subID(MSG *msg){
   char temp[500];
   GetKeyNameText(msg->lParam,temp,500);
+
+  printf("Keyname: \"%s\"\n",temp);
+  fflush(stdout);
 
   if(strlen(temp)<4 || temp[0]!='K' || temp[1]!='P' || temp[2]!='_')
     return EVENT_NO;
@@ -200,6 +205,49 @@ static int get_keypad_subID(MSG *msg){
   if(!strcmp(temp,"KP_Divide"))
     return EVENT_KP_DIV;
 
+  return EVENT_NO;
+}
+#endif
+
+static int get_keypad_subID(MSG *msg){
+  if(0x1000000 & msg->lParam){ // i.e. insert/home/pageup/delete/end/pagedown, an arrow key, KP_DIV or KP_ENTER. (strange flag)
+    if(msg->wParam==VK_RETURN)
+      return EVENT_KP_ENTER;
+    if(msg->wParam==VK_DIVIDE)
+      return EVENT_KP_DIV;
+    return EVENT_NO;
+  }
+
+  switch(msg->wParam){
+  case VK_MULTIPLY:
+    return EVENT_KP_MUL;
+  case 0x6d:
+    return EVENT_KP_SUB;
+  case 0x24:
+    return EVENT_KP_7;
+  case 0x26:
+    return EVENT_KP_8;
+  case 0x21:
+    return EVENT_KP_9;
+  case 0x25:
+    return EVENT_KP_4;
+  case 0x0c:
+    return EVENT_KP_5;
+  case 0x27:
+    return EVENT_KP_6;
+  case 0x23:
+    return EVENT_KP_1;
+  case 0x28:
+    return EVENT_KP_2;
+  case 0x22:
+    return EVENT_KP_3;
+  case 0x2d:
+    return EVENT_KP_0;
+  case 0x2e:
+    return EVENT_KP_DOT;
+  case 0x6b:
+    return EVENT_KP_ADD;
+  }
   return EVENT_NO;
 }
 
