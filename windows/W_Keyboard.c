@@ -238,11 +238,14 @@ bool W_KeyboardFilter(MSG *msg){
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
-      if(msg->wParam==VK_RWIN)
+      if(msg->wParam==VK_RWIN){ 
         right_windows_down = true;
-      if(msg->wParam==VK_LWIN)
+        break;
+      }
+      if(msg->wParam==VK_LWIN){
         left_windows_down = true;
-      
+        break;
+      }
       tevent.ID=TR_KEYBOARD;
       tevent.SubID=get_keyboard_subID(msg);
       tevent.keyswitch=get_keyswitch();
@@ -259,11 +262,14 @@ bool W_KeyboardFilter(MSG *msg){
 
     case WM_KEYUP: 
     case WM_SYSKEYUP:
-      if(msg->wParam==VK_RWIN)
+      if(msg->wParam==VK_RWIN){
         right_windows_down = false;
-      if(msg->wParam==VK_LWIN)
+        break;
+      }
+      if(msg->wParam==VK_LWIN){
         left_windows_down = false;
-
+        break;
+      }
       tevent.ID=TR_KEYBOARDUP;
       tevent.SubID=get_keyboard_subID(msg);
       tevent.keyswitch=get_keyswitch();

@@ -547,12 +547,12 @@ def get_tracks(filename):
     
 def get_parameters(lpb, midi_port, polyphonic):
     radium.openRequester("Please define Midi File Properties")
-
+    
     if lpb==0:
         lpb = radium.requestInteger("Lines per beat? (4) ",1,100000)
         if lpb==0:
             lpb = 4
-
+    
     if polyphonic=="not set":
         polyphonic = radium.requestString("Polyphonic tracks? (Yes) ")
         if polyphonic=="no" or polyphonic=="No" or polyphonic=="NO":
@@ -562,7 +562,7 @@ def get_parameters(lpb, midi_port, polyphonic):
 
     while midi_port=="":
         midi_port = radium.requestMidiPort()
-        
+
     radium.closeRequester()
 
     return lpb,midi_port,polyphonic

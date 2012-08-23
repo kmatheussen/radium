@@ -275,6 +275,9 @@ static gboolean expose_event( GtkWidget *widget,
                           GdkEvent  *event,
                           gpointer   callback_data )
 {
+  if(mouse_keyboard_disabled==true)
+    return TRUE;
+
   struct Tracker_Windows *window=root->song->tracker_windows;
 
   static int num=0;
@@ -1153,6 +1156,9 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 extern PlayerClass *pc;
 
 static gboolean called_periodically(gpointer user_data){
+  if(mouse_keyboard_disabled==true)
+    return TRUE;
+
   struct Tracker_Windows *window=root->song->tracker_windows;
   DO_GFX_BLT({
       MIDI_HandleInputMessage();
