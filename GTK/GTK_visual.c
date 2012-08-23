@@ -188,7 +188,7 @@ GdkFilterReturn FilterFunc(GdkXEvent *xevent,GdkEvent *event,gpointer data)
     XEvent *event = (XEvent*)xevent;
     if(((XAnyEvent*)xevent)->window==GDK_WINDOW_XID(plug->window)){
       if(event->type==ButtonPress){
-        if(((XButtonEvent *)event)->button==TR_LEFTMOUSEDOWN){ // When running in KDE on Ubuntu 12, the left mouse button down is always lost. This is a workaround.
+        if(((XButtonEvent *)event)->button==1){ // When running in KDE on Ubuntu 12, the left mouse button down is always lost. This is a workaround.
           printf("x/y: %d/%d\n",(int)((XButtonEvent *)event)->x,(int)((XButtonEvent *)event)->y);
           struct Tracker_Windows *window=root->song->tracker_windows;
           struct TEvent tevent;
