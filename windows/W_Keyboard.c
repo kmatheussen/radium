@@ -53,7 +53,6 @@ static uint32_t get_keyswitch(void){
   return keyswitch;
 }
 
-static bool keymap_initialized=false;
 static int keymap[0x100] = {EVENT_NO};
 
 static void init_keymap(void){
@@ -152,8 +151,6 @@ static void init_keymap(void){
 
   // keypad
   // ... is handled in the function get_keypad_subID
-
-  keymap_initialized=true;
 }
 
 #if 0
@@ -262,61 +259,90 @@ static int get_keyboard_subID(MSG *msg){
   return keymap[msg->wParam];
 }
 
+static bool g_bWindowActive = true;
+static HHOOK g_hKeyboardHook = NULL;
+
+// http://msdn.microsoft.com/en-us/library/windows/desktop/ee416808(v=vs.85).aspx
+LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
+{
+    if (nCode < 0 || nCode != HC_ACTION )  // do not process message 
+        return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam); 
+ 
+    KBDLLHOOKSTRUCT* p = (KBDLLHOOKSTRUCT*)lParam;
+
+    if(wParam==WM_KEYDOWN || wParam==WM_KEYUP){
+      if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){
+
+        if(p->vkCode==VK_LWIN)
+          left_windows_down = wParam==WM_KEYDOWN?true:false;
+        else
+          right_windows_down = wParam==WM_KEYDOWN?true:false;
+
+        if(g_bWindowActive)
+          return 1;
+      }
+    }
+ 
+    return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam );
+}
+
+void W_KeyboardHandlerShutDown(void){
+  if(g_hKeyboardHook!=NULL)
+    UnhookWindowsHookEx(g_hKeyboardHook);
+}
 
 bool W_KeyboardFilter(MSG *msg){
-  if(keymap_initialized==false)
+  static bool initialized=false;
+
+  if(initialized==false){
     init_keymap();
+    
+    g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
+
+    initialized=true;
+  }
 
   if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
     return false;
 
   struct TEvent tevent;
   struct Tracker_Windows *window=root->song->tracker_windows;
+#if 0
   static int num=0;
-  //char *temp="";
-  //printf("Got something. Message: 0x%x. wParam: 0x%x. lParam: 0x%x. Num: %d. Name: \"%s\", Left shift? 0x%x\n",(int)msg->message,(int)msg->wParam,(int)msg->lParam,num++,temp,(int)GetKeyState(VK_LSHIFT));
-  //fflush(stdout);
+  if(msg->message!=WM_TIMER && msg->message!=0x84 && msg->message!=WM_MOUSEFIRST && msg->message!=WM_MOUSEMOVE && msg->message!=WM_SETCURSOR){
+    char *temp="";
+    printf("Got something. Message: 0x%x. wParam: 0x%x. lParam: 0x%x. Num: %d. Name: \"%s\", Left shift? 0x%x\n",(int)msg->message,(int)msg->wParam,(int)msg->lParam,num++,temp,(int)GetKeyState(VK_LSHIFT));
+    fflush(stdout);
+  }
+#endif
   switch(msg->message){
-    case WM_KILLFOCUS:
-    case WM_SETFOCUS:
-    case WM_ACTIVATE:
-      right_windows_down = false;
-      left_windows_down = false;
+    case WM_HOTKEY:
+      printf("Got HotKey\n");
+      fflush(stdout);
+      return true;
+    case WM_ACTIVATEAPP:
+      g_bWindowActive = msg->wParam ? true : false;
+      printf("Got Activate app. wParam: %d\n",(int)msg->wParam);
+      fflush(stdout);
       break;
-
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
-      if(msg->wParam==VK_RWIN){ 
-        right_windows_down = true;
-        break;
-      }
-      if(msg->wParam==VK_LWIN){
-        left_windows_down = true;
-        break;
-      }
       tevent.ID=TR_KEYBOARD;
       tevent.SubID=get_keyboard_subID(msg);
       tevent.keyswitch=get_keyswitch();
       EventReciever(&tevent,window);
 
-#if 0
-      char temp[500];
-      GetKeyNameText(msg->lParam,temp,500);
-      printf("Got something. Message: 0x%x. wParam: 0x%x. lParam: 0x%x. Num: %d. Name: \"%s\", Left shift? 0x%x. not keypad? 0x%x\n",(int)msg->message,(int)msg->wParam,(int)msg->lParam,num++,temp,(int)(GetKeyState(VK_RCONTROL)&0x8000),(int)(msg->lParam&0x1000000));
-      //printf("Got something down.... %d/0x%x. temp: \"%s\" %d\n",(int)msg->wParam,(int)msg->wParam,temp,num++);
-      fflush(stdout);
-#endif
       return true;
 
     case WM_KEYUP: 
     case WM_SYSKEYUP:
       if(msg->wParam==VK_RWIN){
         right_windows_down = false;
-        break;
+        return true;
       }
       if(msg->wParam==VK_LWIN){
         left_windows_down = false;
-        break;
+        return true;
       }
       tevent.ID=TR_KEYBOARDUP;
       tevent.SubID=get_keyboard_subID(msg);

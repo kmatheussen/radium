@@ -14,9 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "../common/nsmtracker.h"
+
+#if FOR_WINDOWS
+#  include <windows.h>
+#  include "../windows/W_Keyboard_proc.h"
+#endif
 
 #include "../common/OS_endprogram_proc.h"
 
-
 void OS_EndProgram(void){}
-void OS_EndProgram2(void){}
+void OS_EndProgram2(void){
+#if FOR_WINDOWS
+  W_KeyboardHandlerShutDown();
+#endif
+}
