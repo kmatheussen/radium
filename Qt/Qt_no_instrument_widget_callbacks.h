@@ -85,9 +85,9 @@ public slots:
       return;
 
     if(state==Qt::Unchecked)
-      root->editonoff = true;
-    else if(state==Qt::Checked)
       root->editonoff = false;
+    else if(state==Qt::Checked)
+      root->editonoff = true;
     else
       return;
 
