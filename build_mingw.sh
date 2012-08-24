@@ -9,7 +9,8 @@ export CCC=i686-w64-mingw32-g++
 export CC=i686-w64-mingw32-gcc
 export LINKER=i686-w64-mingw32-g++
 
-export BUILDTYPE=DEBUG
+#export BUILDTYPE=DEBUG
+export BUILDTYPE=RELEASE
 
 export PKG="wine `pwd`/temp/bin/pkg-config.exe"
 
@@ -28,6 +29,10 @@ export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/lib/python2.7/l
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__WINDOWS_KS__ -D__RTMIDI_DEBUG__"
 export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lwinmm /usr/i686-w64-mingw32/sys-root/mingw/lib/libksuser.a -lsetupapi"
+
+if [ $BUILDTYPE = "RELEASE" ] ; then
+    export OS_LDFLAGS="$OS_LDFLAGS -mwindows"
+fi
 
 # To build gc for mingw32:
 #

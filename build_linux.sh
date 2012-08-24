@@ -4,8 +4,8 @@ export PYTHONEXE=`./find_python_path.sh`
 export MOC="`./find_moc_and_uic_paths.sh moc`"
 export UIC="`./find_moc_and_uic_paths.sh uic`"
 
-export BUILDTYPE=RELEASE
-#export BUILDTYPE=DEBUG
+#export BUILDTYPE=RELEASE
+export BUILDTYPE=DEBUG
 export OPTIMIZE="-mtune=native -O3"
 
 export CCC=g++

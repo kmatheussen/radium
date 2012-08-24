@@ -16,6 +16,12 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>151</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Form1</string>
   </property>
@@ -24,8 +30,8 @@
     <rect>
      <x>9</x>
      <y>9</y>
-     <width>174</width>
-     <height>54</height>
+     <width>191</width>
+     <height>111</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -60,6 +66,19 @@
       </property>
       <property name="text">
        <string>Create new instrument</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QCheckBox" name="midi_input">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>MIDI input</string>
       </property>
      </widget>
     </item>

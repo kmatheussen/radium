@@ -80,4 +80,21 @@ public slots:
       QApplication::setStyle(default_style_name);
   }
 
+  void on_midi_input_stateChanged(int state){
+    if(initing==true)
+      return;
+
+    if(state==Qt::Unchecked)
+      root->editonoff = true;
+    else if(state==Qt::Checked)
+      root->editonoff = false;
+    else
+      return;
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    char temp[1000];
+    sprintf(temp,"Midi Input %s",root->editonoff?"On":"Off");
+    GFX_SetStatusBar(window,temp);
+  }
+
 };
