@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
 
+#include <QtCore>
+#include <QtGui>
+
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -306,7 +309,17 @@ void SetupMainWindow(void){
     status_bar->addWidget(editor->status_label, 1, true);
   }
 
+
+#if FOR_MACOSX
+  //qt_mac_set_native_menubar(false);
+  QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
+  QMenuBar *menubar = new QMenuBar(0);
+  initMenues(menubar);
+  //menubar->show();
+  main_window->setMenuBar(menubar);
+#else
   initMenues(main_window->menuBar());
+#endif
 
 #if USE_QT_VISUAL
 
