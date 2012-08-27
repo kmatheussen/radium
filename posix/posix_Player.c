@@ -61,7 +61,7 @@ static void *posix_PlayerThread(void *arg){
     struct timeval tv;
 
 
-#ifdef __linux__
+#if defined(__linux__) || defined(FOR_MACOSX)
     struct timespec req={0,(1000*1000*1000) / PLAYERTASKFREQ};
     nanosleep(&req,NULL);
 #endif
@@ -104,7 +104,7 @@ bool posix_InitPlayer(void){
     return false;
   } 
 
-#ifdef __linux__
+#if defined(__linux__) || defined(FOR_MACOSX)
   {
     struct sched_param rtparam;
     int x;
