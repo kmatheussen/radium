@@ -76,7 +76,9 @@
 #include <Q3VBoxLayout>
 #include <QPaintEvent>
 
-
+#ifdef Q_WS_MAC
+#  undef Q_WS_MAC
+#endif
 
 #ifdef Q_WS_MAC
 QRgb macGetRgba( QRgb initial, bool *ok, QWidget *parent, const char* name );

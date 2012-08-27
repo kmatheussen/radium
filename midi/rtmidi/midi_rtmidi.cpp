@@ -359,6 +359,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   return ret;
 }
 
+#ifndef FOR_MACOSX
 static void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
   //printf("Got data: %d (%x)\n",length,message[0]);
   if(length==1)
@@ -368,6 +369,7 @@ static void mycallback( double deltatime, unsigned int length, unsigned char *me
   else if(length==3)
     MIDI_InputMessageHasBeenReceived(message[0],message[1],message[2]);
 }
+#endif
 
 bool MIDI_New(struct Instruments *instrument){
   static bool globals_are_initialized = false;

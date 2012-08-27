@@ -142,6 +142,14 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->effectiveWinId());
 #endif
 
+#if FOR_MACOSX
+    g_embed_container->show();
+    //g_embed_container->show();
+    GTK_CreateVisual(0);//g_embed_container->winId());
+    //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->nativeParentWidget());
+    //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->effectiveWinId());
+#endif
+
     //g_embed_container->grabKeyboard();
 
     //g_embed_container->moveInputToProxy();

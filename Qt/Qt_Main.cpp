@@ -446,12 +446,21 @@ int main(int argc, char **argv){
   Py_Initialize();
 
   char temp[500];
-  sprintf(temp,"import sys;sys.argv=[\"%s\",\"keybindings.conf\"]",argv[0]);
+
+  // Set loading path to argv[0]
+  PyRun_SimpleString("import sys,os");
+  sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
+  PyRun_SimpleString(temp);
+
+  PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
+
+  // Set sys.argv[0]
+  sprintf(temp,"sys.argv=[\"%s\",os.path.join(sys.g_program_path,\"keybindings.conf\")]",argv[0]);
   PyRun_SimpleString(temp);
 
   initradium();
 
-  PyRun_SimpleString("execfile(\"start.py\")"); // keybindings.conf start.sh\")");
+  PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))"); // keybindings.conf start.sh\")");
 
   Py_Finalize();
 }

@@ -155,7 +155,7 @@ class Menu:
         #print str(self.level)+". "+item
 
     
-menu=Menu(LineParser("menues.conf"),0)
+menu=Menu(LineParser(os.path.join(sys.g_program_path,"menues.conf")),0)
 
 if __name__=="__main__":
   menu.printit()

@@ -210,6 +210,10 @@ GdkFilterReturn FilterFunc(GdkXEvent *xevent,GdkEvent *event,gpointer data)
   GdkFilterReturn ret = W_KeyboardFilter((MSG *)xevent)==true ? GDK_FILTER_REMOVE : GDK_FILTER_CONTINUE;
 #endif
 
+#ifdef FOR_MACOSX
+  GdkFilterReturn ret = GDK_FILTER_CONTINUE;
+#endif
+
   if(ret==GDK_FILTER_REMOVE){
     struct Tracker_Windows *window=root->song->tracker_windows;
     GFX_play_op_queue(window);
@@ -461,6 +465,13 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
   //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   //plug = gtk_hbox_new(TRUE,0);
   
+#ifdef FOR_MACOSX
+  plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  //plug = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  //plug = gtk_plug_new((GdkNativeWindow)socket_id);
+  gtk_window_resize((GtkWindow*)plug,600,600);
+#endif
+
   vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(plug), vbox);
 
@@ -520,6 +531,10 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
     return GDK_WINDOW_XID(plug->window);
   else
     return gtk_plug_get_id((GtkPlug*)plug);
+#endif
+
+#ifdef FOR_MACOSX
+  return 0;
 #endif
 }
 
@@ -1178,6 +1193,9 @@ void GTK_MainLoop(void){
   const int timeout = 20;
 #endif
 #ifdef __linux__
+  const int timeout = 20;
+#endif
+#ifdef FOR_MACOSX
   const int timeout = 20;
 #endif
   g_timeout_add(timeout,called_periodically,NULL); // Something's wrong with (at least my) glib here. //Using an interval value of 1 causes 100% CPU.

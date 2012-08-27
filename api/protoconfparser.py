@@ -17,7 +17,7 @@
 
 
 
-import sys,string
+import sys,string,os
 from common import *
         
 class Radium_hs:
@@ -277,7 +277,9 @@ class Protos:
     
 class Read:
     def __init__(self):
-        self.fh=open("protos.conf","r")
+        if not hasattr(sys,'g_program_path'):
+            sys.g_program_path = "" # protoconfparser.py is also used during build
+        self.fh=open(os.path.join(sys.g_program_path,"protos.conf"),"r")
         self.linenum=0
         self.protos=Protos()
         self.iss=Radium_is()
