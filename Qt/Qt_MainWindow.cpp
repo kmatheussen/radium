@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 
+#include "../common/gfx_proc.h"
+#include "../common/cursor_updown_proc.h"
+
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
 
@@ -35,20 +38,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #    endif
 #    if USE_QT4
 #      include <QX11EmbedContainer>
-#      define QtXEmbedContainer QX11EmbedContainer
+#      define EditorWidgetParent QX11EmbedContainer
 #    endif
 #  else
 #    if FOR_MACOSX
 //#      include  <QMacNativeWidget>
-//#      define QtXEmbedContainer QMacNativeWidget 
-#      define QtXEmbedContainer QWidget
+//#      define EditorWidgetParent QMacNativeWidget 
+#      define EditorWidgetParent QWidget
 #    else
-#      define QtXEmbedContainer QWidget
+#      define EditorWidgetParent QWidget
 #    endif
 #  endif
-   QtXEmbedContainer *g_embed_container;
+   EditorWidgetParent *g_embed_container;
 #  include "../GTK/GTK_visual_proc.h"
-#endif
+#endif // USE_GTK_VISUAL
 
 
 #if USE_QT_VISUAL
@@ -72,10 +75,10 @@ static HWND gtk_hwnd = NULL;
 static bool sat=false;
 #endif
 
-class MyQtXEmbedContainer : public QtXEmbedContainer{
+class MyEditorWidgetParent : public EditorWidgetParent{
 public:
-  MyQtXEmbedContainer(QWidget *widget)
-    : QtXEmbedContainer(widget)
+  MyEditorWidgetParent(QWidget *widget)
+    : EditorWidgetParent(widget)
   {
 #if USE_QT3
     setWFlags(Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase);
@@ -84,7 +87,7 @@ public:
   void paintEvent( QPaintEvent *e ){
     //printf("got emb paint event %p\n",gtk_hwnd);
     // Shouldn't we call the super method here?
-    QtXEmbedContainer::paintEvent(e);
+    EditorWidgetParent::paintEvent(e);
 
 #if 1
 #if FOR_WINDOWS
@@ -105,7 +108,7 @@ public:
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
-    //: QtXEmbedContainer( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+    //: EditorWidgetParent( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   , qpa(256)
 {
 #if USE_QT_VISUAL
@@ -118,8 +121,8 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
   if(g_embed_container==NULL){
     //g_embed_container = this;
-    g_embed_container = new MyQtXEmbedContainer(this);
-    //g_embed_container = new QtXEmbedContainer(this);
+    g_embed_container = new MyEditorWidgetParent(this);
+    //g_embed_container = new EditorWidgetParent(this);
     g_embed_container->setBackgroundMode(Qt::NoBackground);
     //g_embed_container->show();
 
@@ -184,7 +187,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
   }
-#endif
+#endif // USE_GTK_VISUAL
 
   setEditorColors(this);
 
@@ -242,24 +245,20 @@ public:
   // Want the wheel to work from everywhere.
   void wheelEvent(QWheelEvent *qwheelevent){
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-    struct TEvent tevent={0};
-    tevent.ID=TR_KEYBOARD;
-    tevent.keyswitch=0;
 
-    if(qwheelevent->delta()>0){
-      tevent.SubID=EVENT_UPARROW;
-    }else{
-      tevent.SubID=EVENT_DOWNARROW;
-    }
+    int num_lines = R_ABS(qwheelevent->delta()/120);    
 
-    tevent.x=qwheelevent->x()-XOFFSET;
-    tevent.y=qwheelevent->y()-YOFFSET;
+    DO_GFX_BLT(
+               {
+                 if(qwheelevent->delta()<0)
+                   ScrollEditorDown(window,num_lines);
+                 else
+                   ScrollEditorUp(window,num_lines);
+               });
 
-    for(int lokke=0;lokke<R_ABS(qwheelevent->delta()/120);lokke++){
-      EventReciever(&tevent,window);
-    }
-
-    update();
+#if USE_QT_VISUAL
+    g_editor->update();
+#endif
   }
 };
 
@@ -294,6 +293,7 @@ void SetupMainWindow(void){
   editor->setAttribute(Qt::WA_PaintOnScreen);
   editor->setAttribute(Qt::WA_OpaquePaintEvent);
   editor->setAttribute(Qt::WA_NoSystemBackground);
+  //main_window->setBackgroundMode(Qt::NoBackground);
 #endif
   editor->main_window = main_window;
 

@@ -17,35 +17,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void ScrollEditorDown(struct Tracker_Windows *window,int num_lines);
+extern LANGSPEC void ScrollEditorDown(struct Tracker_Windows *window,int num_lines);
 
-extern void ScrollEditorUp(struct Tracker_Windows *window,int num_lines);
+extern LANGSPEC void ScrollEditorUp(struct Tracker_Windows *window,int num_lines);
 
-extern void ScrollEditorNextNote(struct Tracker_Windows *window);
-extern void ScrollEditorPrevNote(struct Tracker_Windows *window);
+extern LANGSPEC void ScrollEditorNextNote(struct Tracker_Windows *window);
+extern LANGSPEC void ScrollEditorPrevNote(struct Tracker_Windows *window);
 
-void ScrollEditorToRealLine(
+extern LANGSPEC void ScrollEditorToRealLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int till_curr_realline
 );
 
-void ScrollEditorToRealLine_CurrPos(
+extern LANGSPEC void ScrollEditorToRealLine_CurrPos(
 	struct Tracker_Windows *window,
 	int till_curr_realline
 );
 
-void ScrollEditor(
+extern LANGSPEC void ScrollEditor(
 	struct Tracker_Windows *window,
 	int num_reallines
 );
 
-void ScrollEditorToLine_CurrPos(
+extern LANGSPEC void ScrollEditorToLine_CurrPos(
 	struct Tracker_Windows *window,
 	int line
 );
 
-void ScrollEditorToPercentLine_CurrPos(
+extern LANGSPEC void ScrollEditorToPercentLine_CurrPos(
 	struct Tracker_Windows *window,
 	int percent
 );

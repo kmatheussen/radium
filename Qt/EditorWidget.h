@@ -64,8 +64,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // Don't paint on the frame.
-#define XOFFSET 5
-#define YOFFSET 2
+//#define XOFFSET 5
+//#define YOFFSET 2
+
 
 class QMainWindow;
 class QSplitter;

@@ -130,7 +130,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     //pixmap_paint.setRenderHints(QPainter::Antialiasing);
     //this->pixmap_painter->setPen(this->colors[5]);
 
-    paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
+    //paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
 
     this->painter = &paint;
     this->qpixmap_painter = &pixmap_paint;
@@ -291,13 +291,14 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEDOWN;
     }
   }
-  tevent.x=qmouseevent->x()-XOFFSET;
-  tevent.y=qmouseevent->y()-YOFFSET;
+  tevent.x=qmouseevent->x();//-XOFFSET;
+  tevent.y=qmouseevent->y();//-YOFFSET;
 
   EventReciever(&tevent,this->window);
 
   update();
 }
+
 
 void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   if(qmouseevent->button()==Qt::LeftButton){
@@ -309,8 +310,8 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
-  tevent.x=qmouseevent->x()-XOFFSET;
-  tevent.y=qmouseevent->y()-YOFFSET;
+  tevent.x=qmouseevent->x();//-XOFFSET;
+  tevent.y=qmouseevent->y();//-YOFFSET;
 
 
   EventReciever(&tevent,this->window);
@@ -320,8 +321,8 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->x()-XOFFSET;
-  tevent.y=qmouseevent->y()-YOFFSET;
+  tevent.x=qmouseevent->x();//-XOFFSET;
+  tevent.y=qmouseevent->y();//-YOFFSET;
   EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);

@@ -23,14 +23,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#define USE_EMBED_WORKAROUND (getenv("KDE_FULL_SESSION")!=NULL)
 
 
-#if USE_GTK_VISUAL
 
 #include <string.h>
 #include <math.h>
 
 #include <gtk/gtk.h>
-//#include <gdk/gdk.h>
-//#include <gdk/gdkx.h>
+
+#if USE_GTK_VISUAL
 
 #ifdef FOR_WINDOWS
 #  include <windows.h>
@@ -743,10 +742,6 @@ int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_
     return find_text_length(text, max_width, 0, len-1);
 }
 
-void GTK_Init(int argc, char **argv){
-  gtk_init(&argc, &argv);
-}
-
 void GTK_SetColor(int colornum, int red, int green, int blue){
   //printf("Setting %d: %d/%d/%d\n",colornum,red,green,blue);
   if(colornum>=16)
@@ -1230,3 +1225,7 @@ void GTK_MainLoop(void){
 }
 
 #endif // USE_GTK_VISUAL
+
+void GTK_Init(int argc, char **argv){
+  gtk_init(&argc, &argv);
+}

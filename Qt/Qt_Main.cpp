@@ -56,9 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_instruments_proc.h"
 #include "Qt_MainWindow_proc.h"
 
-#if USE_GTK_VISUAL
-#  include "../GTK/GTK_visual_proc.h"
-#endif
+#include "../GTK/GTK_visual_proc.h"
 
 #ifdef FOR_WINDOWS
 #  include <windows.h>
@@ -289,9 +287,9 @@ int radium_main(char *arg){
   argv[0] = strdup("radium");
   argv[1] = NULL;
 
-#if USE_GTK_VISUAL
+  //#if USE_GTK_VISUAL
   GTK_Init(argc,argv);
-#endif
+  //#endif
 
   //GC_set_all_interior_pointers(0); // crash... (???)
   //GC_enable_incremental(); // crash.

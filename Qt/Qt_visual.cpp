@@ -148,13 +148,53 @@ void OS_GFX_C_DrawCursor(
 				      ){
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
-  editor->cursorpixmap_painter->fillRect(x1,0,x4,height,editor->colors[7]);
-  editor->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,editor->colors[1]);
+#ifdef USE_QT4
+#if 0
+  DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
+                        x1+1,1,
+                        editor->qpixmap,
+                        x1+1,y_pixmap+1,
+                        x2-x1-2,height-2);
+
+  DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
+                        x2+1,1,
+                        editor->qpixmap,
+                        x2+1,y_pixmap+1,
+                        x3-x2-2,height-2);
+
+  DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
+                        x3+1,1,
+                        editor->qpixmap,
+                        x3+1,y_pixmap+1,
+                        x4-x3-2,height-2);
+#endif
+
+  DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
+                        x1+1,1,
+                        editor->qpixmap,
+                        x1+1,y_pixmap+1,
+                        x4-x1-2,height-2);
+
+  editor->cursorpixmap_painter->setPen(editor->colors[1]);
+  editor->cursorpixmap_painter->drawRect(x1+1,0,
+                                         x4-x1-2,height-1);
+
+  editor->cursorpixmap_painter->setPen(editor->colors[1]);
+  editor->cursorpixmap_painter->drawRect(x2+3,1,
+                                         x3-x2-6,height-3);
+  editor->cursorpixmap_painter->drawLine(x2+2,1,
+                                         x2+2,height-1);
+  editor->cursorpixmap_painter->drawLine(x3-4,1,
+                                         x3-4,height-1);
+#endif
 
   //editor->cursorpixmap_painter->setCompositionMode(QPainter::CompositionMode_Xor);
 
   // TODO: fix Qt4
 #ifdef USE_QT3
+  editor->cursorpixmap_painter->fillRect(x1,0,x4,height,editor->colors[7]);
+  editor->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,editor->colors[1]);
+
   bitBlt(
          editor->cursorpixmap,
          0,0,
@@ -201,13 +241,34 @@ void OS_GFX_BitBlt(
 	int x2,int y2
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-
+  printf("pixmap on pixmap. dx: %d. dy: %d\n",dx,dy);
+#if USE_QT3
   DRAW_PIXMAP_ON_PIXMAP(
                         editor->qpixmap,
                         x+dx,y+dy,
                         editor->qpixmap,
                         x,y,x2-x+1,y2-y+1
                         );
+#endif
+
+#if USE_QT4
+#if 0
+     editor->qpixmap_painter->drawPixmap(x+dx,y+dy,
+                                         *editor->qpixmap,
+                                         x,y,
+                                         x2-x+1,y2-y+1);
+#else
+     if(dx<0){
+       editor->qpixmap->scroll(dx,dy,
+         x+dx,y+dy,
+         x2-x+1, y2-y+1);
+     }else{
+       editor->qpixmap->scroll(dx,dy,
+         x,y,
+         x2-x+1, y2-y+1);
+     }
+#endif
+#endif
 }
 
 
@@ -225,7 +286,12 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
   QPainter *painter=GET_QPAINTER(editor,where);
 
   painter->setPen(editor->colors[color]);
+#if USE_QT4
+  painter->drawRect(x,y,x2-x,y2-y);
+#endif
+#if USE_QT3
   painter->drawRect(x,y,x2-x+1,y2-y+1);
+#endif
 }
 
 

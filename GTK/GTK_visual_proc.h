@@ -41,10 +41,11 @@ extern LANGSPEC void GTK_SetPlugSize(int width, int height);
 extern LANGSPEC void GTK_SetSize(int width, int height);
 extern LANGSPEC void GTK_SetFocus(void);
 
-extern LANGSPEC void GTK_Init(int argc, char **argv);
-
 extern LANGSPEC bool GTK_HasPendingEvents(void);
 extern LANGSPEC void GTK_HandleEvents(void);
 
 extern LANGSPEC void GTK_MainLoop(void);
 #endif
+
+extern LANGSPEC void GTK_Init(int argc, char **argv);
+
