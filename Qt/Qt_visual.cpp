@@ -242,7 +242,7 @@ void OS_GFX_BitBlt(
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   printf("pixmap on pixmap. dx: %d. dy: %d\n",dx,dy);
-#if USE_QT3
+#ifdef USE_QT3
   DRAW_PIXMAP_ON_PIXMAP(
                         editor->qpixmap,
                         x+dx,y+dy,
@@ -251,13 +251,15 @@ void OS_GFX_BitBlt(
                         );
 #endif
 
-#if USE_QT4
-#if 0
+#ifdef USE_QT4
+#  ifdef FOR_MACOSX
+     // drawPixmap into itself works on mac since all graphic is buffered.
      editor->qpixmap_painter->drawPixmap(x+dx,y+dy,
                                          *editor->qpixmap,
                                          x,y,
                                          x2-x+1,y2-y+1);
-#else
+#  else
+     // scroll doesn't work on MACOSX. (that's weird)
      if(dx<0){
        editor->qpixmap->scroll(dx,dy,
          x+dx,y+dy,
@@ -267,7 +269,7 @@ void OS_GFX_BitBlt(
          x,y,
          x2-x+1, y2-y+1);
      }
-#endif
+#  endif
 #endif
 }
 
