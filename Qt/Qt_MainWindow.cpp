@@ -38,7 +38,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #      define QtXEmbedContainer QX11EmbedContainer
 #    endif
 #  else
-#    define QtXEmbedContainer QWidget
+#    if FOR_MACOSX
+//#      include  <QMacNativeWidget>
+//#      define QtXEmbedContainer QMacNativeWidget 
+#      define QtXEmbedContainer QWidget
+#    else
+#      define QtXEmbedContainer QWidget
+#    endif
 #  endif
    QtXEmbedContainer *g_embed_container;
 #  include "../GTK/GTK_visual_proc.h"
@@ -139,16 +145,16 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
 #if FOR_WINDOWS
-    //g_embed_container->show();
     gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->winId());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->nativeParentWidget());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->effectiveWinId());
+    g_embed_container->show();
 #endif
 
 #if FOR_MACOSX
-    g_embed_container->show();
     //g_embed_container->show();
-    GTK_CreateVisual(0);//g_embed_container->winId());
+    //g_embed_container->show();
+    GTK_CreateVisual((void*)g_embed_container->winId());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->nativeParentWidget());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->effectiveWinId());
 #endif

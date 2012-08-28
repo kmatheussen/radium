@@ -21,7 +21,7 @@ export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
 
 # MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
 export OS_OPTS="-DFOR_MACOSX -DMEMORY_DEBUG"
-export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread"
+export OS_LDFLAGS="cocoa_embed.o `pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread"
 
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__WINDOWS_KS__ -D__RTMIDI_DEBUG__"
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
@@ -40,6 +40,8 @@ fi
 # echo "void RADIUM_ensure_bin_packages_gc_is_used(void){}" >>malloc.c
 # mingw32-make
 # (that's it)
+
+$CC -c -Wall $GTK_CFLAGS macosx/cocoa_embed.m
 
 darwinx-make radium $@
 

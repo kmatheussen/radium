@@ -342,9 +342,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
   // TODO: Is this really necessary? (Yes, with MINGW it is, at least)
   g_embed_container->resize(this->get_editor_width(),this->get_editor_height());
 
-#if FOR_WINDOWS
   GTK_SetPlugSize(this->get_editor_width(),this->get_editor_height());
-#endif
 }
 #endif // USE_GTK_VISUAL
 

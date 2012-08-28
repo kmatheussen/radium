@@ -8,6 +8,7 @@
 
 #include "Qt_no_instrument_widget.h"
 
+extern "C" void set_font_thickness(int val);
 extern QString default_style_name;
 
 class No_instrument_widget : public QWidget, public Ui::No_instrument_widget{
@@ -97,4 +98,9 @@ public slots:
     GFX_SetStatusBar(window,temp);
   }
 
+  /*
+  void on_font_thickness_slider_valueChanged( int val){
+    set_font_thickness(val);
+  }
+  */
 };

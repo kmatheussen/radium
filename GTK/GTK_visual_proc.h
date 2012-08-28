@@ -19,9 +19,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __linux__
 # define socket_type_t int64_t
-#else
+#endif
+
+#ifdef FOR_WINDWOS
 # define socket_type_t void*
 #endif
+
+#ifdef FOR_MACOSX
+# define socket_type_t void*
+#endif
+
+
 
 extern LANGSPEC void setFontValues(struct Tracker_Windows *window);
 

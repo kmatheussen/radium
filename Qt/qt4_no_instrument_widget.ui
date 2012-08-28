@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>566</width>
-    <height>151</height>
+    <width>705</width>
+    <height>153</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -87,10 +87,10 @@
   <widget class="Q3GroupBox" name="guiGroupBox">
    <property name="geometry">
     <rect>
-     <x>210</x>
-     <y>20</y>
-     <width>162</width>
-     <height>71</height>
+     <x>220</x>
+     <y>30</y>
+     <width>171</width>
+     <height>61</height>
     </rect>
    </property>
    <property name="sizePolicy">

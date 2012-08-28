@@ -42,6 +42,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <gdk/gdkx.h>
 #endif
 
+#ifdef FOR_MACOSX
+#  include "../macosx/cocoa_embed_proc.h"
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/blts_proc.h"
@@ -143,12 +146,22 @@ void setFontValues(struct Tracker_Windows *window){
   window->org_fontheight = window->fontheight;
 }
 
+#define FONT_THICKNESS_CONFIG 0
+
+#if FONT_THICKNESS_CONFIG
+static int font_thickness = 200;
+#endif
+
 static void update_font(void){
   const char *new_font_name = gtk_font_selection_dialog_get_font_name((GtkFontSelectionDialog*)font_selector);
   struct Tracker_Windows *window=root->song->tracker_windows;
 
   pango_font_description_free(font_description);
   font_description = pango_font_description_from_string(new_font_name);
+#if FONT_THICKNESS_CONFIG
+  pango_font_description_set_weight(font_description, font_thickness);
+#endif
+
   pango_layout_set_font_description (pango_layout, font_description);
 
   setFontValues(window);
@@ -161,6 +174,14 @@ static void update_font(void){
     });
   GFX_play_op_queue(window);
 }
+
+#if FONT_THICKNESS_CONFIG
+void set_font_thickness(int val){
+  printf("Setting thickness to %d\n",val);
+  font_thickness = val;
+  update_font();
+}
+#endif
 
 static bool mouse_keyboard_disabled = false;
 
@@ -534,6 +555,8 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 #endif
 
 #ifdef FOR_MACOSX
+  cocoa_embed(socket_id, plug->window);
+  gtk_widget_hide(plug);
   return 0;
 #endif
 }
@@ -544,6 +567,10 @@ void GTK_SetPlugSize(int width, int height){
   gtk_window_resize((GtkWindow*)plug,width,height);
   MoveWindow(GDK_WINDOW_HWND(plug->window), 0, 0, width, height, true);
   SetFocus(GDK_WINDOW_HWND(plug->window));
+#endif
+#if FOR_MACOSX
+  gtk_window_resize((GtkWindow*)plug,width,height);
+  cocoa_set_nsview_size(plug->window,width,height);
 #endif
 }
 
