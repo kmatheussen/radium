@@ -221,19 +221,23 @@ void setEditorColors(EditorWidget *my_widget){
   my_widget->colors[14]=QColor(SETTINGS_read_string("color14","blue"));
   my_widget->colors[15]=QColor(SETTINGS_read_string("color15","red"));
 
+#if USE_GTK_VISUAL
   for(int i=0 ; i<16 ; i++)
     GTK_SetColor(i,
                  my_widget->colors[i].red(),
                  my_widget->colors[i].green(),
                  my_widget->colors[i].blue()
                  );
+#endif
 }
 
 static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
   if(num>=16)
     return;
 
+#if USE_GTK_VISUAL
   GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
+#endif
 
   my_widget->colors[num].setRgb(rgb);
 

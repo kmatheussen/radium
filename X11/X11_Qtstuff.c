@@ -18,14 +18,15 @@ int mkstemp(char *tmpl){
 
 
 void X11_StartQtStuff(void){
-#if !USE_GTK_VISUAL
+#if 0
+//#if !USE_GTK_VISUAL
   PyRun_SimpleString("import X11_Qtstuff");
   PyRun_SimpleString("X11_Qtstuff.GFX_StartQtstuff()");
 #endif
 }
 
-
-#if !USE_GTK_VISUAL
+#if 0
+//#if !USE_GTK_VISUAL
 
 char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
   FILE *file;
@@ -103,7 +104,8 @@ void GFX_HelpWindowToFront(void){}
 void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual){}
 void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual){}
 
-#if !USE_GTK_VISUAL
+#if 0
+//#if !USE_GTK_VISUAL
 
 int GFX_Menu(
 	struct Tracker_Windows *tvisual,

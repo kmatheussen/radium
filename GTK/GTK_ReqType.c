@@ -167,7 +167,9 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   Qt_EnableAllWidgets();
   GFX_enable_mouse_keyboard();
 
+#if USE_GTK_VISUAL
   GTK_SetFocus();
+#endif
 }
 
 

@@ -66,7 +66,8 @@ static HWND gtk_hwnd = NULL;
 #endif
 
 
-#if 1
+#if USE_GTK_VISUAL
+
 #if FOR_WINDOWS
 static bool sat=false;
 #endif
@@ -332,7 +333,7 @@ void SetupMainWindow(void){
   {
     QFont font = QFont("Monospace");
 
-    char *fontstring = SETTINGS_read_string((char*)"font",NULL);
+    const char *fontstring = SETTINGS_read_string("font",NULL);
     if(fontstring!=NULL)
       font.fromString(fontstring);
 

@@ -97,6 +97,8 @@ MyApplication::MyApplication(int argc,char **argv)
 {
 }
 
+int num_users_of_keyboard = 0;
+
 #ifdef __linux__
 
 #if 0
@@ -106,8 +108,6 @@ int MyApplication::x11ProcessEvent(XEvent *event){
   return QApplication::x11ProcessEvent(event);
 }
 #endif
-
-extern int num_users_of_keyboard;
 
 bool MyApplication::x11EventFilter(XEvent *event){
 

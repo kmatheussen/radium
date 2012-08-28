@@ -194,7 +194,7 @@ void GFX_enable_mouse_keyboard(void){
 }
 
 
-int num_users_of_keyboard = 0;
+extern int num_users_of_keyboard;
 
 
 GdkFilterReturn FilterFunc(GdkXEvent *xevent,GdkEvent *event,gpointer data)

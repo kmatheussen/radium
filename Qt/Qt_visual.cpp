@@ -307,7 +307,7 @@ void OS_GFX_Points(
   else
     painter->setPen(mix_colors(editor->colors[color], editor->colors[0], brightness/(float)MAX_BRIGHTNESS));
 
-  while(editor->qpa.size() <= (unsigned int)num_points)
+  while((int)editor->qpa.size() <= num_points)
     editor->qpa.resize(editor->qpa.size()*2);
   
   for(int i=0;i<num_points;i++)
@@ -372,6 +372,17 @@ void OS_GFX_Text(
     painter->setFont(editor->font);
   }
 }                      
+
+static bool mouse_keyboard_disabled = false;
+
+void GFX_disable_mouse_keyboard(void){
+  mouse_keyboard_disabled = true;
+}
+
+void GFX_enable_mouse_keyboard(void){
+  mouse_keyboard_disabled = false;
+}
+
 
 
 #endif // USE_QT_VISUAL

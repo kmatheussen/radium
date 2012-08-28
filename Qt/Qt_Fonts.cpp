@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qfontdialog.h>
 
 #include "../common/nsmtracker.h"
+#include "../common/settings_proc.h"
+
 #include "EditorWidget.h"
 
 #include "Qt_Fonts_proc.h"
@@ -39,7 +41,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
 }
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
-char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
+static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font = QFontDialog::getFont( 0, editor->font ) ;
   editor->setFont(editor->font);
@@ -48,6 +50,15 @@ char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
   return talloc_strdup((char*)editor->font.toString().ascii());
+}
+
+void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
+  char *font = GFX_SelectEditFont(tvisual);
+  SETTINGS_write_string("font",font);
+}
+
+void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
+  RWarning("GFX_ResetFontSize not implemented\n");
 }
 
 void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
