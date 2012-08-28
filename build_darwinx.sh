@@ -1,1 +1,1 @@
-build_darwinx_gtk_visual.sh
+build_darwinx_qt_visual.sh
