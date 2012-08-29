@@ -228,7 +228,6 @@ static bool widgets_are_disabled = false;
 
 void Qt_DisableAllWidgets(void){
   widgets_are_disabled = true;
-  //g_embed_container->grabKeyboard();
 #if USE_GTK_REQTYPE
   g_editor->main_window->setEnabled(false);
 #endif

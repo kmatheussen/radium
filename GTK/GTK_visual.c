@@ -198,10 +198,12 @@ extern int num_users_of_keyboard;
 
 GdkFilterReturn FilterFunc(GdkXEvent *xevent,GdkEvent *event,gpointer data)
 {
-  if(num_users_of_keyboard>0)
+  if(num_users_of_keyboard>0){
     return GDK_FILTER_CONTINUE;
-  if(mouse_keyboard_disabled==true)
+  }
+  if(mouse_keyboard_disabled==true){
     return GDK_FILTER_CONTINUE;
+  }
 
 #ifdef __linux__
   {
