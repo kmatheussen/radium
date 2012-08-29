@@ -78,6 +78,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   //int fontheight = (tvisual==NULL ? 16 : tvisual->fontwidth);
 
   MyReqType *reqtype = new MyReqType();
+
   reqtype->frame = new QFrame(ysplitter);
 
   ysplitter->insertWidget(0,reqtype->frame);
@@ -97,7 +98,9 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
 }
 
 void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
+  //EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
+
   delete reqtype->frame;
   delete reqtype;
 
