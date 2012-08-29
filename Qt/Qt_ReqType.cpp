@@ -167,7 +167,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   reqtype->frame->setMinimumHeight(reqtype->y+20);
 
   edit->setFocus();
-  edit->grabKeyboard();
+  //edit->grabKeyboard();
 
 #if USE_GTK_VISUAL
   GTK_MainLoop();

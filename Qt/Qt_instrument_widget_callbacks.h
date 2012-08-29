@@ -6,14 +6,17 @@ class Instrument_widget : public QWidget, public Ui::Instrument_widget{
 public:
   Instrument_widget(QWidget *parent=NULL)
     : QWidget(parent)
+    , name_has_focus(false)
   {
     setupUi(this);
+    name_widget->setCursorPosition(0);
   }
   
   Control_change_widget *cc_widgets[8];
   struct PatchData *patchdata;
   struct Patch *patch;
-                     
+
+  bool name_has_focus;
 
 public slots:
 
@@ -170,36 +173,42 @@ public slots:
     set_editor_focus();
   }
 
-
-
-  // The returnPressed signal might do exactly what we need. This one is called during instrument widget init as well.
-  void on_name_widget_textChanged( const QString &string )
-  {
-    //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
-    //tab_bar->tab(tab_bar->currentTab())->setText(string);
+  void on_name_widget_cursorPositionChanged ( int old, int newpos ){
+    //printf("cursor pos changed: %s / %d\n",name_has_focus?"true":"false",num_users_of_keyboard);
+    if(name_has_focus==true)
+      return;
+    name_has_focus=true;
+    num_users_of_keyboard++;                                            
   }
 
-
-
-  void on_name_widget_returnPressed()
+  void on_name_widget_editingFinished()
   {
-    printf("return pressed\n");
+    //printf("return pressed: %s / %d\n",name_has_focus?"true":"false",num_users_of_keyboard);
+    name_widget->setCursorPosition(0);
 
-    if(name_widget->text()=="")
+    if(name_has_focus==false)
       return;
 
-    //focus = false;
-    
+    num_users_of_keyboard--;                                            
+    name_has_focus=false;
+
+    QString new_name = name_widget->text();
+
+    if(new_name==""){
+      name_widget->setText("pip");
+      new_name = "pip";
+    }
+
     //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
     //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
-    instruments_widget->tabs->setTabLabel(this, name_widget->text());
+    instruments_widget->tabs->setTabLabel(this, new_name);
 
     {
       struct Tracker_Windows *window = root->song->tracker_windows;
       struct WBlocks *wblock = window->wblock;
       struct WTracks *wtrack = wblock->wtrack;
       DO_GFX(
-             patch->name = talloc_strdup((char*)name_widget->text().ascii());
+             patch->name = talloc_strdup((char*)new_name.ascii());
              DrawWTrackHeader(window,wblock,wtrack);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);

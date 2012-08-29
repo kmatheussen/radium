@@ -56,8 +56,9 @@ void set_editor_focus(void);
   class My##Class : public Class {                                \
   public:                                                         \
   My##Class(QWidget *parent, const char *name = "gakk")           \
-  : Class(parent, name)                                           \
+  : Class(parent)                                           \
     {                                                             \
+      installEventFilter(this);                                   \
     }                                                             \
                                                                   \
   void focusInEvent ( QFocusEvent *e ){                                 \
@@ -73,19 +74,63 @@ void set_editor_focus(void);
     Class::focusOutEvent(e);                                            \
   }                                                                     \
   bool eventFilter ( QObject * o, QEvent * ev ) {                       \
-    if(ev->type()==QEvent::FocusIn)                                     \
-      num_users_of_keyboard++;                                          \
-    if(ev->type()==QEvent::FocusOut)                                    \
+    if(ev->type()==QEvent::FocusIn){                                    \
+      printf("got fo\n");num_users_of_keyboard++;                       \
+    } else if(ev->type()==QEvent::FocusOut) {                           \
       num_users_of_keyboard--;                                          \
-    if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) \
+    } else if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) { \
       set_editor_focus();                                               \
+    }                                                                   \
     return Class::eventFilter(o,ev);                                    \
   }                                                                     \
 }                                                    
 
 MakeFocusOverrideClass(QSpinBox);
-MakeFocusOverrideClass(QLineEdit);
+//MakeFocusOverrideClass(QLineEdit);
 
+class MyQLineEdit : public QLineEdit {                                
+  Q_OBJECT;                                                       
+  public:                                                         
+    MyQLineEdit(QWidget *parent, const char *name = "gakk")           
+      : QLineEdit(parent)                                           
+    {                                                             
+      installEventFilter(this);                                   
+      setCursorPosition(0);
+    }                                                             
+protected:
+#if 0    
+  void focusInEvent ( QFocusEvent *e ){                                 
+    num_users_of_keyboard++;                                            
+    fprintf(stderr,"QLineEdit: oh yeah, i got fokus. Now: %d\n",num_users_of_keyboard); 
+    QLineEdit::focusInEvent(e);                                             
+  }                                                                     
+  void focusOutEvent ( QFocusEvent *e ){                                
+    num_users_of_keyboard--;                                            
+    if(num_users_of_keyboard<0)                                         
+      num_users_of_keyboard = 0;                                        
+    fprintf(stderr,"QLineEdit: lsot focus. Now: %d\n",num_users_of_keyboard);     
+    QLineEdit::focusOutEvent(e);                                            
+  }  
+#endif
+  bool event ( QEvent * e )                                                            {
+    printf("QlineEdit: Got event\n");
+    return true;
+  }
+
+  bool eventFilter ( QObject * o, QEvent * ev ) {                       
+    printf("QLineEdit:Got event: %d\n",(int)ev->type());                          
+    if(ev->type()==QEvent::FocusIn){                                    
+      printf("QLineEdit: got fo\n");num_users_of_keyboard++;                       
+    } else if(ev->type()==QEvent::FocusOut) {                           
+      num_users_of_keyboard--;                                          
+    } else if(ev->type()==QEvent::KeyPress && (static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Return  || static_cast<QKeyEvent*>(ev)->key()==Qt::Key_Enter)) { 
+      set_editor_focus();                                               
+    }                                                                   
+    return QLineEdit::eventFilter(o,ev);                                    
+  }                                                                     
+  };                                                    
+
+#include "mQt_instruments.cpp"
 
 #include "EditorWidget.h"
 #include "../GTK/GTK_visual_proc.h"
