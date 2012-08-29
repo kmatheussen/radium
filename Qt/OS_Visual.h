@@ -20,11 +20,11 @@ struct OS_visual{
   void *main_window;
 };
 
-#ifdef USE_GTK_REQTYPE
+#if USE_GTK_REQTYPE
 #  include "../GTK/GTK_ReqType.h"
 #endif
 
-#ifdef USE_QT_REQTYPE
+#if USE_QT_REQTYPE
 #  include "Qt_ReqType.h"
 #endif
 

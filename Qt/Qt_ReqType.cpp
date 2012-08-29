@@ -78,13 +78,13 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   //int fontheight = (tvisual==NULL ? 16 : tvisual->fontwidth);
 
   MyReqType *reqtype = new MyReqType();
-  reqtype->frame = new QFrame(0);
+  reqtype->frame = new QFrame(ysplitter);
 
   ysplitter->insertWidget(0,reqtype->frame);
   //reqtype->frame->reparent(ysplitter, QPoint(0,0), true);
 
   //reqtype->frame->resize(pixel_width + x_margin*4,pixel_height+y_margin*4);
-  //reqtype->frame->resize(50,100);
+  reqtype->frame->resize(5,10);
   reqtype->frame->show();
   reqtype->y = y_margin;
 
