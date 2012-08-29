@@ -284,31 +284,6 @@ void Qt_EventHandler(void){
 }
 
 int radium_main(char *arg){
-  int argc=1;
-  char *argv[2];
-
-  argv[0] = strdup("radium");
-  argv[1] = NULL;
-
-  //#if USE_GTK_VISUAL
-  GTK_Init(argc,argv);
-  //#endif
-
-  //GC_set_all_interior_pointers(0); // crash... (???)
-  //GC_enable_incremental(); // crash.
-  //GC_dont_gc = 1; // testing
-
-  {
-    int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
-    if(system_font_size>=0){
-      QFont font=QFont(QApplication::font().family(),system_font_size);
-      QApplication::setFont(font);
-    }
-  }
-
-  // Create application here in order to get default style. (not recommended, but can't find another way)
-  qapplication=new MyApplication(argc,argv);
-
   default_style_name = QApplication::style()->objectName();
 
 
@@ -443,6 +418,19 @@ int radium_main(char *arg){
 extern "C" void initradium(void);
 int main(int argc, char **argv){
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
+
+  {
+    int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
+    if(system_font_size>=0){
+      QFont font=QFont(QApplication::font().family(),system_font_size);
+      QApplication::setFont(font);
+    }
+  }
+
+  // Create application here in order to get default style. (not recommended, but can't find another way)
+  qapplication=new MyApplication(argc,argv);
+
+  GTK_Init(argc,argv);
 
   Py_Initialize();
 
