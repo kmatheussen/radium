@@ -126,6 +126,9 @@ bool MyApplication::x11EventFilter(XEvent *event){
     if(ret==true)
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
 
+    if(doquit==true)
+      QApplication::quit();
+
     return ret;
   }
 }

@@ -299,8 +299,10 @@ static gboolean expose_event( GtkWidget *widget,
                           GdkEvent  *event,
                           gpointer   callback_data )
 {
+#if 0
   if(mouse_keyboard_disabled==true)
     return TRUE;
+#endif
 
   struct Tracker_Windows *window=root->song->tracker_windows;
 
@@ -1210,22 +1212,34 @@ static gboolean called_periodically(gpointer user_data){
   return TRUE;
 }
 
+void GTK_MainQuit(void){
+  gtk_main_quit();
+}
+
 void GTK_MainLoop(void){
-#if FOR_WINDOWS
-  const int timeout = 20;
-#endif
-#ifdef __linux__
-  const int timeout = 20;
-#endif
-#ifdef FOR_MACOSX
-  const int timeout = 20;
-#endif
-  g_timeout_add(timeout,called_periodically,NULL); // Something's wrong with (at least my) glib here. //Using an interval value of 1 causes 100% CPU.
   gtk_main();
 }
 
 #endif // USE_GTK_VISUAL
 
 void GTK_Init(int argc, char **argv){
+
+#if USE_GTK_VISUAL
+
+#  if FOR_WINDOWS
+  const int timeout = 20;
+#  endif
+
+#  ifdef __linux__
+  const int timeout = 20;
+#  endif
+
+#  ifdef FOR_MACOSX
+  const int timeout = 20;
+#  endif
+
+  g_timeout_add(timeout,called_periodically,NULL); // Something's wrong with (at least my) glib here. //Using an interval value of 1 causes 100% CPU.
+#endif // USE_GTK_VISUAL
+
   gtk_init(&argc, &argv);
 }

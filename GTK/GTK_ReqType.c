@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#if USE_GTK_REQTYPE
+
 #include <string.h>
 
 #include <gtk/gtk.h>
@@ -131,7 +133,7 @@ static void open_dialog(reqtype_t *reqtype){
   gtk_widget_show(reqtype->text_view);
 }
 
-ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,char *title){
+ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
   num_users_of_keyboard++; // disable X11 keyboard sniffer
 
   reqtype_t *reqtype = talloc_atomic(sizeof(reqtype_t));
@@ -173,7 +175,7 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
 }
 
 
-void GFX_WriteString(ReqType das_reqtype,char *text){
+void GFX_WriteString(ReqType das_reqtype,const char *text){
   reqtype_t *reqtype = das_reqtype;
   GtkTextIter iter;
 
@@ -270,3 +272,5 @@ int main(int argc, char **argv){
   return 0;
 }
 #endif
+
+#endif // USE_GTK_REQTYPE

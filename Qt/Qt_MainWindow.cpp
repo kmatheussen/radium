@@ -224,22 +224,48 @@ void grabKeyboard(void){
   g_editor->setFocus();
 }
 
+static bool widgets_are_disabled = false;
+
 void Qt_DisableAllWidgets(void){
+  widgets_are_disabled = true;
   //g_embed_container->grabKeyboard();
+#if USE_GTK_REQTYPE
   g_editor->main_window->setEnabled(false);
+#endif
+#if USE_QT_REQTYPE
+  g_editor->main_window->menuWidget()->setEnabled(false);
+  for(int i=0;i<g_editor->ysplitter->count();i++)
+    if(g_editor->ysplitter->widget(i) != g_editor)
+      g_editor->ysplitter->widget(i)->setEnabled(false);
+#endif
 }
 void Qt_EnableAllWidgets(void){
   //g_embed_container->grabKeyboard();
   g_editor->main_window->setEnabled(true);
+#if USE_QT_REQTYPE
+  g_editor->main_window->menuWidget()->setEnabled(true);
+  for(int i=0;i<g_editor->ysplitter->count();i++)
+    g_editor->ysplitter->widget(i)->setEnabled(true);
+#endif
+
+  widgets_are_disabled = false;
 }
 #endif
 
 class MyQMainWindow : public QMainWindow{
 public:
   MyQMainWindow() : QMainWindow(NULL,"Radium") {}
+
   void closeEvent(QCloseEvent *ce){
-    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-    doquit = Quit(window);
+    ce->ignore();
+    if(widgets_are_disabled==false){
+      struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+      doquit = Quit(window);
+#if USE_QT_VISUAL
+      if(doquit==true)
+        QApplication::quit();
+#endif
+    }
   }
 
   // Want the wheel to work from everywhere.

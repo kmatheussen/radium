@@ -44,6 +44,7 @@ extern LANGSPEC void GTK_SetFocus(void);
 extern LANGSPEC bool GTK_HasPendingEvents(void);
 extern LANGSPEC void GTK_HandleEvents(void);
 
+extern LANGSPEC void GTK_MainQuit(void);
 extern LANGSPEC void GTK_MainLoop(void);
 #endif
 
