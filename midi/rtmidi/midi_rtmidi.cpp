@@ -76,6 +76,10 @@ static RtMidiIn *inport_winmm;
 static RtMidiIn *inport_winks;
 #endif
 
+#ifdef FOR_MACOSX
+static RtMidiIn *inport_coremidi;
+#endif
+
 static std::vector<unsigned char> message1;
 static std::vector<unsigned char> message2;
 static std::vector<unsigned char> message3;
@@ -338,6 +342,9 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
         return NULL;
       }
 #endif
+#ifdef FOR_MACOSX
+      ret->midiout->openVirtualPort(name);
+#endif
     }catch ( RtError &error ) {
       RError(error.what());
       return NULL;
@@ -443,6 +450,19 @@ bool MIDI_New(struct Instruments *instrument){
       inport_winks->setCallback(mycallback,NULL);
     }
 #endif
+
+#ifdef FOR_MACOSX
+    {
+      inport_coremidi = new RtMidiIn(RtMidi::MACOSX_CORE,std::string("Radium"));
+      if(inport_coremidi!=NULL){
+        if(inport_coremidi->getPortCount()>0)
+          inport_coremidi->openPort(0);
+        else
+          inport_coremidi->openVirtualPort("in");
+      }
+    }
+#endif
+
 
     globals_are_initialized = true;
   }

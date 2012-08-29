@@ -28,8 +28,8 @@ export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__WINDOWS_KS__ -D__RTMIDI_DEBUG__"
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
 #export RTMIDI_LDFLAGS="-lwinmm /usr/i686-w64-mingw32/sys-root/mingw/lib/libksuser.a -lsetupapi"
-export RTMIDI_CFLAGS="-D__DUMMY__ -D__RTMIDI_DEBUG__"
-export RTMIDI_LDFLAGS=""
+export RTMIDI_CFLAGS=" -D__MACOSX_CORE__ -D__RTMIDI_DEBUG__"
+export RTMIDI_LDFLAGS="-framework CoreMIDI -framework CoreFoundation -framework CoreAudio"
 
 if [ $BUILDTYPE = "RELEASE" ] ; then
     export OS_LDFLAGS="$OS_LDFLAGS -mwindows"
