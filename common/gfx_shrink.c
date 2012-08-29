@@ -152,6 +152,10 @@ void GFXS_TextType(
              int where
 	     )
 {
+  if(text==NULL){
+    RWarning("text==NULL\n");
+    return;
+  }
   if(flags & TEXT_NOTEXT){
     int len=strlen(text);
     int maxx=window->wblock->t.x2;

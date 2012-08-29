@@ -94,8 +94,8 @@ void SelectPatch(struct Tracker_Windows *window,struct Tracks *track){
 		}
 		Undo_Track_CurrPos(window);
 		ListAddElement1(&instrument->patches,&patch->l);
-		track->patch=patch;
 		while(patch->name==NULL) patch->name=GFX_GetString(window,reqtype,"Name: ");
+		track->patch=patch;
 		DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
 		GFX_CloseReq(window,reqtype);
 		(*instrument->PP_Update)(instrument,patch);
@@ -130,8 +130,8 @@ void SelectPatch(struct Tracker_Windows *window,struct Tracks *track){
 		}
 		Undo_Track_CurrPos(window);
 		ListAddElement1_ff(&instrument->patches,&patch->l);
-		track->patch=patch;
 		while(patch->name==NULL) patch->name=GFX_GetString(window,reqtype,"Name: ");
+		track->patch=patch;
 	}else{
 		Undo_Track_CurrPos(window);
 		lokke=0;
