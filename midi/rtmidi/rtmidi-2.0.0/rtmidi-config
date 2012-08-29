@@ -1,0 +1,19 @@
+#! /bin/sh
+if (test "x$#" != "x1") ; then
+  echo "Usage: $0 [--libs | --cxxflags | --cppflags]"
+  exit;
+fi
+
+LIBRARY="-framework CoreMIDI -framework CoreFoundation -framework CoreAudio"
+CXXFLAGS="-O3 -Wall"
+CPPFLAGS="-gstabs -Wall -isysroot /usr/darwinx/SDKs/MacOSX10.5.sdk -I/usr/darwinx/usr/include  -D__MACOSX_CORE__"
+
+if (test "x$1" == "x--libs") ; then
+  echo "$LIBRARY"
+elif (test "x$1" == "x--cxxflags") ; then
+  echo "$CXXFLAGS"
+elif (test "x$1" == "x--cppflags") ; then
+  echo "$CPPFLAGS"
+else
+  echo "Unknown option: $1"
+fi

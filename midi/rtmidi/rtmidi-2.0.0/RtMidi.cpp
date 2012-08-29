@@ -449,7 +449,7 @@ void midiInputCallback( const MIDIPacketList *list, void *procRef, void *srcRef 
         // If not a continuing sysex message, invoke the user callback function or queue the message.
         if ( data->usingCallback ) {
           RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) data->userCallback;
-          callback( message.timeStamp, &message.bytes, data->userData );
+          callback( message.timeStamp, message.bytes.size(), &message.bytes[0], data->userData );
         }
         else {
           data->queue.push( message );
@@ -505,7 +505,7 @@ void midiInputCallback( const MIDIPacketList *list, void *procRef, void *srcRef 
             // If not a continuing sysex message, invoke the user callback function or queue the message.
             if ( data->usingCallback ) {
               RtMidiIn::RtMidiCallback callback = (RtMidiIn::RtMidiCallback) data->userCallback;
-              callback( message.timeStamp, &message.bytes, data->userData );
+              callback( message.timeStamp, message.bytes.size(), &message.bytes[0], data->userData );
             }
             else
               data->queue.push(message);
