@@ -72,7 +72,7 @@ extern struct Root *root;
 
 class MyApplication : public QApplication{
 public:
-  MyApplication(int argc,char **argv);
+  MyApplication(int &argc,char **argv);
 protected:
 #ifdef __linux__
   bool x11EventFilter(XEvent*);
@@ -90,7 +90,7 @@ protected:
 #endif
 };
 
-MyApplication::MyApplication(int argc,char **argv)
+MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
 {
 }
