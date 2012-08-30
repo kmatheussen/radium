@@ -70,7 +70,7 @@ void NewTrackRealLines(
 }
 
 
-__inline void AddTrackReallineElement(
+static void AddTrackReallineElement(
 	struct WTracks *wtrack,
 	struct TrackReallineElements *element,
 	int realline
@@ -84,7 +84,7 @@ __inline void AddTrackReallineElement(
   FUNCTION
     Adds a trackreallineelement to the trackline.
 **************************************************************************/
-__inline void InsertTRLElementS(
+static void InsertTRLElementS(
 	struct WTracks *wtrack,
 	int realline,
 	int type,int subtype,float y1,float y2,
@@ -107,7 +107,7 @@ __inline void InsertTRLElementS(
 
 struct TrackReallineElements *TRE_startroot=NULL;
 
-__inline void InsertTRLElement_start(
+static void InsertTRLElement_start(
 	struct TrackReallineElements *element,
 	int realline
 ){
@@ -138,7 +138,7 @@ void InsertStartTREElements(
     Adds a trackreallineelement to the trackline. Does allso ensure that
     all datas are within the trackline area.
 **************************************************************************/
-__inline void InsertTRLElement(
+static void InsertTRLElement(
 	struct Tracker_Windows *window,
 	struct WTracks *wtrack,
 	int subtrack,
