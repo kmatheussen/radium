@@ -232,6 +232,8 @@ Urgent
 
 * Too verbose console when pressing keys.
 
+* Switch all use of left Meta and Left Ctrl, except on Mac.
+
 
 
 Can not reproduce

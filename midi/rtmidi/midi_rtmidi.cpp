@@ -458,7 +458,7 @@ bool MIDI_New(struct Instruments *instrument){
         if(inport_coremidi->getPortCount()>0)
           inport_coremidi->openPort(0);
         else
-          inport_coremidi->openVirtualPort("in");
+          inport_coremidi->openVirtualPort("radium:in");
       }
     }
 #endif

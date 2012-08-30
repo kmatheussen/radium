@@ -15,8 +15,6 @@ export BUILDTYPE=DEBUG
 
 export PYPATH=/home/kjetil/radium-qt4/darwinx/Versions/Current/include/python2.7
 
-export VISUAL="-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0"
-
 export GTK_CFLAGS="`darwinx-pkg-config --cflags gtk+-2.0`"
 export GTK_LDFLAGS="`darwinx-pkg-config --static --libs gtk+-2.0`"
 
@@ -25,13 +23,13 @@ export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
 
 # MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
 export OS_OPTS="-DFOR_MACOSX -DMEMORY_DEBUG"
-export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread"
+export OS_LDFLAGS="cocoa_embed.o `pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread"
 
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__WINDOWS_KS__ -D__RTMIDI_DEBUG__"
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
 #export RTMIDI_LDFLAGS="-lwinmm /usr/i686-w64-mingw32/sys-root/mingw/lib/libksuser.a -lsetupapi"
-export RTMIDI_CFLAGS=" -D__MACOSX_CORE__ -D__RTMIDI_DEBUG__"
-export RTMIDI_LDFLAGS="-framework CoreMIDI -framework CoreAudio"
+export RTMIDI_CFLAGS="-D__DUMMY__ -D__RTMIDI_DEBUG__"
+export RTMIDI_LDFLAGS=""
 
 if [ $BUILDTYPE = "RELEASE" ] ; then
     export OS_LDFLAGS="$OS_LDFLAGS -mwindows"

@@ -4,6 +4,8 @@ export PYTHONEXE=python #In Mingw, this is just the python we use to autogenerat
 export MOC=moc-qt4
 export UIC=uic-qt4
 
+export OPTIMIZE="-mtune=generic -O3"
+
 #export CCC=i686-pc-mingw32-g++
 export CCC=i686-w64-mingw32-g++
 export CC=i686-w64-mingw32-gcc
