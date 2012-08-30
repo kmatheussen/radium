@@ -124,27 +124,29 @@ void GFX_WriteString(ReqType das_reqtype,const char *text){
   reqtype->label_text += text;
 }
 
-class MyQLineEdit : public QLineEdit {
-public:
-  MyQLineEdit(QFrame *parent)
-    : QLineEdit(parent)
-    , gotit(false)
-  {}
-  void keyPressEvent ( QKeyEvent * event ){
-    printf("oh yeah baby %d\n",event->key());
-    //event->ignore();
-    QLineEdit::keyPressEvent(event);
-
-    if(event->key()==Qt::Key_Return)
-      gotit = true;
-
+namespace{
+  class MyQLineEdit : public QLineEdit {
+  public:
+    MyQLineEdit(QFrame *parent)
+      : QLineEdit(parent)
+      , gotit(false)
+    {}
+    void keyPressEvent ( QKeyEvent * event ){
+      printf("oh yeah baby %d\n",event->key());
+      //event->ignore();
+      QLineEdit::keyPressEvent(event);
+      
+      if(event->key()==Qt::Key_Return)
+        gotit = true;
+      
 #if USE_GTK_VISUAL
-    if(event->key()==Qt::Key_Return)
-      GTK_MainQuit();
+      if(event->key()==Qt::Key_Return)
+        GTK_MainQuit();
 #endif
-  }
-  bool gotit;
-};
+    }
+    bool gotit;
+  };
+}
 
 MyQLineEdit *g_edit;
 void gotchar(char c){
