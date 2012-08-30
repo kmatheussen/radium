@@ -232,7 +232,9 @@ Urgent
 
 * Too verbose console when pressing keys.
 
-* Switch all use of left Meta and Left Ctrl, except on Mac.
+* Switch all use of right Meta and right Ctrl, except on Mac.
+
+* Must be possible to chose input midi port, at least on on win and mac.
 
 
 

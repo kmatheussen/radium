@@ -241,7 +241,7 @@ void OS_GFX_BitBlt(
 	int x2,int y2
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  printf("pixmap on pixmap. dx: %d. dy: %d\n",dx,dy);
+  //printf("pixmap on pixmap. dx: %d. dy: %d\n",dx,dy);
 #ifdef USE_QT3
   DRAW_PIXMAP_ON_PIXMAP(
                         editor->qpixmap,
@@ -253,7 +253,7 @@ void OS_GFX_BitBlt(
 
 #ifdef USE_QT4
 #  ifdef FOR_MACOSX
-     // drawPixmap into itself works on mac since all graphic is buffered.
+     // drawPixmap into itself works on mac, probably since all graphic is buffered.
      editor->qpixmap_painter->drawPixmap(x+dx,y+dy,
                                          *editor->qpixmap,
                                          x,y,

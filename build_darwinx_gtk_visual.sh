@@ -32,8 +32,12 @@ export RTMIDI_CFLAGS="-D__DUMMY__ -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS=""
 
 if [ $BUILDTYPE = "RELEASE" ] ; then
-    export OS_LDFLAGS="$OS_LDFLAGS -mwindows"
+    export OS_LDFLAGS="$OS_LDFLAGS"
 fi
+
+export OBJ_X11=
+export OBJ_WIN=
+
 
 # To build gc for mingw32:
 #

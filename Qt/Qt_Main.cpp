@@ -63,6 +63,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include "../windows/W_Keyboard_proc.h"
 #endif
 
+#ifdef FOR_MACOSX
+#  include "../macosx/cocoa_Keyboard_proc.h"
+#endif
+
 #include "Qt_Main_proc.h"
 
 
@@ -70,17 +74,40 @@ extern bool doquit;
 extern struct Root *root;
 
 
+int num_users_of_keyboard = 0;
+
+
 class MyApplication : public QApplication{
 public:
   MyApplication(int &argc,char **argv);
+
 protected:
+
 #ifdef __linux__
   bool x11EventFilter(XEvent*);
   //int x11ProcessEvent(XEvent*);
 #endif
+
 #ifdef FOR_WINDOWS
   bool 	winEventFilter ( MSG * msg, long * result ){
+    if(num_users_of_keyboard>0)
+      return false;
+
     bool ret = W_KeyboardFilter(msg);
+
+    if(ret==true)
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+
+    return ret;
+  }
+#endif
+
+#ifdef FOR_MACOSX
+  bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
+    if(num_users_of_keyboard>0)
+      return false;
+
+    bool ret = cocoa_KeyboardFilter(event);
 
     if(ret==true)
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
@@ -94,8 +121,6 @@ MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
 {
 }
-
-int num_users_of_keyboard = 0;
 
 #ifdef __linux__
 

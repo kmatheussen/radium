@@ -176,16 +176,18 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o X11_disk.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o GTK_ReqType.o GTK_PopupMenu.o X11_Qtstuff.o X11_keyboard.o X11_error.o 
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_MainWindow.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o GTK_ReqType.o GTK_PopupMenu.o  
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
 
-#Posix
+#Posix (used by linux/win/mac)
 OBJ_POSIX=posix_settings.o posix_Player.o 
 
-#Windows
-OBJ_WIN=W_Error.o W_Keyboard.o
+# Two of the following three must be set empty by the build script.
+OBJ_X11 ?= X11_keyboard.o X11_error.o X11_disk.o X11_Qtstuff.o
+OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Error.o W_Keyboard.o
+OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o W_Error.o cocoa_Keyboard.o
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
@@ -194,7 +196,7 @@ OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o 
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_i_input.o midi_menues.o
 # alsaseq_midi.o
 
-OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_WIN) $(OBJ14)
+OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14)
 
 
 
@@ -822,6 +824,9 @@ W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c
 
 W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c 
 	$(CC) windows/W_Keyboard.c $(OPT)
+
+cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.m
+	$(CC) macosx/cocoa_Keyboard.m $(OPT)
 
 X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC) X11/X11_Ptask2Mtask.c $(OPT)

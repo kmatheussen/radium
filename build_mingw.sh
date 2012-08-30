@@ -36,6 +36,9 @@ if [ $BUILDTYPE = "RELEASE" ] ; then
     export OS_LDFLAGS="$OS_LDFLAGS -mwindows"
 fi
 
+export OBJ_X11=
+export OBJ_MACOSX=
+
 # To build gc for mingw32:
 #
 # cd bin/packages/gc-7.2

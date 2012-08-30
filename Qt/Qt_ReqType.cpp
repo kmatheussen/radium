@@ -146,6 +146,14 @@ public:
   bool gotit;
 };
 
+MyQLineEdit *g_edit;
+void gotchar(char c){
+  if(c=='\n')
+    g_edit->gotit=true;
+  else
+    g_edit->insert(QString(c));
+}
+
 void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
@@ -178,6 +186,10 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
 
 #if USE_QT_VISUAL
   QString text = edit->text();
+
+  g_edit = edit;
+  //gotchar('a');
+  //gotchar('b');
 
   while(edit->gotit==false){
     QCoreApplication::processEvents();
