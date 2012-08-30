@@ -18,11 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef FOR_MACOSX
 
 #import <Cocoa/Cocoa.h>
-//#import <Events.h>
-//#import <HIToolbox/Events.h>
-//#import <Carbon/Events.h>
-//#import <Carbon/HIToolbox/Events.h>
-#import "/usr/darwinx/SDKs/MacOSX10.5.sdk/System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h"
+#import <Carbon/Carbon.h>
 
 
 #undef EVENT_H
@@ -282,10 +278,21 @@ bool cocoa_KeyboardFilter(void *void_event){
     }
   }
 
+
+  static void *oldHotKeyMode = NULL;
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     clear_modifiers();
+    if(oldHotKeyMode!=NULL){
+      PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);
+      oldHotKeyMode = NULL;
+    }
     return false;
+  }else{
+    if(oldHotKeyMode==NULL)
+      oldHotKeyMode = PushSymbolicHotKeyMode(kHIHotKeyModeAllDisabled); 
   }
+
+
 
   if(set_modifier(event)) // returns true if it handled a modifier
     return false;

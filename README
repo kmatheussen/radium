@@ -41,6 +41,27 @@ BUILD DEPENDENCIES UBUNTU:
       (On Ubuntu 11, python2-dev is called python-dev)
 
 
+
+
+TO ENABLE ALL KEYBOARD SHORTCUTS ON MAC OS X
+
+      Then go to
+
+          System Preferences -> Accessibility
+
+     or
+
+          System Preferences -> Universal Access
+
+      ... and make sure the button "Enable access for assistive devices" is ON.    
+      This button is placed at the bottom of the Accessibility page.
+      (I Don't know where the button is placed in the "Universal Access" page)
+
+      This is necessary for Radium to be allowed to (temporarily) turn off OSX system shortcuts.
+
+
+
+
 CONTACT
 	k.s.matheussen@notam02.no
 	http://www.notam02.no/radium/
