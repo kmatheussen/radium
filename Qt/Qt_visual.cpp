@@ -422,11 +422,14 @@ void OS_GFX_Text(
   QPainter *painter=GET_QPAINTER(editor,where);
 
   painter->setPen(editor->colors[color]);
-    
+
+#if 0    
   if(flags & TEXT_BOLD){
     editor->font.setBold(true);
     painter->setFont(editor->font);
   }
+#endif
+
   {  
     if(flags & TEXT_CENTER){
       QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
@@ -435,10 +438,13 @@ void OS_GFX_Text(
       painter->drawText(x,y+tvisual->org_fontheight-1,text);
     }
   }
+
+#if 0
   if(flags & TEXT_BOLD){
     editor->font.setBold(false);
     painter->setFont(editor->font);
   }
+#endif
 }                      
 
 static bool mouse_keyboard_disabled = false;
