@@ -13,7 +13,6 @@ libdir = $(PREFIX)/lib
 
 
 # 2. Where moc and uic for QT4 is installed.
-# If you use Fedora, debian, ubuntu or arch Linux, the default values should work.
 #
 MOC ?= moc
 UIC ?= uic
@@ -68,6 +67,7 @@ CD=common/
 CCC ?= g++
 CC ?= gcc
 LINKER ?= g++
+
 PKG ?= pkg-config
 PYPATH ?= 
 QT_CFLAGS ?= `$(PKG) --cflags Qt3Support`

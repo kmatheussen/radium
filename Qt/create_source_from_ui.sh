@@ -12,9 +12,10 @@ UIFILE=qt4_$3.ui
 #UIFILE=$3.ui
 
 
-#$UIC $UIFILE | sed s/protected/public/ | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ | sed s:\#include\ \<QtGui/MyQLineEdit\>://\ \ qlineedit.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: >Qt_$3.h
+$UIC $UIFILE | sed s/protected/public/ | sed s/QLineEdit/MyQLineEdit/ | sed s/QSpinBox/MyQSpinBox/ | sed s:\#include\ \<QtGui/MyQLineEdit\>://\ \ qlineedit.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: >Qt_$3.h
 
-$UIC $UIFILE | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s:\#include\ \<QtGui/MyQLineEdit\>://\ \ qlineedit.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: >Qt_$3.h
+#$UIC $UIFILE | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s:\#include\ \<QtGui/MyQLineEdit\>://\ \ qlineedit.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: >Qt_$3.h
+
 $MOC Qt_$3_callbacks.h >mQt_$3_callbacks.h
 
 #echo "class 

@@ -6,17 +6,13 @@ class Instrument_widget : public QWidget, public Ui::Instrument_widget{
 public:
   Instrument_widget(QWidget *parent=NULL)
     : QWidget(parent)
-    , name_has_focus(false)
   {
     setupUi(this);
-    name_widget->setCursorPosition(0);
   }
   
   Control_change_widget *cc_widgets[8];
   struct PatchData *patchdata;
   struct Patch *patch;
-
-  bool name_has_focus;
 
 public slots:
 
@@ -173,25 +169,8 @@ public slots:
     set_editor_focus();
   }
 
-  void on_name_widget_cursorPositionChanged ( int old, int newpos ){
-    //printf("cursor pos changed: %s / %d\n",name_has_focus?"true":"false",num_users_of_keyboard);
-    if(name_has_focus==true)
-      return;
-    name_has_focus=true;
-    num_users_of_keyboard++;                                            
-  }
-
   void on_name_widget_editingFinished()
   {
-    //printf("return pressed: %s / %d\n",name_has_focus?"true":"false",num_users_of_keyboard);
-    name_widget->setCursorPosition(0);
-
-    if(name_has_focus==false)
-      return;
-
-    num_users_of_keyboard--;                                            
-    name_has_focus=false;
-
     QString new_name = name_widget->text();
 
     if(new_name==""){
