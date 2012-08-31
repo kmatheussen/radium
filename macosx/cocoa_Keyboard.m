@@ -271,7 +271,7 @@ bool cocoa_KeyboardFilter(void *void_event){
   }
 
   {
-    if(type==11||type==12||type==13){
+    if(type==10||type==11||type==12){
       int keycode = [event keyCode];
       uint32_t keyswitch=get_keyswitch();
       printf("keycode: %x, switch: %x\n",keycode,(int)keyswitch);

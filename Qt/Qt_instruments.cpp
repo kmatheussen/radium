@@ -58,7 +58,6 @@ void set_editor_focus(void);
   FocusSniffer##Class(QWidget *parent, const char *name = "gakk")       \
   : Class(parent)                                                       \
     {                                                                   \
-      installEventFilter(this);                                         \
     }                                                                   \
   void focusInEvent ( QFocusEvent *e ){                                 \
     num_users_of_keyboard++;                                            \

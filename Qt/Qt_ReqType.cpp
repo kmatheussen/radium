@@ -65,6 +65,7 @@ struct MyReqType{
   QFrame *frame;
   QString label_text;
   int y;
+  bool widgets_disabled;
 };
 
 
@@ -74,25 +75,16 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
   QSplitter *ysplitter = editor->ysplitter;
 
-  //int fontwidth = (tvisual==NULL ? 10 : tvisual->fontwidth);
-  //int fontheight = (tvisual==NULL ? 16 : tvisual->fontwidth);
-
   MyReqType *reqtype = new MyReqType();
 
   reqtype->frame = new QFrame(ysplitter);
 
   ysplitter->insertWidget(0,reqtype->frame);
-  //reqtype->frame->reparent(ysplitter, QPoint(0,0), true);
 
-  //reqtype->frame->resize(pixel_width + x_margin*4,pixel_height+y_margin*4);
   reqtype->frame->resize(5,10);
   reqtype->frame->show();
   reqtype->y = y_margin;
-
-  Qt_DisableAllWidgets();
-  GFX_disable_mouse_keyboard();
-
-  reqtype->frame->setEnabled(true);
+  reqtype->widgets_disabled = false;
 
   return reqtype;
 }
@@ -110,8 +102,10 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   X11_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 #endif
 
-  Qt_EnableAllWidgets();
-  GFX_enable_mouse_keyboard();
+  if(reqtype->widgets_disabled==true){
+    Qt_EnableAllWidgets();
+    GFX_enable_mouse_keyboard();
+  }
 
 #if USE_GTK_VISUAL
   GTK_SetFocus();
@@ -180,7 +174,12 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   reqtype->frame->setMinimumHeight(reqtype->y+20);
 
   edit->setFocus();
-  //edit->grabKeyboard();
+
+  if(reqtype->widgets_disabled==false){
+    Qt_DisableAllWidgets(reqtype->frame);
+    GFX_disable_mouse_keyboard();
+    reqtype->widgets_disabled=true;
+  }
 
 #if USE_GTK_VISUAL
   GTK_MainLoop();

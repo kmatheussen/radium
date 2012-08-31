@@ -226,7 +226,7 @@ void grabKeyboard(void){
 
 static bool widgets_are_disabled = false;
 
-void Qt_DisableAllWidgets(void){
+void Qt_DisableAllWidgets(QWidget *not_me){
   widgets_are_disabled = true;
 #if USE_GTK_REQTYPE
   g_editor->main_window->setEnabled(false);
@@ -234,7 +234,7 @@ void Qt_DisableAllWidgets(void){
 #if USE_QT_REQTYPE
   g_editor->main_window->menuWidget()->setEnabled(false);
   for(int i=0;i<g_editor->ysplitter->count();i++)
-    if(g_editor->ysplitter->widget(i) != g_editor)
+    if(g_editor->ysplitter->widget(i) != g_editor && g_editor->ysplitter->widget(i)!=not_me)
       g_editor->ysplitter->widget(i)->setEnabled(false);
 #endif
 }
