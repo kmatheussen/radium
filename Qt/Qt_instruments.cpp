@@ -53,9 +53,9 @@ extern int num_users_of_keyboard;
 void set_editor_focus(void);
 
 #define MakeFocusSnifferClass(Class)                                    \
-  class My##Class : public Class {                                      \
+  class FocusSniffer##Class : public Class {                            \
   public:                                                               \
-  My##Class(QWidget *parent, const char *name = "gakk")                 \
+  FocusSniffer##Class(QWidget *parent, const char *name = "gakk")       \
   : Class(parent)                                                       \
     {                                                                   \
       installEventFilter(this);                                         \
