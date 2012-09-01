@@ -232,9 +232,25 @@ static void fixBrokenKeySwitch(unsigned int state){
 }
 */
 
+static void setKeyUpDowns(XEvent *event){
+  if(event->type!=KeyPress && event->type!=KeyRelease)
+    return;
+
+  XKeyEvent *key_event = (XKeyEvent *)event;
+
+  KeySym sym = XkbKeycodeToKeysym(key_event->display, key_event->keycode, 0, 0);
+  if(sym > keytable_size)
+    return;
+
+  int keynum = keytable[sym];
+
+  if(event->type==KeyPress)
+    keyupdowns[keynum]=1;
+  else
+    keyupdowns[keynum]=0;
+}
+
 int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
-  //switch(((XKeyEvent *)&event)->keycode){
-  keyupdowns[keynum]=1;
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARD;
   tevent.SubID=keynum;
@@ -260,8 +276,6 @@ int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
 
 
 int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
-  printf("Releasing %d,\n",keynum);
-  keyupdowns[keynum]=0;
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARDUP;
   tevent.SubID=keynum;
@@ -280,11 +294,19 @@ int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window){
   return X11Event_KeyRelease(keytable[sym],event->state,window);
 }
 
+
+extern int num_users_of_keyboard;
+
 bool X11_KeyboardFilter(XEvent *event){
+  setKeyUpDowns(event);
+
   static int num=0;
   //printf("Got event %d\n",num++);
   switch(event->type){
   case KeyPress:
+    if(num_users_of_keyboard>0)
+      return false;
+
     printf("Got keypress event %d.\n",num++);
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       //this->quit();
@@ -292,6 +314,9 @@ bool X11_KeyboardFilter(XEvent *event){
     }
     return true;
   case KeyRelease:
+    if(num_users_of_keyboard>0)
+      return false;
+
     X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
     return true;
   case EnterNotify:

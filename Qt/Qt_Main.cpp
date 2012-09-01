@@ -84,15 +84,21 @@ public:
 protected:
 
 #ifdef __linux__
-  bool x11EventFilter(XEvent*);
-  //int x11ProcessEvent(XEvent*);
+  bool x11EventFilter(XEvent *event){
+    bool ret = X11_KeyboardFilter(event);
+
+    if(ret==true)
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+
+    if(doquit==true)
+      QApplication::quit();
+
+    return ret;
+  }
 #endif
 
 #ifdef FOR_WINDOWS
   bool 	winEventFilter ( MSG * msg, long * result ){
-    if(num_users_of_keyboard>0)
-      return false;
-
     bool ret = W_KeyboardFilter(msg);
 
     if(ret==true)
@@ -104,9 +110,6 @@ protected:
 
 #ifdef FOR_MACOSX
   bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
-    if(num_users_of_keyboard>0)
-      return false;
-
     bool ret = cocoa_KeyboardFilter(event);
 
     if(ret==true)
@@ -122,42 +125,6 @@ MyApplication::MyApplication(int &argc,char **argv)
 {
 }
 
-#ifdef __linux__
-
-#if 0
-int MyApplication::x11ProcessEvent(XEvent *event){
-  if(event->type==ClientMessage)
-    fprintf(stderr,"GOT IT\n");
-  return QApplication::x11ProcessEvent(event);
-}
-#endif
-
-bool MyApplication::x11EventFilter(XEvent *event){
-
-  //printf("Num users of keyboard: %d\n",num_users_of_keyboard);
-
-  switch(event->type){
-  case KeyPress:
-    if(num_users_of_keyboard>0)
-      return false;
-  case KeyRelease:
-    if(num_users_of_keyboard>0)
-      return false;
-  }
-
-  {
-    bool ret = X11_KeyboardFilter(event);
-
-    if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
-
-    if(doquit==true)
-      QApplication::quit();
-
-    return ret;
-  }
-}
-#endif // __linux__
 
 
   //QApplication *qapplication;

@@ -258,6 +258,8 @@ static int get_keyboard_subID(int keycode){
 }
 
 
+extern int num_users_of_keyboard;
+
 bool cocoa_KeyboardFilter(void *void_event){
   NSEvent *event = (NSEvent *)void_event;
   NSEventType type = [event type];
@@ -301,6 +303,9 @@ bool cocoa_KeyboardFilter(void *void_event){
     return false;
 
   if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
+    return false;
+
+  if(num_users_of_keyboard>0)
     return false;
 
   {

@@ -291,6 +291,8 @@ void W_KeyboardHandlerShutDown(void){
     UnhookWindowsHookEx(g_hKeyboardHook);
 }
 
+extern int num_users_of_keyboard;
+
 bool W_KeyboardFilter(MSG *msg){
   static bool initialized=false;
 
@@ -327,6 +329,9 @@ bool W_KeyboardFilter(MSG *msg){
       break;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
+      if(num_users_of_keyboard>0)
+        return false;
+
       tevent.ID=TR_KEYBOARD;
       tevent.SubID=get_keyboard_subID(msg);
       tevent.keyswitch=get_keyswitch();
@@ -338,12 +343,16 @@ bool W_KeyboardFilter(MSG *msg){
     case WM_SYSKEYUP:
       if(msg->wParam==VK_RWIN){
         right_windows_down = false;
-        return true;
+        return false;
       }
       if(msg->wParam==VK_LWIN){
         left_windows_down = false;
-        return true;
+        return false;
       }
+
+      if(num_users_of_keyboard>0)
+        return false;
+
       tevent.ID=TR_KEYBOARDUP;
       tevent.SubID=get_keyboard_subID(msg);
       tevent.keyswitch=get_keyswitch();
