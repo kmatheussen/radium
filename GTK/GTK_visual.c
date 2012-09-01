@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#if GTK_IS_USED
+
+
 // Sometimes, setting this to 1 helps the window to embed. (TODO. need proper solution)
 // (Note, must edit in Qt_MainWindow.cpp.
 // Update: Calling g_embed_container->show() before calling CreateVisual seems to fix the problem.
@@ -1245,3 +1248,6 @@ void GTK_Init(int argc, char **argv){
 
   gtk_init(&argc, &argv);
 }
+
+#endif // GTK_IS_USED
+

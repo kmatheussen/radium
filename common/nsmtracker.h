@@ -41,6 +41,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error "Missing DEBUG option. Edit the Makefile."
 #endif
 
+#if !USE_GTK_VISUAL && !USE_GTK_REQTYPE && !USE_GTK_MENU
+#  define GTK_IS_USED 0
+#else
+#  define GTK_IS_USED 1
+#endif
 
 #include <limits.h>
 #include <stdint.h>

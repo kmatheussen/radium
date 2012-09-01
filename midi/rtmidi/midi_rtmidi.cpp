@@ -236,9 +236,9 @@ static const std::vector<std::string> get_port_names(RtMidi &rtmidi){
 static char **vector_to_cstring_array(const std::vector<std::string> &strings, int *num_ports){
   *num_ports = 0;
   char **ret = (char**)talloc(sizeof(char*)*strings.size());
-
+  
   for(unsigned int i=0;i<strings.size();i++)
-    if(strings[i] != "Radium:in" && strings[i] != "Radium:0"){
+    if(strings[i].find("Radium") != 0){
       ret[*num_ports] = talloc_strdup((char*)strings[i].c_str());
       *num_ports = *num_ports + 1;
     }
@@ -319,6 +319,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
                 : apis[i]==RtMidi::UNIX_JACK  ? "Jack"
                 : apis[i]==RtMidi::WINDOWS_MM ? "Multimedia Library"
                 : apis[i]==RtMidi::WINDOWS_KS ? "Kernel Streaming"
+                : apis[i]==RtMidi::MACOSX_CORE ? "MAC OS X Core MIDI"
                 : "Unknown type";
       int sel = -1;
       while(sel==-1){
@@ -366,7 +367,6 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
   return ret;
 }
 
-#ifndef FOR_MACOSX
 static void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
   //printf("Got data: %d (%x)\n",length,message[0]);
   if(length==1)
@@ -376,7 +376,6 @@ static void mycallback( double deltatime, unsigned int length, unsigned char *me
   else if(length==3)
     MIDI_InputMessageHasBeenReceived(message[0],message[1],message[2]);
 }
-#endif
 
 bool MIDI_New(struct Instruments *instrument){
   static bool globals_are_initialized = false;
@@ -455,10 +454,8 @@ bool MIDI_New(struct Instruments *instrument){
     {
       inport_coremidi = new RtMidiIn(RtMidi::MACOSX_CORE,std::string("Radium"));
       if(inport_coremidi!=NULL){
-        if(inport_coremidi->getPortCount()>0)
-          inport_coremidi->openPort(0);
-        else
-          inport_coremidi->openVirtualPort("radium:in");
+        inport_coremidi->openVirtualPort("Radium:in");
+        inport_coremidi->setCallback(mycallback,NULL);
       }
     }
 #endif

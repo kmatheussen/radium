@@ -224,6 +224,32 @@ void Ptask2Mtask(void){
 
 #endif // USE_QT_VISUAL
 
+#if !GTK_IS_USED
+
+#include <QTimer>
+#include "../midi/midi_i_input_proc.h"
+#include "../common/gfx_proc.h"
+#include "../common/gfx_op_queue_proc.h"
+
+class CalledPeriodically : public QTimer{
+public:
+  CalledPeriodically(){
+    setInterval(40);
+    start();
+  }
+protected:
+  void 	timerEvent ( QTimerEvent * e ){
+    if(num_users_of_keyboard>0)
+      return;
+    {
+      struct Tracker_Windows *window=root->song->tracker_windows;
+      DO_GFX_BLT(MIDI_HandleInputMessage());
+      if(GFX_get_op_queue_size(window) > 0)
+        static_cast<EditorWidget*>(window->os_visual.widget)->update();
+    }
+  }
+};
+#endif
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
@@ -416,6 +442,10 @@ int radium_main(char *arg){
 
   PyRun_SimpleString("import menues");
 
+#if !GTK_IS_USED
+  CalledPeriodically periodic_timer;
+#endif
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
@@ -455,7 +485,9 @@ int main(int argc, char **argv){
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
 
+#if GTK_IS_USED
   GTK_Init(argc,argv);
+#endif
 
   Py_Initialize();
 
@@ -478,3 +510,4 @@ int main(int argc, char **argv){
 
   Py_Finalize();
 }
+
