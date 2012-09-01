@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export PYTHONEXE=python #In Mingw, this is just the python we use to autogenerate files and so forth during the build process, it is not used to find header or link files
 export MOC=moc-qt4
@@ -48,6 +48,8 @@ export OBJ_WIN=
 # (that's it)
 
 darwinx-make radium $@
+
+./darwinx_change_qt_path.sh bin/radium
 
 cp bin/radium /home/kjetil/Dropbox/radium.app/Contents/MacOS/
 
