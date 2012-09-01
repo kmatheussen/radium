@@ -213,6 +213,9 @@ protected:
       DO_GFX_BLT(MIDI_HandleInputMessage());
       if(GFX_get_op_queue_size(window) > 0)
         static_cast<EditorWidget*>(window->os_visual.widget)->update();
+
+      if(doquit==true)
+        QApplication::quit();
     }
   }
 };
