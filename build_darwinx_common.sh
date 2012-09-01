@@ -6,9 +6,13 @@ export UIC=uic-qt4
 
 export OPTIMIZE="-mtune=generic -O3"
 
-export CCC=darwinx-g++
-export CC=darwinx-gcc
-export LINKER=darwinx-g++
+#export CCC="darwinx-g++ -arch i386 -arch ppc -arch x86_64"
+#export CC="darwinx-gcc -arch i386 -arch ppc -arch x86_64"
+#export LINKER="darwinx-g++ -arch i386 -arch ppc -arch x86_64"
+
+export CCC="darwinx-g++ -arch i386 -arch x86_64"
+export CC="darwinx-gcc -arch i386 -arch x86_64"
+export LINKER="darwinx-g++ -arch i386 -arch x86_64"
 
 export BUILDTYPE=DEBUG
 #export BUILDTYPE=RELEASE
