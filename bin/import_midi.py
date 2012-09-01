@@ -17,8 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 """
 
 
-import sys
-sys.path.append("python-midi")
+import sys,os
+
+sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
 
 import src as midi
 

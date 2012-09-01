@@ -399,25 +399,18 @@ def start(keyhandles,filehandle,outfilehandle):
     
     while parser.nextLine()!="ENDFILE":
 
-        if parser.getLineType()=="GOINGTOINSERTCODE":
-            outfilehandle.write("def keycodedef%d():\n" % defnum)
-        if parser.getLineType()=="INSERTCODE":
-            outfilehandle.write(parser.getCurrLine()+"\n")
-        if parser.getLineType()=="INSERTCODELAST":
-            outfilehandle.write("\treturn\n")
-            if putCode(keyhandles,parser,"eventreceiverparser_generated.keycodedef%d()" % defnum)==false:
-                return false
-            defnum+=1
-
-
-        #            if parser.getLineType()=="GOINGTOINSERTCLEANCODE":
-        #                print "goint to clean ->"
-        if parser.getLineType()=="INSERTCLEANCODE":
-            outfilehandle.write(parser.getCurrLine()+"\n")
-            #                print "clean code -> "+parser.getCurrLine()
-        #            if parser.getLineType()=="INSERTCLEANCODELAST":
-        #                print "<- goint to clean"
-
+        if outfilehandle:
+            if parser.getLineType()=="GOINGTOINSERTCODE":
+                outfilehandle.write("def keycodedef%d():\n" % defnum)
+            if parser.getLineType()=="INSERTCODE":
+                outfilehandle.write(parser.getCurrLine()+"\n")
+            if parser.getLineType()=="INSERTCODELAST":
+                outfilehandle.write("\treturn\n")
+                if putCode(keyhandles,parser,"eventreceiverparser_generated.keycodedef%d()" % defnum)==false:
+                    return false
+                defnum+=1
+            if parser.getLineType()=="INSERTCLEANCODE":
+                outfilehandle.write(parser.getCurrLine()+"\n")
 
         if parser.getLineType()=="ERROR":
             return false
@@ -488,11 +481,14 @@ def start(keyhandles,filehandle,outfilehandle):
 
 
     import cPickle
-    
-    keybindingsfile=open("keybindings.cPickle","w")
-    keybindingsfile.write(cPickle.dumps(keybindingsdict))
-    keybindingsfile.close()
-    #print keybindingsdict
+
+    try:
+        keybindingsfile=open("keybindings.cPickle","w")
+        keybindingsfile.write(cPickle.dumps(keybindingsdict))
+        keybindingsfile.close()
+        #print keybindingsdict
+    except:
+        print "Couldn't create keybindings.cPickle. Using default."
 
     return true
 

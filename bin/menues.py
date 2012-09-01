@@ -29,7 +29,10 @@ def get_command(menutext):
     
 class LineParser:
   def __init__(self,filename):
-    file=open("keybindings.cPickle","r")
+    try:
+      file=open("keybindings.cPickle","r")
+    except:
+      file=open(os.path.join(sys.g_program_path,"keybindings.cPickle"),"r")
     keybindingsdict=cPickle.load(file)
     file.close()
 

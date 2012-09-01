@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "EditorWidget.h"
 
+#include "../api/api_requesters_proc.h"
+
 #include "Qt_Menues_proc.h"
 
 extern bool doquit;
