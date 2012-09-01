@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "../api/api_support_proc.h"
+#include "../api/api_requesters_proc.h"
+
 #include "OS_Player_proc.h"
 
 #include "eventreciever_proc.h"
@@ -363,6 +365,8 @@ int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	element->t.y=in_tevent->y;
 
 	window->TELlast=element;
+
+        closeRequester();
 
 	return 0;
 }

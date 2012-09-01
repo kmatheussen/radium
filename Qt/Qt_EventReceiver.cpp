@@ -370,8 +370,8 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   if(this->get_editor_width() > old_width || this->get_editor_height() > old_height){
 #if 1
     DO_GFX_BLT(DrawUpTrackerWindow(window));
-    repaint(); // I don't know why it's not enough just calling DrawUpTrackerWindow.
-    //update();
+    //repaint(); // I don't know why it's not enough just calling DrawUpTrackerWindow.
+    update();
 #else
     // This doesn't really do anything:
     DO_GFX_BLT({

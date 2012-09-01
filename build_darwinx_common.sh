@@ -26,9 +26,6 @@ export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
 export OS_OPTS="-DFOR_MACOSX -DMEMORY_DEBUG"
 export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread -framework Carbon -framework Foundation"
 
-#export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__WINDOWS_KS__ -D__RTMIDI_DEBUG__"
-#export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
-#export RTMIDI_LDFLAGS="-lwinmm /usr/i686-w64-mingw32/sys-root/mingw/lib/libksuser.a -lsetupapi"
 export RTMIDI_CFLAGS=" -D__MACOSX_CORE__ -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-framework CoreMIDI -framework CoreAudio"
 

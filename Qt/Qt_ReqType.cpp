@@ -68,11 +68,12 @@ struct MyReqType{
   bool widgets_disabled;
 };
 
+extern EditorWidget *g_editor;
 
 ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
   num_users_of_keyboard++; // disable X11 keyboard sniffer
 
-  EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
+  EditorWidget *editor = g_editor;
   QSplitter *ysplitter = editor->ysplitter;
 
   MyReqType *reqtype = new MyReqType();

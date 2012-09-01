@@ -2,7 +2,6 @@
 #define GFX_PROC_H
 
 #include "blts_proc.h"
-#include "../api/api_requesters_proc.h"
 #include "windows_proc.h"
 
 
@@ -10,7 +9,6 @@
     Blt_markVisible(window);                    \
     {                                           \
       OP;                                       \
-      closeRequester();                         \
       checkIfWBlocksAreDirty();                 \
     }                                           \
     Blt_clearNotUsedVisible(window);            \
@@ -21,7 +19,6 @@
     Blt_markVisible(window);                    \
     {                                           \
       OP;                                       \
-      closeRequester();                         \
       checkIfWBlocksAreDirty();                 \
     }                                           \
     Blt_clearNotUsedVisible(window);            \
