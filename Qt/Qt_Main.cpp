@@ -465,7 +465,11 @@ int main(int argc, char **argv){
 
   // Set loading path to argv[0]
   PyRun_SimpleString("import sys,os");
+#if FOR_WINDOWS
+  sprintf(temp,"sys.g_program_path = \"\"");
+#else
   sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
+#endif
   PyRun_SimpleString(temp);
 
   PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
@@ -473,6 +477,9 @@ int main(int argc, char **argv){
   // Set sys.argv[0]
   sprintf(temp,"sys.argv=[\"%s\",os.path.join(sys.g_program_path,\"keybindings.conf\")]",argv[0]);
   PyRun_SimpleString(temp);
+
+  printf("argv[0]: %s\n",argv[0]);
+  PyRun_SimpleString("print \"path:\",sys.g_program_path");
 
   initradium();
 

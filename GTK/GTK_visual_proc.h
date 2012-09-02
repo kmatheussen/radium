@@ -18,15 +18,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef USE_GTK_VISUAL
 
 #ifdef __linux__
-# define socket_type_t int64_t
+typedef int64_t socket_type_t;
 #endif
 
-#ifdef FOR_WINDWOS
-# define socket_type_t void*
+#ifdef FOR_WINDOWS
+typedef void* socket_type_t;
 #endif
 
 #ifdef FOR_MACOSX
-# define socket_type_t void*
+typedef void* socket_type_t;
 #endif
 
 

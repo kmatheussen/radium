@@ -14,8 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#if GTK_IS_USED
+#include "../common/nsmtracker.h"
 
+
+#if GTK_IS_USED
 
 // Sometimes, setting this to 1 helps the window to embed. (TODO. need proper solution)
 // (Note, must edit in Qt_MainWindow.cpp.
@@ -48,7 +50,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include "../macosx/cocoa_embed_proc.h"
 #endif
 
-#include "../common/nsmtracker.h"
 #include "../common/blts_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/wblocks_proc.h"
@@ -437,7 +438,7 @@ static gint resize_event( GtkWidget *widget,
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventConfigure *configure = &event->configure;
   printf("got configure event. width: %d, height: %d\n",configure->width,configure->height);
-
+wef
   window->width = configure->width;
   window->height = configure->height;
   GTK_SetSize(configure->width,configure->height);

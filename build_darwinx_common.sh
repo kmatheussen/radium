@@ -24,15 +24,14 @@ export PYPATH=/home/kjetil/radium-qt4/darwinx/Versions/Current/include/python2.7
 export QT_CFLAGS="`darwinx-pkg-config --cflags Qt3Support`"
 export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
 
-# MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
-export OS_OPTS="-DFOR_MACOSX -DMEMORY_DEBUG"
+export OS_OPTS="-DFOR_MACOSX"
 export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread -framework Carbon -framework Foundation"
 
 export RTMIDI_CFLAGS=" -D__MACOSX_CORE__ -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-framework CoreMIDI -framework CoreAudio"
 
 if [ $BUILDTYPE = "RELEASE" ] ; then
-    export OS_LDFLAGS="$OS_LDFLAGS -mwindows"
+    export OS_LDFLAGS="$OS_LDFLAGS"
 fi
 
 export OBJ_X11=

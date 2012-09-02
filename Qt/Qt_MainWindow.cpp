@@ -14,21 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-#include <qstatusbar.h>
+#include <qapplication.h>
 #include <qmainwindow.h>
+#include <qsplitter.h>
+#include <QCloseEvent>
+#include <QStatusBar>
+
 #include <qfiledialog.h>
 
-#include "EditorWidget.h"
-
-#include "../common/gfx_proc.h"
-#include "../common/cursor_updown_proc.h"
-
-#include "Qt_colors_proc.h"
-#include "Qt_Menues_proc.h"
-
-#include <QtCore>
-#include <QtGui>
 
 
 #if USE_GTK_VISUAL
@@ -50,8 +43,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #    endif
 #  endif
    EditorWidgetParent *g_embed_container;
-#  include "../GTK/GTK_visual_proc.h"
 #endif // USE_GTK_VISUAL
+
+#ifdef FOR_WINDOWS
+#  include <windows.h>
+static HWND gtk_hwnd = NULL;
+#endif
+
+#include "EditorWidget.h"
+
+#if USE_GTK_VISUAL
+#  include "../GTK/GTK_visual_proc.h"
+#endif
+
+#include "../common/gfx_proc.h"
+#include "../common/cursor_updown_proc.h"
+
+#include "Qt_colors_proc.h"
+#include "Qt_Menues_proc.h"
 
 
 #if USE_QT_VISUAL
@@ -63,11 +72,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_MainWindow_proc.h"
 
-#ifdef FOR_WINDOWS
-#  include <windows.h>
-static HWND gtk_hwnd = NULL;
-#endif
-
 
 #if USE_GTK_VISUAL
 
@@ -76,6 +80,8 @@ static bool sat=false;
 #endif
 
 class MyEditorWidgetParent : public EditorWidgetParent{
+  //Q_OBJECT;
+
 public:
   MyEditorWidgetParent(QWidget *widget)
     : EditorWidgetParent(widget)
@@ -252,6 +258,8 @@ void Qt_EnableAllWidgets(void){
 #endif
 
 class MyQMainWindow : public QMainWindow{
+  //Q_OBJECT;
+
 public:
   MyQMainWindow() : QMainWindow(NULL,"Radium") {}
 
@@ -444,4 +452,6 @@ const char *GFX_GetSaveFileName(
     : ret;
 }
 
+
+//#include "mgakk.cpp"
 

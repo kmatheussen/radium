@@ -149,7 +149,6 @@ private:	// Disabled copy constructor and operator=
 // non-interface ...
 
 
-
 struct QWellArrayData {
     QBrush *brush;
 };
@@ -1734,3 +1733,4 @@ bool QColorDialog3::selectColor( const QColor& col )
 #endif
 
 //#endif
+

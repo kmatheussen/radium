@@ -31,23 +31,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpixmap.h>
 #include <qpointarray.h>
 #include <qlabel.h>
-#endif
+#endif // USE_QT3
 
 #ifdef USE_QT4
 //Added by qt3to4:
 #include <QWidget>
-#include <QCustomEvent>
-#include <QPaintEvent>
-#include <QResizeEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QWheelEvent>
-#include <QCloseEvent>
-#include <Q3PointArray>
-#include <QFrame>
 #include <QLabel>
-#include <QMenuBar>
-#include <QApplication>
+#include <Q3PointArray>
 #endif
 
 #ifdef USE_QT3
@@ -74,6 +64,8 @@ class QSplitter;
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
 {
+  //Q_OBJECT;
+
 public:
   EditorWidget(QWidget *parent=0, const char *name="no name" );
   ~EditorWidget();
