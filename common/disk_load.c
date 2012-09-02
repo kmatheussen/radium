@@ -237,6 +237,12 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 
           GFX_EditorWindowToFront(root->song->tracker_windows);
 
+          struct WBlocks *wblock = root->song->tracker_windows->wblock;
+          (*wblock->wtrack->track->instrument->PP_Update)(
+                                                          wblock->wtrack->track->instrument,
+                                                          wblock->wtrack->track->patch
+                                                          );
+
           fprintf(stderr,"Got here (loading finished)\n");
         }
 

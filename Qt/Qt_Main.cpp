@@ -469,6 +469,7 @@ int main(int argc, char **argv){
 #ifdef FOR_WINDOWS
   sprintf(temp,"sys.g_program_path = \"\"");
 #else
+  // This doesn't work on mingw. Could be a wine problem only.
   sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
 #endif
   PyRun_SimpleString(temp);
