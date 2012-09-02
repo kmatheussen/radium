@@ -465,7 +465,7 @@ int main(int argc, char **argv){
 
   // Set loading path to argv[0]
   PyRun_SimpleString("import sys,os");
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   sprintf(temp,"sys.g_program_path = \"\"");
 #else
   sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);

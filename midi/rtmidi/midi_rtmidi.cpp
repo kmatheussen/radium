@@ -282,8 +282,10 @@ char **MIDI_getOutputPortOsNames(int *retsize){
 
 
 void MIDI_closeMidiPortOs(MidiPortOs port){
+#ifndef FOR_WINDOWS
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
   delete myport->midiout;
+#endif
 }
 
 MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name){
@@ -478,7 +480,9 @@ void MIDI_Delete(void){
 
 #ifdef FOR_WINDOWS
   delete inport_winmm;
+#if 0
   delete inport_winks;
+#endif
 #endif
 
 }

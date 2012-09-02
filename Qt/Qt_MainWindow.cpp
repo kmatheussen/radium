@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
    EditorWidgetParent *g_embed_container;
 #endif // USE_GTK_VISUAL
 
-#ifdef FOR_WINDOWS
+#if defined(FOR_WINDOWS) && USE_GTK_VISUAL
 #  include <windows.h>
 static HWND gtk_hwnd = NULL;
 #endif

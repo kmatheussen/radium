@@ -438,7 +438,7 @@ static gint resize_event( GtkWidget *widget,
   struct Tracker_Windows *window=root->song->tracker_windows;
   GdkEventConfigure *configure = &event->configure;
   printf("got configure event. width: %d, height: %d\n",configure->width,configure->height);
-wef
+
   window->width = configure->width;
   window->height = configure->height;
   GTK_SetSize(configure->width,configure->height);
