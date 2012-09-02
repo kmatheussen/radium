@@ -465,12 +465,15 @@ int main(int argc, char **argv){
 
   // Set loading path to argv[0]
   PyRun_SimpleString("import sys,os");
+
 #ifdef FOR_WINDOWS
   sprintf(temp,"sys.g_program_path = \"\"");
 #else
   sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
 #endif
   PyRun_SimpleString(temp);
+
+  PyRun_SimpleString("print \"hepp:\",sys.g_program_path,23");
 
   PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
 
@@ -479,7 +482,9 @@ int main(int argc, char **argv){
   PyRun_SimpleString(temp);
 
   printf("argv[0]: %s\n",argv[0]);
-  PyRun_SimpleString("print \"path:\",sys.g_program_path");
+  PyRun_SimpleString("print \"path:\",sys.g_program_path,239");
+
+  //exit(0);
 
   initradium();
 

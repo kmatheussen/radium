@@ -284,7 +284,7 @@ char **MIDI_getOutputPortOsNames(int *retsize){
 void MIDI_closeMidiPortOs(MidiPortOs port){
 #ifndef FOR_WINDOWS
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
-  delete myport->midiout;
+  delete myport->midiout; // TODO: Find out why this crashes on windows.
 #endif
 }
 
