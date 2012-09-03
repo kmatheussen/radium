@@ -10,8 +10,13 @@
 
 extern PlayerClass *pc;
 
+static void update_statusbar(struct Tracker_Windows *window){
+  struct WBlocks *wblock = window->wblock;
+  GFX_SetChangeInt(window,wblock,"Block RelTempo 0.001*",(int)(wblock->block->reltempo*1000));
+  GFX_DrawStatusBar(window,wblock);
+}
 
-int MoveRelTempoSlider_Mouse(
+static int MoveRelTempoSlider_Mouse(
 	struct Tracker_Windows *window,
 	int x,int y
 ){
@@ -25,10 +30,7 @@ int MoveRelTempoSlider_Mouse(
 		MAXBLOCKRELTIME
 	);
 
-//	if(pc->isplaying==false){
-		GFX_SetChangeInt(window,wblock,"Block RelTempo 0.001*",(int)(wblock->block->reltempo*1000));
-		GFX_DrawStatusBar(window,wblock);
-//	}
+        update_statusbar(window);
 
 	DrawBlockRelTempo(window,wblock);
 #if 1
@@ -49,7 +51,10 @@ void SetMouseActionRelTempoSlider(
 	struct WBlocks *wblock=window->wblock;
 
 	action->action=RELTEMPOSLIDER;
-	if(click==0) return;
+	if(click==0){
+          update_statusbar(window);
+          return;
+        }
 	Undo_RelTempoSlider(window,wblock);
 
 	action->pointer1=wblock;

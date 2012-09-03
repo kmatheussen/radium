@@ -30,9 +30,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "mouse_wtrackheader_proc.h"
 
+static void update_pan_status(struct Tracker_Windows *window,
+                              struct WBlocks *wblock,
+                              struct WTracks *wtrack)
+{
+  GFX_SetChangeInt(window,wblock,"Track Pan",wtrack->track->pan);
+  GFX_DrawStatusBar(window,wblock);
+}
 
+static void update_volume_status(struct Tracker_Windows *window,
+                              struct WBlocks *wblock,
+                              struct WTracks *wtrack)
+{
+  GFX_SetChangeInt(window,wblock,"Track RelVolume",wtrack->track->volume);
+  GFX_DrawStatusBar(window,wblock);
+}
 
-int MoveWTrackPan_Mouse(
+static int MoveWTrackPan_Mouse(
 	struct Tracker_Windows *window,
 	int x,int y
 ){
@@ -51,8 +65,7 @@ int MoveWTrackPan_Mouse(
 		(*wtrack->track->patch->changeTrackPan)(wtrack->track->pan,wtrack->track);
 	}
 
-	GFX_SetChangeInt(window,wblock,"Track Pan",wtrack->track->pan);
-	GFX_DrawStatusBar(window,wblock);
+        update_pan_status(window,wblock,wtrack);
 
 	UpdatePanSlider(window,wblock,wtrack);
 
@@ -61,7 +74,7 @@ int MoveWTrackPan_Mouse(
 
 
 
-int MoveWTrackVolume_Mouse(
+static int MoveWTrackVolume_Mouse(
 	struct Tracker_Windows *window,
 	int x,int y
 ){
@@ -76,8 +89,7 @@ int MoveWTrackVolume_Mouse(
 		MAXTRACKVOL
 	);
 
-	GFX_SetChangeInt(window,wblock,"Track RelVolume",wtrack->track->volume);
-	GFX_DrawStatusBar(window,wblock);
+        update_volume_status(window,wblock,wtrack);
 
 	UpdateVolumeSlider(window,wblock,wtrack);
 
@@ -87,7 +99,7 @@ int MoveWTrackVolume_Mouse(
 
 
 
-void SetMouseActionPanSlider(
+static void SetMouseActionPanSlider(
 	struct Tracker_Windows *window,
 	struct MouseAction *action,
 	struct WTracks *wtrack,
@@ -97,7 +109,10 @@ void SetMouseActionPanSlider(
 	void *temp;
 
 	action->action=PANSLIDER;
-	if(click==0) return;
+	if(click==0){
+          update_pan_status(window,window->wblock,wtrack);
+          return;
+        }
 
 	Undo_TrackHeader(
 		window,
@@ -119,7 +134,7 @@ void SetMouseActionPanSlider(
 
 
 
-void SetMouseActionVolumeSlider(
+static void SetMouseActionVolumeSlider(
 	struct Tracker_Windows *window,
 	struct MouseAction *action,
 	struct WTracks *wtrack,
@@ -129,7 +144,10 @@ void SetMouseActionVolumeSlider(
 	void *temp;
 
 	action->action=VOLUMESLIDER;
-	if(click==0) return;
+	if(click==0){
+          update_volume_status(window,window->wblock,wtrack);
+          return;
+        }
 
 	Undo_TrackHeader(
 		window,
