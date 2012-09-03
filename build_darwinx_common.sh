@@ -25,7 +25,8 @@ export QT_CFLAGS="`darwinx-pkg-config --cflags Qt3Support`"
 export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
 
 export OS_OPTS="-DFOR_MACOSX"
-export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread -framework Carbon -framework Foundation"
+#export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread -framework Carbon -framework Foundation"
+export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a -L`pwd`/darwinx/Versions/2.7/lib/ -lpython2.7 -lpthread -framework Carbon -framework Foundation"
 
 export RTMIDI_CFLAGS=" -D__MACOSX_CORE__ -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-framework CoreMIDI -framework CoreAudio"
@@ -48,8 +49,13 @@ export OBJ_WIN=
 darwinx-make radium $@
 
 ./darwinx_change_qt_path.sh bin/radium
+darwinx-install_name_tool -change /Library/Frameworks/Python.framework/Versions/2.7/Python @executable_path/python2.7/libpython2.7.dylib bin/radium
+
+darwinx-otool -L bin/radium
 
 cp bin/radium /home/kjetil/Dropbox/radium.app/Contents/MacOS/
+
+echo "compilation finished"
 
 
 #cp bin/radium mingw/radium/radium.exe

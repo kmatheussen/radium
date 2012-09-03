@@ -22,7 +22,8 @@ export QT_CFLAGS="`mingw32-pkg-config  --cflags Qt3Support`"
 export QT_LDFLAGS="-L/usr/i686-w64-mingw32/sys-root/mingw/lib -lQt3Support4 -lQtGui4 -lQtCore4"
 
 # MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
-export OS_OPTS="-DFOR_WINDOWS -DMEMORY_DEBUG"
+#export OS_OPTS="-DFOR_WINDOWS -DMEMORY_DEBUG"
+export OS_OPTS="-DFOR_WINDOWS"
 export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread"
 
 #export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__WINDOWS_KS__ -D__RTMIDI_DEBUG__"

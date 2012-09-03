@@ -25,13 +25,13 @@ sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path
 
 import platform
 
-if platform.system() != "Linux" and platform.system() != "mingw":
-    sys.path = [sys.path[0], os.path.join(sys.path[0],"python2.7")]
-    sys.path = sys.path + [os.path.join(sys.path[1],"lib-dynload")]
+#if platform.system() != "Linux" and platform.system() != "mingw":
+#    sys.path = [sys.path[0], os.path.join(sys.path[0],"python2.7")]
+#    sys.path = sys.path + [os.path.join(sys.path[1],"lib-dynload")]
 
 print "sys.path now:",sys.path
-import platform
-print "platform:",platform.system()
+#import platform
+#print "platform:",platform.system()
 
 import traceback
 

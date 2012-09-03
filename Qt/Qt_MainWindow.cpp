@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qsplitter.h>
 #include <QCloseEvent>
 #include <QStatusBar>
+#include <QMenuBar>
 
 #include <qfiledialog.h>
 
@@ -198,7 +199,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   setEditorColors(this);
 
 #if USE_QT_VISUAL
-  //this->setMouseTracking(true);
+  this->setMouseTracking(true);
   //g_embed_container->setMouseTracking(true);
 #endif
 

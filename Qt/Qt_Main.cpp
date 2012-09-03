@@ -459,7 +459,11 @@ int main(int argc, char **argv){
   GTK_Init(argc,argv);
 #endif
 
+  printf("1\n");
+
   Py_Initialize();
+
+  printf("2\n");
 
   char temp[500];
 

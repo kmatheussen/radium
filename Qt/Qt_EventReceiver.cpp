@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/player_proc.h"
 #include "../common/gfx_op_queue_proc.h"
+#include "../common/visual_proc.h"
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -327,8 +328,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 
-  update();
-
+  //update();
 }
 
 #endif // USE_QT_VISUAL

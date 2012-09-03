@@ -6,6 +6,3 @@ DYLIBS="$DYLIBS `darwinx-otool -L $1 | grep "png" | awk -F' ' '{ print $1 }'`"
 #for dylib in $DYLIBS; do cp $dylib bin/; done;
 for dylib in $DYLIBS; do darwinx-install_name_tool -change $dylib \@executable_path/`basename $dylib` $1; done;
 
-darwinx-otool -L $1
-
-echo "compilation finished"
