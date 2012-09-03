@@ -100,9 +100,10 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 #if USE_QT_VISUAL
+static bool do_update_everything =false;
 void EditorWidget::paintEvent( QPaintEvent *e ){
 
-//  setBackgroundColor( this->colors[0] );		/* white background */
+  //setBackgroundColor( this->colors[0] );		/* white background */
 
   //Resize_resized(this->window,this->width()-100,this->height()-30,false);
 #if 0
@@ -116,6 +117,22 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     DO_GFX_BLT(DrawUpTrackerWindow(window));
     fprintf(stderr," painting up everything, %d\n",times++);
   }
+
+  if(do_update_everything==true){
+    fprintf(stderr," Resize: painting up everything, %d\n",times++);
+    DO_GFX_BLT(DrawUpTrackerWindow(window));
+    do_update_everything=false;
+  }
+
+#if 0
+  fprintf(stderr,"paintEvent. rect: %d/%d - %d/%d\n",e->rect().x(), e->rect().y(), e->rect().x()+e->rect().width(), e->rect().y()+e->rect().height());
+
+  if(e->erased()){
+    fprintf(stderr," is erased, painting up everything, %d\n",times++);
+    DO_GFX_BLT(DrawUpTrackerWindow(window));
+  }
+#endif
+
 #endif
 
 #ifdef USE_QT3
@@ -369,6 +386,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
 
   if(this->get_editor_width() > old_width || this->get_editor_height() > old_height){
 #if 1
+    do_update_everything = true;
     DO_GFX_BLT(DrawUpTrackerWindow(window));
     //repaint(); // I don't know why it's not enough just calling DrawUpTrackerWindow.
     update();
