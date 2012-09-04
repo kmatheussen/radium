@@ -49,5 +49,5 @@ mingw32-make radium $@
 
 cp bin/radium mingw/radium/radium.exe
 cp bin/radium temp/bin/radium.exe
-cp bin/radium windows_dist/bin/radium.exe
+cp bin/radium Dropbox/windows_dist/bin/radium.exe
 

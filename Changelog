@@ -1,3 +1,24 @@
+Most important changes 0.68.6 -> 0.68.7:
+* Update status bar also if mouse button is not pressed.
+* Print track volume and track pan in status bar also when mouse button is not pressed.
+* Remove GFX artifact after loading
+* Enable RELEASE build for OSX binary.
+
+
+Most important changes 0.68.2 -> 0.68.6:
+* Windows and Mac OS X port.
+* Replaced GTK Requester and GTK popup menu with Qt code.
+* Focus fixes
+* Fix Qt build. (GTK is still the default on Linux, but
+  Windows and OSX only uses Qt.)
+* Fix Add Instrument menu option. (F12)
+* Qt: Ignore TEXT_BOLD font flag. Let the user decide instead.
+* Fix CLang 3.0 compilation on Linux.
+* Qt: Check periodically if program should quit.
+* Make Radium work without write accesss to binary folder.
+* Display correct Instrument after loading.
+
+
 Most important changes 0.68.1 -> 0.68.2:
 * Fix left mouse down when selecting font or FX.
 

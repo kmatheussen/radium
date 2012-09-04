@@ -6,7 +6,7 @@ export PYTHONEXE=python #In Mingw, this is just the python we use to autogenerat
 export MOC=moc-qt4
 export UIC=uic-qt4
 
-export OPTIMIZE="-mtune=generic -O3"
+export OPTIMIZE="-O3"
 
 #export CCC="darwinx-g++ -arch i386 -arch ppc -arch x86_64"
 #export CC="darwinx-gcc -arch i386 -arch ppc -arch x86_64"
@@ -16,8 +16,8 @@ export CCC="darwinx-g++ -arch i386 -arch x86_64"
 export CC="darwinx-gcc -arch i386 -arch x86_64"
 export LINKER="darwinx-g++ -arch i386 -arch x86_64"
 
-export BUILDTYPE=DEBUG
-#export BUILDTYPE=RELEASE
+#export BUILDTYPE=DEBUG
+export BUILDTYPE=RELEASE
 
 export PYPATH=/home/kjetil/radium-qt4/darwinx/Versions/Current/include/python2.7
 
@@ -53,7 +53,7 @@ darwinx-install_name_tool -change /Library/Frameworks/Python.framework/Versions/
 
 darwinx-otool -L bin/radium
 
-cp bin/radium /home/kjetil/Dropbox/radium.app/Contents/MacOS/
+cp bin/radium Dropbox/radium.app/Contents/MacOS/
 
 echo "compilation finished"
 
