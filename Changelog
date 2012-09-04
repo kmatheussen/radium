@@ -1,3 +1,8 @@
+Most important changes 0.68.7 -> 0.68.8:
+* Fix colors and font on mac.
+  (The default configuration file was not found.)
+
+
 Most important changes 0.68.6 -> 0.68.7:
 * Update status bar also if mouse button is not pressed.
 * Print track volume and track pan in status bar also when mouse button is not pressed.
