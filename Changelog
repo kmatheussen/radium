@@ -1,7 +1,7 @@
 Most important changes 0.68.6 -> 0.68.7:
 * Update status bar also if mouse button is not pressed.
 * Print track volume and track pan in status bar also when mouse button is not pressed.
-* Remove GFX artifact after loading
+* Remove GFX artifacts after loading.
 * Enable RELEASE build for OSX binary.
 
 
