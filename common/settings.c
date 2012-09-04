@@ -83,7 +83,7 @@ static const char** get_lines(void){
   FILE *file = user_file;
 
   if(file==NULL){
-    const char* curr_dir = OS_get_current_directory();
+    const char* curr_dir = OS_get_program_path();
     const char* separator = OS_get_directory_separator();
     char filename[strlen(curr_dir)+strlen(separator)+strlen("config")+10];
     sprintf(filename,"%s%s%s",curr_dir,separator,"config");

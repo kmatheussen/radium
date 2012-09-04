@@ -444,6 +444,38 @@ extern "C" void initradium(void);
 int main(int argc, char **argv){
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
 
+  printf("1: argv[0]: \"%s\"\n",argv[0]);
+
+  Py_Initialize();
+
+  {
+    char temp[500];
+
+    // Set loading path to argv[0]
+    PyRun_SimpleString("import sys,os");
+
+#ifdef FOR_WINDOWS
+    sprintf(temp,"sys.g_program_path = \"\"");
+#else
+    // This doesn't work on mingw. Could be a wine problem only.
+    sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
+#endif
+    PyRun_SimpleString(temp);
+    
+    PyRun_SimpleString("print \"hepp:\",sys.g_program_path,23");
+    
+    PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
+    
+    // Set sys.argv[0]
+    sprintf(temp,"sys.argv=[\"%s\",os.path.join(sys.g_program_path,\"keybindings.conf\")]",argv[0]);
+    PyRun_SimpleString(temp);
+    
+    printf("argv[0]: %s\n",argv[0]);
+    PyRun_SimpleString("print \"path:\",sys.g_program_path,239");
+    
+    //exit(0);
+  }
+
   {
     int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
     if(system_font_size>=0){
@@ -459,37 +491,7 @@ int main(int argc, char **argv){
   GTK_Init(argc,argv);
 #endif
 
-  printf("1\n");
-
-  Py_Initialize();
-
   printf("2\n");
-
-  char temp[500];
-
-  // Set loading path to argv[0]
-  PyRun_SimpleString("import sys,os");
-
-#ifdef FOR_WINDOWS
-  sprintf(temp,"sys.g_program_path = \"\"");
-#else
-  // This doesn't work on mingw. Could be a wine problem only.
-  sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
-#endif
-  PyRun_SimpleString(temp);
-
-  PyRun_SimpleString("print \"hepp:\",sys.g_program_path,23");
-
-  PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
-
-  // Set sys.argv[0]
-  sprintf(temp,"sys.argv=[\"%s\",os.path.join(sys.g_program_path,\"keybindings.conf\")]",argv[0]);
-  PyRun_SimpleString(temp);
-
-  printf("argv[0]: %s\n",argv[0]);
-  PyRun_SimpleString("print \"path:\",sys.g_program_path,239");
-
-  //exit(0);
 
   initradium();
 

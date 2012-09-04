@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "Python.h"
+
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -21,14 +24,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 
-char *OS_get_current_directory(void){
+char *OS_get_program_path(void){
+  static char *program_path = NULL;
+  if(program_path!=NULL){
+    return program_path;
+  }
+
+#ifdef FOR_WINDOWS
+
   int size=128;
   char *ret;
   do{
     size *= 2;
     ret=talloc_atomic(size);
   }while(getcwd(ret,size-1)==NULL);
+
+  program_path = ret;
+
   return ret;
+
+#else
+
+  PyObject* sys_module_string = PyString_FromString((char*)"sys");
+  PyObject* sys_module = PyImport_Import(sys_module_string);
+  PyObject* g_program_path = PyObject_GetAttrString(sys_module,(char*)"g_program_path");
+
+  program_path = talloc_strdup(PyString_AsString(g_program_path));
+  return program_path;
+
+#endif
 }
 
 char *OS_get_directory_separator(void){

@@ -60,7 +60,7 @@ static void show_message(int type, char *message){
             "%s/packages/"
             "xmessage-1.0.3/xmessage -buttons continue:0,quit:1,\"ignore warnings and errors for two seconds\":2,\"ignore warnings and errors for the rest of the program\":3"
             "-nearmouse -print -default yes \"%s: %s.\"",
-            OS_get_current_directory(),
+            OS_get_program_path(),
             typestring,
             message);
 
