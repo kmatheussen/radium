@@ -345,7 +345,8 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 
-  //update();
+  if(GFX_get_op_queue_size(this->window)>0)
+    update();
 }
 
 #endif // USE_QT_VISUAL
