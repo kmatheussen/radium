@@ -1,3 +1,10 @@
+Most important changes 0.68.9 -> 0.69.0:
+* Less automatic increase of window size
+* More shortcuts for keypadless computers:
+	Left Shift + 0...9 : Select track
+	Left Ctrl  + 0...9 : Select track on/off
+
+
 Most important changes 0.68.8 -> 0.68.9:
 * Snappier graphics.
 * Fix graphics after loading
