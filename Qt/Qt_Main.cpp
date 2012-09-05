@@ -498,6 +498,7 @@ int main(int argc, char **argv){
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
 
+
 #if GTK_IS_USED
   GTK_Init(argc,argv);
 #endif

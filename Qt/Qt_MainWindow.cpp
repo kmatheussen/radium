@@ -325,9 +325,12 @@ void SetupMainWindow(void){
 #endif
 
 #ifdef USE_QT4
-  editor->setAttribute(Qt::WA_PaintOnScreen);
+#if !defined( __linux__) && USE_QT_VISUAL
+  editor->setAttribute(Qt::WA_PaintOnScreen); // Turning on double buffer actually improves performance on linux. Still not as good as gtk though.
+#endif
   editor->setAttribute(Qt::WA_OpaquePaintEvent);
   editor->setAttribute(Qt::WA_NoSystemBackground);
+  //editor->setBackgroundMode(Qt::NoBackground);
   //main_window->setBackgroundMode(Qt::NoBackground);
 #endif
   editor->main_window = main_window;
