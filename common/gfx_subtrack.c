@@ -80,7 +80,7 @@ int GetXSubTrack2(
 /************************************************************************
   FUNCTION
     These two functions works just like GetXSubTrack1 and 2, except
-    that they allso accept the tracks that contains to the block. Which
+    that they also accept the tracks that contains to the block. Which
     is the lpb-track, tempo-track, and the temponode-track.
 ************************************************************************/
 int GetXSubTrack_B1(

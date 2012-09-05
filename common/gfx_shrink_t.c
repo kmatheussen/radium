@@ -114,13 +114,13 @@ void GFXST_TextType(
     GFXS_TextType(GFX_OSFunc,window,color,text,R_MAX(minx,x),y,width,flags,where);
   }else{
     int minx=getMinX(window);
-    char temp[600];
 
     if(GFX_OSFunc==QUEUE_GFX_Text){
       if(x<minx){
         x=minx;
-        sprintf(temp,"<--%s",text);
-        GFXS_TextType(GFX_OSFunc,window,color,temp,x,y,width,flags,where);
+        //char temp[600];
+        //sprintf(temp,"<--%s",text);
+        //GFXS_TextType(GFX_OSFunc,window,color,temp,x,y,width,flags,where);
       }else
         GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags,where);
     }else{

@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "gfx_op_queue_proc.h"
 #include "settings_proc.h"
+#include "cursor_proc.h"
+#include "gfx_subtrack_proc.h"
 
 #include "windows_proc.h"
 
@@ -200,6 +202,20 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFER);
+
+        struct WBlocks *wblock = window->wblock;
+
+        while(GetXSubTrack_B2(wblock,window->curr_track,window->curr_track_sub) >= wblock->a.x2){
+
+          if(window->curr_track<wblock->left_track)
+            break; // should not be possible
+
+          if(window->curr_track==wblock->left_track && window->curr_track_sub==wblock->left_subtrack)
+            break;
+
+          CursorLeft_CurrPos(window);
+        }
+
 	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,window->wblock);

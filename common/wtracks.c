@@ -201,6 +201,12 @@ void UpdateAllWTracksCoordinates(
 	  wtrack=NextWTrack(wtrack);
 	}
 
+        {
+          struct WTracks *left_wtrack = wtrack;
+          //printf("****** Setting minimum width to x2 of track %d\n",left_wtrack->l.num);
+          GFX_SetMinimumWindowWidth(window, left_wtrack->x2);
+        }
+
 	if(wblock->left_subtrack>-1){
 	  leftX-=(wtrack->fxwidth*wblock->left_subtrack/wtrack->num_vel)
 	    + (wblock->left_subtrack>0 ? 1 : 0);
@@ -227,14 +233,13 @@ void UpdateAllWTracksCoordinates(
 	UpdateWTrackCoordinates(window,wblock,wtrack,leftX);
 #endif
 
-
 	wtrack=wblock->wtracks;
-	
+
 	while(wtrack!=NULL){
 		wblock->right_track=wtrack->l.num;
 		if(NextWTrack(wtrack)==NULL){
 			wblock->right_subtrack=wtrack->num_vel-1;
-			return;
+			goto exit;
 		}
 		if(NextWTrack(wtrack)->notearea.x>=wblock->a.x2-2) break;
 		wtrack=NextWTrack(wtrack);
@@ -249,6 +254,8 @@ void UpdateAllWTracksCoordinates(
 	}
 
 	//	wblock->t.x2=GetXSubTrack_B1(wblock,wblock->right_track,wblock->right_subtrack);
+ exit:
+        return;
 }
 
 
