@@ -51,3 +51,8 @@ cp bin/radium mingw/radium/radium.exe
 cp bin/radium temp/bin/radium.exe
 cp bin/radium Dropbox/windows_dist/bin/radium.exe
 
+if echo $OS_OPTS |grep MEMORY_DEBUG 2>/dev/null ; then
+    echo
+    echo "WARNING! MEMORY_DEBUG is turned on!"
+    echo
+fi

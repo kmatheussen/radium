@@ -100,7 +100,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 #if USE_QT_VISUAL
-static bool do_update_everything =false;
+bool do_update_everything =false;
 void EditorWidget::paintEvent( QPaintEvent *e ){
 
   //setBackgroundColor( this->colors[0] );		/* white background */

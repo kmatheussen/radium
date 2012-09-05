@@ -168,6 +168,9 @@ extern int max_num_undos;
 extern const char *mmp2filename;
 #endif
 
+#if USE_QT_VISUAL
+extern bool do_update_everything;
+#endif
 
 bool Load_CurrPos(struct Tracker_Windows *window){
 	bool ret = false;
@@ -242,6 +245,10 @@ bool Load_CurrPos(struct Tracker_Windows *window){
                                                           wblock->wtrack->track->instrument,
                                                           wblock->wtrack->track->patch
                                                           );
+
+#if USE_QT_VISUAL
+          do_update_everything=true;
+#endif
 
           fprintf(stderr,"Got here (loading finished)\n");
         }

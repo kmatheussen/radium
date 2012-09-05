@@ -198,6 +198,10 @@ void Ptask2Mtask(void){
 #include "../common/gfx_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 
+#ifdef TEST_GC
+#  include "gc.h"
+#endif
+
 class CalledPeriodically : public QTimer{
 public:
   CalledPeriodically(){
@@ -206,6 +210,11 @@ public:
   }
 protected:
   void 	timerEvent ( QTimerEvent * e ){
+#ifdef TEST_GC
+    printf("triggering full collect\n");
+    GC_gcollect();
+#endif
+
     if(num_users_of_keyboard>0)
       return;
     {

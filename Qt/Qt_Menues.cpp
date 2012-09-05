@@ -90,9 +90,9 @@ public slots:
       DO_GFX(PyRun_SimpleString(temp));
     }else
       DO_GFX(PyRun_SimpleString(python_command));
-    //static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
     closeRequester();
-    static_cast<EditorWidget*>(window->os_visual.widget)->repaint(); // Why isn't calling updateEditor() enough?
+    static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+    //static_cast<EditorWidget*>(window->os_visual.widget)->repaint(); // Why isn't calling updateEditor() enough?
     if(doquit==true)
       qapplication->quit();
   }
