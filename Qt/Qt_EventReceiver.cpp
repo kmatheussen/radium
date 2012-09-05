@@ -113,10 +113,12 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
 #ifdef USE_QT4
   static int times = 0;
-  if(GFX_get_op_queue_size(this->window) ==0) {
+#if 0
+  if(GFX_get_op_queue_size(this->window)==0) {
     DO_GFX_BLT(DrawUpTrackerWindow(window));
     fprintf(stderr," painting up everything, %d\n",times++);
   }
+#endif
 
   if(do_update_everything==true){
     fprintf(stderr," Resize: painting up everything, %d\n",times++);

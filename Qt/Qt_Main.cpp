@@ -37,7 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
-#include "../common/gfx_op_queue_proc.h"
 
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -88,7 +87,7 @@ protected:
   bool x11EventFilter(XEvent *event){
     bool ret = X11_KeyboardFilter(event);
 
-    if(ret==true && GFX_get_op_queue_size(root->song->tracker_windows)>0)
+    if(ret==true)
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
 
     if(doquit==true)
@@ -102,7 +101,7 @@ protected:
   bool 	winEventFilter ( MSG * msg, long * result ){
     bool ret = W_KeyboardFilter(msg);
 
-    if(ret==true && GFX_get_op_queue_size(root->song->tracker_windows)>0)
+    if(ret==true)
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
 
     return ret;
@@ -113,7 +112,7 @@ protected:
   bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
     bool ret = cocoa_KeyboardFilter(event);
 
-    if(ret==true && GFX_get_op_queue_size(root->song->tracker_windows)>0)
+    if(ret==true)
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
 
     return ret;
