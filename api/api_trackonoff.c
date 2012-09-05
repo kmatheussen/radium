@@ -32,6 +32,13 @@ void allTracksOn(void){
   AllTracksOn_CurrPos(root->song->tracker_windows);
 }
 
+void switchTrackOn(int tracknum,int windownum){
+	struct Tracker_Windows *window=getWindowFromNum(windownum);
+	if(window==NULL) return;
+
+	TRACK_OF_switch_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
+}
+
 void soloTrack(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
@@ -39,10 +46,14 @@ void soloTrack(int tracknum,int windownum){
 	TRACK_OF_solo_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
 }
 
-void switchTrack(int tracknum,int windownum){
-	struct Tracker_Windows *window=getWindowFromNum(windownum);
-	if(window==NULL) return;
+void switchSoloTrack(int tracknum,int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  struct WBlocks *wblock=getWBlockFromNum(windownum,-1);
+  struct WTracks *wtrack=getWTrackFromNum(windownum,-1,tracknum);
 
-	TRACK_OF_switch_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
+  if(window==NULL || wblock==NULL || wtrack==NULL)
+    return;
+
+  TRACK_OF_switch_solo_spesified_CurrPos(window,wblock->block,wtrack->track);
 }
 

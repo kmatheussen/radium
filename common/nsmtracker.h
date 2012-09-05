@@ -319,7 +319,7 @@ struct Tracks{
 	bool panonoff;
         bool volumeonoff;                      /* The volume-button on/off, not track on/off. */
 };
-#define NextTrack(a) (struct Tracks *)((a)->l.next)
+#define NextTrack(a) ((struct Tracks *)((a)->l.next))
 
 #define MAXTRACKVOL 1000
 #define MAXTRACKPAN 1000

@@ -57,8 +57,8 @@ void SwitchTrackOnOff_CurrPos(
 	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
 }
 
-void SoloTrack(
-	NInt tracknum
+static void SoloTrack(
+                      NInt tracknum
 ){
 	struct Blocks *block=root->song->blocks;
 	struct Tracks *track;
@@ -67,9 +67,9 @@ void SoloTrack(
 		track=block->tracks;
 		while(track!=NULL){
 			if(track->l.num==tracknum){
-				track->onoff=1;
+                          track->onoff=1;
 			}else{
-				track->onoff=0;
+                          track->onoff=0;
 			}
 			track=NextTrack(track);
 		}
@@ -137,6 +137,34 @@ void TRACK_OF_solo_spesified_CurrPos(
 
 	SoloTrack(tracknum);
 	DrawAllWTrackHeaders(window,window->wblock);
+}
+
+
+void TRACK_OF_switch_solo_spesified_CurrPos(
+	struct Tracker_Windows *window,
+        struct Blocks *block,
+        struct Tracks *track
+){
+  NInt tracknum=track->l.num;
+
+  if(tracknum>=window->wblock->block->num_tracks)
+    return;
+
+  bool set_solo = true;
+
+  if(track->onoff==true){
+    if(track->l.next!=NULL && NextTrack(track)->onoff==false)
+      set_solo = false;
+    else if(track->l.num>0 && ((struct Tracks*)(ListPrevElement1(&block->tracks->l, &track->l)))->onoff==false)
+      set_solo = false;
+  }
+   
+  if(set_solo==true)
+    SoloTrack(tracknum);
+  else
+    AllTracksOn(tracknum);
+
+  DrawAllWTrackHeaders(window,window->wblock);
 }
 
 
