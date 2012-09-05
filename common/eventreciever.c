@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "visual_proc.h"
 #include "../common/gfx_proc.h"
-
+#include "../common/player_proc.h"
 
 #include "../api/radium_proc.h"
 
@@ -56,7 +56,7 @@ bool Quit(struct Tracker_Windows *window){
 	char temp[200];
 	char *ret=NULL;
 
-        StopPlayer();
+        PlayHardStop();
 
 	printf("Going to quit\n");
 	if(num_undos>0){

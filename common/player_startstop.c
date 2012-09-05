@@ -54,7 +54,7 @@ extern struct Root *root;
 
 extern void (*Ptask2MtaskCallBack)(void);
 
-void PlayStopReally(bool doit){ 
+static void PlayStopReally(bool doit){ 
 	pc->isplaying=false;
 	pc->initplaying=false;
 

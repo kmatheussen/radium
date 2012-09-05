@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e 
+
 export VISUAL="-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0"
 
 export GTK_CFLAGS=""
