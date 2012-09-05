@@ -71,8 +71,20 @@ void keyUpPlay(int notenum,int windownum){
 }
 
 void setKeyAdd(int addnum){
-	root->keyoct=addnum;
-	GFX_UpdateKeyOctave(root->song->tracker_windows,root->song->tracker_windows->wblock);
+#if 0
+  if(root->keyoct==addnum)
+    root->keyoct=addnum+12;
+  else if(root->keyoct==addnum+12 && addnum==72)
+    root->keyoct=addnum+24;
+  else if(root->keyoct==addnum+24 && addnum==72)
+    root->keyoct=addnum+36;
+  else if(root->keyoct==addnum+36 && addnum==72)
+    root->keyoct=addnum+48;
+  else
+#endif
+    root->keyoct=addnum;
+
+  GFX_UpdateKeyOctave(root->song->tracker_windows,root->song->tracker_windows->wblock);
 }
 
 void incKeyAdd(int incaddnum){
