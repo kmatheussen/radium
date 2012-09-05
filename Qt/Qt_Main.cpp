@@ -198,6 +198,8 @@ void Ptask2Mtask(void){
 #include "../common/gfx_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 
+//#define TEST_GC
+
 #ifdef TEST_GC
 #  include "gc.h"
 #endif
