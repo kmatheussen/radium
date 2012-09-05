@@ -554,7 +554,7 @@ static void tab_selected(){
            );
 
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-    editor->update();
+    editor->updateEditor();
   }
 
   updatePortsWidget(instrument);

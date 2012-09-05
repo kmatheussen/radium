@@ -113,6 +113,8 @@ public:
 
     Q3PointArray qpa;
 
+    void updateEditor();
+
 protected:
     //    bool        event(QEvent *);
 #if 1 //USE_QT_VISUAL

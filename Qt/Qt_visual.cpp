@@ -95,7 +95,7 @@ int GFX_ShutDownVisual(struct Tracker_Windows *tvisual){
 extern LANGSPEC void QT_UpdateEditor(struct Tracker_Windows *window);
 void QT_UpdateEditor(struct Tracker_Windows *window){
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
-  editor->update();
+  editor->updateEditor();
 }
 
 extern LANGSPEC void QT_RepaintEditor(struct Tracker_Windows *window);

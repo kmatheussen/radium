@@ -78,7 +78,7 @@ void EditorWidget::customEvent(QEvent *e){
 #endif
 
 #if USE_QT_VISUAL
-  update();
+  updateEditor();
 #endif
 }
 
@@ -113,7 +113,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
 #ifdef USE_QT4
   static int times = 0;
-#if 0
+#if 1
   if(GFX_get_op_queue_size(this->window)==0) {
     DO_GFX_BLT(DrawUpTrackerWindow(window));
     fprintf(stderr," painting up everything, %d\n",times++);
@@ -171,6 +171,10 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 }
 #endif
 
+void EditorWidget::updateEditor(){
+  if(GFX_get_op_queue_size(this->window)>0)
+    update();
+}
 
 struct TEvent tevent={0};
 
@@ -283,7 +287,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
 
    EventReciever(&tevent,this->window);
 
-   update();
+   updateEditor();
 }
 
 void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
@@ -316,7 +320,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   EventReciever(&tevent,this->window);
 
-  update();
+  updateEditor();
 }
 
 
@@ -336,7 +340,7 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 
   EventReciever(&tevent,this->window);
 
-  update();
+  updateEditor();
 }
 
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
@@ -348,7 +352,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 
   if(GFX_get_op_queue_size(this->window)>0)
-    update();
+    updateEditor();
 }
 
 #endif // USE_QT_VISUAL

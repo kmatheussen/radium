@@ -191,7 +191,7 @@ public slots:
              DrawWTrackHeader(window,wblock,wtrack);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-      editor->update();
+      editor->updateEditor();
     }
 
     set_editor_focus();

@@ -292,7 +292,7 @@ public:
                });
 
 #if USE_QT_VISUAL
-    g_editor->update();
+    g_editor->updateEditor();
 #endif
   }
 };

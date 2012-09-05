@@ -88,7 +88,7 @@ protected:
     bool ret = X11_KeyboardFilter(event);
 
     if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
 
     if(doquit==true)
       QApplication::quit();
@@ -102,7 +102,7 @@ protected:
     bool ret = W_KeyboardFilter(msg);
 
     if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
 
     return ret;
   }
@@ -113,7 +113,7 @@ protected:
     bool ret = cocoa_KeyboardFilter(event);
 
     if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->update();
+      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
 
     return ret;
   }
@@ -212,7 +212,7 @@ protected:
       struct Tracker_Windows *window=root->song->tracker_windows;
       DO_GFX_BLT(MIDI_HandleInputMessage());
       if(GFX_get_op_queue_size(window) > 0)
-        static_cast<EditorWidget*>(window->os_visual.widget)->update();
+        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
 
       if(doquit==true)
         QApplication::quit();

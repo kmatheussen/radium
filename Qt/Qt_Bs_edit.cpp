@@ -312,7 +312,7 @@ private slots:
     struct WBlocks *wblock=getWBlockFromNum(-1,num);
     DO_GFX(SelectWBlock(window,wblock));
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    editor->update();
+    editor->updateEditor();
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){
