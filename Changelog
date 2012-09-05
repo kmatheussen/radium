@@ -1,3 +1,12 @@
+Most important changes 0.68.8 -> 0.68.9:
+* Snappier graphics.
+* Fix graphics after loading
+* Better keybindings for keypadless computers
+* Changed solo track function to switch between solo track
+  and all tracks on, depending on whether it was on or not.
+* Dont crash when exiting while playing
+
+
 Most important changes 0.68.7 -> 0.68.8:
 * Fix colors and font on mac.
   (The default configuration file was not found.)
