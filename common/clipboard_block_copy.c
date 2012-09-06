@@ -42,7 +42,6 @@ struct WBlocks *CB_CopyBlock(
 ){
 	int lokke;
 	struct WBlocks *towblock;
-	struct WTracks *wtrack;
 	struct Blocks *toblock;
 	struct Blocks *block=wblock->block;
 
@@ -72,14 +71,22 @@ struct WBlocks *CB_CopyBlock(
 	toblock->times=NULL;
 
 	towblock->wtracks=NULL;
-	wtrack=wblock->wtracks;
-	for(lokke=0;lokke<block->num_tracks;lokke++){
-		ListAddElement1(
-			&towblock->wtracks,
-			(struct ListHeader1 *) CB_CopyTrack(towblock,wtrack)
-		);
-		wtrack=NextWTrack(wtrack);
-	}
+
+        {
+          struct WTracks *wtrack=wblock->wtracks;
+          for(lokke=0;lokke<block->num_tracks;lokke++){
+            struct WTracks *towtrack = CB_CopyTrack(towblock,wtrack);
+            if(wblock->wtrack==wtrack)
+              towblock->wtrack=towtrack;
+            
+            ListAddElement1(
+                            &towblock->wtracks,
+                            (struct ListHeader1 *) towtrack
+                            );
+            
+            wtrack=NextWTrack(wtrack);
+          }
+        }
 
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 	toblock->tempos=CB_CopyTempos(block->tempos);
