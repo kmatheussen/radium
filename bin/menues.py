@@ -26,7 +26,29 @@ def get_command(menutext):
     return commands[menutext]
   else:
     return ""
-    
+  
+code2read={"CTRL_L":"Left Ctrl",
+           "CTRL_R":"Right Ctrl",
+           "CAPS":"Caps Lock",
+           "SHIFT_L":"Left Shift",
+           "SHIFT_R":"Right Shift",
+           "ALT_L":"Left Alt",
+           "ALT_R":"Alt Gr",
+           "EXTRA_L":"Left Meta",
+           "EXTRA_R":"Right Meta"}
+
+
+           #import platform
+           #if platform.system() != "Linux" and platform.system() != "mingw":
+           #  code2read["BACKSPACE"] = "Delete"
+
+
+def get_key_name(code):    
+  if code in code2read:
+    return code2read[code]
+  else:
+    return code
+
 class LineParser:
   def __init__(self,filename):
     try:
@@ -66,19 +88,10 @@ class LineParser:
     
     key=keybindingsdict[keykey]
     qualifier=""
-    code2read={"CTRL_L":"Left Ctrl",
-               "CTRL_R":"Right Ctrl",
-               "CAPS":"Caps Lock",
-               "SHIFT_L":"Left Shift",
-               "SHIFT_R":"Right Shift",
-               "ALT_L":"Left Alt",
-               "ALT_R":"Alt Gr",
-               "EXTRA_L":"Left Meta",
-               "EXTRA_R":"Right Meta"}
     
     for item in key[1]:
-      qualifier+=code2read[item]+" + "
-    ret = string.rstrip(items[0])+emptystring(40-((len(items[0]))*3/2))+qualifier+key[0][0]
+      qualifier+=get_key_name(item)+" + "
+    ret = string.rstrip(items[0])+emptystring(40-((len(items[0]))*3/2)) + qualifier + get_key_name(key[0][0])
     commands[string.lstrip(ret)] = string.lstrip(items[1])
     return ret
   

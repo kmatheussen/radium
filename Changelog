@@ -1,3 +1,8 @@
+Most important changes 0.69.0 -> 0.69.1:
+* Faster and fancier graphics for Windows and OSX
+* Use less memory
+
+
 Most important changes 0.68.9 -> 0.69.0:
 * Less automatic increase of window size
 * More shortcuts for keypadless computers:
