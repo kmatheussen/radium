@@ -54,6 +54,10 @@ struct WTracks *CB_CopyTrack(
 	towtrack->track=totrack=talloc(sizeof(struct Tracks));
 	memcpy(totrack,track,sizeof(struct Tracks));
 
+        // Null out some data we don't need so it can be GC-ed.
+        towtrack->trackreallines = NULL;
+        towtrack->wfxnodes = NULL;
+
 	towtrack->track->trackname=talloc_atomic(strlen(wtrack->track->trackname)+1);
 	memcpy(towtrack->track->trackname,wtrack->track->trackname,strlen(wtrack->track->trackname)+1);
 

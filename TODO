@@ -189,6 +189,9 @@ Non-urgent
 * The two noteview modes can be combined. I.e. showing both graphical note height + note name at the
   same time.
 
+* Loop by range playback mode
+
+* duplicate function for instruments in case you want to use the same ccs on multiple channels
 
 Urgent
 ======

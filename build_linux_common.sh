@@ -23,7 +23,8 @@ export QT_LDFLAGS="`$PKG --libs Qt3Support`"
 export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
-export OS_OPTS=
+#export OS_OPTS="-DTEST_GC"
+export OS_OPTS=""
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`

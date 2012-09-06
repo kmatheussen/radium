@@ -59,6 +59,7 @@ struct WBlocks *CB_CopyBlock(
 //	towblock->title=talloc(strlen(wblock->title)+1);
 //	memcpy(towblock->title,wblock->title,strlen(wblock->title)+1);
 
+        // Null out some data we don't need so it can be GC-ed.
 	towblock->wtempos=NULL;
 	towblock->wtemponodes=NULL;
 	towblock->wlpbs=NULL;
