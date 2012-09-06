@@ -319,8 +319,24 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  if(where==PAINT_BUFFER && color==0 && (y>=tvisual->wblock->t.y1))
-    color = 15;
+  if(where==PAINT_BUFFER && color==0){
+    if(y>=tvisual->wblock->t.y1)
+      color = 15;
+  }
+#if 0
+    else{
+      struct WBlocks *wblock = tvisual->wblock;
+      struct WTracks *wtrack = wblock->wtracks;
+      while(wtrack!=NULL){
+        if(x < wtrack->x2)
+          break;
+        wtrack = NextWTrack(wtrack);
+      }
+      if(wtrack==NULL)
+        color=15;
+    }
+  }
+#endif
 
   painter->fillRect(x,y,x2-x+1,y2-y+1,editor->colors[color]);
 }
