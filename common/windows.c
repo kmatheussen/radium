@@ -201,7 +201,8 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
     Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
-	GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFER);
+	GFX_FilledBox(window,0,0,0,window->width-1,window->wblock->t.y1,PAINT_BUFFER);
+	GFX_FilledBox(window,0,0,window->wblock->t.y1,window->width-1,window->height-1,PAINT_BUFFER);
 
         struct WBlocks *wblock = window->wblock;
 

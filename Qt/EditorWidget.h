@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qapplication.h>
 #include <qpixmap.h>
+#include <qimage.h>
 #include <qpointarray.h>
 #include <qlabel.h>
 #endif // USE_QT3
@@ -61,6 +62,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 class QMainWindow;
 class QSplitter;
 
+#if USE_QIMAGE_BUFFER
+typedef QImage PaintBuffer;
+#else
+typedef QPixmap PaintBuffer;
+#endif
+
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
 {
@@ -77,8 +84,9 @@ public:
     QColor     colors[16];				// color array
 
 #if USE_QT_VISUAL
-    QPixmap    *qpixmap;
-    QPixmap    *cursorpixmap;
+    PaintBuffer *paintbuffer;
+
+    PaintBuffer *cursorbuffer;
 #endif
 
     //void timerEvent(QTimerEvent *);
@@ -89,8 +97,8 @@ public:
 
 #if USE_QT_VISUAL
     QPainter *painter; // Set in paintEvent
-    QPainter *qpixmap_painter; // Set in paintEvent
-    QPainter *cursorpixmap_painter; // Set in paintEvent
+    QPainter *paintbuffer_painter; // Set in paintEvent
+    QPainter *cursorbuffer_painter; // Set in paintEvent
 
     QFont font;
 #endif

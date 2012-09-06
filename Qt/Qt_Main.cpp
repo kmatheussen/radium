@@ -175,7 +175,7 @@ void Ptask2Mtask(void){
     static double last_time = 0.0;
     double time = get_ms();
     //if(time-last_time < 150) // this looks much better! (but it needs to be configurable)
-    if(time-last_time < 5)
+    if(time-last_time < 20)
       return;
     last_time = time;
   }

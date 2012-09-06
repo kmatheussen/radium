@@ -120,7 +120,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   , qpa(256)
 {
 #if USE_QT_VISUAL
-  this->qpixmap=NULL;
+  this->paintbuffer=NULL;
 #endif
 
 #if USE_GTK_VISUAL
@@ -331,10 +331,10 @@ void SetupMainWindow(void){
 #if USE_QT_VISUAL && !defined(__linux__)  // double buffer actually improves performance on linux. Still not as good as gtk though.
   editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
+  //editor->setAttribute(Qt::WA_PaintOnScreen);
+
   editor->setAttribute(Qt::WA_OpaquePaintEvent);
   editor->setAttribute(Qt::WA_NoSystemBackground);
-  //editor->setBackgroundMode(Qt::NoBackground);
-  //main_window->setBackgroundMode(Qt::NoBackground);
 #endif
   editor->main_window = main_window;
 
@@ -385,14 +385,17 @@ void SetupMainWindow(void){
   }
 
 
-  editor->qpixmap=new QPixmap(editor->width(),editor->height());
-#ifdef USE_QT3
-  editor->qpixmap->setOptimization(QPixmap::BestOptim);
+#if USE_QIMAGE_BUFFER
+  editor->paintbuffer=new QImage(editor->width(),editor->height(),QImage::Format_ARGB32_Premultiplied);
+  editor->cursorbuffer=new QImage(editor->width(),editor->height(),QImage::Format_ARGB32_Premultiplied);
+#else
+  editor->paintbuffer=new QPixmap(editor->width(),editor->height());
+  editor->cursorbuffer=new QPixmap(editor->width(),editor->height());
 #endif
 
-  editor->cursorpixmap=new QPixmap(editor->width(),editor->height());
 #ifdef USE_QT3
-  editor->cursorpixmap->setOptimization(QPixmap::BestOptim);
+  editor->paintbuffer->setOptimization(QPixmap::BestOptim);
+  editor->cursorbuffer->setOptimization(QPixmap::BestOptim);
 #endif
 
 #endif // USE_QT_VISUAL

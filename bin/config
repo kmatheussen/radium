@@ -1,6 +1,6 @@
-settings_version = 0.670000 # dont change this one
+settings_version = 0.690000 # dont change this one
 
-font = Monospace Bold 11
+font = Liberation Mono,12,-1,5,75,0,0,0,0,0
 system_font_size = 8
 
 show_text_border = true
@@ -15,7 +15,7 @@ color3 = #98006d
 color4 = #6437a7
 color5 = #002491
 color6 = #ffe100
-color7 = #e3e3d3
+color7 = #706958
 color8 = #470086
 color9 = #bcbca7
 color10 = #7a7a7a
@@ -23,7 +23,7 @@ color11 = #999d87
 color12 = #2411ff
 color13 = #13511f
 color14 = #d18409
-color15 = #5d0000
+color15 = #9f9e7e
 
 system_color = #bcbca7
 button_color = #999d87

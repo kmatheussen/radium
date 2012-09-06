@@ -131,12 +131,19 @@ void OS_GFX_C2V_bitBlt(
 		    ){
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
+#if USE_QIMAGE_BUFFER
+  editor->painter->drawImage(from_x1,to_y,
+                             *editor->cursorbuffer,
+                             from_x1,0,
+                             from_x2-from_x1+1,window->fontheight);
+#else
   DRAW_PIXMAP_ON_WIDGET(editor,
                         from_x1,to_y,
-                        editor->cursorpixmap,
+                        editor->cursorbuffer,
                         from_x1,0,
                         from_x2-from_x1+1,window->fontheight
 	 );
+#endif
 }
 
 
@@ -149,42 +156,56 @@ void OS_GFX_C_DrawCursor(
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
 #ifdef USE_QT4
+
 #if 0
   DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
                         x1+1,1,
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         x1+1,y_pixmap+1,
                         x2-x1-2,height-2);
 
   DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
                         x2+1,1,
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         x2+1,y_pixmap+1,
                         x3-x2-2,height-2);
 
   DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
                         x3+1,1,
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         x3+1,y_pixmap+1,
                         x4-x3-2,height-2);
 #endif
 
-  DRAW_PIXMAP_ON_PIXMAP(editor->cursorpixmap,
+#if USE_QIMAGE_BUFFER
+  editor->cursorbuffer_painter->setOpacity(0.75);
+
+  editor->cursorbuffer_painter->drawImage(x1+1,1,
+                                          *editor->paintbuffer,
+    x1+1,y_pixmap+1,
+    x4-x1-2,height-2);
+
+  editor->cursorbuffer_painter->setOpacity(0.2);
+  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
+
+#else
+  DRAW_PIXMAP_ON_PIXMAP(editor->cursorbuffer,
                         x1+1,1,
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         x1+1,y_pixmap+1,
                         x4-x1-2,height-2);
+#endif
 
-  editor->cursorpixmap_painter->setPen(editor->colors[1]);
-  editor->cursorpixmap_painter->drawRect(x1+1,0,
+  editor->cursorbuffer_painter->setOpacity(0.75);
+  editor->cursorbuffer_painter->setPen(editor->colors[1]);
+  editor->cursorbuffer_painter->drawRect(x1+1,0,
                                          x4-x1-2,height-1);
 
-  editor->cursorpixmap_painter->setPen(editor->colors[1]);
-  editor->cursorpixmap_painter->drawRect(x2+3,1,
+  editor->cursorbuffer_painter->drawRect(x2+3,1,
                                          x3-x2-6,height-3);
-  editor->cursorpixmap_painter->drawLine(x2+2,1,
+  editor->cursorbuffer_painter->drawLine(x2+2,1,
                                          x2+2,height-1);
-  editor->cursorpixmap_painter->drawLine(x3-4,1,
+  editor->cursorbuffer_painter->drawLine(x3-4,1,
                                          x3-4,height-1);
 #endif
 
@@ -192,13 +213,13 @@ void OS_GFX_C_DrawCursor(
 
   // TODO: fix Qt4
 #ifdef USE_QT3
-  editor->cursorpixmap_painter->fillRect(x1,0,x4,height,editor->colors[7]);
-  editor->cursorpixmap_painter->fillRect(x2,0,x3-x2+1,height,editor->colors[1]);
+  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
+  editor->cursorbuffer_painter->fillRect(x2,0,x3-x2+1,height,editor->colors[1]);
 
   bitBlt(
-         editor->cursorpixmap,
+         editor->cursorbuffer,
          0,0,
-         editor->qpixmap,
+         editor->paintbuffer,
          0,y_pixmap,
          x4+1,height
          ,Qt::XorROP
@@ -215,15 +236,17 @@ void OS_GFX_P2V_bitBlt(
 		    ){
   
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+  editor->painter->drawImage(to_x,to_y,*editor->paintbuffer,from_x,from_y,width,height);
 
+#if !USE_QIMAGE_BUFFER
   DRAW_PIXMAP_ON_WIDGET(
                         editor,
                         to_x,to_y,
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         from_x,from_y,
                         width,height
                         );
-
+#endif
   /*
   OS_GFX_C2V_bitBlt(
 		 window,
@@ -244,41 +267,60 @@ void OS_GFX_BitBlt(
   //printf("pixmap on pixmap. dx: %d. dy: %d\n",dx,dy);
 #ifdef USE_QT3
   DRAW_PIXMAP_ON_PIXMAP(
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         x+dx,y+dy,
-                        editor->qpixmap,
+                        editor->paintbuffer,
                         x,y,x2-x+1,y2-y+1
                         );
 #endif
 
 #ifdef USE_QT4
-#  ifdef FOR_MACOSX
+
+#  if USE_QIMAGE_BUFFER
+
+  QImage copy = editor->paintbuffer->copy(x,y,x2-x+1,y2-y+1);
+  editor->paintbuffer_painter->drawImage(x+dx,y+dy,copy);
+
+#  else // USE_QIMAGE_BUFFER
+
+#    ifdef FOR_MACOSX
      // drawPixmap into itself works on mac, probably since all graphic is buffered.
-     editor->qpixmap_painter->drawPixmap(x+dx,y+dy,
-                                         *editor->qpixmap,
+
+     editor->paintbuffer_painter->drawPixmap(x+dx,y+dy,
+                                         *editor->paintbuffer,
                                          x,y,
                                          x2-x+1,y2-y+1);
-#  else
+#    else // FOR_MACOSX
      // scroll doesn't work on MACOSX. (that's weird)
+
      if(dx<0){
-       editor->qpixmap->scroll(dx,dy,
+       editor->paintbuffer->scroll(dx,dy,
          x+dx,y+dy,
          x2-x+1, y2-y+1);
      }else{
-       editor->qpixmap->scroll(dx,dy,
+       editor->paintbuffer->scroll(dx,dy,
          x,y,
          x2-x+1, y2-y+1);
      }
-#  endif
-#endif
+#    endif // FOR_MACOSX
+#  endif  // USE_QIMAGE_BUFFER
+#endif // USE_QT4
 }
 
 
-#define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : editor->qpixmap_painter)
+#define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : editor->paintbuffer_painter)
+
+#if 0
+static void setColor(QPainter *painter, int colornum, int where){
+}
+#endif
 
 void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
+
+  if(where==PAINT_BUFFER && color==0 && (y>=tvisual->wblock->t.y1))
+    color = 15;
 
   painter->fillRect(x,y,x2-x+1,y2-y+1,editor->colors[color]);
 }
@@ -289,7 +331,9 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
 
   painter->setPen(editor->colors[color]);
 #if USE_QT4
+  //painter->setRenderHints(QPainter::Antialiasing,true);
   painter->drawRect(x,y,x2-x,y2-y);
+  //painter->setRenderHints(QPainter::Antialiasing,false);
 #endif
 #if USE_QT3
   painter->drawRect(x,y,x2-x+1,y2-y+1);
@@ -304,7 +348,9 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
   painter->setPen(editor->colors[color]);
 
 #if 0
-  QPen pen(editor->colors[color],4,Qt::SolidLine);  
+  painter->setRenderHints(QPainter::Antialiasing,true);
+
+  QPen pen(editor->colors[color],1,Qt::SolidLine);  
   pen.setCapStyle(Qt::RoundCap);
   pen.setJoinStyle(Qt::RoundJoin);
   painter->setPen(pen);
@@ -312,6 +358,10 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
 
   painter->drawLine(x,y,x2,y2);
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
+
+#if 0
+  painter->setRenderHints(QPainter::Antialiasing,false);
+#endif
 }
 
 
@@ -351,7 +401,7 @@ void OS_GFX_Point(
   if(brightness==MAX_BRIGHTNESS && color!=1){
     painter->setPen(editor->colors[color]);
   }else{
-    painter->setPen(mix_colors(editor->colors[color], editor->colors[0], brightness/(float)MAX_BRIGHTNESS));
+    painter->setPen(mix_colors(editor->colors[color], editor->colors[15], brightness/(float)MAX_BRIGHTNESS));
   }
 
   painter->drawPoint(x,y);

@@ -84,10 +84,12 @@ void EditorWidget::customEvent(QEvent *e){
 
 
 #if USE_QT_VISUAL && USE_QT4
+#if 1
 const QPaintEngine* EditorWidget::paintEngine(){     
   //qDebug()<<"Paint Engine";
   return NULL;
 }
+#endif
 #endif
 
 #if USE_GTK_VISUAL
@@ -144,8 +146,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
-    QPainter pixmap_paint(this->qpixmap);
-    QPainter cursorpixmap_paint(this->cursorpixmap);
+    QPainter paintbuffer_paint(this->paintbuffer);
+    QPainter cursorbuffer_paint(this->cursorbuffer);
     //paint.setRenderHints(QPainter::Antialiasing);
     //pixmap_paint.setRenderHints(QPainter::Antialiasing);
     //this->pixmap_painter->setPen(this->colors[5]);
@@ -153,10 +155,10 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     //paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
 
     this->painter = &paint;
-    this->qpixmap_painter = &pixmap_paint;
-    this->cursorpixmap_painter = &cursorpixmap_paint;
+    this->paintbuffer_painter = &paintbuffer_paint;
+    this->cursorbuffer_painter = &cursorbuffer_paint;
 
-    this->qpixmap_painter->setFont(this->font);
+    this->paintbuffer_painter->setFont(this->font);
     this->painter->setFont(this->font);
     this->setFont(this->font);
 
@@ -165,8 +167,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     }
 
     this->painter = NULL;
-    this->qpixmap_painter = NULL;
-    this->cursorpixmap_painter = NULL;
+    this->paintbuffer_painter = NULL;
+    this->cursorbuffer_painter = NULL;
   }
 }
 #endif
@@ -375,8 +377,23 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 #if USE_QT_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
-  this->qpixmap->resize(this->width(), this->height());
-  this->cursorpixmap->resize(this->width(), this->height());
+#if USE_QIMAGE_BUFFER
+  delete this->paintbuffer;
+  delete this->cursorbuffer;
+
+  //QImage::Format format = QImage::Format_ARGB32_Premultiplied;
+  QImage::Format format = QImage::Format_RGB32;
+  //QImage::Format format = QImage::Format_RGB444;
+  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_RGB32);
+  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_RGB32 );
+  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_RGB444);
+  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_ARGB32);
+  this->paintbuffer = new QImage(this->width(), this->height(), format);
+  this->cursorbuffer = new QImage(this->width(), this->height(), format);
+#else
+  this->paintbuffer->resize(this->width(), this->height());
+  this->cursorbuffer->resize(this->width(), this->height());
+#endif
 
   int old_width = this->window->width;
   int old_height = this->window->height;

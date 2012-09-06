@@ -112,7 +112,7 @@ CPPOPT = $(OPT)
 COMMON_QTOPTS =
 
 # QT4 opts
-QTOPT = $(CPPOPT) -DUSE_QT4 $(QT_CFLAGS) $(COMMON_QTOPTS)
+QTOPT = $(CPPOPT) -DUSE_QT4 -DUSE_QIMAGE_BUFFER=1 $(QT_CFLAGS) $(COMMON_QTOPTS)
 QTLINKFLAGS = $(QT_LDFLAGS) $(GTK_LDFLAGS)
 
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
