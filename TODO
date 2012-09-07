@@ -230,6 +230,8 @@ Urgent
 
 * Cancel zoom doesn't work.
 
+* Does QImages need to be cleared after being allocated?
+
 
 Can not reproduce
 =================

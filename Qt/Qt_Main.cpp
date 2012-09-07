@@ -165,7 +165,7 @@ public:
 
 
 void Ptask2Mtask(void){
-
+#if 0 // Polling instead.
   if(using_the_event==1)
     return;
 
@@ -175,18 +175,19 @@ void Ptask2Mtask(void){
     static double last_time = 0.0;
     double time = get_ms();
     //if(time-last_time < 150) // this looks much better! (but it needs to be configurable)
-    if(time-last_time < 20)
+    if(time-last_time < 40)
       return;
     last_time = time;
   }
 #endif
 
-  {
+  if(1){
     QObject *qobject=(QObject *)root->song->tracker_windows->os_visual.widget;
     MyQCustomEvent *qce = new MyQCustomEvent();
 
     qapplication->postEvent(qobject,qce);
   }
+#endif
 }
 
 #endif // USE_QT_VISUAL
@@ -207,7 +208,7 @@ void Ptask2Mtask(void){
 class CalledPeriodically : public QTimer{
 public:
   CalledPeriodically(){
-    setInterval(40);
+    setInterval(20);
     start();
   }
 protected:
@@ -217,6 +218,11 @@ protected:
     GC_gcollect();
 #endif
 
+    if(1){
+      struct Tracker_Windows *window=root->song->tracker_windows;
+      static_cast<EditorWidget*>(window->os_visual.widget)->callCustomEvent();
+    }
+
     if(num_users_of_keyboard>0)
       return;
     {
@@ -224,7 +230,7 @@ protected:
       DO_GFX_BLT(MIDI_HandleInputMessage());
       if(GFX_get_op_queue_size(window) > 0)
         static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
-
+      
       if(doquit==true)
         QApplication::quit();
     }

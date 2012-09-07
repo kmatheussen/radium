@@ -123,6 +123,10 @@ public:
 
     void updateEditor();
 
+    void callCustomEvent(){
+      customEvent(NULL);
+    }
+
 protected:
     //    bool        event(QEvent *);
 #if 1 //USE_QT_VISUAL
