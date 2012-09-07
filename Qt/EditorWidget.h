@@ -143,10 +143,12 @@ public:
            QPainter painter(this->cursorbuffer);
            painter.fillRect(0,0,this->width(),this->height(),this->colors[15]);
       }
+#if 0
       {
            QPainter painter(this->paintbuffer);
-           painter.fillRect(0,0,this->width(),this->height(),this->colors[15]);
+           painter.fillRect(0,0,this->width(),this->height(),this->colors[0]);
       }
+#endif
 #endif
     }
 

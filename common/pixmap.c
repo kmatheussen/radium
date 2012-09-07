@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_subtrack_proc.h"
 #include "common_proc.h"
 #include "gfx_shrink_proc.h"
+#include "list_proc.h"
 
 #include "pixmap_proc.h"
 
@@ -156,7 +157,7 @@ void PixMap_markNotInUse(
 		window->pixmapdefs[PixMap_getVisibleFromVisual(window,lokke)]=-1;
 	}
 }
-
+#if 0
 void PixMap_erase(
 	struct Tracker_Windows *window,
 	int start_visible,
@@ -181,6 +182,7 @@ void PixMap_erase(
 		}
 	}
 }
+#endif
 
 void PixMap_makeNewDefs(
 			struct Tracker_Windows *window,
@@ -199,6 +201,9 @@ void PixMap_makeNewDefs(
       window->pixmapdefs_calc[window->pixmapdefs[lokke]]=1;
     }
   }
+
+  struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+  int x2=wtrack->fxarea.x2;
   
   for(lokke=0;lokke<wblock->num_visiblelines;lokke++){
     if(window->pixmapdefs_calc[lokke]==0){
@@ -208,10 +213,8 @@ void PixMap_makeNewDefs(
       GFX_FilledBox(
 		      window,
 		      0,
-		      wblock->a.x1,
-		      PixMap_getY1(window,curr),
-		      wblock->t.x2,
-		      PixMap_getY2(window,curr),
+		      wblock->a.x1, PixMap_getY1(window,curr),
+		      x2, PixMap_getY2(window,curr),
                       PAINT_BUFFER
 		      );
 //      printf("clear: curr: %d, pixdef: %d\n",curr,lokke);

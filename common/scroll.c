@@ -30,8 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-void Scroll_freePixMapLines(
+#if 0
+static void Scroll_freePixMapLines(
 	struct Tracker_Windows *window,
 	int startrealline,
 	int endrealline
@@ -46,6 +46,7 @@ void Scroll_freePixMapLines(
 		endrealline - window->wblock->top_realline
 	);
 }
+#endif
 
 
 void Scroll_scrollPixMapDefs(

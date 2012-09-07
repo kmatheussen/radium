@@ -204,9 +204,9 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
   //printf("Draw up tracker. width: %d, height: %d\n",window->width,window->height);
 
-#if 0
-        struct WBlocks *wblock = window->wblock;
+  struct WBlocks *wblock = window->wblock;
 
+#if 0
         while(GetXSubTrack_B2(wblock,window->curr_track,window->curr_track_sub) >= wblock->a.x2){
 
           if(window->curr_track<wblock->left_track)
@@ -220,13 +220,27 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 #endif
 
 	UpdateTrackerWindowCoordinates(window);
-	UpdateWBlockCoordinates(window,window->wblock);
+	UpdateWBlockCoordinates(window,wblock);
 
 	PixMap_reset(window);
 
 #if 1
+        // TODO: Decide in common/ if using color 0 or 15. (not in GFX_FilledBox)
+
 	GFX_FilledBox(window,0,0,0,window->width-1,window->wblock->t.y1,PAINT_BUFFER);
-	GFX_FilledBox(window,0,0,window->wblock->t.y1,window->width-1,window->height-1,PAINT_BUFFER);
+	//GFX_FilledBox(window,0,0,window->wblock->t.y1,window->width-1,window->height-1,PAINT_BUFFER);
+
+	struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+        int x2=wtrack->fxarea.x2;
+        //printf("Width: %d. x2: %d\n",window->width,x2);
+	GFX_FilledBox(window,0,
+                      0,window->wblock->t.y1,
+                      x2-1,window->height-1,
+                      PAINT_BUFFER);
+	GFX_FilledBox(window,0,
+                      x2,0,
+                      window->width-1,window->height-1,
+                      PAINT_BUFFER);
 #endif
 
 	DrawWBlock(window,window->wblock);

@@ -486,8 +486,8 @@ void UpdateAllWTracks(
 	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 
 	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-		UpdateWTrack(window,wblock,wtrack,start_realline,end_realline);
-		wtrack=NextWTrack(wtrack);
+          UpdateWTrack(window,wblock,wtrack,start_realline,end_realline);
+          wtrack=NextWTrack(wtrack);
 	}
 }
 

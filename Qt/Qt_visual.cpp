@@ -236,7 +236,6 @@ void OS_GFX_P2V_bitBlt(
 		    ){
   
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
-  editor->painter->drawImage(to_x,to_y,*editor->paintbuffer,from_x,from_y,width,height);
 
 #if !USE_QIMAGE_BUFFER
   DRAW_PIXMAP_ON_WIDGET(
@@ -246,6 +245,10 @@ void OS_GFX_P2V_bitBlt(
                         from_x,from_y,
                         width,height
                         );
+#else
+
+  editor->painter->drawImage(to_x,to_y,*editor->paintbuffer,from_x,from_y,width,height);
+
 #endif
   /*
   OS_GFX_C2V_bitBlt(

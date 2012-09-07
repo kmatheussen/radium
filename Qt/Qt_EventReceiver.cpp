@@ -361,7 +361,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->window->height=this->get_editor_height();
 
 
-#if 1
+#if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
          this->height(),qresizeevent->size().height());
 #endif

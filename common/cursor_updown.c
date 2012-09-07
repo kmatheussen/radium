@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scroll_proc.h"
 #include "scroll_play_proc.h"
 #include "blts_proc.h"
+#include "list_proc.h"
 
 #include "cursor_updown_proc.h"
 
@@ -70,12 +71,14 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 
 			PixMap_reset(window);
 
+                        struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+                        int x2=wtrack->fxarea.x2;
 
 			GFX_FilledBox(
 				window,
 				0,
 				wblock->a.x1,wblock->t.y1,
-				wblock->t.x2,wblock->t.y2,
+				x2,wblock->t.y2,
                                 PAINT_BUFFER
 			);
 
@@ -140,11 +143,14 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 
 			PixMap_reset(window);
 
+                        struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+                        int x2=wtrack->fxarea.x2;
+
 			GFX_FilledBox(
 				window,
 				0,
 				wblock->a.x1,wblock->t.y1,
-				wblock->t.x2,wblock->t.y2,
+				x2,wblock->t.y2,
                                 PAINT_BUFFER
 			);
 			DrawWBlockSpesific(
