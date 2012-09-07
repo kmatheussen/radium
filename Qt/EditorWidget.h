@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWidget>
 #include <QLabel>
 #include <Q3PointArray>
+#include <QPainter>
 #endif
 
 #ifdef USE_QT3
@@ -126,6 +127,42 @@ public:
     void callCustomEvent(){
       customEvent(NULL);
     }
+
+#if USE_QIMAGE_BUFFER
+    void init_buffers(){
+       const QImage::Format image_format = QImage::Format_RGB32;
+
+       if(this->paintbuffer==NULL || this->cursorbuffer==NULL || this->paintbuffer->width()<this->width() || this->paintbuffer->height()<this->height()){
+         delete this->paintbuffer;
+         delete this->cursorbuffer;
+         this->paintbuffer = new QImage(this->width(), this->height(), image_format);
+         this->cursorbuffer = new QImage(this->width(), this->height(), image_format);
+       }
+
+      {
+           QPainter painter(this->cursorbuffer);
+           painter.fillRect(0,0,this->width(),this->height(),this->colors[0]);
+      }
+      {
+           QPainter painter(this->paintbuffer);
+           painter.fillRect(0,0,this->width(),this->height(),this->colors[0]);
+      }
+    }
+#else
+    void init_buffers(){
+       if(this->paintbuffer==NULL || this->cursorbuffer==NULL){
+          this->paintbuffer=new QPixmap(editor->width(),editor->height());
+          this->cursorbuffer=new QPixmap(editor->width(),editor->height());
+#ifdef USE_QT3
+          this->paintbuffer->setOptimization(QPixmap::BestOptim);
+          this->cursorbuffer->setOptimization(QPixmap::BestOptim);
+#endif
+       }else{
+          this->paintbuffer->resize(this->width(), this->height());
+          this->cursorbuffer->resize(this->width(), this->height());
+       }
+    }
+#endif
 
 protected:
     //    bool        event(QEvent *);

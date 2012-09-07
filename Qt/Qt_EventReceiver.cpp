@@ -377,23 +377,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 #if USE_QT_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
-#if USE_QIMAGE_BUFFER
-  delete this->paintbuffer;
-  delete this->cursorbuffer;
-
-  //QImage::Format format = QImage::Format_ARGB32_Premultiplied;
-  QImage::Format format = QImage::Format_RGB32;
-  //QImage::Format format = QImage::Format_RGB444;
-  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_RGB32);
-  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_RGB32 );
-  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_RGB444);
-  //this->paintbuffer = new QImage(this->width(), this->height(), QImage::Format_ARGB32);
-  this->paintbuffer = new QImage(this->width(), this->height(), format);
-  this->cursorbuffer = new QImage(this->width(), this->height(), format);
-#else
-  this->paintbuffer->resize(this->width(), this->height());
-  this->cursorbuffer->resize(this->width(), this->height());
-#endif
+  this->init_buffers();
 
   int old_width = this->window->width;
   int old_height = this->window->height;

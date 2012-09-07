@@ -133,12 +133,14 @@ MyApplication *qapplication;
 
 #if 1 //USE_QT_VISUAL
 
+#if 0
 #if __linux__
 static double get_ms(void){
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
 }
+#endif
 #endif
 
 // Should ideally be atomic, but read and write are usually atomic anyway.
