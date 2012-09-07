@@ -103,33 +103,19 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
-
-  //setBackgroundColor( this->colors[0] );		/* white background */
-
-  //Resize_resized(this->window,this->width()-100,this->height()-30,false);
 #if 0
   static int times=0;
   fprintf(stderr,"\n\n*************** paintEVent. Queue size: %d. Erased? %s **************** %d\n\n",GFX_get_op_queue_size(this->window),e->erased()?"TRUE":"FALSE",times++);
 #endif
 
 #ifdef USE_QT4
+#if 0 // Not needed when using Qt's double buffer.
   static int times = 0;
-#if 1
   if(GFX_get_op_queue_size(this->window)==0) {
     DO_GFX_BLT(DrawUpTrackerWindow(window));
     fprintf(stderr," painting up everything, %d\n",times++);
   }
 #endif
-
-#if 0
-  fprintf(stderr,"paintEvent. rect: %d/%d - %d/%d\n",e->rect().x(), e->rect().y(), e->rect().x()+e->rect().width(), e->rect().y()+e->rect().height());
-
-  if(e->erased()){
-    fprintf(stderr," is erased, painting up everything, %d\n",times++);
-    DO_GFX_BLT(DrawUpTrackerWindow(window));
-  }
-#endif
-
 #endif
 
 #ifdef USE_QT3
@@ -142,7 +128,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     QPainter paintbuffer_paint(this->paintbuffer);
     QPainter cursorbuffer_paint(this->cursorbuffer);
     //paint.setRenderHints(QPainter::Antialiasing);
-    //pixmap_paint.setRenderHints(QPainter::Antialiasing);
+    //paintbuffer_paint.setRenderHints(QPainter::Antialiasing);
     //this->pixmap_painter->setPen(this->colors[5]);
 
     //paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
@@ -346,8 +332,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 
-  if(GFX_get_op_queue_size(this->window)>0)
-    updateEditor();
+  updateEditor();
 }
 
 #endif // USE_QT_VISUAL
@@ -372,20 +357,17 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->init_buffers();
 
-  int old_width = this->window->width;
-  int old_height = this->window->height;
-
   this->window->width=this->get_editor_width();
   this->window->height=this->get_editor_height();
 
 
-#if 0
+#if 1
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
          this->height(),qresizeevent->size().height());
 #endif
 
   DO_GFX_BLT(DrawUpTrackerWindow(window));
-  update();
+  updateEditor();
 }
 #endif // USE_QT_VISUAL
 

@@ -186,11 +186,6 @@ void UpdateWTrack(
 		end_subtrack=wtrack->num_vel-1;
 	}
 
-	if(wtrack->l_num_vel!=wtrack->num_vel || root->clearall==1){
-//		ClearAllTrack(window,wblock,wtrack,start_realline,end_realline,start_subtrack,end_subtrack);
-		wtrack->l_num_vel=wtrack->num_vel;
-	}
-
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 	  within.y1=GetReallineY1Pos(window,wblock,lokke);
 	  within.y2=GetReallineY2Pos(window,wblock,lokke);

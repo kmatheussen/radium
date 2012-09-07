@@ -182,8 +182,9 @@ void Update(
     Draw up the window. Can be called if the window is cleared with color 0.
 ***************************************************************************/
 
+#if 0
+// Use DrawUpTrackerWindow instead.
 void UpdateTrackerWindow(struct Tracker_Windows *window){
-	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,window->wblock);
 
@@ -192,8 +193,8 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 	DrawWBlock(window,window->wblock);
 	DrawLeftSlider(window);
 	window->wblock->isgfxdatahere=true;
-	root->clearall=0;
 }
+#endif
 
 
 /**************************************************************************
@@ -201,9 +202,9 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
     Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
-	GFX_FilledBox(window,0,0,0,window->width-1,window->wblock->t.y1,PAINT_BUFFER);
-	GFX_FilledBox(window,0,0,window->wblock->t.y1,window->width-1,window->height-1,PAINT_BUFFER);
+  //printf("Draw up tracker. width: %d, height: %d\n",window->width,window->height);
 
+#if 0
         struct WBlocks *wblock = window->wblock;
 
         while(GetXSubTrack_B2(wblock,window->curr_track,window->curr_track_sub) >= wblock->a.x2){
@@ -216,18 +217,22 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 
           CursorLeft_CurrPos(window);
         }
+#endif
 
-	root->clearall=1;
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,window->wblock);
 
 	PixMap_reset(window);
 
+#if 1
+	GFX_FilledBox(window,0,0,0,window->width-1,window->wblock->t.y1,PAINT_BUFFER);
+	GFX_FilledBox(window,0,0,window->wblock->t.y1,window->width-1,window->height-1,PAINT_BUFFER);
+#endif
+
 	DrawWBlock(window,window->wblock);
 	DrawLeftSlider(window);
 
 	window->wblock->isgfxdatahere=true;
-	root->clearall=0;
 
         ClearUnusedWindowsAreas(window);
 
@@ -274,7 +279,8 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 	UpdateWBlocks(twindow);
 	twindow->wblock=twindow->wblocks;
 
-	UpdateTrackerWindow(twindow);
+	//UpdateTrackerWindow(twindow);
+        DrawUpTrackerWindow(twindow);
 
 	ListAddElement1(&root->song->tracker_windows,&twindow->l);
 

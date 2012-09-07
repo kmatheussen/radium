@@ -432,7 +432,6 @@ struct WTracks{
 	int fxwidth;						/* is fxarea.x2-fxarea.x */
 	Area fxarea;
 
-	int l_num_vel;						/* Last drawn number of velocity lines showed sim. */
 	int num_vel;						/* Max number of velocity lines showed simultaniously. */
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
@@ -828,8 +827,6 @@ struct Root{
 	NInt curr_block;
 
 	bool setfirstpos;
-
-	int clearall;
 
 	int tempo;			/* Standard tempo. */
 	int lpb;				/* Standard lpb. */

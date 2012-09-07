@@ -460,7 +460,7 @@ void OS_GFX_SetClipRect(
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
-
+  
   painter->setClipRect(x,y,x2-x,y2-y);
   painter->setClipping(true);
 }

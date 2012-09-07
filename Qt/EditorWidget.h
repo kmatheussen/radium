@@ -138,7 +138,7 @@ public:
          this->paintbuffer = new QImage(this->width(), this->height(), image_format);
          this->cursorbuffer = new QImage(this->width(), this->height(), image_format);
        }
-
+#if 1
       {
            QPainter painter(this->cursorbuffer);
            painter.fillRect(0,0,this->width(),this->height(),this->colors[15]);
@@ -147,7 +147,9 @@ public:
            QPainter painter(this->paintbuffer);
            painter.fillRect(0,0,this->width(),this->height(),this->colors[15]);
       }
+#endif
     }
+
 #else
     void init_buffers(){
        if(this->paintbuffer==NULL || this->cursorbuffer==NULL){
