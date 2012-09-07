@@ -242,6 +242,8 @@ bool Load_CurrPos(struct Tracker_Windows *window){
                                                           wblock->wtrack->track->patch
                                                           );
 
+          DrawUpTrackerWindow(root->song->tracker_windows);
+
           fprintf(stderr,"Got here (loading finished)\n");
         }
 
