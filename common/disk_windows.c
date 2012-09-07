@@ -227,11 +227,6 @@ if(window==NULL) return;
 		UpdateReallinesDependens(window,window->wblock);
 	}
 
-	newroot->clearall=1;
-	DrawWBlock(window,window->wblock);
-	DrawLeftSlider(window);
-	newroot->clearall=0;
-
 DLoadWindows(newroot,NextWindow(window));
 }
 
