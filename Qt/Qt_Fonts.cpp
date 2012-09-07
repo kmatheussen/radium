@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
+#include "../common/wblocks_proc.h"
 
 #include "EditorWidget.h"
 
@@ -49,11 +50,14 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   printf("Raw font name: \"%s\"\n",editor->font.rawName().ascii());
 
   setFontValues(tvisual);
+
   return talloc_strdup((char*)editor->font.toString().ascii());
 }
 
 void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   char *font = GFX_SelectEditFont(tvisual);
+  UpdateAllWBlockWidths(tvisual);
+  DrawUpTrackerWindow(tvisual);
   SETTINGS_write_string("font",font);
 }
 
