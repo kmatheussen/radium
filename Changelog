@@ -1,3 +1,10 @@
+Most important changes 0.69.1 -> 0.69.2:
+* Graphics is updated after changing font
+* Dont clear graphics to the right of rightmost track
+* Check graphic update regularly instead of the player signalling the main thread
+* Bug fixes and source cleanups.
+
+
 Most important changes 0.69.0 -> 0.69.1:
 * Faster and fancier graphics for Windows and OSX
 * Use less memory
