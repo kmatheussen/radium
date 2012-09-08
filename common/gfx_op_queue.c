@@ -76,15 +76,15 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
     fprintf(stderr,"queue size: %d\n",queue->pos);
 #endif
 
-
   for(i=0;i<queue->pos;i++){
     queue_element_t *el = &queue->elements[i];
 
-    if(false                                 // Ugly, but this is exactly what happened in Qt/Qt_visual.cpp, and there hasn't been problems with it.
+    if(false // Ugly, but this is exactly what happened in Qt/Qt_visual.cpp, and there hasn't been problems with it. (now there are) (but the problem is not here, see gfx_point.c) Point drawing primitive seems to work perfectly, so there's probably something wrong with the tempocolor track drawing.
        || el->type==ENUM_GFX_C2V_bitBlt
        || el->type==ENUM_GFX_C_DrawCursor
        || el->type==ENUM_GFX_P2V_bitBlt 
-       || el->type==ENUM_GFX_BitBlt)
+       || el->type==ENUM_GFX_BitBlt
+       )
       GFX_BouncePoints(window);
 
     switch(el->type){

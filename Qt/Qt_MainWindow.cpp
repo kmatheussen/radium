@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCloseEvent>
 #include <QStatusBar>
 #include <QMenuBar>
-#include <QPainter>
 
 #include <qfiledialog.h>
 
@@ -120,6 +119,8 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
     //: EditorWidgetParent( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   , paintbuffer(NULL)
   , cursorbuffer(NULL)
+  , paintbuffer_painter(NULL)
+  , cursorbuffer_painter(NULL)
   , qpa(256)
 {
 #if USE_QT_VISUAL

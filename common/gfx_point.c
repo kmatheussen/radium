@@ -54,6 +54,11 @@ void GFX_Point(
 
   brightness = R_BOUNDARIES(0, brightness, MAX_BRIGHTNESS);
 
+#if 0
+  OS_GFX_Point(window,color,brightness,x,y,where);
+  return;
+#endif
+
   struct Points *point=points[color][brightness];
   if(point==NULL)
     points[color][brightness] = point = calloc(1,sizeof(struct Points));

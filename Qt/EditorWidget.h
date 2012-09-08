@@ -133,20 +133,27 @@ public:
        const QImage::Format image_format = QImage::Format_RGB32;
 
        if(this->paintbuffer==NULL || this->cursorbuffer==NULL || this->paintbuffer->width()<this->width() || this->paintbuffer->height()<this->height()){
+         delete this->paintbuffer_painter;
+         delete this->cursorbuffer_painter;
+
          delete this->paintbuffer;
          delete this->cursorbuffer;
          this->paintbuffer = new QImage(this->width(), this->height(), image_format);
          this->cursorbuffer = new QImage(this->width(), this->height(), image_format);
+
+         this->paintbuffer_painter = new QPainter(this->paintbuffer);
+         this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
+
+         this->paintbuffer_painter->setFont(this->font);
        }
+
 #if 1
       {
-           QPainter painter(this->cursorbuffer);
-           painter.fillRect(0,0,this->width(),this->height(),this->colors[15]);
+        this->cursorbuffer_painter->fillRect(0,0,this->width(),this->height(),this->colors[15]);
       }
 #if 0
       {
-           QPainter painter(this->paintbuffer);
-           painter.fillRect(0,0,this->width(),this->height(),this->colors[0]);
+        this->paintbuffer_painter->fillRect(0,0,this->width(),this->height(),this->colors[0]);
       }
 #endif
 #endif

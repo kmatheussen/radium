@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "settings_proc.h"
 #include "cursor_proc.h"
 #include "gfx_subtrack_proc.h"
+#include "gfx_point_proc.h"
+#include "gfx_tempocolor_proc.h"
 
 #include "windows_proc.h"
 
@@ -218,6 +220,8 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
           CursorLeft_CurrPos(window);
         }
 #endif
+
+        GFX_BouncePoints(window); // To clear point buffer. (TODO: Implement a clear point buffer function.)
 
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,wblock);

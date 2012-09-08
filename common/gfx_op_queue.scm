@@ -149,7 +149,7 @@ void GFX_BitBlt(
 (define (create-gfx-func funcdef)
   (parse-c-proto funcdef
                  (lambda (rettype name args)
-                   (let ((window-name (last (car args))))
+                   (let ((window-name (cadr (car args))))
                      (display (<-> rettype " QUEUE_" name "("))
                      (for-each (lambda (arg)
                                  (display (car arg))(display " ") (display (cadr arg))
@@ -157,6 +157,17 @@ void GFX_BitBlt(
                                      (c-display "){")
                                      (display ", ")))
                                args)
+                     (if #f ;; Separates off-screen painting from on-screen painting. (now they are intertwined) Some cleanups are needed before this can be enabled.
+                         (if (member "where" (map cadr args))
+                             (begin
+                               (display (<-> "if(where==PAINT_BUFFER){OS_" name "("))
+                               (for-each (lambda (arg)
+                                           (display (cadr arg))
+                                           (if (equal? arg (last args))
+                                               (display ");")
+                                               (display ", ")))
+                                         args)
+                               (c-display "return;}"))))
                      (c-display (<-> "  queue_element_t *el = get_next_element(" window-name "->op_queue);"))
                      (c-display (<-> "  el->type = ENUM_" name) ";")
                      (for-each (lambda (arg n)

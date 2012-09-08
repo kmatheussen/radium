@@ -125,8 +125,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
-    QPainter paintbuffer_paint(this->paintbuffer);
-    QPainter cursorbuffer_paint(this->cursorbuffer);
+    //QPainter paintbuffer_paint(this->paintbuffer);
+    //QPainter cursorbuffer_paint(this->cursorbuffer);
     //paint.setRenderHints(QPainter::Antialiasing);
     //paintbuffer_paint.setRenderHints(QPainter::Antialiasing);
     //this->pixmap_painter->setPen(this->colors[5]);
@@ -134,10 +134,6 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     //paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
 
     this->painter = &paint;
-    this->paintbuffer_painter = &paintbuffer_paint;
-    this->cursorbuffer_painter = &cursorbuffer_paint;
-
-    this->paintbuffer_painter->setFont(this->font);
     this->painter->setFont(this->font);
     this->setFont(this->font);
 
@@ -146,8 +142,6 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     }
 
     this->painter = NULL;
-    this->paintbuffer_painter = NULL;
-    this->cursorbuffer_painter = NULL;
   }
 }
 #endif
