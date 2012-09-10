@@ -57,7 +57,7 @@ void AppendTrack(struct Blocks *block){
 
 	struct Tracks *temp=talloc(sizeof(struct Tracks));
 
-	debug("tracks.c,AppendTrack,begin. temp:%x\n",temp);
+        //printf("AppendTrack. num: %d\n",tracknum);
 
 	temp->l.num=tracknum;
 	NewTrack(block,temp);

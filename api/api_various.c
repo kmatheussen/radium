@@ -140,7 +140,14 @@ void generalReturn(int windownum){
 }
 
 void appendBlock(void){
-  AppendWBlock(getWindowFromNum(-1));
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  AppendWBlock(window);
+}
+
+void appendTrack(int blocknum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);if(wblock==NULL) return;
+  AppendWTrack_CurrPos(window,wblock);
 }
 
 void swapTracks(int windownum){

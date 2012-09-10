@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "temponodes_proc.h"
 #include "playerclass.h"
+#include "tracks_proc.h"
 
 #include "wtracks_proc.h"
 
@@ -511,6 +512,23 @@ void SwapTrack_CurrPos(
 	CursorNextTrack_CurrPos(window);
 }
 
+
+void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock){
+
+	PlayStop();
+
+	Undo_Block_CurrPos(window);
+        printf("appending tracks. Before: %d\n",wblock->block->num_tracks);
+
+	AppendTrack(wblock->block);
+        wblock->block->num_tracks++;
+
+        UpdateWTracks(window,wblock);
+
+        printf("appending tracks. After: %d\n",wblock->block->num_tracks);
+
+        DrawUpTrackerWindow(window);
+}
 
 
 int WTRACK_getx1(

@@ -80,6 +80,8 @@ void CB_PasteBlock(
 	toblock->l.next=nextblock;
 	toblock->l.num=blocknum;
 
+        //printf("org num_tracks: %d, before: %d\n",org_num_tracks,toblock->num_tracks);
+
 	toblock->num_tracks=org_num_tracks;
 
 	Block_Set_num_tracks(toblock,block->num_tracks);

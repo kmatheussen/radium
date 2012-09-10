@@ -69,6 +69,8 @@ void SwapTrack_CurrPos(
 	struct Tracker_Windows *window
 );
 
+void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock);
+
 int WTRACK_getx1(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
