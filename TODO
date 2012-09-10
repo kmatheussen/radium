@@ -230,7 +230,10 @@ Urgent
 
 * Cancel zoom doesn't work.
 
-* Does QImages need to be cleared after being allocated?
+* Pressing the instrument name in the widget should show a pop up menu with existing instruments to choose
+  from. This is better than using the tab.
+
+* Alt+F should append track, similarly to Ctrl+F appends block.
 
 
 Can not reproduce
