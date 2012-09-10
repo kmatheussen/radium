@@ -121,13 +121,13 @@ extern LANGSPEC void OS_GFX_Points(
                                    );
 
 
-extern LANGSPEC int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text);
-extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width);
+extern LANGSPEC int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text);
+extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, const char *text, int max_width);
 
 extern LANGSPEC void PREOS_GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
-	char *text,
+	const char *text,
 	int x,
 	int y,
         int width,
@@ -137,7 +137,7 @@ extern LANGSPEC void PREOS_GFX_Text(
 extern LANGSPEC void QUEUE_GFX_Text(
 	struct Tracker_Windows *tvisual,
 	int color,
-	char *text,
+	const char *text,
 	int x,
 	int y,
         int width,
@@ -196,14 +196,14 @@ void GFXS_BoxType(
 void GFXS_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,char *text,
+				int color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,char *text,
+	     int color,const char *text,
 	     int x,int y,
              int width,
 	     int flags,
@@ -273,14 +273,14 @@ void GFXST_BoxType(
 void GFXST_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,char *text,
+				int color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,char *text,
+	     int color,const char *text,
 	     int x,int y,
              int width,
              int flags,

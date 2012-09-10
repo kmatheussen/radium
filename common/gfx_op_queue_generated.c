@@ -106,7 +106,7 @@ void QUEUE_GFX_Line(struct Tracker_Windows* tvisual, int color, int x, int y, in
   el->i6 = where ; 
 } 
 
-void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, int color, char* text, int x, int y, int width, int flags, int where){ 
+void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, int color, const char* text, int x, int y, int width, int flags, int where){ 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Text ; 
   el->i1 = color ; 

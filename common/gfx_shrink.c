@@ -138,14 +138,14 @@ void GFXS_BoxType(
 void GFXS_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,char *text,
+				int color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,char *text,
+	     int color,const char *text,
 	     int x,int y,
              int width,
              int flags,
@@ -182,7 +182,7 @@ void GFXS_TextType(
     int maxx=window->wblock->t.x2;
     int len=strlen(text);
     int glen=len*window->fontwidth;
-    char temp[100],*to;
+    char *to;
     int newlen;
     
     if(x>=maxx) return;
@@ -190,26 +190,19 @@ void GFXS_TextType(
     if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
       return;
     }
+
+    to=talloc_strdup(text);
     
     if(x+glen>=maxx){
       newlen=(maxx-x-1)/window->fontwidth;
-      
-      if(newlen>99){
-        to=talloc(newlen+4);
-        sprintf(to,"%s",text);
-        text=to;
-      }else{
-        sprintf(temp,"%s",text);
-        text=&temp[0];
-      }
-      text[newlen]=0;
+      to[newlen]=0;
     }
 
     if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
       return;
     }
 
-    (*GFX_OSFunc)(window,color,text,x,y,width,flags,where);
+    (*GFX_OSFunc)(window,color,(const char*)to,x,y,width,flags,where);
   }
 }
 

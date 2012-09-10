@@ -84,7 +84,7 @@ extern void DC_SSL(const char *string,long integer);
 extern void DC_SSF(const char *string,float integer);
 extern void DC_SSN(const char *string,long integer);
 extern void DC_SSUL(const char *string,unsigned long integer);
-extern void DC_SSS(const char *string,char *string2);
+extern void DC_SSS(const char *string,const char *string2);
 
 extern void DC_fgets(void);
 extern int DC_LoadI(void);

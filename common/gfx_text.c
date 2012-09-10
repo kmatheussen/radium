@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void PREOS_GFX_Text(
                     struct Tracker_Windows *tvisual,
                     int color,
-                    char *text,
+                    const char *text,
                     int x,
                     int y,
                     int width,

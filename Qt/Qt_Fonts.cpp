@@ -88,7 +88,7 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
 }
 
 
-int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text){
+int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   const QFontMetrics fn = QFontMetrics(editor->font);
   return fn.width(text);
@@ -115,7 +115,7 @@ static int find_text_length(const QFontMetrics &fn, const QString &text, int max
     return find_text_length(fn, text, max_width, min, mid-1);
 }
 
-int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width){
+int GFX_get_num_characters(struct Tracker_Windows *tvisual, const char *text, int max_width){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   const QFontMetrics fn = QFontMetrics(editor->font);
   int len = strlen(text);

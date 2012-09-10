@@ -95,14 +95,14 @@ void GFXST_BoxType(
 void GFXST_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,char *text,
+				int color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,char *text,
+	     int color,const char *text,
 	     int x,int y,
              int width,
              int flags,

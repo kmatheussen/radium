@@ -306,8 +306,9 @@ struct Tracks{
 	struct Stops *stops;
 	int onoff;							/* 1=on, 0=off */
 
-	char *trackname;
+	const char *trackname;
 	struct Instruments *instrument; /* Only referenced. */
+	// const char *instrument_name; /* Only used during loading. Tracks are loaded before instruments. (how about loading instruments before tracks?) */
 	struct Patch *patch;
 	struct FXs *fxs;
 

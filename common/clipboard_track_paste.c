@@ -114,7 +114,6 @@ bool CB_PasteTrack(
 ){
 	struct Tracks *totrack;
 	struct Tracks *track;
-	size_t tracknamelen;
 	Place *p1,p2;
 
 	if(towtrack==NULL){
@@ -124,7 +123,6 @@ bool CB_PasteTrack(
 
 	totrack=towtrack->track;
 	track=wtrack->track;
-	tracknamelen=strlen(track->trackname)+1;
 
 	towtrack->notelength=wtrack->notelength;
 	towtrack->fxwidth=wtrack->fxwidth;
@@ -141,8 +139,7 @@ bool CB_PasteTrack(
 		totrack->instrumentdata=(*track->instrument->CopyInstrumentData)(track);
 	}
 
-	totrack->trackname=talloc_atomic(tracknamelen);
-	memcpy(totrack->trackname,track->trackname,tracknamelen);
+	totrack->trackname=talloc_strdup(track->trackname);
 
 	totrack->notes=NULL;
 	totrack->stops=NULL;

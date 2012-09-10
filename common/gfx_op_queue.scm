@@ -76,7 +76,7 @@ void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y
 void GFX_Text(
 	struct Tracker_Windows* tvisual,
 	int color,
-	char* text,
+	const char* text,
 	int x,
 	int y,
 	int width,
@@ -143,7 +143,8 @@ void GFX_BitBlt(
 (define (get-element-slot-name type n)
   (<-> (cond ((string=? type "int") "i")
              ((string=? type "bool") "b")
-             ((string=? type "char*") "s"))
+             ((string=? type "char*") "s")
+             ((string=? type "const char*") "s"))
        (number->string (+ n 1))))
 
 (define (create-gfx-func funcdef)
@@ -173,7 +174,7 @@ void GFX_BitBlt(
                      (for-each (lambda (arg n)
                                  (let ((type (car arg))
                                        (name (cadr arg)))
-                                   (if (string=? type "char*")
+                                   (if (or (string=? type "char*") (string=? type "const char*"))
                                        (c-display (<-> "  memcpy(el->" (get-element-slot-name type n) ", " name ", R_MIN(strlen(" name ")+1,62));"))
                                        (c-display (<-> "  el->" (get-element-slot-name type n)) "=" name ";"))))
                                (cdr args)

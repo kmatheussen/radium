@@ -127,7 +127,7 @@ void DC_SSUL(const char *string,unsigned long integer){
 	DC_SaveUL(integer);
 }
 
-void DC_SSS(const char *string,char *string2){
+void DC_SSS(const char *string,const char *string2){
 	if(string2==NULL) return;
 	DC_SaveS(string);
 	if(fprintf(dc.file,"%s\n",string2)<0) dc.success=false;

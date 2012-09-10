@@ -6,6 +6,7 @@ export PYTHONEXE=python #In Mingw, this is just the python we use to autogenerat
 export MOC=moc-qt4
 export UIC=uic-qt4
 
+# TODO: Get hold of newer compiler. The fedora mingw compiler is 4.2.1 (which doesn't support the generic flag BTW). Maybe I should compile on osx for releases.
 export OPTIMIZE="-O3"
 
 #export CCC="darwinx-g++ -arch i386 -arch ppc -arch x86_64"

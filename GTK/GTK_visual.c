@@ -1139,7 +1139,7 @@ void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual,int where){
 void OS_GFX_Text(
                  struct Tracker_Windows *tvisual,
                  int colornum,
-                 char *text,
+                 const char *text,
                  int x,
                  int y,
                  int width,

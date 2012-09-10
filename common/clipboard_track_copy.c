@@ -58,8 +58,7 @@ struct WTracks *CB_CopyTrack(
         towtrack->trackreallines = NULL;
         towtrack->wfxnodes = NULL;
 
-	towtrack->track->trackname=talloc_atomic(strlen(wtrack->track->trackname)+1);
-	memcpy(towtrack->track->trackname,wtrack->track->trackname,strlen(wtrack->track->trackname)+1);
+        towtrack->track->trackname=talloc_strdup(wtrack->track->trackname);
 
 	p1=PlaceGetFirstPos();
 	PlaceSetLastPos(wblock->block,&p2);
