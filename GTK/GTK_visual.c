@@ -713,11 +713,11 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   setFontValues(tvisual);
 }
 
-int GFX_get_text_width(struct Tracker_Windows *tvisual, char *text){
+int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){
   return get_text_width(text);
 }
 
-static bool does_text_fit(char *text, int pos, int max_width){
+static bool does_text_fit(const char *text, int pos, int max_width){
   char temp[pos+1];
   memcpy(temp,text,pos);
   temp[pos]=0;
@@ -729,7 +729,7 @@ static int average(int min, int max){
 }
 
 // binary search
-static int find_text_length(char *text, int max_width, int min, int max){
+static int find_text_length(const char *text, int max_width, int min, int max){
   if(max<=min)
     return min;
 
@@ -741,7 +741,7 @@ static int find_text_length(char *text, int max_width, int min, int max){
     return find_text_length(text, max_width, min, mid-1);
 }
 
-int GFX_get_num_characters(struct Tracker_Windows *tvisual, char *text, int max_width){
+int GFX_get_num_characters(struct Tracker_Windows *tvisual, const char *text, int max_width){
   int len = strlen(text);
 
   if(does_text_fit(text, len, max_width))

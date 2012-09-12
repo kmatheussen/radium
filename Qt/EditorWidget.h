@@ -128,7 +128,7 @@ public:
       customEvent(NULL);
     }
 
-#if USE_QIMAGE_BUFFER
+#if USE_QT_VISUAL && USE_QIMAGE_BUFFER
     void init_buffers(){
        const QImage::Format image_format = QImage::Format_RGB32;
 
@@ -161,6 +161,7 @@ public:
 
 #else
     void init_buffers(){
+#if USE_QT_VISUAL
        if(this->paintbuffer==NULL || this->cursorbuffer==NULL){
           this->paintbuffer=new QPixmap(editor->width(),editor->height());
           this->cursorbuffer=new QPixmap(editor->width(),editor->height());
@@ -172,6 +173,7 @@ public:
           this->paintbuffer->resize(this->width(), this->height());
           this->cursorbuffer->resize(this->width(), this->height());
        }
+#endif
     }
 #endif
 
