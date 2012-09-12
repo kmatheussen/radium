@@ -1,3 +1,12 @@
+Most important changes 0.69.2 -> 0.69.3:
+* Fix font update problem after changing size
+* Add Append Track function. Using F key, same as Append Block.
+* Add forgotten Swap Tracks function to menues
+* More defined editor color
+* Changed default build to use Qt for visual on Linux.
+  QImage seems to be as fast as GdkPixmap.
+
+
 Most important changes 0.69.1 -> 0.69.2:
 * Graphics is updated after changing font
 * Dont clear graphics to the right of rightmost track
