@@ -1,0 +1,639 @@
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
+
+#include "../audio/SoundPlugin_proc.h"
+
+#include "Qt_audio_instrument_widget.h"
+
+#include "mQt_sample_requester_widget_callbacks.h"
+#include "mQt_plugin_widget_callbacks.h"
+
+#include "../mixergui/QM_chip.h"
+#include "../audio/Bus_plugins_proc.h"
+
+
+extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
+
+class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
+  Q_OBJECT;
+
+public:
+
+  bool _i_am_system_out;
+  struct Patch *_patch;
+
+  Patch_widget *_patch_widget;
+  Plugin_widget *_plugin_widget;
+  Sample_requester_widget *_sample_requester_widget;
+
+  MyQSlider *_system_out_slider;
+
+  static void set_arrow_style(QLabel *arrow, bool set_size_policy=true){
+    QPalette palette2;
+
+    QBrush brush1(QColor(106, 104, 100, 255));
+    brush1.setStyle(Qt::SolidPattern);
+
+    QBrush brush3(QColor(85, 85, 0, 255));
+    //QBrush brush3(QColor(0, 107, 156, 255));
+    brush3.setStyle(Qt::SolidPattern);
+    palette2.setBrush(QPalette::Active, QPalette::WindowText, brush3);
+    palette2.setBrush(QPalette::Inactive, QPalette::WindowText, brush3);
+    palette2.setBrush(QPalette::Disabled, QPalette::WindowText, brush1);
+    arrow->setPalette(palette2);
+
+    if(set_size_policy){
+      QSizePolicy sizePolicy4(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      sizePolicy4.setHorizontalStretch(0);
+      sizePolicy4.setVerticalStretch(0);
+      sizePolicy4.setHeightForWidth(arrow->sizePolicy().hasHeightForWidth());
+      arrow->setSizePolicy(sizePolicy4);
+
+      //arrow->setFrameShape(QFrame::Box);
+    }
+  }
+
+
+ Audio_instrument_widget(QWidget *parent,struct Patch *patch)
+    : QWidget(parent)
+    , _i_am_system_out(false)
+    , _patch(patch)
+    , _sample_requester_widget(NULL)
+    , _system_out_slider(NULL)
+  {
+    setupUi(this);    
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    _patch_widget = new Patch_widget(this,patch);
+    voiceBox_layout->insertWidget(0,_patch_widget);
+    if(plugin->type->play_note==NULL)
+      _patch_widget->voices_widget->setDisabled(true);
+
+    SLIDERPAINTER_set_string(input_volume_slider->_painter, "In");
+    SLIDERPAINTER_set_string(volume_slider->_painter, "Volume");
+    SLIDERPAINTER_set_string(output_volume_slider->_painter, "Out");
+    SLIDERPAINTER_set_string(panning_slider->_painter, "Panning");
+    //velocity_slider->_painter, "Edit vel.";
+
+    SLIDERPAINTER_set_string(drywet_slider->_painter, "Dry/Wet");
+    SLIDERPAINTER_set_string(bus1_slider->_painter, "Reverb");
+    SLIDERPAINTER_set_string(bus2_slider->_painter, "Chorus");
+                                                      
+    if(!strcmp(plugin->type->type_name,"Jack") && !strcmp(plugin->type->name,"System Out")){
+      _i_am_system_out = true;
+      BottomBar_set_system_audio_instrument_widget_and_patch(this, _patch);
+    }
+
+#if 0
+    if(plugin->type->num_inputs==0){
+      drywet_slider->setDisabled(true);
+      effects_onoff->setDisabled(true);
+    }
+
+    if(plugin->type->num_inputs==0){
+      input_volume_slider->setDisabled(true);
+      input_volume_onoff->setDisabled(true);
+    }
+#endif
+
+    if(plugin->type->num_outputs==0){
+      filters_widget->setDisabled(true);
+      outputs_widget->setDisabled(true);
+    }
+
+    if(plugin->type->num_outputs<2){
+      panning_onoff->setDisabled(true);
+      panning_slider->setDisabled(true);
+      rightdelay_onoff->setDisabled(true);
+      rightdelay_slider->setDisabled(true);
+    }
+
+#if 0
+    //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
+    _plugin_widget=PluginWidget_create(NULL, _patch);
+    if(_plugin_widget->_param_widgets.size() > 0){
+      delete(pipe_label);
+      pipe_label = NULL;
+    }
+#else
+    _plugin_widget = new Plugin_widget(this,_patch);
+    delete(pipe_label);
+    pipe_label = NULL;
+#endif
+
+    effects_layout->insertWidget(2,_plugin_widget);
+
+
+    if(plugin->type==PR_get_plugin_type_by_name("Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name("FluidSynth","FluidSynth")){
+      _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _patch);
+      effects_layout->insertWidget(2,_sample_requester_widget);
+
+      QLabel *arrow = new QLabel("=>",this);
+      arrow->setFrameShape(QFrame::Box);
+
+      set_arrow_style(arrow);
+
+      effects_layout->insertWidget(3, arrow, 0, Qt::AlignTop);
+      arrow->show();
+    }
+
+    set_arrow_style(arrow1);
+    set_arrow_style(arrow2);
+    set_arrow_style(arrow3);
+    set_arrow_style(arrow4);
+    set_arrow_style(arrow5);
+    set_arrow_style(arrow6);
+    if(pipe_label!=NULL)
+      set_arrow_style(pipe_label,false);
+
+    updateWidgets();
+
+#if 0
+    if(plugin->type->num_inputs==0){
+      input_volume_layout->setDisabled(true);
+    }
+#endif
+  }
+
+
+  MyQSlider *get_system_slider(int system_effect){
+    switch(system_effect){
+
+    case EFFNUM_INPUT_VOLUME:
+      return input_volume_slider; 
+    case EFFNUM_VOLUME:
+      return volume_slider; 
+    case EFFNUM_OUTPUT_VOLUME:
+      return output_volume_slider;
+
+    case EFFNUM_BUS1:
+      return bus1_slider; 
+    case EFFNUM_BUS2:
+      return bus2_slider; 
+
+    case EFFNUM_DRYWET:
+      return drywet_slider; 
+
+    case EFFNUM_PAN:
+      return panning_slider; 
+
+    case EFFNUM_LOWPASS_FREQ:
+      return lowpass_freq_slider; 
+
+    case EFFNUM_EQ1_FREQ:
+      return eq1_freq_slider; 
+    case EFFNUM_EQ1_GAIN:
+      return eq1_gain_slider; 
+
+    case EFFNUM_EQ2_FREQ:
+      return eq2_freq_slider; 
+    case EFFNUM_EQ2_GAIN:
+      return eq2_gain_slider; 
+
+    case EFFNUM_LOWSHELF_FREQ:
+      return lowshelf_freq_slider; 
+    case EFFNUM_LOWSHELF_GAIN:
+      return lowshelf_gain_slider; 
+
+    case EFFNUM_HIGHSHELF_FREQ:
+      return highshelf_freq_slider; 
+    case EFFNUM_HIGHSHELF_GAIN:
+      return highshelf_gain_slider; 
+
+    case EFFNUM_DELAY_TIME:
+      return rightdelay_slider; 
+
+    default:
+      return NULL;
+    }
+  }
+
+  MyQCheckBox *get_system_checkbox(int system_effect){
+    switch(system_effect){
+    case EFFNUM_INPUT_VOLUME_ONOFF:
+      return input_volume_onoff;
+    case EFFNUM_VOLUME_ONOFF:
+      return volume_onoff;
+    case EFFNUM_OUTPUT_VOLUME_ONOFF:
+      return output_volume_onoff;
+    case EFFNUM_BUS1_ONOFF:
+      return bus1_onoff;
+    case EFFNUM_BUS2_ONOFF:
+      return bus2_onoff;
+    case EFFNUM_PAN_ONOFF:
+      return panning_onoff;
+    case EFFNUM_EFFECTS_ONOFF:
+      return effects_onoff;
+    case EFFNUM_LOWPASS_ONOFF:
+      return lowpass_onoff;
+
+    case EFFNUM_EQ1_ONOFF:
+      return eq1_onoff;
+    case EFFNUM_EQ2_ONOFF:
+      return eq2_onoff;
+    case EFFNUM_LOWSHELF_ONOFF:
+      return lowshelf_onoff;
+    case EFFNUM_HIGHSHELF_ONOFF:
+      return highshelf_onoff;
+
+    case EFFNUM_DELAY_ONOFF:
+      return rightdelay_onoff;
+
+    default:
+      return NULL;
+    }
+  }
+
+  void updateSliderString(int system_effect){
+    MyQSlider *slider = get_system_slider(system_effect);
+    if(slider==NULL)
+      return;
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + system_effect;
+
+    char buf[64]={0};
+    PLUGIN_get_display_value_string(plugin, effect_num, buf, 64);
+    if(system_effect==EFFNUM_DRYWET)
+      SLIDERPAINTER_set_string(slider->_painter, QString(buf));
+    else if(system_effect==EFFNUM_BUS1)
+      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(0)) + ": " + QString(buf));
+    else if(system_effect==EFFNUM_BUS2)
+      SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(1)) + ": " + QString(buf));
+    else
+      SLIDERPAINTER_set_string(slider->_painter, QString(PLUGIN_get_effect_name(type, effect_num)+strlen("System ")) + ": " + QString(buf));
+      
+  }
+
+  void updateSlider(int system_effect){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + system_effect;
+
+    MyQSlider* slider = get_system_slider(system_effect);
+    slider->setValue(PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE) * 10000);
+
+    updateSliderString(system_effect);
+  }
+
+  void updateChecked(QAbstractButton* checkwidget, int system_effect){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+
+    int effect_num = type->num_effects + system_effect;
+
+    bool val = PLUGIN_get_effect_value(plugin,effect_num,VALUE_FROM_STORAGE) > 0.5f;
+
+    checkwidget->setChecked(val);
+
+    if(system_effect==EFFNUM_INPUT_VOLUME_ONOFF)
+      input_volume_slider->setEnabled(val);
+    if(system_effect==EFFNUM_VOLUME_ONOFF)
+      volume_slider->setEnabled(val);
+    if(system_effect==EFFNUM_OUTPUT_VOLUME_ONOFF)
+      output_volume_slider->setEnabled(val);
+    if(system_effect==EFFNUM_BUS1_ONOFF)
+      bus1_slider->setEnabled(val);
+    if(system_effect==EFFNUM_BUS2_ONOFF)
+      bus2_slider->setEnabled(val);
+
+    if(system_effect==EFFNUM_LOWPASS_ONOFF)
+      lowpass_freq_slider->setEnabled(val);
+    if(system_effect==EFFNUM_EQ1_ONOFF){
+      eq1_freq_slider->setEnabled(val);
+      eq1_gain_slider->setEnabled(val);
+    }
+    if(system_effect==EFFNUM_EQ2_ONOFF){
+      eq2_freq_slider->setEnabled(val);
+      eq2_gain_slider->setEnabled(val);
+    }
+    if(system_effect==EFFNUM_LOWSHELF_ONOFF){
+      lowshelf_freq_slider->setEnabled(val);
+      lowshelf_gain_slider->setEnabled(val);
+    }
+    if(system_effect==EFFNUM_HIGHSHELF_ONOFF){
+      highshelf_freq_slider->setEnabled(val);
+      highshelf_gain_slider->setEnabled(val);
+    }
+
+    if(system_effect==EFFNUM_DELAY_ONOFF){
+      rightdelay_slider->setEnabled(val);
+    }
+  }
+
+  void updateWidgets(){
+    updateSlider(EFFNUM_BUS1);
+    updateSlider(EFFNUM_BUS2);
+    updateSlider(EFFNUM_DRYWET);
+    updateSlider(EFFNUM_INPUT_VOLUME);
+    updateSlider(EFFNUM_VOLUME);
+    updateSlider(EFFNUM_OUTPUT_VOLUME);
+    updateSlider(EFFNUM_PAN);
+
+    updateSlider(EFFNUM_LOWPASS_FREQ);
+    updateSlider(EFFNUM_EQ1_FREQ);
+    updateSlider(EFFNUM_EQ1_GAIN);
+    updateSlider(EFFNUM_EQ2_FREQ);
+    updateSlider(EFFNUM_EQ2_GAIN);
+    updateSlider(EFFNUM_LOWSHELF_FREQ);
+    updateSlider(EFFNUM_LOWSHELF_GAIN);
+    updateSlider(EFFNUM_HIGHSHELF_FREQ);
+    updateSlider(EFFNUM_HIGHSHELF_GAIN);
+    updateSlider(EFFNUM_DELAY_TIME);
+
+    updateChecked(input_volume_onoff, EFFNUM_INPUT_VOLUME_ONOFF);
+    updateChecked(volume_onoff, EFFNUM_VOLUME_ONOFF);
+    updateChecked(output_volume_onoff, EFFNUM_OUTPUT_VOLUME_ONOFF);
+    updateChecked(bus1_onoff, EFFNUM_BUS1_ONOFF);
+    updateChecked(bus2_onoff, EFFNUM_BUS2_ONOFF);
+
+    updateChecked(panning_onoff, EFFNUM_PAN_ONOFF);
+    updateChecked(effects_onoff, EFFNUM_EFFECTS_ONOFF);
+
+    updateChecked(lowpass_onoff, EFFNUM_LOWPASS_ONOFF);
+    updateChecked(eq1_onoff, EFFNUM_EQ1_ONOFF);
+    updateChecked(eq2_onoff, EFFNUM_EQ2_ONOFF);
+    updateChecked(lowshelf_onoff, EFFNUM_LOWSHELF_ONOFF);
+    updateChecked(highshelf_onoff, EFFNUM_HIGHSHELF_ONOFF);
+    updateChecked(rightdelay_onoff, EFFNUM_DELAY_ONOFF);
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+
+    if(plugin->type->num_outputs>0){
+      if(plugin->volume_peak_values==NULL)
+        plugin->volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, plugin->type->num_outputs);
+
+      if(plugin->output_volume_peak_values==NULL)
+        plugin->output_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, plugin->type->num_outputs);
+
+      if(plugin->bus_volume_peak_values[0]==NULL)
+        plugin->bus_volume_peak_values[0] = SLIDERPAINTER_obtain_peak_value_pointers(bus1_slider->_painter,2);
+
+      if(plugin->bus_volume_peak_values[1]==NULL)
+        plugin->bus_volume_peak_values[1] = SLIDERPAINTER_obtain_peak_value_pointers(bus2_slider->_painter,2);
+    }
+
+    if(plugin->input_volume_peak_values==NULL)
+      if(plugin->type->num_inputs>0 || plugin->type->num_outputs>0){//plugin->input_volume_peak_values==NULL){
+        if(plugin->type->num_inputs>0)
+          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, plugin->type->num_inputs);
+        else
+          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, plugin->type->num_outputs);
+      }
+
+    for(int system_effect=EFFNUM_INPUT_VOLUME;system_effect<NUM_SYSTEM_EFFECTS;system_effect++){
+      MyQSlider *slider = get_system_slider(system_effect);
+      if(slider!=NULL){
+        int effect_num = type->num_effects + system_effect;
+        slider->_effect_num = effect_num;
+        slider->_patch = _patch;
+      }
+
+      MyQCheckBox *checkbox = get_system_checkbox(system_effect);
+      if(checkbox!=NULL){
+        int effect_num = type->num_effects + system_effect;
+        checkbox->_effect_num = effect_num;
+        checkbox->_patch = _patch;
+      }
+
+      if(slider!=NULL && checkbox!=NULL)
+        RError("weird");
+    }
+
+    bus1_widget->setEnabled(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
+    bus2_widget->setEnabled(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
+
+    if(plugin->type->num_outputs>0){
+      input_volume_layout->setEnabled(plugin->effects_are_on);
+      if(plugin->type->num_inputs>0)
+        _plugin_widget->setEnabled(plugin->effects_are_on);
+      filters_widget->setEnabled(plugin->effects_are_on);
+    }
+
+    _patch_widget->updateWidgets();
+  }
+
+  void set_plugin_value(int sliderval, int system_effect){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + system_effect;
+    PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE); // Don't need to lock player for setting system effects, I think.
+
+    updateSliderString(system_effect);
+  }
+
+public slots:
+
+  void on_input_volume_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_INPUT_VOLUME_ONOFF);
+    input_volume_slider->setEnabled(val);
+  }
+
+  void on_volume_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_VOLUME_ONOFF);
+    volume_slider->setEnabled(val);
+    CHIP_update((SoundPlugin*)_patch->patchdata);
+  }
+
+  void on_output_volume_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_OUTPUT_VOLUME_ONOFF);
+    output_volume_slider->setEnabled(val);
+  }
+
+  void on_bus1_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS1_ONOFF);
+    bus1_slider->setEnabled(val);
+  }
+
+  void on_bus2_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS2_ONOFF);
+    bus2_slider->setEnabled(val);
+  }
+
+  void on_bus1_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_BUS1);
+  }
+
+  void on_bus2_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_BUS2);
+  }
+
+  // effects onoff / dry_wet
+
+  void on_effects_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_EFFECTS_ONOFF);
+    drywet_slider->setEnabled(val);
+    CHIP_update((SoundPlugin*)_patch->patchdata);
+    updateWidgets();
+  }
+
+  void on_drywet_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_DRYWET);
+  }
+
+  void on_input_volume_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_INPUT_VOLUME);
+
+    if(_i_am_system_out==true)
+      OS_GFX_SetVolume(val);
+
+    CHIP_update((SoundPlugin*)_patch->patchdata);
+  }
+
+  void on_volume_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_VOLUME);
+    CHIP_update((SoundPlugin*)_patch->patchdata);
+  }
+
+  void on_output_volume_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_OUTPUT_VOLUME);
+  }
+
+  // lowpass 
+  void on_lowpass_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_LOWPASS_ONOFF);
+    lowpass_freq_slider->setEnabled(val);
+  }
+
+  void on_lowpass_freq_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_LOWPASS_FREQ);
+  }
+
+  // eq1
+  void on_eq1_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_EQ1_ONOFF);
+    eq1_freq_slider->setEnabled(val);
+    eq1_gain_slider->setEnabled(val);
+  }
+
+  void on_eq1_freq_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_EQ1_FREQ);
+  }
+
+  void on_eq1_gain_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_EQ1_GAIN);
+  }
+
+  // eq2
+  void on_eq2_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_EQ2_ONOFF);
+    eq2_freq_slider->setEnabled(val);
+    eq2_gain_slider->setEnabled(val);
+  }
+
+  void on_eq2_freq_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_EQ2_FREQ);
+  }
+
+  void on_eq2_gain_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_EQ2_GAIN);
+  }
+
+  // lowshelf
+  void on_lowshelf_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_LOWSHELF_ONOFF);
+    lowshelf_freq_slider->setEnabled(val);
+    lowshelf_gain_slider->setEnabled(val);
+  }
+
+  void on_lowshelf_freq_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_LOWSHELF_FREQ);
+  }
+
+  void on_lowshelf_gain_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_LOWSHELF_GAIN);
+  }
+
+  // highshelf
+  void on_highshelf_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_HIGHSHELF_ONOFF);
+    highshelf_freq_slider->setEnabled(val);
+    highshelf_gain_slider->setEnabled(val);
+  }
+
+  void on_highshelf_freq_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_HIGHSHELF_FREQ);
+  }
+
+  void on_highshelf_gain_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_HIGHSHELF_GAIN);
+  }
+
+  // rightdelay
+  void on_rightdelay_onoff_toggled(bool val){
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_DELAY_ONOFF);
+    rightdelay_slider->setEnabled(val);
+  }
+
+  void on_rightdelay_slider_valueChanged(int val){
+    set_plugin_value(val, EFFNUM_DELAY_TIME);
+  }
+
+#if 0
+  void on_rightdelay_slider_sliderPressed(){
+    rightdelay_slider->setEnabled(false);
+    printf("Turning off slider\n");
+  }
+
+  void on_rightdelay_slider_sliderReleased(){
+    rightdelay_slider->setEnabled(true);
+    printf("Turning on slider\n");
+  }
+#endif
+
+  // Volume
+
+#if 0
+  // Velocity
+
+  void on_velocity_slider_valueChanged(int val)
+  {
+    _patch->standardvel = val*MAX_VELOCITY/10000;
+  }
+#endif
+
+
+#if 0
+  void on_velocity_onoff_stateChanged( int val)
+  {
+    if (val==Qt::Checked){
+      velocity_slider->setEnabled(true);
+      velocity_spin->setEnabled(true);;
+    }else if(val==Qt::Unchecked){
+      velocity_slider->setEnabled(false);
+      velocity_spin->setEnabled(false);
+    }
+  }
+#endif
+
+  // Panning
+
+  void on_panning_slider_valueChanged( int val)
+  {
+    set_plugin_value(val, EFFNUM_PAN);
+  }
+
+  void on_panning_onoff_toggled(bool val)
+  {
+    set_plugin_value(val==true ? 10000 : 0, EFFNUM_PAN_ONOFF);
+    panning_slider->setEnabled(val);
+  }
+};
