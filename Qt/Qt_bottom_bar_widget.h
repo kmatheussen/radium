@@ -1,7 +1,8 @@
 /********************************************************************************
 ** Form generated from reading UI file 'qt4_bottom_bar_widget.ui'
 **
-** Created by: Qt User Interface Compiler version 4.8.2
+** Created: Mon Nov 5 18:11:04 2012
+**      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/

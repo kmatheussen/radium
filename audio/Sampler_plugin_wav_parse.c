@@ -17,7 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static char *get_current_wav_chunk_id(FILE *file){
   char *val=talloc(5);
-  fread(val,4,1,file);
+  if(fread(val,4,1,file)!=1)
+    fprintf(stderr,"Reading file failed\n");
   fseek(file,-4,SEEK_CUR);
   printf("current_wav_chunk_id: \"%s\"\n",val);
   return val;
@@ -122,7 +123,10 @@ static int find_cue_id_for_label(FILE *file, char *label){
       int id=read_le32int(file);
 
       char *name=talloc(size);
-      fread(name,size-4,1,file);
+      if(fread(name,size-4,1,file)!=1){
+        fprintf(stderr,"Reading file failed\n");
+        return -1;
+      }
       printf("******** labl %d: \"%s\". size: %d\n",id,name,size);
 
       if(!strcmp(name,label))

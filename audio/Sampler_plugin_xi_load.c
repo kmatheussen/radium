@@ -141,7 +141,8 @@ static float *xi_get_sample(FILE *file, int sample_num){
       RError("Out of memory? Failed to allocate %d bytes\n",num_frames*2);
       return sample;
     }
-    fread(s16, 1, 2*num_frames, file);
+    if(fread(s16, 1, 2*num_frames, file)!=2*num_frames)
+      fprintf(stderr,"Reading file failed\n");
     convert_16_bit_little_endian_to_native(s16,num_frames);
 
     int16_t value=0; // must be same type as data since it wraps around
@@ -156,7 +157,8 @@ static float *xi_get_sample(FILE *file, int sample_num){
       RError("Out of memory? Failed to allocate %d bytes\n",num_frames);
       return sample;
     }
-    fread(s8, 1, num_frames, file);
+    if(fread(s8, 1, num_frames, file)!=num_frames)
+      fprintf(stderr,"Reading file failed\n");
 
     int8_t value=0;  // must be same type as data since it wraps around
     int i;

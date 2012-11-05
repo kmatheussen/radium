@@ -363,7 +363,7 @@ struct Mixer{
 
 
   void RT_thread(void){
-//    AVOIDDENORMALS;
+    //AVOIDDENORMALS;
 
     // Denormal handling. These two lines are copied from supernova by Tim Blechmann.
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);

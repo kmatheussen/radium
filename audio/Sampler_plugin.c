@@ -672,7 +672,8 @@ static int32_t get_le_32 (char *src)
 
 static int read_le32int(FILE *file){
   char size_chars[4] = {0}; // {0} is here to keep valgrind quiet.
-  fread(size_chars,4,1,file);
+  if(fread(size_chars,4,1,file)!=1)
+    fprintf(stderr,"Reading file failed\n");
   return get_le_32(size_chars);
 }
 
@@ -701,20 +702,23 @@ static void convert_16_bit_little_endian_to_native(int16_t *src, int num_frames)
 
 static int read_le16int(FILE *file){
   char size_chars[2];
-  fread(size_chars,2,1,file);
+  if(fread(size_chars,2,1,file)!=1)
+    fprintf(stderr,"Reading file failed\n");
   return get_le_16(size_chars);
 }
 
 
 static unsigned int read_8int(FILE *file){
   unsigned char size_chars[1];
-  fread(size_chars,1,1,file);
+  if(fread(size_chars,1,1,file)!=1)
+    fprintf(stderr,"Reading file failed\n");
   return size_chars[0];
 }
 
 static int read_8int_signed(FILE *file){
   int8_t size_chars[1];
-  fread(size_chars,1,1,file);
+  if(fread(size_chars,1,1,file)!=1)
+    fprintf(stderr,"Reading file failed\n");
   return size_chars[0];
 }
 
