@@ -1,0 +1,89 @@
+libgig (3.3.0-1) unstable; urgency=low
+
+  * changed package name to libgig6 according to Debian standards
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Thu, 30 Jul 2009 09:13:47 +0200
+
+libgig (3.2.1-1) unstable; urgency=low
+
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Wed, 05 Dec 2007 16:24:12 +0100
+
+libgig (3.2.0-1) unstable; urgency=low
+
+  * added build dependency to uuid-dev to allow libgig generating DLSIDs
+    for DLS and gig files (not a mandatory but highly recommended
+    dependency)
+  * slightly changed package descriptions
+  * libgig's home has moved to http://www.linuxsampler.org/libgig/
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 14 Oct 2007 01:02:39 +0200
+
+libgig (3.1.1-1) unstable; urgency=low
+
+  * fixed debian rules file for working with official release tarballs as
+    well (expected a Makefile.cvs file)
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sat, 24 Mar 2007 12:14:54 +0100
+
+libgig (3.1.0-1) unstable; urgency=low
+
+  * libgig's home has changed slightly from
+    http://stud.fh-heilbronn.de/~cschoene/projects/libgig/ to
+    http://stud.hs-heilbronn.de/~cschoene/projects/libgig/
+  * include NEWS file on installation
+  * new release
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Fri, 24 Nov 2006 12:16:20 +0100
+
+libgig (3.0.0-1) unstable; urgency=low
+
+  * New release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Fri, 28 Apr 2006 19:22:24 +0200
+
+libgig (2.0.2-1) unstable; urgency=low
+
+  * New release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Mon, 15 Aug 2005 19:19:57 +0200
+
+libgig (2.0.1-1) unstable; urgency=low
+
+  * New release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Sun, 12 Jun 2005 14:55:17 +0200
+
+libgig (2.0.cvs20050523-1) unstable; urgency=low
+
+  * fixed debian description (Closes: #310221)
+  * New release. Mostly pre-prepared by Christian Schoenebeck <cuse@users.sourceforge.net>
+
+ -- Matt Flax <flatmax@pgb.unsw.edu.au>  Mon, 09 May 2005 16:10:58 +0200
+
+libgig (1.0.0cvs20050503-1) unstable; urgency=low
+
+  * Updated to cvs version
+
+ -- Matt Flax <flatmax@pgb.unsw.edu.au>  Wed, 2 Mar 2005 11:40:49 +0100
+
+libgig (1.0.0-1) unstable; urgency=low
+
+  * New upstream release (Closes: #279932)
+  * Doxygen API documentation included with libgig-dev
+  * Changed maintainer names from Christian Schoenebeck to MAtt Flax. Note
+    That the original packaging was done by Christian
+  * altered the rules file
+  * fixed various lintian errors
+
+ -- Matt Flax <flatmax@pgb.unsw.edu.au>  Sat, 5 Feb 2005 20:02:26 +0100
+
+libgig (0.7.1-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>  Tue,  6 Jul 2004 23:12:46 +0200
+

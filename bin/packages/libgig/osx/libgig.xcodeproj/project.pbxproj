@@ -1,0 +1,214 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXFileReference section */
+		E4019E270BED928D0094EB0E /* autoconf_builder.sh */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = text.script.sh; path = autoconf_builder.sh; sourceTree = "<group>"; };
+		E4019E280BED928D0094EB0E /* wrapper.sh */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = text.script.sh; path = wrapper.sh; sourceTree = "<group>"; };
+		E4102CA20BCBE537006B57FE /* DLS.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = DLS.cpp; sourceTree = "<group>"; };
+		E4102CA30BCBE537006B57FE /* DLS.h */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.c.h; path = DLS.h; sourceTree = "<group>"; };
+		E4102CA40BCBE537006B57FE /* dlsdump.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = dlsdump.cpp; sourceTree = "<group>"; };
+		E4102CA50BCBE537006B57FE /* gig.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = gig.cpp; sourceTree = "<group>"; };
+		E4102CA60BCBE537006B57FE /* gig.h */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.c.h; path = gig.h; sourceTree = "<group>"; };
+		E4102CA70BCBE537006B57FE /* gigdump.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = gigdump.cpp; sourceTree = "<group>"; };
+		E4102CA80BCBE537006B57FE /* gigextract.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = gigextract.cpp; sourceTree = "<group>"; };
+		E4102CA90BCBE537006B57FE /* helper.h */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.c.h; path = helper.h; sourceTree = "<group>"; };
+		E4102CAD0BCBE537006B57FE /* RIFF.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = RIFF.cpp; sourceTree = "<group>"; };
+		E4102CAE0BCBE537006B57FE /* RIFF.h */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.c.h; path = RIFF.h; sourceTree = "<group>"; };
+		E4102CAF0BCBE537006B57FE /* rifftree.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = rifftree.cpp; sourceTree = "<group>"; };
+		E4102CB40BCBE537006B57FE /* GigWriteTest.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = GigWriteTest.cpp; sourceTree = "<group>"; };
+		E4102CB50BCBE537006B57FE /* GigWriteTest.h */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.c.h; path = GigWriteTest.h; sourceTree = "<group>"; };
+		E4102CB60BCBE537006B57FE /* main.cpp */ = {isa = PBXFileReference; fileEncoding = "-2147483647"; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* LinuxSampler */ = {
+			isa = PBXGroup;
+			children = (
+				E4019E270BED928D0094EB0E /* autoconf_builder.sh */,
+				E4019E280BED928D0094EB0E /* wrapper.sh */,
+				E4102C990BCBE536006B57FE /* src */,
+			);
+			name = LinuxSampler;
+			sourceTree = "<group>";
+		};
+		E4102C990BCBE536006B57FE /* src */ = {
+			isa = PBXGroup;
+			children = (
+				E4102CA20BCBE537006B57FE /* DLS.cpp */,
+				E4102CA30BCBE537006B57FE /* DLS.h */,
+				E4102CA40BCBE537006B57FE /* dlsdump.cpp */,
+				E4102CA50BCBE537006B57FE /* gig.cpp */,
+				E4102CA60BCBE537006B57FE /* gig.h */,
+				E4102CA70BCBE537006B57FE /* gigdump.cpp */,
+				E4102CA80BCBE537006B57FE /* gigextract.cpp */,
+				E4102CA90BCBE537006B57FE /* helper.h */,
+				E4102CAD0BCBE537006B57FE /* RIFF.cpp */,
+				E4102CAE0BCBE537006B57FE /* RIFF.h */,
+				E4102CAF0BCBE537006B57FE /* rifftree.cpp */,
+				E4102CB00BCBE537006B57FE /* testcases */,
+			);
+			name = src;
+			path = ../src;
+			sourceTree = "<group>";
+		};
+		E4102CB00BCBE537006B57FE /* testcases */ = {
+			isa = PBXGroup;
+			children = (
+				E4102CB40BCBE537006B57FE /* GigWriteTest.cpp */,
+				E4102CB50BCBE537006B57FE /* GigWriteTest.h */,
+				E4102CB60BCBE537006B57FE /* main.cpp */,
+			);
+			path = testcases;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		E4102B730BCBD832006B57FE /* libgig */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(PROJECT_DIR)/wrapper.sh";
+			buildConfigurationList = E4102B740BCBD85E006B57FE /* Build configuration list for PBXLegacyTarget "libgig" */;
+			buildPhases = (
+			);
+			buildToolPath = /bin/sh;
+			buildWorkingDirectory = ..;
+			dependencies = (
+			);
+			name = libgig;
+			passBuildSettingsInEnvironment = 1;
+			productName = libgig;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB919308733D9F0010E9CD /* Build configuration list for PBXProject "libgig" */;
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* LinuxSampler */;
+			projectDirPath = "";
+			targets = (
+				E4102B730BCBD832006B57FE /* libgig */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB919408733D9F0010E9CD /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Development;
+		};
+		E4102B750BCBD85E006B57FE /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = libgig;
+			};
+			name = Development;
+		};
+		E4102B770BCBD8A9006B57FE /* Deployment_ppc */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = libgig;
+			};
+			name = Deployment_ppc;
+		};
+		E4102B780BCBD8A9006B57FE /* Deployment_i386 */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = libgig;
+			};
+			name = Deployment_i386;
+		};
+		E4102B7B0BCBD8A9006B57FE /* Deployment_ppc */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Deployment_ppc;
+		};
+		E4102B7C0BCBD8A9006B57FE /* Deployment_i386 */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Deployment_i386;
+		};
+		E48A31250BEE218F009CAD72 /* Deployment_UB */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = libgig;
+			};
+			name = Deployment_UB;
+		};
+		E48A31260BEE218F009CAD72 /* Deployment_UB */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Deployment_UB;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB919308733D9F0010E9CD /* Build configuration list for PBXProject "libgig" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB919408733D9F0010E9CD /* Development */,
+				E4102B7B0BCBD8A9006B57FE /* Deployment_ppc */,
+				E4102B7C0BCBD8A9006B57FE /* Deployment_i386 */,
+				E48A31260BEE218F009CAD72 /* Deployment_UB */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
+		};
+		E4102B740BCBD85E006B57FE /* Build configuration list for PBXLegacyTarget "libgig" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E4102B750BCBD85E006B57FE /* Development */,
+				E4102B770BCBD8A9006B57FE /* Deployment_ppc */,
+				E4102B780BCBD8A9006B57FE /* Deployment_i386 */,
+				E48A31250BEE218F009CAD72 /* Deployment_UB */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}

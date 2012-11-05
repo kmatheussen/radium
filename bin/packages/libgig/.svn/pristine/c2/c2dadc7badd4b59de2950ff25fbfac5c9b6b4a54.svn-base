@@ -1,0 +1,27 @@
+.TH "gigextract" "1" "8 May 2005" "libgig @VERSION@" "libgig tools"
+.SH NAME
+gigextract \- Extract samples from Gigasampler (.gig) files.
+.SH SYNOPSIS
+.B gigextract
+[ -v ] GIGFILE DESTDIR [SAMPLENR] [ [SAMPLENR] ... ]
+.SH DESCRIPTION
+Extract samples from Gigasampler (.gig) files. All extracted samples will be written in .wav format. You must at least supply name of the .gig input file and an output path where all extracted samples should be written to. By default gigextract extracts all samples contained in the Gigasampler file, even if they are not linked by any instrument in the .gig file, but you can also extract only particular samples by supplying a list of samples indices at the end of the command line. You can use the gigdump tool to see the list of available samples and their sample indices of a Gigasampler file.
+.SH OPTIONS
+.TP
+.B \ GIGFILE
+filename of the input Gigasampler file
+.TP
+.B \ DESTDIR
+output path where all samples should be extracted to
+.TP
+.B \ SAMPLENR
+optional index of sample(s) to be exclusively extracted
+.TP
+.B \ -v
+print version and exit
+.SH "SEE ALSO"
+gigdump(1)
+.SH "BUGS"
+None. Report bugs to http://bugs.linuxsampler.org
+.SH "Author"
+Written by Christian Schoenebeck <cuse@users.sf.net>

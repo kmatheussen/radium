@@ -1,0 +1,33 @@
+In General:
+  - introduce 'iterator' design pattern as a replacement for the simple but
+    error-prone GetFirstFoo() / GetNextFoo() methods
+
+RIFF Part:
+  - replace Chunk::SetPos(), Chunk::GetPos(), Chunk::Read() and
+    Chunk::Write() methods and all other position dependant methods by a
+    'Reader' / 'Writer' design pattern, that is each Chunk object would
+    only provide a new instance to a 'Reader' / 'Writer' object which allows
+    to read and write to the chunk independant how many parties are
+    currently using the respective Chunk object for reading/writing
+
+DLS Part:
+  - support for conditional chunks
+  - check for ZSTR terminated strings in DLS::Info::LoadString()
+  - real support for 64 bit offsets (used by Gigasampler v3 files)
+  - adding methods Articulator::AddArticulation() and
+    Articulator::DeleteArticulation(Articulation* pArticulation) to allow
+    creating and deleting DLS::Articulation objects
+  - modify DLS::Articulation class to allow adding and deleting
+    DLS::Connection objects
+
+Gig Part:
+  - support for <3dnl> chunk in gig::Region class which provides optional
+    textual descriptions for dimensions
+  - additional scan for compressed samples in
+    gig::Sample::ScanCompressedSample() to build a table with the compression
+    mode of each compressed frame in the sample allowing a more efficient
+    Read() on runtime
+  - low level optimization in decompression algorithm
+  - optional writing of frame table to disk to speed up loading of compressed
+    samples
+  - support for creating and modifying compressed samples

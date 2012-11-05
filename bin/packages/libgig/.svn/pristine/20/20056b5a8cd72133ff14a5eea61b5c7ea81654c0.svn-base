@@ -1,0 +1,79 @@
+/**
+
+@mainpage libgig
+
+
+@section Intro
+
+libgig is a C++ library for loading, modifying existing and creating new
+Gigasampler files (of both the old version 2 and the latest version 3 of
+the Gigasampler format) and DLS (Downloadable Sounds) Level 1 & 2 files.
+
+The library actually consists of three parts:
+
+  - 1. @ref RIFF classes: Provide convenient methods to parse and access
+     arbitrary RIFF files. The <i>Resource Interchange File Format</i>
+     provides universal data containers ordered in a tree-like structure
+     and can be compared to XML, but with the difference that RIFF is
+     binary encoded.
+
+  - 2. @ref DLS classes: Provide convenient methods to parse and access
+     DLS (<i>Downloadable Sounds</i>) Level 1 and 2 files. These classes
+     use the RIFF classes to access such files, since the DLS format
+     uses RIFF as its layer beneath to store and structure its data.
+
+  - 3. @ref gig classes: These are based on the DLS classes and provide the
+     necessary extensions for the Gigasampler file format v2 and v3, since
+     the Gigasampler format is in fact based on the DLS Level 2 format, with
+     quite some radical modifications though.
+
+So one can also use this library to access all kinds of RIFF files and DLS
+files, but the main focus (as one can obviously derive from the library name)
+is currently the Gigasampler format.
+
+
+@section License
+
+libgig and its tools are released under the GNU General Public License
+(GPL).
+
+
+@section Examples
+
+Beside the actual library there are four example applications which
+demonstrate how to use the library:
+
+  - @e gigdump: Demo app that prints out the content of a .gig file.
+  - @e gigextract: Extracts samples from a .gig file.
+  - @e dlsdump: Demo app that prints out the content of a DLS file.
+  - @e rifftree: Tool that prints out the RIFF tree of an arbitrary RIFF file.
+
+Since version 3.0.0 libgig also provides write support, that is for creating
+modifying .gig, DLS and RIFF files. You can find a test case called
+@c GigWriteTest.cpp which demonstrates how to create a .gig file with
+libgig. You find other demo apps regarding write support of libgig on the
+website.
+
+
+@section Portability
+
+This library is developed and optimized for POSIX compliant operating
+systems like Linux and OSX and since release 3.1.1 for Windows as well.
+libgig was developed to compile on any operating system, though since
+release 3.0.0 libgig uses one tiny operating system dependant method to be
+able to resize files. Should be a 5 minute job to implement this method for
+other operating systems as well though.
+
+
+@section Outro
+
+For compilation instructions, requirements and further details please refer
+to the README file et al.
+
+That's all folks. Happy hacking!
+
+ -- Christian Schoenebeck <cuse@users.sourceforge.net>
+
+@see http://www.linuxsampler.org
+
+*/

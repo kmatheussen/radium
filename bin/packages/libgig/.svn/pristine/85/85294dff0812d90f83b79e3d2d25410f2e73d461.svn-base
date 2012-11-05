@@ -1,0 +1,24 @@
+.TH "rifftree" "1" "8 May 2005" "libgig @VERSION@" "libgig tools"
+.SH NAME
+rifftree \- Print RIFF tree structure of an arbitrary RIFF file.
+.SH SYNOPSIS
+.B rifftree
+[ -s | -v ] RIFFFILE
+.SH DESCRIPTION
+Print RIFF tree structure of an arbitrary RIFF file. RIFF is a simple, binary file format intended for tree like data structures. Many proprietary file formats are built on top of the RIFF format (e.g. media file formats like WAV, AVI, DLS, GIG). Data in a RIFF file is encapsulated into so called "chunks". There are list chunks which can be seen as nodes in the data tree and thus can have childs (that is can have subchunks) and there are normal chunks which can be seen as leafs in the data tree and thus cannot have childs.
+.SH OPTIONS
+.TP
+.B \ RIFFFILE
+filename of the RIFF based file
+.TP
+.B \ -s
+print the size of each RIFF chunk
+.TP
+.B \ -v
+print version and exit
+.SH "SEE ALSO"
+dlsdump(1) gigdump(1)
+.SH "BUGS"
+None. Report bugs to http://bugs.linuxsampler.org
+.SH "Author"
+Written by Christian Schoenebeck <cuse@users.sf.net>

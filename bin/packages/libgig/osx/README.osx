@@ -1,0 +1,107 @@
+Compiling libgig for Mac OS X with XCode
+========================================
+
+Requirements
+------------
+
+  The XCode project uses autotools build files. On Mac OS 10.4, you need
+  to install pkg-config (available at http://pkgconfig.freedesktop.org/wiki/).
+  
+  If you are to build the CVS snapshot, then you need to do the following
+  steps to make autotools work correctly:
+  
+  $ sudo ln -sf /usr/bin/glibtoolize /usr/local/bin/libtoolize
+  $ sudo cat >/usr/local/bin/aclocal <<'EOF'
+  #!/bin/sh
+  /usr/bin/aclocal -I /usr/local/share/aclocal $@
+  EOF
+  $ sudo chmod +x /usr/local/bin/aclocal
+  
+Layout of the Directories
+-------------------------
+
+  The XCode project for libgig creates a temporary build directory as
+  "$LIBGIG/../temp_build/$BUILD_STYLE" (where $LIBGIG is the libgig 
+  directory, and $BUILD_STYLE is the build style defined in the XCode 
+  project). In this directory, the following subdirectories are created 
+  and used:
+    $BASEGIG.build:
+      Intermediate build directory. Symbolic links to the original 
+      source files are placed and "configure && make" is performed in 
+      this directory. ($BASEGIG is the basename of the libgig directory.)
+    local:
+      The products are "installed" in this directory. libgig.a is in
+      local/lib, and gigdump, gigextract, dlsdump, rifftree are in
+      local/bin.
+  Such a layout allows you to build binaries of different architectures
+  (and build options) independently. On the other hand, you will need to
+  link libgig.a statically because you cannot expect other users to place
+  libgig.a at the same path. The XCode project takes care of this by
+  giving "--disable-shared" to configure.
+  
+  Also note that this temporary directory is outside the libgig directory
+  and will be shared with the Xcode projects for other linuxsampler 
+  subproducts. So it is best to create a common directory for all 
+  linuxsampler subproducts and place the libgig directory (and the
+  directories of other linuxsampler subproducts) in it.
+
+Universal Binaries
+------------------
+
+  You can create the Universal Binaries by selecting "Deployment_UB" build
+  style and build. The binaries for i386 and ppc architectures are built
+  separately and then automatically combined. The products are found in
+  $LIBGIG/../temp_build/Deployment_UB/local/{bin,lib}.
+  
+  You can also create the binaries for i386 and ppc architectures
+  separately by selecting "Deployment_i386" and "Deployment_ppc" built
+  styles respectively. This may be more convenient when you make your
+  binary exclusively for your own use, and/or the required libraries
+  (e.g. libsndfile, see below) are available only for a single
+  architecture.
+
+  Note that the current XCode project does _not_ take care of libgig.la
+  and pkgconfig/gig.pc when creating the Universal Binary.
+  
+  The libgig project is dependent on libsndfile, but you may not 
+  have a Universal Binary version of libsndfile. Don't worry, you 
+  can still create UB of libgig products. Follow these steps:
+  
+  - Get the sources of libsndfile and extract in $LIBGIG/..
+  - cd to $LIBGIG/../libsndfile-*
+  - env BUILD_STYLE=Deployment_ppc \
+    WITH_INSTALL=1 \
+    CONFIG_OPTIONS="--disable-shared" \
+    BUILD_BASE_DIR="$PWD/../temp_build" \
+    SDKROOT="/Developer/SDKs/MacOSX10.4u.sdk" \
+    /bin/sh $LIBGIG/osx/autoconf_builder.sh 
+  - env BUILD_STYLE=Deployment_i386 \
+    WITH_INSTALL=1 \
+    CONFIG_OPTIONS="--disable-shared" \
+    BUILD_BASE_DIR="$PWD/../temp_build" \
+    SDKROOT="/Developer/SDKs/MacOSX10.4u.sdk" \
+    /bin/sh $LIBGIG/osx/autoconf_builder.sh 
+
+  After these steps, the i386 and ppc versions of libsndfile.a are
+  created in $LIBGIG/../temp_build/Deployment_$ARCH/local/lib 
+  ($ARCH is either i386 or ppc). Now you can double-click on 
+  libgig.xcodeproj and build libgig with Deployment_UB build style.
+  When XCode is building libgig for each architecture, pkg-config 
+  will find the correct version of libsndfile.a in $LIBGIG/../
+  temp_build/Deployment_{ppc,i386}/local/lib.
+
+  (You can also easily create a Universal Binary of libsndfile.a,
+  but then you need to take care manually of the contents of 
+  libsndfile.la and pkgconfig/sndfile.pc.)
+
+Additional Information
+----------------------
+
+  The XCode project just invokes autoconf_builder.sh after
+  setting relevant environmental variables. If you are interested
+  (or feel suspicious), please examine autoconf_builder.sh.
+
+
+6 May 2007: First written by Toshi Nagata
+9 May 2007: Updated to account for the Deployment_UB target
+

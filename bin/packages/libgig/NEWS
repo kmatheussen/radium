@@ -1,0 +1,37 @@
+Version 3.3.0 (30 Jul 2009)
+
+  Partial support for MIDI rules, the rest are just bug fixes.
+
+Version 3.2.1 (5 Dec 2007)
+
+  Just some minor performance optimizations.
+
+Version 3.2.0 (14 Oct 2007)
+
+  This release once again comes with a huge bunch of fixes regarding
+  Gigasampler write support. Instrument files created from scratch with
+  libgig can finally be loaded into the Gigasampler application as well.
+
+  libgig's home has moved! From now on you can find it on:
+  http://www.linuxsampler.org/libgig/
+  Please update your links and bookmarks!
+
+Version 3.1.1 (24 Mar 2007)
+
+  This is a bugfix release, fixing one important bug regarding gig v3
+  support (custom split points) and a lot of bugs regarding .gig write
+  support. And this is the first official release for the Windows platform.
+
+Version 3.1.0 (24 Nov 2006)
+
+  libgig's home has moved (slightly) from
+  http://stud.fh-heilbronn.de/~cschoene/projects/libgig/ to
+  http://stud.hs-heilbronn.de/~cschoene/projects/libgig/, please update your
+  links and bookmarks! This is due to the recent renaming of the University
+  of Heilbronn, which kindly hosts this and other projects.
+
+Version 3.0.0 (28 Apr 2006)
+
+  This is the first release which allows to create new and modify existing
+  .gig files. Beside that it also includes another bunch of bug fixes and
+  Gigasampler v3 support improvements.

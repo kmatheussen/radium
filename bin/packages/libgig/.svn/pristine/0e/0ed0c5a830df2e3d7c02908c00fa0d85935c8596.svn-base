@@ -1,0 +1,21 @@
+#commands used to package libgig : Author flatmax <@Matt.Flax>
+#original packaging by Christian Schoenebeck
+cd ~/debian/debRelease/libgig
+MINORVERSION=cvs20050523
+rm -rf libgig-2.0.$MINORVERSION libgig_2.0.$MINORVERSION.orig* *.deb *.dsc libgig_* libgig-2.0.$MINORVERSION.tar.gz libgig.$MINORVERSION.tar.gz
+rm -rf libgig
+cvs -z3 -d:pserver:anonymous@cvs.linuxsampler.org:/var/cvs/linuxsampler co libgig
+find libgig -name 'CVS' | xargs rm -rf
+tar zcpf libgig.$MINORVERSION.tar.gz libgig
+cp libgig.$MINORVERSION.tar.gz /tmp
+mv libgig libgig-2.0.$MINORVERSION
+rm -rf libgig-2.0.$MINORVERSION/debian 
+cp -a debian libgig-2.0.$MINORVERSION/
+rm -rf libgig-2.0.$MINORVERSION/debian/*~
+cd libgig-2.0.$MINORVERSION
+dh_make -e flatmax@Matt.Flax -f ../libgig.$MINORVERSION.tar.gz
+
+dpkg-buildpackage -rfakeroot
+cd ..
+lintian -i libgig_2.0.$MINORVERSION-1_i386.changes
+linda -i libgig_2.0.$MINORVERSION-1_i386.changes

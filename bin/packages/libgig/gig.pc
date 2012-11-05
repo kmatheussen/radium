@@ -1,0 +1,10 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: gig
+Description: C++ library for loading, creating and modifying Gigasampler files and DLS Level 1/2 files
+Version: 3.3.0.svn3
+Libs: -L${libdir} -lgig
+Cflags: -I${includedir}
