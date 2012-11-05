@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE rdf:RDF [
+        <!ENTITY rdf 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+        <!ENTITY rdfs 'http://www.w3.org/2000/01/rdf-schema#'>
+        <!ENTITY dc 'http://purl.org/dc/elements/1.1/'>
+        <!ENTITY ladspa 'http://ladspa.org/ontology#'>
+]>
+<rdf:RDF xmlns:rdf="&rdf;"
+         xmlns:rdfs="&rdfs;"
+         xmlns:dc="&dc;"
+         xmlns:ladspa="&ladspa;">
+
+  <!-- New classes needed for AMB -->
+  <rdfs:Class rdf:about="&ladspa;AmbisonicPlugin" ladspa:hasLabel="Ambisonic">
+    <rdfs:subClassOf rdf:resource="&ladspa;UtilityPlugin" />
+  </rdfs:Class>
+
+  <ladspa:ChorusPlugin rdf:about="&ladspa;1944"/>
+  <ladspa:ChorusPlugin rdf:about="&ladspa;1945"/>
+  <ladspa:ChorusPlugin rdf:about="&ladspa;1951"/>
+  <ladspa:PhaserPlugin rdf:about="&ladspa;1946"/>
+  <ladspa:PhaserPlugin rdf:about="&ladspa;1947"/>
+  <ladspa:ReverbPlugin rdf:about="&ladspa;1950"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1941"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1942"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1943"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1948"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1960"/>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1952"/>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1953"/>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1954"/>
+  <ladspa:GeneratorPlugin rdf:about="&ladspa;1955"/>
+  <ladspa:ParaEQPlugin rdf:about="&ladspa;1970"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1971"/>
+  <ladspa:FilterPlugin rdf:about="&ladspa;1972"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1967"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1968"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1973"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1974"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1975"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1976"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1977"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1978"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1979"/>
+  <ladspa:AmbisonicPlugin rdf:about="&ladspa;1980"/>
+
+</rdf:RDF>
