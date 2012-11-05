@@ -66,17 +66,19 @@ cd xmessage-1.0.3
 make -j3
 cd ..
 
+tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6
-#make clean
+make clean
 CFLAGS="-mtune=native -O3" CPPFLAGS="-mtune=native -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support
 # --enable-debug
-make -j7
+make -j3
 cd ..
 
+tar xvzf libgig.tar.gz
 cd libgig
-#make clean
+make clean
 CFLAGS="-mtune=native -O3" CPPFLAGS="-mtune=native -O3" ./configure
-make -j7
+make -j3
 cd ..
 
 touch deletemetorebuild
