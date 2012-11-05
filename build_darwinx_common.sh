@@ -2,12 +2,16 @@
 
 set -e
 
+export PKG=darwinx-pkg-config
+
 export PYTHONEXE=python #In Mingw, this is just the python we use to autogenerate files and so forth during the build process, it is not used to find header or link files
 export MOC=moc-qt4
 export UIC=uic-qt4
 
 # TODO: Get hold of newer compiler. The fedora mingw compiler is 4.2.1 (which doesn't support the generic flag BTW). Maybe I should compile on osx for releases.
 export OPTIMIZE="-O3"
+export CPUOPT=$OPTIMIZE # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
+
 
 #export CCC="darwinx-g++ -arch i386 -arch ppc -arch x86_64"
 #export CC="darwinx-gcc -arch i386 -arch ppc -arch x86_64"
@@ -17,6 +21,10 @@ export CCC="darwinx-g++ -arch i386 -arch x86_64"
 export CC="darwinx-gcc -arch i386 -arch x86_64"
 export LINKER="darwinx-g++ -arch i386 -arch x86_64"
 
+#export CCC="darwinx-g++ -arch i386 -arch x86_64"
+#export CC="darwinx-gcc -arch i386 -arch x86_64"
+#export LINKER="darwinx-g++ -arch i386 -arch x86_64"
+
 #export BUILDTYPE=DEBUG
 export BUILDTYPE=RELEASE
 
@@ -25,7 +33,12 @@ export PYPATH=/home/kjetil/radium-qt4/darwinx/Versions/Current/include/python2.7
 export QT_CFLAGS="`darwinx-pkg-config --cflags Qt3Support`"
 export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
 
-export OS_OPTS="-DFOR_MACOSX"
+export JACKOPT="-I/gammelhd/home/kjetil/jack2/common/"
+export LRDFOPT="-I/usr/include/raptor2"
+export SNDFILEOPT=""
+export SAMPLERATEOPT=""
+
+export OS_OPTS="-DFOR_MACOSX -msse  -I`pwd`/darwinx/libsndfile-1.0.25/src -I`pwd`/darwinx/include" # -I/usr/darwinx/SDKs/MacOSX10.5.sdk/usr/lib64/gcc/i686-apple-darwin10/4.2.1/include/" # -mfpmath=sse"
 #export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a `pwd`/darwinx/Versions/2.7/lib/python2.7/config/libpython2.7.a -lpthread -framework Carbon -framework Foundation"
 export OS_LDFLAGS="`pwd`/darwinx/gc-7.2/.libs/libgc.a -L`pwd`/darwinx/Versions/2.7/lib/ -lpython2.7 -lpthread -framework Carbon -framework Foundation"
 

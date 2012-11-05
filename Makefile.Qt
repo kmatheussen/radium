@@ -16,7 +16,7 @@ libdir = $(PREFIX)/lib
 #
 MOC ?= moc
 UIC ?= uic
-
+RCC ?= rcc
 
 # 4. Release buid or Debug build
 #
@@ -64,11 +64,19 @@ MAX_NUM_UNDOS=800
 
 CD=common/
 
+PKG ?= pkg-config
+
 CCC ?= g++
 CC ?= gcc
 LINKER ?= g++
+FAUST ?= /home/kjetil/faudiostream/compiler/faust
+JACKOPT ?=
+LRDFOPT ?= `$(PKG) --cflags lrdf`
+SNDFILEOPT ?= `$(PKG) --cflags sndfile`
+SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
+GLIBOPT ?= `$(PKG) --cflags glib-2.0` -DIS_LITTLE_ENDIAN=1
+# (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
-PKG ?= pkg-config
 PYPATH ?= 
 QT_CFLAGS ?= `$(PKG) --cflags Qt3Support`
 QT_LDFLAGS ?= `$(PKG) --libs Qt3Support`
@@ -83,10 +91,10 @@ DEFINES= -DNOPAUSEPLAY
 # define MEMORY_DEBUG
 # define TRACKER_GB
 
-# If you want QT visual: (not supported, probably not working)
-# VISUAL=-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
+# If you want QT visual:
+#VISUAL=-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
-# Or, if you want GTK visual:
+# Or, if you want GTK visual: (Less maintained, and doesn't work very well on OSX. Possibly faster though.)
 VISUAL ?= -DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 
 
@@ -101,6 +109,7 @@ REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
 MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 OPT=-c `cat buildtype.opt` $(DEFINES) -I$(GCDIR)/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) $(OS_OPTS) $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
+CPUOPT ?=
 
 
 # -pg
@@ -112,7 +121,7 @@ CPPOPT = $(OPT)
 COMMON_QTOPTS =
 
 # QT4 opts
-QTOPT = $(CPPOPT) -DUSE_QT4 -DUSE_QIMAGE_BUFFER=1 $(QT_CFLAGS) $(COMMON_QTOPTS)
+QTOPT = $(CPPOPT) -DUSE_QT4 -DUSE_QIMAGE_BUFFER=1 $(QT_CFLAGS) $(COMMON_QTOPTS) -DQT_NO_OPENGL 
 QTLINKFLAGS = $(QT_LDFLAGS) $(GTK_LDFLAGS)
 
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
@@ -146,13 +155,13 @@ RTMIDI_LDFLAGS ?=
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= windows.o window_config.o list.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o
+OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o
 
 OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
-OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o
+OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o range.o
 
 OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o subtrack.o velocities.o pixmap.o scroll.o blts.o
 
@@ -164,19 +173,19 @@ OBJ7= nodelines.o nodeboxes.o instruments.o patch.o fxlines.o fxlines_legalize.o
 OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o mouse_temponodes.o temponodes_legalize.o
 
 #Playing
-OBJ9= Ptask2Mtask.o player.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o
+OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o
 
 #Disk
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o undo_patch.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
 
 #X11 Spesific
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_memory.o Qt_MainWindow.o GTK_ReqType.o GTK_PopupMenu.o  
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_MainWindow.o GTK_ReqType.o GTK_PopupMenu.o  Qt_soundfilesaver_widget_callbacks.o
 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
@@ -197,7 +206,18 @@ OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o 
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_i_input.o midi_menues.o
 # alsaseq_midi.o
 
-OBJ=  $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14)
+#Faust plugins
+OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_lowpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_system_delay.o faust_multibandcomp.o
+
+#AUDIO
+OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o SoundfileSaver.o
+
+#Mixer
+QM=mixergui/
+OBJ_MIXER = QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connections.o undo_chip_addremove.o
+
+
+OBJ = $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER)
 
 
 
@@ -226,9 +246,9 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_instrument_widget.h $(P)Qt_control_change_widget.h $(P)mQt* a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt
 
-dependencies_ok: check_dependencies.sh Makefile
+dependencies_ok: check_dependencies.sh #Makefile
 	sh check_dependencies.sh /usr/bin/python $(MOC) $(UIC)
 #	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
@@ -262,7 +282,7 @@ run-gdb:
 run-valgrind:
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
 #	make -j3 && cd bin && valgrind --tool=helgrind $(PYTHONEXE) start.py keybindings.conf
-	./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes ./radium
+	./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium --dont-load-new-song
 #	make -j3 && cd bin && valgrind gdb --args $(PYTHONEXE) start.py keybindings.conf
 	killall -9 X11_Qtstuff.py radium
 
@@ -287,8 +307,10 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 
-bin/radium: $(OBJ) $(MAKEFILE)
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
+bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) `$(PKG) --libs lrdf` `$(PKG) --libs sndfile` `$(PKG) --libs samplerate` `$(PKG) --libs glib-2.0`
+
+# `$(PKG) --libs fluidsynth`
 #	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
 
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
@@ -329,6 +351,12 @@ windows.o:  $(BUILD_DEPENDENCIES) $(CD)windows.c
 
 list.o:  $(BUILD_DEPENDENCIES) $(CD)list.c 
 	$(CC) $(CD)list.c $(OPT)
+
+vector.o:  $(BUILD_DEPENDENCIES) $(CD)vector.c 
+	$(CC) $(CD)vector.c $(OPT)
+
+hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c 
+	$(CC) $(CD)hashmap.c $(OPT)
 
 song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
 	$(CC) $(CD)song.c $(OPT)
@@ -460,6 +488,9 @@ tbox.o:  $(BUILD_DEPENDENCIES) $(CD)tbox.c
 area.o:  $(BUILD_DEPENDENCIES) $(CD)area.c
 	$(CC) $(CD)area.c $(OPT)
 
+range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
+	$(CC) $(CD)range.c $(OPT)
+
 mouse_wtrack.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_wtrack.c
 	$(CC) $(CD)mouse_wtrack.c $(OPT)
 
@@ -508,6 +539,9 @@ Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
 
 player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h
 	$(CC) $(CD)player.c $(OPT)
+
+scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c
+	$(CC) $(CD)scheduler.c $(OPT)
 
 PEQrealline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQrealline.c $(CD)playerclass.h
 	$(CC) $(CD)PEQrealline.c $(OPT) 
@@ -766,6 +800,15 @@ undo_maintempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_maintempos.c
 undo_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)undo_playlist.c
 	$(CC) $(CD)undo_playlist.c $(OPT)
 
+undo_patch.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patch.c
+	$(CC) $(CD)undo_patch.c $(OPT)
+
+undo_patchvoice.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchvoice.c
+	$(CC) $(CD)undo_patchvoice.c $(OPT)
+
+undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c
+	$(CC) $(CD)undo_patchname.c $(OPT)
+
 gfx_upperleft.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_upperleft.c
 	$(CC) $(CD)gfx_upperleft.c $(OPT)
 
@@ -918,7 +961,7 @@ Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
 Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp
 	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT)
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)Qt_audio_instrument_widget.h 
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
@@ -937,14 +980,26 @@ Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
-Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(P)Qt_instruments_widget.h  $(P)Qt_instrument_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
+INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h
+
+# $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
+Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
 	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
 
 $(P)Qt_instruments_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
 
-$(P)Qt_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instrument_widget_callbacks.h
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instrument_widget
+$(P)Qt_midi_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_midi_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_midi_instrument_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) midi_instrument_widget
+
+$(P)Qt_audio_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)Qt_patch_widget.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) audio_instrument_widget
+
+$(P)Qt_patch_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)create_source_from_ui.sh $(P)Qt_patch_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) patch_widget
+
+$(P)Qt_sample_requester_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_sample_requester_widget.ui $(P)create_source_from_ui.sh $(P)Qt_sample_requester_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) sample_requester_widget
 
 $(P)Qt_no_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_no_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_no_instrument_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) no_instrument_widget
@@ -952,8 +1007,47 @@ $(P)Qt_no_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_no_instrument_widge
 $(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_widget.ui $(P)create_source_from_ui.sh $(P)Qt_control_change_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
+$(P)Qt_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_plugin_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) plugin_widget
+
+$(P)Qt_bottom_bar_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_widget.ui $(P)create_source_from_ui.sh $(P)Qt_bottom_bar_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) bottom_bar_widget
+
+$(P)Qt_vst_paths_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_vst_paths_widget.ui $(P)create_source_from_ui.sh $(P)Qt_vst_paths_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) vst_paths_widget
+#	cd $(P) && $(UIC) qt4_vst_paths_widget.ui > Qt_vst_paths_widget.h
+#	cd $(P) && $(MOC) Qt_vst_paths_widget_callbacks.h >mQt_vst_paths_widget_callbacks.h
+
+$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
+
+Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h
+	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)
+
+$(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
+	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
+	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
+
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)mQt_PluginWidget.cpp $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
+	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
+
+$(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
+	cd $(P) && $(MOC) Qt_PluginWidget.h >mQt_PluginWidget.cpp
+
+Qt_MyQSlider.o: $(BUILD_DEPENDENCIES) $(P)Qt_MyQSlider.h $(P)Qt_MyQSlider.cpp
+	$(CCC) $(P)Qt_MyQSlider.cpp $(QTOPT)
+
+Qt_SliderPainter.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_SliderPainter.cpp
+	$(CCC) $(P)Qt_SliderPainter.cpp $(QTOPT)
+
 Qt_memory.o:  $(BUILD_DEPENDENCIES)  $(P)Qt_memory.cpp
 	$(CCC)  $(P)Qt_memory.cpp $(CPPOPT)
+
+Qt_path_resolver.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_path_resolver.cpp
+	$(CCC) $(P)Qt_path_resolver.cpp $(QTOPT)
+
+Qt_settings.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_settings.cpp
+	$(CCC) $(P)Qt_settings.cpp $(QTOPT)
 
 posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)
@@ -1113,8 +1207,230 @@ RtMidi.o:  $(BUILD_DEPENDENCIES) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
 
 
 
-buildtype.opt: Makefile
+buildtype.opt: #Makefile
 	if [ $(BUILDTYPE) = DEBUG ] ; then echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; else echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; fi
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
+
+
+# Mixer
+
+$(QM)QM_view.cpp: $(QM)mQM_view.cpp
+$(QM)QM_MixerWidget.cpp: $(QM)mQM_MixerWidget.cpp
+
+$(QM)mQM_view.cpp: $(QM)QM_view.h
+	cd $(QM) && $(MOC) QM_view.h >mQM_view.cpp
+
+$(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h
+	cd $(QM) && $(MOC) QM_MixerWidget.h >mQM_MixerWidget.cpp
+
+#images.o: $(QM)images.qrc
+#	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
+#	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
+
+QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h
+	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
+
+QM_view.o: $(QM)QM_view.cpp $(QM)QM_chip.h $(QM)mQM_view.cpp
+	$(CCC) $(QM)QM_view.cpp $(QTOPT)
+
+QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)/Qt_MyQCheckBox.h
+	$(CCC) $(QM)QM_chip.cpp $(QTOPT)
+
+undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
+	$(CC) $(OPT) $(QM)undo_chip_position.c
+
+undo_mixer.o: $(QM)undo_mixer.c
+	$(CC) $(OPT) $(QM)undo_mixer.c
+
+undo_mixer_connections.o: $(QM)undo_mixer_connections.c
+	$(CC) $(OPT) $(QM)undo_mixer_connections.c
+
+undo_chip_addremove.o: $(QM)undo_chip_addremove.c
+	$(CC) $(OPT) $(QM)undo_chip_addremove.c
+
+Jack_plugin.o: audio/Jack_plugin.c
+	$(CC) $(OPT) audio/Jack_plugin.c $(JACKOPT)
+
+Sine_plugin.o: audio/Sine_plugin.c
+	$(CC) $(OPT) audio/Sine_plugin.c
+
+Bus_plugins.o: audio/Bus_plugins.cpp
+	$(CCC) audio/Bus_plugins.cpp $(CPPOPT)
+
+VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
+	$(CCC) audio/VST_plugins.cpp $(QTOPT) # uses some Qt stuff to open GUI window
+
+Ladspa_plugins.o: audio/Ladspa_plugins.cpp
+	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT)
+
+Sampler_plugin.o: audio/Sampler_plugin.c audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h
+	$(CC) $(OPT)  $(CPUOPT) audio/Sampler_plugin.c $(SNDFILEOPT) $(SAMPLERATEOPT) $(GLIBOPT)
+
+FluidSynth_plugin.o: audio/FluidSynth_plugin.c
+	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
+#`$(PKG) --cflags fluidsynth`
+
+zita_rev.o: audio/zita_rev.dsp audio/Faust_plugins.cpp
+	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins.cpp zita_rev.dsp >zita_rev.cpp
+	$(CCC) audio/zita_rev.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
+
+stk_flute.o: audio/faust-examples/faust-stk/flute.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_dsp -a ../../Faust_plugins.cpp flute.dsp >../../stk_flute.cpp
+	$(CCC) audio/stk_flute.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Flute_dsp -DDSP_NAME=\"STK\ Flute\" -DCREATE_NAME=create_stk_flute_plugin
+
+stk_bowed.o: audio/faust-examples/faust-stk/bowed.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bowed_dsp -a ../../Faust_plugins.cpp bowed.dsp >../../stk_bowed.cpp
+	$(CCC) audio/stk_bowed.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Bowed_dsp -DDSP_NAME=\"STK\ Bowed\" -DCREATE_NAME=create_stk_bowed_plugin
+
+stk_blow_bottle.o: audio/faust-examples/faust-stk/blowBottle.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Bottle_dsp -a ../../Faust_plugins.cpp blowBottle.dsp >../../stk_blow_bottle.cpp
+	$(CCC) audio/stk_blow_bottle.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Blow_Bottle_dsp -DDSP_NAME=\"STK\ Blow\ Bottle\" -DCREATE_NAME=create_stk_blow_bottle_plugin
+
+stk_bass.o: audio/faust-examples/faust-stk/bass.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bass_dsp -a ../../Faust_plugins.cpp bass.dsp >../../stk_bass.cpp
+	$(CCC) audio/stk_bass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Bass_dsp -DDSP_NAME=\"STK\ Bass\" -DCREATE_NAME=create_stk_bass_plugin -Iaudio/faust-examples/faust-stk
+
+stk_blow_hole.o: audio/faust-examples/faust-stk/blowHole.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Hole_dsp -a ../../Faust_plugins.cpp blowHole.dsp >../../stk_blow_hole.cpp
+	$(CCC) audio/stk_blow_hole.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Blow_Hole_dsp -DDSP_NAME=\"STK\ Blow\ Hole\ \(clarinet\)\" -DCREATE_NAME=create_stk_blow_hole_plugin -Iaudio/faust-examples/faust-stk
+
+stk_brass.o: audio/faust-examples/faust-stk/brass.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Brass_dsp -a ../../Faust_plugins.cpp brass.dsp >../../stk_brass.cpp
+	$(CCC) audio/stk_brass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Brass_dsp -DDSP_NAME=\"STK\ Brass\" -DCREATE_NAME=create_stk_brass_plugin -Iaudio/faust-examples/faust-stk
+
+stk_clarinet.o: audio/faust-examples/faust-stk/clarinet.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Clarinet_dsp -a ../../Faust_plugins.cpp clarinet.dsp >../../stk_clarinet.cpp
+	$(CCC) audio/stk_clarinet.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Clarinet_dsp -DDSP_NAME=\"STK\ Clarinet\" -DCREATE_NAME=create_stk_clarinet_plugin -Iaudio/faust-examples/faust-stk
+
+stk_flute_stk.o: audio/faust-examples/faust-stk/flutestk.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_Stk_dsp -a ../../Faust_plugins.cpp flutestk.dsp >../../stk_flute_stk.cpp
+	$(CCC) audio/stk_flute_stk.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Flute_Stk_dsp -DDSP_NAME=\"STK\ Flute\ STK\" -DCREATE_NAME=create_stk_flute_stk_plugin -Iaudio/faust-examples/faust-stk
+
+stk_glass_harmonica.o: audio/faust-examples/faust-stk/glassHarmonica.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Glass_Harmonica_dsp -a ../../Faust_plugins.cpp glassHarmonica.dsp >../../stk_glass_harmonica.cpp
+	$(CCC) audio/stk_glass_harmonica.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Glass_Harmonica_dsp -DDSP_NAME=\"STK\ Glass\ Harmonica\" -DCREATE_NAME=create_stk_glass_harmonica_plugin -Iaudio/faust-examples/faust-stk
+
+stk_harpsi.o: audio/faust-examples/faust-stk/harpsi.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Harpsi_dsp -a ../../Faust_plugins.cpp harpsi.dsp >../../stk_harpsi.cpp
+	$(CCC) audio/stk_harpsi.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Harpsi_dsp -DDSP_NAME=\"STK\ Harpsichord\" -DCREATE_NAME=create_stk_harpsi_plugin -Iaudio/faust-examples/faust-stk
+
+stk_modal_bar.o: audio/faust-examples/faust-stk/modalBar.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Modal_Bar_dsp -a ../../Faust_plugins.cpp modalBar.dsp >../../stk_modal_bar.cpp
+	$(CCC) audio/stk_modal_bar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Modal_Bar_dsp -DDSP_NAME=\"STK\ Modal\ Bar\" -DCREATE_NAME=create_stk_modal_bar_plugin -Iaudio/faust-examples/faust-stk
+
+stk_NLF_eks.o: audio/faust-examples/faust-stk/NLFeks.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Eks_dsp -a ../../Faust_plugins.cpp NLFeks.dsp >../../stk_NLF_eks.cpp
+	$(CCC) audio/stk_NLF_eks.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=NLF_Eks_dsp -DDSP_NAME=\"STK\ Non\-linear\ Karplus\-Strong\" -DCREATE_NAME=create_stk_NLF_eks_plugin -Iaudio/faust-examples/faust-stk
+
+stk_NLF_fm.o: audio/faust-examples/faust-stk/NLFfm.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Fm_dsp -a ../../Faust_plugins.cpp NLFfm.dsp >../../stk_NLF_fm.cpp
+	$(CCC) audio/stk_NLF_fm.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=NLF_Fm_dsp -DDSP_NAME=\"STK\ Non\-linear\ FM\" -DCREATE_NAME=create_stk_NLF_fm_plugin -Iaudio/faust-examples/faust-stk
+
+stk_piano.o: audio/faust-examples/faust-stk/piano.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Piano_dsp -a ../../Faust_plugins.cpp piano.dsp >../../stk_piano.cpp
+	$(CCC) audio/stk_piano.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Piano_dsp -DDSP_NAME=\"STK\ Piano\" -DCREATE_NAME=create_stk_piano_plugin -Iaudio/faust-examples/faust-stk
+
+stk_saxophony.o: audio/faust-examples/faust-stk/saxophony.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Saxophony_dsp -a ../../Faust_plugins.cpp saxophony.dsp >../../stk_saxophony.cpp
+	$(CCC) audio/stk_saxophony.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Saxophony_dsp -DDSP_NAME=\"STK\ Saxophony\" -DCREATE_NAME=create_stk_saxophony_plugin -Iaudio/faust-examples/faust-stk
+
+stk_sitar.o: audio/faust-examples/faust-stk/sitar.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Sitar_dsp -a ../../Faust_plugins.cpp sitar.dsp >../../stk_sitar.cpp
+	$(CCC) audio/stk_sitar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Sitar_dsp -DDSP_NAME=\"STK\ Sitar\" -DCREATE_NAME=create_stk_sitar_plugin -Iaudio/faust-examples/faust-stk
+
+stk_tibetan_bowl.o: audio/faust-examples/faust-stk/tibetanBowl.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tibetan_Bowl_dsp -a ../../Faust_plugins.cpp tibetanBowl.dsp >../../stk_tibetan_bowl.cpp
+	$(CCC) audio/stk_tibetan_bowl.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Tibetan_Bowl_dsp -DDSP_NAME=\"STK\ Tibetan\ Bowl\" -DCREATE_NAME=create_stk_tibetan_bowl_plugin -Iaudio/faust-examples/faust-stk
+
+stk_tuned_bar.o: audio/faust-examples/faust-stk/tunedBar.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tuned_Bar_dsp -a ../../Faust_plugins.cpp tunedBar.dsp >../../stk_tuned_bar.cpp
+	$(CCC) audio/stk_tuned_bar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Tuned_Bar_dsp -DDSP_NAME=\"STK\ Tuned\ Bar\" -DCREATE_NAME=create_stk_tuned_bar_plugin -Iaudio/faust-examples/faust-stk
+
+stk_uni_bar.o: audio/faust-examples/faust-stk/uniBar.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Uni_Bar_dsp -a ../../Faust_plugins.cpp uniBar.dsp >../../stk_uni_bar.cpp
+	$(CCC) audio/stk_uni_bar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Uni_Bar_dsp -DDSP_NAME=\"STK\ Uni\ Bar\" -DCREATE_NAME=create_stk_uni_bar_plugin -Iaudio/faust-examples/faust-stk
+
+stk_voice_form.o: audio/faust-examples/faust-stk/voiceForm.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Voice_Form_dsp -a ../../Faust_plugins.cpp voiceForm.dsp >../../stk_voice_form.cpp
+	$(CCC) audio/stk_voice_form.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Voice_Form_dsp -DDSP_NAME=\"STK\ Voice\" -DCREATE_NAME=create_stk_voice_form_plugin -Iaudio/faust-examples/faust-stk
+
+faust_tapiir.o: audio/faust-examples/tapiir.dsp audio/Faust_plugins.cpp
+	cd audio/faust-examples && $(FAUST) -cn Tapiir_dsp -a ../Faust_plugins.cpp tapiir.dsp >../faust_tapiir.cpp
+	$(CCC) audio/faust_tapiir.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Tapiir_dsp -DDSP_NAME=\"Tapiir\" -DCREATE_NAME=create_faust_tapiir_plugin 
+
+faust_multibandcomp.o: audio/faust_multibandcomp.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn Multibandcomp_dsp -a Faust_plugins.cpp faust_multibandcomp.dsp >faust_multibandcomp.cpp
+	$(CCC) audio/faust_multibandcomp.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE
+
+faust_system_eq.o: audio/system_eq.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn System_Eq_dsp -a Faust_plugins.cpp system_eq.dsp >faust_system_eq.cpp
+	$(CCC) audio/faust_system_eq.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+
+faust_system_lowpass.o: audio/system_lowpass.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn System_Lowpass_dsp -a Faust_plugins.cpp system_lowpass.dsp >faust_system_lowpass.cpp
+	$(CCC) audio/faust_system_lowpass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+
+faust_system_lowshelf.o: audio/system_lowshelf.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn System_Lowshelf_dsp -a Faust_plugins.cpp system_lowshelf.dsp >faust_system_lowshelf.cpp
+	$(CCC) audio/faust_system_lowshelf.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Lowshelf_dsp -DDSP_NAME=\"System\ Lowshelf\" -DCREATE_NAME=create_faust_system_lowshelf_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+
+faust_system_highshelf.o: audio/system_highshelf.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn System_Highshelf_dsp -a Faust_plugins.cpp system_highshelf.dsp >faust_system_highshelf.cpp
+	$(CCC) audio/faust_system_highshelf.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Highshelf_dsp -DDSP_NAME=\"System\ Highshelf\" -DCREATE_NAME=create_faust_system_highshelf_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+
+faust_system_delay.o: audio/system_delay.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn System_Delay_dsp -a Faust_plugins.cpp system_delay.dsp >faust_system_delay.cpp
+	$(CCC) audio/faust_system_delay.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Delay_dsp -DDSP_NAME=\"System\ Delay\" -DCREATE_NAME=create_faust_system_delay_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+
+#Faust_plugins.o: audio/Faust_plugins.cpp audio/zita_rev.cpp audio/faust-examples/faust-stk/flute.cpp
+#	$(CCC) audio/Faust_plugins.cpp $(CPPOPT) $(CPUOPT) -DDSP_INCLUDE=zita_rev.cpp -DDSP_NAME=\"Zita Reverb\"
+
+#audio/zita_rev.cpp: audio/zita_rev.dsp
+#	cd audio && $(FAUST) -cn my_dsp zita_rev.dsp >zita_rev.cpp
+
+#audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
+#	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
+
+SoundProducer.o: audio/SoundProducer.cpp
+	$(CCC) audio/SoundProducer.cpp $(CPPOPT) $(CPUOPT)  $(CPUUOPT)
+
+SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
+	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
+
+SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
+	$(CC) audio/SoundPlugin.c $(OPT) $(CPUOPT)  $(CPUUOPT)
+
+Mixer.o: audio/Mixer.cpp
+	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUUOPT)
+
+get_windows_commandlines.o: audio/get_windows_commandlines.c
+	$(CC) audio/get_windows_commandlines.c $(OPT)
+
+Envelope.o: audio/Envelope.cpp
+	$(CCC) audio/Envelope.cpp $(CPPOPT) $(CPUOPT)
+
+Resampler.o: audio/Resampler.cpp
+	$(CCC) audio/Resampler.cpp $(CPPOPT) $(CPUUOPT) `$(PKG) --cflags samplerate`
+
+SoundFonts.o: audio/SoundFonts.cpp
+	$(CCC) audio/SoundFonts.cpp $(CPPOPT) -Ibin/packages/libgig/src/ `$(PKG) --cflags glib-2.0`
+
+audio_instrument.o: audio/audio_instrument.c
+	$(CC) audio/audio_instrument.c $(OPT)
+
+Smooth.o: audio/Smooth.c
+	$(CC) audio/Smooth.c $(OPT) $(CPUUOPT)
+
+undo_audio_effect.o: audio/undo_audio_effect.c
+	$(CC) audio/undo_audio_effect.c $(OPT)
+
+SoundfileSaver.o: audio/SoundfileSaver.c
+	$(CC) audio/SoundfileSaver.c $(OPT)
+
+
+#bin/zita_rev_ladspa.so: audio/zita_rev.dsp
+#	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp
+#	$(CCC) -I /usr/share/faust/ audio/zita_rev_ladspa.cpp -shared -o bin/zita_rev_ladspa.so -fPIC 
+

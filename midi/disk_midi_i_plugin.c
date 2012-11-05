@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_midi_i_plugin_proc.h"
 
 
-void SavePatchData(void *pd){
+void SaveMIDIPatchData(void *pd){
 	struct PatchData *patchdata=(struct PatchData *)pd;
 DC_start("PATCHDATA");
 
@@ -53,7 +53,7 @@ DC_start("PATCHDATA");
 DC_end();
 }
 
-void LoadPatchData(struct PatchData *patchdata){
+void LoadMIDIPatchData(struct PatchData *patchdata){
 	static char **objs=NULL;
 	static char *vars[10]={
 		"clustername",

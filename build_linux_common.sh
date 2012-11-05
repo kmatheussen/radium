@@ -9,6 +9,7 @@ export UIC="`./find_moc_and_uic_paths.sh uic`"
 #export BUILDTYPE=RELEASE
 export BUILDTYPE=DEBUG
 export OPTIMIZE="-mtune=native -O3"
+export CPUOPT=$OPTIMIZE # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 
 export CCC=g++
 export CC=gcc
@@ -20,15 +21,16 @@ export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.
 export QT_CFLAGS="`$PKG --cflags Qt3Support`"
 export QT_LDFLAGS="`$PKG --libs Qt3Support`"
 
-export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
+#export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
+export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS=""
+export OS_OPTS="-Werror=array-bounds -Werror=maybe-uninitialized"
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
-export OS_LDFLAGS="-pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME"
+export OS_LDFLAGS="-pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a"
 
 export OBJ_WIN=""
 export OBJ_MACOSX=""

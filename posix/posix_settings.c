@@ -55,10 +55,8 @@ char *OS_get_program_path(void){
 #endif
 }
 
-char *OS_get_directory_separator(void){
-  return "/";
-}
-
+#if 0
+// This function is moved to Qt/Qt_settings.c
 char *OS_get_config_filename(void){
 #if __linux__ || defined(FOR_MACOSX)
   char temp[500];
@@ -74,12 +72,11 @@ char *OS_get_config_filename(void){
   return talloc_strdup("config");
 #endif
 }
-
-void OS_make_config_file_expired(void){
-#if __linux__ || defined(FOR_MACOSX)
-  char *config_file = OS_get_config_filename();
-  char temp[500];
-  sprintf(temp,"mv %s %s_bu",config_file,config_file);
-  system(temp);
 #endif
+
+void OS_make_config_file_expired(const char *key){
+  char *config_file = OS_get_config_filename(key);
+  char temp[500];
+  sprintf(temp,"%s_bu",config_file);
+  rename(config_file,temp);
 }

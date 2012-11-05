@@ -28,7 +28,7 @@ void playBlockFromStart(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  PlayBlockFromStart(window);
+  PlayBlockFromStart(window,true); // true == do_loop
 }
 
 void playBlockFromCurrent(int windownum){

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "../common/vector_proc.h"
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
 #include "../common/visual_proc.h"
@@ -133,7 +134,7 @@ static char *midi_fxs_fullnames[MIDI_NUM_FX]={
 
 
 static void MIDI_treatFX_CC7(struct FX *fx,int val,struct Tracks *track,STime time,int skip){
-	struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
+  //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
@@ -144,12 +145,12 @@ static void MIDI_treatFX_CC7(struct FX *fx,int val,struct Tracks *track,STime ti
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi3_FX(midi_port,0xb0|channel,midi_fx->cc,val,time,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,fx->effect_num,val,time,10,skip);
 }
 
 
 static void MIDI_treatFX_CC14(struct FX *fx,int val,struct Tracks *track,STime time,int skip){
-	struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
+  //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
@@ -160,8 +161,8 @@ static void MIDI_treatFX_CC14(struct FX *fx,int val,struct Tracks *track,STime t
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
-	PutMidi3_FX(midi_port,0xb0|channel,midi_fx->cc-128,val>>7,time,10,skip);
-	PutMidi3_FX(midi_port,0xb0|channel,midi_fx->cc-128+32,val&127,time,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,fx->effect_num-128,val>>7,time,10,skip);
+	PutMidi3_FX(midi_port,0xb0|channel,fx->effect_num-128+32,val&127,time,10,skip);
 }
 
 static void MIDI_treatFX_Pan7(struct FX *fx,int val,struct Tracks *track,STime time,int skip){
@@ -263,7 +264,7 @@ static bool isFXUsed(struct TrackInstrumentData *tid,struct MIDI_FX *midi_fx){
 	struct UsedTrackMidiCCs *usmf=tid->usmf;
 
 	while(usmf!=NULL){
-		if(midi_fx->cc==usmf->midi_fx->cc) return true;
+		if(midi_fx->effect_num==usmf->midi_fx->effect_num) return true;
 		usmf=usmf->next;
 	}
 
@@ -271,7 +272,7 @@ static bool isFXUsed(struct TrackInstrumentData *tid,struct MIDI_FX *midi_fx){
 }
 
 void MIDI_closeFX(struct FX *fx,struct Tracks *track){
-	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->instrumentdata;
+	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf=tid->usmf;
 	struct UsedTrackMidiCCs *prev=NULL;
 	struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
@@ -299,7 +300,7 @@ void MIDI_closeFX(struct FX *fx,struct Tracks *track){
 }
 
 bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx){
-	switch(midi_fx->cc){
+	switch(fx->effect_num){
 		case PROGRAMCHANGE_CC:
 			fx->treatFX=MIDI_treatFX_ProgramChange;
 			break;
@@ -329,8 +330,8 @@ bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx){
 				default:
 					RError(
 						"Error in function 'MIDIsetTreatFX' in file 'plug-ins/midi_fx.c'\n"
-						"midi_fx->cc: %d, midi_fx->max: %d\n",
-						midi_fx->cc,midi_fx->max
+						"fx->effect_num: %d, midi_fx->max: %d\n",
+						fx->effect_num,midi_fx->max
 					);
 					return false;
 			}
@@ -341,26 +342,22 @@ bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx){
 
 int MIDIgetFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx){
 
-	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->instrumentdata;
+	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf;
 	struct MIDI_FX *midi_fx;
 
 	int lokke,selection;
-	char **menutext;
-	char *menutitle="Select FX";
+	const char *menutitle="Select FX";
 
 	ReqType reqtype;
-	char *restext[2]={"7","14"};
-	int onlymsb=-1;
 
-	menutext=talloc(sizeof(char *)*MIDI_NUM_FX);
+        vector_t v={0};
 
-	for(lokke=0;lokke<MIDI_NUM_FX;lokke++){
-		menutext[lokke]=midi_fxs_fullnames[lokke];
-	}
+	for(lokke=0;lokke<MIDI_NUM_FX;lokke++)
+          VECTOR_push_back(&v,midi_fxs_fullnames[lokke]);
 
 	for(;;){
-		selection=GFX_Menu(window,NULL,menutitle,MIDI_NUM_FX,menutext);
+                selection=GFX_Menu(window,NULL,menutitle,&v);
 		if(-1==selection){
 			return FX_FAILED;
 		}
@@ -368,27 +365,31 @@ int MIDIgetFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx)
 
 		menutitle="FX already used";
 
-		if(midi_fx->cc==-1) continue;
+		if(midi_fx->effect_num==-1) continue;
 
-		if(midi_fx->cc==OTHER_CC){
+		if(midi_fx->effect_num==OTHER_CC){
 			midi_fx=talloc(sizeof(struct MIDI_FX));
 
 			reqtype=GFX_OpenReq(window,30,10,"Other CC select");
 
-			midi_fx->cc=GFX_GetInteger(window,reqtype,"CC >",0,127);
-			if(midi_fx->cc==-1){
+			midi_fx->effect_num=GFX_GetInteger(window,reqtype,"CC >",0,127);
+			if(midi_fx->effect_num==-1){
 				GFX_CloseReq(window,reqtype);
 				return FX_FAILED;
 			}
 
 			midi_fx->max=127;
 
-			if(midi_fx->cc<16){
+			if(midi_fx->effect_num<16){
+                                int onlymsb=-1;
 				while(onlymsb==-1){
-					onlymsb=GFX_Menu(window,reqtype,"Resolution?",2,restext);
+                                  vector_t v={0};
+                                  VECTOR_push_back(&v,"7");
+                                  VECTOR_push_back(&v,"14");
+                                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",&v);
 				}
 				if(onlymsb==1){
-					midi_fx->cc+=128;
+					midi_fx->effect_num+=128;
 					midi_fx->max=0x3fff;
 				}
 			}
@@ -416,23 +417,25 @@ int MIDIgetFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx)
 		if( ! isFXUsed(tid,midi_fx)) break;
 	}
 
+        fx->effect_num = midi_fx->effect_num;
+
 	fx->fxdata=midi_fx;
 
-	fx->l.num=(NInt)midi_fx->cc;
-	fx->name=midi_fx->name;
-	fx->min=midi_fx->min;
-	fx->max=midi_fx->max;
-	fx->closeFX= &MIDI_closeFX;
-	fx->SaveFX=MIDISaveFX;
+	fx->num   = (NInt)fx->effect_num;
+	fx->name    = midi_fx->name;
+	fx->min     = midi_fx->min;
+	fx->max     = midi_fx->max;
+	fx->closeFX = &MIDI_closeFX;
+	fx->SaveFX  = MIDISaveFX;
 
 	if( ! MIDISetTreatFX(fx,midi_fx)){
 		return FX_FAILED;
 	}
 
-	usmf=talloc(sizeof(struct UsedTrackMidiCCs));
-	usmf->next=tid->usmf;
-	tid->usmf=usmf;
-	usmf->midi_fx=midi_fx;
+	usmf          = talloc(sizeof(struct UsedTrackMidiCCs));
+	usmf->next    = tid->usmf;
+	tid->usmf     = usmf;
+	usmf->midi_fx = midi_fx;
 
 	return FX_SUCCESS;
 }
@@ -442,7 +445,7 @@ int MIDIgetFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx)
 /* Make a copy, necesarry for undo/redo and track-copy. */
 
 void *MIDI_CopyInstrumentData(struct Tracks *track){
-	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->instrumentdata;
+	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf=tid->usmf;
 	struct UsedTrackMidiCCs *to_usmf;
 	struct TrackInstrumentData *to=talloc(sizeof(struct TrackInstrumentData));

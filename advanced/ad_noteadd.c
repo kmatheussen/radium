@@ -94,19 +94,9 @@ void AD_installNoteAdds_track(
 	int lokke;
 	struct Notes *note;
 
-	int standardvel=
-		wtrack->track->patch==NULL
-		?
-			root->standardvel
-		:
-			wtrack->track->patch->standardvel;
+	int standardvel=root->standardvel;
 
-	int maxvel=
-		wtrack->track->patch==NULL
-		?
-			(*wtrack->track->instrument->getMaxVelocity)(wtrack->track)
-		:
-			wtrack->track->patch->maxvel;
+	int maxvel=MAX_VELOCITY;
 
 
 	for(lokke=0;lokke<num_nats;lokke++){

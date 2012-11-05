@@ -3443,7 +3443,7 @@ static StreamMutex jackMutex;
 class InitializeJackLock{
 public:
   InitializeJackLock() {
-    MUTEX_INITIALIZE( &jackMutex );
+     MUTEX_INITIALIZE( &jackMutex );
   }
 };
 static InitializeJackLock initializeJackLock; // dummy variable necessary to provoce the constructor to be called during program startup.

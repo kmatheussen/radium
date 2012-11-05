@@ -57,10 +57,10 @@ struct PatchData{
 
 
 struct MIDI_FX{
-	char *name;
+	const char *name;
 	int min;
 	int max;
-	int cc;
+        int effect_num; // Contains the same value as fx->effect_num;
 };
 
 struct UsedTrackMidiCCs{

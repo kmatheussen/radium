@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/notes_proc.h"
+#include "../common/instruments_proc.h"
 
 #include "api_common_proc.h"
 
@@ -201,20 +202,20 @@ static int getPatchNum(int instrument_num, int instrument_patch_num){
 
 struct Instruments *getInstrumentFromNum(int instrument_patch_num){
   if(instrument_patch_num==-1)
-    return root->def_instrument;
+    return get_default_instrument();
 
   int instrument_num = instrument_patch_num % num_instrument_types;
 
   if(instrument_num==0)
-    return root->def_instrument;
+    return  get_MIDI_instrument();
 
 #if 0
   if(instrument_num==1)
-    return root->audio_instrument;
+    return  get_audio_instrument();
 #endif
 
   RError("Unknown instrument_num: %d", instrument_num);
-  return root->def_instrument;
+  return get_default_instrument();
 }
 
 struct Patch *getPatchFromNum(int instrument_patch_num){
@@ -223,7 +224,7 @@ struct Patch *getPatchFromNum(int instrument_patch_num){
 
   struct Instruments *instrument = getInstrumentFromNum(instrument_num);
 
-  struct Patch *patch = ListFindElement1_r0(&instrument->patches->l, patch_num);
+  struct Patch *patch = instrument->patches.elements[patch_num];
   if(patch==NULL)
     RError("Instrument #%d does not exist",instrument_patch_num);
 

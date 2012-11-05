@@ -20,10 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
+#include "../common/vector_proc.h"
+#include "../common/OS_visual_input.h"
+
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_menues_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/instruments_proc.h"
 
 #include "api_common_proc.h"
 
@@ -49,7 +53,7 @@ void selectPatchForTrack(int tracknum,int blocknum,int windownum){
 
   if(wtrack==NULL) return;
 
-  SelectPatch(window,wtrack->track);
+  PATCH_select_patch_for_track(window,wtrack,false);
 }
 
 void setInstrumentForTrack(int instrument_num, int tracknum, int blocknum, int windownum){
@@ -81,29 +85,26 @@ void setInstrumentForTrack(int instrument_num, int tracknum, int blocknum, int w
 int createNewInstrument(char *type, char *name) {
   int instrument_num;
   struct Patch *patch=talloc(sizeof(struct Patch));
-  struct Instruments *instrument;
+  patch->id = PATCH_get_new_id();
+
+  struct Instruments *instrument = NULL;
 
   if(!strcmp("midi", type)) {
-    MIDI_InitPatch(patch);
+    struct Patch *patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, name);
+    GFX_PP_Update(patch);
+    instrument = get_MIDI_instrument();
     instrument_num = 0;
-#if 0
   } else if(!strcmp("audio", type)) {
-    AUDIO_InitPatch(patch);
+    abort();
+//AUDIO_InitPatch(patch);
+    instrument = get_audio_instrument();
     instrument_num = 1;
-#endif
   }else{
     RError("Unknown instrument type '%s'.", type);
     return 0;
   }
 
-  patch->name = talloc_strdup(name);
-
-  instrument = getInstrumentFromNum(instrument_num);
-
-  ListAddElement1_ff(&instrument->patches,&patch->l);
-  (*instrument->PP_Update)(instrument,patch);
-
-  return getInstrumentPatchNum(instrument_num, patch->l.num);
+  return getInstrumentPatchNum(instrument_num, instrument->patches.num_elements-1);
 }
 
 void setInstrumentName(int instrument_num, char *name) {
@@ -120,7 +121,7 @@ char *getInstrumentName(int instrument_num) {
   struct Patch *patch = getPatchFromNum(instrument_num);
   if(patch==NULL) return NULL;
 
-  return patch->name;
+  return (char*)patch->name;
 }
 
 #if 0

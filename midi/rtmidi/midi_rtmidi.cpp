@@ -21,11 +21,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "rtmidi-2.0.0/RtMidi.h"
 
 #include "../../common/nsmtracker.h"
+#include "../../common/playerclass.h"
+#include "../../common/vector_proc.h"
 #include "../../common/memory_proc.h"
 #include "../../common/OS_visual_input.h"
 #include "../midi_i_input_proc.h"
 
 #include "../OS_midi_proc.h"
+
+extern PlayerClass *pc;
 
 struct MyMidiPortOs{
   RtMidiOut *midiout;
@@ -149,7 +153,7 @@ void OS_PutMidi(MidiPortOs port,
 #if 0
   if(true || time<0)
     printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x (%d/%d/%d)\n",
-           ((double)time/(double)PFREQ),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),
+           ((double)time/(double)pc->pfreq),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),
            cc,data1,data2,cc,data1,data2
            );
 #endif
@@ -161,7 +165,7 @@ void OS_PutMidi(MidiPortOs port,
   if(time<0)
     rtmidi_time=myport->last_time; // Necessary to ensure midi messages are sent out in the same order as they got in to this function.
   else{
-    rtmidi_time=startup_time + ((double)(time+LATENCY)/(double)PFREQ);
+    rtmidi_time=startup_time + ((double)(time+LATENCY)/(double)pc->pfreq);
     if(rtmidi_time<myport->last_time)
       rtmidi_time=myport->last_time;  // Necessary to ensure all midi messages are sent in order.
   }
@@ -315,19 +319,20 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     if(apis.size()==1)
       api = apis[0];
     else{
-      const char **menu = (const char**)talloc(apis.size()*sizeof(char*));
+      vector_t v={0};
       for(unsigned int i=0;i<apis.size();i++)
-        menu[i] = apis[i]==RtMidi::LINUX_ALSA ? "Alsa"
-                : apis[i]==RtMidi::UNIX_JACK  ? "Jack"
-                : apis[i]==RtMidi::WINDOWS_MM ? "Multimedia Library"
-                : apis[i]==RtMidi::WINDOWS_KS ? "Kernel Streaming"
-                : apis[i]==RtMidi::MACOSX_CORE ? "MAC OS X Core MIDI"
-                : "Unknown type";
+        VECTOR_push_back(&v,  apis[i]==RtMidi::LINUX_ALSA ? "Alsa"
+                            : apis[i]==RtMidi::UNIX_JACK  ? "Jack"
+                            : apis[i]==RtMidi::WINDOWS_MM ? "Multimedia Library"
+                            : apis[i]==RtMidi::WINDOWS_KS ? "Kernel Streaming"
+                            : apis[i]==RtMidi::MACOSX_CORE ? "MAC OS X Core MIDI"
+                            : "Unknown type"
+                         );
       int sel = -1;
       while(sel==-1){
         char temp[500];
         sprintf(temp,"Select midi API for '%s': ",name);
-        sel = GFX_ReqTypeMenu(window, reqtype, temp,apis.size(),(char**)menu);
+        sel = GFX_ReqTypeMenu(window, reqtype, temp, &v);
       }
       api = apis[sel];
     }

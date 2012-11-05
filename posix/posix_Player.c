@@ -32,6 +32,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "posix_Player_proc.h"
 
+#define USE_POSIX_PLAYER 0
+
+
 
 // Try to call PlayerTask 1200 times a second.
 //#define PLAYERTASKFREQ 44100
@@ -42,6 +45,7 @@ pthread_t playerthread={0};
 bool doexit=false;
 
 extern struct Root *root;
+extern PlayerClass *pc;
 
 static bool isplaying=false;
 
@@ -75,7 +79,7 @@ static void *posix_PlayerThread(void *arg){
     //newtime=(((tv.tv_sec*1000000+tv.tv_usec)/100)*PFREQ)/10000;
     newtime=tv.tv_sec*(1000*1000);
     newtime+=tv.tv_usec;
-    newtime*=PFREQ;
+    newtime*=pc->pfreq;
     newtime/=(1000*1000);
 
     //printf("Gakk player %d\n",getpid());
@@ -94,10 +98,16 @@ static void *posix_PlayerThread(void *arg){
 
 void posix_EndPlayer(void){
   doexit=true;
+#if USE_POSIX_PLAYER
   pthread_join(playerthread,NULL);
+#endif
 }
 
 bool posix_InitPlayer(void){
+
+#if !USE_POSIX_PLAYER
+  return true; // Using jack now.
+#endif
 
   if(pthread_create(&playerthread,NULL,posix_PlayerThread,NULL)!=0){
     fprintf(stderr,"Could not create player\n");

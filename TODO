@@ -195,6 +195,9 @@ Non-urgent
 
 * Fonts ignore CENTER flag (GTK only)
 
+* EnergyXT has an ok keyboard shortcut configuration tool.
+
+
 Urgent
 ======
 
@@ -233,8 +236,94 @@ Urgent
 * Pressing the instrument name in the widget should show a pop up menu with existing instruments to choose
   from. This is better than using the tab.
 
-* Alt+F should append track, similarly to Ctrl+F appends block.
+* Load/save settings
 
+* Should be a way to connect all connections in one movement. I.e. connect both left and right at the same time.
+
+* Menu option with demo song
+
+* Must be possible to drag an effect over a connection, and then that effect gets in the middle.
+  * Similarly, if deleting an effect in the middle of a connection, new connections will be made between those effects.
+  * Right-clicking a chip would work for this.
+
+* Put blocklist/playlist widget to the left of the editor widget, and make it's width fixed.
+
+* Track name font should be smaller. Instrument names seldomly fit.
+
+* More than around 11 effects simultaneously per track doesn't work.
+
+* Pressing a key doesn't capture the key event.
+
+* When mousing, always select the nearest thing to click on, even if not right above anything.
+
+* Import midi is currently not working. There even an abort() call in there just to make it obvious.
+
+* Logarithmic sliders for logarithmic ladspa ports.
+
+* For vst, it makes sense to check canParameterBeAutomated for effects.
+
+* Reset button for effect sliders. (set initial value)
+
+* Jack Buffer size menu option.
+
+* Slider automation update doesn't work after undo delete plugin.
+
+* Effect sliders can have same color as automation, although slightly grayed.
+
+* Clicks when removing connection when stereo-connected sine synth.
+
+* MUST MAKE BACKUP OF EXISTING FILE BEFORE SAVING!
+
+* Checkpushbuttons at the bottom status line, where you can see/change whether midi edit/input play/etc. are enabled.
+
+
+
+editor on/off button
+reset button
+reverb bus slider
+chorus bus slider
+
+
+Mixer gui design
+================
+* Grid, with grid size the same as chip size.
+  * Chip should be halfly grayed out when moved, and not in the grid position. (i.e. moving is per pixel, but
+    releasing it causes it to snap to the closest grid.)
+* Moving a chip over a connection automatically connects the chip inbetween that connection.
+  Moving the chip avay (still dragging the mouse) automatically diskconnects the chip inbetween that connection.
+  * If the chip is placed between two chips that are placed as close as possible, the width of the mixer gui should
+    be expanded so that the new chip can be placed in between.
+    * It might be a bit messy doing this in realtime though.
+* Connection lines should be as wide as possible.
+* Panning. (one slider, manipulates output)
+  * If the plugin only has 1 output channel, it is automatically converted to stereo.
+  * If the plugin has more than 2 output channels, only pan the two first channels.
+* Input volume (one slider)
+* Output volume (one slider)
+* All soundproducers automatically connects to X busses.
+  * Those buses are stereo busses.
+  * There are no visible connections from the chips to the busses. These are implicit.
+     Maybe these connections can be shown in a more gray color than normal connections, if pressing a special button.
+  * All audio widgets have volume controls for X busses.
+  * X needs to be at least 2, but there's room for more in the audio instrument widget.
+  * The first bus is connected to system out, and should be named something special.
+* Chips needs:
+  * VU for all input and output channels
+  * On/off / Bypass
+  * Name
+  * Different colors if selected.
+  * The selected chip is also shown in the instruments widget.
+  * Type identified by color. Tab has the same color as the chip. Use same color algorithm as hurtigmixer.
+* Buses:
+  * Buses are identified by a number, not by it's own object.
+  * Buses don't require connections.
+  * Buses always exists. They can not be created or deleted.
+  * Receivers and Senders SoundProducers sends and receives from buses.
+  * All SoundProducers have options to send out to Buses.
+    This is controlled by sliders in the instrument widget.
+  * At startup, the first Bus is connected to System Out.
+  * A Bus has two sound channels.
+  * There should be VU for all buses placed somewhere.
 
 Can not reproduce
 =================

@@ -149,11 +149,12 @@ int MIDIAllSoundsOff( void )
 extern struct MidiLink *inputmidilink;
 extern struct MidiNode *midinode;
 extern struct Root *root;
-extern char *inlinkname;
 
 int MIDISetInputPort( void ){
   RWarning("Midi input has not been implemented for alsa yet.");
 #if 0
+  static char *inlinkname=NULL;
+
 	char *clustername;
 	ReqType reqtype;
 	FILE *file;

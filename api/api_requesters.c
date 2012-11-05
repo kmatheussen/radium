@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/window_config_proc.h"
 #include "../common/block_properties_proc.h"
+#include "../common/OS_visual_input.h"
+
 #include "../midi/midi_i_plugin_proc.h"
 
 #ifdef _AMIGA
@@ -58,6 +60,10 @@ void configBlock(int windownum){
   Block_Properties_CurrPos(window);
 }
 
+void configVST(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  OS_VST_config(window);
+}
 
 const char *getLoadFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";

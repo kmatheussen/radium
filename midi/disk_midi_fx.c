@@ -32,11 +32,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 void MIDISaveFX(struct FX *fx,struct Tracks *track){
-	struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
+  //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 
 DC_start("FXDATA");
 
-	DC_SSI("cc",midi_fx->cc);
+DC_SSI("cc",fx->effect_num);
 
 DC_end();
 }
@@ -46,7 +46,7 @@ void *MIDILoadFX(struct FX *fx,struct Tracks *track){
 	static char **objs=NULL;
 	static char *vars[1]={"cc"};
 
-	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->instrumentdata;
+	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf;
 
 	struct MIDI_FX *midi_fx=DC_alloc(sizeof(struct MIDI_FX));
@@ -65,7 +65,7 @@ void *MIDILoadFX(struct FX *fx,struct Tracks *track){
 	GENERAL_LOAD(0,1)
 
 var0:
-	midi_fx->cc=DC_LoadI();
+	fx->effect_num=DC_LoadI();
 	if( ! MIDISetTreatFX(fx,midi_fx)){
 		dc.success=false;
 	}

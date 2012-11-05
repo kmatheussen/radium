@@ -78,6 +78,15 @@ void toggleFullScreen(int windownum){
   GFX_toggleFullScreen(window);
 }
 
+void showHideEditor(int windownum){
+  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_showHideEditor();
+}
+
+void showHideMixerWidget(void){
+  GFX_showHideMixerWidget();
+}
+
 void showHideInstrumentWidget(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_showHideInstrumentWidget(window);
@@ -218,6 +227,11 @@ void quit(void){
   if(doquit==true) printf("doquit is really true.\n");
 }
 
+extern void SOUNDFILESAVERGUI_open(void);
+void saveSoundfile(void){
+  SOUNDFILESAVERGUI_open();
+}
+
 void saveAs(void){
   SaveAs(root);
 }
@@ -233,6 +247,16 @@ void load(void){
   if( Load_CurrPos(getWindowFromNum(-1))){
     isloaded=true;
   }
+}
+
+void loadSong(char *filename){
+  if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
+    isloaded=true;
+  }
+}
+
+void newSong(void){
+  NewSong_CurrPos(getWindowFromNum(-1));
 }
 
 void importMidi(void){

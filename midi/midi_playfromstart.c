@@ -17,13 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-
-
-
 #include "nsmtracker.h"
+#include "../common/vector_proc.h"
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
 #include "OS_midi_proc.h"
@@ -31,34 +26,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_playfromstart_proc.h"
 
 void MIDIPlayFromStartHook(struct Instruments *instrument){
+  VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
 
-	struct Patch *patch=instrument->patches;
-
-	while(patch!=NULL){
-		struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
-		int channel=patchdata->channel;
-		struct MidiPort *midi_port = patchdata->midi_port;
-
-		if(patchdata->volumeonoff){
-			R_PutMidi3(midi_port,0xb0|channel,0x7,patchdata->volume);
-		}
-		if(patchdata->panonoff){
-			R_PutMidi3(midi_port,0xb0|channel,0xa,patchdata->pan);
-		}
-
-		{
-			int lokke;
-			for(lokke=0;lokke<8;lokke++){
-				if(patchdata->cc[lokke]>=0 && patchdata->ccsonoff[lokke]){
-					R_PutMidi3(midi_port,0xb0|channel,patchdata->cc[lokke],patchdata->ccvalues[lokke]);
-				}
-			}
-		}
-
-                OS_PlayFromStart(midi_port);
-
-		patch=NextPatch(patch);
-	}
+    struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
+    int channel=patchdata->channel;
+    struct MidiPort *midi_port = patchdata->midi_port;
+    
+    if(patchdata->volumeonoff){
+      R_PutMidi3(midi_port,0xb0|channel,0x7,patchdata->volume);
+    }
+    if(patchdata->panonoff){
+      R_PutMidi3(midi_port,0xb0|channel,0xa,patchdata->pan);
+    }
+    
+    {
+      int lokke;
+      for(lokke=0;lokke<8;lokke++){
+        if(patchdata->cc[lokke]>=0 && patchdata->ccsonoff[lokke]){
+          R_PutMidi3(midi_port,0xb0|channel,patchdata->cc[lokke],patchdata->ccvalues[lokke]);
+        }
+      }
+    }
+    
+    OS_PlayFromStart(midi_port);
+    
+  }END_VECTOR_FOR_EACH;
+  
 }
+
 
 

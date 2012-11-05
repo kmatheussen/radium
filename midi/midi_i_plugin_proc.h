@@ -20,10 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_i_plugin.h"
 
-extern LANGSPEC int MIDIinitInstrumentPlugIn(struct Instruments *instrument);
+extern LANGSPEC int MIDI_initInstrumentPlugIn(struct Instruments *instrument);
 
-extern LANGSPEC int MIDIgetStandardVelocity(struct Tracks *track);
-extern LANGSPEC int MIDIgetMaxVelocity(struct Tracks *track);
+extern LANGSPEC int MIDIgetStandardVelocity(struct Patch *patch);
+extern LANGSPEC int MIDIgetMaxVelocity(struct Patch *patch);
 extern LANGSPEC int MIDIgetPatch(
                                  struct Tracker_Windows *window,
                                  ReqType reqtype,
@@ -32,14 +32,16 @@ extern LANGSPEC int MIDIgetPatch(
                                  );
 extern LANGSPEC void MIDICloseInstrument(struct Instruments *instrument);
 //extern LANGSPEC void MIDISelectTrackInstrument(struct Tracks *track,struct Instruments *instrument);
-extern LANGSPEC void MIDIStopPlaying(struct Instruments *instrument);
+//extern LANGSPEC void MIDIStopPlaying(struct Instruments *instrument);
 
-extern LANGSPEC void MIDIchangeTrackPan(int newpan,struct Tracks *track);
-extern LANGSPEC void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note,STime time);
+//extern LANGSPEC void MIDIchangeTrackPan(int newpan,struct Tracks *track);
+//extern LANGSPEC void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note,STime time);
 //extern LANGSPEC void MIDIstopnote(int notenum,int velocity, struct Tracks *track,struct Notes *note);
 //extern LANGSPEC void MIDIplaynote(int notenum, int velocity, struct Tracks *track,struct Notes *note);
-extern LANGSPEC void MIDIclosePatch(void);
-extern LANGSPEC void MIDI_InitPatch(struct Patch *patch);
+//extern LANGSPEC void MIDIclosePatch(void);
+extern LANGSPEC void MIDI_InitPatch(struct Patch *patch, void *patchdata);
+
+extern LANGSPEC void MIDI_init_track(struct Tracks *track);
 
 extern LANGSPEC char **MIDI_getInputPortNames(int *retsize);
 extern LANGSPEC char **MIDI_getOutputPortNames(int *retsize);

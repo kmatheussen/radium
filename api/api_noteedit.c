@@ -69,6 +69,10 @@ void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenu
 						);
 }
 
+int getMaxVolume(){
+  return MAX_VELOCITY;
+}
+
 int getNoteVolume(int windownum,int blocknum,int tracknum,int notenum){
 	struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
 

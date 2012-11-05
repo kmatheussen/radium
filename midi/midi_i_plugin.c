@@ -17,9 +17,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/playerclass.h"
 #include "../common/settings_proc.h"
+#include "../common/instruments_proc.h"
 
 #include "midi_i_plugin.h"
 
@@ -111,22 +113,18 @@ void MyPutMidi(
 
 /******************** notes **************************/
 
-void MIDIplaynote(int notenum,
+static void MIDIplaynote(struct Patch *patch,
+                  int notenum,
                   int velocity,
-                  struct Tracks *track,
-                  struct Notes *note,
                   STime time
 ){
-	const struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
+	const struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
         struct MidiPort *midi_port = patchdata->midi_port;
 	const int channel=patchdata->channel;
 	int maxbuf=70;
 
-	/* Scale the velocity to the volume set by the track.*/
-	if(track->volumeonoff){
-		velocity=track->volume*velocity/MAXTRACKVOL;
-	}
-
+        if(velocity>127)
+          velocity=127;
 
 	/* Check if the patch has other LSB/MSB/Preset than is currently
 	   set for the channel.
@@ -200,13 +198,15 @@ void MIDIplaynote(int notenum,
 
 bool useOx90ForNoteOff=false;
 
-void MIDIstopnote(int notenum,
+static void MIDIstopnote(struct Patch *patch,
+                  int notenum,
                   int velocity, 
-                  struct Tracks *track,
-                  struct Notes *note,
                   STime time
 ){
-  struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
+  struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
+
+  if(velocity>127)
+    velocity=127;
 
   uint32_t tem=(uint32_t)(((0x80)<<24)|((notenum)<<16)|((velocity)<<8));
   if(tem>>24!=0x80){
@@ -227,14 +227,17 @@ void MIDIstopnote(int notenum,
 
 /******************* Velocity *************************/
 
-void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note,STime time){
-	struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
+static void MIDIchangevelocity(struct Patch *patch,int notenum, int velocity,STime time){
+	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
+
+        if(velocity>127)
+          velocity=127;
 
         //printf("Sending aftertouch. channel: %d, note: %d, val: %d\n",patchdata->channel,note->note,velocity);
 	PutMidi3(
 		patchdata->midi_port,
 		0xa0|patchdata->channel,
-		note->note,
+		notenum,
 		velocity,
                 time,
 		10
@@ -245,7 +248,7 @@ void MIDIchangevelocity(int velocity,struct Tracks *track,struct Notes *note,STi
 
 /******************** patch **************************/
 
-void MIDIchangeTrackPan(int newpan,struct Tracks *track){
+static void MIDIchangeTrackPan(int newpan,struct Tracks *track){
 	struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
 	D_PutMidi3(
 		patchdata->midi_port,
@@ -323,12 +326,9 @@ char *MIDIGetPatchData(struct Patch *patch, char *key){
   return "";
 }
 
-void MIDIclosePatch(void){
+void MIDIclosePatch(struct Patch *patch){
 	return;
 }
-
-int MIDIgetStandardVelocity(struct Tracks *track);
-int MIDIgetMaxVelocity(struct Tracks *track);
 
 static struct PatchData *createPatchData(void) {
   struct PatchData *patchdata=talloc(sizeof(struct PatchData));
@@ -426,11 +426,14 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
   int num_ports;
 
   char **portnames=MIDI_getOutputPortNames(&num_ports);
-  char **menusel = talloc(sizeof(char*)*(num_ports+1));
-  memcpy(menusel,portnames,num_ports*sizeof(char*));
-  menusel[num_ports] = "Create new port";
+  vector_t v={0};
+  int i;
 
-  int sel=GFX_Menu(window,reqtype,"Select port",num_ports+1,menusel);
+  for(i=0;i<num_ports;i++)
+    VECTOR_push_back(&v,portnames[i]);
+  VECTOR_push_back(&v,"Create new port");
+
+  int sel=GFX_Menu(window,reqtype,"Select port",&v);
   if(sel==-1)
     return NULL;
 
@@ -468,18 +471,16 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char
   return midi_port;
 }
 
-void MIDI_InitPatch(struct Patch *patch) {
+void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
   patch->playnote=MIDIplaynote;
   patch->stopnote=MIDIstopnote;
   patch->changevelocity=MIDIchangevelocity;
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 
-  patch->patchdata = createPatchData();
+  patch->patchdata = createPatchData(); // The 'patchdata' argument for this function is ignored. There is basically only one type of MIDI patch class, so we create it here instead.
 
-  patch->minvel=0;
-  patch->maxvel=MIDIgetMaxVelocity(NULL);
-  patch->standardvel=MIDIgetStandardVelocity(NULL);
+  patch->instrument = get_MIDI_instrument();
 }
 
 int MIDIgetPatch(
@@ -488,7 +489,7 @@ int MIDIgetPatch(
 	struct Tracks *track,
 	struct Patch *patch
 ){
-        MIDI_InitPatch(patch);
+        MIDI_InitPatch(patch, NULL);
 
 	struct MidiPort *midi_port = MIDIgetPort(window,reqtype,NULL);
 
@@ -509,11 +510,7 @@ int MIDIgetPatch(
 
 /******************* instrument ***********************/
 
-int MIDIgetStandardVelocity(struct Tracks *track){
-	return 0x50;
-}
-
-int MIDIgetMaxVelocity(struct Tracks *track){
+int MIDIgetMaxVelocity(struct Patch *patch){
 	return 127;
 }
 
@@ -530,16 +527,15 @@ void MIDICloseInstrument(struct Instruments *instrument){
 }
 
 
-static void MIDIInitTrack(struct Instruments *instrument,struct Tracks *track){
+void MIDI_init_track(struct Tracks *track){
 	struct TrackInstrumentData *tid;
 	tid=talloc(sizeof(struct TrackInstrumentData));
-	track->instrumentdata=tid;
+	track->midi_instrumentdata=tid;
 }
 
 void MIDIStopPlaying(struct Instruments *instrument){
-  struct Patch *patch=instrument->patches;
+  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
 
-  while(patch!=NULL){
     struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
     struct MidiPort *midi_port = patchdata->midi_port;
     int ch;
@@ -551,16 +547,22 @@ void MIDIStopPlaying(struct Instruments *instrument){
           R_PutMidi3(midi_port,0x80|ch,notenum,0x00);
     }
 
-    patch=NextPatch(patch);
-  }
+  }END_VECTOR_FOR_EACH;
 }
 
+static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
+  return; // Keep fx. All patches use same fx system.
+}
 
+static void MIDI_remove_patch(struct Patch *patch){
+  // nothing to do.
+}
 
-char *inlinkname=NULL;
+static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
+  GFX_PP_Update(patch);
+}
 
-
-int MIDIinitInstrumentPlugIn(struct Instruments *instrument){
+int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
 
   useOx90ForNoteOff = SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true;
   SETTINGS_write_int("use_0x90_for_note_off",useOx90ForNoteOff==true?1:0);
@@ -570,19 +572,20 @@ int MIDIinitInstrumentPlugIn(struct Instruments *instrument){
   }
 
   instrument->instrumentname="MIDI instrument";
-  instrument->getStandardVelocity= &MIDIgetStandardVelocity;
   instrument->getMaxVelocity= &MIDIgetMaxVelocity;
   instrument->getFX= &MIDIgetFX;
   instrument->getPatch= &MIDIgetPatch;
   instrument->CloseInstrument=MIDICloseInstrument;
-  instrument->InitTrack=MIDIInitTrack;
   instrument->StopPlaying=MIDIStopPlaying;
 
   instrument->CopyInstrumentData=MIDI_CopyInstrumentData;
   instrument->PlayFromStartHook=MIDIPlayFromStartHook;
   instrument->LoadFX=MIDILoadFX;
 
-  instrument->PP_Update=MIDIGFX_PP_Update;
+  instrument->PP_Update=MIDI_PP_Update;
+
+  instrument->handle_fx_when_theres_a_new_patch_for_track=MIDI_handle_fx_when_theres_a_new_patch_for_track;
+  instrument->remove_patch = MIDI_remove_patch;
 
   instrument->setPatchData=MIDISetPatchData;
   instrument->getPatchData=MIDIGetPatchData;
