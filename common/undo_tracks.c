@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "undo.h"
+#include "undo_tracks_proc.h"
 #include "fxlines_proc.h"
 #include "trackreallines_proc.h"
 #include "clipboard_track_copy_proc.h"
@@ -43,14 +44,14 @@ void Undo_Track(
 	struct WTracks *wtrack,
 	int realline
 ){
-	Undo_New(
-		window->l.num,
-		wblock->l.num,
-		wtrack->l.num,
-		realline,
-		CB_CopyTrack(wblock,wtrack),
-		Undo_Do_Track
-	);
+	Undo_Add(
+                 window->l.num,
+                 wblock->l.num,
+                 wtrack->l.num,
+                 realline,
+                 CB_CopyTrack(wblock,wtrack),
+                 Undo_Do_Track
+                 );
 }
 
 void Undo_Track_CurrPos(
@@ -68,6 +69,8 @@ void *Undo_Do_Track(
 ){
 	struct WTracks *undo_wtrack=(struct WTracks *)pointer;
 	struct WTracks *temp=CB_CopyTrack(wblock,wtrack);
+
+        printf("*** undo_do_track called. Tracknum: %d\n",wtrack->l.num);
 
 	CB_PasteTrack(wblock,undo_wtrack,wtrack);
 

@@ -175,10 +175,7 @@ void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int
 			break;
 	}
 
-	(*wblock->wtrack->track->instrument->PP_Update)(
-		wblock->wtrack->track->instrument,
-		wblock->wtrack->track->patch
-	);
+        GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 }
 
 void CursorRight_CurrPos(struct Tracker_Windows *window){

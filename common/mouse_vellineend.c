@@ -52,7 +52,7 @@ int MoveVelEnd_Mouse(
 	int subtrack=action->eint1;
 	Place place;
 	Place *pp_vel,*pn_vel;
-	int maxvel=(*track->instrument->getMaxVelocity)(track);
+	int maxvel=MAX_VELOCITY;
 	int sx1=GetXSubTrack1(wtrack,subtrack);
 	int sx2=GetXSubTrack2(wtrack,subtrack);
 	int velocity_end_org=note->velocity_end;

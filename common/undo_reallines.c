@@ -43,14 +43,14 @@ void Undo_Reallines(
 	struct LocalZooms *tolocalzoom=NULL;
 	CB_CopyLocalZoomsRec(&tolocalzoom,wblock->localzooms);
 
-	Undo_New(
-		window->l.num,
-		wblock->l.num,
-		tracknum,
-		realline,
-		tolocalzoom,
-		Undo_Do_Reallines
-	);
+	Undo_Add(
+                 window->l.num,
+                 wblock->l.num,
+                 tracknum,
+                 realline,
+                 tolocalzoom,
+                 Undo_Do_Reallines
+                 );
 }
 
 void Undo_Reallines_CurrPos(

@@ -45,13 +45,13 @@ void Undo_LPBs(
 	NInt tracknum,
 	int realline
 ){
-	Undo_New(
-		window->l.num,
-		block->l.num,
-		tracknum,
-		realline,
-		CB_CopyLPBs(block->lpbs),
-		Undo_Do_LPBs
+	Undo_Add(
+                 window->l.num,
+                 block->l.num,
+                 tracknum,
+                 realline,
+                 CB_CopyLPBs(block->lpbs),
+                 Undo_Do_LPBs
 	);
 }
 

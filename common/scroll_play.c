@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "wblocks_proc.h"
+#include "patch_proc.h"
 
 #include "scroll_play_proc.h"
 
@@ -36,27 +37,36 @@ void Scroll_play_do(
 	int realline
 ){
 	struct WTracks *wtrack;
-	struct Notes *note;
-	struct Patch *patch;
-	struct TrackReallineElements *tre;
-
+	
 	for(wtrack=wblock->wtracks;wtrack!=NULL;wtrack=NextWTrack(wtrack)){
-		patch=wtrack->track->patch;
+		struct Patch *patch=wtrack->track->patch;
 		if(patch==NULL || wtrack->track->onoff==0) continue;
 
-		tre=wtrack->trackreallines[realline].trackreallineelements;
+                // First turn off
+                {
+                  struct TrackReallineElements *tre=wtrack->trackreallines[realline].trackreallineelements;
 
-		while(tre!=NULL){
-			if(tre->type==TRE_VELLINESTART){
-				note=(struct Notes *)tre->pointer;
-				(*patch->playnote)(note->note,note->velocity,wtrack->track,note,-1);
-			}
-			if(tre->type==TRE_VELLINEEND){
-				note=(struct Notes *)tre->pointer;
-				(*patch->stopnote)(note->note,note->velocity_end,wtrack->track,note,-1);
-			}
-			tre=tre->next;
-		}
+                  while(tre!=NULL){
+                    if(tre->type==TRE_VELLINEEND){
+                      struct Notes *note=(struct Notes *)tre->pointer;
+                      PATCH_stop_note(patch,note->note,note->velocity_end,wtrack->track);
+                    }
+                    tre=tre->next;
+                  }
+                }
+
+                // Then turn on
+                {
+                  struct TrackReallineElements *tre=wtrack->trackreallines[realline].trackreallineelements;
+                  
+                  while(tre!=NULL){
+                    if(tre->type==TRE_VELLINESTART){
+                      struct Notes *note=(struct Notes *)tre->pointer;
+                      PATCH_play_note(patch,note->note,note->velocity,wtrack->track);
+                    }
+                    tre=tre->next;
+                  }
+                }
 	}
 }
 

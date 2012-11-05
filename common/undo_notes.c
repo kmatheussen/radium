@@ -56,7 +56,13 @@ void Undo_Notes(
 	CopyRange_stops(&undo_notes->stops,track->stops,p1,&p2);
 	CopyRange_notes(&undo_notes->notes,track->notes,p1,&p2);
 
-	Undo_New(window->l.num,block->l.num,track->l.num,realline,undo_notes,Undo_Do_Notes);
+	Undo_Add(
+                 window->l.num,
+                 block->l.num,
+                 track->l.num,
+                 realline,
+                 undo_notes,
+                 Undo_Do_Notes);
 }
 
 void Undo_Notes_CurrPos(

@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "notes_proc.h"
 #include "nodelines_proc.h"
+#include "instruments_proc.h"
+#include "../midi/midi_i_plugin_proc.h"
 
 #include "tracks_proc.h"
 
@@ -39,12 +41,11 @@ void CloseTrack(struct Blocks *block, NInt tracknum){
 // l.num must not be set here!
 void InitTrack(struct Tracks *track){
 	track->onoff=1;
-	track->trackname="<>";
-	track->instrument=root->def_instrument;
+	track->trackname="<click me>";
 	track->volume=800;
 	track->panonoff=false;
 	track->volumeonoff=true;
-	(*track->instrument->InitTrack)(track->instrument,track);
+        MIDI_init_track(track);
 }
 
 static void NewTrack(struct Blocks *block,struct Tracks *track){

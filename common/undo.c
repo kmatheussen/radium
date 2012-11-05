@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "windows_proc.h"
 #include "visual_proc.h"
 #include "wblocks_proc.h"
@@ -28,127 +29,256 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #undef RADIUM_UNDOISCALLINGNOW
 
-
-struct Undo UndoRoot={0};
-struct Undo *CurrUndo=&UndoRoot;
 extern struct Root *root;
-int num_undos=0;
-int max_num_undos=MAX_NUM_UNDOS;
 
+struct UndoEntry{
+  NInt windownum;
+  NInt blocknum;
+  NInt tracknum;
+  int realline;
+  struct Patch *current_patch;
+
+  void *pointer;
+  UndoFunction function;
+};
+
+
+struct Undo{
+  struct Undo *prev;
+  struct Undo *next;
+
+  vector_t entries;
+
+  // Used to find cursorpos.
+  NInt windownum;
+  NInt blocknum;
+  NInt tracknum;
+  int realline;
+};
+
+static struct Undo UndoRoot={0};
+static struct Undo *CurrUndo=&UndoRoot;
+static struct Undo *curr_open_undo=NULL;
+
+int num_undos=0;
+static int max_num_undos=MAX_NUM_UNDOS;
+
+static bool undo_is_open=false;
+
+extern struct Patch *g_currpatch;
+
+static bool currently_undoing = false;
 
 void ResetUndo(void){
-	CurrUndo=&UndoRoot;
-	num_undos=0;
+  if(currently_undoing){
+    RError("Can not call ResetUndo from Undo()\n");
+  }
+
+  CurrUndo=&UndoRoot;
+  num_undos=0;
+  OS_GFX_NumUndosHaveChanged(0,false);
+}
+
+void Undo_Open(void){
+  if(currently_undoing){
+    RError("Can not call Undo_Open from Undo()\n");
+  }
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  struct WTracks *wtrack = wblock->wtrack;
+  int realline = wblock->curr_realline;
+
+  printf("Undo_Open\n");
+
+  if(undo_is_open==true)
+    RError("Undo_Open: Undo_is_open==true");
+
+  curr_open_undo = talloc(sizeof(struct Undo));
+  curr_open_undo->windownum=window->l.num;
+  curr_open_undo->blocknum=wblock->l.num;
+  curr_open_undo->tracknum=wtrack->l.num;
+  curr_open_undo->realline=realline;
+    
+
+#if 0 // Disabled. Code doesn't look right.
+  if(num_undos!=0 && num_undos>max_num_undos){
+    num_undos--;
+    UndoRoot.next=UndoRoot.next->next;
+    UndoRoot.next->prev=&UndoRoot;
+  }
+#endif
+
+  undo_is_open = true;
+}
+
+void Undo_Close(void){
+  if(currently_undoing){
+    RError("Can not call Undo_Close from Undo()\n");
+  }
+
+  undo_is_open = false;
+
+  struct Undo *undo = curr_open_undo;
+
+  if(undo->entries.num_elements > 0){
+    undo->prev=CurrUndo;
+    CurrUndo->next=undo;
+    CurrUndo=undo;
+    
+    num_undos++;
+
+    OS_GFX_NumUndosHaveChanged(num_undos, CurrUndo->next!=NULL);
+  }
+}
+
+void Undo_CancelLastUndo(void){
+  if(currently_undoing){
+    RError("Can not call Undo_CancelLastUndo from Undo()\n");
+  }
+
+  CurrUndo=CurrUndo->prev;
+  CurrUndo->next=NULL;
 }
 
 /***************************************************
   FUNCTION
     Insert a new undo-element.
 ***************************************************/
-void Undo_New(
-	NInt windownum,
-	NInt blocknum,
-	NInt tracknum,
-	int realline,
-	void *pointer,
-	void *(*UndoFunction)(
-		struct Tracker_Windows *window,
-		struct WBlocks *wblock,
-		struct WTracks *wtrack,
-		int realline,
-		void *pointer
-	)
+void Undo_Add(
+              int windownum,
+              int blocknum,
+              int tracknum,
+              int realline,
+              void *pointer,
+              UndoFunction undo_function
 ){
-	struct Undo *undo;
+  if(currently_undoing){
+    RError("Can not call Undo_Add from Undo()\n");
+  }
 
-	undo=talloc(sizeof(struct Undo));
+  bool undo_was_open = undo_is_open;
 
-	undo->prev=CurrUndo;
-	CurrUndo->next=undo;
-	CurrUndo=undo;
+  if(undo_is_open==false)
+    Undo_Open();
 
-	undo->windownum=windownum;
-	undo->blocknum=blocknum;
-	undo->tracknum=tracknum;
-	undo->realline=realline;
+  struct UndoEntry *entry=talloc(sizeof(struct UndoEntry));
+  entry->windownum=windownum;
+  entry->blocknum=blocknum;
+  entry->tracknum=tracknum;
+  entry->realline=realline;
+  entry->current_patch = g_currpatch;
+  entry->pointer=pointer;
+  entry->function=undo_function;
 
-	undo->pointer=pointer;
-	undo->UndoFunction=UndoFunction;
+  VECTOR_push_back(&curr_open_undo->entries,entry);
 
-	num_undos++;
-
-	if(num_undos!=0 && num_undos>max_num_undos){
-		num_undos--;
-		UndoRoot.next=UndoRoot.next->next;
-		UndoRoot.next->prev=&UndoRoot;
-	}
-
+  if(undo_was_open==false)
+    Undo_Close();
 }
 
 void Undo(void){
 	struct Undo *undo=CurrUndo;
 
-	struct Tracker_Windows *window;
-	struct WBlocks *wblock;
-	struct WTracks *wtrack=NULL;
-	NInt blocknum;
-
 	if(undo==&UndoRoot) return;
 
+currently_undoing = true;
 	PlayStop();
 
-	blocknum=undo->blocknum;
 
-	window=ListFindElement1(&root->song->tracker_windows->l,undo->windownum);
-	wblock=ListFindElement1_r0(&window->wblocks->l,blocknum);
+        struct Patch *current_patch = NULL;
 
-	if(wblock!=NULL){
-		window->wblock=wblock;
-		if(undo->tracknum<0){
-			wtrack=wblock->wtracks;
-		}else{
-			wtrack=ListFindElement1_r0(&wblock->wtracks->l,undo->tracknum);
-		}
-		if(wtrack!=NULL){
-			wblock->wtrack=wtrack;
-		}
-		wblock->curr_realline=undo->realline;
-		window->curr_track=undo->tracknum;
-	}
+       {
+          int i;
+          for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
 
-	undo->pointer=(*undo->UndoFunction)(window,wblock,wtrack,undo->realline,undo->pointer);
+            struct UndoEntry *entry=undo->entries.elements[i];
+ 
+            struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,entry->windownum);
+            struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
+            struct WTracks *wtrack=NULL;
+            current_patch = entry->current_patch;
 
-	CurrUndo=undo->prev;
+            if(wblock!=NULL){
+              window->wblock=wblock;
+              if(entry->tracknum<0){
+                wtrack=wblock->wtracks;
+              }else{
+                wtrack=ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
+              }
+              if(wtrack!=NULL){
+                wblock->wtrack=wtrack;
+              }
+              wblock->curr_realline=entry->realline;
+              window->curr_track=entry->tracknum;
+            }
 
-	num_undos--;
+            entry->pointer = entry->function(window,wblock,wtrack,entry->realline,entry->pointer);
 
-        wblock=ListFindElement1_r0(&window->wblocks->l,blocknum);
-        if(wblock==NULL)
-          wblock=ListFindElement1_r0(&window->wblocks->l,blocknum-1);
-        if(wblock==NULL){
-          RError("undo.c: block %d does not exist. Using block 0.",blocknum-1);
-          wblock=window->wblocks;
-        }
+            wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
+            if(wblock==NULL)
+              wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum-1);
+            if(wblock==NULL){
+              RError("undo.c: block %d does not exist. Using block 0.",entry->blocknum-1);
+              wblock=window->wblocks;
+            }
+          
+            window->wblock = wblock;
+            if(entry->tracknum<0){
+              wtrack=wblock->wtracks;
+            }else{
+              wtrack=ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
+            }
+            wblock->wtrack=wtrack;
+            wblock->curr_realline=entry->realline;
+            window->curr_track=entry->tracknum;
+          }
+       }
 
-	window->wblock=wblock;
-	if(undo->tracknum<0){
-		wtrack=wblock->wtracks;
-	}else{
-		wtrack=ListFindElement1_r0(&wblock->wtracks->l,undo->tracknum);
-	}
-	wblock->wtrack=wtrack;
-	wblock->curr_realline=undo->realline;
-	window->curr_track=undo->tracknum;
+       VECTOR_reverse(&undo->entries);
 
-	SelectWBlock(
-		window,
-		wblock
-	);
+       CurrUndo=undo->prev;
 
+       num_undos--;
+
+       {
+         struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,undo->windownum);
+         struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,undo->blocknum);
+         struct WTracks *wtrack;
+
+         if(wblock==NULL)
+           wblock=window->wblocks;
+
+         if(undo->tracknum<0){
+           wtrack=wblock->wtracks;
+         }else{
+           wtrack=ListFindElement1_r0(&wblock->wtracks->l,undo->tracknum);
+         }
+
+         if(wtrack==NULL)
+           wtrack=wblock->wtracks;
+           
+         wblock->wtrack=wtrack;
+         wblock->curr_realline=undo->realline;
+         window->curr_track=undo->tracknum;
+
+         SelectWBlock(
+                      window,
+                      wblock
+                      );
+
+         if(current_patch!=NULL)
+           GFX_update_instrument_patch_gui(current_patch);
+
+       }
+currently_undoing = false;
+
+ OS_GFX_NumUndosHaveChanged(num_undos, CurrUndo->next!=NULL);
 }
 
 
 void Redo(void){
+  printf("CurrUndo->next: %p\n",CurrUndo->next);
 
 	if(CurrUndo->next==NULL) return;
 
@@ -158,6 +288,7 @@ void Redo(void){
 
 	num_undos+=2;
 
+        OS_GFX_NumUndosHaveChanged(num_undos, CurrUndo->next!=NULL);
 }
 
 void SetMaxUndos(struct Tracker_Windows *window){
@@ -170,6 +301,8 @@ void SetMaxUndos(struct Tracker_Windows *window){
 	if(newmax==-1) return;
 
 	max_num_undos=newmax;
+
+        RWarning("The max number of undoes variables is ignored. Undo is unlimited.");
 }
 
 

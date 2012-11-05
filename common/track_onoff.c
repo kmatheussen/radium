@@ -28,7 +28,11 @@ extern struct Root *root;
 void SwitchTrackOnOff(
 	struct Tracks *track
 ){
-	track->onoff=track->onoff==0?1:0;
+  if(track->onoff==1){
+    track->onoff=0;
+  }else{
+    track->onoff=1;
+  }
 }
 
 void SwitchAllTracksOnOff(
@@ -97,6 +101,7 @@ void AllTracksOn(
 	while(block!=NULL){
 		track=block->tracks;
 		while(track!=NULL){
+                  printf("AllTracksOn %d\n",track->l.num);
 			track->onoff=1;
 			track=NextTrack(track);
 		}
@@ -158,6 +163,8 @@ void TRACK_OF_switch_solo_spesified_CurrPos(
     else if(track->l.num>0 && ((struct Tracks*)(ListPrevElement1(&block->tracks->l, &track->l)))->onoff==false)
       set_solo = false;
   }
+
+  printf("TRACK_OF_switch_solo_specified_CurrPos\n");
    
   if(set_solo==true)
     SoloTrack(tracknum);

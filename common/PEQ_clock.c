@@ -72,7 +72,7 @@ static STime clock_time;
 
 extern PlayerClass *pc;
 
-void PC_NewSecond(STime time, struct PEventQueue *peq,int doit);
+void PC_NewSecond(struct PEventQueue *peq,int doit);
 
 void InitPEQclock(void){
 	struct PEventQueue *peq=GetPEQelement();
@@ -91,7 +91,7 @@ LONG clocksig;
 
 //RSemaphore *ClockSemaphore;
 
-void PC_NewSecond(STime time, struct PEventQueue *peq,int doit){
+void PC_NewSecond(struct PEventQueue *peq,int doit){
 
 //	ObtainRSemaphore(ClockSemaphore);
 
@@ -109,7 +109,7 @@ void PC_NewSecond(STime time, struct PEventQueue *peq,int doit){
 
 //	ReleaseRSemaphore(ClockSemaphore);
 
-	peq->l.time+=PFREQ*(pc->block->reltempo>1.0f?1.0f:pc->block->reltempo);
+	peq->l.time+=pc->pfreq*(pc->block->reltempo>1.0f?1.0f:pc->block->reltempo);
 
 	ListAddElementP(&pc->peq,&peq->l);
 }
@@ -141,8 +141,8 @@ void UpdateClock(
         if(last_time==time)
           return;
 
-	clock_minutes=time/(60*PFREQ);
-	clock_seconds=time/PFREQ - (60*clock_minutes);
+	clock_minutes=time/(60*pc->pfreq);
+	clock_seconds=time/pc->pfreq - (60*clock_minutes);
 
 //	ObtainRSemaphore(ClockSemaphore);
 

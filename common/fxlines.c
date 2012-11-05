@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "placement_proc.h"
 #include "nodelines_proc.h"
 #include "nodelines.h"
@@ -29,10 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "player_proc.h"
 #include "nodeboxes_proc.h"
-
+#include "OS_visual_input.h"
+#include "instruments_proc.h"
 
 #include "fxlines_proc.h"
 
+
+extern struct Root *root;
 
 
 struct FXextrainfo{
@@ -222,44 +226,80 @@ struct FX *getTrackFX(struct Tracks *track,int num){
 	return NULL;
 }
 
-int nextcolor=4;
+// Called after loading and undo. Can be called at any time.
+void FX_update_all_slider_automation_visuals(void){
+  struct Blocks *block = root->song->blocks;
+  while(block!=NULL){
+    struct Tracks *track = block->tracks;
+    while(track!=NULL){
+      struct FXs *fxs=track->fxs;
+      while(fxs!=NULL){
+        fxs->fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(track->patch,fxs->fx->effect_num);
+        fxs->fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(track->patch,fxs->fx->effect_num);
+        
+        fxs = NextFX(fxs);
+      }
+      track = NextTrack(track);
+    }
+    block = NextBlock(block);
+  }
+}
 
-struct FX *selectFX(
+static struct FX *selectFX(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	char **menutext;
+
+  if(wtrack->track->patch==NULL)
+    return NULL; // TODO: Ask for new patch.
+
 	struct FX *fx;
 	int num_usedFX=getNumUsedFX(wtrack->track);
-	int lokke,selection;
 
 	if(num_usedFX>0){
-		menutext=talloc_atomic(sizeof(char *) * (num_usedFX+1));
-		for(lokke=0;lokke<num_usedFX;lokke++){
-			menutext[lokke]=getTrackFX(wtrack->track,lokke)->name;
-		}
-		menutext[lokke]="New FX";
-		selection=GFX_Menu(window,NULL,"Select FX",num_usedFX+1,menutext);
-		if(selection==-1) return NULL;
-		if(selection<num_usedFX) return getTrackFX(wtrack->track,selection);
+          int lokke;
+          vector_t v={0};
+          for(lokke=0;lokke<num_usedFX;lokke++)
+            VECTOR_push_back(&v,getTrackFX(wtrack->track,lokke)->name);
+
+          VECTOR_push_back(&v,"New FX");
+          int selection=GFX_Menu(window,NULL,"Select FX",&v);
+          if(selection==-1) return NULL;
+          if(selection<num_usedFX) return getTrackFX(wtrack->track,selection);
 	}
 
 	fx=talloc(sizeof(struct FX));
 
+        {
+          if(fx->color==0){
+            static int nextcolor=3;
+
+            nextcolor++;
+
+            if(nextcolor==3)
+              nextcolor=4;
+            if(nextcolor==7)
+              nextcolor=8;
+            if(nextcolor==9||nextcolor==10||nextcolor==11)
+              nextcolor=12;
+            if(nextcolor==15)
+              nextcolor=1;
+
+            fx->color=nextcolor;
+          }
+        }
+
 	if(
-		(*wtrack->track->instrument->getFX)(window,wtrack->track,fx)
+		(*wtrack->track->patch->instrument->getFX)(window,wtrack->track,fx)
 		==
 		FX_FAILED
 	){
 		return NULL;
 	}
 
-	if(fx->color==0){
-		fx->color=nextcolor;
-		nextcolor++;
-		if(nextcolor==256) nextcolor=4;
-	}
+        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(wtrack->track->patch,fx->effect_num);
+        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(wtrack->track->patch,fx->effect_num);
 
 	return fx;
 }
@@ -277,11 +317,11 @@ void AddFXNodeLine(
 	struct FXs *fxs;
 	struct FXNodeLines *fxnodeline;
 
-	fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->l.num);
+	fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
 	if(fxs==NULL){
 	  //		printf("new, fx->l.num: %d, wtrack->fxs->l.num:%d\n",fx->l.num,wtrack->track->fxs->l.num);
 		fxs=talloc(sizeof(struct FXs));
-		fxs->l.num=fx->l.num;
+		fxs->l.num=fx->num;
 		fxs->fx=fx;
 		ListAddElement1(&wtrack->track->fxs,&fxs->l);
 

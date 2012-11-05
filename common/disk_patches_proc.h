@@ -1,7 +1,7 @@
 
 #ifndef TRACKER_INCLUDE
 
-extern void SavePatch(struct Patch *patch);
+extern void SavePatches(vector_t *v);
 extern struct Patch *LoadPatch(void);
 
 #endif

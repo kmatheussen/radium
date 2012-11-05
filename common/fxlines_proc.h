@@ -15,27 +15,27 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-extern void UpdateFXNodeLines(
+extern LANGSPEC void UpdateFXNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 );
 
-extern void UpdateAllFXNodeLines(
+extern LANGSPEC void UpdateAllFXNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-extern void UpdateSomeFXNodeLines(
+extern LANGSPEC void UpdateSomeFXNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt starttrack,
 	NInt endtrack
 );
 
-extern void AddFXNodeLine(
+extern LANGSPEC void FX_update_all_slider_automation_visuals(void);
+
+extern LANGSPEC void AddFXNodeLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -44,11 +44,9 @@ extern void AddFXNodeLine(
 	Place *p1
 );
 
-extern void AddFXNodeLineCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window);
 
-extern void FreeAllWFXnodes(
+extern LANGSPEC void FreeAllWFXnodes(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 );
-
-#endif

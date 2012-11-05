@@ -45,13 +45,13 @@ void Undo_TempoNodes(
 	NInt tracknum,
 	int realline
 ){
-	Undo_New(
-		window->l.num,
-		block->l.num,
-		tracknum,
-		realline,
-		CB_CopyTempoNodes(block->temponodes),
-		Undo_Do_TempoNodes
+	Undo_Add(
+                 window->l.num,
+                 block->l.num,
+                 tracknum,
+                 realline,
+                 CB_CopyTempoNodes(block->temponodes),
+                 Undo_Do_TempoNodes
 	);
 }
 

@@ -66,12 +66,12 @@ void UpdateWTrackHeader(
 	);
 
         int name_x = wtrack->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
-	GFX_T_Text(
+	QUEUE_GFX_Text(
                    window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
                      name_x,
                      wtrack->y,
                      (wtrack->x2-window->fontwidth/2) - name_x,
-                     TEXT_CLIPRECT,
+                     TEXT_SCALE,
                      PAINT_BUFFER
                      );
 	UpdatePanSlider(window,wblock,wtrack);

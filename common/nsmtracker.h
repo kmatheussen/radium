@@ -77,9 +77,10 @@ typedef uint32_t uint_32;	/* A type that should be 64 bits, but may be 32 if 64 
 typedef int64_t STime;		/* Time can be negative. */
 //typedef STime NInt;
 typedef int32_t NInt;
-#define PFREQ (48000*8)			/* Subseconds for STime */
+//#define PFREQ (48000*8)			/* Subseconds for STime */ /* Replaced by samplerate */
 
-#define LATENCY (PFREQ/200)
+//#define LATENCY (PFREQ/200)
+#define LATENCY 0 // Dont need this when the player is called from the jack thread.
 
 #define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
@@ -145,10 +146,31 @@ struct ListHeaderP{
 
 
 /*********************************************************************
+	hashmap.h
+*********************************************************************/
+
+struct _hash_t;
+typedef struct _hash_t hash_t;
+
+
+
+/*********************************************************************
+	vector.h
+*********************************************************************/
+
+typedef struct{
+  int num_elements;
+  int num_elements_allocated;
+  void **elements;
+} vector_t;
+
+
+
+/*********************************************************************
 	velocities.h
 *********************************************************************/
 
-
+#define MAX_VELOCITY (1<<16)
 
 struct Velocities{
 	struct ListHeader3 l;
@@ -188,38 +210,85 @@ struct Notes{
 
 struct Tracks;
 
+struct Instruments;
+
+union SuperType{
+  void *pointer;
+  int64_t int_num;
+  double float_num;
+};
+
+enum TimeFormat{
+  TIME_IN_BEATS = 0,
+  TIME_IN_MS = 1,
+  TIME_IN_S = 2
+};
+
+struct PatchVoice{
+  bool is_on;
+  int transpose;
+  float volume;
+  float start;
+  float length;
+  enum TimeFormat time_format;
+};
+
+#define MAX_PATCH_VOICES 6
+
+// Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
-	struct ListHeader1 l;
-	char *name;
-	int minvel;
-	int maxvel;
-	int standardvel;
-	void (*playnote)(int notenum,int velocity,struct Tracks *track,struct Notes *note, STime time);
-	void (*changevelocity)(int velocity,struct Tracks *track,struct Notes *note,STime time);
-	void (*stopnote)(int notenum,int velocity,struct Tracks *track,struct Notes *note, STime time);
-	void (*closePatch)(void);
+  int id;
 
-	void *patchdata;		// Free use by the instrument plug-in.
+  const char *name;
 
-	void (*changeTrackPan)(int newpan,struct Tracks *track);
+  STime last_time; // player lock must be held when setting this value.
+
+  void (*playnote)(struct Patch *patch,int notenum,int velocity,STime time);
+  void (*changevelocity)(struct Patch *patch,int notenum,int velocity,STime time);
+  void (*stopnote)(struct Patch *patch,int notenum,int velocity,STime time);
+  void (*closePatch)(struct Patch *patch);
+  
+  struct Instruments *instrument;
+
+  void *patchdata;		// Free use by the instrument plug-in.
+
+  void (*changeTrackPan)(int newpan,struct Tracks *track);
+
+  struct PatchVoice voices[MAX_PATCH_VOICES];
+
+  int num_ons[128];            /* To keep track of how many times a voice has to be turned off. */
+  int notes_num_ons[128];   /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1
 #define NextPatch(a) ((struct Patch *)((a)->l.next))
 
+
 /*********************************************************************
 	fx.h
 *********************************************************************/
 
-
 struct FX{
-	struct ListHeader1 l;
-	char *name;
+  //	struct ListHeader1 l; // The next field in 'l' is not used. FX objects are stored one by one in the FXs object.
+	int num;
+	const char *name;
 	int color;
 	void (*configureFX)(struct FX *fx,struct Tracks *track);
 	int min;
 	int max;
+
+	int effect_num; // Set by the instrument plugin.
+
+	// Having pointers to variables in sliders is a bit strange, but letting sliders reference FX instead would cause bookkeeping of live and not alive FX objects.
+	// Not getting that bookkeeping correct would mean crashes that could be difficult to track.
+	// This, on the other hand, is safe, since sliders are always alive as long as the Patch is alive, and the patch always outlives an FX object.
+	// (The refactor to let Patch own FX hasn't been done yet. It didn't make sense when there were only MIDI instrument, but now it's too complicated to let FX live independently.
+        //  However, when an instrument is deleted, all tracks are scanned, and FX are deleted when a patch is deleted. Same when changing patch for a track.)
+	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
+	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
+
 	void (*treatFX)(struct FX *fx,int val,struct Tracks *track,STime time,int skip);
+
 	void (*closeFX)(struct FX *fx,struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
 	void (*SaveFX)(struct FX *fx,struct Tracks *track);
@@ -232,27 +301,37 @@ struct FX{
 	instruments.h
 *********************************************************************/
 
+// These constants are not only used internally, but they are also saved to disk.
+enum{
+  NO_INSTRUMENT_TYPE = 0,
+  MIDI_INSTRUMENT_TYPE,
+  AUDIO_INSTRUMENT_TYPE
+};
+
 struct Tracker_Windows;
 struct Instruments{
 	struct ListHeader1 l;
 
-	struct Patch *patches;
+	const char *instrumentname;
 
-	char *instrumentname;
-	int (*getMaxVelocity)(struct Tracks *track);
+        vector_t patches;
+
+	int (*getMaxVelocity)(struct Patch *patch);
+
 	int (*getFX)(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx);
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,struct Tracks *track,struct Patch *patch);
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
-	void (*InitTrack)(struct Instruments *instrument,struct Tracks *track);
 	void (*StopPlaying)(struct Instruments *instrument);
-	int (*getStandardVelocity)(struct Tracks *track);
 	void (*PP_Update)(struct Instruments *instrument,struct Patch *patch);
 	void *(*CopyInstrumentData)(struct Tracks *track);		//Necesarry for undo.
 
 	void (*PlayFromStartHook)(struct Instruments *instrument);
 
 	void *(*LoadFX)(struct FX *fx,struct Tracks *track);
+
+	void (*handle_fx_when_theres_a_new_patch_for_track)(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
+        void (*remove_patch)(struct Patch *patch);
 
 	void (*setPatchData)(struct Patch *patch, char *key, char *value);
 	char *(*getPatchData)(struct Patch *patch, char *key);
@@ -304,15 +383,13 @@ struct Tracks{
 
 	struct Notes *notes;
 	struct Stops *stops;
-	int onoff;							/* 1=on, 0=off */
+	int onoff;
 
 	const char *trackname;
-	struct Instruments *instrument; /* Only referenced. */
-	// const char *instrument_name; /* Only used during loading. Tracks are loaded before instruments. (how about loading instruments before tracks?) */
 	struct Patch *patch;
 	struct FXs *fxs;
 
-	void *instrumentdata;			/* Free use for the instrument plug-in. */
+        void *midi_instrumentdata;			/* Used by the midi instrument. */
 
 	int pan;
 	int volume;
@@ -803,13 +880,15 @@ struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
 	struct Blocks **playlist;			/* This variable is just temporarily. Later, the playlist will be much more advanced. */
-	struct Instruments *instruments;
 
 	NInt num_blocks;
 	int length;								/* Playlist length. */
 	char *songname;
 
 	NInt maxtracks;						/* The highest number of tracks in a block. (changed when exceeding) */
+
+	hash_t *mixerwidget_state; // Only used during loading.
+	hash_t *instrument_widget_order_state; // Only used during loading.
 };
 
 
@@ -821,8 +900,6 @@ struct Song{
 
 struct Root{
 	struct Song *song;
-	struct Instruments *def_instrument; /* Default instrument. */
-
 	
 	int curr_playlist;
 	NInt curr_block;
@@ -834,7 +911,8 @@ struct Root{
 
 	float quantitize;
 	int keyoct;
-	int standardvel;
+        int min_standardvel;
+        int standardvel;
 
 	bool editonoff;
 	bool scrollplayonoff;

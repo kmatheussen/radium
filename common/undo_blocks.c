@@ -41,13 +41,13 @@ void Undo_Block(
 	struct WTracks *wtrack,
 	int realline
 ){
-	Undo_New(
-		window->l.num,
-		wblock->l.num,
-		wtrack->l.num,
-		realline,
-		CB_CopyBlock(wblock),
-		Undo_Do_Block
+	Undo_Add(
+                 window->l.num,
+                 wblock->l.num,
+                 wtrack->l.num,
+                 realline,
+                 CB_CopyBlock(wblock),
+                 Undo_Do_Block
 	);
 }
 

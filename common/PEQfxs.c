@@ -25,15 +25,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQmempool_proc.h"
 #include "PEQ_calc_proc.h"
 #include "time_proc.h"
+#include "patch_proc.h"
+#include "scheduler_proc.h"
 
 #include "PEQfxs_proc.h"
 
 
 extern PlayerClass *pc;
 
+static float scale(float x, float x1, float x2, float y1, float y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
 
-void PE_HandleFirstFX(STime time,struct PEventQueue *peq,int doit);
-void PE_HandleFX(STime time,struct PEventQueue *peq,int doit);
+void PE_HandleFirstFX(struct PEventQueue *peq,int doit);
+void PE_HandleFX(struct PEventQueue *peq,int doit);
 
 void InitPEQfxs(
 	struct Blocks *block,
@@ -73,14 +81,44 @@ void InitPEQBlockfxs(
 	}
 }
 
-
-static void fxhandle(int x,struct PEventQueue *peq,int skip){
-	if(peq->fxs->fx!=NULL && peq->track->onoff==1){
-          (*peq->fxs->fx->treatFX)(peq->fxs->fx,x,peq->track,peq->l.time+pc->reltime_to_add,skip);
-	}
+static void scheduled_fx_change(int64_t time, union SuperType *args){
+  struct Tracks *track = args[0].pointer;
+  struct FX     *fx    = args[1].pointer;
+  int            x     = args[2].int_num;
+  int64_t        skip  = args[3].int_num;
+  
+  RT_FX_treat_fx(fx, x, track, time, skip);
+  
+  if(fx->slider_automation_value!=NULL)
+    *fx->slider_automation_value = scale(x,fx->min,fx->max,0.0f,1.0f);
+  if(fx->slider_automation_color!=NULL)
+    *fx->slider_automation_color = fx->color; // There's a race condition here. But it's unlikely to happen and has no bad consequence if it should.
 }
 
-void PE_HandleFirstFX(STime time,struct PEventQueue *peq,int doit){
+static void fxhandle(int x, struct PEventQueue *peq, int skip){
+  struct FX *fx = peq->fxs->fx;
+
+  if(fx!=NULL && peq->track->onoff==1){
+    union SuperType args[4];
+    args[0].pointer = peq->track;
+    args[1].pointer = fx;
+    args[2].int_num = x;
+    args[3].int_num = skip;
+
+    SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 4, SCHEDULER_ADDORDER_DOESNT_MATTER);
+
+    /*
+      RT_FX_treat_fx(fx, x, peq->track, peq->l.time, skip);
+      
+      if(fx->slider_automation_value!=NULL)
+      *fx->slider_automation_value = scale(x,fx->min,fx->max,0.0f,1.0f);
+      if(fx->slider_automation_color!=NULL)
+      *fx->slider_automation_color = fx->color; // There's a race condition here. But it's unlikely to happen and has no bad consequence if it should.
+    */
+  }
+}
+
+void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 	struct FXNodeLines *next;
@@ -90,7 +128,7 @@ void PE_HandleFirstFX(STime time,struct PEventQueue *peq,int doit){
 		fxhandle(peq->fxnodeline->val,peq,0);
 	}
 
-	btime=PC_TimeToRelBlockStart(time);
+	btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	peq->TreatMe=PE_HandleFX;
 
@@ -108,7 +146,7 @@ void PE_HandleFirstFX(STime time,struct PEventQueue *peq,int doit){
 			peq->nextfxnodeline=next;
 			peq->time1=peq->time2;
 			peq->time2=Place2STime(peq->block,&next->l.p);
-			PE_HandleFX(time,peq,doit);
+			PE_HandleFX(peq,doit);
 		}
 		return;
 	}
@@ -130,12 +168,12 @@ void PE_HandleFirstFX(STime time,struct PEventQueue *peq,int doit){
 }
 
 
-void PE_HandleFX(STime time,struct PEventQueue *peq,int doit){
+void PE_HandleFX(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 	struct FXNodeLines *next;
 
-	btime=PC_TimeToRelBlockStart(time);
+	btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
 		next=NextFXNodeLine(peq->nextfxnodeline);
@@ -151,7 +189,7 @@ void PE_HandleFX(STime time,struct PEventQueue *peq,int doit){
 			peq->nextfxnodeline=next;
 			peq->time1=peq->time2;
 			peq->time2=Place2STime(peq->block,&next->l.p);
-			PE_HandleFX(time,peq,doit);
+			PE_HandleFX(peq,doit);
 		}
 		return;
 	}

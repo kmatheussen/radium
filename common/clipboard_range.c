@@ -140,7 +140,3 @@ void MakeRangeLegal(
 	wblock->rangex1=R_MIN(wblock->rangex1,wblock->rangex2);
 }
 
-
-
-
-

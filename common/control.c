@@ -27,11 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_type_proc.h"
 #include "playerclass.h"
 #include "song_proc.h"
+#include "patch_proc.h"
 #include "instruments_proc.h"
 #include "OS_endprogram_proc.h"
 #include "input.h"
 #include "PEQ_clock_proc.h"
 #include "blts_proc.h"
+#include "../audio/Mixer_proc.h"
+#include "scheduler_proc.h"
 
 #include "control_proc.h"
 
@@ -65,7 +68,8 @@ bool InitProgram(void){
 
 	root->keyoct=48;
 	root->quantitize=0.5f;
-	root->standardvel=100;
+        root->min_standardvel=MAX_VELOCITY*40/100;
+	root->standardvel=MAX_VELOCITY*80/100;
 	root->scrollplayonoff=true;
 
 	root->song=talloc(sizeof(struct Song));
@@ -77,12 +81,23 @@ bool InitProgram(void){
 		return false;
 	}
 
+        pc->pfreq = 48000; // Default value. Should be overridden in MIXER_start().
 
 /*
 	if( ( ! InitPEQmempool(1000) )  || ( ! Input_Init(4000) ) ){	// 1000 and 4000 are hardcoded values. Not good.
 		return false;
 	}
 */
+
+        SCHEDULER_init();
+
+        PATCH_init();
+
+	printf("...Sound\n");
+        if(MIXER_start()==false){
+          fprintf(stderr,"Could not open Sound\n");
+          return false;
+        }
 
 	printf("...Player 1/2\n");
 
@@ -101,7 +116,7 @@ bool InitProgram(void){
 
 	printf("...Instrument\n");
 
-	if( ! OpenInstrument() ) return false;
+	if( ! OpenInstruments() ) return false;
 
 	printf("...Kebang\n");
 

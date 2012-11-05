@@ -28,87 +28,111 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQcommon_proc.h"
 #include "time2place_proc.h"
 #include "PEQ_type_proc.h"
+#include "../audio/Mixer_proc.h"
+#include "scheduler_proc.h"
 
 #include "player_proc.h"
 
-
-
 extern PlayerClass *pc;
-
-static STime addreltime=0;
+extern struct Root *root;
 
 extern LANGSPEC void OS_InitMidiTiming();
 
 void PlayerTask(STime reltime){
+	static STime addreltime=0;
 
-	struct PEventQueue *peq;
-	STime time;
-	STime newreltime;
+        pc->reltime     = reltime;
 
-	if( ! pc->isplaying){
-		if( ! pc->initplaying) PC_ReturnElements();
-		return;
-	}
-	addreltime+=reltime;
-	newreltime=addreltime*pc->block->reltempo;
+        struct Blocks *block = pc->isplaying ? pc->block : NULL;
 
-	if(pc->time==0){
-		pc->therealtime=reltime;
-                OS_InitMidiTiming();
-	}else{
-		pc->therealtime+=reltime;
-	}
-
-	if(newreltime<1)
-          return;
-
-        {
-          int reltime_to_add_now = addreltime - newreltime;
-          if(pc->time==0)
-            pc->reltime_to_add = reltime_to_add_now;
+        if(block==NULL){
+          if(root->song->tracker_windows != NULL && 
+             root->song->tracker_windows->wblock != NULL && 
+             root->song->tracker_windows->wblock->block != NULL) // check that we have started.
+            block=root->song->tracker_windows->wblock->block;
           else
-            pc->reltime_to_add += reltime_to_add_now;
-#if 0
-          printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
-                 (int)pc->reltime_to_add,pc->reltime_to_add/(double)PFREQ,
-                 reltime_to_add_now,reltime_to_add_now/(double)PFREQ,
-                 (pc->time+newreltime+pc->reltime_to_add)/(double)PFREQ
-                 );
-          fflush(stdout);
-#endif
+            return;
         }
 
-	pc->time+=newreltime;
+	addreltime+=reltime;
+
+        STime tempoadjusted_reltime=addreltime*block->reltempo;
+        if(tempoadjusted_reltime<1)
+          return;
+        else
+          addreltime=0;
+
+	if( ! pc->isplaying){
+          if( ! pc->initplaying)
+            PC_ReturnElements();
+          SCHEDULER_called_per_block(tempoadjusted_reltime);
+          return;
+	}
+        
+        if(pc->end_time==0){
+          pc->therealtime=reltime;
+          OS_InitMidiTiming();
+          OS_InitAudioTiming();
+        }else{
+          pc->therealtime+=reltime;
+        }
 
 
-	addreltime=0;
-
-	time=pc->time;
+#if 0
+        // This debug print is helpful to understand the timing.
+        printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
+               (int)pc->reltime_to_add,pc->reltime_to_add/(double)pc->pfreq,
+               reltime_to_add_now,reltime_to_add_now/(double)pc->pfreq,
+               (pc->end_time+tempoadjusted_reltime+pc->reltime_to_add)/(double)pc->pfreq
+               );
+        fflush(stdout);
+#endif
+          
+        pc->start_time  = pc->end_time;
+        pc->end_time   += tempoadjusted_reltime;
 
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
 
-	peq=pc->peq;
+        {
+          struct PEventQueue *peq = pc->peq;
 
-
-// Main-loop for player.
-
-	while(
+          while(
 		peq!=NULL
-		&& time>=peq->l.time
-		&& peq->l.time<time+(PFREQ*2)  // Dont want to run for more than two seconds.
-		&& pc->isplaying // Dont remove this check.
-	){
-          //printf("time: %d, peq->l.time: %d\n",(int)time,(int)peq->l.time);
-          //fflush(stdout);
-		PC_RemoveFirst();
-		(*peq->TreatMe)(time,peq,1);
-		pc->pausetime=peq->l.time;
-		peq=pc->peq;
-	}
+		&& peq->l.time < pc->end_time
+		//&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
+		&& pc->isplaying
+                )
+            {
+              
+              //printf("time: %d, peq->l.time: %d\n",(int)time,(int)peq->l.time);
+              //fflush(stdout);
+              PC_RemoveFirst();
+              (*peq->TreatMe)(peq,1);
+              pc->pausetime=peq->l.time;
+              peq=pc->peq;
+            }
+        }
 
+        SCHEDULER_called_per_block(tempoadjusted_reltime); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
 }
 
+STime PLAYER_get_delta_time(STime time){
+  if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
+    return 0;
 
-
+  if(pc->isplaying){
+    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time));
+    if(ret<0){
+      RWarning("ret<0: %d",ret);
+      return 0;
+    }
+    if(ret>pc->reltime){
+      RWarning("ret>pc->reltime: %d > %d",ret,pc->reltime);
+      return 0;
+    }
+    return ret;
+  }else
+    return 0;
+}
 

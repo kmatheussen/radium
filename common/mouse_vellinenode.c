@@ -46,7 +46,7 @@ int MoveVelNode_Mouse(
 	int subtrack=action->eint1;
 	Place place,prev_vel,next_vel,*temp;
 	int realline;
-	int maxvel=(*wtrack->track->instrument->getMaxVelocity)(wtrack->track);
+	int maxvel=MAX_VELOCITY;
 	int sx1=GetXSubTrack1(wtrack,subtrack);
 	int sx2=GetXSubTrack2(wtrack,subtrack);
 

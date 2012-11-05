@@ -1,5 +1,8 @@
 
 #include "nsmtracker.h"
+#include "instruments_proc.h"
+#include "vector_proc.h"
+
 #include "disk.h"
 #include "disk_patches_proc.h"
 
@@ -12,7 +15,7 @@ DC_start("INSTRUMENT");
 
 	DC_SSS("instrumentname",instrument->instrumentname);
 
-	SavePatch(instrument->patches);
+	SavePatches(&instrument->patches);
 
 DC_end();
 }
@@ -24,17 +27,27 @@ struct Instruments *LoadInstrument(void){
 	static char *vars[1]={
 		"instrumentname"
 	};
-	struct Instruments *instrument=DC_alloc(sizeof(struct Instruments));
+	struct Instruments *instrument=NULL;
 
 	GENERAL_LOAD(1,1)
 
 
 var0:
-	instrument->instrumentname=DC_LoadS();
+        {
+          char *name = DC_LoadS();
+          if(!strcmp("MIDI instrument",name))
+            instrument = get_MIDI_instrument();
+          if(!strcmp("Audio instrument",name))
+            instrument = get_audio_instrument();        
+        }
+
 	goto start;
 
 obj0:
-	DC_ListAdd1(&instrument->patches,LoadPatch());
+        if(instrument==NULL)
+          RError("Instrument==NULL in disk_instrument.c");
+
+	VECTOR_push_back(&instrument->patches,LoadPatch());
 	goto start;
 
 var1:
@@ -77,13 +90,12 @@ end:
 
 
 void DLoadInstrument(struct Instruments *instrument){
-  MIDIinitInstrumentPlugIn(instrument);
+  if(instrument==get_MIDI_instrument())
+    MIDI_initInstrumentPlugIn(instrument);
 }
 
 void DLoadInstrumentGUI(struct Instruments *instrument){
-  struct Patch *patch = instrument->patches;
-  while(patch!=NULL){
+  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches)
     instrument->PP_Update(instrument, patch);
-    patch = NextPatch(patch);
-  }
+  END_VECTOR_FOR_EACH;
 }

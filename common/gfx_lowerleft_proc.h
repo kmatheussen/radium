@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern void GFX_SetChangeString(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	char *string
+	const char *string
 );
 
 extern void GFX_SetChangeInt(

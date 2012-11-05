@@ -72,7 +72,8 @@ void Undo_Range(
 		CopyRange_notes(&undo_range->notes[lokke],track->notes,p1,&p2);
 	}
 
-	Undo_New(window->l.num,block->l.num,starttrack,realline,undo_range,Undo_Do_Range);
+	Undo_Add(window->l.num,block->l.num,starttrack,realline,
+                 undo_range,Undo_Do_Range);
 }
 
 void *Undo_Do_Range(

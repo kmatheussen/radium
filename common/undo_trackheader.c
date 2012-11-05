@@ -33,13 +33,13 @@ void Undo_TrackHeader(
 	u_th->volumeonoff=track->volumeonoff;
 	u_th->panonoff=track->panonoff;
 
-	Undo_New(
-		window->l.num,
-		block->l.num,
-		track->l.num,
-		realline,
-		u_th,
-		Undo_Do_TrackHeader
+	Undo_Add(
+                 window->l.num,
+                 block->l.num,
+                 track->l.num,
+                 realline,
+                 u_th,
+                 Undo_Do_TrackHeader
 	);
 
 }

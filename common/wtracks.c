@@ -56,7 +56,7 @@ void NewWTrack(
 	wtrack->l.num=track->l.num;
 	wtrack->notelength=3;
 //	wtrack->fxwidth=window->fontwidth*10;
-	wtrack->fxwidth=window->fontwidth*6;
+	wtrack->fxwidth=window->fontwidth*10;
 	wtrack->notesonoff=1;
 	wtrack->fxonoff=1;
 	wtrack->num_vel=1;
@@ -472,10 +472,7 @@ update:
 	DrawUpTrackerWindow(window);
 
 	if( ! pc->isplaying){
-		(*wblock->wtrack->track->instrument->PP_Update)(
-			wblock->wtrack->track->instrument,
-			wblock->wtrack->track->patch
-		);
+          GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 	}
 }
 

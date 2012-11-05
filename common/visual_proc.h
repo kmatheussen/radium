@@ -28,7 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TEXT_CLIPRECT 8
 #define TEXT_NOTEXT 16
 #define TEXT_BOLD 32
+#define TEXT_SCALE 64 // Scales the text into the box.
 
+extern LANGSPEC void GFX_Message(const char *message);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
 extern LANGSPEC void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval);
@@ -77,6 +79,8 @@ extern LANGSPEC void GFX_HelpWindowToFront(void);
 extern LANGSPEC void GFX_toggleFullScreen(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_showHideInstrumentWidget(struct Tracker_Windows *window);
 extern LANGSPEC void GFX_showHidePlaylist(struct Tracker_Windows *window);
+extern LANGSPEC void GFX_showHideEditor(void);
+extern LANGSPEC void GFX_showHideMixerWidget(void);
 
 extern LANGSPEC void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);

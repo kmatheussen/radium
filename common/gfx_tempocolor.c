@@ -129,8 +129,8 @@ void WBLOCK_DrawTempoColor(
   //const int colors[3]={1,4,2};
   const int numcolors=10;
   const int colors[11]={1,3,4,5,6,8,12,13,14,15};
-  const int maxtime=10300;
-  const int mintime=200;
+  const int maxtime=700;
+  const int mintime=10;
 
   int realline,line;
   const int fontheight=window->fontheight;

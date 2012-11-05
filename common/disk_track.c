@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "tracks_proc.h"
+#include "instruments_proc.h"
+#include "patch_proc.h"
 
 #include "disk.h"
 #include "disk_notes_proc.h"
@@ -48,10 +50,13 @@ DC_start("TRACK");
 	DC_SSB("panonoff",track->panonoff);
 
 	if(track->patch!=NULL){
-		DC_SSN("patchnum",track->patch->l.num);
+		DC_SSN("patchnum",track->patch->id);
 	}else{
 		DC_SSN("patchnum",-1);
 	}
+
+        DC_SSI("instrument_type",get_type_from_instrument(track->patch==NULL ? NULL : track->patch->instrument));
+
 //	DC_SSN("instrument",track->instrument->l.num);
 
 	SaveNotes(track->notes);
@@ -71,7 +76,7 @@ struct Tracks *LoadTrack(void){
 		"STOPS",
 		"FXS"
 	};
-	static char *vars[8]={
+	static char *vars[9]={
 		"onoff",
 		"trackname",
 		"patchnum",
@@ -79,13 +84,14 @@ struct Tracks *LoadTrack(void){
 		"pan",
 		"volumeonoff",
 		"panonoff",
-		"relvol"
+		"relvol",
+                "instrument_type"
 	};
 	struct Tracks *track=DC_alloc(sizeof(struct Tracks));
 	track->l.num=DC_LoadN();
         InitTrack(track);
 
-	GENERAL_LOAD(3,8)
+	GENERAL_LOAD(3,9)
 
 var0:
 	track->onoff=DC_LoadI();
@@ -94,8 +100,11 @@ var1:
 	track->trackname=DC_LoadS();
 	goto start;
 var2:
-	track->patch=DC_alloc_atomic(sizeof(struct Patch)); // Reason for atomic alloc: only l.num is used. track->patch is replaced in DLoadTracks
-	track->patch->l.num=DC_LoadN();
+        if(track->patch==NULL){
+          track->patch=DC_alloc(sizeof(struct Patch));
+          track->patch->instrument = get_instrument_from_type(MIDI_INSTRUMENT_TYPE); // To support songs without instrument_type. (old songs)
+        }
+	track->patch->id=DC_LoadN();
 	goto start;
 var3:
 	track->volume=DC_LoadI();
@@ -113,6 +122,12 @@ var7:
 	DC_LoadI(); // relvol is not used anymore
 	goto start;
 
+var8:
+        if(track->patch==NULL)
+          track->patch=DC_alloc(sizeof(struct Patch)); // Reason for atomic alloc: only id and instrument is used during loading.
+        track->patch->instrument = get_instrument_from_type(DC_LoadI());
+        goto start;
+
 obj0:
 	DC_ListAdd3_a(&track->notes,LoadNote());
 	goto start;
@@ -123,7 +138,6 @@ obj2:
 	DC_ListAdd1(&track->fxs,LoadFXs(track));
 	goto start;
 
-var8:
 var9:
 var10:
 var11:
@@ -150,12 +164,11 @@ extern void DLoadInstrumentData(struct Root *newroot,struct Tracks *track);
 void DLoadTracks(struct Root *newroot,struct Tracks *track){
 if(track==NULL) return;
 
-	if(track->patch->l.num==-1){
-		track->patch=NULL;
+	if(track->patch->id==-1){
+          track->patch=NULL;
 	}else{
-		track->patch=ListFindElement1(&newroot->song->instruments->patches->l,track->patch->l.num);
+          track->patch=PATCH_get_from_id(track->patch->id);
 	}
-	track->instrument=newroot->def_instrument;
 
 DLoadTracks(newroot,NextTrack(track));
 }

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_proc.h"
 #include <string.h>
 #include "trackreallines_proc.h"
+#include "../midi/midi_fx_proc.h"
 
 #include "undo_notesandfxs_proc.h"
 
@@ -34,7 +35,7 @@ struct Undo_NotesAndFXs{
 	struct Notes *notes;
 	struct Stops *stops;
 	struct FXs *fxs;
-	void *instrumentdata;
+	void *midi_instrumentdata;
 };
 
 
@@ -61,11 +62,16 @@ void Undo_NotesAndFXs(
 	CopyRange_stops(&undo_notesandfxs->stops,track->stops,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
 	CopyRange_fxs(&undo_notesandfxs->fxs,track->fxs,p1,&p2);
-	if(track->instrumentdata!=NULL){
-		undo_notesandfxs->instrumentdata=(*track->instrument->CopyInstrumentData)(track);
+	if(track->midi_instrumentdata!=NULL){
+          undo_notesandfxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
 
-	Undo_New(window->l.num,block->l.num,track->l.num,realline,undo_notesandfxs,Undo_Do_NotesAndFXs);
+	Undo_Add(
+                 window->l.num,
+                 block->l.num,
+                 track->l.num,
+                 realline,
+                 undo_notesandfxs,Undo_Do_NotesAndFXs);
 
 }
 
@@ -81,24 +87,24 @@ void *Undo_Do_NotesAndFXs(
 	struct Stops *stemp;
 
 	struct FXs *temp;
-	void *instrumentdata;
+	void *midi_instrumentdata;
 
 	struct Tracks *track=wtrack->track;
 
 	ntemp=track->notes;
 	stemp=track->stops;
 	temp=track->fxs;
-	instrumentdata=track->instrumentdata;
+	midi_instrumentdata=track->midi_instrumentdata;
 
 	track->stops=undo_notesandfxs->stops;
 	track->notes=undo_notesandfxs->notes;
 	track->fxs=undo_notesandfxs->fxs;
-	track->instrumentdata=undo_notesandfxs->instrumentdata;
+	track->midi_instrumentdata=undo_notesandfxs->midi_instrumentdata;
 
 	undo_notesandfxs->stops=stemp;
 	undo_notesandfxs->notes=ntemp;
 	undo_notesandfxs->fxs=temp;
-	undo_notesandfxs->instrumentdata=instrumentdata;
+	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
 	UpdateTrackReallines(window,wblock,wtrack);
 	UpdateFXNodeLines(window,wblock,wtrack);

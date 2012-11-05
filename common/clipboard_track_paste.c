@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "fxlines_legalize_proc.h"
 #include "notes_legalize_proc.h"
+#include "../midi/midi_fx_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -73,25 +74,14 @@ bool CB_PasteTrackFX(
 	totrack=towtrack->track;
 	track=wtrack->track;
 
-	if(towtrack->track->instrument==NULL){
-		towtrack->track->instrument=wtrack->track->instrument;
-	}
-
-	if(towtrack->track->instrument==NULL){
-		RError("Error in function CB_PasteTrackFX in file clipboard_track_paste.c\n"
-				"towtrack->track->instrument==NULL && wtrack->track->instrument==NULL\n");
-		return false;
-	}
-
 	if(totrack->patch==NULL){
 		totrack->patch=track->patch;
 	}
 
-	totrack->instrument=track->instrument;
 	totrack->patch=track->patch;
 
-	if(track->instrumentdata!=NULL){
-		totrack->instrumentdata=(*track->instrument->CopyInstrumentData)(track);
+	if(track->midi_instrumentdata!=NULL){
+          totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
 
 	totrack->fxs=NULL;
@@ -127,7 +117,6 @@ bool CB_PasteTrack(
 	towtrack->notelength=wtrack->notelength;
 	towtrack->fxwidth=wtrack->fxwidth;
 
-	totrack->instrument=track->instrument;
 	totrack->patch=track->patch;
 	totrack->onoff=track->onoff;
 	totrack->pan=track->pan;
@@ -135,8 +124,8 @@ bool CB_PasteTrack(
 	totrack->panonoff=track->panonoff;
 	totrack->volumeonoff=track->volumeonoff;
 
-	if(track->instrumentdata!=NULL){
-		totrack->instrumentdata=(*track->instrument->CopyInstrumentData)(track);
+	if(track->midi_instrumentdata!=NULL){
+          totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
 
 	totrack->trackname=talloc_strdup(track->trackname);

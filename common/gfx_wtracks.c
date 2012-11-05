@@ -51,7 +51,7 @@ int *Col=OffC;
 8,9,A : 7
 */
 static const int Col[4]={0,1,2,3};
-static const int NCol[11]={1,1,1,2,3,4,5,6,7,7,7};
+static const int NCol[11]={1,1,2,3,4,5,6,8,12,13,14};
 
 
 void ClearTrack(
@@ -268,8 +268,7 @@ void UpdateWTrack(
 								window,
 								wblock,
 //								Col[1],
-								trackrealline->note==NOTE_STP||trackrealline->note==NOTE_MUL?1:
-									NCol[trackrealline->note/12],
+								trackrealline->note==NOTE_STP||trackrealline->note==NOTE_MUL ? 1 : trackrealline->note+16, //  NCol[trackrealline->note/12],
 								NotesTexts[trackrealline->note],
 								wtrack->notearea.x,
 								lokke,
@@ -292,7 +291,7 @@ void UpdateWTrack(
 					SetTextLine(
 						window,
 						wblock,
-						(trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : NCol[trackrealline->note/12],
+						(trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : trackrealline->note+16, //NCol[trackrealline->note/12],
 						NotesTexts[trackrealline->note],
 						wtrack->notearea.x,
 						lokke,
@@ -360,7 +359,7 @@ void UpdateWTrack(
 
 					GFX_T_Line(
 						window,
-						NCol[note->note/12],
+						note->note+16, //NCol[note->note/12],
 						(int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
 						(int)(within.y1+(element->y1*(within.y2-within.y1))),
 						(int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),

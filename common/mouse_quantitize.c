@@ -43,7 +43,7 @@ void SetMouseActionQuantitize(
 
 	PlayStop();
 
-	ret=GFX_GetFloat(window,NULL,"Quantitize: ",0.1f,99.9f);
+	ret=GFX_GetFloat(window,NULL,"Quantitize Value: ",0.1f,99.9f);
 
 	if(ret<0.1f) return;
 

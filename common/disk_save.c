@@ -67,7 +67,6 @@ void Save_Clean(const char *filename,struct Root *theroot){
 
 void SaveAs(struct Root *theroot){
 	const char *filename;
-	char *ret=NULL;
 
 	PlayStop();
 
@@ -75,6 +74,8 @@ void SaveAs(struct Root *theroot){
 
 	if(filename==NULL) return;
 
+#ifndef GUIISQT // Qt asks this question for us.
+	char *ret=NULL;
 	if( ! access(filename,F_OK)){
 		while(
 			ret==NULL || (
@@ -90,8 +91,10 @@ void SaveAs(struct Root *theroot){
 		}
 		if(!strcmp("no",ret)) return;
 	}
-
+#endif
 	dc.filename=filename;
+
+        GFX_SetWindowTitle(theroot->song->tracker_windows,filename);
 
 	Save_Clean(filename,theroot);
 

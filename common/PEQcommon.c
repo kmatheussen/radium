@@ -18,20 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-/******************** OVERVIEW ******************************
-
-  This file is, sort of, the playerclasses methods (see
-  playerclass.h).
-
-  This isn't oo code, but I like to pretend that it is
-  to make it less messy. (yeah, hmm, well, something like that...)
-
-  This file is the only one that access the playerclasse's
-  "attributes", except player_startstop.c and player.c.
-
-************************************************************/
-
-
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "PEQmempool_proc.h"
@@ -57,9 +43,12 @@ struct Blocks *PC_GetPlayBlock(int numfromcurrent){
 
 	if(numfromcurrent==0) return pc->block;
 
+        if(numfromcurrent>=1 && pc->playtype==PLAYBLOCK_NONLOOP)
+          return NULL;
+
 	if(pc->playtype==PLAYBLOCK){
-		if(numfromcurrent>1) return NULL;
-		return pc->block;
+          if(numfromcurrent>1) return NULL; // what?
+          return pc->block;
 	}
 
 	return BL_GetBlockFromPos(root->curr_playlist+numfromcurrent);
@@ -72,7 +61,7 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
 	int playpos;
 
 	if(addplaypos>0){
-		if(pc->playtype==PLAYBLOCK){
+		if(pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP){
 			time+=getBlockSTimeLength(pc->block);	// When playblock, addplaypos can't be bigger than one.
 		}else{
 			for(
@@ -222,7 +211,7 @@ void PC_GoNextBlock(void){
 
 
 bool PC_isPlayingBlock(void){
-	if(pc->playtype==PLAYBLOCK) return true;
+	if(pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP) return true;
 	return false;
 }
 
@@ -233,7 +222,5 @@ bool PC_isPlayingSong(void){
 
 
 STime PC_TimeToRelBlockStart(STime time){
-	return time-pc->seqtime;
+	return time - pc->seqtime;
 }
-
-

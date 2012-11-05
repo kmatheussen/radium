@@ -299,10 +299,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	BS_SelectBlock(wblock->block);
 
 	if( ! pc->isplaying){
-		(*wblock->wtrack->track->instrument->PP_Update)(
-			wblock->wtrack->track->instrument,
-			wblock->wtrack->track->patch
-		);
+          GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 	}
 }
 

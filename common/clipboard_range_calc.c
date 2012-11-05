@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   FUNCTION
     Returns the place where the range starts.
 ********************************************************/
-__inline Place *getRangeStartPlace(
+Place *getRangeStartPlace(
 	struct WBlocks *wblock
 ){
 	struct LocalZooms **reallines=wblock->reallines;
@@ -49,7 +49,7 @@ __inline Place *getRangeStartPlace(
   FUNCTION
     Returns the place where the range ends.
 ********************************************************/
-__inline Place *getRangeEndPlace(
+Place *getRangeEndPlace(
 	struct WBlocks *wblock
 ){
 	Place *place;

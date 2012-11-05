@@ -45,13 +45,13 @@ void Undo_Tempos(
 	NInt tracknum,
 	int realline
 ){
-	Undo_New(
-		window->l.num,
-		block->l.num,
-		tracknum,
-		realline,
-		CB_CopyTempos(block->tempos),
-		Undo_Do_Tempos
+	Undo_Add(
+                 window->l.num,
+                 block->l.num,
+                 tracknum,
+                 realline,
+                 CB_CopyTempos(block->tempos),
+                 Undo_Do_Tempos
 	);
 }
 

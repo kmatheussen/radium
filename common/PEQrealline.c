@@ -29,7 +29,7 @@ extern PlayerClass *pc;
 
 extern struct Root *root;
 
-void PlayerNewRealline(STime time,struct PEventQueue *peq,int doit);
+void PlayerNewRealline(struct PEventQueue *peq,int doit);
 
 void InitPEQrealline(struct Blocks *block,Place *place){
 	int addplaypos=0;
@@ -73,7 +73,7 @@ void InitPEQrealline(struct Blocks *block,Place *place){
 }
 
 
-void PlayerNewRealline(STime time,struct PEventQueue *peq,int doit){
+void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
 	int realline=peq->realline;
 	//int orgrealline=realline;

@@ -24,20 +24,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "visual_proc.h"
 #include "time_proc.h"
+#include "playerclass.h"
 #include <string.h>
 #include "blocklist_proc.h"
 
 #include "gfx_statusbar_proc.h"
 
 extern struct Root *root;
+extern PlayerClass *pc;
 
-char firstringinstatusbar[32]={0};
+char firstringinstatusbar[512]={0};
 
 void GFX_DrawStatusBar(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-	int blocklength=getBlockSTimeLength(wblock->block)/PFREQ;
+	int blocklength=getBlockSTimeLength(wblock->block)/pc->pfreq;
 	int minutes=blocklength/60;
 	int seconds=blocklength%60;
 
@@ -64,7 +66,7 @@ void GFX_DrawStatusBar(
 void GFX_SetChangeInt(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	char *title,
+	const char *title,
 	int Int
 ){
 	sprintf(firstringinstatusbar,"%s%s%d - ",title,title==NULL?"":": ",Int);
@@ -73,7 +75,7 @@ void GFX_SetChangeInt(
 void GFX_SetChangeFloat(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	char *title,
+	const char *title,
 	float Float
 ){
 	sprintf(

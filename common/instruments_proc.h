@@ -15,9 +15,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-extern bool OpenInstrument(void);
+extern bool OpenInstruments(void);
 extern void CloseAllInstruments(void);
 extern void StopAllInstruments(void);
 extern void InitAllInstrumentsForPlaySongFromStart(void);
-#endif
+
+extern LANGSPEC struct Instruments *get_all_instruments(void);
+extern LANGSPEC struct Instruments *get_default_instrument(void);
+extern LANGSPEC struct Instruments *get_MIDI_instrument(void);
+extern LANGSPEC struct Instruments *get_audio_instrument(void);
+
+extern LANGSPEC struct Instruments *get_instrument_from_type(int type);
+extern LANGSPEC int get_type_from_instrument(struct Instruments *instrument);

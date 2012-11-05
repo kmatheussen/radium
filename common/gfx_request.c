@@ -131,9 +131,8 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){
 int GFX_ReqTypeMenu(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
-	char *seltext,
-	int num_sel,
-	char **menutext
+	const char *seltext,
+        vector_t *v
 ){
   char temp[500];
   int lokke;
@@ -141,31 +140,31 @@ int GFX_ReqTypeMenu(
   bool created_reqtype = false;
 
   if(reqtype==NULL){
-    reqtype=GFX_OpenReq(tvisual,strlen(seltext)+10,num_sel+5,"title");
+    reqtype=GFX_OpenReq(tvisual,strlen(seltext)+10,v->num_elements+5,"title");
     created_reqtype = true;
   }
 
   GFX_WriteString(reqtype,seltext);
   GFX_WriteString(reqtype,"\n");
   
-  if(num_sel<1){
-    RWarning("num_sel=%d",num_sel);
+  if(v->num_elements<1){
+    RWarning("num_sel=%d",v->num_elements);
     goto exit;
   }
 
-  for(lokke=0;lokke<num_sel;lokke++){
-    sprintf(temp,"%d. %s\n",lokke+1,menutext[lokke]);
+  for(lokke=0;lokke<v->num_elements;lokke++){
+    sprintf(temp,"%d. %s\n",lokke+1,(char*)v->elements[lokke]);
     GFX_WriteString(reqtype,temp);
   }
   GFX_WriteString(reqtype,"\n");
 
-  if(num_sel==1){
+  if(v->num_elements==1){
     // TODO: What?
     GFX_WriteString(reqtype,"> 1\n");
     goto exit;
   }
   
-  while(ret<=0 || ret>num_sel){
+  while(ret<=0 || ret>v->num_elements){
     GFX_WriteString(reqtype,"> ");
     GFX_ReadString(reqtype,temp,3);
     if(temp[0]=='\0'){

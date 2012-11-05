@@ -238,6 +238,11 @@ void PixMap_scrollDefs(
   int *pixmapdefs=window->pixmapdefs;
   struct WBlocks *wblock=window->wblock;
 
+  if(pixmapdefs==NULL){
+    RError("pixmapdefs==NULL");
+    return;
+  }
+
   for(lokke=0;lokke<wblock->num_visiblelines;lokke++){
     window->pixmapdefs_calc[lokke]=pixmapdefs[lokke];
   }

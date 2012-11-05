@@ -68,6 +68,8 @@ void GFX_UpdateKeyOctave(
                  TEXT_CLEAR,
                  PAINT_DIRECTLY
 	);
+
+        GFX_OS_UpdateKeyOctave();
 }
 
 void GFX_UpdateCurrLine(

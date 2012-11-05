@@ -46,13 +46,13 @@ void Undo_RelTempoMax(
 	struct Undo_RelTempoMax *u_rt=talloc_atomic(sizeof(struct Undo_RelTempoMax));
 	u_rt->reltempomax=wblock->reltempomax;
 
-	Undo_New(
-		window->l.num,
-		wblock->l.num,
-		wblock->wtrack->l.num,
-		wblock->curr_realline,
-		u_rt,
-		Undo_Do_RelTempoMax
+	Undo_Add(
+                 window->l.num,
+                 wblock->l.num,
+                 wblock->wtrack->l.num,
+                 wblock->curr_realline,
+                 u_rt,
+                 Undo_Do_RelTempoMax
 	);
 
 }

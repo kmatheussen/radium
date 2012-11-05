@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "PEQ_type_proc.h"
 
-
+#if 0
 
 extern bool PlayerNewBlock(STime time,struct PEventQueue *peq);
 extern bool PE_HandleFirstFX(STime time,struct PEventQueue *peq);
@@ -56,8 +56,10 @@ int PEQ_GetType(struct PEventQueue *peq){
 	return lokke;
 }
 
+#endif
 
 void PEQ_GetType_Init(void){
+#if 0
 	PE_functions=malloc(sizeof(void *)*10);
 	PE_functions[0]=(void *)PlayerNewBlock;
 	PE_functions[1]=(void *)PE_HandleFirstFX;
@@ -69,6 +71,7 @@ void PEQ_GetType_Init(void){
 	PE_functions[7]=(void *)PE_ChangeVelocity;
 	PE_functions[8]=(void *)PE_ChangeVelocityToEnd;
 	PE_functions[9]=(void *)PE_ChangeVelocityFromStartToEnd;
+#endif
 }
 
 

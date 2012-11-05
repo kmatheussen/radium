@@ -31,6 +31,9 @@ void IncFontSize_CurrPos(
 ){
 	struct WBlocks *wblock=window->wblock;
 
+        if(window->fontheight+incnum<=3)
+          incnum = -(window->fontheight-3);
+
 	if(
 		incnum==0 ||
 		(window->fontheight<5 && incnum<0) ||

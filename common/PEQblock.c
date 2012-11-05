@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 extern PlayerClass *pc;
 
-void PlayerNewBlock(STime time,struct PEventQueue *peq,int doit);
+void PlayerNewBlock(struct PEventQueue *peq,int doit);
 
 
 
@@ -69,7 +69,7 @@ extern LONG clocksig;
    notes that is going to be started at the startpos of the block
    has been played, to avoid possible delay.
 *******************************************************************/
-void PlayerNewBlockGFX(STime time,struct PEventQueue *peq,int doit){
+void PlayerNewBlockGFX(struct PEventQueue *peq,int doit){
 
 	// Update graphics.
 
@@ -91,10 +91,10 @@ void PlayerNewBlockGFX(STime time,struct PEventQueue *peq,int doit){
    When its time to change block.
 *******************************************************************/
 
-void PlayerNewBlock(STime time,struct PEventQueue *peq,int doit){
+void PlayerNewBlock(struct PEventQueue *peq,int doit){
 	Place firstplace;
 
-	Pdebug("New block, peq->time: %d, time: %d, blocklength: %d, pc->seqtime: %d. visit: %d\n",peq->l.time,time,getBlockSTimeLength(pc->block),pc->seqtime,visit++);
+	Pdebug("New block, peq->time: %d, time: %d, blocklength: %d, pc->seqtime: %d. visit: %d\n",peq->l.time,pc->start_time,getBlockSTimeLength(pc->block),pc->seqtime,visit++);
 
 	// Is this the last block to be played?
 

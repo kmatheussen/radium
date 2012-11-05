@@ -33,9 +33,8 @@ extern LANGSPEC void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlengt
 extern LANGSPEC int GFX_ReqTypeMenu(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
-	char *seltext,
-	int num_sel,
-	char **menutext
+	const char *seltext,
+        vector_t *v
 	);
 
 extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max);
@@ -47,9 +46,8 @@ extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqt
 extern LANGSPEC int GFX_Menu(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
-	char *seltext,
-	int num_sel,
-	char **menutext
+	const char *seltext,
+        vector_t *v
 );
 
 extern LANGSPEC const char *GFX_GetLoadFileName(
@@ -65,3 +63,23 @@ extern LANGSPEC const char *GFX_GetSaveFileName(
 	char *seltext,
 	char *dir
 );
+
+extern LANGSPEC void GFX_OS_UpdateKeyOctave(void);
+extern LANGSPEC void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available);
+extern LANGSPEC void OS_GFX_SetVolume(int value);
+
+extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch);
+extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes the audio object itself. (yes, it's messy)
+
+extern LANGSPEC float *OS_SLIDER_obtain_automation_value_pointer(struct Patch *patch,int effect_num);
+extern LANGSPEC int *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num);
+extern LANGSPEC void OS_SLIDER_release_automation_pointers(struct Patch *patch,int effect_num);
+
+extern LANGSPEC float *GFX_OS_get_system_volume_peak_pointers(int num_channels);
+
+extern LANGSPEC void GFX_update_all_instrument_widgets(void);
+
+extern LANGSPEC void GFX_PP_Update(struct Patch *patch);
+
+extern LANGSPEC const char *OS_get_resolved_file_path(const char *path);
+extern LANGSPEC void OS_VST_config(struct Tracker_Windows *window);

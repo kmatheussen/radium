@@ -55,7 +55,7 @@ void Undo_Block_Split_CurrPos(void){
 	ubm->wblock=CB_CopyBlock(wblock);
 	ubm->blockpos=wblock->l.num;
 
-	Undo_New(
+	Undo_Add(
 		window->l.num,
 		wblock->l.num,
 		window->curr_track,

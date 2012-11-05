@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "list_proc.h"
+#include "patch_proc.h"
 
 #include "mouse_wtrackheader_proc.h"
 
@@ -184,6 +185,12 @@ void SetMouseActionWTrackHeader(
 		return;
 	}
 	if(click==0) return;
+
+        if(y<window->fontheight){
+          printf("gakk %d\n",(int)wtrack->l.num);
+          PATCH_select_patch_for_track(window,wtrack,true);
+          return;
+        }
 
 	if(insideTBox(&wtrack->panonoff,x,y)){
 		Undo_TrackHeader(

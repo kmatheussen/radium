@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQvelocities_proc.h"
 #include "time_proc.h"
 #include "list_proc.h"
+#include "patch_proc.h"
+#include "scheduler_proc.h"
 
 #include "PEQnotes_proc.h"
 
@@ -33,8 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 extern struct Root *root;
 
-void PE_StartNote(STime time,struct PEventQueue *peq,int doit);
-void PE_StopNote(STime time,struct PEventQueue *peq,int doit);
+void PE_StartNote(struct PEventQueue *peq,int doit);
+void PE_StopNote(struct PEventQueue *peq,int doit);
 
 
 void InitPEQendnote(
@@ -111,14 +113,12 @@ void InitPEQnote(
 
 	/* Note-stop. */
 
-	if(track->onoff==1){
-		InitPEQendnote(block,track,note,playlistaddpos);
-
-		InitPEQvelocities(block,track,note,playlistaddpos);
-	}
+        InitPEQendnote(block,track,note,playlistaddpos);
+        
+        InitPEQvelocities(block,track,note,playlistaddpos);
 }
 
-void InitPEQnotesBlock(
+static void InitPEQnotesBlock(
 	PEQ_UsedTracks **UsedTracks,
 	struct Blocks *block,
 	Place *p,
@@ -146,8 +146,12 @@ void InitPEQnotesBlock(
 					peq_usedtrack->num=track->l.num;
 					ListAddElement1(UsedTracks,peq_usedtrack);
 					InitPEQnote(block,track,note,playlistaddpos);
-				}
-			}
+				} else{
+
+                                  //PEQ_FindNextNoteAddPlayPos(peq);
+                                  
+                                }
+                        }
 		}
 		track=NextTrack(track);
 	}
@@ -163,22 +167,22 @@ void InitAllPEQnotes(
 	int playlistaddpos=0;
 	struct Blocks *playlistblock;
 
-	PEQ_UsedTracks *UsedTracks=NULL;
+	PEQ_UsedTracks *UsedTracks=NULL; // Used to keep track of which tracks have been initialized.
 
 
 	InitPEQnotesBlock(&UsedTracks,block,p,0);
 
-	if( PC_isPlayingSong() ){
 
-		for(;;){
-			playlistaddpos++;
-			playlistblock=PC_GetPlayBlock(playlistaddpos);
-			if(playlistblock==NULL) break;
-			InitPEQnotesBlock(&UsedTracks,playlistblock,firstplace,playlistaddpos);
-		}
-	}
-
-
+        for(;;){
+          playlistaddpos++;
+          playlistblock=PC_GetPlayBlock(playlistaddpos);
+          if(playlistblock==NULL)
+            break;
+          InitPEQnotesBlock(&UsedTracks,playlistblock,firstplace,playlistaddpos);
+          
+          if( ! PC_isPlayingSong() )
+            break; // If not, we would loop forever here when starting to play a block.
+        }
 }
 
 
@@ -206,10 +210,8 @@ void PEQ_FindNextNoteAddPlayPos(struct PEventQueue *peq){
 
 				PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
 
-				if(track->onoff==1){
-					InitPEQendnote(block,track,note,playlistaddpos);
-					InitPEQvelocities(block,track,note,playlistaddpos);
-				}
+                                InitPEQendnote(block,track,note,playlistaddpos);
+                                InitPEQvelocities(block,track,note,playlistaddpos);
 
 				return;
 			}
@@ -226,21 +228,35 @@ void PEQ_FindNextNote(struct PEventQueue *peq){
 	if(note!=NULL){
 		peq->note=note;
 		PC_InsertElement2_a(peq,0,&note->l.p);
-		if(peq->track->onoff==1){
-			InitPEQendnote(peq->block,peq->track,note,0);
-			InitPEQvelocities(peq->block,peq->track,note,0);
-		}
+                InitPEQendnote(peq->block,peq->track,note,0);
+                InitPEQvelocities(peq->block,peq->track,note,0);
 	}else{
 		PEQ_FindNextNoteAddPlayPos(peq);
 	}
 }
 
-void PE_StartNote(STime time,struct PEventQueue *peq,int doit){
+static void scheduled_play_note(int64_t time, union SuperType *args){
+  struct Tracks *track = args[0].pointer;
+  struct Notes *note = args[1].pointer;
 
-	struct Notes *note=peq->note;
+  RT_PATCH_play_note(track->patch,
+                     note->note,
+                     note->velocity,
+                     track,
+                     time);
+}
+
+void PE_StartNote(struct PEventQueue *peq,int doit){
 
 	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
-		(*peq->track->patch->playnote)(note->note,note->velocity,peq->track,note, peq->l.time+pc->reltime_to_add);
+          union SuperType args[2];
+          args[0].pointer = peq->track;
+          args[1].pointer = peq->note;
+
+          //printf("__PE_StartNote. Scheduling start for %d at %d\n",peq->note->note,(int)peq->l.time);
+          SCHEDULER_add_event(peq->l.time, scheduled_play_note, &args[0], 2, SCHEDULER_ADD_AFTER_SAME_TIME);
+
+          //RT_PATCH_play_note(peq->track->patch,note->note,note->velocity,peq->track, peq->l.time);
 	}
 
 	PEQ_FindNextNote(peq);
@@ -249,17 +265,35 @@ void PE_StartNote(STime time,struct PEventQueue *peq,int doit){
 }
 
 
-void PE_StopNote(STime time,struct PEventQueue *peq,int doit){
+static void scheduled_stop_note(int64_t time, union SuperType *args){
+  struct Tracks *track = args[0].pointer;
+  struct Notes *note = args[1].pointer;
+  
+  RT_PATCH_stop_note(track->patch,
+                     note->note,
+                     note->velocity_end,
+                     track,
+                     time);
+}
+
+void PE_StopNote(struct PEventQueue *peq,int doit){
 
 	if(doit && peq->track->patch!=NULL){
 //		Pdebug("Stop note: %d, vel: %d\n",peq->note->note,peq->note->velocity_end);
-		(*peq->track->patch->stopnote)(
-			peq->note->note,
-			peq->note->velocity_end,
-			peq->track,
-			peq->note,
-                        peq->l.time+pc->reltime_to_add
-		);
+          union SuperType args[3];
+          args[0].pointer = peq->track;
+          args[1].pointer = peq->note;
+
+          //printf("__PE_StopNote. Scheduling stop for %d at %d\n",peq->note->note,(int)peq->l.time);
+          SCHEDULER_add_event(peq->l.time, scheduled_stop_note, &args[0], 2, SCHEDULER_ADD_BEFORE_SAME_TIME);
+          /*
+          RT_PATCH_stop_note(peq->track->patch,
+                             peq->note->note,
+                             peq->note->velocity_end,
+                             peq->track,
+                             peq->l.time
+                             );
+          */
 	}
 
 	ReturnPEQelement(peq);

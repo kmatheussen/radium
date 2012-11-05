@@ -219,6 +219,14 @@ void *talloc_atomic_uncollectable(size_t size){
 	return NULL;
 }
 
+void *talloc_realloc(void *v, size_t new_size){
+#ifdef MEMORY_DEBUG
+  return realloc(v,new_size);
+#else
+  return GC_realloc(v,new_size);
+#endif
+}
+
 char *talloc_strdup(const char *input) {
   if(input==NULL)
     return NULL;
@@ -230,5 +238,11 @@ char *talloc_strdup(const char *input) {
 char *talloc_numberstring(int number){
   char s[1000];
   sprintf(s,"%d",number);
+  return talloc_strdup(s);
+}
+
+char *talloc_floatstring(float number){
+  char s[1000];
+  snprintf(s,999,"%f",number);
   return talloc_strdup(s);
 }

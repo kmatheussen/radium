@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 #include "nsmtracker.h"
+#include "playerclass.h"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "reltempo_proc.h"
@@ -37,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern struct Root *root;
+extern PlayerClass *pc;
 
 
 /********************************************************/
@@ -109,7 +111,7 @@ STime Place2STime(
 
 			return (STime) (
 				time1 + (
-					PFREQ*60*(fp-fp1)/tempo
+					pc->pfreq*60*(fp-fp1)/tempo
 				)
 			);
 
@@ -292,7 +294,7 @@ static void STP_fillinSTimes2(
 
 		stp->nexttime = (
 			stp->nexttime + (
-				PFREQ*60*(tfp2-tfp1)/(
+				pc->pfreq*60*(tfp2-tfp1)/(
 					(timechange->tempo1*FindAverageRealRelTempo(timechange->rel,(float)(timechange->rel+timechange->deltarel)))
 				)
 			)
@@ -301,7 +303,7 @@ static void STP_fillinSTimes2(
 	}else{
 		stp->nexttime = (
 			stp->nexttime + (
-				PFREQ*60*(tfp2-tfp1)/(stp->tempo*stp->lpb*RelTempo2RealRelTempo(stp->reltempo1))
+				pc->pfreq*60*(tfp2-tfp1)/(stp->tempo*stp->lpb*RelTempo2RealRelTempo(stp->reltempo1))
 			)
 		);
 	}

@@ -51,11 +51,11 @@ void GetNodeBox_basic(
 		int boxwidth,
 		int boxheight
 ){
-	ret->y1=within->y1+(tre->y1*(within->y2-within->y1))-(boxheight/2);
-	ret->y2=within->y1+(tre->y1*(within->y2-within->y1))+(boxheight/2);
+	ret->y1 = within->y1 + (tre->y1*(within->y2-within->y1)) - (boxheight/2);
+	ret->y2 = within->y1 + (tre->y1*(within->y2-within->y1)) + (boxheight/2);
 
-	ret->x1=warea->x+(tre->x1*warea->width)-(boxwidth/2);
-	ret->x2=warea->x+(tre->x1*warea->width)+(boxwidth/2);
+	ret->x1 = warea->x + (tre->x1*warea->width) - (boxwidth/2);
+	ret->x2 = warea->x + (tre->x1*warea->width) + (boxwidth/2);
 
 	TBOX_within(ret,within);
 	//	printf("%d,%d - %d,%d\n",ret->x1,ret->y1,ret->x2,ret->y2);
@@ -100,7 +100,10 @@ bool isInsideNodeBox(
 		 ){
 
   TBox get;
-  GetNodeBox_basic(tre,warea,within,&get,(int)tre->x2,(int)tre->y2);
+  GetNodeBox_basic(tre,warea,within,&get,(int)tre->x2-tre->x1,(int)tre->y2-tre->y1);
+
+  //printf("tbox: %d/%d -> %d/%d\n",get.x1,get.y1,get.x2,get.y2);
+  //printf("tre: %f/%f -> %f/%f\n",tre->x1,tre->y1,tre->x2,tre->y2);
 
   return insideTBox(&get,x,y);
 }

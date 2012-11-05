@@ -38,6 +38,7 @@ DC_start("ROOT");
 	DC_SSI("lpb",theroot->lpb);
 	DC_SSF("quantitize",theroot->quantitize);
 	DC_SSI("keyoct",theroot->keyoct);
+	DC_SSI("min_standardvel",theroot->min_standardvel);
 	DC_SSI("standardvel",theroot->standardvel);
 
 	SaveSong(theroot->song);
@@ -53,19 +54,21 @@ struct Root *LoadRoot(void){
 	static char *objs[1]={
 		"SONG"
 	};
-	static char *vars[7]={
+	static char *vars[8]={
 		"def_instrument",
 		"curr_block",
 		"tempo",
 		"lpb",
 		"quantitize",
 		"keyoct",
+		"min_standardvel",
 		"standardvel"
 	};
 	struct Root *ret=DC_alloc(sizeof(struct Root));
 	ret->scrollplayonoff=true;
+        ret->min_standardvel=MAX_VELOCITY*40/100;
 
-	GENERAL_LOAD(1,7)
+	GENERAL_LOAD(1,8)
 
 
 
@@ -93,10 +96,13 @@ var5:
 	goto start;
 
 var6:
-	ret->standardvel=DC_LoadI();
+	ret->min_standardvel=DC_LoadI();
 	goto start;
 
 var7:
+	ret->standardvel=DC_LoadI();
+	goto start;
+
 var8:
 var9:
 var10:

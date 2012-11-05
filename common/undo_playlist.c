@@ -39,7 +39,7 @@ static void *Undo_Do_Playlist(
 void Undo_Playlist(void){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
-  Undo_New(
+  Undo_Add(
            window->l.num,
            window->wblock->l.num,
            window->curr_track,

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "visual_proc.h"
 #include "windows_proc.h"
 #include "reallines_proc.h"
@@ -129,7 +130,7 @@ void SelectMinNodeSize(
 		reqtype,
 		temp,
 		1,
-		20
+		40
 	);
 	if(newwidth<1) return;
 
@@ -161,22 +162,16 @@ void TextBorderOff(
 void Window_config(
 	struct Tracker_Windows *window
 ){
-	ReqType reqtype;
+	ReqType reqtype=GFX_OpenReq(window,30,12,"Window Config");
 
-	char *menutext[6]={
-		//"Select Edit Font",
-		"Text Border on",
-		"Text Border off",
-		"Left Slider width",
-		"Bottom Slider height",
-		"Minimum node-size"
-	};
+        vector_t v={0};
+        VECTOR_push_back(&v,"Text Border on");
+        VECTOR_push_back(&v,"Text Border off");
+        VECTOR_push_back(&v,"Left Slider width");
+        VECTOR_push_back(&v,"Bottom Slider height");
+        VECTOR_push_back(&v,"Minimum node-size");
 
-	int sel;
-
-	reqtype=GFX_OpenReq(window,30,12,"Window Config");
-
-	sel=GFX_Menu(window,reqtype,"Select operation",5,menutext);
+	int sel=GFX_Menu(window,reqtype,"Select operation",&v);
 
 	switch(sel){
 		case -1: break;

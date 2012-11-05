@@ -174,6 +174,32 @@ struct Notes *InsertNote(
         return note;
 }
 
+static float scale(float x, float x1, float x2, float y1, float y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+
+bool drunk_velocity=true;
+static int64_t last_velocity = MAX_VELOCITY / 2;
+
+static int get_velocity(struct Patch *patch){
+  if(drunk_velocity==false)
+    return root->standardvel;
+
+  int64_t new_velocity = last_velocity + scale(rand()/100.0f,0,RAND_MAX/100.0f,-(MAX_VELOCITY/3), MAX_VELOCITY/3);
+  if(new_velocity>=root->standardvel)
+    new_velocity = root->standardvel - MAX_VELOCITY/50;
+  if(new_velocity<root->min_standardvel)
+    new_velocity = root->min_standardvel + MAX_VELOCITY / 4;
+
+  last_velocity = new_velocity;
+
+  //printf("returning %d\n",(int)new_velocity);
+
+  return new_velocity;
+}
 
 void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override){
 	struct WBlocks *wblock;
@@ -227,7 +253,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
          time on slower machines a lot (extremly much actually).
 		*/
 	  /*
-	    Removed. To much flicker.
+	    Removed. Too much flicker.
 
 		if(!wblock->isranged && wtrack->trackreallines[wblock->curr_realline].note==0){
 			wtrack->trackreallines[wblock->curr_realline].note=notenum;
@@ -243,7 +269,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 
 		InsertNote(
                            wblock,wtrack,&realline->l.p,NULL,notenum,
-                           wtrack->track->patch==NULL?root->standardvel:wtrack->track->patch->standardvel,
+                           get_velocity(wtrack->track->patch),
                            override
 		);
 

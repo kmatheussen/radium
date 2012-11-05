@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "wblocks_proc.h"
 #include "windows_proc.h"
+#include "OS_settings_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_bs.h"
@@ -55,10 +56,9 @@ extern struct Root *root;
 extern NInt currpatch;
 #endif
 
-struct Instruments *def_instrument;
+float disk_load_version;
 
-bool Load(const char *filename){
-	float version;
+static bool Load(const char *filename){
 	struct Root *newroot;
 
 	dc.file=fopen(filename,"r");
@@ -76,22 +76,22 @@ bool Load(const char *filename){
 		return false;
 	}
 
-	version=DC_LoadF();
+	disk_load_version=DC_LoadF();
 
-	if(version>0.4201 && version<0.50){
-		version=0.51;
+	if(disk_load_version>0.4201 && disk_load_version<0.50){
+		disk_load_version=0.51;
 		dc.colorize=true;
 		dc.startcolor=5;
 	}else{
 		dc.colorize=false;
 	}
 
-	if(version>DISKVERSION+0.0001){
-		RError("You are trying to load a %f version, while this program is only %f.\n",version,DISKVERSION);
-		return false;
-	}else{
-		printf("Song diskVersion: %f\n",version);
-	}
+        if(disk_load_version>DISKVERSION+0.0001){
+          RError("You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
+          return false;
+        }else{
+          printf("Song diskVersion: %f\n",disk_load_version);
+        }
 
 	dc.filename=filename;
 
@@ -138,8 +138,6 @@ bool Load(const char *filename){
 
 	ResetUndo();
 
-	def_instrument=root->def_instrument;
-
 #ifdef _AMIGA
 	CloseHelpWindow();
 	CloseCPPWindowWindow();
@@ -162,15 +160,13 @@ bool Load(const char *filename){
 }
 
 extern int num_undos;
-extern int max_num_undos;
 
 #ifdef _AMIGA
 extern const char *mmp2filename;
 #endif
 
-bool Load_CurrPos(struct Tracker_Windows *window){
+static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filename){
 	bool ret = false;
-	const char *filename;
 	char temp[200];
 
         // So many things happen here, that we should turn off garbage collection while loading.
@@ -192,11 +188,10 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 //		sprintf(temp,"%s%d changes has been made to file. Are you shure? (yes/no)",num_undos>=max_num_undos-1?"At least":"",num_undos);
 		sprintf(
 			temp,
-			"%s%d change%s has been made to file.\nAre you shure? (yes/no) >"
-			,num_undos>=max_num_undos-1?"At least":"",
+			"%d change%s been made to file.\nAre you shure? (yes/no) >",
 			num_undos,
-			num_undos>1?"s":""
-		);
+			num_undos>1 ? "s have" : " has"
+                        );
 		while(
 			retreq==NULL || (
 				strcmp("yes",retreq) &&
@@ -212,7 +207,8 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 		if(!strcmp("no",retreq)) goto exit;
 	}
 
-	filename=GFX_GetLoadFileName(window,NULL,"Select file to load","obsolete");
+        if(filename==NULL)
+          filename=GFX_GetLoadFileName(window,NULL,"Select file to load","obsolete");
 
 	if(filename==NULL) goto exit;
 
@@ -231,16 +227,18 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 	}
 
         {
-          ret = Load(filename);
+          OS_set_loading_path(filename);
+          {
+            ret = Load(filename);
+          }
+          OS_unset_loading_path();
+
           GFX_SetWindowTitle(root->song->tracker_windows, filename);
 
           GFX_EditorWindowToFront(root->song->tracker_windows);
 
           struct WBlocks *wblock = root->song->tracker_windows->wblock;
-          (*wblock->wtrack->track->instrument->PP_Update)(
-                                                          wblock->wtrack->track->instrument,
-                                                          wblock->wtrack->track->patch
-                                                          );
+          GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 
           DrawUpTrackerWindow(root->song->tracker_windows);
 
@@ -255,5 +253,21 @@ bool Load_CurrPos(struct Tracker_Windows *window){
 
         return ret;
 
+}
+
+bool Load_CurrPos(struct Tracker_Windows *window){
+  return Load_CurrPos_org(window,NULL);
+}
+
+bool LoadSong_CurrPos(struct Tracker_Windows *window, const char *filename){
+  return Load_CurrPos_org(window,filename);
+}
+
+void NewSong_CurrPos(struct Tracker_Windows *window){
+  char temp[4098];
+  sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
+  Load_CurrPos_org(window,talloc_strdup(temp));
+  GFX_SetWindowTitle(root->song->tracker_windows, "Radium - New song.");
+  dc.filename=NULL;
 }
 

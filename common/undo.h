@@ -15,29 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-
-
-struct Undo{
-	struct Undo *prev;
-	struct Undo *next;
-
-	NInt windownum;
-	NInt blocknum;
-	NInt tracknum;
-	int realline;
-
-//	char *undotext;
-
-	void *pointer;
-	void *(*UndoFunction)(
-		struct Tracker_Windows *window,
-		struct WBlocks *wblock,
-		struct WTracks *wtrack,
-		int realline,
-		void *pointer
-	);
-};
+typedef void *(*UndoFunction)(
+                              struct Tracker_Windows *window,
+                              struct WBlocks *wblock,
+                              struct WTracks *wtrack,
+                              int realline,
+                              void *pointer
+                              );
 
 #ifndef RADIUM_UNDOISCALLINGNOW
 extern struct Undo *CurrUndo;
@@ -45,25 +29,33 @@ extern struct Undo *CurrUndo;
 
 #ifndef TRACKER_INCLUDE
 
+extern LANGSPEC void Undo_Open(void);
+extern LANGSPEC void Undo_Close(void);
+extern LANGSPEC void Undo_CancelLastUndo(void);
+
+extern LANGSPEC void Undo_Add(
+                              int windownum,
+                              int blocknum,
+                              int tracknum,
+                              int realline,
+                              void *pointer,
+                              UndoFunction undo_function);
+
+#if 0
 extern void Undo_New(
 	NInt windownum,
 	NInt blocknum,
 	NInt tracknum,
 	int realline,
 	void *pointer,
-	void *(*UndoFunction)(
-		struct Tracker_Windows *window,
-		struct WBlocks *wblock,
-		struct WTracks *wtrack,
-		int realline,
-		void *pointer
-	)
+        UndoFunction undo_function
 );
+#endif
 
-extern void ResetUndo(void);
-extern void Undo(void);
-extern void Redo(void);
-extern void SetMaxUndos(struct Tracker_Windows *window);
+extern LANGSPEC void ResetUndo(void);
+extern LANGSPEC void Undo(void);
+extern LANGSPEC void Redo(void);
+extern LANGSPEC void SetMaxUndos(struct Tracker_Windows *window);
 
 #endif
 

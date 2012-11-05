@@ -139,6 +139,8 @@ void SetMouseActionFXNodes(
 
 	while(wfxnode!=NULL){
 		if(wfxnode->type==TRE_FXNODE){
+                  //printf("Found TRE_FX_NODE at realline %d. Within: %d/%d -> %d/%d. isInside? %d\n",realline,within.x1,within.y1,within.x2,within.y2,isInsideNodeBox(wfxnode,&warea,&within,x,y));
+
 			if(
 			   isInsideNodeBox(wfxnode,&warea,&within,x,y)
 			   /*
@@ -286,12 +288,12 @@ void SetMouseActionFXarea(
 			wblock,
 			wtrack,
 			subtrack,
-			(((*wtrack->track->instrument->getMaxVelocity)(wtrack->track))*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack))),
+			MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack)),
 			&place,
 			realline
 		);
 
-		GFX_SetChangeInt(window,wblock,"Velocity",(((*wtrack->track->instrument->getMaxVelocity)(wtrack->track))*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack))));
+		GFX_SetChangeInt(window,wblock,"Velocity",MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack)));
 		GFX_DrawStatusBar(window,wblock);
 
 		UpdateTrackReallines(window,wblock,wtrack);

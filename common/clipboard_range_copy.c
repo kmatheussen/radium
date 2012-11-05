@@ -189,7 +189,7 @@ void CopyRange(
 
 	range->notes=talloc((size_t)(sizeof(struct Notes *)*num_tracks));
 	range->stops=talloc((size_t)(sizeof(struct Stops *)*num_tracks));
-	range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
+	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range->fxs=talloc((size_t)(sizeof(struct Fxs *)*num_tracks));
 
 	p1=getRangeStartPlace(wblock);
@@ -199,7 +199,7 @@ void CopyRange(
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
 	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
-		range->instruments[lokke]=track->instrument;
+          //range->instruments[lokke]=track->instrument;
 		CopyRange_notes(&range->notes[lokke],track->notes,p1,p2);
 		CopyRange_stops(&range->stops[lokke],track->stops,p1,p2);
 		CopyRange_fxs(&range->fxs[lokke],track->fxs,p1,p2);

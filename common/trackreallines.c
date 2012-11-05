@@ -404,7 +404,7 @@ void AddTrackReallineNote(
 	int realline;
 	int subtrack;
 
-	float maxx = (float)(*wtrack->track->instrument->getMaxVelocity)(wtrack->track);
+	float maxx = MAX_VELOCITY;
 
 	realline=FindRealLineForNote(wblock,note->Tline,note);
 	subtrack=FindFirstFreeSubTrack(wtrack,realline,&note->l.p);

@@ -25,7 +25,7 @@ void Undo_RelTempoSlider(
 	struct Undo_RelTempoSlider *u_rts=talloc_atomic(sizeof(struct Undo_RelTempoSlider));
 	u_rts->reltempo=wblock->block->reltempo;
 
-	Undo_New(
+	Undo_Add(
 		window->l.num,
 		wblock->l.num,
 		wblock->wtrack->l.num,

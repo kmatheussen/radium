@@ -25,16 +25,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQmempool_proc.h"
 #include "PEQ_calc_proc.h"
 #include "time_proc.h"
+#include "patch_proc.h"
+#include "scheduler_proc.h"
 
 #include "PEQvelocities_proc.h"
 
 extern PlayerClass *pc;
 
+// If patch max velocity is much lower than radium max velocity (MAX_VELOCITY), we avoid sending out two or more messages in a row with the same velocity value.
+STime PEQ_CalcNextVelocityEvent(
+                                struct PEventQueue *peq,
+                                STime time1,
+                                STime time,
+                                STime time2,
+                                int x1,
+                                int *x,
+                                int x2
+                                )
+{
+  STime ntime=PEQ_CalcNextEvent(
+                                time1,time,time2,
+                                PATCH_radiumvelocity_to_patchvelocity(peq->track->patch, x1),
+                                x,
+                                PATCH_radiumvelocity_to_patchvelocity(peq->track->patch, x2)
+                                );
+  *x = PATCH_patchvelocity_to_radiumvelocity(peq->track->patch, *x); // convert back.
+  return ntime;
+}
 
-void PE_ChangeVelocityFromStart(STime time,struct PEventQueue *peq,int doit);
-void PE_ChangeVelocity(STime time,struct PEventQueue *peq,int doit);
-void PE_ChangeVelocityToEnd(STime time,struct PEventQueue *peq,int doit);
-void PE_ChangeVelocityFromStartToEnd(STime time,struct PEventQueue *peq,int doit);
+
+void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit);
+void PE_ChangeVelocity(struct PEventQueue *peq,int doit);
+void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit);
+void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit);
 
 void InitPEQvelocities(
 	struct Blocks *block,
@@ -47,7 +70,11 @@ void InitPEQvelocities(
 
 	struct Velocities *velocity=note->velocities;
 
-	if(velocity==NULL && note->velocity == note->velocity_end) return;
+        if(track->patch==NULL)
+          return;
+
+	if(velocity==NULL && note->velocity == note->velocity_end)
+          return;
 
 	peq=GetPEQelement();
 	peq->block=block;
@@ -60,7 +87,8 @@ void InitPEQvelocities(
 		peq->TreatMe=PE_ChangeVelocityFromStartToEnd;
 		PC_InsertElement(
 			peq,playlistaddpos,
-			PEQ_CalcNextEvent(
+			PEQ_CalcNextVelocityEvent(
+                                                  peq,
 				peq->time1,
 				peq->time1,
 				peq->time2,
@@ -78,7 +106,8 @@ void InitPEQvelocities(
 
 	PC_InsertElement(
 		peq,playlistaddpos,
-		PEQ_CalcNextEvent(
+		PEQ_CalcNextVelocityEvent(
+                                  peq,
 			peq->time1,
 			peq->time1,
 			peq->time2,
@@ -91,24 +120,46 @@ void InitPEQvelocities(
 }
 
 
-__inline static void SendVelocityChange(int x,struct PEventQueue *peq){
+static void scheduled_change_velocity(int64_t time, union SuperType *args){
+  struct Tracks *track = args[0].pointer;
+  struct Notes  *note  = args[1].pointer;
+  int            x     = args[2].int_num;
+
+  RT_PATCH_change_velocity(track->patch,
+                           note->note,
+                           x,
+                           track,
+                           time
+                           );
+}
+
+static void SendVelocityChange(int x,struct PEventQueue *peq){
 	if(peq->track->patch!=NULL && peq->track->onoff==1){
-		(*peq->track->patch->changevelocity)(
-			x,
-			peq->track,
-			peq->note,
-                        peq->l.time+pc->reltime_to_add
-		);
+          union SuperType args[3];
+          args[0].pointer = peq->track;
+          args[1].pointer = peq->note;
+          args[2].int_num = x;
+
+          SCHEDULER_add_event(peq->l.time, scheduled_change_velocity, &args[0], 3, SCHEDULER_ADDORDER_DOESNT_MATTER);
+
+          /*
+          RT_PATCH_change_velocity(peq->track->patch,
+                                   peq->note->note,
+                                   x,
+                                   peq->track,
+                                   peq->l.time
+                                   );
+          */
 	}
 }
 
 
-void PE_ChangeVelocityFromStart(STime time,struct PEventQueue *peq,int doit){
+void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 	struct Velocities *next;
 
-	btime=PC_TimeToRelBlockStart(time);
+	btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
 		next=NextVelocity(peq->velocity);
@@ -116,17 +167,18 @@ void PE_ChangeVelocityFromStart(STime time,struct PEventQueue *peq,int doit){
 		if(next==NULL){
 			peq->time2=Place2STime(peq->block,&peq->note->end);
 			peq->TreatMe=PE_ChangeVelocityToEnd;
-			PE_ChangeVelocityToEnd(time,peq,doit);
+			PE_ChangeVelocityToEnd(peq,doit);
 		}else{
 			peq->nextvelocity=next;
 			peq->time2=Place2STime(peq->block,&next->l.p);
 			peq->TreatMe=PE_ChangeVelocity;
-			PE_ChangeVelocity(time,peq,doit);
+			PE_ChangeVelocity(peq,doit);
 		}
 		return;
 	}
 
-	ntime=PEQ_CalcNextEvent(
+	ntime=PEQ_CalcNextVelocityEvent(
+                                        peq,
 		peq->time1,
 		btime,
 		peq->time2,
@@ -154,12 +206,12 @@ void PE_ChangeVelocityFromStart(STime time,struct PEventQueue *peq,int doit){
 
 
 
-void PE_ChangeVelocity(STime time,struct PEventQueue *peq,int doit){
+void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 	struct Velocities *next;
 
-	btime=PC_TimeToRelBlockStart(time);
+	btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
 		next=NextVelocity(peq->nextvelocity);
@@ -169,16 +221,17 @@ void PE_ChangeVelocity(STime time,struct PEventQueue *peq,int doit){
 		if(next==NULL){
 			peq->time2=Place2STime(peq->block,&peq->note->end);
 			peq->TreatMe=PE_ChangeVelocityToEnd;
-			PE_ChangeVelocityToEnd(time,peq,doit);
+			PE_ChangeVelocityToEnd(peq,doit);
 		}else{
 			peq->nextvelocity=next;
 			peq->time2=Place2STime(peq->block,&next->l.p);
-			PE_ChangeVelocity(time,peq,doit);
+			PE_ChangeVelocity(peq,doit);
 		}
 		return;
 	}
 
-	ntime=PEQ_CalcNextEvent(
+	ntime=PEQ_CalcNextVelocityEvent(
+                peq,
 		peq->time1,
 		btime,
 		peq->time2,
@@ -207,18 +260,19 @@ void PE_ChangeVelocity(STime time,struct PEventQueue *peq,int doit){
 
 
 
-void PE_ChangeVelocityToEnd(STime time,struct PEventQueue *peq,int doit){
+void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 
-	btime=PC_TimeToRelBlockStart(time);
+	btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
 		ReturnPEQelement(peq);
 		return;
 	}
 
-	ntime=PEQ_CalcNextEvent(
+	ntime=PEQ_CalcNextVelocityEvent(
+                                peq,
 		peq->time1,
 		btime,
 		peq->time2,
@@ -243,18 +297,19 @@ void PE_ChangeVelocityToEnd(STime time,struct PEventQueue *peq,int doit){
 
 }
 
-void PE_ChangeVelocityFromStartToEnd(STime time,struct PEventQueue *peq,int doit){
+void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 
-	btime=PC_TimeToRelBlockStart(time);
+	btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
 		ReturnPEQelement(peq);
 		return;
 	}
 
-	ntime=PEQ_CalcNextEvent(
+	ntime=PEQ_CalcNextVelocityEvent(
+                                peq,
 		peq->time1,
 		btime,
 		peq->time2,

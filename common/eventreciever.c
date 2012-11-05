@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 extern int num_undos;
-extern int max_num_undos;
 
 bool doquit=false;
 bool isloaded=false;
@@ -62,11 +61,10 @@ bool Quit(struct Tracker_Windows *window){
 	if(num_undos>0){
 		sprintf(
 			temp,
-			"%s%d change%s has been made to file.\nAre you shure? (yes/no) >"
-			,num_undos>=max_num_undos-1?"At least":"",
+			"%d change%s been made to file.\nAre you shure? (yes/no) >",
 			num_undos,
-			num_undos>1?"s":""
-		);
+			num_undos>1 ? "s have" : " has"
+                        );
 		while(
 			ret==NULL || (
 				strcmp("yes",ret) &&

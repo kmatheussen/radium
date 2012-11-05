@@ -30,13 +30,13 @@ void Undo_MainTempo(
 	u_rt->lpb=root->lpb;
 	u_rt->quantitize=root->quantitize;
 
-	Undo_New(
-		window->l.num,
-		wblock->l.num,
-		wblock->wtrack->l.num,
-		wblock->curr_realline,
-		u_rt,
-		Undo_Do_MainTempo
+	Undo_Add(
+                 window->l.num,
+                 wblock->l.num,
+                 wblock->wtrack->l.num,
+                 wblock->curr_realline,
+                 u_rt,
+                 Undo_Do_MainTempo
 	);
 
 }

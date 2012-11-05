@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct PEventQueue{
 	struct ListHeaderP l;
 
-	void (*TreatMe)(STime time, struct PEventQueue *peq, int doit);
+	void (*TreatMe)(struct PEventQueue *peq, int doit);
 
 // Used by all
 	int playpos;				// Position in the playlist this event was generated from.
@@ -87,10 +87,14 @@ typedef struct{
 
 	struct PEventQueue *peq;	// Player events.
 
-        STime time;
-	STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration.
+        int pfreq; // player frequency. i.e. sample rate.
 
-        STime reltime_to_add;      // Shows how much to add to event time, when taking block->reltempo into consideration.
+        STime start_time; // During current call to peq->treatMe
+        STime end_time;   // During current call to peq->treatMe
+
+	STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock.
+
+        STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 
 	STime seqtime;		/* Time being played at the top of the block that now is playing. */
 
@@ -111,9 +115,9 @@ typedef struct{
 #define PLAYSONG 0
 #define PLAYBLOCK 1
 #define PLAYRANGE 2
+#define PLAYBLOCK_NONLOOP 3
 
 typedef struct ListHeader1 PEQ_UsedTracks;
-
 
 #endif
 

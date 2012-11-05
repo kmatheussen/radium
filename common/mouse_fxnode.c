@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "realline_calc_proc.h"
+#include "OS_visual_input.h"
 
 #include "mouse_fxnode_proc.h"
 
@@ -93,6 +94,7 @@ int MoveFXNode_Mouse(
 	){
 		ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
 		if(ListFindNumElements3(&fxs->fxnodelines->l)<=1){
+                        OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
 			(*fx->closeFX)(fx,track);
 			ListRemoveElement1(&track->fxs,&fxs->l);
 		}
@@ -116,11 +118,7 @@ int MoveFXNode_Mouse(
 		   end_realline
 		   );
 
-	UpdateWTrack(window,wblock,wtrack,
-		     start_realline,
-		     end_realline
-		     );
-
+	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	return 0;
 }
 

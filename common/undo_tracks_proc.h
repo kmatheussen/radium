@@ -21,14 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-void Undo_Track(
+extern LANGSPEC void Undo_Track(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	int realline
 );
 
-extern void Undo_Track_CurrPos(
+extern LANGSPEC void Undo_Track_CurrPos(
 	struct Tracker_Windows *window
 );
 

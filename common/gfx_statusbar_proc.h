@@ -31,14 +31,14 @@ extern void GFX_DrawStatusBar(
 extern void GFX_SetChangeInt(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	char *title,
+	const char *title,
 	int Int
 );
 
 extern void GFX_SetChangeFloat(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	char *title,
+	const char *title,
 	float Float
 );
 

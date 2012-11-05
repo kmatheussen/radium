@@ -18,8 +18,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef OS_SETTINGS_PROC_H
 #define OS_SETTINGS_PROC_H
 
-extern LANGSPEC char *OS_get_config_filename(void);
+extern LANGSPEC void OS_set_loading_path(const char *filename);
+extern LANGSPEC void OS_unset_loading_path(void);
+
+extern LANGSPEC bool OS_config_key_is_color(const char *key);
+extern LANGSPEC char *OS_get_config_filename(const char *key);
 extern LANGSPEC char *OS_get_program_path(void);
-extern LANGSPEC char *OS_get_directory_separator(void);
-extern LANGSPEC void OS_make_config_file_expired(void);
+extern LANGSPEC const char *OS_get_directory_separator(void);
+extern LANGSPEC void OS_make_config_file_expired(const char *key);
 #endif

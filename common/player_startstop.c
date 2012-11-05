@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_calc_proc.h"
+#include "gfx_wblocks_proc.h"
+#include "gfx_wtracks_proc.h"
 
 #include "player_proc.h"
 
@@ -66,9 +68,14 @@ static void PlayStopReally(bool doit){
 
 	if(doit) (*Ptask2MtaskCallBack)();
 
-	pc->time=0;
+	pc->end_time=0;
 
-	GFX_UpdateQuantitize(root->song->tracker_windows,root->song->tracker_windows->wblock);
+        struct Tracker_Windows *window = root->song->tracker_windows;
+        struct WBlocks *wblock = window->wblock;
+	GFX_UpdateQuantitize(window,wblock);
+        DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
+        UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
+        printf("[hb gakkgakk\n");
 }
 
 void PlayHardStop(void){
@@ -92,16 +99,20 @@ void PlayStop(void){
 }
 
 
-void PlayBlock(
+static void PlayBlock(
 	struct Blocks *block,
-	Place *place
+	Place *place,
+        bool do_loop
 ){
 
 	pc->initplaying=true;
 
 		pc->playpos=0;
 
-		pc->playtype=PLAYBLOCK;
+                if(do_loop==true)
+                  pc->playtype=PLAYBLOCK;
+                else
+                  pc->playtype=PLAYBLOCK_NONLOOP;
 
 		pc->block=block;
 
@@ -125,7 +136,7 @@ void PlayBlock(
 	pc->initplaying=false;
 }
 
-void PlayBlockFromStart(struct Tracker_Windows *window){
+void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 	PlayStopReally(false);
 
 	root->setfirstpos=true;
@@ -135,7 +146,7 @@ void PlayBlockFromStart(struct Tracker_Windows *window){
           struct WBlocks *wblock=window->wblock;
           Place place;
           PlaceSetFirstPos(&place);
-          PlayBlock(wblock->block,&place);
+          PlayBlock(wblock->block,&place,do_loop);
         }
 }
 
@@ -150,12 +161,12 @@ void PlayBlockCurrPos(struct Tracker_Windows *window){
 
 	if(wblock->curr_realline==0) root->setfirstpos=true;
 
-	place=&wblock->reallines[wblock->curr_realline]->l.p;
-	pc->seqtime=-Place2STime(wblock->block,place);
+	place       = &wblock->reallines[wblock->curr_realline]->l.p;
+	pc->seqtime = -Place2STime(wblock->block,place);
 
 //	printf("contblock, time: %d\n",pc->seqtime);
 
-	PlayBlock(wblock->block,place);
+	PlayBlock(wblock->block,place,true);
 }
 
 
@@ -178,7 +189,7 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 
 //	printf("playrange, time: %d\n",pc->seqtime);
 
-	PlayBlock(wblock->block,place);
+	PlayBlock(wblock->block,place,true);
 }
 
 

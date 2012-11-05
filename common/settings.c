@@ -78,15 +78,18 @@ static int find_linenum(const char* key, const char** lines){
   return -1;
 }
 
-static const char** get_lines(void){
-  FILE *user_file = fopen(OS_get_config_filename(), "r");
+static const char** get_lines(const char* key){
+  bool is_color_config = OS_config_key_is_color(key);
+
+  FILE *user_file = fopen(OS_get_config_filename(key), "r");
   FILE *file = user_file;
 
   if(file==NULL){
     const char* curr_dir = OS_get_program_path();
     const char* separator = OS_get_directory_separator();
-    char filename[strlen(curr_dir)+strlen(separator)+strlen("config")+10];
-    sprintf(filename,"%s%s%s",curr_dir,separator,"config");
+    const char* basefilename = is_color_config ? "colors" : "config";
+    char filename[strlen(curr_dir)+strlen(separator)+strlen(basefilename)+10];
+    sprintf(filename,"%s%s%s",curr_dir,separator,basefilename);
     file = fopen(filename,"r");
   }
                  
@@ -106,15 +109,18 @@ static const char** get_lines(void){
 
   fclose(file);
 
-  // Check that the file is not too old.
   int version_linenum = find_linenum("settings_version",ret);
-  if(user_file != NULL){
-    if(version_linenum==-1 || atof(get_value(ret[version_linenum])) < SETTINGSVERSION){
-      OS_make_config_file_expired();
-      if(access(OS_get_config_filename(),F_OK)==0)
-        RWarning("\"%s\" still exists",OS_get_config_filename());
-      else
-        return get_lines();
+
+  // Check that the file is not too old.
+  if(is_color_config){
+    if(user_file != NULL){
+      if(version_linenum==-1 || atof(get_value(ret[version_linenum])) < SETTINGSVERSION){
+        OS_make_config_file_expired(key);
+        if(access(OS_get_config_filename(key),F_OK)==0)
+          RWarning("\"%s\" still exists",OS_get_config_filename(key));
+        else
+          return get_lines(key);
+      }
     }
   }
 
@@ -125,8 +131,8 @@ static const char** get_lines(void){
   return ret;
 }
 
-static void write_lines(const char** lines){
-  const char* filename = OS_get_config_filename();
+static void write_lines(const char* key, const char** lines){
+  const char* filename = OS_get_config_filename(key);
   FILE *file = fopen(filename, "w");
   if(file==NULL){
     RError("Unable to write config data to \"%s\"",filename);
@@ -148,7 +154,7 @@ static void append_line(const char** lines, const char* line){
 }
 
 static void SETTINGS_put(const char* key, const char* val){
-  const char** lines = get_lines();
+  const char** lines = get_lines(key);
   int linenum = find_linenum(key,lines);
 
   char *temp = talloc_atomic(strlen(key)+strlen(val)+10);
@@ -159,11 +165,11 @@ static void SETTINGS_put(const char* key, const char* val){
   else
     lines[linenum] = temp;
   
-  write_lines(lines);
+  write_lines(key,lines);
 }
 
 static const char* SETTINGS_get(const char* key){
-  const char** lines = get_lines();
+  const char** lines = get_lines(key);
   int linenum = find_linenum(key,lines);
 
   if(linenum==-1)

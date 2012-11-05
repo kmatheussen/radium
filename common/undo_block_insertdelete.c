@@ -64,7 +64,7 @@ void Undo_Block_Insert(
 	ubi->wblock=NULL;
         ubi->playlist=BL_copy();
 
-	Undo_New(
+	Undo_Add(
 		window->l.num,
 		wblock->l.num,
 		window->curr_track,
@@ -86,7 +86,7 @@ void Undo_Block_Delete(
 	ubi->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos);
         ubi->playlist=BL_copy();
 
-	Undo_New(
+	Undo_Add(
 		window->l.num,
 		wblock->l.num,
 		window->curr_track,

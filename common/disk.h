@@ -103,6 +103,7 @@ extern void DC_SkipBlock(void);
 
 extern int DC_whatString(char **variables,int num);
 
+extern float disk_load_version;
 
 
 #include "list_proc.h"

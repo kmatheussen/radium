@@ -29,16 +29,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void SaveFX(struct FX *fx,struct Tracks *track){
 if(fx==NULL) return;
 DC_start("FX");
-	DC_SaveN(fx->l.num);
+	DC_SaveN(fx->num);
 	DC_SSS("name",fx->name);
 	DC_SSI("color",fx->color);
 	DC_SSI("min",fx->min);
 	DC_SSI("max",fx->max);
+	DC_SSI("effect_num",fx->effect_num);
 
 	(*fx->SaveFX)(fx,track);
 
 DC_end();
-SaveFX((struct FX *)fx->l.next,track);
+//SaveFX((struct FX *)fx->l.next,track);
 }
 
 
@@ -47,15 +48,16 @@ struct FX *LoadFX(struct Tracks *track){
 	static char *objs[1]={
 		"FXDATA"
 	};
-	static char *vars[4]={
+	static char *vars[5]={
 		"name",
 		"color",
 		"min",
-		"max"
+		"max",
+                "effect_num"
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
-	fx->l.num=DC_LoadN();
-	GENERAL_LOAD(0,4)
+	fx->num=DC_LoadN();
+	GENERAL_LOAD(0,5)
 
 
 var0:
@@ -77,12 +79,15 @@ var2:
 var3:
 	fx->max=DC_LoadI();
 	goto start;
+var4:
+	fx->effect_num=DC_LoadI();
+	goto start;
+
 obj0:
-	fx->fxdata=(*track->instrument->LoadFX)(fx,track);
+	fx->fxdata=(*track->patch->instrument->LoadFX)(fx,track);
 	goto start;
 
 
-var4:
 var5:
 var6:
 var7:
