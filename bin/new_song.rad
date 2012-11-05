@@ -1,0 +1,2560 @@
+RADIUM SONG
+0.670000
+
+\
+OSSTUFF
+X11
+/
+
+\
+ROOT
+
+?curr_block
+0
+
+?tempo
+128
+
+?lpb
+4
+
+?quantitize
+0.500000
+
+?keyoct
+36
+
+?min_standardvel
+26214
+
+?standardvel
+52428
+
+\
+SONG
+
+?num_blocks
+1
+
+?length
+1
+
+?maxtracks
+0
+
+\
+TRACKER_WINDOW
+0
+
+?x
+0
+
+?y
+0
+
+?width
+1062
+
+?height
+693
+
+?fontID
+0
+
+?fontTags
+0
+
+?fontwidth
+10
+
+?fontheight
+18
+
+?org_fontheight
+18
+
+?curr_block
+0
+
+?maxwtracksize
+0
+
+?playalong
+1
+
+?textborder
+1
+
+?minnodesize
+25
+
+?leftslider
+1
+14
+
+?bottomslider
+1
+14
+
+\
+WBLOCK
+0
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?zoomlevelarea
+0
+
+?linenumarea
+30
+
+?lpbTypearea
+10
+
+?lpbarea
+20
+
+?tempoTypearea
+10
+
+?tempoarea
+30
+
+?temponodearea
+156
+
+?maxwtracksize
+0
+
+?curr_realline
+18
+
+?num_reallines
+100
+
+?reltempomax
+2.000000
+
+?isranged
+0
+
+?rangex1
+0
+
+?rangex2
+0
+
+?rangey1
+34
+
+?rangey2
+74
+
+\
+LOCALZOOMS
+100
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+66
+
+?num_vel
+1
+/
+/
+/
+
+\
+BLOCK
+0
+
+?name
+First Block
+
+?num_tracks
+8
+
+?num_lines
+100
+
+?reltempo
+1.001876
+
+\
+TRACK
+0
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+1
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+1000
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+2
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+1000
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+3
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+4
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+5
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+6
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+7
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+RELTEMPO
+0.000000
+0.000000
+99
+65533
+65534
+/
+/
+
+\
+PLAYLIST
+1
+0
+/
+
+\
+INSTRUMENT
+
+?instrumentname
+MIDI instrument
+
+\
+PATCH
+6
+
+?name
+MIDI 1
+
+\
+PATCHDATA
+
+?clustername
+M Audio Audiophile 24/96:0
+
+?channel
+0
+
+?preset
+-1
+
+?LSB
+-1
+
+?MSB
+-1
+
+?volumeonoff
+0
+
+?volume
+100
+
+?panonoff
+0
+
+?pan
+64
+
+?controlchange
+Chorus
+0
+93
+0
+Reverb
+0
+91
+0
+Attack
+0
+73
+0
+Release
+0
+72
+0
+CutOff
+0
+74
+0
+Resonance
+0
+71
+0
+Variation Depth
+0
+94
+0
+Modulation
+0
+1
+0
+/
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+/
+/
+/
+
+\
+INSTRUMENT
+
+?instrumentname
+Audio instrument
+
+\
+PATCH
+0
+
+?name
+Main Pipe
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+/
+/
+
+\
+PATCH
+1
+
+?name
+System Out 1
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+/
+/
+
+\
+PATCH
+7
+
+?name
+Zita Reverb 2
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+0
+/
+/
+/
+
+\
+PATCH
+17
+
+?name
+Chorus
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+/
+/
+
+\
+PATCH
+19
+
+?name
+Reverb
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+/
+/
+
+\
+PATCH
+20
+
+?name
+Calf MultiChorus LADSPA 1
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0.000000
+
+?start
+0.000000
+
+?length
+0.000000
+
+?time_format
+1
+/
+/
+/
+/
+
+\
+MIXERWIDGET
+>> HASH MAP BEGIN
+5
+connections
+HASH_TYPE
+>> HASH MAP BEGIN
+29
+<int hash> 2
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+7
+to_patch
+INT_TYPE
+0
+<< HASH MAP END
+<int hash> 3
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+17
+to_patch
+INT_TYPE
+20
+<< HASH MAP END
+<int hash> 4
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+20
+to_patch
+INT_TYPE
+0
+<< HASH MAP END
+<int hash> 0
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+19
+to_patch
+INT_TYPE
+7
+<< HASH MAP END
+<int hash> 1
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+0
+to_patch
+INT_TYPE
+1
+<< HASH MAP END
+num_connections
+INT_TYPE
+5
+<< HASH MAP END
+chips
+HASH_TYPE
+>> HASH MAP BEGIN
+13
+<int hash> 3
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+System Out
+type_name
+STRING_TYPE
+Jack
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+2
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+0.0
+System Hs F.
+FLOAT_TYPE
+4500
+System Ls F.
+FLOAT_TYPE
+400
+System Eq2 F.
+FLOAT_TYPE
+1000
+System Eq1 F.
+FLOAT_TYPE
+400
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out
+FLOAT_TYPE
+0.0
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System Volume
+FLOAT_TYPE
+0.0
+System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+0.0
+System Width
+FLOAT_TYPE
+0.005000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.0
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+0.0
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.0
+System Lp F.
+FLOAT_TYPE
+5000
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+1
+y
+FLOAT_TYPE
+-35.000000
+x
+FLOAT_TYPE
+120.000000
+<< HASH MAP END
+<int hash> 1
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Bus 1
+type_name
+STRING_TYPE
+Bus
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+2
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+0.000000
+System Hs F.
+FLOAT_TYPE
+1500
+System Ls F.
+FLOAT_TYPE
+400
+System Eq2 F.
+FLOAT_TYPE
+1000
+System Eq1 F.
+FLOAT_TYPE
+400
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out
+FLOAT_TYPE
+0.999712
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System Volume
+FLOAT_TYPE
+0.999712
+System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+0.999712
+System Width
+FLOAT_TYPE
+0.000000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+0.000000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+System Lp F.
+FLOAT_TYPE
+5000
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+19
+y
+FLOAT_TYPE
+-75.000000
+x
+FLOAT_TYPE
+-240.000000
+<< HASH MAP END
+<int hash> 4
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Pipe
+type_name
+STRING_TYPE
+Pipe
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+2
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+0.0
+System Hs F.
+FLOAT_TYPE
+4500
+System Ls F.
+FLOAT_TYPE
+400
+System Eq2 F.
+FLOAT_TYPE
+1000
+System Eq1 F.
+FLOAT_TYPE
+400
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out
+FLOAT_TYPE
+0.966607
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System Volume
+FLOAT_TYPE
+1.117506
+System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+1.053780
+System Width
+FLOAT_TYPE
+0.005000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.0
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+0.0
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.0
+System Lp F.
+FLOAT_TYPE
+5000
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+0
+y
+FLOAT_TYPE
+-35.000000
+x
+FLOAT_TYPE
+0.000000
+<< HASH MAP END
+num_chips
+INT_TYPE
+6
+<int hash> 5
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Calf MultiChorus LADSPA
+type_name
+STRING_TYPE
+Ladspa
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+17
+Dry Amount
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+Center Frq 2
+FLOAT_TYPE
+4999.503906
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+0.000000
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+Minimum delay
+FLOAT_TYPE
+4.999510
+Modulation depth
+FLOAT_TYPE
+5.999410
+System Ls F.
+FLOAT_TYPE
+400
+System Pan
+FLOAT_TYPE
+0.500000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+Center Frq 1
+FLOAT_TYPE
+97.956001
+Voices
+FLOAT_TYPE
+3.999500
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 F.
+FLOAT_TYPE
+400
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+Modulation rate
+FLOAT_TYPE
+0.499755
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Width
+FLOAT_TYPE
+0.000000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+Amount
+FLOAT_TYPE
+2.000000
+System Eq2 L.
+FLOAT_TYPE
+0.000000
+System Eq2 F.
+FLOAT_TYPE
+1000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System In On/Off
+FLOAT_TYPE
+1.000000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+Inter-voice phase
+FLOAT_TYPE
+63.972000
+System Hs F.
+FLOAT_TYPE
+1500
+System Lp F.
+FLOAT_TYPE
+5000
+System Out
+FLOAT_TYPE
+1.0
+Q
+FLOAT_TYPE
+0.125000
+Stereo phase
+FLOAT_TYPE
+180.000000
+System In
+FLOAT_TYPE
+0.999712
+System Volume
+FLOAT_TYPE
+0.999712
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+20
+y
+FLOAT_TYPE
+-115.000000
+x
+FLOAT_TYPE
+-120.000000
+<< HASH MAP END
+<int hash> 2
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Zita Reverb
+type_name
+STRING_TYPE
+Faust
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+System Eq2 On/Off
+FLOAT_TYPE
+1.000000
+System Eq2 L.
+FLOAT_TYPE
+-5.243000
+System Eq1 F.
+FLOAT_TYPE
+400
+System Out
+FLOAT_TYPE
+0.836084
+Low RT60
+FLOAT_TYPE
+3.587200
+LF X
+FLOAT_TYPE
+199.910004
+System Hs On/Off
+FLOAT_TYPE
+1.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+Mid RT60
+FLOAT_TYPE
+4.755500
+Input: In Delay
+FLOAT_TYPE
+0.000000
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Ls F.
+FLOAT_TYPE
+400
+System Eq2 F.
+FLOAT_TYPE
+1000
+System Lp F.
+FLOAT_TYPE
+5000
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System In On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+System Hs F.
+FLOAT_TYPE
+4500
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+System In
+FLOAT_TYPE
+1.022410
+HF Damping
+FLOAT_TYPE
+3657.959961
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Width
+FLOAT_TYPE
+0.190000
+System Hs L.
+FLOAT_TYPE
+9.639000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Volume
+FLOAT_TYPE
+1.039322
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+7
+y
+FLOAT_TYPE
+-75.000000
+x
+FLOAT_TYPE
+-120.000000
+<< HASH MAP END
+<int hash> 0
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Bus 2
+type_name
+STRING_TYPE
+Bus
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+2
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+0.000000
+System Hs F.
+FLOAT_TYPE
+1500
+System Ls F.
+FLOAT_TYPE
+400
+System Eq2 F.
+FLOAT_TYPE
+1000.000366
+System Eq1 F.
+FLOAT_TYPE
+400
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out
+FLOAT_TYPE
+0.999712
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System Volume
+FLOAT_TYPE
+0.999712
+System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+0.999712
+System Width
+FLOAT_TYPE
+0.000000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+0.000000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+System Lp F.
+FLOAT_TYPE
+1500
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+17
+y
+FLOAT_TYPE
+-115.000000
+x
+FLOAT_TYPE
+-240.000000
+<< HASH MAP END
+<< HASH MAP END
+<< HASH MAP END
+/
+/
+/
