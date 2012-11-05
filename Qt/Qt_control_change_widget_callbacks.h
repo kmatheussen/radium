@@ -1,3 +1,21 @@
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
+
 #include "Qt_control_change_widget.h"
 
 class Control_change_widget : public QWidget, public Ui::Control_change_widget{
@@ -47,7 +65,7 @@ public slots:
     set_editor_focus();
   }
 
-  void on_groupBox_toggled(bool val)
+  void on_onoff_toggled(bool val)
   {
     if (val==true){
       value_slider->setEnabled(true);
@@ -67,6 +85,9 @@ public slots:
   {
     patchdata->cc[this->ccnum] = val;
     patchdata->ccnames[this->ccnum] = talloc_strdup((char*)ccnames[val]);
+
+    value_slider->_effect_num = patchdata->cc[ccnum];
+    printf("on_cctype_activated: Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
   }
 
 };

@@ -47,7 +47,7 @@ struct Menues{
 
 static struct Menues *current_menu = NULL;
 
-class MenuItem : public QWidget
+class MenuItem : public QObject
 {
     Q_OBJECT
 public:
@@ -121,6 +121,16 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const ch
   struct Menues *menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
   menu->menu = new Q3PopupMenu();
+  //QFont sansFont("Liberation Mono", 8);
+  //QFont sansFont("DejaVu Sans Mono", 7);
+  //QFont sansFont("Nimbus Mono L", 9);
+  //QFont sansFont("WenQuanYi Zen Hei Mono",8);
+  //QFont sansFont("Aurulent Sans Mono",8);
+  QFont sansFont("Bitstream Vera Sans Mono",8);
+
+  //sansFont.setBold(true);
+
+  menu->menu->setFont(sansFont);
   new MenuItem(name, command, menu->menu);
   current_menu = menu;
 }

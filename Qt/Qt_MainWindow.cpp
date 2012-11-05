@@ -14,12 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+extern "C"{
+#include <Python.h>
+#include "../api/radium_proc.h"
+}
+
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qsplitter.h>
 #include <QCloseEvent>
 #include <QStatusBar>
 #include <QMenuBar>
+#include <QMessageBox>
 
 #include <qfiledialog.h>
 
@@ -70,6 +76,10 @@ static HWND gtk_hwnd = NULL;
 
 #include "../common/settings_proc.h"
 #include "../common/eventreciever_proc.h"
+
+#include "Qt_MyQSlider.h"
+#include "Qt_MyQCheckBox.h"
+#include "mQt_bottom_bar_widget_callbacks.h"
 
 #include "Qt_MainWindow_proc.h"
 
@@ -228,6 +238,9 @@ extern struct Root *root;
 
 EditorWidget *g_editor = NULL;
 
+static Bottom_bar_widget *g_bottom_bar = NULL;
+
+
 #if 1
 // dangerous stuff
 extern "C" void grabKeyboard(void);
@@ -264,6 +277,15 @@ void Qt_EnableAllWidgets(void){
   widgets_are_disabled = false;
 }
 #endif
+
+void GFX_showHideEditor(void){
+  if(g_editor->isHidden())
+    g_editor->show();
+  else
+    g_editor->hide();
+}
+
+
 
 class MyQMainWindow : public QMainWindow{
   //Q_OBJECT;
@@ -355,6 +377,40 @@ void SetupMainWindow(void){
   main_window->setCaption("Radium editor window");
   main_window->statusBar()->message( "Ready", 2000 );
 
+#if 1
+  {
+    QStatusBar *status_bar = main_window->statusBar();
+    g_bottom_bar = new Bottom_bar_widget(main_window);
+    status_bar->addWidget(g_bottom_bar, 1, true);
+    //main_window->statusBar()->addWidget(g_bottom_bar, 1, true);
+    editor->status_label = g_bottom_bar->status_label;
+    //main_window->statusBar()->setFrameStyle(QFrame::NoFrame);
+    {
+      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      QPalette pal(status_bar->palette());
+      pal.setColor( QPalette::Active, QColorGroup::Dark, system_color);
+      pal.setColor( QPalette::Active, QColorGroup::Light, system_color);
+      pal.setColor( QPalette::Inactive, QColorGroup::Dark, system_color);
+      pal.setColor( QPalette::Inactive, QColorGroup::Light, system_color);
+      pal.setColor( QPalette::Disabled, QColorGroup::Dark, system_color);
+      pal.setColor( QPalette::Disabled, QColorGroup::Light, system_color);
+      status_bar->setPalette(pal);
+    }
+    {
+      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      QPalette pal(g_bottom_bar->palette());
+      pal.setColor( QPalette::Active, QColorGroup::Dark, system_color);
+      pal.setColor( QPalette::Active, QColorGroup::Light, system_color);
+      pal.setColor( QPalette::Inactive, QColorGroup::Dark, system_color);
+      pal.setColor( QPalette::Inactive, QColorGroup::Light, system_color);
+      pal.setColor( QPalette::Disabled, QColorGroup::Dark, system_color);
+      pal.setColor( QPalette::Disabled, QColorGroup::Light, system_color);
+      g_bottom_bar->setPalette(pal);
+    }
+    main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
+    status_bar->setSizeGripEnabled(false);
+  }
+#else
   {
     QStatusBar *status_bar = main_window->statusBar();
     editor->status_label = new QLabel(status_bar);//"");
@@ -362,6 +418,7 @@ void SetupMainWindow(void){
     //editor->status_frame->
     status_bar->addWidget(editor->status_label, 1, true);
   }
+#endif
 
 
 #if FOR_MACOSX
@@ -418,19 +475,18 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   editor->status_label->setText(title);
 }
 
-extern "C" int num_users_of_keyboard;
-
 const char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
 	char *dir
 ){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   const char *ret;
 
   num_users_of_keyboard++;
 
-  QString filename = QFileDialog::getOpenFileName();
+  QString filename = QFileDialog::getOpenFileName(editor,seltext);
 
   if(filename == ""){
     ret=NULL;
@@ -450,14 +506,27 @@ const char *GFX_GetSaveFileName(
 	char *seltext,
 	char *dir
 ){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+
   num_users_of_keyboard++;
-  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName().ascii());
+  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName(editor,seltext).ascii());
   num_users_of_keyboard--;
   return ret==NULL || strlen(ret)==0 
     ? NULL 
     : ret;
 }
 
+void GFX_Message(const char *message){
+  QMessageBox msgBox;
+        
+  num_users_of_keyboard++;
+  msgBox.setText(QString(message));
+  //msgBox.setInformativeText(message);
+  msgBox.setStandardButtons(QMessageBox::Ok);
+  num_users_of_keyboard--;
+
+  msgBox.exec();
+}
 
 //#include "mgakk.cpp"
 

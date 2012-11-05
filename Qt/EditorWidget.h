@@ -72,7 +72,6 @@ typedef QPixmap PaintBuffer;
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
 {
-  //Q_OBJECT;
 
 public:
   EditorWidget(QWidget *parent=0, const char *name="no name" );

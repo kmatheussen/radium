@@ -16,11 +16,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Python.h"
 
+#include <signal.h>
+
 #include <qapplication.h>
 #include <qmainwindow.h>
 #include <qsplitter.h>
 #include <qpalette.h>
 #include <qtabwidget.h>
+#include <qfontdatabase.h>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -30,10 +33,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCustomEvent>
 #endif
 
+#include "../common/nsmtracker.h"
+#include "../common/disk_load_proc.h"
+#include "../common/undo.h"
+
+#include "../mixergui/QM_MixerWidget.h"
+
+
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
-#include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
@@ -123,12 +132,14 @@ protected:
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
 {
+  //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 }
 
 
 
   //QApplication *qapplication;
 MyApplication *qapplication;
+QApplication *g_qapplication;
 
 
 #if 1 //USE_QT_VISUAL
@@ -323,9 +334,11 @@ void Qt_EventHandler(void){
 #endif
 }
 
-int radium_main(char *arg){
-  default_style_name = QApplication::style()->objectName();
+static bool load_new_song=true;
 
+int radium_main(char *arg){
+
+  default_style_name = QApplication::style()->objectName();
 
 #if 0
   QApplication::setStyle( new QPlatinumStyle() );
@@ -338,23 +351,26 @@ int radium_main(char *arg){
     SETTINGS_write_bool((char*)"override_default_qt_style",override_default_qt_style);
 
 #if 1
-    if(override_default_qt_style)
+    if(override_default_qt_style){
       //QApplication::setStyle( new QOxygenStyle());
       QApplication::setStyle( new QPlastiqueStyle());
     //QApplication::setStyle( new QCleanlooksStyle() );
     //QApplication::setStyle( new QWindowsStyle() );
+    }
 #endif
   }
 
+  QApplication::setEffectEnabled(Qt::UI_AnimateMenu,true);
+  QApplication::setEffectEnabled(Qt::UI_AnimateCombo,true);
 
-
-#ifdef USE_QT4
   //QApplication::setGraphicsSystem("native");
   //QApplication::setGraphicsSystem("raster");
-#endif
 
 
   setApplicationColors(qapplication);
+
+
+
 
 #ifdef __linux__
   X11_init_keyboard();
@@ -422,10 +438,15 @@ int radium_main(char *arg){
 
         main_window->setCentralWidget(ysplitter);
       }
+
+      //MixerWidget *mixer_widget = 
+      new MixerWidget(xsplitter);
+      //mixer_widget->resize(300,mixer_widget->height());
+
     }
 
     qapplication->setMainWidget(main_window);
-    GFX_PlayListWindowToFront(); // To provoce setting width to 'blocklist_width'
+    //GFX_PlayListWindowToFront(); // To provoce setting width to 'blocklist_width'
     main_window->show();
   }
 
@@ -434,6 +455,12 @@ int radium_main(char *arg){
 #if !GTK_IS_USED
   CalledPeriodically periodic_timer;
 #endif
+
+  //QFontDatabase::addApplicationFont("/gammelhd/usr/share/fonts/liberation/LiberationMono-Regular.ttf");
+
+  ResetUndo();
+  if(load_new_song==true)
+    NewSong_CurrPos(root->song->tracker_windows);
 
 #if USE_QT_VISUAL
   qapplication->exec();
@@ -451,6 +478,8 @@ int radium_main(char *arg){
   }
 #endif
 
+  MW_cleanup(); // Stop all sound properly. Don't want clicks when exiting.
+
   EndProgram();
   posix_EndPlayer();
   //EndGuiThread();
@@ -459,11 +488,20 @@ int radium_main(char *arg){
 
 }
 
-extern "C" void initradium(void);
+extern "C" {
+  static void finish(int sig){
+    QApplication::quit();
+  }
+  extern void initradium(void);
+}
+
 int main(int argc, char **argv){
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
 
   printf("1: argv[0]: \"%s\"\n",argv[0]);
+
+  if(argc>1 && !strcmp(argv[1],"--dont-load-new-song"))
+    load_new_song=false;
 
   Py_Initialize();
 
@@ -495,7 +533,41 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
+  // Create application here in order to get default style. (not recommended, but can't find another way)
+  qapplication=new MyApplication(argc,argv);
+  g_qapplication = qapplication;
+
   {
+#if 0
+    fprintf(stderr,"load1\n");
+    fflush(stderr);
+    if(-1==QFontDatabase::addApplicationFont("fonts/Lohit-Tamil.ttf"))
+      abort();
+    fprintf(stderr,"load2\n");
+    fflush(stderr);
+    if(-1==QFontDatabase::addApplicationFont("fonts/LiberationMono-Bold.ttf"))
+      abort();
+    fprintf(stderr,"load3\n");
+    fflush(stderr);
+    if(-1==QFontDatabase::addApplicationFont("fonts/NimbusSansL.ttf"))
+      abort();
+    fprintf(stderr,"load4\n");
+    fflush(stderr);
+    if(-1==QFontDatabase::addApplicationFont("fonts/VeraMono.ttf"))
+      abort();
+    fprintf(stderr,"load5\n");
+    fflush(stderr);
+#endif
+
+    QFontDatabase::addApplicationFont("fonts/LiberationMono-Bold.ttf");
+    QFontDatabase::addApplicationFont("fonts/VeraMono.ttf");
+
+    //QApplication::setFont(QFont("Lohit-Tamil",8));
+    //QApplication::setFont(QFont("Nimbus Sans L",8));
+    //QApplication::setFont(QFont("Liberation Sans L",8));
+
+    printf("System font name: \"%s\". Size: %d\n",QApplication::font().family().ascii(),QApplication::font().pointSize());
+
     int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
     if(system_font_size>=0){
       QFont font=QFont(QApplication::font().family(),system_font_size);
@@ -503,9 +575,7 @@ int main(int argc, char **argv){
     }
   }
 
-  // Create application here in order to get default style. (not recommended, but can't find another way)
-  qapplication=new MyApplication(argc,argv);
-
+  signal(SIGINT,finish);
 
 #if GTK_IS_USED
   GTK_Init(argc,argv);

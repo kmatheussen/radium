@@ -42,6 +42,100 @@ static QColor *system_color=NULL;
 static QColor *button_color=NULL;
 static bool override_default_qt_colors=true;
 
+static QColor g_note_colors[128];
+
+static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+
+  float a1 = how_much;
+  float a2 = 1.0f-a1;
+
+  int r = c1.red()*a1 + c2.red()*a2;
+  int g = c1.green()*a1 + c2.green()*a2;
+  int b = c1.blue()*a1 + c2.blue()*a2;
+
+  return QColor(r,g,b);
+}
+
+#if 0
+#define NUM_NOTE_COLOR_CONF 4
+static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
+  {128*0,                     1},
+  {128*1/NUM_NOTE_COLOR_CONF, 5},
+  {128*2/NUM_NOTE_COLOR_CONF, 6},
+  {128*3/NUM_NOTE_COLOR_CONF, 4},
+  {128*4/NUM_NOTE_COLOR_CONF, 2},
+};
+#endif
+
+#if 0
+#define NUM_NOTE_COLOR_CONF 9
+static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
+  {128*0,1},
+  {128*1/NUM_NOTE_COLOR_CONF,2},
+  {128*2/NUM_NOTE_COLOR_CONF,3},
+  {128*3/NUM_NOTE_COLOR_CONF,4},
+  {128*4/NUM_NOTE_COLOR_CONF,5},
+  {128*5/NUM_NOTE_COLOR_CONF,6},
+  {128*6/NUM_NOTE_COLOR_CONF,8},
+  {128*7/NUM_NOTE_COLOR_CONF,12},
+  {128*8/NUM_NOTE_COLOR_CONF,13},
+  {128*9/NUM_NOTE_COLOR_CONF,14}
+};
+#endif
+
+#define NUM_NOTE_COLOR_CONF 6
+static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
+  {0,3},
+  {24,4},
+  {48,3},
+  {72,4},
+  {96,5},
+  {120,6},
+  {128,8}
+};
+
+static void configure_note_colors(EditorWidget *editor){
+  for(int i=0;i<NUM_NOTE_COLOR_CONF;i++){
+    QColor start_color = editor->colors[note_color_conf[i][1]];
+    QColor end_color = editor->colors[note_color_conf[i+1][1]];
+    int start_note = note_color_conf[i][0];
+    int end_note = note_color_conf[i+1][0];
+
+    if(start_note<64)
+      start_color = editor->colors[1];
+    else
+      end_color = editor->colors[2];
+
+    for(int note=start_note;note<end_note;note++){
+      //printf("setting %d (%d-%d) to %d %d %f\n",note,start_note,end_note,note_color_conf[i][1], note_color_conf[i+1][1], (float)(note-start_note)/(end_note-start_note));
+      g_note_colors[note] = mix_colors(end_color, start_color, (float)(note-start_note)/(end_note-start_note));
+    }
+  }
+}
+
+QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+
+  if(colornum < 16)
+    return editor->colors[colornum];
+
+  if(colornum > 16+128){
+    RError("Illegal colornum: %d",colornum);
+    colornum = colornum % (128+16);
+  }
+
+  colornum -= 16;
+
+  static bool note_colors_configured = false;
+  if(note_colors_configured==false){
+    configure_note_colors(editor);
+    note_colors_configured=true;
+  }
+
+  return g_note_colors[colornum];
+}
+
+
 static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
@@ -61,6 +155,7 @@ static void updatePalette(EditorWidget *my_widget, QPalette &pal){
 
   // Background
   {
+
     //QColor c(0xe5, 0xe5, 0xe5);
     QColor c(*system_color);
     QColor b(*button_color);
@@ -136,6 +231,7 @@ static QPalette sys_palette;
 
 static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   QPalette pal(widget->palette());
+
   updatePalette(my_widget,pal);
 
   if(override_default_qt_colors)
@@ -151,7 +247,19 @@ static void updateApplication(EditorWidget *my_widget,QApplication *app){
 }
 
 static void updateAll(EditorWidget *my_widget, QWidget *widget){
+  configure_note_colors(my_widget);
+
   updateWidget(my_widget, widget);
+
+#if 0
+  if(widget->objectName () == "view"){
+    widget->setStyleSheet(QString::fromUtf8("background-color: qlineargradient(spread:reflect, x1:0, y1:0, x2:0.38, y2:1, stop:0 rgba(111, 131, 111, 22), stop:1 rgba(255, 255, 255, 43));"));
+  }
+#endif
+
+#if 0
+  widget->setStyleSheet(QString::fromUtf8("color: qlineargradient(spread:reflect, x1:0, y1:0, x2:0.38, y2:1, stop:0 rgba(0, 3, 0, 155), stop:1 rgba(5, 5, 5, 175));"));
+#endif
 
   const QList<QObject*> list = widget->children();
   if(list.empty()==true)

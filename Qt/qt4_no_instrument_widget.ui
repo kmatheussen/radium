@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>705</width>
-    <height>153</height>
+    <width>901</width>
+    <height>161</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,23 +25,41 @@
   <property name="windowTitle">
    <string>Form1</string>
   </property>
+  <property name="windowOpacity">
+   <double>0.000000000000000</double>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="Q3GroupBox" name="midi">
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>9</y>
-     <width>191</width>
+     <x>20</x>
+     <y>30</y>
+     <width>221</width>
      <height>111</height>
     </rect>
    </property>
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+     <weight>50</weight>
+     <italic>false</italic>
+     <bold>false</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
    <property name="title">
     <string>MIDI</string>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
    </property>
    <property name="frameShape">
     <enum>Q3GroupBox::LineEditPanel</enum>
@@ -49,55 +67,69 @@
    <property name="frameShadow">
     <enum>Q3GroupBox::MShadow</enum>
    </property>
+   <property name="lineWidth">
+    <number>1</number>
+   </property>
+   <property name="midLineWidth">
+    <number>0</number>
+   </property>
    <layout class="QFormLayout" name="formLayout">
-    <item row="0" column="0">
-     <widget class="QPushButton" name="create_instrument">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>30</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>9</height>
-       </size>
-      </property>
+    <property name="fieldGrowthPolicy">
+     <enum>QFormLayout::ExpandingFieldsGrow</enum>
+    </property>
+    <item row="0" column="0" colspan="2">
+     <widget class="QCommandLinkButton" name="create_midi_instrument">
       <property name="text">
-       <string>Create new instrument</string>
+       <string>New MIDI Instrument</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QCheckBox" name="midi_input">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>MIDI input</string>
-      </property>
-     </widget>
+    <item row="1" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout_7">
+      <item>
+       <widget class="QCheckBox" name="midi_input">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>MIDI input on/off</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
   <widget class="Q3GroupBox" name="guiGroupBox">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>30</y>
-     <width>171</width>
-     <height>61</height>
+     <x>560</x>
+     <y>60</y>
+     <width>165</width>
+     <height>74</height>
     </rect>
    </property>
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
+   </property>
+   <property name="font">
+    <font>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
    </property>
    <property name="title">
     <string>GUI</string>
@@ -108,22 +140,131 @@
    <property name="frameShadow">
     <enum>Q3GroupBox::MShadow</enum>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QCheckBox" name="use_system_colors">
-      <property name="text">
-       <string>Use System Colors</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="use_system_style">
-      <property name="text">
-       <string>Use System Style</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
+   <widget class="QCheckBox" name="use_system_style">
+    <property name="geometry">
+     <rect>
+      <x>12</x>
+      <y>22</y>
+      <width>16</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>20</y>
+      <width>114</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Use System Style</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>11</x>
+      <y>44</y>
+      <width>143</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QCheckBox" name="use_system_colors">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Use System Colors</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="Q3GroupBox" name="audioGroupBox">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>10</y>
+     <width>221</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="font">
+    <font>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="title">
+    <string>AUDIO</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+   <property name="frameShape">
+    <enum>Q3GroupBox::LineEditPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>Q3GroupBox::MShadow</enum>
+   </property>
+   <widget class="QCommandLinkButton" name="create_sample_instrument">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>179</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>New Sampler</string>
+    </property>
+   </widget>
+   <widget class="QCommandLinkButton" name="create_fluidsynth">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>179</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>New FluidSynth</string>
+    </property>
+   </widget>
+   <widget class="QCommandLinkButton" name="create_audio_instrument">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>100</y>
+      <width>179</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>New Audio Instrument</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

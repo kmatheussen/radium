@@ -27,10 +27,17 @@ extern "C"{
 #include <qmainwindow.h>
 #include <qevent.h>
 #include <qtreeview.h>
-
+#include <qlistwidget.h>
 
 #include "../common/nsmtracker.h"
 
+#include "../common/hashmap_proc.h"
+#include "../common/undo.h"
+#include "../mixergui/undo_chip_addremove_proc.h"
+#include "../mixergui/undo_mixer_connections_proc.h"
+#include "undo_instruments_widget_proc.h"
+#include "../common/undo_patch_proc.h"
+#include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
@@ -41,40 +48,25 @@ extern "C"{
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
 #include "Qt_colors_proc.h"
+
+#include "Qt_MyQSlider.h"
+#include "Qt_MyQCheckBox.h"
+#include "Qt_MyQSpinBox.h"
+
+#include "../mixergui/QM_MixerWidget.h"
+#include "../audio/SoundPluginRegistry_proc.h"
+
+
+
 #include "Qt_instruments_proc.h"
+
 
 extern QApplication *qapplication;
 
 extern struct Root *root;
 extern struct Patch *g_currpatch;
 
-extern int num_users_of_keyboard;
-
-void set_editor_focus(void);
-
-#define MakeFocusSnifferClass(Class)                                    \
-  class FocusSniffer##Class : public Class {                            \
-  public:                                                               \
-  FocusSniffer##Class(QWidget *parent, const char *name = "gakk")       \
-  : Class(parent)                                                       \
-    {                                                                   \
-    }                                                                   \
-  void focusInEvent ( QFocusEvent *e ){                                 \
-    num_users_of_keyboard++;                                            \
-    Class::focusInEvent(e);                                             \
-  }                                                                     \
-  void focusOutEvent ( QFocusEvent *e ){                                \
-    num_users_of_keyboard--;                                            \
-    if(num_users_of_keyboard<0)                                         \
-      num_users_of_keyboard = 0;                                        \
-    Class::focusOutEvent(e);                                            \
-  }                                                                     \
-}                                                    
-
-
-MakeFocusSnifferClass(QSpinBox);
-MakeFocusSnifferClass(QLineEdit);
-
+#include "FocusSniffers.h"
 
 #include "EditorWidget.h"
 #include "../GTK/GTK_visual_proc.h"
@@ -93,13 +85,18 @@ class Instruments_widget;
 static Instruments_widget *instruments_widget;
 
 class No_instrument_widget;
-static No_instrument_widget *no_instrument_widget;
+//static No_instrument_widget *no_instrument_widget;
 
-class Instrument_widget;
+class MIDI_instrument_widget;
+class Audio_instrument_widget;
 
-static void tab_selected();
-static Instrument_widget *get_instrument_widget(struct Patch *patch);
-static void updatePortsWidget(Instrument_widget *instrument);
+static void tab_name_has_changed(QWidget *tab, QString new_name);
+//static void tab_selected();
+static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch);
+static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
+static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
+static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
+static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch);
 
 static const char *ccnames[128];
 
@@ -107,15 +104,20 @@ static const char *ccnames[128];
 #if USE_QT3
 #include "Qt_instruments_widget.cpp"
 #include "Qt_control_change_widget.cpp"
-#include "Qt_instrument_widget.cpp"
+#include "Qt_midi_instrument_widget.cpp"
+#include "Qt_audio_instrument_widget.cpp"
 #include "Qt_no_instrument_widget.cpp"
 #endif
 
 #if USE_QT4
 #include "mQt_instruments_widget_callbacks.h"
 #include "mQt_control_change_widget_callbacks.h"
-#include "mQt_instrument_widget_callbacks.h"
+#include "mQt_patch_widget_callbacks.h"
+#include "mQt_midi_instrument_widget_callbacks.h"
+#include "mQt_audio_instrument_widget_callbacks.h"
 #include "mQt_no_instrument_widget_callbacks.h"
+#include "mQt_vst_paths_widget_callbacks.h"
+//#include "mQt_mixer_widget_callbacks.h"
 #endif
 
 static const char *gm_names[] = {
@@ -249,7 +251,7 @@ static const char *gm_names[] = {
   "Gunshot"
   };
 
-static void updatePortsWidget(Instrument_widget *instrument){
+static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
   int item_num = 0;
 
   int num_ports;
@@ -267,10 +269,12 @@ static void updatePortsWidget(Instrument_widget *instrument){
   instrument->port->insertItem("<Create new port>");
 
   instrument->port->setCurrentItem(item_num);
+
+instrument->_patch_widget->updateWidgets();
 }
 
-static Instrument_widget *createInstrumentWidget(const char *name, struct Patch *patch){
-    Instrument_widget *instrument = new Instrument_widget();
+static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, struct Patch *patch){
+  MIDI_instrument_widget *instrument = new MIDI_instrument_widget(NULL,patch);
     instrument->patch = patch;
 
     struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
@@ -311,9 +315,11 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct Patch 
 
     {
       int ccnum = 0;
-      for(int y=0;y<2;y++){
-        for(int x=0;x<4;x++){
+      for(int y=0;y<8;y++){
+        for(int x=0;x<1;x++){
           Control_change_widget *cc = new Control_change_widget(instrument, "hepp");
+          cc->value_slider->_patch = patch;
+          cc->value_slider->_effect_num = patchdata->cc[ccnum];
 
           for(int i=0;i<128;i++){
             char temp[500];
@@ -330,7 +336,7 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct Patch 
           instrument->cc_widgets[ccnum] = cc;
           cc->ccnum = ccnum++;
 
-          cc->groupBox->setTitle(" cc " + QString::number(ccnum));
+          //cc->groupBox->setTitle(" cc " + QString::number(ccnum));
 
           // todo: fix
           //instrument->control_change_groupLayout->addWidget(cc,y,x);
@@ -351,14 +357,30 @@ static Instrument_widget *createInstrumentWidget(const char *name, struct Patch 
 
     //updatePortsWidget(instrument);
 
-    instrument->name_widget->setText(name);
+    instrument->_patch_widget->name_widget->setText(name);
 
     return instrument;
 }
 
 
-void addInstrument(struct Patch *patch){
-  Instrument_widget *instrument = createInstrumentWidget(patch->name, patch);
+static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch){
+  Audio_instrument_widget *instrument = new Audio_instrument_widget(NULL,patch);
+
+  instrument->_patch_widget->name_widget->setText(patch->name);
+
+  //instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count());
+  instruments_widget->tabs->insertWidget(instruments_widget->tabs->count(),instrument);
+
+  // (forgot to take copy)
+  instruments_widget->tabs->setCurrentWidget(instrument);
+  
+  return instrument;
+}
+
+
+static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
+  
+  MIDI_instrument_widget *instrument = create_midi_instrument_widget(patch->name, patch);
 
 #if 0
   //This was a failed attempt to make the no_widget instrument more fancy
@@ -379,9 +401,11 @@ void addInstrument(struct Patch *patch){
   //instrument->nameBox->setEnabled(true);
   instrument->panningBox->setEnabled(true);
   instrument->volumeBox->setEnabled(true);
+#if 0
   instrument->velocityBox->setEnabled(true);
   instrument->velocity_slider->setEnabled(true);
   instrument->velocity_spin->setEnabled(true);
+#endif
   instrument->voiceBox->setEnabled(true);
 #if 0
   instrument->presetBox->setEnabled(true);
@@ -391,8 +415,11 @@ void addInstrument(struct Patch *patch){
   //instrument->control_change_group->setEnabled(true);
 #endif
 
-  instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count()-1);
+  //instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count());
+  instruments_widget->tabs->insertWidget(instruments_widget->tabs->count(),instrument);
   //instruments_widget->tabs->showPage(instrument);
+
+  return instrument;
 }
 
 
@@ -400,13 +427,13 @@ QWidget *createInstrumentsWidget(void){
   instruments_widget = new Instruments_widget();
 
   {
-    const char *name = "<No Instrument>";
+    //const char *name = "<No Instrument>";
 
-    no_instrument_widget = new No_instrument_widget();
+    //no_instrument_widget = new No_instrument_widget();
 
-    delete instruments_widget->tabs->page(0);
-    instruments_widget->tabs->insertTab(no_instrument_widget, QString::fromLatin1(name), 0);
-    instruments_widget->tabs->showPage(no_instrument_widget);
+    delete instruments_widget->tabs->widget(0); // Delete default tab
+    //instruments_widget->tabs->insertTab(no_instrument_widget, QString::fromLatin1(name), 0);
+    //instruments_widget->tabs->showPage(no_instrument_widget);
   }
 
   setWidgetColors(instruments_widget);
@@ -460,19 +487,80 @@ void MIDIGFX_SetChannel(int ch){}
 void MIDIGFX_SetCCSlider(int slidernum,bool on,int value){}
 
 
-static Instrument_widget *get_instrument_widget(struct Patch *patch){
-  QTabWidget* tabs = instruments_widget->tabs;
+// Warning, tabs are not updated immediately after they are created.
+static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch){
+  QStackedWidget* tabs = instruments_widget->tabs;
 
-  for(int i=0;i<tabs->count()-1;i++){
-    Instrument_widget *instrument = static_cast<Instrument_widget*>(tabs->page(i));
-    if(instrument->patch==patch)
+  for(int i=0;i<tabs->count();i++){
+    MIDI_instrument_widget *instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->widget(i));
+    if(instrument!=NULL && instrument->patch==patch)
       return instrument;
   }
 
   return NULL;
 }
 
-static void update_instrument_widget(Instrument_widget *instrument, struct Patch *patch){
+// Warning, tabs is not updated immediately after a tab has been inserted into it. (or deleted from it)
+static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch){
+  QStackedWidget* tabs = instruments_widget->tabs;
+
+  for(int i=0;i<tabs->count();i++){
+    Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
+    if(instrument!=NULL && instrument->_patch==patch)
+      return instrument;
+  }
+
+  return NULL;
+}
+
+// * This is the entry point for creating audio instruments.
+// * The entry point for delete any instrument is common/patch.c/PATCH_delete
+//
+SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x, int y, bool autoconnect, const char *name){
+    if(plugin_type==NULL){
+      plugin_type = MW_popup_plugin_selector();
+    }
+    if(plugin_type==NULL)
+      return NULL;
+
+    SoundPlugin *plugin;
+
+    {
+
+      struct Tracker_Windows *window = root->song->tracker_windows;
+      struct WBlocks *wblock = window->wblock;
+      struct WTracks *wtrack = wblock->wtrack;
+
+      Undo_Track(window,wblock,wtrack,wblock->curr_realline);      
+      Undo_Patch_CurrPos();
+      Undo_InstrumentsWidget_CurrPos();
+      Undo_MixerConnections_CurrPos();
+
+      plugin = MW_add_plugin(plugin_type, x, y);
+      
+      char patchname[200];
+      if(name!=NULL)
+        snprintf(patchname,198,"%s",name);
+      else
+        snprintf(patchname,198,"%s %d",plugin_type->name,++plugin_type->instance_num);
+      struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, patchname);
+
+      Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created.
+
+      //wtrack->track->patch = patch; // Bang!
+      plugin->patch = patch;
+
+      create_audio_instrument_widget(patch);
+
+      if(autoconnect==true)
+        MW_autoconnect_plugin(plugin);
+
+    }
+
+    return plugin;
+}
+
+static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, struct Patch *patch){
   struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
 
   instrument->volume_spin->setValue(patchdata->volume);
@@ -481,67 +569,214 @@ static void update_instrument_widget(Instrument_widget *instrument, struct Patch
   instrument->msb->setValue(patchdata->MSB);
   instrument->lsb->setValue(patchdata->LSB);
 
-  // fix
-  //instrument->volume_onoff->setChecked(patchdata->volumeonoff);
-  //instrument->panning_onoff->setChecked(patchdata->panonoff);
+  instrument->volumeBox->setChecked(patchdata->volumeonoff);
+  instrument->panningBox->setChecked(patchdata->panonoff);
 
   instrument->preset->setCurrentItem(patchdata->preset+1);
 
-  updatePortsWidget(instrument);
+  updateMidiPortsWidget(instrument);
 
   for(int ccnum=0;ccnum<8;ccnum++){
     Control_change_widget *cc = instrument->cc_widgets[ccnum];
     cc->value_spin->setValue(patchdata->ccvalues[ccnum]);
-    //cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
+    cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
     cc->cctype->setCurrentItem(patchdata->cc[ccnum]);
+
+    cc->value_slider->_patch = patch;
+    cc->value_slider->_effect_num = patchdata->cc[ccnum];
+    printf("Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
+  }
+}
+
+void update_audio_instrument_widget(Audio_instrument_widget *instrument, struct Patch *patch){
+  instrument->updateWidgets();
+
+  for(unsigned int i=0;i<instrument->_plugin_widget->_plugin_widget->_param_widgets.size();i++){
+    ParamWidget *param_widget = instrument->_plugin_widget->_plugin_widget->_param_widgets.at(i);
+    param_widget->update_gui_element();
+  }
+}
+
+void GFX_update_instrument_widget(struct Patch *patch){
+  if(patch->instrument==get_MIDI_instrument()){
+    printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
+
+    MIDI_instrument_widget *instrument = get_midi_instrument_widget(patch);
+    if(instrument==NULL){
+      return;
+    }
+    
+    update_midi_instrument_widget(instrument,patch);
+
+  }else if(patch->instrument==get_audio_instrument()){
+    printf("GFX_update_instrument_widget 1\n");
+    Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
+    if(instrument==NULL){
+      printf("GFX_update_instrument_widget 2\n");
+      return;
+    }
+      
+    printf("GFX_update_instrument_widget 3\n");
+    update_audio_instrument_widget(instrument,patch);
+    printf("GFX_update_instrument_widget 4\n");
+  }
+}
+
+void GFX_update_all_instrument_widgets(void){
+  QStackedWidget* tabs = instruments_widget->tabs;
+
+  printf("*(((((((((( Calling. Update all %d:\n",tabs->count());
+  for(int i=0;i<tabs->count();i++){
+    MIDI_instrument_widget *midi_instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->widget(i));
+    Audio_instrument_widget *audio_instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
+    printf("Update all %d: %p/%p\n",i,midi_instrument,audio_instrument);
+
+    if(midi_instrument!=NULL){
+
+      if(midi_instrument->patch->patchdata!=NULL)
+        update_midi_instrument_widget(midi_instrument,midi_instrument->patch);
+
+    }else if(audio_instrument!=NULL){
+
+      if(audio_instrument->_patch->patchdata!=NULL)
+        update_audio_instrument_widget(audio_instrument,audio_instrument->_patch);
+
+    }
   }
 }
 
 static bool called_from_pp_update = false;
 
-void MIDIGFX_PP_Update(struct Instruments *instrument_not_used,struct Patch *patch){
+void GFX_PP_Update(struct Patch *patch){
   called_from_pp_update = true;{
-
-    printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
     if(g_currpatch==patch)
       goto exit;
-
     if(patch==NULL){
 
-      instruments_widget->tabs->showPage(no_instrument_widget);
+      //instruments_widget->tabs->showPage(no_instrument_widget);
 
-    }else{
+    }else if(patch->instrument==get_MIDI_instrument()){
+      printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
 
-      Instrument_widget *instrument = get_instrument_widget(patch);
+      MIDI_instrument_widget *instrument = get_midi_instrument_widget(patch);
       if(instrument==NULL){
-        addInstrument(patch);
-        instrument = get_instrument_widget(patch);
+        instrument = create_midi_instrument(patch);
+        //instrument = get_midi_instrument_widget(patch);
       }
 
-      update_instrument_widget(instrument,patch);
+      update_midi_instrument_widget(instrument,patch);
+      
+      instruments_widget->tabs->setCurrentWidget(instrument);
 
-      instruments_widget->tabs->showPage(instrument);
+      MIDI_SetThroughPatch(patch);
+
+    }else if(patch->instrument==get_audio_instrument()){
+      Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
+      if(instrument==NULL){
+        instrument = create_audio_instrument_widget(patch);
+        //instrument = get_audio_instrument_widget(patch);
+      }
+      
+      update_audio_instrument_widget(instrument,patch);
+      instruments_widget->tabs->setCurrentWidget(instrument);
+      MIDI_SetThroughPatch(patch);
+    }else if(patch->instrument!=NULL){
+      RError("PP_Update: Don't know how to handle instrument %p",patch->instrument);
     }
 
     g_currpatch = patch;
-    MIDI_SetThroughPatch(patch);
+
 
   }exit: called_from_pp_update = false;
 }
 
+void GFX_remove_patch_gui(struct Patch *patch){
+  QStackedWidget* tabs = instruments_widget->tabs;
+
+  Undo_InstrumentsWidget_CurrPos();
+
+  {
+    MIDI_instrument_widget *w = get_midi_instrument_widget(patch);
+    if(w!=NULL){
+      tabs->removeWidget(w); // Undo is storing the tab widget, so we can't delete it.
+      return;
+    }
+  }
+
+  {
+    Audio_instrument_widget *w = get_audio_instrument_widget(patch);
+    if(w==NULL){
+      RError("No such patch widget: %p\n",patch);
+      return;
+    }
+
+    tabs->removeWidget(w);  // Undo is storing the tab widget, so we can't delete it.
+
+    SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+    MW_delete_plugin(plugin);
+  }
+}
+
+void GFX_update_instrument_patch_gui(struct Patch *patch){
+  printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
+  if(patch!=NULL && patch->instrument->PP_Update!=NULL)
+    patch->instrument->PP_Update(patch->instrument,
+                                 patch);
+#if 0
+  if(wblock->wtrack->track->patch!=NULL && wblock->wtrack->track->patch->instrument->PP_Update!=NULL)
+    wblock->wtrack->track->patch->instrument->PP_Update(wblock->wtrack->track->patch->instrument,
+                                                        wblock->wtrack->track->patch);
+#endif
+}
+
+static void tab_name_has_changed(QWidget *tab, QString new_name) {
+
+  if(new_name==""){
+    //name_widget->setText("pip");
+    new_name = "pip";
+  }
+
+  //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
+  //tab_bar->tab(tab_bar->currentTab())->setText(name_widget->text());
+  //instruments_widget->tabs->setTabLabel(tab, new_name);
+  
+  {
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    struct WTracks *wtrack = wblock->wtrack;
+    DO_GFX(
+           g_currpatch->name = talloc_strdup((char*)new_name.ascii());
+           DrawWTrackHeader(window,wblock,wtrack);
+           );
+    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+    editor->updateEditor();
+  }
+}
+
+#if 0
 static void tab_selected(){
   //printf("tab selected -%s-\n",tabname.ascii());
 
   if(called_from_pp_update==true)
     return;
 
-  if(instruments_widget->tabs->currentPage()==no_instrument_widget)
+  MIDI_instrument_widget *midi_instrument = dynamic_cast<MIDI_instrument_widget*>(instruments_widget->tabs->currentWidget());
+
+  // We don't want to current track patch when selecting a different widget instrument.
+  Audio_instrument_widget *audio_instrument = dynamic_cast<Audio_instrument_widget*>(instruments_widget->tabs->currentWidget());
+
+  if(midi_instrument==NULL && audio_instrument==NULL)
     return;
 
-  Instrument_widget *instrument = static_cast<Instrument_widget*>(instruments_widget->tabs->currentPage());
-  g_currpatch = instrument->patch;
-  MIDI_SetThroughPatch(g_currpatch);
+  if(midi_instrument!=NULL){
+    g_currpatch = midi_instrument->patch;
+  }else
+    g_currpatch = audio_instrument->_patch;
 
+#if 0
+
+  if(midi_instrument!=NULL)
+    MIDI_SetThroughPatch(g_currpatch);
 
   {
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -549,22 +784,109 @@ static void tab_selected(){
     struct WTracks *wtrack = wblock->wtrack;
 
     DO_GFX(
-           wtrack->track->patch = instrument->patch;
+           wtrack->track->patch = g_currpatch;
            DrawWTrackHeader(window,wblock,wtrack);
            );
 
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
     editor->updateEditor();
   }
+#endif
 
-  updatePortsWidget(instrument);
-}
-
-void close_all_instrument_widgets(void){
-  QTabWidget* tabs = instruments_widget->tabs;
-
-  while(tabs->count()>1){
-    Instrument_widget *instrument = static_cast<Instrument_widget*>(tabs->page(0));
-    delete instrument;
+  if(midi_instrument!=NULL){
+    updateMidiPortsWidget(midi_instrument);
+    //update_midi_instrument_widget(midi_instrument,midi_instrument->patch);
+  }else if(audio_instrument!=NULL){
+    //update_audio_instrument_widget(audio_instrument,audio_instrument->_patch);
   }
 }
+#endif
+
+void close_all_instrument_widgets(void){
+  QStackedWidget* tabs = instruments_widget->tabs;
+
+  while(tabs->count()>0){
+    //if(dynamic_cast<No_instrument_widget*>(tabs->page(0)))
+    //  tabs->removeTab(1);
+    //else
+    tabs->removeWidget(tabs->widget(0));
+  }
+}
+
+struct Patch *get_current_instruments_gui_patch(void){
+  QStackedWidget* tabs = instruments_widget->tabs;
+
+  {
+    MIDI_instrument_widget *instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->currentWidget());
+    if(instrument!=NULL)
+      return instrument->patch;
+  }
+
+  {
+    Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->currentWidget());
+    if(instrument!=NULL)
+      return instrument->_patch;
+  }
+
+  RError("Current widget is not a known instrument");
+  return NULL;
+}
+
+#if 0
+hash_t *create_instrument_widget_order_state(void){
+  QTabWidget* tabs = instruments_widget->tabs;
+
+  hash_t *state = HASH_create(tabs->count());
+
+  for(int i=0;i<tabs->count();i++)
+    HASH_put_string_at(state, i, tabs->tabText(i).ascii());
+
+  printf("___________Saving state: =-----\n");
+  HASH_save(state,stdout);
+  printf("____________State saved: =-----\n");
+  return state;
+}
+
+void recreate_instrument_widget_order_from_state(hash_t *state){
+  QTabWidget* tabs = instruments_widget->tabs;
+
+  int num_tabs = tabs->count();
+
+  QWidget *tab_widgets[num_tabs];
+  QString tab_names[num_tabs];
+
+  int i=0;
+  while(tabs->count()>0){
+    tab_widgets[i]=tabs->widget(0);
+    tab_names[i]=tabs->tabText(0);
+    i++;
+    tabs->removeTab(0);
+  }
+
+  for(int i=HASH_get_num_elements(state)-1 ; i>=0 ; i--){
+
+    QString tab_name = HASH_get_string_at(state,i);
+    for(int pos=0;pos<num_tabs;pos++){
+      if(tab_name==tab_names[pos]){
+        tabs->insertTab(0,tab_widgets[pos],tab_name);
+        tab_names[pos]="<<<NOT THIS ONE 666 _!#@$!%__ John Wane was a nazi."; // several tabs may have the same name, but hopefully not this one.
+        break;
+      }
+    }
+  } 
+
+  //update_all_instrument_widgets();
+}
+#endif
+
+#include "undo_instruments_widget.cpp"
+
+
+void OS_VST_config(struct Tracker_Windows *window){
+  //EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+  Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(NULL); // I'm not quite sure i it's safe to make this one static. It seems to work, but shouldn't the dialog be deleted when destroying the window? Not having it static is at least safe, although it might leak some memory.
+  vst_paths_widget->show();
+  
+  printf("Ohjea\n");
+}
+

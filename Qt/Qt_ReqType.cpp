@@ -96,7 +96,6 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
   delete reqtype->frame;
-  delete reqtype;
 
   num_users_of_keyboard--;
 
@@ -112,6 +111,8 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
 #if USE_GTK_VISUAL
   GTK_SetFocus();
 #endif
+
+  delete reqtype;
 }
 
 void GFX_WriteString(ReqType das_reqtype,const char *text){

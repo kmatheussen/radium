@@ -8,9 +8,11 @@ public:
     : QWidget(parent)
   {
     setupUi(this);
+    //tabs->tabBar()->hide();
   }
 
 public slots:
+#if 0
   void on_tabs_selected( const QString &tabname)
   {
     printf("on tabs selected \"%s\"\n",tabname.ascii());
@@ -19,6 +21,8 @@ public slots:
       return;
     
     tab_selected();
+
   }
-  
+#endif
+
 };

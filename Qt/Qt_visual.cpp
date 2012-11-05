@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qmainwindow.h>
 
 #include "Qt_instruments_proc.h"
+#include "Qt_colors_proc.h"
 
 #if USE_QT_VISUAL
 #  include "Qt_Fonts_proc.h" // For setFontValues, etc.
@@ -146,6 +147,8 @@ void OS_GFX_C2V_bitBlt(
 #endif
 }
 
+#include "../common/playerclass.h"
+extern PlayerClass *pc;
 
 /* window,x1,x2,x3,x4,height, y pixmap */
 void OS_GFX_C_DrawCursor(
@@ -178,7 +181,10 @@ void OS_GFX_C_DrawCursor(
 #endif
 
 #if USE_QIMAGE_BUFFER
-  editor->cursorbuffer_painter->setOpacity(0.75);
+  if(pc->isplaying)
+    editor->cursorbuffer_painter->setOpacity(0.55);
+  else
+    editor->cursorbuffer_painter->setOpacity(1.0);
 
   editor->cursorbuffer_painter->drawImage(x1+1,1,
                                           *editor->paintbuffer,
@@ -364,7 +370,8 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  painter->setPen(editor->colors[color]);
+  QColor qcolor = get_qcolor(tvisual,color);
+  painter->setPen(qcolor);
 
 #if 0
   painter->setRenderHints(QPainter::Antialiasing,true);
@@ -490,7 +497,8 @@ void OS_GFX_Text(
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  painter->setPen(editor->colors[color]);
+  QColor qcolor = get_qcolor(tvisual,color);
+  painter->setPen(qcolor);
 
 #if 0    
   if(flags & TEXT_BOLD){
@@ -500,11 +508,39 @@ void OS_GFX_Text(
 #endif
 
   {  
-    if(flags & TEXT_CENTER){
+    if(flags & TEXT_SCALE){
+
+      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+
+      const QFontMetrics fn = QFontMetrics(painter->font());
+      float text_width = fn.width(text);
+
+      //printf("Got TEXT_SCALE. Text: \"%s\". text_width: %f. box_width: %f\n",text, text_width, (float)width);
+
+      if(text_width>=width){
+        float s = width/text_width;
+        //float new_fontheight = tvisual->org_fontheight*s;
+
+        //scale(y+tvisual->org_fontheight-1, y, y+tvisual->org_fontheight-1, y, y+new_fontheight);
+
+        painter->save();
+        painter->scale(s,1.0);
+        painter->drawText(x/s, (y+tvisual->org_fontheight-1), text);
+        painter->restore();
+      }else{
+        painter->drawText(x,y+tvisual->org_fontheight-1,text);
+        //painter->drawText(rect, Qt::AlignVCenter, text);
+      }
+
+    }else if(flags & TEXT_CENTER){
+
       QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
       painter->drawText(rect, Qt::AlignVCenter, text);
+
     }else{
+
       painter->drawText(x,y+tvisual->org_fontheight-1,text);
+
     }
   }
 

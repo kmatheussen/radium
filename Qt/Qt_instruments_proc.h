@@ -17,8 +17,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_INSTRUMENTS_PROC_H
 #define QT_INSTRUMENTS_PROC_H
 
+extern LANGSPEC hash_t *create_instrument_widget_order_state(void);
+extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
+
+extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
+
+struct SoundPlugin;
+struct SoundPluginType;
+extern LANGSPEC SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x, int y, bool autoconnect, const char *name);
+extern LANGSPEC void close_all_instrument_widgets(void);
+
+#ifdef __cplusplus
 QWidget *createInstrumentsWidget(void);
-void addInstrument(struct Patch *patch);
-void close_all_instrument_widgets(void);
+#endif // __cplusplus
 
 #endif

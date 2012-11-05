@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define QT_COLORS_PROC_H
 
 class EditorWidget;
+
+extern QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum);
 extern void setWidgetColors(QWidget *widget);
 extern void setApplicationColors(QApplication *app);
 extern void setEditorColors(EditorWidget *editor);

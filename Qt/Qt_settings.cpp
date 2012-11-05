@@ -1,4 +1,3 @@
-
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -15,30 +14,51 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include <qsettings.h>
+
+#include <QDesktopServices>
+#include <QDir>
+#include <QString>
+#include <QFileInfo>
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 
-Arrgh. This doesnt work, no matter what I do. Illegal key all the time. Stupid Qt.
-How hard can it be to load and save string?
-
-
-static void set_path(QSettings &settings){
-  char temp[500];
-  sprintf(temp,"%s./radium/",getenv("HOME"));
-  settings.insertSearchPath(QSettings::Unix, temp);
-  settings.setPath("Radium","Radium");
+const char *OS_get_directory_separator(void){
+  static char ret[2] = {0};
+  ret[0] = QDir::separator().toAscii();
+  return ret;
 }
 
-char *SETTINGS_get(char *key){
-  QSettings settings;
-  set_path(settings);
-  return talloc_strdup((char*)settings.readEntry(key,NULL).ascii());
+bool OS_config_key_is_color(const char *key){
+  return QString(key).contains("color", Qt::CaseInsensitive);
 }
 
-void SETTINGS_put(char *key, char *val){
-  QSettings settings;
-  set_path(settings);
-  settings.writeEntry(key,val);  
+char *OS_get_config_filename(const char *key){
+  bool is_color_config = OS_config_key_is_color(key);
+
+  QString home_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
+
+  QFileInfo info(home_path);
+
+  if(info.exists()==false)
+    home_path = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+
+  QDir dir(home_path);
+
+  if(dir.mkpath(".radium")==false){
+    RError("Unable to create config directory");
+    return NULL;
+  }
+
+  if(dir.cd(".radium")==false){
+    RError("Unable to read config directory\n");
+    return NULL;
+  }
+
+
+  QFileInfo config_info(dir, is_color_config ? "colors" : "config");
+
+  printf("dir: \"%s\"\n",config_info.absoluteFilePath().ascii());
+
+  return talloc_strdup(config_info.absoluteFilePath().ascii());
 }

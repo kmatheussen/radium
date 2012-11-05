@@ -243,6 +243,8 @@ public:
     connect(&remove_button, SIGNAL(pressed()), this, SLOT(remove_from_playlist()));
 
     setWidgetColors(this);
+
+    setFixedWidth(100);
   }
 
   void resizeEvent(QResizeEvent *qresizeevent){
@@ -419,6 +421,7 @@ void BS_SelectPlaylistPos(int pos){
   bs->playlist.setSelected(pos, true);
 }
 
+#if 0
 static void set_widget_width(int width){
   QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
@@ -430,11 +433,23 @@ static void set_widget_width(int width){
   currentSizes[1] = width;
   splitter->setSizes(currentSizes);
 }
+#endif
+
+static bool is_hidden = false;
 
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
-  set_widget_width(bs->last_shown_width > 30 ? bs->last_shown_width : 200);
+  //set_widget_width(bs->last_shown_width > 30 ? bs->last_shown_width : 200);
+  bs->show();
+
+#if 0
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  QSplitter *splitter = editor->xsplitter;
+  splitter->addWidget(bs);
+#endif
+
+  is_hidden = false;
 }
 
 void GFX_PlayListWindowToBack(void){
@@ -446,11 +461,19 @@ void GFX_PlayListWindowToBack(void){
     SETTINGS_write_int((char*)"blocklist_width",bs->width());
 #endif
 
-  set_widget_width(0);
+  //set_widget_width(0);
+  bs->hide();
+  is_hidden = true;
 }
 
 void GFX_showHidePlaylist(struct Tracker_Windows *window){
+#if 0
   if(bs->width() < 10)
+    GFX_PlayListWindowToFront();
+  else
+    GFX_PlayListWindowToBack();
+#endif
+  if(is_hidden)
     GFX_PlayListWindowToFront();
   else
     GFX_PlayListWindowToBack();

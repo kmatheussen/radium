@@ -1,3 +1,20 @@
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 #if USE_QT4
 //#include <QCleanlooksStyle>
 //#include <QOxygenStyle>
@@ -5,6 +22,7 @@
 #endif
 
 #include "../common/patch_proc.h"
+#include "../common/instruments_proc.h"
 
 #include "Qt_no_instrument_widget.h"
 
@@ -28,16 +46,51 @@ class No_instrument_widget : public QWidget, public Ui::No_instrument_widget{
   }
 
 public slots:
-  void on_create_instrument_clicked()
+  void on_create_midi_instrument_clicked()
   {
-    printf("Got it\n");
+    printf("Got it midi\n");
     if(initing==true)
       return;
 
-    struct Patch *patch = NewPatchCurrPos();
-    addInstrument(patch);
-    Instrument_widget *instrument = get_instrument_widget(patch);
+    static int midipatchnum=0;
+    char patchname[200];
+    sprintf(patchname,"MIDI %d",++midipatchnum);
+
+    struct Patch *patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, patchname);
+    GFX_PP_Update(patch);
+
+#if 0
+    add_midi_instrument(patch);
+    MIDI_instrument_widget *instrument = get_midi_instrument_widget(patch);
     instruments_widget->tabs->showPage(instrument);
+#endif
+  }
+
+  void on_create_audio_instrument_clicked()
+  {
+    printf("Got it audio\n");
+    if(initing==true)
+      return;
+
+    add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
+  }
+
+  void on_create_sample_instrument_clicked()
+  {
+    printf("Got it sample\n");
+    if(initing==true)
+      return;
+
+    add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
+  }
+
+  void on_create_fluidsynth_clicked()
+  {
+    printf("Got it fluidsynth\n");
+    if(initing==true)
+      return;
+
+    add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
   }
 
   void on_use_system_colors_stateChanged(int state){
@@ -75,9 +128,11 @@ public slots:
 
     printf("default: %s\n",default_style_name.ascii());
 
-    if(override==true)
+    if(override==true){
       QApplication::setStyle("plastique");
-    else
+      QApplication::setEffectEnabled(Qt::UI_AnimateMenu,true);
+      QApplication::setEffectEnabled(Qt::UI_AnimateCombo,true);
+    }else
       QApplication::setStyle(default_style_name);
   }
 

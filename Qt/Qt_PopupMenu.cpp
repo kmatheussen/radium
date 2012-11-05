@@ -27,24 +27,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 int GFX_Menu(
              struct Tracker_Windows *tvisual,
              ReqType reqtype,
-             char *seltext,
-             int num_sel,
-             char **menutext
+             const char *seltext,
+             vector_t *v
              )
 {
-  if(reqtype==NULL || num_sel>20){
+  if(reqtype==NULL || v->num_elements>20){
    
     QMenu menu(0);
 
-    for(int i=0;i<num_sel;i++)
-      menu.addAction(new QAction(menutext[i],&menu));
+    for(int i=0;i<v->num_elements;i++)
+      menu.addAction(new QAction((const char*)v->elements[i],&menu));
 
     QAction *action = menu.exec(QCursor::pos());
     if(action==NULL)
       return -1;
 
-    for(int i=0;i<num_sel;i++)
-      if(action->text() == menutext[i])
+    for(int i=0;i<v->num_elements;i++)
+      if(action->text() == (const char*)v->elements[i])
         return i;
 
     RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
@@ -53,7 +52,7 @@ int GFX_Menu(
 
   }else{
 
-    return GFX_ReqTypeMenu(tvisual,reqtype,seltext,num_sel,menutext);
+    return GFX_ReqTypeMenu(tvisual,reqtype,seltext,v);
 
   }
 }
