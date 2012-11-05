@@ -18,8 +18,11 @@ import sys
 
 import string,sys,os,cPickle
 
-import radium
-
+if __name__!="__main__":
+  import radium
+else:
+  sys.g_program_path = ""
+  
 commands = {}
 def get_command(menutext):
   if menutext in commands:
@@ -29,9 +32,11 @@ def get_command(menutext):
   
 code2read={"CTRL_L":"Left Ctrl",
            "CTRL_R":"Right Ctrl",
+           "CTRL":"Ctrl",
            "CAPS":"Caps Lock",
            "SHIFT_L":"Left Shift",
            "SHIFT_R":"Right Shift",
+           "SHIFT":"Shift",
            "ALT_L":"Left Alt",
            "ALT_R":"Alt Gr",
            "EXTRA_L":"Left Meta",
@@ -74,8 +79,8 @@ class LineParser:
   def constructmenuitemstring(self,items,keybindingsdict):
     def emptystring(num):
       if num<=0:
-        return " "
-      return "  "+emptystring(num-2)
+        return ""
+      return " "+emptystring(num-1)
     
     if len(items)==1:
       return items[0]
@@ -91,7 +96,10 @@ class LineParser:
     
     for item in key[1]:
       qualifier+=get_key_name(item)+" + "
-    ret = string.rstrip(items[0])+emptystring(40-((len(items[0]))*3/2)) + qualifier + get_key_name(key[0][0])
+
+      #print "items[0]",items[0],len(items[0]),qualifier
+    stripped0 = string.rstrip(items[0])
+    ret = stripped0 + emptystring(41-len(stripped0)) + qualifier + get_key_name(key[0][0])
     commands[string.lstrip(ret)] = string.lstrip(items[1])
     return ret
   

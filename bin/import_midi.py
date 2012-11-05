@@ -432,7 +432,7 @@ def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
         startplace = tick_to_place(note.start_tick, resolution, lpb)
         endplace   = tick_to_place(note.end_tick, resolution, lpb)
 
-        radium.addNote(note.notenum, note.velocity,
+        radium.addNote(note.notenum, note.velocity*radium.getMaxVolume() / 128,
                        startplace[0], startplace[1], startplace[2],
                        endplace[0], endplace[1], endplace[2],
                        -1, -1, tracknum)

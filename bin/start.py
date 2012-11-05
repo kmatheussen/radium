@@ -118,8 +118,8 @@ pid = os.getpid()
 if hasattr(os,'fork') and os.fork()==0:
     import signal,time
     def signal_handler(signalnum, frame):
-        print "You pressed Ctrl+C. As a work-around, I'm going to kill radium with signal.SIGABRT."
-        os.kill(pid,signal.SIGABRT)
+        print "You pressed Ctrl+C. Sending SIGINT signal to radium."
+        os.kill(pid,signal.SIGINT)
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
     while True:

@@ -1,34 +1,12 @@
-settings_version = 0.690000 # dont change this one
+settings_version = 0.720000 # dont change this one
 
-font = Liberation Mono,12,-1,5,75,0,0,0,0,0
 system_font_size = 8
 
 show_text_border = true
 bottom_slider_height = 14
 left_slider_width = 14
-minimum_node_size = 20
+minimum_node_size = 25
 
-color0 = #a4a38a
-color1 = #000000
-color2 = #f1ece6
-color3 = #98006d
-color4 = #6437a7
-color5 = #002491
-color6 = #ffe100
-color7 = #73835a
-color8 = #470086
-color9 = #bcbca7
-color10 = #7a7a7a
-color11 = #999d87
-color12 = #2411ff
-color13 = #13511f
-color14 = #d18409
-color15 = #9d9a80
-
-system_color = #bcbca7
-button_color = #999d87
-
-override_default_qt_colors = true
 override_default_qt_style = true
 
 blocklist_width = 818
