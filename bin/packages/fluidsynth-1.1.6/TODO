@@ -1,0 +1,106 @@
+New features
+------------
+- 24 bit sample support
+- Non-realtime MIDI file rendering
+- Sample streaming, load/unload sample on demand
+- Synth sample rate change after initial creation
+- handle tuning sysex messages
+- Audio level metering
+- Active voice count monitoring
+
+Synthesis
+---------
+- Improve voice stealing algorithm
+- Dynamic voice killing (based on CPU usage)
+- Batch voice activation (stereo synch. as per SoundFont spec)
+- Pitch control on stereo samples not managed as should
+- soft clipping, compressor, limitor, or automatic gain control
+
+Drivers
+-------
+- libao audio output driver
+- MacOS X MidiCore component
+- Windows DirectMusic component
+- ASIO driver
+- DirectSound 3D and EAX
+
+Bugs to mash
+------------
+- Fix warnings on 64 bit platforms and type-puned pointer warning
+- Add byte swapping support (on synthesis or sample load?)
+- Investigate why MIDI rendering causes burst of notes at start
+
+Validation
+----------
+- Validation tests: create soundfont with basic wave forms [sine,
+  square, triangle]; make test midi file; compare with SBLive output;
+  "regression" test
+- Validate chorus (often sounds rather crappy)
+- Analyse performance
+
+Documentation
+-------------
+- Write documention on tuning
+- fluid_synth_program_select2() with name of soundfont instead of font_id
+- fluid_synth_set_gen2()
+- Add usage scenarios in the documentation
+- User and system configuration file
+
+Binaries
+--------
+- FluidSynth 
+  * Linux 
+  * Win
+  * MacOS X
+- fluid~  (Pd/Linux, MaxMSP/MacOSX, MaxMSP/Windows)
+- fluidsynth~ (MaxMSP/MacOSX, MaxMSP/Windows)
+- FluidXtra
+
+Misc
+----
+- Remove dependency of settings on audio driver and other (see
+  fluid_settings_init())
+- Add "unselect" command to shell to set a MIDI channel to not sound.
+- When specifying -i -s (no console and TCP server) log to TCP clients
+  with easier parsable messages ("warning:", "error:", etc)
+- add function to get initial soundfont generator value
+- Pause and resume the synthesizer/audio thread (run synthesizer as a daemon)
+- set loop on/off on a sample (set_gen GEN_SAMPLEMODE?)
+
+
+FluidSynth Next Generation
+--------------------------------------------
+
+Top of the list
+- Use FIFOs to send events to the audio thread
+- Redo sfloader api using "interface" api
+- 3D audio output
+
+Design
+- turn ladspa fx unit and router in indepedent 
+  objects, remove their dependencies from the synth object
+
+MIDI player
+- Add API to manipulate and query MIDI file list
+- generalize use of fluid_event_t, remove fluid_midi_event_t
+
+Shell & command handler
+- Add "note" command that plays a note with a duration (sequencer)
+- MIDI file player commands (load/play/stop)
+- Relax dependency of the command handler on the synthesizer
+- Allow settings to be loaded before the synthesizer is created
+
+SoundFont Specs:
+
+MIDI Specs
+- Omni and poly modes
+- sample dump
+- MIDI thru
+- Scalable Polyphony MIDI (SP-MIDI)
+
+
+Unsorted
+- include readline in project
+- additional aux buses
+- rewrite midi file using new sequencer
+- direct access to audio buffer
