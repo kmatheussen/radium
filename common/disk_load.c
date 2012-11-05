@@ -63,15 +63,15 @@ static bool Load(const char *filename){
 
 	dc.file=fopen(filename,"r");
 	if(dc.file==NULL){
-		RError("Could not open \"%s\" for loading\n",filename);
-		return false;
+          GFX_Message("Could not open \"%s\" for loading\n",filename);
+          return false;
 	}
 
 	dc.ls=talloc(BUFFERLENGTH+1);
 	DC_fgets();
 
 	if(strcmp("RADIUM SONG",dc.ls)){
-		RError("First line in song was not 'RADIUM SONG', but '%s'\n",dc.ls);
+		GFX_Message("First line in song was not 'RADIUM SONG', but '%s'\n",dc.ls);
 		fclose(dc.file);
 		return false;
 	}
@@ -87,13 +87,13 @@ static bool Load(const char *filename){
 	}
 
         if(disk_load_version>DISKVERSION+0.0001){
-          RError("You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
+          GFX_Message("You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
           return false;
         }else{
           printf("Song diskVersion: %f\n",disk_load_version);
         }
 
-	dc.filename=filename;
+	dc.filename=talloc_strdup(filename);
 
 	dc.playlist=NULL;
 	dc.success=true;

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/gfx_wtracks_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/OS_settings_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -253,6 +254,12 @@ void loadSong(char *filename){
   if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
     isloaded=true;
   }
+}
+
+void loadDemoSong(void){
+  char fullpath[1024];
+  sprintf(fullpath,"%s/sounds/song1.rad",OS_get_program_path());
+  loadSong(fullpath);
 }
 
 void newSong(void){

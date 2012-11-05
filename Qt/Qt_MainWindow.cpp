@@ -516,7 +516,7 @@ const char *GFX_GetSaveFileName(
     : ret;
 }
 
-void GFX_Message(const char *message){
+static void show_message(const char *message){
   QMessageBox msgBox;
         
   num_users_of_keyboard++;
@@ -526,6 +526,18 @@ void GFX_Message(const char *message){
   num_users_of_keyboard--;
 
   msgBox.exec();
+}
+
+void GFX_Message(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  show_message(message);
 }
 
 //#include "mgakk.cpp"

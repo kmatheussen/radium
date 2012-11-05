@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TEXT_BOLD 32
 #define TEXT_SCALE 64 // Scales the text into the box.
 
-extern LANGSPEC void GFX_Message(const char *message);
+extern LANGSPEC void GFX_Message(const char *fmt,...);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
 extern LANGSPEC void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval);
