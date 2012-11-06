@@ -1,3 +1,20 @@
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 
 // Huge amount of ladspa plugins for windows:
 // http://opensourcepack.blogspot.se/2012/03/ported-ladspa-plugins-collection.html
@@ -234,15 +251,66 @@ static void buffer_size_is_changed(SoundPlugin *plugin, int new_buffer_size){
   }
 }
 
+static const LADSPA_PortRangeHintDescriptor get_hintdescriptor(const SoundPluginType *plugin_type, int effect_num){
+  TypeData *type_data = (TypeData*)plugin_type->data;
+  const LADSPA_Descriptor *descriptor = type_data->descriptor;
+
+  int effect_num2 = 0;
+  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+      if(effect_num2==effect_num){
+        const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
+        const LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
+        return hints;
+      }else
+        effect_num2++;
+    }
+  }
+
+  RWarning("Unknown effect\n",effect_num);
+  return 0;
+}
+
+static float frequency_2_slider(float freq, const float min_freq, const float max_freq){
+  const float min_output = logf(min_freq)/logf(max_freq);
+  return scale( logf(freq)/logf(max_freq),
+                min_output, 1.0,
+                0.0, 1.0);
+}
+
+static float slider_2_frequency(float slider, const float min_freq, const float max_freq){
+  const float min_output = logf(min_freq)/logf(max_freq);
+  return powf(max_freq, scale(slider,
+                              0,1,
+                              min_output, 1));
+}
+
 static void set_effect_value(SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
   const SoundPluginType *type = plugin->type;
   TypeData *type_data = (TypeData*)type->data;
   Data *data = (Data*)plugin->data;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
-    data->control_values[effect_num] = scale(value,0.0f,1.0f,
-                                             type_data->min_values[effect_num],
-                                             type_data->max_values[effect_num]);
+
+    LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
+
+    if(LADSPA_IS_HINT_LOGARITHMIC(hints)){
+
+      data->control_values[effect_num] = slider_2_frequency(value,
+                                                            type_data->min_values[effect_num],
+                                                            type_data->max_values[effect_num]
+                                                            );
+
+
+    } else {
+
+      data->control_values[effect_num] = scale(value,0.0f,1.0f,
+                                               type_data->min_values[effect_num],
+                                               type_data->max_values[effect_num]);
+
+    }
+
   }else{
     data->control_values[effect_num] = value;
   }
@@ -267,9 +335,21 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
 #endif
 
   if(value_format==PLUGIN_FORMAT_SCALED){
-    return scale(data->control_values[effect_num],
-                 type_data->min_values[effect_num], type_data->max_values[effect_num],
-                 0.0f,1.0f);
+    const LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
+
+    if(LADSPA_IS_HINT_LOGARITHMIC(hints)){
+
+      return frequency_2_slider(data->control_values[effect_num], 
+                                type_data->min_values[effect_num],
+                                type_data->max_values[effect_num]);
+
+    } else {
+
+      return scale(data->control_values[effect_num],
+                   type_data->min_values[effect_num], type_data->max_values[effect_num],
+                   0.0f,1.0f);
+
+    }
   }else{
     return data->control_values[effect_num];
   }
@@ -293,31 +373,17 @@ static const char *get_effect_name(const SoundPluginType *plugin_type, int effec
   return NULL;
 }
 
-static int get_effect_format(const SoundPluginType *plugin_type, int effect_num){
-  TypeData *type_data = (TypeData*)plugin_type->data;
-  const LADSPA_Descriptor *descriptor = type_data->descriptor;
+static int get_effect_format(const SoundPluginType *type, int effect_num){
+  const LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
 
-  int effect_num2 = 0;
-  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      if(effect_num2==effect_num){
-          const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
-          LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
+  if(LADSPA_IS_HINT_TOGGLED(hints))
+    return EFFECT_FORMAT_BOOL;
 
-          if(LADSPA_IS_HINT_TOGGLED(hints))
-            return EFFECT_FORMAT_BOOL;
-          if(LADSPA_IS_HINT_INTEGER(hints))
-            return EFFECT_FORMAT_INT;
-          return EFFECT_FORMAT_FLOAT;
+  else if(LADSPA_IS_HINT_INTEGER(hints))
+    return EFFECT_FORMAT_INT;
 
-      }else
-        effect_num2++;
-    }
-  }
-
-  fprintf(stderr,"unknown effect\n");
-  return 0;
+  else
+    return EFFECT_FORMAT_FLOAT;
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){

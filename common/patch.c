@@ -214,6 +214,7 @@ void PATCH_delete(struct Patch *patch){
       return;
     }
 
+  // Check if this patch is used for playing notes. If not, we don't have to stop playing.
   PlayHardStop();
 
   Undo_Open();{
