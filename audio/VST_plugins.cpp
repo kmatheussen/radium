@@ -32,13 +32,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
-#if 1
-#define VST_FORCE_DEPRECATED 0
-#include "/home/kjetil/vstsdk2.4/pluginterfaces/vst2.x/aeffectx.h"
+#if defined(USE_VESTIGE)
 
-#else
+#  include "vestige/aeffectx.h"
 
-#  include "/home/kjetil/site/src/qtractor-0.5.5/src/vestige/aeffectx.h"
+typedef long int VstIntPtr;
+
 const int effIdle = 53;
 const int effKeysRequired = 57;
 const int effGetPlugCategory = 35;
@@ -51,6 +50,14 @@ const int effSetChunk = 24;
 const int effFlagsProgramChunks = 32;
 
 const int kVstMaxParamStrLen = 8;
+
+#else
+
+// If this fails, and you don't bother downloading and installing vstsdk from steinberg, set USE_VESTIGE to 1 in the Makefile!
+
+#  define VST_FORCE_DEPRECATED 0
+#  include "/home/kjetil/vstsdk2.4/pluginterfaces/vst2.x/aeffectx.h"
+
 #endif
 
 
