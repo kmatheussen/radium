@@ -17,8 +17,8 @@
 #include "/usr/share/faust/gui/UI.h"
 */
 
-#include "/home/kjetil/faudiostream/architecture/faust/audio/dsp.h"
-#include "/home/kjetil/faudiostream/architecture/faust/gui/UI.h"
+#include "faudiostream/architecture/faust/audio/dsp.h"
+#include "faudiostream/architecture/faust/gui/UI.h"
 
 struct Meta
 {
