@@ -30,16 +30,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundfileSaver_proc.h"
 
 extern struct Root *root;
+extern PlayerClass *pc;
+
 
 // Ouch. This turned out to be spaghetti. Should at least unify SoundfileSaver.c and Qt_soundfilesaver_widget_callbacks.cpp.
 
 
-static bool saving_was_successful = true;
-static SNDFILE *sndfile;
+static bool g_saving_was_successful = true;
+static SNDFILE *g_sndfile;
 static const char *g_filename = NULL;
 static float g_post_writing_left;
 
-extern PlayerClass *pc;
 
 extern void SOUNDFILESAVERGUI_stop(const char *message);
 
@@ -55,7 +56,7 @@ static volatile enum SaveState g_save_state;
 static bool stop_writing(void){
   char temp[1024];
   bool ret;
-  int close_result = sf_close(sndfile);
+  int close_result = sf_close(g_sndfile);
 
   if(close_result==0)
     ret = true;
@@ -65,7 +66,7 @@ static bool stop_writing(void){
   if(ret==false)
     sprintf(temp,"Unable to save \"%s\": \"%s\".", g_filename, sf_error_number(close_result));
 
-  else if(saving_was_successful==false)
+  else if(g_saving_was_successful==false)
     sprintf(temp,"\"%s\" was saved, but with errors.", g_filename);
 
   else
@@ -98,8 +99,8 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
 
   //printf("Writing %d frames\n",num_frames);
 
-  if(sf_writef_float(sndfile, interleaved_data, num_frames) != num_frames){
-    saving_was_successful = false;
+  if(sf_writef_float(g_sndfile, interleaved_data, num_frames) != num_frames){
+    g_saving_was_successful = false;
     ret = false;
   }
 
@@ -132,8 +133,8 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
     sf_info.format = libsndfile_format;
     
     {
-      sndfile = sf_open(filename,SFM_WRITE,&sf_info);
-      if(sndfile==NULL){
+      g_sndfile = sf_open(filename,SFM_WRITE,&sf_info);
+      if(g_sndfile==NULL){
         printf("Why: \"%s\"\n",sf_strerror(NULL));
         if(error_string!=NULL)
           *error_string = sf_strerror(NULL);
@@ -142,7 +143,7 @@ bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_
     }
   }
 
-  saving_was_successful = true;
+  g_saving_was_successful = true;
   g_filename = talloc_strdup(filename);
   g_post_writing_left = post_recording_length;
 
