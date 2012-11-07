@@ -7,7 +7,7 @@
 #include <pthread.h> // Needed to compile in mingw.
 #include <semaphore.h>
 
-#include <fluidsynth.h>
+#include "../bin/packages/fluidsynth-1.1.6/include/fluidsynth.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_Player_proc.h"
