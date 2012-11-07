@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #  include "vestige/aeffectx.h"
 
-typedef long int VstIntPtr;
+typedef intptr_t VstIntPtr;
 
 const int effIdle = 53;
 const int effKeysRequired = 57;
