@@ -196,6 +196,8 @@ static void remove_patch_from_song(struct Patch *patch){
     while(wtrack!=NULL){
       struct Tracks *track = wtrack->track;
       if(track->patch==patch){
+        PlayHardStop();
+
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
         handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
         track->patch = NULL;
@@ -214,9 +216,6 @@ void PATCH_delete(struct Patch *patch){
       return;
     }
 
-  // Check if this patch is used for playing notes. If not, we don't have to stop playing.
-  PlayHardStop();
-
   Undo_Open();{
 
     if(patch->instrument==get_audio_instrument()){
@@ -230,7 +229,10 @@ void PATCH_delete(struct Patch *patch){
     patch->instrument->remove_patch(patch);
 
     Undo_Patch_CurrPos();
-    VECTOR_remove(&patch->instrument->patches,patch);
+
+    PLAYER_lock();{ // don't think the lock is necessary.
+      VECTOR_remove(&patch->instrument->patches,patch);
+    }PLAYER_unlock();
 
   }Undo_Close();
 
