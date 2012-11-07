@@ -117,7 +117,7 @@ void PR_add_plugin_type_no_menu(SoundPluginType *type){
       "\n"
       "Note that both the original version of Zita Reverb, and the Faust version (which the Radium version is based on), "
       "have two additional equalizers plus a slider to adjust dry/wet. "
-      "These controllers have been removed since Radium provides this functionality for all plugins.\n"
+      "These controllers are not needed, and have been removed, since Radium provides this functionality for all audio instruments and audio effects.\n"
       ;
 
   if(!strcmp(type->type_name,"Faust") && !strcmp(type->name,"Multiband Compressor"))

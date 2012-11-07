@@ -819,10 +819,8 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
 
   float *tempsounds[num_outputs];
   float tempdata[num_outputs][num_frames];
-  for(int i=0;i<num_outputs;i++){
-    //memset(tempdata[i],0,sizeof(float)*num_frames);
+  for(int i=0;i<num_outputs;i++)
     tempsounds[i] = &tempdata[i][0];
-  }
 
   Voice *voice = data->voices_playing;
   //printf("Voices? %s\n",voice==NULL?"No":"Yes");
