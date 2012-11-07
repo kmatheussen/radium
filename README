@@ -23,8 +23,13 @@ BUILD DEPENDENCIES FEDORA:
         python2-devel
         alsa-lib-devel
         jack-audio-connection-kit-devel
+        libsamplerate-devel
+        liblrdf-devel
+        libsndfile-devel
+        ladspa-devel
+        glib2-devel
 
-        (tested On Fedora 11 and 17)
+        (tested on Fedora 17 64 bit)
 
 
 BUILD DEPENDENCIES UBUNTU:
@@ -34,9 +39,13 @@ BUILD DEPENDENCIES UBUNTU:
       python2-dev
       libasound2-dev
       libjack-jackd2-dev or libjack-jackd1-dev
+      libsamplerate-dev
+      liblrdf-dev
+      libsndfile-dev
+      ladspa-sdk
+      glib2-dev
 
-      (Tested on Ubuntu 12 and Mint 13)
-      (On Ubuntu 11, python2-dev is called python-dev)
+      (Tested on Ubuntu 12 32 bit)
 
 
 
@@ -53,10 +62,15 @@ TO ENABLE ALL KEYBOARD SHORTCUTS ON MAC OS X
 
       ... and make sure the button "Enable access for assistive devices" is ON.    
       This button is placed at the bottom of the Accessibility page.
-      (I Don't know where the button is placed in the "Universal Access" page)
+      (I don't know where the button is placed in the "Universal Access" page)
 
       This is necessary for Radium to be allowed to (temporarily) turn off OSX system shortcuts.
 
+
+
+
+ACKNOWLEDGMENT
+        See http://users.notam02.no/~kjetism/radium/development.php
 
 
 
