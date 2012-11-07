@@ -140,7 +140,7 @@ class ParamWidget : public QWidget{
   }
 
   void update_gui_element(){
-    printf("Update GUI called. _slider: %p. _Check_button: %p\n",_slider,_check_button);
+    //printf("Update GUI called. _slider: %p. _Check_button: %p\n",_slider,_check_button);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     float value;
@@ -152,7 +152,7 @@ class ParamWidget : public QWidget{
     if(_slider!=NULL)
       _slider->setValue(value * 10000.0f);
     else if(_check_button!=NULL){
-      printf("Setting checkbutton to %s (%f)\n",value>0.5?"ON":"OFF",value);
+      //printf("Setting checkbutton to %s (%f)\n",value>0.5?"ON":"OFF",value);
       _check_button->setChecked(value>0.5f); 
     }
   }
@@ -178,7 +178,7 @@ class ParamWidget : public QWidget{
     }
 
     void checkBoxValueToggled(bool toggle){
-      printf("got something %d\n",(int)toggle);
+      //printf("got something %d\n",(int)toggle);
 
       if(toggle==true)
         set_effect_value(1.0f);

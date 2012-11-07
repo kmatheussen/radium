@@ -2,6 +2,7 @@
 
 #include "nsmtracker.h"
 #include "undo.h"
+#include "OS_Player_proc.h"
 
 #include "undo_trackheader_proc.h"
 
@@ -33,14 +34,14 @@ void Undo_TrackHeader(
 	u_th->volumeonoff=track->volumeonoff;
 	u_th->panonoff=track->panonoff;
 
-	Undo_Add(
-                 window->l.num,
-                 block->l.num,
-                 track->l.num,
-                 realline,
-                 u_th,
-                 Undo_Do_TrackHeader
-	);
+        Undo_Add_dont_stop_playing(
+                                   window->l.num,
+                                   block->l.num,
+                                   track->l.num,
+                                   realline,
+                                   u_th,
+                                   Undo_Do_TrackHeader
+                                   );
 
 }
 
@@ -63,7 +64,9 @@ void *Undo_Do_TrackHeader(
 	wtrack->track->panonoff=u_th->panonoff;
 
 	if(wtrack->track->panonoff && wtrack->track->patch!=NULL){
-		(*wtrack->track->patch->changeTrackPan)(wtrack->track->pan,wtrack->track);
+          PLAYER_lock();
+          (*wtrack->track->patch->changeTrackPan)(wtrack->track->pan,wtrack->track);
+          PLAYER_unlock();
 	}
 
 	u_th->volume=volume;

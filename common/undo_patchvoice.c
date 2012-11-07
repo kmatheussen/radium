@@ -59,7 +59,7 @@ static void Undo_PatchVoice(
 
   printf("********* Storing patchvoice undo. Value: %d\n",undo_ae->voice.is_on);
 
-  Undo_Add(
+  Undo_Add_dont_stop_playing(
            window->l.num,
            wblock->l.num,
            wblock->wtrack->l.num,
@@ -95,9 +95,9 @@ printf("Calling Undo_do for %d. Old value: %d. Setting it to %d\n", voicenum,new
 //  abort();
 
   PLAYER_lock();
-  
-  patch->voices[voicenum] = undo_ae->voice;
-
+  {
+    patch->voices[voicenum] = undo_ae->voice;
+  }
   PLAYER_unlock();
 
   GFX_update_instrument_widget(undo_ae->patch);

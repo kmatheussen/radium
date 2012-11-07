@@ -58,7 +58,7 @@ static void Undo_ChipPos(
 
   printf("********* Storing chipos undo. value: %f\n",undo_ae->x);
 
-  Undo_Add(
+  Undo_Add_dont_stop_playing(
            window->l.num,
            wblock->l.num,
            wblock->wtrack->l.num,

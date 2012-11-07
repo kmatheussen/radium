@@ -36,6 +36,8 @@ struct UndoEntry{
   NInt blocknum;
   NInt tracknum;
   int realline;
+  bool stop_playing;
+
   struct Patch *current_patch;
 
   void *pointer;
@@ -145,13 +147,14 @@ void Undo_CancelLastUndo(void){
   FUNCTION
     Insert a new undo-element.
 ***************************************************/
-void Undo_Add(
+static void Undo_Add_internal(
               int windownum,
               int blocknum,
               int tracknum,
               int realline,
               void *pointer,
-              UndoFunction undo_function
+              UndoFunction undo_function,
+              bool stop_playing_when_undoing
 ){
   if(currently_undoing){
     RError("Can not call Undo_Add from Undo()\n");
@@ -170,11 +173,34 @@ void Undo_Add(
   entry->current_patch = g_currpatch;
   entry->pointer=pointer;
   entry->function=undo_function;
+  entry->stop_playing=stop_playing_when_undoing;
 
   VECTOR_push_back(&curr_open_undo->entries,entry);
 
   if(undo_was_open==false)
     Undo_Close();
+}
+
+void Undo_Add(
+              int windownum,
+              int blocknum,
+              int tracknum,
+              int realline,
+              void *pointer,
+              UndoFunction undo_function
+){
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,true);
+}
+
+void Undo_Add_dont_stop_playing(
+              int windownum,
+              int blocknum,
+              int tracknum,
+              int realline,
+              void *pointer,
+              UndoFunction undo_function
+){
+  Undo_Add_internal(windownum,blocknum,tracknum,realline,pointer,undo_function,false);
 }
 
 void Undo(void){
@@ -183,7 +209,6 @@ void Undo(void){
 	if(undo==&UndoRoot) return;
 
 currently_undoing = true;
-	PlayStop();
 
 
         struct Patch *current_patch = NULL;
@@ -193,6 +218,9 @@ currently_undoing = true;
           for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
 
             struct UndoEntry *entry=undo->entries.elements[i];
+
+            if(entry->stop_playing)
+              PlayStop();
  
             struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,entry->windownum);
             struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum);

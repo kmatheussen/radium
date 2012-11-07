@@ -61,7 +61,7 @@ static void Undo_Chip_AddRemove(
     u_rt->chip_state = CHIP_get_chip_state_from_patch(u_rt->patch);
   }
 
-  Undo_Add(
+  Undo_Add_dont_stop_playing(
            window->l.num,
            wblock->l.num,
            wblock->wtrack->l.num,

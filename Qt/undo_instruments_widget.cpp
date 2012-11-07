@@ -79,15 +79,14 @@ static void Undo_InstrumentsWidget(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-	Undo_Add(
-                 window->l.num,
-                 wblock->l.num,
-                 wblock->wtrack->l.num,
-                 wblock->curr_realline,
-                 create_instruments_widget_state(),
-                 Undo_Do_InstrumentsWidget
-	);
-
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             create_instruments_widget_state(),
+                             Undo_Do_InstrumentsWidget
+                             );
 }
 
 void Undo_InstrumentsWidget_CurrPos(void){

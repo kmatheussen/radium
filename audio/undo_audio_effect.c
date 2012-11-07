@@ -61,14 +61,14 @@ static void Undo_AudioEffect(
 
   printf("********* Storing eff undo. value: %f\n",undo_ae->value);
 
-	Undo_Add(
-                 window->l.num,
-                 wblock->l.num,
-                 wblock->wtrack->l.num,
-                 wblock->curr_realline,
-                 undo_ae,
-                 Undo_Do_AudioEffect
-	);
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             undo_ae,
+                             Undo_Do_AudioEffect
+                             );
 
 }
 

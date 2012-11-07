@@ -50,14 +50,14 @@ void Undo_Patch(
 	struct WBlocks *wblock
 ){
 
-  Undo_Add(
-           window->l.num,
-           wblock->l.num,
-           wblock->wtrack->l.num,
-           wblock->curr_realline,
-           get_all_patches(),
-           Undo_Do_Patch
-           );
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             get_all_patches(),
+                             Undo_Do_Patch
+                             );
 }
 
 void Undo_Patch_CurrPos(void){

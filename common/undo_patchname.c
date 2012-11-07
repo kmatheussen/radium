@@ -58,15 +58,14 @@ static void Undo_PatchName(
 
   //printf("********* Storing patchvoice undo. Value: %d\n",undo_ae->voice.is_on);
 
-  Undo_Add(
-           window->l.num,
-           wblock->l.num,
-           wblock->wtrack->l.num,
-           wblock->curr_realline,
-           undo_ae,
-           Undo_Do_PatchName
-           );
-
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             undo_ae,
+                             Undo_Do_PatchName
+                             );
 }
 
 void Undo_PatchName_CurrPos(struct Patch *patch){

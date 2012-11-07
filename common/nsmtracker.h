@@ -314,7 +314,7 @@ struct Instruments{
 
 	const char *instrumentname;
 
-        vector_t patches;
+        vector_t patches; // Not safe to traverse from player thread.
 
 	int (*getMaxVelocity)(struct Patch *patch);
 

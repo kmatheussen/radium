@@ -609,27 +609,24 @@ void GFX_update_instrument_widget(struct Patch *patch){
     update_midi_instrument_widget(instrument,patch);
 
   }else if(patch->instrument==get_audio_instrument()){
-    printf("GFX_update_instrument_widget 1\n");
     Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
     if(instrument==NULL){
-      printf("GFX_update_instrument_widget 2\n");
+      printf("GFX_update_instrument_widget. instrument==NULL\n");
       return;
     }
       
-    printf("GFX_update_instrument_widget 3\n");
     update_audio_instrument_widget(instrument,patch);
-    printf("GFX_update_instrument_widget 4\n");
   }
 }
 
 void GFX_update_all_instrument_widgets(void){
   QStackedWidget* tabs = instruments_widget->tabs;
 
-  printf("*(((((((((( Calling. Update all %d:\n",tabs->count());
+  //printf("*(((((((((( Calling. Update all %d:\n",tabs->count());
   for(int i=0;i<tabs->count();i++){
     MIDI_instrument_widget *midi_instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->widget(i));
     Audio_instrument_widget *audio_instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
-    printf("Update all %d: %p/%p\n",i,midi_instrument,audio_instrument);
+    //printf("Update all %d: %p/%p\n",i,midi_instrument,audio_instrument);
 
     if(midi_instrument!=NULL){
 

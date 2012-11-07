@@ -196,6 +196,7 @@ static void remove_patch_from_song(struct Patch *patch){
     while(wtrack!=NULL){
       struct Tracks *track = wtrack->track;
       if(track->patch==patch){
+
         PlayHardStop();
 
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
@@ -230,9 +231,7 @@ void PATCH_delete(struct Patch *patch){
 
     Undo_Patch_CurrPos();
 
-    PLAYER_lock();{ // don't think the lock is necessary.
-      VECTOR_remove(&patch->instrument->patches,patch);
-    }PLAYER_unlock();
+    VECTOR_remove(&patch->instrument->patches,patch);
 
   }Undo_Close();
 

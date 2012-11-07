@@ -41,6 +41,15 @@ extern LANGSPEC void Undo_Add(
                               void *pointer,
                               UndoFunction undo_function);
 
+extern LANGSPEC void Undo_Add_dont_stop_playing(
+                                                int windownum,
+                                                int blocknum,
+                                                int tracknum,
+                                                int realline,
+                                                void *pointer,
+                                                UndoFunction undo_function
+                                                );
+
 #if 0
 extern void Undo_New(
 	NInt windownum,

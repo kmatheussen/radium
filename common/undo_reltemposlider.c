@@ -25,15 +25,14 @@ void Undo_RelTempoSlider(
 	struct Undo_RelTempoSlider *u_rts=talloc_atomic(sizeof(struct Undo_RelTempoSlider));
 	u_rts->reltempo=wblock->block->reltempo;
 
-	Undo_Add(
-		window->l.num,
-		wblock->l.num,
-		wblock->wtrack->l.num,
-		window->wblock->curr_realline,
-		u_rts,
-		Undo_Do_RelTempoSlider
-	);
-
+        Undo_Add_dont_stop_playing(
+                                   window->l.num,
+                                   wblock->l.num,
+                                   wblock->wtrack->l.num,
+                                   window->wblock->curr_realline,
+                                   u_rts,
+                                   Undo_Do_RelTempoSlider
+                                   );
 }
 
 void *Undo_Do_RelTempoSlider(

@@ -48,14 +48,14 @@ static void Undo_MixerConnections(
   //struct Undo_MixerConnections *u_rt=talloc(sizeof(struct Undo_MixerConnections));
   //u_rt->reltempomax=wblock->reltempomax;
 
-	Undo_Add(
-                 window->l.num,
-                 wblock->l.num,
-                 wblock->wtrack->l.num,
-                 wblock->curr_realline,
-                 MW_get_connections_state(),
-                 Undo_Do_MixerConnections
-	);
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             MW_get_connections_state(),
+                             Undo_Do_MixerConnections
+                             );
 
 }
 
