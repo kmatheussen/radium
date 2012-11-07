@@ -501,12 +501,12 @@ class Multibandcomp_dsp : public dsp {
 		interface->declare(&fslider3, "style", "knob");
 		interface->declare(&fslider3, "tooltip", "Center-frequency of second-order Regalia-Mitra peaking equalizer section 1");
 		interface->declare(&fslider3, "unit", "Hz");
-		interface->addVerticalSlider("Split Freq 1", &fslider3, 166.0f, 4e+01f, 2e+04f, 1.0f);
+		interface->addVerticalSlider("Split Freq 1", &fslider3, 166.0f, 4e+01f, 999.0f, 1.0f);
 		interface->declare(&fslider4, "D", "");
 		interface->declare(&fslider4, "style", "knob");
 		interface->declare(&fslider4, "tooltip", "Center-frequency of second-order Regalia-Mitra peaking equalizer section 1");
 		interface->declare(&fslider4, "unit", "Hz");
-		interface->addVerticalSlider("Split Freq 2", &fslider4, 1.5e+03f, 4e+01f, 2e+04f, 1.0f);
+		interface->addVerticalSlider("Split Freq 2", &fslider4, 1.5e+03f, 1e+03f, 1.5e+04f, 1.0f);
 		interface->declare(&fcheckbox6, "E", "");
 		interface->addCheckButton("Limiter Bypass", &fcheckbox6);
 		interface->declare(&fslider21, "F", "");

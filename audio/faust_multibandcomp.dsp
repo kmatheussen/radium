@@ -88,11 +88,11 @@ compressor(i) = effect.bypass2(bypass,compressor_stereo_demo) with {
 
 split1 =  vslider("[C] Split Freq 1 [unit:Hz] [style:knob]
                   [tooltip: Center-frequency of second-order Regalia-Mitra peaking equalizer section 1]",
-                  166, 40, 20000, 1);
+                  166, 40, 999, 1);
 
 split2 =  vslider("[D] Split Freq 2 [unit:Hz] [style:knob]
                   [tooltip: Center-frequency of second-order Regalia-Mitra peaking equalizer section 1]",
-                  1500, 40, 20000, 1);
+                  1500, 1000, 15000, 1);
 
 stereo_split = filterbank(3,(split1,split2));
       
