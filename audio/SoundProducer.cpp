@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <math.h>
 
-#include <semaphore.h>
-
 #include "pa_memorybarrier.h"
 
 #include "../common/nsmtracker.h"
@@ -210,7 +208,7 @@ static void RT_fade_out(float *sound, int num_frames){
     sound[i] *= (num_frames-i)/num_frames_plus_1;
 }
 
-static sem_t signal_from_RT;
+static RSemaphore *signal_from_RT = NULL;
 
 struct SoundProducer : DoublyLinkedList{
   SoundPlugin *_plugin;
@@ -371,7 +369,7 @@ struct SoundProducer : DoublyLinkedList{
           link->state = SoundProducerLink::FADING_OUT;
         }PLAYER_unlock();
 
-        sem_wait(&signal_from_RT);
+        RSEMAPHORE_wait(signal_from_RT,1);
 
         delete link; // deleted  here
 
@@ -491,7 +489,7 @@ struct SoundProducer : DoublyLinkedList{
           RT_fade_out(fade_sound, num_frames);
           input_producer_sound = &fade_sound[0];
           _input_producers[ch].remove(link);
-          sem_post(&signal_from_RT);
+          RSEMAPHORE_signal(signal_from_RT,1);
           MIXER_RT_set_bus_descendand_type_for_all_plugins();
         }
 
@@ -615,7 +613,7 @@ SoundProducer *SP_create(SoundPlugin *plugin){
   static bool semaphore_inited=false;
 
   if(semaphore_inited==false){
-    sem_init(&signal_from_RT,0,0);
+    signal_from_RT = RSEMAPHORE_create(0);
     semaphore_inited=true;
   }
 
@@ -658,8 +656,7 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
   }PLAYER_unlock();
 
   // Wait
-  for(unsigned int i=0;i<links_to_delete.size();i++)
-    sem_wait(&signal_from_RT);
+  RSEMAPHORE_wait(signal_from_RT,links_to_delete.size());
  
   // Delete
   for(unsigned int i=0;i<links_to_delete.size();i++)

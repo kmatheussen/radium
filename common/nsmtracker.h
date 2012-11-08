@@ -22,8 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   Main header file for the tracker. Each struct often has a source-
   file with the same, or nearly the same, name.
 
-  Note, the files OS_Visual.h and OS_Semaphores.h are OS spesific
-  and must be put into their respective directories. The
+  Note, the file OS_Visual.h is OS spesific
+  and must be put into the OS directory it belongs te. The other
   OS_*_proc.h files are not.
 ******************************************************************/
 
@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "memory_proc.h"
 #include "nsmtracker_events.h"
 #include "OS_error_proc.h"
-#include <OS_Semaphores.h>
+#include "OS_Semaphores.h"
 
 
 /* Unfortunately, AmigaOS has one absolute address that is legal to

@@ -18,9 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 #include <stdio.h>
 
-#include <pthread.h>
-#include <semaphore.h>
-
 #include <jack/jack.h>
 #include <jack/thread.h>
 
@@ -49,7 +46,7 @@ extern PlayerClass *pc;
 extern int num_users_of_keyboard;
 
 static int g_last_set_producer_buffersize;
-static sem_t g_freewheeling_has_started;
+static RSemaphore *g_freewheeling_has_started = NULL;
 
 #include <xmmintrin.h>
 
@@ -433,7 +430,7 @@ struct Mixer{
 
     if(starting!=0){
       mixer->_is_freewheeling = true;
-      sem_post(&g_freewheeling_has_started);
+      RSEMAPHORE_signal(g_freewheeling_has_started,1);
       //SOUNDFILESAVER_start();
     }else{
       printf("MIXER: Freewheeling stopped\n");
@@ -465,7 +462,7 @@ static Mixer *g_mixer;
 bool MIXER_start(void){
 
   init_player_lock();
-  sem_init(&g_freewheeling_has_started,0,0);
+  g_freewheeling_has_started = RSEMAPHORE_create(0);
 
   g_mixer = new Mixer();
 
@@ -490,9 +487,9 @@ bool MIXER_is_saving(void){
 }
 
 void MIXER_start_saving_soundfile(void){
-  sem_init(&g_freewheeling_has_started,0,0); // Must do this in case a different jack client started freewheeling since last call to sem_init.
+  RSEMAPHORE_reset(g_freewheeling_has_started); // Must do this in case a different jack client started freewheeling since last call to sem_init.
   jack_set_freewheel(g_jack_client, 1);
-  sem_wait(&g_freewheeling_has_started);
+  RSEMAPHORE_wait(g_freewheeling_has_started,1);
 }
 
 void MIXER_request_stop_saving_soundfile(void){
