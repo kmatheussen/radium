@@ -2,11 +2,15 @@
 
 set -e
 
-export PKG=darwinx-pkg-config
+#export PKG=darwinx-pkg-config
+export PKG=pkg-config
 
 export PYTHONEXE=python #In Mingw, this is just the python we use to autogenerate files and so forth during the build process, it is not used to find header or link files
-export MOC=moc-qt4
-export UIC=uic-qt4
+#export MOC=moc-qt4
+#export UIC=uic-qt4
+
+export MOC=moc
+export UIC=uic
 
 # TODO: Get hold of newer compiler. The fedora mingw compiler is 4.2.1 (which doesn't support the generic flag BTW). Maybe I should compile on osx for releases.
 export OPTIMIZE="-O3"
@@ -17,9 +21,13 @@ export CPUOPT=$OPTIMIZE # Some files are so CPU intensive that we need to turn o
 #export CC="darwinx-gcc -arch i386 -arch ppc -arch x86_64"
 #export LINKER="darwinx-g++ -arch i386 -arch ppc -arch x86_64"
 
-export CCC="darwinx-g++ -arch i386 -arch x86_64"
-export CC="darwinx-gcc -arch i386 -arch x86_64"
-export LINKER="darwinx-g++ -arch i386 -arch x86_64"
+#export CCC="darwinx-g++ -arch i386 -arch x86_64"
+#export CC="darwinx-gcc -arch i386 -arch x86_64"
+#export LINKER="darwinx-g++ -arch i386 -arch x86_64"
+
+export CCC="g++ -arch i386 -arch x86_64"
+export CC="gcc -arch i386 -arch x86_64"
+export LINKER="g++ -arch i386 -arch x86_64"
 
 #export CCC="darwinx-g++ -arch i386 -arch x86_64"
 #export CC="darwinx-gcc -arch i386 -arch x86_64"
@@ -30,8 +38,8 @@ export BUILDTYPE=RELEASE
 
 export PYPATH=/home/kjetil/radium-qt4/darwinx/Versions/Current/include/python2.7
 
-export QT_CFLAGS="`darwinx-pkg-config --cflags Qt3Support`"
-export QT_LDFLAGS="`darwinx-pkg-config --libs Qt3Support`"
+export QT_CFLAGS="`$PKG --cflags Qt3Support`"
+export QT_LDFLAGS="`$PKG --libs Qt3Support`"
 
 export JACKOPT="-I/gammelhd/home/kjetil/jack2/common/"
 export LRDFOPT="-I/usr/include/raptor2"
@@ -60,12 +68,12 @@ export OBJ_WIN=
 # mingw32-make
 # (that's it)
 
-darwinx-make radium $@
+make radium $@
 
 ./darwinx_change_qt_path.sh bin/radium
 darwinx-install_name_tool -change /Library/Frameworks/Python.framework/Versions/2.7/Python @executable_path/python2.7/libpython2.7.dylib bin/radium
 
-darwinx-otool -L bin/radium
+otool -L bin/radium
 
 cp bin/radium Dropbox/radium.app/Contents/MacOS/
 

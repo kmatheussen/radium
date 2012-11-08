@@ -836,7 +836,7 @@ void create_ladspa_plugins(void){
   QDir dir(getenv("LADSPA_PATH")); //"/usr/lib64/ladspa");
 #endif
 
-#if FOR_WINDOWS
+#if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
   QDir dir(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa");
 #endif
 

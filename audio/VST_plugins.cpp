@@ -51,14 +51,14 @@ const int effFlagsProgramChunks = 32;
 
 const int kVstMaxParamStrLen = 8;
 
-#else
+#else //  defined(USE_VESTIGE)
 
 // If this fails, and you don't bother downloading and installing vstsdk from steinberg, set USE_VESTIGE to 1 in the Makefile!
 
 #  define VST_FORCE_DEPRECATED 0
-#  include "/home/kjetil/vstsdk2.4/pluginterfaces/vst2.x/aeffectx.h"
+#  include <vstsdk2.4/pluginterfaces/vst2.x/aeffectx.h>
 
-#endif
+#endif //  defined(USE_VESTIGE)
 
 
 #include <QWidget>

@@ -310,15 +310,15 @@ struct SoundProducer : DoublyLinkedList{
   void allocate_sound_buffers(int num_frames){
     _dry_sound = (float**)(calloc(sizeof(float*),_num_dry_sounds));
     for(int ch=0;ch<_num_dry_sounds;ch++)
-      _dry_sound[ch] = (float*)calloc(sizeof(float*),num_frames);
+      _dry_sound[ch] = (float*)calloc(sizeof(float),num_frames);
 
     _input_sound = (float**)(calloc(sizeof(float*),_num_inputs));
     for(int ch=0;ch<_num_inputs;ch++)
-      _input_sound[ch] = (float*)calloc(sizeof(float*),num_frames);
+      _input_sound[ch] = (float*)calloc(sizeof(float),num_frames);
 
     _output_sound = (float**)(calloc(sizeof(float*),_num_outputs));
     for(int ch=0;ch<_num_outputs;ch++)
-      _output_sound[ch] = (float*)calloc(sizeof(float*),num_frames);
+      _output_sound[ch] = (float*)calloc(sizeof(float),num_frames);
   }
 
   bool is_recursive(SoundProducer *start_producer){
@@ -365,13 +365,15 @@ struct SoundProducer : DoublyLinkedList{
     //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
     SoundProducerLink *link = (SoundProducerLink*)_input_producers[ch].next;
     while(link!=NULL){
+      fprintf(stderr,"link: %p. link channel: %d\n",link,link->sound_producer_ch);
       if(link->sound_producer==sound_producer && link->sound_producer_ch==sound_producer_ch){
 
         PLAYER_lock();{
           link->state = SoundProducerLink::FADING_OUT;
         }PLAYER_unlock();
 
-        sem_wait(&signal_from_RT);
+        //sem_wait(&signal_from_RT);
+	usleep(1000*1000);
 
         delete link; // deleted  here
 
@@ -380,7 +382,7 @@ struct SoundProducer : DoublyLinkedList{
       link=(SoundProducerLink*)link->next;
     }
 
-    fprintf(stderr,"huffda. link: %p. ch:\n",_input_producers[ch].next);
+    fprintf(stderr,"huffda. link: %p. ch: %d\n",_input_producers[ch].next,ch);
     abort();
   }
 

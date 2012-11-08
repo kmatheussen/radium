@@ -52,17 +52,20 @@ if grep -e "\ \*" api/protos.conf ; then
 fi
 
 
-
-echo "#include <X11/Xaw/Scrollbar.h>" >temp$$.c
-echo "main(){return 0;}" >>temp$$.c
-echo >>temp$$.c
-if ! gcc temp$$.c -lXaw ; then
-    echo "Might be missing libXaw-devel"
-    echo
+if [ `uname` == "Linux" ] ; then
+ 
+    echo "#include <X11/Xaw/Scrollbar.h>" >temp$$.c
+    echo "main(){return 0;}" >>temp$$.c
+    echo >>temp$$.c
+    if ! gcc temp$$.c -lXaw ; then
+	echo "Might be missing libXaw-devel"
+	echo
+	rm temp$$.c
+	exit 5
+    fi
     rm temp$$.c
-    exit 5
 fi
-rm temp$$.c
+
 
 if ! pkg-config --cflags sndfile >/dev/null 2>devnull ; then
     echo "libsndfile not found"
@@ -74,9 +77,11 @@ if ! pkg-config --cflags samplerate >/dev/null 2>devnull ; then
     exit 5
 fi
 
-if ! pkg-config --cflags lrdf >/dev/null 2>devnull ; then
-    echo "liblrdf not found"
-    exit 5
+if [ `uname` == "Linux" ] ; then
+    if ! pkg-config --cflags lrdf >/dev/null 2>devnull ; then
+	echo "liblrdf not found"
+	exit 5
+    fi
 fi
 
 if ! pkg-config --cflags glib-2.0 >/dev/null 2>devnull ; then
@@ -90,11 +95,13 @@ if ! pkg-config --cflags Qt3Support >/dev/null 2>devnull ; then
 fi
 
 
-if [ ! -f bin/packages/deletemetorebuild ] ; then
-    echo
-    echo "Packages not build. First run 'make packages'"
-    echo
-    exit 5
+if [ `uname` == "Linux" ] ; then
+    if [ ! -f bin/packages/deletemetorebuild ] ; then
+	echo
+	echo "Packages not build. First run 'make packages'"
+	echo
+	exit 5
+    fi
 fi
 
 echo "All seems good"

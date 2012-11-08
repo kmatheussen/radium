@@ -309,7 +309,7 @@ start_bin.sh:
 
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) `$(PKG) --libs lrdf` `$(PKG) --libs sndfile` `$(PKG) --libs samplerate` `$(PKG) --libs glib-2.0`
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) `$(PKG) --libs sndfile` `$(PKG) --libs samplerate` `$(PKG) --libs glib-2.0`
 
 # `$(PKG) --libs fluidsynth`
 #	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
@@ -973,7 +973,7 @@ QD = $(P)
 qcolordialog.o:  $(BUILD_DEPENDENCIES) $(QD)qcolordialog.cpp
 	$(MOC) $(QD)qcolordialog.h >$(QD)qcolordialog.moc
 	$(MOC) $(QD)qcolordialog.cpp >>$(QD)qcolordialog.moc
-	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error
+	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error -I.
 
 Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT)

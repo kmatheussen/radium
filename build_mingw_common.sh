@@ -40,7 +40,7 @@ export QT_LDFLAGS="`mingw32-pkg-config --libs Qt3Support` `mingw32-pkg-config --
 # MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
 #export OS_OPTS="-DFOR_WINDOWS -DMEMORY_DEBUG"
 export OS_OPTS="-DFOR_WINDOWS -I`pwd`/mingw/include/ -msse -mfpmath=sse"  # Need sse to disable denormals.
-export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib"
+export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib `$(PKG) --libs lrdf`"
 
 # -msse -msse2 -msse3 -mfpmath=sse -ffast-math
 

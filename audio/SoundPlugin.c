@@ -342,7 +342,7 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
   release_system_filter(&plugin->highshelf, plugin_type->num_outputs);
   release_system_filter(&plugin->delay, plugin_type->num_outputs);
 
-  memset(plugin,-1,sizeof(plugin)); // for debugging. Crashes faster if something is wrong.
+  memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   free(plugin);
 }
 

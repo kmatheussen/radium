@@ -605,7 +605,7 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
 
   Chip::~Chip(){
     while(_connections.size()>0){
-      //printf("Deleting connection. Connections left: %d\n",(int)_connections.size());
+      fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)_connections.size());
       CONNECTION_delete_connection(_connections.at(0));
     }
     SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
