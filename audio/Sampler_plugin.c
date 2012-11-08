@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <sndfile.h>
 
-#include <semaphore.h>
-
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
@@ -145,7 +143,7 @@ typedef struct _Data{
 
   // These two are used when switching sound on the fly
   struct _Data *new_data;
-  sem_t signal_from_RT;
+  RSemaphore *signal_from_RT;
 
 } Data;
 
@@ -350,7 +348,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     plugin->data = data->new_data; // Bang! (hmm.)
     data->new_data = NULL;
 
-    sem_post(&data->signal_from_RT);
+    RSEMAPHORE_signal(data->signal_from_RT,1);
   }
 }
 
@@ -848,7 +846,7 @@ static bool load_sample(Data *data, const char *filename, int instrument_number)
 static Data *create_data(float samplerate, Data *old_data, const char *filename, int instrument_number, int resampler_type){
   Data *data = calloc(1,sizeof(Data));
 
-  sem_init(&data->signal_from_RT,0,0);
+  data->signal_from_RT = RSEMAPHORE_create(0);
 
   if(old_data==NULL){
     data->finetune = 0.5f;
@@ -921,6 +919,8 @@ static void delete_data(Data *data){
 
   free((char*)data->filename);
 
+  RSEMAPHORE_delete(data->signal_from_RT);
+
   free(data);
 }
 
@@ -940,7 +940,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int
       old_data->new_data = data;
     }PLAYER_unlock();
 
-    sem_wait(&old_data->signal_from_RT);
+    RSEMAPHORE_wait(old_data->signal_from_RT,1);
 
   } else {
 

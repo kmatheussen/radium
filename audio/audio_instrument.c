@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
+#include "../Qt/Qt_instruments_proc.h"
 
 #include "audio_instrument_proc.h"
 
@@ -41,6 +42,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static void AUDIO_playnote(struct Patch *patch,int notenum,int velocity,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
+  if(plugin==NULL)
+    return;
+
   if(plugin->type->play_note != NULL)
     plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
   //plugin->type->play_note(plugin, MIXER_get_block_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
@@ -51,6 +55,9 @@ static void AUDIO_playnote(struct Patch *patch,int notenum,int velocity,STime ti
 static void AUDIO_changevelocity(struct Patch *patch,int notenum,int velocity,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
+  if(plugin==NULL)
+    return;
+
   //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
 
   if(plugin->type->set_note_volume != NULL)
@@ -59,6 +66,9 @@ static void AUDIO_changevelocity(struct Patch *patch,int notenum,int velocity,ST
 
 static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL)
+    return;
 
   //printf("stopping audio note %d\n",notenum);
 
@@ -69,7 +79,35 @@ static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime ti
 static void AUDIO_closePatch(struct Patch *patch){
 }
 
+static float scale(float x, float x1, float x2, float y1, float y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+
 static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
+  struct Patch *patch = track->patch;
+
+  printf("Changing track pan. Val: %d. patc: %p, plugin: %p\n",newpan,patch,patch->patchdata);
+
+  if(patch==NULL){ // This really cant happen.
+    RError("What?");
+    return;
+  }
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL)
+    return;
+
+  PLUGIN_set_effect_value(plugin, 
+                          -1, 
+                          plugin->type->num_effects + EFFNUM_PAN,
+                          scale(newpan, -MAXTRACKPAN,MAXTRACKPAN, 0.0,1.0),
+                          PLUGIN_NONSTORED_TYPE,
+                          PLUGIN_DONT_STORE_VALUE);
+  //GFX_update_instrument_widget(patch);
 }
 
 

@@ -219,6 +219,8 @@ void PATCH_delete(struct Patch *patch){
 
   Undo_Open();{
 
+    remove_patch_from_song(patch);
+
     if(patch->instrument==get_audio_instrument()){
       Undo_MixerConnections_CurrPos();
       Undo_Chip_Remove_CurrPos(patch);
@@ -226,11 +228,9 @@ void PATCH_delete(struct Patch *patch){
 
     GFX_remove_patch_gui(patch);
 
-    remove_patch_from_song(patch);
     patch->instrument->remove_patch(patch);
 
     Undo_Patch_CurrPos();
-
     VECTOR_remove(&patch->instrument->patches,patch);
 
   }Undo_Close();

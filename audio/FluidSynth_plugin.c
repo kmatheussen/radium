@@ -4,9 +4,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <pthread.h> // Needed to compile in mingw.
-#include <semaphore.h>
-
 #include "../bin/packages/fluidsynth-1.1.6/include/fluidsynth.h"
 
 #include "../common/nsmtracker.h"
@@ -65,7 +62,7 @@ typedef struct _Data{
 
   // These two are used when switching sound in realtime
   struct _Data *new_data;
-  sem_t signal_from_RT;
+  RSemaphore *signal_from_RT;
 
   float pitch;
   float pitch_range;
@@ -122,7 +119,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     plugin->data = data->new_data; // hmm.
     data->new_data = NULL;
 
-    sem_post(&data->signal_from_RT);
+    RSEMAPHORE_signal(data->signal_from_RT,1);
   }
 }
 
@@ -340,6 +337,8 @@ static void delete_data(Data *data){
 
   free((char*)data->filename);
 
+  RSEMAPHORE_delete(data->signal_from_RT);
+
   free(data);
 }
 
@@ -351,7 +350,7 @@ static void *create_data(const char *filename, float samplerate){
   data->modulation = 0;
   data->sustain_on = 0;
 
-  sem_init(&data->signal_from_RT,0,0);
+  data->signal_from_RT = RSEMAPHORE_create(0);
 
   data->settings = new_fluid_settings();
   if(data->settings==NULL){
@@ -464,7 +463,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const char *sf2_file, int ba
         data->new_data = new_data;
       }PLAYER_unlock();
       
-      sem_wait(&data->signal_from_RT);
+      RSEMAPHORE_wait(data->signal_from_RT,1);
 
     } else{
 

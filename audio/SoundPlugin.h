@@ -231,7 +231,7 @@ typedef struct SoundPlugin{
   Smooth bus_volume[2];
   bool bus_volume_is_on[2];
 
-  Smooth pan; // between -1 and 1
+  Smooth pan; // between 0 and 1
   bool pan_is_on;
 
   Smooth drywet;
