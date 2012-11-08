@@ -119,6 +119,10 @@ static void MIDIplaynote(struct Patch *patch,
                   STime time
 ){
 	const struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
+
+        if(patchdata==NULL)
+          return;
+
         struct MidiPort *midi_port = patchdata->midi_port;
 	const int channel=patchdata->channel;
 	int maxbuf=70;
@@ -205,6 +209,9 @@ static void MIDIstopnote(struct Patch *patch,
 ){
   struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
+  if(patchdata==NULL)
+    return;
+
   if(velocity>127)
     velocity=127;
 
@@ -230,6 +237,9 @@ static void MIDIstopnote(struct Patch *patch,
 static void MIDIchangevelocity(struct Patch *patch,int notenum, int velocity,STime time){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
+        if(patchdata==NULL)
+          return;
+
         if(velocity>127)
           velocity=127;
 
@@ -250,6 +260,10 @@ static void MIDIchangevelocity(struct Patch *patch,int notenum, int velocity,STi
 
 static void MIDIchangeTrackPan(int newpan,struct Tracks *track){
 	struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
+
+        if(patchdata==NULL)
+          return;
+
 	D_PutMidi3(
 		patchdata->midi_port,
 		0xb0|patchdata->channel,
