@@ -1,0 +1,2673 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE rdf:RDF [
+<!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#">
+<!ENTITY dc "http://purl.org/dc/elements/1.1/">
+<!ENTITY ladspa "http://ladspa.org/ontology#">
+]>
+
+<rdf:RDF xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:dc="&dc;" xmlns:ladspa="&ladspa;">
+
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1641">
+    <dc:title>Bandlimited Sawtooth Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1641.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1641.2" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1641.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1642">
+    <dc:title>Bandlimited Sawtooth Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1642.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1642.2" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1642.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1643">
+    <dc:title>Bandlimited Square Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1643.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1643.2" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1643.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1644">
+    <dc:title>Bandlimited Square Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1644.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1644.2" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1644.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1645">
+    <dc:title>Bandlimited Variable Width Pulse Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1645.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1645.2" ladspa:hasLabel="Pulsewidth" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1645.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1645.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1645.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1646">
+    <dc:title>Bandlimited Variable Width Pulse Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1646.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1646.2" ladspa:hasLabel="Pulsewidth" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1646.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1646.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1646.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1647">
+    <dc:title>Bandlimited Variable Width Pulse Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1647.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1647.2" ladspa:hasLabel="Pulsewidth" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1647.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1647.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1647.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1648">
+    <dc:title>Bandlimited Variable Width Pulse Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1648.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1648.2" ladspa:hasLabel="Pulsewidth" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1648.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1648.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1648.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1649">
+    <dc:title>Bandlimited Variable Slope Triangle Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1649.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1649.2" ladspa:hasLabel="Slope" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1649.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1649.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1649.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1650">
+    <dc:title>Bandlimited Variable Slope Triangle Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1650.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1650.2" ladspa:hasLabel="Slope" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1650.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1650.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1650.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1651">
+    <dc:title>Bandlimited Variable Slope Triangle Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1651.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1651.2" ladspa:hasLabel="Slope" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1651.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1651.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1651.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1652">
+    <dc:title>Bandlimited Variable Slope Triangle Oscillator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1652.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1652.2" ladspa:hasLabel="Slope" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1652.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1652.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;1652.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+
+  <ladspa:DynamicsPlugin rdf:about="&ladspa;1653">
+    <dc:title>ADSR Envelope Generator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1653.1" ladspa:hasLabel="Driving Signal" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1653.2" ladspa:hasLabel="Trigger Threshold" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1653.3" ladspa:hasLabel="Attack Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1653.4" ladspa:hasLabel="Decay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1653.5" ladspa:hasLabel="Sustain Level" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1653.6" ladspa:hasLabel="Release Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1653.7" ladspa:hasLabel="Envelope Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1653.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1653.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;1653.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1653.6" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:DynamicsPlugin>
+
+  <ladspa:AmplifierPlugin rdf:about="&ladspa;1654">
+    <dc:title>Mono Amplifier</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1654.1" ladspa:hasLabel="Gain">
+        <ladspa:hasUnits rdf:resource="&ladspa;dB" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1654.2" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1654.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1654.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:AmplifierPlugin>
+  <ladspa:AmplifierPlugin rdf:about="&ladspa;1655">
+    <dc:title>Mono Amplifier</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1655.1" ladspa:hasLabel="Gain">
+        <ladspa:hasUnits rdf:resource="&ladspa;dB" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1655.2" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1655.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1655.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:AmplifierPlugin>
+
+  <ladspa:FrequencyPlugin rdf:about="&ladspa;1656">
+    <dc:title>Frequency Modulator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1656.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1656.2" ladspa:hasLabel="Modulation" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1656.3" ladspa:hasLabel="Modulated Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:OutputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1656.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:FrequencyPlugin>
+  <ladspa:FrequencyPlugin rdf:about="&ladspa;1657">
+    <dc:title>Frequency Modulator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1657.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1657.2" ladspa:hasLabel="Modulation" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1657.3" ladspa:hasLabel="Modulated Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:OutputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1657.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:FrequencyPlugin>
+  <ladspa:FrequencyPlugin rdf:about="&ladspa;1658">
+    <dc:title>Frequency Modulator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1658.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1658.2" ladspa:hasLabel="Modulation" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1658.3" ladspa:hasLabel="Modulated Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:OutputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1658.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:FrequencyPlugin>
+  <ladspa:FrequencyPlugin rdf:about="&ladspa;1659">
+    <dc:title>Frequency Modulator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1659.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1659.2" ladspa:hasLabel="Modulation" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1659.3" ladspa:hasLabel="Modulated Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:OutputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1659.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:FrequencyPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1660">
+    <dc:title>Control to Audio Interpolator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1660.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1660.2" ladspa:hasLabel="Interpolated Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+
+  <ladspa:GeneratorPlugin rdf:about="&ladspa;1661">
+    <dc:title>Random Wave Generator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1661.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1661.2" ladspa:hasLabel="Smoothness" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1661.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1661.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;1661.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:GeneratorPlugin>
+  <ladspa:GeneratorPlugin rdf:about="&ladspa;1662">
+    <dc:title>Random Wave Generator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1662.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1662.2" ladspa:hasLabel="Smoothness" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1662.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1662.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;1662.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:GeneratorPlugin>
+  <ladspa:GeneratorPlugin rdf:about="&ladspa;1663">
+    <dc:title>Random Wave Generator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1663.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1663.2" ladspa:hasLabel="Smoothness" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1663.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1663.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;1663.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:GeneratorPlugin>
+  <ladspa:GeneratorPlugin rdf:about="&ladspa;1664">
+    <dc:title>Random Wave Generator</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1664.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1664.2" ladspa:hasLabel="Smoothness" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1664.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="440">
+            <ladspa:forPort rdf:resource="&ladspa;1664.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;1664.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:GeneratorPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1665">
+    <dc:title>Signal Sum</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1665.1" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1665.2" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1665.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1666">
+    <dc:title>Signal Sum</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1666.1" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1666.2" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1666.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1667">
+    <dc:title>Signal Sum</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1667.1" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1667.2" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;1667.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1668">
+    <dc:title>Signal Product</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1668.1" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1668.2" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1668.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1669">
+    <dc:title>Signal Product</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1669.1" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1669.2" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1669.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1670">
+    <dc:title>Signal Product</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1670.1" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1670.2" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;1670.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2030">
+    <dc:title>Signal Difference</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2030.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2030.2" ladspa:hasLabel="Minus" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2030.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2031">
+    <dc:title>Signal Difference</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2031.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2031.2" ladspa:hasLabel="Minus" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2031.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2032">
+    <dc:title>Signal Difference</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2032.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2032.2" ladspa:hasLabel="Minus" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2032.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2033">
+    <dc:title>Signal Difference</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2033.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2033.2" ladspa:hasLabel="Minus" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;2033.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2034">
+    <dc:title>Signal Ratio</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2034.1" ladspa:hasLabel="Numerator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2034.2" ladspa:hasLabel="Denominator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2034.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2035">
+    <dc:title>Signal Ratio</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2035.1" ladspa:hasLabel="Numerator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2035.2" ladspa:hasLabel="Denominator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2035.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2036">
+    <dc:title>Signal Ratio</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2036.1" ladspa:hasLabel="Numerator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2036.2" ladspa:hasLabel="Denominator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2036.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2037">
+    <dc:title>Signal Ratio</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2037.1" ladspa:hasLabel="Numerator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2037.2" ladspa:hasLabel="Denominator" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;2037.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+
+  <ladspa:LowpassPlugin rdf:about="&ladspa;1671">
+    <dc:title>4 Pole Low Pass Filter with Resonance</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1671.1" ladspa:hasLabel="Cutoff Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1671.2" ladspa:hasLabel="Resonance" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1671.3" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1671.4" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="24000">
+            <ladspa:forPort rdf:resource="&ladspa;1671.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1671.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:LowpassPlugin>
+  <ladspa:LowpassPlugin rdf:about="&ladspa;1672">
+    <dc:title>4 Pole Low Pass Filter with Resonance</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1672.1" ladspa:hasLabel="Cutoff Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1672.2" ladspa:hasLabel="Resonance" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1672.3" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1672.4" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="24000">
+            <ladspa:forPort rdf:resource="&ladspa;1672.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1672.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:LowpassPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1673">
+    <dc:title>Signal Branch</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1673.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1673.2" ladspa:hasLabel="Output 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1672.3" ladspa:hasLabel="Output 2" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;1674">
+    <dc:title>Signal Branch</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1674.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;1674.2" ladspa:hasLabel="Output 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;1674.3" ladspa:hasLabel="Output 2" />
+    </ladspa:hasPort>
+  </ladspa:UtilityPlugin>
+
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;1675">
+    <dc:title>Analogue Style 64 Step Sequencer</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1675.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1675.2" ladspa:hasLabel="Step Trigger" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.3" ladspa:hasLabel="Loops Steps" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.4" ladspa:hasLabel="Reset to Value on Gate Close">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="No" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="Yes" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.5" ladspa:hasLabel="Gate Close Value" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.6" ladspa:hasLabel="Input 0" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.7" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.8" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.9" ladspa:hasLabel="Input 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.10" ladspa:hasLabel="Input 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.11" ladspa:hasLabel="Input 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.12" ladspa:hasLabel="Input 6" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.13" ladspa:hasLabel="Input 7" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.14" ladspa:hasLabel="Input 8" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.15" ladspa:hasLabel="Input 9" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.16" ladspa:hasLabel="Input 10" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.17" ladspa:hasLabel="Input 11" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.18" ladspa:hasLabel="Input 12" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.19" ladspa:hasLabel="Input 13" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.20" ladspa:hasLabel="Input 14" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.21" ladspa:hasLabel="Input 15" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.22" ladspa:hasLabel="Input 16" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.23" ladspa:hasLabel="Input 17" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.24" ladspa:hasLabel="Input 18" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.25" ladspa:hasLabel="Input 19" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.26" ladspa:hasLabel="Input 20" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.27" ladspa:hasLabel="Input 21" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.28" ladspa:hasLabel="Input 22" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.29" ladspa:hasLabel="Input 23" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.30" ladspa:hasLabel="Input 24" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.31" ladspa:hasLabel="Input 25" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.32" ladspa:hasLabel="Input 26" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.33" ladspa:hasLabel="Input 27" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.34" ladspa:hasLabel="Input 28" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.35" ladspa:hasLabel="Input 29" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.36" ladspa:hasLabel="Input 30" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.37" ladspa:hasLabel="Input 31" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.38" ladspa:hasLabel="Input 32" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.39" ladspa:hasLabel="Input 33" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.40" ladspa:hasLabel="Input 34" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.41" ladspa:hasLabel="Input 35" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.42" ladspa:hasLabel="Input 36" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.43" ladspa:hasLabel="Input 37" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.44" ladspa:hasLabel="Input 38" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.45" ladspa:hasLabel="Input 39" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.46" ladspa:hasLabel="Input 40" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.47" ladspa:hasLabel="Input 41" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.48" ladspa:hasLabel="Input 42" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.49" ladspa:hasLabel="Input 43" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.50" ladspa:hasLabel="Input 44" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.51" ladspa:hasLabel="Input 45" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.52" ladspa:hasLabel="Input 46" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.53" ladspa:hasLabel="Input 47" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.54" ladspa:hasLabel="Input 48" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.55" ladspa:hasLabel="Input 49" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.56" ladspa:hasLabel="Input 50" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.57" ladspa:hasLabel="Input 51" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.58" ladspa:hasLabel="Input 52" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.59" ladspa:hasLabel="Input 53" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.60" ladspa:hasLabel="Input 54" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.61" ladspa:hasLabel="Input 55" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.62" ladspa:hasLabel="Input 56" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.63" ladspa:hasLabel="Input 57" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.64" ladspa:hasLabel="Input 58" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.65" ladspa:hasLabel="Input 59" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.66" ladspa:hasLabel="Input 60" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.67" ladspa:hasLabel="Input 61" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.68" ladspa:hasLabel="Input 62" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1675.69" ladspa:hasLabel="Input 63" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1675.70" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="64">
+            <ladspa:forPort rdf:resource="&ladspa;1675.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1675.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:SimulatorPlugin>
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;1676">
+    <dc:title>Analogue Style 32 Step Sequencer</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1676.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1676.2" ladspa:hasLabel="Step Trigger" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.3" ladspa:hasLabel="Loops Steps" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.4" ladspa:hasLabel="Reset to Value on Gate Close">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="No" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="Yes" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.5" ladspa:hasLabel="Gate Close Value" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.6" ladspa:hasLabel="Input 0" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.7" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.8" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.9" ladspa:hasLabel="Input 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.10" ladspa:hasLabel="Input 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.11" ladspa:hasLabel="Input 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.12" ladspa:hasLabel="Input 6" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.13" ladspa:hasLabel="Input 7" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.14" ladspa:hasLabel="Input 8" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.15" ladspa:hasLabel="Input 9" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.16" ladspa:hasLabel="Input 10" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.17" ladspa:hasLabel="Input 11" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.18" ladspa:hasLabel="Input 12" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.19" ladspa:hasLabel="Input 13" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.20" ladspa:hasLabel="Input 14" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.21" ladspa:hasLabel="Input 15" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.22" ladspa:hasLabel="Input 16" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.23" ladspa:hasLabel="Input 17" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.24" ladspa:hasLabel="Input 18" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.25" ladspa:hasLabel="Input 19" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.26" ladspa:hasLabel="Input 20" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.27" ladspa:hasLabel="Input 21" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.28" ladspa:hasLabel="Input 22" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.29" ladspa:hasLabel="Input 23" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.30" ladspa:hasLabel="Input 24" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.31" ladspa:hasLabel="Input 25" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.32" ladspa:hasLabel="Input 26" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.33" ladspa:hasLabel="Input 27" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.34" ladspa:hasLabel="Input 28" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.35" ladspa:hasLabel="Input 29" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.36" ladspa:hasLabel="Input 30" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1676.37" ladspa:hasLabel="Input 31" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1676.38" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="64">
+            <ladspa:forPort rdf:resource="&ladspa;1676.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1676.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:SimulatorPlugin>
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;1677">
+    <dc:title>Analogue Style 16 Step Sequencer</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1677.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1677.2" ladspa:hasLabel="Step Trigger" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.3" ladspa:hasLabel="Loops Steps" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.4" ladspa:hasLabel="Reset to Value on Gate Close">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="No" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="Yes" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.5" ladspa:hasLabel="Gate Close Value" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.6" ladspa:hasLabel="Input 0" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.7" ladspa:hasLabel="Input 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.8" ladspa:hasLabel="Input 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.9" ladspa:hasLabel="Input 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.10" ladspa:hasLabel="Input 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.11" ladspa:hasLabel="Input 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.12" ladspa:hasLabel="Input 6" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.13" ladspa:hasLabel="Input 7" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.14" ladspa:hasLabel="Input 8" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.15" ladspa:hasLabel="Input 9" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.16" ladspa:hasLabel="Input 10" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.17" ladspa:hasLabel="Input 11" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.18" ladspa:hasLabel="Input 12" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.19" ladspa:hasLabel="Input 13" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.20" ladspa:hasLabel="Input 14" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1677.21" ladspa:hasLabel="Input 15" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1675.22" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="64">
+            <ladspa:forPort rdf:resource="&ladspa;1677.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1677.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:SimulatorPlugin>
+
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1678">
+    <dc:title>Clock Oscillator with Gate</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1678.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1678.2" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1678.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="16">
+            <ladspa:forPort rdf:resource="&ladspa;1678.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;1679">
+    <dc:title>Clock Oscillator with Gate</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1679.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1679.2" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1679.3" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="16">
+            <ladspa:forPort rdf:resource="&ladspa;1679.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+
+  <ladspa:DynamicsPlugin rdf:about="&ladspa;1680">
+    <dc:title>ADSR Envelope Generator with Gate and Trigger</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;1680.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1680.2" ladspa:hasLabel="Trigger"/>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1680.3" ladspa:hasLabel="Attack Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1680.4" ladspa:hasLabel="Decay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1680.5" ladspa:hasLabel="Sustain Level" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;1680.6" ladspa:hasLabel="Release Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;1680.7" ladspa:hasLabel="Envelope Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1680.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1680.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;1680.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;1680.6" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:DynamicsPlugin>
+
+  <ladspa:DynamicsPlugin rdf:about="&ladspa;2021">
+    <dc:title>DAHDSR Envelope Generator with Gate and Trigger (Audio Rate Inputs)</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.2" ladspa:hasLabel="Trigger"/>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.3" ladspa:hasLabel="Delay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.4" ladspa:hasLabel="Attack Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.5" ladspa:hasLabel="Hold Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.6" ladspa:hasLabel="Decay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.7" ladspa:hasLabel="Sustain Level" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2021.8" ladspa:hasLabel="Release Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2021.9" ladspa:hasLabel="Envelope Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2021.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2021.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2021.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2021.6" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2021.7" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2021.8" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:DynamicsPlugin>
+  <ladspa:DynamicsPlugin rdf:about="&ladspa;2022">
+    <dc:title>DAHDSR Envelope Generator with Gate and Trigger (Control Inputs)</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2022.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2022.2" ladspa:hasLabel="Trigger"/>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2022.3" ladspa:hasLabel="Delay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2022.4" ladspa:hasLabel="Attack Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2022.5" ladspa:hasLabel="Hold Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2022.6" ladspa:hasLabel="Decay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2022.7" ladspa:hasLabel="Sustain Level" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2022.8" ladspa:hasLabel="Release Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2022.9" ladspa:hasLabel="Envelope Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2022.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2022.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2022.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2022.6" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2022.7" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2022.8" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:DynamicsPlugin>
+  <ladspa:DynamicsPlugin rdf:about="&ladspa;2038">
+    <dc:title>DAHDSR Envelope Generator with Control Gate and Trigger (Control Inputs)</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.2" ladspa:hasLabel="Trigger"/>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.3" ladspa:hasLabel="Delay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.4" ladspa:hasLabel="Attack Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.5" ladspa:hasLabel="Hold Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.6" ladspa:hasLabel="Decay Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.7" ladspa:hasLabel="Sustain Level" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2038.8" ladspa:hasLabel="Release Time">
+        <ladspa:hasUnits rdf:resource="&ladspa;seconds" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2038.9" ladspa:hasLabel="Envelope Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2038.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2038.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2038.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2038.6" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2038.7" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2038.8" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:DynamicsPlugin>
+
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;2023">
+    <dc:title>Clock Pulse Oscillator with Gate</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2023.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2023.2" ladspa:hasLabel="Pulsewidth" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2023.3" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2023.4" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="16">
+            <ladspa:forPort rdf:resource="&ladspa;2023.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;2023.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+  <ladspa:OscillatorPlugin rdf:about="&ladspa;2024">
+    <dc:title>Clock Pulse Oscillator with Gate</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2024.1" ladspa:hasLabel="Frequency">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2024.2" ladspa:hasLabel="Pulsewidth" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2024.3" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2024.4" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="16">
+            <ladspa:forPort rdf:resource="&ladspa;2024.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0.5">
+            <ladspa:forPort rdf:resource="&ladspa;2024.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:OscillatorPlugin>
+
+  <ladspa:WaveshaperPlugin rdf:about="&ladspa;2025">
+    <dc:title>Signal Tracker</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.2" ladspa:hasLabel="Attack Rate when Gate High">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.3" ladspa:hasLabel="Decay Rate when Gate High">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.4" ladspa:hasLabel="Attack Rate when Gate Low">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.5" ladspa:hasLabel="Decay Rate when Gate Low">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputAudioPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.6" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2025.7" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2025.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2025.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2025.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2025.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:WaveshaperPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2025" />
+  <ladspa:WaveshaperPlugin rdf:about="&ladspa;2026">
+    <dc:title>Signal Tracker</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2026.1" ladspa:hasLabel="Gate" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2026.2" ladspa:hasLabel="Attack Rate when Gate High">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2026.3" ladspa:hasLabel="Decay Rate when Gate High">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2026.4" ladspa:hasLabel="Attack Rate when Gate Low">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2026.5" ladspa:hasLabel="Decay Rate when Gate Low">
+        <ladspa:hasUnits rdf:resource="&ladspa;Hz" />
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2026.6" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2026.7" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2026.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2026.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2026.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="100">
+            <ladspa:forPort rdf:resource="&ladspa;2026.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:WaveshaperPlugin>
+
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2027">
+    <dc:title>Quantiser (20 Steps)</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.1" ladspa:hasLabel="Range Minimum" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.2" ladspa:hasLabel="Range Maximum" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.3" ladspa:hasLabel="Match Range" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.4" ladspa:hasLabel="Mode">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="Extend" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="Wrap" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="2" ladspa:hasLabel="Clip" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.5" ladspa:hasLabel="Steps" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.6" ladspa:hasLabel="Value 0" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.7" ladspa:hasLabel="Value 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.8" ladspa:hasLabel="Value 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.9" ladspa:hasLabel="Value 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.10" ladspa:hasLabel="Value 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.11" ladspa:hasLabel="Value 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.12" ladspa:hasLabel="Value 6" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.13" ladspa:hasLabel="Value 7" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.14" ladspa:hasLabel="Value 8" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.15" ladspa:hasLabel="Value 9" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.16" ladspa:hasLabel="Value 10" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.17" ladspa:hasLabel="Value 11" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.18" ladspa:hasLabel="Value 12" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.19" ladspa:hasLabel="Value 13" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.20" ladspa:hasLabel="Value 14" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.21" ladspa:hasLabel="Value 15" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.22" ladspa:hasLabel="Value 16" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.23" ladspa:hasLabel="Value 17" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.24" ladspa:hasLabel="Value 18" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2027.25" ladspa:hasLabel="Value 19" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2027.26" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2027.27" ladspa:hasLabel="Quantised Output" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2027.28" ladspa:hasLabel="Output Changed" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2027.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="20">
+            <ladspa:forPort rdf:resource="&ladspa;2027.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2028">
+    <dc:title>Quantiser (50 Steps)</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.1" ladspa:hasLabel="Range Minimum" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.2" ladspa:hasLabel="Range Maximum" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.3" ladspa:hasLabel="Match Range" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.4" ladspa:hasLabel="Mode">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="Extend" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="Wrap" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="2" ladspa:hasLabel="Clip" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.5" ladspa:hasLabel="Steps" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.6" ladspa:hasLabel="Value 0" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.7" ladspa:hasLabel="Value 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.8" ladspa:hasLabel="Value 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.9" ladspa:hasLabel="Value 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.10" ladspa:hasLabel="Value 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.11" ladspa:hasLabel="Value 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.12" ladspa:hasLabel="Value 6" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.13" ladspa:hasLabel="Value 7" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.14" ladspa:hasLabel="Value 8" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.15" ladspa:hasLabel="Value 9" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.16" ladspa:hasLabel="Value 10" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.17" ladspa:hasLabel="Value 11" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.18" ladspa:hasLabel="Value 12" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.19" ladspa:hasLabel="Value 13" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.20" ladspa:hasLabel="Value 14" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.21" ladspa:hasLabel="Value 15" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.22" ladspa:hasLabel="Value 16" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.23" ladspa:hasLabel="Value 17" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.24" ladspa:hasLabel="Value 18" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.25" ladspa:hasLabel="Value 19" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.26" ladspa:hasLabel="Value 20" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.27" ladspa:hasLabel="Value 21" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.28" ladspa:hasLabel="Value 22" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.29" ladspa:hasLabel="Value 23" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.30" ladspa:hasLabel="Value 24" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.31" ladspa:hasLabel="Value 25" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.32" ladspa:hasLabel="Value 26" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.33" ladspa:hasLabel="Value 27" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.34" ladspa:hasLabel="Value 28" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.35" ladspa:hasLabel="Value 29" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.36" ladspa:hasLabel="Value 30" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.37" ladspa:hasLabel="Value 31" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.38" ladspa:hasLabel="Value 32" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.39" ladspa:hasLabel="Value 33" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.40" ladspa:hasLabel="Value 34" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.41" ladspa:hasLabel="Value 35" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.42" ladspa:hasLabel="Value 36" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.43" ladspa:hasLabel="Value 37" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.44" ladspa:hasLabel="Value 38" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.45" ladspa:hasLabel="Value 39" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.46" ladspa:hasLabel="Value 40" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.47" ladspa:hasLabel="Value 41" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.48" ladspa:hasLabel="Value 42" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.49" ladspa:hasLabel="Value 43" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.50" ladspa:hasLabel="Value 44" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.51" ladspa:hasLabel="Value 45" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.52" ladspa:hasLabel="Value 46" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.53" ladspa:hasLabel="Value 47" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.54" ladspa:hasLabel="Value 48" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2028.55" ladspa:hasLabel="Value 49" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2027.56" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2027.57" ladspa:hasLabel="Quantised Output" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2028.58" ladspa:hasLabel="Output Changed" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2028.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="20">
+            <ladspa:forPort rdf:resource="&ladspa;2028.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:UtilityPlugin>
+  <ladspa:UtilityPlugin rdf:about="&ladspa;2029">
+    <dc:title>Quantiser (100 Steps)</dc:title>
+    <dc:creator>Mike Rawes &lt;mike_rawes@yahoo.co.uk&gt;</dc:creator>
+    <dc:rights>GNU General Public Licence Version 2 or Later</dc:rights>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.1" ladspa:hasLabel="Range Minimum" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.2" ladspa:hasLabel="Range Maximum" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.3" ladspa:hasLabel="Match Range" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.4" ladspa:hasLabel="Mode">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="Extend" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="Wrap" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="2" ladspa:hasLabel="Clip" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.5" ladspa:hasLabel="Steps" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.6" ladspa:hasLabel="Value 0" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.7" ladspa:hasLabel="Value 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.8" ladspa:hasLabel="Value 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.9" ladspa:hasLabel="Value 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.10" ladspa:hasLabel="Value 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.11" ladspa:hasLabel="Value 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.12" ladspa:hasLabel="Value 6" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.13" ladspa:hasLabel="Value 7" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.14" ladspa:hasLabel="Value 8" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.15" ladspa:hasLabel="Value 9" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.16" ladspa:hasLabel="Value 10" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.17" ladspa:hasLabel="Value 11" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.18" ladspa:hasLabel="Value 12" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.19" ladspa:hasLabel="Value 13" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.20" ladspa:hasLabel="Value 14" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.21" ladspa:hasLabel="Value 15" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.22" ladspa:hasLabel="Value 16" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.23" ladspa:hasLabel="Value 17" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.24" ladspa:hasLabel="Value 18" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.25" ladspa:hasLabel="Value 19" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.26" ladspa:hasLabel="Value 20" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.27" ladspa:hasLabel="Value 21" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.28" ladspa:hasLabel="Value 22" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.29" ladspa:hasLabel="Value 23" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.30" ladspa:hasLabel="Value 24" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.31" ladspa:hasLabel="Value 25" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.32" ladspa:hasLabel="Value 26" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.33" ladspa:hasLabel="Value 27" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.34" ladspa:hasLabel="Value 28" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.35" ladspa:hasLabel="Value 29" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.36" ladspa:hasLabel="Value 30" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.37" ladspa:hasLabel="Value 31" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.38" ladspa:hasLabel="Value 32" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.39" ladspa:hasLabel="Value 33" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.40" ladspa:hasLabel="Value 34" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.41" ladspa:hasLabel="Value 35" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.42" ladspa:hasLabel="Value 36" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.43" ladspa:hasLabel="Value 37" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.44" ladspa:hasLabel="Value 38" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.45" ladspa:hasLabel="Value 39" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.46" ladspa:hasLabel="Value 40" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.47" ladspa:hasLabel="Value 41" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.48" ladspa:hasLabel="Value 42" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.49" ladspa:hasLabel="Value 43" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.50" ladspa:hasLabel="Value 44" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.51" ladspa:hasLabel="Value 45" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.52" ladspa:hasLabel="Value 46" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.53" ladspa:hasLabel="Value 47" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.54" ladspa:hasLabel="Value 48" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.55" ladspa:hasLabel="Value 49" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.56" ladspa:hasLabel="Value 50" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.57" ladspa:hasLabel="Value 51" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.58" ladspa:hasLabel="Value 52" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.59" ladspa:hasLabel="Value 53" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.60" ladspa:hasLabel="Value 54" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.61" ladspa:hasLabel="Value 55" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.62" ladspa:hasLabel="Value 56" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.63" ladspa:hasLabel="Value 57" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.64" ladspa:hasLabel="Value 58" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.65" ladspa:hasLabel="Value 59" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.66" ladspa:hasLabel="Value 60" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.67" ladspa:hasLabel="Value 61" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.68" ladspa:hasLabel="Value 62" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.69" ladspa:hasLabel="Value 63" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.70" ladspa:hasLabel="Value 64" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.71" ladspa:hasLabel="Value 65" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.72" ladspa:hasLabel="Value 66" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.73" ladspa:hasLabel="Value 67" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.74" ladspa:hasLabel="Value 68" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.75" ladspa:hasLabel="Value 69" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.76" ladspa:hasLabel="Value 70" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.77" ladspa:hasLabel="Value 71" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.78" ladspa:hasLabel="Value 72" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.79" ladspa:hasLabel="Value 73" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.80" ladspa:hasLabel="Value 74" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.81" ladspa:hasLabel="Value 75" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.82" ladspa:hasLabel="Value 76" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.83" ladspa:hasLabel="Value 77" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.84" ladspa:hasLabel="Value 78" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.85" ladspa:hasLabel="Value 79" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.86" ladspa:hasLabel="Value 80" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.87" ladspa:hasLabel="Value 81" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.88" ladspa:hasLabel="Value 82" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.89" ladspa:hasLabel="Value 83" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.90" ladspa:hasLabel="Value 84" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.91" ladspa:hasLabel="Value 85" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.92" ladspa:hasLabel="Value 86" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.93" ladspa:hasLabel="Value 87" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.94" ladspa:hasLabel="Value 88" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.95" ladspa:hasLabel="Value 89" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.96" ladspa:hasLabel="Value 90" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.97" ladspa:hasLabel="Value 91" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.98" ladspa:hasLabel="Value 92" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.99" ladspa:hasLabel="Value 93" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.100" ladspa:hasLabel="Value 94" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.101" ladspa:hasLabel="Value 95" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.102" ladspa:hasLabel="Value 96" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.103" ladspa:hasLabel="Value 97" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.104" ladspa:hasLabel="Value 98" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2029.105" ladspa:hasLabel="Value 99" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputAudioPort rdf:about="&ladspa;2027.106" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2027.107" ladspa:hasLabel="Quantised Output" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputAudioPort rdf:about="&ladspa;2029.108" ladspa:hasLabel="Output Changed" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2029.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="20">
+            <ladspa:forPort rdf:resource="&ladspa;2029.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:UtilityPlugin>
+</rdf:RDF>

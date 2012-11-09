@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE rdf:RDF [
+        <!ENTITY rdf 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+        <!ENTITY rdfs 'http://www.w3.org/2000/01/rdf-schema#'>
+        <!ENTITY dc 'http://purl.org/dc/elements/1.1/'>
+        <!ENTITY ladspa 'http://ladspa.org/ontology#'>
+]>
+<rdf:RDF xmlns:rdf="&rdf;"
+         xmlns:rdfs="&rdfs;"
+         xmlns:dc="&dc;"
+         xmlns:ladspa="&ladspa;">
+
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;4069">
+    <dc:creator>Guitarix Team</dc:creator>
+    <dc:title>Guitarix Amp</dc:title>
+    <ladspa:hasPort>
+      <ladspa:AudioInputPort rdf:about="&ladspa;4069.1" ladspa:hasLabel="Input" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:AudioOutputPort rdf:about="&ladspa;4069.2" ladspa:hasLabel="Output" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.3" ladspa:hasLabel="Preset" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.4" ladspa:hasLabel="parameter 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.5" ladspa:hasLabel="parameter 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.6" ladspa:hasLabel="parameter 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.7" ladspa:hasLabel="parameter 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.8" ladspa:hasLabel="parameter 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.9" ladspa:hasLabel="No Buffer" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.10" ladspa:hasLabel="Buffersize" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.11" ladspa:hasLabel="Non-RT Mode" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4069.12" ladspa:hasLabel="RT Priority" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;4069.13" ladspa:hasLabel="latency" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4069.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4069.9" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4069.10" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4069.11" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4069.12" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:SimulatorPlugin>
+
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;4070">
+    <dc:creator>Guitarix Team</dc:creator>
+    <dc:title>Guitarix Stereo Fx</dc:title>
+    <ladspa:hasPort>
+      <ladspa:AudioInputPort rdf:about="&ladspa;4070.1" ladspa:hasLabel="Input1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:AudioInputPort rdf:about="&ladspa;4070.2" ladspa:hasLabel="Input2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:AudioOutputPort rdf:about="&ladspa;4070.3" ladspa:hasLabel="Output1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:AudioOutputPort rdf:about="&ladspa;4070.4" ladspa:hasLabel="Output2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.5" ladspa:hasLabel="Preset" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.6" ladspa:hasLabel="parameter 1" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.7" ladspa:hasLabel="parameter 2" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.8" ladspa:hasLabel="parameter 3" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.9" ladspa:hasLabel="parameter 4" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.10" ladspa:hasLabel="parameter 5" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.11" ladspa:hasLabel="No Buffer" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.12" ladspa:hasLabel="Buffersize" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.13" ladspa:hasLabel="Non-RT Mode" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;4070.14" ladspa:hasLabel="RT Priority" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:OutputControlPort rdf:about="&ladspa;4070.15" ladspa:hasLabel="latency" />
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4070.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4070.11" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4070.12" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4070.13" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;4070.14" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:SimulatorPlugin>
+
+</rdf:RDF>

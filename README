@@ -28,6 +28,7 @@ BUILD DEPENDENCIES FEDORA:
         libsndfile-devel
         ladspa-devel
         glib2-devel
+        ladspa-calf-plugins
 
         (tested on Fedora 17 64 bit)
 
@@ -44,6 +45,7 @@ BUILD DEPENDENCIES UBUNTU:
       libsndfile-dev
       ladspa-sdk
       glib2-dev
+      calf-plugins
 
       (Tested on Ubuntu 12 32 bit)
 

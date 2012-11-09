@@ -732,18 +732,26 @@ static void get_path_uris (std::vector<char*> &lrdf_uris){
 
 #if __linux__
 
+#if 0
   sprintf(lrdf_path,"%s:/usr/local/share/ladspa/rdf:/usr/share/ladspa/rdf:%s/rdf",
           getenv("LADSPA_RDF_PATH")==NULL ? "" : getenv("LADSPA_RDF_PATH"),
           OS_get_program_path());
+
+#else
+
+  sprintf(lrdf_path,"%s/rdf",
+          OS_get_program_path());
+#endif
+
 
   char *dir = strtok (lrdf_path, ":");
   do
     get_dir_uris (lrdf_uris, dir);
   while ((dir = strtok (NULL, ":")));
 
-#endif
+#endif // __linux__
 
-#if FOR_WINDOWS
+#if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
   sprintf(lrdf_path,"%s%srdf",OS_get_program_path(), OS_get_directory_separator());
   get_dir_uris(lrdf_uris,lrdf_path);
 #endif

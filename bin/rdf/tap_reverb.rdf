@@ -1,0 +1,220 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE rdf:RDF [
+        <!ENTITY rdf 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+        <!ENTITY rdfs 'http://www.w3.org/2000/01/rdf-schema#'>
+        <!ENTITY dc 'http://purl.org/dc/elements/1.1/'>
+        <!ENTITY ladspa 'http://ladspa.org/ontology#'>
+]>
+<rdf:RDF xmlns:rdf="&rdf;"
+         xmlns:rdfs="&rdfs;"
+         xmlns:dc="&dc;"
+         xmlns:ladspa="&ladspa;">
+
+  <ladspa:ReverbPlugin rdf:about="&ladspa;2142">
+    <dc:creator>Tom Szilagyi</dc:creator>
+    <dc:title>TAP Reverberator</dc:title>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.0" ladspa:hasLabel="decay" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.1" ladspa:hasLabel="drylevel" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.2" ladspa:hasLabel="wetlevel" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.3" ladspa:hasLabel="combs_en" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.4" ladspa:hasLabel="allps_en" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.5" ladspa:hasLabel="bandpass_en" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.6" ladspa:hasLabel="stereo_enh" />
+    </ladspa:hasPort>
+    <ladspa:hasPort>
+      <ladspa:InputControlPort rdf:about="&ladspa;2142.7" ladspa:hasLabel="type">
+        <ladspa:hasScale>
+          <ladspa:Scale>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="0" ladspa:hasLabel="AfterBurn" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="1" ladspa:hasLabel="AfterBurn (Long)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="2" ladspa:hasLabel="Ambience" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="3" ladspa:hasLabel="Ambience (Thick)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="4" ladspa:hasLabel="Ambience (Thick) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="5" ladspa:hasLabel="Cathedral" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="6" ladspa:hasLabel="Cathedral - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="7" ladspa:hasLabel="Drum Chamber" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="8" ladspa:hasLabel="Garage" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="9" ladspa:hasLabel="Garage (Bright)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="10" ladspa:hasLabel="Gymnasium" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="11" ladspa:hasLabel="Gymnasium (Bright)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="12" ladspa:hasLabel="Gymnasium (Bright) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="13" ladspa:hasLabel="Hall (Small)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="14" ladspa:hasLabel="Hall (Medium)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="15" ladspa:hasLabel="Hall (Large)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="16" ladspa:hasLabel="Hall (Large) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="17" ladspa:hasLabel="Plate (Small)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="18" ladspa:hasLabel="Plate (Medium)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="19" ladspa:hasLabel="Plate (Large)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="20" ladspa:hasLabel="Plate (Large) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="21" ladspa:hasLabel="Pulse Chamber" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="22" ladspa:hasLabel="Pulse Chamber (Reverse)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="23" ladspa:hasLabel="Resonator (96 ms)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="24" ladspa:hasLabel="Resonator (152 ms)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="25" ladspa:hasLabel="Resonator (208 ms)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="26" ladspa:hasLabel="Room (Small)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="27" ladspa:hasLabel="Room (Medium)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="28" ladspa:hasLabel="Room (Large)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="29" ladspa:hasLabel="Room (Large) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="30" ladspa:hasLabel="Slap Chamber" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="31" ladspa:hasLabel="Slap Chamber - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="32" ladspa:hasLabel="Slap Chamber (Bright)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="33" ladspa:hasLabel="Slap Chamber (Bright) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="34" ladspa:hasLabel="Smooth Hall (Small)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="35" ladspa:hasLabel="Smooth Hall (Medium)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="36" ladspa:hasLabel="Smooth Hall (Large)" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="37" ladspa:hasLabel="Smooth Hall (Large) - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="38" ladspa:hasLabel="Vocal Plate" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="39" ladspa:hasLabel="Vocal Plate - HD" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="40" ladspa:hasLabel="Warble Chamber" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="41" ladspa:hasLabel="Warehouse" />
+            </ladspa:hasPoint>
+            <ladspa:hasPoint>
+              <ladspa:Point rdf:value="42" ladspa:hasLabel="Warehouse - HD" />
+            </ladspa:hasPoint>
+          </ladspa:Scale>
+        </ladspa:hasScale>
+      </ladspa:InputControlPort>
+    </ladspa:hasPort>
+    <ladspa:hasSetting>
+      <ladspa:Default>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="2500">
+            <ladspa:forPort rdf:resource="&ladspa;2142.0" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2142.1" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2142.2" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2142.3" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2142.4" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2142.5" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="1">
+            <ladspa:forPort rdf:resource="&ladspa;2142.6" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+        <ladspa:hasPortValue>
+          <ladspa:PortValue rdf:value="0">
+            <ladspa:forPort rdf:resource="&ladspa;2142.7" />
+          </ladspa:PortValue>
+        </ladspa:hasPortValue>
+      </ladspa:Default>
+    </ladspa:hasSetting>
+  </ladspa:ReverbPlugin>
+
+</rdf:RDF>

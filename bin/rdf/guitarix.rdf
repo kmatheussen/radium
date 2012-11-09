@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE rdf:RDF [
+  <!ENTITY rdf 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+  <!ENTITY rdfs 'http://www.w3.org/2000/01/rdf-schema#'>
+  <!ENTITY dc 'http://purl.org/dc/elements/1.1/'>
+  <!ENTITY ladspa 'http://ladspa.org/ontology#'>
+]>
+<rdf:RDF xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:dc="&dc;" xmlns:ladspa="&ladspa;">
+  <ladspa:DistortionPlugin rdf:about="&ladspa;4061">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-distortion</dc:title>
+  </ladspa:DistortionPlugin>
+
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;4062">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-crybaby</dc:title>
+  </ladspa:SimulatorPlugin>
+
+  <ladspa:DelayPlugin rdf:about="&ladspa;4063">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-echo</dc:title>
+  </ladspa:DelayPlugin>
+
+  <ladspa:ReverbPlugin rdf:about="&ladspa;4064">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-freeverb</dc:title>
+  </ladspa:ReverbPlugin>
+
+  <ladspa:FrequencyPlugin rdf:about="&ladspa;4065">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-IR</dc:title>
+  </ladspa:FrequencyPlugin>
+
+  <ladspa:AmplifierPlugin rdf:about="&ladspa;4066">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-monoamp</dc:title>
+  </ladspa:AmplifierPlugin>
+
+  <ladspa:CompressorPlugin rdf:about="&ladspa;4067">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix-monocompressor</dc:title>
+  </ladspa:CompressorPlugin>
+
+  <ladspa:SimulatorPlugin rdf:about="&ladspa;4068">
+    <dc:creator>brummer</dc:creator>
+    <dc:title>guitarix</dc:title>
+  </ladspa:SimulatorPlugin>
+</rdf:RDF>
+
