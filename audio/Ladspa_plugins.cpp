@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #if defined(FOR_MACOSX)
-#  define LIB_SUFFIX "dylib"
+#  define LIB_SUFFIX "so"
 #endif
 
 #if defined(FOR_WINDOWS)
@@ -416,7 +416,7 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
 static void add_ladspa_plugin_type(QFileInfo file_info){
   QString filename = file_info.absoluteFilePath();
 
-  //fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
+  fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
 
   QLibrary myLib(filename);
 
@@ -793,10 +793,16 @@ static void init_uncategorized_menues(){
                                                                  diff.begin(),
                                                                  plugin_type_pred());
   
+  fprintf(stderr,"g_plugin_size: %d, added_size: %d, diff size: %d\n",(int)g_plugin_types.size(),(int)g_added_plugin_types.size(),(int)diff.size());
+
+  //if(g_added_plugin_types.size()==0)
+  //  return;
+
   PR_add_menu_entry(PluginMenuEntry::level_up("Uncategorized"));
   {
     char last=0;
-    for(unsigned int i=0;diff.at(i)!=*end;i++){
+    for(unsigned int i=0;i<diff.size() && diff.at(i)!=*end;i++){
+      fprintf(stderr,"i: %d\n",(int)i);
       SoundPluginType *plugin_type = diff.at(i);
       const char *name = plugin_type->name;
       if(name[0]==last){
@@ -844,6 +850,7 @@ void create_ladspa_plugins(void){
   dir.setSorting(QDir::Name);
   
   QFileInfoList list = dir.entryInfoList();
+
   for (int i = 0; i < list.size(); ++i) {
     QFileInfo fileInfo = list.at(i);
     if(fileInfo.suffix()==LIB_SUFFIX)

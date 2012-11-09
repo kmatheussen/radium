@@ -119,9 +119,9 @@ static void LoadPatchVoices(struct Patch *patch){
 
  obj0:
   voicenum = DC_LoadI();
-  printf("----------Loading voice %d\n",voicenum);
+  //printf("----------Loading voice %d\n",voicenum);
   LoadPatchVoice(&patch->voices[voicenum]);
-  printf("----------Finished Loading voice %d\n",voicenum);
+  //printf("----------Finished Loading voice %d\n",voicenum);
   goto start;
 
 var1:
@@ -225,15 +225,15 @@ var3:
 obj0:
         is_MIDI_instrument = true;
         MIDI_InitPatch(patch, NULL);
-        printf("---Load MIDI Patch Data: %p\n",patch->patchdata);
+        //printf("---Load MIDI Patch Data: %p\n",patch->patchdata);
 	LoadMIDIPatchData(patch->patchdata);
-        printf("---Finished Load MIDI Patch Data\n");
+        //printf("---Finished Load MIDI Patch Data\n");
 	goto start;
 
 obj1:
-        printf("---Load Patch Voices\n");
+        //printf("---Load Patch Voices\n");
         LoadPatchVoices(patch);
-        printf("---Finihsed Load Patch Voices\n");
+        //printf("---Finihsed Load Patch Voices\n");
         goto start;
 
 var4:
