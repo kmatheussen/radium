@@ -7,7 +7,7 @@ Released 2012-11-10
 
 HOW TO MAKE IT RUN
        (If installing from source code)
-
+ 
        Paste the following lines into the terminal. Hopefully it works:
 
 make packages
