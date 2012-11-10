@@ -23,7 +23,7 @@ print "sys.path:",sys.path
 
 sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path
 
-import platform
+#import platform
 
 #if platform.system() != "Linux" and platform.system() != "mingw":
 #    sys.path = [sys.path[0], os.path.join(sys.path[0],"python2.7")]
@@ -112,7 +112,6 @@ import eventreceiverparser_generated
 #os.system("/usr/bin/givertcap")
 
 
-import os
 pid = os.getpid()
 
 if hasattr(os,'fork') and os.fork()==0:

@@ -238,6 +238,9 @@ static void updateWidget(EditorWidget *my_widget,QWidget *widget){
     widget->setPalette(pal);
   else
     widget->setPalette(sys_palette);
+
+  //QFont font=QFont("Bitstream Vera Sans Mono",4);
+  //widget->setFont(font);
 }
 
 static void updateApplication(EditorWidget *my_widget,QApplication *app){

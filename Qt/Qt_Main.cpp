@@ -503,6 +503,16 @@ int main(int argc, char **argv){
   if(argc>1 && !strcmp(argv[1],"--dont-load-new-song"))
     load_new_song=false;
 
+#ifdef IS_LINUX_BINARY
+#if 0
+  setenv("PYTHONHOME","temp/dist",1);
+  setenv("PYTHONPATH","temp/dist",1);
+#else
+  setenv("PYTHONHOME","python2.7/lib",1);
+  setenv("PYTHONPATH","python2.7/lib",1);
+#endif
+#endif
+
   Py_Initialize();
 
   {
@@ -511,7 +521,7 @@ int main(int argc, char **argv){
     // Set loading path to argv[0]
     PyRun_SimpleString("import sys,os");
 
-#ifdef FOR_WINDOWS
+#if defined(FOR_WINDOWS)
     sprintf(temp,"sys.g_program_path = \"\"");
 #else
     // This doesn't work on mingw. Could be a wine problem only.
@@ -522,6 +532,7 @@ int main(int argc, char **argv){
     PyRun_SimpleString("print \"hepp:\",sys.g_program_path,23");
     
     PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
+    //PyRun_SimpleString("sys.path = [sys.g_program_path]");
     
     // Set sys.argv[0]
     sprintf(temp,"sys.argv=[\"%s\",os.path.join(sys.g_program_path,\"keybindings.conf\")]",argv[0]);
@@ -570,7 +581,9 @@ int main(int argc, char **argv){
 
     int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
     if(system_font_size>=0){
-      QFont font=QFont(QApplication::font().family(),system_font_size);
+      //QFont font=QFont(QApplication::font().family(),system_font_size);
+      QFont font=QFont("Nimbus Sans L",system_font_size);
+      //QFont font=QFont("Bitstream Vera Sans Mono",system_font_size);
       QApplication::setFont(font);
     }
   }

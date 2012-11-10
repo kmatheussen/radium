@@ -69,12 +69,12 @@ cp bin/radium mingw/radium/radium.exe
 cp bin/radium temp/bin/radium.exe
 cp bin/radium Dropbox/windows_dist/bin/radium.exe
 
-cp bin/*.py Dropbox/windows_dist/bin/radium.exe
-cp bin/*.pyc Dropbox/windows_dist/bin/radium.exe
-cp bin/config Dropbox/windows_dist/bin/radium.exe
-cp bin/colors Dropbox/windows_dist/bin/radium.exe
-cp bin/menues.conf Dropbox/windows_dist/bin/radium.exe
-cp bin/keybindings.conf Dropbox/windows_dist/bin/radium.exe
+cp bin/*.py Dropbox/windows_dist/bin/
+cp bin/*.pyc Dropbox/windows_dist/bin/
+cp bin/config Dropbox/windows_dist/bin/
+cp bin/colors Dropbox/windows_dist/bin/
+cp bin/menues.conf Dropbox/windows_dist/bin/
+cp bin/keybindings.conf Dropbox/windows_dist/bin/
 
 
 if echo $OS_OPTS |grep MEMORY_DEBUG 2>/dev/null ; then
