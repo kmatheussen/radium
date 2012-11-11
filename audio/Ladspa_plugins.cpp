@@ -843,34 +843,37 @@ static void init_menues(){
 }
 
 void create_ladspa_plugins(void){
+  char ladspa_path[1024];
 
 #if __linux__
-  if(getenv("LADSPA_PATH")==NULL)
+  if(getenv("LADSPA_PATH")==NULL){
     QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
-  QDir dir(getenv("LADSPA_PATH")); //"/usr/lib64/ladspa");
+    return;
+  }
+  sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
 #endif
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  QDir dir(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa");
+  sprintf(ladspa_path,"%s",QSring(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").ascii());
 #endif
 
-  dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-  dir.setSorting(QDir::Name);
-  
-  QFileInfoList list = dir.entryInfoList();
+  char *dirname = strtok (ladspa_path, ":");
+  do{
 
-  for (int i = 0; i < list.size(); ++i) {
-    QFileInfo fileInfo = list.at(i);
-    if(fileInfo.suffix()==LIB_SUFFIX)
-      add_ladspa_plugin_type(fileInfo);
-  }
+    QDir dir(dirname);
 
-#if 0
-  {
-    QFileInfo zitaInfo = QString(OS_get_program_path()) + "/zita_rev_ladspa.so";
-    add_ladspa_plugin_type(zitaInfo);
-  }
-#endif
+    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+    dir.setSorting(QDir::Name);
+    
+    QFileInfoList list = dir.entryInfoList();
+    
+    for (int i = 0; i < list.size(); ++i) {
+      QFileInfo fileInfo = list.at(i);
+      if(fileInfo.suffix()==LIB_SUFFIX)
+        add_ladspa_plugin_type(fileInfo);
+    }
+
+  }while ((dirname = strtok (NULL, ":")));
 
   init_menues();
 }
