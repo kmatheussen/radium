@@ -7,8 +7,14 @@ export MOC="`./find_moc_and_uic_paths.sh moc`"
 export UIC="`./find_moc_and_uic_paths.sh uic`"
 
 #export BUILDTYPE=RELEASE
-export BUILDTYPE=DEBUG
-export OPTIMIZE="-mtune=native -O3"
+if ! env |grep BUILDTYPE ; then
+    export BUILDTYPE=DEBUG
+fi
+
+if ! env |grep OPTIMIZE ; then
+    export OPTIMIZE="-mtune=native -O3"
+fi
+
 export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 
 export CCC=g++

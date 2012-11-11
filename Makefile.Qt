@@ -264,6 +264,8 @@ install:
 	mkdir $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/
 	cp bin/packages/xmessage-1.0.3/xmessage $(DESTDIR)$(libdir)/radium/packages/xmessage-1.0.3/
 
+	rm -fr $(DESTDIR)$(libdir)/radium/python2.7
+
 	chmod -R a+rx $(DESTDIR)$(libdir)/radium/*
 
 	echo "#!/bin/sh" >$(DESTDIR)$(bindir)/radium

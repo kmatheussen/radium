@@ -4,7 +4,13 @@ set -e
 
 export IS_LINUX_BINARY="-DIS_LINUX_BINARY"
 
+rm -f Qt_Main.o
+
+export OPTIMIZE="-mtune=generic -msse -O3"
+export BUILDTYPE=RELEASE
+
 ./build_linux.sh $@
+
 
 cp README radium64_dist/
 cp bin/radium radium64_dist/bin/
@@ -14,7 +20,7 @@ cp bin/config radium64_dist/bin/
 cp bin/colors radium64_dist/bin/
 cp bin/menues.conf radium64_dist/bin/
 cp bin/keybindings.conf radium64_dist/bin/
-rm -f radium_0.9.1_linux64.tar.gz && tar cvzf radium_0.9.1_linux64.tar.gz radium64_dist
+rm -f radium_1.9.1_linux64.tar.gz && tar cvzf radium_1.9.1_linux64.tar.gz radium64_dist
 
 
 #echo "Building finished."
