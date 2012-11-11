@@ -8,8 +8,8 @@
 # 1. Where to install
 #
 PREFIX ?= /usr/local
-bindir = $(PREFIX)/bin
-libdir = $(PREFIX)/lib
+bindir ?= $(PREFIX)/bin
+libdir ?= $(PREFIX)/lib
 
 
 # 2. Where moc and uic for QT4 is installed.
