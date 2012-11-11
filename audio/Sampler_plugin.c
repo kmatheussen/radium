@@ -773,7 +773,14 @@ static bool load_sample_with_libsndfile(Data *data, const char *filename){
       float samples[1024*sf_info.channels];
 
       int read_now = sf_readf_float(sndfile, samples, 1024);
-      //printf("Reading %d frames. Size: %d. Read: %d. samples[0]: %f. channels: %d/%d\n",read_now,sample->num_frames,frames_read,samples[0],sample->num_channels,sf_info.channels);
+      //printf("read_now: %d. frames_read: %d. num_frames: %d. requested frames: %d\n",read_now,frames_read,sf_info.frames,frames_to_request);
+
+      if(read_now==0){ // This shouldn't happen, but it does.
+        memset(samples,0,1024*sf_info.channels*sizeof(float));
+        read_now = 1024;
+        if(frames_read + read_now > sf_info.frames)
+          read_now = sf_info.frames - frames_read;
+      }
 
       int interleaved_pos=0;
       int i;
