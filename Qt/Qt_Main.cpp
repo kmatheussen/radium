@@ -353,7 +353,7 @@ int radium_main(char *arg){
 #if 1
     if(override_default_qt_style){
       //QApplication::setStyle( new QOxygenStyle());
-      QApplication::setStyle( new QPlastiqueStyle());
+    QApplication::setStyle( new QPlastiqueStyle());
     //QApplication::setStyle( new QCleanlooksStyle() );
     //QApplication::setStyle( new QWindowsStyle() );
     }
@@ -544,9 +544,12 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  // Create application here in order to get default style. (not recommended, but can't find another way)
-  qapplication=new MyApplication(argc,argv);
-  g_qapplication = qapplication;
+  QApplication::setDesktopSettingsAware(false);
+
+    // Create application here in order to get default style. (not recommended, but can't find another way)
+    qapplication=new MyApplication(argc,argv);
+    g_qapplication = qapplication;
+
 
   {
 #if 0
@@ -572,21 +575,26 @@ int main(int argc, char **argv){
 
     QFontDatabase::addApplicationFont("fonts/LiberationMono-Bold.ttf");
     QFontDatabase::addApplicationFont("fonts/VeraMono.ttf");
+    QFontDatabase::addApplicationFont("fonts/NimbusSansL.ttf");
+
 
     //QApplication::setFont(QFont("Lohit-Tamil",8));
     //QApplication::setFont(QFont("Nimbus Sans L",8));
     //QApplication::setFont(QFont("Liberation Sans L",8));
 
-    printf("System font name: \"%s\". Size: %d\n",QApplication::font().family().ascii(),QApplication::font().pointSize());
+    //printf("System font name: \"%s\". Size: %d\n",QApplication::font().family().ascii(),QApplication::font().pointSize());
 
     int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
     if(system_font_size>=0){
       //QFont font=QFont(QApplication::font().family(),system_font_size);
       QFont font=QFont("Nimbus Sans L",system_font_size);
+      //QFont font=QFont("Nimbus Sans L",10);
+      //font.setPointSize(system_font_size);
       //QFont font=QFont("Bitstream Vera Sans Mono",system_font_size);
       QApplication::setFont(font);
     }
   }
+
 
   signal(SIGINT,finish);
 

@@ -854,7 +854,7 @@ void create_ladspa_plugins(void){
 #endif
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  sprintf(ladspa_path,"%s",QSring(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").ascii());
+  sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").ascii());
 #endif
 
   char *dirname = strtok (ladspa_path, ":");
