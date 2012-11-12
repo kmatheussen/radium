@@ -441,6 +441,7 @@ QWidget *createInstrumentsWidget(void){
   return instruments_widget;
 }
 
+#if 0
 static void set_widget_height(int height){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
@@ -458,13 +459,20 @@ static void set_widget_height(int height){
 #  undef QValueList
 #endif
 }
+#endif
+
+bool GFX_InstrumentWindowIsVisible(void){
+  return instruments_widget->isVisible();
+}
 
 void GFX_InstrumentWindowToFront(void){
-  set_widget_height(300);
+  //set_widget_height(30);
+  instruments_widget->show();
 }
 
 void GFX_InstrumentWindowToBack(void){
-  set_widget_height(0);
+  instruments_widget->hide();
+  //set_widget_height(0);
 }
 
 

@@ -89,13 +89,25 @@ void showHideMixerWidget(void){
 }
 
 void showHideInstrumentWidget(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  GFX_showHideInstrumentWidget(window);
+  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  //GFX_showHideInstrumentWidget(window);
+  if(GFX_InstrumentWindowIsVisible())
+    GFX_InstrumentWindowToBack();
+  else
+    GFX_InstrumentWindowToFront();
 }
+
+#if 0
+void toggleInstrumentWidgetOnly(void){
+  //if(GFX_
+}
+#endif
+
 void showHidePlaylist(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_showHidePlaylist(window);
 }
+
 
 void addFX(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

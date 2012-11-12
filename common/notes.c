@@ -201,6 +201,8 @@ static int get_velocity(struct Patch *patch){
   return new_velocity;
 }
 
+int g_downscroll = 1;
+
 void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
@@ -244,7 +246,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 					    
 		}
 		if(window->curr_track_sub==-1 && !pc->isplaying){
-			ScrollEditorDown(window,1);
+			ScrollEditorDown(window,g_downscroll);
 		}
 
 	}else{
@@ -277,7 +279,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 			UpdateAllWTracksCoordinates(window,wblock);
 
 		if(window->curr_track_sub==-1 && override==0 && !pc->isplaying){
-			ScrollEditorDown(window,1);
+			ScrollEditorDown(window,g_downscroll);
 		}
 
 		UpdateTrackReallines(window,wblock,wtrack);
@@ -386,7 +388,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 	}
 
 	if(window->curr_track_sub==-1  && !pc->isplaying){
-		ScrollEditorDown(window,1);
+		ScrollEditorDown(window,g_downscroll);
 	}
 	UpdateTrackReallines(window,wblock,wtrack);
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);

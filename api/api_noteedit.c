@@ -69,6 +69,11 @@ void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenu
 						);
 }
 
+extern int g_downscroll;
+void setNoteScrollLength(int l){
+  g_downscroll = l;
+}
+
 int getMaxVolume(){
   return MAX_VELOCITY;
 }
