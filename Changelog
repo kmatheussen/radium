@@ -1,3 +1,37 @@
+
+Most important changes 1.9.1 -> 1.9.2:
+* Give editor keyboard focus when clicking it
+* Option to set number of lines to scroll when adding notes. (suggested by Florian Paul Schmidt)
+* Right click to reset slider value
+* Properly load samples. (Thanks to Erik de Castro Lopo for explaining the libsndfile API)
+* Avoid playing samples two times (almost exactly on top of each other) when clicking the filename of a sample. (Bug found by Florian Paul Schmidt)
+* Make bindir and libdir overridable in the Makefile. Requested by Dominique Michel to easier make ebuilds for Radium.
+* Support several paths in LADSPA_PATH (Bug reported by Florian Paul Schmidt)
+* Fix readline build errors (Bug reported by Florian Paul Schmidt)
+
+
+
+Most important changes 0.69.3 -> 1.9.1:
+* Audio.
+* A quick-to-use modular mixer. Jack ports can be inserted anywhere.
+* VST plugins and instruments (native, not via wine)
+* LADSPA
+* Fluidsynth instrument
+* 20 STK instruments. (Physical modelling)
+* Sampler instrument (soundfiles, xi instruments, soundfonts)
+* Multiband compressor
+* Built-in filters and equalizers.
+* Simple arpeggiator
+* Drunk input velocity
+* Various GUI improvements
+* Pitch expand made available in the menues.
+* Tapiir plugin
+* Zita reverb plugin
+* Demo song
+* Reconfigured keybindings
+* Various bug fixes
+
+
 Most important changes 0.69.2 -> 0.69.3:
 * Fix font update problem after changing size
 * Add Append Track function. Using F key, same as Append Block.
