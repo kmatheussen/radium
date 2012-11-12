@@ -81,7 +81,7 @@ typedef struct{
   double frequency_table[128];
 } Sample;
 
-// A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, needs x voice objects to play that note.
+// A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
 typedef struct _Voice{
   struct _Voice *prev;
   struct _Voice *next;
@@ -741,14 +741,49 @@ static void set_legal_loop_points(Sample *sample, int start, int end){
 #include "Sampler_plugin_xi_load.c"
 #include "Sampler_plugin_sf2_load.c"
 
+static float *load_interleaved_samples(const char *filename, SF_INFO *sf_info){
+  SNDFILE *sndfile          = sf_open(filename,SFM_READ,sf_info);
+  if(sndfile==NULL)
+    return NULL;
+
+  float   *ret              = talloc_atomic(sizeof(float) * sf_info->channels * sf_info->frames);
+  int      allocated_frames = sf_info->frames;
+
+  int total_read_frames     = sf_readf_float(sndfile, ret, sf_info->frames);
+
+  if(total_read_frames==0)
+    return NULL;
+
+  while(true){
+    float samples[1024*sf_info->channels];
+    int read_now = sf_readf_float(sndfile, samples, 1024);
+    if(read_now==0)
+      break;
+
+    if(total_read_frames + read_now > allocated_frames){
+      allocated_frames = (total_read_frames+read_now) * 2;
+      ret = talloc_realloc(ret, allocated_frames * sizeof(float) * sf_info->channels);
+    }
+
+    memcpy(ret + (total_read_frames*sf_info->channels), samples, sizeof(float)*1024*sf_info->channels);
+
+    total_read_frames += read_now;
+  }
+
+  sf_close(sndfile);
+
+  sf_info->frames = total_read_frames;
+  return ret;
+}
+
 static bool load_sample_with_libsndfile(Data *data, const char *filename){
   SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
   data->num_different_samples = 1;
 
-  SNDFILE *sndfile = sf_open(filename,SFM_READ,&sf_info);
+  float *samples = load_interleaved_samples(filename, &sf_info);
 
-  if(sndfile==NULL){
+  if(samples==NULL){
     fprintf(stderr,"could not open file\n");
     return false;
   }
@@ -763,41 +798,22 @@ static bool load_sample_with_libsndfile(Data *data, const char *filename){
 
     int ch;
     for(ch=0;ch<num_channels;ch++){
-      Sample *sample=(Sample*)&data->samples[ch];
-      sample->num_frames   = sf_info.frames;
-      sample->data = malloc(sizeof(float)*sample->num_frames);
+      Sample *sample     = (Sample*)&data->samples[ch];
+      sample->num_frames = sf_info.frames;
+      sample->data       = malloc(sizeof(float)*sample->num_frames);
     }
 
-    int frames_read = 0;
-    while(frames_read < sf_info.frames){
-      float samples[1024*sf_info.channels];
-
-      int read_now = sf_readf_float(sndfile, samples, 1024);
-      //printf("read_now: %d. frames_read: %d. num_frames: %d. requested frames: %d\n",read_now,frames_read,sf_info.frames,frames_to_request);
-
-      if(read_now==0){ // This shouldn't happen, but it does.
-        memset(samples,0,1024*sf_info.channels*sizeof(float));
-        read_now = 1024;
-        if(frames_read + read_now > sf_info.frames)
-          read_now = sf_info.frames - frames_read;
-      }
-
-      int interleaved_pos=0;
-      int i;
-      for(i=0;i<read_now;i++){
-        for(ch=0;ch<sf_info.channels;ch++){
-          if(ch<2){
-            Sample *sample=(Sample*)&data->samples[ch];
-            sample->data[frames_read+i] = samples[interleaved_pos];
-          }
-          interleaved_pos++;
+    int interleaved_pos=0;
+    int i;
+    for(i=0;i<sf_info.frames;i++){
+      for(ch=0;ch<sf_info.channels;ch++){
+        if(ch<2){
+          Sample *sample=(Sample*)&data->samples[ch];
+          sample->data[i] = samples[interleaved_pos];
         }
+        interleaved_pos++;
       }
-
-      frames_read += read_now;
     }
-
-    sf_close(sndfile);
 
     for(ch=0;ch<num_channels;ch++){     
       Sample *sample=(Sample*)&data->samples[ch];
