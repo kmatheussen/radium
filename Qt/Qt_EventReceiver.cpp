@@ -294,6 +294,8 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   EventReciever(&tevent,this->window);
 
+  setFocus();
+
   updateEditor();
 }
 
