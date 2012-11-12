@@ -285,6 +285,7 @@ class Sample_requester_widget : public QWidget
       successfully_selected = FLUIDSYNTH_set_new_preset(plugin, _sf2_file, bank_num, preset_num);
 
     if(successfully_selected==true && pc->isplaying==false)
+      printf("playing note 1\n");
       PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
     }
 
@@ -345,6 +346,7 @@ class Sample_requester_widget : public QWidget
 
     if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
       if(pc->isplaying==false)
+        printf("playing note 2\n");
         PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
     }
   }
@@ -390,6 +392,7 @@ class Sample_requester_widget : public QWidget
   }
 
   void handle_item_pressed(QString item_text){
+    printf("item pressed\n");
     switch(_file_chooser_state){
     case IN_SF2_BANK:
       handle_sf2_preset_pressed(item_text);
@@ -430,7 +433,8 @@ public slots:
 
   void on_file_list_itemActivated ( QListWidgetItem * item ){
     bool was_normal_file = item!=NULL && !item->text().endsWith("/");
-    on_file_list_itemPressed(item);
+    //on_file_list_itemPressed(item);
+    handle_item_pressed(item->text());
     if(was_normal_file){
 
       if(g_filenames_hash.contains(item->text())==true)
@@ -457,11 +461,12 @@ public slots:
   void on_file_list_currentItemChanged ( QListWidgetItem * current, QListWidgetItem * previous ){
     printf("Current item changed!\n");
     if( current!=NULL && !current->text().endsWith("/"))
-      on_file_list_itemPressed(current);
+      handle_item_pressed(current->text());
   }
 
   void on_file_list_itemPressed(QListWidgetItem * item ){
-    handle_item_pressed(item->text());
+    printf("file_list item pressed\n");
+    //handle_item_pressed(item->text());
   }
 
 #if 0
@@ -530,6 +535,7 @@ public slots:
       
       if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
         if(pc->isplaying==false)
+          printf("playing note 3\n");
           PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
         //SAMPLER_save_sample(plugin, "/tmp/tmp.wav", 0);
       }
