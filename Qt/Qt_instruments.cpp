@@ -366,6 +366,12 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch){
   Audio_instrument_widget *instrument = new Audio_instrument_widget(NULL,patch);
 
+  fprintf(stderr,"instrument: %p, patch: %p\n",instrument,patch);
+  if(instrument==NULL){
+    fprintf(stderr,"instrument==NULL\n");
+    return NULL;
+  }
+
   instrument->_patch_widget->name_widget->setText(patch->name);
 
   //instruments_widget->tabs->insertTab(instrument, QString::fromLatin1(patch->name), instruments_widget->tabs->count());

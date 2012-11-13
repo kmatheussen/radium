@@ -586,8 +586,11 @@ int main(int argc, char **argv){
 
     int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
     if(system_font_size>=0){
-      //QFont font=QFont(QApplication::font().family(),system_font_size);
+#if 0 //defined(FOR_MACOSX)
+      QFont font=QFont(QApplication::font().family(),system_font_size);
+#else
       QFont font=QFont("Nimbus Sans L",system_font_size);
+#endif
       //QFont font=QFont("Nimbus Sans L",10);
       //font.setPointSize(system_font_size);
       //QFont font=QFont("Bitstream Vera Sans Mono",system_font_size);

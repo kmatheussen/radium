@@ -78,7 +78,7 @@ public:
   ~EditorWidget();
 
 #if USE_QT_VISUAL && USE_QT4
-  const QPaintEngine* paintEngine();
+  //const QPaintEngine* paintEngine();
 #endif
 
     QColor     colors[16];				// color array

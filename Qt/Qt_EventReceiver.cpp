@@ -84,7 +84,7 @@ void EditorWidget::customEvent(QEvent *e){
 
 
 #if USE_QT_VISUAL && USE_QT4
-#if 1
+#if 0
 const QPaintEngine* EditorWidget::paintEngine(){     
   //qDebug()<<"Paint Engine";
   return NULL;

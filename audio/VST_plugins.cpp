@@ -23,6 +23,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // http://code.breakfastquay.com/projects/dssi-vst/repository/entry/dssi-vst-server.cpp
 
 
+#if defined(FOR_MACOSX)
+#  import <Carbon/Carbon.h>
+#  undef EVENT_H
+// 
+#endif
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -32,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
-#if defined(USE_VESTIGE)
+#if USE_VESTIGE
 
 #  include "vestige/aeffectx.h"
 
@@ -51,15 +58,18 @@ const int effFlagsProgramChunks = 32;
 
 const int kVstMaxParamStrLen = 8;
 
-#else //  defined(USE_VESTIGE)
+#else //  USE_VESTIGE
 
 // If this fails, and you don't bother downloading and installing vstsdk from steinberg, set USE_VESTIGE to 1 in the Makefile!
 
 #  define VST_FORCE_DEPRECATED 0
 #  include <vstsdk2.4/pluginterfaces/vst2.x/aeffectx.h>
 
-#endif //  defined(USE_VESTIGE)
+#endif //  USE_VESTIGE
 
+#include <QMacNativeWidget>
+#include <QApplication>
+#include <QBoxLayout>
 
 #include <QWidget>
 #include <QLibrary>
@@ -70,6 +80,7 @@ const int kVstMaxParamStrLen = 8;
 #include <QSlider>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
 
@@ -104,8 +115,8 @@ namespace{ // Use namespace since we already have a widget called EditorWidget. 
     AEffect *aeffect;
     EditorWidget *editor_widget;
     float sample_rate;
-    struct VstEvents *events;
-    struct VstMidiEvent midi_events[MAX_EVENTS];
+    VstEvents *events;
+    VstMidiEvent midi_events[MAX_EVENTS];
   };
   
   struct TypeDataParam{
@@ -178,7 +189,7 @@ public:
 
 	// Constructor.
 	EditorWidget(QWidget *pParent, Qt::WindowFlags wflags = 0)
-		: QWidget(pParent, wflags),
+	  : QWidget(pParent, wflags),
                   _is_open(false),
 	#if defined(Q_WS_X11)
 		m_pDisplay(QX11Info::display()),
@@ -196,13 +207,6 @@ public:
 	{
                 _effect = effect;
 		
-		// Start the proper (child) editor...
-		long  value = 0;
-		void *ptr = (void *) winId();
-	#if defined(Q_WS_X11)
-		value = (long) m_pDisplay;
-	#endif
-
 		// Make it the right size
 		struct ERect {
 			short top;
@@ -212,36 +216,37 @@ public:
 		} *pRect;
 
                 if (effect->dispatcher(effect, effEditGetRect, 0, 0, &pRect, 0.0f)) {
+#if !defined(FOR_MACOSX)
 			int w = pRect->right - pRect->left;
 			int h = pRect->bottom - pRect->top;
 			if (w > 0 && h > 0)
 				QWidget::setFixedSize(w, h);
+#endif
 		}
 
 #if defined(FOR_WINDOWS)
-                _effect->dispatcher(_effect, effEditOpen, 0, value, ptr, 0.0f);
+		void *ptr = (void *) winId();
+                _effect->dispatcher(_effect, effEditOpen, 0, 0, ptr, 0.0f);
 #endif
 
-#if defined(FOR_MAC)
-  // From Audacity:
+#if defined(FOR_MACOSX)
 
-  HIViewRef view;
-  WindowRef win = (WindowRef) MacGetTopLevelWindowRef();
-  HIViewFindByID(HIViewGetRoot(win), kHIViewWindowContentID, &view);
+		Rect contentRect = {pRect->top+100, pRect->left+100, pRect->bottom+100, pRect->right+100};
+		//SetRect(&contentRect, 200, 200, 400, 400);
+		HIWindowRef windowRef;
+		CreateNewWindow(kDocumentWindowClass, kWindowStandardFloatingAttributes | kWindowCompositingAttribute | kWindowStandardHandlerAttribute, &contentRect, &windowRef);
+		HIViewRef contentView = 0;
+		GetRootControl(windowRef, &contentView);
+		
+		_effect->dispatcher(_effect,effEditOpen, 0, 0, (void*)windowRef, 0.0f);
+		
+		ShowWindow(windowRef);
+#endif // defined(FOR_MACOSX)
 
-  _effect->dispatcher(_effect,effEditOpen, 0, 0, win, 0.0f);
-
-#if 0
-  HIViewRef subview = HIViewGetFirstSubview(view);
-  if (subview == NULL) {
-    _effect->dispatcher(_effect,effEditClose, 0, 0, win, 0.0);
-    return;
-  }
-#endif
-
-#endif
 
 #if defined(Q_WS_X11)
+		void *ptr = (void *) winId();
+                long value = (long) m_pDisplay;
                 _effect->dispatcher(_effect, effEditOpen, 0, value, ptr, 0.0f);
 		m_wVstEditor = getXChildWindow(m_pDisplay, (Window) winId());
 		if (m_wVstEditor)
@@ -259,19 +264,23 @@ public:
 
                // this is the same as m_pVstPlugin->idleEditor()
                _effect->dispatcher(_effect, effEditIdle, 0, 0, NULL, 0.0f);
+#if !defined(FOR_MACOSX)
                 show();
                 update();
+#endif
 
-  _is_open=true;
+                _is_open=true;
 
 	}
 
 	// Close the editor widget.
 	void close()
 	{
-  printf("Close()\n");
-		QWidget::close();
+                printf("Close()\n");
 
+#if !defined(FOR_MACOSX)
+		QWidget::close();
+#endif
 		if (_effect && _is_open) {
                         _effect->dispatcher(_effect,effEditClose, 0, 0, NULL, 0.0f);
 		//	m_pVstPlugin->setEditorVisible(false);
@@ -282,8 +291,15 @@ public:
 		if (iIndex >= 0)
 			g_vstEditors.removeAt(iIndex);
 
-  _is_open=false;
+                _is_open=false;
 	}
+
+#if 0
+  bool macEvent ( EventHandlerCallRef caller, EventRef event ){
+    printf("got mac event\n");
+    return false;
+  }
+#endif
 
 #if defined(Q_WS_X11)
 
@@ -322,6 +338,7 @@ public:
   */
 
 protected:
+#if !defined(FOR_MACOSX)
 
 	// Visibility event handlers.
 	void showEvent(QShowEvent *pShowEvent)
@@ -355,6 +372,7 @@ protected:
 		}
 	#endif
 	}
+#endif // !defined(FOR_MACOSX)
 
 private:
 
@@ -366,7 +384,7 @@ private:
 	bool       m_bButtonPress;
 #endif
 
-  AEffect *_effect;
+        AEffect *_effect;
 };
 
 } // namespace vst
@@ -718,7 +736,7 @@ static void sendmidi(AEffect *effect,int val1, int val2, int val3){
 
 static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val2, int val3){
   Data *data = (Data*)plugin->data;
-  struct VstEvents *events=data->events;
+  VstEvents *events=data->events;
   
   if(events->numEvents==MAX_EVENTS){
     fprintf(stderr,"Error, too many vst midi events at once. Skipping.\n");
@@ -726,7 +744,7 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
   }
 
   {
-    struct VstMidiEvent *pevent=(struct VstMidiEvent*)events->events[events->numEvents];
+    VstMidiEvent *pevent=(VstMidiEvent*)events->events[events->numEvents];
     events->numEvents++;
     
     //  printf("note: %d\n",note);
@@ -863,13 +881,15 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   AEffect *aeffect = type_data->get_plugin_instance(VSTS_audioMaster);
   if (aeffect == NULL){
+    GFX_Message("Loading VST plugin %s failed",plugin_type->name);
     fprintf(stderr,"nope2\n");
-    abort();
+    //abort();
     return NULL;
   }
   if (aeffect->magic != kEffectMagic){
+    GFX_Message("Loading VST plugin %s failed. It doesnt seem to be a VST plugin...",plugin_type->name);
     fprintf(stderr,"nope3\n");
-    abort();
+    //abort();
     return NULL;
   }
 
@@ -897,9 +917,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   data->editor_widget = editor_widget;
   data->sample_rate = sample_rate;
 
-  data->events = (struct VstEvents*)calloc(1,sizeof(struct VstEvents) + (MAX_EVENTS*sizeof(struct VstMidiEvent*)));
+  data->events = (VstEvents*)calloc(1,sizeof(VstEvents) + (MAX_EVENTS*sizeof(VstMidiEvent*)));
   for(int i=0;i<MAX_EVENTS;i++)
-    data->events->events[i] = (struct VstEvent*)&data->midi_events[i];
+    data->events->events[i] = (VstEvent*)&data->midi_events[i];
 
   aeffect->dispatcher(aeffect, effMainsChanged, 0, 1, NULL, 0.0f);
 
@@ -961,7 +981,9 @@ void add_vst_plugin_type(QFileInfo file_info){
     type_data->get_plugin_instance = get_plugin_instance;
 
     QString basename = file_info.fileName();
+#if !defined(FOR_MACOSX)
     basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
+#endif
 
     plugin_type->type_name = "VST";
     plugin_type->name      = strdup(basename.ascii());
@@ -993,23 +1015,29 @@ void add_vst_plugin_type(QFileInfo file_info){
 
 void create_vst_plugins(void){
 
-#if 0
-  {
-    QDir dir("/home/kjetil/vst/");
+#if defined(FOR_MACOSX)
+  QDir dir("/Library/Audio/Plug-Ins/VST/");
+
+  //Digits.vst/Contents/MacOS/Digits 
+
+  dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+  dir.setSorting(QDir::Name);
+  QFileInfoList list = dir.entryInfoList();
+  for (int i = 0; i < list.size(); ++i) {
+    QFileInfo fileInfo = list.at(i);
+    QDir dir(fileInfo.absoluteFilePath() + "/Contents/MacOS/");
     dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     dir.setSorting(QDir::Name);
     
     QFileInfoList list = dir.entryInfoList();
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
-      if(fileInfo.suffix()==VST_SUFFIX)
-        add_vst_plugin_type(fileInfo);
+      add_vst_plugin_type(fileInfo);
     }
-
-    PR_add_menu_entry(PluginMenuEntry::separator());
   }
-#endif
 
+
+#else // defined(FOR_MACOSX)
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
@@ -1027,9 +1055,10 @@ void create_vst_plugins(void){
       if(fileInfo.suffix()==VST_SUFFIX)
         add_vst_plugin_type(fileInfo);
     }
-
+    
     PR_add_menu_entry(PluginMenuEntry::separator());
   }    
+#endif // defined(FOR_MACOSX)
 }
 
 

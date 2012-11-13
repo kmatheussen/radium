@@ -1102,7 +1102,6 @@ static SoundPluginType plugin_type = {
  get_effect_format        : NULL,
  get_effect_num           : get_effect_num,
  get_effect_name          : get_effect_name,
- get_display_value_string : NULL,
  effect_is_RT             : NULL,
  create_plugin_data       : create_plugin_data,
  cleanup_plugin_data      : cleanup_plugin_data,
