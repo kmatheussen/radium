@@ -70,7 +70,11 @@ PKG ?= pkg-config
 CCC ?= g++
 CC ?= gcc
 LINKER ?= g++
+
+# Note, in case you want to change this variable, beware that the include files in audio/faudiostream are copied from Faust 0.9.55.
 FAUST ?= /home/kjetil/faudiostream/compiler/faust
+
+
 JACKOPT ?=
 LRDFOPT ?= `$(PKG) --cflags lrdf`
 SNDFILEOPT ?= `$(PKG) --cflags sndfile`
