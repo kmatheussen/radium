@@ -273,7 +273,7 @@ install:
 	chmod -R a+rx $(DESTDIR)$(libdir)/radium/*
 
 	echo "#!/bin/sh" >$(DESTDIR)$(bindir)/radium
-	echo "cd " $(DESTDIR)$(libdir)/radium >>$(DESTDIR)$(bindir)/radium
+	echo "cd " $(libdir)/radium >>$(DESTDIR)$(bindir)/radium
 	echo "./radium" >>$(DESTDIR)$(bindir)/radium
 
 	chmod a+rx $(DESTDIR)$(bindir)/radium
