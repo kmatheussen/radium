@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/gfx_proc.h"
+#include "../common/settings_proc.h"
 #include "EditorWidget.h"
 
 #include "../api/api_requesters_proc.h"
@@ -126,7 +127,7 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const ch
   //QFont sansFont("Nimbus Mono L", 9);
   //QFont sansFont("WenQuanYi Zen Hei Mono",8);
   //QFont sansFont("Aurulent Sans Mono",8);
-  QFont sansFont("Bitstream Vera Sans Mono",8);
+  QFont sansFont("Bitstream Vera Sans Mono",SETTINGS_read_int((char*)"system_font_size",8));
   //sansFont.setPointSize(8);
   //sansFont.setBold(true);
 
