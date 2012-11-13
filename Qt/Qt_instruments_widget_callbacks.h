@@ -9,6 +9,7 @@ public:
   {
     setupUi(this);
     //tabs->tabBar()->hide();
+    //resize(width(),30);
   }
 
 public slots:

@@ -27,9 +27,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 
 #include "../common/instruments_proc.h"
+#include "../common/vector_proc.h"
+
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
+
+#include "Qt_instruments_proc.h"
 
 #include "Qt_SliderPainter_proc.h"
 
@@ -47,7 +51,7 @@ static int scale(int x, int x1, int x2, int y1, int y2){
 struct MyQSlider;
 
 extern QVector<MyQSlider*> g_all_myqsliders;
-
+extern struct Root *root;
 
 struct MyQSlider : public QSlider{
 
@@ -115,8 +119,33 @@ struct MyQSlider : public QSlider{
       handle_mouse_event(event);
       _has_mouse = true;
 
-    }else
-      QSlider::mousePressEvent(event);
+    }else{
+      vector_t options = {0};
+      VECTOR_push_back(&options, "Reset");
+      //VECTOR_push_back(&options, "Set Value");
+
+      int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
+
+      if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        PLUGIN_reset_one_effect(plugin,_effect_num);
+        GFX_update_instrument_widget(_patch);
+      }
+#if 0
+      else if(command==1 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
+        if(s!=NULL){
+          float value = atof(s);
+          Undo_AudioEffect_CurrPos(_patch, _effect_num);
+          PLUGIN_set_effect_value(plugin,-1,_effect_num,value,PLUGIN_STORED_TYPE,PLUGIN_STORE_VALUE);
+          GFX_update_instrument_widget(_patch);
+        }
+      }
+#endif
+
+      event->accept();
+    }
   }
 
   void mouseMoveEvent ( QMouseEvent * event )

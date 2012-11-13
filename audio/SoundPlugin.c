@@ -996,3 +996,8 @@ void PLUGIN_reset(SoundPlugin *plugin){
   for(i=0;i<type->num_effects;i++)
     PLUGIN_set_effect_value(plugin, 0, i, plugin->initial_effect_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
 }
+
+void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
+  Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
+  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
+}

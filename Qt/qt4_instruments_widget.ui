@@ -32,7 +32,7 @@
    <item row="0" column="1">
     <widget class="QStackedWidget" name="tabs">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -43,7 +43,7 @@
      <property name="styleSheet">
       <string notr="true"/>
      </property>
-     <widget class="QWidget" name="tabsPage1" native="true"/>
+     <widget class="QWidget" name="tabsPage1"/>
     </widget>
    </item>
   </layout>

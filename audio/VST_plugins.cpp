@@ -218,13 +218,35 @@ public:
 				QWidget::setFixedSize(w, h);
 		}
 
+#if defined(FOR_WINDOWS)
                 _effect->dispatcher(_effect, effEditOpen, 0, value, ptr, 0.0f);
-		
-	#if defined(Q_WS_X11)
+#endif
+
+#if defined(FOR_MAC)
+  // From Audacity:
+
+  HIViewRef view;
+  WindowRef win = (WindowRef) MacGetTopLevelWindowRef();
+  HIViewFindByID(HIViewGetRoot(win), kHIViewWindowContentID, &view);
+
+  _effect->dispatcher(_effect,effEditOpen, 0, 0, win, 0.0f);
+
+#if 0
+  HIViewRef subview = HIViewGetFirstSubview(view);
+  if (subview == NULL) {
+    _effect->dispatcher(_effect,effEditClose, 0, 0, win, 0.0);
+    return;
+  }
+#endif
+
+#endif
+
+#if defined(Q_WS_X11)
+                _effect->dispatcher(_effect, effEditOpen, 0, value, ptr, 0.0f);
 		m_wVstEditor = getXChildWindow(m_pDisplay, (Window) winId());
 		if (m_wVstEditor)
 			m_pVstEventProc = getXEventProc(m_pDisplay, m_wVstEditor);
-	#endif
+#endif
 
 		g_vstEditors.append(this);
 

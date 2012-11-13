@@ -52,5 +52,6 @@ extern LANGSPEC void PLUGIN_create_effects_from_state(SoundPlugin *plugin, hash_
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state);
 
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num);
 
 #endif // AUDIO_SOUNDPLUGIN_PROC_H

@@ -545,7 +545,9 @@ SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x
       Undo_MixerConnections_CurrPos();
 
       plugin = MW_add_plugin(plugin_type, x, y);
-      
+      if(plugin==NULL)
+        return NULL;
+
       char patchname[200];
       if(name!=NULL)
         snprintf(patchname,198,"%s",name);
