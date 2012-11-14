@@ -317,7 +317,7 @@ start_bin.sh:
 
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) `$(PKG) --libs sndfile` `$(PKG) --libs samplerate` `$(PKG) --libs glib-2.0`
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
 
 # `$(PKG) --libs fluidsynth`
 #	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
@@ -1472,7 +1472,8 @@ SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
 	$(CC) audio/SoundPlugin.c $(OPT) $(CPUOPT)  $(CPUOPT)
 
 Mixer.o: audio/Mixer.cpp
-	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -msse
+	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) 
+#-msse
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC) audio/get_windows_commandlines.c $(OPT)
