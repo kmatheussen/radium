@@ -292,7 +292,7 @@ run-valgrind:
 	./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium
 # --dont-load-new-song
 #	make -j3 && cd bin && valgrind gdb --args $(PYTHONEXE) start.py keybindings.conf
-	killall -9 X11_Qtstuff.py radium
+#	killall -9 X11_Qtstuff.py radium
 
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 

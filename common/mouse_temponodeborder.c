@@ -42,28 +42,32 @@ int MoveTempoNodeBorder_Mouse(
 ){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack2;
-	int oldwidth;
 	NInt oldrighttrack;
 
 //	PlayStop();
 
 	x-=window->prevaction.eint1;
 
-	oldwidth=wblock->temponodearea.width;
+	int old_width=wblock->temponodearea.width;
 	oldrighttrack=wblock->right_track;
+
+        struct WTracks *leftmost_track = ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+        //int max_x2 = R_MAX(wblock->t.x2-window->fontwidth*10, leftmost_track->x2 - 5);
+        //printf("max_x2: %d, leftmost_track->x2-5: %d\n",max_x2,leftmost_track->x2-5);
 
 	x=R_BOUNDARIES(wblock->temponodearea.x+3, x, wblock->t.x2-window->fontwidth*10);
 
-	wblock->temponodearea.width=x - wblock->temponodearea.x;
+        int new_width = x - wblock->temponodearea.x;
+        if(old_width == new_width)
+          return 0;
 
-	if(oldwidth==wblock->temponodearea.width){
-	  /*
-	  if(window->prevaction.action==NOACTION){
-	    DrawUpTrackerWindow(window);
-	  }
-	  */
-	  return 0;
-	}
+        int change = new_width - old_width;
+        //printf("Change: %d, leftmost->x2: %d, wblock->t.x2: %d\n",change,leftmost_track->x2,wblock->t.x2);
+        if(leftmost_track->x2 + change >= wblock->t.x2)
+          return 0;
+
+	wblock->temponodearea.width = new_width;
+
 
 	//	UpdateWTempoNodes(window,wblock);
 
@@ -71,7 +75,7 @@ int MoveTempoNodeBorder_Mouse(
 	//	  DrawUpTrackerWindow(window);
 	//	}else{
 	  //	  UpdateTrackerWindow(window);
-	  GFX_BitBlt(window,wblock->temponodearea.width-oldwidth,0,
+	  GFX_BitBlt(window,wblock->temponodearea.width-old_width,0,
 		       wblock->temponodearea.x2-2,wblock->a.y1,
 		       wblock->a.x2,wblock->t.y2
 		       );
@@ -86,7 +90,7 @@ int MoveTempoNodeBorder_Mouse(
 	  DrawUpWTempoNodes(window,wblock);
 	  //	  Blt_blt(window);
 
-	  if(oldwidth>wblock->temponodearea.width){
+	  if(old_width>wblock->temponodearea.width){
 	    wtrack2=ListFindElement1(&wblock->wtracks->l,oldrighttrack);
 	    while(wtrack2!=NULL && wtrack2->l.num<=wblock->right_track){
 	      DrawUpWTrack(window,wblock,wtrack2);
