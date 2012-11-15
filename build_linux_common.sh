@@ -6,7 +6,9 @@ export PYTHONEXE=`./find_python_path.sh`
 export MOC="`./find_moc_and_uic_paths.sh moc`"
 export UIC="`./find_moc_and_uic_paths.sh uic`"
 
-#export BUILDTYPE=RELEASE
+# Uncomment next line for debug build.
+export BUILDTYPE=RELEASE
+
 if ! env |grep BUILDTYPE ; then
     export BUILDTYPE=DEBUG
 fi
@@ -36,7 +38,7 @@ export OS_OPTS="-Werror=array-bounds"
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
-export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$(PKG) --libs sndfile` `$(PKG) --libs samplerate` `$(PKG) --libs glib-2.0`"
+export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0`"
 
 export OBJ_WIN=""
 export OBJ_MACOSX=""
