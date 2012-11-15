@@ -1,4 +1,13 @@
 
+Most important changes 1.9.2 -> 1.9.3:
+* Never expand editor area when changing track width
+* Various build fixes from Dominique Michel
+* Use system font size for menues, not 8
+* Adjust slider text position
+* Dont crash if loading plugin fails
+
+
+
 Most important changes 1.9.1 -> 1.9.2:
 * Give editor keyboard focus when clicking it
 * Option to set number of lines to scroll when adding notes. (suggested by Florian Paul Schmidt)
