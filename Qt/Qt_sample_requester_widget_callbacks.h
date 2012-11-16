@@ -437,14 +437,18 @@ public slots:
     handle_item_pressed(item->text());
     if(was_normal_file){
 
+      QString name;
+
       if(g_filenames_hash.contains(item->text())==true)
-        _instrument_name_widget->setText(QFileInfo(g_filenames_hash[item->text()]).fileName());
+        name = QFileInfo(g_filenames_hash[item->text()]).fileName();
       else
-        _instrument_name_widget->setText(item->text());
+        name = item->text();
+
+      _instrument_name_widget->setText(name);
 
       //audio_instrument_widget->on_name_widget_editingFinished()
       file_list->setCurrentItem(NULL);
-      tab_name_has_changed(_instrument_widget,item->text());
+      tab_name_has_changed(_instrument_widget,name);
       CHIP_update((SoundPlugin*)_patch->patchdata);
       set_editor_focus();
     }
