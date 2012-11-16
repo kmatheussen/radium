@@ -533,7 +533,7 @@ struct SliderPainter{
       p->drawRect(0,0,width(),height());
     }
 
-    QRect rect(5,5,width()-5,height()-5);
+    QRect rect(5,2,width()-5,height()-2);
 
     if(_display_string!=""){
       if(isEnabled()){
