@@ -72,6 +72,23 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     velocity_slider->setValue(8000);
     update_velocity_sliders();
 
+    // Adjust cpu label width
+    {
+      QFontMetrics fm(QApplication::font());
+      //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
+      int width = fm.width("CPU: 100.5") + 5;
+      cpu_label->setMinimumWidth(width);
+    }
+
+    // Adjust velocity slider widths
+    {
+      QFontMetrics fm(QApplication::font());
+      //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
+      int width = fm.width("Min. Vel: 100%")+20;
+      min_velocity_slider->setMinimumWidth(width);
+      velocity_slider->setMinimumWidth(width);
+    }
+
     _initing = false;
 
     _timer.bottom_bar_widget = this;

@@ -23,11 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPainter>
 #include <QTimer>
 #include <QVector>
+#include <QApplication>
+#include <QFont>
 
 #include "EditorWidget.h"
 
 #include "../common/instruments_proc.h"
 #include "../common/vector_proc.h"
+#include "../common/settings_proc.h"
 
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/SoundPlugin.h"
@@ -53,6 +56,8 @@ struct MyQSlider;
 extern QVector<MyQSlider*> g_all_myqsliders;
 extern struct Root *root;
 
+static int g_minimum_height = 0;
+
 struct MyQSlider : public QSlider{
 
  public:
@@ -61,11 +66,22 @@ struct MyQSlider : public QSlider{
   
   SliderPainter *_painter;
 
+  bool _minimum_size_set;
+
   void init(){
     _has_mouse=false;
 
     _patch = NULL;
     _effect_num = 0;
+
+    if(g_minimum_height==0){
+      QFontMetrics fm(QApplication::font());
+      QRect r =fm.boundingRect("In Out 234234 dB");
+      g_minimum_height = r.height()+4;
+      printf("Minimum height: %d, family: %s, font pixelsize: %d, font pointsize: %d\n",g_minimum_height,QApplication::font().family().ascii(),QApplication::font().pixelSize(),QApplication::font().pointSize());
+    }
+
+    _minimum_size_set = false; // minimumSize must be set later. I think ui generated code overwrites it when set here.
 
     _painter = SLIDERPAINTER_create(this);
 
@@ -73,7 +89,7 @@ struct MyQSlider : public QSlider{
   }
 
   MyQSlider ( QWidget * parent = 0 ) : QSlider(parent) {init();}
-  MyQSlider ( Qt::Orientation orientation, QWidget * parent = 0 ) : QSlider(orientation,parent) {}
+  MyQSlider ( Qt::Orientation orientation, QWidget * parent = 0 ) : QSlider(orientation,parent) { init();}
 
   ~MyQSlider(){
     g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
@@ -172,6 +188,22 @@ struct MyQSlider : public QSlider{
   }
 
   void paintEvent ( QPaintEvent * ev ){
+    if(_minimum_size_set==false){
+      _minimum_size_set=true;
+      setMinimumHeight(g_minimum_height);
+    }
+
+#if 0
+    {
+      QFontMetrics fm(QApplication::font());
+      //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
+      int width = fm.width(SLIDERPAINTER_get_string(_painter)) + 20;
+      if(minimumWidth() < width)
+        setMinimumWidth(width);
+    }
+
+#endif
+
     QPainter p(this);
     SLIDERPAINTER_paint(_painter,&p);
   }

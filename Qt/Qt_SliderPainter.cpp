@@ -606,3 +606,6 @@ void SLIDERPAINTER_set_string(SliderPainter *painter,QString string){
   painter->_display_string = string;
 }
 
+QString SLIDERPAINTER_get_string(SliderPainter *painter){
+  return painter->_display_string;
+}

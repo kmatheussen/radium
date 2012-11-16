@@ -174,7 +174,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   edit->show();
 
   reqtype->frame->adjustSize();
-  reqtype->frame->setMinimumHeight(reqtype->y+20);
+  reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
 
   edit->setFocus();
 
@@ -209,7 +209,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   edit->setEnabled(false);
 
   reqtype->label_text = "";
-  reqtype->y = reqtype->y + edit->height() + 2;
+  reqtype->y = reqtype->y + edit->height() + 10;
 
   snprintf(buffer,bufferlength-1,"%s",edit->text().toAscii().constData());
   printf("Got: \"%s\"\n",buffer);

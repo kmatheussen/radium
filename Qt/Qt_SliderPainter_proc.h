@@ -37,3 +37,4 @@ void SLIDERPAINTER_release_automation_pointers(SliderPainter *painter);
 
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter);
 void SLIDERPAINTER_set_string(SliderPainter *painter,QString string);
+QString SLIDERPAINTER_get_string(SliderPainter *painter);
