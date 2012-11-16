@@ -41,6 +41,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_VESTIGE
 
+#warning
+#warning
+#warning "Using vestige headers instead of vst headers from Steinberg."
+#warning
+#warning
+
 #  include "vestige/aeffectx.h"
 
 typedef intptr_t VstIntPtr;
