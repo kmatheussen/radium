@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1053</width>
-    <height>72</height>
+    <height>34</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1249,7 +1249,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>20</height>
+          <height>16777215</height>
          </size>
         </property>
         <property name="text">
@@ -1268,7 +1268,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>20</height>
+          <height>16777215</height>
          </size>
         </property>
         <property name="text">
@@ -1807,7 +1807,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>20</height>
+          <height>5134134</height>
          </size>
         </property>
         <property name="text">
@@ -2815,7 +2815,7 @@
       <item>
        <widget class="QToolButton" name="midi_input_onoff">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -2823,7 +2823,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>20</height>
+          <height>16777215</height>
          </size>
         </property>
         <property name="text">
@@ -2837,7 +2837,7 @@
       <item>
        <widget class="QToolButton" name="scrollplay_onoff">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -2845,7 +2845,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>20</height>
+          <height>16777215</height>
          </size>
         </property>
         <property name="text">
@@ -3354,24 +3354,33 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>50</width>
+          <width>0</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>50</width>
+          <width>16777215</width>
           <height>16777215</height>
          </size>
         </property>
         <property name="baseSize">
          <size>
-          <width>80</width>
+          <width>0</width>
           <height>0</height>
          </size>
         </property>
         <property name="text">
          <string>CPU:   55.2%</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
+        </property>
+        <property name="scaledContents">
+         <bool>false</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>

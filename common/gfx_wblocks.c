@@ -73,29 +73,30 @@ void DrawUpLineNums(
 			color=1;
 		}
 
-		if(realline->level>0){
+		if(realline->level>0 && realline->zoomline>0){
 			SetTextNumLine(
 				window,
 				wblock,
 				color,
-				realline->level,
-				wblock->zoomlevelarea.width/window->fontwidth,
-				wblock->zoomlevelarea.x,
+				realline->zoomline,
+				wblock->zoomlinearea.width/window->fontwidth,
+				wblock->zoomlinearea.x,
 				lokke,
 				false
 			);
-		}
-		SetTextNumLine(
-			window,
-			wblock,
-			color,
-			realline->zoomline,
-//			realline->Tline,
-			wblock->linenumarea.width/window->fontwidth,
-			wblock->linenumarea.x,
-			lokke,
-			false
-		);
+		}else{
+                  SetTextNumLine(
+                                 window,
+                                 wblock,
+                                 color,
+                                 //realline->zoomline,
+                                 realline->Tline,
+                                 wblock->linenumarea.width/window->fontwidth,
+                                 wblock->linenumarea.x,
+                                 lokke,
+                                 false
+                                 );
+                }
 	}
 
 	Blt_markSTrack(window,LINENUMBTRACK,start_realline,end_realline);
@@ -314,14 +315,14 @@ void WBLOCK_DrawBorders(
 
 	GFX_DrawTrackBorderDouble(
                                   window,
-                                  wblock->zoomlevelarea.x2+1,
+                                  wblock->linenumarea.x2+1,
                                   y1,y2,
                                   PAINT_BUFFER
                                   );
 
 	GFX_DrawTrackBorderDouble(
                                   window,
-                                  wblock->linenumarea.x2+1,
+                                  wblock->zoomlinearea.x2+1,
                                   y1,y2,
                                   PAINT_BUFFER
                                   );

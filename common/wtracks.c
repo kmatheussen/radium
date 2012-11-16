@@ -539,7 +539,7 @@ int WTRACK_getx1(
 
 	switch(tracknum){
 	case LINENUMBTRACK:
-		return wblock->zoomlevelarea.x;
+		return wblock->linenumarea.x;
 		break;
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x;
@@ -580,7 +580,7 @@ int WTRACK_getx2(
 
 	switch(tracknum){
 	case LINENUMBTRACK:
-		return wblock->zoomlevelarea.x2;
+		return wblock->zoomlinearea.x2;
 		break;
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x2;

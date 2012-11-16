@@ -24,7 +24,10 @@ extern void UpdateReallinesDependens(
 	struct WBlocks *wblock
 );
 extern void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock);
-extern int FindHighestLocalzoomLevel(struct WBlocks *wblock);
+//extern int FindHighestLocalzoomLevel(struct WBlocks *wblock);
+extern void SetZoomLevelAreaWidth(struct Tracker_Windows *window,
+                                  struct WBlocks *wblock);
+
 extern void ExpandLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

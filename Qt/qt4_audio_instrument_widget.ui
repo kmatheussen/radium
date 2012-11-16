@@ -92,7 +92,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>6</height>
+               <height>0</height>
               </size>
              </property>
              <property name="maximumSize">
@@ -104,7 +104,7 @@
              <property name="baseSize">
               <size>
                <width>0</width>
-               <height>12</height>
+               <height>0</height>
               </size>
              </property>
              <property name="text">
@@ -135,7 +135,7 @@
              <property name="baseSize">
               <size>
                <width>0</width>
-               <height>12</height>
+               <height>0</height>
               </size>
              </property>
              <property name="maximum">

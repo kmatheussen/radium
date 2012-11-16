@@ -201,6 +201,7 @@ void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 }
 
+#if 0
 int FindHighestLocalzoomLevel(struct WBlocks *wblock){
   int highest=0;
   int i;
@@ -208,7 +209,26 @@ int FindHighestLocalzoomLevel(struct WBlocks *wblock){
     highest = R_MAX(wblock->reallines[i]->level, highest);
   return highest;
 }
+#endif
 
+static int FindLargestZoomLineNum(struct WBlocks *wblock){
+  int highest=0;
+  int i;
+  for(i=0;i<wblock->num_reallines;i++)
+    if(wblock->reallines[i]->level>0)
+      highest = R_MAX(wblock->reallines[i]->zoomline, highest);
+  return highest;
+}
+
+void SetZoomLevelAreaWidth(struct Tracker_Windows *window,
+                           struct WBlocks *wblock)
+{
+  int largest = FindLargestZoomLineNum(wblock);
+  if(largest<10)
+    wblock->zoomlinearea.width = window->fontwidth;
+  else
+    wblock->zoomlinearea.width = ((int)log10(largest)+1) * window->fontwidth;
+}
 
 void ExpandLine(
 	struct Tracker_Windows *window,
@@ -238,6 +258,7 @@ void ExpandLine(
 		);
 	}
 
+#if 0
 	if(
 		 ( (int)log10((float)(localzoom->level+1))+1 )*window->fontwidth > 
 		 wblock->zoomlevelarea.width
@@ -245,10 +266,13 @@ void ExpandLine(
 		wblock->zoomlevelarea.width+=window->fontwidth;
 	}
 
+#endif
+
 	wblock->num_reallines+=num_newreallines-1;
 
 	UpdateRealLines(window,wblock);
 
+        SetZoomLevelAreaWidth(window,wblock);
 
 	MakeRangeLegal(wblock);
 
@@ -310,7 +334,7 @@ void UnexpandCurrPos(struct Tracker_Windows *window){
 	Unexpand(window,wblock,realline);
 
 	if(wblock->num_reallines==wblock->block->num_lines){
-		wblock->zoomlevelarea.width=0;
+		wblock->zoomlinearea.width=0;
 	}
 
 	UpdateReallinesDependens(window,wblock);
@@ -325,11 +349,11 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	int curr_realline=curr_realline_org;
 	int num_reallines=wblock->num_reallines;
 	int num_toexpand;
-	int zoomlevelareawidth;
+	int zoomlineareawidth;
 
 	PlayStop();
 
-	zoomlevelareawidth=wblock->zoomlevelarea.width;
+	zoomlineareawidth=wblock->zoomlinearea.width;
 
 	Undo_Reallines_CurrPos(window);
 
@@ -349,11 +373,11 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	}
 
 	if(wblock->num_reallines==wblock->block->num_lines){
-		wblock->zoomlevelarea.width=0;
+		wblock->zoomlinearea.width=0;
 	}
 
 
-	if(zoomlevelareawidth!=wblock->zoomlevelarea.width){
+	if(zoomlineareawidth!=wblock->zoomlinearea.width){
 
 	  UpdateReallinesDependens(window,wblock);
 	  DrawUpTrackerWindow(window);
@@ -369,7 +393,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 
 	  GFX_FilledBox(
                         window,0,
-                        wblock->zoomlevelarea.x,
+                        wblock->linenumarea.x,
                         wblock->t.y1,
                         wblock->temponodearea.x2,
                         wblock->t.y2,

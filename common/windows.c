@@ -139,7 +139,7 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
   GFX_FilledBox(
                 window,color,
                 window->leftslider.width+1, wblock->t.y1,
-                wblock->zoomlevelarea.x, wblock->t.y2+1,
+                wblock->linenumarea.x, wblock->t.y2+1,
                 PAINT_DIRECTLY
                 );
 

@@ -157,7 +157,7 @@ void Blt_marktrack(
     
 	switch(starttrack){
 	case LINENUMBTRACK:
-		nx1=wblock->zoomlevelarea.x;
+		nx1=wblock->linenumarea.x;
 		break;
 	case TEMPOCOLORTRACK:
 		nx1=wblock->tempocolorarea.x;

@@ -135,11 +135,3 @@ int IsOnRealLine(
 	return 0;
 
 }
-
-
-
-
-
-
-
-

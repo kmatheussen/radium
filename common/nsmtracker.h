@@ -699,8 +699,9 @@ struct WBlocks{
 	TBox t;
 //	int tx,ty,tx2,ty2;				/* lines, nodes, etc. GFX area. */
 
-	WArea zoomlevelarea;
+	//WArea zoomlevelarea;
 	WArea linenumarea;
+	WArea zoomlinearea;
         WArea tempocolorarea;
 	WArea lpbTypearea;
 	WArea lpbarea;

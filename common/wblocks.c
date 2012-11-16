@@ -108,11 +108,14 @@ void UpdateWBlockCoordinates(
 	wblock->linearea.y  = wblock->a.y1+(window->org_fontheight*2);
 	wblock->linearea.y2 = wblock->a.y2;
 
-	wblock->zoomlevelarea.x  = wblock->a.x1;
-	wblock->zoomlevelarea.x2 = wblock->a.x1             + wblock->zoomlevelarea.width;
-	wblock->linenumarea.x    = wblock->zoomlevelarea.x2 + 3;
+	wblock->linenumarea.x    = wblock->a.x1 + 3;
 	wblock->linenumarea.x2   = wblock->linenumarea.x    + wblock->linenumarea.width;
-	wblock->tempocolorarea.x = wblock->linenumarea.x2   + 3;
+
+	wblock->zoomlinearea.x    = wblock->linenumarea.x2 + 3;
+	wblock->zoomlinearea.x2   = wblock->zoomlinearea.x    + wblock->zoomlinearea.width;
+
+
+	wblock->tempocolorarea.x = wblock->zoomlinearea.x2   + 3;
 	wblock->tempocolorarea.x2= wblock->tempocolorarea.x + wblock->tempocolorarea.width;
 	wblock->lpbTypearea.x    = wblock->tempocolorarea.x2+ 3;
 	wblock->lpbTypearea.x2   = wblock->lpbTypearea.x    + wblock->lpbTypearea.width;
@@ -157,13 +160,13 @@ void UpdateAllWBlockCoordinates(
 }
 
 void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
-	wblock->linenumarea.width   = window->fontwidth*3;
-	wblock->tempocolorarea.width= window->fontwidth*3;
-	wblock->lpbTypearea.width   = window->fontwidth;
-	wblock->lpbarea.width       = window->fontwidth*2;
-	wblock->tempoTypearea.width = window->fontwidth;
-	wblock->tempoarea.width     = window->fontwidth*3;
-	wblock->temponodearea.width = window->fontwidth*7;
+	wblock->linenumarea.width    = window->fontwidth*3;
+	wblock->tempocolorarea.width = window->fontwidth*3;
+	wblock->lpbTypearea.width    = window->fontwidth;
+	wblock->lpbarea.width        = window->fontwidth*2;
+	wblock->tempoTypearea.width  = window->fontwidth;
+	wblock->tempoarea.width      = window->fontwidth*3;
+	wblock->temponodearea.width  = window->fontwidth*7;
 }
 
 void UpdateAllWBlockWidths(struct Tracker_Windows *window){
@@ -190,7 +193,7 @@ void NewWBlock(
 
 	wblock->tempotrackonoff=1;
 
-	wblock->zoomlevelarea.width = 0;
+	wblock->zoomlinearea.width = 0;
 	UpdateWBlockWidths(window,wblock);
 
 	wblock->left_subtrack= -1;

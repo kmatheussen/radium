@@ -40,8 +40,9 @@ DC_start("WBLOCK");
 	DC_SSI("tempotrackonoff",wblock->tempotrackonoff);
 	DC_SSI("temponodetrackonoff",wblock->temponodetrackonoff);
 
-	DC_SaveS("zoomlevelarea");SaveWArea(&wblock->zoomlevelarea);
+	//DC_SaveS("zoomlevelarea");SaveWArea(&wblock->zoomlevelarea);
 	DC_SaveS("linenumarea");SaveWArea(&wblock->linenumarea);
+        //DC_SaveS("zoomlinearea");SaveWArea(&wblock->zoomlevelarea);
 	DC_SaveS("lpbTypearea");SaveWArea(&wblock->lpbTypearea);
 	DC_SaveS("lpbarea");SaveWArea(&wblock->lpbarea);
 	DC_SaveS("tempoTypearea");SaveWArea(&wblock->tempoTypearea);
@@ -79,7 +80,7 @@ struct WBlocks *LoadWBlock(void){
 	static char *vars[18]={
 		"tempotrackonoff",
 		"temponodetrackonoff",
-		"zoomlevelarea",
+		"zoomlevelarea", // not used anymore, kept for being able to load old songs
 		"linenumarea",
 		"lpbTypearea",
 		"lpbarea",
