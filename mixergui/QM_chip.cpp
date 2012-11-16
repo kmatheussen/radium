@@ -673,7 +673,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     bool is_over = (option->state & QStyle::State_MouseOver);
   */
 
-  painter->setPen(QPen(Qt::black, 2));
+  QColor c(g_editor->colors[1]);
+  c.setAlpha(160);
+
+  painter->setPen(QPen(c, 2));
   painter->setFont(g_editor->main_window->font());
 
   // main box
@@ -729,7 +732,6 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   }
 #endif
 
-  painter->setPen(QPen(Qt::black, 2));
 
   // Draw text
   {
@@ -749,6 +751,13 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QString text = SP_get_plugin(_sound_producer)->patch->name;
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
+
+    {
+      QColor c(g_editor->colors[1]);
+      c.setAlpha(160);
+      
+      painter->setPen(QPen(c, 2));
+    }
 
     if(textlen>=width){
       float s = width/textlen;

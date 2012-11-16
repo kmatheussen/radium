@@ -76,7 +76,7 @@ public:
         //info.sprintf("%d / %d",type->num_inputs,type->num_outputs);
         plugin_info->hide();
       else{
-        info.sprintf("Inputs: %d. Outputs: %d.",type->num_inputs,type->num_outputs);
+        info.sprintf("Ins: %d. Outs: %d.",type->num_inputs,type->num_outputs);
         plugin_info->setText(info);
       }
     }

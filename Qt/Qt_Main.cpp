@@ -334,6 +334,8 @@ void Qt_EventHandler(void){
 #endif
 }
 
+//extern void updateAllFonts(QWidget *widget);
+
 static bool load_new_song=true;
 
 int radium_main(char *arg){
@@ -462,6 +464,8 @@ int radium_main(char *arg){
   if(load_new_song==true)
     NewSong_CurrPos(root->song->tracker_windows);
 
+  //updateAllFonts(QApplication::mainWidget());
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
@@ -546,10 +550,10 @@ int main(int argc, char **argv){
 
   QApplication::setDesktopSettingsAware(false);
 
-    // Create application here in order to get default style. (not recommended, but can't find another way)
-    qapplication=new MyApplication(argc,argv);
-    g_qapplication = qapplication;
-
+  // Create application here in order to get default style. (not recommended, but can't find another way)
+  qapplication=new MyApplication(argc,argv);
+  g_qapplication = qapplication;
+  
 
   {
 #if 0
@@ -584,12 +588,15 @@ int main(int argc, char **argv){
 
     //printf("System font name: \"%s\". Size: %d\n",QApplication::font().family().ascii(),QApplication::font().pointSize());
 
+
     const char *fontstring = SETTINGS_read_string("system_font",NULL);
     if(fontstring!=NULL){
       QFont font;
       font.fromString(fontstring);
+      qapplication->setFont(font);
       QApplication::setFont(font);
     }
+
 
 #if 0
 

@@ -197,6 +197,8 @@ static void updatePalette(EditorWidget *my_widget, QPalette &pal){
   // Foreground, text, etc. (everything blackish)
   {
     QColor c(my_widget==NULL ? QColor(SETTINGS_read_string("color1","black")) : my_widget->colors[1]);
+    c.setAlpha(180);
+
     pal.setColor(QPalette::Active, QColorGroup::Foreground, c);
     pal.setColor(QPalette::Inactive, QColorGroup::Foreground, c.light(93));
     pal.setColor(QPalette::Disabled, QColorGroup::Foreground, c.light(80));

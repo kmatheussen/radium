@@ -46,7 +46,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
   tvisual->fontheight=fm.height();
 }
 
-static void updateAllFonts(QWidget *widget){
+void updateAllFonts(QWidget *widget){
   if(widget!=NULL){
     widget->setFont(QApplication::font());
 
@@ -60,10 +60,13 @@ static void updateAllFonts(QWidget *widget){
 
 
 void GFX_ConfigSystemFont(void){
-  QApplication::setFont(QFontDialog::getFont( 0, QApplication::font()));
-  qApp->setFont(QApplication::font());
+  QFont font = QFontDialog::getFont( 0, QApplication::font());
+  QApplication::setFont(font);
+  qApp->setFont(font);
+
+  SETTINGS_write_string("system_font",font.toString().ascii());
+
   updateAllFonts(QApplication::mainWidget());
-  SETTINGS_write_string("system_font",(char*)QApplication::font().toString().ascii());
 }
 
 static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){

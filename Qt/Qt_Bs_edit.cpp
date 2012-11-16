@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qpushbutton.h>
 #include <qsplitter.h>
+#include <qapplication.h>
 
 #if 0
 #include <qwidget.h>
@@ -244,7 +245,11 @@ public:
 
     setWidgetColors(this);
 
-    setFixedWidth(100);
+    {
+      QFontMetrics fm(QApplication::font());
+      int width = fm.width("0: 0/Pretty long name");
+      setFixedWidth(width);
+    }
   }
 
   void resizeEvent(QResizeEvent *qresizeevent){

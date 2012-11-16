@@ -536,10 +536,13 @@ struct SliderPainter{
     QRect rect(5,2,width()-5,height()-2);
 
     if(_display_string!=""){
+      QColor c(editor->colors[1]);
       if(isEnabled()){
-        p->setPen(QPen(Qt::black,1));//editor->colors[2].darker(500));
+        c.setAlpha(160);
+        p->setPen(QPen(c,1));//editor->colors[2].darker(500));
       }else{
-        p->setPen(QPen(editor->colors[2].darker(300),1));
+        c.setAlpha(60);
+        p->setPen(QPen(c,1));
       }
       p->drawText(rect, Qt::AlignLeft, _display_string);
     }
