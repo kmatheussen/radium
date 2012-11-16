@@ -584,6 +584,15 @@ int main(int argc, char **argv){
 
     //printf("System font name: \"%s\". Size: %d\n",QApplication::font().family().ascii(),QApplication::font().pointSize());
 
+    const char *fontstring = SETTINGS_read_string("system_font",NULL);
+    if(fontstring!=NULL){
+      QFont font;
+      font.fromString(fontstring);
+      QApplication::setFont(font);
+    }
+
+#if 0
+
     int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
     if(system_font_size>=0){
 #if 0 //defined(FOR_MACOSX)
@@ -596,6 +605,7 @@ int main(int argc, char **argv){
       //QFont font=QFont("Bitstream Vera Sans Mono",system_font_size);
       QApplication::setFont(font);
     }
+#endif
   }
 
 

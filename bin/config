@@ -1,7 +1,7 @@
 settings_version = 0.720000 # dont change this one
 
-font = Liberation Mono,12,-1,5,75,0,0,0,0,0
-system_font_size = 8
+font = Monospace,12,-1,5,75,0,0,0,0,0
+system_font = Nimbus Sans L [urw],10,-1,5,75,0,0,0,0,0
 
 show_text_border = true
 bottom_slider_height = 14

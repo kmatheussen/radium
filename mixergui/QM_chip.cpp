@@ -754,10 +754,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       float s = width/textlen;
       painter->save();
       painter->scale(s,1.0);
-      painter->drawText(x1/s, y1, width/s, y2-y1, Qt::AlignCenter, text);
+      painter->drawText(x1/s, y1+2, width/s, y2-y1, Qt::AlignLeft, text);
       painter->restore();
     }else{
-      painter->drawText(x1, y1, width, y2-y1, Qt::AlignCenter, text);
+      painter->drawText(x1, y1+2, width, y2-y1, Qt::AlignLeft, text);
     }
 
     // checbuttons.

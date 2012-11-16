@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+extern LANGSPEC void GFX_ConfigSystemFont(void);
 //extern LANGSPEC char *GFX_SelectEditFont(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ResetFontSize(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels);

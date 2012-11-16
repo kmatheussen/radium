@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include <qfontdialog.h>
+#include <qapplication.h>
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
@@ -45,7 +46,26 @@ void setFontValues(struct Tracker_Windows *tvisual){
   tvisual->fontheight=fm.height();
 }
 
-//bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){return true;}
+static void updateAllFonts(QWidget *widget){
+  if(widget!=NULL){
+    widget->setFont(QApplication::font());
+
+    const QList<QObject*> list = widget->children();
+    for (int i = 0; i < list.size(); ++i) {
+      QWidget *widget = dynamic_cast<QWidget*>(list.at(i));
+      updateAllFonts(widget);
+    }
+  }
+}
+
+
+void GFX_ConfigSystemFont(void){
+  QApplication::setFont(QFontDialog::getFont( 0, QApplication::font()));
+  qApp->setFont(QApplication::font());
+  updateAllFonts(QApplication::mainWidget());
+  SETTINGS_write_string("system_font",(char*)QApplication::font().toString().ascii());
+}
+
 static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font = QFontDialog::getFont( 0, editor->font ) ;

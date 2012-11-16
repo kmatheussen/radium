@@ -127,7 +127,9 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const ch
   //QFont sansFont("Nimbus Mono L", 9);
   //QFont sansFont("WenQuanYi Zen Hei Mono",8);
   //QFont sansFont("Aurulent Sans Mono",8);
-  QFont sansFont("Bitstream Vera Sans Mono",SETTINGS_read_int((char*)"system_font_size",8));
+  QFont sansFont(QApplication::font());
+
+  sansFont.setFamily("Bitstream Vera Sans Mono");
   //sansFont.setPointSize(8);
   //sansFont.setBold(true);
 

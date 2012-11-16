@@ -45,6 +45,10 @@ void configColors(int windownum){
 #endif
 }
 
+void configSystemFont(void){
+  GFX_ConfigSystemFont();
+}
+
 void configFonts(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_ConfigFonts(window);
