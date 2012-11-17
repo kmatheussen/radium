@@ -117,8 +117,8 @@ void WBLOCK_DrawProperlyMixedTempoColor(
                                         )
 
 {
-  color1 = color1+10 % 16;
-  color2 = color2+10 % 16;
+  color1 = (color1+7) % 16;
+  color2 = (color2+7) % 16;
 
   //printf("mixfact: %f - %d\n",mixfactor,(int)(mixfactor*1000.0f));
   GFX_SetMixColor(window,color1,color2,(mixfactor*1000.0f));
