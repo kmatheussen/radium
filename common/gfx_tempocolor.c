@@ -109,6 +109,30 @@ void WBLOCK_DrawNotMixedTempoColor(
 
 }
 
+void WBLOCK_DrawProperlyMixedTempoColor(
+                                        struct Tracker_Windows *window,
+                                        int x,int y,int width,
+                                        int color1,int color2,
+                                        float mixfactor
+                                        )
+
+{
+  color1 = color1+10 % 16;
+  color2 = color2+10 % 16;
+
+  //printf("mixfact: %f - %d\n",mixfactor,(int)(mixfactor*1000.0f));
+  GFX_SetMixColor(window,color1,color2,(mixfactor*1000.0f));
+
+  GFX_Line(
+	     window,color1,
+	     x,
+	     y,
+	     x+width,
+	     y,
+             PAINT_BUFFER
+	     );
+}
+
 #if 0
 float scale(float x, float x1, float x2, float y1, float y2){
   return y1 + ( ((x-x1)*(y2-y1))
@@ -201,8 +225,9 @@ void WBLOCK_DrawTempoColor(
       //if(colors[colortousebase]==0 || colors[colortousebase+1]==0)
       //  abort();
 
-      WBLOCK_DrawMixedTempoColor(
-      //      WBLOCK_DrawNotMixedTempoColor(
+      //WBLOCK_DrawMixedTempoColor(
+      //WBLOCK_DrawNotMixedTempoColor(
+      WBLOCK_DrawProperlyMixedTempoColor(
 				    window,
 				    wblock->tempocolorarea.x,
 				    GetReallineY1Pos(window,wblock,realline)+line,

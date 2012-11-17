@@ -73,6 +73,8 @@ void GFX_CancelClipRect(struct Tracker_Windows* tvisual,int where);
 
 void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where);
 
+void GFX_SetMixColor(struct Tracker_Windows* tvisual,int color1,int color2,int mix_factor);
+
 void GFX_Text(
 	struct Tracker_Windows* tvisual,
 	int color,

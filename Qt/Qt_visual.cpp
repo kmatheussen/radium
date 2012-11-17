@@ -365,13 +365,20 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
 #endif
 }
 
+static bool g_use_custom_color = false;
+static QColor g_custom_color;
 
 void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  QColor qcolor = get_qcolor(tvisual,color);
-  painter->setPen(qcolor);
+  if(g_use_custom_color==true){
+    painter->setPen(g_custom_color);
+    g_use_custom_color = false;
+  }else{    
+    QColor qcolor = get_qcolor(tvisual,color);
+    painter->setPen(qcolor);
+  }
 
 #if 0
   painter->setRenderHints(QPainter::Antialiasing,true);
@@ -389,7 +396,6 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
   painter->setRenderHints(QPainter::Antialiasing,false);
 #endif
 }
-
 
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 
@@ -461,6 +467,14 @@ void OS_GFX_Points(
 }
 
 
+void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, int mix_factor){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  //printf("mix_factor: %d\n",mix_factor);
+  g_custom_color = mix_colors(editor->colors[color1], editor->colors[color2], mix_factor / 1000.0);
+  g_use_custom_color = true;
+}
+
+
 void OS_GFX_SetClipRect(
                         struct Tracker_Windows *tvisual,
                         int x,int y,
@@ -498,6 +512,7 @@ void OS_GFX_Text(
   QPainter *painter=GET_QPAINTER(editor,where);
 
   QColor qcolor = get_qcolor(tvisual,color);
+  qcolor.setAlpha(200);
   painter->setPen(qcolor);
 
 #if 0    

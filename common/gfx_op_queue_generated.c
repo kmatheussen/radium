@@ -9,6 +9,7 @@ ENUM_GFX_Box,
 ENUM_GFX_SetClipRect, 
 ENUM_GFX_CancelClipRect, 
 ENUM_GFX_Line, 
+ENUM_GFX_SetMixColor, 
 ENUM_GFX_Text, 
 ENUM_GFX_BitBlt, 
 #endif 
@@ -22,6 +23,7 @@ case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5, el
 case ENUM_GFX_SetClipRect: OS_GFX_SetClipRect(window, el->i1, el->i2, el->i3, el->i4, el->i5); break; 
 case ENUM_GFX_CancelClipRect: OS_GFX_CancelClipRect(window, el->i1); break; 
 case ENUM_GFX_Line: PREOS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_SetMixColor: OS_GFX_SetMixColor(window, el->i1, el->i2, el->i3); break; 
 case ENUM_GFX_Text: PREOS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6, el->i7); break; 
 case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 #endif 
@@ -104,6 +106,14 @@ void QUEUE_GFX_Line(struct Tracker_Windows* tvisual, int color, int x, int y, in
   el->i4 = x2 ; 
   el->i5 = y2 ; 
   el->i6 = where ; 
+} 
+
+void QUEUE_GFX_SetMixColor(struct Tracker_Windows* tvisual, int color1, int color2, int mix_factor){ 
+  queue_element_t *el = get_next_element(tvisual->op_queue); 
+  el->type = ENUM_GFX_SetMixColor ; 
+  el->i1 = color1 ; 
+  el->i2 = color2 ; 
+  el->i3 = mix_factor ; 
 } 
 
 void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, int color, const char* text, int x, int y, int width, int flags, int where){ 
