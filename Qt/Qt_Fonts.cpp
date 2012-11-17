@@ -58,9 +58,12 @@ void updateAllFonts(QWidget *widget){
   }
 }
 
+extern int num_users_of_keyboard;
 
 void GFX_ConfigSystemFont(void){
+  num_users_of_keyboard++;
   QFont font = QFontDialog::getFont( 0, QApplication::font());
+  num_users_of_keyboard--;
   QApplication::setFont(font);
   qApp->setFont(font);
 
@@ -71,7 +74,9 @@ void GFX_ConfigSystemFont(void){
 
 static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  num_users_of_keyboard++;
   editor->font = QFontDialog::getFont( 0, editor->font ) ;
+  num_users_of_keyboard--;
   editor->setFont(editor->font);
 
   printf("Raw font name: \"%s\"\n",editor->font.rawName().ascii());

@@ -406,6 +406,8 @@ public slots:
 
 #include "mQt_colors.cpp"
 
+extern int num_users_of_keyboard;
+
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   static bool is_running = false;
 
@@ -422,6 +424,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
 
   Scoped_GTK_EventHandler_Timer eventhandler;
 
+  num_users_of_keyboard++;
   if(QColorDialog3::getColor(editorwidget->colors[0],editorwidget).isValid()==false){
     // "cancel"
     printf("Got CANCEL!\n");
@@ -446,6 +449,8 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
       SETTINGS_write_string(key,(char*)editorwidget->colors[i].name().ascii());
     }
   }
+
+  num_users_of_keyboard--;
 
   updateAll(editorwidget);
 
