@@ -117,11 +117,16 @@ void WBLOCK_DrawProperlyMixedTempoColor(
                                         )
 
 {
-  color1 = (color1+7) % 16;
-  color2 = (color2+7) % 16;
+  int das_mixfactor = (R_ABS(mixfactor)) * 1000.0f;
+  das_mixfactor = das_mixfactor % 1000;
 
+  color1 = R_ABS(color1+7) % 16;
+  color2 = R_ABS(color2+7) % 16;
+
+
+  //fprintf(stderr,"Colors: %d %d %f/%d\n",color1,color2,mixfactor,(int)(mixfactor*1000.f));
   //printf("mixfact: %f - %d\n",mixfactor,(int)(mixfactor*1000.0f));
-  GFX_SetMixColor(window,color1,color2,(mixfactor*1000.0f));
+  GFX_SetMixColor(window,color1,color2,das_mixfactor);
 
   GFX_Line(
 	     window,color1,
@@ -153,7 +158,7 @@ void WBLOCK_DrawTempoColor(
   //const int colors[3]={1,4,2};
   const int numcolors=10;
   const int colors[11]={1,3,4,5,6,8,12,13,14,15};
-  const int maxtime=700;
+  const int maxtime=1700;
   const int mintime=10;
 
   int realline,line;
@@ -217,7 +222,7 @@ void WBLOCK_DrawTempoColor(
                   (numcolors-1)* (delta-mintime)
                   );
 
-      colortouse/=(maxtime-mintime);
+      colortouse /= (maxtime-mintime);
       colortousebase=R_BOUNDARIES(0,(int)colortouse,numcolors-2);
       colortousefloor=1.0f-(colortouse-(float)colortousebase);
 
