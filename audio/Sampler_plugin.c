@@ -251,6 +251,19 @@ static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_f
   return RESAMPLER_read(voice->resampler, RT_get_src_ratio(data,voice), num_frames, out);
 }
 
+#if 0
+static float get_peak(float *samples, int num_samples){
+  float ret=0.0f;
+  int i;
+  for(i=0;i<num_samples;i++){
+    float m=fabsf(samples[i]);
+    if(m>ret)
+      ret=m;
+  }
+  return ret;
+}
+#endif
+
 static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, float **outputs){
   int startpos = voice->delta_pos_at_start;
   int endpos = voice->delta_pos_at_end;
@@ -268,6 +281,8 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 
   float resampled_data[num_frames_to_produce-startpos];
   int frames_created_by_resampler = RT_get_resampled_data(data,voice,resampled_data,num_frames_to_produce-startpos);
+  //printf("Frames created by resampler: %d\n",frames_created_by_resampler);
+  //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
 
   int frames_created_by_envelope;
 
@@ -285,6 +300,7 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
     }else{
       frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, pre_release_len);
 
+      //printf("************************ Calling adsr release\n");
       ADSR_release(voice->adsr);
 
       int post_release_len = frames_created_by_resampler - frames_created_by_envelope;
@@ -295,8 +311,11 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
   }else{
 
     frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, frames_created_by_resampler);
-
+    //printf("Frames created by envelope: %d, peak: %f\n",frames_created_by_envelope,get_peak(resampled_data,frames_created_by_envelope));
+    //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
   }
+
+  //float peak_in = get_peak(resampled_data,frames_created_by_envelope);
 
   const Sample *sample = voice->sample;
 
@@ -312,6 +331,8 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
     float *out=outputs[sample->ch] + startpos;
     SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, voice->start_volume, voice->end_volume);
   }
+
+  //printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
 
   voice->start_volume = voice->end_volume;
 
@@ -340,6 +361,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     voice = next;
   }
+
 
   if(data->new_data != NULL){
     RT_fade_out(outputs[0],num_frames);
@@ -429,7 +451,7 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   while(voice!=NULL){
     if(voice->note_num==note_num && voice->delta_pos_at_end == -1){
       voice->delta_pos_at_end = time;
-      voice->end_volume = velocity2gain(volume);
+      //voice->end_volume = velocity2gain(volume); // no no no. end_volume is for change velocity only. If volume==0, note ends here, not when release is finished. (the volume argument for stop_note is probably completely useless)
     }
 
     voice = voice->next;
