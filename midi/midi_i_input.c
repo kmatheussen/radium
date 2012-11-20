@@ -99,4 +99,3 @@ void MIDI_HandleInputMessage(void){
   InsertNoteCurrPos(root->song->tracker_windows,data1,0);
 }
 
-

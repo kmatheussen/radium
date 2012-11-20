@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/nsmtracker.h"
+#include "../common/settings_proc.h"
 
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
@@ -150,48 +151,13 @@ extern struct MidiLink *inputmidilink;
 extern struct MidiNode *midinode;
 extern struct Root *root;
 
-int MIDISetInputPort( void ){
-  RWarning("Midi input has not been implemented for alsa yet.");
-#if 0
-  static char *inlinkname=NULL;
-
-	char *clustername;
-	ReqType reqtype;
-	FILE *file;
-
-	reqtype=GFX_OpenReq(root->song->tracker_windows,70,(int)(10),"Select Input MidiLink");
-
-	clustername=CAMD_getClusterName(reqtype);
-
-	if(clustername==NULL){
-		GFX_CloseReq(root->song->tracker_windows,reqtype);
-		return 0;
-	}
-
-	RemoveMidiLink(inputmidilink);
-
-	sprintf(inlinkname,"%s",clustername);
-
-	inputmidilink=AddMidiLink(midinode,MLTYPE_Receiver,
-		MLINK_Name, "sortoftracker.in",
-		MLINK_Location,inlinkname,
-		MLINK_EventMask,CMF_Channel,
-		NULL
-	);
-
-	GFX_CloseReq(root->song->tracker_windows,reqtype);
-
-	if(inputmidilink==NULL){
-		return 0;
-	}
-
-	file=fopen("radium:inlinkname.txt","w");
-	if(file!=NULL){
-		fprintf(file,"%s",inlinkname);
-		fclose(file);
-	}
-#endif
-	return 0;
+int MIDISetInputPort(void){
+  char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true);
+  if(portname!=NULL){
+    MIDI_OS_SetInputPort(portname);
+    SETTINGS_write_string("midi_input_port",portname);
+  }
+  return 0;
 }
 
 extern bool useOx90ForNoteOff;

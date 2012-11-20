@@ -15,7 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
 #include "nsmtracker.h"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
@@ -385,7 +384,7 @@ static struct PatchData *createPatchData(void) {
   {
     int num_ports;
     char *portname = "default";
-    char **portnames=MIDI_getOutputPortNames(&num_ports);
+    char **portnames=MIDI_getPortNames(&num_ports,false);
     if(num_ports>0)
       portname=portnames[0];
     patchdata->midi_port = MIDIgetPort(NULL,NULL,portname);
@@ -406,9 +405,9 @@ static bool is_member(char *name, char**names){
   return false;
 }
 
-char **MIDI_getOutputPortNames(int *retsize){
+char **MIDI_getPortNames(int *retsize, bool is_input){
   int num_os_names;
-  char **os_names = MIDI_getOutputPortOsNames(&num_os_names);
+  char **os_names = is_input ? MIDI_getInputPortOsNames(&num_os_names) : MIDI_getOutputPortOsNames(&num_os_names);
 
   int num_midi_ports = 0;
   struct MidiPort *midi_port = g_midi_ports;
@@ -422,13 +421,16 @@ char **MIDI_getOutputPortNames(int *retsize){
   char **ret = talloc((num_os_names+num_midi_ports+1)*sizeof(char*));
   memcpy(ret,os_names,sizeof(char*)*num_os_names);
 
-  midi_port = g_midi_ports;
-  while(midi_port != NULL){
-    if(is_member(midi_port->name, ret)==false){
-      ret[*retsize] = talloc_strdup(midi_port->name);
-      *retsize = *retsize + 1;
+  // Add existing ports;
+  if(is_input==false){
+    midi_port = g_midi_ports;
+    while(midi_port != NULL){
+      if(is_member(midi_port->name, ret)==false){
+        ret[*retsize] = talloc_strdup(midi_port->name);
+        *retsize = *retsize + 1;
+      }
+      midi_port=midi_port->next;
     }
-    midi_port=midi_port->next;
   }
 
   return ret;
@@ -436,10 +438,10 @@ char **MIDI_getOutputPortNames(int *retsize){
 
 extern struct Root *root;
 
-char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
+char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool is_input){
   int num_ports;
 
-  char **portnames=MIDI_getOutputPortNames(&num_ports);
+  char **portnames=MIDI_getPortNames(&num_ports, is_input);
   vector_t v={0};
   int i;
 
@@ -464,7 +466,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype){
 // This function must never return NULL.
 struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name){
   while(name==NULL){
-    name = MIDIrequestPortName(window,reqtype);
+    name = MIDIrequestPortName(window,reqtype,false);
   }
 
   struct MidiPort *midi_port = g_midi_ports;

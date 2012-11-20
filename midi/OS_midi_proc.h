@@ -40,6 +40,8 @@ extern LANGSPEC void MIDI_closeMidiPortOs(MidiPortOs port);
 extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name);
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
+extern LANGSPEC void MIDI_OS_SetInputPort(const char *portname);
+
 extern LANGSPEC void OS_GoodPutMidi(MidiPortOs port,
                                     int cc,
                                     int data1,

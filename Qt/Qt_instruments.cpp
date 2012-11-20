@@ -255,7 +255,7 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
   int item_num = 0;
 
   int num_ports;
-  char **portnames = MIDI_getOutputPortNames(&num_ports);
+  char **portnames = MIDI_getPortNames(&num_ports,false);
 
   while(instrument->port->count()>0)
     instrument->port->removeItem(0);
@@ -693,6 +693,7 @@ void GFX_PP_Update(struct Patch *patch){
       update_audio_instrument_widget(instrument,patch);
       instruments_widget->tabs->setCurrentWidget(instrument);
       MIDI_SetThroughPatch(patch);
+
     }else if(patch->instrument!=NULL){
       RError("PP_Update: Don't know how to handle instrument %p",patch->instrument);
     }

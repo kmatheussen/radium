@@ -130,7 +130,7 @@ int requestMenu(char *text, PyObject* arguments){
 
 char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  char *ret = MIDIrequestPortName(window, requester);
+  char *ret = MIDIrequestPortName(window, requester, false);
   if(ret==NULL)
     ret="";
   return ret;
