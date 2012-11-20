@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#include <gc.h>
 
 #include "nsmtracker.h"
 #include "playerclass.h"
@@ -76,6 +76,9 @@ static void PlayStopReally(bool doit){
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
         printf("[hb gakkgakk\n");
+
+        while(GC_is_disabled())
+          GC_enable();
 }
 
 void PlayHardStop(void){
@@ -134,6 +137,9 @@ static void PlayBlock(
 
 
 	pc->initplaying=false;
+
+        while(GC_is_disabled()==false)
+          GC_disable();
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
@@ -227,6 +233,9 @@ void PlaySong(
 
 
 	pc->initplaying=false;
+
+        while(GC_is_disabled()==false)
+          GC_disable();
 }
 
 

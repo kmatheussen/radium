@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "playerclass.h"
 
+#include "OS_Player_proc.h"
+
 #include "notes_proc.h"
 
 
@@ -161,16 +163,22 @@ struct Notes *InsertNote(
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
 	note->velocity_end=note->velocity;
 
-	ListAddElement3(&track->notes,&note->l);
+        PLAYER_lock();
+        {
 
-	if(override==0)
-		StopAllNotesAtPlace(wblock,wtrack,placement);
+          ListAddElement3(&track->notes,&note->l);
 
-        if (end_placement==NULL)
-          SetEndAttributes(block,track,note);
-        else
-          PlaceCopy(&note->end, end_placement);
-        
+          if(override==0)
+            StopAllNotesAtPlace(wblock,wtrack,placement);
+
+          if (end_placement==NULL)
+            SetEndAttributes(block,track,note);
+          else
+            PlaceCopy(&note->end, end_placement);
+
+        }
+        PLAYER_unlock();
+
         return note;
 }
 
@@ -213,7 +221,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 
 	if(notenum<1 || notenum>127) return;
 
-	PC_Pause();
+	//PC_Pause();
 
 	wblock=window->wblock;
 	wtrack=wblock->wtrack;
@@ -288,7 +296,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 
 	}
 
-	PC_StopPause();
+	//PC_StopPause();
 }
 
 void InsertStop(
