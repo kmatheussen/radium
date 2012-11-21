@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 export PYTHONEXE=`./find_python_path.sh`
 
 # find_moc_and_uic_path.sh has been tested on fedora 11, fedora 17, ubuntu 12, and mint 13.
@@ -10,7 +12,8 @@ export UIC="`./find_moc_and_uic_paths.sh uic`"
 #export BUILDTYPE=RELEASE
 
 if ! env |grep BUILDTYPE ; then
-    export BUILDTYPE=DEBUG
+    echo "Must define BUILDTYPE to DEBUG or RELEASE. For instance: \"BUILDTYPE=RELEASE ./build_linux.sh -j7\""
+    exit -1
 fi
 
 if ! env |grep OPTIMIZE ; then

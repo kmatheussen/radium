@@ -8,7 +8,7 @@ Released 2012-11-15
 HOW TO MAKE IT RUN
 
 make packages
-./build_linux.sh -j7
+BUILDTYPE=RELEASE ./build_linux.sh -j7
 ./start.sh
 
 
