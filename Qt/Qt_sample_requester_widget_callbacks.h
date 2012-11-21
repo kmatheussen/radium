@@ -113,6 +113,19 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
   return ret;
 }
 
+static QString get_display_name(const char *filename, int bank=-1, int preset=-1){
+  QString str;
+  int fontsize = QApplication::font().pointSize();
+  if(fontsize<=0)
+    fontsize = 7;
+  else
+    fontsize = fontsize*7/8;
+  if(bank>=0)
+    str.sprintf("<html><head/><body><p><span style=\" font-size:%dpt; font-weight:600; color:#4a4808;\">%s, b: %d, p: %d</span></p></body></html>",fontsize,filename,bank,preset);
+  else
+    str.sprintf("<html><head/><body><p><span style=\" font-size:%dpt; font-weight:600; color:#4a4808;\">%s</span></p></body></html>",fontsize,filename);
+  return str;
+}
 
 class Sample_requester_widget : public QWidget
                               , public Ui::Sample_requester_widget 
@@ -133,6 +146,7 @@ class Sample_requester_widget : public QWidget
 
   int _preview_octave;
 
+  QLabel *_sample_name_label;
 
   enum{
     IN_SF2_BANK,
@@ -141,12 +155,13 @@ class Sample_requester_widget : public QWidget
   } _file_chooser_state;
 
 
-  Sample_requester_widget(QWidget *instrument_widget, QLineEdit *instrument_name_widget, Patch *patch)
+ Sample_requester_widget(QWidget *instrument_widget, QLineEdit *instrument_name_widget, QLabel *sample_name_label, Patch *patch)
    : QWidget(instrument_widget)
-   , _patch(patch)
-   , _instrument_name_widget(instrument_name_widget)
-   , _instrument_widget(instrument_widget)
-   , _preview_octave(4)
+    , _patch(patch)
+    , _instrument_name_widget(instrument_name_widget)
+    , _instrument_widget(instrument_widget)
+    , _preview_octave(4)
+    , _sample_name_label(sample_name_label)
   {
     setupUi(this);
     //_dir = QDir("/home/kjetil/brenn/downloaded/temp/CATEGORY"); //QDir::currentPath();
@@ -163,6 +178,14 @@ class Sample_requester_widget : public QWidget
     octave->setToolTip("Preview octave.");
     up->setToolTip("Shift preview sound one octave up.");
     down->setToolTip("Shift preview sound one octave down");
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    if(QString("Sample Player") == plugin->type->type_name){
+      _sample_name_label->setText(get_display_name(SAMPLER_get_filename_display(plugin)));
+    }else{
+      _sample_name_label->setText(get_display_name(FLUIDSYNTH_get_filename_display(plugin)));
+    }
   }
 
   void update_file_list(){
@@ -284,6 +307,10 @@ class Sample_requester_widget : public QWidget
     else
       successfully_selected = FLUIDSYNTH_set_new_preset(plugin, _sf2_file, bank_num, preset_num);
 
+    if(successfully_selected){
+      _sample_name_label->setText(get_display_name(_sf2_file.ascii(),bank_num,preset_num));
+    }
+
     if(successfully_selected==true && pc->isplaying==false)
       printf("playing note 1\n");
       PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
@@ -345,9 +372,11 @@ class Sample_requester_widget : public QWidget
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
-      if(pc->isplaying==false)
+      if(pc->isplaying==false){
         printf("playing note 2\n");
         PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
+      }
+      _sample_name_label->setText(get_display_name(filename));
     }
   }
 
@@ -538,9 +567,11 @@ public slots:
         filename = string;
       
       if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
-        if(pc->isplaying==false)
+        if(pc->isplaying==false){
           printf("playing note 3\n");
           PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
+        }
+        _sample_name_label->setText(get_display_name(filename));
         //SAMPLER_save_sample(plugin, "/tmp/tmp.wav", 0);
       }
     }

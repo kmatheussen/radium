@@ -507,6 +507,14 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "preset_num", data->preset_num);
 }
 
+const char *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
+  Data *data=(Data*)plugin->data;
+  char *ret = talloc_atomic(strlen(data->filename)+200);
+
+  sprintf(ret,"%s, b: %d, p: %d",data->filename,data->bank_num,data->preset_num);
+  return ret;
+}
+
 static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
   switch(effect_num){
   case EFF_PITCH:

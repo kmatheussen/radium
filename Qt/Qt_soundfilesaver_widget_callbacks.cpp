@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/windows_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundfileSaver_proc.h"

@@ -141,7 +141,7 @@ public:
 
 
     if(plugin->type==PR_get_plugin_type_by_name("Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name("FluidSynth","FluidSynth")){
-      _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _patch);
+      _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
       effects_layout->insertWidget(2,_sample_requester_widget);
 
       QLabel *arrow = new QLabel("=>",this);

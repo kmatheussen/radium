@@ -19,4 +19,5 @@ extern LANGSPEC bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const ch
 extern LANGSPEC bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, int resampler_type);
 extern LANGSPEC int SAMPLER_get_resampler_type(struct SoundPlugin *plugin);
 extern LANGSPEC void SAMPLER_save_sample(struct SoundPlugin *plugin, const char *filename, int sample_number);
+extern LANGSPEC const char *SAMPLER_get_filename_display(struct SoundPlugin *plugin);
 

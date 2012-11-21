@@ -84,10 +84,13 @@ public:
     if(strcmp(type->type_name,"Faust") || strcmp(type->name,"Multiband Compressor"))
       delete limiter_bypass_button;
 
+    if(strcmp(type->type_name,"Sample Player") && strcmp(type->type_name,"FluidSynth"))
+      delete sample_name_label;
+
     //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
     _plugin_widget=PluginWidget_create(NULL, _patch);
 
-    vertical_layout->insertWidget(3,_plugin_widget);
+    vertical_layout->insertWidget(1,_plugin_widget);
   }
 
   public slots:

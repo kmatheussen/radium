@@ -1112,6 +1112,11 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "resampler_type",data->resampler_type);
 }
 
+const char *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
+  Data *data=(Data*)plugin->data;
+  return data->filename;
+}
+
 static SoundPluginType plugin_type = {
  type_name                : "Sample Player",
  name                     : "Sample Player",
