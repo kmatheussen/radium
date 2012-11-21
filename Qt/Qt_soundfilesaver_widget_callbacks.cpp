@@ -166,6 +166,13 @@ static Soundfilesaver_widget *widget=NULL;
 
 extern "C"{
   void SOUNDFILESAVERGUI_open(void){
+
+#if FULL_VERSION==0
+
+    GFX_Message("Soundfile export is only available to subscribers.<p>"
+                "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
+
+#else // FULL_VERSION==0
     if(widget==NULL)
       widget = new Soundfilesaver_widget(NULL);
 
@@ -176,6 +183,8 @@ extern "C"{
     widget->exec();
     num_users_of_keyboard--;
 #endif
+
+#endif // FULL_VERSION==0
   }
 
   void SOUNDFILESAVERGUI_stop(const char *message){
@@ -184,3 +193,4 @@ extern "C"{
 }
 
 #include "mQt_soundfilesaver_widget_callbacks.cpp"
+

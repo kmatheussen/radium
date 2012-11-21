@@ -27,7 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_save_proc.h"
 #include "visual_proc.h"
 #include "player_proc.h"
+#include "nag.h"
+
 #include "../config/config.h"
+
 
 void Save_Clean(const char *filename,struct Root *theroot){
 	int length1,length2;
@@ -62,7 +65,10 @@ void Save_Clean(const char *filename,struct Root *theroot){
 	if(fclose(dc.file)==EOF){
 		RError("Could not close file. Out of disk-space?\n");
 		RError("Saving failed.\n");
+                return;
 	}
+
+        show_nag_window("File successfully saved.<p>");
 }
 
 void SaveAs(struct Root *theroot){

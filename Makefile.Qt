@@ -103,6 +103,7 @@ DEFINES=-DNOPAUSEPLAY
 # Or, if you want GTK visual: (Less maintained, and doesn't work very well on OSX. Possibly faster though.)
 VISUAL ?= -DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 
+FULL_VERSION ?= 1
 
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
 RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -g $(OPTIMIZE)
@@ -114,7 +115,7 @@ OS_LDFLAGS ?=
 REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
 MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
-OPT=-c `cat buildtype.opt` $(DEFINES) -I$(GCDIR)/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) $(OS_OPTS) $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE) $(VST_OPTS)
+OPT=-c `cat buildtype.opt` $(DEFINES) -I$(GCDIR)/include -I$(P) -I$(PYPATH) -DGUIISQT $(MIDIINC) -DUSE_GFX_OP_QUEUE $(CFLAGS) $(OS_OPTS) $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE) $(VST_OPTS) -DFULL_VERSION=$(FULL_VERSION)
 CPUOPT ?=
 
 
@@ -1274,7 +1275,7 @@ Bus_plugins.o: audio/Bus_plugins.cpp
 	$(CCC) audio/Bus_plugins.cpp $(CPPOPT)
 
 VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
-	$(CCC) audio/VST_plugins.cpp $(QTOPT) # uses some Qt stuff to open GUI window
+	$(CCC) audio/VST_plugins.cpp $(QTOPT) -Wno-error # uses some Qt stuff to open GUI window
 
 Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT)

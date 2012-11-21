@@ -73,7 +73,6 @@ const int kVstMaxParamStrLen = 8;
 
 #endif //  USE_VESTIGE
 
-#include <QMacNativeWidget>
 #include <QApplication>
 #include <QBoxLayout>
 
@@ -880,10 +879,18 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
   }
 }
 
-
+static int num_running_plugins = 0;
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, float sample_rate, int block_size){ // Returns plugin->data.
   TypeData *type_data = (TypeData*)plugin_type->data;
+
+#if FULL_VERSION==0
+  if(num_running_plugins >= 2){
+    GFX_Message("Using more than 2 VST plugins is only available to subscribers.<p>"
+                "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
+    return NULL;
+  }
+#endif // FULL_VERSION==0
 
   AEffect *aeffect = type_data->get_plugin_instance(VSTS_audioMaster);
   if (aeffect == NULL){
@@ -929,14 +936,16 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   aeffect->dispatcher(aeffect, effMainsChanged, 0, 1, NULL, 0.0f);
 
+  num_running_plugins++;
 
-  
   return data;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   AEffect *aeffect = data->aeffect;
+
+  num_running_plugins--;
 
   delete data->editor_widget;
   aeffect->dispatcher(aeffect, effClose, 0, 0, NULL, 0.0f);
