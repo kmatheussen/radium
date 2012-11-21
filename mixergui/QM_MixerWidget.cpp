@@ -302,6 +302,15 @@ void MW_set_selected_chip(Chip *chip){
   chip->setSelected(true);
 }
 
+void MW_update_all_chips(void){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  for (int i = 0; i < das_items.size(); ++i) {
+    Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
+    if(chip2!=NULL)
+      chip2->update();
+  }
+}
+
 static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * event, Chip *main_chip, float mouse_x, float mouse_y){
   Undo_Open();
 

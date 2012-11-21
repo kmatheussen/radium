@@ -128,6 +128,7 @@ extern MixerWidget *g_mixer_widget;
 Chip *MW_get_chip_at(float x, float y, Chip *except);
 
 void MW_set_selected_chip(Chip *chip);
+void MW_update_all_chips(void);
 
 // MW_add_plugin/MW_delete_plugin are the entry points for audio plugins.
 // Creating/deleting a plugin goes through here, not through audio/

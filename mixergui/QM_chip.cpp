@@ -674,15 +674,24 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   */
 
   QColor c(g_editor->colors[1]);
-  c.setAlpha(160);
+  if(get_current_instruments_gui_patch()!=plugin->patch)
+    c.setAlpha(160);
 
   painter->setPen(QPen(c, 2));
+
   painter->setFont(g_editor->main_window->font());
 
   // main box
   {
     int x1,y1,x2,y2;
     get_coordinates(x1,y1,x2,y2);
+
+    if(get_current_instruments_gui_patch()==plugin->patch){
+      QColor c(g_editor->colors[2]);
+      c.setAlpha(50);
+      painter->setBrush(QBrush(c,Qt::SolidPattern));
+    }
+
     painter->drawRect(x1,y1,x2-x1,y2-y1);
   }
 
@@ -754,7 +763,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     {
       QColor c(g_editor->colors[1]);
-      c.setAlpha(160);
+      if(get_current_instruments_gui_patch()!=plugin->patch)
+        c.setAlpha(160);
       
       painter->setPen(QPen(c, 2));
     }

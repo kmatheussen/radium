@@ -379,7 +379,8 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
 
   // (forgot to take copy)
   instruments_widget->tabs->setCurrentWidget(instrument);
-  
+  MW_update_all_chips();
+
   return instrument;
 }
 
@@ -680,6 +681,7 @@ void GFX_PP_Update(struct Patch *patch){
       update_midi_instrument_widget(instrument,patch);
       
       instruments_widget->tabs->setCurrentWidget(instrument);
+      MW_update_all_chips();
 
       MIDI_SetThroughPatch(patch);
 
@@ -692,6 +694,8 @@ void GFX_PP_Update(struct Patch *patch){
       
       update_audio_instrument_widget(instrument,patch);
       instruments_widget->tabs->setCurrentWidget(instrument);
+      MW_update_all_chips();
+
       MIDI_SetThroughPatch(patch);
 
     }else if(patch->instrument!=NULL){
@@ -729,6 +733,8 @@ void GFX_remove_patch_gui(struct Patch *patch){
     SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
     MW_delete_plugin(plugin);
   }
+
+  MW_update_all_chips();
 }
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){
@@ -825,6 +831,8 @@ void close_all_instrument_widgets(void){
     //else
     tabs->removeWidget(tabs->widget(0));
   }
+
+  MW_update_all_chips();
 }
 
 struct Patch *get_current_instruments_gui_patch(void){
