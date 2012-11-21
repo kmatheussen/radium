@@ -1,7 +1,8 @@
 settings_version = 0.720000 # dont change this one
 
 font = DejaVu Sans Mono,12,-1,5,75,0,0,0,0,0
-system_font = DejaVu Sans Condensed,8,-1,5,75,0,0,0,0,0
+system_font = DejaVu Sans,8,-1,5,75,0,0,0,0,0
+system_font_style = Condensed Bold
 
 show_text_border = true
 bottom_slider_height = 14
