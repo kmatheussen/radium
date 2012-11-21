@@ -131,6 +131,7 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const ch
   QFont sansFont;
 
   sansFont.setFamily("Bitstream Vera Sans Mono");
+  sansFont.setStyleName("Bold");
   sansFont.setPointSize(QApplication::font().pointSize());
   //sansFont.setBold(true);
 

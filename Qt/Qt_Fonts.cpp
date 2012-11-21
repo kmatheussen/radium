@@ -67,7 +67,10 @@ void GFX_ConfigSystemFont(void){
   QApplication::setFont(font);
   qApp->setFont(font);
 
+  printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().ascii(),font.family().ascii(),font.styleName().ascii());
+
   SETTINGS_write_string("system_font",font.toString().ascii());
+  SETTINGS_write_string("system_font_style",font.styleName().ascii()); // toString doesn't seem to cover this.
 
   updateAllFonts(QApplication::mainWidget());
 }
@@ -83,6 +86,7 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
 
+  //SETTINGS_write_string("font_style",editor->font.styleName().ascii()); // toString doesn't seem to cover this. (arrgh, there's a billion bugs in qt when it comes to font styles)
   return talloc_strdup((char*)editor->font.toString().ascii());
 }
 

@@ -441,6 +441,10 @@ void SetupMainWindow(void){
     if(fontstring!=NULL)
       font.fromString(fontstring);
 
+    //const char *fontstyle = SETTINGS_read_string("font_style",NULL);  //(arrgh, there's a billion bugs in qt when it comes to font styles)
+    //if(fontstyle!=NULL)
+    //  font.setStyleName(fontstyle);
+
     editor->font = font;
 
     //editor->font->setStyleHint(QFont::TypeWriter);

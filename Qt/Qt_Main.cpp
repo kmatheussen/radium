@@ -599,6 +599,8 @@ int main(int argc, char **argv){
     if(fontstring!=NULL){
       QFont font;
       font.fromString(fontstring);
+      if(SETTINGS_read_string("system_font_style",NULL)!=NULL)
+        font.setStyleName(SETTINGS_read_string("system_font_style",NULL));
       qapplication->setFont(font);
       QApplication::setFont(font);
     }
