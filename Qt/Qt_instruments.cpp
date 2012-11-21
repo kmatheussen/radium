@@ -850,7 +850,7 @@ struct Patch *get_current_instruments_gui_patch(void){
       return instrument->_patch;
   }
 
-  RError("Current widget is not a known instrument");
+  RError("Current widget is not a known instrument: %p",tabs->currentWidget());
   return NULL;
 }
 

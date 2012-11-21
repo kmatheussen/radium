@@ -256,12 +256,12 @@ clean:
 	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt
 
 dependencies_ok: check_dependencies.sh #Makefile
-	sh check_dependencies.sh /usr/bin/python $(MOC) $(UIC)
+	bash check_dependencies.sh /usr/bin/python $(MOC) $(UIC)
 #	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
 
 install:
-	sh check_install_dependencies.sh
+	bash check_install_dependencies.sh
 	install -d $(DESTDIR)$(bindir)
 	install -d $(DESTDIR)$(libdir)/radium
 
@@ -307,7 +307,7 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	cd bin/packages;\
 	./build.sh $(PYTHONEXE) no \
 	" >makescript.sh
-	sh makescript.sh
+	bash makescript.sh
 	@echo
 	@echo "packages successfully built. Now run ./build_linux.sh -j7"
 
@@ -1154,7 +1154,7 @@ radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
 
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf $(API)protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
-	cd $(API) ; sh makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
+	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
 
 # # The following two lines can be uses instead of the two previous.
 # # But I haven't found out how to make swig generate the "PyArg_ParseTupleAndKeywords"

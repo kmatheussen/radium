@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 UIC=$1
 MOC=$2

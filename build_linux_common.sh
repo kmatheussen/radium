@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export PYTHONEXE=`./find_python_path.sh`
 
