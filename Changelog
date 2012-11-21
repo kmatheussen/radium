@@ -1,4 +1,25 @@
 
+Most important changes 1.9.2 -> 1.9.6:
+* Undo sample change
+* Text looks better.
+* Upgrade bdw-gc to 7.2d
+* Play block when pressing "Alt Gr" or Right Shift alone.
+* Menu improvements and clean ups.
+* Gradient color tempo-show track.
+* Midi Input port can be configured.
+* Radium window icon
+* Filename is shown for the Sampler Instrument and the FluidSynth instrument
+* Current "chip" (mixer object) is drawn in more distinct colors.
+* Fixed release value in Sampler instrument.
+* Notes can be added while playing. (works quite okay)
+* Keyboard is functional in the font and color setting windows.
+* Menu option to configure system font.
+* GUI should look okay also for other system font sizes than 8.
+* Chip (mixer object) name is updated properly.
+* Demo-song clean-up.
+* The looks when zoomin in on a single line is cleaner. (Left shift + up/down)
+
+
 Most important changes 1.9.2 -> 1.9.3:
 * Never expand editor area when changing track width
 * Various build fixes from Dominique Michel
