@@ -557,6 +557,7 @@ int main(int argc, char **argv){
   qapplication=new MyApplication(argc,argv);
   g_qapplication = qapplication;
   
+  qapplication->setWindowIcon(QIcon("radium_256x256x32.png"));
 
   {
 #if 0

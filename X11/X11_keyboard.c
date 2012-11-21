@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
-
+#include "../common/player_proc.h"
 
 #include "X11_keyboard_proc.h"
 
