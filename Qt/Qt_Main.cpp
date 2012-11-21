@@ -583,6 +583,7 @@ int main(int argc, char **argv){
 
     QFontDatabase::addApplicationFont("fonts/LiberationMono-Bold.ttf");
     QFontDatabase::addApplicationFont("fonts/VeraMono.ttf");
+    QFontDatabase::addApplicationFont("fonts/VeraMoBd.ttf");
     QFontDatabase::addApplicationFont("fonts/NimbusSansL.ttf");
     QFontDatabase::addApplicationFont("fonts/DejaVuSansCondensed-Bold.ttf");
     QFontDatabase::addApplicationFont("fonts/DejaVuSansMono-Bold.ttf");
