@@ -1120,7 +1120,7 @@ const char *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
 static SoundPluginType plugin_type = {
  type_name                : "Sample Player",
  name                     : "Sample Player",
- info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped using \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead (the Soundfont handling in Sample Player needs more care). However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports polyphonic aftertouch, and has configurable options such as attack, decay, sustain, and release.",
+ info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped using \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead (the Soundfont handling in Sample Player needs more care). However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
  num_inputs               : 0,
  num_outputs              : 2,
  is_instrument            : true,
