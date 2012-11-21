@@ -274,7 +274,8 @@ instrument->_patch_widget->updateWidgets();
 }
 
 static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, struct Patch *patch){
-  MIDI_instrument_widget *instrument = new MIDI_instrument_widget(NULL,patch);
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  MIDI_instrument_widget *instrument = new MIDI_instrument_widget(editor->main_window,patch);
     instrument->patch = patch;
 
     struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
@@ -364,7 +365,8 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
 
 
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch){
-  Audio_instrument_widget *instrument = new Audio_instrument_widget(NULL,patch);
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  Audio_instrument_widget *instrument = new Audio_instrument_widget(editor->main_window,patch);
 
   fprintf(stderr,"instrument: %p, patch: %p\n",instrument,patch);
   if(instrument==NULL){
@@ -850,7 +852,9 @@ struct Patch *get_current_instruments_gui_patch(void){
       return instrument->_patch;
   }
 
-  RError("Current widget is not a known instrument: %p",tabs->currentWidget());
+  //RError("Current widget is not a known instrument: %p",tabs->currentWidget());
+  // above line uncommented since widgets are not available during load.
+
   return NULL;
 }
 
