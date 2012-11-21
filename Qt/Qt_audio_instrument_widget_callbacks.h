@@ -440,6 +440,10 @@ public:
     }
 
     _patch_widget->updateWidgets();
+
+    if(_sample_requester_widget != NULL){
+      _sample_requester_widget->updateWidgets();
+    }
   }
 
   void set_plugin_value(int sliderval, int system_effect){

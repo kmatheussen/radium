@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/FluidSynth_plugin_proc.h"
 #include "../audio/SoundFonts_proc.h"
+#include "../audio/undo_sample_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/playerclass.h"
 
@@ -173,12 +174,16 @@ class Sample_requester_widget : public QWidget
 
     _file_chooser_state = IN_DIRECTORY;
 
-    update_file_list();
-
     octave->setToolTip("Preview octave.");
     up->setToolTip("Shift preview sound one octave up.");
     down->setToolTip("Shift preview sound one octave down");
 
+    update_file_list();
+
+    updateWidgets();
+  }
+
+  void updateWidgets(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if(QString("Sample Player") == plugin->type->type_name){
@@ -300,6 +305,8 @@ class Sample_requester_widget : public QWidget
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
+    Undo_Sample_CurrPos(_patch);
+
     bool successfully_selected;
 
     if(QString("Sample Player") == plugin->type->type_name)
@@ -370,6 +377,8 @@ class Sample_requester_widget : public QWidget
     QString filename = g_filenames_hash[item_text];//_dir.absolutePath() + QString(QDir::separator()) + item_text;
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    Undo_Sample_CurrPos(_patch);
 
     if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
       if(pc->isplaying==false){
@@ -502,81 +511,6 @@ public slots:
     //handle_item_pressed(item->text());
   }
 
-#if 0
-  void on_file_list_itemPressed(QListWidgetItem * item ){
-    if(item==NULL)
-      return;
-
-    QString string = _dir.absolutePath() + QString(QDir::separator()) + item->text();
-
-    QString without_slash = string.left(string.size()-1);
-    printf("Pressed!: \"%s\". string: %s\n",item->text().ascii(),without_slash.ascii());
-
-   
-    if(item->text().endsWith("/")){
-
-      hash_t *sf2;
-      if(_is_inside_sf2==true)
-        sf2 = NULL;
-      else
-        sf2 = SF2_get_info(without_slash.ascii());
-
-      if(sf2!=NULL){
-        
-        _is_inside_sf2 = true;
-        _sf2_file = string;
-        _sf2_file_without_slash = without_slash;
-
-        //hash_t *presets = HASH_get_hash(sf2,"instruments");
-        update_sf2_instrument_list(SF2_get_displayable_preset_names(sf2));
-
-      } else {
-
-        QString cursor_entry;
-        
-        if(_is_inside_sf2==true){ // hmm, hopefully there are not too many instrument names ending with "/".
-
-          _is_inside_sf2=false;
-          cursor_entry = QFileInfo(_sf2_file_without_slash).fileName() + "/";
-
-        }else{
-
-          if(item->text()=="../")
-            cursor_entry = _dir.dirName() + "/";
-          _dir.cd(item->text());
-
-        }
-
-        update_file_list(); //path_edit->text() + QString(QDir::separator()) + item->text());
-        printf("A directory \"%s\"\n",cursor_entry.ascii());
-        
-        if(cursor_entry!=""){
-          QList<QListWidgetItem *> items = file_list->findItems(cursor_entry,Qt::MatchExactly);
-          if(items.count()>0)
-            file_list->setCurrentItem(items.first());
-        }
-      }
-
-    }else{
-
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      QString filename;
-      if(_is_inside_sf2==true)
-        filename = _sf2_file_without_slash;
-      else
-        filename = string;
-      
-      if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
-        if(pc->isplaying==false){
-          printf("playing note 3\n");
-          PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
-        }
-        _sample_name_label->setText(get_display_name(filename));
-        //SAMPLER_save_sample(plugin, "/tmp/tmp.wav", 0);
-      }
-    }
-  }
-#endif
 
   void on_path_edit_editingFinished()
   {
