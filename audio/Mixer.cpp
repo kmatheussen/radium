@@ -48,7 +48,9 @@ extern int num_users_of_keyboard;
 static int g_last_set_producer_buffersize;
 static RSemaphore *g_freewheeling_has_started = NULL;
 
-#include <xmmintrin.h>
+#ifndef DOESNT_HAVE_SSE
+#  include <xmmintrin.h>
+#endif
 
 #if 0
 
@@ -366,10 +368,11 @@ struct Mixer{
 
   void RT_thread(void){
     //AVOIDDENORMALS;
-
+#ifndef DOESNT_HAVE_SSE
     // Denormal handling. These two lines are copied from supernova by Tim Blechmann.
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _mm_setcsr(_mm_getcsr() | 0x40);
+#endif
 
 #if 0
 #define CSR_FLUSH_TO_ZERO         (1 << 15)
