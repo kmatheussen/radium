@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <pthread.h>
 #include <string.h>
 
+#include <vector>
 
 #include "rtmidi-2.0.0/RtMidi.h"
 
@@ -28,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../../common/memory_proc.h"
 #include "../../common/OS_visual_input.h"
 #include "../../common/settings_proc.h"
+#include "../../common/visual_proc.h"
 
 #include "../midi_i_input_proc.h"
 
@@ -81,7 +83,7 @@ static RtMidiIn *inport_alsa;
 
 #ifdef FOR_WINDOWS
 static RtMidiIn *inport_winmm;
-static RtMidiIn *inport_winks
+//static RtMidiIn *inport_winks;
 #endif
 
 #ifdef FOR_MACOSX

@@ -250,10 +250,14 @@ static void setKeyUpDowns(XEvent *event){
     keyupdowns[keynum]=0;
 }
 
+static int g_last_pressed_key = -1;
+
 int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARD;
   tevent.SubID=keynum;
+
+  g_last_pressed_key = keynum;
 
   if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
     tevent.SubID=EVENT_NO;
@@ -279,6 +283,12 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARDUP;
   tevent.SubID=keynum;
+
+  if(keynum==g_last_pressed_key && keynum==EVENT_ALT_R)
+    PlayBlockFromStart(window,true); // true == do_loop
+
+  if(keynum==g_last_pressed_key && keynum==EVENT_SHIFT_R)
+    PlayBlockFromStart(window,true); // true == do_loop
 
   if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
     tevent.SubID=EVENT_NO;

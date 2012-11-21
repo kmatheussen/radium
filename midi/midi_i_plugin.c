@@ -445,9 +445,17 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool i
   vector_t v={0};
   int i;
 
+#if defined(FOR_WINDOWS)
+  if(num_ports==0)
+    return NULL;
+#endif
+
   for(i=0;i<num_ports;i++)
     VECTOR_push_back(&v,portnames[i]);
+
+#if !defined(FOR_WINDOWS)
   VECTOR_push_back(&v,"Create new port");
+#endif
 
   int sel=GFX_Menu(window,reqtype,"Select port",&v);
   if(sel==-1)

@@ -7,7 +7,7 @@ export MOC="`./find_moc_and_uic_paths.sh moc`"
 export UIC="`./find_moc_and_uic_paths.sh uic`"
 
 # Uncomment next line for debug build.
-export BUILDTYPE=RELEASE
+#export BUILDTYPE=RELEASE
 
 if ! env |grep BUILDTYPE ; then
     export BUILDTYPE=DEBUG

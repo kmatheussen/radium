@@ -1,7 +1,7 @@
 settings_version = 0.720000 # dont change this one
 
-font = Monospace,12,-1,5,75,0,0,0,0,0
-system_font = Nimbus Sans L [urw],10,-1,5,75,0,0,0,0,0
+font = DejaVu Sans Mono,12,-1,5,75,0,0,0,0,0
+system_font = DejaVu Sans Condensed,8,-1,5,75,0,0,0,0,0
 
 show_text_border = true
 bottom_slider_height = 14
@@ -12,3 +12,6 @@ override_default_qt_style = true
 
 blocklist_width = 818
 use_0x90_for_note_off = 0
+
+num_vst_paths = 1
+vst_path0 = C:/Program Files/Steinberg/VstPlugins

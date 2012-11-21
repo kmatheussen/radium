@@ -260,7 +260,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
           VECTOR_push_back(&v,patch->name);
         }END_VECTOR_FOR_EACH;
 
-        VECTOR_push_back(&v,"<New Midi Instrument>");
+        VECTOR_push_back(&v,"<New MIDI Instrument>");
         VECTOR_push_back(&v,"<New Sample Player>");
         VECTOR_push_back(&v,"<New FluidSynth>");
         VECTOR_push_back(&v,"<New Audio Instrument>");
@@ -525,6 +525,7 @@ void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Trac
 }
 
 void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track){
+  printf("stopping note %d / %d\n",notenum,velocity);
   PLAYER_lock();{
     RT_PATCH_stop_note(patch,notenum,velocity,track,-1);
   }PLAYER_unlock();

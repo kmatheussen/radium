@@ -236,6 +236,7 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 		    RError("Warning, Unknown TR_KEYBOARD; TR_SUB event: %d. \n",in_tevent->SubID);
 		    break;
 		  }
+                  //printf("subid: %d\n",in_tevent->SubID);
 			if(ER_gotKey(in_tevent->SubID,a,in_tevent->ID==TR_KEYBOARD?true:false)==true){
 				break;
 			}

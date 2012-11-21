@@ -109,7 +109,7 @@ void PR_add_plugin_type_no_menu(SoundPluginType *type){
     type->info = "Zita Reverb is a reverb designed by Fons Adriaensen.\n"
       "The Faust version is implemented by Julius O. Smith III.\n"
       "\n"
-      "Julius O. Smith III: "
+      "Julius O. Smith III writes: "
       "\"Internal 8x8 late-reverberation FDN used in the FOSS Linux reverb zita-rev1 "
       "by Fons Adriaensen <fons@linuxaudio.org>.  This is an FDN reverb with "
       "allpass comb filters in each feedback delay in addition to the "

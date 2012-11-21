@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
+#include "../common/player_proc.h"
 
 #include "W_Keyboard_proc.h"
 
@@ -295,6 +296,8 @@ extern int num_users_of_keyboard;
 
 bool W_KeyboardFilter(MSG *msg){
   static bool initialized=false;
+  static int last_pressed_key = -1;
+  static int last_pressed_keyswitch = -1;
 
   if(initialized==false){
     init_keymap();
@@ -333,8 +336,13 @@ bool W_KeyboardFilter(MSG *msg){
         return false;
 
       tevent.ID=TR_KEYBOARD;
+
       tevent.SubID=get_keyboard_subID(msg);
+      last_pressed_key = tevent.SubID;
+
       tevent.keyswitch=get_keyswitch();
+      last_pressed_keyswitch = tevent.keyswitch;
+
       EventReciever(&tevent,window);
 
       return true;
@@ -353,9 +361,20 @@ bool W_KeyboardFilter(MSG *msg){
       if(num_users_of_keyboard>0)
         return false;
 
+      int keynum = get_keyboard_subID(msg);
+      printf("keynum: %d, last_pressed: %d, ALT_R: %d\n",keynum,last_pressed_key,EVENT_ALT_R);
+      fflush(stdout);
+
       tevent.ID=TR_KEYBOARDUP;
-      tevent.SubID=get_keyboard_subID(msg);
+      tevent.SubID=keynum;
       tevent.keyswitch=get_keyswitch();
+
+      if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTALT)
+        PlayBlockFromStart(window,true); // true == do_loop
+
+      if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTSHIFT)
+        PlayBlockFromStart(window,true); // true == do_loop
+
       EventReciever(&tevent,window);
       return true;
 

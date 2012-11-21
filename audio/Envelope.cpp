@@ -131,6 +131,7 @@ struct Envelope{
 
     for(int ch=0;ch<num_channels;ch++){
       float *b=buf[ch];
+      //printf("env_data[0]: %f\n",env_data[0]);
       for(int i=0;i<len;i++)
         b[i] *= env_data[i];
     }

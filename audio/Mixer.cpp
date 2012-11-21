@@ -70,7 +70,7 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 #   error "AVOIDDENORMALS is not defined"
     #define AVOIDDENORMALS 
 #endif
-#endif
+#endif // 0
 
 
 // Mutex and sleeping (copied from RtAudio.h, RtAudio.cpp and tests/qmidiin.cpp)
