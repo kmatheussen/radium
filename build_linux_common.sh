@@ -37,7 +37,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse"
+export OS_OPTS="-Werror=array-bounds -msse -mfpmath=sse"
 
 export VST_OPTS="-DUSE_VESTIGE=1"
 

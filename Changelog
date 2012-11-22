@@ -30,7 +30,7 @@ Most important changes 1.9.2 -> 1.9.3:
 
 
 Most important changes 1.9.1 -> 1.9.2:
-* Give editor keyboard focus when clicking it
+* Give editor keyboard-focus when clicking it
 * Option to set number of lines to scroll when adding notes. (suggested by Florian Paul Schmidt)
 * Right click to reset slider value
 * Properly load samples. (Thanks to Erik de Castro Lopo for explaining the libsndfile API)
