@@ -245,12 +245,15 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                                      struct WBlocks *wblock,
                                      struct WTracks *wtrack,
                                      int realline,
-                                     TBox within,
-                                     TBox within2
+                                     TBox within
                                      )
 {
   struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
   struct TrackReallineElements *element;
+
+  TBox within2;
+  within2.y1=within.y1;
+  within2.y2=within.y2;
 
   // Note graphics
   //
@@ -430,8 +433,7 @@ void UpdateWTrack(
 ){
 	int lokke;
 
-	TBox within,within2;
-
+	TBox within;
 
 	int start_subtrack= -1;
 	int end_subtrack;
@@ -463,18 +465,12 @@ void UpdateWTrack(
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 	  within.y1=GetReallineY1Pos(window,wblock,lokke);
 	  within.y2=GetReallineY2Pos(window,wblock,lokke);
-	  within2.y1=within.y1;
-	  within2.y2=within.y2;
 
           draw_wtrack_text(window,wblock,wtrack,lokke,within);
-          draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within,within2);
+          draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within);
           draw_wtrack_fxgraphics(window,wblock,wtrack,lokke,within);
 
-
           WTRACK_DrawTrackBorders(window,wblock,wtrack,lokke,start_subtrack,end_subtrack);
-
-                // FX graphics
-                //
 	}
 
 	Blt_markSTrack(window,wtrack->l.num,start_realline,end_realline);
