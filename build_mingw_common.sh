@@ -82,10 +82,15 @@ cp bin/colors Dropbox/windows_dist/bin/
 cp bin/menues.conf Dropbox/windows_dist/bin/
 cp bin/protos.conf Dropbox/windows_dist/bin/
 cp bin/keybindings.conf Dropbox/windows_dist/bin/
+cp bin/keybindings.cPickle Dropbox/windows_dist/bin/
 cp bin/new_song.rad Dropbox/windows_dist/bin/
 cp -a bin/sounds Dropbox/windows_dist/bin/
 cp bin/radium_256x256x32.png Dropbox/windows_dist/bin/
 cp -a bin/fonts Dropbox/windows_dist/bin/
+
+# fix fonts
+sed -i 's/^system_font/#removed/' Dropbox/windows_dist/bin/config
+echo "system_font = DejaVu Sans Condensed,8,-1,5,75,0,0,0,0,0" >>Dropbox/windows_dist/bin/config
 
 cd icons && ./create.sh && cd ..
 $CC windows/launcher.c icons/windows_icon.o -mwindows -Wall -Wl,--subsystem,windows -o Dropbox/windows_dist/radium.exe 

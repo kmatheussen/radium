@@ -121,14 +121,125 @@ void WTRACK_DrawTrackBorders(
   }
 }
 
-/*******************************************************
-   TODO
-     This function started out to be very nice and easy
-     to read. After a while, when I added more new
-     functions, it became uglier and uglier. It should
-     be split up or something. There will probably be
-     problems here later because of its complexity.
-*******************************************************/
+
+static void draw_wtrack_text(struct Tracker_Windows *window,
+                             struct WBlocks *wblock,
+                             struct WTracks *wtrack,
+                             int realline,
+                             TBox within
+                             )
+{
+  struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+  char **NotesTexts=wtrack->notelength==3?NotesTexts3:NotesTexts2;
+
+  bool isranged=wblock->isranged ? wblock->rangex1<=wtrack->l.num ? wblock->rangex2>=wtrack->l.num ? true : false : false : false;
+
+  if(isranged){
+
+    bool ranged=false,notranged=false;
+
+    if(trackrealline->note!=0){
+      if(trackrealline->note==NOTE_MUL){
+        struct TrackReallineElements *element=trackrealline->trackreallineelements;
+        while(element!=NULL){
+          if(element->type==TRE_THISNOTELINES || element->type==TRE_STOPLINE){
+            struct ListHeader3 *l=element->pointer;
+            if( isPlaceRanged(wblock,&l->p) ){
+              ranged=true;
+            }else{
+              notranged=true;
+            }
+            if(ranged && notranged) break;
+          }
+          element=element->next;
+        }
+        if(ranged && notranged){
+          SetInvertTextLine(
+                            window,
+                            wblock,
+                            Col[1],
+                            NotesTexts[NOTE_MUR],	//Is this possible? Will it ever happen?
+                            wtrack->notearea.x,
+                            realline,
+                            true
+                            );
+        }else{
+          if(ranged){
+            SetInvertTextLine(
+                              window,
+                              wblock,
+                              Col[1],
+                              NotesTexts[trackrealline->note],
+                              wtrack->notearea.x,
+                              realline,
+                              true
+                              );
+          }else{
+            SetTextLine(
+                        window,
+                        wblock,
+                        Col[1],
+                        NotesTexts[trackrealline->note],
+                        wtrack->notearea.x,
+                        realline,
+                        true
+                        );
+          }
+        }
+      }else{
+        struct TrackReallineElements *element=trackrealline->trackreallineelements;
+        while(element->type!=TRE_THISNOTELINES && element->type!=TRE_STOPLINE){
+          element=element->next;
+        }
+        struct ListHeader3 *l=element->pointer;
+        if( isPlaceRanged(wblock,&l->p) ){
+          SetInvertTextLine(
+                            window,
+                            wblock,
+                            Col[1],
+                            NotesTexts[trackrealline->note],
+                            wtrack->notearea.x,
+                            realline,
+                            true
+                            );
+        }else{
+          SetTextLine(
+                      window,
+                      wblock,
+                      //								Col[1],
+                      trackrealline->note==NOTE_STP||trackrealline->note==NOTE_MUL ? 1 : trackrealline->note+16, //  NCol[trackrealline->note/12],
+                      NotesTexts[trackrealline->note],
+                      wtrack->notearea.x,
+                      realline,
+                      true
+                      );
+        }
+      }
+    }else{
+      if(realline>=wblock->rangey1 && realline<wblock->rangey2){
+        SetInvertTextLineNotext(
+                                window,wblock,Col[1],
+                                wtrack->notelength,
+                                wtrack->notearea.x,
+                                realline,
+                                true
+                                );
+      }
+    }
+  }else{
+    if(trackrealline->note!=0 && wtrack->noteshowtype==TEXTTYPE){
+      SetTextLine(
+                  window,
+                  wblock,
+                  (trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : trackrealline->note+16, //NCol[trackrealline->note/12],
+                  NotesTexts[trackrealline->note],
+                  wtrack->notearea.x,
+                  realline,
+                  true
+                  );
+    }
+  }
+}
 
 void UpdateWTrack(
 	struct Tracker_Windows *window,
@@ -147,14 +258,7 @@ void UpdateWTrack(
 	int end_subtrack;
 	struct Notes *note;
 
-	char **NotesTexts;
-
-	bool isranged=wblock->isranged ? wblock->rangex1<=wtrack->l.num ? wblock->rangex2>=wtrack->l.num ? true : false : false : false;
-	struct ListHeader3 *l;
-	bool ranged=false,notranged=false;
-
 	WFXNodes *wfxnode;
-	struct TrackRealline *trackrealline;
 	struct TrackReallineElements *element;
 
 	if(WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline)==false){
@@ -173,8 +277,6 @@ void UpdateWTrack(
           return;
 #endif
 
-	NotesTexts=wtrack->notelength==3?NotesTexts3:NotesTexts2;
-
 	if(wtrack->l.num==wblock->left_track){
 		start_subtrack=wblock->left_subtrack;
 	}
@@ -192,115 +294,12 @@ void UpdateWTrack(
 	  within2.y1=within.y1;
 	  within2.y2=within.y2;
 
-		trackrealline= &wtrack->trackreallines[lokke];
-		//		if(start_subtrack==-1){
-		if(1){
+          draw_wtrack_text(window,wblock,wtrack,lokke,within);
 
-			if(
-				isranged
-			){
-				if(trackrealline->note!=0){
-					if(trackrealline->note==NOTE_MUL){
-						element=trackrealline->trackreallineelements;
-						while(element!=NULL){
-							if(element->type==TRE_THISNOTELINES || element->type==TRE_STOPLINE){
-								l=(struct ListHeader3 *)element->pointer;
-								if( isPlaceRanged(wblock,&l->p) ){
-									ranged=true;
-								}else{
-									notranged=true;
-								}
-								if(ranged && notranged) break;
-							}
-							element=element->next;
-						}
-						if(ranged && notranged){
-							SetInvertTextLine(
-								window,
-								wblock,
-								Col[1],
-								NotesTexts[NOTE_MUR],	//Is this possible? Will it ever happen?
-								wtrack->notearea.x,
-								lokke,
-								true
-							);
-						}else{
-							if(ranged){
-								SetInvertTextLine(
-									window,
-									wblock,
-									Col[1],
-									NotesTexts[trackrealline->note],
-									wtrack->notearea.x,
-									lokke,
-									true
-								);
-							}else{
-								SetTextLine(
-									window,
-									wblock,
-									Col[1],
-									NotesTexts[trackrealline->note],
-									wtrack->notearea.x,
-									lokke,
-									true
-								);
-							}
-						}
-					}else{
-						element=trackrealline->trackreallineelements;
-						while(element->type!=TRE_THISNOTELINES && element->type!=TRE_STOPLINE){
-							element=element->next;
-						}
-						l=(struct ListHeader3 *)element->pointer;
-						if( isPlaceRanged(wblock,&l->p) ){
-							SetInvertTextLine(
-								window,
-								wblock,
-								Col[1],
-								NotesTexts[trackrealline->note],
-								wtrack->notearea.x,
-								lokke,
-								true
-							);
-						}else{
-							SetTextLine(
-								window,
-								wblock,
-//								Col[1],
-								trackrealline->note==NOTE_STP||trackrealline->note==NOTE_MUL ? 1 : trackrealline->note+16, //  NCol[trackrealline->note/12],
-								NotesTexts[trackrealline->note],
-								wtrack->notearea.x,
-								lokke,
-								true
-							);
-						}
-					}
-				}else{
-					if(lokke>=wblock->rangey1 && lokke<wblock->rangey2){
-						SetInvertTextLineNotext(
-									window,wblock,Col[1],
-									wtrack->notelength,
-									wtrack->notearea.x,lokke,
-									true
-									);
-					}
-				}
-			}else{
-				if(trackrealline->note!=0 && wtrack->noteshowtype==TEXTTYPE){
-					SetTextLine(
-						window,
-						wblock,
-						(trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : trackrealline->note+16, //NCol[trackrealline->note/12],
-						NotesTexts[trackrealline->note],
-						wtrack->notearea.x,
-						lokke,
-						true
-					);
-				}
-			}
-		}
+          struct TrackRealline *trackrealline= &wtrack->trackreallines[lokke];
 
+                // Note graphics
+                //
 		for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
 		  warea2.x=GetXSubTrack1(wtrack,element->subtype);
 		  warea2.x2=GetXSubTrack2(wtrack,element->subtype);
@@ -399,6 +398,8 @@ void UpdateWTrack(
 
 		WTRACK_DrawTrackBorders(window,wblock,wtrack,lokke,start_subtrack,end_subtrack);
 
+                // FX graphics
+                //
 		wfxnode=wtrack->wfxnodes[lokke];
 		while(wfxnode!=NULL){
 			switch(wfxnode->type){
