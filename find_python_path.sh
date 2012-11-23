@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if which python >/dev/null 2>/dev/null ; then
+if which python2 >/dev/null 2>/dev/null ; then
     which python2
 elif which python >/dev/null 2>/dev/null ; then
     which python
