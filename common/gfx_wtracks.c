@@ -241,6 +241,123 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
   }
 }
 
+static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
+                                     struct WBlocks *wblock,
+                                     struct WTracks *wtrack,
+                                     int realline,
+                                     TBox within,
+                                     TBox within2
+                                     )
+{
+  struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+  struct TrackReallineElements *element;
+
+  // Note graphics
+  //
+  for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
+    WArea warea2;
+    TBox get;
+
+    warea2.x=GetXSubTrack1(wtrack,element->subtype);
+    warea2.x2=GetXSubTrack2(wtrack,element->subtype);
+    warea2.width=warea2.x2-warea2.x;
+    within2.x1=warea2.x;
+    within2.x2=warea2.x2;
+
+    //		  if(element->subtype>end_subtrack || element->subtype<start_subtrack) continue;
+    switch(element->type){
+    case TRE_THISNOTELINES:
+      //					if(start_subtrack<=0)
+      if(wtrack->noteshowtype==TEXTTYPE){
+        GFX_T_Line(
+                   window,Col[3],
+                   (int)(wtrack->fxarea.x+element->x1),
+                   (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
+                   R_MIN(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
+                   (int)(within2.y1+(element->y2*(within2.y2-within2.y1))),
+                   PAINT_BUFFER
+                   );
+      }
+      break;
+
+#define USE_TRIANGLE 0
+
+    case TRE_VELLINEEND:
+#define  dasize (int)GetNodeSize(window)
+      GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
+#if USE_TRIANGLE 
+      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_BUFFER);
+      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_BUFFER);
+      GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
+#else
+      //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
+      GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+      //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+#endif
+      break;
+    case TRE_VELLINESTART:
+      GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
+#if USE_TRIANGLE
+      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_BUFFER);
+      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
+      GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
+#else
+      GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+      //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+#endif
+      break;
+    case TRE_VELLINENODE:
+      GetNodeBox(window,element,&warea2,&within2,&get);
+      GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+      //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+      break;
+    case TRE_VELLINE:
+      if(wtrack->noteshowtype!=TEXTTYPE){
+        struct Notes *note=element->pointer;
+
+        GFX_T_Line(
+                   window,
+                   note->note+16, //NCol[note->note/12],
+                   (int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
+                   (int)(within.y1+(element->y1*(within.y2-within.y1))),
+                   (int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
+                   (int)(within.y1+(element->y2*(within.y2-within.y1))),
+                   PAINT_BUFFER
+                   );
+      }
+
+      GetNodeLine(element,&warea2,&within2,&get);
+      GFX_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+      break;
+    case TRE_STOPLINE:
+      GFX_T_Line(
+                 window,Col[1],
+                 wtrack->fxarea.x,
+                 (int)(within.y1+element->y1),
+                 wtrack->fxarea.x2,
+                 (int)(within.y1+element->y1),
+                 PAINT_BUFFER
+                 );
+      break;
+    case TRE_REALSTARTSTOP:
+      {
+        struct Notes *note=element->pointer;
+        GFX_T_Line(
+                   window,Col[2],
+                   wtrack->noteshowtype==TEXTTYPE?
+                   within2.x1:
+                   wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12,
+                   (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
+                   within2.x2,
+                   (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
+                   PAINT_BUFFER
+                   );
+      }
+      break;
+    }
+  }
+}
+
 void UpdateWTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -252,14 +369,11 @@ void UpdateWTrack(
 
 	TBox get,within,within2;
 	WArea warea;
-	WArea warea2;
 
 	int start_subtrack= -1;
 	int end_subtrack;
-	struct Notes *note;
 
 	WFXNodes *wfxnode;
-	struct TrackReallineElements *element;
 
 	if(WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline)==false){
 	  return;
@@ -295,106 +409,8 @@ void UpdateWTrack(
 	  within2.y2=within.y2;
 
           draw_wtrack_text(window,wblock,wtrack,lokke,within);
+          draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within,within2);
 
-          struct TrackRealline *trackrealline= &wtrack->trackreallines[lokke];
-
-                // Note graphics
-                //
-		for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
-		  warea2.x=GetXSubTrack1(wtrack,element->subtype);
-		  warea2.x2=GetXSubTrack2(wtrack,element->subtype);
-		  warea2.width=warea2.x2-warea2.x;
-		  within2.x1=warea2.x;
-		  within2.x2=warea2.x2;
-
-		  //		  if(element->subtype>end_subtrack || element->subtype<start_subtrack) continue;
-			switch(element->type){
-				case TRE_THISNOTELINES:
-				  //					if(start_subtrack<=0)
-					if(wtrack->noteshowtype==TEXTTYPE){
-						GFX_T_Line(
-							window,Col[3],
-							(int)(wtrack->fxarea.x+element->x1),
-							(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
-							R_MIN(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
-							(int)(within2.y1+(element->y2*(within2.y2-within2.y1))),
-                                                        PAINT_BUFFER
-						);
-					}
-					break;
-#define USE_TRIANGLE 0
-				case TRE_VELLINEEND:
-#define  dasize (int)GetNodeSize(window)
-					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
-#if USE_TRIANGLE 
-                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_BUFFER);
-                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_BUFFER);
-                                        GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
-#else
-                                        //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
-					GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-					//GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
-#endif
-					break;
-				case TRE_VELLINESTART:
-					GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
-#if USE_TRIANGLE
-                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_BUFFER);
-                                        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
-                                        GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
-#else
-					GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-					//GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
-#endif
-					break;
-				case TRE_VELLINENODE:
-					GetNodeBox(window,element,&warea2,&within2,&get);
-					GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-					//GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
-					break;
-				case TRE_VELLINE:
-				  if(wtrack->noteshowtype!=TEXTTYPE){
-					note=(struct Notes *)element->pointer;
-
-					GFX_T_Line(
-						window,
-						note->note+16, //NCol[note->note/12],
-						(int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
-						(int)(within.y1+(element->y1*(within.y2-within.y1))),
-						(int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
-						(int)(within.y1+(element->y2*(within.y2-within.y1))),
-                                                PAINT_BUFFER
-					);
-				  }
-
-				  GetNodeLine(element,&warea2,&within2,&get);
-				  GFX_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
-				  break;
-				case TRE_STOPLINE:
-					GFX_T_Line(
-						window,Col[1],
-						wtrack->fxarea.x,
-						(int)(within.y1+element->y1),
-						wtrack->fxarea.x2,
-						(int)(within.y1+element->y1),
-                                                PAINT_BUFFER
-					);
-					break;
-			case TRE_REALSTARTSTOP:
-					note=(struct Notes *)element->pointer;
-					GFX_T_Line(
-						window,Col[2],
-						wtrack->noteshowtype==TEXTTYPE?
-						  within2.x1:
-						  wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12,
-						(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
-						within2.x2,
-						(int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
-                                                PAINT_BUFFER
-					);
-					break;
-			}
-		}
 
 		WTRACK_DrawTrackBorders(window,wblock,wtrack,lokke,start_subtrack,end_subtrack);
 
