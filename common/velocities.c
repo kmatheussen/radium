@@ -166,6 +166,16 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 	PC_StopPause();
 }
 
+
+#if 0
+static struct Notes *get_note_at_realline(struct Tracker_Windows *window,struct WBlocks *wblock, struct WTracks *wtrack, int realline){
+  struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+
+  
+}
+#endif
+
+
 void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
@@ -205,17 +215,24 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
         } else {
 
-          if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL) return;
+          element=trackrealline->trackreallineelements;
+
+          if(element==NULL)
+            return;
 
           PC_Pause();
 
           Undo_Notes_CurrPos(window);
 
-          element=trackrealline->trackreallineelements;
+          if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL){
+            element=trackrealline->trackreallineelements;
+            note=(struct Notes *)element->pointer;
+          }else{
           
-          while(element->type!=TRE_THISNOTELINES) element=element->next;
-          note=(struct Notes *)element->pointer;
-          
+            while(element->type!=TRE_THISNOTELINES) element=element->next;
+            note=(struct Notes *)element->pointer;
+          }
+
           note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
           if(note->velocities==NULL)
             note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
