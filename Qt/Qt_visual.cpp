@@ -466,12 +466,80 @@ void OS_GFX_Points(
   painter->drawPoints(editor->qpa,0,num_points);
 }
 
+void OS_GFX_Polygon(
+                    struct Tracker_Windows *tvisual,
+                    int color,
+                    int x1, int y1, int x2, int y2,
+                    int num_points,
+                    struct APoint *peaks,
+                    int where
+                    )
+{
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  QPainter *painter=GET_QPAINTER(editor,where);
+
+
+  int width=x2-x1;
+  int height=y2-y1;
+
+  QPolygon polygon(num_points);
+  for(int i=0;i<num_points;i++){
+    polygon.setPoint(i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
+    //printf("point %d set to %d/%d\n",i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
+  }
+
+  QColor col = editor->colors[color];
+
+  if(g_use_custom_color==true){
+    col = g_custom_color;
+    g_use_custom_color = false;
+  }
+
+  //printf("--polygon called\n");
+
+  painter->setPen(col);
+  painter->setBrush(QBrush(col,Qt::SolidPattern));
+  painter->drawPolygon(polygon);
+  painter->setBrush(QBrush());
+}
+                    
+
+void OS_GFX_Polyline(
+                    struct Tracker_Windows *tvisual,
+                    int colornum,
+                    int x1, int y1, int x2, int y2,
+                    int num_points,
+                    struct APoint *peaks,
+                    int where
+                    )
+{
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  QPainter *painter=GET_QPAINTER(editor,where);
+  QColor color = editor->colors[colornum];
+  color.setAlpha(160);
+
+  painter->setPen(color);
+
+  int width=x2-x1;
+  int height=y2-y1;
+
+  QPolygon polygon(num_points);
+  for(int i=0;i<num_points;i++){
+    polygon.setPoint(i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
+  }
+
+  painter->setRenderHint(QPainter::Antialiasing, true);
+  painter->drawPolyline(polygon);
+  painter->setRenderHint(QPainter::Antialiasing, false);
+}
+                    
 
 void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, int mix_factor){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("mix_factor: %d\n",mix_factor);
   g_custom_color = mix_colors(editor->colors[color1], editor->colors[color2], mix_factor / 1000.0);
   g_use_custom_color = true;
+  //printf("mixcolor called\n");
 }
 
 

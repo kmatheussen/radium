@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "gfx_tempocolor_proc.h"
 #include "nodeboxes_proc.h"
+#include "trackreallines_proc.h"
+#include "gfx_wtracks_proc.h"
 
 #include "mouse_temponodes_proc.h"
 
@@ -134,6 +136,9 @@ int MoveTempoNode_Mouse(
 
 	GFX_DrawStatusBar(window,wblock);
 	WBLOCK_DrawTempoColor(window,wblock,start_realline,end_realline);
+
+        UpdateAllTrackReallines(window,wblock);
+        DrawUpAllPeakWTracks(window,wblock,NULL);
 
 	return 0;
 }

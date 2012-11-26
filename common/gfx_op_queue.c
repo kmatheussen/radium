@@ -50,7 +50,10 @@ typedef struct{
     bool b5;
   };
   int i6;
-  int i7;
+  union{
+    int i7;
+    struct APoint *p7;
+  };
   int i8;
 #if 0
   // this would be nice

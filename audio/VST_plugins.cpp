@@ -775,7 +775,7 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
 }
 
 
-  static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+  static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume,float pan){
     //printf("****************** play note at %d\n",(int)time);
     add_midi_event(plugin,time,0x9a,note_num,volume*127);
   }

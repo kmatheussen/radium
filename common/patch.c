@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_Player_proc.h"
 #include "scheduler_proc.h"
+#include "trackreallines_proc.h"
 
 #include "undo.h"
 #include "undo_tracks_proc.h"
@@ -180,6 +181,7 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
       VECTOR_push_back(&patch->instrument->patches,patch);
     }
 
+    UpdateTrackReallines(window,wblock,wtrack);
     UpdateFXNodeLines(window,wblock,wtrack);
     DrawUpTrackerWindow(window);
 
@@ -202,6 +204,7 @@ static void remove_patch_from_song(struct Patch *patch){
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
         handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
         track->patch = NULL;
+        UpdateTrackReallines(window,wblock,wtrack);
         UpdateFXNodeLines(window,wblock,wtrack);
       }
       wtrack = NextWTrack(wtrack);
@@ -302,10 +305,13 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
                 printf("Unknown option\n");
 
               if(patch!=NULL){
-                handle_fx_when_theres_a_new_patch_for_track(wtrack->track,wtrack->track->patch,patch);
+                struct Tracks *track=wtrack->track;
 
-                wtrack->track->patch=patch;
+                handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
+
+                track->patch=patch;
               
+                UpdateTrackReallines(window,window->wblock,wtrack);
                 UpdateFXNodeLines(window,window->wblock,wtrack);
                 DrawUpTrackerWindow(window);
               
@@ -329,13 +335,6 @@ void PATCH_init(void){
 
 
 
-static double scale(double x, double x1, double x2, double y1, double y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
-
 int PATCH_radiumvelocity_to_patchvelocity(struct Patch *patch,int velocity){
   if(patch->instrument==NULL)
     return velocity;
@@ -358,6 +357,13 @@ int PATCH_patchvelocity_to_radiumvelocity(struct Patch *patch,int velocity){
 ////////////////////////////////////
 // Play note
 
+static float get_voice_velocity(struct PatchVoice *voice){
+  if(voice->volume<=35)
+    return scale(voice->volume,-35,35,0,2);
+  else
+    return scale(voice->volume,35,70,2,7);
+}
+
 static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
   //printf("\n\n___RT_play_voice. note %d, time: %d, velocity: %d\n\n",notenum,(int)time,velocity);
 
@@ -369,13 +375,18 @@ static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct T
   else
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,velocity);
 
+  float pan = 0.0f;
+
+  if(track!=NULL && track->panonoff)
+    pan = scale(track->pan,-MAXTRACKPAN,MAXTRACKPAN,-1.0f,1.0f);
+
   if(time < patch->last_time)
     time = patch->last_time;
   else 
     patch->last_time = time;
 
   patch->num_ons[notenum]++;
-  patch->playnote(patch,notenum,velocity,time);  
+  patch->playnote(patch,notenum,velocity,time,pan);
 }
 
 static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
@@ -414,7 +425,7 @@ void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Trac
     if(voice->is_on==true){
 
       int voice_notenum = notenum + voice->transpose;
-      int voice_velocity = velocity * scale(voice->volume,-35,35,0,2);
+      int voice_velocity = velocity * get_voice_velocity(voice);
 
       union SuperType args[4];
 
@@ -502,7 +513,7 @@ void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Trac
       if(voice->length<=0.001) { // i.e. this voice uses the stopping time which is defined in the editor.
 
         int voice_notenum = notenum + voice->transpose;
-        int voice_velocity = velocity * scale(voice->volume,-35,35,0,2);
+        int voice_velocity = velocity * get_voice_velocity(voice);
 
         if(voice->start<0.001f){
 
@@ -537,6 +548,9 @@ void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks 
 // Change velocity
 
 static void RT_change_voice_velocity(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+  if(notenum < 1 || notenum>127)
+    return;
+
   if(track!=NULL && track->volumeonoff)
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,track->volume*velocity)/MAXTRACKVOL;
   else
@@ -580,7 +594,7 @@ void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struc
     if(voice->is_on==true){
 
       int voice_notenum = notenum + voice->transpose;
-      int voice_velocity = velocity * scale(voice->volume,-35,35,0,2);
+      int voice_velocity = velocity * get_voice_velocity(voice);
 
       if(voice->start<0.001f){
 
@@ -647,7 +661,7 @@ static void RT_PATCH_turn_voice_on(struct Patch *patch, int voicenum){
 
   struct PatchVoice *voice = &patch->voices[voicenum];
 
-  int voice_velocity = root->standardvel * scale(voice->volume,-35,35,0,2);
+  int voice_velocity = root->standardvel * get_voice_velocity(voice);
 
   if(voice->is_on==false){
     for(notenum=0;notenum<128;notenum++)
@@ -732,3 +746,81 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum){
 	PATCH_stop_note(patch,notenum,root->standardvel,track);
 }
 
+// Must only be called if TRACK_has_peaks(track)==true.
+int PATCH_get_peaks(struct Patch *patch, int notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
+  int ret = 0;
+  SoundPlugin *plugin=patch->patchdata;
+
+  if(ch==-1) {
+
+    if(track!=NULL && track->panonoff)
+      return 2;
+    else
+      return plugin->type->get_peaks(plugin,
+                                     0,
+                                     -1,
+                                     0,
+                                     0,0,NULL,NULL);
+
+  }
+
+  float sample_rate = MIXER_get_sample_rate();
+
+  float pan = 0.0f;
+
+  if(track!=NULL && track->panonoff)
+    pan = scale(track->pan,-MAXTRACKPAN,MAXTRACKPAN,-1.0f,1.0f);
+                
+
+  float min=0.0f;
+  float max=0.0f;
+
+  int i;
+
+  for(i=0;i<MAX_PATCH_VOICES;i++){
+    struct PatchVoice *voice = &patch->voices[i];
+
+    // This didn't turn out very pretty.
+    if(voice->is_on==true){
+
+      int voice_notenum = notenum + voice->transpose;
+
+      if(voice_notenum > 0 && voice_notenum<128){
+
+        int64_t voice_start_time = start_time - voice->start*sample_rate/1000;
+
+        if(voice_start_time > 0.0f){
+          float min2;
+          float max2;
+
+          int64_t voice_end_time = end_time - voice->start*sample_rate/1000;
+
+          if(voice->length<=0.001 || ( voice_start_time < (voice->length*sample_rate/1000))){
+            
+            ret = plugin->type->get_peaks(plugin,
+                                          voice_notenum,
+                                          ch,
+                                          pan,
+                                          voice_start_time,
+                                          voice_end_time,
+                                          &min2,
+                                          &max2);
+            
+            min2 *= get_voice_velocity(voice);
+            max2 *= get_voice_velocity(voice);
+            
+            if(min2<min)
+              min=min2;
+            if(max2>max)
+              max=max2;
+          }
+        }
+      }
+    }
+  }
+
+  *min_value = min;
+  *max_value = max;
+
+  return ret;
+}

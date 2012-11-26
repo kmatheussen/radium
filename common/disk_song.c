@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "hashmap_proc.h"
 #include "fxlines_proc.h"
+#include "trackreallines_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -168,4 +169,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         BS_UpdatePlayList();
 
         FX_update_all_slider_automation_visuals();
+
+        // Audio plugins are created after creating trackreallines.
+        //TRACKREALLINES_update_peak_tracks(song->tracker_windows);
 }

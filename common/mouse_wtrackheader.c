@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "list_proc.h"
 #include "patch_proc.h"
+#include "trackreallines_proc.h"
+#include "gfx_wtracks_proc.h"
+#include "tracks_proc.h"
 
 #include "mouse_wtrackheader_proc.h"
 
@@ -37,6 +40,11 @@ static void update_pan_status(struct Tracker_Windows *window,
 {
   GFX_SetChangeInt(window,wblock,"Track Pan",wtrack->track->pan);
   GFX_DrawStatusBar(window,wblock);
+
+  if(TRACK_has_peaks(wtrack->track)==true){
+    UpdateTrackReallines(window,window->wblock,wtrack);
+    DrawUpWTrack(window,window->wblock,wtrack);
+  }
 }
 
 static void update_volume_status(struct Tracker_Windows *window,
@@ -45,6 +53,11 @@ static void update_volume_status(struct Tracker_Windows *window,
 {
   GFX_SetChangeInt(window,wblock,"Track RelVolume",wtrack->track->volume);
   GFX_DrawStatusBar(window,wblock);
+
+  if(TRACK_has_peaks(wtrack->track)==true){
+    UpdateTrackReallines(window,wblock,wtrack);
+    DrawUpWTrack(window,wblock,wtrack);
+  }
 }
 
 static int MoveWTrackPan_Mouse(
@@ -204,6 +217,12 @@ void SetMouseActionWTrackHeader(
 			(*wtrack->track->patch->changeTrackPan)(wtrack->track->pan,wtrack->track);
 		}
 		UpdatePanSlider(window,window->wblock,wtrack);
+
+                if(TRACK_has_peaks(wtrack->track)==true){
+                  UpdateTrackReallines(window,window->wblock,wtrack);
+                  DrawUpWTrack(window,window->wblock,wtrack);
+                }
+
 		return;
 	}
 	if(insideTBox(&wtrack->volumeonoff,x,y)){
@@ -215,6 +234,11 @@ void SetMouseActionWTrackHeader(
 		);
 		wtrack->track->volumeonoff=wtrack->track->volumeonoff?false:true;
 		UpdateVolumeSlider(window,window->wblock,wtrack);
+
+                if(TRACK_has_peaks(wtrack->track)==true){
+                  UpdateTrackReallines(window,window->wblock,wtrack);
+                  DrawUpWTrack(window,window->wblock,wtrack);
+                }
 	}
 }
 

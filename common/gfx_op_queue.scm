@@ -73,6 +73,24 @@ void GFX_CancelClipRect(struct Tracker_Windows* tvisual,int where);
 
 void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where);
 
+void GFX_Polygon(
+                                    struct Tracker_Windows* tvisual,
+                                    int color,
+                                    int x1, int y1, int x2, int y2,
+                                    int num_points,
+                                    struct APoint* peaks,
+                                    int where
+                                    );
+
+void GFX_Polyline(
+                                     struct Tracker_Windows* tvisual,
+                                     int color,
+                                     int x1, int y1, int x2, int y2,
+                                     int num_points,
+                                     struct APoint* peaks,
+                                     int where
+                                     );
+
 void GFX_SetMixColor(struct Tracker_Windows* tvisual,int color1,int color2,int mix_factor);
 
 void GFX_Text(
@@ -146,7 +164,8 @@ void GFX_BitBlt(
   (<-> (cond ((string=? type "int") "i")
              ((string=? type "bool") "b")
              ((string=? type "char*") "s")
-             ((string=? type "const char*") "s"))
+             ((string=? type "const char*") "s")
+             ((string=? type "struct APoint*") "p"))
        (number->string (+ n 1))))
 
 (define (create-gfx-func funcdef)

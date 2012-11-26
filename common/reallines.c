@@ -388,7 +388,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	  //	  GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFEr);
 	  
 	  UpdateReallinesDependens(window,wblock);
-	  DrawUpAllWTracks(window,wblock);
+	  DrawUpAllWTracks(window,wblock,NULL);
 	  UpdateLeftSlider(window);
 
 	  GFX_FilledBox(

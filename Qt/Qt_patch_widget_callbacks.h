@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
+#include "../common/trackreallines_proc.h"
+#include "../common/gfx_wtracks_proc.h"
 
 #include "Qt_patch_widget.h"
 
@@ -99,12 +101,21 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
     name_widget->setText(_patch->name);
   }
 
+  void update_peaks(){
+    struct Tracker_Windows *window=root->song->tracker_windows;
+    struct WBlocks *wblock=window->wblock;
+    TRACKREALLINES_update_peak_tracks(window,_patch);
+    DrawUpAllPeakWTracks(window,wblock,_patch);
+  }
+
   void onoff_toggled(int voicenum,bool val){
     printf("%d set to %d\n",voicenum,val);
     if(val==true)
       PATCH_turn_voice_on(_patch, voicenum);
     else
       PATCH_turn_voice_off(_patch, voicenum);
+
+    update_peaks();
   }
 
   void set_transpose(int voicenum){
@@ -114,6 +125,7 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
       PATCH_change_voice_transpose(_patch, voicenum, transpose);
     }
     set_editor_focus();
+    update_peaks();
   }
 
   void set_volume(int voicenum){
@@ -123,6 +135,7 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
       _voices[voicenum].volume = volume;
     }
     set_editor_focus();
+    update_peaks();
   }
 
   void set_start(int voicenum){
@@ -132,6 +145,7 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
       _voices[voicenum].start = start;
     }
     set_editor_focus();
+    update_peaks();
   }
 
   void set_length(int voicenum){
@@ -141,6 +155,7 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
       _voices[voicenum].length = length;
     }
     set_editor_focus();
+    update_peaks();
   }
 
 public slots:

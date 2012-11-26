@@ -101,6 +101,13 @@ enum{
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
+static inline float scale(float x, float x1, float x2, float y1, float y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+
 
 /*********************************************************************
 	placement.h
@@ -243,7 +250,7 @@ struct Patch{
 
   STime last_time; // player lock must be held when setting this value.
 
-  void (*playnote)(struct Patch *patch,int notenum,int velocity,STime time);
+  void (*playnote)(struct Patch *patch,int notenum,int velocity,STime time,float pan);
   void (*changevelocity)(struct Patch *patch,int notenum,int velocity,STime time);
   void (*stopnote)(struct Patch *patch,int notenum,int velocity,STime time);
   void (*closePatch)(struct Patch *patch);
@@ -426,16 +433,25 @@ typedef struct{
 	trackreallines.h
 *********************************************************************/
 
+#define NUM_PEAKS_PER_LINE 8
+struct APoint{
+  float x,y;
+};
 
 #define TRE_Max INT16_MAX
 struct TrackReallineElements{
-	struct TrackReallineElements *next;
-   SDB
-	int type;										/* Dont use number higher than TRE_Max, because of TRE_GC. */
-	int subtype;
-	float y1,y2;
-	float x1,x2;
-	void *pointer;									/* References only, TREs are allocated atomic. */
+  struct TrackReallineElements *next;
+
+  int type;
+  int subtype;
+  float y1,y2;
+  float x1,x2;
+  void *pointer;
+
+  struct APoint *velocity_polygon;
+
+  int num_peaks;
+  struct APoint *peaks[2];
 };
 /************* Types: */
 #define TRE_THISNOTELINES 0
@@ -453,9 +469,8 @@ struct TrackReallineElements{
 
 
 struct TrackRealline{
-	int note;										/* Is 0 if no note. */
-   SDB
-	struct TrackReallineElements *trackreallineelements;
+  int note;										/* Is 0 if no note. */
+  struct TrackReallineElements *trackreallineelements;
 };
 #define NOTE_MUL 128
 #define NOTE_STP 129
@@ -510,7 +525,7 @@ struct WTracks{
 	int fxwidth;						/* is fxarea.x2-fxarea.x */
 	Area fxarea;
 
-	int num_vel;						/* Max number of velocity lines showed simultaniously. */
+	int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 
@@ -721,6 +736,8 @@ struct WBlocks{
 	int till_curr_realline;				/* The player-routine sets this on. */
 
 	int bot_realline;
+
+        int mouse_track; // The track the mouse is currently above. -1 if not on a track.
 
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */
 

@@ -135,7 +135,7 @@ static void draw_line_aa(
 
 
 void PREOS_GFX_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2,int where){
-  if(x!=x2 && y!=y2){
+  if(false && x!=x2 && y!=y2){
     draw_line_aa(window,color,x,y,x2,y2,where);
     //OS_GFX_BouncePoints(window); // doesn't seem necessary
   }else{

@@ -114,8 +114,8 @@ int MoveFXNode_Mouse(
 	UpdateFXNodeLines(window,wblock,wtrack);
 
 	ClearTrack(window,wblock,wtrack,
-		   start_realline,
-		   end_realline
+                   wblock->top_realline,
+                   wblock->bot_realline
 		   );
 
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);

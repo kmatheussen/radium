@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nodelines_proc.h"
 #include "instruments_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
+#include "../audio/SoundPlugin.h"
 
 #include "tracks_proc.h"
 
@@ -36,6 +37,19 @@ void CloseTrack(struct Blocks *block, NInt tracknum){
 	struct Tracks *temp=(struct Tracks *)ListFindElement1(&block->tracks->l,tracknum);
 
 	ListRemoveElement1(&block->tracks,&temp->l);
+}
+
+bool TRACK_has_peaks(struct Tracks *track){
+  struct Patch *patch=track->patch;
+
+  if(patch==NULL || patch->patchdata==NULL)
+    return false;
+
+  if(patch->instrument==get_audio_instrument() && ((SoundPlugin*)patch->patchdata)->type->get_peaks!=NULL){
+    return true;
+  }else{
+    return false;
+  }
 }
 
 // l.num must not be set here!

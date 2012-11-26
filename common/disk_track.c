@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tracks_proc.h"
 #include "instruments_proc.h"
 #include "patch_proc.h"
+#include "../audio/SoundPlugin.h"
 
 #include "disk.h"
 #include "disk_notes_proc.h"

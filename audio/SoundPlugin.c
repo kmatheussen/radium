@@ -44,13 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define DELAY_MAX 50.0f
 
 
-static float scale(float x, float x1, float x2, float y1, float y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
-
 /*
 (define (slider_2_gain val db_min db_max)
   (let* ((threshold_val  0.05)

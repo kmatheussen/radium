@@ -25,17 +25,12 @@ template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include "faudiostream/architecture/faust/audio/dsp.h"
 #include "faudiostream/architecture/faust/gui/UI.h"
 
+#include "../common/nsmtracker.h"
+
 struct Meta
 {
     void declare (const char* key, const char* value) { }
 };
-
-static float scale(float x, float x1, float x2, float y1, float y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
 
 static void RT_fade_out(float *sound, int num_frames){
   float num_frames_plus_1 = num_frames+1.0f;
@@ -512,7 +507,6 @@ float 	NLF_Fm_dsp::ftbl0[65536];
 
 
 
-#include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
@@ -883,7 +877,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //printf("Playing %d\n",note_num);

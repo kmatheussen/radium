@@ -37,16 +37,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_FX_VAL (1<<16)
 //(1<<30)
 
+
 /* Audio Patch */
 
-static void AUDIO_playnote(struct Patch *patch,int notenum,int velocity,STime time){
+static void AUDIO_playnote(struct Patch *patch,int notenum,int velocity,STime time,float pan){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
     return;
 
   if(plugin->type->play_note != NULL)
-    plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
+    plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL, pan);
   //plugin->type->play_note(plugin, MIXER_get_block_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
 
   //printf("playing audio note %d, velocity: %d, delta time: %d. Absolute time: %d\n",notenum,velocity,(int)MIXER_get_block_delta_time(time),(int)time);
@@ -79,12 +80,14 @@ static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime ti
 static void AUDIO_closePatch(struct Patch *patch){
 }
 
+#if 0
 static float scale(float x, float x1, float x2, float y1, float y2){
   return y1 + ( ((x-x1)*(y2-y1))
                 /
                 (x2-x1)
                 );
 }
+#endif
 
 static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
   struct Patch *patch = track->patch;
@@ -96,6 +99,7 @@ static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
     return;
   }
 
+#if 0
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -108,6 +112,7 @@ static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
                           PLUGIN_NONSTORED_TYPE,
                           PLUGIN_DONT_STORE_VALUE);
   //GFX_update_instrument_widget(patch);
+#endif
 }
 
 

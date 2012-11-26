@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "list_proc.h"
+
 #include "mouse_wtrackborder_proc.h"
 #include "mouse_fxarea_proc.h"
 #include "mouse_wtrackheader_proc.h"
@@ -42,6 +43,8 @@ void SetMouseActionWTrack(
 		if(x>wtrack->x && x<wtrack->x2) break;
 		wtrack=NextWTrack(wtrack);
 	}
+
+        wblock->mouse_track=wtrack->l.num;
 
 	if(wtrack->l.num==rwtracknum && x>=rwtrack->fxarea.x2 && x<=rwtrack->fxarea.x2+5){
 		SetMouseActionWTrackBorder(window,action,x);

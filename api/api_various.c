@@ -433,7 +433,7 @@ void setBlockNoteShowType(int type,int blocknum,int windownum){
   }
 
   if(window->wblock==wblock){
-    DrawUpAllWTracks(window,wblock);
+    DrawUpAllWTracks(window,wblock,NULL);
   }
   
 }

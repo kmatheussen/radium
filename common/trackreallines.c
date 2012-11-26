@@ -43,6 +43,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nodeboxes_proc.h"
 #include "nodelines.h"
 #include "fxlines_proc.h"
+#include "instruments_proc.h"
+#include "patch_proc.h"
+#include "time_proc.h"
+#include "tracks_proc.h"
 
 #include "trackreallines_proc.h"
 
@@ -391,7 +395,7 @@ void NodeLineCallBack_vel(
 
 
 
-void AddTrackReallineNote(
+static void AddTrackReallineNote(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -790,6 +794,110 @@ void AddStopsElements(
 
 }
 
+static void create_peaks(
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock,
+                         struct WTracks *wtrack)
+{
+  struct Blocks *block = wblock->block;
+
+  int realline;
+  for(realline=0;realline<wblock->num_reallines;realline++){
+    struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+    struct TrackReallineElements *element;
+    for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
+      if(element->type==TRE_VELLINE){
+        
+        if(TRACK_has_peaks(wtrack->track)==true && (element->y2-element->y1)>0.001){
+
+          struct Patch *patch = wtrack->track->patch;
+
+          struct Notes *note=element->pointer;
+          float note_time = Place2STime(block, &note->l.p);
+
+          element->num_peaks = ((element->y2-element->y1)*NUM_PEAKS_PER_LINE)+1;
+          if(element->num_peaks<0){
+            RError("element->num_peaks<0: %d",element->num_peaks);
+            element->num_peaks=0;
+          }
+
+          if(element->num_peaks>0){
+
+            element->num_peaks++; // We're generating coordinates for a polygon, and it needs to stretch to the start of the next node.
+
+            float time1 = Place2STime(block, &wblock->reallines[realline]->l.p) - note_time;
+            float time2;
+
+            if(realline<wblock->num_reallines-1){
+              time2 = Place2STime(block, &wblock->reallines[realline+1]->l.p);
+            }else{
+              time2 = block->times[block->num_lines].time;
+            }
+            time2 = time2 - note_time;
+
+            const int num_channels=PATCH_get_peaks(patch, 0,
+                                                   -1,
+                                                   0.0f,0.0f,
+                                                   wtrack->track,
+                                                   0,0,
+                                                   NULL,NULL);
+            int ch;
+
+            for(ch=0;ch<num_channels;ch++){
+              struct APoint *peaks=talloc_atomic(element->num_peaks*2*sizeof(struct APoint));        
+              
+              element->peaks[ch] = peaks;
+
+              int i;
+              for(i=0;i<element->num_peaks;i++){
+                float y1 = scale(i,0,element->num_peaks-1,element->y1,element->y2); // -1 is here since we generate 2 points for each node.
+                float y2 = scale(i+1,0,element->num_peaks-1,element->y1,element->y2);
+
+                float track_volume =  wtrack->track->volumeonoff ? (float)wtrack->track->volume / MAXTRACKVOL : 1.0f;
+                float velocity = scale(y2,element->y1,element->y2,element->x1,element->x2);
+
+                float min,max;
+                PATCH_get_peaks(patch, 
+                                note->note,
+                                ch,
+                                scale(y1,element->y1,element->y2,element->x1,element->x2),
+                                scale(y2,element->y1,element->y2,element->x1,element->x2),
+                                wtrack->track,
+                                scale(y1,0,1,time1,time2) / block->reltempo,
+                                scale(y2,0,1,time1,time2) / block->reltempo,
+                                &min,
+                                &max);
+                
+                float bound_x1 = scale(ch,0,num_channels,0.0f,velocity);
+                float bound_x2 = scale(ch+1,0,num_channels,0.0f,velocity);
+
+                peaks[i].x = R_MAX(bound_x1, scale(min*track_volume,-1,1, bound_x1, bound_x2));
+                peaks[i].y = y1;
+                peaks[element->num_peaks*2 - 1 - i].x = R_MIN(bound_x2, scale(max*track_volume,-1,1, bound_x1, bound_x2));
+                peaks[element->num_peaks*2 - 1 - i].y = y1; //max
+              }
+            }
+          }
+        }
+
+        element->velocity_polygon=talloc_atomic(2*2*sizeof(struct APoint));
+          
+        element->velocity_polygon[0].x = 0.0f;
+        element->velocity_polygon[0].y = element->y1;
+          
+        element->velocity_polygon[1].x = 0.0f;
+        element->velocity_polygon[1].y = element->y2;
+        
+        element->velocity_polygon[2].x = element->x2;
+        element->velocity_polygon[2].y = element->y2;
+        
+        element->velocity_polygon[3].x = element->x1;
+        element->velocity_polygon[3].y = element->y1;
+      }
+    }
+  }
+}
+
 /****************************************************************
   FUNCTION
     Building up all from the ground, is what really happens.
@@ -826,6 +934,8 @@ void UpdateTrackReallines(
 
 	AddStopsElements(window,wblock,wtrack);
 
+        create_peaks(window,wblock,wtrack);
+        
 	if(window->curr_track==wtrack->l.num)
 		if(window->curr_track_sub >= wtrack->num_vel)
 			window->curr_track_sub=wtrack->num_vel-1;
@@ -834,8 +944,8 @@ void UpdateTrackReallines(
 
 
 void UpdateAllTrackReallines(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+                             struct Tracker_Windows *window,
+                             struct WBlocks *wblock
 ){
 	struct WTracks *wtrack=wblock->wtracks;
 
@@ -849,6 +959,30 @@ void UpdateAllTrackReallines(
 	}
 }
 
+void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Patch *patch){
+  struct WBlocks *wblock=window->wblocks;
+
+  while(wblock!=NULL){
+
+    struct WTracks *wtrack=wblock->wtracks;
+
+    while(wtrack!=NULL){
+      struct Tracks *track=wtrack->track;
+
+      if(track->patch==patch || patch==NULL)
+        if(TRACK_has_peaks(wtrack->track))
+          UpdateTrackReallines(
+                               window,
+                               wblock,
+                               wtrack
+                               );
+
+      wtrack=NextWTrack(wtrack);
+    }
+
+    wblock=NextWBlock(wblock);
+  }
+}
 
 void UpdateSomeTrackReallines(
 	struct Tracker_Windows *window,

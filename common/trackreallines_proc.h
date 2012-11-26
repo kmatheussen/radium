@@ -56,6 +56,8 @@ extern void UpdateAllTrackReallines(
 	struct WBlocks *wblock
 );
 
+extern LANGSPEC void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Patch *patch);
+
 extern void UpdateSomeTrackReallines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

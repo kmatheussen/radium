@@ -71,12 +71,6 @@ typedef struct _Data{
 
 } Data;
 
-static float scale(float x, float x1, float x2, float y1, float y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
 
 
 static void RT_fade_out(float *sound, int num_frames){
@@ -186,7 +180,7 @@ static void sendpitchbend(Data *data, int chan, int pitch, int time)
     printf("Unable to send pitchbend\n");
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //fluid_synth_noteon(data->synth, 0, note_num, volume*127);

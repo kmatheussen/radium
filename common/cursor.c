@@ -161,7 +161,7 @@ void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int
 			break;
 		case 2:
 		  UpdateWBlockCoordinates(window,wblock);
-		  DrawUpAllWTracks(window,wblock);
+		  DrawUpAllWTracks(window,wblock,NULL);
 		  DrawAllWTrackHeaders(window,wblock);
 
 		  wtrack2=ListLast1(&wblock->wtracks->l);

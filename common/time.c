@@ -73,7 +73,7 @@ STime Place2STime(
 
         if(stime==NULL){
           RError("Oh no\n");
-          abort();
+          return 0;
         }
 
 	time1=stime->time;

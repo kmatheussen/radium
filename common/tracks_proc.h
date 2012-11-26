@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-
+extern LANGSPEC bool TRACK_has_peaks(struct Tracks *track);
 extern void CloseTrack(struct Blocks *block, NInt tracknum);
 extern void CloseAllTracks(struct Blocks *block);
 extern void InitTrack(struct Tracks *track);

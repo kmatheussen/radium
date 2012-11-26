@@ -113,9 +113,10 @@ void MyPutMidi(
 /******************** notes **************************/
 
 static void MIDIplaynote(struct Patch *patch,
-                  int notenum,
-                  int velocity,
-                  STime time
+                         int notenum,
+                         int velocity,
+                         STime time,
+                         float pan
 ){
 	const struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 

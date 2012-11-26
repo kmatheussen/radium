@@ -4,6 +4,9 @@
 #include "gfx_wblocks_reltempo_proc.h"
 #include "gfx_statusbar_proc.h"
 #include "gfx_tempocolor_proc.h"
+#include "trackreallines_proc.h"
+#include "gfx_wtracks_proc.h"
+
 #include "playerclass.h"
 
 #include "mouse_reltemposlider_proc.h"
@@ -33,11 +36,12 @@ static int MoveRelTempoSlider_Mouse(
         update_statusbar(window);
 
 	DrawBlockRelTempo(window,wblock);
-#if 1
-	if(pc->isplaying==false){
-		WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
-	}
-#endif
+
+        TRACKREALLINES_update_peak_tracks(window,NULL);
+        WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+
+        DrawUpAllWTracks(window,wblock,NULL);
+
 	return 0;
 }
 

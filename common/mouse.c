@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "mouse_reltemposlider_proc.h"
 #include "gfx_upperleft_proc.h"
 #include "gfx_tempotrackheader_proc.h"
+#include "gfx_wtracks_proc.h"
 
 #include "mouse_proc.h"
 
@@ -42,7 +43,11 @@ void SetMouseAction(
     int x,int y, int click
 ){
   struct WBlocks *wblock=window->wblock;
-  
+
+  int old_mouse_track = wblock->mouse_track;
+
+  wblock->mouse_track = -1;
+
   if(
      y>window->height ||
      x>window->width ||
@@ -50,23 +55,23 @@ void SetMouseAction(
      y<0
   ){
     action->action=NOACTION;
-    return;
+    goto exit;
   }
 
 	if(insideTBox(&window->wblock->reltempo,x,y)){
 		SetMouseActionRelTempoSlider(window,action,x,y,click);
-		return;
+		goto exit;
 	}
 
 	if(y<wblock->t.y2){
 		if(x>wblock->t.x1){
 			SetMouseActionWTrack(window,action,x,y,click);
-			return;
+			goto exit;
 		}else{
 			if(y<wblock->t.y1){
 				if(x>wblock->linenumarea.x2){
 					SetMouseActionTempoHeader(window,action,x,y,click);
-					return;
+					goto exit;
 				}else{
 					if(y<window->org_fontheight){
 						SetMouseActionQuantitize(window,action,x,y,click);
@@ -92,10 +97,18 @@ void SetMouseAction(
 
 	if(insideWArea(&wblock->temponodearea,x)){
 		SetMouseActionTempoNodes(window,action,x,y,click);
-		return;
+		goto exit;
 	}
 
 	action->action=NOACTION;
+
+ exit:
+
+        if(old_mouse_track!=wblock->mouse_track){
+          //printf("mouse.c: Drawing up tracks\n");
+          DrawUpAllWTracks(window,wblock,NULL);
+        }
+
 }
 
 void MouseMove(struct Tracker_Windows *window,int x,int y){

@@ -45,8 +45,15 @@ extern void DrawUpWTrack(
 	);
 void DrawUpAllWTracks(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+	struct WBlocks *wblock,
+        struct Patch *patch
 	);
+
+extern LANGSPEC void DrawUpAllPeakWTracks(
+                                   struct Tracker_Windows *window,
+                                   struct WBlocks *wblock,
+                                   struct Patch *patch
+                                   );
 
 extern void UpdateAllWTracks(
 	struct Tracker_Windows *window,

@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/trackreallines_proc.h"
+#include "../common/gfx_wtracks_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -68,6 +70,8 @@ enum{
   EFF_NUM_EFFECTS
   };
 
+#define SAMPLES_PER_PEAK 64
+
 typedef struct{
   float volume;
 
@@ -77,6 +81,9 @@ typedef struct{
 
   int ch;        // -1 means both channels.
   float *data;
+
+  float *min_peaks;
+  float *max_peaks;
 
   double frequency_table[128];
 } Sample;
@@ -90,9 +97,13 @@ typedef struct _Voice{
 
   int note_num;
 
+  // These two variables are used when setting velocity after a note has started playing.
   float start_volume;
   float end_volume;
   //double gain;
+
+  Panvals pan;
+
   int pos;
 
   void *resampler;
@@ -148,12 +159,7 @@ typedef struct _Data{
 } Data;
 
 
-static float scale(float x, float x1, float x2, float y1, float y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
+extern struct Root *root;
 
 // input is between 0 and 1.
 // output is between 0 and 1.
@@ -227,17 +233,22 @@ static long RT_src_callback(void *cb_data, float **data){
   }
 }
 
-static double RT_get_src_ratio(Data *data, Voice *voice){
-  const Sample *sample = voice->sample;
-
-  //int notenum = voice->note_num + (int)data->octave_adjust*12 + (int)data->note_adjust;
-  int notenum = voice->note_num + (int)data->note_adjust;
+static double RT_get_src_ratio2(Data *data, const Sample *sample, int notenum){
   if(notenum<1)
     notenum=1;
   if(notenum>126)
     notenum=126;
 
   return data->samplerate / scale(data->finetune, 0, 1, sample->frequency_table[notenum-1], sample->frequency_table[notenum+1]);
+}
+
+static double RT_get_src_ratio(Data *data, Voice *voice){
+  const Sample *sample = voice->sample;
+
+  //int notenum = voice->note_num + (int)data->octave_adjust*12 + (int)data->note_adjust;
+  int notenum = voice->note_num + (int)data->note_adjust;
+
+  return RT_get_src_ratio2(data,sample,notenum);
 }
 
 static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_frames){
@@ -319,17 +330,22 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 
   const Sample *sample = voice->sample;
 
+#define mix(input_channel, output_channel) do{                          \
+    float panval = voice->pan.vals[input_channel][output_channel];      \
+    if(panval>0.0f){                                                    \
+      float *out          = outputs[output_channel] + startpos;         \
+      float  start_volume = voice->start_volume*panval;                 \
+      float  end_volume   = voice->end_volume*panval;                   \
+      SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, start_volume, end_volume); \
+    }                                                                   \
+  }while(0)
+
   if(sample->ch == -1){
-    {
-      float *out=outputs[0] + startpos;
-      SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, voice->start_volume, voice->end_volume);
-    }{
-      float *out=outputs[1] + startpos;
-      SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, voice->start_volume, voice->end_volume);
-    }
+    mix(0,0);
+    mix(0,1);
   }else{
-    float *out=outputs[sample->ch] + startpos;
-    SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, voice->start_volume, voice->end_volume);
+    mix(sample->ch,0);
+    mix(sample->ch,1);
   }
 
   //printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
@@ -374,10 +390,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
-  //printf("playing note %d\n",note_num);
+  printf("playing note %d, pan: %f\n",note_num,pan);
 
   const Note *note = &data->notes[note_num];
 
@@ -400,7 +416,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
 
     voice->start_volume = velocity2gain(volume);
     voice->end_volume = voice->start_volume;
-    
+
     voice->sample = note->samples[i];
     
     if(voice->sample->loop_end > voice->sample->loop_start)
@@ -411,7 +427,9 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
       voice->pos=scale(data->startpos,  // set startpos between 0 and sound length
                        0,1,
                        0,voice->sample->num_frames);
-    
+
+    voice->pan = get_pan_vals_vector(pan,voice->sample->ch==-1?1:2);
+        
     RESAMPLER_reset(voice->resampler);
     ADSR_reset(voice->adsr);
     ADSR_set_adsr(voice->adsr, data->a, data->h, data->d, data->s, data->r);
@@ -458,6 +476,160 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   }
 }
 
+
+static int time_to_frame(Data *data, double time, int note_num){
+  
+  const Sample *sample=data->notes[note_num].samples[0];
+
+  double src_ratio = RT_get_src_ratio2(data, sample, note_num+data->note_adjust);
+
+  return
+    data->startpos*sample->num_frames 
+    + time/src_ratio ;
+}
+
+
+static void apply_adsr_to_peak(Data *data, int64_t time, float *min_value, float *max_value){
+  float ms = time*1000 / data->samplerate;
+  float mul;
+
+  if(ms >= data->a+data->h+data->d)
+    mul = data->s;
+
+  else if(ms >= data->a+data->h)
+    mul = scale(ms,
+                (data->a+data->h),
+                (data->a+data->h+data->d), 
+                1.0f,
+                data->s);
+
+  else if(ms >= data->a)
+    mul = 1.0f;
+
+  else
+    mul = scale(ms,
+                0.0f,data->a,
+                0.0f,1.0f);
+
+
+  *min_value = *min_value * mul;
+  *max_value = *max_value * mul;
+}
+
+static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_value, float *max_value){
+
+  if(framenum>sample->loop_end && sample->loop_end > sample->loop_start){
+
+    int loop_length = sample->loop_end - sample->loop_start;
+
+    framenum -= sample->loop_end;
+
+    int num_loops = framenum / loop_length;
+
+    framenum -= (num_loops*loop_length);
+
+    framenum += sample->loop_start;
+
+  }
+
+  if(framenum >= sample->num_frames)
+    return false;
+
+  int peak_pos = framenum/SAMPLES_PER_PEAK;
+  *min_value = sample->min_peaks[peak_pos];
+  *max_value = sample->max_peaks[peak_pos];
+
+  return true;
+}
+
+static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int64_t end_frame, float *min_value, float *max_value){
+  float min=0.0f;
+  float max=0.0f;
+
+  int framenum=start_frame;
+
+  for(framenum=start_frame;framenum<end_frame;framenum+=SAMPLES_PER_PEAK){
+    float min2;
+    float max2;
+    if(get_peak_sample(sample,framenum,&min2,&max2)==false)
+      break;
+    if(min2<min)
+      min=min2;
+    if(max2>max)
+      max=max2;
+  }
+
+  *min_value = min;
+  *max_value = max;
+}
+
+static int get_peaks(struct SoundPlugin *plugin, int note_num, int ch, float das_pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
+  Data *data = (Data*)plugin->data;
+
+  if(ch==-1){
+    int i;
+    for(i=0;i<MAX_NUM_SAMPLES;i++){
+      Sample *sample=(Sample*)&data->samples[i];
+      if(sample->data!=NULL){
+        if(sample->ch==1)
+          return 2;
+      }
+    }
+    return 1;
+  }
+
+  int start_frame = time_to_frame(data, start_time, note_num);
+  int end_frame = time_to_frame(data, end_time, note_num);
+
+  {
+    const Note *note=&data->notes[note_num];
+
+    float min=0.0f;
+    float max=0.0f;
+
+    int samplenum;
+
+    for(samplenum=0;samplenum<note->num_samples;samplenum++){
+      const Sample *sample=note->samples[samplenum];
+
+      Panvals pan = get_pan_vals_vector(das_pan, sample->ch==-1 ? 1 : 2);
+      int input_channel = sample->ch==-1 ? 0 : sample->ch;
+      float panval = pan.vals[input_channel][ch];
+      
+      if(panval>0.0f){
+        
+        float min2;
+        float max2;
+        
+        get_peaks_from_sample(sample, start_frame, end_frame, &min2, &max2);
+        
+        min2 *= panval;
+        max2 *= panval;
+        
+        if(min2<min)
+          min=min2;
+        if(max2>max)
+          max=max2;
+        
+      }
+    }
+  
+    *min_value = min;
+    *max_value = max;
+  }
+
+  apply_adsr_to_peak(data, (start_time+end_time)/2, min_value, max_value);
+  
+  return 2;
+}
+
+static void update_peaks(SoundPlugin *plugin){
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct WBlocks *wblock=window->wblock;
+  TRACKREALLINES_update_peak_tracks(window,plugin->patch);
+  DrawUpAllPeakWTracks(window,wblock,plugin->patch);
+}
+
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
 
@@ -465,29 +637,35 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     switch(effect_num){
     case EFF_STARTPOS:
       data->startpos = value;
+      update_peaks(plugin);
       break;
     case EFF_FINETUNE:
       data->finetune = value;
+      update_peaks(plugin);
       break;
     case EFF_A:
       data->a = scale(value,
                       0.0,1.0,
                       0,MAX_A);
+      update_peaks(plugin);
       break;
     case EFF_H:
       data->h = scale(value,
                       0.0,1.0,
                       0,MAX_H);
+      update_peaks(plugin);
       break;
     case EFF_D:
       data->d = scale(value,
                       0.0,1.0,
                       0,MAX_D);
+      update_peaks(plugin);
       break;
     case EFF_S:
       data->s = scale(value,
                       0.0,1.0,
                       0,MAX_S);
+      update_peaks(plugin);
       break;
     case EFF_R:
       data->r = scale(value,
@@ -498,6 +676,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       data->note_adjust = scale(value,
                                 0.0,1.0,
                                 -6.99,6.99);
+      update_peaks(plugin);
       break;
 #if 0
     case EFF_OCTAVE_ADJUST:
@@ -513,27 +692,34 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     switch(effect_num){
     case EFF_STARTPOS:
       data->startpos = value;
+      update_peaks(plugin);
       break;
     case EFF_FINETUNE:
       data->finetune = value;
+      update_peaks(plugin);
       break;
     case EFF_A:
       data->a = value;
+      update_peaks(plugin);
       break;
     case EFF_H:
       data->h = value;
+      update_peaks(plugin);
       break;
     case EFF_D:
       data->d = value;
+      update_peaks(plugin);
       break;
     case EFF_S:
       data->s = value;
+      update_peaks(plugin);
       break;
     case EFF_R:
       data->r = value;
       break;
     case EFF_NOTE_ADJUST:
       data->note_adjust = value;
+      update_peaks(plugin);
       break;
 #if 0
     case EFF_OCTAVE_ADJUST:
@@ -867,6 +1053,44 @@ static bool load_sample_with_libsndfile(Data *data, const char *filename){
   return true;
 }
 
+static void generate_peaks(Data *data){
+  float *prev=NULL;
+  int sample_num;
+
+  for(sample_num=0;sample_num<MAX_NUM_SAMPLES;sample_num++){
+    Sample *sample=(Sample*)&data->samples[sample_num];
+
+    if(sample->data!=NULL && sample->data != prev){
+      prev = sample->data;
+
+      float *samples = sample->data;
+
+      int num_peaks = (sample->num_frames / SAMPLES_PER_PEAK)+10;
+      sample->min_peaks = malloc(sizeof(float)*num_peaks);
+      sample->max_peaks = malloc(sizeof(float)*num_peaks);
+      
+      int i;
+      int peaknum=0;
+      float min=samples[0];
+      float max=min;
+
+      for(i=1;i<sample->num_frames;i++){
+        if( (i%SAMPLES_PER_PEAK)==0 || i==sample->num_frames-1){
+          sample->min_peaks[peaknum] = min;
+          sample->max_peaks[peaknum] = max;
+          peaknum++;
+          min=0.0f;
+          max=0.0f;
+        }
+        if(samples[i]<min)
+          min = samples[i];
+        if(samples[i]>max)
+          max = samples[i];
+      }
+    }
+  }
+}
+
 static bool load_sample(Data *data, const char *filename, int instrument_number){
   if(load_xi_instrument(data,filename)==false)
     if(load_sample_with_libsndfile(data,filename)==false)
@@ -874,6 +1098,8 @@ static bool load_sample(Data *data, const char *filename, int instrument_number)
         return false;
 
   //data->num_channels = data->samples[0].num_channels; // All samples must contain the same number of channels.
+
+  generate_peaks(data);
 
   int i=0;
   for(i=0;i<POLYPHONY;i++){
@@ -951,11 +1177,13 @@ static void delete_data(Data *data){
   float *prev=NULL;
 
   for(i=0;i<MAX_NUM_SAMPLES;i++){
-    Sample *sample=(Sample*)&data->samples[0];
+    Sample *sample=(Sample*)&data->samples[i];
 
-    if(sample->data != prev){
+    if(sample->data!=NULL && sample->data != prev){
       prev = sample->data;
       free(sample->data);
+      free(sample->min_peaks);
+      free(sample->max_peaks);
     }
   }
 
@@ -994,6 +1222,8 @@ static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int
   }
 
   delete_data(old_data);
+
+  update_peaks(plugin);
   
   success = true;
  exit:
@@ -1137,6 +1367,7 @@ static SoundPluginType plugin_type = {
  play_note        : play_note,
  set_note_volume  : set_note_volume,
  stop_note        : stop_note,
+ get_peaks        : get_peaks,
  set_effect_value : set_effect_value,
  get_effect_value : get_effect_value,
  get_display_value_string : get_display_value_string,

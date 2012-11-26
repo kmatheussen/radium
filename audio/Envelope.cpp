@@ -21,9 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Envelope_proc.h"
 
 
-static float scale(float x,float x1,float x2,float y1,float y2){
-  return y1+( ((x-x1)*(y2-y1))/(x2-x1));
-}
 
 static int ms_to_frames(float ms, float samplerate){
   return ms * samplerate / 1000;

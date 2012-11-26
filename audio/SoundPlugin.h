@@ -161,14 +161,17 @@ typedef struct SoundPluginType{
   // For instance, if the plugin has one input and one output, inputs[0] and outputs[0] are very likely to be equal.
   void (*RT_process)(struct SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs);
 
-  // These two functions are not used if SoundPluginType->note_handling_is_RT is false
-  void (*RT_play_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
+  // These two functions are not used if SoundPluginType->note_handling_is_RT is false (currently, these two functions are note used at all)
+  void (*RT_play_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan);
   void (*RT_stop_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
 
   // These three functions are not used if SoundPluginType->note_handling_is_RT is true
-  void (*play_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
+  void (*play_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan);
   void (*set_note_volume)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
   void (*stop_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
+  
+  // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
+  int (*get_peaks)(struct SoundPlugin *plugin, int note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
   void (*set_effect_value)(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format);

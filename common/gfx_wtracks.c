@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "nodeboxes_proc.h"
 #include "nodelines_proc.h"
+#include "tracks_proc.h"
 
 #include "gfx_wtracks_proc.h"
 
@@ -53,6 +54,14 @@ int *Col=OffC;
 static const int Col[4]={0,1,2,3};
 static const int NCol[11]={1,1,2,3,4,5,6,8,12,13,14};
 
+#if 0
+static float scale(float x, float x1, float x2, float y1, float y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+#endif
 
 void ClearTrack(
 	struct Tracker_Windows *window,
@@ -241,6 +250,87 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
   }
 }
 
+static void draw_wtrack_peaks(struct Tracker_Windows *window,
+                              struct WBlocks *wblock,
+                              struct WTracks *wtrack,
+                              int realline,
+                              TBox within
+                              )
+{
+  struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+  struct TrackReallineElements *element;
+
+  for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
+
+    if(element->type==TRE_VELLINE){
+
+      int x=GetXSubTrack1(wtrack,element->subtype);
+      int x2=GetXSubTrack2(wtrack,element->subtype);
+
+      // fill velocity area
+      {
+        GFX_SetMixColor(window, 5, 15, 100);
+
+        GFX_Polygon(window,
+                    1,
+                    x, within.y1,
+                    x2, within.y2,
+                    4,
+                    element->velocity_polygon,
+                    PAINT_BUFFER
+                    );
+      }
+
+
+      int num_peaks = element->num_peaks;
+
+      if(num_peaks>0){
+        //GFX_SetMixColor(window, 5, 15, 100);
+
+        GFX_Polygon(window,
+                    0,
+                    x+1, within.y1,
+                    x2-1, within.y2,
+                    num_peaks*2,
+                    element->peaks[0],
+                    PAINT_BUFFER
+                    );
+
+        if(element->peaks[1] != NULL)
+          GFX_Polygon(window,
+                      0,
+                      x+1, within.y1,
+                      x2-1, within.y2,
+                      num_peaks*2,
+                      element->peaks[1],
+                      PAINT_BUFFER
+                      );
+      }
+
+      // border
+#if 1
+      GFX_Polyline(window,
+                   1,
+                   x, within.y1,
+                   x2, within.y2,
+                   2,
+                   &element->velocity_polygon[2],
+                     PAINT_BUFFER
+                   );
+#else
+      GFX_T_Line(window,
+                 1,
+                 scale(element->x1,0,1,x,x2),
+                 scale(element->y1,0,1,within.y1,within.y2),
+                 scale(element->x2,0,1,x,x2),
+                 scale(element->y2,0,1,within.y1,within.y2),
+                 PAINT_BUFFER);
+#endif
+
+    }
+  }
+}
+
 static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                                      struct WBlocks *wblock,
                                      struct WTracks *wtrack,
@@ -250,6 +340,8 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
 {
   struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
   struct TrackReallineElements *element;
+
+  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
 
   TBox within2;
   within2.y1=within.y1;
@@ -271,7 +363,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     switch(element->type){
     case TRE_THISNOTELINES:
       //					if(start_subtrack<=0)
-      if(wtrack->noteshowtype==TEXTTYPE){
+      if(show_read_lines && wtrack->noteshowtype==TEXTTYPE){
         GFX_T_Line(
                    window,Col[3],
                    (int)(wtrack->fxarea.x+element->x1),
@@ -288,36 +380,44 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     case TRE_VELLINEEND:
 #define  dasize (int)GetNodeSize(window)
       GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
+      if(show_read_lines){
 #if USE_TRIANGLE 
-      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_BUFFER);
-      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_BUFFER);
-      GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
 #else
-      //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
-      GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-      //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+        //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
+        GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
+      }
       break;
     case TRE_VELLINESTART:
       GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
+      if(show_read_lines){
 #if USE_TRIANGLE
-      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_BUFFER);
-      GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
-      GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
 #else
-      GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-      //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+        GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
+      }
       break;
     case TRE_VELLINENODE:
       GetNodeBox(window,element,&warea2,&within2,&get);
-      GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-      //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+      if(show_read_lines){
+        GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+      }
       break;
     case TRE_VELLINE:
+
       if(wtrack->noteshowtype!=TEXTTYPE){
         struct Notes *note=element->pointer;
 
+        // Graphical representation of note
         GFX_T_Line(
                    window,
                    note->note+16, //NCol[note->note/12],
@@ -328,9 +428,12 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                    PAINT_BUFFER
                    );
       }
-
+#if 0
+      // drawn up in draw_wtrack_peaks (drawn up by a polygon instead now)
       GetNodeLine(element,&warea2,&within2,&get);
       GFX_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+#endif
+
       break;
     case TRE_STOPLINE:
       GFX_T_Line(
@@ -346,7 +449,8 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
       {
         struct Notes *note=element->pointer;
         GFX_T_Line(
-                   window,Col[2],
+      //window,Col[2],
+                   window,11,
                    wtrack->noteshowtype==TEXTTYPE?
                    within2.x1:
                    wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12,
@@ -405,7 +509,27 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
         );
       */
       GetNodeBox(window,wfxnode,&warea,&within,&get);
-      GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+      //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+      GFX_T_Line(window,wfxnode->subtype,
+                 get.x1+1,get.y1+1,
+                 get.x1+2,get.y2-1,
+                 PAINT_BUFFER);
+
+      GFX_T_Line(window,wfxnode->subtype,
+                 get.x1+2,get.y2-1,
+                 get.x2-1,get.y2-2,
+                 PAINT_BUFFER);
+
+      GFX_T_Line(window,wfxnode->subtype,
+                 get.x2-1,get.y2-2,
+                 get.x2-2,get.y1+2,
+                 PAINT_BUFFER);
+
+      GFX_T_Line(window,wfxnode->subtype,
+                 get.x2-2,get.y1+2,
+                 get.x1+1,get.y1+1,
+                 PAINT_BUFFER);
+
       /*
         GFX_T_Box(
         //						window,wfxnode->subtype==1?2:wfxnode->subtype>=4?wfxnode->subtype%3+1==1?2:Col[1]:Col[1],
@@ -467,6 +591,7 @@ void UpdateWTrack(
 	  within.y2=GetReallineY2Pos(window,wblock,lokke);
 
           draw_wtrack_text(window,wblock,wtrack,lokke,within);
+          draw_wtrack_peaks(window,wblock,wtrack,lokke,within);
           draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within);
           draw_wtrack_fxgraphics(window,wblock,wtrack,lokke,within);
 
@@ -488,15 +613,34 @@ void DrawUpWTrack(
 
 void DrawUpAllWTracks(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock
+	struct WBlocks *wblock,
+        struct Patch *patch // Filter. If patch==NULL, draw up everything
 ){
 	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 
 	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-	  DrawUpWTrack(window,wblock,wtrack);
+          if(wtrack->track->patch==patch || patch==NULL)
+            DrawUpWTrack(window,wblock,wtrack);
 	  wtrack=NextWTrack(wtrack);
 	}
 }
+
+
+void DrawUpAllPeakWTracks(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+        struct Patch *patch // Filter. If patch==NULL, draw up everything
+){
+	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+
+	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+          if(wtrack->track->patch==patch || patch==NULL)
+            if(TRACK_has_peaks(wtrack->track))
+              DrawUpWTrack(window,wblock,wtrack);
+	  wtrack=NextWTrack(wtrack);
+	}
+}
+
 
 /*******************************************************
    Draw Up all visible tracks.
