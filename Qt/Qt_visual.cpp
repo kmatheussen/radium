@@ -368,7 +368,7 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
 static bool g_use_custom_color = false;
 static QColor g_custom_color;
 
-void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
+void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
@@ -376,25 +376,25 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,in
     painter->setPen(g_custom_color);
     g_use_custom_color = false;
   }else{    
-    QColor qcolor = get_qcolor(tvisual,color);
+    QColor qcolor = get_qcolor(tvisual,colornum);
     painter->setPen(qcolor);
   }
 
-#if 0
-  painter->setRenderHints(QPainter::Antialiasing,true);
-
-  QPen pen(editor->colors[color],1,Qt::SolidLine);  
-  pen.setCapStyle(Qt::RoundCap);
-  pen.setJoinStyle(Qt::RoundJoin);
-  painter->setPen(pen);
-#endif
+  if(x!=x2 && y!=y2){
+    painter->setRenderHints(QPainter::Antialiasing,true);
+    QColor color = editor->colors[colornum];
+    color.setAlpha(100);
+    QPen pen(color,2,Qt::SolidLine);  
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setJoinStyle(Qt::RoundJoin);
+    painter->setPen(pen);
+  }
 
   painter->drawLine(x,y,x2,y2);
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 
-#if 0
-  painter->setRenderHints(QPainter::Antialiasing,false);
-#endif
+  if(x!=x2 && y!=y2)
+    painter->setRenderHints(QPainter::Antialiasing,false);
 }
 
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
