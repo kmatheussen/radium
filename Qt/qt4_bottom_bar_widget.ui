@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1053</width>
+    <width>1085</width>
     <height>34</height>
    </rect>
   </property>
@@ -2827,7 +2827,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Midi input</string>
+         <string>MIDI input</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
