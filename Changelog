@@ -1,4 +1,7 @@
 
+Most important changes 1.9.9 -> 1.9.10:
+* Use x instead of STP. Idea: Damir Sijakovic
+
 Most important changes 1.9.8 -> 1.9.9:
 * Better looking temponodes.
 
