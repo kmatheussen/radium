@@ -109,7 +109,10 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   }else{
     float org_size = editor->font.pointSize();
     for(int i=1;i<100;i++){
-      editor->font.setPointSize(org_size+(i*pixels));
+      int new_font_size = org_size+(i*pixels);
+      if(new_font_size<2)
+        return;
+      editor->font.setPointSize(new_font_size);
       if(editor->font.pointSize()!=org_size)
         goto exit;
     }
