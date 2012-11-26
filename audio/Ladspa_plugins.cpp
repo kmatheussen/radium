@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLibrary>
 #include <QDir>
 #include <QMessageBox>
+#include <QHash>
 
 #if defined(__linux__)
 #  define LIB_SUFFIX "so"
@@ -725,7 +726,7 @@ static void get_path_uris (std::vector<char*> &lrdf_uris){
 
 #if __linux__
 
-#if 0
+#if 1
   sprintf(lrdf_path,"%s:/usr/local/share/ladspa/rdf:/usr/share/ladspa/rdf:%s/rdf",
           getenv("LADSPA_RDF_PATH")==NULL ? "" : getenv("LADSPA_RDF_PATH"),
           OS_get_program_path());
@@ -750,12 +751,31 @@ static void get_path_uris (std::vector<char*> &lrdf_uris){
 #endif
 }
 
+static std::vector<char*> filter_out_same_basename_lrdf(std::vector<char*> &lrdf_uris){
+  QHash<QString,int> basenames;
+  std::vector<char*> ret;
+
+  for(unsigned int i=0;i<lrdf_uris.size();i++){
+    QFileInfo fileInfo(lrdf_uris.at(i));
+    if(basenames.contains(fileInfo.baseName())==false){
+      basenames[fileInfo.baseName()] = 1;
+      ret.push_back(lrdf_uris.at(i));
+    }
+  }
+
+  return ret;
+}
+
 // This function is copied from jack-rack by Bob Ham. Slightly modified.
 static void init_lrdf (){
   std::vector<char*> lrdf_uris;
   int err;
   
   get_path_uris (lrdf_uris);
+
+  lrdf_uris = filter_out_same_basename_lrdf(lrdf_uris);
+
+
   printf("Get paths\n");
   fflush(stdout);
 
