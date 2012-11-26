@@ -393,7 +393,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
-  printf("playing note %d, pan: %f\n",note_num,pan);
+  //printf("playing note %d, pan: %f\n",note_num,pan);
 
   const Note *note = &data->notes[note_num];
 
@@ -808,7 +808,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   Data *data = (Data*)plugin->data;
   switch(effect_num){
   case EFF_STARTPOS:
-    snprintf(buffer,buffersize-1,"%d%%",(int)scale(data->startpos,0.0,1.0,0,100));
+    snprintf(buffer,buffersize-1,"%.2f%%",scale(data->startpos,0.0,1.0,0,100));
     break;
   case EFF_FINETUNE:
     snprintf(buffer,buffersize-1,"%f cents",scale(data->finetune,0.0,1.0,-100,100));
