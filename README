@@ -1,11 +1,13 @@
 
 
-Radium V1.9.8
+Radium V1.9.9
 Released 2012-11-26
 
 
 
 HOW TO MAKE IT RUN
+
+        If you downloaded tar-ball:
 
         "
         make packages
@@ -13,12 +15,14 @@ HOW TO MAKE IT RUN
         ./start.sh
         "
 
-        However, if you checked out from the git repostiory, you probably want to do this first:
+
+        If you checked out from git repository:
 
         "
-        rm -fr audio
-        git checkout audio
         touch audio/*.cpp
+        make packages
+        BUILDTYPE=RELEASE ./build_linux.sh -j7
+        ./start.sh
         "
 
 

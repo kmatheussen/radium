@@ -1,4 +1,7 @@
 
+Most important changes 1.9.8 -> 1.9.9:
+* Better looking temponodes.
+
 Most important changes 1.9.6 -> 1.9.8:
 * "make install" should work without first running the program.
 * Fixed denormals on 32 bit Linux. (-mpmath=sse)
