@@ -17,7 +17,7 @@ if ! env |grep BUILDTYPE ; then
 fi
 
 if ! env |grep OPTIMIZE ; then
-    export OPTIMIZE="-mtune=native -O3"
+    export OPTIMIZE="-O3"
 fi
 
 export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.

@@ -33,7 +33,7 @@ PYTHONEXE ?= `which python2`
 
 
 # 6. Opimization options. Only enabled in RELEASE build
-OPTIMIZE ?= -mtune=native -O3
+OPTIMIZE ?= -O3
 
 
 #----------------END USER SETTINGS---------------------------
