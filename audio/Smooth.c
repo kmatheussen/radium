@@ -189,11 +189,8 @@ void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, floa
 }
 
 // Think I found this pan calculation method in the ardour source many years ago.
-// TODO: Panning can be optimized by only calculating new pan values at block time, and do linear smoothing inbetween.
+// TODO: Optimize panning when smoothing is necessary.
 void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_frames){
-  const float sqrt2              = 1.414213562373095;
-  const float pan_scaleval       = 2.0f-(2*sqrt2);
-  const float one_minus_panscale = 1.0f-pan_scaleval;
 
   int i;
   if(num_channels>=2){
@@ -202,32 +199,49 @@ void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_f
 
     if(is_smoothing_necessary(smooth)==true){
 
-      for(i=0;i<num_frames;i++){
-        float x = smooth->values[i];
-        float one_minus_x = 1.0f-x;
-        
-        float pan_ch_0 = one_minus_x*((pan_scaleval*one_minus_x)+one_minus_panscale);
-        float pan_ch_1 = x * ( (pan_scaleval*x) + one_minus_panscale);
-        
-        sound0[i] *= pan_ch_0;
-        sound1[i] *= pan_ch_1;
+      Panvals pan_start = get_pan_vals_vector(scale(smooth->values[0],0,1,-1,1),2);
+      Panvals pan_end   = get_pan_vals_vector(scale(smooth->values[num_frames-1],0,1,-1,1),2);
+
+      for(i=0;i<num_frames;i++) {
+        float sound0i = sound0[i];
+        float sound1i = sound1[i];
+        sound0[i] = sound0i*scale(i,0,num_frames,pan_start.vals[0][0],pan_end.vals[0][0]) + sound1i*scale(i,0,num_frames,pan_start.vals[1][0],pan_end.vals[1][0]);
+        sound1[i] = sound0i*scale(i,0,num_frames,pan_start.vals[0][1],pan_end.vals[0][1]) + sound1i*scale(i,0,num_frames,pan_start.vals[1][1],pan_end.vals[1][1]);
       }
 
     } else {
 
-      float x = smooth->end_value;
-      float one_minus_x = 1.0f-x;
-        
-      float pan_ch_0 = one_minus_x*((pan_scaleval*one_minus_x)+one_minus_panscale);
-      float pan_ch_1 = x * ( (pan_scaleval*x) + one_minus_panscale);
+      if(smooth->end_value!=0.5f){
+        Panvals pan = get_pan_vals_vector(scale(smooth->end_value,0,1,-1,1), 2);
 
-      if(pan_ch_0 != 1.0f)
-        for(i=0;i<num_frames;i++)
-          sound0[i] *= pan_ch_0;
+#if 1
+        if(smooth->end_value < 0.5f){
 
-      if(pan_ch_1 != 1.0f)
-        for(i=0;i<num_frames;i++)
-          sound1[i] *= pan_ch_1;
+          for(i=0;i<num_frames;i++)
+            sound0[i] += sound1[i]*pan.vals[1][0];
+
+          for(i=0;i<num_frames;i++)
+            sound1[i] *= pan.vals[1][1];
+
+        } else {
+
+          for(i=0;i<num_frames;i++)
+            sound1[i] += sound0[i]*pan.vals[0][1];
+
+          for(i=0;i<num_frames;i++)
+            sound0[i] *= pan.vals[0][0];
+
+        }
+#else
+        // Same, but perhaps a bit slower.
+        for(i=0;i<num_frames;i++) {
+          float sound0i = sound0[i];
+          float sound1i = sound1[i];
+          sound0[i] = sound0i*pan.vals[0][0] + sound1i*pan.vals[1][0];
+          sound1[i] = sound0i*pan.vals[0][1] + sound1i*pan.vals[1][1];
+        }
+#endif
+      }
     }
   }
 }
