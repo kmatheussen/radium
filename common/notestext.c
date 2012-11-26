@@ -307,7 +307,7 @@ const char *NotesTexts3[131]={
 "G-A",
 
 "MUL",
-" x ",
+"---",
 "MUR"
 };
 
