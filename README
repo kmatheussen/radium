@@ -7,10 +7,19 @@ Released 2012-11-21
 
 HOW TO MAKE IT RUN
 
-make packages
-BUILDTYPE=RELEASE ./build_linux.sh -j7
-./start.sh
+        "
+        make packages
+        BUILDTYPE=RELEASE ./build_linux.sh -j7
+        ./start.sh
+        "
 
+        If you checked out from the git repostiory, you probably want to do this first:
+
+        "
+        rm -fr audio
+        git checkout audio
+        touch audio/*.cpp
+        "
 
 
 INTRODUCTION
