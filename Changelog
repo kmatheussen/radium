@@ -1,4 +1,25 @@
 
+Most important changes 1.9.6 -> 1.9.8:
+* "make install" should work without first running the program.
+* Fixed denormals on 32 bit Linux. (-mpmath=sse)
+* Shift+left/right to change note volume works even if cursor is not
+  placed on the same line as the note name.
+* Fixed zooming-in-a-lot bug.
+* Breakpoint nodes for velocity lines are only shown when mouse cursor is
+  placed in the track.
+* Breakpoint curves for velocity replaced grayed areas. (looks much better)
+* Waveform data is shown in the editor for the sampler instrument.
+* Pan-per-note for the sampler instrument. Means that the track panner works
+  for that track only.
+* Fixed samplefile font in sample file selector.
+* Improved graphics for breakpoint curves/nodes for effects.
+* Different panning algorithm. (Dont just lower volume in one channel on stereo files)
+  (Warning: may change sound of existing songs)
+* Remove -mtune=native for linux builds.
+* Linux: Use standard paths for lrdf files
+* Instructions on how to compile from git
+
+
 Most important changes 1.9.3 -> 1.9.6:
 * Undo sample change
 * Text looks better.

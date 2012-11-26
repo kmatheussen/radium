@@ -1,7 +1,7 @@
 
 
-Radium V1.9.6
-Released 2012-11-21
+Radium V1.9.8
+Released 2012-11-26
 
 
 
@@ -13,7 +13,7 @@ HOW TO MAKE IT RUN
         ./start.sh
         "
 
-        If you checked out from the git repostiory, you probably want to do this first:
+        However, if you checked out from the git repostiory, you probably want to do this first:
 
         "
         rm -fr audio
