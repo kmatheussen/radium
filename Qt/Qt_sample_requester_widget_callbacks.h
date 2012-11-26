@@ -231,14 +231,19 @@ class Sample_requester_widget : public QWidget
             if(display_name != QString("")){
 
               QListWidgetItem *item = new QListWidgetItem(display_name);
-              item->setForeground(QBrush(QColor("blue").light(80)));
-              //QFont font;
-              QFont font("Bitstream Vera Sans Mono",8);
+              QColor color = QColor("blue").light(80);
+              color.setAlpha(150);
+              item->setForeground(QBrush(color));
+              QFont font;
+              //QFont font("Bitstream Vera Sans Mono",8);
+              font.setFamily("Bitstream Vera Sans Mono");
               font.setBold(true);
-              //if(font.pixelSize()>0)
-              //  font.setPixelSize(font.pixelSize()*4/3);
-              //else
-              //  font.setPointSize(font.pointSize()*4/3);
+              font.setStyleName("Bold");
+
+              if(font.pixelSize()>0)
+                font.setPixelSize(8);//font.pixelSize()*4/3);
+              else
+                font.setPointSize(8);//font.pointSize()*4/3);
               item->setFont(font);
               file_list->addItem(item);
               //file_list->repaint();
@@ -520,6 +525,7 @@ public slots:
     if(_dir.exists(new_path)){
       _dir.setPath(new_path);
       update_file_list();
+      SETTINGS_write_string("samples_dir",_dir.absolutePath().ascii());
     }else{
       path_edit->setText(_dir.absolutePath());
     }
