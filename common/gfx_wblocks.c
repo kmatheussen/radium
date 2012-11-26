@@ -269,11 +269,34 @@ void DrawWTempoNodes(
                                                 get.y2-1,
                                                 PAINT_BUFFER
                                                 );
+
+                                  GFX_Line(window,1,
+                                           get.x1+1,get.y1+1,
+                                           get.x1+2,get.y2-1,
+                                           PAINT_BUFFER);
+                                  
+                                  GFX_Line(window,1,
+                                           get.x1+2,get.y2-1,
+                                           get.x2-1,get.y2-2,
+                                           PAINT_BUFFER);
+                                  
+                                  GFX_Line(window,1,
+                                           get.x2-1,get.y2-2,
+                                           get.x2-2,get.y1+2,
+                                           PAINT_BUFFER);
+                                  
+                                  GFX_Line(window,1,
+                                           get.x2-2,get.y1+2,
+                                           get.x1+1,get.y1+1,
+                                           PAINT_BUFFER);
+
+#if 0
 				  GFX_Box(
                                           window,1,
                                           get.x1,get.y1,get.x2,get.y2,
                                           PAINT_BUFFER
                                           );
+#endif
 				  /*
 					GFX_P_FilledBox(
 						window,6,
