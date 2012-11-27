@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/instruments_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/OS_Player_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -340,13 +341,15 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
     struct FXs *next = NextFX(fxs);
     {
       struct FX *fx = fxs->fx;
-      if(fx->effect_num >= num_old_effects){
-        fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
-        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num);
-        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num);
-      }else{
-        ListRemoveElement1(&track->fxs, &fxs->l);
-      }
+      PLAYER_lock();{
+        if(fx->effect_num >= num_old_effects){
+          fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
+          fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num);
+          fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num);
+        }else{
+          ListRemoveElement1(&track->fxs, &fxs->l);
+        }
+      }PLAYER_unlock();
     }
     fxs = next;
   }

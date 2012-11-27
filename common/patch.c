@@ -244,8 +244,6 @@ void PATCH_delete(struct Patch *patch){
 void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup){
 	ReqType reqtype;
 
-	PlayStop();
-
         vector_t *patches=get_all_patches();
 
 	NInt num_patches=patches->num_elements;
@@ -309,8 +307,10 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
                 handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
 
-                track->patch=patch;
-              
+                PLAYER_lock();{
+                  track->patch=patch;
+                }PLAYER_unlock();
+
                 UpdateTrackReallines(window,window->wblock,wtrack);
                 UpdateFXNodeLines(window,window->wblock,wtrack);
                 DrawUpTrackerWindow(window);
