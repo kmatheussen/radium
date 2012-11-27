@@ -421,9 +421,10 @@ void SetupMainWindow(void){
 #endif
 
 
+  QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
+
 #if FOR_MACOSX
   //qt_mac_set_native_menubar(false);
-  QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
   QMenuBar *menubar = new QMenuBar(0);
   initMenues(menubar);
   //menubar->show();
