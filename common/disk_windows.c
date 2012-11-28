@@ -163,7 +163,8 @@ var13:
 	LoadSlider(&dummy);
 	goto start;
 var14:
-	window->textborder=DC_LoadB();
+	//window->textborder=DC_LoadB();
+        DC_LoadB();
 	goto start;
 var15:
 	//window->org_fontheight=
@@ -200,7 +201,7 @@ end:
 void DLoadWindows(struct Root *newroot,struct Tracker_Windows *window){
 if(window==NULL) return;
 
-	window->textborder=SETTINGS_read_bool("show_text_border",true);
+        window->textborder=SETTINGS_read_bool("show_text_border",false);
 	window->minnodesize=SETTINGS_read_int("minimum_node_size",20);
 
 #ifdef USE_GFX_OP_QUEUE

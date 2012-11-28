@@ -275,7 +275,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 	twindow->width=width;
 	twindow->height=height;
 
-	twindow->textborder=SETTINGS_read_bool("show_text_border",true);
+	twindow->textborder=SETTINGS_read_bool("show_text_border",false);
 
 #ifdef USE_GFX_OP_QUEUE
         GFX_create_op_queue(twindow);

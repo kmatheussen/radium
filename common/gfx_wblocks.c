@@ -56,6 +56,9 @@ void DrawUpLineNums(
 	  return;
 	}
 
+        bool window_textborder = window->textborder;
+        window->textborder = true;
+
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 		realline= wblock->reallines[lokke];
 
@@ -98,6 +101,8 @@ void DrawUpLineNums(
                                  );
                 }
 	}
+
+        window->textborder = window_textborder;
 
 	Blt_markSTrack(window,LINENUMBTRACK,start_realline,end_realline);
 }
