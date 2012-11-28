@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
+#if 0
 extern void MakeBlackBox(
 	struct Tracker_Windows *window,
 	int u_x,
@@ -23,8 +23,9 @@ extern void MakeBlackBox(
 	int width,
 	struct TrackReallineElements *tre
 );
+#endif
 
-int GetNodeSize(struct Tracker_Windows *window);
+int GetNodeSize(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
 void GetNodeBox_customsize(
 		struct TrackReallineElements *tre,
@@ -37,6 +38,8 @@ void GetNodeBox_customsize(
 
 void GetNodeBox(
 		struct Tracker_Windows *window,
+                struct WBlocks *wblock,
+                struct WTracks *wtrack,
 		struct TrackReallineElements *tre,
 		WArea *warea,
 		TBox *within,

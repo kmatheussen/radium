@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_slider_proc.h"
 
 
-
 void DrawSlider(
 	struct Tracker_Windows *window,
 	TBox *box,
@@ -49,7 +48,7 @@ void DrawSlider(
 	}
 
 	if(t){
-	GFX_T_Box(
+          GFX_T_Box(
 		window,1,
 		box->x1,box->y1,
 		box->x2,box->y2,

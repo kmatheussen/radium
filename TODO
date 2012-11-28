@@ -325,6 +325,8 @@ Mixer gui design
   * A Bus has two sound channels.
   * There should be VU for all buses placed somewhere.
 
+* Node size should probably be autoadjusted to around fontheight/2.
+
 Can not reproduce
 =================
 

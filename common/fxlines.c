@@ -40,7 +40,6 @@ extern struct Root *root;
 
 
 struct FXextrainfo{
-	struct WTracks *wtrack;
 	int color;
 	void *FXs;
 	void *FXNodeLine;
@@ -50,6 +49,7 @@ struct FXextrainfo{
 void MakeWFXNodesCallBack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	void *extrainfo,
 	int firstlast,
 	int realline,
@@ -57,7 +57,6 @@ void MakeWFXNodesCallBack(
 	float u_x1,float u_x2
 ){
 	struct FXextrainfo *fxextrainfo=(struct FXextrainfo *)extrainfo;
-	struct WTracks *wtrack=(struct WTracks *)fxextrainfo->wtrack;
 	struct FXNodeLines *fxnodeline1,*fxnodeline2;
 
 	/* To avoid displaying a long vertical line. */
@@ -138,7 +137,6 @@ void UpdateFXNodeLines(
 	struct FXNodeLines *fxnode;
 
 	struct FXextrainfo fxextrainfo={0};
-	fxextrainfo.wtrack=wtrack;
 
         wtrack->wfxnodes=talloc(sizeof(WFXNodes *) * wblock->num_reallines);
 
@@ -153,6 +151,7 @@ void UpdateFXNodeLines(
 			MakeNodeLines(
 				window,
 				wblock,
+                                wtrack,
 				&prev->l.p,
 				&fxnode->l.p,
 				(float)prev->val,(float)fxnode->val,

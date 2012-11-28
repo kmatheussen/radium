@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void MakeNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	Place *p1,
 	Place *p2,
 	float x1,float x2,
@@ -25,6 +26,7 @@ void MakeNodeLines(
 	void (*ReturnNodeLineData)(
 		struct Tracker_Windows *window,
 		struct WBlocks *wblock,
+                struct WTracks *wtrack,
 		void *extrainfo,
 		int firstlast,
 		int realline,

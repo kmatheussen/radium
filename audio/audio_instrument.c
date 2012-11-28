@@ -93,7 +93,7 @@ static float scale(float x, float x1, float x2, float y1, float y2){
 static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
   struct Patch *patch = track->patch;
 
-  printf("Changing track pan. Val: %d. patc: %p, plugin: %p\n",newpan,patch,patch->patchdata);
+  //printf("Changing track pan. Val: %d. patc: %p, plugin: %p\n",newpan,patch,patch->patchdata);
 
   if(patch==NULL){ // This really cant happen.
     RError("What?");

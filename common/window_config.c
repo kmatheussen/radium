@@ -114,6 +114,7 @@ void SelectBottomSliderHeight(
         SETTINGS_write_int("bottom_slider_height",newwidth);
 }
 
+#if 0
 void SelectMinNodeSize(
 	struct Tracker_Windows *window,
 	ReqType reqtype
@@ -142,6 +143,7 @@ void SelectMinNodeSize(
 
         SETTINGS_write_int("minimum_node_size",newwidth);
 }
+#endif
 
 void TextBorderOn(
 	struct Tracker_Windows *window
@@ -169,7 +171,7 @@ void Window_config(
         VECTOR_push_back(&v,"Text Border off");
         VECTOR_push_back(&v,"Left Slider width");
         VECTOR_push_back(&v,"Bottom Slider height");
-        VECTOR_push_back(&v,"Minimum node-size");
+        //VECTOR_push_back(&v,"Minimum node-size");
 
 	int sel=GFX_Menu(window,reqtype,"Select operation",&v);
 
@@ -192,9 +194,11 @@ void Window_config(
 		case 3:
 			SelectBottomSliderHeight(window,reqtype);
 			break;
+#if 0
 		case 4:
 			SelectMinNodeSize(window,reqtype);
 			break;
+#endif
 	}
 
 	GFX_CloseReq(window,reqtype);

@@ -404,7 +404,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
 #define USE_TRIANGLE 0
 
     case TRE_VELLINEEND:
-#define  dasize (int)GetNodeSize(window)
+#define  dasize (int)GetNodeSize(window,wblock,wtrack)
       GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
       if(show_read_lines){
 #if USE_TRIANGLE 
@@ -427,15 +427,17 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
         GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
         GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
 #else
-        GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
       }
       break;
     case TRE_VELLINENODE:
-      GetNodeBox(window,element,&warea2,&within2,&get);
+      GetNodeBox(window,wblock,wtrack,element,&warea2,&within2,&get);
       if(show_read_lines){
-        GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
       }
       break;

@@ -38,6 +38,7 @@ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
 export OS_OPTS="-Werror=array-bounds -msse -mfpmath=sse"
+#export OS_OPTS="-Werror=array-bounds -march=native"
 
 export VST_OPTS="-DUSE_VESTIGE=1"
 

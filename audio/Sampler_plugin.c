@@ -518,14 +518,12 @@ static void apply_adsr_to_peak(Data *data, int64_t time, float *min_value, float
 
 static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_value, float *max_value){
 
-  if(framenum>sample->loop_end && sample->loop_end > sample->loop_start){
+  if(framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
+
+    framenum -= sample->loop_end; // i.e. how far after loop end are we?
 
     int loop_length = sample->loop_end - sample->loop_start;
-
-    framenum -= sample->loop_end;
-
     int num_loops = framenum / loop_length;
-
     framenum -= (num_loops*loop_length);
 
     framenum += sample->loop_start;

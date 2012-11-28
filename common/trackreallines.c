@@ -195,9 +195,10 @@ static void InsertTRLElement(
     Adds a trackreallineelement to the trackline. Does allso ensure that
     all datas are within the trackline area.
 **************************************************************************/
-void NodeLineCallBack(
+static void NodeLineCallBack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	void *extrainfo,
 	int firstlast,
 	int realline,
@@ -222,7 +223,7 @@ void NodeLineCallBack(
 			    realline,
 			    TRE_VELLINESTART,
 			    nodeinfo->subtype,
-			    y1,(float)GetNodeSize(window),x1,(float)GetNodeSize(window),
+			    y1,(float)GetNodeSize(window,wblock,wtrack),x1,(float)GetNodeSize(window,wblock,wtrack),
 			    nodeinfo->pointer
 			    );
 	  InsertTRLElementS(
@@ -249,7 +250,7 @@ void NodeLineCallBack(
 			    realline,
 			    TRE_VELLINEEND,
 			    nodeinfo->subtype,
-			    y2,(float)(GetNodeSize(window)*2),x2,(float)GetNodeSize(window),
+			    y2,(float)(GetNodeSize(window,wblock,wtrack)*2),x2,(float)GetNodeSize(window,wblock,wtrack),
 			    nodeinfo->pointer
 			    );
 	  InsertTRLElementS(
@@ -263,9 +264,10 @@ void NodeLineCallBack(
 	}
 }
 
-void NodeLineCallBack_last(
+static void NodeLineCallBack_last(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	void *extrainfo,
 	int firstlast,
 	int realline,
@@ -309,7 +311,7 @@ void NodeLineCallBack_last(
 			    realline,
 			    TRE_VELLINEEND,
 			    nodeinfo->subtype,
-			    y2,(float)GetNodeSize(window),x2,(float)GetNodeSize(window),
+			    y2,(float)GetNodeSize(window,wblock,wtrack),x2,(float)GetNodeSize(window,wblock,wtrack),
 			    nodeinfo->pointer
 			    );
 	  InsertTRLElementS(
@@ -323,9 +325,10 @@ void NodeLineCallBack_last(
 	}
 }
 
-void NodeLineCallBack_first(
+static void NodeLineCallBack_first(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	void *extrainfo,
 	int firstlast,
 	int realline,
@@ -348,7 +351,7 @@ void NodeLineCallBack_first(
 			    realline,
 			    TRE_VELLINESTART,
 			    nodeinfo->subtype,
-			    y1,(float)(GetNodeSize(window)*2),x1,(float)GetNodeSize(window),
+			    y1,(float)(GetNodeSize(window,wblock,wtrack)*2),x1,(float)GetNodeSize(window,wblock,wtrack),
 			    nodeinfo->pointer
 			    );
 	  InsertTRLElementS(
@@ -365,6 +368,7 @@ void NodeLineCallBack_first(
 void NodeLineCallBack_vel(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	void *extrainfo,
 	int firstlast,
 	int realline,
@@ -434,6 +438,7 @@ static void AddTrackReallineNote(
 		MakeNodeLines(
 			window,
 			wblock,
+                        wtrack,
 			&note->l.p,&velocity->l.p,
 			(float)note->velocity,(float)velocity->velocity,
 			0.0f,maxx,
@@ -447,6 +452,7 @@ static void AddTrackReallineNote(
 			MakeNodeLines(
 				window,
 				wblock,
+                                wtrack,
 				&prev->l.p,&velocity->l.p,
 				(float)prev->velocity,(float)velocity->velocity,
 				0.0f,maxx,
@@ -460,6 +466,7 @@ static void AddTrackReallineNote(
 		MakeNodeLines(
 			window,
 			wblock,
+                        wtrack,
 			&prev->l.p,&note->end,
 			(float)prev->velocity,(float)note->velocity_end,
 			0.0f,maxx,
@@ -470,6 +477,7 @@ static void AddTrackReallineNote(
 		MakeNodeLines(
 			window,
 			wblock,
+                        wtrack,
 			&note->l.p,&note->end,
 			(float)note->velocity,(float)note->velocity_end,
 			0.0f,maxx,

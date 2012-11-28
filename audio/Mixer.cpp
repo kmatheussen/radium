@@ -316,10 +316,17 @@ struct Mixer{
       msgBox.setIcon(QMessageBox::Critical);
       msgBox.setText("Unable to connect to Jack.");
       msgBox.setInformativeText("The Jack Audio Connection Kit server must be started before running Radium. "
+                                "\n\n"
 #if defined(FOR_MACOSX)
                                 "Download Jack from http://www.jackosx.com"
-#else
+#endif
+
+#if defined(__linux__)
                                 "Download Jack from http://www.jackaudio.org"
+#endif
+
+#if defined(FOR_WINDOWS)
+                                "Please read the file README_first.txt"
 #endif
 				);
       

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void MakeWTempoNodesCallBack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	void *extrainfo,
 	int firstlast,
 	int realline,
@@ -100,6 +101,7 @@ void UpdateWTempoNodes(
 		MakeNodeLines(
 			window,
 			wblock,
+                        NULL,
 			&prev->l.p,
 			&temponode->l.p,
 			prev->reltempo,

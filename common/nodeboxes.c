@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nodeboxes_proc.h"
 
 
+#if 0
 void MakeBlackBox(
 	struct Tracker_Windows *window,
 	int u_x,
@@ -41,6 +42,7 @@ void MakeBlackBox(
 	tre->x1=R_MAX(0,u_x-size);
 	tre->x2=R_MIN(width,u_x+size);
 }
+#endif
 
 
 void GetNodeBox_basic(
@@ -75,19 +77,21 @@ void GetNodeBox_customsize(
   tre->y2=(float)boxheight;
 }
 
-int GetNodeSize(struct Tracker_Windows *window){
-  return R_MAX(window->minnodesize*2/3,window->fontwidth*2/3);
+int GetNodeSize(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  return window->fontheight*2;//R_MAX(window->minnodesize*2/3,window->fontwidth*2/3);
 }
 
 void GetNodeBox(
 		struct Tracker_Windows *window,
+                struct WBlocks *wblock,
+                struct WTracks *wtrack,
 		struct TrackReallineElements *tre,
 		WArea *warea,
 		TBox *within,
 		TBox *ret
 ){
-    int size=R_MAX(window->minnodesize*2/3,window->fontwidth*2/3);
-    GetNodeBox_customsize(tre,warea,within,ret,size,size);
+  int size=GetNodeSize(window,wblock,wtrack);
+  GetNodeBox_customsize(tre,warea,within,ret,size,size);
 }
 
 

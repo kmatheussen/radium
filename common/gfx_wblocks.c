@@ -260,7 +260,7 @@ void DrawWTempoNodes(
 				  */
 					break;
 				case TEMPONODE_NODE:
-				  GetNodeBox(window,wtemponode,temponodearea,&within,&get);
+				  GetNodeBox(window,wblock,NULL,wtemponode,temponodearea,&within,&get);
 				  GFX_FilledBox(
                                                 window,6,
                                                 get.x1+1,

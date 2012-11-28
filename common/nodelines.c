@@ -57,7 +57,7 @@ void FillInLineRealLine(
 }
 */
 
-#define FillInLineRealLine(a,b,c,d,e,f,g,h,i,j) (*i)(a,b,h,j,c,e,g,(float)(d),(float)(f))
+#define FillInLineRealLine(a,b,t,c,d,e,f,g,h,i,j) (*i)(a,b,t,h,j,c,e,g,(float)(d),(float)(f))
 
 
 /**********************************************************************
@@ -83,6 +83,7 @@ void FillInLineRealLine(
 void MakeNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
+        struct WTracks *wtrack,
 	Place *p1,
 	Place *p2,
 	float x1,float x2,
@@ -91,6 +92,7 @@ void MakeNodeLines(
 	void (*ReturnNodeLineData)(
 		struct Tracker_Windows *window,
 		struct WBlocks *wblock,
+                struct WTracks *wtrack,
 		void *extrainfo,
 		int firstlast,
 		int realline,
@@ -127,6 +129,7 @@ void MakeNodeLines(
     FillInLineRealLine(
 		       window,
 		       wblock,
+                       wtrack,
 		       realline1,
 		       
 		       x1,(float)((y1-ry1)/(ry2-ry1)),
@@ -152,6 +155,7 @@ void MakeNodeLines(
     FillInLineRealLine(
 		       window,
 		       wblock,
+                       wtrack,
 		       realline1,
 		       
 		       x1,(float)((y1-ry1)/(ry2-ry1)),
@@ -175,6 +179,7 @@ void MakeNodeLines(
       FillInLineRealLine(
 			 window,
 			 wblock,
+                         wtrack,
 			 lokke,
 			 
 			 (float)((direction*(ry1-y1))+x1),
@@ -200,6 +205,7 @@ void MakeNodeLines(
     FillInLineRealLine(
 		       window,
 		       wblock,
+                       wtrack,
 		       realline2,
 		       
 		       (float)((direction*(ry1-y1))+x1),

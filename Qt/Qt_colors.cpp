@@ -467,7 +467,7 @@ void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
 
   QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
   QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
-  QFile::copy(QString(OS_get_program_path())+OS_get_directory_separator()+"colors", OS_get_config_filename("color0"));
+  QFile::copy(QString(curr_dir)+separator+"colors", OS_get_config_filename("color0"));
 
   setEditorColors(editorwidget); // read back from file.
   system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
