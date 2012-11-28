@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "settings_proc.h"
 
+static const char *custom_configuration_filename=NULL;
 
 static const char* get_value(const char* line){
   int pos=0;
@@ -81,7 +82,9 @@ static int find_linenum(const char* key, const char** lines){
 static const char** get_lines(const char* key){
   bool is_color_config = OS_config_key_is_color(key);
 
-  FILE *user_file = fopen(OS_get_config_filename(key), "r");
+  const char *filename = custom_configuration_filename==NULL ? OS_get_config_filename(key) : custom_configuration_filename;
+
+  FILE *user_file = fopen(filename, "r");
   FILE *file = user_file;
 
   if(file==NULL){
@@ -112,7 +115,7 @@ static const char** get_lines(const char* key){
   int version_linenum = find_linenum("settings_version",ret);
 
   // Check that the file is not too old.
-  if(is_color_config){
+  if(is_color_config && !strcmp(filename,OS_get_config_filename(key))){
     if(user_file != NULL){
       if(version_linenum==-1 || atof(get_value(ret[version_linenum])) < SETTINGSVERSION){
         OS_make_config_file_expired(key);
@@ -176,6 +179,14 @@ static const char* SETTINGS_get(const char* key){
     return NULL;
 
   return get_value(lines[linenum]);
+}
+
+void SETTINGS_set_custom_configfile(const char *filename){
+  custom_configuration_filename=talloc_strdup(filename);
+}
+
+void SETTINGS_unset_custom_configfile(void){
+  custom_configuration_filename=NULL;
 }
 
 bool SETTINGS_read_bool(const char* key, bool def){

@@ -90,6 +90,9 @@ extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
+extern LANGSPEC void GFX_SetDefaultColors(struct Tracker_Windows *tvisual);
+
+
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
 extern LANGSPEC void QUEUE_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2, int where);

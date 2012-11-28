@@ -45,6 +45,10 @@ void configColors(int windownum){
 #endif
 }
 
+void setDefaultColors(void){
+  GFX_SetDefaultColors(getWindowFromNum(-1));
+}
+
 void configSystemFont(void){
   GFX_ConfigSystemFont();
 }
@@ -52,6 +56,16 @@ void configSystemFont(void){
 void configFonts(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_ConfigFonts(window);
+}
+
+void setDefaultEditorFont(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_SetDefaultFont(window);
+}
+
+void setDefaultSystemFont(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  GFX_SetDefaultSystemFont(window);
 }
 
 void configWindow(int windownum){

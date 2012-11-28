@@ -138,6 +138,7 @@ static void PlayBlock(
 
 	pc->initplaying=false;
 
+        // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
         while(GC_is_disabled()==false)
           GC_disable();
 }
@@ -234,6 +235,7 @@ void PlaySong(
 
 	pc->initplaying=false;
 
+        // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
         while(GC_is_disabled()==false)
           GC_disable();
 }

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/OS_settings_proc.h"
 
 #include "EditorWidget.h"
 
@@ -60,10 +61,7 @@ void updateAllFonts(QWidget *widget){
 
 extern int num_users_of_keyboard;
 
-void GFX_ConfigSystemFont(void){
-  num_users_of_keyboard++;
-  QFont font = QFontDialog::getFont( 0, QApplication::font());
-  num_users_of_keyboard--;
+static void set_system_font(QFont font){
   QApplication::setFont(font);
   qApp->setFont(font);
 
@@ -73,6 +71,14 @@ void GFX_ConfigSystemFont(void){
   SETTINGS_write_string("system_font_style",font.styleName().ascii()); // toString doesn't seem to cover this.
 
   updateAllFonts(QApplication::mainWidget());
+}
+
+void GFX_ConfigSystemFont(void){
+  num_users_of_keyboard++;
+  QFont font = QFontDialog::getFont( 0, QApplication::font());
+  num_users_of_keyboard--;
+
+  set_system_font(font);
 }
 
 static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
@@ -95,6 +101,8 @@ void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   UpdateAllWBlockWidths(tvisual);
   DrawUpTrackerWindow(tvisual);
   SETTINGS_write_string("font",font);
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  SETTINGS_write_string("font_style",editor->font.styleName().ascii()); // toString doesn't seem to cover this.
 }
 
 void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
@@ -126,6 +134,45 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   setFontValues(tvisual);
 }
 
+void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
+  QFont font;
+
+  SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+  {
+    const char *fontstring = SETTINGS_read_string("font",NULL);
+
+    font.fromString(fontstring);
+    if(SETTINGS_read_string("font_style",NULL)!=NULL)
+      font.setStyleName(SETTINGS_read_string("font_style",NULL));
+
+  }
+  SETTINGS_unset_custom_configfile();
+
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->font = font;
+  editor->setFont(editor->font);
+  setFontValues(tvisual);
+
+  UpdateAllWBlockWidths(tvisual);
+  DrawUpTrackerWindow(tvisual);
+}
+
+void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
+  QFont font;
+
+  SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+  {
+    const char *fontstring = SETTINGS_read_string("system_font",NULL);
+
+    font.fromString(fontstring);
+    if(SETTINGS_read_string("system_font_style",NULL)!=NULL)
+      font.setStyleName(SETTINGS_read_string("system_font_style",NULL));
+
+  }
+  SETTINGS_unset_custom_configfile();
+
+  set_system_font(font);
+}
 
 int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;

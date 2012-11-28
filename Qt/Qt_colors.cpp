@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpalette.h>
 #include "qcolordialog.h"
 #include <qtimer.h>
+#include <qfile.h>
 
 #ifdef USE_QT3
 #include <qobjectlist.h>
@@ -33,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/windows_proc.h"
 #include "../common/gfx_proc.h"
 #include "../GTK/GTK_visual_proc.h"
+#include "../common/OS_settings_proc.h"
 
 
 extern struct Root *root;
@@ -455,4 +457,21 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   updateAll(editorwidget);
 
   is_running = false;
+}
+
+void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
+  EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
+
+  const char* curr_dir = OS_get_program_path();
+  const char* separator = OS_get_directory_separator();
+
+  QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
+  QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
+  QFile::copy(QString(OS_get_program_path())+OS_get_directory_separator()+"colors", OS_get_config_filename("color0"));
+
+  setEditorColors(editorwidget); // read back from file.
+  system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
+  button_color->setRgb(QColor(SETTINGS_read_string("button_color","#c1f1e3")).rgb());
+  DrawUpTrackerWindow(tvisual);
+  updateAll(editorwidget);
 }

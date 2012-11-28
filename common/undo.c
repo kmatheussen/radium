@@ -91,7 +91,7 @@ void Undo_Open(void){
   struct WTracks *wtrack = wblock->wtrack;
   int realline = wblock->curr_realline;
 
-  printf("Undo_Open\n");
+  //printf("Undo_Open\n");
 
   if(undo_is_open==true)
     RError("Undo_Open: Undo_is_open==true");
@@ -306,7 +306,7 @@ currently_undoing = false;
 
 
 void Redo(void){
-  printf("CurrUndo->next: %p\n",CurrUndo->next);
+  //printf("CurrUndo->next: %p\n",CurrUndo->next);
 
 	if(CurrUndo->next==NULL) return;
 

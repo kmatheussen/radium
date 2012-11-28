@@ -20,6 +20,9 @@ extern LANGSPEC void GFX_ConfigSystemFont(void);
 extern LANGSPEC void GFX_ResetFontSize(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels);
 
+extern LANGSPEC void GFX_SetDefaultFont(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual);
+
 extern LANGSPEC void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title);
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title);
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
