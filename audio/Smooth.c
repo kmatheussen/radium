@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include <math.h>
 
 #include "../common/nsmtracker.h"
@@ -62,7 +63,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
   if(smooth->end_value == target_value){
     smooth->start_value = smooth->end_value;
     smooth->smoothing_is_necessary = false;
-    int i;    
+    int i;
     for(i=0;i<num_values;i++)
       smooth->values[i] = target_value;
   }else{
@@ -113,6 +114,8 @@ void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
     if(volume != 1.0f)
       for(i=0;i<num_frames;i++)
         dst[i] = src[i] * volume;
+    else
+      memcpy(dst,src,sizeof(float)*num_frames);
   }
 }
 

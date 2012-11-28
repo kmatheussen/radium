@@ -389,9 +389,9 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     switch(element->type){
     case TRE_THISNOTELINES:
       //					if(start_subtrack<=0)
-      if(show_read_lines && wtrack->noteshowtype==TEXTTYPE){
+      if(show_read_lines && wtrack->noteshowtype==TEXTTYPE && element->subtype>0){ // Filter out subtype==0 here (subtype==subtrack), since THISNOTELINES is used for other things as well.
         GFX_T_Line(
-                   window,Col[3],
+                   window,13,//Col[3],
                    (int)(wtrack->fxarea.x+element->x1),
                    (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
                    R_MIN(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
@@ -414,7 +414,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
 #else
         //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
         //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        draw_skewed_box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window,5,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
       }
