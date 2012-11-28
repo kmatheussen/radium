@@ -1,4 +1,18 @@
 
+Most important changes 1.9.10 -> 1.9.11:
+* Fix missing sound on AMD phenom processor. Thanks to DoosC for helping to debug.
+* Disable text border by default (except for line numbers), and ignore saved text border setting
+* Ignore minnodesize and use font height*2 instead.
+* Only show gfx nodes for the track the mouse is currently placed over.
+* Implement reset font size for qt
+* Demo song audio adjustments
+* Set default colors/fonts menu options
+* Qt: set DontUseNativeMenuBar on all systems, not just osx. Menues requires mono font to look right
+  (fix for unity)
+* Dont stop playing when changeing patch for a track
+* Various graphical improvements
+
+
 Most important changes 1.9.9 -> 1.9.10:
 * Use x instead of STP. Idea: Damir Sijakovic
 
