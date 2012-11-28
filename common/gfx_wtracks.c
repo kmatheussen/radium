@@ -331,6 +331,32 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
   }
 }
 
+static void draw_skewed_box(struct Tracker_Windows *window,
+                            int color,
+                            int x1,int y1,int x2, int y2,
+                            int where)
+{
+  GFX_T_Line(window,color,
+                 x1+1,y1+1,
+                 x1+2,y2-1,
+                 where);
+
+  GFX_T_Line(window,color,
+                 x1+2,y2-1,
+                 x2-1,y2-2,
+                 where);
+
+  GFX_T_Line(window,color,
+                 x2-1,y2-2,
+                 x2-2,y1+2,
+                 where);
+
+  GFX_T_Line(window,color,
+                 x2-2,y1+2,
+                 x1+1,y1+1,
+                 where);
+}
+
 static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                                      struct WBlocks *wblock,
                                      struct WTracks *wtrack,
@@ -387,7 +413,8 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
         GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
 #else
         //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
-        GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
       }
@@ -479,6 +506,8 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
   warea.x2=wtrack->fxarea.x2;
   warea.width=warea.x2-warea.x;
 
+  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
+
   WFXNodes *wfxnode=wtrack->wfxnodes[realline];
   while(wfxnode!=NULL){
     switch(wfxnode->type){
@@ -508,27 +537,30 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
         PAINT_BUFFER
         );
       */
-      GetNodeBox(window,wfxnode,&warea,&within,&get);
+      GetNodeBox(window,wblock,wtrack,wfxnode,&warea,&within,&get);
       //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-      GFX_T_Line(window,wfxnode->subtype,
-                 get.x1+1,get.y1+1,
-                 get.x1+2,get.y2-1,
-                 PAINT_BUFFER);
 
-      GFX_T_Line(window,wfxnode->subtype,
-                 get.x1+2,get.y2-1,
+      if(show_read_lines){
+        GFX_T_Line(window,wfxnode->subtype,
+                   get.x1+1,get.y1+1,
+                   get.x1+2,get.y2-1,
+                   PAINT_BUFFER);
+
+        GFX_T_Line(window,wfxnode->subtype,
+                   get.x1+2,get.y2-1,
                  get.x2-1,get.y2-2,
-                 PAINT_BUFFER);
-
-      GFX_T_Line(window,wfxnode->subtype,
-                 get.x2-1,get.y2-2,
-                 get.x2-2,get.y1+2,
-                 PAINT_BUFFER);
-
-      GFX_T_Line(window,wfxnode->subtype,
-                 get.x2-2,get.y1+2,
-                 get.x1+1,get.y1+1,
-                 PAINT_BUFFER);
+                   PAINT_BUFFER);
+        
+        GFX_T_Line(window,wfxnode->subtype,
+                   get.x2-1,get.y2-2,
+                   get.x2-2,get.y1+2,
+                   PAINT_BUFFER);
+        
+        GFX_T_Line(window,wfxnode->subtype,
+                   get.x2-2,get.y1+2,
+                   get.x1+1,get.y1+1,
+                   PAINT_BUFFER);
+      }
 
       /*
         GFX_T_Box(
