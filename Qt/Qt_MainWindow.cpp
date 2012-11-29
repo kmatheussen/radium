@@ -195,8 +195,8 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
     //usleep(1*1000*1000);
 #if 1
-    int width=600;
-    int height=600;
+    int width=800;
+    int height=800;
     g_embed_container->resize(width,height);
     GTK_SetSize(width,height);
 #endif
@@ -370,9 +370,9 @@ void SetupMainWindow(void){
   main_window->setBackgroundMode(Qt::NoBackground);
 #endif
 
-  main_window->resize(800,400);
-  editor->setMinimumWidth(400);
-  editor->setMinimumHeight(200);
+  main_window->resize(1024,600);
+  editor->setMinimumWidth(600);
+  editor->setMinimumHeight(400);
 
   main_window->setCaption("Radium editor window");
   main_window->statusBar()->message( "Ready", 2000 );
@@ -456,7 +456,6 @@ void SetupMainWindow(void){
   editor->init_buffers();
 
 #endif // USE_QT_VISUAL
-
 
   g_editor = editor;
 }

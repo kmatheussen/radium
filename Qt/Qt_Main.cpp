@@ -408,8 +408,9 @@ int radium_main(char *arg){
   BS_SelectBlock(root->song->blocks);
   BS_SelectPlaylistPos(0);
 
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+
   {
-    QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
     {
@@ -466,6 +467,9 @@ int radium_main(char *arg){
     NewSong_CurrPos(root->song->tracker_windows);
 
   //updateAllFonts(QApplication::mainWidget());
+
+  main_window->repaint();
+  DrawUpTrackerWindow(root->song->tracker_windows);
 
   show_nag_window("");
 
