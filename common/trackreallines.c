@@ -90,12 +90,14 @@ static void AddTrackReallineElement(
 **************************************************************************/
 static void InsertTRLElementS(
 	struct WTracks *wtrack,
+        struct Notes *note,
 	int realline,
 	int type,int subtype,float y1,float y2,
 	float x1,float x2,
 	void *pointer
 ){
 	struct TrackReallineElements *element = talloc(sizeof(struct TrackReallineElements));
+        element->note=note;
 	element->type=type;
 	element->subtype=subtype;
 	element->y1=y1;
@@ -210,6 +212,7 @@ static void NodeLineCallBack(
 
 	InsertTRLElementS(
 		nodeinfo->wtrack,
+                note,
 		realline,
 		nodeinfo->type,
 		nodeinfo->subtype,
@@ -220,6 +223,7 @@ static void NodeLineCallBack(
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_VELLINESTART,
 			    nodeinfo->subtype,
@@ -228,6 +232,7 @@ static void NodeLineCallBack(
 			    );
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_REALSTARTSTOP,
 			    nodeinfo->subtype,
@@ -247,6 +252,7 @@ static void NodeLineCallBack(
 	if(firstlast==NODELINE_LAST || firstlast==NODELINE_FIRSTANDLAST){
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_VELLINEEND,
 			    nodeinfo->subtype,
@@ -255,6 +261,7 @@ static void NodeLineCallBack(
 			    );
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_REALSTARTSTOP,
 			    nodeinfo->subtype,
@@ -279,6 +286,7 @@ static void NodeLineCallBack_last(
 
 	InsertTRLElementS(
 		nodeinfo->wtrack,
+                note,
 		realline,
 		nodeinfo->type,
 		nodeinfo->subtype,
@@ -290,6 +298,7 @@ static void NodeLineCallBack_last(
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_VELLINENODE,
 			    nodeinfo->subtype,
@@ -308,6 +317,7 @@ static void NodeLineCallBack_last(
 	if(firstlast==NODELINE_LAST || firstlast==NODELINE_FIRSTANDLAST){
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_VELLINEEND,
 			    nodeinfo->subtype,
@@ -316,6 +326,7 @@ static void NodeLineCallBack_last(
 			    );
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_REALSTARTSTOP,
 			    nodeinfo->subtype,
@@ -336,8 +347,11 @@ static void NodeLineCallBack_first(
 	float x1,float x2
 ){
 	struct TrackReallineNodeInfo *nodeinfo=(struct TrackReallineNodeInfo *)extrainfo;
+	struct Notes *note=(struct Notes *)nodeinfo->pointer;
+
 	InsertTRLElementS(
 		nodeinfo->wtrack,
+                note,
 		realline,
 		nodeinfo->type,
 		nodeinfo->subtype,
@@ -348,6 +362,7 @@ static void NodeLineCallBack_first(
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_VELLINESTART,
 			    nodeinfo->subtype,
@@ -356,6 +371,7 @@ static void NodeLineCallBack_first(
 			    );
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_REALSTARTSTOP,
 			    nodeinfo->subtype,
@@ -376,8 +392,11 @@ void NodeLineCallBack_vel(
 	float x1,float x2
 ){
 	struct TrackReallineNodeInfo *nodeinfo=(struct TrackReallineNodeInfo *)extrainfo;
+	struct Notes *note=(struct Notes *)nodeinfo->pointer;
+
 	InsertTRLElementS(
 		nodeinfo->wtrack,
+                note,
 		realline,
 		TRE_VELLINE,
 		nodeinfo->subtype,
@@ -388,6 +407,7 @@ void NodeLineCallBack_vel(
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
+                            note,
 			    realline,
 			    TRE_VELLINENODE,
 			    nodeinfo->subtype,
@@ -786,6 +806,7 @@ void AddStopsElements(
 		subrealline=FindSubRealLine(window,wblock,realline,&stop->l.p);
 		InsertTRLElementS(
 			wtrack,
+                        NULL,
 			realline,
 			TRE_STOPLINE,0,
 			(float)subrealline,(float)subrealline,0.0f,(float)(wtrack->fxwidth-2),

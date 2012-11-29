@@ -442,6 +442,8 @@ struct APoint{
 struct TrackReallineElements{
   struct TrackReallineElements *next;
 
+  struct Notes *note;
+
   int type;
   int subtype;
   float y1,y2;
@@ -738,6 +740,7 @@ struct WBlocks{
 	int bot_realline;
 
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.
+        struct Notes *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note.
 
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */
 

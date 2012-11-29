@@ -44,8 +44,10 @@ void SetMouseAction(
 ){
   struct WBlocks *wblock=window->wblock;
 
+  struct Notes *old_mouse_note = wblock->mouse_note;
   int old_mouse_track = wblock->mouse_track;
 
+  //wblock->mouse_note = NULL;
   wblock->mouse_track = -1;
 
   if(
@@ -104,7 +106,7 @@ void SetMouseAction(
 
  exit:
 
-        if(old_mouse_track!=wblock->mouse_track){
+        if(old_mouse_track!=wblock->mouse_track || old_mouse_note!=wblock->mouse_note){
           //printf("mouse.c: Drawing up tracks\n");
           DrawUpAllWTracks(window,wblock,NULL);
         }

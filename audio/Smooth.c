@@ -111,11 +111,11 @@ void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
     }
   }else{
     float volume = smooth->end_value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
-    if(volume != 1.0f)
+    if(volume > 0.0f)
       for(i=0;i<num_frames;i++)
         dst[i] = src[i] * volume;
     else
-      memcpy(dst,src,sizeof(float)*num_frames);
+      memset(dst,0,sizeof(float)*num_frames);
   }
 }
 

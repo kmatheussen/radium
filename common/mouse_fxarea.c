@@ -46,15 +46,41 @@ void SetMouseActionVelocities(
 	int click
 ){
 	struct WBlocks *wblock=window->wblock;
-	struct TrackReallineElements *element;
 
 	WArea warea;
         TBox within;
 
-	element=wtrack->trackreallines[realline].trackreallineelements;
-
 	within.y1=Common_oldGetReallineY1Pos(window,wblock,realline);
 	within.y2=Common_oldGetReallineY2Pos(window,wblock,realline);
+
+        // Find wblock->mouse_note
+
+        {
+          struct TrackReallineElements *element=wtrack->trackreallines[realline].trackreallineelements;
+
+          while(element!=NULL){
+            warea.x=GetXSubTrack1(wtrack,element->subtype);
+            warea.x2=GetXSubTrack2(wtrack,element->subtype);
+            warea.width=warea.x2-warea.x;
+            
+            within.x1=warea.x;
+            within.x2=warea.x2;
+            
+            if(element->type==TRE_VELLINE){
+              int y1=scale(element->y1,0,1,within.y1,within.y2);
+              int y2=scale(element->y2,0,1,within.y1,within.y2);
+              if(y>=y1 && y<y2 && x>=warea.x && x<warea.x2){
+                wblock->mouse_note=element->pointer;
+                //printf("Set mouse_note to %d\n",wblock->mouse_note->note);
+              }
+            }
+            
+            element=element->next;
+          }
+        }
+
+
+	struct TrackReallineElements *element=wtrack->trackreallines[realline].trackreallineelements;
 
 	while(element!=NULL){
 	  warea.x=GetXSubTrack1(wtrack,element->subtype);
@@ -63,7 +89,6 @@ void SetMouseActionVelocities(
 
 	  within.x1=warea.x;
 	  within.x2=warea.x2;
-
 
 		if(element->type==TRE_VELLINENODE || element->type==TRE_VELLINESTART || element->type==TRE_VELLINEEND){
 			if(

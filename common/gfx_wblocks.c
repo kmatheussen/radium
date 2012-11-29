@@ -210,6 +210,41 @@ void DrawLPBs(
 	Blt_markSTrack(window,LPBTRACK,start_realline,end_realline);
 }
 
+static void draw_skewed_box(struct Tracker_Windows *window,
+                            int color,
+                            int x1,int y1,int x2, int y2,
+                            int where)
+{
+  // vertical left
+  GFX_SetMixColor(window, color, 2, 100);
+  GFX_Line(window,color,
+                 x1+1,y1+1,
+                 x1+2,y2-1,
+                 where);
+
+  // horizontal bottom
+  GFX_SetMixColor(window, color, 1, 300);
+  GFX_Line(window,color,
+                 x1+2,y2-1,
+                 x2-1,y2-2,
+                 where);
+
+  // vertical right
+  GFX_SetMixColor(window, color,1, 400);
+  //GFX_SetMixColor(window, 8,9, 700);
+  GFX_Line(window,color,
+                 x2-1,y2-2,
+                 x2-2,y1+2,
+                 where);
+
+  // horizontal top
+  GFX_SetMixColor(window, color, 2, 300);
+  GFX_Line(window,color,
+                 x2-2,y1+2,
+                 x1+1,y1+1,
+                 where);
+}
+
 void DrawWTempoNodes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -270,30 +305,33 @@ void DrawWTempoNodes(
                                                 window,6,
                                                 get.x1+1,
                                                 get.y1+1,
-                                                get.x2-1,
-                                                get.y2-1,
+                                                get.x2-2,
+                                                get.y2-2,
                                                 PAINT_BUFFER
                                                 );
+                                  draw_skewed_box(window,1,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+#if 0
+                                  GFX_Line(window,1,
+                                           get.x1+1,get.y1+1,
+                                           get.x1+2,get.y2-1,
+                                           PAINT_BUFFER);
+                                  
+                                  GFX_Line(window,1,
+                                           get.x1+2,get.y2-1,
+                                           get.x2-1,get.y2-2,
+                                           PAINT_BUFFER);
+                                  
+                                  GFX_Line(window,1,
+                                           get.x2-1,get.y2-2,
+                                           get.x2-2,get.y1+2,
+                                           PAINT_BUFFER);
+                                  
+                                  GFX_Line(window,1,
+                                           get.x2-2,get.y1+2,
+                                           get.x1+1,get.y1+1,
+                                           PAINT_BUFFER);
 
-                                  GFX_Line(window,1,
-                                           get.x1+1,get.y1+1,
-                                           get.x1+2,get.y2-1,
-                                           PAINT_BUFFER);
-                                  
-                                  GFX_Line(window,1,
-                                           get.x1+2,get.y2-1,
-                                           get.x2-1,get.y2-2,
-                                           PAINT_BUFFER);
-                                  
-                                  GFX_Line(window,1,
-                                           get.x2-1,get.y2-2,
-                                           get.x2-2,get.y1+2,
-                                           PAINT_BUFFER);
-                                  
-                                  GFX_Line(window,1,
-                                           get.x2-2,get.y1+2,
-                                           get.x1+1,get.y1+1,
-                                           PAINT_BUFFER);
+#endif
 
 #if 0
 				  GFX_Box(

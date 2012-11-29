@@ -331,26 +331,68 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
   }
 }
 
-static void draw_skewed_box(struct Tracker_Windows *window,
+#if 0
+static void draw_skewed_box_old(struct Tracker_Windows *window,
                             int color,
                             int x1,int y1,int x2, int y2,
                             int where)
 {
+  GFX_SetMixColor(window, Col[1],5, 500);
   GFX_T_Line(window,color,
                  x1+1,y1+1,
                  x1+2,y2-1,
                  where);
 
+  GFX_SetMixColor(window, Col[2],4, 500);
   GFX_T_Line(window,color,
                  x1+2,y2-1,
                  x2-1,y2-2,
                  where);
 
+  GFX_SetMixColor(window, Col[2],4, 500);
+  //GFX_SetMixColor(window, 8,9, 700);
   GFX_T_Line(window,color,
                  x2-1,y2-2,
                  x2-2,y1+2,
                  where);
 
+  GFX_SetMixColor(window, 8,9, 700);
+  GFX_T_Line(window,color,
+                 x2-2,y1+2,
+                 x1+1,y1+1,
+                 where);
+}
+#endif
+
+static void draw_skewed_box(struct Tracker_Windows *window,
+                            int color,
+                            int x1,int y1,int x2, int y2,
+                            int where)
+{
+  // vertical left
+  GFX_SetMixColor(window, color, 2, 100);
+  GFX_T_Line(window,color,
+                 x1+1,y1+1,
+                 x1+2,y2-1,
+                 where);
+
+  // horizontal bottom
+  GFX_SetMixColor(window, color, 1, 300);
+  GFX_T_Line(window,color,
+                 x1+2,y2-1,
+                 x2-1,y2-2,
+                 where);
+
+  // vertical right
+  GFX_SetMixColor(window, color,1, 400);
+  //GFX_SetMixColor(window, 8,9, 700);
+  GFX_T_Line(window,color,
+                 x2-1,y2-2,
+                 x2-2,y1+2,
+                 where);
+
+  // horizontal top
+  GFX_SetMixColor(window, color, 2, 300);
   GFX_T_Line(window,color,
                  x2-2,y1+2,
                  x1+1,y1+1,
@@ -367,8 +409,6 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
   struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
   struct TrackReallineElements *element;
 
-  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
-
   TBox within2;
   within2.y1=within.y1;
   within2.y2=within.y2;
@@ -378,6 +418,8 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
   for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
     WArea warea2;
     TBox get;
+
+    bool show_read_lines = wblock->mouse_track==wtrack->l.num && wblock->mouse_note==element->note;
 
     warea2.x=GetXSubTrack1(wtrack,element->subtype);
     warea2.x2=GetXSubTrack2(wtrack,element->subtype);
@@ -389,7 +431,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     switch(element->type){
     case TRE_THISNOTELINES:
       //					if(start_subtrack<=0)
-      if(show_read_lines && wtrack->noteshowtype==TEXTTYPE && element->subtype>0){ // Filter out subtype==0 here (subtype==subtrack), since THISNOTELINES is used for other things as well.
+      if(wblock->mouse_track==wtrack->l.num && wtrack->noteshowtype==TEXTTYPE && element->subtype>0){ // Filter out subtype==0 here (subtype==subtrack), since THISNOTELINES is used for other things as well.
         GFX_T_Line(
                    window,13,//Col[3],
                    (int)(wtrack->fxarea.x+element->x1),
@@ -428,7 +470,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
         GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
 #else
         //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        draw_skewed_box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window,4,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
 #endif
       }
@@ -436,7 +478,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     case TRE_VELLINENODE:
       GetNodeBox(window,wblock,wtrack,element,&warea2,&within2,&get);
       if(show_read_lines){
-        draw_skewed_box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window,8,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
       }
@@ -543,6 +585,8 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
       //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
 
       if(show_read_lines){
+        draw_skewed_box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+#if 0
         GFX_T_Line(window,wfxnode->subtype,
                    get.x1+1,get.y1+1,
                    get.x1+2,get.y2-1,
@@ -562,6 +606,7 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
                    get.x2-2,get.y1+2,
                    get.x1+1,get.y1+1,
                    PAINT_BUFFER);
+#endif
       }
 
       /*
