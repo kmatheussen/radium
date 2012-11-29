@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "gfx_wtrackheader_volpan_proc.h"
 #include "blts_proc.h"
+#include "../audio/SoundPlugin.h"
+#include "../Qt/Qt_instruments_proc.h"
 
 #include "gfx_wtrackheaders_proc.h"
 
@@ -54,6 +56,42 @@ void UpdateWTrackHeader(
         //  printf("maxwidth: %d. x/x2: %d/%d\n",maxwidth,wtrack->x,wtrack->x2);
         temp[maxwidth] = 0;
 #endif
+
+        if(get_current_instruments_gui_patch()==wtrack->track->patch){
+          struct WTracks *next_wtrack=NextWTrack(wtrack);
+
+          bool is_last_track = next_wtrack==NULL || wtrack->track->patch != next_wtrack->track->patch;
+
+          int x1 = wtrack->x;
+          int x2 = wtrack->x2; //is_last_track ? wtrack->x2+2 : next_wtrack->x;
+          int y1 = wtrack->y+3;
+          int y2 = wblock->t.y1-1;
+
+          GFX_SetMixColor(window, 7, 15, 100);
+          GFX_T_FilledBox(window, 7,
+                          x1,y1,x2,y2,
+                          PAINT_BUFFER);
+
+          // vertical left
+          GFX_SetMixColor(window, 1, 15, 200);
+          GFX_T_Line(window, 1,
+                     x1,y1,x1,y2,
+                     PAINT_BUFFER);
+
+          // horizontal top
+          GFX_SetMixColor(window, 1, 15, 200);
+          GFX_T_Line(window, 1,
+                     x1,y1,x2,y1,
+                     PAINT_BUFFER);
+
+          if(is_last_track){
+            // vertical right
+            GFX_SetMixColor(window, 1, 15, 200);
+            GFX_Line(window, 1,
+                     x2,y1,x2,y2,
+                     PAINT_BUFFER);
+          }
+        }
 
 	sprintf(temp,"%d:",wtrack->l.num);
 	GFX_T_Text(

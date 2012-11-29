@@ -44,6 +44,9 @@ QtXEmbedContainer *g_embed_container;
 
 extern EditorWidget *g_editor;
 
+static bool g_use_custom_color = false;
+static QColor g_custom_color;
+
 
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
@@ -324,13 +327,13 @@ static void setColor(QPainter *painter, int colornum, int where){
 }
 #endif
 
-void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
+void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  if(where==PAINT_BUFFER && color==0){
+  if(where==PAINT_BUFFER && colornum==0){
     if(y>=tvisual->wblock->t.y1)
-      color = 15;
+      colornum = 15;
   }
 #if 0
     else{
@@ -342,19 +345,25 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int 
         wtrack = NextWTrack(wtrack);
       }
       if(wtrack==NULL)
-        color=15;
+        colornum=15;
     }
   }
 #endif
 
-  painter->fillRect(x,y,x2-x+1,y2-y+1,editor->colors[color]);
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  g_use_custom_color = false;
+
+  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
 }
 
-void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where){
+void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  painter->setPen(editor->colors[color]);
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  g_use_custom_color = false;
+
+  painter->setPen(qcolor);
 #if USE_QT4
   //painter->setRenderHints(QPainter::Antialiasing,true);
   painter->drawRect(x,y,x2-x,y2-y);
@@ -364,9 +373,6 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int
   painter->drawRect(x,y,x2-x+1,y2-y+1);
 #endif
 }
-
-static bool g_use_custom_color = false;
-static QColor g_custom_color;
 
 void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;

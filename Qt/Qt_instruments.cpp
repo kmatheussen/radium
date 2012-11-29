@@ -684,6 +684,7 @@ void GFX_PP_Update(struct Patch *patch){
       
       instruments_widget->tabs->setCurrentWidget(instrument);
       MW_update_all_chips();
+      DrawAllWTrackHeaders(root->song->tracker_windows, root->song->tracker_windows->wblock);
 
       MIDI_SetThroughPatch(patch);
 
@@ -697,6 +698,7 @@ void GFX_PP_Update(struct Patch *patch){
       update_audio_instrument_widget(instrument,patch);
       instruments_widget->tabs->setCurrentWidget(instrument);
       MW_update_all_chips();
+      DrawAllWTrackHeaders(root->song->tracker_windows, root->song->tracker_windows->wblock);
 
       MIDI_SetThroughPatch(patch);
 
@@ -838,6 +840,9 @@ void close_all_instrument_widgets(void){
 }
 
 struct Patch *get_current_instruments_gui_patch(void){
+  if(instruments_widget==NULL || instruments_widget->tabs==NULL)
+    return NULL;
+
   QStackedWidget* tabs = instruments_widget->tabs;
 
   {

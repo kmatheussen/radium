@@ -431,7 +431,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     switch(element->type){
     case TRE_THISNOTELINES:
       //					if(start_subtrack<=0)
-      if(wblock->mouse_track==wtrack->l.num && wtrack->noteshowtype==TEXTTYPE && element->subtype>0){ // Filter out subtype==0 here (subtype==subtrack), since THISNOTELINES is used for other things as well.
+      if(wtrack->noteshowtype==TEXTTYPE && element->subtype>0){ // Filter out subtype==0 here (subtype==subtrack), since THISNOTELINES is used for other things as well.
         GFX_T_Line(
                    window,13,//Col[3],
                    (int)(wtrack->fxarea.x+element->x1),
