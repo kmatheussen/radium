@@ -372,23 +372,18 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  if(g_use_custom_color==true){
-    painter->setPen(g_custom_color);
-    g_use_custom_color = false;
-  }else{    
-    QColor qcolor = get_qcolor(tvisual,colornum);
-    painter->setPen(qcolor);
-  }
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  g_use_custom_color = false;
 
   if(x!=x2 && y!=y2){
     painter->setRenderHints(QPainter::Antialiasing,true);
-    QColor color = editor->colors[colornum];
-    color.setAlpha(100);
-    QPen pen(color,2,Qt::SolidLine);  
+    qcolor.setAlpha(100);
+    QPen pen(qcolor,2,Qt::SolidLine);  
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::RoundJoin);
-    painter->setPen(pen);
-  }
+    painter->setPen(pen);    
+  } else 
+    painter->setPen(qcolor);
 
   painter->drawLine(x,y,x2,y2);
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
