@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
+#include "../common/visual_proc.h"
 
 #include "SoundFonts_proc.h"
 
@@ -360,6 +361,7 @@ hash_t *SF2_get_info(const char *filename){
     return hash;
 
   }catch (RIFF::Exception e) {
+    GFX_Message("Unable to parse soundfont file: %s",e.Message.c_str());
     e.PrintMessage();
     return NULL;
   }catch (...) {
