@@ -18,7 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#include <stdarg.h>
+#include <errno.h>
 
 
 #include "nsmtracker.h"
@@ -26,8 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TRACKER_DISK_IS_CALLING_NOW
 #include "disk.h"
 #undef TRACKER_DISK_IS_CALLING_NOW
-
-#include <stdarg.h>
 
 
 

@@ -280,34 +280,37 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                     PAINT_BUFFER
                     );
       }
-
-
-      int num_peaks = element->num_peaks;
-
-      if(num_peaks>0){
+            
+      // fill wave data (if available)
+      {
+        int num_peaks = element->num_peaks;
+        
+        if(num_peaks>0){
         //GFX_SetMixColor(window, 5, 15, 100);
-
-        GFX_Polygon(window,
-                    0,
-                    x+1, within.y1,
-                    x2-1, within.y2,
-                    num_peaks*2,
-                    element->peaks[0],
-                    PAINT_BUFFER
-                    );
-
-        if(element->peaks[1] != NULL)
+          
           GFX_Polygon(window,
                       0,
-                      x+1, within.y1,
+                    x+1, within.y1,
                       x2-1, within.y2,
                       num_peaks*2,
-                      element->peaks[1],
+                    element->peaks[0],
                       PAINT_BUFFER
                       );
+          
+          if(element->peaks[1] != NULL)
+            GFX_Polygon(window,
+                        0,
+                        x+1, within.y1,
+                        x2-1, within.y2,
+                        num_peaks*2,
+                        element->peaks[1],
+                        PAINT_BUFFER
+                        );
+        }
       }
 
-      // border
+
+      // velocity border
 #if 1
       GFX_Polyline(window,
                    1,
@@ -315,7 +318,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                    x2, within.y2,
                    2,
                    &element->velocity_polygon[2],
-                     PAINT_BUFFER
+                   PAINT_BUFFER
                    );
 #else
       GFX_T_Line(window,
@@ -519,12 +522,12 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
     case TRE_REALSTARTSTOP:
       {
         struct Notes *note=element->pointer;
+        GFX_SetMixColor(window, 11, 1, 800);
         GFX_T_Line(
       //window,Col[2],
                    window,11,
-                   wtrack->noteshowtype==TEXTTYPE?
-                   within2.x1:
-                   wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12,
+                   wtrack->noteshowtype==TEXTTYPE ? wtrack->notearea.x //within2.x1
+                                                  : wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12,
                    (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
                    within2.x2,
                    (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
@@ -669,10 +672,11 @@ void UpdateWTrack(
 	  within.y1=GetReallineY1Pos(window,wblock,lokke);
 	  within.y2=GetReallineY2Pos(window,wblock,lokke);
 
-          draw_wtrack_text(window,wblock,wtrack,lokke,within);
           draw_wtrack_peaks(window,wblock,wtrack,lokke,within);
           draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within);
           draw_wtrack_fxgraphics(window,wblock,wtrack,lokke,within);
+
+          draw_wtrack_text(window,wblock,wtrack,lokke,within);
 
           WTRACK_DrawTrackBorders(window,wblock,wtrack,lokke,start_subtrack,end_subtrack);
 	}

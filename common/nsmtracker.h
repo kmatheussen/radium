@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define GTK_IS_USED 1
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
