@@ -269,7 +269,12 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
 
       // fill velocity area
       {
+
+#if 0 // same color as note name. Cool, but messy
+        GFX_SetMixColor(window, element->note->note+16, 15, 400);
+#else
         GFX_SetMixColor(window, 5, 15, 100);
+#endif
 
         GFX_Polygon(window,
                     1,
@@ -290,13 +295,14 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
           
           GFX_Polygon(window,
                       0,
-                    x+1, within.y1,
+                      x+1, within.y1,
                       x2-1, within.y2,
                       num_peaks*2,
-                    element->peaks[0],
+                      element->peaks[0],
                       PAINT_BUFFER
                       );
           
+          // For stereo. This is the right channel.
           if(element->peaks[1] != NULL)
             GFX_Polygon(window,
                         0,
@@ -306,12 +312,34 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                         element->peaks[1],
                         PAINT_BUFFER
                         );
+
+#if 0 // waveform border
+          GFX_SetMixColor(window, 1, 15, 500);
+          GFX_Polyline(window,
+                      1,
+                      x-1, within.y1,
+                      x2-1, within.y2,
+                      num_peaks,
+                      element->peaks[0],
+                      PAINT_BUFFER
+                      );
+          GFX_SetMixColor(window, 1, 15, 500);
+          GFX_Polyline(window,
+                      1,
+                      x, within.y1,
+                      x2, within.y2,
+                      num_peaks,
+                      &element->peaks[0][num_peaks],
+                      PAINT_BUFFER
+                      );
+#endif // waveform border
         }
       }
 
 
       // velocity border
 #if 1
+      GFX_SetMixColor(window, 1, 15, 300);
       GFX_Polyline(window,
                    1,
                    x, within.y1,

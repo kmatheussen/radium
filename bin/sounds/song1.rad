@@ -53,10 +53,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1052
+1290
 
 ?height
-811
+837
 
 ?fontID
 0
@@ -122,13 +122,13 @@ WBLOCK
 30
 
 ?temponodearea
-70
+216
 
 ?maxwtracksize
 0
 
 ?curr_realline
-48
+3
 
 ?num_reallines
 79
@@ -365,7 +365,7 @@ WTRACK
 3
 
 ?fxwidth
-194
+196
 
 ?num_vel
 1
@@ -382,7 +382,7 @@ WTRACK
 3
 
 ?fxwidth
-104
+196
 
 ?num_vel
 1
@@ -399,7 +399,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+196
 
 ?num_vel
 1
@@ -416,7 +416,7 @@ WTRACK
 3
 
 ?fxwidth
-88
+196
 
 ?num_vel
 1
@@ -433,7 +433,7 @@ WTRACK
 3
 
 ?fxwidth
-49
+196
 
 ?num_vel
 1
@@ -450,7 +450,7 @@ WTRACK
 3
 
 ?fxwidth
-104
+196
 
 ?num_vel
 1
@@ -2732,6 +2732,18 @@ FXNODELINES
 /
 
 \
+TEMPOS
+59
+0
+5
+80
+60
+0
+1
+104
+/
+
+\
 RELTEMPO
 0.000000
 0.130435
@@ -4335,7 +4347,7 @@ HASH_TYPE
 7
 from_patch
 INT_TYPE
-16
+21
 to_patch
 INT_TYPE
 0
@@ -4346,7 +4358,7 @@ HASH_TYPE
 7
 from_patch
 INT_TYPE
-21
+16
 to_patch
 INT_TYPE
 0
@@ -4357,23 +4369,12 @@ HASH_TYPE
 7
 from_patch
 INT_TYPE
-5
+0
 to_patch
 INT_TYPE
-7
+20
 << HASH MAP END
 <int hash> 7
-HASH_TYPE
->> HASH MAP BEGIN
-7
-from_patch
-INT_TYPE
-18
-to_patch
-INT_TYPE
-21
-<< HASH MAP END
-<int hash> 0
 HASH_TYPE
 >> HASH MAP BEGIN
 7
@@ -4384,29 +4385,18 @@ to_patch
 INT_TYPE
 0
 << HASH MAP END
+<int hash> 0
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+18
+to_patch
+INT_TYPE
+21
+<< HASH MAP END
 <int hash> 2
-HASH_TYPE
->> HASH MAP BEGIN
-7
-from_patch
-INT_TYPE
-7
-to_patch
-INT_TYPE
-0
-<< HASH MAP END
-<int hash> 4
-HASH_TYPE
->> HASH MAP BEGIN
-7
-from_patch
-INT_TYPE
-0
-to_patch
-INT_TYPE
-20
-<< HASH MAP END
-<int hash> 5
 HASH_TYPE
 >> HASH MAP BEGIN
 7
@@ -4417,6 +4407,28 @@ to_patch
 INT_TYPE
 1
 << HASH MAP END
+<int hash> 4
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+5
+to_patch
+INT_TYPE
+7
+<< HASH MAP END
+<int hash> 5
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+from_patch
+INT_TYPE
+7
+to_patch
+INT_TYPE
+0
+<< HASH MAP END
 num_connections
 INT_TYPE
 8
@@ -4426,588 +4438,6 @@ HASH_TYPE
 >> HASH MAP BEGIN
 23
 <int hash> 0
-HASH_TYPE
->> HASH MAP BEGIN
-7
-plugin
-HASH_TYPE
->> HASH MAP BEGIN
-11
-name
-STRING_TYPE
-Bus 2
-type_name
-STRING_TYPE
-Bus
-effects
-HASH_TYPE
->> HASH MAP BEGIN
-2
-System Width On/Off
-FLOAT_TYPE
-0.000000
-System Hs L.
-FLOAT_TYPE
-0.000000
-System Hs F.
-FLOAT_TYPE
-1499.337646
-System Ls F.
-FLOAT_TYPE
-399.120880
-System Eq2 F.
-FLOAT_TYPE
-1000.000366
-System Eq1 F.
-FLOAT_TYPE
-399.120880
-System Lowpass On/Off
-FLOAT_TYPE
-0.000000
-System Dry/Wet
-FLOAT_TYPE
-1.000000
-System Pan On/Off
-FLOAT_TYPE
-0.000000
-System Reverb On/Off
-FLOAT_TYPE
-1.000000
-System Reverb
-FLOAT_TYPE
-0.000000
-System Out
-FLOAT_TYPE
-0.999712
-System Volume On/Off
-FLOAT_TYPE
-1.000000
-System Volume
-FLOAT_TYPE
-0.999712
-System In On/Off
-FLOAT_TYPE
-1.000000
-System In
-FLOAT_TYPE
-0.999712
-System Width
-FLOAT_TYPE
-0.000000
-System Hs On/Off
-FLOAT_TYPE
-0.000000
-System Ls On/Off
-FLOAT_TYPE
-0.000000
-System Ls L.
-FLOAT_TYPE
-0.000000
-System Eq2 On/Off
-FLOAT_TYPE
-0.000000
-System Eq2 L.
-FLOAT_TYPE
-0.000000
-System Eq1 On/Off
-FLOAT_TYPE
-0.000000
-System Eq1 L.
-FLOAT_TYPE
-0.000000
-System Lp F.
-FLOAT_TYPE
-4999.347168
-System Effects On/Off
-FLOAT_TYPE
-1.000000
-System Pan
-FLOAT_TYPE
-0.500000
-System Chorus On/Off
-FLOAT_TYPE
-1.000000
-System Chorus
-FLOAT_TYPE
-0.000000
-System Out On/Off
-FLOAT_TYPE
-1.000000
-<< HASH MAP END
-<< HASH MAP END
-patch
-INT_TYPE
-22
-y
-FLOAT_TYPE
--195.000000
-x
-FLOAT_TYPE
--240.000000
-<< HASH MAP END
-<int hash> 4
-HASH_TYPE
->> HASH MAP BEGIN
-7
-plugin
-HASH_TYPE
->> HASH MAP BEGIN
-11
-name
-STRING_TYPE
-Pipe
-type_name
-STRING_TYPE
-Pipe
-effects
-HASH_TYPE
->> HASH MAP BEGIN
-2
-System Width On/Off
-FLOAT_TYPE
-0.000000
-System Hs L.
-FLOAT_TYPE
-4.130001
-System Hs F.
-FLOAT_TYPE
-9400.922852
-System Ls F.
-FLOAT_TYPE
-0.347067
-System Eq2 F.
-FLOAT_TYPE
-1073.258423
-System Eq1 F.
-FLOAT_TYPE
-0.347067
-System Lowpass On/Off
-FLOAT_TYPE
-0.000000
-System Dry/Wet
-FLOAT_TYPE
-1.000000
-System Pan On/Off
-FLOAT_TYPE
-0.000000
-System Reverb On/Off
-FLOAT_TYPE
-1.000000
-System Reverb
-FLOAT_TYPE
-0.000000
-System Out
-FLOAT_TYPE
-0.966607
-System Volume On/Off
-FLOAT_TYPE
-1.000000
-System Volume
-FLOAT_TYPE
-1.117506
-System In On/Off
-FLOAT_TYPE
-1.000000
-System In
-FLOAT_TYPE
-1.355970
-System Width
-FLOAT_TYPE
-19.740000
-System Hs On/Off
-FLOAT_TYPE
-1.000000
-System Ls On/Off
-FLOAT_TYPE
-0.000000
-System Ls L.
-FLOAT_TYPE
-0.496998
-System Eq2 On/Off
-FLOAT_TYPE
-1.000000
-System Eq2 L.
-FLOAT_TYPE
--2.841999
-System Eq1 On/Off
-FLOAT_TYPE
-0.000000
-System Eq1 L.
-FLOAT_TYPE
-0.496998
-System Lp F.
-FLOAT_TYPE
-0.768622
-System Effects On/Off
-FLOAT_TYPE
-1.000000
-System Pan
-FLOAT_TYPE
-0.500000
-System Chorus On/Off
-FLOAT_TYPE
-1.000000
-System Chorus
-FLOAT_TYPE
-0.000000
-System Out On/Off
-FLOAT_TYPE
-1.000000
-<< HASH MAP END
-<< HASH MAP END
-patch
-INT_TYPE
-0
-y
-FLOAT_TYPE
--155.000000
-x
-FLOAT_TYPE
-0.000000
-<< HASH MAP END
-num_chips
-INT_TYPE
-10
-<int hash> 6
-HASH_TYPE
->> HASH MAP BEGIN
-7
-plugin
-HASH_TYPE
->> HASH MAP BEGIN
-11
-name
-STRING_TYPE
-Bus 1
-type_name
-STRING_TYPE
-Bus
-effects
-HASH_TYPE
->> HASH MAP BEGIN
-2
-System Width On/Off
-FLOAT_TYPE
-0.000000
-System Hs L.
-FLOAT_TYPE
-1.917999
-System Hs F.
-FLOAT_TYPE
-2392.544189
-System Ls F.
-FLOAT_TYPE
-0.347067
-System Eq2 F.
-FLOAT_TYPE
-0.500000
-System Eq1 F.
-FLOAT_TYPE
-0.347067
-System Lowpass On/Off
-FLOAT_TYPE
-0.000000
-System Dry/Wet
-FLOAT_TYPE
-1.000000
-System Pan On/Off
-FLOAT_TYPE
-0.000000
-System Reverb On/Off
-FLOAT_TYPE
-1.000000
-System Reverb
-FLOAT_TYPE
-0.000000
-System Out
-FLOAT_TYPE
-0.898980
-System Volume On/Off
-FLOAT_TYPE
-1.000000
-System Volume
-FLOAT_TYPE
-1.201573
-System In On/Off
-FLOAT_TYPE
-1.000000
-System In
-FLOAT_TYPE
-0.531802
-System Width
-FLOAT_TYPE
-0.005000
-System Hs On/Off
-FLOAT_TYPE
-0.000000
-System Ls On/Off
-FLOAT_TYPE
-0.000000
-System Ls L.
-FLOAT_TYPE
-0.496998
-System Eq2 On/Off
-FLOAT_TYPE
-0.000000
-System Eq2 L.
-FLOAT_TYPE
-0.496998
-System Eq1 On/Off
-FLOAT_TYPE
-0.000000
-System Eq1 L.
-FLOAT_TYPE
-0.496998
-System Lp F.
-FLOAT_TYPE
-0.768622
-System Effects On/Off
-FLOAT_TYPE
-1.000000
-System Pan
-FLOAT_TYPE
-0.500000
-System Chorus On/Off
-FLOAT_TYPE
-1.000000
-System Chorus
-FLOAT_TYPE
-0.000000
-System Out On/Off
-FLOAT_TYPE
-1.000000
-<< HASH MAP END
-<< HASH MAP END
-patch
-INT_TYPE
-5
-y
-FLOAT_TYPE
--235.000000
-x
-FLOAT_TYPE
--240.000000
-<< HASH MAP END
-<int hash> 8
-HASH_TYPE
->> HASH MAP BEGIN
-7
-plugin
-HASH_TYPE
->> HASH MAP BEGIN
-11
-name
-STRING_TYPE
-Multiband Compressor
-type_name
-STRING_TYPE
-Faust
-effects
-HASH_TYPE
->> HASH MAP BEGIN
-53
-System Lowpass On/Off
-FLOAT_TYPE
-0.000000
-System Hs F.
-FLOAT_TYPE
-1499.337646
-System Eq2 L.
-FLOAT_TYPE
-0.000000
-Final Output Gain
-FLOAT_TYPE
--9.944000
-System Eq2 F.
-FLOAT_TYPE
-1000.000366
-Band 3: Input Gain
-FLOAT_TYPE
-0.000000
-Band 3: Release
-FLOAT_TYPE
-200.000000
-Band 3: Threshold
-FLOAT_TYPE
--20.018997
-System In
-FLOAT_TYPE
-8.248500
-System Out On/Off
-FLOAT_TYPE
-1.000000
-Split Freq 1
-FLOAT_TYPE
-165.724899
-System Eq1 F.
-FLOAT_TYPE
-399.120880
-Band 2: Output Gain
-FLOAT_TYPE
-3.144001
-System Pan On/Off
-FLOAT_TYPE
-0.000000
-Band 2: Bypass
-FLOAT_TYPE
-0.000000
-System Reverb
-FLOAT_TYPE
-0.000000
-Band 2: Attack
-FLOAT_TYPE
-192.699997
-System In On/Off
-FLOAT_TYPE
-1.000000
-System Hs L.
-FLOAT_TYPE
-0.000000
-System Ls On/Off
-FLOAT_TYPE
-0.000000
-System Volume
-FLOAT_TYPE
-2.407825
-Band 1: Attack
-FLOAT_TYPE
-128.450012
-Limiter Bypass
-FLOAT_TYPE
-0.000000
-Band 3: Output Gain
-FLOAT_TYPE
-8.096001
-Band 2:  Solo
-FLOAT_TYPE
-0.000000
-System Eq1 L.
-FLOAT_TYPE
-0.000000
-Limiter Output Gain
-FLOAT_TYPE
-7.216000
-Band 3: Bypass
-FLOAT_TYPE
-0.000000
-Band 1: Release
-FLOAT_TYPE
-260.399994
-System Volume On/Off
-FLOAT_TYPE
-1.000000
-Band 2: Ratio
-FLOAT_TYPE
-1.999400
-Limiter Attack
-FLOAT_TYPE
-42.931999
-System Chorus On/Off
-FLOAT_TYPE
-1.000000
-System Eq1 On/Off
-FLOAT_TYPE
-0.000000
-System Ls F.
-FLOAT_TYPE
-399.120880
-System Hs On/Off
-FLOAT_TYPE
-0.000000
-Band 1: Bypass
-FLOAT_TYPE
-0.000000
-Band 3: Ratio
-FLOAT_TYPE
-1.999400
-Band 1: Threshold
-FLOAT_TYPE
--20.018997
-System Ls L.
-FLOAT_TYPE
-0.000000
-System Effects On/Off
-FLOAT_TYPE
-1.000000
-System Dry/Wet
-FLOAT_TYPE
-1.000000
-Band 1:  Solo
-FLOAT_TYPE
-0.000000
-Band 3:  Solo
-FLOAT_TYPE
-0.000000
-System Eq2 On/Off
-FLOAT_TYPE
-0.000000
-System Lp F.
-FLOAT_TYPE
-4999.347168
-System Pan
-FLOAT_TYPE
-0.500000
-Band 3: Attack
-FLOAT_TYPE
-100.000000
-System Chorus
-FLOAT_TYPE
-0.000000
-Limiter Input Gain
-FLOAT_TYPE
--5.824001
-System Width On/Off
-FLOAT_TYPE
-0.000000
-Band 2: Input Gain
-FLOAT_TYPE
-0.000000
-Band 2: Release
-FLOAT_TYPE
-402.700012
-Band 1: Output Gain
-FLOAT_TYPE
-7.320000
-System Width
-FLOAT_TYPE
-0.000000
-Band 2: Threshold
-FLOAT_TYPE
--20.018997
-Band 1: Ratio
-FLOAT_TYPE
-1.999400
-System Reverb On/Off
-FLOAT_TYPE
-1.000000
-System Out
-FLOAT_TYPE
-0.999712
-Split Freq 2
-FLOAT_TYPE
-2099.000000
-Band 1: Input Gain
-FLOAT_TYPE
-0.000000
-Limiter Release
-FLOAT_TYPE
-210.335007
-Limiter Ratio
-FLOAT_TYPE
-12.752000
-<< HASH MAP END
-<< HASH MAP END
-patch
-INT_TYPE
-20
-y
-FLOAT_TYPE
--155.000000
-x
-FLOAT_TYPE
-120.000000
-<< HASH MAP END
-<int hash> 9
 HASH_TYPE
 >> HASH MAP BEGIN
 7
@@ -5157,7 +4587,7 @@ x
 FLOAT_TYPE
 -120.000000
 << HASH MAP END
-<int hash> 7
+<int hash> 4
 HASH_TYPE
 >> HASH MAP BEGIN
 7
@@ -5167,132 +4597,278 @@ HASH_TYPE
 11
 name
 STRING_TYPE
-Zita Reverb
+System Out
 type_name
 STRING_TYPE
-Faust
+Jack
 effects
 HASH_TYPE
 >> HASH MAP BEGIN
-11
-System Eq2 On/Off
+2
+System Width On/Off
 FLOAT_TYPE
-1.000000
-System Eq2 L.
+0.000000
+System Hs L.
 FLOAT_TYPE
--27.285999
+0.496998
+System Hs F.
+FLOAT_TYPE
+0.567674
+System Ls F.
+FLOAT_TYPE
+0.347067
+System Eq2 F.
+FLOAT_TYPE
+0.500000
 System Eq1 F.
 FLOAT_TYPE
-399.120880
-System Out
-FLOAT_TYPE
-0.836084
-Low RT60
-FLOAT_TYPE
-2.515500
-LF X
-FLOAT_TYPE
-221.000000
-System Hs On/Off
-FLOAT_TYPE
-1.000000
-System Ls On/Off
-FLOAT_TYPE
-0.000000
-System Ls L.
-FLOAT_TYPE
-0.000000
-System Chorus
-FLOAT_TYPE
-0.000000
-Mid RT60
-FLOAT_TYPE
-4.455900
-Input: In Delay
-FLOAT_TYPE
-1.300000
-System Effects On/Off
-FLOAT_TYPE
-1.000000
-System Reverb
+0.347067
+System Lowpass On/Off
 FLOAT_TYPE
 0.000000
 System Dry/Wet
 FLOAT_TYPE
 1.000000
-System Ls F.
+System Pan On/Off
 FLOAT_TYPE
-399.120880
-System Eq2 F.
+0.000000
+System Reverb On/Off
 FLOAT_TYPE
-1023.641724
-System Lp F.
+1.000000
+System Reverb
 FLOAT_TYPE
-4999.347168
+0.000000
+System Out
+FLOAT_TYPE
+0.531802
 System Volume On/Off
 FLOAT_TYPE
 1.000000
+System Volume
+FLOAT_TYPE
+0.531802
 System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+1.255669
+System Width
+FLOAT_TYPE
+0.005000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.496998
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+0.496998
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.496998
+System Lp F.
+FLOAT_TYPE
+0.768622
+System Effects On/Off
 FLOAT_TYPE
 1.000000
 System Pan
 FLOAT_TYPE
 0.500000
-System Reverb On/Off
+System Chorus On/Off
 FLOAT_TYPE
 1.000000
-System Pan On/Off
+System Chorus
 FLOAT_TYPE
 0.000000
 System Out On/Off
 FLOAT_TYPE
 1.000000
-System Hs F.
-FLOAT_TYPE
-4418.867188
-System Chorus On/Off
-FLOAT_TYPE
-1.000000
-System Eq1 L.
-FLOAT_TYPE
-0.000000
-System In
-FLOAT_TYPE
-1.022410
-HF Damping
-FLOAT_TYPE
-8550.803711
-System Width On/Off
-FLOAT_TYPE
-0.000000
-System Width
-FLOAT_TYPE
-24.785000
-System Hs L.
-FLOAT_TYPE
-11.298000
-System Eq1 On/Off
-FLOAT_TYPE
-0.000000
-System Lowpass On/Off
-FLOAT_TYPE
-0.000000
-System Volume
-FLOAT_TYPE
-0.624993
 << HASH MAP END
 << HASH MAP END
 patch
 INT_TYPE
-7
+1
 y
 FLOAT_TYPE
--235.000000
+-155.000000
 x
 FLOAT_TYPE
--120.000000
+240.000000
 << HASH MAP END
-<int hash> 1
+num_chips
+INT_TYPE
+10
+<int hash> 6
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+plugin_state
+HASH_TYPE
+>> HASH MAP BEGIN
+17
+filename
+STRING_TYPE
+/home/kjetil/radium-qt4/bin/sounds/bbs2.wav
+instrument_number
+INT_TYPE
+98
+resampler_type
+INT_TYPE
+2
+<< HASH MAP END
+name
+STRING_TYPE
+Sample Player
+type_name
+STRING_TYPE
+Sample Player
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+13
+System Lp F.
+FLOAT_TYPE
+20000.000000
+System Volume
+FLOAT_TYPE
+0.243431
+System Hs On/Off
+FLOAT_TYPE
+1.000000
+System Eq1 F.
+FLOAT_TYPE
+106.245171
+Sustain
+FLOAT_TYPE
+1.000000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Pan On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.101596
+Note adjustment
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+5.236000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.579800
+System Out
+FLOAT_TYPE
+0.999712
+Hold
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+-19.019001
+System Out On/Off
+FLOAT_TYPE
+1.000000
+System Eq1 L.
+FLOAT_TYPE
+-1.378998
+System Reverb
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Lowpass On/Off
+FLOAT_TYPE
+1.000000
+Release
+FLOAT_TYPE
+20.000000
+System Hs L.
+FLOAT_TYPE
+13.502998
+System In On/Off
+FLOAT_TYPE
+1.000000
+System Eq2 F.
+FLOAT_TYPE
+931.184143
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+Decay
+FLOAT_TYPE
+0.000000
+Attack
+FLOAT_TYPE
+0.000000
+Finetune
+FLOAT_TYPE
+0.485800
+System Width On/Off
+FLOAT_TYPE
+1.000000
+System Width
+FLOAT_TYPE
+8.400000
+System Eq2 On/Off
+FLOAT_TYPE
+1.000000
+System Ls F.
+FLOAT_TYPE
+50.000008
+System Chorus On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+0.000000
+System In
+FLOAT_TYPE
+0.999712
+System Hs F.
+FLOAT_TYPE
+11353.646484
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+Start Position
+FLOAT_TYPE
+0.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+16
+y
+FLOAT_TYPE
+-155.000000
+x
+FLOAT_TYPE
+-240.000000
+<< HASH MAP END
+<int hash> 8
 HASH_TYPE
 >> HASH MAP BEGIN
 7
@@ -5450,7 +5026,127 @@ x
 FLOAT_TYPE
 -240.000000
 << HASH MAP END
-<int hash> 2
+<int hash> 9
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Bus 2
+type_name
+STRING_TYPE
+Bus
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+2
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+0.000000
+System Hs F.
+FLOAT_TYPE
+1499.337646
+System Ls F.
+FLOAT_TYPE
+399.120880
+System Eq2 F.
+FLOAT_TYPE
+1000.000366
+System Eq1 F.
+FLOAT_TYPE
+399.120880
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out
+FLOAT_TYPE
+0.999712
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System Volume
+FLOAT_TYPE
+0.999712
+System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+0.999712
+System Width
+FLOAT_TYPE
+0.000000
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Eq2 L.
+FLOAT_TYPE
+0.000000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+System Lp F.
+FLOAT_TYPE
+4999.347168
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+22
+y
+FLOAT_TYPE
+-195.000000
+x
+FLOAT_TYPE
+-240.000000
+<< HASH MAP END
+<int hash> 7
 HASH_TYPE
 >> HASH MAP BEGIN
 7
@@ -5484,10 +5180,10 @@ HASH_TYPE
 13
 System Lp F.
 FLOAT_TYPE
-4999.347168
+11346.845703
 System Volume
 FLOAT_TYPE
-0.155105
+0.184820
 System Hs On/Off
 FLOAT_TYPE
 1.000000
@@ -5511,7 +5207,7 @@ FLOAT_TYPE
 0.000000
 System Eq2 L.
 FLOAT_TYPE
-0.000000
+-10.409000
 System Dry/Wet
 FLOAT_TYPE
 1.000000
@@ -5526,7 +5222,7 @@ FLOAT_TYPE
 0.000000
 System Ls L.
 FLOAT_TYPE
-6.334999
+1.414001
 System Out On/Off
 FLOAT_TYPE
 1.000000
@@ -5535,7 +5231,7 @@ FLOAT_TYPE
 0.000000
 System Reverb
 FLOAT_TYPE
-0.026900
+0.068529
 System Ls On/Off
 FLOAT_TYPE
 1.000000
@@ -5547,7 +5243,7 @@ FLOAT_TYPE
 97.000000
 System Hs L.
 FLOAT_TYPE
-9.639000
+8.980999
 System In On/Off
 FLOAT_TYPE
 1.000000
@@ -5571,19 +5267,19 @@ FLOAT_TYPE
 1.000000
 System Width
 FLOAT_TYPE
-2.100000
+28.040001
 System Eq2 On/Off
 FLOAT_TYPE
-0.000000
+1.000000
 System Ls F.
 FLOAT_TYPE
 399.120880
 System Chorus On/Off
 FLOAT_TYPE
-1.000000
+0.000000
 System Reverb On/Off
 FLOAT_TYPE
-0.000000
+1.000000
 System In
 FLOAT_TYPE
 0.999712
@@ -5606,6 +5302,360 @@ FLOAT_TYPE
 -115.000000
 x
 FLOAT_TYPE
+-240.000000
+<< HASH MAP END
+<int hash> 1
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Multiband Compressor
+type_name
+STRING_TYPE
+Faust
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+53
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Hs F.
+FLOAT_TYPE
+1499.337646
+System Eq2 L.
+FLOAT_TYPE
+0.000000
+Final Output Gain
+FLOAT_TYPE
+-9.944000
+System Eq2 F.
+FLOAT_TYPE
+1000.000366
+Band 3: Input Gain
+FLOAT_TYPE
+0.000000
+Band 3: Release
+FLOAT_TYPE
+200.000000
+Band 3: Threshold
+FLOAT_TYPE
+-20.018997
+System In
+FLOAT_TYPE
+8.248500
+System Out On/Off
+FLOAT_TYPE
+1.000000
+Split Freq 1
+FLOAT_TYPE
+165.724899
+System Eq1 F.
+FLOAT_TYPE
+399.120880
+Band 2: Output Gain
+FLOAT_TYPE
+-4.584000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+Band 2: Bypass
+FLOAT_TYPE
+0.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+Band 2: Attack
+FLOAT_TYPE
+209.300003
+System In On/Off
+FLOAT_TYPE
+1.000000
+System Hs L.
+FLOAT_TYPE
+0.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Volume
+FLOAT_TYPE
+1.907106
+Band 1: Attack
+FLOAT_TYPE
+128.450012
+Limiter Bypass
+FLOAT_TYPE
+0.000000
+Band 3: Output Gain
+FLOAT_TYPE
+5.879997
+Band 2:  Solo
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+Limiter Output Gain
+FLOAT_TYPE
+7.216000
+Band 3: Bypass
+FLOAT_TYPE
+0.000000
+Band 1: Release
+FLOAT_TYPE
+260.399994
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+Band 2: Ratio
+FLOAT_TYPE
+1.685900
+Limiter Attack
+FLOAT_TYPE
+42.931999
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Ls F.
+FLOAT_TYPE
+399.120880
+System Hs On/Off
+FLOAT_TYPE
+0.000000
+Band 1: Bypass
+FLOAT_TYPE
+0.000000
+Band 3: Ratio
+FLOAT_TYPE
+1.999400
+Band 1: Threshold
+FLOAT_TYPE
+-20.018997
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+Band 1:  Solo
+FLOAT_TYPE
+0.000000
+Band 3:  Solo
+FLOAT_TYPE
+0.000000
+System Eq2 On/Off
+FLOAT_TYPE
+0.000000
+System Lp F.
+FLOAT_TYPE
+4999.347168
+System Pan
+FLOAT_TYPE
+0.500000
+Band 3: Attack
+FLOAT_TYPE
+100.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+Limiter Input Gain
+FLOAT_TYPE
+-5.824001
+System Width On/Off
+FLOAT_TYPE
+0.000000
+Band 2: Input Gain
+FLOAT_TYPE
+13.488003
+Band 2: Release
+FLOAT_TYPE
+402.700012
+Band 1: Output Gain
+FLOAT_TYPE
+5.400002
+System Width
+FLOAT_TYPE
+0.000000
+Band 2: Threshold
+FLOAT_TYPE
+-20.018997
+Band 1: Ratio
+FLOAT_TYPE
+1.999400
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Out
+FLOAT_TYPE
+0.999712
+Split Freq 2
+FLOAT_TYPE
+2099.000000
+Band 1: Input Gain
+FLOAT_TYPE
+0.000000
+Limiter Release
+FLOAT_TYPE
+210.335007
+Limiter Ratio
+FLOAT_TYPE
+12.752000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+20
+y
+FLOAT_TYPE
+-155.000000
+x
+FLOAT_TYPE
+120.000000
+<< HASH MAP END
+<int hash> 2
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Zita Reverb
+type_name
+STRING_TYPE
+Faust
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+System Eq2 On/Off
+FLOAT_TYPE
+1.000000
+System Eq2 L.
+FLOAT_TYPE
+-12.299000
+System Eq1 F.
+FLOAT_TYPE
+399.120880
+System Out
+FLOAT_TYPE
+0.749894
+Low RT60
+FLOAT_TYPE
+2.515500
+LF X
+FLOAT_TYPE
+221.000000
+System Hs On/Off
+FLOAT_TYPE
+1.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+Mid RT60
+FLOAT_TYPE
+4.455900
+Input: In Delay
+FLOAT_TYPE
+1.300000
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Ls F.
+FLOAT_TYPE
+399.120880
+System Eq2 F.
+FLOAT_TYPE
+1023.641724
+System Lp F.
+FLOAT_TYPE
+4999.347168
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System In On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+System Hs F.
+FLOAT_TYPE
+4418.867188
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Eq1 L.
+FLOAT_TYPE
+0.000000
+System In
+FLOAT_TYPE
+1.022410
+HF Damping
+FLOAT_TYPE
+8550.803711
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Width
+FLOAT_TYPE
+24.785000
+System Hs L.
+FLOAT_TYPE
+4.724998
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Volume
+FLOAT_TYPE
+0.470029
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+7
+y
+FLOAT_TYPE
+-235.000000
+x
+FLOAT_TYPE
 -120.000000
 << HASH MAP END
 <int hash> 5
@@ -5618,10 +5668,10 @@ HASH_TYPE
 11
 name
 STRING_TYPE
-System Out
+Pipe
 type_name
 STRING_TYPE
-Jack
+Pipe
 effects
 HASH_TYPE
 >> HASH MAP BEGIN
@@ -5631,10 +5681,130 @@ FLOAT_TYPE
 0.000000
 System Hs L.
 FLOAT_TYPE
-0.496998
+4.130001
 System Hs F.
 FLOAT_TYPE
-0.567674
+9400.922852
+System Ls F.
+FLOAT_TYPE
+0.347067
+System Eq2 F.
+FLOAT_TYPE
+1073.258423
+System Eq1 F.
+FLOAT_TYPE
+0.347067
+System Lowpass On/Off
+FLOAT_TYPE
+0.000000
+System Dry/Wet
+FLOAT_TYPE
+1.000000
+System Pan On/Off
+FLOAT_TYPE
+0.000000
+System Reverb On/Off
+FLOAT_TYPE
+1.000000
+System Reverb
+FLOAT_TYPE
+0.000000
+System Out
+FLOAT_TYPE
+0.966607
+System Volume On/Off
+FLOAT_TYPE
+1.000000
+System Volume
+FLOAT_TYPE
+1.117506
+System In On/Off
+FLOAT_TYPE
+1.000000
+System In
+FLOAT_TYPE
+1.355970
+System Width
+FLOAT_TYPE
+19.740000
+System Hs On/Off
+FLOAT_TYPE
+1.000000
+System Ls On/Off
+FLOAT_TYPE
+0.000000
+System Ls L.
+FLOAT_TYPE
+0.496998
+System Eq2 On/Off
+FLOAT_TYPE
+1.000000
+System Eq2 L.
+FLOAT_TYPE
+-2.841999
+System Eq1 On/Off
+FLOAT_TYPE
+0.000000
+System Eq1 L.
+FLOAT_TYPE
+0.496998
+System Lp F.
+FLOAT_TYPE
+0.768622
+System Effects On/Off
+FLOAT_TYPE
+1.000000
+System Pan
+FLOAT_TYPE
+0.500000
+System Chorus On/Off
+FLOAT_TYPE
+1.000000
+System Chorus
+FLOAT_TYPE
+0.000000
+System Out On/Off
+FLOAT_TYPE
+1.000000
+<< HASH MAP END
+<< HASH MAP END
+patch
+INT_TYPE
+0
+y
+FLOAT_TYPE
+-155.000000
+x
+FLOAT_TYPE
+0.000000
+<< HASH MAP END
+<int hash> 3
+HASH_TYPE
+>> HASH MAP BEGIN
+7
+plugin
+HASH_TYPE
+>> HASH MAP BEGIN
+11
+name
+STRING_TYPE
+Bus 1
+type_name
+STRING_TYPE
+Bus
+effects
+HASH_TYPE
+>> HASH MAP BEGIN
+2
+System Width On/Off
+FLOAT_TYPE
+0.000000
+System Hs L.
+FLOAT_TYPE
+1.917999
+System Hs F.
+FLOAT_TYPE
+2392.544189
 System Ls F.
 FLOAT_TYPE
 0.347067
@@ -5661,19 +5831,19 @@ FLOAT_TYPE
 0.000000
 System Out
 FLOAT_TYPE
-0.531802
+0.898980
 System Volume On/Off
 FLOAT_TYPE
 1.000000
 System Volume
 FLOAT_TYPE
-0.531802
+1.201573
 System In On/Off
 FLOAT_TYPE
 1.000000
 System In
 FLOAT_TYPE
-0.999712
+0.531802
 System Width
 FLOAT_TYPE
 0.005000
@@ -5720,171 +5890,13 @@ FLOAT_TYPE
 << HASH MAP END
 patch
 INT_TYPE
-1
+5
 y
 FLOAT_TYPE
--155.000000
+-235.000000
 x
 FLOAT_TYPE
-240.000000
-<< HASH MAP END
-<int hash> 3
-HASH_TYPE
->> HASH MAP BEGIN
-7
-plugin
-HASH_TYPE
->> HASH MAP BEGIN
-11
-plugin_state
-HASH_TYPE
->> HASH MAP BEGIN
-17
-filename
-STRING_TYPE
-/home/kjetil/radium-qt4/bin/sounds/bbs2.wav
-instrument_number
-INT_TYPE
-98
-resampler_type
-INT_TYPE
-2
-<< HASH MAP END
-name
-STRING_TYPE
-Sample Player
-type_name
-STRING_TYPE
-Sample Player
-effects
-HASH_TYPE
->> HASH MAP BEGIN
-13
-System Lp F.
-FLOAT_TYPE
-20000.000000
-System Volume
-FLOAT_TYPE
-0.243431
-System Hs On/Off
-FLOAT_TYPE
-1.000000
-System Eq1 F.
-FLOAT_TYPE
-106.245171
-Sustain
-FLOAT_TYPE
-1.000000
-System Eq1 On/Off
-FLOAT_TYPE
-0.000000
-System Pan On/Off
-FLOAT_TYPE
-1.000000
-System Chorus
-FLOAT_TYPE
-0.101596
-Note adjustment
-FLOAT_TYPE
-0.000000
-System Eq2 L.
-FLOAT_TYPE
-5.236000
-System Dry/Wet
-FLOAT_TYPE
-1.000000
-System Pan
-FLOAT_TYPE
-0.579800
-System Out
-FLOAT_TYPE
-0.999712
-Hold
-FLOAT_TYPE
-0.000000
-System Ls L.
-FLOAT_TYPE
--19.019001
-System Out On/Off
-FLOAT_TYPE
-1.000000
-System Eq1 L.
-FLOAT_TYPE
--1.378998
-System Reverb
-FLOAT_TYPE
-0.000000
-System Ls On/Off
-FLOAT_TYPE
-0.000000
-System Lowpass On/Off
-FLOAT_TYPE
-1.000000
-Release
-FLOAT_TYPE
-20.000000
-System Hs L.
-FLOAT_TYPE
-13.502998
-System In On/Off
-FLOAT_TYPE
-1.000000
-System Eq2 F.
-FLOAT_TYPE
-931.184143
-System Volume On/Off
-FLOAT_TYPE
-1.000000
-Decay
-FLOAT_TYPE
-0.000000
-Attack
-FLOAT_TYPE
-0.000000
-Finetune
-FLOAT_TYPE
-0.485800
-System Width On/Off
-FLOAT_TYPE
-1.000000
-System Width
-FLOAT_TYPE
-8.400000
-System Eq2 On/Off
-FLOAT_TYPE
-1.000000
-System Ls F.
-FLOAT_TYPE
-50.000008
-System Chorus On/Off
-FLOAT_TYPE
-0.000000
-System Reverb On/Off
-FLOAT_TYPE
-0.000000
-System In
-FLOAT_TYPE
-0.999712
-System Hs F.
-FLOAT_TYPE
-11353.646484
-System Effects On/Off
-FLOAT_TYPE
-1.000000
-Start Position
-FLOAT_TYPE
-0.000000
-<< HASH MAP END
-<< HASH MAP END
-patch
-INT_TYPE
-16
-y
-FLOAT_TYPE
--155.000000
-x
-FLOAT_TYPE
--120.000000
+-240.000000
 << HASH MAP END
 << HASH MAP END
 << HASH MAP END

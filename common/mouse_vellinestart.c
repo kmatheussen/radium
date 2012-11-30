@@ -113,8 +113,8 @@ int MoveVelStart_Mouse(
 	  ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	  UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	}else{
-	  start_realline=R_MIN(realline,start_realline);
-	  end_realline=R_MAX(realline,end_realline);
+	  start_realline=R_MIN(realline-1,start_realline);
+	  end_realline=R_MAX(realline+1,end_realline);
 	  ClearTrack(window,wblock,wtrack,start_realline,end_realline);
 	  UpdateWTrack(window,wblock,wtrack,start_realline,end_realline);
 	}

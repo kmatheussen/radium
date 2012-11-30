@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qpainter.h>
 #include <qmainwindow.h>
+#include <qapplication.h>
+#include <qdesktopwidget.h>
 
 #include "Qt_instruments_proc.h"
 #include "Qt_colors_proc.h"
@@ -332,8 +334,23 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
   QPainter *painter=GET_QPAINTER(editor,where);
 
   if(where==PAINT_BUFFER && colornum==0){
-    if(y>=tvisual->wblock->t.y1)
-      colornum = 15;
+    if(y>=tvisual->wblock->t.y1){
+      QColor qcolor = get_qcolor(tvisual,15);
+
+      QLinearGradient gradient(0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
+      gradient.setStart(0,0);
+      gradient.setFinalStop(QApplication::desktop()->width(),0);
+      gradient.setColorAt(0,qcolor.darker(95));
+      gradient.setColorAt(1,qcolor.darker(110));
+
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(gradient);
+
+      painter->drawRect(x,y,x2-x+1,y2-y+1);
+
+      painter->setBrush(QBrush());
+      return;
+    }
   }
 #if 0
     else{
@@ -350,10 +367,9 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
   }
 #endif
 
-  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
-  g_use_custom_color = false;
-
-  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+g_use_custom_color = false;
+painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
 }
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
@@ -386,16 +402,40 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
     qcolor.setAlpha(100);
     QPen pen(qcolor,2,Qt::SolidLine);  
     pen.setCapStyle(Qt::RoundCap);
+    //pen.setCapStyle(Qt::SquareCap);
     pen.setJoinStyle(Qt::RoundJoin);
+    //pen.setJoinStyle(Qt::BevelJoin);
     painter->setPen(pen);    
-  } else 
-    painter->setPen(qcolor);
+#if 0
+    // if thicker lines than 2:
+    y2-=1;
+    if(x2>x)
+      x2-=1;
+    else
+      x-=1;
+#endif
+  } else {
+    //painter->setPen(qcolor);
+
+    QLinearGradient gradient(x,y,x2,y2); //0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
+    gradient.setStart(x,y);
+    gradient.setFinalStop(x2,y);//QApplication::desktop()->width(),0);
+    gradient.setColorAt(0,qcolor.darker(90));
+    gradient.setColorAt(1,qcolor.darker(110));
+
+    QPen pen;
+    pen.setBrush(gradient);
+    //painter->setBrush(gradient);
+    painter->setPen(pen);//qcolor);
+  }
 
   painter->drawLine(x,y,x2,y2);
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 
   if(x!=x2 && y!=y2)
     painter->setRenderHints(QPainter::Antialiasing,false);
+  else
+    painter->setBrush(QBrush());
 }
 
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
@@ -481,7 +521,7 @@ void OS_GFX_Polygon(
 
 
   int width=x2-x1;
-  int height=y2-y1;
+  int height=1+y2-y1;
 
   QPolygon polygon(num_points);
   for(int i=0;i<num_points;i++){
@@ -496,10 +536,22 @@ void OS_GFX_Polygon(
     g_use_custom_color = false;
   }
 
+#if 1 // gradient, looks cool, but is a bit messy
   //printf("--polygon called\n");
+  QLinearGradient gradient(x1,y1,x2,y2);
+  gradient.setColorAt(0,col.darker(95));
+  gradient.setColorAt(1,col.darker(105));
+
+  painter->setPen(Qt::NoPen);
+  painter->setBrush(gradient);
+
+#else // gradient
 
   painter->setPen(col);
   painter->setBrush(QBrush(col,Qt::SolidPattern));
+
+#endif // gradient
+
   painter->drawPolygon(polygon);
   painter->setBrush(QBrush());
 }
@@ -516,10 +568,15 @@ void OS_GFX_Polyline(
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
-  QColor color = editor->colors[colornum];
+
+  QColor color = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  g_use_custom_color = false;
+
   color.setAlpha(160);
 
-  painter->setPen(color);
+  QPen pen(color);
+  pen.setWidth(2);
+  painter->setPen(pen);
 
   int width=x2-x1;
   int height=y2-y1;
@@ -536,9 +593,9 @@ void OS_GFX_Polyline(
                     
 
 void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, int mix_factor){
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("mix_factor: %d\n",mix_factor);
-  g_custom_color = mix_colors(editor->colors[color1], editor->colors[color2], mix_factor / 1000.0);
+  g_custom_color = mix_colors(get_qcolor(tvisual,color1), get_qcolor(tvisual,color2), mix_factor / 1000.0);
   g_use_custom_color = true;
   //printf("mixcolor called\n");
 }
