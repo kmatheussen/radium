@@ -1,7 +1,7 @@
 
 
-Radium V1.9.11
-Released 2012-11-28
+Radium V1.9.12
+Released 2012-12-01
 
 
 
@@ -63,7 +63,7 @@ BUILD DEPENDENCIES UBUNTU:
       glib2-dev
       calf-plugins
 
-      (Tested on Ubuntu 12 32 bit)
+      (Tested on Ubuntu 12 32 bit and 64 bit)
 
 
 

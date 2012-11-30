@@ -1,3 +1,13 @@
+Most important changes 1.9.11 -> 1.9.12:
+* Fix various horrible bugs for those with non-C locale settings
+  Thanks to "DoosC" for helping to debug.
+* Various graphical improvements
+* TAB switches between common window configs
+* Show message box if parsing soundfont file fails
+* Add -Wall option to RELEASE build
+* Make track headers of current instrument more distinct
+* Larger window during startup
+
 
 Most important changes 1.9.10 -> 1.9.11:
 * Fix missing sound on AMD phenom processor. Thanks to DoosC for helping to debug.
