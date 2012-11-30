@@ -335,19 +335,21 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
 
   if(where==PAINT_BUFFER && colornum==0){
     if(y>=tvisual->wblock->t.y1){
-      QColor qcolor = get_qcolor(tvisual,15);
+      colornum = 15;
+
+      QColor qcolor = get_qcolor(tvisual,colornum);
 
       QLinearGradient gradient(0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
       gradient.setStart(0,0);
       gradient.setFinalStop(QApplication::desktop()->width(),0);
       gradient.setColorAt(0,qcolor.darker(95));
       gradient.setColorAt(1,qcolor.darker(110));
-
+      
       painter->setPen(Qt::NoPen);
       painter->setBrush(gradient);
-
+      
       painter->drawRect(x,y,x2-x+1,y2-y+1);
-
+      
       painter->setBrush(QBrush());
       return;
     }

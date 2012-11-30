@@ -145,7 +145,7 @@ struct MyQSlider : public QSlider{
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
         if(s!=NULL){
-          float value = atof(s);
+          float value = OS_get_double_from_string(s);
           Undo_AudioEffect_CurrPos(_patch, _effect_num);
           PLUGIN_set_effect_value(plugin,-1,_effect_num,value,PLUGIN_STORED_TYPE,PLUGIN_STORE_VALUE);
           GFX_update_instrument_widget(_patch);

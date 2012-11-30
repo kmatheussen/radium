@@ -26,4 +26,7 @@ extern LANGSPEC char *OS_get_config_filename(const char *key);
 extern LANGSPEC char *OS_get_program_path(void);
 extern LANGSPEC const char *OS_get_directory_separator(void);
 extern LANGSPEC void OS_make_config_file_expired(const char *key);
+
+// locale independent.
+extern LANGSPEC double OS_get_double_from_string(const char *s);
 #endif

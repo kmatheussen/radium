@@ -117,7 +117,7 @@ static const char** get_lines(const char* key){
   // Check that the file is not too old.
   if(is_color_config && !strcmp(filename,OS_get_config_filename(key))){
     if(user_file != NULL){
-      if(version_linenum==-1 || atof(get_value(ret[version_linenum])) < SETTINGSVERSION){
+      if(version_linenum==-1 || OS_get_double_from_string(get_value(ret[version_linenum])) < SETTINGSVERSION){
         OS_make_config_file_expired(key);
         if(access(OS_get_config_filename(key),F_OK)==0)
           RWarning("\"%s\" still exists",OS_get_config_filename(key));
@@ -208,7 +208,7 @@ double SETTINGS_read_double(const char* key, double def){
   if(val==NULL)
     return def;
   else
-    return atof(val);
+    return OS_get_double_from_string(val);
 }
 
 const char* SETTINGS_read_string(const char* key, const char* def){

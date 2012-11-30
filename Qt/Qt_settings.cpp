@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDir>
 #include <QString>
 #include <QFileInfo>
+#include <QLocale>
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
@@ -62,3 +63,10 @@ char *OS_get_config_filename(const char *key){
 
   return talloc_strdup(config_info.absoluteFilePath().ascii());
 }
+
+double OS_get_double_from_string(const char *s){
+  QLocale::setDefault(QLocale::C);
+  QString string(s);
+  return string.toDouble();
+}
+

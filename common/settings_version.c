@@ -177,7 +177,7 @@ static bool SETTINGS_is_valid_version(double version){
     if(val==NULL)
       return false;
     else{
-      double diskversion=atof(val);
+      double diskversion=OS_get_double_from_string(val);
       if(version>diskversion)
         return false;
       else
@@ -211,7 +211,7 @@ double SETTINGS_read_double(const char* key, double def, double version){
   if(val==NULL)
     return def;
   else
-    return atof(val);
+    return OS_get_double_from_string(val);
 }
 
 const char* SETTINGS_read_string(const char* key, const char* def, double version){

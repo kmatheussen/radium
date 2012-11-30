@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "OS_settings_proc.h"
 
 #define TRACKER_DISK_IS_CALLING_NOW
 #include "disk.h"
@@ -215,11 +216,7 @@ unsigned long DC_LoadUL(void){
 
 float DC_LoadF(void){
 	DC_fgets();
-        errno=0;
-	float ret = strtod(dc.ret, (char **) NULL);
-        if(errno!=0)
-          RWarning("gakk!: %d",errno);
-        return ret;
+	return OS_get_double_from_string(dc.ret);
 }
 
 /************** OS depended function. ****************/

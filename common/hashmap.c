@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "OS_settings_proc.h"
 
 #include "hashmap_proc.h"
 
@@ -372,7 +373,7 @@ hash_t *HASH_load(FILE *file){
       break;
     case FLOAT_TYPE:
       read_line(line, 8193, file);
-      HASH_put_float(hash, key, atof(line));
+      HASH_put_float(hash, key, OS_get_double_from_string(line));
       break;
     case HASH_TYPE:
       HASH_put_hash(hash, key, HASH_load(file));

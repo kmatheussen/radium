@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "visual_proc.h"
 #include "OS_visual_input.h"
+#include "OS_settings_proc.h"
 
 
 int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max){
@@ -78,14 +79,14 @@ float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,fl
 			break;
 		}
 		if(rettext[0]=='/'){
-			ret=(float)atof(rettext+1);
+			ret=OS_get_double_from_string(rettext+1);
 			if(ret!=0.0f){
 				ret=(float)1.0f/ret;
 			}else{
 				ret=min-1.0f;
 			}
 		}else{
-			ret=(float)atof(rettext);
+			ret=OS_get_double_from_string(rettext);
 		}
 	}
 
