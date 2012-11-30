@@ -215,7 +215,11 @@ unsigned long DC_LoadUL(void){
 
 float DC_LoadF(void){
 	DC_fgets();
-	return (float)atof(dc.ret);
+        errno=0;
+	float ret = strtod(dc.ret, (char **) NULL);
+        if(errno!=0)
+          RWarning("gakk!: %d",errno);
+        return ret;
 }
 
 /************** OS depended function. ****************/

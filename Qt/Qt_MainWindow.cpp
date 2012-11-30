@@ -278,6 +278,18 @@ void Qt_EnableAllWidgets(void){
 }
 #endif
 
+bool GFX_EditorIsVisible(void){
+  return !g_editor->isHidden();
+}
+
+void GFX_ShowEditor(void){
+  g_editor->show();
+}
+
+void GFX_HideEditor(void){
+  g_editor->hide();
+}
+
 void GFX_showHideEditor(void){
   if(g_editor->isHidden())
     g_editor->show();

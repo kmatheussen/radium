@@ -68,6 +68,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenu>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 
 #include "QM_MixerWidget.h"
 #include "QM_view.h"
@@ -838,7 +839,15 @@ MixerWidget::MixerWidget(QWidget *parent)
     setWindowTitle(tr("Chip Demo"));
 }
 
-extern "C"{ void GFX_showHideMixerWidget(void);}
+bool GFX_MixerIsVisible(void){
+  return !g_mixer_widget->isHidden();
+}
+void GFX_ShowMixer(void){
+  g_mixer_widget->show();
+}
+void GFX_HideMixer(void){
+  g_mixer_widget->hide();
+}
 
 void GFX_showHideMixerWidget(void){
   if(g_mixer_widget->isHidden())

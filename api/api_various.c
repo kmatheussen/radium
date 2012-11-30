@@ -67,16 +67,27 @@ void helpWindowToFront(void){
 
 void maximizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-	GFX_MaximizeEditorWindow(window);
+  GFX_MaximizeEditorWindow(window);
 }
 void minimizeEditorWindow(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-	GFX_MinimizeEditorWindow(window);
+  GFX_MinimizeEditorWindow(window);
 }
 
 void toggleFullScreen(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+
+#if 0
+  if(GFX_InstrumentWindowIsVisible()==true)
+    GFX_SetMinimalInstrumentWindow();
+#endif
+
   GFX_toggleFullScreen(window);
+
+#if 0  
+  if(GFX_InstrumentWindowIsVisible()==true)
+    GFX_SetMinimalInstrumentWindow();
+#endif
 }
 
 void showHideEditor(int windownum){
@@ -108,6 +119,33 @@ void showHidePlaylist(int windownum){
   GFX_showHidePlaylist(window);
 }
 
+// Switch between:
+// 1. Editor alone
+// 2. Editor + instrument
+// 3. Mixer + instruments
+void switchWindowConfiguration(void){
+  // From 1 to 2
+  printf("editor: %d\ninstrument: %d\nmixer: %d\n",GFX_EditorIsVisible(), GFX_InstrumentWindowIsVisible(), GFX_MixerIsVisible());
+
+  if(GFX_EditorIsVisible()==true && GFX_InstrumentWindowIsVisible()==false && GFX_MixerIsVisible()==false){
+    GFX_InstrumentWindowToFront();
+    //GFX_SetMinimalInstrumentWindow();
+    return;
+  }
+
+  // From 2 to 3
+  if(GFX_EditorIsVisible()==true && GFX_InstrumentWindowIsVisible()==true && GFX_MixerIsVisible()==false){
+    GFX_HideEditor();
+    GFX_ShowMixer();
+    //GFX_SetMinimalInstrumentWindow();
+    return;
+  }
+
+  // To 1.
+  GFX_ShowEditor();
+  GFX_InstrumentWindowToBack();
+  GFX_HideMixer();
+}
 
 void addFX(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

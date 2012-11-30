@@ -82,6 +82,16 @@ extern LANGSPEC void GFX_showHidePlaylist(struct Tracker_Windows *window);
 extern LANGSPEC void GFX_showHideEditor(void);
 extern LANGSPEC void GFX_showHideMixerWidget(void);
 
+extern LANGSPEC void GFX_SetMinimalInstrumentWindow(void);
+
+extern LANGSPEC bool GFX_EditorIsVisible(void);
+extern LANGSPEC void GFX_ShowEditor(void);
+extern LANGSPEC void GFX_HideEditor(void);
+
+extern LANGSPEC bool GFX_MixerIsVisible(void);
+extern LANGSPEC void GFX_ShowMixer(void);
+extern LANGSPEC void GFX_HideMixer(void);
+
 extern LANGSPEC bool GFX_InstrumentWindowIsVisible(void);
 
 extern LANGSPEC void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual);

@@ -434,6 +434,7 @@ int radium_main(char *arg){
         QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
         editor->ysplitter = ysplitter;
         ysplitter->setOpaqueResize(true);
+        
 
         QWidget *instruments = createInstrumentsWidget();
 
@@ -441,6 +442,9 @@ int radium_main(char *arg){
         instruments->reparent(ysplitter, QPoint(0, main_window->height()-100), true);
 
         main_window->setCentralWidget(ysplitter);
+
+        ysplitter->setStretchFactor(0,1);
+        ysplitter->setStretchFactor(1,0);
       }
 
       //MixerWidget *mixer_widget = 
