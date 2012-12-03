@@ -131,15 +131,17 @@ namespace{
     void keyPressEvent ( QKeyEvent * event ){
       printf("oh yeah baby %d\n",event->key());
       //event->ignore();
-      QLineEdit::keyPressEvent(event);
+      if(event->key()>0){
+        QLineEdit::keyPressEvent(event);
       
-      if(event->key()==Qt::Key_Return)
-        gotit = true;
+        if(event->key()==Qt::Key_Return)
+          gotit = true;
       
 #if USE_GTK_VISUAL
-      if(event->key()==Qt::Key_Return)
-        GTK_MainQuit();
+        if(event->key()==Qt::Key_Return)
+          GTK_MainQuit();
 #endif
+      }
     }
     bool gotit;
   };
