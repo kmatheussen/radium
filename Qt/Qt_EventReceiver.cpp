@@ -123,7 +123,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 void EditorWidget::updateEditor(){
-  if(GFX_get_op_queue_size(this->window)>0)
+  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0)
     update();
 }
 

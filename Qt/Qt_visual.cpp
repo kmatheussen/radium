@@ -419,11 +419,17 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
   } else {
     //painter->setPen(qcolor);
 
-    QLinearGradient gradient(x,y,x2,y2); //0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
-    gradient.setStart(x,y);
-    gradient.setFinalStop(x2,y);//QApplication::desktop()->width(),0);
+    QLinearGradient gradient(x,y,x2,y); //0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
+    //gradient.setStart(x,y);
+    //gradient.setFinalStop(x2,y);//QApplication::desktop()->width(),0);
+#if 1
     gradient.setColorAt(0,qcolor.darker(90));
     gradient.setColorAt(1,qcolor.darker(110));
+#else
+    gradient.setColorAt(0,qcolor.darker(105));
+    gradient.setColorAt(0.5,qcolor.darker(95));
+    gradient.setColorAt(1,editor->colors[15]);
+#endif
 
     QPen pen;
     pen.setBrush(gradient);
