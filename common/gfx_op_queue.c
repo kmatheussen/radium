@@ -106,20 +106,34 @@ void GFX_create_op_queue(struct Tracker_Windows *window){
   window->op_queue = talloc(sizeof(queue_t));
 }
 
+void GFX_clear_op_queue(struct Tracker_Windows *window){
+  queue_t *queue = window->op_queue;
+  queue->pos = 0;
+}
+
 int GFX_get_op_queue_size(struct Tracker_Windows *window){
   queue_t *queue = window->op_queue;
   return queue->pos;
 }
 
+#define START_QUEUE_SIZE (4096*8)
+//#define START_QUEUE_SIZE 16 // For debugging
+
 static void grow_queue(queue_t *queue){
-  int new_size = queue->size==0 ? 16 : queue->size*2;
-  queue_element_t *new_elements = talloc_atomic(sizeof(queue_element_t)*new_size);
-  memset(new_elements,0,sizeof(queue_element_t)*new_size); // needed for oversized strings to terminate
 
-  memcpy(new_elements, queue->elements, sizeof(queue_element_t)*queue->size);
+  if(queue->size==0){
 
-  queue->elements = new_elements;
-  queue->size = new_size;
+    queue->elements = talloc_atomic(sizeof(queue_element_t)*START_QUEUE_SIZE);
+    memset(queue->elements, 0, sizeof(queue_element_t)*START_QUEUE_SIZE);  // needed for oversized strings to terminate
+    queue->size = START_QUEUE_SIZE;
+
+  } else {
+
+    queue->elements = talloc_realloc(queue->elements,sizeof(queue_element_t)*queue->size*2);
+    memset(queue->elements+queue->size, 0, sizeof(queue_element_t)*queue->size);  // needed for oversized strings to terminate
+    queue->size *= 2;
+
+  }
 }
 
 static queue_element_t *get_next_element(queue_t *queue){

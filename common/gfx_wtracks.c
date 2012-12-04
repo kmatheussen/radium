@@ -70,7 +70,10 @@ void ClearTrack(
 	int start_realline,
 	int end_realline
 ){
-  int lokke;
+        int lokke;
+
+        if(window->must_redraw==true)
+          return;
 
 	if(WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline)==false){
 	  return;
@@ -671,6 +674,9 @@ void UpdateWTrack(
 
 	int start_subtrack= -1;
 	int end_subtrack;
+
+        if(window->must_redraw==true)
+          return;
 
 	if(WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline)==false){
 	  return;

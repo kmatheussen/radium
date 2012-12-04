@@ -593,6 +593,7 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
   SETTINGS_write_int("use_0x90_for_note_off",useOx90ForNoteOff==true?1:0);
 
   if(MIDI_New(instrument)==false){
+    RError("Unable to open MIDI");
     return INSTRUMENT_FAILED;
   }
 

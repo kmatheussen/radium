@@ -375,7 +375,7 @@ void testColorInRealtime(int num, QColor color){
     my_widget->repaint(); // todo: fix flicker.
   else{
     // Doesn't draw everything.
-    DO_GFX_BLT({
+    DO_GFX({
         DrawUpTrackerWindow(window);
       });
     my_widget->updateEditor();

@@ -44,9 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
-#    if USE_QT3
-#      include "qtxembed-1.3-free/src/qtxembed.h"
-#    endif
 #    if USE_QT4
 #      include <QX11EmbedContainer>
 #      define QtXEmbedContainer QX11EmbedContainer
@@ -66,7 +63,7 @@ extern PlayerClass *pc;
 
 void EditorWidget::customEvent(QEvent *e){
   //printf("Got customEvent\n");
-  DO_GFX_BLT({
+  DO_GFX({
       if(pc->isplaying)
         P2MUpdateSongPosCallBack();
       UpdateClock(this->window);
@@ -94,45 +91,25 @@ const QPaintEngine* EditorWidget::paintEngine(){
 
 #if USE_GTK_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
-  //printf("got paint event\n");
-#if 1
   GFX_play_op_queue(window);
-#endif
 }
 #endif
 
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
-#if 0
-  static int times=0;
-  fprintf(stderr,"\n\n*************** paintEVent. Queue size: %d. Erased? %s **************** %d\n\n",GFX_get_op_queue_size(this->window),e->erased()?"TRUE":"FALSE",times++);
-#endif
 
-#ifdef USE_QT4
-#if 0 // Not needed when using Qt's double buffer.
-  static int times = 0;
-  if(GFX_get_op_queue_size(this->window)==0) {
-    DO_GFX_BLT(DrawUpTrackerWindow(window));
-    fprintf(stderr," painting up everything, %d\n",times++);
+  if(window->must_redraw==true){
+    //printf("** Drawing up everything!\n");
+    window->must_redraw=false;
+    GFX_clear_op_queue(this->window);
+    DO_GFX(DrawUpTrackerWindow(this->window));
   }
-#endif
-#endif
 
-#ifdef USE_QT3
-  if(e->erased())
-    DO_GFX_BLT(DrawUpTrackerWindow(window));
-#endif
+  //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
+  //printf("paintevent. width: %d, height: %d\n",this->width(),this->height());
 
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
-    //QPainter paintbuffer_paint(this->paintbuffer);
-    //QPainter cursorbuffer_paint(this->cursorbuffer);
-    //paint.setRenderHints(QPainter::Antialiasing);
-    //paintbuffer_paint.setRenderHints(QPainter::Antialiasing);
-    //this->pixmap_painter->setPen(this->colors[5]);
-
-    //paint.translate(XOFFSET,YOFFSET);   // Don't paint on the frame.
-
     this->painter = &paint;
     this->painter->setFont(this->font);
 
@@ -361,8 +338,12 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
          this->height(),qresizeevent->size().height());
 #endif
 
-  DO_GFX_BLT(DrawUpTrackerWindow(window));
+#if 1
+  DO_GFX(DrawUpTrackerWindow(window));
   updateEditor();
+#else
+  update();
+#endif
 }
 #endif // USE_QT_VISUAL
 

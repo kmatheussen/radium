@@ -883,6 +883,7 @@ struct Tracker_Windows{
 #ifdef USE_GFX_OP_QUEUE
   void *op_queue;
 #endif
+  bool must_redraw;
 };
 #define NextWindow(a) (struct Tracker_Windows *)((a)->l.next)
 

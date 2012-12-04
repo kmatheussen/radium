@@ -323,13 +323,13 @@ public:
 
     int num_lines = R_ABS(qwheelevent->delta()/120);    
 
-    DO_GFX_BLT(
-               {
-                 if(qwheelevent->delta()<0)
-                   ScrollEditorDown(window,num_lines);
-                 else
-                   ScrollEditorUp(window,num_lines);
-               });
+    DO_GFX(
+           {
+             if(qwheelevent->delta()<0)
+               ScrollEditorDown(window,num_lines);
+             else
+               ScrollEditorUp(window,num_lines);
+           });
 
 #if USE_QT_VISUAL
     g_editor->updateEditor();

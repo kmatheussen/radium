@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "wblocks_proc.h"
 #include "mouse_proc.h"
+#include "gfx_op_queue_proc.h"
 
 #include "fxlines_proc.h"
 
@@ -346,8 +347,12 @@ int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
 	if(window->dontbuffer==1) return 0;
 
 	if(CanITreatThisEvent_questionmark(in_tevent->ID,window)==0){
+
           int ret;
-          DO_GFX(ret=EventTreater(in_tevent,window));
+          DO_GFX({
+              ret=EventTreater(in_tevent,window);
+            });
+
 	  return ret;
 	}
 

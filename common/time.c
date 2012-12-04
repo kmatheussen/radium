@@ -65,6 +65,11 @@ STime Place2STime(
 	float fp,fp1,fp2,orgfp2;
 	float tempo;
 
+        if(block->times==NULL){
+          RError("Oh no 2\n");
+          return 0;
+        }
+
 	int line=p->line;
 	struct STimes *stime= &block->times[line];
 	struct STimeChanges *stc,*next;

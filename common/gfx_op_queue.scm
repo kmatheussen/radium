@@ -190,6 +190,9 @@ void GFX_BitBlt(
                                                (display ", ")))
                                          args)
                                (c-display "return;}"))))
+
+                     (c-display (<-> "  if(" window-name "->must_redraw==true) return;"))
+
                      (c-display (<-> "  queue_element_t *el = get_next_element(" window-name "->op_queue);"))
                      (c-display (<-> "  el->type = ENUM_" name) ";")
                      (for-each (lambda (arg n)

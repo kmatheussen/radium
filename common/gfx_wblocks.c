@@ -487,6 +487,9 @@ void DrawWBlockSpesific(
 
 void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
+  if(window->must_redraw==true)
+    return;
+
 	GFX_DrawStatusBar(window,wblock);
 
 	DrawTempoTrackHeader(window,wblock);

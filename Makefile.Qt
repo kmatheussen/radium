@@ -286,12 +286,15 @@ uninstall:
 
 run-gdb:
 	./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb ./radium
+#./build_linux.sh -j7 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb -e ./radium -x ../gakk
 #	make -j3 && cd bin && G_DEBUG=fatal-criticals QT_FATAL_WARNINGS=1 gdb --args $(PYTHONEXE) start.py keybindings.conf && cd ..          
 
 run-valgrind:
-	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
+	echo "Execute first: jackd -s -r -ddummy -r 11000 -p 2048 -w 5000000"
+#	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
+	rm Mixer.o
 #	make -j3 && cd bin && valgrind --tool=helgrind $(PYTHONEXE) start.py keybindings.conf
-	./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium
+	BUILDTYPE=DEBUG ./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium
 # --dont-load-new-song
 #	make -j3 && cd bin && valgrind gdb --args $(PYTHONEXE) start.py keybindings.conf
 #	killall -9 X11_Qtstuff.py radium

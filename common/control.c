@@ -116,7 +116,9 @@ bool InitProgram(void){
 
 	printf("...Instrument\n");
 
-	if( ! OpenInstruments() ) return false;
+	if( OpenInstruments()==false ){
+          return false;
+        }
 
 	printf("...Kebang\n");
 

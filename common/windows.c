@@ -206,6 +206,9 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
   //printf("Draw up tracker. width: %d, height: %d\n",window->width,window->height);
 
+  if(window->must_redraw==true)
+    return;
+
   struct WBlocks *wblock = window->wblock;
 
 #if 0

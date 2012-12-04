@@ -194,6 +194,7 @@ static void check_jackd_arguments(void){
 
 #if defined(__linux__) || defined(FOR_MACOSX)
 
+#if 1
 static void PLAYER_acquire_same_priority(void){
   //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
   jack_acquire_real_time_scheduling(pthread_self(),g_jack_client_priority);
@@ -202,6 +203,7 @@ static void PLAYER_acquire_same_priority(void){
 static void PLAYER_drop_same_priority(void){
   jack_drop_real_time_scheduling(pthread_self());
 }
+#endif
 
 #endif // defined(__linux__) || defined(FOR_MACOSX)
 

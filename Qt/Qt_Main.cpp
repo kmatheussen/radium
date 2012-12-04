@@ -241,9 +241,8 @@ protected:
       return;
     {
       struct Tracker_Windows *window=root->song->tracker_windows;
-      DO_GFX_BLT(MIDI_HandleInputMessage());
-      if(GFX_get_op_queue_size(window) > 0)
-        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+      DO_GFX(MIDI_HandleInputMessage());
+      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
       
       if(doquit==true)
         QApplication::quit();
@@ -476,6 +475,8 @@ int radium_main(char *arg){
   DrawUpTrackerWindow(root->song->tracker_windows);
 
   show_nag_window("");
+
+  //QApplication::quit();
 
 #if USE_QT_VISUAL
   qapplication->exec();

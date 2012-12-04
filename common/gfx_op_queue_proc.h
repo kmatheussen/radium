@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void GFX_play_op_queue(struct Tracker_Windows *window);
+extern LANGSPEC void GFX_clear_op_queue(struct Tracker_Windows *window);
 extern LANGSPEC void GFX_create_op_queue(struct Tracker_Windows *window);
 extern LANGSPEC int GFX_get_op_queue_size(struct Tracker_Windows *window);
 

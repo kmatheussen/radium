@@ -3,26 +3,20 @@
 
 #include "blts_proc.h"
 #include "windows_proc.h"
+#include "gfx_op_queue_proc.h"
 
-
-#define DO_GFX_BLT(OP) do{               \
-    Blt_markVisible(window);                    \
-    {                                           \
-      OP;                                       \
-      checkIfWBlocksAreDirty();                 \
-    }                                           \
-    Blt_clearNotUsedVisible(window);            \
-    Blt_blt(window);                            \
-  }while(0)
-
-#define DO_GFX(OP) do{                          \
-    Blt_markVisible(window);                    \
-    {                                           \
-      OP;                                       \
-      checkIfWBlocksAreDirty();                 \
-    }                                           \
-    Blt_clearNotUsedVisible(window);            \
-    Blt_blt(window);                            \
+#define DO_GFX(OP) do{                                                  \
+    if(GFX_get_op_queue_size(window) >0 || window->must_redraw==true ){ \
+      window->must_redraw = true;                                       \
+      GFX_clear_op_queue(window);                                       \
+    }else                                                               \
+      Blt_markVisible(window);                                          \
+    OP;                                                                 \
+    if(window->must_redraw==false){                                     \
+      checkIfWBlocksAreDirty();                                         \
+      Blt_clearNotUsedVisible(window);                                  \
+      Blt_blt(window);                                                  \
+    }                                                                   \
   }while(0)
 
 #endif

@@ -27,26 +27,25 @@ struct Instruments *LoadInstrument(void){
 	static char *vars[1]={
 		"instrumentname"
 	};
+        char *instrument_name = NULL;
 	struct Instruments *instrument=NULL;
 
 	GENERAL_LOAD(1,1)
 
 
 var0:
-        {
-          char *name = DC_LoadS();
-          if(!strcmp("MIDI instrument",name))
-            instrument = get_MIDI_instrument();
-          if(!strcmp("Audio instrument",name))
-            instrument = get_audio_instrument();        
-        }
+        instrument_name = DC_LoadS();
+        if(!strcmp("MIDI instrument",instrument_name))
+          instrument = get_MIDI_instrument();
+        if(!strcmp("Audio instrument",instrument_name))
+          instrument = get_audio_instrument();        
 
 	goto start;
 
 obj0:
         if(instrument==NULL)
-          RError("Instrument==NULL in disk_instrument.c");
-
+          RError("Instrument==NULL in disk_instrument.c. instrument_name: \"%s\", strcmp returns: %d, get_audio_instrument() returns: %p",instrument_name,strcmp("Audio instrument",instrument_name),get_audio_instrument());
+          
 	VECTOR_push_back(&instrument->patches,LoadPatch());
 	goto start;
 

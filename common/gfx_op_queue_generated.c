@@ -34,6 +34,7 @@ case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->
 
 #ifdef OP_FUNCS 
 void QUEUE_GFX_C2V_bitBlt(struct Tracker_Windows* window, int from_x1, int from_x2, int to_y){ 
+  if(window->must_redraw==true) return; 
   queue_element_t *el = get_next_element(window->op_queue); 
   el->type = ENUM_GFX_C2V_bitBlt ; 
   el->i1 = from_x1 ; 
@@ -42,6 +43,7 @@ void QUEUE_GFX_C2V_bitBlt(struct Tracker_Windows* window, int from_x1, int from_
 } 
 
 void QUEUE_GFX_C_DrawCursor(struct Tracker_Windows* window, int x1, int x2, int x3, int x4, int height, int y_pixmap){ 
+  if(window->must_redraw==true) return; 
   queue_element_t *el = get_next_element(window->op_queue); 
   el->type = ENUM_GFX_C_DrawCursor ; 
   el->i1 = x1 ; 
@@ -53,6 +55,7 @@ void QUEUE_GFX_C_DrawCursor(struct Tracker_Windows* window, int x1, int x2, int 
 } 
 
 void QUEUE_GFX_P2V_bitBlt(struct Tracker_Windows* window, int from_x, int from_y, int to_x, int to_y, int width, int height){ 
+  if(window->must_redraw==true) return; 
   queue_element_t *el = get_next_element(window->op_queue); 
   el->type = ENUM_GFX_P2V_bitBlt ; 
   el->i1 = from_x ; 
@@ -64,6 +67,7 @@ void QUEUE_GFX_P2V_bitBlt(struct Tracker_Windows* window, int from_x, int from_y
 } 
 
 void QUEUE_GFX_FilledBox(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_FilledBox ; 
   el->i1 = color ; 
@@ -75,6 +79,7 @@ void QUEUE_GFX_FilledBox(struct Tracker_Windows* tvisual, int color, int x, int 
 } 
 
 void QUEUE_GFX_Box(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Box ; 
   el->i1 = color ; 
@@ -86,6 +91,7 @@ void QUEUE_GFX_Box(struct Tracker_Windows* tvisual, int color, int x, int y, int
 } 
 
 void QUEUE_GFX_SetClipRect(struct Tracker_Windows* tvisual, int x, int y, int x2, int y2, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_SetClipRect ; 
   el->i1 = x ; 
@@ -96,12 +102,14 @@ void QUEUE_GFX_SetClipRect(struct Tracker_Windows* tvisual, int x, int y, int x2
 } 
 
 void QUEUE_GFX_CancelClipRect(struct Tracker_Windows* tvisual, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_CancelClipRect ; 
   el->i1 = where ; 
 } 
 
 void QUEUE_GFX_Line(struct Tracker_Windows* tvisual, int color, int x, int y, int x2, int y2, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Line ; 
   el->i1 = color ; 
@@ -113,6 +121,7 @@ void QUEUE_GFX_Line(struct Tracker_Windows* tvisual, int color, int x, int y, in
 } 
 
 void QUEUE_GFX_Polygon(struct Tracker_Windows* tvisual, int color, int x1, int y1, int x2, int y2, int num_points, struct APoint* peaks, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Polygon ; 
   el->i1 = color ; 
@@ -126,6 +135,7 @@ void QUEUE_GFX_Polygon(struct Tracker_Windows* tvisual, int color, int x1, int y
 } 
 
 void QUEUE_GFX_Polyline(struct Tracker_Windows* tvisual, int color, int x1, int y1, int x2, int y2, int num_points, struct APoint* peaks, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Polyline ; 
   el->i1 = color ; 
@@ -139,6 +149,7 @@ void QUEUE_GFX_Polyline(struct Tracker_Windows* tvisual, int color, int x1, int 
 } 
 
 void QUEUE_GFX_SetMixColor(struct Tracker_Windows* tvisual, int color1, int color2, int mix_factor){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_SetMixColor ; 
   el->i1 = color1 ; 
@@ -147,6 +158,7 @@ void QUEUE_GFX_SetMixColor(struct Tracker_Windows* tvisual, int color1, int colo
 } 
 
 void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, int color, const char* text, int x, int y, int width, int flags, int where){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Text ; 
   el->i1 = color ; 
@@ -159,6 +171,7 @@ void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, int color, const char* text
 } 
 
 void QUEUE_GFX_BitBlt(struct Tracker_Windows* tvisual, int dx, int dy, int x, int y, int x2, int y2){ 
+  if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_BitBlt ; 
   el->i1 = dx ; 
