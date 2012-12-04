@@ -166,7 +166,8 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
 	wblock->lpbarea.width        = window->fontwidth*2;
 	wblock->tempoTypearea.width  = window->fontwidth;
 	wblock->tempoarea.width      = window->fontwidth*3;
-	wblock->temponodearea.width  = window->fontwidth*7;
+        if(wblock->temponodearea.width==0)
+          wblock->temponodearea.width  = window->fontwidth*7;
 }
 
 void UpdateAllWBlockWidths(struct Tracker_Windows *window){
