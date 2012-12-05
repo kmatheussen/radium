@@ -51,9 +51,9 @@ void Undo_Block(
   static int64_t last_undo_block_time = -1000;
   int64_t time_now = MIXER_get_time();
 
-  printf("last: %d, now: %d, diff: %d\n",(int)last_undo_block_time,(int)time_now,(int)(time_now-last_undo_block_time));
+  //printf("last: %d, now: %d, diff: %d\n",(int)last_undo_block_time,(int)time_now,(int)(time_now-last_undo_block_time));
 
-  if( (time_now-last_undo_block_time) > pc->pfreq // more than 1 second.
+  if( (time_now-last_undo_block_time) > pc->pfreq*3 // more than 1 second.
       || wblock!=last_wblock
       || wtrack!=last_wtrack
       || realline!=last_realline
