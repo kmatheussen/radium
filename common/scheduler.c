@@ -39,7 +39,7 @@ typedef struct _event_t{
 
 
 
-static int g_current_time = 0;
+static int64_t g_current_time = 0;
 
 static event_t g_event0 = {0};
 
