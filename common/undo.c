@@ -143,6 +143,14 @@ void Undo_CancelLastUndo(void){
   CurrUndo->next=NULL;
 }
 
+UndoFunction Undo_get_last_function(void){
+  if(CurrUndo==&UndoRoot)
+    return NULL;
+
+  struct UndoEntry *entry=CurrUndo->entries.elements[0];
+  return entry->function;
+}
+
 /***************************************************
   FUNCTION
     Insert a new undo-element.

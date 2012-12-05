@@ -493,10 +493,10 @@ bool MIXER_start(void){
   return true;
 }
 
-static STime startup_time = 0;
+static STime g_startup_time = 0;
 void OS_InitAudioTiming(void){
-  startup_time = g_mixer->_time;
-  printf("OS_InitAudioTiming called. New time: %d\n",(int)startup_time);
+  g_startup_time = g_mixer->_time;
+  printf("OS_InitAudioTiming called. New time: %d\n",(int)g_startup_time);
 }
 
 bool MIXER_is_saving(void){
@@ -514,8 +514,13 @@ void MIXER_request_stop_saving_soundfile(void){
   printf("REQUEST to stop saving received\n");
 }
 
+// dont work.
 STime MIXER_get_block_delta_time(STime time){
-  return (time+startup_time) - g_mixer->_time;
+  return (time+g_startup_time) - g_mixer->_time;
+}
+
+int64_t MIXER_get_time(void){
+  return g_mixer->_time;
 }
 
 void MIXER_RT_set_bus_descendand_type_for_all_plugins(void){

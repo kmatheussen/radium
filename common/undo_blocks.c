@@ -19,12 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "playerclass.h"
 #include "undo.h"
 #include "clipboard_block_copy_proc.h"
 #include "clipboard_block_paste_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "undo_blocks_proc.h"
 
+extern PlayerClass *pc;
 
 void *Undo_Do_Block(
 	struct Tracker_Windows *window,
@@ -41,14 +44,33 @@ void Undo_Block(
 	struct WTracks *wtrack,
 	int realline
 ){
-	Undo_Add(
-                 window->l.num,
-                 wblock->l.num,
-                 wtrack->l.num,
-                 realline,
-                 CB_CopyBlock(wblock),
-                 Undo_Do_Block
-	);
+  static struct WBlocks *last_wblock;
+  static struct WTracks *last_wtrack;
+  static int last_realline;
+
+  static int64_t last_undo_block_time = -1000;
+  int64_t time_now = MIXER_get_time();
+
+  printf("last: %d, now: %d, diff: %d\n",(int)last_undo_block_time,(int)time_now,(int)(time_now-last_undo_block_time));
+
+  if( (time_now-last_undo_block_time) > pc->pfreq // more than 1 second.
+      || wblock!=last_wblock
+      || wtrack!=last_wtrack
+      || realline!=last_realline
+      || Undo_get_last_function()!=Undo_Do_Block)
+    Undo_Add(
+             window->l.num,
+             wblock->l.num,
+             wtrack->l.num,
+             realline,
+             CB_CopyBlock(wblock),
+             Undo_Do_Block
+             );
+
+  last_undo_block_time = time_now;
+  last_wblock=wblock;
+  last_wtrack=wtrack;
+  last_realline=realline;
 }
 
 void Undo_Block_CurrPos(

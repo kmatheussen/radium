@@ -32,6 +32,7 @@ extern struct Undo *CurrUndo;
 extern LANGSPEC void Undo_Open(void);
 extern LANGSPEC void Undo_Close(void);
 extern LANGSPEC void Undo_CancelLastUndo(void);
+extern LANGSPEC UndoFunction Undo_get_last_function(void);
 
 extern LANGSPEC void Undo_Add(
                               int windownum,
