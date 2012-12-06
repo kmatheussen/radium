@@ -21,8 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "X11.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "X11_keyboard_proc.h"
 
@@ -73,6 +75,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern bool doquit;
 extern struct Root *root;
+
+extern PlayerClass *pc;
+
 
 static int keytable_size = 0;
 static int *keytable = NULL;
@@ -251,6 +256,7 @@ static void setKeyUpDowns(XEvent *event){
 }
 
 static int g_last_pressed_key = -1;
+static int64_t g_last_pressed_key_time = 0;
 
 int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   setKeySwitch(keystate);
@@ -258,6 +264,7 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   tevent.SubID=keynum;
 
   g_last_pressed_key = keynum;
+  g_last_pressed_key_time = MIXER_get_time();
 
   if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
     tevent.SubID=EVENT_NO;
@@ -284,11 +291,15 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   tevent.ID=TR_KEYBOARDUP;
   tevent.SubID=keynum;
 
-  if(keynum==g_last_pressed_key && keynum==EVENT_ALT_R)
-    PlayBlockFromStart(window,true); // true == do_loop
+  int64_t time_now = MIXER_get_time();
 
-  if(keynum==g_last_pressed_key && keynum==EVENT_SHIFT_R)
-    PlayBlockFromStart(window,true); // true == do_loop
+  if( (time_now-g_last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
+    if(keynum==g_last_pressed_key && keynum==EVENT_ALT_R)
+      PlayBlockFromStart(window,true); // true == do_loop
+    
+    if(keynum==g_last_pressed_key && keynum==EVENT_SHIFT_R)
+      PlayBlockFromStart(window,true); // true == do_loop
+  }
 
   if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
     tevent.SubID=EVENT_NO;

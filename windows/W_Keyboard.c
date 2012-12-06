@@ -19,12 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <windows.h>
 
 #include "../common/nsmtracker.h"
+#include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "W_Keyboard_proc.h"
 
 extern struct Root *root;
+extern PlayerClass *pc;
 
 static bool left_windows_down = false;
 static bool right_windows_down = false;
@@ -297,6 +300,7 @@ extern int num_users_of_keyboard;
 bool W_KeyboardFilter(MSG *msg){
   static bool initialized=false;
   static int last_pressed_key = -1;
+  static int64_t last_pressed_key_time = -1;
   static int last_pressed_keyswitch = -1;
 
   if(initialized==false){
@@ -340,6 +344,9 @@ bool W_KeyboardFilter(MSG *msg){
       tevent.SubID=get_keyboard_subID(msg);
       last_pressed_key = tevent.SubID;
 
+      if(last_pressed_key_time==-1)
+        last_pressed_key_time = MIXER_get_time();
+
       tevent.keyswitch=get_keyswitch();
       last_pressed_keyswitch = tevent.keyswitch;
 
@@ -362,18 +369,25 @@ bool W_KeyboardFilter(MSG *msg){
         return false;
 
       int keynum = get_keyboard_subID(msg);
-      printf("keynum: %d, last_pressed: %d, ALT_R: %d\n",keynum,last_pressed_key,EVENT_ALT_R);
-      fflush(stdout);
 
       tevent.ID=TR_KEYBOARDUP;
       tevent.SubID=keynum;
       tevent.keyswitch=get_keyswitch();
 
-      if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTALT)
-        PlayBlockFromStart(window,true); // true == do_loop
+      int64_t time_now = MIXER_get_time();
 
-      if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTSHIFT)
-        PlayBlockFromStart(window,true); // true == do_loop
+      printf("keynum: %d, last_pressed: %d, ALT_R: %d, time_now: %d, last_time: %d, diff: %d\n",keynum,last_pressed_key,EVENT_ALT_R,(int)time_now,(int)last_pressed_key_time,(int)(time_now-last_pressed_key_time));
+      fflush(stdout);
+
+      if( (time_now-last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
+        if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTALT)
+          PlayBlockFromStart(window,true); // true == do_loop
+        
+        if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTSHIFT)
+          PlayBlockFromStart(window,true); // true == do_loop
+      }
+
+      last_pressed_key_time=-1;
 
       EventReciever(&tevent,window);
       return true;
