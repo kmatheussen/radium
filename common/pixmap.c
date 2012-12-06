@@ -271,7 +271,7 @@ void PixMap_makeCursor(
 
 	int xb1=GetXSubTrack_B1(wblock,track,subtrack)-3;
 	int xb2=GetXSubTrack_B2(wblock,track,subtrack)+3;
-	xb2=R_MIN(wblock->a.x2,xb2);
+	//xb2=R_MIN(wblock->a.x2,xb2);
 
 	if(xb1<=wblock->a.x1 || xb2<=xb1 || xb2<=wblock->a.x1){
 	  RError("Error in function PixMap_makeCursor, %d <= %d < %d <= %d\n",wblock->a.x1,xb1,xb2,wblock->a.x2);

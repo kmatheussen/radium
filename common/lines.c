@@ -195,7 +195,7 @@ void InsertLines_CurrPos(
 
 	window=root->song->tracker_windows;
 	while(window!=NULL){
-		DrawUpTrackerWindow(window);
+		window->must_redraw = true;
 		window=NextWindow(window);
 	}
 }

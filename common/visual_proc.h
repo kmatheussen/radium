@@ -391,6 +391,9 @@ void GFXST_BorderType2(
 #define GFX_Polygon QUEUE_GFX_Polygon
 #define GFX_Polyline QUEUE_GFX_Polyline
 
+#define GFX_SetClipRect QUEUE_GFX_SetClipRect
+#define GFX_CancelClipRect QUEUE_GFX_CancelClipRect
+
 #endif
 
 #endif

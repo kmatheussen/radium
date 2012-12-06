@@ -170,6 +170,11 @@ void DrawBottomSlider(struct Tracker_Windows *window){
 void UpdateLeftSlider(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 
+        if((wblock->num_reallines + wblock->num_visiblelines - 2)==0)
+          return;
+        if(wblock->num_visiblelines==0)
+          return;
+
 	int dx=(wblock->t.y2 - wblock->t.y1 - 4)
 	       * wblock->num_visiblelines
 	       / (wblock->num_reallines + wblock->num_visiblelines - 2);

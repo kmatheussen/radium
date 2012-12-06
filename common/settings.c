@@ -114,6 +114,7 @@ static const char** get_lines(const char* key){
 
   int version_linenum = find_linenum("settings_version",ret);
 
+#if 0
   // Check that the file is not too old.
   if(is_color_config && !strcmp(filename,OS_get_config_filename(key))){
     if(user_file != NULL){
@@ -126,6 +127,7 @@ static const char** get_lines(const char* key){
       }
     }
   }
+#endif
 
   char version_string[500];
   sprintf(version_string,"settings_version = %f # dont change this one",SETTINGSVERSION);

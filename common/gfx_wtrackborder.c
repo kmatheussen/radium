@@ -27,7 +27,7 @@ void GFX_DrawTrackBorderDouble(
                                )
 {
   QUEUE_GFX_Line(window,1,x,y,x,y2,where);
-  QUEUE_GFX_Line(window,2,x+1,y,x+1,y2,where);
+  QUEUE_GFX_Line(window,9,x+1,y,x+1,y2,where);
 }
 
 void GFX_DrawTrackBorderSingle(
@@ -35,5 +35,5 @@ void GFX_DrawTrackBorderSingle(
                                int x, int y, int y2,
                                int where
 ){
-  QUEUE_GFX_Line(tvisual,2,x,y,x,y2,where);
+  QUEUE_GFX_Line(tvisual,7,x,y,x,y2,where);
 }

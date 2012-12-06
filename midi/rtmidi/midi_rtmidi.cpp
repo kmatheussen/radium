@@ -404,7 +404,7 @@ void MIDI_OS_SetInputPort(const char *portname){
   int portnum = get_portnum(portname);
 
 #ifdef __linux__
-#if 0
+#if 1
     {
       inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,std::string("Radium"));
       if(inport_jack!=NULL){

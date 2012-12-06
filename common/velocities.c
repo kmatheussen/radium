@@ -195,7 +195,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
         if(is_track_ranged(wblock,wblock->wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
 
           vector_t *notes = get_all_ranged_notes(wblock);
-          printf("num_element: %d\n",notes->num_elements);
+          //printf("num_elements: %d\n",notes->num_elements);
 
           if(notes->num_elements==0)
             return;
@@ -211,7 +211,7 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
           }END_VECTOR_FOR_EACH;
 
           UpdateAllTrackReallines(window,wblock);
-          DrawUpTrackerWindow(window);
+          window->must_redraw = true;
 
         } else {
 

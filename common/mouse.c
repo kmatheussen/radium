@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_upperleft_proc.h"
 #include "gfx_tempotrackheader_proc.h"
 #include "gfx_wtracks_proc.h"
+#include "gfx_wblocks_proc.h"
 
 #include "mouse_proc.h"
 
@@ -48,7 +49,7 @@ void SetMouseAction(
   int old_mouse_track = wblock->mouse_track;
 
   //wblock->mouse_note = NULL;
-  wblock->mouse_track = -1;
+  wblock->mouse_track = NOTRACK;
 
   if(
      y>window->height ||
@@ -84,17 +85,8 @@ void SetMouseAction(
 	}
 
 	if(click && insideWArea(&wblock->tempocolorarea,x)){
-	  GFX_FilledBox(
-			window,0,
-			wblock->lpbTypearea.x+1,
-			wblock->a.y1,
-			wblock->tempoTypearea.x2+3,
-			wblock->t.y1-2,
-                        PAINT_DIRECTLY
-			);
-
-		wblock->tempocolorarea.width=0;
-		DrawUpTrackerWindow(window);
+          wblock->tempocolorarea.width=0;
+          window->must_redraw = true;
 	}
 
 	if(insideWArea(&wblock->temponodearea,x)){
@@ -111,6 +103,8 @@ void SetMouseAction(
           DrawUpAllWTracks(window,wblock,NULL);
         }
 
+        if(old_mouse_track!=wblock->mouse_track && (old_mouse_track==TEMPONODETRACK || wblock->mouse_track==TEMPONODETRACK))
+          DrawUpWTempoNodes(window,wblock);
 }
 
 void MouseMove(struct Tracker_Windows *window,int x,int y){

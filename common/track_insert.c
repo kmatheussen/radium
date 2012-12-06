@@ -153,7 +153,7 @@ void InsertTracks_CurrPos(
 
 	SetCursorPosConcrete(window,wblock,curr_track,-1);
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
 }
 

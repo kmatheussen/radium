@@ -308,7 +308,7 @@ void ChangeNoteLength_CurrPos(
 ){
 	struct WTracks *wtrack=window->wblock->wtrack;
 	SetNoteLength(window,wtrack,wtrack->notelength=wtrack->notelength==3?2:3);
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 }
 
 void ChangeNoteLength_Block_CurrPos(
@@ -323,7 +323,7 @@ void ChangeNoteLength_Block_CurrPos(
 		wtrack=NextWTrack(wtrack);
 	}
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 }
 
 void MinimizeTrack_CurrPos(
@@ -338,7 +338,7 @@ void MinimizeTrack_CurrPos(
 	UpdateFXNodeLines(window,wblock,wtrack);
 	UpdateTrackReallines(window,wblock,wtrack);
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 }
 
 
@@ -469,7 +469,7 @@ update:
 	}
 	*/
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
 	if( ! pc->isplaying){
           GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
@@ -504,7 +504,7 @@ void SwapTrack_CurrPos(
 	UpdateFXNodeLines(window,wblock,next);
 	UpdateTrackReallines(window,wblock,next);
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
 	CursorNextTrack_CurrPos(window);
 }
@@ -524,7 +524,7 @@ void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
         printf("appending tracks. After: %d\n",wblock->block->num_tracks);
 
-        DrawUpTrackerWindow(window);
+        window->must_redraw = true;
 }
 
 

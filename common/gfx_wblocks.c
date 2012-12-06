@@ -301,61 +301,17 @@ void DrawWTempoNodes(
 					break;
 				case TEMPONODE_NODE:
 				  GetNodeBox(window,wblock,NULL,wtemponode,temponodearea,&within,&get);
-				  GFX_FilledBox(
-                                                window,6,
-                                                get.x1+1,
-                                                get.y1+1,
-                                                get.x2-2,
-                                                get.y2-2,
-                                                PAINT_BUFFER
-                                                );
-                                  draw_skewed_box(window,1,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
-#if 0
-                                  GFX_Line(window,1,
-                                           get.x1+1,get.y1+1,
-                                           get.x1+2,get.y2-1,
-                                           PAINT_BUFFER);
-                                  
-                                  GFX_Line(window,1,
-                                           get.x1+2,get.y2-1,
-                                           get.x2-1,get.y2-2,
-                                           PAINT_BUFFER);
-                                  
-                                  GFX_Line(window,1,
-                                           get.x2-1,get.y2-2,
-                                           get.x2-2,get.y1+2,
-                                           PAINT_BUFFER);
-                                  
-                                  GFX_Line(window,1,
-                                           get.x2-2,get.y1+2,
-                                           get.x1+1,get.y1+1,
-                                           PAINT_BUFFER);
-
-#endif
-
-#if 0
-				  GFX_Box(
-                                          window,1,
-                                          get.x1,get.y1,get.x2,get.y2,
-                                          PAINT_BUFFER
-                                          );
-#endif
-				  /*
-					GFX_P_FilledBox(
-						window,6,
-						temponodearea->x+(temponodearea->width*wtemponode->x1)+1,
-						GetReallineY1Pos(window,wblock,lokke)+wtemponode->y1+1,
-						temponodearea->x+(temponodearea->width*wtemponode->x2)-1,
-						GetReallineY1Pos(window,wblock,lokke)+wtemponode->y2-1
-					);
-					GFX_P_Box(
-						window,1,
-						temponodearea->x+(temponodearea->width*wtemponode->x1),
-						GetReallineY1Pos(window,wblock,lokke)+wtemponode->y1,
-						temponodearea->x+(temponodearea->width*wtemponode->x2),
-						GetReallineY1Pos(window,wblock,lokke)+wtemponode->y2
-					);
-				  */
+                                  if(wblock->mouse_track==TEMPONODETRACK){
+                                    GFX_FilledBox(
+                                                  window,6,
+                                                  get.x1+1,
+                                                  get.y1+1,
+                                                  get.x2-2,
+                                                  get.y2-2,
+                                                  PAINT_BUFFER
+                                                  );
+                                    draw_skewed_box(window,1,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+                                  }
 			}
 			wtemponode=wtemponode->next;
 		}

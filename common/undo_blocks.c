@@ -53,7 +53,7 @@ void Undo_Block(
 
   //printf("last: %d, now: %d, diff: %d\n",(int)last_undo_block_time,(int)time_now,(int)(time_now-last_undo_block_time));
 
-  if( (time_now-last_undo_block_time) > pc->pfreq*3 // more than 1 second.
+  if( (time_now-last_undo_block_time) > pc->pfreq*3 // more than 3 seconds.
       || wblock!=last_wblock
       || wtrack!=last_wtrack
       || realline!=last_realline

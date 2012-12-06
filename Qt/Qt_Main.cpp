@@ -239,6 +239,15 @@ protected:
 
     if(num_users_of_keyboard>0)
       return;
+
+    {
+      static int num_calls = 0;
+      if(num_calls<1000/20){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+        root->song->tracker_windows->must_redraw = true;
+        num_calls++;
+      }
+    }
+
     {
       struct Tracker_Windows *window=root->song->tracker_windows;
       DO_GFX(MIDI_HandleInputMessage());
@@ -459,10 +468,6 @@ int radium_main(char *arg){
 
   PyRun_SimpleString("import menues");
 
-#if !GTK_IS_USED
-  CalledPeriodically periodic_timer;
-#endif
-
   //QFontDatabase::addApplicationFont("/gammelhd/usr/share/fonts/liberation/LiberationMono-Regular.ttf");
 
   ResetUndo();
@@ -477,6 +482,12 @@ int radium_main(char *arg){
   show_nag_window("");
 
   //QApplication::quit();
+
+#if !GTK_IS_USED
+  CalledPeriodically periodic_timer;
+#endif
+
+  root->song->tracker_windows->must_redraw = true;
 
 #if USE_QT_VISUAL
   qapplication->exec();

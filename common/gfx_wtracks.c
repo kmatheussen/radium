@@ -240,10 +240,107 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
     }
   }else{
     if(trackrealline->note!=0 && wtrack->noteshowtype==TEXTTYPE){
+
+      if(trackrealline->note>0 && trackrealline->note<128){
+
+
+#if 1
+        GFX_SetMixColor(window,6,5,scale(trackrealline->note,0,127,0,1000));
+        GFX_T_FilledBox(
+                        window,
+                        5,
+                        wtrack->notearea.x,within.y1+2,
+                        wtrack->notearea.x2-1,within.y2,
+                        PAINT_BUFFER);
+
+#if 0
+        int x = scale(trackrealline->note,0,127,wtrack->notearea.x,wtrack->notearea.x2);
+
+        GFX_SetMixColor(window, 11, 1, 800);
+        GFX_T_Line(
+                   window,
+                   1,
+                   x,within.y1,
+                   x,within.y2,
+                   PAINT_BUFFER
+                   );
+#endif
+
+#else
+        // left fill
+#if 1
+        int x = scale(trackrealline->note,0,127,wtrack->notearea.x,wtrack->notearea.x2);
+        int c = 14;
+
+        GFX_SetMixColor(window,5,15,200);
+        GFX_T_FilledBox(
+                        window,
+                        5,
+                        wtrack->notearea.x,within.y1+2,
+                        x,within.y2-2,
+                        PAINT_BUFFER);
+#endif
+
+        // right fill
+        GFX_SetMixColor(window,c,15,400);
+        GFX_T_FilledBox(
+                        window,
+                        c,
+                        x,within.y1+2,
+                        wtrack->notearea.x2-1,within.y2-2,
+                        PAINT_BUFFER);
+                        
+                        
+        GFX_SetMixColor(window, 11, 1, 800);
+        GFX_T_Line(
+                   window,
+                   1,
+                   x,within.y1,
+                   x,within.y2,
+                   PAINT_BUFFER
+                   );
+
+#endif
+
+#if 0
+        int height = 2;
+
+        // middle
+        GFX_T_Line(
+                   window,
+                   1,
+                   x,within.y1,
+                   x,within.y1+height,
+                   PAINT_BUFFER
+                   );
+
+        // left
+        GFX_SetMixColor(window, 1, 15, 500);
+        GFX_T_Line(
+                   window,
+                   3,
+                   x-1,within.y1,
+                   x-1,within.y1+height,
+                   PAINT_BUFFER
+                   );
+
+        // right
+        GFX_SetMixColor(window, 1, 15, 500);
+        GFX_T_Line(
+                   window,
+                   3,
+                   x+1,within.y1,
+                   x+1,within.y1+height,
+                   PAINT_BUFFER
+                   );
+#endif
+      }
+
+
       SetTextLine(
                   window,
                   wblock,
-                  (trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : trackrealline->note+16, //NCol[trackrealline->note/12],
+                  1, //(trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : trackrealline->note+16, //NCol[trackrealline->note/12],
                   NotesTexts[trackrealline->note],
                   wtrack->notearea.x,
                   realline,
@@ -276,7 +373,8 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
 #if 0 // same color as note name. Cool, but messy
         GFX_SetMixColor(window, element->note->note+16, 15, 400);
 #else
-        GFX_SetMixColor(window, 5, 15, 100);
+        GFX_SetMixColor(window,6,5,scale(R_BOUNDARIES(0,element->note->note,127),0,127,0,1000));
+        //GFX_SetMixColor(window, 5, 15, 100);
 #endif
 
         GFX_Polygon(window,
@@ -517,6 +615,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
         //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
       }
       break;
+
     case TRE_VELLINE:
 
       if(wtrack->noteshowtype!=TEXTTYPE){
@@ -685,6 +784,9 @@ void UpdateWTrack(
 	within.x1=wtrack->fxarea.x;
 	within.x2=wtrack->fxarea.x2;
 
+        if(within.x2<=wblock->temponodearea.x2)
+          return;
+
 #if 0
         // hack. This function should not be called when this is true.
         if(wtrack->x >= window->width)
@@ -706,10 +808,14 @@ void UpdateWTrack(
 	  within.y1=GetReallineY1Pos(window,wblock,lokke);
 	  within.y2=GetReallineY2Pos(window,wblock,lokke);
 
-          draw_wtrack_peaks(window,wblock,wtrack,lokke,within);
-          draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within);
-          draw_wtrack_fxgraphics(window,wblock,wtrack,lokke,within);
+          GFX_SetClipRect(window,R_MAX(within.x1,wblock->temponodearea.x2),within.y1,within.x2,within.y2+1,PAINT_BUFFER);
+          {
+            draw_wtrack_peaks(window,wblock,wtrack,lokke,within);
+            draw_wtrack_fxgraphics(window,wblock,wtrack,lokke,within);
+          }
+          GFX_CancelClipRect(window,PAINT_BUFFER);
 
+          draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within);
           draw_wtrack_text(window,wblock,wtrack,lokke,within);
 
           WTRACK_DrawTrackBorders(window,wblock,wtrack,lokke,start_subtrack,end_subtrack);

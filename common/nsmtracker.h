@@ -865,10 +865,12 @@ struct Tracker_Windows{
 	struct MouseAction prevaction;
 
 	int org_fontheight;
+#ifdef _AMIGA
 	char *h_fontname;
 	int h_fontID;							/* System spesific. For amiga: fontsize. */
 	int h_fontTags;						/* System spesific. For amiga: nothing. */
 	int h_fontwidth;
+#endif
 
 	bool textborder;
 
@@ -893,7 +895,7 @@ struct Tracker_Windows{
 #define LPBTRACK -3
 #define LINENUMBTRACK -4
 #define TEMPOCOLORTRACK -5
-
+#define NOTRACK -10000
 
 /*********************************************************************
 	song.h

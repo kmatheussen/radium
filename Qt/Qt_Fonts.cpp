@@ -42,7 +42,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
   QFontMetrics fm(font);
 
   double width3 = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
-  tvisual->fontwidth=(int)ceil(width3/3.0);
+  tvisual->fontwidth=(int)(width3/3.0) + 1;
   tvisual->org_fontheight=fm.height();
   tvisual->fontheight=fm.height();
 }

@@ -48,11 +48,13 @@ void GWT_P_Text(
                      PAINT_BUFFER
 		     );
 	  
-	  if(window->textborder){
-	    GFX_T_Line(window,2,x,y,x,y2,PAINT_BUFFER);
-	    GFX_T_Line(window,2,x,y,x2,y,PAINT_BUFFER);
-	    GFX_T_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
-	    GFX_T_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
+	  if(window->textborder && strcmp(text,"---")){
+	    //GFX_T_Line(window,9,x,y+1,x,y2+1,PAINT_BUFFER);
+	    GFX_T_Line(window,9,x,y+1,x2-1,y+1,PAINT_BUFFER);
+            GFX_SetMixColor(window, 11, 1, 800);
+            GFX_T_Line(window,1,x2-1,y,x2-1,y2+1,PAINT_BUFFER);
+            GFX_SetMixColor(window, 11, 1, 800);
+	    GFX_T_Line(window,1,x,y2+1,x2-1,y2+1,PAINT_BUFFER);
 	  }
 	}else{
 	  GFX_Text(
@@ -67,10 +69,19 @@ void GWT_P_Text(
 		     );
 	  
 	  if(window->textborder){
+#if 1
+	    GFX_Line(window,9,x,y,x,y2,PAINT_BUFFER);
+	    GFX_Line(window,9,x,y,x2,y,PAINT_BUFFER);
+            GFX_SetMixColor(window, 11, 1, 800);
+	    GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
+            GFX_SetMixColor(window, 11, 1, 800);
+	    GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
+#else
 	    GFX_Line(window,2,x,y,x,y2,PAINT_BUFFER);
 	    GFX_Line(window,2,x,y,x2,y,PAINT_BUFFER);
 	    GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
 	    GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
+#endif
 	  }
 	}
 }

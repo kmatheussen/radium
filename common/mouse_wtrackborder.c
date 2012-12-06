@@ -47,15 +47,16 @@ int MoveWTrackBorder_Mouse(
 	int oldfxwidth;
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=(struct WTracks *)ListFindElement1_r0(&wblock->wtracks->l,(NInt)window->prevaction.eint1);
-	struct WTracks *wtrack2;
-	NInt oldrighttrack;
+
+        if(window->prevaction.action==NOACTION)
+          window->must_redraw=true; // fix up slightly skewed gradient caused by the direct blitting. (blitting is wrong, but it's faster)
 
 	if(wtrack==NULL) return 0;
 
 	x=R_BOUNDARIES(wtrack->fxarea.x+3, x, wblock->t.x2-3);
 
 	oldfxwidth=wtrack->fxwidth;
-	oldrighttrack=wblock->right_track;
+        NInt oldrighttrack=wblock->right_track;
 
 	wtrack->fxwidth=x - wtrack->fxarea.x;
 	wtrack->fxwidth=R_MAX(wtrack->fxwidth,2);
@@ -64,16 +65,21 @@ int MoveWTrackBorder_Mouse(
 	  return 0;
 	}
 
+#if 1
 	GFX_BitBlt(window,wtrack->fxwidth-oldfxwidth,0,
 		     wtrack->fxarea.x2-2,wblock->a.y1,
 		     wblock->a.x2,wblock->t.y2
 		     );
+#endif
 
 	UpdateWBlockCoordinates(window,wblock);
-	
+
+#if 1
 	DrawUpWTrack(window,wblock,wtrack);
 	DrawWTrackHeader(window,wblock,wtrack);
 	
+	struct WTracks *wtrack2;
+
 	if(oldfxwidth>wtrack->fxwidth){
 	  wtrack2=ListFindElement1(&wblock->wtracks->l,oldrighttrack);
 	  while(wtrack2!=NULL && wtrack2->l.num<=wblock->right_track){
@@ -109,6 +115,8 @@ int MoveWTrackBorder_Mouse(
 		   );
 	  Blt_marktrackheader(window,wtrack->l.num,wblock->right_track);
 	}
+#endif
+                   //window->must_redraw=true;
 	
 	return 0;
 }

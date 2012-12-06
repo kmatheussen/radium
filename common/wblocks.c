@@ -161,6 +161,9 @@ void UpdateAllWBlockCoordinates(
 
 void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
 	wblock->linenumarea.width    = window->fontwidth*3;
+
+        SetZoomLevelAreaWidth(window,wblock);
+
 	wblock->tempocolorarea.width = window->fontwidth*3;
 	wblock->lpbTypearea.width    = window->fontwidth;
 	wblock->lpbarea.width        = window->fontwidth*2;
@@ -298,7 +301,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	window->curr_block=wblock->l.num;
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
 	BS_SelectBlock(wblock->block);
 

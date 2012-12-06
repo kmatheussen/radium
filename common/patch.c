@@ -183,7 +183,7 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
 
     UpdateTrackReallines(window,wblock,wtrack);
     UpdateFXNodeLines(window,wblock,wtrack);
-    DrawUpTrackerWindow(window);
+    window->must_redraw = true;
 
     return patch;
   }
@@ -313,7 +313,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
                 UpdateTrackReallines(window,window->wblock,wtrack);
                 UpdateFXNodeLines(window,window->wblock,wtrack);
-                DrawUpTrackerWindow(window);
+                window->must_redraw = true;
               
                 (*patch->instrument->PP_Update)(patch->instrument,patch);
               }

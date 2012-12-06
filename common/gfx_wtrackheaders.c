@@ -93,25 +93,30 @@ void UpdateWTrackHeader(
           }
         }
 
-	sprintf(temp,"%d:",wtrack->l.num);
-	GFX_T_Text(
-                   window,1,temp,
-                   wtrack->x+window->fontwidth/2,
-                   wtrack->y,
-                   wtrack->x2-wtrack->x-1,
-                   TEXT_CLIPRECT|TEXT_BOLD,
-                   PAINT_BUFFER
-	);
-
-        int name_x = wtrack->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
-	QUEUE_GFX_Text(
-                   window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
-                     name_x,
+        GFX_SetClipRect(window,R_MAX(wtrack->x,wblock->temponodearea.x2),0,wtrack->x2,wblock->t.y1,PAINT_BUFFER);
+        {
+          sprintf(temp,"%d:",wtrack->l.num);
+          GFX_T_Text(
+                     window,1,temp,
+                     wtrack->x+window->fontwidth/2,
                      wtrack->y,
-                     (wtrack->x2-window->fontwidth/2) - name_x,
-                     TEXT_SCALE,
+                     wtrack->x2-wtrack->x-1,
+                     TEXT_CLIPRECT|TEXT_BOLD,
                      PAINT_BUFFER
                      );
+          
+          int name_x = wtrack->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
+          QUEUE_GFX_Text(
+                         window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
+                         name_x,
+                         wtrack->y,
+                         (wtrack->x2-window->fontwidth/2) - name_x,
+                         TEXT_SCALE,
+                         PAINT_BUFFER
+                         );
+        }
+        GFX_CancelClipRect(window,PAINT_BUFFER);
+
 	UpdatePanSlider(window,wblock,wtrack);
 	UpdateVolumeSlider(window,wblock,wtrack);
 

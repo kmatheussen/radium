@@ -473,8 +473,10 @@ void SetupMainWindow(void){
 }
 
 void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
+#if 0
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->setMinimumWidth(width);
+#endif
 }
 
 

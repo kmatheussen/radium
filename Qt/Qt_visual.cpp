@@ -49,6 +49,29 @@ extern EditorWidget *g_editor;
 static bool g_use_custom_color = false;
 static QColor g_custom_color;
 
+static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+
+  float a1 = how_much;
+  float a2 = 1.0f-a1;
+
+  if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
+    int r = 74*a1 + c2.red()*a2;
+    int g = 74*a1 + c2.green()*a2;
+    int b = 74*a1 + c2.blue()*a2;
+
+    return QColor(r,g,b);
+  }else{
+
+    int r = c1.red()*a1 + c2.red()*a2;
+    int g = c1.green()*a1 + c2.green()*a2;
+    int b = c1.blue()*a1 + c2.blue()*a2;
+
+    return QColor(r,g,b);
+  }
+}
+
+
+
 
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
@@ -342,9 +365,15 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
       QLinearGradient gradient(0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
       gradient.setStart(0,0);
       gradient.setFinalStop(QApplication::desktop()->width(),0);
-      gradient.setColorAt(0,qcolor.darker(95));
-      gradient.setColorAt(1,qcolor.darker(110));
-      
+      gradient.setColorAt(0,qcolor.darker(100));
+      gradient.setColorAt(1,qcolor.darker(112));
+#if 0
+      gradient.setColorAt(0,qcolor.darker(90));
+      gradient.setColorAt(0.5,qcolor.darker(112));
+      //gradient.setColorAt(0.5,mix_colors(qcolor,editor->colors[7],0.9));
+      gradient.setColorAt(1,qcolor.darker(90));
+      //gradient.setColorAt(1,editor->colors[7]);
+#endif 
       painter->setPen(Qt::NoPen);
       painter->setBrush(gradient);
       
@@ -366,12 +395,14 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
       if(wtrack==NULL)
         colornum=15;
     }
-  }
 #endif
 
-QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
-g_use_custom_color = false;
-painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  if(g_use_custom_color==true)
+    qcolor = mix_colors(qcolor,editor->colors[15],0.4);
+  //qcolor.setAlpha(100);
+  g_use_custom_color = false;
+  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
 }
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
@@ -422,14 +453,15 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
     QLinearGradient gradient(x,y,x2,y); //0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
     //gradient.setStart(x,y);
     //gradient.setFinalStop(x2,y);//QApplication::desktop()->width(),0);
-#if 1
-    gradient.setColorAt(0,qcolor.darker(90));
-    gradient.setColorAt(1,qcolor.darker(110));
-#else
-    gradient.setColorAt(0,qcolor.darker(105));
-    gradient.setColorAt(0.5,qcolor.darker(95));
-    gradient.setColorAt(1,editor->colors[15]);
-#endif
+
+    if(x!=tvisual->wblock->tempocolorarea.x){
+      gradient.setColorAt(0,qcolor.darker(90));
+      gradient.setColorAt(1,qcolor.darker(110));
+    }else{
+      gradient.setColorAt(0,qcolor);
+      //gradient.setColorAt(0.5,qcolor.darker(95));
+      gradient.setColorAt(1,editor->colors[15].darker(scale(tvisual->wblock->tempocolorarea.x2,0,QApplication::desktop()->width(),100,112)));
+    }
 
     QPen pen;
     pen.setBrush(gradient);
@@ -445,28 +477,6 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
   else
     painter->setBrush(QBrush());
 }
-
-static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
-
-  float a1 = how_much;
-  float a2 = 1.0f-a1;
-
-  if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
-    int r = 74*a1 + c2.red()*a2;
-    int g = 74*a1 + c2.green()*a2;
-    int b = 74*a1 + c2.blue()*a2;
-
-    return QColor(r,g,b);
-  }else{
-
-    int r = c1.red()*a1 + c2.red()*a2;
-    int g = c1.green()*a1 + c2.green()*a2;
-    int b = c1.blue()*a1 + c2.blue()*a2;
-
-    return QColor(r,g,b);
-  }
-}
-
 
 void OS_GFX_Point(
 	struct Tracker_Windows *tvisual,
@@ -544,21 +554,29 @@ void OS_GFX_Polygon(
     g_use_custom_color = false;
   }
 
-#if 1 // gradient, looks cool, but is a bit messy
-  //printf("--polygon called\n");
-  QLinearGradient gradient(x1,y1,x2,y2);
-  gradient.setColorAt(0,col.darker(95));
-  gradient.setColorAt(1,col.darker(105));
+//  if(g_use_custom_color==true)
+    col = mix_colors(col,editor->colors[15],0.4);
 
-  painter->setPen(Qt::NoPen);
-  painter->setBrush(gradient);
+  if(color!=0){ // gradient, looks cool, but is a bit messy
+    //printf("--polygon called\n");
+    QLinearGradient gradient(x1,y1,x2,y2);
+#if 1
+    gradient.setColorAt(0,col.darker(100));
+    gradient.setColorAt(1,col.darker(115));
+#else
+    gradient.setColorAt(0,col);
+    gradient.setColorAt(1,editor->colors[10]);
+#endif
+    
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(gradient);
+    
+  }else{
 
-#else // gradient
-
-  painter->setPen(col);
-  painter->setBrush(QBrush(col,Qt::SolidPattern));
-
-#endif // gradient
+    painter->setPen(col);
+    painter->setBrush(QBrush(col,Qt::SolidPattern));
+    
+  }
 
   painter->drawPolygon(polygon);
   painter->setBrush(QBrush());

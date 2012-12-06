@@ -50,7 +50,7 @@ void SelectEditFont(
 	UpdateReallinesDependens(window,wblock);
 
         window->blt.clear_do=false;
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
         printf("font: -%s-\n",font);
         // Saved last in case the font crashes radium
@@ -81,7 +81,7 @@ void SelectLeftSliderWidth(
 	UpdateAllWBlockCoordinates(window);
 
         window->blt.clear_do=false;
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
         SETTINGS_write_int("left_slider_width",newwidth);
 }
@@ -109,7 +109,7 @@ void SelectBottomSliderHeight(
 	UpdateAllWBlockCoordinates(window);
 
         window->blt.clear_do=false;
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
         SETTINGS_write_int("bottom_slider_height",newwidth);
 }
@@ -139,7 +139,7 @@ void SelectMinNodeSize(
 
 	UpdateReallinesDependens(window,wblock);
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
         SETTINGS_write_int("minimum_node_size",newwidth);
 }
@@ -149,7 +149,7 @@ void TextBorderOn(
 	struct Tracker_Windows *window
 ){
 	window->textborder=true;
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
         SETTINGS_write_bool("show_text_border",true);
 }
 
@@ -157,7 +157,7 @@ void TextBorderOff(
 	struct Tracker_Windows *window
 ){
 	window->textborder=false;
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
         SETTINGS_write_bool("show_text_border",false);
 }
 

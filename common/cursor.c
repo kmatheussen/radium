@@ -151,7 +151,6 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 }
 
 void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int ret){
-  struct WTracks *wtrack2;
 
 	switch(ret){
 		case 0:
@@ -160,19 +159,24 @@ void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int
 			SetCursorPos(window);
 			break;
 		case 2:
+                  window->must_redraw = true;
+#if 0
 		  UpdateWBlockCoordinates(window,wblock);
 		  DrawUpAllWTracks(window,wblock,NULL);
 		  DrawAllWTrackHeaders(window,wblock);
 
-		  wtrack2=ListLast1(&wblock->wtracks->l);
-		  if(wtrack2->fxarea.x2<wblock->a.x2){
-		    GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->t.y1,wblock->a.x2,wblock->t.y2,PAINT_BUFFER);
-		    GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,0,wblock->a.x2,wblock->t.y1,PAINT_DIRECTLY);
-		  }
+                  {
+                    struct WTracks *wtrack2=ListLast1(&wblock->wtracks->l);
+                    if(wtrack2->fxarea.x2<wblock->a.x2){
+                      GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,wblock->t.y1,wblock->a.x2,wblock->t.y2,PAINT_BUFFER);
+                      GFX_FilledBox(window,0,wtrack2->fxarea.x2+2,0,wblock->a.x2,wblock->t.y1,PAINT_DIRECTLY);
+                    }
+                  }
 
 		  DrawBottomSlider(window);
-		  //			DrawUpTrackerWindow(window);
-			break;
+                  DrawUpTrackerWindow(window);
+#endif
+                  break;
 	}
 
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);

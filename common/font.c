@@ -46,7 +46,7 @@ void IncFontSize_CurrPos(
 	//	UpdateReallinesDependens(window,wblock);
 
         UpdateAllWBlockWidths(window);
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 }
 
 void SetFontSizeNormal_CurrPos(
@@ -55,6 +55,6 @@ void SetFontSizeNormal_CurrPos(
   //IncFontSize_CurrPos(window,window->org_fontheight-window->fontheight+2);
   GFX_ResetFontSize(window);
   UpdateAllWBlockWidths(window);
-  DrawUpTrackerWindow(window);
+  window->must_redraw = true;
 }
 

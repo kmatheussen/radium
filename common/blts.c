@@ -101,7 +101,12 @@ void Blt_mark(
   Blt *wblt=&window->blt;
   struct WBlocks *wblock=window->wblock;
 
-  if(x1<wblock->a.x1 || x2<=x1 || wblock->a.x2<x2){
+  x2 = R_MIN(wblock->a.x2,x2);
+
+  if(x1>=wblock->a.x2)
+    return;
+
+  if(x2<=x1){
     RError("Error in function Blt_mark. x1,x2: %d,%d. min,max: %d,%d\n",x1,x2,wblock->a.x1,wblock->a.x2);
     return;
   }

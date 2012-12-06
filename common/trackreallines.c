@@ -946,7 +946,7 @@ void UpdateTrackReallines(
 		if(window->wblock==wblock){
 			UpdateAllWTracksCoordinates(window,wblock);
 			UpdateFXNodeLines(window,wblock,wtrack);
-			DrawUpTrackerWindow(window);
+			window->must_redraw = true;
 		}
 	}
 	*/

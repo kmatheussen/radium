@@ -193,7 +193,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 				if(CB_PasteTrack(wblock,cb_wtrack,wtrack)){
 					UpdateFXNodeLines(window,wblock,wtrack);
 					UpdateTrackReallines(window,wblock,wtrack);
-					DrawUpTrackerWindow(window);
+					window->must_redraw = true;
 				}else{
 					UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 						window,
@@ -206,7 +206,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 				if(CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
 					UpdateFXNodeLines(window,wblock,wtrack);
 					UpdateTrackReallines(window,wblock,wtrack);
-					DrawUpTrackerWindow(window);
+					window->must_redraw = true;
 				}else{
 					UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 						window,

@@ -223,11 +223,17 @@ static int FindLargestZoomLineNum(struct WBlocks *wblock){
 void SetZoomLevelAreaWidth(struct Tracker_Windows *window,
                            struct WBlocks *wblock)
 {
-  int largest = FindLargestZoomLineNum(wblock);
-  if(largest<10)
-    wblock->zoomlinearea.width = window->fontwidth;
-  else
-    wblock->zoomlinearea.width = ((int)log10(largest)+1) * window->fontwidth;
+  if(wblock->reallines==NULL){
+    wblock->zoomlinearea.width = 0;
+  }else{
+    int largest = FindLargestZoomLineNum(wblock);
+    if(largest==0)
+      wblock->zoomlinearea.width = 0;
+    else if(largest<10)
+      wblock->zoomlinearea.width = window->fontwidth;
+    else
+      wblock->zoomlinearea.width = ((int)log10(largest)+1) * window->fontwidth;
+  }
 }
 
 void ExpandLine(
@@ -292,7 +298,7 @@ void ExpandLineCurrPos(
 
 	UpdateReallinesDependens(window,wblock);
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 }
 
 int FindNumReallinesFor(struct LocalZooms *localzoom){
@@ -339,7 +345,7 @@ void UnexpandCurrPos(struct Tracker_Windows *window){
 
 	UpdateReallinesDependens(window,wblock);
 
-	DrawUpTrackerWindow(window);
+	window->must_redraw = true;
 
 }
 
@@ -380,7 +386,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	if(zoomlineareawidth!=wblock->zoomlinearea.width){
 
 	  UpdateReallinesDependens(window,wblock);
-	  DrawUpTrackerWindow(window);
+	  window->must_redraw = true;
 
 	}else{
 	  PixMap_reset(window);
