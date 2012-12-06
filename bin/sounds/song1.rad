@@ -53,10 +53,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1531
+1783
 
 ?height
-811
+1022
 
 ?fontID
 0
@@ -65,13 +65,13 @@ TRACKER_WINDOW
 0
 
 ?fontwidth
-10
+11
 
 ?fontheight
-18
+19
 
 ?org_fontheight
-18
+19
 
 ?curr_block
 0
@@ -107,19 +107,19 @@ WBLOCK
 0
 
 ?linenumarea
-30
+33
 
 ?lpbTypearea
-10
+11
 
 ?lpbarea
-20
+22
 
 ?tempoTypearea
-10
+11
 
 ?tempoarea
-30
+33
 
 ?temponodearea
 156
@@ -128,7 +128,7 @@ WBLOCK
 0
 
 ?curr_realline
-18
+33
 
 ?num_reallines
 79
@@ -365,7 +365,7 @@ WTRACK
 3
 
 ?fxwidth
-136
+310
 
 ?num_vel
 1
@@ -489,7 +489,7 @@ First Block
 64
 
 ?reltempo
-1.087026
+1.200800
 
 \
 TRACK
@@ -502,7 +502,7 @@ TRACK
 <click me>
 
 ?volume
-895
+545
 
 ?pan
 0
@@ -524,13 +524,13 @@ NOTE
 0
 0
 1
-48
+50
 0
-36670
+49115
 16
 0
 1
-36670
+49115
 1
 /
 
@@ -539,7 +539,7 @@ NOTE
 16
 0
 1
-48
+50
 0
 42598
 32
@@ -554,7 +554,7 @@ NOTE
 32
 0
 1
-48
+50
 0
 49221
 48
@@ -570,17 +570,17 @@ VELOCITIES
 19
 49486
 40
-6
+5
 19
-18724
+27949
 42
-8
-18
-10031
+13
+19
+22166
 43
-11
-18
-13040
+14
+19
+26985
 44
 7
 18
@@ -593,7 +593,7 @@ NOTE
 48
 0
 65534
-48
+50
 0
 51197
 63
@@ -752,11 +752,11 @@ NOTE
 1
 36
 0
-65222
+64226
 17
 0
 1
-65222
+64226
 1
 /
 
@@ -798,10 +798,10 @@ NOTE
 37
 0
 44610
-45
-3
+44
+1
 19
-0
+65536
 1
 
 \
@@ -822,14 +822,6 @@ VELOCITIES
 0
 19
 65536
-44
-5
-19
-65536
-44
-17246
-65534
-0
 /
 /
 
@@ -1300,6 +1292,9 @@ STOPS
 33
 0
 1
+44
+0
+1
 47
 0
 1
@@ -1408,10 +1403,10 @@ NOTE
 49
 0
 5015
-45
-3
+44
+1
 19
-0
+65536
 1
 
 \
@@ -1432,15 +1427,14 @@ VELOCITIES
 0
 19
 65536
-44
-5
-19
-65536
-44
-17246
-65534
-1003
 /
+/
+
+\
+STOPS
+44
+0
+1
 /
 /
 
@@ -4685,7 +4679,7 @@ FLOAT_TYPE
 0.000000
 System Hs L.
 FLOAT_TYPE
-4.130001
+1.889999
 System Hs F.
 FLOAT_TYPE
 9400.922852
@@ -5084,7 +5078,7 @@ FLOAT_TYPE
 402.700012
 Band 1: Output Gain
 FLOAT_TYPE
-5.191998
+5.879997
 System Width
 FLOAT_TYPE
 0.000000
@@ -5446,7 +5440,7 @@ FLOAT_TYPE
 4999.347168
 System Volume
 FLOAT_TYPE
-0.247457
+0.246817
 System Hs On/Off
 FLOAT_TYPE
 1.000000
@@ -5661,7 +5655,7 @@ FLOAT_TYPE
 0.000000
 Release
 FLOAT_TYPE
-97.000000
+23.199999
 System Hs L.
 FLOAT_TYPE
 8.980999
@@ -5676,7 +5670,7 @@ FLOAT_TYPE
 1.000000
 Decay
 FLOAT_TYPE
-55.500000
+4.800000
 Attack
 FLOAT_TYPE
 7.700000
@@ -5700,7 +5694,7 @@ FLOAT_TYPE
 0.000000
 System Reverb On/Off
 FLOAT_TYPE
-1.000000
+0.000000
 System In
 FLOAT_TYPE
 0.999712
@@ -5712,7 +5706,7 @@ FLOAT_TYPE
 1.000000
 Start Position
 FLOAT_TYPE
-0.000000
+0.001900
 << HASH MAP END
 << HASH MAP END
 patch
@@ -5790,7 +5784,7 @@ FLOAT_TYPE
 1.000000
 System In
 FLOAT_TYPE
-0.891251
+0.201488
 System Width
 FLOAT_TYPE
 0.005000
@@ -5882,7 +5876,7 @@ FLOAT_TYPE
 20000.000000
 System Volume
 FLOAT_TYPE
-0.247457
+0.246817
 System Hs On/Off
 FLOAT_TYPE
 1.000000
@@ -5939,10 +5933,10 @@ FLOAT_TYPE
 1.000000
 Release
 FLOAT_TYPE
-20.000000
+208.800003
 System Hs L.
 FLOAT_TYPE
-13.502998
+6.146004
 System In On/Off
 FLOAT_TYPE
 1.000000
@@ -5960,7 +5954,7 @@ FLOAT_TYPE
 0.000000
 Finetune
 FLOAT_TYPE
-0.485800
+0.293000
 System Width On/Off
 FLOAT_TYPE
 1.000000
