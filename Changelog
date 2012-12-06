@@ -1,3 +1,25 @@
+
+Most important changes 1.9.12 -> 1.9.13:
+* Many gui improvements. Adjusted colors, etc.
+* Switch shift and right-alt keybindings for left/right arrow. Now:
+  * Right Shift + left/right moves cursor to previous / next track
+  * Right Alt + left/right changes velocity for note playing under cursor.
+* Need to press altgr or right shift less than 0.25 seconds to play.
+* Radium doesn't freeze when trying to play after it has been running
+  for a few hours.
+* Dont create block undo too often. (Most notable when changing velocity
+  using keyboard)
+* Don't reset temponode size when zooming.
+* Fix pesky memory bug, sometimes causing the program to quit because
+  it ran out of memory. Graphics should also be snappier in some situations
+  after this fix. It was caused by the gfx queue growing and growing
+  when QWidget::paintEvent wasnt called directly after drawing something.
+* Doesn't add the first caracter in the shortcut starting a line reader.
+  Was only a problem in windows.
+* Dont crash when pasting block in certain situations.
+* Remove reading of uninitialized memory in slider painter.
+
+
 Most important changes 1.9.11 -> 1.9.12:
 * Fix various horrible bugs for those with non-C locale settings
   Thanks to "DoosC" for helping to debug.
