@@ -346,7 +346,7 @@ p209
 (lp211
 g5
 aa(lp212
-g8
+g7
 aasS'ra.switchSoloTrack(4)'
 p213
 (lp214
@@ -420,7 +420,7 @@ p251
 (lp253
 g74
 aa(lp254
-g8
+g7
 aasS'ra.showHideInstrumentWidget()'
 p255
 (lp256
@@ -2292,7 +2292,7 @@ p1306
 (lp1308
 g74
 aa(lp1309
-g7
+g8
 aasS'ra.switchSoloTrack(17)'
 p1310
 (lp1311
@@ -2330,7 +2330,7 @@ p1326
 (lp1328
 g5
 aa(lp1329
-g7
+g8
 aasS'ra.switchTrackOn(15)'
 p1330
 (lp1331

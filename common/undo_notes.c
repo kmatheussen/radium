@@ -80,13 +80,11 @@ void *Undo_Do_Notes(
 	void *pointer
 ){
 	struct Undo_Notes *undo_notes=(struct Undo_Notes *)pointer;
-	struct Notes *ntemp;
-	struct Stops *stemp;
 
 	struct Tracks *track=wtrack->track;
 
-	ntemp=track->notes;
-	stemp=track->stops;
+	struct Notes *ntemp=track->notes;
+	struct Stops *stemp=track->stops;
 
 	track->notes=undo_notes->notes;
 	track->stops=undo_notes->stops;

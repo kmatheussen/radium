@@ -133,6 +133,18 @@ void WTRACK_DrawTrackBorders(
   }
 }
 
+static void set_note_color(struct Tracker_Windows *window, int notenum){
+  notenum = R_BOUNDARIES(0,notenum,127);
+  const int split1 = 50;
+  const int split2 = 95;
+  if(notenum<split1)
+    GFX_SetMixColor(window,5,1,scale(notenum,0,split1,0,1000));
+  else if(notenum<split2)
+    GFX_SetMixColor(window,6,5,scale(notenum,split1,split2,0,1000));
+  else
+    GFX_SetMixColor(window,2,6,scale(notenum,split2,160,0,1000));
+}
+
 
 static void draw_wtrack_text(struct Tracker_Windows *window,
                              struct WBlocks *wblock,
@@ -245,7 +257,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
 
 
 #if 1
-        GFX_SetMixColor(window,6,5,scale(trackrealline->note,0,127,0,1000));
+        //GFX_SetMixColor(window,6,5,scale(trackrealline->note,0,127,0,1000));
+        set_note_color(window,trackrealline->note);
         GFX_T_FilledBox(
                         window,
                         5,
@@ -373,7 +386,8 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
 #if 0 // same color as note name. Cool, but messy
         GFX_SetMixColor(window, element->note->note+16, 15, 400);
 #else
-        GFX_SetMixColor(window,6,5,scale(R_BOUNDARIES(0,element->note->note,127),0,127,0,1000));
+        //GFX_SetMixColor(window,6,5,scale(R_BOUNDARIES(0,element->note->note,127),0,127,0,1000));
+        set_note_color(window,element->note->note);
         //GFX_SetMixColor(window, 5, 15, 100);
 #endif
 

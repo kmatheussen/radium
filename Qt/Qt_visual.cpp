@@ -352,6 +352,11 @@ static void setColor(QPainter *painter, int colornum, int where){
 }
 #endif
 
+static QColor get_note_color(EditorWidget *editor, QColor base){
+  return mix_colors(base,editor->colors[15],0.4);
+}
+
+
 void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
@@ -399,7 +404,7 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
 
   QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
   if(g_use_custom_color==true)
-    qcolor = mix_colors(qcolor,editor->colors[15],0.4);
+    qcolor = get_note_color(editor,qcolor);
   //qcolor.setAlpha(100);
   g_use_custom_color = false;
   painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
@@ -555,14 +560,14 @@ void OS_GFX_Polygon(
   }
 
 //  if(g_use_custom_color==true)
-    col = mix_colors(col,editor->colors[15],0.4);
+  col = get_note_color(editor,col);
 
   if(color!=0){ // gradient, looks cool, but is a bit messy
     //printf("--polygon called\n");
     QLinearGradient gradient(x1,y1,x2,y2);
 #if 1
     gradient.setColorAt(0,col.darker(100));
-    gradient.setColorAt(1,col.darker(115));
+    gradient.setColorAt(1,col.darker(110));
 #else
     gradient.setColorAt(0,col);
     gradient.setColorAt(1,editor->colors[10]);
