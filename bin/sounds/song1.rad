@@ -53,10 +53,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1783
+1357
 
 ?height
-1022
+811
 
 ?fontID
 0
@@ -122,13 +122,13 @@ WBLOCK
 33
 
 ?temponodearea
-156
+91
 
 ?maxwtracksize
 0
 
 ?curr_realline
-33
+21
 
 ?num_reallines
 79
@@ -365,7 +365,7 @@ WTRACK
 3
 
 ?fxwidth
-310
+69
 
 ?num_vel
 1
@@ -382,7 +382,7 @@ WTRACK
 3
 
 ?fxwidth
-136
+69
 
 ?num_vel
 1
@@ -399,7 +399,7 @@ WTRACK
 3
 
 ?fxwidth
-51
+69
 
 ?num_vel
 1
@@ -416,7 +416,7 @@ WTRACK
 3
 
 ?fxwidth
-136
+69
 
 ?num_vel
 1
@@ -433,7 +433,7 @@ WTRACK
 3
 
 ?fxwidth
-136
+69
 
 ?num_vel
 1
@@ -450,7 +450,7 @@ WTRACK
 3
 
 ?fxwidth
-136
+69
 
 ?num_vel
 1
@@ -467,7 +467,58 @@ WTRACK
 3
 
 ?fxwidth
-136
+69
+
+?num_vel
+1
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+69
+
+?num_vel
+1
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+69
+
+?num_vel
+1
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+69
 
 ?num_vel
 1
@@ -483,7 +534,7 @@ BLOCK
 First Block
 
 ?num_tracks
-7
+10
 
 ?num_lines
 64
@@ -604,10 +655,18 @@ NOTE
 
 \
 VELOCITIES
+49
+6
+19
+0
 50
-34486
+8
+19
+0
+50
+27594
 65534
-65536
+57502
 60
 31042
 65534
@@ -655,10 +714,18 @@ FXNODELINES
 16
 19
 65536
-40
+28
+6
+19
+65536
+36
+1
+19
+39514
+41
 9
 19
-54997
+21202
 44
 3
 19
@@ -667,6 +734,10 @@ FXNODELINES
 9
 19
 1317
+50
+18
+19
+48568
 57
 0
 19
@@ -1207,11 +1278,11 @@ NOTE
 2
 49
 0
-31159
+50809
 63
 0
 1
-31159
+50809
 0
 /
 
@@ -1222,11 +1293,11 @@ NOTE
 1
 58
 0
-21107
+63027
 63
 1
 4
-21107
+63027
 1
 /
 
@@ -1237,11 +1308,11 @@ NOTE
 4
 93
 0
-26419
+57204
 63
 2
 4
-26419
+57204
 1
 /
 
@@ -1252,11 +1323,11 @@ NOTE
 4
 86
 0
-33767
+55382
 63
 3
 4
-33767
+55382
 1
 /
 
@@ -1267,11 +1338,11 @@ NOTE
 4
 89
 0
-22953
+49153
 63
 65533
 65534
-22953
+49153
 1
 /
 
@@ -1883,11 +1954,11 @@ NOTE
 1
 61
 0
-29141
+59271
 63
 2
 4
-29141
+59271
 1
 /
 
@@ -1898,11 +1969,11 @@ NOTE
 4
 62
 0
-41788
+65536
 63
 65533
 65534
-41788
+65536
 1
 /
 
@@ -2828,6 +2899,93 @@ FXNODELINES
 65536
 /
 /
+/
+
+\
+TRACK
+7
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+8
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
+/
+
+\
+TRACK
+9
+
+?onoff
+1
+
+?trackname
+<click me>
+
+?volume
+800
+
+?pan
+0
+
+?volumeonoff
+1
+
+?panonoff
+0
+
+?patchnum
+-1
+
+?instrument_type
+0
 /
 
 \
@@ -5066,7 +5224,7 @@ FLOAT_TYPE
 0.000000
 Limiter Input Gain
 FLOAT_TYPE
--8.976000
+0.240002
 System Width On/Off
 FLOAT_TYPE
 0.000000
@@ -5784,7 +5942,7 @@ FLOAT_TYPE
 1.000000
 System In
 FLOAT_TYPE
-0.201488
+1.171858
 System Width
 FLOAT_TYPE
 0.005000
