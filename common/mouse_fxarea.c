@@ -238,12 +238,16 @@ void SetMouseActionFXarea(
 		if(wfxnode->type==TRE_FXLINE){
 			if(wfxnode->y1<=rel_y && wfxnode->y2>=rel_y){
 				if(wfxnode->y2!=wfxnode->y1){
-					float tempdist=rel_x-((rel_y-wfxnode->y1)*(wfxnode->x2-wfxnode->x1)/(wfxnode->y2-wfxnode->y1)+wfxnode->x1);
-					tempdist=R_ABS(tempdist);
-					if(tempdist<mindist || mindist==-1.0f){
-						mindist=tempdist;
-						wfxnodemin=wfxnode;
-					}
+                                  int nodedist_x = wfxnode->x2-wfxnode->x1;
+                                  int nodedist_y = wfxnode->y2-wfxnode->y1;
+                                  if(nodedist_y>0){ // shouldnt happen
+                                    float tempdist=rel_x-((rel_y-wfxnode->y1)*nodedist_x/nodedist_y+wfxnode->x1);
+                                    tempdist=R_ABS(tempdist);
+                                    if(tempdist<mindist || mindist==-1.0f){
+                                      mindist=tempdist;
+                                      wfxnodemin=wfxnode;
+                                    }
+                                  }
 				}
 			}
 		}
@@ -274,6 +278,10 @@ void SetMouseActionFXarea(
 	if(mindist==-1.0f) return;
 
 	if(0==mintype){
+
+          if(wtrack->fxwidth<=1)
+            return;
+
 		Undo_FXs(window,wblock->block,wtrack->track,window->wblock->curr_realline);
 
 		fx=((struct FXs *)(wfxnodemin->pointer))->fx;
@@ -303,6 +311,10 @@ void SetMouseActionFXarea(
 		SetMouseActionFXNodes(window,action,wtrack,x,y,realline,0);
 
 	}else{
+          int subtrackwidth = GetSubTrackWidth(wtrack,subtrack);
+          if(subtrackwidth<=0)
+            return;
+
 		PlayStop();
 
 		Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
@@ -312,12 +324,12 @@ void SetMouseActionFXarea(
 			wblock,
 			wtrack,
 			subtrack,
-			MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack)),
+			MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/subtrackwidth,
 			&place,
 			realline
 		);
 
-		GFX_SetChangeInt(window,wblock,"Velocity",MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/(GetSubTrackWidth(wtrack,subtrack)));
+		GFX_SetChangeInt(window,wblock,"Velocity",MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/subtrackwidth);
 		GFX_DrawStatusBar(window,wblock);
 
 		UpdateTrackReallines(window,wblock,wtrack);
