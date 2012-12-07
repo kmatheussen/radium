@@ -1,4 +1,8 @@
 
+Most important changes 1.9.13 -> 1.9.14:
+* Remove some divide by zero bugs
+
+
 Most important changes 1.9.12 -> 1.9.13:
 * Many gui improvements. Adjusted colors, etc.
 * Switch shift and right-alt keybindings for left/right arrow. Now:
