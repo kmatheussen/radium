@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "block_properties_proc.h"
 #include "undo_blocks_proc.h"
+#include "clipboard_track_cut_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "clipboard_track_paste_proc.h"
 #include "trackreallines_proc.h"
@@ -38,11 +39,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /* Private function. Should only be called by InsertTracks. */
 
-void DeleteTracks(
-	struct WBlocks *wblock,
-	NInt tracknum,
-	NInt todelete
-){
+static void DeleteTracks(
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock,
+                         NInt tracknum,
+                         NInt todelete
+                         ){
 	NInt lokke;
 	NInt num_tracks;
 	struct Blocks *block=wblock->block;
@@ -52,10 +54,13 @@ void DeleteTracks(
 	  todelete=block->num_tracks-tracknum;
 	}
 	
+	if(block->num_tracks==1){
+          CB_CutTrack_CurrPos(window);
+          return;
+        }
+
 	num_tracks=block->num_tracks-todelete;
 	
-	if(num_tracks<3) return;
-
 	fprintf(stderr,"delete track. Curr: %d, num_tracks: %d, todelete: %d\n",tracknum,num_tracks,todelete);
 
 	for(lokke=tracknum ; lokke<num_tracks-1+todelete;lokke++){
@@ -78,10 +83,11 @@ void DeleteTracks(
 
 /* Not private function. toinsert may be negative. */
 
-void InsertTracks(
-	struct WBlocks *wblock,
-	NInt tracknum,
-	NInt toinsert
+static void InsertTracks(
+                         struct Tracker_Windows *window,
+                         struct WBlocks *wblock,
+                         NInt tracknum,
+                         NInt toinsert
 ){
 	NInt lokke;
 	NInt num_tracks;
@@ -92,8 +98,8 @@ void InsertTracks(
 	if(tracknum>=block->num_tracks || tracknum<0) return;
 
 	if(toinsert<=0){
-		if(toinsert<0) DeleteTracks(wblock,tracknum,-toinsert);
-		return;
+          if(toinsert<0) DeleteTracks(window,wblock,tracknum,-toinsert);
+          return;
 	}
 
 	num_tracks=block->num_tracks+toinsert;
@@ -140,7 +146,7 @@ void InsertTracks_CurrPos(
 
 	wblock=window->wblock;
 
-	InsertTracks(wblock,curr_track,toinsert);
+	InsertTracks(window,wblock,curr_track,toinsert);
 
 	if(curr_track>=wblock->block->num_tracks){
 		curr_track=wblock->block->num_tracks-1;
