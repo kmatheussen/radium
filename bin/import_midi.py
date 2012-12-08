@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 import sys,os
 
+#sys.setrecursionlimit(1500)
+
 sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
 
 import src as midi
@@ -60,6 +62,9 @@ if 0:
     print True, is_overlapping(Note(100,end_tick=-1), Note(100,end_tick=-1))
     sys.exit(0)
 
+
+#Unfortunately, python has a very low limit on recursion.
+"""
 def extract_polyphonic_notes_0(overlap_end, sequence):
     if sequence==[]:
         return []
@@ -79,6 +84,34 @@ def extract_polyphonic_notes_0(overlap_end, sequence):
 
     else:
         return extract_polyphonic_notes_0(0, sequence[1:])
+"""
+
+# Ugly workaround:
+def extract_polyphonic_notes_0(overlap_end, sequence):
+    ret = []
+
+    while len(sequence)>0:    
+        first_note = sequence[0]
+        if first_note.start_tick < overlap_end:
+            overlap_end = max(overlap_end, first_note.end_tick)
+            ret = [first_note] + ret
+            sequence = sequence[1:]
+
+        elif len(sequence)==1:
+            break
+
+        else:
+            second_note = sequence[1]
+            if is_overlapping(first_note, second_note):
+                overlap_end = max(first_note.end_tick, second_note.end_tick)
+                ret = [first_note, second_note] + ret
+                sequence = sequence[2:]
+
+            else:
+                sequence = sequence[1:]
+                overlap_end = 0
+
+    return ret
 
 
 def extract_polyphonic_notes(sequence):
