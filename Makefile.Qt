@@ -308,7 +308,7 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	pkg-config --cflags sndfile >/dev/null
 	echo "\
 	cd bin/packages;\
-	./build.sh $(PYTHONEXE) no \
+	./build.sh this_argument_is_not_used no \
 	" >makescript.sh
 	bash makescript.sh
 	@echo
