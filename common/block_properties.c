@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "player_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "wblocks_proc.h"
 
 #include "block_properties_proc.h"
 
@@ -133,6 +134,7 @@ void Block_Set_num_lines(
 
 	while(window!=NULL){
 		wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+                UpdateWBlockWidths(window,wblock);
 		UpdateRealLines(window,wblock);
 		window=NextWindow(window);
 	}

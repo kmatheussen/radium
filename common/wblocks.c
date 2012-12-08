@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <math.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -160,7 +161,7 @@ void UpdateAllWBlockCoordinates(
 }
 
 void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
-	wblock->linenumarea.width    = window->fontwidth*3;
+  wblock->linenumarea.width    = window->fontwidth*R_MAX(3, ((int)log10(wblock->block->num_lines))+1);
 
         SetZoomLevelAreaWidth(window,wblock);
 

@@ -92,7 +92,8 @@ static void InsertTRLElementS(
 	struct WTracks *wtrack,
         struct Notes *note,
 	int realline,
-	int type,int subtype,float y1,float y2,
+	int type,int subtype,
+        float y1,float y2,
 	float x1,float x2,
 	void *pointer
 ){

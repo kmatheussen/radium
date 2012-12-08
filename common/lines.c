@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
+#include "wblocks_proc.h"
 
 #include "lines_proc.h"
 
@@ -159,6 +160,7 @@ void InsertLines(
 			localzoom->zoomline=lokke;
 			ListAddElement3(&wblock->localzooms,&localzoom->l);
 		}
+                UpdateWBlockWidths(window,wblock);
 		UpdateRealLines(window,wblock);
 		UpdateReallinesDependens(window,wblock);
 		if(wblock->curr_realline>=wblock->num_reallines){

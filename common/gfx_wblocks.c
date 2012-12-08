@@ -94,7 +94,7 @@ void DrawUpLineNums(
                                  color,
                                  //realline->zoomline,
                                  realline->Tline,
-                                 wblock->linenumarea.width/window->fontwidth,
+                                 (wblock->linenumarea.width)/window->fontwidth,
                                  wblock->linenumarea.x,
                                  lokke,
                                  false
