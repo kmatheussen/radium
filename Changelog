@@ -1,4 +1,12 @@
 
+Most important changes 1.9.14 -> 1.9.15:
+* Update linenumber width (fix for blocks with more than 1000 lines)
+* Fix building packages when theres no python2 executable
+* Fix import midi files with many notes in tracks in non-polyphony mode
+* Remove limitation on delete track
+
+
+
 Most important changes 1.9.13 -> 1.9.14:
 * Remove some divide by zero bugs
 
