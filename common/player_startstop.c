@@ -75,9 +75,10 @@ static void PlayStopReally(bool doit){
 	GFX_UpdateQuantitize(window,wblock);
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
-        printf("[hb gakkgakk\n");
+        printf("[hb gakkgakk: %d\n",GC_dont_gc);
 
-        while(GC_is_disabled())
+        //while(GC_is_disabled())
+        while(GC_dont_gc>0)
           GC_enable();
 }
 
@@ -139,8 +140,11 @@ static void PlayBlock(
 	pc->initplaying=false;
 
         // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
-        while(GC_is_disabled()==false)
+        //while(GC_is_disabled()==false){
+          //printf("Calling gc_disable: %d\n",GC_dont_gc);
+        while(GC_dont_gc<=0){
           GC_disable();
+        }
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
