@@ -1,4 +1,10 @@
 
+Most important changes 1.9.15 -> 1.9.16:
+* Circumvent confusing GC_is_disabled API (fix for playing sometimes taking many seconds to start)
+* Dont update gfx from jack thread (horror)
+
+
+
 Most important changes 1.9.14 -> 1.9.15:
 * Update linenumber width (fix for blocks with more than 1000 lines)
 * Fix building packages when theres no python2 executable
