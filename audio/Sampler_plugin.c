@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/trackreallines_proc.h"
-#include "../common/gfx_wtracks_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -622,10 +621,14 @@ static int get_peaks(struct SoundPlugin *plugin, int note_num, int ch, float das
 }
 
 static void update_peaks(SoundPlugin *plugin){
+#if 0
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock=window->wblock;
   TRACKREALLINES_update_peak_tracks(window,plugin->patch);
   DrawUpAllPeakWTracks(window,wblock,plugin->patch);
+#endif
+  if(plugin->patch!=NULL)
+    RT_TRACKREALLINES_schedule_update_peak_tracks(plugin->patch);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){

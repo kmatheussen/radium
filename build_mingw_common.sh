@@ -42,9 +42,11 @@ export QT_CFLAGS="`mingw32-pkg-config --cflags Qt3Support`"
 export QT_LDFLAGS="`mingw32-pkg-config --libs Qt3Support`"
 #"-L/usr/i686-w64-mingw32/sys-root/mingw/lib -lQt3Support4 -lQtGui4 -lQtCore4"
 
-# MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
-#export OS_OPTS="-DFOR_WINDOWS -DMEMORY_DEBUG"
 export OS_OPTS="$OS_OPTS -DFOR_WINDOWS -I`pwd`/mingw/include/ -DUSE_VESTIGE=0 -I/home/kjetil/Dropbox/radium_build/"
+
+# MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
+#export OS_OPTS="$OS_OPTS -DMEMORY_DEBUG"
+
 export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib `$PKG --libs lrdf` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0`"
 
 # -msse -msse2 -msse3 -mfpmath=sse -ffast-math

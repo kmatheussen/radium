@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/trackreallines_proc.h"
 
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -232,29 +233,32 @@ protected:
     GC_gcollect();
 #endif
 
-    if(1){
+    if(num_users_of_keyboard==0){
+      {
+        static int num_calls = 0;
+        if(num_calls<1000/20){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+          root->song->tracker_windows->must_redraw = true;
+          num_calls++;
+        }
+      }
+      
+      {
+        struct Tracker_Windows *window=root->song->tracker_windows;
+        DO_GFX({
+            MIDI_HandleInputMessage();
+            TRACKREALLINES_call_very_often(window);
+          });
+        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+        
+        if(doquit==true)
+          QApplication::quit();
+      }
+    } // num_users_of_keyboard==0
+
+    // Update graphics when playing
+    {
       struct Tracker_Windows *window=root->song->tracker_windows;
       static_cast<EditorWidget*>(window->os_visual.widget)->callCustomEvent();
-    }
-
-    if(num_users_of_keyboard>0)
-      return;
-
-    {
-      static int num_calls = 0;
-      if(num_calls<1000/20){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
-        root->song->tracker_windows->must_redraw = true;
-        num_calls++;
-      }
-    }
-
-    {
-      struct Tracker_Windows *window=root->song->tracker_windows;
-      DO_GFX(MIDI_HandleInputMessage());
-      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
-      
-      if(doquit==true)
-        QApplication::quit();
     }
   }
 };

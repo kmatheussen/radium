@@ -267,6 +267,8 @@ struct Patch{
 
   int num_ons[128];            /* To keep track of how many times a voice has to be turned off. */
   int notes_num_ons[128];   /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
+
+  bool peaks_are_dirty; /* Can be set to true by any thread. */
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1

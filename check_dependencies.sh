@@ -4,6 +4,7 @@ PYTHONEXE=$1
 MOC=$2
 UIC=$3
 
+
 set -e
 
 echo

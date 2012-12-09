@@ -27,9 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 *******************************************************************/
 
+#include <string.h>
 
 #include "nsmtracker.h"
-#include <string.h>
+#include "vector_proc.h"
 #include "list_proc.h"
 #include "localzooms_proc.h"
 #include "windows_proc.h"
@@ -39,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "realline_calc_proc.h"
 #include "velocities_proc.h"
 #include "gfx_subtrack_proc.h"
+#include "gfx_wtracks_proc.h"
 #include "nodelines_proc.h"
 #include "nodeboxes_proc.h"
 #include "nodelines.h"
@@ -51,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "trackreallines_proc.h"
 
 
+extern struct Root *root;
 
 
 struct TrackReallineNodeInfo{
@@ -251,15 +254,15 @@ static void NodeLineCallBack(
 	)return;
 
 	if(firstlast==NODELINE_LAST || firstlast==NODELINE_FIRSTANDLAST){
-	  InsertTRLElementS(
-			    nodeinfo->wtrack,
+          InsertTRLElementS(
+                            nodeinfo->wtrack,
                             note,
-			    realline,
-			    TRE_VELLINEEND,
-			    nodeinfo->subtype,
-			    y2,(float)(GetNodeSize(window,wblock,wtrack)*2),x2,(float)GetNodeSize(window,wblock,wtrack),
-			    nodeinfo->pointer
-			    );
+                            realline,
+                            TRE_VELLINEEND,
+                            nodeinfo->subtype,
+                            y2,(float)(GetNodeSize(window,wblock,wtrack)*2),x2,(float)GetNodeSize(window,wblock,wtrack),
+                            nodeinfo->pointer
+                            );
 	  InsertTRLElementS(
 			    nodeinfo->wtrack,
                             note,
@@ -1012,6 +1015,34 @@ void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Pa
 
     wblock=NextWBlock(wblock);
   }
+}
+
+static bool g_peaks_are_dirty;
+
+void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){
+  if(g_peaks_are_dirty==false)
+    return;
+  else
+    g_peaks_are_dirty=false;
+
+  struct WBlocks *wblock=window->wblocks;
+
+  struct Instruments *instrument = get_all_instruments();
+  while(instrument!=NULL){
+    VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
+      if(patch->peaks_are_dirty==true){
+        patch->peaks_are_dirty=false;
+        TRACKREALLINES_update_peak_tracks(window,patch);
+        DrawUpAllPeakWTracks(window,wblock,patch);
+      }
+    }END_VECTOR_FOR_EACH;
+    instrument = NextInstrument(instrument);
+  }
+}
+
+void RT_TRACKREALLINES_schedule_update_peak_tracks(struct Patch *patch){
+  patch->peaks_are_dirty = true;
+  g_peaks_are_dirty = true;
 }
 
 void UpdateSomeTrackReallines(
