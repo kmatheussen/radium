@@ -145,30 +145,12 @@ void SelectMinNodeSize(
 }
 #endif
 
-void TextBorderOn(
-	struct Tracker_Windows *window
-){
-	window->textborder=true;
-	window->must_redraw = true;
-        SETTINGS_write_bool("show_text_border",true);
-}
-
-void TextBorderOff(
-	struct Tracker_Windows *window
-){
-	window->textborder=false;
-	window->must_redraw = true;
-        SETTINGS_write_bool("show_text_border",false);
-}
-
 void Window_config(
 	struct Tracker_Windows *window
 ){
 	ReqType reqtype=GFX_OpenReq(window,30,12,"Window Config");
 
         vector_t v={0};
-        VECTOR_push_back(&v,"Text Border on");
-        VECTOR_push_back(&v,"Text Border off");
         VECTOR_push_back(&v,"Left Slider width");
         VECTOR_push_back(&v,"Bottom Slider height");
         //VECTOR_push_back(&v,"Minimum node-size");
@@ -182,16 +164,10 @@ void Window_config(
 			SelectEditFont(window);
 			break;
 #endif
-		case 0:
-			TextBorderOn(window);
-			break;
 		case 1:
-			TextBorderOff(window);
-			break;
-		case 2:
 			SelectLeftSliderWidth(window,reqtype);
 			break;
-		case 3:
+		case 2:
 			SelectBottomSliderHeight(window,reqtype);
 			break;
 #if 0

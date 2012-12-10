@@ -5,10 +5,8 @@ font_style = Bold
 system_font = DejaVu Sans,8,-1,5,75,0,0,0,0,0
 system_font_style = Condensed Bold
 
-show_text_border = true
 bottom_slider_height = 14
 left_slider_width = 14
-minimum_node_size = 25
 
 override_default_qt_style = true
 

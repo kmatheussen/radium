@@ -109,6 +109,13 @@ static void PlayBlock(
         bool do_loop
 ){
 
+        // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
+        //while(GC_is_disabled()==false){
+          //printf("Calling gc_disable: %d\n",GC_dont_gc);
+        while(GC_dont_gc<=0){
+          GC_disable();
+        }
+
 	pc->initplaying=true;
 
 		pc->playpos=0;
@@ -138,13 +145,6 @@ static void PlayBlock(
 
 
 	pc->initplaying=false;
-
-        // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
-        //while(GC_is_disabled()==false){
-          //printf("Calling gc_disable: %d\n",GC_dont_gc);
-        while(GC_dont_gc<=0){
-          GC_disable();
-        }
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){

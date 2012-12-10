@@ -62,9 +62,9 @@ DC_start("TRACKER_WINDOW");
 
 	DC_SSB("playalong",window->playalong);
 
-	DC_SSB("textborder",window->textborder);
+	//DC_SSB("textborder",window->textborder);
 
-	DC_SSI("minnodesize",window->minnodesize);
+	//DC_SSI("minnodesize",window->minnodesize);
 
 	DC_SaveS("leftslider");SaveSlider(&window->leftslider);
 	DC_SaveS("bottomslider");SaveSlider(&window->bottomslider);
@@ -201,8 +201,8 @@ end:
 void DLoadWindows(struct Root *newroot,struct Tracker_Windows *window){
 if(window==NULL) return;
 
-        window->textborder=SETTINGS_read_bool("show_text_border",false);
-	window->minnodesize=SETTINGS_read_int("minimum_node_size",20);
+        //window->textborder=SETTINGS_read_bool("show_text_border",false);
+	//window->minnodesize=SETTINGS_read_int("minimum_node_size",20);
 
 #ifdef USE_GFX_OP_QUEUE
         GFX_create_op_queue(window);

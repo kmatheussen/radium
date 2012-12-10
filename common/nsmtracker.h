@@ -874,10 +874,6 @@ struct Tracker_Windows{
 	int h_fontwidth;
 #endif
 
-	bool textborder;
-
-	int minnodesize;
-
   int num_pixmapdefs;
   int *pixmapdefs;
   int *pixmapdefs_calc;
