@@ -76,8 +76,8 @@ keyhandles=map(getKeyHandler,range(len(keybindingsparser.keysub)))
 
 # key and keys are constants!
 def gotKey(windownum,key,keys):
-    print "*********** key: " + keybindingsparser.keysub[key] + ". keys: " + str(map(lambda k:keybindingsparser.keysub[k], keys))
-#    key=keys.pop(0)
+    #    print "*********** key: " + keybindingsparser.keysub[key] + ". keys: " + str(map(lambda k:keybindingsparser.keysub[k], keys))
+    #    key=keys.pop(0)
     keyhandles[key].exe(windownum,keys);    
 
 

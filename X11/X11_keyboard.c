@@ -218,7 +218,7 @@ static void setKeySwitch(unsigned int state){
     }
   }
 
-  printf("keyswitch: %x / %x. Leftshift: %s. Rightshift: %s\n",(unsigned int)tevent.keyswitch, state, LeftShift(tevent.keyswitch)?"on":"off", RightShift(tevent.keyswitch)?"on":"off");
+  //printf("keyswitch: %x / %x. Leftshift: %s. Rightshift: %s\n",(unsigned int)tevent.keyswitch, state, LeftShift(tevent.keyswitch)?"on":"off", RightShift(tevent.keyswitch)?"on":"off");
 }
 
 
@@ -321,14 +321,14 @@ extern int num_users_of_keyboard;
 bool X11_KeyboardFilter(XEvent *event){
   setKeyUpDowns(event);
 
-  static int num=0;
+  //static int num=0;
   //printf("Got event %d\n",num++);
   switch(event->type){
   case KeyPress:
     if(num_users_of_keyboard>0)
       return false;
 
-    printf("Got keypress event %d.\n",num++);
+    //printf("Got keypress event %d.\n",num++);
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       //this->quit();
       //doquit = true;

@@ -326,13 +326,13 @@ bool W_KeyboardFilter(MSG *msg){
 #endif
   switch(msg->message){
     case WM_HOTKEY:
-      printf("Got HotKey\n");
-      fflush(stdout);
+      //printf("Got HotKey\n");
+      //fflush(stdout);
       return true;
     case WM_ACTIVATEAPP:
       g_bWindowActive = msg->wParam ? true : false;
-      printf("Got Activate app. wParam: %d\n",(int)msg->wParam);
-      fflush(stdout);
+      //printf("Got Activate app. wParam: %d\n",(int)msg->wParam);
+      //fflush(stdout);
       break;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
@@ -376,8 +376,8 @@ bool W_KeyboardFilter(MSG *msg){
 
       int64_t time_now = MIXER_get_time();
 
-      printf("keynum: %d, last_pressed: %d, ALT_R: %d, time_now: %d, last_time: %d, diff: %d\n",keynum,last_pressed_key,EVENT_ALT_R,(int)time_now,(int)last_pressed_key_time,(int)(time_now-last_pressed_key_time));
-      fflush(stdout);
+      //printf("keynum: %d, last_pressed: %d, ALT_R: %d, time_now: %d, last_time: %d, diff: %d\n",keynum,last_pressed_key,EVENT_ALT_R,(int)time_now,(int)last_pressed_key_time,(int)(time_now-last_pressed_key_time));
+      //fflush(stdout);
 
       if( (time_now-last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
         if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTALT)
