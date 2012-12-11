@@ -44,7 +44,7 @@ static bool spool_to_next_wav_chunk(FILE *file, int endpos){
   return true;
 }
 
-static bool spool_to_wav_chunk(FILE *file, char *chunk_id){ // chunk_id is a 4 byte string
+static bool spool_to_wav_chunk(FILE *file, char *chunk_id, int num){ // chunk_id is a 4 byte string
   fseek(file,0,SEEK_SET);
 
   if(strcmp(get_current_wav_chunk_id(file),"RIFF"))
@@ -59,14 +59,23 @@ static bool spool_to_wav_chunk(FILE *file, char *chunk_id){ // chunk_id is a 4 b
 
   fseek(file,4,SEEK_CUR);
 
-  while(strcmp(chunk_id,get_current_wav_chunk_id(file)))
+  int i=0;
+
+  while(true){
+    if(!strcmp(chunk_id,get_current_wav_chunk_id(file))){
+      if(i==num)
+        return true;
+      else
+        i++;
+    }
+
     if(spool_to_next_wav_chunk(file,filesize)==false){
       printf("wav chunk \"%s\" not found\n",chunk_id);
       return false;
     }
+  }
 
-  return true;
-
+  return false;
 }
 
 // seek must be set to 0x0c into the cue chunk (start of the list). It will not change this seek when returning.
@@ -91,9 +100,7 @@ static int find_loop_cue_pos(FILE *file, int cue_id, int num_cues){
   return ret;
 }
 
-static int find_cue_id_for_label(FILE *file, char *label){
-  if(spool_to_wav_chunk(file, "LIST")==false)
-    return -1;
+static int find_cue_id_for_label2(FILE *file, char *label){
 
   int startpos=ftell(file);
 
@@ -112,7 +119,7 @@ static int find_cue_id_for_label(FILE *file, char *label){
     if(ftell(file)>=end_pos)
       return -1;
 
-    printf("  LIST:  ");
+    printf("  LIST:  \"%s\"\n",get_current_wav_chunk_id(file));
 
     if(!strcmp("labl",get_current_wav_chunk_id(file))){
       fseek(file,4,SEEK_CUR);
@@ -144,6 +151,22 @@ static int find_cue_id_for_label(FILE *file, char *label){
   return -1;
 }
 
+static int find_cue_id_for_label(FILE *file, char *label){
+  int i=0;
+  while(true){
+    if(spool_to_wav_chunk(file, "LIST", i)==false)
+      return -1;
+
+    int ret = find_cue_id_for_label2(file,label);
+    if(ret!=-1)
+      return ret;
+    else
+      i++;
+  }
+
+  return -1;
+}
+
 static void set_wav_loop_points(Sample *sample, const char *filename){
   FILE *file=fopen(filename,"r");
   if(file==NULL){
@@ -157,7 +180,7 @@ static void set_wav_loop_points(Sample *sample, const char *filename){
   if(cue_id_loop_start==-1 || cue_id_loop_end==-1)
     goto exit;
 
-  if(spool_to_wav_chunk(file, "cue ")==-1)
+  if(spool_to_wav_chunk(file, "cue ", 0)==-1)
     goto exit;
 
   fseek(file,8,SEEK_CUR);
