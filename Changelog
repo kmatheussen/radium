@@ -1,4 +1,8 @@
 
+Most important changes 1.9.17 -> 1.9.18:
+* Remove loop from guitar sample in demo song
+
+
 Most important changes 1.9.16 -> 1.9.17:
 * Fix alsa midi input. (two ports named "in" made chaos)
   * Radium can be used as midi sampler now. Only one instrument is supported though,
