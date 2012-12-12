@@ -52,7 +52,7 @@ void PC_Pause(void){
 	}
 
 #ifdef NOPAUSEPLAY
-	PlayHardStop();
+	PlayStop();
 #else
 	PausePlayer();				// Will not return before the player has really paused.
 

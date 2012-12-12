@@ -123,7 +123,7 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
 
 bool SOUNDFILESAVER_save(const char *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, const char **error_string){
 
-  PlayHardStop();
+  PlayStop();
 
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));

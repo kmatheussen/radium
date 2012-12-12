@@ -82,26 +82,12 @@ static void PlayStopReally(bool doit){
           GC_enable();
 }
 
-void PlayHardStop(void){
-	if(! pc->isplaying){
-		StopAllInstruments();
-		return;
-	}
-	PlayStopReally(true);
-}
-
 void PlayStop(void){
-	if(pc->isplaying){
-		StopAllInstruments();
-		pc->isplaying=false;
-		pc->initplaying=false;
-
-   		while(pc->peq!=NULL) OS_WaitForAShortTime(20);
-
-		PlayStopReally(true);
-	}
+	if(! pc->isplaying)
+          StopAllInstruments();
+        else
+          PlayStopReally(true);
 }
-
 
 static void PlayBlock(
 	struct Blocks *block,

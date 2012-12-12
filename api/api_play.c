@@ -57,6 +57,6 @@ void playRange(int windownum){
 }
 
 void playStop(void){
-  PlayHardStop();
+  PlayStop();
 }
 

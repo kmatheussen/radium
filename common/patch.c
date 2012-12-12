@@ -199,7 +199,7 @@ static void remove_patch_from_song(struct Patch *patch){
       struct Tracks *track = wtrack->track;
       if(track->patch==patch){
 
-        PlayHardStop();
+        PlayStop();
 
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
         handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);

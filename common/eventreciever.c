@@ -56,7 +56,7 @@ bool Quit(struct Tracker_Windows *window){
 	char temp[200];
 	char *ret=NULL;
 
-        PlayHardStop();
+        PlayStop();
 
 	printf("Going to quit\n");
 	if(num_undos>0){

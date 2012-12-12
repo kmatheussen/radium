@@ -242,7 +242,7 @@ static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, FILE *file){
 }
 
 static void set_wav_loop_points(Sample *sample, const char *filename){
-  FILE *file=fopen(filename,"r");
+  FILE *file=fopen(filename,"rb");
   if(file==NULL){
     RError("Could not open file \"%s\". libsndfile could though, which is very strange",filename);
     return;
