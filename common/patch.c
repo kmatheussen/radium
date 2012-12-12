@@ -448,8 +448,10 @@ void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Trac
   }
 }
 
+//extern const char *NotesTexts3[131];
 
 void PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track){
+  //printf("** playing note %s\n",NotesTexts3[notenum]);
   PLAYER_lock();{
     RT_PATCH_play_note(patch,notenum,velocity,track,-1);
   }PLAYER_unlock();
@@ -536,7 +538,7 @@ void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Trac
 }
 
 void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track){
-  printf("stopping note %d / %d\n",notenum,velocity);
+  //printf("** stopping note %s\n\n",NotesTexts3[notenum]);
   PLAYER_lock();{
     RT_PATCH_stop_note(patch,notenum,velocity,track,-1);
   }PLAYER_unlock();
