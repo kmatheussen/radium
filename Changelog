@@ -1,8 +1,17 @@
 
+Most important changes 1.9.16 -> 1.9.17:
+* Fix alsa midi input. (two ports named "in" made chaos)
+  * Radium can be used as midi sampler now. Only one instrument is supported though,
+    but as a work-around, several Radium instances can run simultaneously.
+* Get wav loop points from smpl chunk, not by using Loop Start/Loop End cues
+* Support looping for wav files with more than one LIST chunk
+* Less verbose when pressing keys
+* Remove textborder and minnodesize options
+
+
 Most important changes 1.9.15 -> 1.9.16:
 * Circumvent confusing GC_is_disabled API (fix for playing sometimes taking many seconds to start)
 * Dont update gfx from jack thread (horror)
-
 
 
 Most important changes 1.9.14 -> 1.9.15:
@@ -10,7 +19,6 @@ Most important changes 1.9.14 -> 1.9.15:
 * Fix building packages when theres no python2 executable
 * Fix import midi files with many notes in tracks in non-polyphony mode
 * Remove limitation on delete track
-
 
 
 Most important changes 1.9.13 -> 1.9.14:
