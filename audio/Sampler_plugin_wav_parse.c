@@ -167,21 +167,15 @@ static int find_cue_id_for_label(FILE *file, char *label){
   return -1;
 }
 
-static void set_wav_loop_points(Sample *sample, const char *filename){
-  FILE *file=fopen(filename,"r");
-  if(file==NULL){
-    RError("Could not open file \"%s\". libsndfile could though, which is very strange",filename);
-    return;
-  }
-
+static bool set_wav_loop_points_using_cues(Sample *sample, FILE *file){
   int cue_id_loop_start=find_cue_id_for_label(file, "Loop Start");
   int cue_id_loop_end=find_cue_id_for_label(file, "Loop End");
 
   if(cue_id_loop_start==-1 || cue_id_loop_end==-1)
-    goto exit;
+    return false;
 
   if(spool_to_wav_chunk(file, "cue ", 0)==-1)
-    goto exit;
+    return false;
 
   fseek(file,8,SEEK_CUR);
   int num_cues = read_le32int(file);
@@ -192,7 +186,70 @@ static void set_wav_loop_points(Sample *sample, const char *filename){
   set_legal_loop_points(sample, loop_start, loop_end);
 
   printf("*************** num_cues: %d. loop_start: %d, loop_end: %d\n",num_cues,loop_start,loop_end);
+  return true;
+}
 
- exit:
+#if 0
+static int get_bytes_per_frame_in_wav(FILE *file){
+  if(spool_to_wav_chunk(file, "fmt ", 0)==-1)
+    return -1;
+
+  fseek(file,0x0a,SEEK_CUR);
+  int num_channels = read_le16int(file);
+
+  fseek(file,0x16-0xa-2,SEEK_CUR);
+  int bits = read_le16int(file);
+  if(bits%8!=0){
+    float b=bits/8;
+    b=ceil(b);
+    bits = b*8;
+  }
+  
+  return num_channels * bits / 8;
+}
+#endif
+
+static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, FILE *file){
+  if(spool_to_wav_chunk(file, "smpl", 0)==-1)
+    return false;
+
+  fseek(file,0x24,SEEK_CUR);
+  int num_loops = read_le32int(file);
+
+  if(num_loops==0)
+    return false;
+
+  fseek(file,4 + 8,SEEK_CUR);
+  int loop_start = read_le32int(file);
+  int loop_end = read_le32int(file);
+
+#if 0
+  int bytes_per_frame = get_bytes_per_frame_in_wav(file);
+  if(bytes_per_frame<=0)
+    return false;
+
+  printf("HEPP: loop_start: %d (%d), loop_end: %d(%d), bytes_per_frame: %d\n",
+         loop_start,loop_start/bytes_per_frame,
+         loop_end,loop_end/bytes_per_frame,
+         bytes_per_frame);
+
+  set_legal_loop_points(sample, loop_start/bytes_per_frame, loop_end/bytes_per_frame);
+#endif
+
+  set_legal_loop_points(sample, loop_start, loop_end);
+  
+  return true;
+}
+
+static void set_wav_loop_points(Sample *sample, const char *filename){
+  FILE *file=fopen(filename,"r");
+  if(file==NULL){
+    RError("Could not open file \"%s\". libsndfile could though, which is very strange",filename);
+    return;
+  }
+
+  if(set_wav_loop_points_using_smpl_chunk(sample,file)==false)
+    set_wav_loop_points_using_cues(sample,file);
+
   fclose(file);
 }
