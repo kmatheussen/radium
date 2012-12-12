@@ -381,7 +381,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
 }
 
 static void mycallback( double deltatime, unsigned int length, unsigned char *message, void *userData ){
-  //printf("Got data: %d (%x)\n",length,message[0]);
+  //printf("Got data: %d (%x). time: %f\n",length,message[0],deltatime);
   if(length==1)
     MIDI_InputMessageHasBeenReceived(message[0],0,0);
   else if(length==2)
@@ -404,7 +404,7 @@ void MIDI_OS_SetInputPort(const char *portname){
   int portnum = get_portnum(portname);
 
 #ifdef __linux__
-#if 1
+#if 0
     {
       inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,std::string("Radium"));
       if(inport_jack!=NULL){

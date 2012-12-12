@@ -41,21 +41,21 @@ static struct Patch *g_through_patch = NULL;
 
 // TODO: This isn't always working properly. Going to change rtmidi API.
 
+extern const char *NotesTexts3[131];
+
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
+  //static int num=0;
+  //num++;
 
   if(cc>=0xf0) // Too much drama
     return;
 
-  if(g_cc!=0) // Too quick.
-    return;
-
-
-  // should be a memory barrier here somewhere.
 
   if(cc>=0x80 && cc<0xa0){
     struct Patch *patch = g_through_patch;
     if(patch!=NULL){
+      //printf("%d: got note %s (0x%x 0x%x)\n",num-1,NotesTexts3[data1],cc,data2);
       if(data2>0 && cc>=0x90)
         PATCH_play_note(patch,data1,data2*MAX_VELOCITY/127,NULL);
       else
@@ -63,6 +63,11 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
     //MyMyPutMidi(patchdata->midi_port,(cc&0xf0)|patchdata->channel,data1,data2); // send out the message again to the patch and channel specified at the current track
     }
   }
+
+  if(g_cc!=0) // Too quick.
+    return;
+
+  // should be a memory barrier here somewhere.
 
   if((cc&0xf0)==0x90 && data2!=0) {
     g_cc = cc;

@@ -1180,6 +1180,10 @@ extern "C" void *alsaMidiHandler( void *ptr )
       std::cerr << "\nMidiInAlsa::alsaMidiHandler: MIDI input buffer overrun!\n\n";
       continue;
     }
+    else if ( result == -ENOSPC ) {
+      std::cerr << "MidiInAlsa::alsaMidiHandler: input FIFO of sequencer overran, and some events are lost.\n";
+      continue;
+    }      
     else if ( result <= 0 ) {
       std::cerr << "MidiInAlsa::alsaMidiHandler: unknown MIDI input error!\n";
       continue;
