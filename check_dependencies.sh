@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PYTHONEXE=$1
 MOC=$2
@@ -13,6 +13,13 @@ which sed
 which $PYTHONEXE
 #which guile-1.8
 
+if [ $4 == "test_packages" ] ; then
+    echo "testing packages"
+fi
+
+if [ $4 == "test_build" ] ; then
+    echo "testing build"
+fi
 
 if $1 -c "import sys ; sys.exit(sys.version[:1] == \"2\")" ; then
     echo "Only Python 2 is supported:"
@@ -21,30 +28,32 @@ if $1 -c "import sys ; sys.exit(sys.version[:1] == \"2\")" ; then
     exit 5
 fi
 
-if ! which $MOC ; then
-    echo "Can not find moc. Make sure QTDIR and/or MOC is set correctly in the Makefile".
-    echo
-    exit 5
-fi
+if [ $4 == "test_build" ] ; then
 
-if ! which $UIC ; then
-    echo "Can not find uic. Make sure QTDIR and/or UIC set correctly in the Makefile".
-    echo
-    exit 5
-fi
+    if ! which $MOC ; then
+        echo "Can not find moc. Make sure QTDIR and/or MOC is set correctly in the Makefile".
+        echo
+        exit 5
+    fi
 
-if $MOC -v 2>&1 |grep Qt\ 3 ; then
-    echo $MOC "is for QT3. Need moc for QT4. Make sure MOC is set correctly in the Makefile."
-    echo
-    exit 5
-fi
+    if ! which $UIC ; then
+        echo "Can not find uic. Make sure QTDIR and/or UIC set correctly in the Makefile".
+        echo
+        exit 5
+    fi
 
-if $UIC -v 2>&1 |grep Qt\ 3 ; then
-    echo $UIC "is for QT3. Need uic for QT4. Make sure UIC is set correctly in the Makefile."
-    echo
-    exit 5
-fi
+    if $MOC -v 2>&1 |grep Qt\ 3 ; then
+        echo $MOC "is for QT3. Need moc for QT4. Make sure MOC is set correctly in the Makefile."
+        echo
+        exit 5
+    fi
 
+    if $UIC -v 2>&1 |grep Qt\ 3 ; then
+        echo $UIC "is for QT3. Need uic for QT4. Make sure UIC is set correctly in the Makefile."
+        echo
+        exit 5
+    fi
+fi
 
 if grep -e "\ \*" api/protos.conf ; then
     echo "The above line in api/protos.conf is wrongly formatted. Must use \"<type>*\", not \"<type> *\""
@@ -96,12 +105,14 @@ if ! pkg-config --cflags Qt3Support >/dev/null 2>devnull ; then
 fi
 
 
-if [ `uname` == "Linux" ] ; then
-    if [ ! -f bin/packages/deletemetorebuild ] ; then
-	echo
-	echo "Packages not build. First run 'make packages'"
-	echo
-	exit 5
+if [ $4 == "test_build" ] ; then
+    if [ `uname` == "Linux" ] ; then
+        if [ ! -f bin/packages/deletemetorebuild ] ; then
+	    echo
+	    echo "Packages not build. First run 'make packages'"
+	    echo
+	    exit 5
+        fi
     fi
 fi
 
