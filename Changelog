@@ -1,4 +1,13 @@
 
+Most important changes 1.9.18 -> 1.9.19:
+* All stops are hard stops (Fix for stopping not always stopping sounds)
+* Loop on/off button for samples
+* Custom GFX for checkboxes and pushbuttons
+* Fix color for qcomoboxes.
+* Run check_dependencies.sh before making packages
+* Remove separator between Reset and Help
+
+
 Most important changes 1.9.17 -> 1.9.18:
 * Remove loop from guitar sample in demo song
 
