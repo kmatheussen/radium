@@ -51,6 +51,7 @@ extern "C"{
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
+#include "Qt_MyQButton.h"
 #include "Qt_MyQSpinBox.h"
 
 #include "../mixergui/QM_MixerWidget.h"

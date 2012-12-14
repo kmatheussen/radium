@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QCheckBox>
 #include <QMouseEvent>
+#include <QString>
+
+#include "../Qt/EditorWidget.h"
 
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
@@ -47,42 +50,56 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 }
 
 
-inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, bool contains_text){
+inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text){
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
-    QColor col1; // off
-    QColor col2; // on
+    QColor col; // on
 
-    int col1num = 13;
-    int col2num = 9;
+    int colnum = 9;
 
-    if(is_enabled==true){
-      col1 = editor->colors[col1num].light(40);
-      col2 = editor->colors[col2num].light(52);
+    if(text!=""){
+      col = editor->colors[13];
+      col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
+      col.setAlpha(76);
     }else{
-      col1 = editor->colors[col1num].light(96);
-      col2 = editor->colors[col2num].light(90);
-    }
+      col = editor->colors[colnum].light(52);
+   }
 
-    if(contains_text){
-      col1.setAlpha(120);
-      col2 = mix_colors(col1.light(70),QColor(98,59,33).light(90),0.35);//editor->colors[col2num].light(52);
-      col2.setAlpha(70);
-    }
 
-    //col2 = QColor(106, 104, 100, 255);
-    //col2 = QColor(0, 107, 156, 255);
+    if(is_enabled==false)
+      col.setAlpha(col.alpha()/3);
+
+    //col = QColor(106, 104, 100, 255);
+    //col = QColor(0, 107, 156, 255);
 
     if(is_checked==true){
-      painter->fillRect(1,1,width-2,height-1,col2);
-      painter->setPen(editor->colors[1]);
+      painter->fillRect(1,1,width-2,height-1,col);
+      //painter->setPen(editor->colors[1]);
       //p.drawRect(0,0,width()-1,height()-1);
       //p.drawRect(1,1,width()-3,height()-3);
     }else{
-      painter->setPen(col2);
+      painter->setPen(col);
       painter->drawRect(1,1,width-3,height-2);
       painter->drawRect(2,2,width-5,height-4);
-      //p.fillRect(0,0,width(),height(),col1);
+    }
+
+
+    if(text!=""){
+      painter->setPen(editor->colors[15]);
+      painter->drawRect(0,0,width,height);
+
+      //QRect rect(5,3,width-5,height-3);
+      QRect rect(1,1,width-2,height-1);//5,3,width-5,height-3);
+      QColor black(0,0,0);
+      if(is_checked==true)
+        black.setAlpha(190);
+      else
+        black.setAlpha(120);
+      painter->setPen(black);
+      if(text=="Loop")
+        painter->drawText(rect, Qt::AlignCenter, text + " " + QChar(8634));
+      else
+        painter->drawText(rect, Qt::AlignCenter, text);
     }
 }
 
@@ -122,22 +139,7 @@ struct MyQCheckBox : public QCheckBox{
 
   void paintEvent ( QPaintEvent * ev ){
     QPainter p(this);
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text()!="");
-
-    if(text()!=""){
-      QRect rect(5,2,width()-5,height()-2);
-      QColor black(0,0,0);
-      if(isChecked())
-        black.setAlpha(190);
-      else
-        black.setAlpha(120);
-      p.setPen(black);
-      if(text()=="Loop")
-        p.drawText(rect, Qt::AlignLeft, text() + " " + QChar(8634));
-      else
-   
-        p.drawText(rect, Qt::AlignLeft, text());
-    }
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text());
   }
 };
 

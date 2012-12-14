@@ -74,6 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "QM_view.h"
 #include "QM_chip.h"
 
+#include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/mQt_mixer_widget_callbacks.h"
 
