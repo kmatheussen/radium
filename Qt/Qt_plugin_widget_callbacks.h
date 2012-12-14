@@ -52,6 +52,18 @@ public:
                                      "Sinc1  = Excellent sound: \"The fastest bandlimited interpolator, providing a Signal-to-Noise Ratio (SNR) of 97dB and a bandwidth of 80%.\" (libsamplerate)\n"
                                      "Sinc2  = Excellent sound: \"The highest quality sinc based converter, providing a worst case SNR of 97dB at a bandwidth of 97%.\" (libsamplerate)");
       interpolation_type->setCurrentIndex(SAMPLER_get_resampler_type(plugin));
+
+      {
+        EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+        QColor c = editor->colors[13];
+        c=mix_colors(c.light(70),QColor(98,59,33),0.55);
+        c.setAlpha(76);
+        QPalette pal(interpolation_type->palette());
+        pal.setColor( QPalette::Active, QColorGroup::Button, c);
+        pal.setColor( QPalette::Inactive, QColorGroup::Button, c);
+        pal.setColor( QPalette::Disabled, QColorGroup::Button, c.light(80));
+        interpolation_type->setPalette(pal);
+      }
     }
 
     {

@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qcolor.h>
 #include <qapplication.h>
 #include <qpalette.h>
+#include <qcombobox.h>
+
 #include "qcolordialog.h"
 #include <qtimer.h>
 #include <qfile.h>
@@ -138,7 +140,7 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
 }
 
 
-static void updatePalette(EditorWidget *my_widget, QPalette &pal){
+static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
     SETTINGS_write_string("system_color",system_color->name().ascii());
@@ -161,6 +163,13 @@ static void updatePalette(EditorWidget *my_widget, QPalette &pal){
     //QColor c(0xe5, 0xe5, 0xe5);
     QColor c(*system_color);
     QColor b(*button_color);
+
+    if(dynamic_cast<QComboBox*>(widget)!=NULL){
+      c = my_widget->colors[13];
+      c=mix_colors(c.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
+      c.setAlpha(76);
+    }
+
     pal.setColor( QPalette::Active, QColorGroup::Background, b);
     pal.setColor( QPalette::Inactive, QColorGroup::Background, b);
     pal.setColor( QPalette::Disabled, QColorGroup::Background, b.light(95));
@@ -236,7 +245,7 @@ static QPalette sys_palette;
 static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   QPalette pal(widget->palette());
 
-  updatePalette(my_widget,pal);
+  updatePalette(my_widget,widget,pal);
 
   if(override_default_qt_colors)
     widget->setPalette(pal);
@@ -249,7 +258,7 @@ static void updateWidget(EditorWidget *my_widget,QWidget *widget){
 
 static void updateApplication(EditorWidget *my_widget,QApplication *app){
   QPalette pal(app->palette());
-  updatePalette(my_widget,pal);
+  updatePalette(my_widget,NULL,pal);
   app->setPalette(pal);
 }
 

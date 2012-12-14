@@ -112,8 +112,14 @@
        <property name="whatsThis">
         <string extracomment="Interpolation type for this instrument"/>
        </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
        <property name="currentIndex">
         <number>2</number>
+       </property>
+       <property name="frame">
+        <bool>true</bool>
        </property>
        <item>
         <property name="text">
