@@ -89,7 +89,7 @@ static float iec_scale(float db) {
 #endif
 
 
-QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 
   float a1 = how_much;
   float a2 = 1.0f-a1;

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
+    <width>1090</width>
     <height>34</height>
    </rect>
   </property>
@@ -1797,7 +1797,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="drunk_velocity_onoff">
+       <widget class="QCheckBox" name="drunk_velocity_onoff">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
@@ -2813,7 +2813,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="midi_input_onoff">
+       <widget class="QCheckBox" name="midi_input_onoff">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -2835,7 +2835,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="scrollplay_onoff">
+       <widget class="QCheckBox" name="scrollplay_onoff">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
           <horstretch>0</horstretch>

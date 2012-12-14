@@ -80,7 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../Qt/EditorWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
-#include "../Qt/Qt_MyQCheckBox.h"
+//#include "../Qt/Qt_MyQCheckBox.h"
 
 #include "../common/patch_proc.h"
 

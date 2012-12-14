@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef QT_MYQCHECKBOX_H
+#define QT_MYQCHECKBOX_H
 
 #include <QCheckBox>
 #include <QMouseEvent>
@@ -23,14 +25,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height){
+static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+
+  float a1 = how_much;
+  float a2 = 1.0f-a1;
+
+  if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
+    int r = 74*a1 + c2.red()*a2;
+    int g = 74*a1 + c2.green()*a2;
+    int b = 74*a1 + c2.blue()*a2;
+
+    return QColor(r,g,b);
+  }else{
+
+    int r = c1.red()*a1 + c2.red()*a2;
+    int g = c1.green()*a1 + c2.green()*a2;
+    int b = c1.blue()*a1 + c2.blue()*a2;
+
+    return QColor(r,g,b);
+  }
+}
+
+
+inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, bool contains_text){
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
     QColor col1; // off
     QColor col2; // on
 
-    int col1num = 11;
-    int col2num = 10;
+    int col1num = 13;
+    int col2num = 9;
 
     if(is_enabled==true){
       col1 = editor->colors[col1num].light(40);
@@ -38,6 +62,12 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
     }else{
       col1 = editor->colors[col1num].light(96);
       col2 = editor->colors[col2num].light(90);
+    }
+
+    if(contains_text){
+      col1.setAlpha(120);
+      col2 = mix_colors(col1.light(70),QColor(98,59,33).light(90),0.35);//editor->colors[col2num].light(52);
+      col2.setAlpha(70);
     }
 
     //col2 = QColor(106, 104, 100, 255);
@@ -92,8 +122,24 @@ struct MyQCheckBox : public QCheckBox{
 
   void paintEvent ( QPaintEvent * ev ){
     QPainter p(this);
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height());
-  }
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text()!="");
 
+    if(text()!=""){
+      QRect rect(5,2,width()-5,height()-2);
+      QColor black(0,0,0);
+      if(isChecked())
+        black.setAlpha(190);
+      else
+        black.setAlpha(120);
+      p.setPen(black);
+      if(text()=="Loop")
+        p.drawText(rect, Qt::AlignLeft, text() + " " + QChar(8634));
+      else
+   
+        p.drawText(rect, Qt::AlignLeft, text());
+    }
+  }
 };
 
+
+#endif // QT_MYQCHECKBOX_H

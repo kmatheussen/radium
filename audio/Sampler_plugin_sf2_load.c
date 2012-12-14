@@ -65,6 +65,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
       sample->volume = 1.0f;
       sample->num_frames = HASH_get_int(sample_info,"num_frames");
 
+      set_legal_loop_points(sample,-1,-1); // By default, loop all.
       set_legal_loop_points(sample,
                             HASH_get_int(sample_info,"loop start"),
                             HASH_get_int(sample_info,"loop end"));
@@ -80,7 +81,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
           sample->ch = 1;
       }
 
-      sample->data = SF2_load_sample(filename, sample_num);
+      sample->sound = SF2_load_sample(filename, sample_num);
 
       int root_key = HASH_get_int(region, "root key");
       int coarsetune = HASH_get_int(region, "coarse tune");

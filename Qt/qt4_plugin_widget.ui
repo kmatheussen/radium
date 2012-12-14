@@ -65,7 +65,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="limiter_bypass_button">
+      <widget class="QCheckBox" name="limiter_bypass_button">
        <property name="text">
         <string>Limiter Bypass</string>
        </property>

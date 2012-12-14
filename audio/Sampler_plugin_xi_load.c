@@ -233,14 +233,16 @@ bool load_xi_instrument(Data *data,const char *filename){
 
     sample->num_frames   = xi_get_num_frames(file,sample_num);
 
+    set_legal_loop_points(sample,-1,-1); // By default, loop all.
+
     if(xi_get_loop_type(file,sample_num)!=0){ // TODO: Implement those other types of loops.
       set_legal_loop_points(sample,
                             xi_get_loop_start(file,sample_num),
                             xi_get_loop_end(file,sample_num));
     }
 
-    sample->data = xi_get_sample(file, sample_num);
-    if(sample->data==NULL)
+    sample->sound = xi_get_sample(file, sample_num);
+    if(sample->sound==NULL)
       goto exit;
 
     int note;

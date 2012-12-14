@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/Faust_plugins_proc.h"
 
+#include "Qt_MyQCheckBox.h"
+
 
 // Widget generation code is based on / copied from qtractor, written by Rui Nuno Capela.
 
@@ -36,7 +38,8 @@ class ParamWidget : public QWidget{
   const SoundPluginType *_type;
     
   MyQSlider *_slider;
-  QToolButton *_check_button;
+  //QToolButton *_check_button;
+  MyQCheckBox *_check_button;
   QString _name;
     
  ParamWidget(QWidget *parent, struct Patch *patch, int effect_num)
@@ -60,7 +63,8 @@ class ParamWidget : public QWidget{
       grid_layout->setSpacing(4);
 
       if (format==EFFECT_FORMAT_BOOL){
-        _check_button = new QToolButton(this);
+        //_check_button = new QToolButton(this);
+        _check_button = new MyQCheckBox(this);
         _check_button->setCheckable(true);
 
         QSizePolicy sizePolicy5(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -149,12 +153,12 @@ class ParamWidget : public QWidget{
       value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
     }PLAYER_unlock();
 
+    //printf("UPDATE GUI ELEMENT %d for %s (%p / %p). Value: %f\n",_effect_num,plugin->type->name,_slider,_check_button,value);
+
     if(_slider!=NULL)
       _slider->setValue(value * 10000.0f);
-    else if(_check_button!=NULL){
-      //printf("Setting checkbutton to %s (%f)\n",value>0.5?"ON":"OFF",value);
+    else if(_check_button!=NULL)
       _check_button->setChecked(value>0.5f); 
-    }
   }
 
   public slots:

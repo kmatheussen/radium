@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 #include "SoundProducer_proc.h"
 
+#include "../Qt/Qt_instruments_proc.h"
+
 #include "SoundPluginRegistry_proc.h"
 
 #include "Resampler_proc.h"
@@ -66,10 +68,14 @@ enum{
   EFF_D,
   EFF_S,
   EFF_R,
+  EFF_LOOP_ONOFF,
   EFF_NUM_EFFECTS
   };
 
 #define SAMPLES_PER_PEAK 64
+
+struct _Data;
+typedef struct _Data Data;
 
 typedef struct{
   float volume;
@@ -79,12 +85,14 @@ typedef struct{
   int loop_end;
 
   int ch;        // -1 means both channels.
-  float *data;
+  float *sound;
 
   float *min_peaks;
   float *max_peaks;
 
   double frequency_table[128];
+
+  Data *data;
 } Sample;
 
 // A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
@@ -124,7 +132,7 @@ typedef struct{
   const Sample *samples[MAX_NUM_SAMPLES];
 } Note;
 
-typedef struct _Data{
+struct _Data{
   float finetune; // -100 -> +100
   float note_adjust; // -6 -> +6      (must be float because of conversions)
   //float octave_adjust; // -10 -> +10. (must be float because of conversions)
@@ -132,6 +140,8 @@ typedef struct _Data{
   float startpos;
 
   float a,h,d,s,r;
+
+  bool loop_onoff;
 
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
@@ -155,7 +165,7 @@ typedef struct _Data{
   struct _Data *new_data;
   RSemaphore *signal_from_RT;
 
-} Data;
+};
 
 
 extern struct Root *root;
@@ -211,11 +221,11 @@ static long RT_src_callback(void *cb_data, float **data){
   const Sample *sample=voice->sample;
   int pos = voice->pos;
 
-  *data = &voice->sample->data[pos];
+  *data = &voice->sample->sound[pos];
 
   //printf("Supplying from sample %p. offset: %d. loop start: %d, loop end: %d\n",voice->sample->interleaved_samples,voice->pos,sample->loop_start,sample->loop_end);
 
-  if(sample->loop_end > sample->loop_start){
+  if(sample->data->loop_onoff==true && sample->loop_end > sample->loop_start){
     voice->pos = sample->loop_start;
 
     if(pos >= sample->loop_end) // just in case. not sure if this can happen
@@ -418,7 +428,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
 
     voice->sample = note->samples[i];
     
-    if(voice->sample->loop_end > voice->sample->loop_start)
+    if(data->loop_onoff==true && voice->sample->loop_end > voice->sample->loop_start)
       voice->pos=scale(data->startpos, // set startpos between 0 and loop_end
                        0,1,
                        0,voice->sample->loop_end);
@@ -517,7 +527,7 @@ static void apply_adsr_to_peak(Data *data, int64_t time, float *min_value, float
 
 static bool get_peak_sample(const Sample *sample, int64_t framenum, float *min_value, float *max_value){
 
-  if(framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
+  if(sample->data->loop_onoff==true && framenum>=sample->loop_end && sample->loop_end>sample->loop_start){
 
     framenum -= sample->loop_end; // i.e. how far after loop end are we?
 
@@ -567,7 +577,7 @@ static int get_peaks(struct SoundPlugin *plugin, int note_num, int ch, float das
     int i;
     for(i=0;i<MAX_NUM_SAMPLES;i++){
       Sample *sample=(Sample*)&data->samples[i];
-      if(sample->data!=NULL){
+      if(sample->sound!=NULL){
         if(sample->ch==1)
           return 2;
       }
@@ -631,6 +641,14 @@ static void update_peaks(SoundPlugin *plugin){
     RT_TRACKREALLINES_schedule_update_peak_tracks(plugin->patch);
 }
 
+static void set_loop_onoff(Data *data, bool loop_onoff){
+  data->loop_onoff = loop_onoff;
+}
+
+static bool get_loop_onoff(Data *data){
+  return data->loop_onoff;
+}
+
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
 
@@ -686,6 +704,11 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
                                   -10.99,10.99);
       break;
 #endif
+    case EFF_LOOP_ONOFF:
+      set_loop_onoff(data, value>=0.5f);
+      update_peaks(plugin);
+      break;
+
     default:
       RError("Unknown effect number %d\n",effect_num);
     }
@@ -727,6 +750,10 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       data->octave_adjust = value;
       break;
 #endif
+    case EFF_LOOP_ONOFF:
+      set_loop_onoff(data, value>=0.5f);
+      update_peaks(plugin);
+      break;
     default:
       RError("Unknown effect number %d\n",effect_num);
     }
@@ -772,6 +799,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
                    -10.99,10.99,
                    0,1);
 #endif
+    case EFF_LOOP_ONOFF:
+      return get_loop_onoff(data)==true?1.0f:0.0f;
+      break;
+
     default:
       RError("Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -798,6 +829,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     case EFF_OCTAVE_ADJUST:
       return data->octave_adjust;
 #endif
+    case EFF_LOOP_ONOFF:
+      return get_loop_onoff(data)==true?1.0f:0.0f;
+      break;
+
     default:
       RError("Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -930,7 +965,14 @@ static int read_8int_signed(FILE *file){
 }
 
 
+// Note, if start==-1 and end==-1, loop_start is set to 0 and loop_end is set to sample->num_frames, and loop_onoff is not set.
 static void set_legal_loop_points(Sample *sample, int start, int end){
+  if(start==-1 && end==-1){ 
+    sample->loop_start=0;
+    sample->loop_end=sample->num_frames;
+    return;
+  }
+
   if(start<0)
     start=0;
 
@@ -939,10 +981,11 @@ static void set_legal_loop_points(Sample *sample, int start, int end){
 
   if(end<=start){
     sample->loop_start=0;
-    sample->loop_end=0;
+    sample->loop_end=sample->num_frames;
   }else{
     sample->loop_start=start;
     sample->loop_end=end;
+    sample->data->loop_onoff = true;
   }
 }
 
@@ -1009,7 +1052,7 @@ static bool load_sample_with_libsndfile(Data *data, const char *filename){
     for(ch=0;ch<num_channels;ch++){
       Sample *sample     = (Sample*)&data->samples[ch];
       sample->num_frames = sf_info.frames;
-      sample->data       = malloc(sizeof(float)*sample->num_frames);
+      sample->sound       = malloc(sizeof(float)*sample->num_frames);
     }
 
     int interleaved_pos=0;
@@ -1018,7 +1061,7 @@ static bool load_sample_with_libsndfile(Data *data, const char *filename){
       for(ch=0;ch<sf_info.channels;ch++){
         if(ch<2){
           Sample *sample=(Sample*)&data->samples[ch];
-          sample->data[i] = samples[interleaved_pos];
+          sample->sound[i] = samples[interleaved_pos];
         }
         interleaved_pos++;
       }
@@ -1029,6 +1072,7 @@ static bool load_sample_with_libsndfile(Data *data, const char *filename){
 
       if((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
         printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
+        set_legal_loop_points(sample,-1,-1); // By default, don't loop, but if set, loop all.
         set_wav_loop_points(sample,filename);
       }
 
@@ -1061,10 +1105,10 @@ static void generate_peaks(Data *data){
   for(sample_num=0;sample_num<MAX_NUM_SAMPLES;sample_num++){
     Sample *sample=(Sample*)&data->samples[sample_num];
 
-    if(sample->data!=NULL && sample->data != prev){
-      prev = sample->data;
+    if(sample->sound!=NULL && sample->sound != prev){
+      prev = sample->sound;
 
-      float *samples = sample->data;
+      float *samples = sample->sound;
 
       int num_peaks = (sample->num_frames / SAMPLES_PER_PEAK)+10;
       sample->min_peaks = malloc(sizeof(float)*num_peaks);
@@ -1136,12 +1180,19 @@ static Data *create_data(float samplerate, Data *old_data, const char *filename,
     data->d = old_data->d;
     data->s = old_data->s;
     data->r = old_data->r;
+
   }
   
   data->samplerate = samplerate;
   data->resampler_type = resampler_type;
   data->filename = strdup(filename);
   data->instrument_number = instrument_number;
+
+  int i;
+  for(i=0;i<MAX_NUM_SAMPLES;i++){
+    Sample *sample=(Sample*)&data->samples[i];
+    sample->data = data;
+  }
 
   return data;
 }
@@ -1180,9 +1231,9 @@ static void delete_data(Data *data){
   for(i=0;i<MAX_NUM_SAMPLES;i++){
     Sample *sample=(Sample*)&data->samples[i];
 
-    if(sample->data!=NULL && sample->data != prev){
-      prev = sample->data;
-      free(sample->data);
+    if(sample->sound!=NULL && sample->sound != prev){
+      prev = sample->sound;
+      free(sample->sound);
       free(sample->min_peaks);
       free(sample->max_peaks);
     }
@@ -1208,6 +1259,9 @@ static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int
   if(load_sample(data,filename,instrument_number)==false)
     goto exit;
 
+  // Put loop_onoff into storage.
+  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
+
   if(SP_is_plugin_running(plugin)){
 
     PLAYER_lock();{  
@@ -1225,7 +1279,10 @@ static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int
   delete_data(old_data);
 
   update_peaks(plugin);
-  
+
+  if(plugin->patch!=NULL)
+    GFX_update_instrument_widget(plugin->patch); // Update "loop" button.
+
   success = true;
  exit:
   if(success==false)
@@ -1272,7 +1329,7 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, const char *filename, int s
     return;
   }
 
-  sf_writef_float(sndfile,sample->data,sample->num_frames);
+  sf_writef_float(sndfile,sample->sound,sample->num_frames);
 
   sf_close(sndfile);
 }
@@ -1306,10 +1363,19 @@ static const char *get_effect_name(const struct SoundPluginType *plugin_type, in
   case EFF_OCTAVE_ADJUST:
     return "Octave adjustment";      
 #endif
+  case EFF_LOOP_ONOFF:
+    return "Loop";
   default:
     RError("Unknown effect number %d\n",effect_num);
     return NULL;
   }
+}
+
+static int get_effect_format(const struct SoundPluginType *plugin_type, int effect_num){
+  if(effect_num==EFF_LOOP_ONOFF)
+    return EFFECT_FORMAT_BOOL;
+  else
+    return EFFECT_FORMAT_FLOAT;
 }
 
 static int get_effect_num(const struct SoundPluginType *plugin_type, const char *effect_name){
@@ -1351,13 +1417,13 @@ const char *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
 static SoundPluginType plugin_type = {
  type_name                : "Sample Player",
  name                     : "Sample Player",
- info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead (the Soundfont handling in Sample Player needs more care). However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
+ info                     : "Sample Player can load XI intruments, Soundfonts, and all types of sample formats supported by libsndfile. WAV files are looped if they have loops defined in the \"sampl\" chunk, or they have \"Loop Start\" and \"Loop End\" cue id's.\n\nSoundFonts often sound better when played with FluidSynth instead of the Sample Player. The Soundfont handling in Sample Player needs more care. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.",
  num_inputs               : 0,
  num_outputs              : 2,
  is_instrument            : true,
  note_handling_is_RT      : false,
  num_effects              : EFF_NUM_EFFECTS,
- get_effect_format        : NULL,
+ get_effect_format        : get_effect_format,
  get_effect_num           : get_effect_num,
  get_effect_name          : get_effect_name,
  effect_is_RT             : NULL,
