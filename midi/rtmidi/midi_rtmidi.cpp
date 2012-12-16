@@ -421,9 +421,9 @@ void MIDI_OS_SetInputPort(const char *portname){
       inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,std::string("Radium"));
       if(inport_alsa!=NULL){
         if(portnum==-1)
-          inport_alsa->openVirtualPort("in");
+          inport_alsa->openVirtualPort(portname);
         else
-          inport_alsa->openPort(portnum,"in");
+          inport_alsa->openPort(portnum,portname);
         inport_alsa->setCallback(mycallback,NULL);
       }
     }
