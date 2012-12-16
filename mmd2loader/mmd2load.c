@@ -67,6 +67,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/disk_load_proc.h"
 #include "../common/time_proc.h"
 
+typedef uint8_t UBYTE;
+
 struct TrackLine{
 	UBYTE note;
 	UBYTE instrument;

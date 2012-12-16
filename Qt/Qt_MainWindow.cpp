@@ -534,19 +534,37 @@ const char *GFX_GetSaveFileName(
     : ret;
 }
 
-static void show_message(const char *message){
-  QMessageBox msgBox;
+static int show_message(vector_t *buttons, const char *message){
         
-  num_users_of_keyboard++;
-  msgBox.setText(QString(message));
-  //msgBox.setInformativeText(message);
-  msgBox.setStandardButtons(QMessageBox::Ok);
-  num_users_of_keyboard--;
 
-  msgBox.exec();
+  if(buttons==NULL){
+
+    QMessageBox msgBox;
+    msgBox.setText(QString(message));
+    msgBox.setStandardButtons(QMessageBox::Ok);
+
+    num_users_of_keyboard++;
+    {
+      msgBox.exec();
+    }
+    num_users_of_keyboard--;
+
+    return 0;
+  }
+
+  RWarning("what?");
+
+  return 0;
+
+#if 0
+  VECTOR_FOR_EACH(const char *,button_text,buttons){
+    msgBox.addButton(button_text);
+  }END_VECTOR_FOR_EACH;
+#endif
 }
 
-void GFX_Message(const char *fmt,...){
+
+int GFX_Message(vector_t *buttons, const char *fmt,...){
   char message[1000];
   va_list argp;
   
@@ -554,8 +572,8 @@ void GFX_Message(const char *fmt,...){
   /*	vfprintf(stderr,fmt,argp); */
   vsprintf(message,fmt,argp);
   va_end(argp);
-
-  show_message(message);
+  
+  return show_message(buttons,message);
 }
 
 //#include "mgakk.cpp"

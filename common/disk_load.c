@@ -63,7 +63,7 @@ static bool Load(const char *filename){
 
 	dc.file=fopen(filename,"r");
 	if(dc.file==NULL){
-          GFX_Message("Could not open \"%s\" for loading\n",filename);
+          GFX_Message(NULL,"Could not open \"%s\" for loading\n",filename);
           return false;
 	}
 
@@ -71,9 +71,9 @@ static bool Load(const char *filename){
 	DC_fgets();
 
 	if(strcmp("RADIUM SONG",dc.ls)){
-		GFX_Message("First line in song was not 'RADIUM SONG', but '%s'\n",dc.ls);
-		fclose(dc.file);
-		return false;
+          GFX_Message(NULL,"First line in song was not 'RADIUM SONG', but '%s'\n",dc.ls);
+          fclose(dc.file);
+          return false;
 	}
 
 	disk_load_version=DC_LoadF();
@@ -87,7 +87,7 @@ static bool Load(const char *filename){
 	}
 
         if(disk_load_version>DISKVERSION+0.0001){
-          GFX_Message("You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
+          GFX_Message(NULL,"You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
           return false;
         }else{
           printf("Song diskVersion: %f\n",disk_load_version);

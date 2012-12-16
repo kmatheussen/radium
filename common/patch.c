@@ -216,7 +216,7 @@ static void remove_patch_from_song(struct Patch *patch){
 void PATCH_delete(struct Patch *patch){
   if(patch->instrument==get_audio_instrument())
     if(AUDIO_is_permanent_patch(patch)==true){
-      GFX_Message("Can not be deleted");
+      GFX_Message(NULL,"Can not be deleted");
       return;
     }
 

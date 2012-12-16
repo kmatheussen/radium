@@ -432,7 +432,7 @@ void MIDI_OS_SetInputPort(const char *portname){
 #ifdef FOR_WINDOWS
 
     if(portnum==-1)
-      GFX_Message("Unknown port %s",portname);
+      GFX_Message(NULL,"Unknown port %s",portname);
 
     else{
 

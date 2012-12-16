@@ -494,7 +494,8 @@ int radium_main(char *arg){
   root->song->tracker_windows->must_redraw = true;
 
   if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"1.9.13")){
-    GFX_Message("Note!\n\n"
+    GFX_Message(NULL,
+                "Note!\n\n"
                 "The default colors have changed. In case you have run Radium before, you might want to go to the Edit menu and select \"Set Default Colors\".\n\n"
                 "You will only see this message once.");
     SETTINGS_write_string("last_color_version","1.9.13");

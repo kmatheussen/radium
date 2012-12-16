@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static void show_nag_window(const char *message){
 #if FULL_VERSION==0
-  GFX_Message("%sThanks for trying this DEMO version of Radium!<br>"
+  GFX_Message(NULL,
+              "%sThanks for trying this DEMO version of Radium!<br>"
               "I hope you like the program."
               "<p>"
               "In this version, only two VST plugins can be used at the same time, and soundfile export is disabled.<p>"

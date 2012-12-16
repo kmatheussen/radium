@@ -94,20 +94,16 @@ public slots:
 
 #if FULL_VERSION==0
 
-    GFX_Message("Soundfile export is only available to subscribers.<p>"
+      GFX_Message(NULL,
+                  "Soundfile export is only available to subscribers.<p>"
                 "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
 
 #else // FULL_VERSION==0
 
 
       if(filename_edit->text()==QString("")){
-        QMessageBox msgBox;
-        
-        msgBox.setText("Filename was not specified.");
-        //msgBox.setInformativeText(error_string);
-        msgBox.setStandardButtons(QMessageBox::Ok);
-
-        msgBox.exec();
+        GFX_Message(NULL,
+                    "Filename was not specified.");
         return;
       }
       

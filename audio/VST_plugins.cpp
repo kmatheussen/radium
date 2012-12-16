@@ -886,7 +886,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
 #if FULL_VERSION==0
   if(num_running_plugins >= 2){
-    GFX_Message("Using more than 2 VST plugins is only available to subscribers.<p>"
+    GFX_Message(NULL,
+                "Using more than 2 VST plugins is only available to subscribers.<p>"
                 "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
     return NULL;
   }
@@ -894,13 +895,13 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   AEffect *aeffect = type_data->get_plugin_instance(VSTS_audioMaster);
   if (aeffect == NULL){
-    GFX_Message("Loading VST plugin %s failed",plugin_type->name);
+    GFX_Message(NULL,"Loading VST plugin %s failed",plugin_type->name);
     fprintf(stderr,"nope2\n");
     //abort();
     return NULL;
   }
   if (aeffect->magic != kEffectMagic){
-    GFX_Message("Loading VST plugin %s failed. It doesnt seem to be a VST plugin...",plugin_type->name);
+    GFX_Message(NULL,"Loading VST plugin %s failed. It doesn't seem to be a VST plugin...",plugin_type->name);
     fprintf(stderr,"nope3\n");
     //abort();
     return NULL;
