@@ -1,4 +1,10 @@
 
+Most important changes 1.9.20 -> 1.9.21:
+* Change system font to Lato Black (http://www.latofonts.com)
+* Fix crashes on Windows related to garbage collection.
+  (Could for instance happen when loading the demo song)
+
+
 Most important changes 1.9.19 -> 1.9.20:
 * alsa: Fix name of input port, not always use "in".
 * Menu option to GFX_message
