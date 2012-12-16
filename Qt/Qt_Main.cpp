@@ -501,6 +501,14 @@ int radium_main(char *arg){
     SETTINGS_write_string("last_color_version","1.9.13");
   }
 
+  if(strcmp(SETTINGS_read_string("last_system_font_version","0.0"),"1.9.21")){
+    GFX_Message(NULL,
+                "Note!\n\n"
+                "The default system font has changed. In case you have run Radium before, you might want to go to the Edit menu and select \"Set Default System Font\".\n\n"
+                "You will only see this message once.");
+    SETTINGS_write_string("last_system_font_version","1.9.21");
+  }
+
 
 
 #if USE_QT_VISUAL
@@ -621,7 +629,7 @@ int main(int argc, char **argv){
     QFontDatabase::addApplicationFont("fonts/NimbusSansL.ttf");
     QFontDatabase::addApplicationFont("fonts/DejaVuSansCondensed-Bold.ttf");
     QFontDatabase::addApplicationFont("fonts/DejaVuSansMono-Bold.ttf");
-
+    QFontDatabase::addApplicationFont("fonts/Lato-Bla.ttf");
 
     //QApplication::setFont(QFont("Lohit-Tamil",8));
     //QApplication::setFont(QFont("Nimbus Sans L",8));
