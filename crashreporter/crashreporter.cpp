@@ -113,10 +113,10 @@ int main(int argc, char **argv){
         break;
       case Report::THERE_IS_A_MESSAGE:
         {
-          fprintf(stderr,"Got message. Waiting 5 seconds.\n");
+          fprintf(stderr,"Got message. Waiting 3 seconds.\n");
 
           g_sharedmemory->unlock();
-          sleep(5);
+          sleep(3);
           g_sharedmemory->lock();
 
           fprintf(stderr,"Got message:\n%s\n",report->data);
@@ -143,7 +143,8 @@ int main(int argc, char **argv){
             box.setText("Radium Crashed. :((");
             box.setInformativeText("This crash will be automatically reported when you press \"SEND\".\n"
                                    "\n"
-                                   "The reporting is anonymous.\n"
+                                   "The report is sent anonymously, and will only be seen by the author of Radium.\n"
+                                   //"The reporting is anonymous, and the report will not be available to the public.\n"
                                    "\n"
                                    "Only the information in \"Show details...\" is sent.\n"
                                    );

@@ -631,37 +631,16 @@ int main(int argc, char **argv){
   qapplication=new MyApplication(argc,argv);
   g_qapplication = qapplication;
   
-  qapplication->setWindowIcon(QIcon("radium_256x256x32.png"));
+  qapplication->setWindowIcon(QIcon(QString(OS_get_program_path()) + OS_get_directory_separator() + "radium_256x256x32.png"));
 
   {
-#if 0
-    fprintf(stderr,"load1\n");
-    fflush(stderr);
-    if(-1==QFontDatabase::addApplicationFont("fonts/Lohit-Tamil.ttf"))
-      abort();
-    fprintf(stderr,"load2\n");
-    fflush(stderr);
-    if(-1==QFontDatabase::addApplicationFont("fonts/LiberationMono-Bold.ttf"))
-      abort();
-    fprintf(stderr,"load3\n");
-    fflush(stderr);
-    if(-1==QFontDatabase::addApplicationFont("fonts/NimbusSansL.ttf"))
-      abort();
-    fprintf(stderr,"load4\n");
-    fflush(stderr);
-    if(-1==QFontDatabase::addApplicationFont("fonts/VeraMono.ttf"))
-      abort();
-    fprintf(stderr,"load5\n");
-    fflush(stderr);
-#endif
-
-    QFontDatabase::addApplicationFont("fonts/LiberationMono-Bold.ttf");
-    QFontDatabase::addApplicationFont("fonts/VeraMono.ttf");
-    QFontDatabase::addApplicationFont("fonts/VeraMoBd.ttf");
-    QFontDatabase::addApplicationFont("fonts/NimbusSansL.ttf");
-    QFontDatabase::addApplicationFont("fonts/DejaVuSansCondensed-Bold.ttf");
-    QFontDatabase::addApplicationFont("fonts/DejaVuSansMono-Bold.ttf");
-    QFontDatabase::addApplicationFont("fonts/Lato-Bla.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/LiberationMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/VeraMono.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/VeraMoBd.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/NimbusSansL.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/DejaVuSansCondensed-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/DejaVuSansMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/Lato-Bla.ttf");
 
     //QApplication::setFont(QFont("Lohit-Tamil",8));
     //QApplication::setFont(QFont("Nimbus Sans L",8));
