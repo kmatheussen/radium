@@ -68,27 +68,29 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
   if(crash_already_reported()==false){
 
+    if(fork()==0){
 #define NUM_LINES 100
-    
-    void *buffer[NUM_LINES];
-    char **strings;
-    int nptrs = backtrace(buffer, NUM_LINES);
-    
-    strings = backtrace_symbols(buffer, nptrs);
-    
-    
-    if (strings != NULL) {
-      CRASHREPORTER_report_crash((const char**)strings,nptrs);
-      num_crash_reports++;
-    } else {
-      const char *message="no backtrace availabe\n";
-      CRASHREPORTER_report_crash(&message,1);
+      
+      void *buffer[NUM_LINES];
+      char **strings;
+      int nptrs = backtrace(buffer, NUM_LINES);
+      
+      strings = backtrace_symbols(buffer, nptrs);
+      
+      
+      if (strings != NULL) {
+        CRASHREPORTER_report_crash((const char**)strings,nptrs);
+        num_crash_reports++;
+      } else {
+        const char *message="no backtrace availabe\n";
+        CRASHREPORTER_report_crash(&message,1);
+      }
+
+      abort();
     }
-    
-    //abort();
   }
 
-  if((now_time-start_time) > 6000 || num_crash_reports>3){
+  if((now_time-start_time) > 3000 || num_crash_reports>3){
     CRASHREPORTER_close();
     abort();
   }
