@@ -559,12 +559,19 @@ int main(int argc, char **argv){
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
 
-  OS_set_argv0(argv[0]);
-
 #if 0
   printf("argv0: \"%s\"\n",argv[0]);
   return 0;
 #endif
+
+  QApplication::setDesktopSettingsAware(false);
+
+  // Create application here in order to get default style. (not recommended, but can't find another way)
+  qapplication=new MyApplication(argc,argv);
+  g_qapplication = qapplication;
+
+  OS_set_argv0(argv[0]);
+  
 
   CRASHREPORTER_init();
 
@@ -625,12 +632,6 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  QApplication::setDesktopSettingsAware(false);
-
-  // Create application here in order to get default style. (not recommended, but can't find another way)
-  qapplication=new MyApplication(argc,argv);
-  g_qapplication = qapplication;
-  
   qapplication->setWindowIcon(QIcon(QString(OS_get_program_path()) + OS_get_directory_separator() + "radium_256x256x32.png"));
 
   {

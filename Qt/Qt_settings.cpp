@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QString>
 #include <QFileInfo>
 #include <QLocale>
+#include <QCoreApplication>
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
@@ -33,9 +34,9 @@ const char *OS_get_directory_separator(void){
 static const char *g_program_path = NULL;
 
 void OS_set_argv0(char *argv0){
-  QFileInfo info(QDir::currentPath() + QString(OS_get_directory_separator()) + QString(argv0));
+  //QFileInfo info(QDir::currentPath() + QString(OS_get_directory_separator()) + QString(argv0));
 
-  QString path = info.canonicalPath();
+  QString path =  QCoreApplication::applicationDirPath(); //info.canonicalPath();
   g_program_path = (const char*)malloc(path.size() + 10);
   sprintf((char*)g_program_path,"%s",path.ascii());
   
