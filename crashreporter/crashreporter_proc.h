@@ -15,21 +15,23 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef OS_SETTINGS_PROC_H
-#define OS_SETTINGS_PROC_H
+#ifndef CRASHREPORTER_CRASHREPORTER_PROC_H
+#define CRASHREPORTER_CRASHREPORTER_PROC_H
 
-extern LANGSPEC void OS_set_loading_path(const char *filename);
-extern LANGSPEC void OS_unset_loading_path(void);
-
-extern LANGSPEC const char *OS_get_directory_separator(void);
-extern LANGSPEC void OS_set_argv0(char *argv0);
-extern LANGSPEC const char *OS_get_program_path(void);
-
-extern LANGSPEC bool OS_config_key_is_color(const char *key);
-extern LANGSPEC char *OS_get_config_filename(const char *key);
-
-extern LANGSPEC void OS_make_config_file_expired(const char *key);
-
-// locale independent.
-extern LANGSPEC double OS_get_double_from_string(const char *s);
+#ifdef __cplusplus
+extern "C"{
 #endif
+
+  void CRASHREPORTER_init(void);
+  void CRASHREPORTER_report_crash(const char **messages, int num_messages);
+  void CRASHREPORTER_close(void);
+
+  void CRASHREPORTER_posix_init(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif // CRASHREPORTER_CRASHREPORTER_PROC_H
+

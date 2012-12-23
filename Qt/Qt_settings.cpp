@@ -30,6 +30,22 @@ const char *OS_get_directory_separator(void){
   return ret;
 }
 
+static const char *g_program_path = NULL;
+
+void OS_set_argv0(char *argv0){
+  QFileInfo info(QDir::currentPath() + QString(OS_get_directory_separator()) + QString(argv0));
+
+  QString path = info.canonicalPath();
+  g_program_path = (const char*)malloc(path.size() + 10);
+  sprintf((char*)g_program_path,"%s",path.ascii());
+  
+  printf("current path: -%s-\n",g_program_path);
+}
+
+const char *OS_get_program_path(void){
+  return g_program_path;
+}
+
 bool OS_config_key_is_color(const char *key){
   return QString(key).contains("color", Qt::CaseInsensitive);
 }

@@ -48,6 +48,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/trackreallines_proc.h"
+#include "../common/OS_settings_proc.h"
+
+#include "../crashreporter/crashreporter_proc.h"
 
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -533,6 +536,8 @@ int radium_main(char *arg){
   posix_EndPlayer();
   //EndGuiThread();
 
+  CRASHREPORTER_close();
+
   return 0;
 
 }
@@ -541,13 +546,40 @@ extern "C" {
   static void finish(int sig){
     QApplication::quit();
   }
+#if 0
+  static void crash(int sig){
+    fprintf(stderr,"CRASH!!! %d\n",sig);
+    abort();
+  }
+#endif
   extern void initradium(void);
 }
 
 int main(int argc, char **argv){
+  //signal(SIGSEGV,crash);
+  //signal(SIGFPE,crash);
+
+  OS_set_argv0(argv[0]);
+
+#if 0
+  printf("argv0: \"%s\"\n",argv[0]);
+  return 0;
+#endif
+
+  CRASHREPORTER_init();
+
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
 
   printf("1: argv[0]: \"%s\"\n",argv[0]);
+
+#if 0
+  {
+    int i=0;
+    int k=5;
+    printf("%d\n",k/i);
+    sscanf("12345", "%i", (int *) (k=i));
+  }
+#endif
 
   if(argc>1 && !strcmp(argv[1],"--dont-load-new-song"))
     load_new_song=false;

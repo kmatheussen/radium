@@ -97,9 +97,9 @@ sed -i 's/Lato/Lato Black/' Dropbox/windows_dist/bin/config
 cd icons && ./create.sh && cd ..
 $CC windows/launcher.c icons/windows_icon.o -mwindows -Wall -Wl,--subsystem,windows -o Dropbox/windows_dist/radium.exe 
 
-if [ $BUILDTYPE == "RELEASE" ] ; then
-    i686-w64-mingw32-strip Dropbox/windows_dist/bin/radium.bin.exe
-fi
+#if [ $BUILDTYPE == "RELEASE" ] ; then
+#    i686-w64-mingw32-strip Dropbox/windows_dist/bin/radium.bin.exe
+#fi
 
 if echo $OS_OPTS |grep MEMORY_DEBUG 2>/dev/null ; then
     echo

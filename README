@@ -44,6 +44,9 @@ BUILD DEPENDENCIES FEDORA:
         ladspa-devel
         glib2-devel
         ladspa-calf-plugins
+        binutils-devel
+        libtool-ltdl
+        libtool
 
         (tested on Fedora 17 64 bit)
 
@@ -62,6 +65,8 @@ BUILD DEPENDENCIES UBUNTU:
       ladspa-sdk
       glib2-dev
       calf-plugins
+      binutils-dev
+      libc6-dev
 
       (Tested on Ubuntu 12 32 bit and 64 bit)
 

@@ -77,6 +77,19 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 
+echo "#include <bfd.h>"  >temp$$.c
+echo "#include <dlfcn.h>" >>temp$$.c
+echo "#include <libiberty.h>" >>temp$$.c
+echo "main(){return 0;}" >>temp$$.c
+echo >>temp$$.c
+if ! gcc temp$$.c -lbfd -ldl ; then
+    echo "Couldn't find -lbfd or -ldl, or header files for bfd, dlfcn or libiberty."
+    echo "On Fedora, binutils-devel, libtool-ltdl or libtool might be missing."
+    echo "On Debian, libc6-dev or binutils-dev might be missing."
+    exit 5
+fi
+rm temp$$.c
+
 if ! pkg-config --cflags sndfile >/dev/null 2>devnull ; then
     echo "libsndfile not found"
     exit 5

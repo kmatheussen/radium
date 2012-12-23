@@ -46,7 +46,7 @@ void SetMouseActionMainLPB(
 	if(newlpb==-1) return;
 
 	Undo_MainTempo(window,wblock);
-
+        //root=NULL; // test crash reporter
 	root->lpb=newlpb;
 
 	UpdateTempoTrackHeader_LPB(
