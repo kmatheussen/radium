@@ -1,4 +1,9 @@
 
+Most important changes 1.9.21 -> 1.9.22:
+* Crashreporter.
+* Linux version works properly without first cd into the path of the radium binary.
+
+
 Most important changes 1.9.20 -> 1.9.21:
 * Change system font to Lato Black (http://www.latofonts.com)
 * Fix crashes on Windows related to garbage collection.
