@@ -19,9 +19,9 @@ if grep ^export\ BUILDTYPE\= build_linux.sh |grep -v -e RELEASE ; then
     exit -1
 fi
 
-if grep ^export\ RTMIDI_CFLAGS\=  build_linux_common.sh |grep -v D__UNIX_JACK_  ; then
-    echo
-    echo "Missing RTMIDI_CFLAGS=-D__UNIX_JACK__ in build_linux_common.sh"
-    exit -1
-fi
+#if grep ^export\ RTMIDI_CFLAGS\=  build_linux_common.sh |grep -v D__UNIX_JACK_  ; then
+#    echo
+#    echo "Missing RTMIDI_CFLAGS=-D__UNIX_JACK__ in build_linux_common.sh"
+#    exit -1
+#fi
 
