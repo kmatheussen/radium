@@ -27,6 +27,7 @@ extern "C"{
   void CRASHREPORTER_close(void);
 
   void CRASHREPORTER_posix_init(void);
+  void CRASHREPORTER_windows_init(void);
 
 #ifdef __cplusplus
 }

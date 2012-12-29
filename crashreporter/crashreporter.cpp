@@ -229,6 +229,7 @@ void CRASHREPORTER_init(void){
 
 #if defined(FOR_WINDOWS)
   system(QString(QString("start ") + OS_get_program_path() + "\\crashreporter " + key + " /B").toAscii());
+  CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX) || defined(FOR_MACOSX)
   system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + "&").toAscii());
