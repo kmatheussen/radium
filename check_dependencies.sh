@@ -77,7 +77,9 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 
-echo "#include <bfd.h>"  >temp$$.c
+echo "#define PACKAGE 1" >temp$$.c
+echo "#define PACKAGE_VERSION 1" >>temp$$.c
+echo "#include <bfd.h>"  >>temp$$.c
 echo "#include <dlfcn.h>" >>temp$$.c
 echo "#include <libiberty.h>" >>temp$$.c
 echo "main(){return 0;}" >>temp$$.c

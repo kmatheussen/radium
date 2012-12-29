@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
 
+#define PACKAGE 1 // workaround for bug in libbfd
+#define PACKAGE_VERSION 1 // workaround for bug in libbfd
 #include "backtrace-symbols.c"
 
 #include <pthread.h>
