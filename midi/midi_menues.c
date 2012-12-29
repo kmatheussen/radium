@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
+#include "../../common/instruments_proc.h"
 
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
@@ -37,7 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Patch *g_currpatch;
 
-#define APP_GetVars() struct Patch *patch=g_currpatch;
+#define APP_GetVars()                                            \
+  struct Patch *patch=g_currpatch;                               \
+  do{                                                            \
+    if(patch==NULL || patch->instrument!=get_MIDI_instrument()) \
+      return 0;                                                  \
+  }while(0);
 
 
 
@@ -52,7 +58,6 @@ int MIDIResetAllControllers( void )
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
 	midi_port=patchdata->midi_port;
 
@@ -75,7 +80,6 @@ int MIDILocalKeyboardOn( void )
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
 	midi_port=patchdata->midi_port;
 
@@ -95,7 +99,6 @@ int MIDILocalKeyboardOff( void )
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
 	midi_port=patchdata->midi_port;
 
@@ -115,7 +118,6 @@ int MIDIAllNotesOff( void )
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
 	midi_port=patchdata->midi_port;
 
@@ -136,7 +138,6 @@ int MIDIAllSoundsOff( void )
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(patch==NULL) return 0;
 	patchdata=(struct PatchData *)patch->patchdata;
 	midi_port=patchdata->midi_port;
 
