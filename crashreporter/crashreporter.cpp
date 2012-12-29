@@ -38,6 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "crashreporter_proc.h"
 
+#if defined(FOR_WINDOWS)
+#  include <windows.h>
+#  define mysleep(ms) Sleep(ms)
+#else
+#  define mysleep(ms) usleep(ms*1000);
+#endif
 
 #define MESSAGE_LEN (1024*32)
 
@@ -65,6 +71,7 @@ static void exit_handler(int sig){
   abort();
 }
 
+#if defined(FOR_LINUX)
 static QString string_to_file(QString filename){
   QFile file(filename);
   bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -76,6 +83,7 @@ static QString string_to_file(QString filename){
     }
   return "";
 }
+#endif
 
 int main(int argc, char **argv){
   QString key = argv[1];
@@ -101,7 +109,7 @@ int main(int argc, char **argv){
   QString tosend = VERSION "\n\n";
 
   while(do_exit==false){
-    sleep(1);
+    mysleep(1000);
     
     if(g_sharedmemory->lock()==false){
       fprintf(stderr,"Crashreporter: Couldn't lock...\n");
@@ -116,7 +124,7 @@ int main(int argc, char **argv){
           fprintf(stderr,"Got message. Waiting 3 seconds.\n");
 
           g_sharedmemory->unlock();
-          sleep(3);
+          mysleep(3000);
           g_sharedmemory->lock();
 
           fprintf(stderr,"Got message:\n%s\n",report->data);
@@ -175,7 +183,7 @@ int main(int argc, char **argv){
 #endif
 
               g_sharedmemory->unlock();
-              sleep(50);
+              mysleep(50000);
               g_sharedmemory->lock();
             }
           }
@@ -216,11 +224,11 @@ void CRASHREPORTER_init(void){
   g_sharedmemory = new QSharedMemory(key);
 
   if(g_sharedmemory->create(sizeof(Report))==false){
-    fprintf(stderr,"Crashreporter: Couldn't attach... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
+    fprintf(stderr,"Crashreporter: Couldn't create... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
   }
 
 #if defined(FOR_WINDOWS)
-  system(QString(QString("start ") + OS_get_program_path() + "\crashreporter " + key + " /B").toAscii());
+  system(QString(QString("start ") + OS_get_program_path() + "\\crashreporter " + key + " /B").toAscii());
 
 #elif defined(FOR_LINUX) || defined(FOR_MACOSX)
   system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + "&").toAscii());
@@ -231,7 +239,7 @@ void CRASHREPORTER_init(void){
 
 #endif
 
-  sleep(1);
+  mysleep(1000);
 }
 
 void CRASHREPORTER_report_crash(const char **messages, int num_messages){

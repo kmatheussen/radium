@@ -29,6 +29,7 @@ extern "C"{
 
 #include <qfiledialog.h>
 
+extern bool is_starting_up;
 
 
 #if USE_GTK_VISUAL
@@ -89,6 +90,7 @@ static HWND gtk_hwnd = NULL;
 #if FOR_WINDOWS
 static bool sat=false;
 #endif
+
 
 class MyEditorWidgetParent : public EditorWidgetParent{
   //Q_OBJECT;
@@ -319,6 +321,9 @@ public:
 
   // Want the wheel to work from everywhere.
   void wheelEvent(QWheelEvent *qwheelevent){
+    if(is_starting_up==true)
+      return;
+
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
     int num_lines = R_ABS(qwheelevent->delta()/120);    

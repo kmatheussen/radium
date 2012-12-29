@@ -90,15 +90,20 @@ extern struct Root *root;
 
 int num_users_of_keyboard = 0;
 
+bool is_starting_up = true;
 
 class MyApplication : public QApplication{
 public:
+
   MyApplication(int &argc,char **argv);
 
 protected:
 
 #ifdef __linux__
   bool x11EventFilter(XEvent *event){
+    if(is_starting_up==true)
+      return false;
+
     bool ret = X11_KeyboardFilter(event);
 
     if(ret==true)
@@ -113,6 +118,9 @@ protected:
 
 #ifdef FOR_WINDOWS
   bool 	winEventFilter ( MSG * msg, long * result ){
+    if(is_starting_up==true)
+      return false;
+
     bool ret = W_KeyboardFilter(msg);
 
     if(ret==true)
@@ -124,6 +132,9 @@ protected:
 
 #ifdef FOR_MACOSX
   bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
+    if(is_starting_up==true)
+      return false;
+
     bool ret = cocoa_KeyboardFilter(event);
 
     if(ret==true)
@@ -513,6 +524,7 @@ int radium_main(char *arg){
   }
 
 
+  is_starting_up=false;
 
 #if USE_QT_VISUAL
   qapplication->exec();

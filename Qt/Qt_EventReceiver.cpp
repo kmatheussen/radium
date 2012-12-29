@@ -61,7 +61,13 @@ extern LANGSPEC void P2MUpdateSongPosCallBack(void);
 
 extern PlayerClass *pc;
 
+extern bool is_starting_up;
+
+
 void EditorWidget::customEvent(QEvent *e){
+  if(is_starting_up==true)
+    return;
+
   //printf("Got customEvent\n");
   DO_GFX({
       if(pc->isplaying)
@@ -97,6 +103,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
+  if(is_starting_up==true)
+    return;
 
   if(window->must_redraw==true){
     //printf("** Drawing up everything!\n");
@@ -123,6 +131,9 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 void EditorWidget::updateEditor(){
+  if(is_starting_up==true)
+    return;
+
   if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0)
     update();
 }
@@ -172,6 +183,9 @@ const unsigned int Qt2SubId[0x2000]={
 
 void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
   RWarning("keyPressEvent should not be called.\n");
+
+  if(is_starting_up==true)
+    return;
 
   printf("ascii    : %d\n",qkeyevent->ascii());
   printf("key      : %d\n",qkeyevent->key());
@@ -255,6 +269,8 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 #if USE_QT_VISUAL
 
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
+  if(is_starting_up==true)
+    return;
 
   if(qmouseevent->button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEDOWN;
@@ -278,6 +294,9 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
 
 void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
+  if(is_starting_up==true)
+    return;
+
   if(qmouseevent->button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEUP;
   }else{
@@ -297,6 +316,9 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 }
 
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
+  if(is_starting_up==true)
+    return;
+
   tevent.ID=TR_MOUSEMOVE;
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
@@ -312,6 +334,9 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
 
 #if USE_GTK_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
+  if(is_starting_up==true)
+    return;
+
   printf("got resize event\n");
   this->window->width=this->get_editor_width();
   this->window->height=this->get_editor_height();
@@ -332,6 +357,8 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->window->width=this->get_editor_width();
   this->window->height=this->get_editor_height();
 
+  if(is_starting_up==true)
+    return;
 
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
