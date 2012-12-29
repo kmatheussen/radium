@@ -321,7 +321,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a
-	$(LINKER) $(OBJ) -o bin/radium -g -lm -lbfd -ldl $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
 
 # `$(PKG) --libs fluidsynth`
 #	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
@@ -1507,7 +1507,7 @@ SoundfileSaver.o: audio/SoundfileSaver.c
 
 bin/crashreporter: crashreporter/crashreporter.cpp
 	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" `$(PKG) --cflags QtGui` `$(PKG) --cflags QtNetwork` -o crashbin.o
-	$(LINKER) crashbin.o -o bin/crashreporter `$(PKG) --libs QtGui` `$(PKG) --libs QtNetwork` -lrt
+	$(LINKER) crashbin.o -o bin/crashreporter `$(PKG) --libs QtGui` `$(PKG) --libs QtNetwork`
 	rm crashbin.o
 
 crashreporter.o: crashreporter/crashreporter.cpp

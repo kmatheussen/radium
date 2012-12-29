@@ -73,9 +73,8 @@ export OBJ_MACOSX=""
 
 mingw32-make radium $@
 
-cp bin/radium mingw/radium/radium.exe
-cp bin/radium temp/bin/radium.exe
 cp bin/radium Dropbox/windows_dist/bin/radium.bin.exe
+cp bin/crashreporter Dropbox/windows_dist/bin/crashreporter.exe
 
 cp bin/*.py Dropbox/windows_dist/bin/
 cp bin/*.pyc Dropbox/windows_dist/bin/
