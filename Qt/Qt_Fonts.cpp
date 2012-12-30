@@ -163,6 +163,10 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   }
   SETTINGS_unset_custom_configfile();
 
+  SETTINGS_write_string("font",font.toString().ascii());
+  SETTINGS_write_string("font_style",font.styleName().ascii()); // toString doesn't seem to cover this.
+
+
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font = font;
   editor->setFont(editor->font);
