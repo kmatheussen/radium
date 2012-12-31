@@ -121,10 +121,10 @@ int main(int argc, char **argv){
         break;
       case Report::THERE_IS_A_MESSAGE:
         {
-          fprintf(stderr,"Got message. Waiting 3 seconds.\n");
+          fprintf(stderr,"Got message. Waiting 2 seconds.\n");
 
           g_sharedmemory->unlock();
-          mysleep(3000);
+          mysleep(2000);
           g_sharedmemory->lock();
 
           fprintf(stderr,"Got message:\n%s\n",report->data);
@@ -157,6 +157,21 @@ int main(int argc, char **argv){
                                    "Only the information in \"Show details...\" is sent.\n"
                                    );
             box.setDetailedText(tosend);
+
+            box.show();
+
+            box.activateWindow();
+            box.raise();
+            //box.stackUnder(box.parentWidget());
+            box.setWindowFlags(Qt::WindowStaysOnTopHint);
+            box.setWindowModality(Qt::ApplicationModal);
+
+#ifdef FOR_WINDOWS
+            HWND wnd=box.winId();
+            SetFocus(wnd);
+            SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+#endif
+            
             int ret = box.exec();
 
             if(ret==QMessageBox::AcceptRole){
@@ -228,7 +243,27 @@ void CRASHREPORTER_init(void){
   }
 
 #if defined(FOR_WINDOWS)
-  system(QString(QString("start ") + OS_get_program_path() + "\\crashreporter " + key + " /B").toAscii());
+  //system(QString(QString("start ") + OS_get_program_path() + "\\crashreporter " + key + " /B").toAscii());
+
+#if 0
+  QString command=QString("start /B ") + OS_get_program_path() + "\\crashreporter.exe " + key;
+  //system(command.toAscii());
+#endif
+  QString command=QString(OS_get_program_path()) + "\\crashreporter.exe";
+
+  char *c = strdup(command.toAscii());
+  char *k = strdup(key.toAscii());
+
+  if(_spawnl( _P_DETACH, c, c, k, NULL)==-1){
+    //if(_spawnl( _P_NOWAIT, c, c, k, NULL)==-1){
+    //if(_spawnl( _P_NOWAIT, "start", "start", "/B", c, k, NULL)==-1){
+    fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",c,k);
+    Sleep(3000);
+  }
+
+
+  //execv(args[0],args);
+
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX) || defined(FOR_MACOSX)
@@ -252,14 +287,17 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
     Report *report = (Report*)g_sharedmemory->data();
 
     for(int i=0;i<num_messages;i++){
-    
-      snprintf(report->data+pos,bytes_left,"%d: %s\n",i,messages[i]);
+
+      if(num_messages>1)
+        snprintf(report->data+pos,bytes_left,"%d: %s\n",i,messages[i]);
+      else
+        snprintf(report->data+pos,bytes_left,"%s\n",messages[i]);
 
       pos=strlen(report->data);
       bytes_left = MESSAGE_LEN - pos - 1;
     }
 
-    {
+    if(num_messages!=1){
       snprintf(report->data+pos,bytes_left,"\n\n");
       pos=strlen(report->data);
       bytes_left = MESSAGE_LEN - pos - 1;
@@ -271,6 +309,10 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
 }
 
 void CRASHREPORTER_close(void){
+#if defined(FOR_WINDOWS)
+  CRASHREPORTER_windows_close();
+#endif
+
   Report *report = (Report*)g_sharedmemory->data();
 
   if(g_sharedmemory->lock()==true){

@@ -191,6 +191,57 @@ void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, floa
   }
 }
 
+#if 1
+// Something in get_pan_vals_vector crashes on windows XP. It's hard to reproduce, but doesn't seem to happen very often (or at all) if the function is not inlined.
+static Panvals das_get_pan_vals_vector(float pan, int num_source_channels){
+  Panvals p;
+
+  const float sqrt2              = 1.414213562373095;
+  const float pan_scaleval       = 2.0f-(2*sqrt2);
+
+  if(num_source_channels==1){
+
+    float x=scale(pan,-1,1,0,1);
+    p.vals[0][0] = ((1.0f-x)*((pan_scaleval*(1.0f-x))+(1.0f-pan_scaleval)));
+    p.vals[0][1] = x * ( (pan_scaleval*x) + (1.0f-pan_scaleval));
+
+  }else{
+
+    if(pan<=0){
+      //fprintf(stderr,"p1\n");
+      p.vals[0][0] = 1.0f;
+      p.vals[0][1] = 0.0f;
+      
+      pan=scale(pan,-1,0,-1,1);
+      float x=scale(pan,-1,1,0,1);
+      //fprintf(stderr,"p2\n");
+      p.vals[1][0] = ((1.0f-x)*((pan_scaleval*(1.0f-x))+(1.0f-pan_scaleval)));
+      //fprintf(stderr,"p3\n");
+      p.vals[1][1] = x * ( (pan_scaleval*x) + (1.0f-pan_scaleval));
+      //fprintf(stderr,"p4\n");
+      //System.out.println("l/r/pan "+p.vals[1][0]+" "+p.vals[1][1]+" "+pan);
+
+    }else{
+      //fprintf(stderr,"p5\n");
+      pan=scale(pan,0,1,-1,1);
+      float x=scale(pan,-1,1,0,1);
+      //fprintf(stderr,"p6\n");
+      p.vals[0][0] = ((1.0f-x)*((pan_scaleval*(1.0f-x))+(1.0f-pan_scaleval)));
+      //fprintf(stderr,"p7\n");
+      p.vals[0][1] = x * ( (pan_scaleval*x) + (1.0f-pan_scaleval));
+      //fprintf(stderr,"p8\n");
+
+      p.vals[1][0] = 0.0f;
+      p.vals[1][1] = 1.0f;
+      //System.out.println("l/r/pan "+p.vals[0][0]+" "+p.vals[0][1]+" "+pan);
+
+    }
+  }
+
+  return p;
+}
+#endif
+
 // Think I found this pan calculation method in the ardour source many years ago.
 // TODO: Optimize panning when smoothing is necessary.
 void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_frames){
@@ -202,8 +253,11 @@ void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_f
 
     if(is_smoothing_necessary(smooth)==true){
 
-      Panvals pan_start = get_pan_vals_vector(scale(smooth->values[0],0,1,-1,1),2);
-      Panvals pan_end   = get_pan_vals_vector(scale(smooth->values[num_frames-1],0,1,-1,1),2);
+      //fprintf(stderr,"s1\n");
+      Panvals pan_start = das_get_pan_vals_vector(scale(smooth->values[0],0,1,-1,1),2);
+      //fprintf(stderr,"s2\n");
+      Panvals pan_end   = das_get_pan_vals_vector(scale(smooth->values[num_frames-1],0,1,-1,1),2);
+      //fprintf(stderr,"s3\n");
 
       for(i=0;i<num_frames;i++) {
         float sound0i = sound0[i];

@@ -53,23 +53,29 @@ static inline Panvals get_pan_vals_vector(float pan, int num_source_channels){
   }else{
 
     if(pan<=0){
-
+      //fprintf(stderr,"p1\n");
       p.vals[0][0] = 1.0f;
       p.vals[0][1] = 0.0f;
       
       pan=scale(pan,-1,0,-1,1);
       float x=scale(pan,-1,1,0,1);
+      //fprintf(stderr,"p2\n");
       p.vals[1][0] = ((1.0f-x)*((pan_scaleval*(1.0f-x))+(1.0f-pan_scaleval)));
+      //fprintf(stderr,"p3\n");
       p.vals[1][1] = x * ( (pan_scaleval*x) + (1.0f-pan_scaleval));
+      //fprintf(stderr,"p4\n");
       //System.out.println("l/r/pan "+p.vals[1][0]+" "+p.vals[1][1]+" "+pan);
 
     }else{
-
+      //fprintf(stderr,"p5\n");
       pan=scale(pan,0,1,-1,1);
       float x=scale(pan,-1,1,0,1);
+      //fprintf(stderr,"p6\n");
       p.vals[0][0] = ((1.0f-x)*((pan_scaleval*(1.0f-x))+(1.0f-pan_scaleval)));
+      //fprintf(stderr,"p7\n");
       p.vals[0][1] = x * ( (pan_scaleval*x) + (1.0f-pan_scaleval));
-      
+      //fprintf(stderr,"p8\n");
+
       p.vals[1][0] = 0.0f;
       p.vals[1][1] = 1.0f;
       //System.out.println("l/r/pan "+p.vals[0][0]+" "+p.vals[0][1]+" "+pan);

@@ -47,7 +47,7 @@ export OS_OPTS="$OS_OPTS -DFOR_WINDOWS -I`pwd`/mingw/include/ -DUSE_VESTIGE=0 -I
 # MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
 #export OS_OPTS="$OS_OPTS -DMEMORY_DEBUG"
 
-export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib `$PKG --libs lrdf` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` -Lmingw/lib/ /home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd/libbfd.a /home/kjetil/radium-qt4/mingw/binutils-2.23.1/libiberty/libiberty.a -lz -limagehlp"
+export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib `$PKG --libs lrdf` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` /home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd/libbfd.a /home/kjetil/radium-qt4/mingw/binutils-2.23.1/libiberty/libiberty.a -lz -limagehlp"
 
 # -msse -msse2 -msse3 -mfpmath=sse -ffast-math
 
@@ -56,8 +56,10 @@ export RTMIDI_CFLAGS="-D__WINDOWS_MM__ -D__RTMIDI_DEBUG__"
 #export RTMIDI_LDFLAGS="-lwinmm /usr/i686-w64-mingw32/sys-root/mingw/lib/libksuser.a -lsetupapi"
 export RTMIDI_LDFLAGS="-lwinmm -lsetupapi"
 
+
 if [ $BUILDTYPE = "RELEASE" ] ; then
-    export OS_LDFLAGS="$OS_LDFLAGS -mwindows"
+    export CRASHREPORTER_OPTS="-mwindows"
+    export OS_LDFLAGS="-mwindows $OS_LDFLAGS"
 fi
 
 export OBJ_X11=""

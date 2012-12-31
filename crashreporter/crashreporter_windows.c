@@ -1,5 +1,308 @@
+#ifdef FOR_WINDOWS
+
+#include <windows.h>
+#include <excpt.h>
+#include <imagehlp.h>
+#include <bfd.h>
+#include <psapi.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdbool.h>
+
+// cpuid.cpp 
+// processor: x86, x64
+// Use the __cpuid intrinsic to get information about a CPU
+
+#include <stdio.h>
+#include <string.h>
+#include <intrin.h>
+
+
+#include "crashreporter_proc.h"
+
+#define NUM_BACKTRACE 62 // More than 63, and capturestackbacktrace won't work on xp and 2003.
+
+struct output_buffer;
+static void output_print(struct output_buffer *ob, const char * format, ...);
+
+#define printf_s output_print
+
 /*
-  99.9% of this is written by Cloud Wu.
+  Code for extracting CPU info is written by microsoft: http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.80).aspx
+  Code for backtracing is written by Cloud Wu: http://code.google.com/p/backtrace-mingw/source/browse/trunk/backtrace.c?r=2
+*/
+
+
+
+static const char* szFeatures[] =
+{
+    "x87 FPU On Chip",
+    "Virtual-8086 Mode Enhancement",
+    "Debugging Extensions",
+    "Page Size Extensions",
+    "Time Stamp Counter",
+    "RDMSR and WRMSR Support",
+    "Physical Address Extensions",
+    "Machine Check Exception",
+    "CMPXCHG8B Instruction",
+    "APIC On Chip",
+    "Unknown1",
+    "SYSENTER and SYSEXIT",
+    "Memory Type Range Registers",
+    "PTE Global Bit",
+    "Machine Check Architecture",
+    "Conditional Move/Compare Instruction",
+    "Page Attribute Table",
+    "Page Size Extension",
+    "Processor Serial Number",
+    "CFLUSH Extension",
+    "Unknown2",
+    "Debug Store",
+    "Thermal Monitor and Clock Ctrl",
+    "MMX Technology",
+    "FXSAVE/FXRSTOR",
+    "SSE Extensions",
+    "SSE2 Extensions",
+    "Self Snoop",
+    "Hyper-threading Technology",
+    "Thermal Monitor",
+    "Unknown4",
+    "Pend. Brk. EN."
+};
+
+static void print_cpuinfo(struct output_buffer *ob){
+  {
+    char CPUString[0x20];
+    char CPUBrandString[0x40];
+    int CPUInfo[4] = {-1};
+    int nSteppingID = 0;
+    int nModel = 0;
+    int nFamily = 0;
+    int nProcessorType = 0;
+    int nExtendedmodel = 0;
+    int nExtendedfamily = 0;
+    int nBrandIndex = 0;
+    int nCLFLUSHcachelinesize = 0;
+    int nAPICPhysicalID = 0;
+    int nFeatureInfo = 0;
+    int nCacheLineSize = 0;
+    int nL2Associativity = 0;
+    int nCacheSizeK = 0;
+    //int nRet = 0;
+    unsigned    nIds, nExIds, i;
+    bool    bSSE3NewInstructions = false;
+    bool    bMONITOR_MWAIT = false;
+    bool    bCPLQualifiedDebugStore = false;
+    bool    bThermalMonitor2 = false;
+
+
+    // __cpuid with an InfoType argument of 0 returns the number of
+    // valid Ids in CPUInfo[0] and the CPU identification string in
+    // the other three array elements. The CPU identification string is
+    // not in linear order. The code below arranges the information 
+    // in a human readable form.
+    __cpuid(CPUInfo, 0);
+    nIds = CPUInfo[0];
+    memset(CPUString, 0, sizeof(CPUString));
+
+    char *gakk1 = (char*)&CPUInfo[1];
+    char *gakk2 = (char*)&CPUInfo[2];
+    char *gakk3 = (char*)&CPUInfo[3];
+
+    CPUString[0]=gakk1[0];
+    CPUString[1]=gakk1[1];
+    CPUString[2]=gakk1[2];
+    CPUString[3]=gakk1[3];
+    CPUString[4]=gakk2[0];
+    CPUString[5]=gakk2[1];
+    CPUString[6]=gakk2[2];
+    CPUString[7]=gakk2[3];
+    CPUString[8]=gakk3[0];
+    CPUString[9]=gakk3[1];
+    CPUString[10]=gakk3[2];
+    CPUString[11]=gakk3[3];
+
+#if 0
+    *((int*)CPUString) = CPUInfo[1];
+    *((int*)(CPUString+4)) = CPUInfo[3];
+    *((int*)(CPUString+8)) = CPUInfo[2];
+#endif
+    
+    // Get the information associated with each valid Id
+    for (i=0; i<=nIds; ++i)
+      {
+        __cpuid(CPUInfo, i);
+        printf_s(ob,"\nFor InfoType %d", i); 
+        printf_s(ob,"CPUInfo[0] = 0x%x", CPUInfo[0]);
+        printf_s(ob,"CPUInfo[1] = 0x%x", CPUInfo[1]);
+        printf_s(ob,"CPUInfo[2] = 0x%x", CPUInfo[2]);
+        printf_s(ob,"CPUInfo[3] = 0x%x", CPUInfo[3]);
+
+        // Interpret CPU feature information.
+        if  (i == 1)
+          {
+            nSteppingID = CPUInfo[0] & 0xf;
+            nModel = (CPUInfo[0] >> 4) & 0xf;
+            nFamily = (CPUInfo[0] >> 8) & 0xf;
+            nProcessorType = (CPUInfo[0] >> 12) & 0x3;
+            nExtendedmodel = (CPUInfo[0] >> 16) & 0xf;
+            nExtendedfamily = (CPUInfo[0] >> 20) & 0xff;
+            nBrandIndex = CPUInfo[1] & 0xff;
+            nCLFLUSHcachelinesize = ((CPUInfo[1] >> 8) & 0xff) * 8;
+            nAPICPhysicalID = (CPUInfo[1] >> 24) & 0xff;
+            bSSE3NewInstructions = (CPUInfo[2] & 0x1) || false;
+            bMONITOR_MWAIT = (CPUInfo[2] & 0x8) || false;
+            bCPLQualifiedDebugStore = (CPUInfo[2] & 0x10) || false;
+            bThermalMonitor2 = (CPUInfo[2] & 0x100) || false;
+            nFeatureInfo = CPUInfo[3];
+          }
+      }
+
+    // Calling __cpuid with 0x80000000 as the InfoType argument
+    // gets the number of valid extended IDs.
+    __cpuid(CPUInfo, 0x80000000);
+    nExIds = CPUInfo[0];
+    memset(CPUBrandString, 0, sizeof(CPUBrandString));
+
+    // Get the information associated with each extended ID.
+    for (i=0x80000000; i<=nExIds; ++i)
+      {
+        __cpuid(CPUInfo, i);
+        printf_s(ob,"\nFor InfoType %x", i); 
+        printf_s(ob,"CPUInfo[0] = 0x%x", CPUInfo[0]);
+        printf_s(ob,"CPUInfo[1] = 0x%x", CPUInfo[1]);
+        printf_s(ob,"CPUInfo[2] = 0x%x", CPUInfo[2]);
+        printf_s(ob,"CPUInfo[3] = 0x%x", CPUInfo[3]);
+
+        // Interpret CPU brand string and cache information.
+        if  (i == 0x80000002)
+          memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
+        else if  (i == 0x80000003)
+          memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
+        else if  (i == 0x80000004)
+          memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
+        else if  (i == 0x80000006)
+          {
+            nCacheLineSize = CPUInfo[2] & 0xff;
+            nL2Associativity = (CPUInfo[2] >> 12) & 0xf;
+            nCacheSizeK = (CPUInfo[2] >> 16) & 0xffff;
+          }
+      }
+
+    // Display all the information in user-friendly format.
+
+    printf_s(ob,"\nCPU String: %s", CPUString);
+
+    if  (nIds >= 1)
+      {
+        if  (nSteppingID)
+          printf_s(ob,"Stepping ID = %d", nSteppingID);
+        if  (nModel)
+          printf_s(ob,"Model = %d", nModel);
+        if  (nFamily)
+          printf_s(ob,"Family = %d", nFamily);
+        if  (nProcessorType)
+          printf_s(ob,"Processor Type = %d", nProcessorType);
+        if  (nExtendedmodel)
+          printf_s(ob,"Extended model = %d", nExtendedmodel);
+        if  (nExtendedfamily)
+          printf_s(ob,"Extended family = %d", nExtendedfamily);
+        if  (nBrandIndex)
+          printf_s(ob,"Brand Index = %d", nBrandIndex);
+        if  (nCLFLUSHcachelinesize)
+          printf_s(ob,"CLFLUSH cache line size = %d",
+                   nCLFLUSHcachelinesize);
+        if  (nAPICPhysicalID)
+          printf_s(ob,"APIC Physical ID = %d", nAPICPhysicalID);
+
+        if  (nFeatureInfo || bSSE3NewInstructions ||
+             bMONITOR_MWAIT || bCPLQualifiedDebugStore ||
+             bThermalMonitor2)
+          {
+            printf_s(ob,"\nThe following features are supported:");
+
+            if  (bSSE3NewInstructions)
+              printf_s(ob,"\tSSE3 New Instructions");
+            if  (bMONITOR_MWAIT)
+              printf_s(ob,"\tMONITOR/MWAIT");
+            if  (bCPLQualifiedDebugStore)
+              printf_s(ob,"\tCPL Qualified Debug Store");
+            if  (bThermalMonitor2)
+              printf_s(ob,"\tThermal Monitor 2");
+
+            i = 0;
+            nIds = 1;
+            while (i < (sizeof(szFeatures)/sizeof(const char*)))
+              {
+                if  (nFeatureInfo & nIds)
+                  {
+                    printf_s(ob,"\t");
+                    printf_s(ob,szFeatures[i]);
+                    printf_s(ob,"");
+                  }
+
+                nIds <<= 1;
+                ++i;
+              }
+          }
+      }
+
+    if  (nExIds >= 0x80000004)
+      printf_s(ob,"\nCPU Brand String: %s", CPUBrandString);
+
+    if  (nExIds >= 0x80000006)
+      {
+        printf_s(ob,"Cache Line Size = %d\n", nCacheLineSize);
+        printf_s(ob,"L2 Associativity = %d\n", nL2Associativity);
+        printf_s(ob,"Cache Size = %dK\n", nCacheSizeK);
+      }
+
+  }
+}
+
+// Picked up from http://msdn.microsoft.com/en-us/library/windows/desktop/ms724439(v=vs.85).aspx
+static void print_osinfo(struct output_buffer *ob){
+    DWORD dwVersion = 0; 
+    DWORD dwMajorVersion = 0;
+    DWORD dwMinorVersion = 0; 
+    DWORD dwBuild = 0;
+
+    dwVersion = GetVersion();
+ 
+    // Get the Windows version.
+
+    dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+    dwMinorVersion = (DWORD)(HIBYTE(LOWORD(dwVersion)));
+
+    // Get the build number.
+
+    if (dwVersion < 0x80000000)              
+        dwBuild = (DWORD)(HIWORD(dwVersion));
+
+    printf_s(ob, "Windows version of this OS is %d.%d (%d)\nVersion names:\n%s\n", 
+           dwMajorVersion,
+           dwMinorVersion,
+           dwBuild,
+           "Windows 8	6.2\n"
+           "Windows Server 2012	6.2\n"
+           "Windows 7	6.1\n"
+           "Windows Server 2008 R2	6.1\n"
+           "Windows Server 2008	6.0\n"
+           "Windows Vista	6.0\n"
+           "Windows Server 2003 R2	5.2\n"
+           "Windows Server 2003	5.2\n"
+           "Windows XP 64-Bit Edition	5.2\n"
+           "Windows XP	5.1\n"
+           "Windows 2000	5.0\n");
+
+}
+
+
+/*
+
+  Backtrace code mostly written by Cloud Wu. Original copyright message:
  */
 
 
@@ -22,21 +325,6 @@
 
   */
 
-
-#ifdef FOR_WINDOWS
-
-#include <windows.h>
-#include <excpt.h>
-#include <imagehlp.h>
-#include <bfd.h>
-#include <psapi.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdbool.h>
-
-#include "crashreporter_proc.h"
 
 #define BUFFER_MAX (16*1024)
 
@@ -139,7 +427,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	bfd *b = bfd_openr(procname, 0);
 	if (!b) {
-		output_print(ob,"Failed to open bfd from (%s)\n" , procname);
+		output_print(ob,"Failed to open bfd from (%s)" , procname);
 		return 1;
 	}
 
@@ -149,7 +437,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	if (!(r1 && r2 && r3)) {
 		bfd_close(b);
-		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d\n", procname,r1,r2,r3);
+		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d", procname,r1,r2,r3);
 		return 1;
 	}
 
@@ -160,7 +448,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 		if (bfd_read_minisymbols(b, TRUE, &symbol_table, &dummy) < 0) {
 			free(symbol_table);
 			bfd_close(b);
-			output_print(ob,"Failed to read symbols from (%s)\n", procname);
+			output_print(ob,"Failed to read symbols from (%s)", procname);
 			return 1;
 		}
 	}
@@ -217,38 +505,71 @@ release_set(struct bfd_set *set)
 	}
 }
 
+
+// Can not get more than one trace back in Windows XP. 
+//
+// This function is based on code from http://src.chromium.org/svn/trunk/src/base/debug/stack_trace_win.cc
+static int stacktrace(LPCONTEXT context, DWORD *trace_, int num_traces){
+  // When walking an exception stack, we need to use StackWalk64().
+  int count_ = 0;
+  // Initialize stack walking.
+  STACKFRAME64 stack_frame;
+  memset(&stack_frame, 0, sizeof(stack_frame));
+#if defined(_WIN64)
+  int machine_type = IMAGE_FILE_MACHINE_AMD64;
+  stack_frame.AddrPC.Offset = context->Rip;
+  stack_frame.AddrFrame.Offset = context->Rbp;
+  stack_frame.AddrStack.Offset = context->Rsp;
+#else
+  int machine_type = IMAGE_FILE_MACHINE_I386;
+  stack_frame.AddrPC.Offset = context->Eip;
+  stack_frame.AddrFrame.Offset = context->Ebp;
+  stack_frame.AddrStack.Offset = context->Esp;
+#endif
+  stack_frame.AddrPC.Mode = AddrModeFlat;
+  stack_frame.AddrFrame.Mode = AddrModeFlat;
+  stack_frame.AddrStack.Mode = AddrModeFlat;
+
+
+  while (StackWalk64(machine_type,
+                     GetCurrentProcess(),
+                     GetCurrentThread(),
+                     &stack_frame,
+                     context,
+                     NULL,
+                     &SymFunctionTableAccess64,
+                     &SymGetModuleBase64,
+                     NULL) &&
+         count_ < num_traces) {
+    trace_[count_++] = stack_frame.AddrPC.Offset;
+  }
+
+  size_t i;
+  for (i = count_; i < num_traces; ++i)
+    trace_[i] = 0;
+
+  return count_;
+}
+
+
 static void
 _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT context)
 {
 	char procname[MAX_PATH];
 	GetModuleFileNameA(NULL, procname, sizeof procname);
-
-	struct bfd_ctx *bc = NULL;
-
-	STACKFRAME frame;
-	memset(&frame,0,sizeof(frame));
-
-	frame.AddrPC.Offset = context->Eip;
-	frame.AddrPC.Mode = AddrModeFlat;
-	frame.AddrStack.Offset = context->Esp;
-	frame.AddrStack.Mode = AddrModeFlat;
-	frame.AddrFrame.Offset = context->Ebp;
-	frame.AddrFrame.Mode = AddrModeFlat;
-
 	HANDLE process = GetCurrentProcess();
-	HANDLE thread = GetCurrentThread();
+
+        DWORD stack[NUM_BACKTRACE];
+        int num_frames = stacktrace(context, stack, NUM_BACKTRACE);
 
 	char symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 255];
 	char module_name_raw[MAX_PATH];
 
-	while(StackWalk(IMAGE_FILE_MACHINE_I386, 
-		process, 
-		thread, 
-		&frame, 
-		context, 
-		0, 
-		SymFunctionTableAccess, 
-		SymGetModuleBase, 0)) {
+        int lokke;
+        for(lokke=0;lokke<num_frames;lokke++){
+  DWORD offset = stack[lokke];
+
+                int i = 0;
 
 		--depth;
 		if (depth < 0)
@@ -258,13 +579,15 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		symbol->SizeOfStruct = (sizeof *symbol) + 255;
 		symbol->MaxNameLength = 254;
 
-		DWORD module_base = SymGetModuleBase(process, frame.AddrPC.Offset);
+		DWORD module_base = SymGetModuleBase(process, offset);
+                struct bfd_ctx *bc = NULL;
 
 		const char * module_name = "[unknown module]";
 		if (module_base && 
-			GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)) {
-			module_name = module_name_raw;
-			bc = get_bc(ob, set, module_name);
+			GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)) 
+                  {
+  module_name = module_name_raw;
+  bc = get_bc(ob, set, module_name);
 		}
 
 		const char * file = NULL;
@@ -272,12 +595,12 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		unsigned line = 0;
 
 		if (bc) {
-			find(bc,frame.AddrPC.Offset,&file,&func,&line);
+			find(bc,offset,&file,&func,&line);
 		}
 
 		if (file == NULL) {
 			DWORD dummy = 0;
-			if (SymGetSymFromAddr(process, frame.AddrPC.Offset, &dummy, symbol)) {
+			if (SymGetSymFromAddr(process, offset, &dummy, symbol)) {
 				file = symbol->Name;
 			}
 			else {
@@ -285,19 +608,23 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 			}
 		}
 		if (func == NULL) {
-			output_print(ob,"0x%x : %s : %s \n", 
-				frame.AddrPC.Offset,
-				module_name,
-				file);
+			output_print(ob,"%d: 0x%x : %s : %s ", 
+                                     i,
+                                     offset,
+                                     module_name,
+                                     file);
 		}
 		else {
-			output_print(ob,"0x%x : %s : %s (%d) : in function (%s) \n", 
-				frame.AddrPC.Offset,
-				module_name,
-				file,
-				line,
-				func);
+			output_print(ob,"%d: 0x%x : %s : %s (%d) : in function (%s) ", 
+                                     i,
+                                     offset,
+                                     module_name,
+                                     file,
+                                     line,
+                                     func);
 		}
+
+                i++;
 	}
 }
 
@@ -307,20 +634,29 @@ static LPTOP_LEVEL_EXCEPTION_FILTER g_prev = NULL;
 static LONG WINAPI 
 exception_filter(LPEXCEPTION_POINTERS info)
 {
+        CONTEXT c_holder;
+        LPCONTEXT c = &c_holder;
+        memcpy(c,info->ContextRecord,sizeof(CONTEXT));
+
+        //c->ContextFlags = CONTEXT_FULL;
+
 	struct output_buffer ob;
 	output_init(&ob, g_output, BUFFER_MAX);
 
 	if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
-		output_print(&ob,"Failed to init symbol context\n");
+		output_print(&ob,"Failed to init symbol context");
 	}
 	else {
 		bfd_init();
 		struct bfd_set *set = calloc(1,sizeof(*set));
-		_backtrace(&ob , set , 128 , info->ContextRecord);
+		_backtrace(&ob , set , 128 , c);
 		release_set(set);
 
 		SymCleanup(GetCurrentProcess());
 	}
+
+        print_cpuinfo(&ob);
+        print_osinfo(&ob);
 
 	fputs(g_output , stderr);
 
@@ -338,7 +674,6 @@ backtrace_register(void)
 	}
 }
 
-#if 0
 static void
 backtrace_unregister(void)
 {
@@ -349,7 +684,6 @@ backtrace_unregister(void)
 		g_output = NULL;
 	}
 }
-#endif
 
 #if 0
 BOOL WINAPI 
@@ -369,6 +703,10 @@ DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
 
 void CRASHREPORTER_windows_init(void){
   backtrace_register();
+}
+
+void CRASHREPORTER_windows_close(void){
+  backtrace_unregister();
 }
 
 #endif //FOR_WINDOWS
