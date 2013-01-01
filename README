@@ -1,29 +1,33 @@
 
 
-Radium V1.9.22
-Released 2012-12-23
+Radium V1.9.24
+Released 2013-01-01
 
 
 
 HOW TO MAKE IT RUN
 
-        If you downloaded a tar-ball:
+        Either:
 
-        "
-        make packages
-        BUILDTYPE=RELEASE ./build_linux.sh -j7
-        ./start.sh
-        "
+          1. If you downloaded a tar-ball:
+
+          "
+          make packages
+          BUILDTYPE=RELEASE ./build_linux.sh -j7
+          ./start.sh
+          "
 
 
-        If you checked out from a git repository:
+        Or:
 
-        "
-        touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
-        make packages
-        BUILDTYPE=RELEASE ./build_linux.sh -j7
-        ./start.sh
-        "
+          2. If you checked out from a git repository:
+
+          "
+          touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
+          make packages
+          BUILDTYPE=RELEASE ./build_linux.sh -j7
+          ./start.sh
+          "
 
 
 INTRODUCTION

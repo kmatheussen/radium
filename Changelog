@@ -1,4 +1,14 @@
 
+Most important changes 1.9.22 -> 1.9.24:
+* Crashreporter works in Windows.
+* Write settings to disk when selecting Set Default Editor Font
+* Dont crash when using MIDI menu unless the current instrument is a midi instrument
+* Workaround for bug in newer versions of libbfd, causing compilation to fail. Patch from James Morris
+* Wait to handle events until program has started. Hopefully fixes a crash reported
+  by the crashreporter once.
+* Remove check for jack in rt midi in check_install script.
+
+
 Most important changes 1.9.21 -> 1.9.22:
 * Crashreporter.
 * Linux version works properly without first cd into the path of the radium binary.
