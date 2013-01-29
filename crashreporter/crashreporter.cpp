@@ -231,15 +231,23 @@ int main(int argc, char **argv){
 
 #if !defined(CRASHREPORTER_BIN)
 
+static double get_ms(void){
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
+}
+
 void CRASHREPORTER_init(void){
-  QTime now = QTime::currentTime();
-  qsrand(now.msec());
-  QString key = "radium_crashreporter_" + QString::number(qrand());
+  QString key = "radium_crashreporter_" + QString::number(get_ms());
 
   g_sharedmemory = new QSharedMemory(key);
 
   if(g_sharedmemory->create(sizeof(Report))==false){
     fprintf(stderr,"Crashreporter: Couldn't create... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
+#ifndef RELEASE
+    fprintf(stderr,"press return\n");
+    gets(NULL);
+#endif
   }
 
 #if defined(FOR_WINDOWS)
