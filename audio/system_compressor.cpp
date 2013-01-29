@@ -140,14 +140,14 @@ class Faust_system_compressor : public dsp {
 			FAUSTFLOAT* output0 = &output[0][index];
 			FAUSTFLOAT* output1 = &output[1][index];
 			// SECTION : 1
-			// LOOP 0x2eb21f0
+			// LOOP 0x3877580
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec0[i] = fabsf((fabsf((float)input1[i]) + fabsf((float)input0[i])));
 			}
 			
 			// SECTION : 2
-			// LOOP 0x2eb1e80
+			// LOOP 0x3877210
 			// pre processing
 			for (int i=0; i<4; i++) fRec2_tmp[i]=fRec2_perm[i];
 			// exec code
@@ -158,7 +158,7 @@ class Faust_system_compressor : public dsp {
 			for (int i=0; i<4; i++) fRec2_perm[i]=fRec2_tmp[count+i];
 			
 			// SECTION : 3
-			// LOOP 0x2eb19a0
+			// LOOP 0x3876d30
 			// pre processing
 			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
 			// exec code
@@ -169,14 +169,14 @@ class Faust_system_compressor : public dsp {
 			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
 			
 			// SECTION : 4
-			// LOOP 0x2eb7e00
+			// LOOP 0x387d390
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec1[i] = (8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec1[i]))) - 87.989971088f));
 			}
 			
 			// SECTION : 5
-			// LOOP 0x2eb78c0
+			// LOOP 0x387ce50
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph0 = fZec1[i];
@@ -184,7 +184,7 @@ class Faust_system_compressor : public dsp {
 			}
 			
 			// SECTION : 6
-			// LOOP 0x2eb15a0
+			// LOOP 0x3876930
 			// pre processing
 			for (int i=0; i<4; i++) fRec0_tmp[i]=fRec0_perm[i];
 			// exec code
@@ -196,20 +196,20 @@ class Faust_system_compressor : public dsp {
 			for (int i=0; i<4; i++) fRec0_perm[i]=fRec0_tmp[count+i];
 			
 			// SECTION : 7
-			// LOOP 0x2ebbfa0
+			// LOOP 0x3881360
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec3[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec0[i])))));
 			}
 			
 			// SECTION : 8
-			// LOOP 0x2eb13a0
+			// LOOP 0x3876730
 			// exec code
 			for (int i=0; i<count; i++) {
 				output0[i] = (FAUSTFLOAT)(fSlow9 * ((float)input0[i] * fZec3[i]));
 			}
 			
-			// LOOP 0x2ebde40
+			// LOOP 0x3883200
 			// exec code
 			for (int i=0; i<count; i++) {
 				output1[i] = (FAUSTFLOAT)(fSlow9 * ((float)input1[i] * fZec3[i]));
@@ -224,14 +224,14 @@ class Faust_system_compressor : public dsp {
 			FAUSTFLOAT* output0 = &output[0][index];
 			FAUSTFLOAT* output1 = &output[1][index];
 			// SECTION : 1
-			// LOOP 0x2eb21f0
+			// LOOP 0x3877580
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec0[i] = fabsf((fabsf((float)input1[i]) + fabsf((float)input0[i])));
 			}
 			
 			// SECTION : 2
-			// LOOP 0x2eb1e80
+			// LOOP 0x3877210
 			// pre processing
 			for (int i=0; i<4; i++) fRec2_tmp[i]=fRec2_perm[i];
 			// exec code
@@ -242,7 +242,7 @@ class Faust_system_compressor : public dsp {
 			for (int i=0; i<4; i++) fRec2_perm[i]=fRec2_tmp[count+i];
 			
 			// SECTION : 3
-			// LOOP 0x2eb19a0
+			// LOOP 0x3876d30
 			// pre processing
 			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
 			// exec code
@@ -253,14 +253,14 @@ class Faust_system_compressor : public dsp {
 			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
 			
 			// SECTION : 4
-			// LOOP 0x2eb7e00
+			// LOOP 0x387d390
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec1[i] = (8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec1[i]))) - 87.989971088f));
 			}
 			
 			// SECTION : 5
-			// LOOP 0x2eb78c0
+			// LOOP 0x387ce50
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph0 = fZec1[i];
@@ -268,7 +268,7 @@ class Faust_system_compressor : public dsp {
 			}
 			
 			// SECTION : 6
-			// LOOP 0x2eb15a0
+			// LOOP 0x3876930
 			// pre processing
 			for (int i=0; i<4; i++) fRec0_tmp[i]=fRec0_perm[i];
 			// exec code
@@ -280,20 +280,20 @@ class Faust_system_compressor : public dsp {
 			for (int i=0; i<4; i++) fRec0_perm[i]=fRec0_tmp[count+i];
 			
 			// SECTION : 7
-			// LOOP 0x2ebbfa0
+			// LOOP 0x3881360
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec3[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec0[i])))));
 			}
 			
 			// SECTION : 8
-			// LOOP 0x2eb13a0
+			// LOOP 0x3876730
 			// exec code
 			for (int i=0; i<count; i++) {
 				output0[i] = (FAUSTFLOAT)(fSlow9 * ((float)input0[i] * fZec3[i]));
 			}
 			
-			// LOOP 0x2ebde40
+			// LOOP 0x3883200
 			// exec code
 			for (int i=0; i<count; i++) {
 				output1[i] = (FAUSTFLOAT)(fSlow9 * ((float)input1[i] * fZec3[i]));

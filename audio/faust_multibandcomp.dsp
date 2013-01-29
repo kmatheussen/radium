@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 import("filter.lib");
 effect = library("effect.lib");
-
+import("fast_log_exp.dsp");
 
 def_ratio = 2.0;
 def_threshold = -20.0;
@@ -40,11 +40,11 @@ solo(i) = int(checkbox("Band %i: [0] Solo [tooltip: When this is checked, the co
 get_gain_from_solo(i) = float(solo(i) | ( (solo(1)==0) & (solo(2)==0) & (solo(3)==0) ));
 
 compression_gain_mono(ratio,thresh,att,rel) = _
-  : effect.amp_follower_ud(att,rel)
-  : linear2db 
-  : outminusindb(ratio,thresh) 
-  : kneesmooth(att) 
-  : db2linear
+    : effect.amp_follower_ud(att,rel)
+    : ll2_linear2db 
+    : outminusindb(ratio,thresh) 
+    : kneesmooth(att) 
+    : ll2_db2linear
 with {
   // kneesmooth(att) installs a "knee" in the dynamic-range compression,
   // where knee smoothness is set equal to half that of the compression-attack.
@@ -130,7 +130,7 @@ limiter = effect.bypass2(limiter_bypass, process) with{
     limiter_bypass = checkbox("[E] Limiter Bypass"); // Must be named "Limiter Bypass". Used in Qt_PluginWidget.cpp and Qt_plugin_widget_callbacks.h
 
     input_gain    = *(ingain),*(ingain);
-    ingain        = ingain_slider : db2linear;
+    ingain        = ingain_slider : ll2_db2linear;
     ingain_slider = hslider("[F] Limiter Input Gain [unit:dB]  [tooltip: Adjust overall gain.]",
                             0, -40, 40, 0.1);
 
@@ -140,7 +140,7 @@ limiter = effect.bypass2(limiter_bypass, process) with{
 
     output_gain    = *(outgain),*(outgain);
     outgain = hslider("[J] Limiter Output Gain [unit:dB]  [tooltip: Adjust overall gain.]",
-                   0, -40, 40, 0.1) : db2linear;
+                   0, -40, 40, 0.1) : ll2_db2linear;
 };
 
 main_gain =
