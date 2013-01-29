@@ -76,31 +76,31 @@ export OBJ_MACOSX=""
 
 mingw32-make radium $@
 
-cp bin/radium Dropbox/windows_dist/bin/radium.bin.exe
-cp bin/crashreporter Dropbox/windows_dist/bin/crashreporter.exe
+cp bin/radium /home/kjetil/Dropbox/windows_dist/bin/radium.bin.exe
+cp bin/crashreporter /home/kjetil/Dropbox/windows_dist/bin/crashreporter.exe
 
-cp bin/*.py Dropbox/windows_dist/bin/
-cp bin/*.pyc Dropbox/windows_dist/bin/
-cp bin/colors Dropbox/windows_dist/bin/
-cp bin/menues.conf Dropbox/windows_dist/bin/
-cp bin/protos.conf Dropbox/windows_dist/bin/
-cp bin/keybindings.conf Dropbox/windows_dist/bin/
-cp bin/keybindings.cPickle Dropbox/windows_dist/bin/
-cp bin/new_song.rad Dropbox/windows_dist/bin/
-cp -a bin/sounds Dropbox/windows_dist/bin/
-cp bin/radium_256x256x32.png Dropbox/windows_dist/bin/
-cp -a bin/fonts Dropbox/windows_dist/bin/
+cp bin/*.py /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/*.pyc /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/colors /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/menues.conf /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/protos.conf /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/keybindings.conf /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/keybindings.cPickle /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/new_song.rad /home/kjetil/Dropbox/windows_dist/bin/
+cp -a bin/sounds /home/kjetil/Dropbox/windows_dist/bin/
+cp bin/radium_256x256x32.png /home/kjetil/Dropbox/windows_dist/bin/
+cp -a bin/fonts /home/kjetil/Dropbox/windows_dist/bin/
 
-cp bin/config Dropbox/windows_dist/bin/
+cp bin/config /home/kjetil/Dropbox/windows_dist/bin/
 
 # fix fonts. Qt uses different text formats for QFont::toString/QFont::fromString on Windows and Linux/OSX. (The windows system stores everything, and is better, BTW.)
-sed -i 's/Lato/Lato Black/' Dropbox/windows_dist/bin/config
+sed -i 's/Lato/Lato Black/' /home/kjetil/Dropbox/windows_dist/bin/config
 
 cd icons && ./create.sh && cd ..
-$CC windows/launcher.c icons/windows_icon.o -mwindows -Wall -Wl,--subsystem,windows -o Dropbox/windows_dist/radium.exe 
+$CC windows/launcher.c icons/windows_icon.o -mwindows -Wall -Wl,--subsystem,windows -o /home/kjetil/Dropbox/windows_dist/radium.exe 
 
 #if [ $BUILDTYPE == "RELEASE" ] ; then
-#    i686-w64-mingw32-strip Dropbox/windows_dist/bin/radium.bin.exe
+#    i686-w64-mingw32-strip /home/kjetil/Dropbox/windows_dist/bin/radium.bin.exe
 #fi
 
 if echo $OS_OPTS |grep MEMORY_DEBUG 2>/dev/null ; then

@@ -231,14 +231,8 @@ int main(int argc, char **argv){
 
 #if !defined(CRASHREPORTER_BIN)
 
-static double get_ms(void){
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * 1000.0 + ((double)ts.tv_nsec) / 1000000.0;
-}
-
 void CRASHREPORTER_init(void){
-  QString key = "radium_crashreporter_" + QString::number(get_ms());
+  QString key = "radium_crashreporter_" + QString::number(QDateTime::currentMSecsSinceEpoch());
 
   g_sharedmemory = new QSharedMemory(key);
 

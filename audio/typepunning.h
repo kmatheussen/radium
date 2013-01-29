@@ -26,7 +26,7 @@ static inline int pun_float_to_int(float x){
 }
 
 static inline float pun_int_to_float(int x){
-  union { uint32_t i; float f; } mx = { .i=(uint32_t)x };
+  union { uint32_t i; float f; } mx = { (uint32_t)x };
   return mx.f;
 }
 
