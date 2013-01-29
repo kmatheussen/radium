@@ -1,4 +1,13 @@
 
+Most important changes 1.9.24 -> 1.9.25:
+* System compressor
+* Compressor and equalizer GUI can be shown/hidden.
+* Use fast log/exp functions for the multiband compressor.
+  (Huge improvement in CPU usage for the demo song)
+* Fixed key used for shared memory in crashreporter.
+* Various
+
+
 Most important changes 1.9.22 -> 1.9.24:
 * Crashreporter works in Windows.
 * Write settings to disk when selecting Set Default Editor Font
