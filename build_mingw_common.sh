@@ -17,7 +17,8 @@ export UIC=uic-qt4
 
 export OPTIMIZE="-mtune=generic -O3"
 #export OPTIMIZE="-mtune=native -O3"
-export CPUOPT=$OPTIMIZE # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
+#export CPUOPT=$OPTIMIZE # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
+export CPUOPT=
 
 
 #export CCC=i686-pc-mingw32-g++

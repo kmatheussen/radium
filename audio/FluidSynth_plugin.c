@@ -209,7 +209,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     switch(effect_num){
     case EFF_PITCH:
       data->pitch = scale(value,0.0f,1.0f,0,16383);
-      printf("Setting Pitch to %d\n",(int)data->pitch);
+      //printf("Setting Pitch to %d\n",(int)data->pitch);
       sendpitchbend(data,0,data->pitch,time);
       break;
     case EFF_PITCH_RANGE:
@@ -320,18 +320,20 @@ static void delete_data(Data *data){
   if(data->event!=NULL)
     delete_fluid_event(data->event);
 
-  if(data->event!=NULL)
+  if(data->sequencer!=NULL)
     delete_fluid_sequencer(data->sequencer);
 
   if(data->synth!=NULL)
     delete_fluid_synth(data->synth);
 
-  if(data->synth!=NULL)
+  if(data->settings!=NULL)
     delete_fluid_settings(data->settings);
 
-  free((char*)data->filename);
+  if(data->filename!=NULL)
+    free((char*)data->filename);
 
-  RSEMAPHORE_delete(data->signal_from_RT);
+  if(data->signal_from_RT!=NULL)
+    RSEMAPHORE_delete(data->signal_from_RT);
 
   free(data);
 }

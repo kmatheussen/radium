@@ -23,8 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSlider>
 #include <QTimerEvent>
 
-#include "../nsmtracker.h"
-
 #include "EditorWidget.h"
 
 #include "Qt_SliderPainter_proc.h"
@@ -32,8 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 const int k_timer_interval = 50;
 
-
+#ifdef COMPILING_RADIUM
 extern struct Root *root;
+#else
+extern QColor *g_colors;
+#endif
+
+
 
 static int scale(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
@@ -406,7 +409,11 @@ struct SliderPainter{
   }
 
   void paint(QPainter *p){
-    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+#ifdef COMPILING_RADIUM
+    QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
+#else
+    QColor *colors = g_colors;
+#endif
 
     QColor col1;
     QColor col1b;
@@ -421,14 +428,14 @@ struct SliderPainter{
       if(isEnabled()){
         QColor c1(70,70,33);
         QColor c2(59,98,33);
-        col1 = mix_colors(c1,editor->colors[col1num].light(90),0.5);
+        col1 = mix_colors(c1,colors[col1num].light(90),0.5);
         col1b = mix_colors(c2,col1,0.3);
         ///col2 = mix_colors(editor->colors[col2num],editor->colors[col1num],0.8).light(95);//.light(90);
-        col2 = editor->colors[15];
+        col2 = colors[15];
       }else{
-        col1 = editor->colors[col1num].light(105);
+        col1 = colors[col1num].light(105);
         col1b = col1;
-        col2 = editor->colors[col2num].light(102);
+        col2 = colors[col2num].light(102);
       }
     }else{
       if(isEnabled()){
@@ -436,17 +443,17 @@ struct SliderPainter{
 
         int colnum = 8;
         col1 = c.light(90);
-        col1b = editor->colors[13].light(100);
+        col1b = colors[13].light(100);
         //int colnum = 8;
         //col1 = editor->colors[colnum].light(90);
         //col1b = editor->colors[13].light(100);
 
-        col2 = editor->colors[colnum];
+        col2 = colors[colnum];
       }else{
         //col1 = editor->colors[col1num].light(105);
-        col1 = mix_colors(editor->colors[col1num], Qt::gray, 0.8f);
-        col1b = mix_colors(editor->colors[col1num].light(110), Qt::gray, 0.8f);
-        col2 = mix_colors(editor->colors[col2num], Qt::gray, 0.8f);
+        col1 = mix_colors(colors[col1num], Qt::gray, 0.8f);
+        col1b = mix_colors(colors[col1num].light(110), Qt::gray, 0.8f);
+        col2 = mix_colors(colors[col2num], Qt::gray, 0.8f);
         //col2 = editor->colors[col2num].light(102);
       }
 
@@ -500,10 +507,10 @@ struct SliderPainter{
       
       p->fillRect(data->requested_pos+1 ,y1+1,
                   2,                    height-1,
-                  editor->colors[*data->color]);
+                  colors[*data->color]);
       
       //p->setPen(editor->colors[2].dark(10));
-      p->setPen(QPen(editor->colors[11].light(120),1));
+      p->setPen(QPen(colors[11].light(120),1));
       p->drawRect(data->requested_pos, y1,
                   3,                   height);
       
@@ -511,14 +518,14 @@ struct SliderPainter{
     }
 
     if(1){
-      p->setPen(QPen(editor->colors[11].light(110),1));
+      p->setPen(QPen(colors[11].light(110),1));
       p->drawRect(0,0,width(),height());
     }
 
     QRect rect(5,2,width()-5,height()-2);
 
     if(_display_string!=""){
-      QColor c(editor->colors[1]);
+      QColor c(colors[1]);
       if(isEnabled()){
         c.setAlpha(160);
         p->setPen(QPen(c,1));//editor->colors[2].darker(500));

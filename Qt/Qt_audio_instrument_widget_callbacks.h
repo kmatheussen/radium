@@ -15,13 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
 #include "../audio/SoundPlugin_proc.h"
 
 #include "Qt_audio_instrument_widget.h"
 
 #include "mQt_sample_requester_widget_callbacks.h"
 #include "mQt_plugin_widget_callbacks.h"
+#include "mQt_compressor_widget_callbacks.h"
 
 #include "../mixergui/QM_chip.h"
 #include "../audio/Bus_plugins_proc.h"
@@ -40,10 +40,11 @@ public:
   Patch_widget *_patch_widget;
   Plugin_widget *_plugin_widget;
   Sample_requester_widget *_sample_requester_widget;
+  radium_comp::Compressor_widget *_comp_widget;
 
   MyQSlider *_system_out_slider;
 
-  static void set_arrow_style(QLabel *arrow, bool set_size_policy=true){
+  static void set_arrow_style(QWidget *arrow, bool set_size_policy=true){
     QPalette palette2;
 
     QBrush brush1(QColor(106, 104, 100, 255));
@@ -57,6 +58,7 @@ public:
     palette2.setBrush(QPalette::Disabled, QPalette::WindowText, brush1);
     arrow->setPalette(palette2);
 
+#if 1
     if(set_size_policy){
       QSizePolicy sizePolicy4(QSizePolicy::Fixed, QSizePolicy::Fixed);
       sizePolicy4.setHorizontalStretch(0);
@@ -66,6 +68,7 @@ public:
 
       //arrow->setFrameShape(QFrame::Box);
     }
+#endif
   }
 
 
@@ -153,12 +156,30 @@ public:
       arrow->show();
     }
 
+    // Add compressor
+    {
+      _comp_widget = new radium_comp::Compressor_widget(patch, this);
+      effects_layout->insertWidget(effects_layout->count()-1, _comp_widget);
+
+      // these widgets are only used in the standalone version
+      _comp_widget->load_button->hide();
+      _comp_widget->save_button->hide();
+      _comp_widget->radium_url->hide();
+      _comp_widget->bypass->hide();
+
+      _comp_widget->show();
+      _comp_widget->setVisible(plugin->show_compressor_gui);
+    }
+
+    filters_widget->setVisible(plugin->show_equalizer_gui);
+
     set_arrow_style(arrow1);
     set_arrow_style(arrow2);
     set_arrow_style(arrow3);
     set_arrow_style(arrow4);
     set_arrow_style(arrow5);
     set_arrow_style(arrow6);
+    set_arrow_style(arrow7);
     if(pipe_label!=NULL)
       set_arrow_style(pipe_label,false);
 
@@ -439,6 +460,11 @@ public:
       filters_widget->setEnabled(plugin->effects_are_on);
     }
 
+    _comp_widget->update_gui();
+
+    show_equalizer->setChecked(plugin->show_equalizer_gui);
+    show_compressor->setChecked(plugin->show_compressor_gui);
+
     _patch_widget->updateWidgets();
 
     if(_sample_requester_widget != NULL){
@@ -456,6 +482,37 @@ public:
   }
 
 public slots:
+
+#if 0
+  void on_arrow1_toggled(bool val){
+    _plugin_widget->setVisible(val);
+  }
+
+  void on_arrow2_toggled(bool val){
+    filters_widget->setVisible(val);
+  }
+
+  void on_arrow3_toggled(bool val){
+    outputs_widget1->setVisible(val);
+    outputs_widget2->setVisible(val);
+  }
+#endif
+
+  void on_show_equalizer_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + EFFNUM_EQ_SHOW_GUI;
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+    filters_widget->setVisible(val);
+  }
+
+  void on_show_compressor_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + EFFNUM_COMP_SHOW_GUI;
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+    _comp_widget->setVisible(val);
+  }
 
   void on_input_volume_onoff_toggled(bool val){
     set_plugin_value(val==true ? 10000 : 0, EFFNUM_INPUT_VOLUME_ONOFF);

@@ -26,7 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
 
+#ifdef COMPILING_RADIUM
 extern struct Root *root;
+#else
+extern QColor *g_colors;
+#endif
 
 static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 
@@ -49,20 +53,26 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
   }
 }
 
+static int get_text_width(QString text){
+  const QFontMetrics fn = QFontMetrics(QFont());
+  return fn.width(text);
+}
 
 inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text){
-    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+#ifdef COMPILING_RADIUM
+    QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
+#else
+    QColor *colors = g_colors;
+#endif
 
     QColor col; // on
 
-    int colnum = 9;
-
     if(text!=""){
-      col = editor->colors[13];
+      col = colors[13];
       col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
       col.setAlpha(76);
     }else{
-      col = editor->colors[colnum].light(52);
+      col = colors[9].light(52);
    }
 
 
@@ -85,7 +95,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 
 
     if(text!=""){
-      painter->setPen(editor->colors[15]);
+      painter->setPen(colors[15]);
       painter->drawRect(0,0,width,height);
 
       //QRect rect(5,3,width-5,height-3);
@@ -96,10 +106,22 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       else
         black.setAlpha(120);
       painter->setPen(black);
+
       if(text=="Loop")
-        painter->drawText(rect, Qt::AlignCenter, text + " " + QChar(8634));
-      else
+        text = text + " " + QChar(8634);
+
+      if(height>width){
+        painter->save();
+        painter->translate(0,0);
+        painter->rotate(90);
+        int text_width = get_text_width(text);
+        int pos = (height-text_width)/2;
+        painter->drawText(pos,-5, text);
+        painter->restore();
+      }else{
         painter->drawText(rect, Qt::AlignCenter, text);
+      }
+
     }
 }
 
@@ -108,6 +130,8 @@ struct MyQCheckBox : public QCheckBox{
   struct Patch *_patch;
   int _effect_num;
   bool _undo_patchvoice;
+
+  QString vertical_text;
 
   void init(){
     _has_mouse=false;
@@ -119,15 +143,16 @@ struct MyQCheckBox : public QCheckBox{
   MyQCheckBox ( QWidget * parent = 0 ) : QCheckBox(parent) {init();}
   MyQCheckBox ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {init();}
 
-
   void mousePressEvent ( QMouseEvent * event )
   {
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
+#ifdef COMPILING_RADIUM
       if(_undo_patchvoice==true)
         Undo_PatchVoice_CurrPos(_patch,_effect_num);
       else if(_patch!=NULL)
         Undo_AudioEffect_CurrPos(_patch, _effect_num);
+#endif
       //handle_mouse_event(event);
       _has_mouse = true;
       printf("Got it %p %d\n",_patch,_effect_num);
@@ -139,7 +164,13 @@ struct MyQCheckBox : public QCheckBox{
 
   void paintEvent ( QPaintEvent * ev ){
     QPainter p(this);
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text());
+
+    if(text().startsWith("V ")){
+      vertical_text = text().right(text().size()-2);
+      setText("");
+    }
+
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), vertical_text!="" ? vertical_text : text());
   }
 };
 
