@@ -155,7 +155,7 @@ struct MyQCheckBox : public QCheckBox{
 #endif
       //handle_mouse_event(event);
       _has_mouse = true;
-      printf("Got it %p %d\n",_patch,_effect_num);
+      printf("Got it %p %d. Checked: %d\n",_patch,_effect_num,!isChecked());
       setChecked(!isChecked());
     }else
       QCheckBox::mousePressEvent(event);

@@ -42,6 +42,9 @@ const float def_makeupgain = 0.3f;
 
 #ifdef COMPILING_RADIUM
 
+// I'm pretty sure it's not necessary to test for plugin!=NULL in these three functons.
+// Normally, it's safe, but these functions can also be called from a timer.
+//
 static void set_compressor_parameter(struct Patch *patch, int num,float value){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   if(plugin!=NULL)
@@ -604,11 +607,19 @@ Comp(struct Patch *patch, QWidget *parent)
     int y = event->y();
 
     if(in_box.inside(x,y)){
+#ifdef COMPILING_RADIUM
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      Undo_AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_THRESHOLD);
+#endif
 
       curr_slider = THRESHOLD_SLIDER;
       p_startpos = in_box.p2;
 
     }else if(out_box.inside(x,y)){
+#ifdef COMPILING_RADIUM
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      Undo_AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_RATIO);
+#endif
 
       curr_slider = RATIO_SLIDER;
       if(in_box.p1>0){
@@ -618,6 +629,10 @@ Comp(struct Patch *patch, QWidget *parent)
       }
 
     }else if(vol_box.inside(x,y)){
+#ifdef COMPILING_RADIUM
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      Undo_AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_OUTPUT_VOLUME);
+#endif
 
       curr_slider = MAKEUPGAIN_SLIDER;
       p_startpos = vol_box.p1;
@@ -1081,6 +1096,18 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     comp = new Comp(patch,this);
     comp->setEnabled(false);
     verticalLayout->insertWidget(1,comp);
+
+    // Enable MyQSlider and MyQCheckBox to take care of undo/redo.
+    {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      attack_slider->_patch = patch;
+      attack_slider->_effect_num = plugin->type->num_effects+EFFNUM_COMP_ATTACK;
+      release_slider->_patch = patch;
+      release_slider->_effect_num = plugin->type->num_effects+EFFNUM_COMP_RELEASE;
+      enable_checkbox->_patch = patch;
+      enable_checkbox->_effect_num = plugin->type->num_effects+EFFNUM_COMP_ONOFF;
+    }
+
     update_gui();
     initing = false;
   }
@@ -1100,8 +1127,11 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     comp->set_gui_parameters();
     attack_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch, COMP_EFF_ATTACK),1000,0,max_attack_release));
     release_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch, COMP_EFF_RELEASE),1000,0,max_attack_release));
-    //attack_slider->setValue(get_exp_inverted_value(50,1000,0,max_attack_release)); // fix
-    //release_slider->setValue(get_exp_inverted_value(100,1000,0,max_attack_release)); // fix
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    enable_checkbox->setChecked(plugin->comp.is_on);
+
+    update();
   }
 
   void load(QString filename){
@@ -1132,13 +1162,14 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
 public slots:
 
 void on_enable_checkbox_toggled(bool val){
+#ifdef COMPILING_RADIUM
   SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-  if(plugin!=NULL)
-    plugin->comp.is_on=val;
+  PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_ONOFF, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
 
   attack_slider->setEnabled(val);
   release_slider->setEnabled(val);
   comp->setEnabled(val);
+#endif
 }
 
   void on_attack_slider_valueChanged(int val){

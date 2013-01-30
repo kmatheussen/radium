@@ -567,6 +567,7 @@ static void set_smooth_on_off(Smooth *smooth, bool *on_off, float value, float s
 
 void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type){
   float store_value = value;
+  //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
   if(effect_num < plugin->type->num_effects){
 
@@ -620,7 +621,7 @@ void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
 
     case EFFNUM_OUTPUT_VOLUME:
       store_value = get_gain_store_value(value,value_type);
-      printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
+      //printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
       if(plugin->output_volume_is_on==true)
         SMOOTH_set_target_value(&plugin->output_volume, store_value*plugin->volume);
       break;
@@ -767,7 +768,7 @@ void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
 
       // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
     case EFFNUM_COMP_RATIO:
-      printf("Setting ratio to %f\n",store_value);
+      //printf("Setting ratio to %f\n",store_value);
       COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RATIO, store_value);
       break;
     case EFFNUM_COMP_THRESHOLD:
@@ -784,6 +785,7 @@ void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       break;
     case EFFNUM_COMP_ONOFF:
       plugin->comp.is_on=store_value > 0.5f;
+      //printf("storing comp. %d %f %f\n",plugin->comp.is_on,store_value,value);
       break;
 
     case EFFNUM_COMP_SHOW_GUI:
