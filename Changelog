@@ -1,4 +1,8 @@
 
+Most important changes 1.9.26 -> 1.9.27:
+* Undo/redo for the compressor.
+
+
 Most important changes 1.9.25 -> 1.9.26:
 * Fix union compilation error.
 
