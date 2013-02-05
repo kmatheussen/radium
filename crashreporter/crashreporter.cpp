@@ -268,9 +268,11 @@ void CRASHREPORTER_init(void){
 
   CRASHREPORTER_windows_init();
 
-#elif defined(FOR_LINUX) || defined(FOR_MACOSX)
+#elif defined(FOR_LINUX)
   system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + "&").toAscii());
   CRASHREPORTER_posix_init();
+
+#elif defined(FOR_MACOSX)
 
 #else
 # error "Unknown machine"
