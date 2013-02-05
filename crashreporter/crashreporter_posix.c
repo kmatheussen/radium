@@ -14,7 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+#if defined(FOR_LINUX)
+// || defined(FOR_MACOSX)
 
 #define PACKAGE 1 // workaround for bug in libbfd
 #define PACKAGE_VERSION 1 // workaround for bug in libbfd
@@ -121,4 +122,5 @@ void CRASHREPORTER_posix_init(void){
 }
 
 
-#endif // defined(FOR_LINUX) || defined(FOR_MACOSX)
+#endif // defined(FOR_LINUX)
+// || defined(FOR_MACOSX)

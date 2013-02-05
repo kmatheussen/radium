@@ -92,6 +92,7 @@ GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
 VST_OPTS ?= -DUSE_VESTIGE=0
 
 CRASHREPORTER_OPTS ?= 
+CRASHREPORTER_POSIX_OPTS ?= 
 
 DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM
 # -DMEMORY_DEBUG
@@ -1522,10 +1523,10 @@ bin/crashreporter: crashreporter/crashreporter.cpp
 	rm crashbin.o
 
 crashreporter.o: crashreporter/crashreporter.cpp
-	$(CC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS)
+	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS)
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
-	$(CC) crashreporter/crashreporter_posix.c $(OPT)
+	$(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS)
 
 crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
