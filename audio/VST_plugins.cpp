@@ -811,15 +811,16 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     Data *data = (Data*)plugin->data;
     AEffect *aeffect = data->aeffect;
 
-    char disp[9] = {0};
+    char disp[128] = {0};
     aeffect->dispatcher(aeffect,effGetParamDisplay,
 			effect_num, 0, (void *) disp, 0.0f);
 
-    if (disp[0]==0)
+    if (disp[0]==0){
       snprintf(buffer,buffersize,"%f%s",aeffect->getParameter(aeffect,effect_num),type_data->params[effect_num].label);
-    else
-      snprintf(buffer,buffersize,"%s%s",disp,type_data->params[effect_num].label);
-
+    }else{
+      const char *label = type_data->params[effect_num].label;
+      snprintf(buffer,buffersize,"%s%s",disp,label==NULL ? "" : label);
+    }
   }
 
   static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
