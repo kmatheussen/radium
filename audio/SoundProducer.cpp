@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
+#include "system_compressor_wrapper_proc.h"
 
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
@@ -277,24 +278,22 @@ struct SoundProducer : DoublyLinkedList{
     free(_output_sound);
   }
   
-  BusDescendantType RT_set_bus_descendant_type_for_plugin(){
-    if(_plugin->bus_descendant_type==IS_BUS_DESCENDANT)
-      return IS_BUS_DESCENDANT;
-
-    if(_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT)
-      return IS_NOT_A_BUS_DESCENDANT;
+  void RT_set_bus_descendant_type_for_plugin(){
+    if(_plugin->bus_descendant_type != MAYBE_A_BUS_DESCENDANT)
+      return;
 
     if(!strcmp(_plugin->type->type_name,"Bus")){
       _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
-      return IS_BUS_DESCENDANT;
+      return;
     }
 
     for(int ch=0;ch<_num_inputs;ch++){
       SoundProducerLink *link = (SoundProducerLink*)_input_producers[ch].next;
       while(link!=NULL){
-        if(link->sound_producer->RT_set_bus_descendant_type_for_plugin()==IS_BUS_DESCENDANT){
+        link->sound_producer->RT_set_bus_descendant_type_for_plugin();
+        if(link->sound_producer->_plugin->bus_descendant_type==IS_BUS_DESCENDANT){
           _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
-          return IS_BUS_DESCENDANT;
+          return;
         }
         
         link=(SoundProducerLink*)link->next;
@@ -302,7 +301,6 @@ struct SoundProducer : DoublyLinkedList{
     }
 
     _plugin->bus_descendant_type = IS_NOT_A_BUS_DESCENDANT;
-    return IS_NOT_A_BUS_DESCENDANT;
   }
 
   void allocate_sound_buffers(int num_frames){
@@ -397,57 +395,87 @@ struct SoundProducer : DoublyLinkedList{
     return links;
   }
 
-  // Quite chaotic with all the on/off is/was booleans.
-  void RT_apply_system_filter(SystemFilter *filter, float *output_sound, int ch, int num_frames){
-    float *s[1];
-
-    if(filter->is_on==true){
-
-      if(filter->was_off==true){ // fade in
-        float filter_sound[num_frames];
-        memcpy(filter_sound,output_sound,sizeof(float)*num_frames);
-        
-        s[0] = &filter_sound[0];
-        filter->plugins[ch]->type->RT_process(filter->plugins[ch], 0, num_frames, s,s);
-
-        RT_fade_in(&filter_sound[0], num_frames);
-        RT_fade_out(output_sound, num_frames);
+  // fade in 'input'
+  void RT_crossfade_in(float *input, float *output, int num_frames){
+    RT_fade_in(input, num_frames);
+    RT_fade_out(output, num_frames);
           
-        for(int i=0;i<num_frames;i++)
-          output_sound[i] += filter_sound[i]; // crossfade
+    for(int i=0;i<num_frames;i++)
+      output[i] += input[i];
+  }
 
-        if(ch==_num_outputs-1)
-          filter->was_off=false;
+  // fade out 'input'
+  void RT_crossfade_out(float *input, float *output, int num_frames){
+    RT_fade_out(input, num_frames);
+    RT_fade_in(output, num_frames);
+          
+    for(int i=0;i<num_frames;i++)
+      output[i] += input[i];
+  }
 
+  void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames){
+    if(filter->plugins==NULL)
+      if(num_channels==0){
+        return;
+      }else if(num_channels==1){
+        float *s[2];
+        float temp_ch2[num_frames];
+        s[0] = input[0];
+        s[1] = temp_ch2;
+        memset(s[1],0,sizeof(float)*num_frames);
+        COMPRESSOR_process(_plugin->compressor, s, s, num_frames);
+        if(s[0] != output[0])
+          memcpy(output[0],s[0],sizeof(float)*num_frames);
       }else{
+        COMPRESSOR_process(_plugin->compressor, input, output, num_frames);
+      }
+    else
+      for(int ch=0;ch<num_channels;ch++)
+        filter->plugins[ch]->type->RT_process(filter->plugins[ch], 0, num_frames, &input[ch], &output[ch]);
+  }
 
-        s[0] = output_sound;
-        filter->plugins[ch]->type->RT_process(filter->plugins[ch], 0, num_frames, s,s);
+  // Quite chaotic with all the on/off is/was booleans.
+  void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames){
+    if(filter->is_on==false && filter->was_on==false)
+      return;
 
+    {
+      float *s[num_channels];
+      float filter_sound[num_channels*num_frames];
+      
+      for(int ch=0;ch<num_channels;ch++)
+        s[ch] = &filter_sound[ch*num_frames];
+      
+      if(filter->is_on==true){
+        
+        if(filter->was_off==true){ // fade in
+          RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames);
+          
+          for(int ch=0;ch<num_channels;ch++)
+            RT_crossfade_in(s[ch], sound[ch], num_frames);
+          
+          filter->was_off=false;
+          
+        }else{
+          
+          RT_apply_system_filter_apply(filter,sound,sound,num_channels,num_frames);
+          
+        }
+        
+        filter->was_on=true;
+        
+      }else if(filter->was_on==true){ // fade out.
+        
+        RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames);
+        
+        for(int ch=0;ch<num_channels;ch++)
+          RT_crossfade_out(s[ch], sound[ch], num_frames);
+        
+        filter->was_on=false;
+        filter->was_off=true;
       }
 
-      filter->was_on=true;
-
-    }else if(filter->was_on==true){ // fade out.
-
-      float filter_sound[num_frames];
-      memcpy(filter_sound,output_sound,sizeof(float)*num_frames);
-
-      s[0] = &filter_sound[0];
-      filter->plugins[ch]->type->RT_process(filter->plugins[ch], 0, num_frames, s,s);          
-
-      RT_fade_out(&filter_sound[0], num_frames);
-      RT_fade_in(output_sound, num_frames);
-          
-      for(int i=0;i<num_frames;i++)
-        output_sound[i] += filter_sound[i]; // crossfade
-
-      if(ch==_num_outputs-1)
-        filter->was_on=false;
-        
-      filter->was_off=true;
     }
-
   }
 
   void RT_process(int64_t time, int num_frames){
@@ -556,16 +584,16 @@ struct SoundProducer : DoublyLinkedList{
 
       }
 
+      // compressor
+      RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames);
 
       // filters
-      for(int ch=0;ch<_num_outputs;ch++){
-        RT_apply_system_filter(&_plugin->lowshelf, _output_sound[ch], ch, num_frames);
-        RT_apply_system_filter(&_plugin->eq1, _output_sound[ch], ch, num_frames);
-        RT_apply_system_filter(&_plugin->eq2, _output_sound[ch], ch, num_frames);
-        RT_apply_system_filter(&_plugin->highshelf, _output_sound[ch], ch, num_frames);
-        RT_apply_system_filter(&_plugin->lowpass, _output_sound[ch], ch, num_frames);
-      }
-      
+      RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames);
+      RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames);
+      RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames);
+      RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames);
+      RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames);
+  
       // dry/wet
       RT_apply_dry_wet(_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
 
@@ -577,7 +605,7 @@ struct SoundProducer : DoublyLinkedList{
 
     // Right channel delay
     if(_num_outputs>1)
-      RT_apply_system_filter(&_plugin->delay, _output_sound[1], _num_outputs-1, num_frames);
+      RT_apply_system_filter(&_plugin->delay, &_output_sound[1], _num_outputs-1, num_frames);
 
 
     // Output peaks

@@ -18,11 +18,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // Code is based on "compressor_demo" from the file effects.lib in the Faust distribution,
 // written by Julius O. Smith III.
 
+// benchmark:
+// /home/kjetil/faudiostream/compiler/faust -a bench.cpp faust_multibandcomp.dsp >benchmark.cpp && g++ benchmark.cpp  -O3 -Wall -msse -mfpmath=sse  -o benchmark -lpthread && ./benchmark
 
 
 import("filter.lib");
 effect = library("effect.lib");
-
+import("fast_log_exp.dsp");
 
 def_ratio = 2.0;
 def_threshold = -20.0;
@@ -37,6 +39,27 @@ def_outgain = 0.0;
 solo(i) = int(checkbox("Band %i: [0] Solo [tooltip: When this is checked, the compressor is enabled. If not, sound is muted.]"));
 get_gain_from_solo(i) = float(solo(i) | ( (solo(1)==0) & (solo(2)==0) & (solo(3)==0) ));
 
+compression_gain_mono(ratio,thresh,att,rel) = _
+    : effect.amp_follower_ud(att,rel)
+    : ll2_linear2db 
+    : outminusindb(ratio,thresh) 
+    : kneesmooth(att) 
+    : ll2_db2linear
+with {
+  // kneesmooth(att) installs a "knee" in the dynamic-range compression,
+  // where knee smoothness is set equal to half that of the compression-attack.
+  // A general 'knee' parameter could be used instead of tying it to att/2:
+  kneesmooth(att)  = smooth(tau2pole(att/2.0));
+  // compression gain in dB:
+   outminusindb(ratio,thresh,level) = max(level-thresh,0.0) * (1.0/float(ratio)-1.0);
+  // Note: "float(ratio)" REQUIRED when ratio is an integer > 1!
+};
+
+compressor_stereo(ratio,thresh,att,rel,x,y) = cgm*x, cgm*y with {
+  cgm = compression_gain_mono(ratio,thresh,att,rel,abs(x)+abs(y));
+};
+
+
 //---------------------------- compressor_demo -------------------------
 // USAGE: _,_ : compressor_demo : _,_;
 //
@@ -47,7 +70,7 @@ compressor(i) = effect.bypass2(bypass,compressor_stereo_demo) with {
     displaygain = _,_ <: _,_,(abs,abs:+) : _,_,gainview : _,attach;
 
     compressor_stereo_demo = *(ingain), *(ingain) 
-    : displaygain(effect.compressor_stereo(ratio,threshold,attack,release)) 
+    : displaygain(compressor_stereo(ratio,threshold,attack,release)) 
     : *(outgain), *(outgain)
     : *(get_gain_from_solo(i)),*(get_gain_from_solo(i))
     : outgainview;
@@ -68,7 +91,7 @@ compressor(i) = effect.bypass2(bypass,compressor_stereo_demo) with {
     : *(0.001)
     : max(1/SR);
 
-    gainview = effect.compression_gain_mono(ratio,threshold,attack,release)
+    gainview = compression_gain_mono(ratio,threshold,attack,release)
     : *(0.5)
     : hbargraph("Band %i:[6][1] Input Gain [tooltip: dummy tooltip]",
                 0.0, 1.0);
@@ -102,12 +125,12 @@ comb = (stereo_split,stereo_split);
 
 limiter = effect.bypass2(limiter_bypass, process) with{
 
-    process = input_gain : effect.compressor_stereo(ratio,-6,attack,release) : output_gain;
+    process = input_gain : compressor_stereo(ratio,-6,attack,release) : output_gain;
 
     limiter_bypass = checkbox("[E] Limiter Bypass"); // Must be named "Limiter Bypass". Used in Qt_PluginWidget.cpp and Qt_plugin_widget_callbacks.h
 
     input_gain    = *(ingain),*(ingain);
-    ingain        = ingain_slider : db2linear;
+    ingain        = ingain_slider : ll2_db2linear;
     ingain_slider = hslider("[F] Limiter Input Gain [unit:dB]  [tooltip: Adjust overall gain.]",
                             0, -40, 40, 0.1);
 
@@ -117,7 +140,7 @@ limiter = effect.bypass2(limiter_bypass, process) with{
 
     output_gain    = *(outgain),*(outgain);
     outgain = hslider("[J] Limiter Output Gain [unit:dB]  [tooltip: Adjust overall gain.]",
-                   0, -40, 40, 0.1) : db2linear;
+                   0, -40, 40, 0.1) : ll2_db2linear;
 };
 
 main_gain =

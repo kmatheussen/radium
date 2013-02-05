@@ -59,7 +59,7 @@ static void Undo_AudioEffect(
   undo_ae->value = plugin->savable_effect_values[effect_num];
 
 
-  printf("********* Storing eff undo. value: %f\n",undo_ae->value);
+  printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
 
   Undo_Add_dont_stop_playing(
                              window->l.num,

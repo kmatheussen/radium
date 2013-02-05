@@ -232,14 +232,16 @@ int main(int argc, char **argv){
 #if !defined(CRASHREPORTER_BIN)
 
 void CRASHREPORTER_init(void){
-  QTime now = QTime::currentTime();
-  qsrand(now.msec());
-  QString key = "radium_crashreporter_" + QString::number(qrand());
+  QString key = "radium_crashreporter_" + QString::number(QDateTime::currentMSecsSinceEpoch());
 
   g_sharedmemory = new QSharedMemory(key);
 
   if(g_sharedmemory->create(sizeof(Report))==false){
     fprintf(stderr,"Crashreporter: Couldn't create... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
+#ifndef RELEASE
+    fprintf(stderr,"press return\n");
+    gets(NULL);
+#endif
   }
 
 #if defined(FOR_WINDOWS)

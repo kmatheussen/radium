@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
 #include "undo_audio_effect_proc.h"
+#include "system_compressor_wrapper_proc.h"
 
 #include "SoundPlugin_proc.h"
 
@@ -196,6 +197,17 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Hs L.",
   "System Hs On/Off",
 
+  "System Show Equalizer GUI",
+
+  "System Compression Ratio",
+  "System Compression Threshold",
+  "System Compression Attack",
+  "System Compression Release",
+  "System Compression Makeup Gain",
+  "System Compression On/Off",
+
+  "System Show Compressor GUI",
+
   "System Width",
   "System Width On/Off"
 };
@@ -282,6 +294,16 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type){
   }
 
   {
+    plugin->compressor = COMPRESSOR_create(MIXER_get_sample_rate());
+    plugin->comp.is_on = false;
+    plugin->comp.was_off = true;
+    plugin->comp.was_on = false;
+  }
+
+  plugin->show_equalizer_gui = true;
+  plugin->show_compressor_gui = false;
+
+  {
     int i;
     plugin->savable_effect_values=calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
 
@@ -327,6 +349,8 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
   SMOOTH_release(&plugin->bus_volume[1]);
   SMOOTH_release(&plugin->pan);
   SMOOTH_release(&plugin->drywet);
+
+  COMPRESSOR_delete(plugin->compressor);
 
   release_system_filter(&plugin->lowpass, plugin_type->num_outputs);
   release_system_filter(&plugin->eq1, plugin_type->num_outputs);
@@ -485,7 +509,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     val = plugin->highshelf_db;
     snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
     break;
-
+    
   case EFFNUM_DELAY_TIME:
     val = plugin->delay_time;
     snprintf(buffer,buffersize-1,"%.2f ms",val);
@@ -543,6 +567,7 @@ static void set_smooth_on_off(Smooth *smooth, bool *on_off, float value, float s
 
 void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type){
   float store_value = value;
+  //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
   if(effect_num < plugin->type->num_effects){
 
@@ -596,7 +621,7 @@ void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
 
     case EFFNUM_OUTPUT_VOLUME:
       store_value = get_gain_store_value(value,value_type);
-      printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
+      //printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
       if(plugin->output_volume_is_on==true)
         SMOOTH_set_target_value(&plugin->output_volume, store_value*plugin->volume);
       break;
@@ -736,7 +761,37 @@ void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     case EFFNUM_HIGHSHELF_ONOFF:
       plugin->highshelf.is_on = store_value > 0.5f;
       break;
-      
+
+    case EFFNUM_EQ_SHOW_GUI:
+      plugin->show_equalizer_gui = store_value > 0.5f;
+      break;
+
+      // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
+    case EFFNUM_COMP_RATIO:
+      //printf("Setting ratio to %f\n",store_value);
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RATIO, store_value);
+      break;
+    case EFFNUM_COMP_THRESHOLD:
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_THRESHOLD, store_value);
+      break;
+    case EFFNUM_COMP_ATTACK:
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_ATTACK, store_value);
+      break;
+    case EFFNUM_COMP_RELEASE:
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RELEASE, store_value);
+      break;
+    case EFFNUM_COMP_OUTPUT_VOLUME:
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_OUTPUT_VOLUME, store_value);
+      break;
+    case EFFNUM_COMP_ONOFF:
+      plugin->comp.is_on=store_value > 0.5f;
+      //printf("storing comp. %d %f %f\n",plugin->comp.is_on,store_value,value);
+      break;
+
+    case EFFNUM_COMP_SHOW_GUI:
+      plugin->show_compressor_gui = store_value > 0.5f;
+      break;
+
     case EFFNUM_DELAY_TIME:
       store_value = value_type==PLUGIN_STORED_TYPE ? value : scale(value, 0, 1, DELAY_MIN, DELAY_MAX);
       plugin->delay_time = store_value;
@@ -882,6 +937,25 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return scale(plugin->highshelf_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_HIGHSHELF_ONOFF:
     return plugin->highshelf.is_on==true ? 1.0 : 0.0f;
+
+  case EFFNUM_EQ_SHOW_GUI:
+    return plugin->show_equalizer_gui==true ? 1.0 : 0.0f;
+
+  case EFFNUM_COMP_RATIO:
+    return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_RATIO);
+  case EFFNUM_COMP_THRESHOLD:
+    return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_THRESHOLD);
+  case EFFNUM_COMP_ATTACK:
+    return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_ATTACK);
+  case EFFNUM_COMP_RELEASE:
+    return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_RELEASE);
+  case EFFNUM_COMP_OUTPUT_VOLUME:
+    return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_OUTPUT_VOLUME);
+  case EFFNUM_COMP_ONOFF:
+    return plugin->comp.is_on==true ? 1.0 : 0.0f;
+
+  case EFFNUM_COMP_SHOW_GUI:
+    return plugin->show_compressor_gui==true ? 1.0 : 0.0f;
     
   case EFFNUM_DELAY_TIME:
     return scale(plugin->highshelf_db,DELAY_MIN,DELAY_MAX,0,1);

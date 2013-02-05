@@ -74,6 +74,17 @@ enum{
   EFFNUM_HIGHSHELF_GAIN,
   EFFNUM_HIGHSHELF_ONOFF,
 
+  EFFNUM_EQ_SHOW_GUI,
+
+  EFFNUM_COMP_RATIO, // Note that the order for the compressor parameters must be the same as the compressor parameters in system_compresssor_wrapper_proc.h
+  EFFNUM_COMP_THRESHOLD,
+  EFFNUM_COMP_ATTACK,
+  EFFNUM_COMP_RELEASE,
+  EFFNUM_COMP_OUTPUT_VOLUME,
+  EFFNUM_COMP_ONOFF,
+
+  EFFNUM_COMP_SHOW_GUI,
+
   EFFNUM_DELAY_TIME,
   EFFNUM_DELAY_ONOFF,
 
@@ -261,6 +272,13 @@ typedef struct SoundPlugin{
 
   SystemFilter delay;
   float delay_time;
+
+  bool show_equalizer_gui;
+
+  SystemFilter comp;
+  void *compressor;
+
+  bool show_compressor_gui;
 
   float *volume_peak_values;
   float *volume_peak_values_for_chip;

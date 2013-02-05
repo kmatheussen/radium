@@ -40,14 +40,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_SliderPainter_proc.h"
 
-static int scale(int x, int x1, int x2, int y1, int y2){
+static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
 }
 
 struct MyQSlider;
 
+#ifdef COMPILING_RADIUM
 extern QVector<MyQSlider*> g_all_myqsliders;
 extern struct Root *root;
+#else
+QVector<MyQSlider*> g_all_myqsliders;
+#endif
 
 static int g_minimum_height = 0;
 
@@ -108,9 +112,9 @@ struct MyQSlider : public QSlider{
   void handle_mouse_event ( QMouseEvent * event ){
     //printf("Got mouse press event %d / %d\n",(int)event->x(),(int)event->y());
     if (orientation() == Qt::Vertical)
-      setValue(scale(event->y(),height(),0,minimum(),maximum()));
+      setValue(scale_int(event->y(),height(),0,minimum(),maximum()));
     else
-      setValue(scale(event->x(),0,width(),minimum(),maximum()));
+      setValue(scale_int(event->x(),0,width(),minimum(),maximum()));
 
     event->accept();
   }
@@ -120,15 +124,20 @@ struct MyQSlider : public QSlider{
   {
     //printf("Got mouse pres event %d / %d\n",(int)event->x(),(int)event->y());
     if (event->button() == Qt::LeftButton){
+
+#ifdef COMPILING_RADIUM
       if(_patch!=NULL && _patch->instrument==get_audio_instrument()){
         Undo_AudioEffect_CurrPos(_patch, _effect_num);
         //handle_system_delay(true);
       }
+#endif
 
       handle_mouse_event(event);
       _has_mouse = true;
 
     }else{
+
+#ifdef COMPILING_RADIUM
       vector_t options = {0};
       VECTOR_push_back(&options, "Reset");
       //VECTOR_push_back(&options, "Set Value");
@@ -140,6 +149,8 @@ struct MyQSlider : public QSlider{
         PLUGIN_reset_one_effect(plugin,_effect_num);
         GFX_update_instrument_widget(_patch);
       }
+#endif
+
 #if 0
       else if(command==1 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
