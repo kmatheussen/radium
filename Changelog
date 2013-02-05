@@ -1,3 +1,6 @@
+Most important changes 1.9.28 -> 1.9.29:
+* Make it compile
+
 Most important changes 1.9.27 -> 1.9.28:
 * Revert back to fausts denormal handling. Hopefully fixes crash on CPUs without sse2.
 * Fix vst plugin memory corruption
