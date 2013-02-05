@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 1.9.27
+VERSION = 1.9.28
 
 #----------------USER SETTINGS-------------------------------
 
@@ -1512,7 +1512,7 @@ SoundfileSaver.o: audio/SoundfileSaver.c
 	$(CC) audio/SoundfileSaver.c $(OPT)
 
 system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_compressor.cpp
-	$(CCC) $(CPPOPT) $(CPUOPT) audio/system_compressor_wrapper.cpp
+	$(CCC) $(QTOPT) $(CPUOPT) audio/system_compressor_wrapper.cpp
 
 audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -vec -cn Faust_system_compressor audio/system_compressor.dsp >audio/system_compressor.cpp
