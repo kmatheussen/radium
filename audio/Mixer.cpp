@@ -376,12 +376,9 @@ struct Mixer{
 
 
   void RT_thread(void){
-    //AVOIDDENORMALS;
-#ifndef DOESNT_HAVE_SSE
-    // Denormal handling. These two lines are copied from supernova by Tim Blechmann.
-    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-    _mm_setcsr(_mm_getcsr() | 0x40);
-#endif
+    //#ifndef DOESNT_HAVE_SSE
+    AVOIDDENORMALS;
+    //#endif
 
 #if 0
 #define CSR_FLUSH_TO_ZERO         (1 << 15)
