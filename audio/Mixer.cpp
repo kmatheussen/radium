@@ -52,7 +52,7 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 #  include <xmmintrin.h>
 #endif
 
-#if 0
+#if 1
 
 #include <float.h>
 
