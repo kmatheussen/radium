@@ -178,6 +178,7 @@ MyScene::MyScene(QWidget *parent)
   _slot_indicator = new SlotIndicatorItem(); //addRect(0,0,chip_width,chip_width, QPen(color));//, Qt::SolidPattern);
   _slot_indicator->setZValue(-2);
 
+  addItem(_slot_indicator);
   //new HelpText(this);
 }
 
@@ -341,7 +342,7 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
     }
   }
 
-  myscene->addItem(_slot_indicator);
+  //myscene->addItem(_slot_indicator);
   draw_slot(myscene,mouse_x,mouse_y);
 }
 
@@ -418,7 +419,7 @@ static void cleanup_chip_positions(MyScene *myscene){
 
 static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
-  myscene->removeItem(_slot_indicator);
+  //myscene->removeItem(_slot_indicator);
   myscene->_parent->setCursor(QCursor(Qt::ArrowCursor));
 
   Chip *main_chip = myscene->_moving_chips.at(0);
@@ -445,9 +446,10 @@ static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 }
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
-  //printf("mousemove: %p\n",_current_connection);
-  
+    
   QPointF pos=event->scenePos();
+
+  draw_slot(this, pos.x(), pos.y());
 
   if(_current_connection != NULL){
 
@@ -661,7 +663,7 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
       return false;
   }
 
-  scene->addItem(_slot_indicator);
+  //scene->addItem(_slot_indicator);
   draw_slot(scene,mouse_x,mouse_y);
 
   Undo_Open();{
@@ -676,8 +678,8 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     }
 
   }Undo_Close();
-
-  scene->removeItem(_slot_indicator);
+  
+  //scene->removeItem(_slot_indicator);
   event->accept();
   return true;
 }

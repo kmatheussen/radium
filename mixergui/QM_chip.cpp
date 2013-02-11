@@ -666,8 +666,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     bool is_over = (option->state & QStyle::State_MouseOver);
   */
 
+  bool is_current_patch = get_current_instruments_gui_patch()==plugin->patch;
+
   QColor c(g_editor->colors[1]);
-  if(get_current_instruments_gui_patch()!=plugin->patch)
+  if(is_current_patch==false);
     c.setAlpha(160);
 
   painter->setPen(QPen(c, 2));
@@ -679,9 +681,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_coordinates(x1,y1,x2,y2);
 
-    if(get_current_instruments_gui_patch()==plugin->patch){
+    if(is_current_patch==true){
       QColor c(g_editor->colors[2]);
-      c.setAlpha(50);
+      c.setAlpha(30);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
     }
 
@@ -756,7 +758,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     {
       QColor c(g_editor->colors[1]);
-      if(get_current_instruments_gui_patch()!=plugin->patch)
+      if(is_current_patch==false)
         c.setAlpha(160);
       
       painter->setPen(QPen(c, 2));
