@@ -130,7 +130,7 @@ static const char** get_lines(const char* key){
 #endif
 
   char version_string[500];
-  sprintf(version_string,"settings_version = %f # dont change this one",SETTINGSVERSION);
+  sprintf(version_string,"settings_version = %s # dont change this one",OS_get_string_from_double(SETTINGSVERSION));
   ret[version_linenum] = talloc_strdup(version_string);
 
   return ret;
@@ -234,7 +234,7 @@ void SETTINGS_write_int(const char* key, int64_t val){
 
 void SETTINGS_write_double(const char* key, double val){
   char temp[500];
-  sprintf(temp,"%f",val);
+  sprintf(temp,"%s",OS_get_string_from_double(val));
   SETTINGS_put(key,temp);
 }
 

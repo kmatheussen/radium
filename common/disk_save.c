@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "player_proc.h"
 #include "nag.h"
+#include "OS_settings_proc.h"
 
 #include "../config/config.h"
 
@@ -44,7 +45,7 @@ void Save_Clean(const char *filename,struct Root *theroot){
 	}
 
 	length1=fprintf(dc.file,"RADIUM SONG\n");
-	length2=fprintf(dc.file,"%f\n",DISKVERSION);
+	length2=fprintf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
 
 	if(length1<0 || length2<0){
 		RError("Could not write to file.\n");

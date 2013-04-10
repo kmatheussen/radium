@@ -87,3 +87,7 @@ double OS_get_double_from_string(const char *s){
   return string.toDouble();
 }
 
+char *OS_get_string_from_double(double d){
+  QString string = QString::number(d,'g',16);
+  return talloc_strdup(string.ascii());
+}

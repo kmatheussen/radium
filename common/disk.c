@@ -83,7 +83,7 @@ void DC_SaveP(unsigned long integer){
 }
 
 void DC_SaveF(float integer){
-	if(fprintf(dc.file,"%f\n",integer)<0) dc.success=false;
+  if(fprintf(dc.file,"%s\n",OS_get_string_from_double(integer))<0) dc.success=false;
 }
 
 void DC_SaveB(bool integer){

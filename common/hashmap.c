@@ -311,7 +311,7 @@ void HASH_save(hash_t *hash, FILE *file){
         fprintf(file,"%" PRId64 "\n",element->int_number);
         break;
       case FLOAT_TYPE:
-        fprintf(file,"%f\n",element->float_number);
+        fprintf(file,"%s\n",OS_get_string_from_double(element->float_number));
         break;
       case HASH_TYPE:
         HASH_save(element->hash, file);
