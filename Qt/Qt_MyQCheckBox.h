@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
+#include "Qt_mix_colors.h"
 
 #ifdef COMPILING_RADIUM
 extern struct Root *root;
@@ -32,26 +33,6 @@ extern struct Root *root;
 extern QColor *g_colors;
 #endif
 
-static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
-
-  float a1 = how_much;
-  float a2 = 1.0f-a1;
-
-  if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
-    int r = 74*a1 + c2.red()*a2;
-    int g = 74*a1 + c2.green()*a2;
-    int b = 74*a1 + c2.blue()*a2;
-
-    return QColor(r,g,b);
-  }else{
-
-    int r = c1.red()*a1 + c2.red()*a2;
-    int g = c1.green()*a1 + c2.green()*a2;
-    int b = c1.blue()*a1 + c2.blue()*a2;
-
-    return QColor(r,g,b);
-  }
-}
 
 static int get_text_width(QString text){
   const QFontMetrics fn = QFontMetrics(QFont());

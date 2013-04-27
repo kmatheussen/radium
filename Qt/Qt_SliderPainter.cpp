@@ -27,18 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_SliderPainter_proc.h"
 
+#include "Qt_MyWidget.h"
+#include "MySliderPainterPainter.h"
+
 
 const int k_timer_interval = 50;
 
-#ifdef COMPILING_RADIUM
-extern struct Root *root;
-#else
-extern QColor *g_colors;
-#endif
 
-
-
-static int scale(int x, int x1, int x2, int y1, int y2){
+static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
 }
 
@@ -92,27 +88,6 @@ static float iec_scale(float db) {
 #endif
 
 
-static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
-
-  float a1 = how_much;
-  float a2 = 1.0f-a1;
-
-  if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
-    int r = 74*a1 + c2.red()*a2;
-    int g = 74*a1 + c2.green()*a2;
-    int b = 74*a1 + c2.blue()*a2;
-
-    return QColor(r,g,b);
-  }else{
-
-    int r = c1.red()*a1 + c2.red()*a2;
-    int g = c1.green()*a1 + c2.green()*a2;
-    int b = c1.blue()*a1 + c2.blue()*a2;
-
-    return QColor(r,g,b);
-  }
-}
-
 
 
 #define MAX_CHANNELS 8
@@ -135,11 +110,11 @@ struct AutomationOrPeakData{
 }
 
 static int DATA_get_y1(AutomationOrPeakData *data, int height){
-  return scale(data->ch,0,data->num_ch,1,height-1);
+  return scale_int(data->ch,0,data->num_ch,1,height-1);
 }
 
 static int DATA_get_y2(AutomationOrPeakData *data, int height){
-  return scale(data->ch+1,0,data->num_ch,1,height-1);
+  return scale_int(data->ch+1,0,data->num_ch,1,height-1);
 }
 
 struct SliderPainter{
@@ -200,7 +175,7 @@ struct SliderPainter{
     }
   }; // struct Timer
 
-  std::vector<AutomationOrPeakData*> _data;
+  std::vector<AutomationOrPeakData*>_data;
   
   QSlider *_qslider;
   QGraphicsItem *_graphics_item;  // Either widget or _graphics_item must be set.
@@ -415,89 +390,13 @@ struct SliderPainter{
     QColor *colors = g_colors;
 #endif
 
-    QColor col1;
-    QColor col1b;
-    QColor col2;
+    cvs::MyPainter mp(p);
 
-    int col1num = 11;
-    int col2num = 9;
-    //int col1num = qrand() % 15;
-    //int col2num = qrand() % 15;
-
-    if(false && _qslider!=NULL){
-      if(isEnabled()){
-        QColor c1(70,70,33);
-        QColor c2(59,98,33);
-        col1 = mix_colors(c1,colors[col1num].light(90),0.5);
-        col1b = mix_colors(c2,col1,0.3);
-        ///col2 = mix_colors(editor->colors[col2num],editor->colors[col1num],0.8).light(95);//.light(90);
-        col2 = colors[15];
-      }else{
-        col1 = colors[col1num].light(105);
-        col1b = col1;
-        col2 = colors[col2num].light(102);
-      }
-    }else{
-      if(isEnabled()){
-        QColor c(98,59,33);
-
-        int colnum = 8;
-        col1 = c.light(90);
-        col1b = colors[13].light(100);
-        //int colnum = 8;
-        //col1 = editor->colors[colnum].light(90);
-        //col1b = editor->colors[13].light(100);
-
-        col2 = colors[colnum];
-      }else{
-        //col1 = editor->colors[col1num].light(105);
-        col1 = mix_colors(colors[col1num], Qt::gray, 0.8f);
-        col1b = mix_colors(colors[col1num].light(110), Qt::gray, 0.8f);
-        col2 = mix_colors(colors[col2num], Qt::gray, 0.8f);
-        //col2 = editor->colors[col2num].light(102);
-      }
-
-      if(_alternative_color==true){
-        col1 = QColor(200,200,200);
-        col2 = QColor(100,100,100);
-      }
-
-      if(_qslider!=NULL){
-        col1.setAlpha(80);
-        col1b.setAlpha(100);
-      }else{
-        col1.setAlpha(120);
-        col1b.setAlpha(120);
-      }
-      col2.setAlpha(0);
-    }
-
-    if(orientation() == Qt::Vertical){
-      int pos=scale(value(),maximum(),minimum(),0,height());
-      p->fillRect(0,0,width(),height(),col2);
-      p->fillRect(0,pos,width(),height()-pos,col1);
-    }else{
-      int pos=scale(value(),minimum(),maximum(),0,width());
-      {
-        QLinearGradient gradient(0,0,width(),height()*3/4);
-        if(_qslider!=NULL){
-          //gradient.setColorAt(0,col1.light(90));
-          //gradient.setColorAt(1,col1.light(110));
-          gradient.setColorAt(0,col1.light(100));
-          gradient.setColorAt(1,col1b);
-        }else{
-          gradient.setColorAt(0,col1.light(150));
-          gradient.setColorAt(1,col1b);
-        }
-        p->setPen(QPen(QColor(Qt::gray).light(50),1));
-        p->setBrush(gradient);
-        //p->fillRect(0   ,0, pos         ,height(),col1);
-        p->drawRect(0   ,0, pos, height());
-        p->setBrush(QBrush());
-      }
-      p->setPen(QPen(Qt::gray,1));
-      p->fillRect(pos ,0, width()-pos ,height(),col2);
-    }
+    SLIDERPAINTERPAINTER_paint(&mp,0,0,width(),height(),
+                               isEnabled(), 
+                               scale(value(),minimum(),maximum(),0.0f,1.0f),
+                               _display_string.toStdString(),
+                               _alternative_color);
 
     for(unsigned int i=0;i<_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
@@ -509,31 +408,11 @@ struct SliderPainter{
                   2,                    height-1,
                   colors[*data->color]);
       
-      //p->setPen(editor->colors[2].dark(10));
       p->setPen(QPen(colors[11].light(120),1));
       p->drawRect(data->requested_pos, y1,
                   3,                   height);
       
       data->last_drawn_pos = data->requested_pos;
-    }
-
-    if(1){
-      p->setPen(QPen(colors[11].light(110),1));
-      p->drawRect(0,0,width(),height());
-    }
-
-    QRect rect(5,2,width()-5,height()-2);
-
-    if(_display_string!=""){
-      QColor c(colors[1]);
-      if(isEnabled()){
-        c.setAlpha(160);
-        p->setPen(QPen(c,1));//editor->colors[2].darker(500));
-      }else{
-        c.setAlpha(60);
-        p->setPen(QPen(c,1));
-      }
-      p->drawText(rect, Qt::AlignLeft, _display_string);
     }
   }
 

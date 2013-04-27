@@ -197,16 +197,40 @@ static void RT_apply_dry_wet(float **dry, int num_dry_channels, float **wet, int
   }
 }
 
+#if 1
 static void RT_fade_in(float *sound, int num_frames){
   float num_frames_plus_1 = num_frames+1.0f;
   for(int i=0;i<num_frames;i++)
     sound[i] *= (i+1.0f)/num_frames_plus_1;
 }
 
+#else
+
+// not correct
+static void RT_fade_in(float *sound, int num_frames){
+  float num_frames_plus_1 = num_frames+1.0f;
+
+  float val = 1.0f/num_frames_plus_1;
+  float inc = val - ( (num_frames-1) / num_frames_plus_1);
+
+  for(int i=0;i<num_frames;i++){
+    sound[i] *= val;
+    val += inc;
+  }
+}
+#endif
+
+
 static void RT_fade_out(float *sound, int num_frames){
   float num_frames_plus_1 = num_frames+1.0f;
-  for(int i=0;i<num_frames;i++)
-    sound[i] *= (num_frames-i)/num_frames_plus_1;
+  int i;
+  float val = (num_frames / num_frames_plus_1);
+  float inc = val - ( (num_frames-1) / num_frames_plus_1);
+
+  for(i=0;i<num_frames;i++){
+    sound[i] *= val;
+    val -= inc;
+  }
 }
 
 static RSemaphore *signal_from_RT = NULL;
@@ -522,11 +546,11 @@ struct SoundProducer : DoublyLinkedList{
           MIXER_RT_set_bus_descendand_type_for_all_plugins();
         }
 
-        // Apply volume
+        // Apply volume and mix
         SMOOTH_mix_sounds(&source_plugin->output_volume, channel_target, input_producer_sound, num_frames);
         
         link = next;
-      }
+      } // while(link!=NULL)
     }
 
 
@@ -603,7 +627,7 @@ struct SoundProducer : DoublyLinkedList{
     // Output pan
     SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
 
-    // Right channel delay
+    // Right channel delay ("width")
     if(_num_outputs>1)
       RT_apply_system_filter(&_plugin->delay, &_output_sound[1], _num_outputs-1, num_frames);
 
@@ -740,8 +764,8 @@ SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
     SoundProducer *sp = (SoundProducer*)sound_producer_list;
     if(SP_get_plugin(sp)==plugin)
       return sp;
-    else
-      sound_producer_list = sound_producer_list->next;
+
+    sound_producer_list = sound_producer_list->next;
   }
   return NULL;
 }

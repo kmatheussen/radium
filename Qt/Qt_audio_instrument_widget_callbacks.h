@@ -40,7 +40,7 @@ public:
   Patch_widget *_patch_widget;
   Plugin_widget *_plugin_widget;
   Sample_requester_widget *_sample_requester_widget;
-  radium_comp::Compressor_widget *_comp_widget;
+  Compressor_widget *_comp_widget;
 
   MyQSlider *_system_out_slider;
 
@@ -158,7 +158,7 @@ public:
 
     // Add compressor
     {
-      _comp_widget = new radium_comp::Compressor_widget(patch, this);
+      _comp_widget = new Compressor_widget(patch, this);
       effects_layout->insertWidget(effects_layout->count()-1, _comp_widget);
 
       // these widgets are only used in the standalone version

@@ -23,8 +23,8 @@ NSLog(@"subview's frame after  resizing: %@", NSStringFromRect([subView frame]))
 void cocoa_set_nsview_size(GdkWindow *view,int width, int height){
   NSView* nsview = gdk_quartz_window_get_nsview(view);
 
-//[nsview setFrameSize:NSMakeSize(width, height)];
-[nsview setFrame:NSMakeRect(0, 0, width, height)];
+  //[nsview setFrameSize:NSMakeSize(width, height)];
+  [nsview setFrame:NSMakeRect(0, 0, width, height)];
 }
 
 void cocoa_embed(void *super_view, GdkWindow *sub_view){

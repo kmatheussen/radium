@@ -996,7 +996,7 @@ Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
-INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h
+INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
@@ -1056,7 +1056,7 @@ $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
 Qt_MyQSlider.o: $(BUILD_DEPENDENCIES) $(P)Qt_MyQSlider.h $(P)Qt_MyQSlider.cpp
 	$(CCC) $(P)Qt_MyQSlider.cpp $(QTOPT)
 
-Qt_SliderPainter.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_SliderPainter.cpp
+Qt_SliderPainter.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_SliderPainter.cpp $(P)MySliderPainterPainter.h
 	$(CCC) $(P)Qt_SliderPainter.cpp $(QTOPT)
 
 Qt_memory.o:  $(BUILD_DEPENDENCIES)  $(P)Qt_memory.cpp
@@ -1258,7 +1258,7 @@ QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_chip.h $(QM)mQM_view.cpp
 	$(CCC) $(QM)QM_view.cpp $(QTOPT)
 
-QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)/Qt_MyQCheckBox.h
+QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h
 	$(CCC) $(QM)QM_chip.cpp $(QTOPT)
 
 undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h

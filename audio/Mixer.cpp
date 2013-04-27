@@ -387,48 +387,52 @@ struct Mixer{
     __builtin_ia32_ldmxcsr(csr);
 #endif
 
+    LOCK_LOCK(player_lock);  // This is a RT-safe lock. Priority inversion can not happen.
+
     while(true){
 
       // Schedule new notes, etc.
-      LOCK_LOCK(player_lock);{ // This is a RT-safe lock. Priority inversion can not happen.
-        PlayerTask(_buffer_size); // The editor player.
-      }LOCK_UNLOCK(player_lock);
-      
+      PlayerTask(_buffer_size); // The editor player.
+
+
+      LOCK_UNLOCK(player_lock);
 
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
+      LOCK_LOCK(player_lock);
+
 
       // Process sound.
-      LOCK_LOCK(player_lock);{
 
-        jack_time_t start_time = jack_get_time();
-        
-        if(_bus1!=NULL)
-          SP_RT_process(_bus1,_time,num_frames);
-        if(_bus2!=NULL)
-          SP_RT_process(_bus2,_time,num_frames);
-        
-        {
-          DoublyLinkedList *sound_producer = _sound_producers.next;
-          while(sound_producer!=NULL){
+      jack_time_t start_time = jack_get_time();
+      
+      if(_bus1!=NULL)
+        SP_RT_process(_bus1,_time,num_frames);
+      if(_bus2!=NULL)
+        SP_RT_process(_bus2,_time,num_frames);
+      
+      {
+        DoublyLinkedList *sound_producer = _sound_producers.next;
+        while(sound_producer!=NULL){
             SP_RT_process((SoundProducer*)sound_producer,_time,num_frames);
             sound_producer = sound_producer->next;
-          }
         }
-        
-        _time += num_frames;
+      }
       
-        jack_time_t end_time = jack_get_time();
+      _time += num_frames;
+      
+      jack_time_t end_time = jack_get_time();
         g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
-
-      }LOCK_UNLOCK(player_lock);
-
+        
       // Tell jack we are finished.
       jack_cycle_signal(_rjack_client, 0);
-    }
+
+    } // end while
+
+    LOCK_UNLOCK(player_lock);
   }
       
 

@@ -24,8 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 import("filter.lib");
-effect = library("effect.lib");
 import("fast_log_exp.dsp");
+
+effect = library("effect.lib");
 
 def_ratio = 2.0;
 def_threshold = -20.0;
@@ -64,7 +65,7 @@ ingain = hslider("[4] Input Gain [unit:dB]  [tooltip: The compressed-signal outp
 // outgain
 outgain = hslider("[5] Output Gain [unit:dB]  [tooltip: The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression]",
                   def_outgain, -40, 40, 0.1)
-  : db2linear;
+  : db2linear : smooth(0.999);
 
 gainview2(i) = _ <: _,hbargraph("[7] [%i] Gakk",-50,10) : attach;
 

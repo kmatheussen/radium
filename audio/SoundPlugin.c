@@ -816,7 +816,6 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     RError("Illegal effect_num %d",effect_num);
     return 0.0f;
   }
-
   float store_value = plugin->savable_effect_values[effect_num];
 
   if(effect_num < plugin->type->num_effects) {
