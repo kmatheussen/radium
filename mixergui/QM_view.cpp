@@ -100,7 +100,9 @@ View::View(const QString &name, QWidget *parent)
     graphicsView->setDragMode(QGraphicsView::RubberBandDrag);
     graphicsView->setOptimizationFlags(QGraphicsView::DontSavePainterState);
     graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+    //graphicsView->setViewportUpdateMode(QGraphicsView::NoViewportUpdate);
     graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    //graphicsView->setTransformationAnchor(QGraphicsView::AnchorViewCenter);
 
     int size = style()->pixelMetric(QStyle::PM_ToolBarIconSize);
     QSize iconSize(size, size);

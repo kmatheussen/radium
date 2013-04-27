@@ -110,6 +110,7 @@ class MyScene : public QGraphicsScene{
 };
 
 
+class MyQGraphicsView;
 
 class MixerWidget : public QWidget
 {
@@ -121,6 +122,7 @@ public:
     void populateScene();
     
     MyScene scene;
+    MyQGraphicsView *view;
 };
 
 extern MixerWidget *g_mixer_widget;

@@ -253,6 +253,25 @@ static void draw_slot(MyScene *myscene, float x, float y){
   }
 #endif
 
+  QGraphicsView *view = g_mixer_widget->view;
+  const QRectF visibleRect = view->visibleRect();
+
+  //printf("slot x1: %d (visible x1: %d). slot y1: %d (visible y1: %d)\n",(int)x1,(int)visibleRect.left(),(int)y1,(int)visibleRect.top());
+
+  if(y2 >= visibleRect.bottom())
+    return;
+  if(x2 >= visibleRect.right()){
+    //printf("x2: %d, visible x2: %d\n",(int)x2,(int)visibleRect.right());
+    return;
+  }
+  if(y1 <= visibleRect.top())
+    return;
+  if(x1 < visibleRect.left())
+    return;
+
+
+  //myscene->setSceneRect(myscene->itemsBoundingRect ()); // Dangerous. Crashes now and then.
+
   _slot_indicator->setPos(x1,y1);
 }
 
@@ -806,6 +825,7 @@ MixerWidget::MixerWidget(QWidget *parent)
     Mixer_widget *mixer_widget = new Mixer_widget(this);
     mixer_widget->view->setScene(&scene);
     gridLayout->addWidget(mixer_widget, 0, 0, 1, 1);
+    this->view = mixer_widget->view;
 
 #endif
 

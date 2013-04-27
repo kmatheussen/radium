@@ -29,6 +29,15 @@ public:
     //g_view = this;
   }
 
+  // http://stackoverflow.com/questions/1355446/get-visible-rectangle-of-qgraphicsview
+  QRectF visibleRect(){
+    QPointF A = mapToScene( QPoint(0,0) );
+    QPointF B = mapToScene( QPoint( 
+                                    viewport()->width(), 
+                                    viewport()->height()));
+    return QRectF( A, B );
+  }
+
   void wheelEvent(QWheelEvent *e)
   {
     if(g_zoom_slider!=NULL){
