@@ -1,3 +1,8 @@
+Most important changes 1.9.29 -> 1.9.30:
+* Fix for saving floats in wrong format for certain country settings
+* Always show slot indicator in mixer gui
+
+
 Most important changes 1.9.28 -> 1.9.29:
 * Make it compile
 
