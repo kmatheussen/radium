@@ -28,7 +28,7 @@ elif grep -i mint /etc/lsb-release >/dev/null 2>/dev/null ; then
     echo $1-qt4
 
 elif grep -i arch /etc/lsb-release >/dev/null 2>/dev/null ; then
-    echo $1
+    echo $1-qt4
 
 else
     echo $1
