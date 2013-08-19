@@ -18,10 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define GLIDING_PEAK_AREA 0 // Set to 1 to get gliding peaks area, which most meters use. Looks good, but I think it is slightly more confusing than the array used now.
 
-const int min_db = -40;
-const int max_db = 40;
+static const int min_db = -40;
+static const int max_db = 40;
 
-const int k_timer_interval = 30;
+static const int k_timer_interval = 30;
 
 const float def_threshold = 0.7f;
 const float def_ratio = 0.3;

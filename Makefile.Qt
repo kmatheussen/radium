@@ -221,7 +221,7 @@ OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfro
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_lowpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_system_delay.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
+OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
 
 #Mixer
 QM=mixergui/
@@ -324,7 +324,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) /home/kjetil/libpd/libs/libpds.so
 
 # `$(PKG) --libs fluidsynth`
 #	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
@@ -996,7 +996,7 @@ Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
-INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h
+INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_no_instrument_widget.h $(P)Qt_control_change_widget.h $(P)Qt_vst_paths_widget.h $(P)Qt_plugin_widget.h $(P)Qt_pd_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
@@ -1025,6 +1025,15 @@ $(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_wid
 
 $(P)Qt_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_plugin_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) plugin_widget
+
+$(P)Qt_pd_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_pd_plugin_widget_callbacks.h $(P)Qt_pd_controller_widget.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pd_plugin_widget
+
+$(P)Qt_pd_controller_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_controller_widget.ui $(P)create_source_from_ui.sh $(P)Qt_pd_controller_widget_callbacks.h $(P)Qt_pd_controller_config_dialog.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pd_controller_widget
+
+$(P)Qt_pd_controller_config_dialog.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_controller_config_dialog.ui $(P)create_source_from_ui.sh $(P)Qt_pd_controller_config_dialog_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pd_controller_config_dialog
 
 $(P)Qt_compressor_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_compressor_widget.ui $(P)create_source_from_ui.sh $(P)Qt_compressor_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) compressor_widget
@@ -1294,6 +1303,9 @@ Sampler_plugin.o: audio/Sampler_plugin.c audio/Sampler_plugin_wav_parse.c audio/
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
 #`$(PKG) --cflags fluidsynth`
+
+Pd_plugin.o: audio/Pd_plugin.c
+	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/Pd_plugin.c -I/home/kjetil/libpd/libpds -I/home/kjetil/libpd/libpd_wrapper -I/home/kjetil/libpd/pure-data/src
 
 zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin

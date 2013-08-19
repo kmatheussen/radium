@@ -23,6 +23,8 @@ struct SliderPainter;
 SliderPainter *SLIDERPAINTER_create(QSlider *qslider);
 SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1, int x2, int y2);
 void SLIDERPAINTER_delete(SliderPainter *painter);
+void SLIDERPAINTER_start_auto_updater(SliderPainter *painter);
+
 void SLIDERPAINTER_paint(SliderPainter *painter, QPainter *p);
 
 void SLIDERPAINTER_set_num_channels(SliderPainter *painter, int num_channels);

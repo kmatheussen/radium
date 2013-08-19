@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC hash_t *HASH_create(int approx_size);
 
 extern LANGSPEC bool HASH_has_key(hash_t *hash, const char *key);
+extern LANGSPEC bool HASH_has_key_at(hash_t *hash, const char *key, int i);
 
 extern LANGSPEC int HASH_get_num_elements(hash_t *hash);
 
@@ -50,15 +51,15 @@ extern LANGSPEC hash_t *HASH_get_hash(hash_t *hash, const char *key);
 
 extern LANGSPEC int HASH_get_array_size(hash_t *hash);
 
-extern LANGSPEC void HASH_put_string_at(hash_t *hash, int i, const char *val);
-extern LANGSPEC void HASH_put_int_at(hash_t *hash, int i, int64_t val);
-extern LANGSPEC void HASH_put_float_at(hash_t *hash, int i, double val);
-extern LANGSPEC void HASH_put_hash_at(hash_t *hash, int i, hash_t *val);
+extern LANGSPEC void HASH_put_string_at(hash_t *hash, const char *key, int i, const char *val);
+extern LANGSPEC void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val);
+extern LANGSPEC void HASH_put_float_at(hash_t *hash, const char *key, int i, double val);
+extern LANGSPEC void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val);
 
-extern LANGSPEC const char *HASH_get_string_at(hash_t *hash, int i);
-extern LANGSPEC int64_t HASH_get_int_at(hash_t *hash, int i);
-extern LANGSPEC double HASH_get_float_at(hash_t *hash, int i);
-extern LANGSPEC hash_t *HASH_get_hash_at(hash_t *hash, int i);
+extern LANGSPEC const char *HASH_get_string_at(hash_t *hash, const char *key, int i);
+extern LANGSPEC int64_t HASH_get_int_at(hash_t *hash, const char *key, int i);
+extern LANGSPEC double HASH_get_float_at(hash_t *hash, const char *key, int i);
+extern LANGSPEC hash_t *HASH_get_hash_at(hash_t *hash, const char *key, int i);
 
 
 // Loading and saving (serializing and deserializing to string. (The 'file' argument can be stdout for debugging))

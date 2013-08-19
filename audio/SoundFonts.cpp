@@ -233,7 +233,7 @@ static hash_t *get_instrument_info(sf2::Instrument *instr){
   hash_t *regions = HASH_create(instr->GetRegionCount());
   HASH_put_hash(info, "regions", regions);
   for(int i=0;i<instr->GetRegionCount();i++)
-    HASH_put_hash_at(regions,i,get_region_info(instr->GetRegion(i)));
+    HASH_put_hash_at(regions,"",i,get_region_info(instr->GetRegion(i)));
 
   return info;
 }
@@ -261,10 +261,10 @@ static hash_t *get_preset_info(sf2::Preset *preset){
     HASH_put_hash(info,"regions",regions);
 
     if(preset->pGlobalRegion)
-      HASH_put_hash_at(regions, preset->GetRegionCount(), get_region_info(preset->pGlobalRegion));
+      HASH_put_hash_at(regions, "", preset->GetRegionCount(), get_region_info(preset->pGlobalRegion));
 
     for(int i=0 ; i<preset->GetRegionCount() ; i++)
-      HASH_put_hash_at(regions, i, get_region_info(preset->GetRegion(i)));
+      HASH_put_hash_at(regions, "", i, get_region_info(preset->GetRegion(i)));
   }
 
   return info;
@@ -275,7 +275,7 @@ static hash_t *get_presets_info(sf2::File *file){
 
   for(int i=0;i<file->GetPresetCount();i++){
     sf2::Preset *preset = file->GetPreset(i);
-    HASH_put_hash_at(presets, preset->PresetBagNdx, get_preset_info(preset));
+    HASH_put_hash_at(presets, "", preset->PresetBagNdx, get_preset_info(preset));
   }
   
   return presets;
@@ -314,7 +314,7 @@ static hash_t *get_menu(hash_t *info){
   int num_presets = HASH_get_array_size(preset_keys);
 
   for(int i=0;i<num_presets;i++){
-    hash_t     *preset         = HASH_get_hash(presets,HASH_get_string_at(preset_keys,i));
+    hash_t     *preset         = HASH_get_hash(presets,HASH_get_string_at(preset_keys,"",i));
     int         preset_num     = HASH_get_int(preset,"num");
     int         bank_num       = HASH_get_int(preset,"bank");
     const char *preset_name    = HASH_get_string(preset,"name");
@@ -378,11 +378,11 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
   hash_t *displayable_names = HASH_create(num_presets);
 
   for(int i=0;i<num_presets;i++){
-    hash_t *preset = HASH_get_hash_at(presets,i);
+    hash_t *preset = HASH_get_hash_at(presets,"",i);
     char display[512];
     //sprintf(filename,"%s.%0*d.wav",base_filename,leading_zeros+1,0);
     sprintf(display,"%03d. %s",(int)HASH_get_int(preset,"num"),HASH_get_string(preset,"name"));
-    HASH_put_string_at(displayable_names,i,display);
+    HASH_put_string_at(displayable_names,"",i,display);
   }
 
   return displayable_names;

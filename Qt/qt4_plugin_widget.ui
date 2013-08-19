@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>495</width>
+    <width>656</width>
     <height>106</height>
    </rect>
   </property>
@@ -77,6 +77,33 @@
        </property>
        <property name="checkable">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="show_gui_button">
+       <property name="text">
+        <string>Show GUI</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="show_gui_checkbox">
+       <property name="text">
+        <string>GUI</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="new_pd_controller_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Add Pd Controller</string>
        </property>
       </widget>
      </item>

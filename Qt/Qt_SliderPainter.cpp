@@ -31,8 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "MySliderPainterPainter.h"
 
 
-const int k_timer_interval = 50;
-
+static const int k_timer_interval = 50;
 
 static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
@@ -202,6 +201,8 @@ struct SliderPainter{
 
   int _num_channels;
 
+  bool _auto_updater_has_started;
+
 
   int value(){
     if(_qslider!=NULL)
@@ -288,6 +289,7 @@ struct SliderPainter{
     : _qslider(widget)
     , _graphics_item(NULL)
     , _automation_value(0.0f)
+    , _auto_updater_has_started(false)
   {
     init();
   }
@@ -307,6 +309,15 @@ struct SliderPainter{
       delete _data.at(i);
   }
 
+  void start_auto_updater() {
+    if (_auto_updater_has_started==false){
+      _timer._painter = this;
+      _timer.setInterval(k_timer_interval);
+      _timer.start();
+      _auto_updater_has_started = true;
+    }
+  }
+
   AutomationOrPeakData *create_automation_data(){
     AutomationOrPeakData *data = new AutomationOrPeakData;
 
@@ -322,11 +333,9 @@ struct SliderPainter{
     data->is_automation = true;
 
     _data.push_back(data);
-    if(_num_automations==0){
-      _timer._painter = this;
-      _timer.setInterval(k_timer_interval);
-      _timer.start();
-    }
+
+    start_auto_updater();
+
     _num_automations++;
     
     return data;
@@ -436,6 +445,10 @@ SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1
 
 void SLIDERPAINTER_delete(SliderPainter *painter){
   delete painter;
+}
+
+void SLIDERPAINTER_start_auto_updater(SliderPainter *painter){
+  painter->start_auto_updater();
 }
 
 void SLIDERPAINTER_setValue(SliderPainter *painter, int value){

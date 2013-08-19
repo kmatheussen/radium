@@ -13,7 +13,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
   hash_t *sample_infos = HASH_get_hash(info,"samples");
 
   hash_t *presets = HASH_get_hash(info,"presets");
-  hash_t *preset = HASH_get_hash_at(presets, preset_bag_number);
+  hash_t *preset = HASH_get_hash_at(presets, "", preset_bag_number);
   if(preset==NULL){
     RError("No such preset number %d in instrument \"%s\"\n",preset_bag_number, filename);
     return false;
@@ -30,7 +30,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
 
     int i;
     for(i=0;i<HASH_get_array_size(regions);i++){
-      hash_t *region = HASH_get_hash_at(regions,i);
+      hash_t *region = HASH_get_hash_at(regions,"",i);
 
       if(HASH_has_key(region,"instrument")==true){
         instrument = HASH_get_hash(instruments,HASH_get_string(region,"instrument"));
@@ -52,7 +52,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
 
   int i;
   for(i=0;i<HASH_get_array_size(regions);i++){
-    hash_t *region = HASH_get_hash_at(regions,i);
+    hash_t *region = HASH_get_hash_at(regions,"",i);
     
     const char *sample_name = HASH_get_string(region, "sample_name");
     if(strcmp(sample_name,"<no sample!>")){

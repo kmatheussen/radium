@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQSlider.h"
 
 #include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
 #include "../common/OS_Player_proc.h"
 
 
@@ -52,7 +53,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   const int MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
 
   //const Plugin::Params& params = m_pPlugin->params();
-  int iParams = type->num_effects;
+  int iParams = PLUGIN_get_num_visible_effects(plugin);
 
   int iParamsPerPage = iParams;
   int iParamsOnLastPage = 0;

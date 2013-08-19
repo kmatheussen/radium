@@ -145,6 +145,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     msgBox.setInformativeText(
                               "* Move objects with right mouse button.\n"
                               "\n"
+                              "* Double-click the name of an object to open GUI.\n"
+                              "\n"
                               "* Delete objects or connections by pressing SHIFT and click left.\n"
                               "  - Alternatively, click with middle mouse button.\n"
                               "\n"
@@ -156,9 +158,6 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
                               "\n"
                               "* To move and connect an object in one operation, place one object on \n"
                               "   top of another object.\n"
-                              "\n"
-                              "* Double-click the name of a VST object to open the native VST GUI.\n"
-                              "   (If the VST plugin provides one.)\n"
                               "\n"
                               "* Zoom in and out by pressing CTRL and using the scroll wheel.\n"
                               );

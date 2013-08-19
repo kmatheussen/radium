@@ -619,10 +619,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
 void update_audio_instrument_widget(Audio_instrument_widget *instrument, struct Patch *patch){
   instrument->updateWidgets();
 
-  for(unsigned int i=0;i<instrument->_plugin_widget->_plugin_widget->_param_widgets.size();i++){
-    ParamWidget *param_widget = instrument->_plugin_widget->_plugin_widget->_param_widgets.at(i);
-    param_widget->update_gui_element();
-  }
+  instrument->_plugin_widget->update_widget();
 }
 
 void GFX_update_instrument_widget(struct Patch *patch){

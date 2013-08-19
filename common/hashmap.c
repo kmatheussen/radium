@@ -41,23 +41,27 @@ static int find_next_prime_number(int number){
 
 // Bob Jenkins's One-at-a-Time hash
 // copied from http://eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
-unsigned int oat_hash(const void *key)
+unsigned int oat_hash(const void *key, int i_i)
 {
   const unsigned char *p = key;
   unsigned h = 0;
-  int i;
   int len = strlen(key);
+  int i;
 
   for ( i = 0; i < len; i++ ) {
     h += p[i];
     h += ( h << 10 );
     h ^= ( h >> 6 );
   }
+
+  h += i_i;
+  h += ( h << 10 );
+  h ^= ( h >> 6 );
   
   h += ( h << 3 );
   h ^= ( h >> 11 );
   h += ( h << 15 );
-  
+
   return h;
 }
 
@@ -86,6 +90,7 @@ static int typename_to_type(const char *type_name){
 typedef struct _hash_element_t{
   struct _hash_element_t *next;
   const char *key;
+  int i;
   int type;
   union{
     const char *string;
@@ -128,32 +133,19 @@ hash_t *HASH_get_keys(hash_t *hash){
   for(i=0;i<hash->elements_size;i++){
     hash_element_t *element = hash->elements[i];
     while(element!=NULL){
-      HASH_put_string_at(keys,pos++,element->key);
+      HASH_put_string_at(keys,"key",pos++,element->key);
       element=element->next;
     }
   }
   return keys;
 }
 
-static const char *HASH_get_int_hash(int i){
-  const int table_size = 1024*16;
-  if(i<table_size && i>=0){
-    static const char **h=NULL;
-    if(h==NULL)
-      h=calloc(sizeof(char*),table_size); // allocate at runtime because of GC. (less scanning)
-    if(h[i]==NULL){
-      char num[64];
-      sprintf(num,"<int hash> %d",i);
-      h[i] = strdup(num);
-    }
-    return h[i];
+static void put(hash_t *hash, const char *key, int i, hash_element_t *element){
+  unsigned int index = oat_hash(key,i) % hash->elements_size;
+  //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
-  }else
-    return talloc_numberstring(i);
-}
-
-static void HASH_put(hash_t *hash, const char *key, hash_element_t *element){
-  unsigned int index = oat_hash(key) % hash->elements_size;
+  element->key=key;
+  element->i=i;
 
   hash->num_elements++;
 
@@ -161,105 +153,133 @@ static void HASH_put(hash_t *hash, const char *key, hash_element_t *element){
   hash->elements[index] = element;
 }
 
-void HASH_put_string(hash_t *hash, const char *key, const char *val){
+static void put_string(hash_t *hash, const char *key, int i, const char *val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->key=key;
   element->type=STRING_TYPE;
   element->string=talloc_strdup(val);
 
-  HASH_put(hash,key,element);
+  put(hash,key,i,element);
 }
 
-void HASH_put_int(hash_t *hash, const char *key, int64_t val){
+static void put_int(hash_t *hash, const char *key, int i, int64_t val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->key=key;
   element->type=INT_TYPE;
   element->int_number=val;
 
-  HASH_put(hash,key,element);
+  put(hash,key,i,element);
 }
 
-void HASH_put_float(hash_t *hash, const char *key, double val){
+static void put_float(hash_t *hash, const char *key, int i, double val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->key=key;
   element->type=FLOAT_TYPE;
   element->float_number=val;
 
-  HASH_put(hash,key,element);
+  put(hash,key,i,element);
 }
 
-void HASH_put_hash(hash_t *hash, const char *key, hash_t *val){
+static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
   hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->key=key;
   element->type=HASH_TYPE;
   element->hash=val;
 
-  HASH_put(hash,key,element);
+  put(hash,key,i,element);
 }
 
-void HASH_put_string_at(hash_t *hash, int i, const char *val){
-  HASH_put_string(hash, HASH_get_int_hash(i), val);
-  hash->num_array_elements++;
-}
-void HASH_put_int_at(hash_t *hash, int i, int64_t val){
-  HASH_put_int(hash, HASH_get_int_hash(i), val);
-  hash->num_array_elements++;
-}
-void HASH_put_float_at(hash_t *hash, int i, double val){
-  HASH_put_float(hash, HASH_get_int_hash(i), val);
-  hash->num_array_elements++;
-}
-void HASH_put_hash_at(hash_t *hash, int i, hash_t *val){
-  HASH_put_hash(hash, HASH_get_int_hash(i), val);
-  hash->num_array_elements++;
+void HASH_put_string(hash_t *hash, const char *key, const char *val){
+  put_string(hash, key, 0, val);
 }
 
-static hash_element_t *HASH_get_no_complaining(hash_t *hash, const char *key){
-  unsigned int index = oat_hash(key) % hash->elements_size;
+void HASH_put_int(hash_t *hash, const char *key, int64_t val){
+  put_int(hash, key, 0, val);
+}
+
+void HASH_put_float(hash_t *hash, const char *key, double val){
+  put_float(hash, key, 0, val);
+}
+
+void HASH_put_hash(hash_t *hash, const char *key, hash_t *val){
+  put_hash(hash, key, 0, val);
+}
+
+void HASH_put_string_at(hash_t *hash, const char *key, int i, const char *val){
+  put_string(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
+  put_int(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+void HASH_put_float_at(hash_t *hash, const char *key, int i, double val){
+  put_float(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val){
+  put_hash(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+
+static hash_element_t *HASH_get_no_complaining(hash_t *hash, const char *key, int i){
+  unsigned int index = oat_hash(key,i) % hash->elements_size;
   hash_element_t *element=hash->elements[index];
 
-  while(element!=NULL && strcmp(key,element->key))
+  //fprintf(stderr,"start searching\n");
+  while(element!=NULL && (element->i!=i || strcmp(key,element->key))) {
+    //fprintf(stderr,"key: -%s- (-%s-), i: %d (%d)\n",element->key,key,element->i,i);
     element=element->next;
+  }
+  //fprintf(stderr,"end searching\n");
 
   return element;
 }
 
-bool HASH_has_key(hash_t *hash, const char *key){
-  return HASH_get_no_complaining(hash,key) != NULL;
+bool HASH_has_key_at(hash_t *hash, const char *key, int i){
+  return HASH_get_no_complaining(hash,key,i) != NULL;
 }
 
-static hash_element_t *HASH_get(hash_t *hash, const char *key, int type){
-  hash_element_t *element=HASH_get_no_complaining(hash, key);
+bool HASH_has_key(hash_t *hash, const char *key){
+  return HASH_has_key_at(hash, key, 0);
+}
+
+static hash_element_t *HASH_get(hash_t *hash, const char *key, int i, int type){
+  hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
   if(element==NULL)
-    RWarning("HASH_get. Element not found. key: \"%s\"",key);
+    RWarning("HASH_get. Element not found. key: \"%s\"/%d. hash: %p",key,i,hash);
 
   if(element->type!=type){
-    RWarning("HASH_get. Element \"%s\" is found, but is wrong type. Requested %d, found %d.",key,type,element->type);
+    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %d, found %d.",key,i,type,element->type);
     element = NULL;
   }
 
   return element;
 }
 
-const char *HASH_get_string(hash_t *hash, const char *key){
-  hash_element_t *element = HASH_get(hash,key,STRING_TYPE);
+static const char *get_string(hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i,STRING_TYPE);
   if(element==NULL)
     return NULL;
 
   return element->string;
 }
 
-int64_t HASH_get_int(hash_t *hash, const char *key){
-  hash_element_t *element = HASH_get(hash,key,INT_TYPE);
+static int64_t get_int(hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i,INT_TYPE);
   if(element==NULL)
     return 0;
 
   return element->int_number;
 }
 
-double HASH_get_float(hash_t *hash, const char *key){
-  hash_element_t *element = HASH_get(hash,key,FLOAT_TYPE);
+static double get_float(hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i,FLOAT_TYPE);
   if(element==NULL)
     return 0.0;
 
@@ -267,33 +287,49 @@ double HASH_get_float(hash_t *hash, const char *key){
 }
 
 
-hash_t *HASH_get_hash(hash_t *hash, const char *key){
-  hash_element_t *element = HASH_get(hash,key,HASH_TYPE);
+static hash_t *get_hash(hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i,HASH_TYPE);
   if(element==NULL)
     return NULL;
 
   return element->hash;
 }
 
-const char *HASH_get_string_at(hash_t *hash, int i){
-  return HASH_get_string(hash, HASH_get_int_hash(i));
+const char *HASH_get_string(hash_t *hash, const char *key){
+  return get_string(hash, key, 0);
 }
 
-int64_t HASH_get_int_at(hash_t *hash, int i){
-  return HASH_get_int(hash, HASH_get_int_hash(i));
+int64_t HASH_get_int(hash_t *hash, const char *key){
+  return get_int(hash, key, 0);
 }
 
-double HASH_get_float_at(hash_t *hash, int i){
-  return HASH_get_float(hash, HASH_get_int_hash(i));
+double HASH_get_float(hash_t *hash, const char *key){
+  return get_float(hash, key, 0);
 }
 
-hash_t *HASH_get_hash_at(hash_t *hash, int i){
-  return HASH_get_hash(hash, HASH_get_int_hash(i));
+hash_t *HASH_get_hash(hash_t *hash, const char *key){
+  return get_hash(hash, key, 0);
+}
+
+const char *HASH_get_string_at(hash_t *hash, const char *key, int i){
+  return get_string(hash, key, i);
+}
+
+int64_t HASH_get_int_at(hash_t *hash, const char *key, int i){
+  return get_int(hash, key, i);
+}
+
+double HASH_get_float_at(hash_t *hash, const char *key, int i){
+  return get_float(hash, key, i);
+}
+
+hash_t *HASH_get_hash_at(hash_t *hash, const char *key, int i){
+  return get_hash(hash, key, i);
 }
 
 
 void HASH_save(hash_t *hash, FILE *file){
-  fprintf(file, ">> HASH MAP BEGIN\n");
+  fprintf(file, ">> HASH MAP BEGIN V2\n");
 
   fprintf(file, "%d\n", hash->elements_size);
 
@@ -302,6 +338,7 @@ void HASH_save(hash_t *hash, FILE *file){
     hash_element_t *element=hash->elements[i];
     while(element!=NULL){
       fprintf(file,"%s\n",element->key);
+      fprintf(file,"%d\n",element->i);
       fprintf(file,"%s\n",type_to_typename(element->type));
       switch(element->type){
       case STRING_TYPE:
@@ -336,12 +373,17 @@ static bool read_line(char *line,int len,FILE *file){
 }
 
 hash_t *HASH_load(FILE *file){
+  bool new_format = false;
   char line[8194];
 
   read_line(line,8193,file);
   if(strcmp(line,">> HASH MAP BEGIN")){
-    RError("Trying to load something which is not a hash map. First line: \"%s\"",line);
-    return NULL;
+    if(strcmp(line,">> HASH MAP V2 BEGIN")){
+      RError("Trying to load something which is not a hash map. First line: \"%s\"",line);
+      return NULL;
+    }else {
+      new_format = true;
+    }
   }
 
   read_line(line, 8193, file);
@@ -352,11 +394,20 @@ hash_t *HASH_load(FILE *file){
   read_line(line, 8193, file);
 
   while(strcmp(line,"<< HASH MAP END")){
-
     const char *key = talloc_strdup(line);
+    int i = 0;
 
-    if(!strncmp(key,"<int hash>",strlen("<int hash>")))
+    if(new_format==true){
+      read_line(line, 8193, file);
+      i = atoi(line);
+      int new_size = i+1;
+      if(new_size>hash->num_array_elements)
+        hash->num_array_elements = new_size;
+    } else if(!strncmp(key,"<int hash>",strlen("<int hash>"))) {
+      sscanf(key, "<int hash> %d", &i);
+      key = "";
       hash->num_array_elements++;
+    }
 
     read_line(line, 8193, file);
     int type = typename_to_type(line);
@@ -365,18 +416,18 @@ hash_t *HASH_load(FILE *file){
 
     case STRING_TYPE:
       read_line(line, 8193, file);
-      HASH_put_string(hash, key, line);
+      put_string(hash, key, i, line);
       break;
     case INT_TYPE:
       read_line(line, 8193, file);
-      HASH_put_int(hash, key, atoll(line));
+      put_int(hash, key, i, atoll(line));
       break;
     case FLOAT_TYPE:
       read_line(line, 8193, file);
-      HASH_put_float(hash, key, OS_get_double_from_string(line));
+      put_float(hash, key, i, OS_get_double_from_string(line));
       break;
     case HASH_TYPE:
-      HASH_put_hash(hash, key, HASH_load(file));
+      put_hash(hash, key, i, HASH_load(file));
       break;
     }
 

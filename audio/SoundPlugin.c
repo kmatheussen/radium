@@ -373,6 +373,24 @@ void PLUGIN_update_smooth_values(SoundPlugin *plugin){
   SMOOTH_called_per_block(&plugin->drywet);
 }
 
+int PLUGIN_get_num_visible_effects(SoundPlugin *plugin){
+  const SoundPluginType *plugin_type = plugin->type;
+  int i;
+  int result=0;
+
+  if(plugin_type->effect_is_visible != NULL) {
+
+    for(i=0;i<plugin_type->num_effects;i++)
+      result += plugin_type->effect_is_visible ? 1 : 0;
+    return result;
+
+  }else{
+
+    return plugin_type->num_effects;
+
+  }
+}
+
 int PLUGIN_get_effect_format(const struct SoundPluginType *plugin_type, int effect_num){
   if(effect_num<plugin_type->num_effects)
     return plugin_type->get_effect_format(plugin_type, effect_num);

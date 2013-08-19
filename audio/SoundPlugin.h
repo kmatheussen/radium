@@ -158,6 +158,8 @@ typedef struct SoundPluginType{
 
   void (*get_display_value_string)(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
+  bool (*effect_is_visible)(struct SoundPlugin *plugin, int effect_num);
+
   // Returns true if you want to call SP_RT_get_effect_value_array to get effect values for this effect.
   // If not, set_effect_value will be called instead.
   bool (*effect_is_RT)(const struct SoundPluginType *plugin_type, int effect_num);

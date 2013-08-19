@@ -65,11 +65,15 @@ struct MyQSlider : public QSlider{
 
   bool _minimum_size_set;
 
+  bool _is_a_pd_slider;
+
   void init(){
     _has_mouse=false;
 
     _patch = NULL;
     _effect_num = 0;
+
+    _is_a_pd_slider = false;
 
     if(g_minimum_height==0){
       QFontMetrics fm(QApplication::font());
@@ -142,6 +146,16 @@ struct MyQSlider : public QSlider{
       VECTOR_push_back(&options, "Reset");
       //VECTOR_push_back(&options, "Set Value");
 
+      /*
+      if(_is_a_pd_slider){
+        VECTOR_push_back(&options, "Set Symbol Name");
+        VECTOR_push_back(&options, "Set Type");
+        VECTOR_push_back(&options, "Set Minimum Value");
+        VECTOR_push_back(&options, "Set Maximum Value");
+        VECTOR_push_back(&options, "Delete");
+      }
+      */
+
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
 
       if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
@@ -149,7 +163,6 @@ struct MyQSlider : public QSlider{
         PLUGIN_reset_one_effect(plugin,_effect_num);
         GFX_update_instrument_widget(_patch);
       }
-#endif
 
 #if 0
       else if(command==1 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
@@ -162,7 +175,8 @@ struct MyQSlider : public QSlider{
           GFX_update_instrument_widget(_patch);
         }
       }
-#endif
+#endif // 0
+#endif // COMPILING_RADIUM
 
       event->accept();
     }

@@ -107,10 +107,13 @@ struct HelpText : public QTimer{
     QFont font = g_editor->main_window->font();
     font.setPointSize(15);
     font.setPixelSize(15);
-    
+
+    // When is this text shown?
     _text = scene->addText(
                            // "* Add objects with right mouse button\n"
                            "* Move objects with right mouse button.\n"
+                           "\n"
+                           "* Double-click the name of an object to open GUI. (only if there is one)\n"
                            "\n"
                            "* Delete objects or connections by pressing SHIFT and click left.\n"
                            "  - Alternatively, click with middle mouse button.\n"
@@ -119,8 +122,6 @@ struct HelpText : public QTimer{
                            "  - Alternatively, mark an area of objects with left mouse button.\n"
                            "\n"
                            "* To autoconnect a new object to an existing object, right click at the input or output of an existing object.\n"
-                           "\n"
-                           "* Double-click the name of a VST object to open GUI.\n"
                            "\n"
                            "* Zoom in and out by pressing CTRL and using the scroll wheel.\n"
                            ,
@@ -1110,7 +1111,7 @@ static hash_t *MW_get_chips_state(void){
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL)
-      HASH_put_hash_at(chips, num_chips++, CHIP_get_state(chip));
+      HASH_put_hash_at(chips, "", num_chips++, CHIP_get_state(chip));
   }
   
   HASH_put_int(chips, "num_chips", num_chips);
@@ -1128,7 +1129,7 @@ hash_t *MW_get_connections_state(void){
     Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
     if(connection!=NULL)
       if(connection->from!=NULL && connection->to!=NULL) // dont save ongoing connections.
-        HASH_put_hash_at(connections, num_connections++, CONNECTION_get_state(connection));
+        HASH_put_hash_at(connections, "", num_connections++, CONNECTION_get_state(connection));
   }
   
   HASH_put_int(connections, "num_connections", num_connections);
@@ -1146,13 +1147,14 @@ hash_t *MW_get_state(void){
 }
 
 static void MW_create_chips_from_state(hash_t *chips){
+  fprintf(stderr,"number of chips: %d\n",(int)HASH_get_int(chips, "num_chips"));
   for(int i=0;i<HASH_get_int(chips, "num_chips");i++)
-    CHIP_create_from_state(HASH_get_hash_at(chips, i));
+    CHIP_create_from_state(HASH_get_hash_at(chips, "", i));
 }
 
 static void MW_create_connections_from_state_internal(hash_t *connections){
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++)
-    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, i));
+    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i));
 }
 
 void MW_create_connections_from_state(hash_t *connections){

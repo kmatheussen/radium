@@ -24,19 +24,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_plugin_widget.h"
 
+#include "mQt_pd_plugin_widget_callbacks.h"
+
+
 class Plugin_widget : public QWidget, public Ui::Plugin_widget{
   Q_OBJECT;
 
 public:
-
   struct Patch *_patch;
-  PluginWidget *_plugin_widget;
 
+private:
+  PluginWidget *_plugin_widget;
+  Pd_Plugin_widget *_pd_plugin_widget;
+
+public:
 
   Plugin_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent,"plugin widget")
     , _patch(patch)
-  {
+    , _plugin_widget(NULL)
+    , _pd_plugin_widget(NULL)
+    {
     setupUi(this);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -100,12 +108,52 @@ public:
       delete sample_name_label;
 
     //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
-    _plugin_widget=PluginWidget_create(NULL, _patch);
+    if(plugin->type==PR_get_plugin_type_by_name("Pd","Pd")) {
+      _pd_plugin_widget = new Pd_Plugin_widget(this,_patch);
+      vertical_layout->insertWidget(1,_pd_plugin_widget);
+    } else {
+      new_pd_controller_button->hide();
+      _plugin_widget=PluginWidget_create(NULL, _patch);
+      vertical_layout->insertWidget(1,_plugin_widget);
+    }
 
-    vertical_layout->insertWidget(1,_plugin_widget);
+    if(plugin->type->show_gui==NULL || plugin->type->hide_gui==NULL)
+      show_gui_checkbox->hide();
+
+    if(plugin->type->show_gui==NULL)
+      show_gui_button->hide();
+
+    if(plugin->type->show_gui!=NULL && plugin->type->hide_gui!=NULL)
+      show_gui_button->hide();
+  }
+
+  void update_widget() {
+    if(_plugin_widget != NULL)
+      for(unsigned int i=0;i<_plugin_widget->_param_widgets.size();i++){
+        ParamWidget *param_widget = _plugin_widget->_param_widgets.at(i);
+        param_widget->update_gui_element();
+      }
   }
 
   public slots:
+
+  void on_new_pd_controller_button_released() {
+    _pd_plugin_widget->new_controller();  
+  }
+
+  void on_show_gui_checkbox_stateChanged(int val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (val==Qt::Checked){
+      plugin->type->show_gui(plugin);
+    }else if(val==Qt::Unchecked){
+      plugin->type->hide_gui(plugin);
+    }
+  }
+
+  void on_show_gui_button_released(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    plugin->type->show_gui(plugin);
+  }
 
     void on_limiter_bypass_button_toggled(bool val){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;

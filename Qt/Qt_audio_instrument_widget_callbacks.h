@@ -39,6 +39,7 @@ public:
 
   Patch_widget *_patch_widget;
   Plugin_widget *_plugin_widget;
+  
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
 
@@ -76,6 +77,7 @@ public:
     : QWidget(parent)
     , _i_am_system_out(false)
     , _patch(patch)
+    , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
     , _system_out_slider(NULL)
   {
@@ -136,13 +138,13 @@ public:
     }
 #else
     _plugin_widget = new Plugin_widget(this,_patch);
+
     delete(pipe_label);
     pipe_label = NULL;
 #endif
 
     effects_layout->insertWidget(2,_plugin_widget);
-
-
+    
     if(plugin->type==PR_get_plugin_type_by_name("Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name("FluidSynth","FluidSynth")){
       _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
       effects_layout->insertWidget(2,_sample_requester_widget);

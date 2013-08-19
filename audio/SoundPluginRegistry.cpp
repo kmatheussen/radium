@@ -181,6 +181,7 @@ extern void create_vst_plugins(void);
 extern void create_ladspa_plugins(void);
 extern "C" void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
+extern "C" void create_pd_plugin(void);
 
 extern void create_zita_rev_plugin(void);
 extern void create_faust_tapiir_plugin(void);
@@ -264,6 +265,7 @@ void PR_init_plugin_types(void){
   //create_sine_plugin();
   create_sample_plugin();
   create_fluidsynth_plugin();
+  create_pd_plugin();
   create_zita_rev_plugin();
   create_faust_tapiir_plugin();
   create_faust_multibandcomp_plugin();

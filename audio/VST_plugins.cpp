@@ -806,6 +806,12 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     data->editor_widget->open(aeffect);
   }
 
+  static void hide_gui(struct SoundPlugin *plugin){
+    Data *data = (Data*)plugin->data;
+    AEffect *aeffect = data->aeffect;
+    data->editor_widget->close();
+  }
+
   static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
     TypeData *type_data = (TypeData*)plugin->type->data;
     Data *data = (Data*)plugin->data;
@@ -1014,6 +1020,7 @@ void add_vst_plugin_type(QFileInfo file_info){
     plugin_type->cleanup_plugin_data = cleanup_plugin_data;
 
     plugin_type->show_gui = show_gui;
+    plugin_type->hide_gui = hide_gui;
 
     plugin_type->play_note       = play_note;
     plugin_type->set_note_volume = set_note_volume;
