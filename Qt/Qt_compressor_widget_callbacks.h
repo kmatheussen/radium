@@ -89,7 +89,8 @@ static double OS_get_double_from_string(const char *s){
 static float read_float(FILE *file){
   char temp[512] = {0};
 
-  fgets(temp,500,file);
+  if(fgets(temp,500,file)==NULL)
+    fprintf(stderr,"Unable to read float\n");
 
   return OS_get_double_from_string(temp);
 }

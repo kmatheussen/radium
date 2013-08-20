@@ -17,6 +17,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin_proc.h"
 
+/*
+class Pd_Plugin_widget;
+class Audio_instrument_wigdet;
+static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widget *audio_instrument_widget);
+*/
+
 #include "Qt_audio_instrument_widget.h"
 
 #include "mQt_sample_requester_widget_callbacks.h"
@@ -472,6 +478,7 @@ public:
     if(_sample_requester_widget != NULL){
       _sample_requester_widget->updateWidgets();
     }
+
   }
 
   void set_plugin_value(int sliderval, int system_effect){
@@ -711,3 +718,9 @@ public slots:
     panning_slider->setEnabled(val);
   }
 };
+
+/*
+static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widget *audio_instrument_widget){
+  return audio_instrument_widget->_plugin_widget->_pd_plugin_widget;
+}
+*/

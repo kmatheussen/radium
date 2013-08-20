@@ -44,7 +44,7 @@ public:
   struct Timer : public QTimer{
 
     Pd_Controller *_controller; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
-    Pd_Controller_widget *_pd_plugin_widget;
+    Pd_Controller_widget *_pd_controller_widget;
     SoundPlugin *_plugin;
 
     QByteArray _conf_geometry;
@@ -52,56 +52,55 @@ public:
     QString _name;
 
     void timerEvent(QTimerEvent * e){
-      if(_pd_plugin_widget->isVisible()==false)
+      if(_pd_controller_widget->isVisible()==false)
         return;
 
-      Pd_Controller_Config_dialog *conf = &_pd_plugin_widget->_conf;
+      Pd_Controller_Config_dialog *conf = &_pd_controller_widget->_conf;
 
       if (conf->isVisible() && conf->_showing==false) {
         _conf_geometry = conf->saveGeometry();
         conf->hide();
-        _pd_plugin_widget->popup_button->setChecked(false);
+        _pd_controller_widget->popup_button->setChecked(false);
       } if (!conf->isVisible() && conf->_showing==true) {
         conf->show();
         conf->restoreGeometry((const QByteArray &)_conf_geometry);
       }
 
-      if (conf->_showing==false && _pd_plugin_widget->popup_button->checkState()==Qt::Checked){
-        _pd_plugin_widget->popup_button->setChecked(false);
-      } else if (conf->_showing==true && _pd_plugin_widget->popup_button->checkState()!=Qt::Checked){
-        _pd_plugin_widget->popup_button->setChecked(true);
-      }
+      if (conf->_showing==false && _pd_controller_widget->popup_button->checkState()==Qt::Checked)
+        _pd_controller_widget->popup_button->setChecked(false);
+      else if (conf->_showing==true && _pd_controller_widget->popup_button->checkState()!=Qt::Checked)
+        _pd_controller_widget->popup_button->setChecked(true);
 
       if (_controller->type != _type) {
         _type = _controller->type;
-        _pd_plugin_widget->update_gui();
-        _pd_plugin_widget->update();
+        _pd_controller_widget->update_gui();
+        _pd_controller_widget->update();
       }
 
       if (_controller->name!=NULL && strcmp(_controller->name, _name.ascii())) {
         _name = _controller->name;
-        _pd_plugin_widget->paint_slider_text();
-        _pd_plugin_widget->paint_onoff_text();
-        _pd_plugin_widget->update();
+        _pd_controller_widget->paint_slider_text();
+        _pd_controller_widget->paint_onoff_text();
+        _pd_controller_widget->update();
       }
 
       if(_controller->type==2){
         float new_value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_PLUGIN);
 
-        bool is_checked = _pd_plugin_widget->onoff_widget->isChecked();
+        bool is_checked = _pd_controller_widget->onoff_widget->isChecked();
 
         if(is_checked && new_value<0.49)
-          _pd_plugin_widget->onoff_widget->setChecked(false);
+          _pd_controller_widget->onoff_widget->setChecked(false);
 
         else if(!is_checked && new_value>0.51)
-          _pd_plugin_widget->onoff_widget->setChecked(true);
+          _pd_controller_widget->onoff_widget->setChecked(true);
 
       } else {
         int new_value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_PLUGIN) * 10000;
-        int old_value = _pd_plugin_widget->value_slider->value();
+        int old_value = _pd_controller_widget->value_slider->value();
 
         if (new_value != old_value)
-          _pd_plugin_widget->value_slider->setValue(new_value);
+          _pd_controller_widget->value_slider->setValue(new_value);
       }
     }
   };
@@ -118,6 +117,12 @@ public:
     setupUi(this);
 
     value_slider->_is_a_pd_slider = true;
+    value_slider->_patch = plugin->patch;
+    value_slider->_effect_num = controller_num;
+
+    onoff_widget->_is_a_pd_slider = true;
+    onoff_widget->_patch = plugin->patch;
+    onoff_widget->_effect_num = controller_num;
 
     //SLIDERPAINTER_start_auto_updater(value_slider->_painter);
 
@@ -125,7 +130,7 @@ public:
 
     _controller->has_gui = true;
 
-    _timer._pd_plugin_widget = this;
+    _timer._pd_controller_widget = this;
 
     _timer._type = _controller->type;
     _timer._controller = _controller;
@@ -202,7 +207,7 @@ public slots:
   }
 
   void on_onoff_widget_stateChanged(int val){
-    float effect_value;
+    float effect_value = 0.0f;
     if (val==Qt::Checked){
       effect_value = 1.0f;
     }else if(val==Qt::Unchecked){

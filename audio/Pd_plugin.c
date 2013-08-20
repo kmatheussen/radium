@@ -26,10 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
+#include "undo_pd_controllers_proc.h"
+
 #include "../common/OS_Player_proc.h"
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
 #include "SoundPluginRegistry_proc.h"
+
+#include "Qt_instruments_proc.h"
 
 #include "Pd_plugin.h"
 
@@ -46,8 +50,9 @@ typedef struct{
 
   const char *directory;
   const char *filename;
-} Data;
 
+  void *qtgui;
+} Data;
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -151,10 +156,8 @@ static void pdfloathook(void *d, const char *sym, float val){
   float scaled_value = scale(val, controller->min_value, controller->max_value,
                              0.0f, 1.0f);
 
-  if (fabs(old_value - val) > 1.0/10000.0) {
+  if (fabs(old_value - val) > 1.0/10000.0)
     PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
-    //PDGUI_update(data->controllers[0].gui);
-  }
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float sample_rate, int block_size){
@@ -171,7 +174,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   pd_t *pd;
 
   PLAYER_lock();{
-    pd = libpds_create(true, "/home/kjetil/libpd/pure-data");
+    pd = libpds_create(true, "/home/ksvalast/libpd/pure-data");
     data->pd = pd;
 
     libpds_set_printhook(pd, pdprint);
@@ -192,7 +195,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     libpds_add_float(pd, 1.0f);
     libpds_finish_message(pd, "pd", "dsp");
 
-    data->directory = "/home/kjetil/libpd/samples/guiTest";
+    data->directory = "/home/ksvalast/libpd/samples/guiTest/";
     data->filename = "test.pd";
     data->file = libpds_openfile(pd, data->filename, data->directory);
   }PLAYER_unlock();
@@ -211,9 +214,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
     libpds_delete(data->pd);
   }PLAYER_unlock();
 
-  void *gui = data->controllers[0].gui;
-  if(gui!=NULL)
-    PDGUI_clear(gui);
+  PDGUI_clear(data->qtgui);
 
   int i;
   for(i=0;i<NUM_CONTROLLERS;i++){
@@ -233,6 +234,11 @@ static const char *get_effect_name(const struct SoundPluginType *plugin_type, in
     inited=true;
   }
   return names[effect_num];
+}
+
+void PD_set_qtgui(SoundPlugin *plugin, void *qtgui){
+  Data *data = (Data*)plugin->data;
+  data->qtgui = qtgui;
 }
 
 Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
@@ -271,13 +277,11 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
   free(old_name);  
 }
 
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+
+void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  void *gui = data->controllers[0].gui;
-
-  if(gui!=NULL)
-    PDGUI_clear(gui);
+  PDGUI_clear(data->qtgui);
 
   int i;
   for(i=0;i<NUM_CONTROLLERS;i++) {
@@ -307,13 +311,18 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
         bind_receiver(controller);
       }PLAYER_unlock();
     }
-      
-    if(controller->has_gui && gui!=NULL)
-      PDGUI_add_controller(gui, i);
   }
+
+  if(plugin->patch != NULL)
+    GFX_update_instrument_widget(plugin->patch);
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+
+static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+  PD_recreate_controllers_from_state(plugin, state);
+}
+
+void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
   HASH_put_string(state, "directory", data->directory);
@@ -328,12 +337,19 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);
     HASH_put_float_at(state, "max_value", i, controller->max_value);
-    HASH_put_int_at(state, "has_gui", i, controller->has_gui);
+    HASH_put_int_at(state, "has_gui", i, controller->has_gui ? 1 : 0);
   }
 }
 
+static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  PD_create_controllers_from_state(plugin, state);
+}
+
+// Warning! undo is created here (for simplicity). It's not common to call the undo creation function here, so beware of possible circular dependencies in the future.
 void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   Data *data=(Data*)plugin->data;
+
+  Undo_PdControllers_CurrPos(plugin->patch);
 
   int i;
   hash_t *state = HASH_create(NUM_CONTROLLERS);
@@ -395,3 +411,5 @@ static SoundPluginType plugin_type = {
 void create_pd_plugin(void){
   PR_add_plugin_type(&plugin_type);
 }
+
+

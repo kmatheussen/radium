@@ -112,6 +112,8 @@ struct MyQCheckBox : public QCheckBox{
   int _effect_num;
   bool _undo_patchvoice;
 
+  bool _is_a_pd_slider;
+
   QString vertical_text;
 
   void init(){
@@ -119,6 +121,7 @@ struct MyQCheckBox : public QCheckBox{
     _patch = NULL;
     _effect_num = 0;
     _undo_patchvoice = false;
+    _is_a_pd_slider = false;
   }
 
   MyQCheckBox ( QWidget * parent = 0 ) : QCheckBox(parent) {init();}
@@ -138,8 +141,45 @@ struct MyQCheckBox : public QCheckBox{
       _has_mouse = true;
       printf("Got it %p %d. Checked: %d\n",_patch,_effect_num,!isChecked());
       setChecked(!isChecked());
-    }else
-      QCheckBox::mousePressEvent(event);
+
+    }else{
+
+#ifdef COMPILING_RADIUM
+      vector_t options = {0};
+
+      if(_is_a_pd_slider){
+        /*
+        VECTOR_push_back(&options, "Set Symbol Name");
+        VECTOR_push_back(&options, "Set Type");
+        VECTOR_push_back(&options, "Set Minimum Value");
+        VECTOR_push_back(&options, "Set Maximum Value");
+        */
+        VECTOR_push_back(&options, "Delete");
+      } else {
+        VECTOR_push_back(&options, "Reset");
+        //VECTOR_push_back(&options, "Set Value");
+      }
+
+
+      int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
+
+      //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
+
+      if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        if(_is_a_pd_slider) {
+          //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
+          PD_delete_controller(plugin, _effect_num);
+        } else {
+          PLUGIN_reset_one_effect(plugin,_effect_num);
+          GFX_update_instrument_widget(_patch);
+        }
+      }
+
+#endif // COMPILING_RADIUM
+
+      event->accept();
+    }
   }
 
 

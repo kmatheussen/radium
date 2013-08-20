@@ -240,7 +240,8 @@ void CRASHREPORTER_init(void){
     fprintf(stderr,"Crashreporter: Couldn't create... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
 #ifndef RELEASE
     fprintf(stderr,"press return\n");
-    gets(NULL);
+    if(fgets(NULL,0,stdin)==NULL)
+      printf("got null\n");
 #endif
   }
 
@@ -269,7 +270,8 @@ void CRASHREPORTER_init(void){
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX)
-  system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + "&").toAscii());
+  if(system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + "&").toAscii())==-1)
+    fprintf(stderr,"Couldn't start crashreporter\n");
   CRASHREPORTER_posix_init();
 
 #elif defined(FOR_MACOSX)

@@ -571,6 +571,11 @@ int main(int argc, char **argv){
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
 
+  setenv("LC_NUMERIC", "C", 1); // Qt insists on doing strange things with locale settings, causing commans to appear instead of punctation. In an ideal world, LC_NUMERIC/LANG should never be set to anything else than "C", but unfortunately, many computers runs with uncommon language settings such as french or swedish. By default, programs seems to respect the sane behaviour (in the programming world), namely to never use commas when converting between strings and floats, but Qt does something strange with the world inside the QApplication contructor, and causes commas to be used everywhere if there is an uncommon LC_NUMERIC settings (or uncommon LANG setting). This setenv call is the only way I was able to make Pd work, without modifying Pd itself. (I modified Pd too though, but kept this line to prevent similar errors to appear in other libraries.) This behaviour should be changed in Qt.)
+
+  //QLocale::setDefault(QLocale::C);
+  QLocale::setDefault(QLocale::c());
+
 #if 0
   printf("argv0: \"%s\"\n",argv[0]);
   return 0;
@@ -578,8 +583,11 @@ int main(int argc, char **argv){
 
   QApplication::setDesktopSettingsAware(false);
 
+  QLocale::setDefault(QLocale::C);
+
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
+
   g_qapplication = qapplication;
 
   OS_set_argv0(argv[0]);

@@ -74,7 +74,7 @@ static void Undo_AudioEffect(
 
 void Undo_AudioEffect_CurrPos(struct Patch *patch, int effect_num){
   struct Tracker_Windows *window = root->song->tracker_windows;
-
+  printf("Undo_AudioEffect_CurrPos\n");
   Undo_AudioEffect(window,window->wblock, patch, effect_num);
 }
 

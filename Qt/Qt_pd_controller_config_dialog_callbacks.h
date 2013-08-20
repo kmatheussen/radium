@@ -57,6 +57,8 @@ public:
       min_value_widget->hide();
       max_value_widget->hide();
     }
+
+    name_widget->setText(_controller->name);
   }
 
   void closeEvent(QCloseEvent *event) {
@@ -69,26 +71,37 @@ public slots:
 
   void on_min_value_widget_valueChanged(double val){
     if(val!=_controller->max_value) {
+      Undo_PdControllers_CurrPos(_plugin->patch);
       _controller->min_value = val;
     }
   }
 
   void on_max_value_widget_valueChanged(double val){
     if(val!=_controller->min_value) {
+       Undo_PdControllers_CurrPos(_plugin->patch);
       _controller->max_value = val;
     }
   }
 
   void on_type_selector_currentIndexChanged( int val){
+if(val!=_controller->type) {
+Undo_PdControllers_CurrPos(_plugin->patch);
     _controller->type = val;
     update_gui();
+}
     //value_slider->update();
+  }
+
+  void on_name_widget_returnPressed(){
+    _showing = false;
+    hide();
   }
 
   void on_name_widget_editingFinished(){
     printf("name: -%s-\n",name_widget->text().ascii());
     QString name = name_widget->text();
-    if(name != "") {
+    if(name != _controller->name) {
+      Undo_PdControllers_CurrPos(_plugin->patch);
       PD_set_controller_name(_plugin, _controller->num, name.ascii());
     }
     //set_editor_focus();
@@ -101,6 +114,7 @@ public slots:
   }
 
   void on_delete_button_released(){
+//Undo_PdControllers_CurrPos(_plugin->patch);
     PD_delete_controller(_plugin, _controller->num);
   }
 };

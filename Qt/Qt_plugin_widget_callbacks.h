@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_PluginWidget.h"
 
 #include "../audio/Sampler_plugin_proc.h"
+#include "../audio/undo_pd_controllers_proc.h"
 
 #include "Qt_plugin_widget.h"
 
@@ -32,18 +33,18 @@ class Plugin_widget : public QWidget, public Ui::Plugin_widget{
 
 public:
   struct Patch *_patch;
+  Pd_Plugin_widget *_pd_plugin_widget;
 
 private:
   PluginWidget *_plugin_widget;
-  Pd_Plugin_widget *_pd_plugin_widget;
 
 public:
 
   Plugin_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent,"plugin widget")
     , _patch(patch)
-    , _plugin_widget(NULL)
     , _pd_plugin_widget(NULL)
+    , _plugin_widget(NULL)
     {
     setupUi(this);
 
@@ -133,11 +134,15 @@ public:
         ParamWidget *param_widget = _plugin_widget->_param_widgets.at(i);
         param_widget->update_gui_element();
       }
+
+    if(_pd_plugin_widget != NULL)
+      _pd_plugin_widget->update_gui();
   }
 
   public slots:
 
   void on_new_pd_controller_button_released() {
+    Undo_PdControllers_CurrPos(_patch);
     _pd_plugin_widget->new_controller();  
   }
 

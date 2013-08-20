@@ -96,6 +96,7 @@ class Audio_instrument_widget;
 static void tab_name_has_changed(QWidget *tab, QString new_name);
 //static void tab_selected();
 static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch);
+//static Audio_instrument_widget *get_audio_instrument_widget_from_patchdata(void *patchdata);
 static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
 static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
@@ -525,8 +526,21 @@ static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch){
 
   return NULL;
 }
-
+/*
 // Warning, tabs is not updated immediately after a tab has been inserted into it. (or deleted from it)
+static Audio_instrument_widget *get_audio_instrument_widget_from_patchdata(void *patchdata){
+  QStackedWidget* tabs = instruments_widget->tabs;
+
+  for(int i=0;i<tabs->count();i++){
+    Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
+    if(instrument!=NULL && instrument->_patch->patchdata==patchdata)
+      return instrument;
+  }
+
+  return NULL;
+}
+*/
+
 static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch){
   QStackedWidget* tabs = instruments_widget->tabs;
 

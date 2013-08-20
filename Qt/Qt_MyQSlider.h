@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/Pd_plugin_proc.h"
 
 #include "Qt_instruments_proc.h"
 
@@ -143,25 +144,34 @@ struct MyQSlider : public QSlider{
 
 #ifdef COMPILING_RADIUM
       vector_t options = {0};
-      VECTOR_push_back(&options, "Reset");
-      //VECTOR_push_back(&options, "Set Value");
 
-      /*
       if(_is_a_pd_slider){
+        /*
         VECTOR_push_back(&options, "Set Symbol Name");
         VECTOR_push_back(&options, "Set Type");
         VECTOR_push_back(&options, "Set Minimum Value");
         VECTOR_push_back(&options, "Set Maximum Value");
+        */
         VECTOR_push_back(&options, "Delete");
+      } else {
+        VECTOR_push_back(&options, "Reset");
+        //VECTOR_push_back(&options, "Set Value");
       }
-      */
+
 
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
 
+      //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
+
       if(command==0 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-        PLUGIN_reset_one_effect(plugin,_effect_num);
-        GFX_update_instrument_widget(_patch);
+        if(_is_a_pd_slider) {
+          //printf("Calling delete controller for %p / %d\n",plugin,_effect_num);
+          PD_delete_controller(plugin, _effect_num);
+        } else {
+          PLUGIN_reset_one_effect(plugin,_effect_num);
+          GFX_update_instrument_widget(_patch);
+        }
       }
 
 #if 0

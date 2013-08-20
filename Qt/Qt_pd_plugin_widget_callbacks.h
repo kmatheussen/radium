@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_pd_plugin_widget.h"
 
 
+static const int k_timer_interval_here3 = 50;
+
 class Pd_Plugin_widget : public QWidget, public Ui::Pd_Plugin_widget{
   Q_OBJECT;
 
@@ -39,6 +41,25 @@ public:
   int _num_controllers;
   std::vector<Pd_Controller_widget*> _controllers;
 
+  struct Timer : public QTimer{
+    Pd_Plugin_widget *_pd_plugin_widget;
+
+    void timerEvent(QTimerEvent * e){
+      SoundPlugin *plugin = (SoundPlugin*)_pd_plugin_widget->_patch->patchdata;
+      if(plugin!=NULL) { // dont think plugin can be NULL here though.
+
+        PD_set_qtgui(plugin, _pd_plugin_widget);
+
+        if(_pd_plugin_widget->isVisible()==false)
+          return;
+
+        _pd_plugin_widget->update_gui();
+      }
+    }
+  };
+
+  Timer _timer;
+
   Pd_Plugin_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent,"pd_plugin widget")
     , _patch(patch)
@@ -46,12 +67,26 @@ public:
   {
     setupUi(this);
 
-    PD_get_controller((SoundPlugin*)patch->patchdata, 0)->gui = this;
+    //update_gui();
 
-    update_gui();
+    printf("\n\n\n\n          ************************************ CONSTRUCTOR *************************\n\n\n\n\n");
+
+    _timer._pd_plugin_widget = this;
+    _timer.setInterval(k_timer_interval_here);
+    _timer.start();
+
   }
 
   void update_gui(void){
+    if(_controllers.empty()) {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      // test if plugin==NULL here.
+      for(int controller_num=0; controller_num < 40; controller_num++){
+        Pd_Controller *controller = PD_get_controller(plugin, controller_num);
+        if(controller->has_gui)
+          new_controller(controller_num);
+      }
+    }
   }
 
   void new_controller(int controller_num){
@@ -97,17 +132,10 @@ public slots:
 
 };
 
-void PDGUI_clear(void *gui) {
-  Pd_Plugin_widget *pw = (Pd_Plugin_widget*)gui;
-  pw->clear();
+
+void PDGUI_clear(void *gui){
+  Pd_Plugin_widget *pw = (Pd_Plugin_widget *)gui;
+  if(pw!=NULL)
+    pw->clear();
 }
 
-void PDGUI_add_controller(void *gui, int controller_num){
-  Pd_Plugin_widget *pw = (Pd_Plugin_widget*)gui;
-  pw->new_controller(controller_num);
-}
-
-/*
-void PDGUI_new_controller() {
-}
-*/

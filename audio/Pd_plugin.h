@@ -31,7 +31,6 @@ typedef struct{
   bool has_gui;
   
   void *pd_binding;
-  void *gui;
 } Pd_Controller;
 
 #endif // AUDIO_PD_PLUGIN_H
