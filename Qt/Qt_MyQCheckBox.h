@@ -131,7 +131,7 @@ struct MyQCheckBox : public QCheckBox{
 #ifdef COMPILING_RADIUM
       if(_undo_patchvoice==true)
         Undo_PatchVoice_CurrPos(_patch,_effect_num);
-      else if(_patch!=NULL)
+      else if(_patch!=NULL  && _patch->instrument==get_audio_instrument())
         Undo_AudioEffect_CurrPos(_patch, _effect_num);
 #endif
       //handle_mouse_event(event);

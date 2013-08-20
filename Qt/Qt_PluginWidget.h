@@ -67,6 +67,9 @@ class ParamWidget : public QWidget{
         _check_button = new MyQCheckBox(this);
         _check_button->setCheckable(true);
 
+        _check_button->_patch = patch;
+        _check_button->_effect_num = effect_num;
+
         QSizePolicy sizePolicy5(QSizePolicy::Expanding, QSizePolicy::Expanding);
         sizePolicy5.setHorizontalStretch(0);
         sizePolicy5.setVerticalStretch(0);
