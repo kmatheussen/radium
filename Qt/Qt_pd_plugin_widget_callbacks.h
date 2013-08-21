@@ -43,10 +43,18 @@ public:
 
   struct Timer : public QTimer{
     Pd_Plugin_widget *_pd_plugin_widget;
+    int _last_cleared_generation;
+    volatile int _clearing_generation;
 
     void timerEvent(QTimerEvent * e){
       SoundPlugin *plugin = (SoundPlugin*)_pd_plugin_widget->_patch->patchdata;
       if(plugin!=NULL) { // dont think plugin can be NULL here though.
+
+        int clearing_generation = _clearing_generation;
+        if(_last_cleared_generation != clearing_generation){
+          _last_cleared_generation = clearing_generation;
+          _pd_plugin_widget->clear();
+        }
 
         PD_set_qtgui(plugin, _pd_plugin_widget);
 
@@ -72,6 +80,8 @@ public:
     printf("\n\n\n\n          ************************************ CONSTRUCTOR *************************\n\n\n\n\n");
 
     _timer._pd_plugin_widget = this;
+    _timer._last_cleared_generation = 0;
+    _timer._clearing_generation = 0;
     _timer.setInterval(k_timer_interval_here);
     _timer.start();
 
@@ -132,10 +142,16 @@ public slots:
 
 };
 
-
 void PDGUI_clear(void *gui){
-  Pd_Plugin_widget *pw = (Pd_Plugin_widget *)gui;
-  if(pw!=NULL)
+  if(gui!=NULL){
+    Pd_Plugin_widget *pw = (Pd_Plugin_widget *)gui;
     pw->clear();
+  }
 }
 
+void PDGUI_schedule_clearing(void *gui){
+  if(gui!=NULL){
+    Pd_Plugin_widget *pw = (Pd_Plugin_widget *)gui;
+    pw->_timer._clearing_generation++; // Only called from the player thread, so we dont need atomic update.
+  }
+}

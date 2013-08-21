@@ -1307,7 +1307,7 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 #`$(PKG) --cflags fluidsynth`
 
 Pd_plugin.o: audio/Pd_plugin.c
-	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/Pd_plugin.c -I/home/ksvalast/libpd/libpds -I/home/ksvalast/libpd/libpd_wrapper -I/home/ksvalast/libpd/pure-data/src
+	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) audio/Pd_plugin.c -I/home/ksvalast/libpd/libpds -I/home/ksvalast/libpd/libpd_wrapper -I/home/ksvalast/libpd/pure-data/src
 
 zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define QT_PD_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
 
 extern LANGSPEC void PDGUI_clear(void *gui);
+extern LANGSPEC void PDGUI_schedule_clearing(void *gui);
 
 #endif // QT_PD_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
 

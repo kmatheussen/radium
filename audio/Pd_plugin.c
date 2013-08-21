@@ -51,6 +51,8 @@ typedef struct{
   const char *directory;
   const char *filename;
 
+  void *controller_binding;
+
   void *qtgui;
 } Data;
 
@@ -160,6 +162,56 @@ static void pdfloathook(void *d, const char *sym, float val){
     PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
 }
 
+static void bind_receiver(Pd_Controller *controller){
+  char receive_symbol_name[1024];
+  snprintf(receive_symbol_name, 1023, "%s-receiver", controller->name);
+  controller->pd_binding = libpds_bind(((Data*)controller->plugin->data)->pd, receive_symbol_name, controller);
+}
+
+static void add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type){
+  Pd_Controller *controller;
+  int controller_num;
+  for(controller_num=0;controller_num<NUM_CONTROLLERS;controller_num++) {
+    controller = &data->controllers[controller_num];
+
+    if(controller->name != NULL && !strcmp(controller->name, controller_name))
+      return; // already there.
+
+    if(controller->name == NULL || !strcmp(controller->name, ""))
+      break;
+  }
+
+  if(controller_num==NUM_CONTROLLERS)
+    return;
+
+  controller->type = 0;
+  controller->min_value = 0;
+  controller->value = 0;
+  controller->max_value = 1;  
+  controller->name = strdup(controller_name);
+
+  controller->has_gui = true;
+
+  bind_receiver(controller);
+
+  PDGUI_schedule_clearing(data->qtgui);
+}
+
+// Note that hooks are always called from the player thread.
+static void pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
+  SoundPlugin *plugin = (SoundPlugin*)d;
+  Data *data = (Data*)plugin->data;
+
+  t_atom a = argv[0];
+  char *type_name = libpd_get_symbol(a); // do something with the C string s
+  printf("Got something: -%s- -%s- -%s-\n",source,controller_name,type_name);
+
+  if (!strcmp(type_name, "float")) 
+    add_controller(plugin, data, controller_name, 0);
+  else
+    printf("Unknown type: -%s-\n",type_name);
+}
+
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float sample_rate, int block_size){
   Data *data = calloc(1,sizeof(Data));
 
@@ -180,8 +232,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     libpds_set_printhook(pd, pdprint);
     libpds_set_noteonhook(pd, pdnoteon);
     libpds_set_floathook(pd, pdfloathook);
+    libpds_set_messagehook(pd, pdmessagehook);
 
     libpds_init_audio(pd, 2, 2, sample_rate);
+
 
     blocksize = libpds_blocksize(pd);
   }PLAYER_unlock();
@@ -195,12 +249,16 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     libpds_add_float(pd, 1.0f);
     libpds_finish_message(pd, "pd", "dsp");
 
+    plugin->data = data; // plugin->data is used before this function ends.
+    data->controller_binding = libpds_bind(pd, "radium_controller", plugin);
+
     data->directory = "/home/ksvalast/libpd/samples/guiTest/";
     data->filename = "test.pd";
     data->file = libpds_openfile(pd, data->filename, data->directory);
   }PLAYER_unlock();
 
   printf("####################################################### Setting pd volume to 0.5f (create_plugin_data)\n");
+
   return data;
 }
 
@@ -246,12 +304,6 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
   return &data->controllers[n];
 }
 
-static void bind_receiver(Pd_Controller *controller){
-  char receive_symbol_name[1024];
-  snprintf(receive_symbol_name, 1023, "%s-receiver", controller->name);
-  controller->pd_binding = libpds_bind(((Data*)controller->plugin->data)->pd, receive_symbol_name, controller);
-}
-
 void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
@@ -262,7 +314,7 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
 
   char *new_name = strdup(name);
 
-  // Should check if it is different before binding.
+  // Should check if it is different before binding. (but also if it is already binded)
 
   PLAYER_lock();{
     controller->name = new_name;
