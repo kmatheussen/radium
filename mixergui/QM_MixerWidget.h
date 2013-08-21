@@ -136,8 +136,6 @@ void MW_update_all_chips(void);
 // Creating/deleting a plugin goes through here, not through audio/
 
 SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, float x, float y);
-void MW_delete_plugin(SoundPlugin *plugin);
-
 
 void MW_autoconnect_plugin(SoundPlugin *plugin);
 
@@ -151,6 +149,7 @@ extern LANGSPEC hash_t *MW_get_connections_state(void);
 extern LANGSPEC hash_t *MW_get_state(void);
 extern LANGSPEC void MW_create_connections_from_state(hash_t *connections);
 extern LANGSPEC void MW_create_from_state(hash_t *state);
+extern LANGSPEC void MW_delete_plugin(SoundPlugin *plugin); // Deletes chip, plugin soundproducer and connections.
 
 extern LANGSPEC void MW_create_plain();
 

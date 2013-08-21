@@ -96,7 +96,7 @@ static void *Undo_Do_Chip_AddRemove(
   {
     if(is_present==true){
       u_rt->chip_state = CHIP_get_chip_state_from_patch(u_rt->patch);
-      CHIP_delete_from_patch(u_rt->patch);
+      MW_delete_plugin((SoundPlugin *)u_rt->patch->patchdata);
       u_rt->is_present=false;
     }else{
       CHIP_create_from_state(u_rt->chip_state);

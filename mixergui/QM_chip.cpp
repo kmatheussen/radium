@@ -596,17 +596,17 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    CHIP_update(SP_get_plugin(sound_producer));
  }
 
-  Chip::~Chip(){
-    while(_connections.size()>0){
-      fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)_connections.size());
-      CONNECTION_delete_connection(_connections.at(0));
-    }
-    SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
-    SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
-
-    SLIDERPAINTER_delete(_input_slider);
-    SLIDERPAINTER_delete(_output_slider);
+Chip::~Chip(){
+  while(_connections.size()>0){
+    fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)_connections.size());
+    CONNECTION_delete_connection(_connections.at(0));
   }
+  SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
+  SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
+  
+  SLIDERPAINTER_delete(_input_slider);
+  SLIDERPAINTER_delete(_output_slider);
+}
 
 QRectF Chip::boundingRect() const
 {
@@ -1056,16 +1056,6 @@ void CHIP_create_from_state(hash_t *state){
   }else{
     printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
   }
-}
-
-void CHIP_delete_from_patch(struct Patch *patch){
-  Chip *chip = get_chip_from_patch_id(&g_mixer_widget->scene, patch->id);
-  if(chip==NULL){
-    RError("CHIP_delete: Chip not found");
-    return;
-  }
-
-  delete chip;
 }
 
 hash_t *CONNECTION_get_state(Connection *connection){

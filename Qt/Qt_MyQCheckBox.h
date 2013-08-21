@@ -23,6 +23,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/EditorWidget.h"
 
+#include "../common/instruments_proc.h"
+#include "../common/vector_proc.h"
+#include "../audio/SoundPlugin_proc.h"
+#include "../audio/Pd_plugin_proc.h"
+
+#include "Qt_instruments_proc.h"
+
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
 #include "Qt_mix_colors.h"
