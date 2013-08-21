@@ -58,6 +58,7 @@ public:
       max_value_widget->hide();
     }
 
+    type_selector->setCurrentIndex(_controller->type);
     name_widget->setText(_controller->name);
   }
 
@@ -84,11 +85,11 @@ public slots:
   }
 
   void on_type_selector_currentIndexChanged( int val){
-if(val!=_controller->type) {
-Undo_PdControllers_CurrPos(_plugin->patch);
-    _controller->type = val;
-    update_gui();
-}
+    if(val!=_controller->type) {
+      Undo_PdControllers_CurrPos(_plugin->patch);
+      _controller->type = val;
+      update_gui();
+    }
     //value_slider->update();
   }
 
@@ -114,7 +115,7 @@ Undo_PdControllers_CurrPos(_plugin->patch);
   }
 
   void on_delete_button_released(){
-//Undo_PdControllers_CurrPos(_plugin->patch);
+    //Undo_PdControllers_CurrPos(_plugin->patch);
     PD_delete_controller(_plugin, _controller->num);
   }
 };
