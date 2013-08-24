@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMessageBox>
 #include <QFileDialog>
-#include <QTimer>
-#include <QTimerEvent>
 
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/Pd_plugin_proc.h"

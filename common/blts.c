@@ -429,7 +429,7 @@ void  Blt_markVisible(struct Tracker_Windows *window){
   Blt *blt=&window->blt;
 
   if(WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline)==false){
-    RError("Something strange just happened in the function Blt_markVisible in the file blts.c\n");
+    RError("Something strange just happened in the function Blt_markVisible in the file blts.c. start_realline: %d, end_realline: %d\n",start_realline,end_realline);
     blt->clear_do=false;
     return;
   }

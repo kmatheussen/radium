@@ -451,6 +451,16 @@ void SLIDERPAINTER_start_auto_updater(SliderPainter *painter){
   painter->start_auto_updater();
 }
 
+void SLIDERPAINTER_became_visible(SliderPainter *painter){
+  if(painter->_auto_updater_has_started==true)
+    painter->_timer.start();
+}
+
+void SLIDERPAINTER_became_invisible(SliderPainter *painter){
+  if(painter->_auto_updater_has_started==true)
+    painter->_timer.stop();
+}
+
 void SLIDERPAINTER_setValue(SliderPainter *painter, int value){
   painter->_value = value;
 }

@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSlider>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QTimer>
 #include <QVector>
 #include <QApplication>
 #include <QFont>
@@ -96,6 +95,14 @@ struct MyQSlider : public QSlider{
   ~MyQSlider(){
     g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
     SLIDERPAINTER_delete(_painter);
+  }
+
+  void hideEvent ( QHideEvent * event ) {
+    SLIDERPAINTER_became_invisible(_painter);
+  }
+
+  void showEvent ( QShowEvent * event ) {
+    SLIDERPAINTER_became_visible(_painter);
   }
 
 #if 0

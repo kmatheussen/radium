@@ -29,8 +29,13 @@ typedef struct{
   float min_value;
   float max_value;
   bool has_gui;
-  
+
+  float set_new_value;
   void *pd_binding;
+
+  bool calling_from_set_effect_value;
+  bool calling_from_pd;
+
 } Pd_Controller;
 
 #endif // AUDIO_PD_PLUGIN_H

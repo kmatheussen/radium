@@ -77,6 +77,8 @@ public:
 
     //update_gui();
 
+    PD_set_qtgui((SoundPlugin*)patch->patchdata, this);
+
     printf("\n\n\n\n          ************************************ CONSTRUCTOR *************************\n\n\n\n\n");
 
     _timer._pd_plugin_widget = this;
@@ -85,6 +87,14 @@ public:
     _timer.setInterval(k_timer_interval_here);
     _timer.start();
 
+  }
+
+  void hideEvent ( QHideEvent * event ) {
+    _timer.stop();
+  }
+
+  void showEvent ( QShowEvent * event ) {
+    _timer.start();
   }
 
   void update_gui(void){

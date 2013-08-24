@@ -40,6 +40,8 @@ public:
   SoundPlugin *_plugin; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
   Pd_Controller *_controller; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
   Pd_Controller_Config_dialog _conf;
+  
+  bool _calling_from_timer;
 
   struct Timer : public QTimer{
 
@@ -96,11 +98,14 @@ public:
           _pd_controller_widget->onoff_widget->setChecked(true);
 
       } else {
-        int new_value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_PLUGIN) * 10000;
+        int new_value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_STORAGE) * 10000;
         int old_value = _pd_controller_widget->value_slider->value();
 
-        if (new_value != old_value)
+        if (new_value != old_value) {
+          _pd_controller_widget->_calling_from_timer = true;
           _pd_controller_widget->value_slider->setValue(new_value);
+          _pd_controller_widget->_calling_from_timer = false;
+        }
       }
     }
   };
@@ -113,6 +118,7 @@ public:
     , _plugin(plugin)
     , _controller(PD_get_controller(plugin, controller_num))
     , _conf(this, plugin, controller_num)
+    , _calling_from_timer(false)
   {
     setupUi(this);
 
@@ -137,6 +143,14 @@ public:
     _timer._plugin = _plugin;
 
     _timer.setInterval(k_timer_interval_here);
+    _timer.start();
+  }
+
+  void hideEvent ( QHideEvent * event ) {
+    _timer.stop();
+  }
+
+  void showEvent ( QShowEvent * event ) {
     _timer.start();
   }
 
@@ -199,9 +213,11 @@ public slots:
   }
 
   void on_value_slider_valueChanged( int val) {
-    PLAYER_lock();{
-      PLUGIN_set_effect_value(_plugin, -1, _controller->num, val/10000.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
-    }PLAYER_unlock();
+    if (_calling_from_timer==false) {
+      PLAYER_lock();{
+        PLUGIN_set_effect_value(_plugin, -1, _controller->num, val/10000.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+      }PLAYER_unlock();
+    }
 
     paint_slider_text();
   }

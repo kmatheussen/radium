@@ -25,6 +25,9 @@ SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1
 void SLIDERPAINTER_delete(SliderPainter *painter);
 void SLIDERPAINTER_start_auto_updater(SliderPainter *painter);
 
+void SLIDERPAINTER_became_visible(SliderPainter *painter);
+void SLIDERPAINTER_became_invisible(SliderPainter *painter);
+
 void SLIDERPAINTER_paint(SliderPainter *painter, QPainter *p);
 
 void SLIDERPAINTER_set_num_channels(SliderPainter *painter, int num_channels);
