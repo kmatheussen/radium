@@ -511,7 +511,7 @@ const char *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
   return ret;
 }
 
-static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
+static const char *get_effect_name(struct SoundPlugin *plugin_type, int effect_num){
   switch(effect_num){
   case EFF_PITCH:
     return "Pitch";
@@ -527,7 +527,7 @@ static const char *get_effect_name(const struct SoundPluginType *plugin_type, in
   }
 }
 
-static int get_effect_format(const struct SoundPluginType *plugin_type, int effect_num){
+static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   if(effect_num==EFF_SUSTAIN_PEDAL)
     return EFFECT_FORMAT_BOOL;
   else

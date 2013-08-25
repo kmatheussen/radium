@@ -787,14 +787,16 @@ float *FAUST_get_peak_value_pointer(SoundPlugin *plugin, int effect_num){
 }
 #endif
 
-static int get_effect_format(const struct SoundPluginType *plugin_type, int effect_num){
+static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *plugin_type = plugin->type;
   Data *data = (Data*)plugin_type->data;
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
   return controller->type;
 }
 
-static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
+static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *plugin_type = plugin->type;
   Data *data = (Data*)plugin_type->data;
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
@@ -866,7 +868,8 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return controller->tooltip;
 }
 
-static int get_effect_num(const struct SoundPluginType *plugin_type, const char *effect_name){
+static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
+  const struct SoundPluginType *plugin_type = plugin->type;
   Data *data = (Data*)plugin_type->data;
   Voice *voice = &data->voices[0];
   for(unsigned int i=0;i<voice->myUI._controllers.size();i++){

@@ -244,6 +244,44 @@ void FX_update_all_slider_automation_visuals(void){
   }
 }
 
+void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float old_min, float old_max, float new_min, float new_max){
+  struct Blocks *block = root->song->blocks;
+
+  while(block!=NULL){
+    struct Tracks *track = block->tracks;
+
+    while(track!=NULL){
+
+      if (track->patch == patch) {
+        struct FXs *fxs=track->fxs;
+        while(fxs!=NULL){
+          if (fxs->l.num == fxnum) {
+            struct FX *fx = fxs->fx;
+            int fx_min = fx->min;
+            int fx_max = fx->max;
+
+            struct FXNodeLines *fxnode = fxs->fxnodelines;
+
+            Undo_FXs(root->song->tracker_windows, block, track, 0);
+
+            while(fxnode != NULL) {
+              double real_val = scale_double(fxnode->val, fx_min,  fx_max,  old_min, old_max);
+              fxnode->val     = scale_double(real_val,    new_min, new_max, fx_min,  fx_max);
+              fxnode = NextFXNodeLine(fxnode);
+            }
+
+            block->is_dirty=true;
+          }
+
+          fxs = NextFX(fxs);
+        }
+      }
+      track = NextTrack(track);
+    }
+    block = NextBlock(block);
+  }
+}
+
 static struct FX *selectFX(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

@@ -150,10 +150,6 @@ typedef struct SoundPluginType{
 
   bool plugin_takes_care_of_savable_values; // For instance, if a VST plugin has it's own editor, we ask the plugin for values instead of using savable_effect_values (which contains the last set value). Then this value is true.
 
-  int (*get_effect_format)(const struct SoundPluginType *plugin_type, int effect_num); // Must return one of the EFFECT_* values above.
-
-  int (*get_effect_num)(const struct SoundPluginType *plugin_type, const char *effect_name); // Necessary to implement this if the order of effects may change in the future.
-  const char *(*get_effect_name)(const struct SoundPluginType *plugin_type, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
   const char *(*get_effect_description)(const struct SoundPluginType *plugin_type, int effect_num);
 
   void (*get_display_value_string)(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
@@ -185,6 +181,10 @@ typedef struct SoundPluginType{
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
   int (*get_peaks)(struct SoundPlugin *plugin, int note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
+
+  int (*get_effect_format)(struct SoundPlugin *plugin, int effect_num); // Must return one of the EFFECT_* values above.
+  int (*get_effect_num)(struct SoundPlugin *plugin, const char *effect_name); // Necessary to implement this if the order of effects may change in the future.
+  const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
   void (*set_effect_value)(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format);

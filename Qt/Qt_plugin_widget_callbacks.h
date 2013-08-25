@@ -162,8 +162,7 @@ public:
 
     void on_limiter_bypass_button_toggled(bool val){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      const SoundPluginType *type = plugin->type;
-      int effect_num = PLUGIN_get_effect_num(type, "Limiter Bypass");
+      int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass");
 
       PLUGIN_set_effect_value(plugin, -1, effect_num, val==true ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
 

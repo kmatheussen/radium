@@ -128,7 +128,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   //for ( ; param != params.constEnd(); ++param) {
   for(int effect_num=0;effect_num<type->num_effects;effect_num++){
 
-    if(is_multiband && !strcmp(PLUGIN_get_effect_name(type,effect_num),"Limiter Bypass"))
+    if(is_multiband && !strcmp(PLUGIN_get_effect_name(plugin,effect_num),"Limiter Bypass"))
       continue;
 
     //PluginParam *pParam = param.value();

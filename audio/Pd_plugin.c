@@ -278,12 +278,10 @@ $1 = (SoundPlugin *) 0x0
 #include "Pd_plugin_proc.h"
 
 
-#define NUM_CONTROLLERS 40
-
 typedef struct{
   pd_t *pd;
 
-  Pd_Controller controllers[NUM_CONTROLLERS];
+  Pd_Controller controllers[NUM_PD_CONTROLLERS];
   void *file;
 
   const char *directory;
@@ -328,7 +326,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   Pd_Controller *controller = &data->controllers[effect_num];
   float real_value;
 
-  if(value_format==PLUGIN_FORMAT_SCALED && controller->type!=2)
+  if(value_format==PLUGIN_FORMAT_SCALED && controller->type!=EFFECT_FORMAT_BOOL)
     real_value = scale(value, 0.0, 1.0, 
                        controller->min_value, controller->max_value);
   else
@@ -351,7 +349,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   float raw = data->controllers[effect_num].value;
-  if(value_format==PLUGIN_FORMAT_SCALED && data->controllers[effect_num].type!=2)
+  if(value_format==PLUGIN_FORMAT_SCALED && data->controllers[effect_num].type!=EFFECT_FORMAT_BOOL)
     return scale(raw, data->controllers[effect_num].min_value, data->controllers[effect_num].max_value,
                  0.0f, 1.0f);
   else
@@ -361,7 +359,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
   const char *name = data->controllers[effect_num].name;
-  if(data->controllers[effect_num].type==0)
+  if(data->controllers[effect_num].type==EFFECT_FORMAT_FLOAT)
     snprintf(buffer,buffersize-1,"%s: %f",name==NULL?"<not set>":name, data->controllers[effect_num].value);
   else
     snprintf(buffer,buffersize-1,"%s: %d",name==NULL?"<not set>":name, (int)data->controllers[effect_num].value);
@@ -383,11 +381,11 @@ static void hide_gui(struct SoundPlugin *plugin){
   }PLAYER_unlock();
 }
 
+#if 0
 static void pdprint(const char *s) {
   printf("PD. %s", s); // FIX. Not thread safe.
 }
 
-#if 0
 static void pdnoteon(int ch, int pitch, int vel) {
   printf("PD. noteon: %d %d %d\n", ch, pitch, vel);
 }
@@ -418,7 +416,7 @@ static void bind_receiver(Pd_Controller *controller){
 static void add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type){
   Pd_Controller *controller;
   int controller_num;
-  for(controller_num=0;controller_num<NUM_CONTROLLERS;controller_num++) {
+  for(controller_num=0;controller_num<NUM_PD_CONTROLLERS;controller_num++) {
     controller = &data->controllers[controller_num];
 
     if(controller->name != NULL && !strcmp(controller->name, controller_name))
@@ -428,7 +426,7 @@ static void add_controller(SoundPlugin *plugin, Data *data, const char *controll
       break;
   }
 
-  if(controller_num==NUM_CONTROLLERS)
+  if(controller_num==NUM_PD_CONTROLLERS)
     return;
 
   controller->type = type;
@@ -454,11 +452,11 @@ static void pdmessagehook(void *d, const char *source, const char *controller_na
   //printf("Got something: -%s- -%s- -%s-\n",source,controller_name,type_name);
 
   if (!strcmp(type_name, "float")) 
-    add_controller(plugin, data, controller_name, 0);
+    add_controller(plugin, data, controller_name, EFFECT_FORMAT_FLOAT);
   else if (!strcmp(type_name, "int")) 
-    add_controller(plugin, data, controller_name, 1);
+    add_controller(plugin, data, controller_name, EFFECT_FORMAT_INT);
   else if (!strcmp(type_name, "bool")) 
-    add_controller(plugin, data, controller_name, 2);
+    add_controller(plugin, data, controller_name, EFFECT_FORMAT_BOOL);
   else
     printf("Unknown type: -%s-\n",type_name);
 }
@@ -467,7 +465,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = calloc(1,sizeof(Data));
 
   int i;
-  for(i=0;i<NUM_CONTROLLERS;i++) {
+  for(i=0;i<NUM_PD_CONTROLLERS;i++) {
     data->controllers[i].plugin = plugin;
     data->controllers[i].num = i;
     data->controllers[i].max_value = 1.0f;
@@ -479,8 +477,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   pd = libpds_create(true, "/home/kjetil/libpd/pure-data");
   data->pd = pd;
 
-  libpds_set_printhook(pd, pdprint);
-  libpds_set_noteonhook(pd, pdnoteon);
+  //libpds_set_printhook(pd, pdprint);
+  //libpds_set_noteonhook(pd, pdnoteon);
   libpds_set_floathook(pd, pdfloathook);
   libpds_set_messagehook(pd, pdmessagehook);
 
@@ -517,23 +515,37 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   PDGUI_clear(data->qtgui);
 
   int i;
-  for(i=0;i<NUM_CONTROLLERS;i++){
+  for(i=0;i<NUM_PD_CONTROLLERS;i++){
     free(data->controllers[i].name);
   }
 
   free(data);
 }
 
-static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
-  static char names[NUM_CONTROLLERS][128];
+static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
+  Data *data = (Data*)plugin->data;
+  Pd_Controller *controller = &data->controllers[effect_num];
+
+  return controller->type;
+}
+
+static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+  static char notused_names[NUM_PD_CONTROLLERS][128];
   static bool inited=false;
   if(inited==false){
     int i;
-    for(i=0;i<NUM_CONTROLLERS;i++)
-      sprintf(names[i],"Pd_Controller %d",i);
+    for(i=0;i<NUM_PD_CONTROLLERS;i++)
+      sprintf(notused_names[i],"NOTUSED %d",i);
     inited=true;
   }
-  return names[effect_num];
+
+  Data *data = (Data*)plugin->data;
+  Pd_Controller *controller = &data->controllers[effect_num];
+
+  if (controller->name == NULL || !strcmp(controller->name, ""))
+    return notused_names[effect_num];
+  else
+    return controller->name;
 }
 
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui){
@@ -578,7 +590,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   PDGUI_clear(data->qtgui);
 
   int i;
-  for(i=0;i<NUM_CONTROLLERS;i++) {
+  for(i=0;i<NUM_PD_CONTROLLERS;i++) {
     Pd_Controller *controller = &data->controllers[i];
 
     if(controller->pd_binding!=NULL) {
@@ -597,6 +609,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     controller->value = HASH_get_float_at(state, "value", i);
     controller->max_value = HASH_get_float_at(state, "max_value", i);
     controller->has_gui   = HASH_get_int_at(state, "has_gui", i)==1 ? true : false;
+    controller->config_dialog_visible = HASH_get_int_at(state, "config_dialog_visible", i)==1 ? true : false;
 
     if(controller->name != NULL) {
       bind_receiver(controller);
@@ -619,7 +632,7 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   HASH_put_string(state, "filename", data->filename);
 
   int i;
-  for(i=0;i<NUM_CONTROLLERS;i++) {
+  for(i=0;i<NUM_PD_CONTROLLERS;i++) {
     Pd_Controller *controller = &data->controllers[i];
     if(controller->name != NULL)
       HASH_put_string_at(state, "name", i, controller->name);
@@ -628,6 +641,7 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     HASH_put_float_at(state, "value", i, controller->value);
     HASH_put_float_at(state, "max_value", i, controller->max_value);
     HASH_put_int_at(state, "has_gui", i, controller->has_gui ? 1 : 0);
+    HASH_put_int_at(state, "config_dialog_visible", i, controller->config_dialog_visible ? 1 : 0);
   }
 }
 
@@ -642,9 +656,9 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   Undo_PdControllers_CurrPos(plugin->patch);
 
   int i;
-  hash_t *state = HASH_create(NUM_CONTROLLERS);
+  hash_t *state = HASH_create(NUM_PD_CONTROLLERS);
 
-  for(i=0;i<NUM_CONTROLLERS-1;i++) {
+  for(i=0;i<NUM_PD_CONTROLLERS-1;i++) {
     int s = i>=controller_num ? i+1 : i;
     Pd_Controller *controller = &data->controllers[s];
     HASH_put_string_at(state, "name", i, controller->name);
@@ -653,14 +667,16 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
     HASH_put_float_at(state, "value", i, controller->value);
     HASH_put_float_at(state, "max_value", i, controller->max_value);
     HASH_put_int_at(state, "has_gui", i, controller->has_gui);
+    HASH_put_int_at(state, "config_dialog_visible", i, controller->config_dialog_visible);
   }
 
-  HASH_put_string_at(state, "name", NUM_CONTROLLERS-1, "");
-  HASH_put_int_at(state, "type", NUM_CONTROLLERS-1, 0);
-  HASH_put_float_at(state, "min_value", NUM_CONTROLLERS-1, 0.0);
-  HASH_put_float_at(state, "value", NUM_CONTROLLERS-1, 0.0);
-  HASH_put_float_at(state, "max_value", NUM_CONTROLLERS-1, 1.0);
-  HASH_put_int_at(state, "has_gui", NUM_CONTROLLERS-1, 0);
+  HASH_put_string_at(state, "name", NUM_PD_CONTROLLERS-1, "");
+  HASH_put_int_at(state, "type", NUM_PD_CONTROLLERS-1, EFFECT_FORMAT_FLOAT);
+  HASH_put_float_at(state, "min_value", NUM_PD_CONTROLLERS-1, 0.0);
+  HASH_put_float_at(state, "value", NUM_PD_CONTROLLERS-1, 0.0);
+  HASH_put_float_at(state, "max_value", NUM_PD_CONTROLLERS-1, 1.0);
+  HASH_put_int_at(state, "has_gui", NUM_PD_CONTROLLERS-1, 0);
+  HASH_put_int_at(state, "config_dialog_visible", i, 0);
 
   recreate_from_state(plugin, state);
 }
@@ -674,8 +690,8 @@ static SoundPluginType plugin_type = {
  num_outputs              : 2,
  is_instrument            : true,
  note_handling_is_RT      : false,
- num_effects              : NUM_CONTROLLERS,
- get_effect_format        : NULL,
+ num_effects              : NUM_PD_CONTROLLERS,
+ get_effect_format        : get_effect_format,
  get_effect_name          : get_effect_name,
  effect_is_RT             : NULL,
  create_plugin_data       : create_plugin_data,

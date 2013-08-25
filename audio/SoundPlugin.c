@@ -391,9 +391,11 @@ int PLUGIN_get_num_visible_effects(SoundPlugin *plugin){
   }
 }
 
-int PLUGIN_get_effect_format(const struct SoundPluginType *plugin_type, int effect_num){
+int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *plugin_type = plugin->type;
+
   if(effect_num<plugin_type->num_effects)
-    return plugin_type->get_effect_format(plugin_type, effect_num);
+    return plugin_type->get_effect_format(plugin, effect_num);
 
   int system_effect = effect_num - plugin_type->num_effects;
 
@@ -405,18 +407,22 @@ int PLUGIN_get_effect_format(const struct SoundPluginType *plugin_type, int effe
     return EFFECT_FORMAT_FLOAT;
 }
 
-int PLUGIN_get_effect_num(const struct SoundPluginType *plugin_type, const char *effect_name){
+int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
+  const struct SoundPluginType *plugin_type = plugin->type;
+
   int i;
   for(i=0;i<NUM_SYSTEM_EFFECTS;i++)
     if(!strcmp(system_effect_names[i],effect_name))
       return i + plugin_type->num_effects;
 
-  return plugin_type->get_effect_num(plugin_type,effect_name);
+  return plugin_type->get_effect_num(plugin,effect_name);
 }
 
-const char *PLUGIN_get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
+const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *plugin_type = plugin->type;
+
   if(effect_num<plugin_type->num_effects)
-    return plugin_type->get_effect_name(plugin_type, effect_num);
+    return plugin_type->get_effect_name(plugin, effect_num);
 
   int system_effect = effect_num - plugin_type->num_effects;
   return system_effect_names[system_effect];
@@ -996,10 +1002,10 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   int i;
   
   for(i=0;i<type->num_effects;i++)
-    HASH_put_float(effects, PLUGIN_get_effect_name(type,i), type->get_effect_value(plugin, i, PLUGIN_FORMAT_NATIVE)); // Do this so that the plugin can change min/max values between sessions.
+    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), type->get_effect_value(plugin, i, PLUGIN_FORMAT_NATIVE)); // Do this so that the plugin can change min/max values between sessions.
 
   for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    HASH_put_float(effects, PLUGIN_get_effect_name(type,i), plugin->savable_effect_values[i]);
+    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), plugin->savable_effect_values[i]);
 
   return effects;
 }
@@ -1028,7 +1034,7 @@ void PLUGIN_create_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 
   int i;
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    const char *effect_name = PLUGIN_get_effect_name(type,i);
+    const char *effect_name = PLUGIN_get_effect_name(plugin,i);
     if(HASH_has_key(effects, effect_name)){
       float val = HASH_get_float(effects, effect_name);
       if(i<type->num_effects){

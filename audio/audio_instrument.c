@@ -202,15 +202,25 @@ static int AUDIO_getFX(struct Tracker_Windows *window,struct Tracks *track,struc
     return FX_FAILED;
   }
 
+  int num=0;
+  int nums[num_effects];
+
   int i;
-  for(i=0;i<num_effects;i++)
-    VECTOR_push_back(&v,PLUGIN_get_effect_name(plugin_type, i));
+  for(i=0;i<num_effects;i++) {
+    const char *name = PLUGIN_get_effect_name(plugin, i);
+    if (strncmp(name, "NOTUSED", strlen("NOTUSED"))) {
+      VECTOR_push_back(&v,name);
+      nums[num++] = i;
+    }
+  }
   
   int selection=GFX_Menu(window,NULL,menutitle,&v);
   if(-1==selection)
     return FX_FAILED;
 
-  init_fx(fx,selection,(const char*)v.elements[selection]);
+  int effect_num = nums[selection];
+
+  init_fx(fx,effect_num,(const char*)v.elements[selection]);
 
   return FX_SUCCESS;
 }
@@ -287,9 +297,8 @@ void DLoadAudioInstrument(void){
 
         SoundPlugin *plugin = patch->patchdata;
         if(plugin!=NULL){
-          const SoundPluginType *type = plugin->type;
-          if(type->get_effect_num!=NULL){
-            fx->effect_num = PLUGIN_get_effect_num(type, fx->name);
+          if(plugin->type->get_effect_num!=NULL){
+            fx->effect_num = PLUGIN_get_effect_num(plugin, fx->name);
             fx->num = fx->effect_num;
           }
         }

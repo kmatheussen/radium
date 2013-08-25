@@ -350,7 +350,8 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
 }
 
 
-static const char *get_effect_name(const SoundPluginType *plugin_type, int effect_num){
+static const char *get_effect_name(SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *plugin_type = plugin->type;
   TypeData *type_data = (TypeData*)plugin_type->data;
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
@@ -367,7 +368,8 @@ static const char *get_effect_name(const SoundPluginType *plugin_type, int effec
   return NULL;
 }
 
-static int get_effect_format(const SoundPluginType *type, int effect_num){
+static int get_effect_format(SoundPlugin *plugin, int effect_num){
+  const struct SoundPluginType *type = plugin->type;
   const LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
 
   if(LADSPA_IS_HINT_TOGGLED(hints))
@@ -381,11 +383,10 @@ static int get_effect_format(const SoundPluginType *type, int effect_num){
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  const SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
   float value = data->control_values[effect_num];
 
-  switch(get_effect_format(type,effect_num)){
+  switch(get_effect_format(plugin,effect_num)){
   case EFFECT_FORMAT_FLOAT:
     snprintf(buffer,buffersize-1,"%f",value);
     break;

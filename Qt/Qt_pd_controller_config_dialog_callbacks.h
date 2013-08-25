@@ -18,103 +18,266 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMessageBox>
 #include <QFileDialog>
 
+#include "../common/fxlines_proc.h"
+
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/Pd_plugin_proc.h"
 
 #include "Qt_pd_controller_config_dialog.h"
 
+static const int k_timer_interval_here4 = 50;
 
-class Pd_Controller_Config_dialog : public QDialog, public Ui::Pd_Controller_Config_dialog{
+extern LANGSPEC void QT_UpdateEditor(struct Tracker_Windows *window);
+extern LANGSPEC void QT_RepaintEditor(struct Tracker_Windows *window);
+
+class Pd_Controller_Config_dialog : public QDialog, public Ui::Pd_Controller_Config_dialog {
   Q_OBJECT;
 
 public:
-  QWidget *_pd_controller_widget;
-  SoundPlugin *_plugin; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
-  Pd_Controller *_controller; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
-  bool _showing;
+  struct Patch *_patch;
+  int _controller_num;
+  bool _is_updating_gui;
 
- Pd_Controller_Config_dialog(QWidget *parent, SoundPlugin *plugin, int controller_num)
+  QByteArray _my_geometry;
+  int _type;
+  QString _name;
+
+  struct Timer : QTimer{
+    Pd_Controller_Config_dialog *my;
+    void timerEvent(QTimerEvent * e){
+      my->timerCallback();
+    }
+  };
+
+  Timer _timer;
+
+ Pd_Controller_Config_dialog(QWidget *parent, struct Patch *patch, int controller_num)
     : QDialog(parent,"pd_plugin widget")
-    , _pd_controller_widget(parent)
-    , _plugin(plugin)
-    , _controller(PD_get_controller(plugin, controller_num))
-    , _showing(false)
+    , _patch(patch)
+    , _controller_num(controller_num)
+    , _is_updating_gui(true)
+    , _type(0)
  {
     setupUi(this);
     update_gui();
+
+    //if(controller_num==0)
+    //  printf("*** New controller dialog for %s. min: %f, val: %f, max: %f\n", _controller->name, _controller->min_value, _controller->value, _controller->max_value);
+    
+    _timer.setInterval(k_timer_interval_here4);
+    _timer.my = this;
+    _timer.start();
+  }
+
+  Pd_Controller *get_controller(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if(plugin==NULL)
+      return NULL;
+
+    return PD_get_controller(plugin, _controller_num);
+  }
+
+  void hide_and_remember_position() {
+    _my_geometry = saveGeometry();
+    hide();
+  }
+
+  void timerCallback(void) {
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL)
+      return;
+
+    if (isVisible() && controller->config_dialog_visible==false) {
+      hide_and_remember_position();
+    } if (!isVisible() && controller->config_dialog_visible==true) {
+      show();
+      restoreGeometry((const QByteArray &)_my_geometry);
+    }
+
+    if (controller->type != _type) {
+      _type = controller->type;
+      update_gui();
+    }
+
+    if (controller->name!=NULL && strcmp(controller->name, _name.ascii())) {
+      _name = controller->name;
+      update_gui();
+    }
+
+    if(controller->type != EFFECT_FORMAT_BOOL){
+      if (min_value_widget->value() != controller->min_value)
+        update_gui();
+      if (max_value_widget->value() != controller->max_value)
+        update_gui();
+    }
+  }
+
+  void parent_is_hiding() {
+    hide_and_remember_position();
+    _timer.stop();
+  }
+
+  void parent_is_showing() {
+    if(! _timer.isActive())
+      _timer.start();
   }
 
   void update_gui(void){
-    if(_controller->type==0 || _controller->type==1) {
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
+    }
+
+    _is_updating_gui = true;
+
+    if(controller->type==EFFECT_FORMAT_FLOAT || controller->type==EFFECT_FORMAT_INT) {
       //value_slider->show();
       //onoff_widget->hide();
       min_value_widget->show();
       max_value_widget->show();
+
+      min_value_widget->setValue(controller->min_value);
+      max_value_widget->setValue(controller->max_value);
 
     } else {
       min_value_widget->hide();
       max_value_widget->hide();
     }
 
-    type_selector->setCurrentIndex(_controller->type);
-    name_widget->setText(_controller->name);
+    type_selector->setCurrentIndex(controller->type);
+    name_widget->setText(controller->name);
+
+    _is_updating_gui = false;
   }
 
   void closeEvent(QCloseEvent *event) {
-    _showing = false;
-    event->ignore(); // keep window
+    Pd_Controller *controller = get_controller();
+    if(controller!=NULL)
+      controller->config_dialog_visible = false;
+    event->ignore(); // Only hide the window, dont close it.
+  }
+
+  void set_min_max(double new_min, double new_max){
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
+    }
+
+    Undo_Open();{
+
+      Undo_PdControllers_CurrPos(_patch);
+
+      float old_min = controller->min_value;
+      float old_max = controller->max_value;
+
+      controller->min_value = new_min;
+      controller->max_value = new_max;
+
+      FX_min_max_have_changed_for_patch(_patch, controller->num, old_min, old_max, new_min, new_max);
+
+    }Undo_Close();
   }
 
 
 public slots:
 
   void on_min_value_widget_valueChanged(double val){
-    if(val!=_controller->max_value) {
-      Undo_PdControllers_CurrPos(_plugin->patch);
-      _controller->min_value = val;
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
     }
+
+    if(_is_updating_gui==false)
+      if(val!=controller->max_value) {
+        set_min_max(val, controller->max_value);
+      }
   }
 
   void on_max_value_widget_valueChanged(double val){
-    if(val!=_controller->min_value) {
-       Undo_PdControllers_CurrPos(_plugin->patch);
-      _controller->max_value = val;
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
     }
+
+    if(_is_updating_gui==false)
+      if(val!=controller->min_value) {
+        set_min_max(controller->min_value, val);
+      }
   }
 
   void on_type_selector_currentIndexChanged( int val){
-    if(val!=_controller->type) {
-      Undo_PdControllers_CurrPos(_plugin->patch);
-      _controller->type = val;
-      update_gui();
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
     }
+
+    if(_is_updating_gui==false)
+      if(val!=controller->type) {
+        Undo_PdControllers_CurrPos(_patch);
+        controller->type = val;
+        update_gui();
+      }
     //value_slider->update();
   }
 
   void on_name_widget_returnPressed(){
-    _showing = false;
-    hide();
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
+    }
+
+    controller->config_dialog_visible = false;
+    hide_and_remember_position();
   }
 
   void on_name_widget_editingFinished(){
-    printf("name: -%s-\n",name_widget->text().ascii());
-    QString name = name_widget->text();
-    if(name != _controller->name) {
-      Undo_PdControllers_CurrPos(_plugin->patch);
-      PD_set_controller_name(_plugin, _controller->num, name.ascii());
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
     }
-    //set_editor_focus();
-    //_pd_controller_widget->update();
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    if(_is_updating_gui==false) {
+      printf("name: -%s-\n",name_widget->text().ascii());
+      QString name = name_widget->text();
+      if(name != controller->name) {
+        Undo_PdControllers_CurrPos(_patch);
+        PD_set_controller_name(plugin, controller->num, name.ascii());
+      }
+      //set_editor_focus();
+      //_pd_controller_widget->update();
+    }
   }
 
   void on_hide_button_released(){
-    _showing = false;
-    hide();
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
+    }
+
+    controller->config_dialog_visible = false;
+    hide_and_remember_position();
   }
 
   void on_delete_button_released(){
-    //Undo_PdControllers_CurrPos(_plugin->patch);
-    PD_delete_controller(_plugin, _controller->num);
+    Pd_Controller *controller = get_controller();
+    if(controller==NULL){
+      printf("controller==NULL (\?\?\?)\n");
+      return;
+    }
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    PD_delete_controller(plugin, controller->num);
   }
 };
 

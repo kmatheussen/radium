@@ -264,6 +264,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
         VECTOR_push_back(&v,"<New MIDI Instrument>");
         VECTOR_push_back(&v,"<New Sample Player>");
         VECTOR_push_back(&v,"<New FluidSynth>");
+        VECTOR_push_back(&v,"<New Pd Instrument>");
         VECTOR_push_back(&v,"<New Audio Instrument>");
 
         {
@@ -295,6 +296,11 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
                   patch = plugin->patch;
             
               }else if(selection==num_patches+3){
+                SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","Pd"),-100000,-100000,true,NULL);
+                if(plugin!=NULL)
+                  patch = plugin->patch;
+
+              }else if(selection==num_patches+4){
                 SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
                 if(plugin!=NULL)
                   patch = plugin->patch;

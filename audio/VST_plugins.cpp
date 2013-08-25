@@ -808,7 +808,7 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
 
   static void hide_gui(struct SoundPlugin *plugin){
     Data *data = (Data*)plugin->data;
-    AEffect *aeffect = data->aeffect;
+    //AEffect *aeffect = data->aeffect;
     data->editor_widget->close();
   }
 
@@ -829,7 +829,8 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     }
   }
 
-  static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
+  static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+    const struct SoundPluginType *plugin_type = plugin->type;
     TypeData *type_data = (TypeData*)plugin_type->data;
     printf("type_data: %p, num: %d, Effect name: \"%s\"\n",type_data, effect_num,type_data->params[effect_num].label);
     return type_data->params[effect_num].name;

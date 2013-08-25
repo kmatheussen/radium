@@ -52,11 +52,11 @@ class ParamWidget : public QWidget{
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type  = plugin->type;
       _type = type;
-      _name = type->get_effect_name(type, effect_num);
+      _name = type->get_effect_name(plugin, effect_num);
       if(_name.size()>25)
         _name = _name.left(25);
 
-      int format = type->get_effect_format ? type->get_effect_format(type, effect_num) : EFFECT_FORMAT_FLOAT;
+      int format = type->get_effect_format!=NULL ? type->get_effect_format(plugin, effect_num) : EFFECT_FORMAT_FLOAT;
 
       QGridLayout *grid_layout = new QGridLayout();
       grid_layout->setMargin(0);

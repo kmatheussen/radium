@@ -39,7 +39,6 @@ class Pd_Controller_widget : public QWidget, public Ui::Pd_Controller_widget{
 public:
   SoundPlugin *_plugin; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
   Pd_Controller *_controller; // Pd_plugin.recreate_from_state also recreate gui, so it is safe to store this one here.
-  Pd_Controller_Config_dialog _conf;
   
   bool _calling_from_timer;
 
@@ -49,7 +48,6 @@ public:
     Pd_Controller_widget *_pd_controller_widget;
     SoundPlugin *_plugin;
 
-    QByteArray _conf_geometry;
     int _type;
     QString _name;
 
@@ -57,20 +55,9 @@ public:
       if(_pd_controller_widget->isVisible()==false)
         return;
 
-      Pd_Controller_Config_dialog *conf = &_pd_controller_widget->_conf;
-
-      if (conf->isVisible() && conf->_showing==false) {
-        _conf_geometry = conf->saveGeometry();
-        conf->hide();
+      if (_controller->config_dialog_visible==false && _pd_controller_widget->popup_button->checkState()==Qt::Checked)
         _pd_controller_widget->popup_button->setChecked(false);
-      } if (!conf->isVisible() && conf->_showing==true) {
-        conf->show();
-        conf->restoreGeometry((const QByteArray &)_conf_geometry);
-      }
-
-      if (conf->_showing==false && _pd_controller_widget->popup_button->checkState()==Qt::Checked)
-        _pd_controller_widget->popup_button->setChecked(false);
-      else if (conf->_showing==true && _pd_controller_widget->popup_button->checkState()!=Qt::Checked)
+      else if (_controller->config_dialog_visible==true && _pd_controller_widget->popup_button->checkState()!=Qt::Checked)
         _pd_controller_widget->popup_button->setChecked(true);
 
       if (_controller->type != _type) {
@@ -86,7 +73,7 @@ public:
         _pd_controller_widget->update();
       }
 
-      if(_controller->type==2){
+      if(_controller->type==EFFECT_FORMAT_BOOL){
         float new_value = PLUGIN_get_effect_value(_plugin, _controller->num, VALUE_FROM_PLUGIN);
 
         bool is_checked = _pd_controller_widget->onoff_widget->isChecked();
@@ -117,7 +104,6 @@ public:
     : QWidget(parent,"pd_plugin widget")
     , _plugin(plugin)
     , _controller(PD_get_controller(plugin, controller_num))
-    , _conf(this, plugin, controller_num)
     , _calling_from_timer(false)
   {
     setupUi(this);
@@ -155,7 +141,7 @@ public:
   }
 
   void update_gui(void){
-    if(_controller->type==0 || _controller->type==1) {
+    if(_controller->type==EFFECT_FORMAT_FLOAT || _controller->type==EFFECT_FORMAT_INT) {
       value_slider->show();
       onoff_widget->hide();
       //min_value_widget->show();
@@ -206,9 +192,9 @@ public slots:
 
   void on_popup_button_stateChanged(int val){
     if (val==Qt::Checked){
-      _conf._showing = true;
+      _controller->config_dialog_visible = true;
     } else {
-      _conf._showing = false;
+      _controller->config_dialog_visible = false;
     }
   }
 
@@ -230,7 +216,7 @@ public slots:
       effect_value = 0.0f;
     }
 
-    printf("Setting to %f\n",effect_value);
+    //printf("Setting to %f\n",effect_value);
 
     PLAYER_lock();{
       PLUGIN_set_effect_value(_plugin, -1, _controller->num, effect_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);

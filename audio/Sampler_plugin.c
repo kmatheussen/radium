@@ -1341,7 +1341,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete_data(data);
 }
 
-static const char *get_effect_name(const struct SoundPluginType *plugin_type, int effect_num){
+static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   switch(effect_num){
   case EFF_STARTPOS:
     return "Start Position";
@@ -1371,17 +1371,17 @@ static const char *get_effect_name(const struct SoundPluginType *plugin_type, in
   }
 }
 
-static int get_effect_format(const struct SoundPluginType *plugin_type, int effect_num){
+static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   if(effect_num==EFF_LOOP_ONOFF)
     return EFFECT_FORMAT_BOOL;
   else
     return EFFECT_FORMAT_FLOAT;
 }
 
-static int get_effect_num(const struct SoundPluginType *plugin_type, const char *effect_name){
+static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
   int i;
   for(i=0;i<EFF_NUM_EFFECTS;i++)
-    if(!strcmp(effect_name,get_effect_name(plugin_type,i)))
+    if(!strcmp(effect_name,get_effect_name(plugin,i)))
       return i;
 
   RError("Unknown effect name \"%s\"",effect_name);

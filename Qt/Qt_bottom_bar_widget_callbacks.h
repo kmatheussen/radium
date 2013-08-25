@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 
 #include "../Qt/Qt_MyQButton.h"
+#include <QTimer>
 
 #include "FocusSniffers.h"
 

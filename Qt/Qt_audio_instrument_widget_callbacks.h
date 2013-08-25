@@ -318,7 +318,7 @@ public:
     else if(system_effect==EFFNUM_BUS2)
       SLIDERPAINTER_set_string(slider->_painter, QString(BUS_get_bus_name(1)) + ": " + QString(buf));
     else
-      SLIDERPAINTER_set_string(slider->_painter, QString(PLUGIN_get_effect_name(type, effect_num)+strlen("System ")) + ": " + QString(buf));
+      SLIDERPAINTER_set_string(slider->_painter, QString(PLUGIN_get_effect_name(plugin, effect_num)+strlen("System ")) + ": " + QString(buf));
       
   }
 

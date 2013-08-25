@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef AUDIO_PD_PLUGIN_H
 #define AUDIO_PD_PLUGIN_H
 
+#define NUM_PD_CONTROLLERS 40
+
 typedef struct{
   int num;
   SoundPlugin *plugin;
@@ -29,6 +31,7 @@ typedef struct{
   float min_value;
   float max_value;
   bool has_gui;
+  bool config_dialog_visible;
 
   float set_new_value;
   void *pd_binding;

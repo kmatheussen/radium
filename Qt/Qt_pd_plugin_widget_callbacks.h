@@ -40,6 +40,7 @@ public:
   struct Patch *_patch;
   int _num_controllers;
   std::vector<Pd_Controller_widget*> _controllers;
+  Pd_Controller_Config_dialog *_conf_dialogs[NUM_PD_CONTROLLERS];
 
   struct Timer : public QTimer{
     Pd_Plugin_widget *_pd_plugin_widget;
@@ -75,11 +76,14 @@ public:
   {
     setupUi(this);
 
+    for(int i=0;i<NUM_PD_CONTROLLERS;i++)
+      _conf_dialogs[i] = new Pd_Controller_Config_dialog(this, patch, i);
+
     //update_gui();
 
     PD_set_qtgui((SoundPlugin*)patch->patchdata, this);
 
-    printf("\n\n\n\n          ************************************ CONSTRUCTOR *************************\n\n\n\n\n");
+    //printf("\n\n\n\n          ************************************ CONSTRUCTOR *************************\n\n\n\n\n");
 
     _timer._pd_plugin_widget = this;
     _timer._last_cleared_generation = 0;
@@ -89,11 +93,22 @@ public:
 
   }
 
+  ~Pd_Plugin_widget() {
+    for(int i=0;i<NUM_PD_CONTROLLERS;i++)
+      delete _conf_dialogs[i];
+  }
+
   void hideEvent ( QHideEvent * event ) {
+    for(int i=0;i<NUM_PD_CONTROLLERS;i++)
+      _conf_dialogs[i]->parent_is_hiding();
+
     _timer.stop();
   }
 
   void showEvent ( QShowEvent * event ) {
+    for(int i=0;i<NUM_PD_CONTROLLERS;i++)
+      _conf_dialogs[i]->parent_is_showing();
+
     _timer.start();
   }
 
@@ -110,7 +125,6 @@ public:
   }
 
   void new_controller(int controller_num){
-    printf("hepp\n");
     if(_num_controllers>=40)
       return;
 
@@ -121,8 +135,6 @@ public:
 
     int x = _num_controllers / 8;
     int y = _num_controllers - (8*x);
-
-    printf("x: %d. y: %d\n",x,y);
 
     gridLayout->addWidget(controller_widget,y,x);
     _num_controllers++;
