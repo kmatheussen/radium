@@ -15,14 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef QT_PD_PLUGIN_WIDGET_CALLBACKS_PROC_H
-#define QT_PD_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
+#ifndef QT_PLUGIN_WIDGET_CALLBACKS_PROC_H
+#define QT_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
 
-extern LANGSPEC void PDGUI_clear(void *gui);
-extern LANGSPEC void PDGUI_schedule_clearing(void *gui);
+void PLUGINWIDGET_gui_is_hidden(void *w);
+void PLUGINWIDGET_gui_is_visible(void *w);
 
-extern LANGSPEC void PDGUI_is_hidden(void *gui);
-extern LANGSPEC void PDGUI_is_visible(void *gui);
-
-#endif // QT_PD_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
-
+#endif // QT_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H

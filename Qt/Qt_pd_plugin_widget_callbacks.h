@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Pd_plugin.h"
 #include "../audio/Pd_plugin_proc.h"
 
+#include "Qt_plugin_widget_callbacks_proc.h"
+
 #include "mQt_pd_controller_widget_callbacks.h"
 
 #include "Qt_pd_plugin_widget_callbacks_proc.h"
@@ -38,6 +40,8 @@ class Pd_Plugin_widget : public QWidget, public Ui::Pd_Plugin_widget{
 
 public:
   struct Patch *_patch;
+  volatile bool _gui_is_visible;
+
   int _num_controllers;
   std::vector<Pd_Controller_widget*> _controllers;
   Pd_Controller_Config_dialog *_conf_dialogs[NUM_PD_CONTROLLERS];
@@ -46,6 +50,7 @@ public:
     Pd_Plugin_widget *_pd_plugin_widget;
     int _last_cleared_generation;
     volatile int _clearing_generation;
+    bool _last_sent_gui_is_visible;
 
     void timerEvent(QTimerEvent * e){
       SoundPlugin *plugin = (SoundPlugin*)_pd_plugin_widget->_patch->patchdata;
@@ -62,6 +67,17 @@ public:
         if(_pd_plugin_widget->isVisible()==false)
           return;
 
+        bool gui_is_visible = _pd_plugin_widget->_gui_is_visible;
+        if (_last_sent_gui_is_visible != gui_is_visible) {
+          QWidget *parent = _pd_plugin_widget->parentWidget();
+          if(gui_is_visible)
+            PLUGINWIDGET_gui_is_visible(parent);
+          else
+            PLUGINWIDGET_gui_is_hidden(parent);
+
+          _last_sent_gui_is_visible = gui_is_visible;
+        }
+
         _pd_plugin_widget->update_gui();
       }
     }
@@ -72,6 +88,7 @@ public:
   Pd_Plugin_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent,"pd_plugin widget")
     , _patch(patch)
+    , _gui_is_visible(false)
     , _num_controllers(0)
   {
     setupUi(this);
@@ -86,6 +103,7 @@ public:
     //printf("\n\n\n\n          ************************************ CONSTRUCTOR *************************\n\n\n\n\n");
 
     _timer._pd_plugin_widget = this;
+    _timer._last_sent_gui_is_visible = false;
     _timer._last_cleared_generation = 0;
     _timer._clearing_generation = 0;
     _timer.setInterval(k_timer_interval_here);
@@ -163,6 +181,20 @@ public:
 public slots:
 
 };
+
+void PDGUI_is_hidden(void *gui){
+  if(gui!=NULL){
+    Pd_Plugin_widget *pd_widget = (Pd_Plugin_widget *)gui;
+    pd_widget->_gui_is_visible = false;
+  }
+}
+
+void PDGUI_is_visible(void *gui){
+  if(gui!=NULL){
+    Pd_Plugin_widget *pd_widget = (Pd_Plugin_widget *)gui;
+    pd_widget->_gui_is_visible = true;
+  }
+}
 
 void PDGUI_clear(void *gui){
   if(gui!=NULL){

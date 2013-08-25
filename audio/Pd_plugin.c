@@ -253,7 +253,6 @@ $1 = (SoundPlugin *) 0x0
 
                                 */
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -446,6 +445,15 @@ static void add_controller(SoundPlugin *plugin, Data *data, const char *controll
 static void pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
+  
+  if( !strcmp(source, "libpd")) {
+    printf("controller_name: -%s-\n",controller_name);
+    if(!strcmp(controller_name, "gui_is_visible"))
+      PDGUI_is_visible(data->qtgui);
+    else if(!strcmp(controller_name, "gui_is_hidden"))
+      PDGUI_is_hidden(data->qtgui);
+    return;
+  }
 
   t_atom a = argv[0];
   char *type_name = libpd_get_symbol(a); // do something with the C string s
@@ -501,6 +509,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   data->directory = "/home/kjetil/libpd/samples/guiTest/";
   data->filename = "test.pd";
   data->file = libpds_openfile(pd, data->filename, data->directory);
+
+  libpds_bind(pd, "libpd", plugin);
 
   return data;
 }

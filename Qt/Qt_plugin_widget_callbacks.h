@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/undo_pd_controllers_proc.h"
 
+#include "Qt_plugin_widget_callbacks_proc.h"
+
 #include "Qt_plugin_widget.h"
 
 #include "mQt_pd_plugin_widget_callbacks.h"
@@ -34,6 +36,7 @@ class Plugin_widget : public QWidget, public Ui::Plugin_widget{
 public:
   struct Patch *_patch;
   Pd_Plugin_widget *_pd_plugin_widget;
+  bool _ignore_show_gui_checkbox_stateChanged;
 
 private:
   PluginWidget *_plugin_widget;
@@ -44,6 +47,7 @@ public:
     : QWidget(parent,"plugin widget")
     , _patch(patch)
     , _pd_plugin_widget(NULL)
+    , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
     {
     setupUi(this);
@@ -147,11 +151,13 @@ public:
   }
 
   void on_show_gui_checkbox_stateChanged(int val){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (val==Qt::Checked){
-      plugin->type->show_gui(plugin);
-    }else if(val==Qt::Unchecked){
-      plugin->type->hide_gui(plugin);
+    if (_ignore_show_gui_checkbox_stateChanged==false) {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (val==Qt::Checked){
+        plugin->type->show_gui(plugin);
+      }else if(val==Qt::Unchecked){
+        plugin->type->hide_gui(plugin);
+      }
     }
   }
 
@@ -263,3 +269,18 @@ public:
       msgBox.exec();
     }
 };
+
+void PLUGINWIDGET_gui_is_hidden(void *w){
+  Plugin_widget *plugin_widget = static_cast<Plugin_widget*>(w);
+  plugin_widget->_ignore_show_gui_checkbox_stateChanged = true; {
+    plugin_widget->show_gui_checkbox->setChecked(false);
+  } plugin_widget->_ignore_show_gui_checkbox_stateChanged = false;
+}
+
+void PLUGINWIDGET_gui_is_visible(void *w){
+  Plugin_widget *plugin_widget = static_cast<Plugin_widget*>(w);
+  plugin_widget->_ignore_show_gui_checkbox_stateChanged = true; {
+    plugin_widget->show_gui_checkbox->setChecked(true);
+  } plugin_widget->_ignore_show_gui_checkbox_stateChanged = false;
+}
+
