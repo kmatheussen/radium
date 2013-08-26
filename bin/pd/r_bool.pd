@@ -1,0 +1,16 @@
+#N canvas 1332 710 540 322 10;
+#X obj 100 178 outlet;
+#X obj 96 58 s \$1;
+#X obj 95 33 inlet;
+#X obj 100 125 tgl 25 0 \$1-receiver \$1 empty 17 7 0 10 -261682 -1
+-1 1 1;
+#X obj 210 32 loadbang;
+#X obj 210 95 symbol \$1;
+#X obj 210 177 s radium_controller;
+#X obj 210 136 pack s 2 0 \$2 1;
+#X connect 2 0 1 0;
+#X connect 3 0 0 0;
+#X connect 4 0 5 0;
+#X connect 5 0 7 0;
+#X connect 7 0 6 0;
+#X coords 0 -1 1 1 40 50 1 100 100;

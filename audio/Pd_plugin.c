@@ -266,6 +266,7 @@ $1 = (SoundPlugin *) 0x0
 #include "undo_pd_controllers_proc.h"
 
 #include "../common/OS_Player_proc.h"
+#include "../common/OS_settings_proc.h"
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
 #include "SoundPluginRegistry_proc.h"
@@ -286,8 +287,6 @@ typedef struct{
   const char *directory;
   const char *filename;
 
-  void *controller_binding;
-
   void *qtgui;
 } Data;
 
@@ -301,25 +300,25 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   libpds_process_float_noninterleaved(pd, num_frames / libpds_blocksize(pd), (const float**) inputs, outputs);
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void RT_play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_noteon(pd, 0, note_num, volume*127);
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_polyaftertouch(pd, 0, note_num, volume*127);
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_noteon(pd, 0, note_num, 0);
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format) {
+static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   Pd_Controller *controller = &data->controllers[effect_num];
@@ -344,7 +343,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
   }
 }
 
-static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format) {
+static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   float raw = data->controllers[effect_num].value;
   if(value_format==PLUGIN_FORMAT_SCALED && data->controllers[effect_num].type!=EFFECT_FORMAT_BOOL)
@@ -382,17 +381,7 @@ static void hide_gui(struct SoundPlugin *plugin){
   }PLAYER_unlock();
 }
 
-#if 0
-static void pdprint(const char *s) {
-  printf("PD. %s", s); // FIX. Not thread safe.
-}
-
-static void pdnoteon(int ch, int pitch, int vel) {
-  printf("PD. noteon: %d %d %d\n", ch, pitch, vel);
-}
-#endif
-
-static void pdfloathook(void *d, const char *sym, float val){
+static void RT_pdfloathook(void *d, const char *sym, float val){
   Pd_Controller *controller = (Pd_Controller*)d;
 
   //printf("pdfloathook. calling_from_set_effect_value: %s\n",controller->calling_from_set_effect_value?"true":"false");
@@ -408,13 +397,13 @@ static void pdfloathook(void *d, const char *sym, float val){
   }
 }
 
-static void bind_receiver(Pd_Controller *controller){
-  char receive_symbol_name[1024];
-  snprintf(receive_symbol_name, 1023, "%s-receiver", controller->name);
+static void RT_bind_receiver(Pd_Controller *controller){
+  char receive_symbol_name[PD_NAME_LENGTH+20];
+  snprintf(receive_symbol_name, PD_NAME_LENGTH+19, "%s-receiver", controller->name);
   controller->pd_binding = libpds_bind(((Data*)controller->plugin->data)->pd, receive_symbol_name, controller);
 }
 
-static void add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value){
+static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value){
   Pd_Controller *controller;
   int controller_num;
   bool creating_new = true;
@@ -452,13 +441,13 @@ static void add_controller(SoundPlugin *plugin, Data *data, const char *controll
   controller->has_gui = true;
 
   if (creating_new==true)
-    bind_receiver(controller);
+    RT_bind_receiver(controller);
 
   PDGUI_schedule_clearing(data->qtgui);
 }
 
 // Note that hooks are always called from the player thread.
-static void pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
+static void RT_pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
   
@@ -472,7 +461,7 @@ static void pdmessagehook(void *d, const char *source, const char *controller_na
   }
 }
 
-static void pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
+static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
   
@@ -485,7 +474,7 @@ static void pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
     //printf("Got something: %s, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
 
     if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
-      add_controller(plugin, data, name, type, min_value, value, max_value);
+      RT_add_controller(plugin, data, name, type, min_value, value, max_value);
     else
       printf("Unknown type: -%d-\n",type);
   }
@@ -504,14 +493,16 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   int blocksize;
   pd_t *pd;
 
-  pd = libpds_create(true, "/home/kjetil/libpd/pure-data");
+  char puredatapath[1024];
+  snprintf(puredatapath,1023,"%s/packages/libpd-master/pure-data",OS_get_program_path());
+  pd = libpds_create(true, puredatapath);
   data->pd = pd;
 
   //libpds_set_printhook(pd, pdprint);
   //libpds_set_noteonhook(pd, pdnoteon);
-  libpds_set_floathook(pd, pdfloathook);
-  libpds_set_messagehook(pd, pdmessagehook);
-  libpds_set_listhook(pd, pdlisthook);
+  libpds_set_floathook(pd, RT_pdfloathook);
+  libpds_set_messagehook(pd, RT_pdmessagehook);
+  libpds_set_listhook(pd, RT_pdlisthook);
 
   libpds_init_audio(pd, 2, 2, sample_rate);
     
@@ -527,9 +518,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   libpds_finish_message(pd, "pd", "dsp");
 
   plugin->data = data; // plugin->data is used before this function ends.
-  data->controller_binding = libpds_bind(pd, "radium_controller", plugin);
+  libpds_bind(pd, "radium_controller", plugin);
 
-  data->directory = "/home/kjetil/libpd/samples/guiTest/";
+  snprintf(puredatapath,1023,"%s/pd",OS_get_program_path());
+  data->directory = puredatapath;
   data->filename = "test.pd";
   data->file = libpds_openfile(pd, data->filename, data->directory);
 
@@ -601,7 +593,7 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
     if(controller->pd_binding != NULL)
       libpds_unbind(data->pd, controller->pd_binding);
 
-    bind_receiver(controller);
+    RT_bind_receiver(controller);
 
   }PLAYER_unlock();
 }
@@ -635,7 +627,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     controller->config_dialog_visible = HASH_get_int_at(state, "config_dialog_visible", i)==1 ? true : false;
 
     if(controller->name != NULL) {
-      bind_receiver(controller);
+      RT_bind_receiver(controller);
     }
   }
 
@@ -723,11 +715,11 @@ static SoundPluginType plugin_type = {
  hide_gui         : hide_gui,
 
  RT_process       : RT_process,
- play_note        : play_note,
- set_note_volume  : set_note_volume,
- stop_note        : stop_note,
- set_effect_value : set_effect_value,
- get_effect_value : get_effect_value,
+ play_note        : RT_play_note,
+ set_note_volume  : RT_set_note_volume,
+ stop_note        : RT_stop_note,
+ set_effect_value : RT_set_effect_value,
+ get_effect_value : RT_get_effect_value,
  get_display_value_string : get_display_value_string,
 
  recreate_from_state : recreate_from_state,

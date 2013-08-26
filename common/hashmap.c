@@ -329,7 +329,7 @@ hash_t *HASH_get_hash_at(hash_t *hash, const char *key, int i){
 
 
 void HASH_save(hash_t *hash, FILE *file){
-  fprintf(file, ">> HASH MAP BEGIN V2\n");
+  fprintf(file, ">> HASH MAP V2 BEGIN\n");
 
   fprintf(file, "%d\n", hash->elements_size);
 
@@ -357,7 +357,7 @@ void HASH_save(hash_t *hash, FILE *file){
       element = element->next;
     }
   }
-  fprintf(file,"<< HASH MAP END\n");
+  fprintf(file,"<< HASH MAP V2 END\n");
 }
 
 static bool read_line(char *line,int len,FILE *file){
@@ -393,7 +393,7 @@ hash_t *HASH_load(FILE *file){
 
   read_line(line, 8193, file);
 
-  while(strcmp(line,"<< HASH MAP END")){
+  while(strcmp(line,"<< HASH MAP END") && strcmp(line,"<< HASH MAP V2 END")){
     const char *key = talloc_strdup(line);
     int i = 0;
 

@@ -52,6 +52,11 @@ if test $2 = "yes" ; then
     cd ..
 fi
 
+tar xvzf libpd-master.tar.gz
+cd libpd-master/
+make -j7
+cd ..
+
 
 # gc.tar.gz is currently gc-7.2d, with ABORT made into a dummy operation.
 
