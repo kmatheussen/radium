@@ -332,14 +332,13 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     real_value = value;
 
   controller->value = real_value;
-  const char *name = controller->name;
-  if(name != NULL) {
+
+  if(strcmp(controller->name, "")) {
     //printf("####################################################### Setting pd volume to %f / real_value: %f, for -%s-. Coming-from-pd: %d\n",value, real_value,name,controller->calling_from_pd);
     controller->calling_from_set_effect_value = true; {
 
-      if(false==controller->calling_from_pd) {
-        libpds_float(pd, name, real_value);
-      }
+      if(false==controller->calling_from_pd)
+        libpds_float(pd, controller->name, real_value);
 
     } controller->calling_from_set_effect_value = false;
   }
@@ -357,11 +356,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
-  const char *name = data->controllers[effect_num].name;
-  if(data->controllers[effect_num].type==EFFECT_FORMAT_FLOAT)
-    snprintf(buffer,buffersize-1,"%s: %f",name==NULL?"<not set>":name, data->controllers[effect_num].value);
+  Pd_Controller *controller = &data->controllers[effect_num];
+
+  const char *name = controller->name;
+
+  if(controller->type==EFFECT_FORMAT_FLOAT)
+    snprintf(buffer,buffersize-1,"%s: %f",!strcmp(name,"")?"<not set>":name, controller->value);
   else
-    snprintf(buffer,buffersize-1,"%s: %d",name==NULL?"<not set>":name, (int)data->controllers[effect_num].value);
+    snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)controller->value);
 }
 
 static void show_gui(struct SoundPlugin *plugin){
@@ -412,14 +414,18 @@ static void bind_receiver(Pd_Controller *controller){
   controller->pd_binding = libpds_bind(((Data*)controller->plugin->data)->pd, receive_symbol_name, controller);
 }
 
-static void add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type){
+static void add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value){
   Pd_Controller *controller;
   int controller_num;
+  bool creating_new = true;
+
   for(controller_num=0;controller_num<NUM_PD_CONTROLLERS;controller_num++) {
     controller = &data->controllers[controller_num];
 
-    if(controller->name != NULL && !strcmp(controller->name, controller_name))
-      return; // already there.
+    if(controller->name != NULL && !strcmp(controller->name, controller_name)) {
+      creating_new = false;
+      break;
+    }
 
     if(controller->name == NULL || !strcmp(controller->name, ""))
       break;
@@ -428,15 +434,25 @@ static void add_controller(SoundPlugin *plugin, Data *data, const char *controll
   if(controller_num==NUM_PD_CONTROLLERS)
     return;
 
+  if (fabs(min_value-max_value) < 0.0001f) {
+    if(fabs(min_value) < 0.001f)
+      max_value = 1.0f;
+    else {
+      min_value = value;
+      max_value = value + 1.0f;
+    }
+  }
+
   controller->type = type;
-  controller->min_value = 0;
-  controller->value = 0;
-  controller->max_value = 1;  
-  controller->name = strdup(controller_name);
+  controller->min_value = min_value;
+  controller->value = value;
+  controller->max_value = max_value;  
+  strncpy(controller->name, controller_name, PD_NAME_LENGTH-1);
 
   controller->has_gui = true;
 
-  bind_receiver(controller);
+  if (creating_new==true)
+    bind_receiver(controller);
 
   PDGUI_schedule_clearing(data->qtgui);
 }
@@ -447,26 +463,32 @@ static void pdmessagehook(void *d, const char *source, const char *controller_na
   Data *data = (Data*)plugin->data;
   
   if( !strcmp(source, "libpd")) {
-    printf("controller_name: -%s-\n",controller_name);
+    //printf("controller_name: -%s-\n",controller_name);
     if(!strcmp(controller_name, "gui_is_visible"))
       PDGUI_is_visible(data->qtgui);
     else if(!strcmp(controller_name, "gui_is_hidden"))
       PDGUI_is_hidden(data->qtgui);
     return;
   }
+}
 
-  t_atom a = argv[0];
-  char *type_name = libpd_get_symbol(a); // do something with the C string s
-  //printf("Got something: -%s- -%s- -%s-\n",source,controller_name,type_name);
+static void pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
+  SoundPlugin *plugin = (SoundPlugin*)d;
+  Data *data = (Data*)plugin->data;
+  
+  if( !strcmp(recv, "radium_controller")) {
+    char *name = libpd_get_symbol(argv[0]);
+    int type = libpd_get_float(argv[1]);
+    float min_value = libpd_get_float(argv[2]);
+    float value = libpd_get_float(argv[3]);
+    float max_value = libpd_get_float(argv[4]);
+    //printf("Got something: %s, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
 
-  if (!strcmp(type_name, "float")) 
-    add_controller(plugin, data, controller_name, EFFECT_FORMAT_FLOAT);
-  else if (!strcmp(type_name, "int")) 
-    add_controller(plugin, data, controller_name, EFFECT_FORMAT_INT);
-  else if (!strcmp(type_name, "bool")) 
-    add_controller(plugin, data, controller_name, EFFECT_FORMAT_BOOL);
-  else
-    printf("Unknown type: -%s-\n",type_name);
+    if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
+      add_controller(plugin, data, name, type, min_value, value, max_value);
+    else
+      printf("Unknown type: -%d-\n",type);
+  }
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float sample_rate, int block_size){
@@ -489,6 +511,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   //libpds_set_noteonhook(pd, pdnoteon);
   libpds_set_floathook(pd, pdfloathook);
   libpds_set_messagehook(pd, pdmessagehook);
+  libpds_set_listhook(pd, pdlisthook);
 
   libpds_init_audio(pd, 2, 2, sample_rate);
     
@@ -524,11 +547,6 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
   PDGUI_clear(data->qtgui);
 
-  int i;
-  for(i=0;i<NUM_PD_CONTROLLERS;i++){
-    free(data->controllers[i].name);
-  }
-
   free(data);
 }
 
@@ -552,7 +570,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[effect_num];
 
-  if (controller->name == NULL || !strcmp(controller->name, ""))
+  if (!strcmp(controller->name, ""))
     return notused_names[effect_num];
   else
     return controller->name;
@@ -571,17 +589,14 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
 void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
-  char *old_name = controller->name;
 
-  if(old_name!=NULL && !strcmp(old_name, name))
+  if(!strcmp(controller->name, name))
     return;
-
-  char *new_name = strdup(name);
 
   // Should check if it is different before binding. (but also if it is already binded)
 
   PLAYER_lock();{
-    controller->name = new_name;
+    strncpy(controller->name, name, PD_NAME_LENGTH-1);
 
     if(controller->pd_binding != NULL)
       libpds_unbind(data->pd, controller->pd_binding);
@@ -589,8 +604,6 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
     bind_receiver(controller);
 
   }PLAYER_unlock();
-
-  free(old_name);  
 }
 
 
@@ -610,10 +623,10 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
 
     const char *name = HASH_has_key_at(state, "name", i) ? HASH_get_string_at(state, "name", i) : NULL;
     if(name==NULL || !strcmp(name,""))
-      controller->name    = NULL;
-    else {
-      controller->name    = strdup(name);
-    }
+      controller->name[0] = 0;
+    else
+      strncpy(controller->name, name, PD_NAME_LENGTH-1);
+
     controller->type      = HASH_get_int_at(state, "type", i);
     controller->min_value = HASH_get_float_at(state, "min_value", i);
     controller->value = HASH_get_float_at(state, "value", i);
@@ -644,8 +657,7 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
     Pd_Controller *controller = &data->controllers[i];
-    if(controller->name != NULL)
-      HASH_put_string_at(state, "name", i, controller->name);
+    HASH_put_string_at(state, "name", i, controller->name);
     HASH_put_int_at(state, "type", i, controller->type);
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);

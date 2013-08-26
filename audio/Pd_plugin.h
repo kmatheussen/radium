@@ -21,11 +21,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define NUM_PD_CONTROLLERS 40
 
+#define PD_NAME_LENGTH 64
+
 typedef struct{
   int num;
   SoundPlugin *plugin;
 
-  char *name; // Can not be set directly. Use PD_set_controller_name(SoundPlugin *plugin, int n, const char *name).
+  char name[PD_NAME_LENGTH]; // Can not be set directly. Use PD_set_controller_name(SoundPlugin *plugin, int n, const char *name).
   int type;
   float value;
   float min_value;

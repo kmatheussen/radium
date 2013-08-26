@@ -66,7 +66,7 @@ public:
         _pd_controller_widget->update();
       }
 
-      if (_controller->name!=NULL && strcmp(_controller->name, _name.ascii())) {
+      if (strcmp(_controller->name, _name.ascii())) {
         _name = _controller->name;
         _pd_controller_widget->paint_slider_text();
         _pd_controller_widget->paint_onoff_text();
@@ -173,7 +173,7 @@ public:
   void paint_onoff_text(void){
     bool is_checked = onoff_widget->isChecked();
   
-    const char *name = _controller->name==NULL ? "<not set>" : _controller->name;
+    const char *name = !strcmp(_controller->name, "") ? "<not set>" : _controller->name;
 
     if(is_checked)
       onoff_widget->setText(QString(name)+": On");

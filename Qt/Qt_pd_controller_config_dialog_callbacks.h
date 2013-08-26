@@ -99,7 +99,7 @@ public:
       update_gui();
     }
 
-    if (controller->name!=NULL && strcmp(controller->name, _name.ascii())) {
+    if (strcmp(controller->name, _name.ascii())) {
       _name = controller->name;
       update_gui();
     }
