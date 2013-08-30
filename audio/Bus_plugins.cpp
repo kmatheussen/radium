@@ -74,7 +74,7 @@ static void RT_right_out_process(SoundPlugin *plugin, int64_t time, int num_fram
 static SoundPlugin *bus1 = NULL;
 static SoundPlugin *bus2 = NULL;
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   if(plugin_type==&bus_type1)
     bus1 = plugin;
   if(plugin_type==&bus_type2)

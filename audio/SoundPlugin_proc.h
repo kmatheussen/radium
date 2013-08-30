@@ -33,7 +33,7 @@ enum WhereToGetValue{
   VALUE_FROM_STORAGE
 };
 
-extern LANGSPEC SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type);
+extern LANGSPEC SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *plugin_state);
 extern LANGSPEC void PLUGIN_delete_plugin(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
 
@@ -50,7 +50,7 @@ extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int ef
 extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);
 extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 
-extern LANGSPEC void PLUGIN_create_effects_from_state(SoundPlugin *plugin, hash_t *effects);
+extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state);
 
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);

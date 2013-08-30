@@ -325,7 +325,7 @@ start_bin.sh:
 	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
 	chmod a+rx start_bin.sh
 
-bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a
+bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a
 	$(LINKER) $(OBJ) -o bin/radium -g -lm $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) bin/packages/libpd-master/libs/libpds.a
 
 # `$(PKG) --libs fluidsynth`
@@ -1306,8 +1306,8 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
 #`$(PKG) --cflags fluidsynth`
 
-Pd_plugin.o: audio/Pd_plugin.c
-	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) audio/Pd_plugin.c -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
+Pd_plugin.o: audio/Pd_plugin.cpp
+	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin

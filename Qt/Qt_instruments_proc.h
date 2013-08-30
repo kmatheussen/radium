@@ -30,6 +30,7 @@ extern LANGSPEC void close_all_instrument_widgets(void);
 extern LANGSPEC struct Patch *get_current_instruments_gui_patch(void);
 
 #ifdef __cplusplus
+#include <QWidget>
 QWidget *createInstrumentsWidget(void);
 #endif // __cplusplus
 

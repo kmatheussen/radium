@@ -1197,7 +1197,7 @@ static Data *create_data(float samplerate, Data *old_data, const char *filename,
   return data;
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float samplerate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
 
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/SYNTH/PAD/NAMED1/etrnpadl.xi"; // one sample
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/SYNTH/PAD/NAMED1/elecpad.xi"; // multile samples

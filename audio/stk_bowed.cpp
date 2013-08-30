@@ -1005,7 +1005,7 @@ static void RT_process_effect(SoundPlugin *plugin, int64_t time, int num_frames,
   //printf("out00: %f, out10: %f\n",outputs[0][0],outputs[1][0]);
 }
 
-static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float samplerate, int blocksize){
+static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
   Data *data = new Data;
   data->samplerate = samplerate;
 
@@ -1017,7 +1017,7 @@ static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struc
   return data;
 }
 
-static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float samplerate, int blocksize){
+static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int blocksize){
   Data *data = new Data;
   data->samplerate = samplerate;
 
@@ -1181,7 +1181,7 @@ static SoundPluginType faust_type = {0};
 void CREATE_NAME (void){
   fill_type(&faust_type);
 
-  Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
+  Data *data = (Data*)create_effect_plugin_data(&faust_type, NULL, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
   faust_type.data = data;
 
   faust_type.name = DSP_NAME;

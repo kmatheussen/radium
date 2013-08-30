@@ -181,7 +181,7 @@ extern void create_vst_plugins(void);
 extern void create_ladspa_plugins(void);
 extern "C" void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
-extern "C" void create_pd_plugin(void);
+extern void create_pd_plugin(void);
 
 extern void create_zita_rev_plugin(void);
 extern void create_faust_tapiir_plugin(void);

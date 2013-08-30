@@ -426,7 +426,7 @@ static void *create_data(const char *filename, float samplerate){
   return data;
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float samplerate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
   char temp[1024];
   sprintf(temp,"%s%ssounds%s%s",OS_get_program_path(),OS_get_directory_separator(),OS_get_directory_separator(),"Orgue.sf2");

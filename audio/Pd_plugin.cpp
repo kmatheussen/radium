@@ -257,8 +257,15 @@ $1 = (SoundPlugin *) 0x0
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 #include <libpds.h>
+
+#include <QTemporaryFile>
+#include <QFile>
+#include <QFileInfo>
+#include <QDir>
+#include <QTextStream>
 
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
@@ -284,8 +291,7 @@ typedef struct{
   Pd_Controller controllers[NUM_PD_CONTROLLERS];
   void *file;
 
-  const char *directory;
-  const char *filename;
+  QTemporaryFile *pdfile;
 
   void *qtgui;
 } Data;
@@ -293,7 +299,6 @@ typedef struct{
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -367,17 +372,23 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 
 static void show_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
-  printf("####################################################### Showing Pd gui\n");
+  //printf("####################################################### Showing Pd gui\n");
   PLAYER_lock();{
     libpds_show_gui(data->pd);
   }PLAYER_unlock();
 }
 
+void save_file(SoundPlugin *plugin) {
+  Data *data=(Data*)plugin->data;
+  libpds_savefile(data->pd, data->file);
+}
+
 static void hide_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
-  printf("####################################################### Showing Pd gui\n");
+  //printf("####################################################### Showing Pd gui\n");
   PLAYER_lock();{
     libpds_hide_gui(data->pd);
+    save_file(plugin);
   }PLAYER_unlock();
 }
 
@@ -480,8 +491,49 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   }
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, float sample_rate, int block_size){
-  Data *data = calloc(1,sizeof(Data));
+static QTemporaryFile *create_temp_pdfile(){
+  QString destFileNameTemplate = QDir::tempPath()+QDir::separator()+"radium_XXXXXX.pd";
+  return new QTemporaryFile(destFileNameTemplate);
+}
+
+static QTemporaryFile *get_pdfile_from_state(hash_t *state){
+  QTemporaryFile *pdfile = create_temp_pdfile();
+  pdfile->open();
+
+  QTextStream out(pdfile);
+  int num_lines = HASH_get_int(state, "num_lines");
+
+  for(int i=0; i<num_lines; i++)
+    out << HASH_get_string_at(state, "line", i);
+
+  pdfile->close();
+
+  return pdfile;
+}
+
+// http://www.java2s.com/Code/Cpp/Qt/Readtextfilelinebyline.htm
+static void put_pdfile_into_state(QFile *file, hash_t *state){
+  file->open(QIODevice::ReadOnly | QIODevice::Text);
+
+  QTextStream in(file);
+
+  int i=0;
+  QString line = in.readLine();
+  while (!line.isNull()) {
+    //printf("line: -%s-\n",line.ascii());
+    HASH_put_string_at(state, "line", i, line.ascii());
+    i++;
+    line = in.readLine();
+  }
+
+  HASH_put_int(state, "num_lines", i);
+
+  file->close();
+}
+
+
+static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){
+  Data *data = (Data*)calloc(1,sizeof(Data));
 
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
@@ -498,15 +550,15 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   pd = libpds_create(true, puredatapath);
   data->pd = pd;
 
-  //libpds_set_printhook(pd, pdprint);
-  //libpds_set_noteonhook(pd, pdnoteon);
+  QString search_path = QString(OS_get_program_path()) + QDir::separator() + "pd";
+  libpds_add_to_search_path(pd, search_path.ascii());
+
   libpds_set_floathook(pd, RT_pdfloathook);
   libpds_set_messagehook(pd, RT_pdmessagehook);
   libpds_set_listhook(pd, RT_pdlisthook);
 
   libpds_init_audio(pd, 2, 2, sample_rate);
     
-
   blocksize = libpds_blocksize(pd);
 
   if( (block_size % blocksize) != 0)
@@ -517,15 +569,57 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   libpds_add_float(pd, 1.0f);
   libpds_finish_message(pd, "pd", "dsp");
 
-  plugin->data = data; // plugin->data is used before this function ends.
+  plugin->data = data; // plugin->data is used before this function ends. (No, only data, seems like. We can send 'data' instead of 'plugin' to the hooks.) (well, PD_recreate_controllers_from_state uses plugin->data)
+
   libpds_bind(pd, "radium_controller", plugin);
-
-  snprintf(puredatapath,1023,"%s/pd",OS_get_program_path());
-  data->directory = puredatapath;
-  data->filename = "test.pd";
-  data->file = libpds_openfile(pd, data->filename, data->directory);
-
   libpds_bind(pd, "libpd", plugin);
+
+  data->pdfile = pdfile;
+
+  QFileInfo qfileinfo(pdfile->fileName());
+  printf("name: %s, dir: %s\n",qfileinfo.fileName().ascii(), qfileinfo.absolutePath().ascii());
+
+  data->file = libpds_openfile(pd, qfileinfo.fileName().ascii(), qfileinfo.absolutePath().ascii());
+
+  return data;
+}
+
+static QTemporaryFile *create_new_tempfile(const char *fileName){
+  QString sourceDirectory = QString(OS_get_program_path()) + QDir::separator() + "pd" + QDir::separator() + "patches" + QDir::separator();
+  QString sourceFileName = sourceDirectory + QString(fileName);
+
+  // create
+  QFile source(sourceFileName);
+  QTemporaryFile *pdfile = create_temp_pdfile();
+
+  // open
+  printf("open: %d\n",pdfile->open());
+  source.open(QIODevice::ReadOnly);
+
+  printf("filename: -%s-\n",pdfile->fileName().ascii());
+
+  // copy
+  pdfile->write(source.readAll());
+
+  // close
+  pdfile->close();
+  source.close();
+
+  return pdfile;
+}
+
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+  QTemporaryFile *pdfile;
+
+  if (state==NULL)
+    pdfile = create_new_tempfile((const char*)plugin_type->data);
+  else
+    pdfile = get_pdfile_from_state(state);
+
+  Data *data = create_data(pdfile, plugin, sample_rate, block_size);
+
+  if(state!=NULL)
+    PD_recreate_controllers_from_state(plugin, state);
 
   return data;
 }
@@ -538,6 +632,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   libpds_delete(data->pd);
 
   PDGUI_clear(data->qtgui);
+
+  delete data->pdfile;
 
   free(data);
 }
@@ -598,7 +694,6 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
   }PLAYER_unlock();
 }
 
-
 void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
@@ -635,16 +730,8 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     GFX_update_instrument_widget(plugin->patch);
 }
 
-
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  PD_recreate_controllers_from_state(plugin, state);
-}
-
 void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
-
-  HASH_put_string(state, "directory", data->directory);
-  HASH_put_string(state, "filename", data->filename);
 
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
@@ -660,7 +747,12 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
+  Data *data = (Data*)plugin->data;
+
   PD_create_controllers_from_state(plugin, state);
+
+  put_pdfile_into_state(data->pdfile, state);
 }
 
 // Warning! undo is created here (for simplicity). It's not common to call the undo creation function here, so beware of possible circular dependencies in the future.
@@ -692,44 +784,44 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   HASH_put_int_at(state, "has_gui", NUM_PD_CONTROLLERS-1, 0);
   HASH_put_int_at(state, "config_dialog_visible", i, 0);
 
-  recreate_from_state(plugin, state);
+  PD_recreate_controllers_from_state(plugin, state);
 }
 
 
-static SoundPluginType plugin_type = {
- type_name                : "Pd",
- name                     : "Pd",
- info                     : "Pd is (mainly) made by Miller Puckette. Radium uses a modified version of libpd to access it.",
- num_inputs               : 2,
- num_outputs              : 2,
- is_instrument            : true,
- note_handling_is_RT      : false,
- num_effects              : NUM_PD_CONTROLLERS,
- get_effect_format        : get_effect_format,
- get_effect_name          : get_effect_name,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- show_gui         : show_gui,
- hide_gui         : hide_gui,
-
- RT_process       : RT_process,
- play_note        : RT_play_note,
- set_note_volume  : RT_set_note_volume,
- stop_note        : RT_stop_note,
- set_effect_value : RT_set_effect_value,
- get_effect_value : RT_get_effect_value,
- get_display_value_string : get_display_value_string,
-
- recreate_from_state : recreate_from_state,
- create_state        : create_state,
-
- data                     : NULL
-};
-
 void create_pd_plugin(void){
-  PR_add_plugin_type(&plugin_type);
+  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+
+  plugin_type->type_name                = "Pd";
+  plugin_type->name                     = "Pd - test";
+  plugin_type->info                     = "Pd is (mainly) made by Miller Puckette. Radium uses a modified version of libpd to access it.";
+  plugin_type->num_inputs               = 2;
+  plugin_type->num_outputs              = 2;
+  plugin_type->is_instrument            = true;
+  plugin_type->note_handling_is_RT      = false;
+  plugin_type->num_effects              = NUM_PD_CONTROLLERS;
+  plugin_type->get_effect_format        = get_effect_format;
+  plugin_type->get_effect_name          = get_effect_name;
+  plugin_type->effect_is_RT             = NULL;
+  plugin_type->create_plugin_data       = create_plugin_data;
+  plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
+
+  plugin_type->show_gui         = show_gui;
+  plugin_type->hide_gui         = hide_gui;
+
+  plugin_type->RT_process       = RT_process;
+  plugin_type->play_note        = RT_play_note;
+  plugin_type->set_note_volume  = RT_set_note_volume;
+  plugin_type->stop_note        = RT_stop_note;
+  plugin_type->set_effect_value = RT_set_effect_value;
+  plugin_type->get_effect_value = RT_get_effect_value;
+  plugin_type->get_display_value_string = get_display_value_string;
+
+  //plugin_type->recreate_from_state = recreate_from_state;
+  plugin_type->create_state        = create_state;
+
+  plugin_type->data                     = (void*)"test.pd";
+
+  PR_add_plugin_type(plugin_type);
 }
 
 

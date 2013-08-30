@@ -889,7 +889,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
 
 static int num_running_plugins = 0;
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, float sample_rate, int block_size){ // Returns plugin->data.
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){ // Returns plugin->data.
   TypeData *type_data = (TypeData*)plugin_type->data;
 
 #if FULL_VERSION==0

@@ -144,7 +144,7 @@ static void setup_audio_ports(const SoundPluginType *type, Data *data, int block
   }
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   Data *data = (Data*)calloc(1, sizeof(Data));
   TypeData *type_data = (TypeData*)plugin_type->data;
   const LADSPA_Descriptor *descriptor = type_data->descriptor;

@@ -903,10 +903,10 @@ void MixerWidget::populateScene()
 {
 #if 0
   SoundPluginType *type1 = PR_get_plugin(0);
-  SoundPlugin *plugin1 = PLUGIN_create_plugin(type1);
+  SoundPlugin *plugin1 = PLUGIN_create_plugin(type1, NULL);
 
   SoundPluginType *type2 = PR_get_plugin(1);
-  SoundPlugin *plugin2 = PLUGIN_create_plugin(type2);
+  SoundPlugin *plugin2 = PLUGIN_create_plugin(type2, NULL);
 
   SoundProducer *sound_producer1 = SP_create(plugin1);
   SoundProducer *sound_producer2 = SP_create(plugin2);
@@ -959,7 +959,7 @@ static float find_next_autopos_y(Chip *system_chip){
 // The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
 //
 SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, float x, float y){
-  SoundPlugin     *plugin         = PLUGIN_create_plugin(plugin_type);
+  SoundPlugin     *plugin         = PLUGIN_create_plugin(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;
 

@@ -218,7 +218,7 @@ static void init_system_filter(SystemFilter *filter, int num_channels, const cha
   for(ch=0;ch<num_channels;ch++){
     filter->plugins[ch] = calloc(1, sizeof(SoundPlugin));
     filter->plugins[ch]->type = PR_get_plugin_type_by_name("Faust",name);
-    filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], MIXER_get_sample_rate(), MIXER_get_buffer_size());
+    filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
     filter->was_off = true;
     filter->was_on = false;
   }
@@ -233,13 +233,14 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
   free(filter->plugins);
 }
 
-SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type){
+SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *plugin_state){
   SoundPlugin *plugin = calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
   int buffer_size = MIXER_get_buffer_size();
 
-  plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, MIXER_get_sample_rate(), buffer_size);
+  // TODO: Don't do this. Check if all plugins can be initialized later.
+  plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
   if(plugin->data==NULL){
     free(plugin);
     return NULL;
@@ -1029,7 +1030,7 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   return state;
 }
 
-void PLUGIN_create_effects_from_state(SoundPlugin *plugin, hash_t *effects){
+void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
 
   int i;
@@ -1060,16 +1061,18 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
     return NULL;
   }
 
-  SoundPlugin *plugin = PLUGIN_create_plugin(type);
+  hash_t *plugin_state = HASH_has_key(state, "plugin_state") ? HASH_get_hash(state, "plugin_state") : NULL;
+
+  SoundPlugin *plugin = PLUGIN_create_plugin(type, plugin_state);
 
   if(plugin==NULL)
     return NULL;
 
   hash_t *effects = HASH_get_hash(state, "effects");
-  PLUGIN_create_effects_from_state(plugin, effects);
+  PLUGIN_set_effects_from_state(plugin, effects);
 
-  if(HASH_has_key(state, "plugin_state"))
-    type->recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"));
+  if(plugin_state!=NULL && type->recreate_from_state!=NULL)
+    type->recreate_from_state(plugin, plugin_state);
   
   return plugin;
 }

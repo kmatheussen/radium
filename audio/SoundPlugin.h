@@ -160,7 +160,7 @@ typedef struct SoundPluginType{
   // If not, set_effect_value will be called instead.
   bool (*effect_is_RT)(const struct SoundPluginType *plugin_type, int effect_num);
 
-  void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, float sample_rate, int block_size); // Called by Radium during the instantiation of a plugin. The function returns plugin->data.
+  void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size); // Called by Radium during the instantiation of a plugin. The function returns plugin->data.
   void (*cleanup_plugin_data)(struct SoundPlugin *plugin);
 
   // If set, this callback will be called when the 'num_frames' argument to RT_process changes. The audio thread is suspended while this function is called.
@@ -194,7 +194,7 @@ typedef struct SoundPluginType{
   void (*show_gui)(struct SoundPlugin *plugin);
   void (*hide_gui)(struct SoundPlugin *plugin);
 
-  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state);
+  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state); // Optional function. Called after plugin has been created. The 'state' variable is also sent as argument to create_plugin_data.
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
   // Free use by the plugin

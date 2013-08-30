@@ -113,7 +113,7 @@ public:
       delete sample_name_label;
 
     //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
-    if(plugin->type==PR_get_plugin_type_by_name("Pd","Pd")) {
+    if(!strcmp(plugin->type->type_name, "Pd")) {
       _pd_plugin_widget = new Pd_Plugin_widget(this,_patch);
       vertical_layout->insertWidget(1,_pd_plugin_widget);
     } else {
@@ -247,7 +247,7 @@ public:
           Undo_AudioEffect_CurrPos(plugin->patch, i);
       }Undo_Close();
 
-      PLUGIN_create_effects_from_state(plugin, state);
+      PLUGIN_set_effects_from_state(plugin, state);
       GFX_update_instrument_widget(plugin->patch);
     }
 
