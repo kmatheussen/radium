@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "clipboard_range_calc_proc.h"
@@ -163,7 +164,10 @@ void CopyRange_fxs(
 	if(fromfxs==NULL) return;
 
 	fxs=talloc(sizeof(struct FXs));
-	fxs->fx=fromfxs->fx;
+
+	fxs->fx=talloc(sizeof(struct FX));
+        memcpy(fxs->fx, fromfxs->fx, sizeof(struct FX));
+
 	fxs->l.num=fromfxs->l.num;
 
 	ListAddElement1(tofxs,&fxs->l);
