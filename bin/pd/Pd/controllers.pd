@@ -1,0 +1,11 @@
+#N canvas 1124 333 450 300 8;
+#X text 170 82 <- Optional arguments for r_float: [min val max];
+#X text 171 139 <- Optional arguments for r_int: [min val max];
+#X obj 23 185 r_bool onoff 1;
+#X obj 22 65 r_float freq -5 0 5;
+#X obj 23 125 r_int selection -5 0 5;
+#X text 169 203 <- Optional arguments for r_bool: [on];
+#X text 60 12 There are three controllers which set up communication
+between Pd and Radium. They all take a message name as first argument
+plus 3 or 1 optional argument(s).;
+#X text 79 259 Don't forget to give the controller a name!;

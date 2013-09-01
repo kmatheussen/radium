@@ -266,6 +266,7 @@ $1 = (SoundPlugin *) 0x0
 #include <QFileInfo>
 #include <QDir>
 #include <QTextStream>
+#include <QMessageBox>
 
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
@@ -476,19 +477,29 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
   
-  if( !strcmp(recv, "radium_controller")) {
-    char *name = libpd_get_symbol(argv[0]);
-    int type = libpd_get_float(argv[1]);
-    float min_value = libpd_get_float(argv[2]);
-    float value = libpd_get_float(argv[3]);
-    float max_value = libpd_get_float(argv[4]);
-    //printf("Got something: %s, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
+  printf("argc: %d\n",argc);
 
-    if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
-      RT_add_controller(plugin, data, name, type, min_value, value, max_value);
-    else
-      printf("Unknown type: -%d-\n",type);
-  }
+  if( !strcmp(recv, "radium_controller") &&
+      argc==5 &&
+      libpd_is_symbol(argv[0]) &&
+      strcmp("", libpd_get_symbol(argv[0])) &&
+      libpd_is_float(argv[1]) &&
+      libpd_is_float(argv[2]) &&
+      libpd_is_float(argv[3]) &&
+      libpd_is_float(argv[4]))
+    {
+      char  *name      = libpd_get_symbol(argv[0]);
+      int    type      = libpd_get_float(argv[1]);
+      float  min_value = libpd_get_float(argv[2]);
+      float  value     = libpd_get_float(argv[3]);
+      float  max_value = libpd_get_float(argv[4]);
+      printf("Got something: -%s-, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
+      
+      if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
+        RT_add_controller(plugin, data, name, type, min_value, value, max_value);
+      else
+        printf("Unknown type: -%d-\n",type);
+    }
 }
 
 static QTemporaryFile *create_temp_pdfile(){
@@ -531,6 +542,9 @@ static void put_pdfile_into_state(QFile *file, hash_t *state){
   file->close();
 }
 
+static QString get_search_path() {
+  return QString(OS_get_program_path()) + QDir::separator() + "pd";
+}
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){
   Data *data = (Data*)calloc(1,sizeof(Data));
@@ -548,9 +562,17 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   char puredatapath[1024];
   snprintf(puredatapath,1023,"%s/packages/libpd-master/pure-data",OS_get_program_path());
   pd = libpds_create(true, puredatapath);
+  if(pd==NULL) {
+    QMessageBox msgBox;
+    msgBox.setText(QString(libpds_strerror()));
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
+    return NULL;
+  }
+
   data->pd = pd;
 
-  QString search_path = QString(OS_get_program_path()) + QDir::separator() + "pd";
+  QString search_path = get_search_path();
   libpds_add_to_search_path(pd, search_path.ascii());
 
   libpds_set_floathook(pd, RT_pdfloathook);
@@ -585,11 +607,8 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 }
 
 static QTemporaryFile *create_new_tempfile(const char *fileName){
-  QString sourceDirectory = QString(OS_get_program_path()) + QDir::separator() + "pd" + QDir::separator() + "patches" + QDir::separator();
-  QString sourceFileName = sourceDirectory + QString(fileName);
-
   // create
-  QFile source(sourceFileName);
+  QFile source(fileName);
   QTemporaryFile *pdfile = create_temp_pdfile();
 
   // open
@@ -788,11 +807,11 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
 }
 
 
-void create_pd_plugin(void){
+static void add_plugin(const char *name, const char *filename) {
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "Pd";
-  plugin_type->name                     = "Pd - test";
+  plugin_type->name                     = strdup(name);
   plugin_type->info                     = "Pd is (mainly) made by Miller Puckette. Radium uses a modified version of libpd to access it.";
   plugin_type->num_inputs               = 2;
   plugin_type->num_outputs              = 2;
@@ -819,9 +838,50 @@ void create_pd_plugin(void){
   //plugin_type->recreate_from_state = recreate_from_state;
   plugin_type->create_state        = create_state;
 
-  plugin_type->data                     = (void*)"test.pd";
+  plugin_type->data                = (void*)strdup(filename);
 
+  //PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
   PR_add_plugin_type(plugin_type);
+}
+
+static void build_plugins(QDir dir){
+  printf(">> dir: -%s-\n",dir.absolutePath().ascii());
+  PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName()));
+
+  dir.setSorting(QDir::Name);
+
+  // browse dirs first.
+  dir.setFilter(QDir::Dirs |  QDir::NoDotAndDotDot);
+
+  {
+    QFileInfoList list = dir.entryInfoList();
+    
+    for (int i = 0; i < list.size(); ++i) {
+      QFileInfo fileInfo = list.at(i);
+      //if(fileInfo.absoluteFilePath() != dir.absoluteFilePath())
+        build_plugins(QDir(fileInfo.absoluteFilePath()));
+    }
+  }
+
+    // Then the files
+  dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+  {
+    QFileInfoList list = dir.entryInfoList();
+    
+    for (int i = 0; i < list.size(); ++i) {
+      QFileInfo fileInfo = list.at(i);
+      printf("   file: -%s-\n",fileInfo.absoluteFilePath().ascii());
+      if(fileInfo.suffix()=="pd")
+        add_plugin(fileInfo.baseName().ascii(), fileInfo.absoluteFilePath().ascii());
+    }
+  }
+
+  printf("<< dir: -%s-\n",dir.absolutePath().ascii());
+  PR_add_menu_entry(PluginMenuEntry::level_down());
+}
+
+void create_pd_plugin(void){
+  build_plugins(QDir(get_search_path()+OS_get_directory_separator()+"Pd"));
 }
 
 
