@@ -53,7 +53,7 @@ if test $2 = "yes" ; then
 fi
 
 tar xvzf libpd-master.tar.gz
-mv libpd-27c473b0f262f06396d99a729c8233642f606d3a libpd-master
+#mv libpd-27c473b0f262f06396d99a729c8233642f606d3a libpd-master
 cd libpd-master/
 make -j7
 cd ..
