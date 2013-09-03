@@ -74,7 +74,12 @@ BUILD DEPENDENCIES UBUNTU:
       libc6-dev
       tk8.5
 
+      sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5
+
       (Tested on Ubuntu 12 32 bit and 64 bit)
+
+      On Ubuntu LTS, I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.
+      I also needed to install python2.7-dev instead of python2-dev.
 
 
 
