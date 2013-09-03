@@ -381,7 +381,7 @@ static void show_gui(struct SoundPlugin *plugin){
 
 void save_file(SoundPlugin *plugin) {
   Data *data=(Data*)plugin->data;
-  libpds_savefile(data->pd, data->file);
+  libpds_request_savefile(data->pd, data->file);
 }
 
 static void hide_gui(struct SoundPlugin *plugin){
@@ -523,7 +523,15 @@ static QTemporaryFile *get_pdfile_from_state(hash_t *state){
 }
 
 // http://www.java2s.com/Code/Cpp/Qt/Readtextfilelinebyline.htm
-static void put_pdfile_into_state(QFile *file, hash_t *state){
+static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *state){
+  Data *data=(Data*)plugin->data;
+  void *request;
+  PLAYER_lock();{
+    request = libpds_request_savefile(data->pd, data->file);
+  }PLAYER_unlock();
+
+  libpds_wait_until_file_is_saved(data->pd, request, 2.0);
+
   file->open(QIODevice::ReadOnly | QIODevice::Text);
 
   QTextStream in(file);
@@ -771,7 +779,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   PD_create_controllers_from_state(plugin, state);
 
-  put_pdfile_into_state(data->pdfile, state);
+  put_pdfile_into_state(plugin, data->pdfile, state);
 }
 
 // Warning! undo is created here (for simplicity). It's not common to call the undo creation function here, so beware of possible circular dependencies in the future.
