@@ -51,6 +51,7 @@ BUILD DEPENDENCIES FEDORA:
         binutils-devel
         libtool-ltdl
         libtool
+        tk
 
         (tested on Fedora 17 64 bit)
 
@@ -71,6 +72,7 @@ BUILD DEPENDENCIES UBUNTU:
       calf-plugins
       binutils-dev
       libc6-dev
+      tk8.5
 
       (Tested on Ubuntu 12 32 bit and 64 bit)
 
