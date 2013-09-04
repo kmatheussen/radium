@@ -66,7 +66,6 @@ public:
     
     _timer.setInterval(k_timer_interval_here4);
     _timer.my = this;
-    _timer.start();
   }
 
   Pd_Controller *get_controller(){
