@@ -526,10 +526,9 @@ struct SoundProducer : DoublyLinkedList{
 
         float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->sound_producer_ch);
 
-        float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
-
         // fade in
         if(link->state==SoundProducerLink::FADING_IN){
+          float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
           memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
           RT_fade_in(fade_sound, num_frames);
           input_producer_sound = &fade_sound[0];
@@ -538,6 +537,7 @@ struct SoundProducer : DoublyLinkedList{
 
         // fade out
         else if(link->state==SoundProducerLink::FADING_OUT){
+          float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
           memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
           RT_fade_out(fade_sound, num_frames);
           input_producer_sound = &fade_sound[0];

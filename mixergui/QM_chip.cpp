@@ -86,6 +86,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern EditorWidget *g_editor;
 
+//
+// eport/econnection means "event port"/"event connection".
+//
 
 int get_text_width(const QFont &font, const QString &text){
   const QFontMetrics fn = QFontMetrics(font);
@@ -165,6 +168,60 @@ bool CHIP_is_at_output_port(Chip *chip, int x, int y){
     && (y >= get_port_y1(chip))
     && (y < get_port_y2(chip));
 }
+
+
+// eports
+
+int CHIP_get_eport_x(Chip *chip){
+  return chip->x() + chip_width/2;
+}
+
+static int get_eport_x1(Chip *chip){
+  return CHIP_get_eport_x(chip)-port_width/2;
+}
+
+static int get_eport_x2(Chip *chip){
+  return CHIP_get_eport_x(chip) + port_width/2;
+}
+
+int CHIP_get_input_eport_y(Chip *chip){
+  return chip->y();
+}
+
+int CHIP_get_output_eport_y(Chip *chip){
+  return chip->y() + chip_height;
+}
+
+static int get_input_eport_y1(Chip *chip){
+  return CHIP_get_input_eport_y(chip)-port_width/2;
+}
+
+static int get_input_eport_y2(Chip *chip){
+  return CHIP_get_input_eport_y(chip)+port_width/2;
+}
+
+static int get_output_eport_y1(Chip *chip){
+  return CHIP_get_output_eport_y(chip)-port_width/2;
+}
+
+static int get_output_eport_y2(Chip *chip){
+  return CHIP_get_output_eport_y(chip)+port_width/2;
+}
+
+bool CHIP_is_at_input_eport(Chip *chip, int x, int y){
+  return (x >= get_eport_x1(chip))
+    && (x < get_eport_x2(chip))
+    && (y >= get_input_eport_y1(chip))
+    && (y < get_input_eport_y2(chip));
+}
+
+bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
+  return (x >= get_eport_x1(chip))
+    && (x < get_eport_x2(chip))
+    && (y >= get_output_eport_y1(chip))
+    && (y < get_output_eport_y2(chip));
+}
+
 
 #if 0
 static int get_num_sliders(Chip *chip){
@@ -393,10 +450,25 @@ static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *t
                      from->_sound_producer, from_portnum);
 }
 
+static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
+  return PLUGIN_add_event_receiver(SP_get_plugin(from->_sound_producer),
+                                   SP_get_plugin(to->_sound_producer));
+}
+
 static bool chips_are_connected(Chip *from, Chip *to){
   for(unsigned int i=0;i<from->_connections.size();i++){
     Connection *connection = from->_connections.at(i);
     if(connection->from==from && connection->to==to)
+      return true;
+  }
+
+  return false;
+}
+
+static bool chips_are_econnected(Chip *from, Chip *to){
+  for(unsigned int i=0;i<from->_econnections.size();i++){
+    Connection *econnection = from->_econnections.at(i);
+    if(econnection->from==from && econnection->to==to)
       return true;
   }
 
@@ -416,17 +488,17 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   if(from_is_mono==true){
     for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
       if(connect(scene, from, 0, to, to_portnum)==false)
-        return; //recursive
+        return; // trying to make recursive connection
     }
   }else if(to_is_mono==true){
     for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
       if(connect(scene, from, from_portnum, to, 0)==false)
-        return; //recursive
+        return; // trying to make recursive connection
     }
   }else{
     for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
       if(connect(scene, from, portnum, to, portnum)==false)
-        return; //recursive
+        return; // trying to make recursive connection
     }
   }
 
@@ -445,18 +517,56 @@ void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *t
   CHIP_connect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
 }
 
+void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
+  if(chips_are_econnected(from,to)==true){
+    printf("Chips are already econnected\n");
+    return;
+  }
+
+  if(econnect(scene, from, to)==false)
+    return; // trying to make recursive connection
+
+  Connection *econnection = new Connection(scene, true);
+  econnection->from = from;
+  econnection->to = to;
+  
+  from->_econnections.push_back(econnection);
+  to->_econnections.push_back(econnection);
+  
+  econnection->update_position();
+  scene->addItem(econnection);
+}
+
+void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
+  CHIP_econnect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
+}
+
 void CONNECTION_delete_a_connection_where_all_links_have_been_removed(Connection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;
 
-  {
-    // Why does std::vector do this so incredibly complicated?
-    std::vector<Connection*>::iterator newEnd = std::remove(from->_connections.begin(), from->_connections.end(), connection);
-    from->_connections.erase(newEnd, from->_connections.end());
-  }
-  {
-    std::vector<Connection*>::iterator newEnd = std::remove(to->_connections.begin(), to->_connections.end(), connection);
-    to->_connections.erase(newEnd, to->_connections.end());
+  // connections
+  if (connection->_is_event_connection == false) {
+    {
+      // Why does std::vector do this so incredibly complicated?
+      std::vector<Connection*>::iterator newEnd = std::remove(from->_connections.begin(), from->_connections.end(), connection);
+      from->_connections.erase(newEnd, from->_connections.end());
+    }
+    {
+      std::vector<Connection*>::iterator newEnd = std::remove(to->_connections.begin(), to->_connections.end(), connection);
+      to->_connections.erase(newEnd, to->_connections.end());
+    }
+
+  } else {
+    {
+      // Why does std::vector do this so incredibly complicated?
+      std::vector<Connection*>::iterator newEnd = std::remove(from->_econnections.begin(), from->_econnections.end(), connection);
+      from->_econnections.erase(newEnd, from->_econnections.end());
+    }
+    {
+      std::vector<Connection*>::iterator newEnd = std::remove(to->_econnections.begin(), to->_econnections.end(), connection);
+      to->_econnections.erase(newEnd, to->_econnections.end());
+    }
   }
 
   delete connection;
@@ -466,23 +576,31 @@ void CONNECTION_delete_connection(Connection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;
 
-  bool from_is_mono = from->_num_outputs==1;
-  bool to_is_mono   = to->_num_inputs==1;
+  if (connection->_is_event_connection) {
+    
+    PLUGIN_remove_event_receiver(SP_get_plugin(from->_sound_producer),
+                                 SP_get_plugin(to->_sound_producer));
 
-  if(from_is_mono==true){
-    for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
-      SP_remove_link(to->_sound_producer, to_portnum,
-                     from->_sound_producer, 0);
-    }
-  }else if(to_is_mono==true){
-    for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
-      SP_remove_link(to->_sound_producer, 0,
-                     from->_sound_producer, from_portnum);
-    }
-  }else{
-    for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
-      SP_remove_link(to->_sound_producer, portnum,
-                     from->_sound_producer, portnum);
+  } else {
+
+    bool from_is_mono = from->_num_outputs==1;
+    bool to_is_mono   = to->_num_inputs==1;
+
+    if(from_is_mono==true){
+      for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
+        SP_remove_link(to->_sound_producer, to_portnum,
+                       from->_sound_producer, 0);
+      }
+    }else if(to_is_mono==true){
+      for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
+        SP_remove_link(to->_sound_producer, 0,
+                       from->_sound_producer, from_portnum);
+      }
+    }else{
+      for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
+        SP_remove_link(to->_sound_producer, portnum,
+                       from->_sound_producer, portnum);
+      }
     }
   }
 
@@ -491,18 +609,25 @@ void CONNECTION_delete_connection(Connection *connection){
 
 
 void Connection::update_position(void){
-#if 0
-  int x1 = CHIP_get_input_port_x(to)-port_width/2;
-  int x2 = CHIP_get_output_port_x(from)+port_width/2;
-  int y1 = CHIP_get_port_y(to);
-  int y2 = CHIP_get_port_y(from);
-#endif
-  int x1 = to->pos().x()+port_width/2;
-  int x2 = from->pos().x()+grid_width-port_width/2;
-  int y1 = CHIP_get_port_y(to);
-  int y2 = CHIP_get_port_y(from);
+  if(_is_event_connection) {
+
+    int x1 = CHIP_get_eport_x(from);
+    int x2 = CHIP_get_eport_x(to);
+    int y1 = CHIP_get_output_eport_y(from);
+    int y2 = CHIP_get_input_eport_y(to);
   
-  this->setLine(x1,y1,x2,y2);
+    this->setLine(x1,y1,x2,y2);
+
+  } else {
+
+    int x1 = to->pos().x()+port_width/2;
+    int x2 = from->pos().x()+grid_width-port_width/2;
+    int y1 = CHIP_get_port_y(to);
+    int y2 = CHIP_get_port_y(from);
+  
+    this->setLine(x1,y1,x2,y2);
+
+  }
 }
 
 // 'right_chip' is inserted in the middle of 'left_chip' and all chips 'left_chip' sends to.
@@ -600,6 +725,10 @@ Chip::~Chip(){
   while(_connections.size()>0){
     fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)_connections.size());
     CONNECTION_delete_connection(_connections.at(0));
+  }
+  while(_econnections.size()>0){
+    fprintf(stderr,"Deleting econnection. EConnections left: %d\n",(int)_econnections.size());
+    CONNECTION_delete_connection(_econnections.at(0));
   }
   SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
   SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
@@ -946,6 +1075,8 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
   if (change == ItemPositionHasChanged && this->scene()) {
     for(unsigned int i=0;i<_connections.size();i++)
       _connections[i]->update_position();
+    for(unsigned int i=0;i<_econnections.size();i++)
+      _econnections[i]->update_position();
     //printf("item pos changed\n");
   }
 
@@ -1065,6 +1196,7 @@ hash_t *CONNECTION_get_state(Connection *connection){
 
   HASH_put_int(state, "from_patch", get_patch_from_chip(connection->from)->id);
   HASH_put_int(state, "to_patch", get_patch_from_chip(connection->to)->id);
+  HASH_put_int(state, "is_event_connection", connection->_is_event_connection ? 1 : 0);
 
   return state;
 }
@@ -1076,5 +1208,8 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state){
   if(from_chip==NULL || to_chip==NULL)
     RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);
 
-  CHIP_connect_chips(scene, from_chip, to_chip);
+  if(HASH_has_key(state, "is_event_connection") && HASH_get_int(state, "is_event_connection")==1) // .rad files before 1.9.31 did not have even connections.
+    CHIP_econnect_chips(scene, from_chip, to_chip);
+  else
+    CHIP_connect_chips(scene, from_chip, to_chip);
 }

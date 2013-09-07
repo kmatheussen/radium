@@ -80,9 +80,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 class Chip;
 
 class Connection : public QGraphicsLineItem{
+
 public:
-  Connection(QGraphicsScene *parent)
+
+  bool _is_event_connection;
+
+  QPen getPen(){
+    QPen pen(Qt::gray, 50);
+    pen.setWidth(3);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    //pen.setColor(QColor(30,25,70,6));
+    if(_is_event_connection)
+      pen.setColor(QColor(30,95,70,140));
+    else
+      pen.setColor(QColor(50,25,70,140));
+    return pen;
+  }
+
+ Connection(QGraphicsScene *parent, bool is_event_connection = false)
     : QGraphicsLineItem()
+    , _is_event_connection(is_event_connection)
     , from(NULL)
     , to(NULL)
     , is_selected(false)
@@ -101,9 +119,7 @@ public:
 
     setAcceptHoverEvents(true);
 
-    pen.setWidth(6);
-    pen.setColor(QColor(30,25,70,40));
-    visible_line.setPen(pen);
+    visible_line.setPen(getPen());
     parent->addItem(&visible_line);
   }
 
@@ -152,12 +168,14 @@ public:
   void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
     //printf("hover leave\n");
 
+    /*
     QPen pen(Qt::gray,6);
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     pen.setColor(QColor(30,25,70,40));
+    */
 
-    visible_line.setPen(pen);
+    visible_line.setPen(getPen());
 
     {
       QPen pen(Qt::gray, 50);
@@ -202,6 +220,7 @@ public:
   int _num_outputs;
   QColor _color;
   std::vector<Connection*> _connections;
+  std::vector<Connection*> _econnections;
 
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
@@ -221,6 +240,9 @@ extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPl
 extern void CONNECTION_delete_a_connection_where_all_links_have_been_removed(Connection *connection);
 extern void CONNECTION_delete_connection(Connection *connection);
 
+extern void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
+extern void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+
 extern void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip);
 extern void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip);
 
@@ -230,6 +252,12 @@ int CHIP_get_port_y(Chip *chip);
 
 bool CHIP_is_at_input_port(Chip *chip, int x, int y);
 bool CHIP_is_at_output_port(Chip *chip, int x, int y);
+
+int CHIP_get_input_eport_y(Chip *chip);
+int CHIP_get_output_eport_y(Chip *chip);
+int CHIP_get_eport_x(Chip *chip);
+bool CHIP_is_at_input_eport(Chip *chip, int x, int y);
+bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 
 hash_t *CHIP_get_state(Chip *chip);
 

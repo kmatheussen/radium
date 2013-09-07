@@ -99,6 +99,10 @@ class MyScene : public QGraphicsScene{
   Chip *_current_from_chip;
   Chip *_current_to_chip;
 
+  Connection *_current_econnection;
+  Chip *_ecurrent_from_chip;
+  Chip *_ecurrent_to_chip;
+
   std::vector<Chip*>_moving_chips;
 
 #if 0

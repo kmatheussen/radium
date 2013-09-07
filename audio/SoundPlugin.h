@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C"{
 #endif
 
+#define MAX_NUM_EVENT_RECEIVERS 64
+
 enum{
   EFFNUM_INPUT_VOLUME = 0,  // This one must be first.
   EFFNUM_INPUT_VOLUME_ONOFF,
@@ -294,6 +296,9 @@ typedef struct SoundPlugin{
   float *bus_volume_peak_values[2];
 
   enum BusDescendantType bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
+
+  int num_event_receivers;
+  struct SoundPlugin *event_receivers[MAX_NUM_EVENT_RECEIVERS];
 
 } SoundPlugin;
 

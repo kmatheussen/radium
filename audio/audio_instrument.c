@@ -49,7 +49,6 @@ static void AUDIO_playnote(struct Patch *patch,int notenum,int velocity,STime ti
 
   if(plugin->type->play_note != NULL)
     plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL, pan);
-  //plugin->type->play_note(plugin, MIXER_get_block_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
 
   //printf("playing audio note %d, velocity: %d, delta time: %d. Absolute time: %d\n",notenum,velocity,(int)MIXER_get_block_delta_time(time),(int)time);
 }
@@ -100,7 +99,7 @@ static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
     return;
   }
 
-#if 0
+#if 0 // It's up to the plugin whether it wants to use the track pan. Seems like only the sample player uses it... It's difficult to use since many tracks can share the same instrument.
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)

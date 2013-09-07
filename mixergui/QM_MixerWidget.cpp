@@ -169,6 +169,9 @@ MyScene::MyScene(QWidget *parent)
   , _current_connection(NULL)
   , _current_from_chip(NULL)
   , _current_to_chip(NULL)
+  , _current_econnection(NULL)
+  , _ecurrent_from_chip(NULL)
+  , _ecurrent_to_chip(NULL)
 {
 #if 0
   connect(this,SIGNAL(changed( const QList<QRectF> &)),
@@ -490,6 +493,25 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
 
     event->accept();
 
+  }else if(_current_econnection != NULL){
+
+    int x1,y1;
+
+    if(_ecurrent_from_chip != NULL){
+      x1 = CHIP_get_eport_x(_ecurrent_from_chip);
+      y1 = CHIP_get_output_eport_y(_ecurrent_from_chip);
+    }else{
+      x1 = CHIP_get_eport_x(_ecurrent_to_chip);
+      y1 = CHIP_get_input_eport_y(_ecurrent_to_chip);
+    }
+
+    int x2 = pos.x();
+    int y2 = pos.y();
+
+    _current_econnection->setLine(x1,y1,x2,y2);
+
+    event->accept();
+
   } else if(_moving_chips.size()>0){
 
     move_moving_chips(this,pos.x(),pos.y());
@@ -549,6 +571,10 @@ static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y){
         return chip;
       if(CHIP_is_at_output_port(chip,x,y))
         return chip;
+      if(CHIP_is_at_input_eport(chip,x,y))
+        return chip;
+      if(CHIP_is_at_output_eport(chip,x,y))
+        return chip;
     }
   }
 
@@ -602,6 +628,8 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     if(before!=NULL)
       CHIP_connect_chips(scene, before, after);
 
+    // Shouldn't there be a "delete chip" call here? (Guess it's deleted through PATCH_delete). TODO: Check that this is correct, and add a comment here why there is no "delete chip" call here.
+
     event->accept();
     return true;
   }
@@ -614,30 +642,58 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
   Chip *chip = get_chip_with_port_at(scene,mouse_x,mouse_y);
   if(chip!=NULL){
 
-    if(CHIP_is_at_output_port(chip,mouse_x,mouse_y))
-      scene->_current_from_chip = chip;
+    printf("chip: %p\n", chip);
 
-    else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y))
-      scene->_current_to_chip = chip;
+    // connection
+    {
+      if(CHIP_is_at_output_port(chip,mouse_x,mouse_y))
+        scene->_current_from_chip = chip;
 
-    if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
-      //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
-            
-      scene->_current_connection = new Connection(scene);
-      scene->addItem(scene->_current_connection);
-              
-      scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
-              
-      event->accept();
-      return true;
+      else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y))
+        scene->_current_to_chip = chip;
+      
+      if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
+        //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
+        
+        scene->_current_connection = new Connection(scene);
+        scene->addItem(scene->_current_connection);
+        
+        scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
+        
+        event->accept();
+        return true;
+      }
+
     }
-  }
+
+    // econnection
+    {
+      if(CHIP_is_at_output_eport(chip,mouse_x,mouse_y))
+        scene->_ecurrent_from_chip = chip;
+
+      else if(CHIP_is_at_input_eport(chip,mouse_x,mouse_y))
+        scene->_ecurrent_to_chip = chip;
+
+      if(scene->_ecurrent_from_chip!=NULL || scene->_ecurrent_to_chip!=NULL){
+        //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
+        
+        scene->_current_econnection = new Connection(scene, true);
+        scene->addItem(scene->_current_econnection);
+        
+        scene->_current_econnection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
+        
+        event->accept();
+        return true;
+      }
+    }  
+ }
 
   return false;
 }
 
 static bool mousepress_delete_connection(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
   Connection *connection = dynamic_cast<Connection*>(item);
+
   if(connection==NULL){
     QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
     for (int i = 0; i < das_items.size(); ++i) {
@@ -775,7 +831,6 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
           Undo_MixerConnections_CurrPos();
           CHIP_connect_chips(this, chip, _current_to_chip);
         }
-
       }
     }
 
@@ -784,6 +839,39 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _current_connection = NULL;
     _current_from_chip = NULL;
     _current_to_chip = NULL;
+    event->accept();
+    
+
+  }else if(_current_econnection!=NULL){
+
+    Chip *chip = get_chip_with_port_at(this,mouse_x,mouse_y);
+
+    if(chip!=NULL){ // TODO: Must check if the connection is already made.
+
+      if(_ecurrent_from_chip != NULL){
+
+        if(CHIP_is_at_input_eport(chip, mouse_x, mouse_y)){
+          Undo_MixerConnections_CurrPos();
+          printf("************ Connecting two chips 1\n");
+          CHIP_econnect_chips(this, _ecurrent_from_chip, chip);
+        }
+
+      }else if(_ecurrent_to_chip != NULL){
+
+        if(CHIP_is_at_output_eport(chip, mouse_x, mouse_y)){
+          Undo_MixerConnections_CurrPos();
+          printf("***************** Connecting two chips 2\n");
+          CHIP_econnect_chips(this, chip, _ecurrent_to_chip);
+        }
+
+      }
+    }
+
+    removeItem(_current_econnection);
+    delete _current_econnection;     
+    _current_econnection = NULL;
+    _ecurrent_from_chip = NULL;
+    _ecurrent_to_chip = NULL;
     event->accept();
     
   }else if(_moving_chips.size()>0){
@@ -1078,6 +1166,11 @@ static void MW_cleanup_connections(void){
   }
 
   SP_remove_all_links(producers);
+
+  for(unsigned int i=0;i<producers.size();i++){
+    SoundProducer *producer = producers.at(i);
+    PLUGIN_remove_all_event_receivers(SP_get_plugin(producer));
+  }
 
   for(unsigned int i=0;i<connections.size();i++)
     CONNECTION_delete_a_connection_where_all_links_have_been_removed(connections.at(i));
