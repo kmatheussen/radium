@@ -820,7 +820,7 @@ static void add_plugin(const char *name, const char *filename) {
 
   plugin_type->type_name                = "Pd";
   plugin_type->name                     = strdup(name);
-  plugin_type->info                     = "Pd is (mainly) made by Miller Puckette. Radium uses a modified version of libpd to access it.";
+  plugin_type->info                     = "Pd is made by Miller Puckette. Radium uses a modified version of libpd to access it.\nlibpd is made by Peter Brinkmann.";
   plugin_type->num_inputs               = 2;
   plugin_type->num_outputs              = 2;
   plugin_type->is_instrument            = true;
