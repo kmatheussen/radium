@@ -275,6 +275,7 @@ $1 = (SoundPlugin *) 0x0
 
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/patch_proc.h"
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
 #include "SoundPluginRegistry_proc.h"
@@ -502,6 +503,20 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
     }
 }
 
+static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
+  SoundPlugin *plugin = (SoundPlugin*)d;
+  if(velocity>0)
+    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1); // TODO: Find delta time.
+  else
+    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1); // TODO: Find delta time.
+
+  printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
+}
+
+static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
+  printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
+}
+
 static QTemporaryFile *create_temp_pdfile(){
   QString destFileNameTemplate = QDir::tempPath()+QDir::separator()+"radium_XXXXXX.pd";
   return new QTemporaryFile(destFileNameTemplate);
@@ -586,6 +601,8 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   libpds_set_floathook(pd, RT_pdfloathook);
   libpds_set_messagehook(pd, RT_pdmessagehook);
   libpds_set_listhook(pd, RT_pdlisthook);
+
+  libpds_set_hook_data(pd, plugin);
 
   libpds_set_noteonhook(pd, RT_noteonhook);
   libpds_set_polyaftertouchhook(pd, RT_polyaftertouchhook);

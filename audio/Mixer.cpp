@@ -225,6 +225,11 @@ static void init_player_lock(){
   LOCK_INITIALIZE(player_lock);
 }
 
+// Must be a multiply of 64 because of pd, which uses a block size of 64. 64 seems to work fine.
+#define RADIUM_BLOCKSIZE 64
+
+int jackblock_size = 0;
+jack_time_t jackblock_delta_time = 0;
 
 struct Mixer{
   SoundProducer *_bus1;
@@ -340,6 +345,11 @@ struct Mixer{
 
     _sample_rate = jack_get_sample_rate(_rjack_client);
     _buffer_size = jack_get_buffer_size(_rjack_client);
+    if(_buffer_size < RADIUM_BLOCKSIZE)
+      RWarning("Jack's blocksize of %d is less than Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
+    else if((_buffer_size % RADIUM_BLOCKSIZE) != 0)
+      RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
+
     g_last_set_producer_buffersize = _buffer_size;
     g_jack_client_priority = jack_client_real_time_priority(_rjack_client);
 
@@ -375,6 +385,8 @@ struct Mixer{
   }
 
 
+  // Starting to get very chaotic...
+
   void RT_thread(void){
     //#ifndef DOESNT_HAVE_SSE
     AVOIDDENORMALS;
@@ -392,7 +404,7 @@ struct Mixer{
     while(true){
 
       // Schedule new notes, etc.
-      PlayerTask(_buffer_size); // The editor player.
+      //PlayerTask(_buffer_size); // The editor player.
 
 
       LOCK_UNLOCK(player_lock);
@@ -404,25 +416,34 @@ struct Mixer{
 
       LOCK_LOCK(player_lock);
 
+      jackblock_size = num_frames;
 
       // Process sound.
 
       jack_time_t start_time = jack_get_time();
+
+      jackblock_delta_time = 0;
+      while(jackblock_delta_time < num_frames){
+        PlayerTask(RADIUM_BLOCKSIZE);
+
+        if(_bus1!=NULL)
+          SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE);
+        if(_bus2!=NULL)
+          SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE);
       
-      if(_bus1!=NULL)
-        SP_RT_process(_bus1,_time,num_frames);
-      if(_bus2!=NULL)
-        SP_RT_process(_bus2,_time,num_frames);
-      
-      {
-        DoublyLinkedList *sound_producer = _sound_producers.next;
-        while(sound_producer!=NULL){
-            SP_RT_process((SoundProducer*)sound_producer,_time,num_frames);
+        {
+          DoublyLinkedList *sound_producer = _sound_producers.next;
+          while(sound_producer!=NULL){
+            SP_RT_process((SoundProducer*)sound_producer,_time,RADIUM_BLOCKSIZE);
             sound_producer = sound_producer->next;
+          }
         }
+
+        _time += RADIUM_BLOCKSIZE;
+        jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
-      
-      _time += num_frames;
+
+      //_time += num_frames;
       
       jack_time_t end_time = jack_get_time();
         g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
@@ -462,6 +483,8 @@ struct Mixer{
 
     LOCK_LOCK(player_lock);{  // Not sure which thread this callback is called from. But since the player thread can not run here anyway, it's safest not to use PLAYER_lock(). (If it's called from the realtime thread, PLAYER_unlock() would set the priority of the realtime thread to non-realtime.)
       mixer->_buffer_size = num_frames;
+      if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
+        RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
 
       DoublyLinkedList *sound_producer = mixer->_sound_producers.next;
       while(sound_producer!=NULL){
@@ -545,6 +568,6 @@ float MIXER_get_sample_rate(void){
 }
 
 int MIXER_get_buffer_size(void){
-  return g_mixer->_buffer_size;
+  return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
 }
 
