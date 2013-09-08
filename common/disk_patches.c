@@ -173,6 +173,8 @@ void SavePatches(vector_t *v){
       //DC_SSI("minvel",patch->minvel);
       //DC_SSI("maxvel",patch->maxvel);
       //DC_SSI("standardvel",patch->standardvel);
+
+      DC_SSB("forward_events",patch->forward_events);
       
       if(patch->instrument==get_MIDI_instrument())
         SaveMIDIPatchData(patch->patchdata);
@@ -191,19 +193,21 @@ struct Patch *LoadPatch(void){
           "PATCHDATA",
           "VOICES"
 	};
-	static char *vars[4]={
+	static char *vars[5]={
 		"name",
 		"minvel",
 		"maxvel",
-		"standardvel"
+		"standardvel",
+                "forward_events"
 	};
 
 	struct Patch *patch=DC_alloc(sizeof(struct Patch));
 	patch->id=DC_LoadN();
+        patch->forward_events = true; // default value
 
         PATCH_init_voices(patch);
 
-	GENERAL_LOAD(2,4)
+	GENERAL_LOAD(2,5)
 
 
 var0:
@@ -222,6 +226,10 @@ var3:
         DC_LoadI();  // Not used anymore.
 	goto start;
 
+var4:
+        patch->forward_events = DC_LoadB();
+        goto start;
+
 obj0:
         is_MIDI_instrument = true;
         MIDI_InitPatch(patch, NULL);
@@ -236,7 +244,6 @@ obj1:
         //printf("---Finihsed Load Patch Voices\n");
         goto start;
 
-var4:
 var5:
 var6:
 var7:

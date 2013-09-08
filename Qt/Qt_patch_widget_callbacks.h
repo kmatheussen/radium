@@ -99,6 +99,7 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
     }
 
     name_widget->setText(_patch->name);
+    through_onoff->setChecked(_patch->forward_events);
   }
 
   void update_peaks(){
@@ -278,4 +279,10 @@ public slots:
     set_editor_focus();
   }
 
+  void on_through_onoff_toggled(bool val){
+    if(val != _patch->forward_events) {
+      Undo_PatchName_CurrPos(_patch);
+      _patch->forward_events = val;
+    }
+  }
 };

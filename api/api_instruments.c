@@ -84,8 +84,9 @@ void setInstrumentForTrack(int instrument_num, int tracknum, int blocknum, int w
 
 int createNewInstrument(char *type, char *name) {
   int instrument_num;
-  struct Patch *patch=talloc(sizeof(struct Patch));
+  struct Patch *patch=talloc(sizeof(struct Patch)); // ??? What is the point of this one? (This function is not finished, it's only used by the midi importer.
   patch->id = PATCH_get_new_id();
+  patch->forward_events = true;
 
   struct Instruments *instrument = NULL;
 

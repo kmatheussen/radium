@@ -102,7 +102,7 @@ var1:
 	goto start;
 var2:
         if(track->patch==NULL){
-          track->patch=DC_alloc(sizeof(struct Patch));
+          track->patch=DC_alloc(sizeof(struct Patch)); // temporary object used during loading.
           track->patch->instrument = get_instrument_from_type(MIDI_INSTRUMENT_TYPE); // To support songs without instrument_type. (old songs)
         }
 	track->patch->id=DC_LoadN();

@@ -28,12 +28,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo_patchvoice_proc.h"
 
+// Also undo/redoes the forward_event boolean variable. Event destinations are stored in the mixer gui undo/redo system.
 
 extern struct Root *root;
 
 struct Undo_PatchName{
   struct Patch *patch;
   const char *name;
+  bool forward_events;
 };
 
 static void *Undo_Do_PatchName(
@@ -54,7 +56,7 @@ static void Undo_PatchName(
   
   undo_ae->patch = patch;
   undo_ae->name = talloc_strdup(patch->name);
-
+  undo_ae->forward_events = patch->forward_events;
 
   //printf("********* Storing patchvoice undo. Value: %d\n",undo_ae->voice.is_on);
 
@@ -86,17 +88,20 @@ static void *Undo_Do_PatchName(
   struct Patch *patch = undo_ae->patch;
 
   const char *new_name = talloc_strdup(patch->name);
+  bool new_forward_events = patch->forward_events;
 
   //printf("Calling Undo_do for %d. Old value: %d. Setting it to %d\n", voicenum,new_patch_voice.is_on,undo_ae->voice.is_on);
   //if(new_patch_voice.is_on==undo_ae->voice.is_on)
   //  abort();
 
   patch->name = undo_ae->name;
+  patch->forward_events = undo_ae->forward_events;
 
   GFX_update_instrument_widget(patch);
   CHIP_update(patch->patchdata);
 
   undo_ae->name = new_name;
+  undo_ae->forward_events = new_forward_events;
 
   return undo_ae;
 }

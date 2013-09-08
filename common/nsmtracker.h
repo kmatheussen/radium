@@ -279,6 +279,7 @@ struct Patch{
 
   bool peaks_are_dirty; /* Can be set to true by any thread. */
 
+  bool forward_events; /* If true, all events that comes in, are also sent out to the receivers. True by default. */
   int num_event_receivers;
   struct Patch *event_receivers[MAX_NUM_EVENT_RECEIVERS];
 };

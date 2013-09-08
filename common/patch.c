@@ -118,7 +118,8 @@ void PATCH_init_voices(struct Patch *patch){
 struct Patch *NewPatchCurrPos(int instrumenttype, void *patchdata, const char *name){
   struct Patch *patch=(struct Patch*)talloc(sizeof(struct Patch));
   patch->id = PATCH_get_new_id();
-  
+  patch->forward_events = true;
+
   patch->name = talloc_strdup(name);
   
   PATCH_init_voices(patch);
@@ -157,6 +158,7 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
   {
     struct Patch *patch=(struct Patch*)talloc(sizeof(struct Patch));
     patch->id = PATCH_get_new_id();
+    patch->forward_events = true;
 
     patch->name = talloc_strdup(name);
 
@@ -441,6 +443,14 @@ static float get_voice_velocity(struct PatchVoice *voice){
     return scale(voice->volume,35,70,2,7);
 }
 
+void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_play_note(receiver, notenum, velocity, track, time);
+  }
+}
+
 static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
   //printf("\n\n___RT_play_voice. note %d, time: %d, velocity: %d\n\n",notenum,(int)time,velocity);
 
@@ -465,11 +475,8 @@ static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct T
   patch->num_ons[notenum]++;
   patch->playnote(patch,notenum,velocity,time,pan);
 
-  int i;
-  for(i = 0; i<patch->num_event_receivers; i++) {
-    struct Patch *receiver = patch->event_receivers[i];
-    RT_PATCH_play_note(receiver, notenum, velocity, track, time);
-  }
+  if(patch->forward_events)
+    RT_PATCH_send_play_note_to_receivers(patch, notenum, velocity, track, time);
 }
 
 static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
@@ -544,6 +551,14 @@ void PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks 
 ////////////////////////////////////
 // Stop note
 
+void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_stop_note(receiver, notenum, velocity, track, time);
+  }
+}
+
 static void RT_stop_voice(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
   if(notenum < 1 || notenum>127)
     return;
@@ -561,11 +576,8 @@ static void RT_stop_voice(struct Patch *patch, int notenum,int velocity,struct T
   //printf("__stopping note: %d. time: %d\n",notenum,(int)time);
   patch->stopnote(patch,notenum,velocity,time);
 
-  int i;
-  for(i = 0; i<patch->num_event_receivers; i++) {
-    struct Patch *receiver = patch->event_receivers[i];
-    RT_PATCH_stop_note(receiver, notenum, velocity, track, time);
-  }
+  if(patch->forward_events)
+    RT_PATCH_send_stop_note_to_receivers(patch, notenum, velocity, track, time);
 }
 
 static void RT_scheduled_stop_voice(int64_t time, union SuperType *args){
@@ -638,6 +650,14 @@ void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks 
 ////////////////////////////////////
 // Change velocity
 
+void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_change_velocity(receiver, notenum, velocity, track, time);
+  }
+}
+
 static void RT_change_voice_velocity(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
   if(notenum < 1 || notenum>127)
     return;
@@ -654,11 +674,8 @@ static void RT_change_voice_velocity(struct Patch *patch, int notenum,int veloci
 
   patch->changevelocity(patch,notenum,velocity,time);
 
-  int i;
-  for(i = 0; i<patch->num_event_receivers; i++) {
-    struct Patch *receiver = patch->event_receivers[i];
-    RT_PATCH_change_velocity(receiver, notenum, velocity, track, time);
-  }
+  if(patch->forward_events)
+    RT_PATCH_send_change_velocity_to_receivers(patch, notenum, velocity, track, time);
 }
 
 static void RT_scheduled_change_voice_velocity(int64_t time, union SuperType *args){

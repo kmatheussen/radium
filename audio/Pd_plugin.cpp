@@ -587,6 +587,9 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   libpds_set_messagehook(pd, RT_pdmessagehook);
   libpds_set_listhook(pd, RT_pdlisthook);
 
+  libpds_set_noteonhook(pd, RT_noteonhook);
+  libpds_set_polyaftertouchhook(pd, RT_polyaftertouchhook);
+
   libpds_init_audio(pd, 2, 2, sample_rate);
     
   blocksize = libpds_blocksize(pd);
