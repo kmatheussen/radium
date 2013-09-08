@@ -335,6 +335,77 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 }
 
 
+static bool has_recursive_event_connection(struct Patch *patch, struct Patch *start_patch){
+  if(start_patch==patch)
+    return true;
+
+  int num_event_receivers = patch->num_event_receivers;
+  int i;
+  for(i=0; i<num_event_receivers; i++)
+    if(has_recursive_event_connection(patch->event_receivers[i], start_patch)==true)
+      return true;
+
+  return false;
+}
+
+// Returns false if connection couldn't be made.
+bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
+  int num_event_receivers = source->num_event_receivers;
+
+  if(num_event_receivers==MAX_NUM_EVENT_RECEIVERS) {
+    printf("No more free event receiver slots. (wow)\n");
+    return false;
+  }
+
+  int i;
+  for(i=0; i<num_event_receivers; i++)
+    if(source->event_receivers[i]==destination){
+      printf("Already connectied\n");
+      return false;
+    }
+
+  if(has_recursive_event_connection(destination, source)==true) {
+    printf("Recursive attempt\n");
+    return false;
+  }
+
+  PLAYER_lock();{
+    source->event_receivers[num_event_receivers] = destination;
+    source->num_event_receivers = num_event_receivers+1;
+  }PLAYER_unlock();
+
+  return true;
+}
+
+void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination){
+  int i;
+  int num_event_receivers = source->num_event_receivers;
+
+  PLAYER_lock();{
+    for(i=0; i<num_event_receivers; i++){
+      if(source->event_receivers[i]==destination){
+        source->event_receivers[i] = source->event_receivers[num_event_receivers-1];
+        source->num_event_receivers = num_event_receivers-1;
+        //printf("Removed event receiver\n");
+        break;
+      }
+    }
+  }PLAYER_unlock();
+}
+
+void PATCH_remove_all_event_receivers(struct Patch *patch){
+  int num_event_receivers = patch->num_event_receivers;
+
+  PLAYER_lock();{
+    int i;
+    for(i=0; i<num_event_receivers; i++)
+      patch->event_receivers[i] = NULL;
+
+    patch->num_event_receivers = 0;
+  }PLAYER_unlock();
+}
+
+
 void PATCH_init(void){
   //MUTEX_INITIALIZE();
 }
@@ -393,6 +464,12 @@ static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct T
 
   patch->num_ons[notenum]++;
   patch->playnote(patch,notenum,velocity,time,pan);
+
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_play_note(receiver, notenum, velocity, track, time);
+  }
 }
 
 static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
@@ -483,6 +560,12 @@ static void RT_stop_voice(struct Patch *patch, int notenum,int velocity,struct T
 
   //printf("__stopping note: %d. time: %d\n",notenum,(int)time);
   patch->stopnote(patch,notenum,velocity,time);
+
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_stop_note(receiver, notenum, velocity, track, time);
+  }
 }
 
 static void RT_scheduled_stop_voice(int64_t time, union SuperType *args){
@@ -570,6 +653,12 @@ static void RT_change_voice_velocity(struct Patch *patch, int notenum,int veloci
     patch->last_time = time;
 
   patch->changevelocity(patch,notenum,velocity,time);
+
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_change_velocity(receiver, notenum, velocity, track, time);
+  }
 }
 
 static void RT_scheduled_change_voice_velocity(int64_t time, union SuperType *args){

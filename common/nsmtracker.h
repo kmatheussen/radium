@@ -250,6 +250,8 @@ struct PatchVoice{
 };
 
 #define MAX_PATCH_VOICES 6
+#define MAX_NUM_EVENT_RECEIVERS 64
+
 
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
@@ -276,6 +278,9 @@ struct Patch{
   int notes_num_ons[128];   /* To keep track of which notes are playing. (Useful to avoid hanging notes when turning on and off voices)*/
 
   bool peaks_are_dirty; /* Can be set to true by any thread. */
+
+  int num_event_receivers;
+  struct Patch *event_receivers[MAX_NUM_EVENT_RECEIVERS];
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1

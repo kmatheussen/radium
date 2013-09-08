@@ -47,10 +47,6 @@ extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin,
 extern LANGSPEC void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type);
 extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where);
 
-extern LANGSPEC bool PLUGIN_add_event_receiver(SoundPlugin *plugin, SoundPlugin *event_receiver);
-extern LANGSPEC void PLUGIN_remove_event_receiver(SoundPlugin *plugin, SoundPlugin *event_receiver);
-extern LANGSPEC void PLUGIN_remove_all_event_receivers(SoundPlugin *plugin);
-
 extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);
 extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 

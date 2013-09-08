@@ -1169,7 +1169,9 @@ static void MW_cleanup_connections(void){
 
   for(unsigned int i=0;i<producers.size();i++){
     SoundProducer *producer = producers.at(i);
-    PLUGIN_remove_all_event_receivers(SP_get_plugin(producer));
+    SoundPlugin *plugin = SP_get_plugin(producer);
+    struct Patch *patch = plugin->patch;
+    PATCH_remove_all_event_receivers(patch);
   }
 
   for(unsigned int i=0;i<connections.size();i++)

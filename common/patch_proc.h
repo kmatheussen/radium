@@ -25,6 +25,11 @@ extern LANGSPEC void PATCH_delete(struct Patch *patch);
 extern LANGSPEC void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup);
 //extern LANGSPEC void SelectPatch(struct Tracker_Windows *window,struct Tracks *track,bool use_popup);
 extern LANGSPEC void PATCH_init(void);
+
+extern LANGSPEC bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination);
+extern LANGSPEC void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination);
+extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch);
+
 extern LANGSPEC int PATCH_radiumvelocity_to_patchvelocity(struct Patch *patch,int velocity);
 extern LANGSPEC int PATCH_patchvelocity_to_radiumvelocity(struct Patch *patch,int velocity);
 

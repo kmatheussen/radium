@@ -63,6 +63,7 @@ static void AUDIO_changevelocity(struct Patch *patch,int notenum,int velocity,ST
 
   if(plugin->type->set_note_volume != NULL)
     plugin->type->set_note_volume(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
+ 
 }
 
 static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime time){
@@ -75,6 +76,7 @@ static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime ti
 
   if(plugin->type->stop_note != NULL)
     plugin->type->stop_note(plugin, PLAYER_get_delta_time(time), notenum, 0.0f);//note->velocity/127.0f);
+
 }
 
 static void AUDIO_closePatch(struct Patch *patch){

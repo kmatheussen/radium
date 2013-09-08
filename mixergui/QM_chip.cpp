@@ -451,8 +451,8 @@ static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *t
 }
 
 static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
-  return PLUGIN_add_event_receiver(SP_get_plugin(from->_sound_producer),
-                                   SP_get_plugin(to->_sound_producer));
+  return PATCH_add_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
+                                  SP_get_plugin(to->_sound_producer)->patch);
 }
 
 static bool chips_are_connected(Chip *from, Chip *to){
@@ -578,8 +578,8 @@ void CONNECTION_delete_connection(Connection *connection){
 
   if (connection->_is_event_connection) {
     
-    PLUGIN_remove_event_receiver(SP_get_plugin(from->_sound_producer),
-                                 SP_get_plugin(to->_sound_producer));
+    PATCH_remove_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
+                                SP_get_plugin(to->_sound_producer)->patch);
 
   } else {
 
