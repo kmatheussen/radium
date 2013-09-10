@@ -1179,9 +1179,9 @@ void CHIP_create_from_state(hash_t *state){
 
   struct SoundPlugin *plugin = PLUGIN_create_from_state(HASH_get_hash(state, "plugin"));
   patch->patchdata = plugin;
-  plugin->patch = patch;
 
   if(plugin!=NULL){
+    plugin->patch = patch;
     Chip *chip = new Chip(&g_mixer_widget->scene,SP_create(plugin),x,y);
     printf("Made chip %p\n",chip);
   }else{
@@ -1205,8 +1205,10 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state){
   Chip *from_chip = get_chip_from_patch_id(scene, HASH_get_int(state, "from_patch"));
   Chip *to_chip   = get_chip_from_patch_id(scene, HASH_get_int(state, "to_patch"));
 
-  if(from_chip==NULL || to_chip==NULL)
+  if(from_chip==NULL || to_chip==NULL) {
     RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);
+    return;
+  }
 
   if(HASH_has_key(state, "is_event_connection") && HASH_get_int(state, "is_event_connection")==1) // .rad files before 1.9.31 did not have even connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);

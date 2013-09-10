@@ -506,15 +506,17 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1); // TODO: Find delta time.
+    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1);
   else
-    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1); // TODO: Find delta time.
+    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1);
 
-  printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
+  //printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 
 static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
-  printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
+  SoundPlugin *plugin = (SoundPlugin*)d;
+  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, velocity, NULL, -1);
+  //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 
 static QTemporaryFile *create_temp_pdfile(){
