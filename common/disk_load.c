@@ -71,7 +71,7 @@ static bool Load(const char *filename){
 	DC_fgets();
 
 	if(strcmp("RADIUM SONG",dc.ls)){
-          GFX_Message(NULL,"First line in song was not 'RADIUM SONG', but '%s'\n",dc.ls);
+          GFX_Message(NULL,"First line in song was not 'RADIUM SONG', but '%s'. Last: %d\n",dc.ls,dc.ls[strlen(dc.ls)-1]);
           fclose(dc.file);
           return false;
 	}

@@ -152,7 +152,7 @@ void DC_fgets(void){
 		return;
 	}
 
-	while(ret[strlen(ret)-1]==' ' || ret[strlen(ret)-1]=='\n'){
+	while(ret[strlen(ret)-1]==' ' || ret[strlen(ret)-1]=='\n' || ret[strlen(ret)-1]=='\r'){
 		ret[strlen(ret)-1]=0;													//ret is allways longer than one, because of a newline-character.
 		if(strlen(ret)==0){
 			DC_fgets();

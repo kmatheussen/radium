@@ -366,7 +366,11 @@ static bool read_line(char *line,int len,FILE *file){
     return false;
   }
 
-  if(line[strlen(line)-1]=='\n')
+  if (strlen(line)>=2){ // Remove line shift if reading file with DOS char set
+    size_t dos_pos = strcspn(line, "\r\n"); 
+    line[dos_pos] = 0; 
+
+  } else if(line[strlen(line)-1]=='\n')
     line[strlen(line)-1] = 0;
 
   return true;
