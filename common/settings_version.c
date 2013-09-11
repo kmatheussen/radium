@@ -93,6 +93,10 @@ static const char** get_lines(void){
   int linenum = 0;
   char line[500];  
   while(fgets(line,499,file)!=NULL){
+    if (strlen(line)>=2){ // Remove line shift if reading file with DOS char set
+      size_t dos_pos = strcspn(line, "\r\n"); 
+      line[dos_pos] = 0; 
+    }
     if(line[strlen(line)-1]=='\n')
       line[strlen(line)-1] = 0;
     ret[linenum] = talloc_strdup(line);
