@@ -453,7 +453,8 @@ struct Comp : public MyWidget, public MyTimer{
   }
 
   void resized(){
-    createBackgroundImage();
+    if(width()>0 && height()>0)
+      createBackgroundImage();
   }
 
   int get_box_width(){
