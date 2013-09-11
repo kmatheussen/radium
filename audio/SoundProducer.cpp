@@ -235,6 +235,23 @@ static void RT_fade_out(float *sound, int num_frames){
 
 static RSemaphore *signal_from_RT = NULL;
 
+static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
+
+#if 0
+  static bool printed = false;
+
+  for(int ch=0;ch<plugin->type->num_outputs;ch++)
+    for(int i=0;i<num_frames;i++)
+      if(!isfinite(outputs[ch][i])){
+        if(printed==false)
+          printf("NOT FINITE %s %s\n",plugin->type->type_name, plugin->type->name);
+        printed=true;
+        outputs[ch][i]=0.0f;
+      }
+#endif
+}
+
 struct SoundProducer : DoublyLinkedList{
   SoundPlugin *_plugin;
 
@@ -455,7 +472,7 @@ struct SoundProducer : DoublyLinkedList{
       }
     else
       for(int ch=0;ch<num_channels;ch++)
-        filter->plugins[ch]->type->RT_process(filter->plugins[ch], 0, num_frames, &input[ch], &output[ch]);
+        PLUGIN_RT_process(filter->plugins[ch], 0, num_frames, &input[ch], &output[ch]);
   }
 
   // Quite chaotic with all the on/off is/was booleans.
@@ -559,7 +576,7 @@ struct SoundProducer : DoublyLinkedList{
 
 
     if(is_a_generator)
-      _plugin->type->RT_process(_plugin, time, num_frames, _input_sound, _dry_sound);
+      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound);
 
 
     // Input peaks
@@ -603,7 +620,7 @@ struct SoundProducer : DoublyLinkedList{
         
         // Fill output
         {
-          _plugin->type->RT_process(_plugin, time, num_frames, _input_sound, _output_sound);
+          PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound);
         }
 
       }
