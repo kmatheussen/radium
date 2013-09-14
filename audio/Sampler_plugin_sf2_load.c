@@ -60,6 +60,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
 
       Sample *sample = (Sample*)&data->samples[num_samples++];
       memset(sample,0,sizeof(Sample));
+      sample->data = data;
 
       sample->volume = 1.0f;
       sample->num_frames = HASH_get_int(sample_info,"num_frames");
