@@ -391,10 +391,11 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window){
 	wblock=window->wblock;
 	wtrack=wblock->wtrack;
 
-	Undo_FXs_CurrPos(window);
 
 	fx=selectFX(window,wblock,wtrack);
 	if(fx==NULL) return;
+
+	Undo_FXs_CurrPos(window);
 
 	AddFXNodeLine(
 		window,wblock,wtrack,
