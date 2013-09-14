@@ -159,15 +159,12 @@ static bool Load(const char *filename){
 
 }
 
-extern int num_undos;
-
 #ifdef _AMIGA
 extern const char *mmp2filename;
 #endif
 
 static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filename){
 	bool ret = false;
-	char temp[200];
 
         // So many things happen here, that we should turn off garbage collection while loading.
         //
@@ -182,30 +179,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filenam
 
 	PlayStop();
 
-	if(num_undos>0){
-		char *retreq=NULL;
-
-//		sprintf(temp,"%s%d changes has been made to file. Are you shure? (yes/no)",num_undos>=max_num_undos-1?"At least":"",num_undos);
-		sprintf(
-			temp,
-			"%d change%s been made to file.\nAre you shure? (yes/no) >",
-			num_undos,
-			num_undos>1 ? "s have" : " has"
-                        );
-		while(
-			retreq==NULL || (
-				strcmp("yes",retreq) &&
-				strcmp("no",retreq)
-			)
-		){
-			retreq=GFX_GetString(
-				window,
-				NULL,
-				temp
-			);
-		}
-		if(!strcmp("no",retreq)) goto exit;
-	}
+        if(Undo_are_you_shure_questionmark()==false)
+          goto exit;
 
         if(filename==NULL)
           filename=GFX_GetLoadFileName(window,NULL,"Select file to load","obsolete");

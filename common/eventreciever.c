@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "mouse_proc.h"
 #include "gfx_op_queue_proc.h"
+#include "undo.h"
 
 #include "fxlines_proc.h"
 
@@ -46,43 +47,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-extern int num_undos;
-
 bool doquit=false;
 bool isloaded=false;
 
 bool Quit(struct Tracker_Windows *window){
-
-	char temp[200];
-	char *ret=NULL;
-
         PlayStop();
 
 	printf("Going to quit\n");
-	if(num_undos>0){
-		sprintf(
-			temp,
-			"%d change%s been made to file.\nAre you shure? (yes/no) >",
-			num_undos,
-			num_undos>1 ? "s have" : " has"
-                        );
-		while(
-			ret==NULL || (
-				strcmp("yes",ret) &&
-				strcmp("no",ret)
-			)
-		){
-			ret=GFX_GetString(
-				window,
-				NULL,
-				temp
-			);
-			
-		}
-		if(!strcmp("no",ret)) return false;
-	}
 
-	return true;
+        return Undo_are_you_shure_questionmark();
 }
 
 

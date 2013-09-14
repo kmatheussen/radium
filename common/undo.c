@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -62,7 +63,8 @@ static struct Undo UndoRoot={0};
 static struct Undo *CurrUndo=&UndoRoot;
 static struct Undo *curr_open_undo=NULL;
 
-int num_undos=0;
+static int undo_pos_at_last_saving=0;
+static int num_undos=0;
 static int max_num_undos=MAX_NUM_UNDOS;
 
 static bool undo_is_open=false;
@@ -71,6 +73,18 @@ extern struct Patch *g_currpatch;
 
 static bool currently_undoing = false;
 
+int Undo_num_undos_since_last_save(void){
+  return num_undos - undo_pos_at_last_saving;
+}
+
+int Undo_num_undos(void){
+  return num_undos;
+}
+
+void Undo_saved_song(void){
+  undo_pos_at_last_saving = num_undos;
+}
+
 void ResetUndo(void){
   if(currently_undoing){
     RError("Can not call ResetUndo from Undo()\n");
@@ -78,8 +92,43 @@ void ResetUndo(void){
 
   CurrUndo=&UndoRoot;
   num_undos=0;
+  undo_pos_at_last_saving=0;
   OS_GFX_NumUndosHaveChanged(0,false);
 }
+
+bool Undo_are_you_shure_questionmark(void){
+  int num_undos = Undo_num_undos_since_last_save();
+
+  if(num_undos>0){
+    char temp[200];
+    char *ret=NULL;
+
+    sprintf(
+            temp,
+            "%d change%s been made to file since song was saved.\nAre you shure? (yes/no) >",
+            num_undos,
+            num_undos>1 ? "s have" : " has"
+            );
+    while(
+          ret==NULL || (
+                        strcmp("yes",ret) &&
+                        strcmp("no",ret)
+			)
+          ){
+      ret=GFX_GetString(
+                        NULL,
+                        NULL,
+                        temp
+			);
+      
+    }
+    if(!strcmp("no",ret))
+      return false;
+  }
+
+  return true;
+}
+
 
 void Undo_Open(void){
   if(currently_undoing){

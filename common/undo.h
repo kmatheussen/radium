@@ -29,6 +29,10 @@ extern struct Undo *CurrUndo;
 
 #ifndef TRACKER_INCLUDE
 
+extern LANGSPEC int Undo_num_undos_since_last_save(void);
+extern LANGSPEC void Undo_saved_song(void);
+extern LANGSPEC int Undo_num_undos(void);
+
 extern LANGSPEC void Undo_Open(void);
 extern LANGSPEC void Undo_Close(void);
 extern LANGSPEC void Undo_CancelLastUndo(void);
@@ -63,6 +67,7 @@ extern void Undo_New(
 #endif
 
 extern LANGSPEC void ResetUndo(void);
+extern LANGSPEC bool Undo_are_you_shure_questionmark(void);
 extern LANGSPEC void Undo(void);
 extern LANGSPEC void Redo(void);
 extern LANGSPEC void SetMaxUndos(struct Tracker_Windows *window);
