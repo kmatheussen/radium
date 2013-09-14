@@ -405,6 +405,6 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window){
 	);
 
 	UpdateFXNodeLines(window,wblock,wtrack);
-//	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 }
