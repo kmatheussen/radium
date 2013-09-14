@@ -301,7 +301,7 @@ struct FX{
 	int min;
 	int max;
 
-	int effect_num; // Set by the instrument plugin.
+  	int effect_num; // Set by the instrument plugin.
 
 	// Having pointers to variables in sliders is a bit strange, but letting sliders reference FX instead would cause bookkeeping of live and not alive FX objects.
 	// Not getting that bookkeeping correct would mean crashes that could be difficult to track.

@@ -56,7 +56,7 @@ struct FX *LoadFX(struct Tracks *track){
                 "effect_num"
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
-	fx->num=DC_LoadN();
+	DC_LoadN(); 
 	GENERAL_LOAD(0,5)
 
 
@@ -79,8 +79,9 @@ var2:
 var3:
 	fx->max=DC_LoadI();
 	goto start;
-var4:
+var4:        
 	fx->effect_num=DC_LoadI();
+        fx->num = fx->effect_num; // Fix bugs in previous versions. Sometimes fx->effect_num is the only one containing the right value.
 	goto start;
 
 obj0:

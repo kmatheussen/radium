@@ -356,7 +356,7 @@ void AddFXNodeLine(
 
 	fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
 	if(fxs==NULL){
-	  //		printf("new, fx->l.num: %d, wtrack->fxs->l.num:%d\n",fx->l.num,wtrack->track->fxs->l.num);
+          printf("new, fx->num: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
 		fxs=talloc(sizeof(struct FXs));
 		fxs->l.num=fx->num;
 		fxs->fx=fx;

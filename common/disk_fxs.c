@@ -62,6 +62,7 @@ struct FXs *LoadFXs(struct Tracks *track){
 
 obj0:
 	fxs->fx=LoadFX(track);
+        fxs->l.num = fxs->fx->effect_num; // Sometimes fx->effect_num is the only one containing the right value. (bug in previous version)
 	goto start;
 obj1:
 	LoadFXNodeLines(&fxs->fxnodelines);

@@ -172,7 +172,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name){
   fx->effect_num      = effect_num;
   //fx->fxdata          = fxdata;
 
-  fx->num   = effect_num;
+  fx->num     = effect_num;
   fx->name    = name;
   fx->min     = 0;
   fx->max     = MAX_FX_VAL;
@@ -231,7 +231,7 @@ static void AUDIO_save_FX(struct FX *fx,struct Tracks *track){
 
   DC_start("FXDATA");{
 
-    DC_SSI("num",fx->effect_num);
+    DC_SSI("num",fx->effect_num); // Why save the same number a FOURTH time?
     DC_SSS("name",fx->name);
 
   }DC_end();
@@ -247,6 +247,7 @@ static void *AUDIO_LoadFX(struct FX *fx,struct Tracks *track){
 
 var0:
 	fx->effect_num = DC_LoadI(); // the effect num may change later, if the plugin has implemented get_effect_num, and it returns a different value.
+        fx->num = fx->effect_num;
 	goto start;
 
 var1:
@@ -354,6 +355,8 @@ static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *tra
       PLAYER_lock();{
         if(fx->effect_num >= num_old_effects){
           fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
+          fx->num = fx->effect_num;
+          fxs->l.num = fx->effect_num; // TODO: Merge these three variables into one. I don't think the values of them should ever be different.
           fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(new_patch,fx->effect_num);
           fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(new_patch,fx->effect_num);
         }else{
