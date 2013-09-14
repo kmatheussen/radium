@@ -102,11 +102,12 @@ int Undo_num_undos_since_last_save(void){
   return num_undos - undo_pos_at_last_saving;
 }
 
-static void update_star(void){
+static void update_gfx(void){
   if(Undo_num_undos_since_last_save()==0)
     hide_star();
   else
     show_star();
+  OS_GFX_NumUndosHaveChanged(num_undos,CurrUndo->next!=NULL,showing_star_in_filename);
 }
 
 int Undo_num_undos(void){
@@ -115,7 +116,7 @@ int Undo_num_undos(void){
 
 void Undo_saved_song(void){
   undo_pos_at_last_saving = num_undos;
-  update_star();
+  update_gfx();
 }
 
 void ResetUndo(void){
@@ -126,8 +127,7 @@ void ResetUndo(void){
   CurrUndo=&UndoRoot;
   num_undos=0;
   undo_pos_at_last_saving=0;
-  OS_GFX_NumUndosHaveChanged(0,false);
-  update_star();
+  update_gfx();
 }
 
 bool Undo_are_you_shure_questionmark(void){
@@ -213,7 +213,7 @@ void Undo_Close(void){
     
     num_undos++;
 
-    OS_GFX_NumUndosHaveChanged(num_undos, CurrUndo->next!=NULL);
+    update_gfx();
   }
 }
 
@@ -272,7 +272,7 @@ static void Undo_Add_internal(
   if(undo_was_open==false)
     Undo_Close();
 
-  update_star();
+  update_gfx();
 }
 
 void Undo_Add(
@@ -395,8 +395,7 @@ currently_undoing = true;
        }
 currently_undoing = false;
 
- OS_GFX_NumUndosHaveChanged(num_undos, CurrUndo->next!=NULL);
- update_star();
+ update_gfx();
 }
 
 
@@ -411,8 +410,7 @@ void Redo(void){
 
 	num_undos+=2;
 
-        OS_GFX_NumUndosHaveChanged(num_undos, CurrUndo->next!=NULL);
-        update_star();
+        update_gfx();
 }
 
 void SetMaxUndos(struct Tracker_Windows *window){

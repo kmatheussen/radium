@@ -189,8 +189,9 @@ extern "C"{
     g_bottom_bar_widget->octave_label->setText(QString("Octave: ")+QString::number(root->keyoct/12,16));
   }
 
-  void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available){
+  void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
     g_bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
+    g_bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");
     g_bottom_bar_widget->undo_button->setEnabled(num_undos>0);
     g_bottom_bar_widget->redo_button->setEnabled(redos_are_available);
   }
