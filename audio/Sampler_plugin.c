@@ -1141,7 +1141,7 @@ static bool load_sample(Data *data, const char *filename, int instrument_number)
     if(load_sample_with_libsndfile(data,filename)==false)
       if(load_sf2_instrument(data,filename,instrument_number)==false)
         return false;
-
+  
   //data->num_channels = data->samples[0].num_channels; // All samples must contain the same number of channels.
 
   generate_peaks(data);

@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "OS_settings_proc.h"
 
 #include "hashmap_proc.h"
@@ -138,6 +139,20 @@ hash_t *HASH_get_keys(hash_t *hash){
     }
   }
   return keys;
+}
+
+vector_t *HASH_get_values(hash_t *hash){
+  vector_t *vector = talloc(sizeof(vector_t));
+  int pos=0;
+  int i;
+  for(i=0;i<hash->elements_size;i++){
+    hash_element_t *element = hash->elements[i];
+    while(element!=NULL){
+      VECTOR_push_back(vector, element->hash);
+      element=element->next;
+    }
+  }
+  return vector; 
 }
 
 static void put(hash_t *hash, const char *key, int i, hash_element_t *element){

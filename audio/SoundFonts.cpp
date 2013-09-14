@@ -307,14 +307,12 @@ static hash_t *get_samples_info(sf2::File *file){
 }
 
 static hash_t *get_menu(hash_t *info){
-  hash_t *presets = HASH_get_hash(info,"presets");
-  hash_t *menu    = HASH_create(50);
-
-  hash_t *preset_keys = HASH_get_keys(presets);
-  int num_presets = HASH_get_array_size(preset_keys);
+  vector_t *presets     = HASH_get_values(HASH_get_hash(info,"presets"));
+  hash_t   *menu        = HASH_create(50);
+  int       num_presets = presets->num_elements;
 
   for(int i=0;i<num_presets;i++){
-    hash_t     *preset         = HASH_get_hash(presets,HASH_get_string_at(preset_keys,"",i));
+    hash_t     *preset         = (hash_t*)presets->elements[i];
     int         preset_num     = HASH_get_int(preset,"num");
     int         bank_num       = HASH_get_int(preset,"bank");
     const char *preset_name    = HASH_get_string(preset,"name");

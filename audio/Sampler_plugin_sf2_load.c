@@ -9,7 +9,6 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
     return false;
 
   //HASH_save(info,stdout);
-
   hash_t *sample_infos = HASH_get_hash(info,"samples");
 
   hash_t *presets = HASH_get_hash(info,"presets");

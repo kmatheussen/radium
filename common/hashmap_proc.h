@@ -32,6 +32,7 @@ extern LANGSPEC bool HASH_has_key_at(hash_t *hash, const char *key, int i);
 extern LANGSPEC int HASH_get_num_elements(hash_t *hash);
 
 extern LANGSPEC hash_t *HASH_get_keys(hash_t *hash); // Returns all keys in a new hash array.
+extern LANGSPEC vector_t *HASH_get_values(hash_t *hash);
 
 // HASH_put_*: char *key is not copied. I.e. the key is used directly, not a copy of it.
 // HASH_put_string: A copy of char *val is used, not val itself.
