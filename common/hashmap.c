@@ -143,7 +143,6 @@ hash_t *HASH_get_keys(hash_t *hash){
 
 vector_t *HASH_get_values(hash_t *hash){
   vector_t *vector = talloc(sizeof(vector_t));
-  int pos=0;
   int i;
   for(i=0;i<hash->elements_size;i++){
     hash_element_t *element = hash->elements[i];

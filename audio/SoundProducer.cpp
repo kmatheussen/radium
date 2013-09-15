@@ -402,7 +402,7 @@ struct SoundProducer : DoublyLinkedList{
     //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
     SoundProducerLink *link = (SoundProducerLink*)_input_producers[ch].next;
     while(link!=NULL){
-      fprintf(stderr,"link: %p. link channel: %d\n",link,link->sound_producer_ch);
+      //fprintf(stderr,"link: %p. link channel: %d\n",link,link->sound_producer_ch);
       if(link->sound_producer==sound_producer && link->sound_producer_ch==sound_producer_ch){
 
         PLAYER_lock();{
