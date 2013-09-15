@@ -108,6 +108,13 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   const SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
 
+#if 0
+  if(!strcmp(type->name,"System Out")){
+    plugin->system_volume_peak_values = GFX_OS_get_system_volume_peak_pointers(type->num_inputs);
+    printf("%p\n",plugin->system_volume_peak_values);
+  }
+#endif
+
   if(MIXER_is_saving()){
 
     if(!strcmp(type->name,"System Out"))
@@ -133,7 +140,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   if(!strcmp(plugin_type->name,"System Out"))
-    plugin->system_volume_peak_values = GFX_OS_get_system_volume_peak_pointers(plugin_type->num_inputs);
+    GFX_OS_set_system_volume_peak_pointers(&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
   return create_data(plugin_type, (jack_client_t*)plugin_type->data,plugin_type->num_inputs,plugin_type->num_outputs);
 }
 

@@ -590,8 +590,7 @@ struct SoundProducer : DoublyLinkedList{
         if(_plugin->input_volume_peak_values!=NULL)
           _plugin->input_volume_peak_values[ch] = peak;
 
-        if(_plugin->system_volume_peak_values!=NULL) // the slider at the bottom bar.
-          _plugin->system_volume_peak_values[ch] = peak;
+        _plugin->system_volume_peak_values[ch] = peak; // Value only used by the slider at the bottom bar.
       }
     }
 

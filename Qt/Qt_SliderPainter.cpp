@@ -122,9 +122,6 @@ struct SliderPainter{
     SliderPainter *_painter;
 
     void timerEvent(QTimerEvent * e){
-      //if(_painter->isVisible())
-      //  printf("oh yeah. value: %f. last_drawn: %d, visible? %d\n",*data->value, data->last_drawn_pos,_painter->isVisible());
-
       if(_painter->isVisible()==false)
         return;
 
@@ -194,7 +191,6 @@ struct SliderPainter{
 
   int _value;
 
-  int _num_automations;
   Timer _timer;
 
   QString _display_string;
@@ -276,7 +272,6 @@ struct SliderPainter{
 
   void init(){
     _value = 0;
-    _num_automations = 0;
     _num_channels = 0;
     _peak_values = NULL;
     _local_peak_values=false;
@@ -336,8 +331,6 @@ struct SliderPainter{
 
     start_auto_updater();
 
-    _num_automations++;
-    
     return data;
   }
 
@@ -351,7 +344,6 @@ struct SliderPainter{
   }
 
   float *obtain_peak_value_pointers(int num_channels, float *peak_values){
-    bool is_replacing = _peak_values!=NULL;
 
     if(peak_values==NULL) {
       _peak_values = (float*)calloc(sizeof(float*),num_channels);
@@ -361,14 +353,9 @@ struct SliderPainter{
     } else {
 
       _peak_values = peak_values;
-
     } 
-    
-    if(is_replacing){
-      while(_num_automations>0)
-        release_automation_pointers(); // Warning! This works only since _is_replacing==true just for the bottom bar volume slider (which doesn't have automations).
-      _data.clear();
-    }
+
+    _data.clear();
 
     for(int ch=0;ch<num_channels;ch++){
       AutomationOrPeakData *data = create_automation_data();
@@ -384,12 +371,6 @@ struct SliderPainter{
 
   void set_peak_value_pointers(int num_channels, float *pointers){
     obtain_peak_value_pointers(num_channels, pointers);
-  }
-
-  void release_automation_pointers(){
-    _num_automations--;
-    if(_num_automations==0)
-      _timer.stop();
   }
 
   void paint(QPainter *p){
@@ -488,7 +469,11 @@ int *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter){
   return painter->obtain_automation_color_pointer();
 }
 void SLIDERPAINTER_release_automation_pointers(SliderPainter *painter){
-  painter->release_automation_pointers();
+  // Removed: 1. It's not very important to remove it.
+  //          2. In order to remove the correct one, we need to know which automation to remove.
+  //          3. Code was very complicated
+  //          4. Peaks for the bottom bar disappeared. (very complicated code)
+  //painter->release_automation_pointers();
 }
 
 // Used for chips where the slider controls input volume instead of output volume.

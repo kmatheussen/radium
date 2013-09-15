@@ -79,7 +79,8 @@ extern LANGSPEC float *OS_SLIDER_obtain_automation_value_pointer(struct Patch *p
 extern LANGSPEC int *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num);
 extern LANGSPEC void OS_SLIDER_release_automation_pointers(struct Patch *patch,int effect_num);
 
-extern LANGSPEC float *GFX_OS_get_system_volume_peak_pointers(int num_channels);
+extern LANGSPEC void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels);
+//extern LANGSPEC float *GFX_OS_get_system_volume_peak_pointers(int num_channels);
 
 extern LANGSPEC void GFX_update_all_instrument_widgets(void);
 

@@ -181,8 +181,8 @@ public slots:
 };
 
 extern "C"{
-  float *GFX_OS_get_system_volume_peak_pointers(int num_channels){
-    return SLIDERPAINTER_obtain_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, num_channels);
+  void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels){
+    SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, num_channels, pointers);
   }
 
   void GFX_OS_UpdateKeyOctave(void){

@@ -290,7 +290,7 @@ typedef struct SoundPlugin{
   float *input_volume_peak_values;
   float *input_volume_peak_values_for_chip;
 
-  float *system_volume_peak_values; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
+  float system_volume_peak_values[2]; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
   float *bus_volume_peak_values[2];
 
   enum BusDescendantType bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.

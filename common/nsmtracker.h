@@ -196,6 +196,17 @@ struct Velocities{
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
 
 
+/*********************************************************************
+	glides.h
+*********************************************************************/
+
+struct Glides{
+	struct ListHeader3 l;
+
+	float note;
+};
+#define NextGlide(a) ((struct Glides *)((a)->l.next))
+
 
 /*********************************************************************
 	notes.h
@@ -213,6 +224,7 @@ struct Notes{
 	int velocity_end;
 	
 	struct Velocities *velocities;
+	struct Glides *glides;
 
 	int noend;
 };
