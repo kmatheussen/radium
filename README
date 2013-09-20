@@ -52,6 +52,10 @@ BUILD DEPENDENCIES FEDORA:
         libtool-ltdl
         libtool
         tk
+        libogg-devel
+        libvorbis-devel
+        speex-devel
+        fftw-devel
 
         (tested on Fedora 17 64 bit)
 
@@ -73,6 +77,11 @@ BUILD DEPENDENCIES UBUNTU:
       binutils-dev
       libc6-dev
       tk8.5
+
+        libogg-dev
+        libvorbis-dev
+        speex-dev
+        fftw-dev
 
       sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5
 
