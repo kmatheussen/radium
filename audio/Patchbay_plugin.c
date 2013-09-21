@@ -89,13 +89,12 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   free(plugin->data);
 }
 
-
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  static char name[64];
+  static char names[NUM_CHANNELS*NUM_CHANNELS][64];
   int from = effect_num / NUM_CHANNELS;
   int to = effect_num % NUM_CHANNELS;
-  sprintf(name, "%d->%d",from,to);
-  return name;
+  sprintf(names[effect_num], "%d->%d",from,to);
+  return names[effect_num];
 }
 
 static int get_effect_format(SoundPlugin *plugin, int effect_num){
