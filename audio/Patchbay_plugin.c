@@ -1,3 +1,19 @@
+/* Copyright 2013 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -50,7 +66,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 static void set_effect_value(SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
-  printf("####################################################### Setting sine volume to %f\n",value);
 
   if(value_format==PLUGIN_FORMAT_SCALED)
     data->routes[effect_num] = value > 0.5f;
@@ -74,7 +89,6 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-  printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   free(plugin->data);
 }
 
