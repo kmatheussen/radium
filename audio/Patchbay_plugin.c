@@ -32,8 +32,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         float *in=inputs[in_ch];
         float *out=outputs[out_ch];
         if(touched[out_ch]==0){
-          for(i=0;i<num_frames;i++)
-            out[i] = in[i];
+          memcpy(out, in, sizeof(float)*num_frames);
           touched[out_ch]=1;
         }else
           for(i=0;i<num_frames;i++)
