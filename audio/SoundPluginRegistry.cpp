@@ -177,6 +177,7 @@ void PR_add_plugin_type(SoundPluginType *type){
 
 //extern "C" void create_sine_plugin(void);
 extern void create_bus_plugins(void);
+extern "C" void create_patchbay_plugin(void);
 extern void create_vst_plugins(void);
 extern void create_ladspa_plugins(void);
 extern "C" void create_sample_plugin(void);
@@ -260,6 +261,7 @@ void PR_init_plugin_types(void){
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   create_bus_plugins();
+  create_patchbay_plugin();
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   //create_sine_plugin();

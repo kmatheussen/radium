@@ -30,6 +30,20 @@ HOW TO MAKE IT RUN
           "
 
 
+
+IF YOU GOT THE SOURCE FROM GIT
+
+   After git clone, you must do:
+
+          touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
+
+   And after git pull, you must do:
+          make clean
+
+     (since not all dependencies are tracked in the makefile)
+
+
+
 INTRODUCTION
         Radium is a free (as in speech) music editor with a novel interface.
         It's inspired by trackers, but has fewer limitations and uses graphics to show musical data. 
