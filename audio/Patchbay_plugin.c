@@ -80,11 +80,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   Data *data = calloc(1,sizeof(Data));
-  data->routes[0]=0;
-  data->routes[1]=1;
-  int i;
-  for(i=2;i<NUM_CHANNELS;i++)
-    data->routes[i]=-1;
+  data->routes[0]=1;
+  data->routes[NUM_CHANNELS+1]=1;
   return data;
 }
 
