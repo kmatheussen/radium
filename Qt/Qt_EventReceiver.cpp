@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //Added by qt3to4:
 #include <QCustomEvent>
 #include <QCloseEvent>
-#include <QTimerEvent>
 #include <QWheelEvent>
 #include <QPaintEvent>
 #include <QResizeEvent>

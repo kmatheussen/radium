@@ -36,31 +36,28 @@ typedef struct{
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
-  int touched[NUM_CHANNELS]={0};
-
-  int in_ch;
-  for(in_ch=0;in_ch<NUM_CHANNELS;in_ch++){
-    int out_ch;
-    for(out_ch=0;out_ch<NUM_CHANNELS;out_ch++){
-      int onoff = data->routes[in_ch*NUM_CHANNELS + out_ch];
-      int i;
-      if(onoff==1){
-        float *in=inputs[in_ch];
-        float *out=outputs[out_ch];
-        if(touched[out_ch]==0){
-          memcpy(out, in, sizeof(float)*num_frames);
-          touched[out_ch]=1;
-        }else
-          for(i=0;i<num_frames;i++)
-            out[i] += in[i];
-      }
-    }
-  }
 
   int out_ch;
   for(out_ch=0;out_ch<NUM_CHANNELS;out_ch++){
-    if(touched[out_ch]==0)
-      memset(outputs[out_ch],0,sizeof(float)*num_frames);
+    bool touched = false;
+    int in_ch;
+    float *out=outputs[out_ch];
+    for(in_ch=0;in_ch<NUM_CHANNELS;in_ch++){
+      int onoff = data->routes[in_ch*NUM_CHANNELS + out_ch];
+      if(onoff==1){
+        float *in=inputs[in_ch];
+        if(touched==false){
+          memcpy(out, in, sizeof(float)*num_frames);
+          touched=true;
+        }else{
+          int i;
+          for(i=0;i<num_frames;i++)
+            out[i] += in[i];
+        }
+      }
+    }
+    if(touched==false)
+      memset(out,0,sizeof(float)*num_frames);
   }
 }
 

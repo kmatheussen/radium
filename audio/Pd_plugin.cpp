@@ -49,7 +49,7 @@ Calling Undo_do for 74. Current value: 0.000000. Now setting it back to 1.000000
 *(((( EFFNUM_OUTPUT_VOLUME. val: -0.002502. MIN_DB: -40. Target: 0.999424. plugin->volume: 0.999712
 Called GFX_update_instrument_patch_gui for patch "Pd 2"
 Called GFX_update_instrument_patch_gui for patch "Pd 2"
-Calling Undo_do for 74. Current value: 1.000000. Now setting it back to 0.000000
+hookCalling Undo_do for 74. Current value: 1.000000. Now setting it back to 0.000000
 *(((( EFFNUM_OUTPUT_VOLUME. val: -0.002502. MIN_DB: -40. Target: 0.999424. plugin->volume: 0.999712
 Called GFX_update_instrument_patch_gui for patch "Pd 2"
 Called GFX_update_instrument_patch_gui for patch "Pd 2"
