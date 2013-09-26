@@ -157,7 +157,8 @@ class SlotIndicatorItem : public QGraphicsItem
        QColor color(59,68,155,40);
        painter->setPen(color);
        painter->setBrush(QBrush(color,Qt::SolidPattern));
-       painter->drawRoundedRect(port_width, port_height, grid_width-(port_width*2), grid_height-(port_height*2), grid_border, grid_border);
+       //painter->drawRoundedRect(port_width, port_height, grid_width-(port_width*2), grid_height-(port_height*2), grid_border, grid_border);
+       painter->drawRoundedRect(0, 0, grid_width, grid_height, grid_border, grid_border);
        painter->setBrush(QBrush());
      }
  };

@@ -112,24 +112,16 @@ static const int button_height = 13;//name_height/2;
 
 // coordinates
 
-static int chip_box_x1 = port_width + left_border;
-static int chip_box_x2 = chip_width - port_width - right_border;
-static int chip_box_y1 = port_height + top_border;
-
-static int get_chip_visible_height(void){
-  //  int x1,y1,x2,y2;
-  //get_name_coordinates(x1,y1,x2,y2);
-  //return y2 + bottom_border;
-  return chip_height-(port_height*2);
-}
+static int chip_box_x1 = port_width;
+static int chip_box_x2 = chip_width - port_width;
+static int chip_box_y1 = port_height;
+static int chip_box_y2 = chip_height-(port_height*2);
 
 static void get_coordinates(int &x1, int &y1, int &x2, int &y2){
-  x1=port_width;
-  y1=port_height;
-  x2=chip_width-(port_width*2);
-  y2=y1+get_chip_visible_height();
-  //  int t1,t2,t3;
-  //  get_name_coordinates(t1,t2,t3,y2);
+  x1=chip_box_x1;
+  y1=chip_box_y1;
+  x2=chip_box_x2;
+  y2=chip_box_y2;
 }
 
 static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
@@ -147,10 +139,10 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
 static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
 
-  x1 = chip_box_x1;
-  x2 = chip_box_x2;
+  x1 += left_border;
+  x2 = chip_box_x2 - right_border;
   y2 = y1;
-  y1 = chip_box_y1;
+  y1 = chip_box_y1 + top_border;
 }
 
 
@@ -160,27 +152,6 @@ static void get_slider2_coordinates(int &x1, int &y1, int &x2, int &y2){
   //y2+=slider_height;
 }
 
-
-#if 0
-static void get_input_slider_coordinates(int &x1, int &y1, int &x2, int &y2){
-  get_slider1_coordinates(x1,y1,x2,y2);
-}
-
-static void get_output_slider_coordinates(Chip *chip, int &x1, int &y1, int &x2, int &y2){
-  if(chip->_num_inputs==0)
-    get_slider1_coordinates(x1,y1,x2,y2);
-  else
-    get_slider2_coordinates(x1,y1,x2,y2);
-}
-#endif
-
-#if 0
-static void get_dontbypass_button_coordinates(int &x1, int &y1, int &x2, int &y2){
-  get_makesound_button_coordinates(x1,y1,x2,y2);
-  y1 = y2;
-  y2 = y1+button_height;
-}
-#endif
 
 static void get_volume_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
@@ -264,11 +235,13 @@ int CHIP_get_eport_x(Chip *chip){
 }
 
 static int get_eport_x1(Chip *chip){
-  return CHIP_get_eport_x(chip)-port_width/2;
+  return chip->x();
+  //return CHIP_get_eport_x(chip)-port_width/2;
 }
 
 static int get_eport_x2(Chip *chip){
-  return CHIP_get_eport_x(chip) + port_width/2;
+  return chip->x() + chip_width;
+  //return CHIP_get_eport_x(chip) + port_width/2;
 }
 
 int CHIP_get_input_eport_y(Chip *chip){
@@ -280,19 +253,23 @@ int CHIP_get_output_eport_y(Chip *chip){
 }
 
 static int get_input_eport_y1(Chip *chip){
-  return CHIP_get_input_eport_y(chip)-port_height/2;
+  return chip->y();
+  //return CHIP_get_input_eport_y(chip)-port_height/2;
 }
 
 static int get_input_eport_y2(Chip *chip){
-  return CHIP_get_input_eport_y(chip)+port_height/2;
+  return chip->y() + chip_box_y1;
+  //return CHIP_get_input_eport_y(chip)+port_height/2;
 }
 
 static int get_output_eport_y1(Chip *chip){
-  return CHIP_get_output_eport_y(chip)-port_height/2;
+  return chip->y() + chip_box_y2;
+  //return CHIP_get_output_eport_y(chip)-port_height/2;
 }
 
 static int get_output_eport_y2(Chip *chip){
-  return CHIP_get_output_eport_y(chip)+port_height/2;
+  return chip->y() + grid_height;
+  //return CHIP_get_output_eport_y(chip)+port_height/2;
 }
 
 bool CHIP_is_at_input_eport(Chip *chip, int x, int y){
@@ -754,13 +731,13 @@ Chip::~Chip(){
 
 QRectF Chip::boundingRect() const
 {
-  return QRectF(0, 0, chip_width, get_chip_visible_height());
+  return QRectF(0, 0, chip_width, chip_box_y2);
 }
 
 QPainterPath Chip::shape() const
 {
   QPainterPath path;
-  path.addRect(0, 0, chip_width, get_chip_visible_height());
+  path.addRect(0, 0, chip_width, chip_box_y2);
   return path;
 }
 
