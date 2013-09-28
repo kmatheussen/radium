@@ -50,7 +50,8 @@ bool GFXS_EnsureBoundaries(
 		return false;
 	}
 	if(y2>=window->height){
-		RError("Error. y2>=window->height: %d>=%d in function %s.\n",y2,window->height,type);
+          //RError("Error. y2>=window->height: %d>=%d in function %s.\n",y2,window->height,type);
+          fprintf(stderr, "Error. y2>=window->height: %d>=%d in function %s.\n",y2,window->height,type);
 		return false;
 	}
 	if(y>=window->height){
