@@ -104,7 +104,7 @@ static const int bottom_border = 2;
 //static const int chip_width = 120;
 //static const int slider_height = 15;
 
-static const int name_height = 17;
+static const int name_height = 14;
 static const int button_width = 13;//name_height/2;
 static const int button_height = 13;//name_height/2;
 
@@ -115,7 +115,7 @@ static const int button_height = 13;//name_height/2;
 static int chip_box_x1 = port_width;
 static int chip_box_x2 = chip_width - port_width;
 static int chip_box_y1 = port_height;
-static int chip_box_y2 = chip_height-(port_height*2);
+static int chip_box_y2 = chip_height-port_height;
 
 static void get_coordinates(int &x1, int &y1, int &x2, int &y2){
   x1=chip_box_x1;
@@ -245,11 +245,17 @@ static int get_eport_x2(Chip *chip){
 }
 
 int CHIP_get_input_eport_y(Chip *chip){
-  return chip->y() - port_height/2;
+  int x1,y1,x2,y2;
+  get_slider1_coordinates(x1,y1,x2,y2);
+  return chip->y() + (y1+y2)/2;
+  //return chip->y() + chip_box_y1;
 }
 
 int CHIP_get_output_eport_y(Chip *chip){
-  return chip->y() + chip_height - port_height/2;
+  int x1,y1,x2,y2;
+  get_name_coordinates(x1,y1,x2,y2);
+  return chip->y() + (y1+y2)/2;
+  //  return chip->y() + chip_box_y2;
 }
 
 static int get_input_eport_y1(Chip *chip){
@@ -263,8 +269,10 @@ static int get_input_eport_y2(Chip *chip){
 }
 
 static int get_output_eport_y1(Chip *chip){
-  return chip->y() + chip_box_y2;
-  //return CHIP_get_output_eport_y(chip)-port_height/2;
+  int x1,y1,x2,y2;
+  get_name_coordinates(x1,y1,x2,y2);
+
+  return chip->y() + y1;
 }
 
 static int get_output_eport_y2(Chip *chip){
@@ -273,10 +281,6 @@ static int get_output_eport_y2(Chip *chip){
 }
 
 bool CHIP_is_at_input_eport(Chip *chip, int x, int y){
-  printf("x/y: %d/%d. x1/y1: %d/%d. x2/y2: %d/%d\n",x,y,
-         get_eport_x1(chip),get_input_eport_y1(chip),
-         get_eport_x2(chip),get_input_eport_y2(chip));
-
   return (x >= get_eport_x1(chip))
     && (x < get_eport_x2(chip))
     && (y >= get_input_eport_y1(chip))
@@ -284,6 +288,10 @@ bool CHIP_is_at_input_eport(Chip *chip, int x, int y){
 }
 
 bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
+  printf("x/y: %d/%d. x1/y1: %d/%d. x2/y2: %d/%d\n",x,y,
+         get_eport_x1(chip),get_output_eport_y1(chip),
+         get_eport_x2(chip),get_output_eport_y2(chip));
+
   return (x >= get_eport_x1(chip))
     && (x < get_eport_x2(chip))
     && (y >= get_output_eport_y1(chip))
@@ -731,13 +739,13 @@ Chip::~Chip(){
 
 QRectF Chip::boundingRect() const
 {
-  return QRectF(0, 0, chip_width, chip_box_y2);
+  return QRectF(0, 0, chip_width, chip_height);
 }
 
 QPainterPath Chip::shape() const
 {
   QPainterPath path;
-  path.addRect(0, 0, chip_width, chip_box_y2);
+  path.addRect(0, 0, chip_width, chip_height);
   return path;
 }
 
@@ -889,10 +897,10 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       float s = width/textlen;
       painter->save();
       painter->scale(s,1.0);
-      painter->drawText(x1/s, y1+2, width/s, y2-y1, Qt::AlignLeft, text);
+      painter->drawText(x1/s, y1, width/s, y2-y1, Qt::AlignLeft, text);
       painter->restore();
     }else{
-      painter->drawText(x1, y1+2, width, y2-y1, Qt::AlignLeft, text);
+      painter->drawText(x1, y1, width, y2-y1, Qt::AlignLeft, text);
     }
 
     // checbuttons.

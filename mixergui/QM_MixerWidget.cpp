@@ -374,7 +374,7 @@ static void move_chip_to_slot(Chip *chip, float x, float y){
   float x1,x2,y1,y2;
 
   get_slot_coordinates(get_slot_x(x), get_slot_y(y), x1,y1,x2,y2);
-  chip->setPos(x1,y1+grid_border);
+  chip->setPos(x1,y1);
 }
 
 static Connection *find_clean_connection_at(MyScene *scene, float x, float y);
@@ -813,25 +813,22 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   float mouse_x = pos.x();
   float mouse_y = pos.y();
 
-  if(_current_connection!=NULL){
+  Chip *chip = MW_get_chip_at(mouse_x, mouse_y, NULL);
 
-    Chip *chip = get_chip_with_port_at(this,mouse_x,mouse_y);
+  if(_current_connection!=NULL){
 
     if(chip!=NULL){ // TODO: Must check if the connection is already made.
 
-      if(_current_from_chip != NULL){
+      if(_current_from_chip != NULL && chip != _current_from_chip){
 
-        if(CHIP_is_at_input_port(chip, mouse_x, mouse_y)){
-          Undo_MixerConnections_CurrPos();
-          CHIP_connect_chips(this, _current_from_chip, chip);
-        }
+        Undo_MixerConnections_CurrPos();
+        CHIP_connect_chips(this, _current_from_chip, chip);
 
-      }else if(_current_to_chip != NULL){
+      }else if(_current_to_chip != NULL && chip != _current_to_chip){
 
-        if(CHIP_is_at_output_port(chip, mouse_x, mouse_y)){
-          Undo_MixerConnections_CurrPos();
-          CHIP_connect_chips(this, chip, _current_to_chip);
-        }
+        Undo_MixerConnections_CurrPos();
+        CHIP_connect_chips(this, chip, _current_to_chip);
+
       }
     }
 
@@ -845,25 +842,17 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
   }else if(_current_econnection!=NULL){
 
-    Chip *chip = get_chip_with_port_at(this,mouse_x,mouse_y);
-
     if(chip!=NULL){ // TODO: Must check if the connection is already made.
 
-      if(_ecurrent_from_chip != NULL){
+      if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){
 
-        if(CHIP_is_at_input_eport(chip, mouse_x, mouse_y)){
-          Undo_MixerConnections_CurrPos();
-          printf("************ Connecting two chips 1\n");
-          CHIP_econnect_chips(this, _ecurrent_from_chip, chip);
-        }
+        Undo_MixerConnections_CurrPos();
+        CHIP_econnect_chips(this, _ecurrent_from_chip, chip);
 
-      }else if(_ecurrent_to_chip != NULL){
+      }else if(_ecurrent_to_chip != NULL && chip != _ecurrent_to_chip){
 
-        if(CHIP_is_at_output_eport(chip, mouse_x, mouse_y)){
-          Undo_MixerConnections_CurrPos();
-          printf("***************** Connecting two chips 2\n");
-          CHIP_econnect_chips(this, chip, _ecurrent_to_chip);
-        }
+        Undo_MixerConnections_CurrPos();
+        CHIP_econnect_chips(this, chip, _ecurrent_to_chip);
 
       }
     }
