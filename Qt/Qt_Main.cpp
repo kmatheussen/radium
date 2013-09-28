@@ -237,7 +237,7 @@ void Ptask2Mtask(void){
 class CalledPeriodically : public QTimer{
 public:
   CalledPeriodically(){
-    setInterval(20);
+    setInterval(10);
     start();
   }
 protected:

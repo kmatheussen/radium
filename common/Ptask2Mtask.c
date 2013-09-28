@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_updown_proc.h"
 #include "list_proc.h"
 #include "common_proc.h"
+#include "time_proc.h"
 #include "blocklist_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "gfx_proc.h"
@@ -49,6 +50,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 extern struct Root *root;
+
+//static int 
+static STime last_time = 0;
+struct WBlocks *last_wblock = NULL;
+
+int lines_per_second = 10;
 
 
 void P2MUpdateSongPosCallBack(void){
@@ -66,9 +73,8 @@ void P2MUpdateSongPosCallBack(void){
                   DO_GFX({
 			wblock=ListFindElement1(&window->wblocks->l,curr_block);
 			till_curr_realline=wblock->till_curr_realline;
-
+                        
 			if(window->curr_block!=curr_block){
-				debug("change block\n");
 				if(setfirstpos){
 					wblock->curr_realline=0;
 					SetWBlock_Top_And_Bot_Realline(window,wblock);
@@ -84,13 +90,46 @@ void P2MUpdateSongPosCallBack(void){
 			}
 
 			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
+#if 0
                         if(wblock->curr_realline != till_curr_realline)
                           ScrollEditorToRealLine(window,wblock,till_curr_realline);
+#else
+                        {
+                          bool do_scrolling = false;
+
+                          if(wblock != last_wblock)
+                            do_scrolling = true;
+                          
+                          else if (last_time > pc->therealtime)
+                            do_scrolling = true;
+                          
+                          else if(till_curr_realline < wblock->curr_realline)
+                            do_scrolling = true;
+                          
+                          else if(till_curr_realline > wblock->curr_realline){
+                            STime from_time = (STime) ((double)Place2STime(wblock->block, &wblock->reallines[wblock->curr_realline]->l.p) / wblock->block->reltempo);
+                            STime to_time   = (STime) ((double)Place2STime(wblock->block, &wblock->reallines[till_curr_realline]->l.p) / wblock->block->reltempo);
+                            
+                            STime time = to_time - from_time;
+                            
+                            STime time_necessary_to_scroll = pc->pfreq / lines_per_second;
+                            
+                            if(time>=time_necessary_to_scroll)
+                              do_scrolling = true;
+                          }
+
+                          if(do_scrolling==true) {
+                            ScrollEditorToRealLine(window,wblock,till_curr_realline);
+                            last_time = pc->therealtime;
+                            last_wblock = wblock;
+                          }
+                        }
+#endif
 
                     });
-		}
+        }
 		window=NextWindow(window);
-	}
+}
 
 	root->setfirstpos=false;
 

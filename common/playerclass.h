@@ -92,7 +92,7 @@ typedef struct{
         STime start_time; // During current call to peq->treatMe
         STime end_time;   // During current call to peq->treatMe
 
-	STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock.
+	STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 
 #include "../Qt/Qt_MyQButton.h"
+#include "../Qt/Qt_MyQSpinBox.h"
 #include <QTimer>
 
 #include "FocusSniffers.h"
@@ -42,6 +43,7 @@ struct Patch *g_system_out_patch = NULL;
 
 extern bool drunk_velocity;
 extern float g_cpu_usage;
+extern int lines_per_second;
 
 class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Q_OBJECT
@@ -74,6 +76,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     min_velocity_slider->setValue(4000);
     velocity_slider->setValue(8000);
     update_velocity_sliders();
+    lps->setValue(lines_per_second);
 
     // Adjust cpu label width
     {
@@ -135,6 +138,10 @@ public slots:
 
   void on_octave_down_button_pressed(){
     incKeyAdd(-12);
+  }
+
+  void on_lps_valueChanged(int val){
+    lines_per_second = val;
   }
 
   void on_drunk_velocity_onoff_toggled(bool val){
