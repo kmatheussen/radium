@@ -84,6 +84,11 @@ typedef int32_t NInt;
 //#define LATENCY (PFREQ/200)
 #define LATENCY 0 // Dont need this when the player is called from the jack thread.
 
+
+// Must be a multiply of 64 because of pd, which uses a block size of 64. 64 seems to work fine.
+#define RADIUM_BLOCKSIZE 64
+
+
 #define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
 

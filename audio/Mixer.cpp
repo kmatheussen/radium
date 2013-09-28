@@ -225,9 +225,6 @@ static void init_player_lock(){
   LOCK_INITIALIZE(player_lock);
 }
 
-// Must be a multiply of 64 because of pd, which uses a block size of 64. 64 seems to work fine.
-#define RADIUM_BLOCKSIZE 64
-
 int jackblock_size = 0;
 jack_time_t jackblock_delta_time = 0;
 
