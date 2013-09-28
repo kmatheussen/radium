@@ -81,7 +81,7 @@ static const int grid_width = chip_width;
 static const int grid_border = 5;
 static const int grid_height = chip_height;
 static const int port_width = chip_width/8;
-static const int port_height = 0;//chip_height/8;
+static const int port_height = 2;//chip_height/8;
 
 class MyScene : public QGraphicsScene{
   Q_OBJECT

@@ -239,8 +239,10 @@ static int get_eport_x1(Chip *chip){
   //return CHIP_get_eport_x(chip)-port_width/2;
 }
 
-static int get_eport_x2(Chip *chip){
-  return chip->x() + chip_width;
+static int get_eport_x2(Chip *chip){ 
+  int x1,y1,x2,y2;
+  get_effects_onoff_coordinates(x1,y1,x2,y2);
+  return chip->x() + x1;
   //return CHIP_get_eport_x(chip) + port_width/2;
 }
 
