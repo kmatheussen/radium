@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFile>
 #include <QTextStream>
 #include <QTime>
+#include <QTextEdit>
+#include <QLabel>
+#include <QLayout>
 
 #if defined(CRASHREPORTER_BIN)
 #include <QNetworkRequest>
@@ -158,6 +161,38 @@ int main(int argc, char **argv){
                                    );
             box.setDetailedText(tosend);
 
+            QLabel space(" ");
+            box.layout()->addWidget(&space);
+
+            QLabel text_edit_label("\n\n"
+                                   "Please also include additional information below.\n"
+                                   "\n"
+                                   "The best type of help you "
+                                   "can give is to write "
+                                   "down\na step by step "
+                                   "recipe in the following "
+                                   "format:"
+                                   "\n\n"
+                                   "1. Start Radium\n"
+                                   "2. Move the cursor to track 3.\n"
+                                   "3. Press the Q button.\n"
+                                   "4. Radium crashes\n"
+                                   "\n"
+                                   );
+
+            //text_edit.setMinimumWidth(1000000);
+            //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
+            box.layout()->addWidget(&text_edit_label);
+
+            QLabel space2(" ");
+            box.layout()->addWidget(&space2);
+
+            QTextEdit text_edit;
+            text_edit.setText("<Please add recipe and/or email address here>");
+            //text_edit.setMinimumWidth(1000000);
+            //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
+            box.layout()->addWidget(&text_edit);
+
             box.show();
 
             box.activateWindow();
@@ -179,8 +214,10 @@ int main(int argc, char **argv){
               QByteArray data;
               QUrl params;
               params.addQueryItem("data", tosend);
-              data.append(params.toString());
+              data.append(params.toString().toAscii(),params.toString().length()-1);
               data.remove(0,1);
+              data.append("\n");
+              data.append(text_edit.toPlainText());
 
               QNetworkAccessManager nam;
               QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
