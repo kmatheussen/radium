@@ -37,6 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "disk_song_proc.h"
 
+extern hash_t *COMMENT_get_state(void);
+extern void COMMENT_reset(void);
+extern void COMMENT_set_state(hash_t *state);
 
 void SaveSong(struct Song *song){
 DC_start("SONG");
@@ -45,6 +48,10 @@ DC_start("SONG");
 	DC_SSI("length",song->length);
 	DC_SSS("songname",song->songname);
 	DC_SSN("maxtracks",song->maxtracks);
+
+        DC_start("COMMENT");{
+          HASH_save(COMMENT_get_state(), dc.file);
+        }DC_end();
 
 	SaveWindow(song->tracker_windows);
 	SaveBlock(song->blocks);
@@ -55,7 +62,7 @@ DC_start("SONG");
 
         // Patchdata for audio patches are saved here, not in disk_patches.
         DC_start("MIXERWIDGET");{
-          HASH_save(MW_get_state(),dc.file);
+          HASH_save(MW_get_state(), dc.file);
           //HASH_save(create_instrument_widget_order_state(),dc.file);
         }DC_end();
 
@@ -63,12 +70,13 @@ DC_end();
 }
 
 struct Song *LoadSong(void){
-	static char *objs[5]={
+	static char *objs[6]={
 		"TRACKER_WINDOW",
 		"BLOCK",
 		"PLAYLIST",
 		"INSTRUMENT",
-                "MIXERWIDGET"
+                "MIXERWIDGET",
+                "COMMENT"
 	};
 	static char *vars[4]={
 		"num_blocks",
@@ -81,7 +89,9 @@ struct Song *LoadSong(void){
         VECTOR_clean(&get_MIDI_instrument()->patches);
         VECTOR_clean(&get_audio_instrument()->patches);
 
-	GENERAL_LOAD(5,4)
+        COMMENT_reset();
+
+	GENERAL_LOAD(6,4)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -99,8 +109,14 @@ obj3:
 obj4:
         song->mixerwidget_state = HASH_load(dc.file);
         //song->instrument_widget_order_state = HASH_load(dc.file);
+        DC_fgets();
         goto start;
-        
+
+obj5:
+        COMMENT_set_state(HASH_load(dc.file));
+        DC_fgets();
+        goto start;
+
 var0:
 	song->num_blocks=DC_LoadI();
 	goto start;
@@ -130,7 +146,6 @@ var16:
 var17:
 var18:
 
-obj5:
 obj6:
 
 error:

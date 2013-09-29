@@ -198,7 +198,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_MainWindow.o GTK_ReqType.o GTK_PopupMenu.o  Qt_soundfilesaver_widget_callbacks.o Qt_Semaphores.o
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_MainWindow.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog_callbacks.o Qt_Semaphores.o
 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
@@ -1057,6 +1057,13 @@ Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesave
 $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
 	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
 	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
+
+Qt_comment_dialog_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.cpp $(P)Qt_comment_dialog.h
+	$(CCC) $(P)Qt_comment_dialog_callbacks.cpp $(QTOPT)
+
+$(P)Qt_comment_dialog.h: $(BUILD_DEPENDENCIES) $(P)qt4_comment_dialog.ui $(P)Qt_comment_dialog_callbacks.cpp
+	cd $(P) && $(UIC) qt4_comment_dialog.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_comment_dialog.h
+	cd $(P) && $(MOC) Qt_comment_dialog_callbacks.cpp >mQt_comment_dialog_callbacks.cpp
 
 Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)mQt_PluginWidget.cpp $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)

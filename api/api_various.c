@@ -283,6 +283,11 @@ void saveSoundfile(void){
   SOUNDFILESAVERGUI_open();
 }
 
+extern void COMMENTDIALOG_open(void);
+void openCommentDialog(void){
+  COMMENTDIALOG_open();
+}
+
 void saveAs(void){
   SaveAs(root);
 }

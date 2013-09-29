@@ -49,6 +49,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "disk_load_proc.h"
 
+void COMMENTDIALOG_open(void);
+bool COMMENT_show_after_loading(void);
+
 
 extern struct Root *root;
 
@@ -149,7 +152,8 @@ static bool Load(const char *filename){
 
 	DLoadRoot(newroot);
 
-
+        if(COMMENT_show_after_loading())
+          COMMENTDIALOG_open();
 
 #ifdef _AMIGA
 	currpatch=-1;
