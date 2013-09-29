@@ -316,6 +316,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void RT_play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
+  //printf("RT_play_note. %d %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
   libpds_noteon(pd, 0, note_num, volume*127);
 }
 
@@ -512,9 +513,9 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1);
+    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
   else
-    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, velocity, NULL, -1);
+    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, 0, NULL, -1);
 
   //printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
