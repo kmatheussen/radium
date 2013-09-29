@@ -34,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
 
+#include "fade_envelopes.h"
+
+
 #if 0
 faust conversions:
 db2linear(x)	= pow(10, x/20.0);
@@ -101,6 +104,7 @@ static float iec_scale(float db) {
 struct SoundProducerLink : public DoublyLinkedList{
   SoundProducer *sound_producer;
   int sound_producer_ch;
+  int fade_pos;
   enum {NO_STATE, FADING_IN, STABLE, FADING_OUT} state;
 };
 
@@ -197,41 +201,18 @@ static void RT_apply_dry_wet(float **dry, int num_dry_channels, float **wet, int
   }
 }
 
-#if 1
-static void RT_fade_in(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
+static void RT_fade_in2(float *sound, int pos, int num_frames){
   for(int i=0;i<num_frames;i++)
-    sound[i] *= (i+1.0f)/num_frames_plus_1;
+    sound[i] *= fade_in_envelope[i+pos];
 }
 
-#else
 
-// not correct
-static void RT_fade_in(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
-
-  float val = 1.0f/num_frames_plus_1;
-  float inc = val - ( (num_frames-1) / num_frames_plus_1);
-
-  for(int i=0;i<num_frames;i++){
-    sound[i] *= val;
-    val += inc;
-  }
+static void RT_fade_out2(float *sound, int pos, int num_frames){
+  for(int i=0;i<num_frames;i++)
+    sound[i] *= fade_out_envelope[i+pos];
 }
-#endif
 
 
-static void RT_fade_out(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
-  int i;
-  float val = (num_frames / num_frames_plus_1);
-  float inc = val - ( (num_frames-1) / num_frames_plus_1);
-
-  for(i=0;i<num_frames;i++){
-    sound[i] *= val;
-    val -= inc;
-  }
-}
 
 static RSemaphore *signal_from_RT = NULL;
 
@@ -386,6 +367,7 @@ struct SoundProducer : DoublyLinkedList{
     SoundProducerLink *link = new SoundProducerLink(); // created here
     link->sound_producer    = sound_producer;
     link->sound_producer_ch = sound_producer_ch;
+    link->fade_pos          = 0;
     link->state = SoundProducerLink::FADING_IN;
 
     PLAYER_lock();{
@@ -405,8 +387,12 @@ struct SoundProducer : DoublyLinkedList{
       //fprintf(stderr,"link: %p. link channel: %d\n",link,link->sound_producer_ch);
       if(link->sound_producer==sound_producer && link->sound_producer_ch==sound_producer_ch){
 
+        while(link->state == SoundProducerLink::FADING_IN)
+          usleep(3000);
+
         PLAYER_lock();{
-          link->state = SoundProducerLink::FADING_OUT;
+          link->fade_pos = 0;
+          link->state    = SoundProducerLink::FADING_OUT;
         }PLAYER_unlock();
 
         RSEMAPHORE_wait(signal_from_RT,1);
@@ -437,18 +423,18 @@ struct SoundProducer : DoublyLinkedList{
   }
 
   // fade in 'input'
-  void RT_crossfade_in(float *input, float *output, int num_frames){
-    RT_fade_in(input, num_frames);
-    RT_fade_out(output, num_frames);
+  void RT_crossfade_in2(float *input, float *output, int fade_pos, int num_frames){
+    RT_fade_in2(input, fade_pos, num_frames);
+    RT_fade_out2(output, fade_pos, num_frames);
           
     for(int i=0;i<num_frames;i++)
       output[i] += input[i];
   }
 
   // fade out 'input'
-  void RT_crossfade_out(float *input, float *output, int num_frames){
-    RT_fade_out(input, num_frames);
-    RT_fade_in(output, num_frames);
+  void RT_crossfade_out2(float *input, float *output, int fade_pos, int num_frames){
+    RT_fade_out2(input, fade_pos, num_frames);
+    RT_fade_in2(output, fade_pos, num_frames);
           
     for(int i=0;i<num_frames;i++)
       output[i] += input[i];
@@ -493,27 +479,35 @@ struct SoundProducer : DoublyLinkedList{
           RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames);
           
           for(int ch=0;ch<num_channels;ch++)
-            RT_crossfade_in(s[ch], sound[ch], num_frames);
-          
-          filter->was_off=false;
+            RT_crossfade_in2(s[ch], sound[ch], filter->fade_pos, num_frames);
+
+          filter->fade_pos += num_frames;
+          if(filter->fade_pos==FADE_LEN){
+            filter->was_off=false;
+            filter->fade_pos = 0;
+            filter->was_on=true;
+          }
           
         }else{
           
-          RT_apply_system_filter_apply(filter,sound,sound,num_channels,num_frames);
-          
+          RT_apply_system_filter_apply(filter,sound,sound,num_channels,num_frames);      
+          filter->was_on=true;   
         }
-        
-        filter->was_on=true;
+       
         
       }else if(filter->was_on==true){ // fade out.
         
         RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames);
         
         for(int ch=0;ch<num_channels;ch++)
-          RT_crossfade_out(s[ch], sound[ch], num_frames);
-        
-        filter->was_on=false;
-        filter->was_off=true;
+          RT_crossfade_out2(s[ch], sound[ch], filter->fade_pos, num_frames);
+                
+        filter->fade_pos += num_frames;
+        if(filter->fade_pos==FADE_LEN){
+          filter->was_on=false;
+          filter->was_off=true;
+          filter->fade_pos = 0;
+        }
       }
 
     }
@@ -541,26 +535,33 @@ struct SoundProducer : DoublyLinkedList{
         SoundProducer *source_sound_producer = link->sound_producer;
         SoundPlugin *source_plugin = source_sound_producer->_plugin;
 
-        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->sound_producer_ch);
-
         float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
+
+        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->sound_producer_ch);
 
         // fade in
         if(link->state==SoundProducerLink::FADING_IN){
           memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
-          RT_fade_in(fade_sound, num_frames);
+          RT_fade_in2(fade_sound, link->fade_pos, num_frames);
           input_producer_sound = &fade_sound[0];
-          link->state=SoundProducerLink::STABLE;
+
+          link->fade_pos += num_frames;
+          if(link->fade_pos==FADE_LEN)
+            link->state=SoundProducerLink::STABLE;
         }
 
         // fade out
         else if(link->state==SoundProducerLink::FADING_OUT){
           memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
-          RT_fade_out(fade_sound, num_frames);
+          RT_fade_out2(fade_sound, link->fade_pos, num_frames);
           input_producer_sound = &fade_sound[0];
-          _input_producers[ch].remove(link);
-          RSEMAPHORE_signal(signal_from_RT,1);
-          MIXER_RT_set_bus_descendand_type_for_all_plugins();
+
+          link->fade_pos += num_frames;
+          if(link->fade_pos==FADE_LEN){
+            _input_producers[ch].remove(link);
+            RSEMAPHORE_signal(signal_from_RT,1);
+            MIXER_RT_set_bus_descendand_type_for_all_plugins();
+          }
         }
 
         // Apply volume and mix
@@ -572,7 +573,7 @@ struct SoundProducer : DoublyLinkedList{
 
 
     bool is_a_generator = _num_inputs==0;
-    bool do_bypass      = _plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.end_value==0.0f;
+    bool do_bypass      = _plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
 
 
     if(is_a_generator)
@@ -717,10 +718,16 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
     STD_VECTOR_APPEND(links_to_delete, links_to_delete_here);
   }
 
+  // Wait until all links are finished fading in.
+  for(unsigned int i=0;i<links_to_delete.size();i++)
+    while(links_to_delete.at(i)->state == SoundProducerLink::FADING_IN)
+      usleep(3000);
+
   // Change state
   PLAYER_lock();{
     for(unsigned int i=0;i<links_to_delete.size();i++){
       links_to_delete.at(i)->state = SoundProducerLink::FADING_OUT;
+      links_to_delete.at(i)->fade_pos = 0;      
     }
   }PLAYER_unlock();
 

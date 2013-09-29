@@ -17,15 +17,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef AUDIO_SMOOTH_PROC_H
 #define AUDIO_SMOOTH_PROC_H
 
+// Must be a multiple of RADIUM_BLOCKSIZE
+#define SMOOTH_LENGTH 1024
+
 typedef struct{
   float* values;
 
-  volatile float target_value;
+  volatile float next_target_value;
+  float target_value;
+  float value;
 
-  float start_value;
-  float end_value;
-
-  int num_values;
+  int num_values; // same as RADIUM_BLOCKSIZE. (i.e. 64)
+  int pos; // between 0 and SMOOTH_LENGTH (in intervals of 64)
 
   bool smoothing_is_necessary;
 } Smooth;

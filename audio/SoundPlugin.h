@@ -210,6 +210,7 @@ typedef struct SystemFilter{
   bool is_on;
   bool was_on;
   bool was_off;
+  int fade_pos;
 } SystemFilter;
 
 enum BusDescendantType{

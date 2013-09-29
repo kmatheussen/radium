@@ -1489,7 +1489,7 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp
+SoundProducer.o: audio/SoundProducer.cpp audio/fade_envelopes.h
 	$(CCC) audio/SoundProducer.cpp $(CPPOPT) $(CPUOPT)  $(CPUOPT)
 
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
@@ -1516,7 +1516,7 @@ SoundFonts.o: audio/SoundFonts.cpp
 audio_instrument.o: audio/audio_instrument.c
 	$(CC) audio/audio_instrument.c $(OPT)
 
-Smooth.o: audio/Smooth.c
+Smooth.o: audio/Smooth.c audio/Smooth_proc.h
 	$(CC) audio/Smooth.c $(OPT) $(CPUOPT)
 
 undo_audio_effect.o: audio/undo_audio_effect.c

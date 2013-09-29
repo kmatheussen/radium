@@ -7,9 +7,9 @@
 
 void SMOOTH_init(Smooth *smooth, float value, int blocksize){
 
+  smooth->next_target_value = value;
   smooth->target_value = value;
-  smooth->start_value = value;
-  smooth->end_value = value;
+  smooth->value = value;
 
   smooth->num_values = blocksize;
   smooth->values = malloc(sizeof(float)*blocksize);
@@ -29,56 +29,52 @@ void SMOOTH_release(Smooth *smooth){
 
 static bool is_smoothing_necessary(Smooth *smooth){
   return smooth->smoothing_is_necessary;
-#if 0
-  if(smooth->last_target_value==smooth->target_value)
-    return false;
-  else
-    return true;
-#endif
-
-#if 0
-  else if(fabsf(smooth->end_value - smooth->start_value)<0.0005){
-    smooth->get = smooth->set;
-    return false;
-  }else
-    return true;
-#endif
 }
 
 // Can be called at any time
 void SMOOTH_set_target_value(Smooth *smooth, float value){
-  smooth->target_value = value;
+  smooth->next_target_value = value;
 }
 
 float SMOOTH_get_target_value(Smooth *smooth){
-  return smooth->target_value;
+  return smooth->next_target_value;
 }
 
 // Must be called before processing a new block.
 void SMOOTH_called_per_block(Smooth *smooth){
   int num_values = smooth->num_values;
 
-  float target_value = smooth->target_value; // Only one read. smooth->target_value can be written at any time from any thread.
+  float next_target_value = smooth->next_target_value; // Only one read. smooth->next_target_value can be written at any time from any thread.
 
-  if(smooth->end_value == target_value){
-    smooth->start_value = smooth->end_value;
-    smooth->smoothing_is_necessary = false;
-    int i;
-    for(i=0;i<num_values;i++)
-      smooth->values[i] = target_value;
-  }else{
+  if(smooth->value == next_target_value && smooth->pos==0){
+
+    if(smooth->smoothing_is_necessary==true){
+      int i;
+      for(i=0;i<num_values;i++) // shouldn't be necessary.
+        smooth->values[i] = next_target_value;
+
+      smooth->smoothing_is_necessary = false;
+    }
+
+  }else{    
     smooth->smoothing_is_necessary = true;
 
-    smooth->start_value = smooth->end_value;
-    smooth->end_value = target_value;
+    //printf("pos: %d, start: %f, current_target: %f, target: %f\n",smooth->pos,smooth->start_value,smooth->current_target_value,target_value);
 
-    float val = smooth->start_value;
-    float inc = (smooth->end_value - smooth->start_value) / num_values;
+    if(smooth->pos==0)
+      smooth->target_value = next_target_value;
+
     int i;
-    
     for(i=0;i<num_values;i++){
-      smooth->values[i] = val;
-      val += inc;
+      smooth->values[i] = scale(smooth->pos + i,
+                                0, SMOOTH_LENGTH,
+                                smooth->value, smooth->target_value);
+    }
+    
+    smooth->pos += num_values;
+    if(smooth->pos==SMOOTH_LENGTH){
+      smooth->value = smooth->target_value;
+      smooth->pos = 0;
     }
   }
 }
@@ -93,7 +89,7 @@ void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames){
       sound[i] *= values[i];
     }
   }else{
-    float volume = smooth->end_value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
+    float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
     if(volume != 1.0f)
       for(i=0;i<num_frames;i++)
         sound[i] *= volume;
@@ -110,7 +106,7 @@ void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
       dst[i] = src[i] * values[i];
     }
   }else{
-    float volume = smooth->end_value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
+    float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
     if(volume > 0.0f)
       for(i=0;i<num_frames;i++)
         dst[i] = src[i] * volume;
@@ -126,7 +122,7 @@ void SMOOTH_apply_volume_using_inverted_values(Smooth *smooth, float *sound, int
     for(i=0;i<num_frames;i++)
       sound[i] *= (1.0f-values[i]);
   }else{
-    float volume = 1.0f - smooth->end_value; // might be a click here if target_value is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
+    float volume = 1.0f - smooth->value; // might be a click here if target_value is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
     if(volume != 1.0f)
       for(i=0;i<num_frames;i++)
         sound[i] *= volume;
@@ -163,7 +159,7 @@ void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_fra
       target[i] += source[i] * values[i];
   }else{
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
-    float volume = smooth->end_value;
+    float volume = smooth->value;
     if(volume == 1.0f)
       for(i=0;i<num_frames;i++)
         target[i] += source[i];
@@ -181,7 +177,7 @@ void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, floa
       target[i] += source[i] * (1.0f-values[i]);
   }else{
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
-    float volume = (1.0f-smooth->end_value);
+    float volume = (1.0f-smooth->value);
     if(volume == 1.0f)
       for(i=0;i<num_frames;i++)
         target[i] += source[i];
@@ -268,11 +264,11 @@ void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_f
 
     } else {
 
-      if(smooth->end_value!=0.5f){
-        Panvals pan = get_pan_vals_vector(scale(smooth->end_value,0,1,-1,1), 2);
+      if(smooth->value!=0.5f){
+        Panvals pan = get_pan_vals_vector(scale(smooth->value,0,1,-1,1), 2);
 
 #if 1
-        if(smooth->end_value < 0.5f){
+        if(smooth->value < 0.5f){
 
           for(i=0;i<num_frames;i++)
             sound0[i] += sound1[i]*pan.vals[1][0];
