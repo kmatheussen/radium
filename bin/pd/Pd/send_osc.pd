@@ -1,0 +1,24 @@
+#N canvas 665 597 524 275 8;
+#X obj 9 112 packOSC;
+#X obj 9 151 udpsend;
+#X obj 9 186 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1 1
+;
+#X obj 278 102 loadbang;
+#X msg 277 132 connect 127.0.0.1 5214;
+#X msg 9 72 send /float \$1;
+#X msg 151 73 send /int \$1;
+#X msg 280 73 send /bool \$1;
+#X obj 9 11 r_float float -5 0 5;
+#X obj 151 12 r_int int -5 0 5;
+#X obj 280 13 r_bool bool 1;
+#X text 42 182 <-- Connected;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 3 0 4 0;
+#X connect 4 0 1 0;
+#X connect 5 0 0 0;
+#X connect 6 0 0 0;
+#X connect 7 0 0 0;
+#X connect 8 0 5 0;
+#X connect 9 0 6 0;
+#X connect 10 0 7 0;

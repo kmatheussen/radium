@@ -1,0 +1,14 @@
+#N canvas 617 469 792 454 8;
+#X obj -10 210 r_float float -5 0 5;
+#X obj 132 211 r_int int -5 0 5;
+#X obj 261 212 r_bool bool 1;
+#X obj -7 34 udpreceive 5214;
+#X obj -7 81 routeOSC /float /int /bool;
+#X obj 366 213 print unmatched;
+#X obj -7 57 unpackOSC;
+#X connect 3 0 6 0;
+#X connect 4 0 0 0;
+#X connect 4 1 1 0;
+#X connect 4 2 2 0;
+#X connect 4 3 5 0;
+#X connect 6 0 4 0;
