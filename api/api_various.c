@@ -288,6 +288,10 @@ void openCommentDialog(void){
   COMMENTDIALOG_open();
 }
 
+char *getProgramPath(void){
+  return (char*)OS_get_program_path();
+}
+
 void saveAs(void){
   SaveAs(root);
 }
