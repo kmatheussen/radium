@@ -878,7 +878,10 @@ static void add_plugin(const char *name, const char *filename) {
   plugin_type->data                = (void*)strdup(filename);
 
   //PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
-  PR_add_plugin_type(plugin_type);
+  if(!strcmp(name,""))
+    PR_add_plugin_type_no_menu(plugin_type);
+  else
+    PR_add_plugin_type(plugin_type);
 }
 
 static void build_plugins(QDir dir){
@@ -908,8 +911,11 @@ static void build_plugins(QDir dir){
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
       printf("   file: -%s-\n",fileInfo.absoluteFilePath().ascii());
-      if(fileInfo.suffix()=="pd")
+      if(fileInfo.suffix()=="pd") {
+        if(fileInfo.baseName()==QString("New"))
+          add_plugin("", fileInfo.absoluteFilePath().ascii());
         add_plugin(fileInfo.baseName().replace("_"," ").ascii(), fileInfo.absoluteFilePath().ascii());
+      }
     }
   }
 
