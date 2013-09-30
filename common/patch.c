@@ -298,7 +298,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
                   patch = plugin->patch;
             
               }else if(selection==num_patches+3){
-                SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","simple_midi_synth"),-100000,-100000,true,NULL);
+                SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","Simple_Midi_Synth"),-100000,-100000,true,NULL);
                 if(plugin!=NULL)
                   patch = plugin->patch;
 
