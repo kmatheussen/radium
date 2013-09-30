@@ -1,0 +1,30 @@
+#N canvas 329 375 775 499 8;
+#X obj 419 371 noteout;
+#X obj 391 207 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 394 329 makenote 64 250;
+#X obj 391 271 random 80;
+#X obj 392 237 metro 50;
+#X text 435 207 <-- Click to play random notes;
+#X obj 43 176 notein;
+#X floatatom 37 215 5 0 0 0 - - -;
+#X floatatom 83 215 5 0 0 0 - - -;
+#X floatatom 128 215 5 0 0 0 - - -;
+#X text 76 49 MIDI IN;
+#X text 442 44 MIDI OUT;
+#X text 387 77 Notes and velocities can be sent TO Radium via MIDI
+output (using "noteout"). Event-connected objects will then receive
+these notes and velocities.;
+#X text 25 102 Notes and velocities are received FROM Radium via MIDI
+input (using "notein").;
+#X text 388 128 To event-connect two Radium sound objects: 1 Go to
+the radium mixer \, 2 Press left mouse on on the name of an object
+\, 3 Drag the green line to another object.;
+#X connect 1 0 4 0;
+#X connect 2 0 0 0;
+#X connect 2 1 0 1;
+#X connect 3 0 2 0;
+#X connect 4 0 3 0;
+#X connect 6 0 7 0;
+#X connect 6 1 8 0;
+#X connect 6 2 9 0;
