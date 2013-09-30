@@ -469,6 +469,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
 // Note that hooks are always called from the player thread.
 static void RT_pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
   SoundPlugin *plugin = (SoundPlugin*)d;
+
   Data *data = (Data*)plugin->data;
   
   if( !strcmp(source, "libpd")) {
@@ -512,6 +513,9 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
 
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
+  if(plugin->patch==NULL)
+    return;
+
   if(velocity>0)
     RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
   else
@@ -522,6 +526,9 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
 
 static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
+  if(plugin->patch==NULL)
+    return;
+
   RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, velocity, NULL, -1);
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
