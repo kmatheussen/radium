@@ -28,7 +28,7 @@ static const int prime_numbers[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 
 
 static int find_next_prime_number(int number){
   if(number>997)
-    return number * 3 / 2;
+    return (number * 3 / 2) + 1;
 
   int i;
   for(i=0;i<168;i++)
