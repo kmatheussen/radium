@@ -638,12 +638,13 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   return false;
 }
 
+
 static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
 
   Chip *chip = get_chip_with_port_at(scene,mouse_x,mouse_y);
-  if(chip!=NULL){
+  printf("chip: %p\n", chip);
 
-    printf("chip: %p\n", chip);
+  if(chip!=NULL){
 
     // connection
     {
@@ -676,8 +677,6 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         scene->_ecurrent_to_chip = chip;
 
       if(scene->_ecurrent_from_chip!=NULL || scene->_ecurrent_to_chip!=NULL){
-        //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
-        
         scene->_current_econnection = new Connection(scene, true);
         scene->addItem(scene->_current_econnection);
         
@@ -770,6 +769,18 @@ static bool event_can_delete(QGraphicsSceneMouseEvent *event){
 
   else
     return false;
+}
+
+void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
+  QPointF pos=event->scenePos();
+  printf("Scene is double-clicked\n");
+
+  Chip *chip = MW_get_chip_at(pos.x(), pos.y(), NULL);
+  if(chip!=NULL){
+    if(SP_get_plugin(chip->_sound_producer)->type->show_gui != NULL)
+      SP_get_plugin(chip->_sound_producer)->type->show_gui(SP_get_plugin(chip->_sound_producer));
+    event->accept();
+  }
 }
 
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){

@@ -89,6 +89,7 @@ class MyScene : public QGraphicsScene{
   MyScene(QWidget *parent);
 
  protected:
+  void 	mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event );
   void 	mouseMoveEvent ( QGraphicsSceneMouseEvent * event );
   void 	mousePressEvent ( QGraphicsSceneMouseEvent * event );
   void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event );
