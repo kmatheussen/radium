@@ -1,27 +1,22 @@
-#N canvas 1240 479 518 367 8;
+#N canvas 1241 477 518 367 8;
 #X obj 209 242 noteout;
 #X obj 141 84 notein;
 #X floatatom 135 123 5 0 0 0 - - -;
 #X floatatom 181 123 5 0 0 0 - - -;
 #X floatatom 226 123 5 0 0 0 - - -;
-#X obj 160 165 t b f;
-#X obj 161 207 -;
-#X msg 103 183 128;
-#X obj 104 156 loadbang;
 #X text 90 24 This simple patch inverts the notes:;
+#X obj 135 195 + 128;
+#X obj 135 163 * -1;
 #X text 107 292 To use it \, event-connect the output of the Radium
-sound object to another object that makes sound. To avoid hearing both
-the inverted and the non-inverted notes \, click the "T" button right
-next to the instrument name in the instrument configuration widget.
-;
+sound object to another object that makes sound. To avoid sending out
+both the inverted and the non-inverted notes \, click the "T" button
+right next to the instrument name in the instrument configuration widget.
+("T" stands for "Through");
 #X connect 1 0 2 0;
 #X connect 1 1 3 0;
 #X connect 1 2 4 0;
-#X connect 2 0 5 0;
+#X connect 2 0 7 0;
 #X connect 3 0 0 1;
 #X connect 4 0 0 2;
-#X connect 5 0 6 0;
-#X connect 5 1 6 1;
 #X connect 6 0 0 0;
 #X connect 7 0 6 0;
-#X connect 8 0 7 0;
