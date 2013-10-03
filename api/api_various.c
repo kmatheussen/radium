@@ -315,12 +315,6 @@ void loadSong(char *filename){
   }
 }
 
-void loadDemoSong(void){
-  char fullpath[1024];
-  sprintf(fullpath,"%s/sounds/song1.rad",OS_get_program_path());
-  loadSong(fullpath);
-}
-
 void newSong(void){
   NewSong_CurrPos(getWindowFromNum(-1));
 }
