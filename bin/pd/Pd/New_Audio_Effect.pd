@@ -1,6 +1,6 @@
-#N canvas 958 473 450 300 8;
+#N canvas 960 469 297 135 8;
 #X obj 38 24 adc~;
 #X obj 38 72 dac~;
-#X text 83 45 <- Put your effect here;
+#X text 83 45 <- Put your audio effect here;
 #X connect 0 0 1 0;
 #X connect 0 1 1 1;

@@ -1,0 +1,13 @@
+#N canvas 838 571 389 227 8;
+#X obj 46 65 noteout;
+#X obj 47 17 notein;
+#X text 111 42 <- Put your note effect here;
+#X obj 49 115 polytouchin;
+#X obj 50 179 polytouchout;
+#X text 131 142 <- Put you note velocity effect here;
+#X connect 1 0 0 0;
+#X connect 1 1 0 1;
+#X connect 1 2 0 2;
+#X connect 3 0 4 0;
+#X connect 3 1 4 1;
+#X connect 3 2 4 2;
