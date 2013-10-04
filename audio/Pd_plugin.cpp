@@ -919,7 +919,7 @@ static void build_plugins(QDir dir){
       QFileInfo fileInfo = list.at(i);
       printf("   file: -%s-\n",fileInfo.absoluteFilePath().ascii());
       if(fileInfo.suffix()=="pd") {
-        if(fileInfo.baseName()==QString("New"))
+        if(fileInfo.baseName()==QString("New_Audio_Effect"))
           add_plugin("", fileInfo.absoluteFilePath().ascii());
         add_plugin(fileInfo.baseName().replace("_"," ").ascii(), fileInfo.absoluteFilePath().ascii());
       }
