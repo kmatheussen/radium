@@ -1,4 +1,8 @@
 
+Most important changes 1.9.31 -> 1.9.32:
+* Button for setting random effect values.
+
+
 Most important changes 1.9.30 -> 1.9.31:
 * New demo song: BlowFish! Made by www.magnetophon.nl
 * Save hashmap elements in sorted order so that songs can more easily be compared textually
