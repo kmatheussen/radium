@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1212</width>
+    <width>1215</width>
     <height>34</height>
    </rect>
   </property>
@@ -3380,7 +3380,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="lps">
+       <widget class="QSpinBox" name="sps">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;S&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;crolls &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;er &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;S&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;econd.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Maximum number of times per second the player will scroll the editor to a new line.&lt;/p&gt;&lt;p&gt;Scrolling too often can be tiresome for the eyes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>

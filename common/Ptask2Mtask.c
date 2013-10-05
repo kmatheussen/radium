@@ -55,7 +55,7 @@ extern struct Root *root;
 static STime last_time = 0;
 struct WBlocks *last_wblock = NULL;
 
-int lines_per_second = 10;
+int scrolls_per_second = 10;
 
 
 void P2MUpdateSongPosCallBack(void){
@@ -112,7 +112,7 @@ void P2MUpdateSongPosCallBack(void){
                             
                             STime time = to_time - from_time;
                             
-                            STime time_necessary_to_scroll = pc->pfreq / lines_per_second;
+                            STime time_necessary_to_scroll = pc->pfreq / scrolls_per_second;
                             
                             if(time>=time_necessary_to_scroll)
                               do_scrolling = true;
