@@ -192,7 +192,7 @@ public:
   }
 };
 
-
+// This is now a dummy function
 void Ptask2Mtask(void){
 #if 0 // Polling instead.
   if(using_the_event==1)

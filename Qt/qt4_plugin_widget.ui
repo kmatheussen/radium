@@ -129,6 +129,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="random_button">
+       <property name="text">
+        <string>Random</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QComboBox" name="interpolation_type">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">

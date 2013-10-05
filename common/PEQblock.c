@@ -72,6 +72,7 @@ extern LONG clocksig;
 void PlayerNewBlockGFX(struct PEventQueue *peq,int doit){
 
 	// Update graphics.
+  //printf("playerNewBlock. curr_before: %d. curr_now: %d\n",root->curr_block,pc->block->l.num);
 
 	root->curr_block=pc->block->l.num;
 	root->setfirstpos=true;

@@ -310,7 +310,7 @@ private slots:
   void blocklist_highlighted(int num){
     if(num==-1)
       return;
-    printf("num: %d\n",num);
+    //printf("num: %d\n",num);
 
     if(num_visitors>0) // event created internally
       return;

@@ -1095,3 +1095,26 @@ void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
   PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
 }
+
+static float get_rand(void){
+  float r = (double)rand() / (double)RAND_MAX;
+  if(r<0.0f)
+    r=0.0f;
+  if(r>1.0f)
+    r=1.0f;
+  return r;
+}
+
+void PLUGIN_random(SoundPlugin *plugin){
+  const SoundPluginType *type = plugin->type;
+  int i;
+
+  Undo_Open();{
+    for(i=0;i<type->num_effects;i++)
+      Undo_AudioEffect_CurrPos(plugin->patch, i);
+  }Undo_Close();
+
+  for(i=0;i<type->num_effects;i++)
+    PLUGIN_set_effect_value(plugin, 0, i, get_rand(), PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+}
+

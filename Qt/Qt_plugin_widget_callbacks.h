@@ -257,6 +257,12 @@ public:
       GFX_update_instrument_widget(plugin->patch);
     }
 
+    void on_random_button_pressed(){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      PLUGIN_random(plugin);
+      GFX_update_instrument_widget(plugin->patch);
+    }
+
     void on_info_button_pressed(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type = plugin->type;

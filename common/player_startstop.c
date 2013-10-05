@@ -115,6 +115,7 @@ static void PlayBlock(
 
 		root->curr_block=pc->block->l.num;
 		printf("Play block. root->curr_block: %d. Block: %p\n",root->curr_block,pc->block);
+                //abort();
                 fflush(stdout);
 
 		pc->isplaying=true;
