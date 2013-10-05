@@ -169,8 +169,11 @@ public:
       Pd_Controller_widget *c = _controllers[i];
       gridLayout->removeWidget(c);
       c->hide(); // Probably not necessary, but this stops the timer.
-      c->deleteLater();
-      //delete c;
+
+      // Todo: c is never deleted.
+
+      //c->deleteLater(); // This can crash radium
+      //delete c; // This is very likely to crash radium
     }
 
     _controllers.clear();
