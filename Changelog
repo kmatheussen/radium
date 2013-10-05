@@ -1,3 +1,31 @@
+
+Most important changes 1.9.30 -> 1.9.31:
+* New demo song: BlowFish! Made by www.magnetophon.nl
+* Save hashmap elements in sorted order so that songs can more easily be compared textually
+* Menu entry to show name of all included pd externals
+* Help menu options to edit keybindings and menues
+* Song comment dialog
+* Fix "Switch Window Configuration" menu option
+* Removed "Error. y2>=window->height: ..." error. Just print to stderr instead.
+* Removed the "Something strange just happened in the function Blt_markVisible" warning (print to stderr instead)
+* Option to set number of scrolls per second. Scrolling too often can be tiresome for the eyes.
+* Make it easier to connect objects and see connections in the mixer, plus adjust object sizes
+* Patchbay sound object
+* Fix crash loading Soundfonts in the Fluidsynth and Sampler instrument
+* Show stars around filename if theres unsaved data
+* When quitting or loading, only ask sure/yes/no if edited since last save.
+* Change "Set Patch For Track" to "Set Instrument For Track" in the instruments menu.
+  The word "patch" should not be exposed to the user anymore.
+* Be able to load files with DOS char set
+* Changed internal radium block size to 64 (similar to Pd)
+* Sending note events between sound objects (green lines)
+* Enable undo for on/off effect controllers
+* Pd extended is included as a sound object. 921 externals are included. GUI is working.
+  Several instances is working. Can be used to write both audio effects and note effects.
+* Fix qt paths on Archlinux (Javafant/archlinux)
+* Many minor bug fixes
+
+
 Most important changes 1.9.29 -> 1.9.30:
 * Fix for saving floats in wrong format for certain country settings
 * Always show slot indicator in mixer gui

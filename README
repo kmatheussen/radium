@@ -1,13 +1,13 @@
 
 
-Radium V1.9.30
-Released 2013-04-28
+Radium V1.9.31
+Released 2013-10-05
 
 
 
 HOW TO MAKE IT RUN
 
-        Either:
+        Either (TAR):
 
           1. If you downloaded a tar-ball:
 
@@ -18,7 +18,7 @@ HOW TO MAKE IT RUN
           "
 
 
-        Or:
+        Or (GIT):
 
           2. If you checked out from a git repository:
 
@@ -33,12 +33,12 @@ HOW TO MAKE IT RUN
 
 IF YOU GOT THE SOURCE FROM GIT
 
-   After git clone, you must do:
+   In general, after a git clone, you must also do:
 
           touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
 
-   And after git pull, you must do:
-          make clean
+   And after a git pull, you must do:
+          make very_clean
 
      (since not all dependencies are tracked in the makefile)
 
