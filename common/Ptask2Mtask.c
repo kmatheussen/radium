@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blocklist_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "gfx_proc.h"
+#include "settings_proc.h"
 
 
 extern PlayerClass *pc;
@@ -55,8 +56,8 @@ extern struct Root *root;
 static STime last_time = 0;
 struct WBlocks *last_wblock = NULL;
 
-int scrolls_per_second = 10;
-
+int scrolls_per_second = -1;
+int default_scrolls_per_second = 20;
 
 void P2MUpdateSongPosCallBack(void){
 	struct Tracker_Windows *window=root->song->tracker_windows;
@@ -64,6 +65,9 @@ void P2MUpdateSongPosCallBack(void){
 	NInt curr_block=root->curr_block;
 	struct WBlocks *wblock;
 	int till_curr_realline;
+
+        if(scrolls_per_second==-1)
+          scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
 
 	if(pc->playtype==PLAYSONG) BS_SelectPlaylistPos(root->curr_playlist);
 

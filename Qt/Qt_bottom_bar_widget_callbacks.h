@@ -44,6 +44,7 @@ struct Patch *g_system_out_patch = NULL;
 extern bool drunk_velocity;
 extern float g_cpu_usage;
 extern int scrolls_per_second;
+extern int default_scrolls_per_second;
 
 class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Q_OBJECT
@@ -76,6 +77,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     min_velocity_slider->setValue(4000);
     velocity_slider->setValue(8000);
     update_velocity_sliders();
+
+    if(scrolls_per_second==-1)
+      scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
+
     sps->setValue(scrolls_per_second);
 
     // Adjust cpu label width
@@ -142,6 +147,7 @@ public slots:
 
   void on_sps_valueChanged(int val){
     scrolls_per_second = val;
+    SETTINGS_write_int("scrolls_per_second", val);
   }
 
   void on_drunk_velocity_onoff_toggled(bool val){
