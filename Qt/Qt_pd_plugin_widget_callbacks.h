@@ -133,7 +133,7 @@ public:
   void update_gui(void){
     if(_controllers.empty()) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      // test if plugin==NULL here.
+      //test if plugin==NULL here?
       for(int controller_num=0; controller_num < 40; controller_num++){
         Pd_Controller *controller = PD_get_controller(plugin, controller_num);
         if(controller->has_gui)
