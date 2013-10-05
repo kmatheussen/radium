@@ -342,33 +342,66 @@ hash_t *HASH_get_hash_at(hash_t *hash, const char *key, int i){
 }
 
 
+static vector_t *get_elements(hash_t *hash){
+  vector_t *vector = talloc(sizeof(vector_t));
+  int i;
+  for(i=0;i<hash->elements_size;i++){
+    hash_element_t *element = hash->elements[i];
+    while(element!=NULL){
+      VECTOR_push_back(vector, element);
+      element=element->next;
+    }
+  }
+  return vector; 
+}
+
+static int compare_hash_elements(const void *a2, const void *b2){
+  hash_element_t *a = * (hash_element_t**)a2;
+  hash_element_t *b = * (hash_element_t**)b2;
+
+  int string_cmp = strcmp(a->key, b->key);
+
+  if(string_cmp !=0 )
+    return string_cmp;
+
+  if(a->type != b->type)
+    return a->type - b->type;
+
+  return a->i - b->i;
+}
+
+static vector_t *get_sorted_elements(hash_t *hash){
+  vector_t *elements = get_elements(hash);
+  qsort(elements->elements, elements->num_elements, sizeof(void*), compare_hash_elements);
+  return elements;
+}
+
 void HASH_save(hash_t *hash, FILE *file){
   fprintf(file, ">> HASH MAP V2 BEGIN\n");
 
-  fprintf(file, "%d\n", hash->elements_size);
+  vector_t *elements = get_sorted_elements(hash);
+
+  fprintf(file, "%d\n", elements->num_elements);
 
   int i;
-  for(i=0;i<hash->elements_size;i++){
-    hash_element_t *element=hash->elements[i];
-    while(element!=NULL){
-      fprintf(file,"%s\n",element->key);
-      fprintf(file,"%d\n",element->i);
-      fprintf(file,"%s\n",type_to_typename(element->type));
-      switch(element->type){
-      case STRING_TYPE:
-        fprintf(file,"%s\n",element->string);
-        break;
-      case INT_TYPE:
-        fprintf(file,"%" PRId64 "\n",element->int_number);
-        break;
-      case FLOAT_TYPE:
-        fprintf(file,"%s\n",OS_get_string_from_double(element->float_number));
-        break;
-      case HASH_TYPE:
-        HASH_save(element->hash, file);
-        break;
-      }
-      element = element->next;
+  for(i=0;i<elements->num_elements;i++){
+    hash_element_t *element=elements->elements[i];
+    fprintf(file,"%s\n",element->key);
+    fprintf(file,"%d\n",element->i);
+    fprintf(file,"%s\n",type_to_typename(element->type));
+    switch(element->type){
+    case STRING_TYPE:
+      fprintf(file,"%s\n",element->string);
+      break;
+    case INT_TYPE:
+      fprintf(file,"%" PRId64 "\n",element->int_number);
+      break;
+    case FLOAT_TYPE:
+      fprintf(file,"%s\n",OS_get_string_from_double(element->float_number));
+      break;
+    case HASH_TYPE:
+      HASH_save(element->hash, file);
+      break;
     }
   }
   fprintf(file,"<< HASH MAP V2 END\n");
