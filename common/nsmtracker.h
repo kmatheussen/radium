@@ -333,6 +333,8 @@ struct FX{
 	void (*closeFX)(struct FX *fx,struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
 	void (*SaveFX)(struct FX *fx,struct Tracks *track);
+
+  //void (*setFXstring)(struct FX *fx,struct Tracks *track, char *string);
 };
 #define FX_FAILED 0
 #define FX_SUCCESS 1

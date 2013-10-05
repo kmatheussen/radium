@@ -446,9 +446,10 @@ static void set_db_display(char *buffer, int buffersize, float value){
 }
 
 // It's not necessary to implement for all EFFNUM_* values. Can probably remove some code.
+//void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, bool use_stored_value, float value, char *buffer, int buffersize){
 void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   if(effect_num<plugin->type->num_effects)
-    return plugin->type->get_display_value_string(plugin,effect_num,buffer,buffersize);
+    return plugin->type->get_display_value_string(plugin, effect_num, buffer, buffersize);
 
   float val;
 

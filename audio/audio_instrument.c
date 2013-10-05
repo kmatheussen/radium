@@ -163,6 +163,17 @@ static void AUDIO_treat_FX(struct FX *fx,int val,struct Tracks *track,STime time
   PLUGIN_set_effect_value(plugin,PLAYER_get_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE);
 }
 
+#if 0
+static void AUDIO_set_FX_string(struct FX *fx,int val,struct Tracks *track,char *string){
+  SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
+  //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
+
+  float effect_val = val / (float)MAX_FX_VAL;
+
+  PLUGIN_get_display_value_string(plugin, fx->effect_num, effect_val, string, 512);
+}
+#endif
+
 static void AUDIO_save_FX(struct FX *fx,struct Tracks *track);
 static void *AUDIO_LoadFX(struct FX *fx,struct Tracks *track);
 
@@ -179,6 +190,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name){
   fx->closeFX = AUDIO_close_FX;
   fx->SaveFX  = AUDIO_save_FX;
   fx->treatFX = AUDIO_treat_FX;
+  //fx->setFXstring = AUDIO_set_FX_string;
 
 #if 0
   plugin->num_automations[selection]++;

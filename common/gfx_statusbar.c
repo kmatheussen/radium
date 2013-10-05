@@ -63,6 +63,13 @@ void GFX_DrawStatusBar(
 	GFX_SetStatusBar(window,wblock->title);
 }
 
+char *GFX_GetChangeString(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock
+){
+  return firstringinstatusbar;
+}
+
 void GFX_SetChangeInt(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

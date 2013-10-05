@@ -28,6 +28,11 @@ extern void GFX_DrawStatusBar(
 	struct WBlocks *wblock
 );
 
+extern char *GFX_GetChangeString(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock
+);
+
 extern void GFX_SetChangeInt(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
