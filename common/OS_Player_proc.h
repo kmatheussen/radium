@@ -31,5 +31,7 @@ extern LANGSPEC void StopPausePlayer(void);
 
 extern LANGSPEC void OS_WaitForAShortTime(int milliseconds);
 
-
+extern LANGSPEC void PLAYER_volumeUp(float db);
+extern LANGSPEC void PLAYER_volumeDown(float db);
+extern LANGSPEC void PLAYER_mute(void);
 

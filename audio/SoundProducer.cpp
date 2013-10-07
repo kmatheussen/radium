@@ -141,7 +141,7 @@ static float RT_get_max_val(float *array, int num_elements){
       minus_ret = -val;
     }else if (val<minus_ret){
       ret = -val;
-        minus_ret = val;
+      minus_ret = val;
     }
   }
   

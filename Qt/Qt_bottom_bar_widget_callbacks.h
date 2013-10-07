@@ -212,6 +212,16 @@ extern "C"{
   void OS_GFX_SetVolume(int value){
     g_bottom_bar_widget->system_volume_slider->setValue(value);
   }
+
+  void OS_GFX_IncVolume(int how_much){
+    int new_value = how_much + g_bottom_bar_widget->system_volume_slider->value();
+    if(new_value<0)
+      new_value=0;
+    if(new_value>10000)
+      new_value=10000;
+
+    g_bottom_bar_widget->system_volume_slider->setValue(new_value);
+  }
 }
 
 void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *system_out_patch){

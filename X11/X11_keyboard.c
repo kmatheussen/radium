@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
+#include "../common/OS_Player_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "X11_keyboard_proc.h"
@@ -280,8 +281,27 @@ void X11_ResetKeysUpDowns(void){
 
 int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
   KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
-  if(sym > keytable_size)
+  //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
+
+  if(sym > keytable_size) {
+    if (sym==XF86XK_AudioLowerVolume)
+      PLAYER_volumeDown(3);
+
+    else if (sym==XF86XK_AudioRaiseVolume)
+      PLAYER_volumeUp(3);
+
+    else if (sym==XF86XK_AudioMute)
+      PLAYER_mute();
+
+    else if (sym==XF86XK_AudioPlay)
+      PlayBlockFromStart(window,true); // true == do_loop
+
+    else if (sym==XF86XK_AudioStop)
+      PlayStop();
+
     return 0;
+  }
+
   return X11Event_KeyPress(keytable[sym],event->state,window);
 }
 

@@ -71,6 +71,7 @@ extern LANGSPEC const char *GFX_GetSaveFileName(
 extern LANGSPEC void GFX_OS_UpdateKeyOctave(void);
 extern LANGSPEC void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos);
 extern LANGSPEC void OS_GFX_SetVolume(int value);
+extern LANGSPEC void OS_GFX_IncVolume(int how_much);
 
 extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch);
 extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes the audio object itself. (yes, it's messy)
