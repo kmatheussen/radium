@@ -889,6 +889,31 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
 MixerWidget *g_mixer_widget = NULL;
 
+namespace{
+  class MixerWidgetTimer : public QTimer{
+    void 	timerEvent ( QTimerEvent * e ){
+      QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+      
+      for (int i = 0; i < das_items.size(); ++i) {
+        Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+        if(chip!=NULL){
+          SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+          if(plugin != NULL){
+            struct Patch *patch = plugin->patch;
+            if(patch!=NULL){
+              if(patch->visual_note_intencity > 0) {
+                patch->visual_note_intencity--; // Writing to the same variable from two threads simultaneously, but it shouldn't be a problem here.
+                //printf("intencity: %d\n",intencity);
+                chip->update();
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
 MixerWidget::MixerWidget(QWidget *parent)
     : QWidget(parent)
     , scene(this)
@@ -950,6 +975,12 @@ MixerWidget::MixerWidget(QWidget *parent)
 #endif
 
     setWindowTitle(tr("Chip Demo"));
+
+    {
+      MixerWidgetTimer *timer = new MixerWidgetTimer;
+      timer->setInterval(20);
+      timer->start();
+    }
 }
 
 bool GFX_MixerIsVisible(void){

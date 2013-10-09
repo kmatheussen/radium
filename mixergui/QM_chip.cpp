@@ -791,13 +791,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   Q_UNUSED(widget);
 
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+  struct Patch *patch = plugin->patch;
 
   bool is_selected = (option->state & QStyle::State_Selected);
   /*
     bool is_over = (option->state & QStyle::State_MouseOver);
   */
 
-  bool is_current_patch = get_current_instruments_gui_patch()==plugin->patch;
+  bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
   QColor c(g_editor->colors[1]);
   if(is_current_patch==false);
@@ -891,7 +892,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       QColor c(g_editor->colors[1]);
       if(is_current_patch==false)
         c.setAlpha(160);
-      
+
+      c.setBlue((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+      //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
       painter->setPen(QPen(c, 2));
     }
 

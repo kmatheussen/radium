@@ -268,7 +268,7 @@ struct PatchVoice{
 
 #define MAX_PATCH_VOICES 6
 #define MAX_NUM_EVENT_RECEIVERS 64
-
+#define MAX_NOTE_INTENCITY 15
 
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
@@ -299,6 +299,8 @@ struct Patch{
   bool forward_events; /* If true, all events that comes in, are also sent out to the receivers. True by default. */
   int num_event_receivers;
   struct Patch *event_receivers[MAX_NUM_EVENT_RECEIVERS];
+
+  volatile int visual_note_intencity; // Used by the mixer to keep track of how bright the note indicator should light up.
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1

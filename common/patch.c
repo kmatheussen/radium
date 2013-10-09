@@ -475,6 +475,8 @@ static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct T
   patch->num_ons[notenum]++;
   patch->playnote(patch,notenum,velocity,time,pan);
 
+  patch->visual_note_intencity = MAX_NOTE_INTENCITY;
+
   if(patch->forward_events)
     RT_PATCH_send_play_note_to_receivers(patch, notenum, velocity, track, time);
 }
