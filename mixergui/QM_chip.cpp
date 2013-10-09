@@ -81,6 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/EditorWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 //#include "../Qt/Qt_MyQCheckBox.h"
+#include "../Qt/Qt_mix_colors.h"
 
 #include "../common/patch_proc.h"
 
@@ -893,7 +894,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       if(is_current_patch==false)
         c.setAlpha(160);
 
-      c.setBlue((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+      if(patch->visual_note_intencity>0){
+        //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
+        c = mix_colors(c,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
+        //      c.setRed((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+        //c.setBlue((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+        //c.setGreen((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+      }
+
       //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
       painter->setPen(QPen(c, 2));
     }
