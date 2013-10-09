@@ -129,7 +129,7 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
   //get_slider2_coordinates(x1,y1,x2,y2);
 
-  x1 += 2;
+  x1 += name_height + 2;
   x2 = x2-button_width-3;
   y1 = y2-name_height;
 
@@ -139,12 +139,15 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
 
 void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
+
+  x1 = chip_box_x1;
+  x2 = chip_box_x1 + name_height;
 }
 
 static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
 
-  x1 += left_border;
+  x1 = chip_box_x1 + left_border;
   x2 = chip_box_x2 - right_border;
   y2 = y1;
   y1 = chip_box_y1 + top_border;
@@ -805,12 +808,11 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
-  QColor c(g_editor->colors[1]);
+  QColor border_color(g_editor->colors[1]);
   if(is_current_patch==false);
-    c.setAlpha(160);
+    border_color.setAlpha(160);
 
-  painter->setPen(QPen(c, 2));
-
+  painter->setPen(QPen(border_color, 2));
   painter->setFont(g_editor->main_window->font());
 
   // main box
@@ -873,6 +875,23 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   }
 #endif
 
+  // Draw note indicator
+  if(patch->visual_note_intencity>0){
+    int x1,y1,x2,y2;
+    CHIP_get_name_coordinates(x1,y1,x2,y2);
+
+    //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
+    //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
+    QColor c = g_editor->colors[12];
+    c.setAlphaF(::scale(patch->visual_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
+    //      c.setRed((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+    //c.setBlue((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+    //c.setGreen((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
+    painter->setPen(c);
+    painter->setBrush(QBrush(c,Qt::SolidPattern));
+
+    painter->drawRoundedRect(x1+4,y1+4,x2-x1-8,y2-y1-8,20.0,20.0);
+  }
 
   // Draw text
   {
@@ -897,14 +916,6 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       QColor c(g_editor->colors[1]);
       if(is_current_patch==false)
         c.setAlpha(160);
-
-      if(patch->visual_note_intencity>0){
-        //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
-        c = mix_colors(c,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
-        //      c.setRed((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
-        //c.setBlue((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
-        //c.setGreen((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
-      }
 
       //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
       painter->setPen(QPen(c, 2));
