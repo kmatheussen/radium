@@ -904,7 +904,9 @@ namespace{
               if(patch->visual_note_intencity > 0) {
                 patch->visual_note_intencity--; // Writing to the same variable from two threads simultaneously, but it shouldn't be a problem here.
                 //printf("intencity: %d\n",intencity);
-                chip->update();
+                int x1,y1,x2,y2;
+                CHIP_get_name_coordinates(x1,y1,x2,y2);
+                chip->update(x1,y1,x2-x1,y2-y1);
               }
             }
           }

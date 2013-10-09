@@ -231,6 +231,8 @@ public:
   float _moving_y_offset;
 };
 
+extern void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2);
+
 extern void CHIP_kick_left(Chip *chip);
 extern void CHIP_kick_right(Chip *chip);
 

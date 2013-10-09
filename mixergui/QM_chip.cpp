@@ -137,6 +137,10 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   //  y2+=name_height;
 }
 
+void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_name_coordinates(x1,y1,x2,y2);
+}
+
 static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
 
