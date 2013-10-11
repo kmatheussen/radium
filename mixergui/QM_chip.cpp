@@ -129,7 +129,7 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
   //get_slider2_coordinates(x1,y1,x2,y2);
 
-  x1 += name_height + 2;
+  x1 += 2;
   x2 = x2-button_width-3;
   y1 = y2-name_height;
 
@@ -137,11 +137,22 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   //  y2+=name_height;
 }
 
-void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
+static void get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
 
-  x1 = chip_box_x1;
-  x2 = chip_box_x1 + name_height;
+  x2 = x1 + 5;
+  y1 += 4;
+  y2 -= 4;
+}
+
+static int get_note_indicator_x2(void){
+  int x1,x2,y1,y2;
+  get_note_indicator_coordinates(x1,y1,x2,y2);
+  return x2;
+}
+
+void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_note_indicator_coordinates(x1,y1,x2,y2);
 }
 
 static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
@@ -239,7 +250,10 @@ bool CHIP_is_at_output_port(Chip *chip, int x, int y){
 // control port coordinates (eport coordinates)
 
 int CHIP_get_eport_x(Chip *chip){
-  return chip->x() + chip_width/2;
+  int x1,y1,x2,y2;
+  get_note_indicator_coordinates(x1,y1,x2,y2);
+  return chip->x() + (x1+x2)/2;
+  //return chip->x() + chip_width/2;
 }
 
 static int get_eport_x1(Chip *chip){
@@ -254,28 +268,16 @@ static int get_eport_x2(Chip *chip){
   //return CHIP_get_eport_x(chip) + port_width/2;
 }
 
-int CHIP_get_input_eport_y(Chip *chip){
-  int x1,y1,x2,y2;
-  get_slider1_coordinates(x1,y1,x2,y2);
-  return chip->y() + (y1+y2)/2;
-  //return chip->y() + chip_box_y1;
-}
-
 int CHIP_get_output_eport_y(Chip *chip){
   int x1,y1,x2,y2;
   get_name_coordinates(x1,y1,x2,y2);
   return chip->y() + (y1+y2)/2;
-  //  return chip->y() + chip_box_y2;
 }
 
-static int get_input_eport_y1(Chip *chip){
-  return chip->y();
-  //return CHIP_get_input_eport_y(chip)-port_height/2;
-}
-
-static int get_input_eport_y2(Chip *chip){
-  return chip->y() + chip_box_y1;
-  //return CHIP_get_input_eport_y(chip)+port_height/2;
+int CHIP_get_input_eport_y(Chip *chip){
+  int x1,y1,x2,y2;
+  get_name_coordinates(x1,y1,x2,y2);
+  return chip->y()+y1;
 }
 
 static int get_output_eport_y1(Chip *chip){
@@ -288,6 +290,16 @@ static int get_output_eport_y1(Chip *chip){
 static int get_output_eport_y2(Chip *chip){
   return chip->y() + grid_height;
   //return CHIP_get_output_eport_y(chip)+port_height/2;
+}
+
+static int get_input_eport_y1(Chip *chip){
+  //return get_output_eport_y1(chip);
+  return chip->y();
+}
+
+static int get_input_eport_y2(Chip *chip){
+  //return get_output_eport_y2(chip);
+  return chip->y() + chip_box_y1;
 }
 
 bool CHIP_is_at_input_eport(Chip *chip, int x, int y){
@@ -625,7 +637,17 @@ void Connection::update_position(void){
     int x2 = CHIP_get_eport_x(to);
     int y1 = CHIP_get_output_eport_y(from);
     int y2 = CHIP_get_input_eport_y(to);
-  
+
+    /*
+    if (x2>x1) {
+      y2 = ::scale(x2-10,x1,x2,y1,y2);
+      x2 -= 10;
+    } else if (x2<x1) {
+      y2 = ::scale(x2+10,x1,x2,y1,y2);
+      x2 += 10;
+    }
+    */
+
     this->setLine(x1,y1,x2,y2);
 
   } else {
@@ -875,28 +897,11 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   }
 #endif
 
-  // Draw note indicator
-  if(patch->visual_note_intencity>0){
-    int x1,y1,x2,y2;
-    CHIP_get_name_coordinates(x1,y1,x2,y2);
-
-    //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
-    //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
-    QColor c = g_editor->colors[12];
-    c.setAlphaF(::scale(patch->visual_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
-    //      c.setRed((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
-    //c.setBlue((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
-    //c.setGreen((int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 255,0));
-    painter->setPen(c);
-    painter->setBrush(QBrush(c,Qt::SolidPattern));
-
-    painter->drawRoundedRect(x1+4,y1+4,x2-x1-8,y2-y1-8,20.0,20.0);
-  }
-
   // Draw text
   {
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
+    x1 = get_note_indicator_x2() + 2;
 
     if(is_selected){
       QColor c(30,25,70,60);
@@ -961,6 +966,28 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 #endif
     }
 #endif
+  }
+
+  // Draw note indicator
+  {
+    int x1,y1,x2,y2;
+    get_note_indicator_coordinates(x1,y1,x2,y2);
+
+    if(patch->visual_note_intencity>0){      
+      //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
+      //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
+      QColor c = g_editor->colors[12];
+      c.setAlphaF(::scale(patch->visual_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
+      painter->setPen(c);
+      painter->setBrush(QBrush(c,Qt::SolidPattern));
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);
+    }
+
+    // border
+    QColor border_color = g_editor->colors[7];
+    painter->setBrush(QBrush());
+    painter->setPen(border_color);
+    painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);
   }
 
   //printf("Paint Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);

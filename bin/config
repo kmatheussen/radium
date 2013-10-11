@@ -1,8 +1,10 @@
-settings_version = 0.720000 # dont change this one
+settings_version = 0.72 # dont change this one
 
 font = DejaVu Sans Mono,12,-1,5,75,0,0,0,0,0
 font_style = Bold
 
+system_font_size = 10
+system_font_stretch = 100
 system_font = Lato,8,-1,5,87,0,0,0,0,0
 system_font_style = Black
 

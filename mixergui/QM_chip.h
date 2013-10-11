@@ -105,6 +105,7 @@ public:
     , to(NULL)
     , is_selected(false)
     , visible_line(this)
+    , arrow_line1(this)
   {
     QPen pen(Qt::gray, 50);
     pen.setJoinStyle(Qt::RoundJoin);
@@ -121,6 +122,13 @@ public:
 
     visible_line.setPen(getPen());
     parent->addItem(&visible_line);
+
+    /*
+    if(_is_event_connection){
+      arrow_line1.setPen(getPen());
+      parent->addItem(&arrow_line1);
+    }
+    */
   }
 
   Chip *from;
@@ -128,9 +136,30 @@ public:
   bool is_selected;
 
   QGraphicsLineItem visible_line;
+  QGraphicsLineItem arrow_line1;
 
   void setLine ( qreal x1, qreal y1, qreal x2, qreal y2 ){
     visible_line.setLine(x1,y1,x2,y2);
+
+    /*
+    if(_is_event_connection){
+      qreal x = x2;
+      qreal y = y2;
+      qreal xb,yb;
+      if(x2>x1)
+        xb=x-10;
+      else
+        xb=x+10;
+      if(y2>y1)
+        yb=y-10;
+      else
+        yb=y+10;
+      arrow_line1.setLine(x,y,xb,yb);
+    }
+
+    QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
+    */
+
     QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
   }
 
