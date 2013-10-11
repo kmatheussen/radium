@@ -12,6 +12,7 @@ echo "Checking dependencies: "
 which sed
 which $PYTHONEXE
 #which guile-1.8
+which guile
 
 if [ $4 == "test_packages" ] ; then
     echo "testing packages"
