@@ -156,7 +156,6 @@ public:
         yb=y+10;
       arrow_line1.setLine(x,y,xb,yb);
     }
-
     QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
     */
 
