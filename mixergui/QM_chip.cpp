@@ -270,13 +270,15 @@ static int get_eport_x2(Chip *chip){
 
 int CHIP_get_output_eport_y(Chip *chip){
   int x1,y1,x2,y2;
-  get_name_coordinates(x1,y1,x2,y2);
-  return chip->y() + (y1+y2)/2;
+  //get_name_coordinates(x1,y1,x2,y2);
+  get_note_indicator_coordinates(x1,y1,x2,y2);
+  return chip->y() + y2;
 }
 
 int CHIP_get_input_eport_y(Chip *chip){
   int x1,y1,x2,y2;
-  get_name_coordinates(x1,y1,x2,y2);
+  //get_name_coordinates(x1,y1,x2,y2);
+  get_note_indicator_coordinates(x1,y1,x2,y2);
   return chip->y()+y1;
 }
 
