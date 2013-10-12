@@ -36,7 +36,8 @@ class ParamWidget : public QWidget{
   struct Patch *_patch; // Pointer to a patch never changes, but the patch's plugin might. That's why we store the patch and not the plugin, although we only use the plugin.
   int _effect_num;
   const SoundPluginType *_type;
-    
+
+  MyQCheckBox *_randomized_button;
   MyQSlider *_slider;
   //QToolButton *_check_button;
   MyQCheckBox *_check_button;
@@ -60,7 +61,21 @@ class ParamWidget : public QWidget{
 
       QGridLayout *grid_layout = new QGridLayout();
       grid_layout->setMargin(0);
-      grid_layout->setSpacing(4);
+      grid_layout->setSpacing(0);
+
+      if(0){
+        _randomized_button = new MyQCheckBox(this);
+        _randomized_button->setCheckable(true);
+        //_randomized_button->setText("R");
+        _randomized_button->setToolTip("Whether to randomize when pressing the \"Random\" button");
+        _randomized_button->resize(10,12);
+        grid_layout->addWidget(_randomized_button, 1, 0, 1, 1);
+        QSizePolicy sizePolicy5(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        sizePolicy5.setHorizontalStretch(0);
+        sizePolicy5.setVerticalStretch(0);
+        //sizePolicy5.setHeightForWidth(_randomized_button->sizePolicy().hasHeightForWidth());
+        _randomized_button->setSizePolicy(sizePolicy5);
+      }
 
       if (format==EFFECT_FORMAT_BOOL){
         //_check_button = new QToolButton(this);
@@ -71,7 +86,7 @@ class ParamWidget : public QWidget{
         _check_button->_effect_num = effect_num;
 
         QSizePolicy sizePolicy5(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        sizePolicy5.setHorizontalStretch(0);
+        sizePolicy5.setHorizontalStretch(1);
         sizePolicy5.setVerticalStretch(0);
         sizePolicy5.setHeightForWidth(_check_button->sizePolicy().hasHeightForWidth());
         _check_button->setSizePolicy(sizePolicy5);
@@ -80,7 +95,7 @@ class ParamWidget : public QWidget{
         if(type->get_effect_description!=NULL)
           _check_button->setToolTip(type->get_effect_description(type,effect_num));
 
-        grid_layout->addWidget(_check_button, 1,0,1,2);
+        grid_layout->addWidget(_check_button, 1,1,1,1);
       } else {
         _slider = new MyQSlider();
         _slider->_patch = patch;
@@ -96,7 +111,7 @@ class ParamWidget : public QWidget{
         //_slider->setValue(value);
 
         QSizePolicy sizePolicy5(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        sizePolicy5.setHorizontalStretch(0);
+        sizePolicy5.setHorizontalStretch(1);
         sizePolicy5.setVerticalStretch(0);
         sizePolicy5.setHeightForWidth(_slider->sizePolicy().hasHeightForWidth());
         _slider->setSizePolicy(sizePolicy5);
@@ -104,7 +119,7 @@ class ParamWidget : public QWidget{
         if(type->get_effect_description!=NULL)
           _slider->setToolTip(type->get_effect_description(type,effect_num));
 
-        grid_layout->addWidget(_slider, 1, 0, 1, 2);
+        grid_layout->addWidget(_slider, 1, 1, 1, 1);
       }
 
       if (format==EFFECT_FORMAT_BOOL){
