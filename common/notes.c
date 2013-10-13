@@ -156,12 +156,13 @@ struct Notes *InsertNote(
 
 	struct Notes *note=talloc(sizeof(struct Notes));
 
-#if 0  // For testing note pitch.
+#if 1  // For testing note pitch.
         note->pitches = talloc(sizeof(struct Pitches));
 	PlaceCopy(&note->pitches->l.p,placement);
         note->pitches->l.p.line++;
         note->pitches->note = notenum + 1;
         note->pitches->note_note = note;
+        note->note_end = notenum;
 #else
         note->note_end = notenum;
 #endif

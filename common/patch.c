@@ -778,9 +778,6 @@ static void RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args)
   if(track!=NULL && track->patch != patch)
     return;
 
-  //printf("stopping scheduled play note: %d. time: %d, pitch: %d\n",notenum,(int)time,pitch);
-  //return;
-
   RT_change_voice_pitch(patch,notenum,pitch,track,time);
 }
 

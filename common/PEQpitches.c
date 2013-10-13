@@ -46,11 +46,11 @@ static STime PEQ_CalcNextPitchEvent(
   int int_x;
   STime ntime=PEQ_CalcNextEvent(
                                 time1,time,time2,
-                                scale(x1, 0,128,0,INT_MAX),
+                                scale(x1, 0,128,0,INT_MAX/2),
                                 &int_x,
-                                scale(x2, 0,128,0,INT_MAX)
+                                scale(x2, 0,128,0,INT_MAX/2)
                                 );
-  *x = scale(int_x, 0,INT_MAX, 0.0,128.0); // convert back.
+  *x = scale(int_x, 0,INT_MAX/2, 0.0,128.0); // convert back.
   return ntime;
 }
 
@@ -141,7 +141,7 @@ static void SendPitchChange(float x,struct PEventQueue *peq){
           args[1].pointer = peq->note;
           args[2].float_num = x;
 
-          SCHEDULER_add_event(peq->l.time, scheduled_change_pitch, &args[0], 3, SCHEDULER_ADDORDER_DOESNT_MATTER);
+          SCHEDULER_add_event(peq->l.time, scheduled_change_pitch, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
 
           /*
           RT_PATCH_change_pitch(peq->track->patch,
@@ -179,14 +179,14 @@ static void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit){
 	}
 
 	ntime=PEQ_CalcNextPitchEvent(
-                                        peq,
-		peq->time1,
-		btime,
-		peq->time2,
-		peq->note->note,
-		&x,
-		peq->pitch->note
-	);
+                                     peq,
+                                     peq->time1,
+                                     btime,
+                                     peq->time2,
+                                     peq->note->note,
+                                     &x,
+                                     peq->pitch->note
+                                     );
 
 	if(btime==ntime){
 		Pdebug("btime==ntime, stopper, x: %d, btime: %d, x1: %d, x2: %d\n",x,btime,peq->note->note,peq->pitch->note);
@@ -194,7 +194,7 @@ static void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit){
 	}
 
 	if(ntime>peq->time2) ntime=peq->time2;
-
+        
 //	Pdebug("start->vel,Pitch: %d, time: %d, ntime: %d, btime: %d, time1: %d, time2: %d\n",x,time,ntime,btime,peq->time1,peq->time2);
 	if(doit){
           SendPitchChange(x,peq);
@@ -288,7 +288,7 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
                                      FindNextPitch(peq->pitch->note_note)
 	);
 
-	if(ntime>=peq->time2){
+	if(ntime>peq->time2){
 		ReturnPEQelement(peq);
 		return;
 	}
