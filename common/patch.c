@@ -742,6 +742,94 @@ void PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct T
 
 
 ////////////////////////////////////
+// Change pitch
+
+void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, int notenum,float pitch,struct Tracks *track,STime time){
+  int i;
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_change_pitch(receiver, notenum, pitch, track, time);
+  }
+}
+
+static void RT_change_voice_pitch(struct Patch *patch, int notenum,float pitch,struct Tracks *track,STime time){
+  if(notenum < 1 || notenum>127)
+    return;
+
+  if(time==-1)
+    time = patch->last_time;
+  else
+    patch->last_time = time;
+
+  //printf("Calling patch->changeptitch %d %f\n",notenum,pitch);
+  patch->changepitch(patch,notenum,pitch,time);
+
+  if(patch->forward_events)
+    RT_PATCH_send_change_pitch_to_receivers(patch, notenum, pitch, track, time);
+}
+
+static void RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args){
+  struct Tracks *track = args[0].pointer;
+  struct Patch *patch = args[1].pointer;
+
+  int notenum = args[3].int_num;
+  float pitch = args[4].float_num;
+
+  if(track!=NULL && track->patch != patch)
+    return;
+
+  //printf("stopping scheduled play note: %d. time: %d, pitch: %d\n",notenum,(int)time,pitch);
+  //return;
+
+  RT_change_voice_pitch(patch,notenum,pitch,track,time);
+}
+
+void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tracks *track,STime time){
+  //printf("vel: %d\n",pitch);
+  if(time==-1)
+    time = patch->last_time;
+
+  float sample_rate = MIXER_get_sample_rate();
+
+  int i;
+  for(i=0;i<MAX_PATCH_VOICES;i++){
+    struct PatchVoice *voice = &patch->voices[i];
+
+    if(voice->is_on==true){
+
+      int voice_notenum = notenum + voice->transpose;
+      float voice_pitch = pitch + voice->transpose;
+
+      if(voice->start<0.001f){
+
+        RT_change_voice_pitch(patch,voice_notenum,voice_pitch,track,time);
+
+      }else{
+        
+        // Should improve this. It might not play anymore.
+
+        union SuperType args[4];
+
+        args[0].pointer = track;
+        args[1].pointer = patch;
+        args[2].int_num = voice_notenum;
+        args[3].float_num = voice_pitch;
+
+        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 4, SCHEDULER_ADDORDER_DOESNT_MATTER);
+      }
+    }
+  }
+}
+
+void PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tracks *track){
+  PLAYER_lock();{
+    RT_PATCH_change_pitch(patch,notenum,pitch,track,-1);
+  }PLAYER_unlock();
+}
+
+
+
+////////////////////////////////////
 // FX
 
 // All FX goes through this function.

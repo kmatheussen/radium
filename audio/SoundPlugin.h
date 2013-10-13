@@ -177,6 +177,7 @@ typedef struct SoundPluginType{
   // These three functions are not used if SoundPluginType->note_handling_is_RT is true
   void (*play_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan);
   void (*set_note_volume)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
+  void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch);
   void (*stop_note)(struct SoundPlugin *plugin, int64_t time, int note_num, float volume);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)

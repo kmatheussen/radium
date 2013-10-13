@@ -52,6 +52,10 @@ struct PEventQueue{
 	struct Velocities *velocity;
 	struct Velocities *nextvelocity;
 
+// Used by PEQpitches
+	struct Pitches *pitch;
+	struct Pitches *nextpitch;
+
 
 // Used by PEQfxs
 	struct FXs *fxs;

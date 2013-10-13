@@ -23,7 +23,6 @@ extern Place *PlaceCreate(int line, int counter, int dividor);
 extern int PlaceCmp(  Place *p1,  Place *p2);
 extern Place *PlaceMax(  Place *p1,  Place *p2);
 extern Place *PlaceMin(  Place *p1,  Place *p2);
-extern void PlaceCopy(Place *p1,  Place *p2);
 
 extern void PlaceHandleOverflow(Place *p);
 

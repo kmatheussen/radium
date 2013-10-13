@@ -255,6 +255,8 @@ static void MIDIchangevelocity(struct Patch *patch,int notenum, int velocity,STi
 }
 
 
+static void MIDIchangepitch(struct Patch *patch,int notenum, float pitch,STime time){
+}
 
 /******************** patch **************************/
 
@@ -500,6 +502,7 @@ void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
   patch->playnote=MIDIplaynote;
   patch->stopnote=MIDIstopnote;
   patch->changevelocity=MIDIchangevelocity;
+  patch->changepitch=MIDIchangepitch;
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 

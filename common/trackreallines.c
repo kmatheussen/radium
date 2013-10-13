@@ -433,13 +433,10 @@ static void AddTrackReallineNote(
 
 	struct Velocities *velocity,*prev;
 
-	int realline;
-	int subtrack;
+	int realline=FindRealLineForNote(wblock,note->Tline,note);
+	int subtrack=FindFirstFreeSubTrack(wtrack,realline,&note->l.p);
 
 	float maxx = MAX_VELOCITY;
-
-	realline=FindRealLineForNote(wblock,note->Tline,note);
-	subtrack=FindFirstFreeSubTrack(wtrack,realline,&note->l.p);
 
 	InsertTRLElement(
 		window,
@@ -543,7 +540,8 @@ static void AddTrackReallineNote(
 int FindNumberOfNotesOnTrackRealline(struct TrackReallineElements *element){
 	int ret=0;
 	while(element!=NULL){
-		if(element->type==TRE_THISNOTELINES) ret++;
+		if(element->type==TRE_THISNOTELINES)
+                  ret++;
 		element=element->next;
 	}
 	return ret;
@@ -754,29 +752,29 @@ void OrganizeThisNoteLines(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	int lokke;
+	int realline;
 	int num_notes,num_freereallinesdown;
 	struct TrackRealline *trackreallines=wtrack->trackreallines;
 	struct Notes *note;
 	struct TrackReallineElements *temp;
 
-	for(lokke=0;lokke<wblock->num_reallines;lokke++){
-		num_notes=FindNumberOfNotesOnTrackRealline(trackreallines[lokke].trackreallineelements);
+	for(realline=0;realline<wblock->num_reallines;realline++){
+		num_notes=FindNumberOfNotesOnTrackRealline(trackreallines[realline].trackreallineelements);
 		if(num_notes>0){
 			if(num_notes>1){
-				num_freereallinesdown=FindNumberOfFreeReallinesDown(wblock,wtrack,lokke);
+				num_freereallinesdown=FindNumberOfFreeReallinesDown(wblock,wtrack,realline);
 				if(num_freereallinesdown>=num_notes-1){
-					InsertNotesFromRealline(window,wblock,wtrack,lokke,num_notes-1,num_notes);
+					InsertNotesFromRealline(window,wblock,wtrack,realline,num_notes-1,num_notes);
 				}else{
-					InsertNotesFromRealline(window,wblock,wtrack,lokke,num_freereallinesdown,num_notes);
+					InsertNotesFromRealline(window,wblock,wtrack,realline,num_freereallinesdown,num_notes);
 				}
-				lokke+=num_freereallinesdown;
+				realline+=num_freereallinesdown;
 			}else{
-				temp=wtrack->trackreallines[lokke].trackreallineelements;
+				temp=wtrack->trackreallines[realline].trackreallineelements;
 				while(temp->type!=TRE_THISNOTELINES) temp=temp->next;
 				note=temp->pointer;
-				trackreallines[lokke].note=note->note;
-				InsertCoordinatesForThisNoteLines(window,wtrack,lokke,temp);
+				trackreallines[realline].note=note->note;
+				InsertCoordinatesForThisNoteLines(window,wtrack,realline,temp);
 			}
 		}
 	}
@@ -800,14 +798,12 @@ void AddStopsElements(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	int realline=0;
-	int subrealline;
 	struct Stops *stop=wtrack->track->stops;
 
 	while(stop!=NULL){
-		realline=FindRealLineFor(wblock,R_MAX(stop->Tline,realline),&stop->l.p);
+		int realline=FindRealLineFor(wblock,R_MAX(stop->Tline,realline),&stop->l.p);
 
-		subrealline=FindSubRealLine(window,wblock,realline,&stop->l.p);
+		int subrealline=FindSubRealLine(window,wblock,realline,&stop->l.p);
 		InsertTRLElementS(
 			wtrack,
                         NULL,
@@ -825,6 +821,39 @@ void AddStopsElements(
 		stop=NextStop(stop);
 	}
 
+}
+
+void AddPitchElements(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack
+){
+  struct Notes *note=wtrack->track->notes;
+  while(note!=NULL){
+    struct Pitches *pitch=note->pitches;
+    while(pitch!=NULL){
+      int realline=FindRealLineFor(wblock,R_MAX(pitch->Tline,realline),&pitch->l.p);
+      int subrealline=FindSubRealLine(window,wblock,realline,&pitch->l.p);
+
+      InsertTRLElementS(
+			wtrack,
+                        NULL,
+			realline,
+                        TRE_THISPITCHLINES,0,
+			(float)subrealline,(float)subrealline,0.0f,(float)(wtrack->fxwidth-2),
+			pitch
+                        );
+      
+      if(wtrack->trackreallines[realline].note!=0){
+        wtrack->trackreallines[realline].note=NOTE_MUL;
+      }else{
+        wtrack->trackreallines[realline].note=NOTE_PITCH_START + pitch->note;
+      }
+
+      pitch=NextPitch(pitch);
+    }
+    note=NextNote(note);
+  }
 }
 
 static void create_peaks(
@@ -966,6 +995,8 @@ void UpdateTrackReallines(
 	OrganizeThisNoteLines(window,wblock,wtrack);
 
 	AddStopsElements(window,wblock,wtrack);
+
+        AddPitchElements(window,wblock,wtrack);
 
         create_peaks(window,wblock,wtrack);
         

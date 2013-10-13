@@ -88,6 +88,7 @@ void PasteRange_notes(
 	}
 
 	note->note=fromnote->note;
+        note->note_end=fromnote->note_end;
 	note->velocity=fromnote->velocity;
 	note->cents=fromnote->cents;
 	note->velocity_end=fromnote->velocity_end;

@@ -309,13 +309,13 @@ void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
 	}
 
 	ntime=PEQ_CalcNextVelocityEvent(
-                                peq,
-		peq->time1,
-		btime,
-		peq->time2,
-		peq->note->velocity,
-		&x,
-		peq->note->velocity_end+1		// Don't really know why I have to add 1, but it works...
+                                        peq,
+                                        peq->time1,
+                                        btime,
+                                        peq->time2,
+                                        peq->note->velocity,
+                                        &x,
+                                        peq->note->velocity_end+1		// Don't really know why I have to add 1, but it works...
 	);
 
 	if(ntime>=peq->time2){

@@ -202,15 +202,16 @@ struct Velocities{
 
 
 /*********************************************************************
-	glides.h
+	pitches.h
 *********************************************************************/
 
-struct Glides{
+struct Pitches{
 	struct ListHeader3 l;
 
 	float note;
+	struct Notes *note_note;
 };
-#define NextGlide(a) ((struct Glides *)((a)->l.next))
+#define NextPitch(a) ((struct Pitches *)((a)->l.next))
 
 
 /*********************************************************************
@@ -226,10 +227,12 @@ struct Notes{
 	int velocity;
 
 	Place end;
-	int velocity_end;
 	
 	struct Velocities *velocities;
-	struct Glides *glides;
+	int velocity_end;
+
+	struct Pitches *pitches;
+	float note_end;
 
 	int noend;
 };
@@ -280,6 +283,7 @@ struct Patch{
 
   void (*playnote)(struct Patch *patch,int notenum,int velocity,STime time,float pan);
   void (*changevelocity)(struct Patch *patch,int notenum,int velocity,STime time);
+  void (*changepitch)(struct Patch *patch,int notenum,float pitch,STime time);
   void (*stopnote)(struct Patch *patch,int notenum,int velocity,STime time);
   void (*closePatch)(struct Patch *patch);
   
@@ -493,15 +497,19 @@ struct TrackReallineElements{
   int num_peaks;
   struct APoint *peaks[2];
 };
+
 /************* Types: */
-#define TRE_THISNOTELINES 0
-#define TRE_VELLINECENTS 0x5
-#define TRE_VELLINENODE 0x10
-#define TRE_VELLINE 0x20
-#define TRE_VELLINESTART 0x30
-#define TRE_VELLINEEND 0x40
-#define TRE_STOPLINE 0x90
-#define TRE_REALSTARTSTOP 0xa0
+enum{
+  TRE_THISNOTELINES,
+  TRE_THISPITCHLINES,
+  TRE_VELLINECENTS,
+  TRE_VELLINENODE,
+  TRE_VELLINE,
+  TRE_VELLINESTART,
+  TRE_VELLINEEND,
+  TRE_STOPLINE,
+  TRE_REALSTARTSTOP
+};
 
 /* Subtype for 0-0x40 is
    the same as subtrack for the note.
@@ -512,9 +520,14 @@ struct TrackRealline{
   int note;										/* Is 0 if no note. */
   struct TrackReallineElements *trackreallineelements;
 };
-#define NOTE_MUL 128
-#define NOTE_STP 129
-#define NOTE_MUR 130
+#define NOTE_END_NORMAL 128
+enum{
+  NOTE_MUL=NOTE_END_NORMAL,
+  NOTE_STP,
+  NOTE_MUR,
+  NOTE_PITCH_START
+};
+
 
 /*********************************************************************
 	wfxnodes.h

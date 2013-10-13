@@ -127,6 +127,7 @@ void AD_installNoteAdds_track(
 		}
 
 		note->note=R_BOUNDARIES(nat->notenum,1,127);
+                note->note_end = note->note;
 
 		ListAddElement3(&wtrack->track->notes,&note->l);
 	}

@@ -186,7 +186,7 @@ OBJ7= nodelines.o nodeboxes.o instruments.o patch.o fxlines.o fxlines_legalize.o
 OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o mouse_temponodes.o temponodes_legalize.o
 
 #Playing
-OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o
+OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o
 
 #Disk
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
@@ -588,6 +588,9 @@ player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playercl
 
 PEQvelocities.o:  $(BUILD_DEPENDENCIES) $(CD)PEQvelocities.c
 	$(CC) $(CD)PEQvelocities.c $(OPT)
+
+PEQpitches.o:  $(BUILD_DEPENDENCIES) $(CD)PEQpitches.c
+	$(CC) $(CD)PEQpitches.c $(OPT)
 
 PEQ_calc.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc.c
 	$(CC) $(CD)PEQ_calc.c $(OPT)

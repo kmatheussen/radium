@@ -109,6 +109,10 @@ typedef struct _Voice{
   float end_volume;
   //double gain;
 
+  // Same for pitch
+  float start_pitch;
+  float end_pitch;
+
   Panvals pan;
 
   int pos;
@@ -242,22 +246,26 @@ static long RT_src_callback(void *cb_data, float **data){
   }
 }
 
-static double RT_get_src_ratio2(Data *data, const Sample *sample, int notenum){
-  if(notenum<1)
-    notenum=1;
-  if(notenum>126)
-    notenum=126;
+static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
+  if(pitch<=0.0)
+    pitch=0.0f;
+  if(pitch>126)
+    pitch=126.0f;
 
-  return data->samplerate / scale(data->finetune, 0, 1, sample->frequency_table[notenum-1], sample->frequency_table[notenum+1]);
+  int notenum = (int)pitch;
+  float finetune = pitch - notenum;
+
+  return data->samplerate / scale(finetune, 0, 1, sample->frequency_table[notenum], sample->frequency_table[notenum+1]);
 }
 
 static double RT_get_src_ratio(Data *data, Voice *voice){
   const Sample *sample = voice->sample;
 
   //int notenum = voice->note_num + (int)data->octave_adjust*12 + (int)data->note_adjust;
-  int notenum = voice->note_num + (int)data->note_adjust;
+  //int notenum = voice->note_num + (int)data->note_adjust;
+  float pitch = voice->end_pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
 
-  return RT_get_src_ratio2(data,sample,notenum);
+  return RT_get_src_ratio2(data,sample,pitch);
 }
 
 static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_frames){
@@ -360,6 +368,7 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
   //printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
 
   voice->start_volume = voice->end_volume;
+  voice->start_pitch = voice->end_pitch;
 
   if(startpos+frames_created_by_envelope < num_frames_to_produce)
     return true;
@@ -426,6 +435,9 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
     voice->start_volume = velocity2gain(volume);
     voice->end_volume = voice->start_volume;
 
+    voice->start_pitch = note_num;
+    voice->end_pitch   = voice->start_pitch;
+
     voice->sample = note->samples[i];
     
     if(data->loop_onoff==true && voice->sample->loop_end > voice->sample->loop_start)
@@ -460,6 +472,21 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_n
 
     if(voice->note_num==note_num)
       voice->end_volume = velocity2gain(volume);
+
+    voice = voice->next;
+  }
+}
+
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+  Data *data = (Data*)plugin->data;
+
+  Voice *voice = data->voices_playing;
+
+  while(voice!=NULL){
+    //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
+
+    if(voice->note_num==note_num)
+      voice->end_pitch = pitch;
 
     voice = voice->next;
   }
@@ -1433,6 +1460,7 @@ static SoundPluginType plugin_type = {
  RT_process       : RT_process,
  play_note        : play_note,
  set_note_volume  : set_note_volume,
+ set_note_pitch   : set_note_pitch,
  stop_note        : stop_note,
  get_peaks        : get_peaks,
  set_effect_value : set_effect_value,

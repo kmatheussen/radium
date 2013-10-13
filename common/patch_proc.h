@@ -40,6 +40,7 @@ extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *pa
 extern LANGSPEC void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time);
 extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time);
 extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tracks *track,STime time);
 
 extern LANGSPEC void PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track);
 extern LANGSPEC void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track);

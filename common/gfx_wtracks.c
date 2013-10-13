@@ -154,16 +154,26 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                              )
 {
   struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+  int notenum = trackrealline->note;
+  //bool isgliding = false;
+  int colnum = Col[1];
+
+  if(notenum>=NOTE_PITCH_START){
+    //isgliding = true;
+    notenum -= NOTE_PITCH_START;
+    colnum = 5;
+  }
+
   char **NotesTexts=wtrack->notelength==3?NotesTexts3:NotesTexts2;
 
-  bool isranged=wblock->isranged ? wblock->rangex1<=wtrack->l.num ? wblock->rangex2>=wtrack->l.num ? true : false : false : false;
+  bool isranged=wblock->isranged && wblock->rangex1<=wtrack->l.num && wblock->rangex2>=wtrack->l.num;
 
   if(isranged){
 
     bool ranged=false,notranged=false;
 
-    if(trackrealline->note!=0){
-      if(trackrealline->note==NOTE_MUL){
+    if(notenum!=0){
+      if(notenum==NOTE_MUL){
         struct TrackReallineElements *element=trackrealline->trackreallineelements;
         while(element!=NULL){
           if(element->type==TRE_THISNOTELINES || element->type==TRE_STOPLINE){
@@ -181,7 +191,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
           SetInvertTextLine(
                             window,
                             wblock,
-                            Col[1],
+                            colnum,
                             NotesTexts[NOTE_MUR],	//Is this possible? Will it ever happen?
                             wtrack->notearea.x,
                             realline,
@@ -192,8 +202,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
             SetInvertTextLine(
                               window,
                               wblock,
-                              Col[1],
-                              NotesTexts[trackrealline->note],
+                              colnum,
+                              NotesTexts[notenum],
                               wtrack->notearea.x,
                               realline,
                               true
@@ -202,8 +212,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
             SetTextLine(
                         window,
                         wblock,
-                        Col[1],
-                        NotesTexts[trackrealline->note],
+                        colnum,
+                        NotesTexts[notenum],
                         wtrack->notearea.x,
                         realline,
                         true
@@ -220,8 +230,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
           SetInvertTextLine(
                             window,
                             wblock,
-                            Col[1],
-                            NotesTexts[trackrealline->note],
+                            colnum,
+                            NotesTexts[notenum],
                             wtrack->notearea.x,
                             realline,
                             true
@@ -230,9 +240,9 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
           SetTextLine(
                       window,
                       wblock,
-                      //								Col[1],
-                      trackrealline->note==NOTE_STP||trackrealline->note==NOTE_MUL ? 1 : trackrealline->note+16, //  NCol[trackrealline->note/12],
-                      NotesTexts[trackrealline->note],
+                      //								colnum,
+                      notenum==NOTE_STP||notenum==NOTE_MUL ? 1 : notenum+16, //  NCol[notenum/12],
+                      NotesTexts[notenum],
                       wtrack->notearea.x,
                       realline,
                       true
@@ -242,7 +252,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
     }else{
       if(realline>=wblock->rangey1 && realline<wblock->rangey2){
         SetInvertTextLineNotext(
-                                window,wblock,Col[1],
+                                window,wblock,colnum,
                                 wtrack->notelength,
                                 wtrack->notearea.x,
                                 realline,
@@ -250,15 +260,17 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                                 );
       }
     }
-  }else{
-    if(trackrealline->note!=0 && wtrack->noteshowtype==TEXTTYPE){
 
-      if(trackrealline->note>0 && trackrealline->note<128){
+  }else{
+
+    if(notenum!=0 && wtrack->noteshowtype==TEXTTYPE){
+
+      if(notenum>0 && notenum<128){
 
 
 #if 1
-        //GFX_SetMixColor(window,6,5,scale(trackrealline->note,0,127,0,1000));
-        set_note_color(window,trackrealline->note);
+        //GFX_SetMixColor(window,6,5,scale(notenum,0,127,0,1000));
+        set_note_color(window,notenum);
         GFX_T_FilledBox(
                         window,
                         5,
@@ -267,7 +279,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                         PAINT_BUFFER);
 
 #if 0
-        int x = scale(trackrealline->note,0,127,wtrack->notearea.x,wtrack->notearea.x2);
+        int x = scale(notenum,0,127,wtrack->notearea.x,wtrack->notearea.x2);
 
         GFX_SetMixColor(window, 11, 1, 800);
         GFX_T_Line(
@@ -282,7 +294,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
 #else
         // left fill
 #if 1
-        int x = scale(trackrealline->note,0,127,wtrack->notearea.x,wtrack->notearea.x2);
+        int x = scale(notenum,0,127,wtrack->notearea.x,wtrack->notearea.x2);
         int c = 14;
 
         GFX_SetMixColor(window,5,15,200);
@@ -353,8 +365,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
       SetTextLine(
                   window,
                   wblock,
-                  1, //(trackrealline->note==NOTE_STP || trackrealline->note==NOTE_MUL) ? 1 : trackrealline->note+16, //NCol[trackrealline->note/12],
-                  NotesTexts[trackrealline->note],
+                  colnum, //(notenum==NOTE_STP || notenum==NOTE_MUL) ? 1 : notenum+16, //NCol[notenum/12],
+                  NotesTexts[notenum],
                   wtrack->notearea.x,
                   realline,
                   true

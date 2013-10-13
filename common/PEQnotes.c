@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "PEQmempool_proc.h"
 #include "PEQvelocities_proc.h"
+#include "PEQpitches_proc.h"
 #include "time_proc.h"
 #include "list_proc.h"
 #include "patch_proc.h"
@@ -110,12 +111,11 @@ void InitPEQnote(
 
 	PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
 
-
-	/* Note-stop. */
-
         InitPEQendnote(block,track,note,playlistaddpos);
         
         InitPEQvelocities(block,track,note,playlistaddpos);
+
+        InitPEQpitches(block,track,note,playlistaddpos);
 }
 
 static void InitPEQnotesBlock(
@@ -212,6 +212,7 @@ void PEQ_FindNextNoteAddPlayPos(struct PEventQueue *peq){
 
                                 InitPEQendnote(block,track,note,playlistaddpos);
                                 InitPEQvelocities(block,track,note,playlistaddpos);
+                                InitPEQpitches(block,track,note,playlistaddpos);
 
 				return;
 			}
@@ -230,6 +231,7 @@ void PEQ_FindNextNote(struct PEventQueue *peq){
 		PC_InsertElement2_a(peq,0,&note->l.p);
                 InitPEQendnote(peq->block,peq->track,note,0);
                 InitPEQvelocities(peq->block,peq->track,note,0);
+                InitPEQpitches(peq->block,peq->track,note,0);
 	}else{
 		PEQ_FindNextNoteAddPlayPos(peq);
 	}

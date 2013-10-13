@@ -156,6 +156,16 @@ struct Notes *InsertNote(
 
 	struct Notes *note=talloc(sizeof(struct Notes));
 
+#if 0  // For testing note pitch.
+        note->pitches = talloc(sizeof(struct Pitches));
+	PlaceCopy(&note->pitches->l.p,placement);
+        note->pitches->l.p.line++;
+        note->pitches->note = notenum + 1;
+        note->pitches->note_note = note;
+#else
+        note->note_end = notenum;
+#endif
+
 	PlaceCopy(&note->l.p,placement);
 
 	note->note=notenum;
@@ -225,7 +235,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 	if(
 		0==override &&
 		wtrack->trackreallines[wblock->curr_realline].note>0 &&
-		wtrack->trackreallines[wblock->curr_realline].note<NOTE_MUL
+		wtrack->trackreallines[wblock->curr_realline].note<NOTE_END_NORMAL
 	){
 		wtrack->trackreallines[wblock->curr_realline].note=notenum;
 		element=wtrack->trackreallines[wblock->curr_realline].trackreallineelements;
