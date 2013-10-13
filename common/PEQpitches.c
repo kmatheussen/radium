@@ -1,4 +1,4 @@
-/* Copyright 2000 Kjetil S. Matheussen
+/* Copyright 2000-2013 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 
 // If patch max pitch is much lower than radium max pitch (MAX_PITCH), we avoid sending out two or more messages in a row with the same pitch value.
-STime PEQ_CalcNextPitchEvent(
+static STime PEQ_CalcNextPitchEvent(
                                 struct PEventQueue *peq,
                                 STime time1,
                                 STime time,
@@ -55,10 +55,10 @@ STime PEQ_CalcNextPitchEvent(
 }
 
 
-void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit);
-void PE_ChangePitch(struct PEventQueue *peq,int doit);
-void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit);
-void PE_ChangePitchFromStartToEnd(struct PEventQueue *peq,int doit);
+static void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit);
+static void PE_ChangePitch(struct PEventQueue *peq,int doit);
+static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit);
+static void PE_ChangePitchFromStartToEnd(struct PEventQueue *peq,int doit);
 
 void InitPEQpitches(
 	struct Blocks *block,
@@ -155,7 +155,7 @@ static void SendPitchChange(float x,struct PEventQueue *peq){
 }
 
 
-void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit){
+static void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit){
 	float x;
 	STime ntime,btime;
 	struct Pitches *next;
@@ -207,7 +207,7 @@ void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit){
 
 
 
-void PE_ChangePitch(struct PEventQueue *peq,int doit){
+static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 	float x;
 	STime ntime,btime;
 	struct Pitches *next;
@@ -267,7 +267,7 @@ static float FindNextPitch(struct Notes *note){
     return 100;
 }
 
-void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
+static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 	float x;
 	STime ntime,btime;
 
@@ -304,7 +304,7 @@ void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 
 }
 
-void PE_ChangePitchFromStartToEnd(struct PEventQueue *peq,int doit){
+static void PE_ChangePitchFromStartToEnd(struct PEventQueue *peq,int doit){
 	float x;
 	STime ntime,btime;
 

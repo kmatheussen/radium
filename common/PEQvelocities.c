@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 
 // If patch max velocity is much lower than radium max velocity (MAX_VELOCITY), we avoid sending out two or more messages in a row with the same velocity value.
-STime PEQ_CalcNextVelocityEvent(
+static STime PEQ_CalcNextVelocityEvent(
                                 struct PEventQueue *peq,
                                 STime time1,
                                 STime time,
@@ -54,10 +54,10 @@ STime PEQ_CalcNextVelocityEvent(
 }
 
 
-void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit);
-void PE_ChangeVelocity(struct PEventQueue *peq,int doit);
-void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit);
-void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit);
+static void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit);
+static void PE_ChangeVelocity(struct PEventQueue *peq,int doit);
+static void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit);
+static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit);
 
 void InitPEQvelocities(
 	struct Blocks *block,
@@ -154,7 +154,7 @@ static void SendVelocityChange(int x,struct PEventQueue *peq){
 }
 
 
-void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
+static void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 	struct Velocities *next;
@@ -206,7 +206,7 @@ void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
 
 
 
-void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
+static void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 	struct Velocities *next;
@@ -260,7 +260,7 @@ void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
 
 
 
-void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
+static void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 
@@ -297,7 +297,7 @@ void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
 
 }
 
-void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
+static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
 	int x;
 	STime ntime,btime;
 
