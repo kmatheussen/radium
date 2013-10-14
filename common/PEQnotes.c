@@ -186,38 +186,26 @@ void InitAllPEQnotes(
 }
 
 
-void PEQ_FindNextNoteAddPlayPos(struct PEventQueue *peq){
-	struct Blocks *block;
-	struct Tracks *track;
-	struct Notes *note;
-	NInt tracknum=peq->track->l.num;
-	int playlistaddpos=0;
+static void PEQ_FindNextNoteAddPlayPos(struct PEventQueue *peq){
+  struct Blocks *block;
+  struct Tracks *track;
+  struct Notes *note;
+  int playlistaddpos=0;
 
-	for(;;){
-		playlistaddpos++;
-		block=PC_GetPlayBlock(playlistaddpos);
-		if(block==NULL){
-			ReturnPEQelement(peq);
-			return;
-		}
-		track=ListFindElement1_r0(&block->tracks->l,tracknum);
-		if(track!=NULL){
-			note=track->notes;
-			if(note!=NULL){
-				peq->block=block;
-				peq->track=track;
-				peq->note=note;
+  if (PC_GetNextNoteAfterCurrentBlock(peq->track->l.num, &playlistaddpos, &note, &track, &block) == false) {
+    ReturnPEQelement(peq);
+    return;
+  }
 
-				PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
+  peq->block=block;
+  peq->track=track;
+  peq->note=note;
 
-                                InitPEQendnote(block,track,note,playlistaddpos);
-                                InitPEQvelocities(block,track,note,playlistaddpos);
-                                InitPEQpitches(block,track,note,playlistaddpos);
+  PC_InsertElement2_a(peq,playlistaddpos,&note->l.p);
 
-				return;
-			}
-		}
-	}
+  InitPEQendnote(block,track,note,playlistaddpos);
+  InitPEQvelocities(block,track,note,playlistaddpos);
+  InitPEQpitches(block,track,note,playlistaddpos);
 
 }
 

@@ -259,33 +259,53 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 
 }
 
-static float FindNextPitch(struct Notes *note){
-  struct Notes *next_note = NextNote(note);
+static float FindNextPitch(struct PEventQueue *peq){
+  struct Notes *next_note = NextNote(peq->pitch->note_note);
   if(next_note!=NULL)
+
     return next_note->note;
-  else
-    return 100;
+
+  else {
+
+    struct Blocks *block;
+    struct Tracks *track;
+    struct Notes *note;
+    int playlistaddpos=0;
+    
+    if (PC_GetNextNoteAfterCurrentBlock(peq->track->l.num, &playlistaddpos, &note, &track, &block) == false) {
+      return -1.0f;
+    }
+
+    return note->note;
+  }
 }
 
 static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 	float x;
-	STime ntime,btime;
 
-	btime=PC_TimeToRelBlockStart(pc->end_time);
+	STime btime=PC_TimeToRelBlockStart(pc->end_time);
 
 	if(btime>=peq->time2){
 		ReturnPEQelement(peq);
 		return;
 	}
 
-	ntime=PEQ_CalcNextPitchEvent(
+        float next_pitch = FindNextPitch(peq);
+        if(next_pitch<=0.0f){
+          ReturnPEQelement(peq);
+          return;
+	}
+
+        //printf("next_pitch: %f\n",next_pitch);
+
+	STime ntime=PEQ_CalcNextPitchEvent(
                                      peq,
                                      peq->time1,
                                      btime,
                                      peq->time2,
                                      peq->pitch->note,
                                      &x,
-                                     FindNextPitch(peq->pitch->note_note)
+                                     next_pitch
 	);
 
 	if(ntime>peq->time2){

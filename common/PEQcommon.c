@@ -52,9 +52,28 @@ struct Blocks *PC_GetPlayBlock(int numfromcurrent){
 	}
 
 	return BL_GetBlockFromPos(root->curr_playlist+numfromcurrent);
-
 }
 
+bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, struct Blocks **block){
+  *playlistaddpos=0;
+
+  for(;;){
+    (*playlistaddpos)++;
+
+    *block = PC_GetPlayBlock(*playlistaddpos);
+    if(*block==NULL)
+      break;
+
+    *track = ListFindElement1_r0(&(*block)->tracks->l,tracknum);    
+    if(*track != NULL) {
+      *note = (*track)->notes;
+      if(*note!=NULL)
+        return true;
+    }    
+  }
+  
+  return false;
+}
 
 static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
 	int time=pc->seqtime;

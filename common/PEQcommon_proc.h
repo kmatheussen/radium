@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern void PC_RemoveFirst(void);
 extern struct Blocks *PC_GetPlayBlock(int numfromcurrent);
+extern bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, struct Blocks **block);
 
 extern void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
