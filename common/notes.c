@@ -55,7 +55,8 @@ struct Notes *GetCurrNote(struct Tracker_Windows *window){
 	wtrack=wblock->wtrack;
 	trackrealline= &wtrack->trackreallines[wblock->curr_realline];
 
-	if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL) return NULL;
+	if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL)
+          return NULL;
 
 	element=trackrealline->trackreallineelements;
 
@@ -156,16 +157,7 @@ struct Notes *InsertNote(
 
 	struct Notes *note=talloc(sizeof(struct Notes));
 
-#if 1  // For testing note pitch.
-        note->pitches = talloc(sizeof(struct Pitches));
-	PlaceCopy(&note->pitches->l.p,placement);
-        note->pitches->l.p.line++;
-        note->pitches->note = notenum + 1;
-        note->pitches->note_note = note;
         note->note_end = notenum;
-#else
-        note->note_end = notenum;
-#endif
 
 	PlaceCopy(&note->l.p,placement);
 
@@ -473,19 +465,4 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	PC_StopPause();
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

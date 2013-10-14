@@ -136,15 +136,11 @@ void AddVelocity(
 }
 
 void AddVelocityCurrPos(struct Tracker_Windows *window){
-	struct WBlocks *wblock;
-	struct LocalZooms *realline;
-	int subtrack;
-
 	PC_Pause();
 
-	wblock=window->wblock;
-	realline= wblock->reallines[wblock->curr_realline];
-	subtrack=window->curr_track_sub;
+	struct WBlocks *wblock=window->wblock;
+	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
+	int subtrack=window->curr_track_sub;
 
 	Undo_Notes_CurrPos(window);
 

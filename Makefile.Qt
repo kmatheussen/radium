@@ -170,7 +170,7 @@ RTMIDI_LDFLAGS ?=
 
 OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o
 
-OBJ2= notes.o notes_legalize.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
+OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
@@ -394,6 +394,9 @@ localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c
 
 notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.c 
 	$(CC) $(CD)notes.c $(OPT)
+
+pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
+	$(CC) $(CD)pitches.c $(OPT)
 
 wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)wblocks.c 
 	$(CC) $(CD)wblocks.c $(OPT)

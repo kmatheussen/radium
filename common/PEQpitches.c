@@ -272,9 +272,8 @@ static float FindNextPitch(struct PEventQueue *peq){
     struct Notes *note;
     int playlistaddpos=0;
     
-    if (PC_GetNextNoteAfterCurrentBlock(peq->track->l.num, &playlistaddpos, &note, &track, &block) == false) {
+    if (PC_GetNextNoteAfterCurrentBlock(peq->track->l.num, &playlistaddpos, &note, &track, &block) == false)
       return -1.0f;
-    }
 
     return note->note;
   }

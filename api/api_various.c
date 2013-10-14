@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/temponodes_proc.h"
 #include "../common/fxlines_proc.h"
 #include "../common/notes_proc.h"
+#include "../common/pitches_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/disk_save_proc.h"
 #include "../common/disk_load_proc.h"
@@ -41,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_wtracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
+
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -194,7 +196,13 @@ void generalReturn(int windownum){
     AddTempoNodeCurrPos(window,(float) -0.0f);
     break;
   default:
-    if(window->curr_track>=0 && window->curr_track_sub>=0) AddVelocityCurrPos(window);
+    printf("curr_track: %d, sub_track: %d\n",window->curr_track,window->curr_track_sub);
+    if(window->curr_track>=0){
+      if (window->curr_track_sub>=0)
+        AddVelocityCurrPos(window);
+      else if (window->curr_track_sub==-1)
+        SetPitchCurrPos(window);
+    }
     break;
   }  
 }
