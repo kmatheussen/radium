@@ -55,10 +55,8 @@ static STime PEQ_CalcNextPitchEvent(
 }
 
 
-static void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit);
 static void PE_ChangePitch(struct PEventQueue *peq,int doit);
 static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit);
-static void PE_ChangePitchFromStartToEnd(struct PEventQueue *peq,int doit);
 
 void InitPEQpitches(
 	struct Blocks *block,
@@ -74,36 +72,25 @@ void InitPEQpitches(
         if(track->patch==NULL)
           return;
 
-	if(pitch==NULL && note->note == note->note_end)
+	if(pitch==NULL)
           return;
 
 	peq=GetPEQelement();
 	peq->block=block;
 	peq->track=track;
 	peq->note=note;
-	peq->time1=Place2STime(block,&note->l.p);
+        peq->pitch=pitch;
+	peq->time1=Place2STime(block,&pitch->l.p);
 
-	if(pitch==NULL){
-		peq->time2=Place2STime(block,&note->end);
-		peq->TreatMe=PE_ChangePitchFromStartToEnd;
-		PC_InsertElement(
-			peq,playlistaddpos,
-			PEQ_CalcNextPitchEvent(
-                                                  peq,
-                                                  peq->time1,
-                                                  peq->time1,
-                                                  peq->time2,
-                                                  note->note,
-                                                  &x,
-                                                  note->note_end
-			)
-		);
-		return;
-	}
-
-	peq->time2=Place2STime(block,&pitch->l.p);
-	peq->TreatMe=PE_ChangePitchFromStart;
-	peq->pitch=pitch;
+        struct Pitches *next_pitch = NextPitch(pitch);
+        if(next_pitch==NULL){
+          peq->time2=Place2STime(peq->block,&peq->note->end);
+          peq->TreatMe=PE_ChangePitchToEnd;
+        } else {
+          peq->nextpitch = next_pitch;
+          peq->time2=Place2STime(block,&next_pitch->l.p);
+          peq->TreatMe=PE_ChangePitch;
+        }
 
 	PC_InsertElement(
 		peq,playlistaddpos,
@@ -117,7 +104,6 @@ void InitPEQpitches(
                                   pitch->note
 		)
 	);
-
 }
 
 
@@ -153,58 +139,6 @@ static void SendPitchChange(float x,struct PEventQueue *peq){
           */
 	}
 }
-
-
-static void PE_ChangePitchFromStart(struct PEventQueue *peq,int doit){
-	float x;
-	STime ntime,btime;
-	struct Pitches *next;
-
-	btime=PC_TimeToRelBlockStart(pc->end_time);
-
-	if(btime>=peq->time2){
-		next=NextPitch(peq->pitch);
-		peq->time1=peq->time2;
-		if(next==NULL){
-			peq->time2=Place2STime(peq->block,&peq->note->end);
-			peq->TreatMe=PE_ChangePitchToEnd;
-			PE_ChangePitchToEnd(peq,doit);
-		}else{
-			peq->nextpitch=next;
-			peq->time2=Place2STime(peq->block,&next->l.p);
-			peq->TreatMe=PE_ChangePitch;
-			PE_ChangePitch(peq,doit);
-		}
-		return;
-	}
-
-	ntime=PEQ_CalcNextPitchEvent(
-                                     peq,
-                                     peq->time1,
-                                     btime,
-                                     peq->time2,
-                                     peq->note->note,
-                                     &x,
-                                     peq->pitch->note
-                                     );
-
-	if(btime==ntime){
-		Pdebug("btime==ntime, stopper, x: %d, btime: %d, x1: %d, x2: %d\n",x,btime,peq->note->note,peq->pitch->note);
-		return;
-	}
-
-	if(ntime>peq->time2) ntime=peq->time2;
-        
-//	Pdebug("start->vel,Pitch: %d, time: %d, ntime: %d, btime: %d, time1: %d, time2: %d\n",x,time,ntime,btime,peq->time1,peq->time2);
-	if(doit){
-          SendPitchChange(x,peq);
-	}
-
-	PC_InsertElement(peq,0,ntime);
-
-	return;
-}
-
 
 
 static void PE_ChangePitch(struct PEventQueue *peq,int doit){
@@ -322,42 +256,3 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 	return;
 
 }
-
-static void PE_ChangePitchFromStartToEnd(struct PEventQueue *peq,int doit){
-	float x;
-	STime ntime,btime;
-
-	btime=PC_TimeToRelBlockStart(pc->end_time);
-
-	if(btime>=peq->time2){
-		ReturnPEQelement(peq);
-		return;
-	}
-
-	ntime=PEQ_CalcNextPitchEvent(
-                                        peq,
-                                        peq->time1,
-                                        btime,
-                                        peq->time2,
-                                        peq->note->note,
-                                        &x,
-                                        120 //peq->note->note_end+1		// Don't really know why I have to add 1, but it works...
-	);
-
-	if(ntime>=peq->time2){
-		ReturnPEQelement(peq);
-		return;
-	}
-
-
-//	Pdebug("Player start->end, Pitch: %d\n",x);
-	if(doit){
-		SendPitchChange(x,peq);
-	}
-
-	PC_InsertElement(peq,0,ntime);
-
-	return;
-}
-
-

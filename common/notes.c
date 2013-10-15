@@ -157,8 +157,6 @@ struct Notes *InsertNote(
 
 	struct Notes *note=talloc(sizeof(struct Notes));
 
-        note->note_end = notenum;
-
 	PlaceCopy(&note->l.p,placement);
 
 	note->note=notenum;

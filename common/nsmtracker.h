@@ -232,7 +232,6 @@ struct Notes{
 	int velocity_end;
 
 	struct Pitches *pitches;
-	float note_end;
 
 	int noend;
 };

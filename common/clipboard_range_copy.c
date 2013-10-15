@@ -77,7 +77,6 @@ void CopyRange_notes(
 
 	note=talloc(sizeof(struct Notes));
 	note->note=fromnote->note;
-        note->note_end = fromnote->note_end;
 	note->cents=fromnote->cents;
 	note->velocity=fromnote->velocity;
 	note->noend=fromnote->noend;

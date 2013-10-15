@@ -55,8 +55,7 @@ struct Notes *LoadNote(void){
 
 	LoadPlace(&note->l.p);
 	note->note=DC_LoadI();
-        note->note_end = note->note;
-	note->cents=DC_LoadI(); // TODO: Throw away cents (never used), and replace the slot with note_end.
+	note->cents=DC_LoadI();
 	note->velocity=DC_LoadI(); if(disk_load_version<0.67) note->velocity=note->velocity*MAX_VELOCITY/127;
 	LoadPlace(&note->end);
 	note->velocity_end=DC_LoadI(); if(disk_load_version<0.67) note->velocity_end=note->velocity_end*MAX_VELOCITY/127;

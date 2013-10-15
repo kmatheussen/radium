@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
+#include <ctype.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -27,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 
 static int get_chroma(char chromachar){
+  chromachar = tolower(chromachar);
+
   switch(chromachar){
   case 'c':
     return 0;
@@ -50,6 +53,8 @@ static int get_chroma(char chromachar){
 }
 
 static int get_octave(char octavechar){
+  octavechar = tolower(octavechar);
+
   switch(octavechar){
   case '0':
     return 0;
@@ -73,15 +78,9 @@ static int get_octave(char octavechar){
     return 9;
   case 'a':
     return 10;
-  case 'A':
-    return 10;
   case 'b':
     return 11;
-  case 'B':
-    return 11;
   case 'c':
-    return 12;
-  case 'C':
     return 12;
   default:
     return -1;
@@ -95,6 +94,8 @@ static int get_sharp(char sharptext){
     return -1;
   else if(sharptext=='B')
     return -1;
+  else if(sharptext=='-')
+    return 0;
   else
     return -2;
 }
@@ -138,8 +139,6 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
   int subtrack_num;
   struct Notes *note = NULL;
 
-  PC_Pause();
-
   for(subtrack_num=0;subtrack_num<num_subtracks;subtrack_num++){
     note = FindNoteOnSubTrack(window, wblock, wtrack, subtrack_num, realline_num, &realline->l.p);
     if(note != NULL)
@@ -147,27 +146,27 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
   }
 
   int notenum = -1;
-
+  
   if (note != NULL) {
-
+    
     printf("note: %d\n",note==NULL ? -1 : note->note);
     ReqType reqtype=GFX_OpenReq(window,30,12,"Set Pitch");
     char *notetext;
 
     do{
-       notetext = GFX_GetString(
-                    window,
-                    reqtype,
-                    "Write note to pitch from (for example: c4 or c#5) >"
-                    );
+      notetext = GFX_GetString(
+                               window,
+                               reqtype,
+                               "Write note to pitch from (for example: c4 or c#5) >"
+                               );
       if(notetext==NULL)
         break;
-
+      
       notenum=notenum_from_notetext(notetext);
     }while(notenum==-1);
-
+    
     GFX_CloseReq(window,reqtype);
-
+    
     printf("notenum: %d\n",notenum);
 
     if(notetext!=NULL){
@@ -176,7 +175,9 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
       pitch->note = notenum;
       pitch->note_note = note;
 
-      ListAddElement3(&note->pitches, &pitch->l);
+      PC_Pause(); {
+        ListAddElement3(&note->pitches, &pitch->l);
+      }PC_StopPause();
 
       UpdateTrackReallines(window,wblock,wtrack);
       ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
@@ -184,7 +185,4 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
     }
 
   }
-
-
-  PC_StopPause();
 }
