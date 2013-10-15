@@ -1038,6 +1038,17 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_n
   }
 }
 
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+  Data *data = (Data*)plugin->data;
+  Voice *voice = data->voices_playing;
+  //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
+  while(voice!=NULL){
+    if(voice->note_num==note_num)
+      *(voice->myUI._freq_control) = midi_to_hz(pitch);
+    voice=voice->next;
+  }
+}
+
 static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
@@ -1216,6 +1227,8 @@ static void fill_type(SoundPluginType *type){
 
  type->play_note       = play_note;
  type->set_note_volume = set_note_volume;
+ type->set_note_pitch  = set_note_pitch;
+
  type->stop_note       = stop_note;
 
  type->set_effect_value         = set_effect_value;
