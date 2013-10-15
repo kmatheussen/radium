@@ -58,6 +58,33 @@ void PasteRange_velocities(
 	PasteRange_velocities(block,tovelocity,NextVelocity(fromvelocity),place);
 }
 
+void PasteRange_pitches(
+	struct Blocks *block,
+	struct Pitches **topitch,
+	struct Pitches *frompitch,
+	Place *place
+){
+	Place lastplace;
+	struct Pitches *pitch;
+
+	if(frompitch==NULL) return;
+
+	pitch=talloc(sizeof(struct Pitches));
+
+	PlaceSetLastPos(block,&lastplace);
+
+	PlaceCopy(&pitch->l.p,&frompitch->l.p);
+	PlaceAdd(&pitch->l.p,place);
+
+	if(PlaceGreaterOrEqual(&pitch->l.p,&lastplace)) return;
+
+	pitch->note=frompitch->note;
+
+	ListAddElement3(topitch,&pitch->l);
+
+	PasteRange_pitches(block,topitch,NextPitch(frompitch),place);
+}
+
 void PasteRange_notes(
 	struct Blocks *block,
 	struct Tracks *track,
@@ -95,6 +122,7 @@ void PasteRange_notes(
 	ListAddElement3(&track->notes,&note->l);
 
 	PasteRange_velocities(block,&note->velocities,fromnote->velocities,place);
+	PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
 
 	PasteRange_notes(block,track,NextNote(fromnote),place);
 }

@@ -209,7 +209,6 @@ struct Pitches{
 	struct ListHeader3 l;
 
 	float note;
-	struct Notes *note_note;
 };
 #define NextPitch(a) ((struct Pitches *)((a)->l.next))
 

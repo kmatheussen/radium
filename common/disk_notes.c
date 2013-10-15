@@ -44,6 +44,7 @@ DC_start("NOTE");
 	DC_SaveI(note->noend);
 
 	SaveVelocities(note->velocities);
+	SavePitches(note->pitches);
 
 DC_end();
 SaveNotes(NextNote(note));
@@ -61,10 +62,22 @@ struct Notes *LoadNote(void){
 	note->velocity_end=DC_LoadI(); if(disk_load_version<0.67) note->velocity_end=note->velocity_end*MAX_VELOCITY/127;
 	note->noend=DC_LoadI();
 
-	if(DC_Next()==LS_OBJECT){
-		LoadVelocities(&note->velocities);
-		DC_Next();
-	}
+        if(disk_load_version<0.69) {
+
+          if(DC_Next()==LS_OBJECT){
+            LoadVelocities(&note->velocities);
+            DC_Next();
+          }
+
+        } else {
+
+            DC_Next();
+            LoadVelocities(&note->velocities);
+
+            DC_Next();
+            LoadPitches(&note->pitches);
+            DC_Next();
+        }
 
 
 error:

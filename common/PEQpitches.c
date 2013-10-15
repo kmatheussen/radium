@@ -64,7 +64,6 @@ void InitPEQpitches(
 	struct Notes *note,
 	int playlistaddpos
 ){
-	float x;
 	struct PEventQueue *peq;
 
 	struct Pitches *pitch=note->pitches;
@@ -93,17 +92,9 @@ void InitPEQpitches(
         }
 
 	PC_InsertElement(
-		peq,playlistaddpos,
-		PEQ_CalcNextPitchEvent(
-                                  peq,
-                                  peq->time1,
-                                  peq->time1,
-                                  peq->time2,
-                                  note->note,
-                                  &x,
-                                  pitch->note
-		)
-	);
+                         peq,playlistaddpos,
+                         peq->time1
+                         );
 }
 
 
@@ -194,7 +185,7 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 }
 
 static float FindNextPitch(struct PEventQueue *peq){
-  struct Notes *next_note = NextNote(peq->pitch->note_note);
+  struct Notes *next_note = NextNote(peq->note);
   if(next_note!=NULL)
 
     return next_note->note;

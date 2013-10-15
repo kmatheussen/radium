@@ -70,6 +70,7 @@ void InsertLines_notes(
 		}
 
 		List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
+		List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
 	}
 }
 

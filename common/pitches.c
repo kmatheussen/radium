@@ -173,7 +173,7 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
       struct Pitches *pitch = talloc(sizeof(struct Pitches));
       PlaceCopy(&pitch->l.p,&realline->l.p);
       pitch->note = notenum;
-      pitch->note_note = note;
+      //pitch->note_note = note;
 
       PC_Pause(); {
         ListAddElement3(&note->pitches, &pitch->l);

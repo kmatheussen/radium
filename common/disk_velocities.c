@@ -31,14 +31,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 void SaveVelocities(struct Velocities *velocity){
-if(velocity==NULL) return;
 DC_start("VELOCITIES");
-
-	do{
+ 
+	while(velocity!=NULL){
 		SavePlace(&velocity->l.p);
 		DC_SaveI(velocity->velocity);
 		velocity=NextVelocity(velocity);
-	}while(velocity!=NULL);
+	}
 
 DC_end();
 }
@@ -58,6 +57,41 @@ void LoadVelocities(struct Velocities **to){
 		velocity->Tdividor=DC_LoadU32();
 		velocity->velocity=DC_LoadI();  if(disk_load_version<0.67) velocity->velocity=velocity->velocity*MAX_VELOCITY/127;
 		ListAddElement3(to,&velocity->l);
+	}
+
+
+error:
+	return;
+}
+
+
+void SavePitches(struct Pitches *pitch){
+DC_start("PITCHES");
+ 
+	while(pitch!=NULL){
+		SavePlace(&pitch->l.p);
+		DC_SaveF(pitch->note);
+		pitch=NextPitch(pitch);
+	}
+
+DC_end();
+}
+
+
+void LoadPitches(struct Pitches **to){
+
+	struct Pitches *pitch;
+
+
+	while(dc.success){
+		DC_fgets();
+		if(dc.ret[0]=='/') return;
+		pitch=DC_alloc(sizeof(struct Pitches));
+		pitch->Tline=atoi(dc.ret);
+		pitch->Tcounter=DC_LoadU32();
+		pitch->Tdividor=DC_LoadU32();
+		pitch->note=DC_LoadF();
+		ListAddElement3(to,&pitch->l);
 	}
 
 

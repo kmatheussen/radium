@@ -137,6 +137,7 @@ void StopAllNotesAtPlace(
 	while(temp!=NULL && PlaceLessThan(&temp->l.p,placement)){
 		if(PlaceGreaterThan(&temp->end,placement)){
 			CutListAt(&temp->velocities,placement);
+			CutListAt(&temp->pitches,placement);
 			PlaceCopy(&temp->end,placement);
 		}
 		temp=NextNote(temp);

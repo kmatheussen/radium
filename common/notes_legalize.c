@@ -45,8 +45,6 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 	Place endplace;
 	struct Notes *note=track->notes;
 	struct Notes *notetemp;
-	struct Velocities *velocity;
-	struct Velocities *velocitytemp;
 	struct Stops *stop=track->stops;
 	struct Stops *stoptemp;
 
@@ -67,20 +65,36 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 			continue;
 		}
 
-		velocity=note->velocities;
+		struct Velocities *velocity=note->velocities;
 		while(velocity!=NULL){
 			p=&velocity->l.p;
 			if(
 				PlaceLessOrEqual(p,p1) ||
 				PlaceGreaterOrEqual(p,p2)
 			){
-				velocitytemp=NextVelocity(velocity);
+				struct Velocities *velocitytemp=NextVelocity(velocity);
 				ListRemoveElement3(&note->velocities,&velocity->l);
 				velocity=velocitytemp;
 				continue;
 			}
 			p1=p;
 			velocity=NextVelocity(velocity);
+		}
+
+		struct Pitches *pitch=note->pitches;
+		while(pitch!=NULL){
+			p=&pitch->l.p;
+			if(
+				PlaceLessOrEqual(p,p1) ||
+				PlaceGreaterOrEqual(p,p2)
+			){
+				struct Pitches *pitchtemp=NextPitch(pitch);
+				ListRemoveElement3(&note->pitches,&pitch->l);
+				pitch=pitchtemp;
+				continue;
+			}
+			p1=p;
+			pitch=NextPitch(pitch);
 		}
 
 		note=NextNote(note);

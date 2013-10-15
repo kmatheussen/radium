@@ -78,6 +78,7 @@ void Block_Set_num_lines(
 			note=track->notes;
 			while(note!=NULL){
 				CutListAt(&note->velocities,&lastplace);
+				CutListAt(&note->pitches,&lastplace);
 				if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
 					PlaceCopy(&note->end,&lastplace);
 				}

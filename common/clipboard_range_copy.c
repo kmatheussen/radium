@@ -50,7 +50,29 @@ void CopyRange_velocities(
 	ListAddElement3(tovelocity,&velocity->l);
 
 	CopyRange_velocities(tovelocity,NextVelocity(fromvelocity),p1,p2);
+}
 
+
+void CopyRange_pitches(
+	struct Pitches **topitch,
+	struct Pitches *frompitch,
+	Place *p1,
+	Place *p2
+){
+	struct Pitches *pitch;
+
+	if(frompitch==NULL) return;
+
+	if(PlaceGreaterOrEqual(&frompitch->l.p,p2)) return;
+
+	pitch=talloc(sizeof(struct Pitches));
+	pitch->note=frompitch->note;
+	PlaceCopy(&pitch->l.p,&frompitch->l.p);
+	PlaceSub(&pitch->l.p,p1);
+
+	ListAddElement3(topitch,&pitch->l);
+
+	CopyRange_pitches(topitch,NextPitch(frompitch),p1,p2);
 }
 
 
@@ -91,6 +113,7 @@ void CopyRange_notes(
 	ListAddElement3(tonote,&note->l);
 
 	CopyRange_velocities(&note->velocities,fromnote->velocities,p1,p2);
+	CopyRange_pitches(&note->pitches,fromnote->pitches,p1,p2);
 
 	CopyRange_notes(tonote,NextNote(fromnote),p1,p2);
 }
