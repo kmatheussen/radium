@@ -837,7 +837,7 @@ void AddPitchElements(
 
       InsertTRLElementS(
 			wtrack,
-                        NULL,
+                        note,
 			realline,
                         TRE_THISPITCHLINES,0,
 			(float)subrealline,(float)subrealline,0.0f,(float)(wtrack->fxwidth-2),

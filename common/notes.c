@@ -380,6 +380,11 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 				note=(struct Notes *)element->pointer;
 				ListRemoveElement3(&wtrack->track->notes,&note->l);
 			}
+			if(element->type==TRE_THISPITCHLINES){
+                          note=element->note;
+                          struct Pitches *pitch = element->pointer;
+                          ListRemoveElement3(&note->pitches,&pitch->l);
+			}
 			element=element->next;
 //			nextnote=NextNote(note);
 		}
