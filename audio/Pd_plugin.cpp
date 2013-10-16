@@ -326,6 +326,16 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t time, int not
   libpds_polyaftertouch(pd, 0, note_num, volume*127);
 }
 
+static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+  Data *data = (Data*)plugin->data;
+  pd_t *pd = data->pd;
+
+  t_atom v[2]; 
+  SETFLOAT(v, note_num);
+  SETFLOAT(v + 1, pitch);
+  libpds_list(pd, "radium_note_pitch", 2, v);
+}
+
 static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -874,6 +884,7 @@ static void add_plugin(const char *name, const char *filename) {
   plugin_type->RT_process       = RT_process;
   plugin_type->play_note        = RT_play_note;
   plugin_type->set_note_volume  = RT_set_note_volume;
+  plugin_type->set_note_pitch   = RT_set_note_pitch;
   plugin_type->stop_note        = RT_stop_note;
   plugin_type->set_effect_value = RT_set_effect_value;
   plugin_type->get_effect_value = RT_get_effect_value;
