@@ -38,12 +38,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ***************************************************************/
 
 
+#include <string.h>
 
+#ifdef __AMIGA__
 #include <exec/types.h>
-#include <proplayer.h>
+#include "proplayer.h"
+
+#include "../Amiga/Amiga_bs_edit_proc.h"
+#include "../Amiga/plug-ins/camd_i_plugin.h"
+#include "../Amiga/plug-ins/camd_i_plugin_proc.h"
+#include "../Amiga/plug-ins/camd_get_clustername_proc.h"
+#include "../Amiga/plug-ins/camd_getMidiLink_proc.h"
+#include "../Amiga/plug-ins/camd_playfromstart_proc.h"
+#include "../Amiga/plug-ins/camd_fx_proc.h"
+#include "../Amiga/instrprop/Amiga_instrprop_edit_proc.h"
+
+#else
+#include <stdint.h>
+typedef uint32_t ULONG;
+typedef uint16_t UWORD;
+typedef int16_t WORD;
+typedef int8_t BYTE;
+typedef uint8_t UBYTE;
+
+#define EXEC_TYPES_H 1
+#include "proplayer.h"
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
+#include "../common/vector_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/block_properties_proc.h"
 #include "../common/clipboard_track_cut_proc.h"
@@ -52,20 +76,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/windows_proc.h"
 #include "../common/reallines_proc.h"
 #include "../common/undo.h"
-#include "../Amiga/Amiga_bs_edit_proc.h"
 #include "../common/visual_proc.h"
-#include "../Amiga/plug-ins/camd_i_plugin.h"
-#include "../Amiga/plug-ins/camd_i_plugin_proc.h"
-#include "../Amiga/plug-ins/camd_get_clustername_proc.h"
-#include "../Amiga/plug-ins/camd_getMidiLink_proc.h"
-#include "../Amiga/plug-ins/camd_playfromstart_proc.h"
-#include "../Amiga/plug-ins/camd_fx_proc.h"
-#include <string.h>
-#include "../Amiga/instrprop/Amiga_instrprop_edit_proc.h"
-#include "../common/trackreallineelements_proc.h"
 #include "../common/blocklist_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/time_proc.h"
+#include "../common/instruments_proc.h"
+#include "../common/OS_Bs_edit_proc.h"
+#include "../common/read_binary.h"
+
+int createNewInstrument(char *type, char *name);
+
 
 typedef uint8_t UBYTE;
 
@@ -128,19 +148,19 @@ int MMD_findVelocity(
 	int lokke;
 	struct CmdTrackLine *cmdtrackline;
 
-	if(trackline->cmd==0xc) return (int)max(0,min(trackline->val*2-1,127));
+	if(trackline->cmd==0xc) return (int)R_MAX(0,R_MIN(trackline->val*2-1,127));
 
 	if(numpages>0){
 		for(lokke=0;lokke<numpages;lokke++){
 			cmdtrackline=cmdpagetable[lokke];
 			cmdtrackline=&cmdtrackline[numtracks*line+track];
-			if(cmdtrackline->cmd==0xc) return (int)max(0,min(cmdtrackline->val*2-1,127));
+			if(cmdtrackline->cmd==0xc) return (int)R_MAX(0,R_MIN(cmdtrackline->val*2-1,127));
 		}
 	}
 	if(patch==NULL){
 		return 100;
 	}
-	return patch->standardvel;
+	return root->standardvel;
 }
 
 
@@ -279,7 +299,8 @@ void LoadOctaBlock(
 			}
 
 			if(trackline->instrument!=0 && patch==NULL){
-				patch=ListFindElement1_r0(&root->song->instruments->patches->l,(NInt)trackline->instrument-1);
+                          //patch=ListFindElement1_r0(&root->song->instruments->patches->l,(NInt)trackline->instrument-1);
+                          patch=get_MIDI_instrument()->patches.elements[trackline->instrument-1];
 			}
 			if(trackline->note!=0){
 				note=talloc(sizeof(struct Notes));
@@ -337,15 +358,21 @@ char *MMD_GetInstrumentName(FILE *file,NInt num){
 	char *name;
 
 	fseek(file,32,SEEK_SET);
-	fread(&expdata,4,1,file);
+        expdata = read_be32uint(file);
+
 	fseek(file,expdata+20,SEEK_SET);
-	fread(&iinfo,4,1,file);
+        iinfo = read_be32uint(file);
+
+        i_ext_entries = read_be16uint(file);
+        i_ext_entrsz = read_be16uint(file);
+        /*
 	fread(&i_ext_entries,2,1,file);
 	fread(&i_ext_entrsz,2,1,file);
+        */
 
 	if(num>=i_ext_entries) return "NN";
 
-	fseek(file,iinfo+(num*i_ext_entrsz),SEEK_SET);
+	fseek(file,iinfo+(num*i_ext_entrsz),SEEK_SET);        
 	fread(temp,i_ext_entrsz,1,file);
 
 	if(strlen(temp)<2) return "NN";
@@ -359,13 +386,13 @@ char *MMD_GetInstrumentName(FILE *file,NInt num){
 
 void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 	NInt lokke;
-	struct Instruments *instrument=root->song->instruments;
-	struct Patch *patch;
-	struct PatchData *patchdata;
-	struct MyMidiLinks *mymidilink=NULL;
-	char *clustername=NULL;
 
 	struct MMD0sample *mmd0sample=talloc_atomic(sizeof(struct MMD0sample)*63);
+
+#if 0
+        // FIX
+	struct MyMidiLinks *mymidilink=NULL;
+	char *clustername=NULL;
 
 	while(mymidilink==NULL){
 		while(clustername==NULL){
@@ -373,28 +400,44 @@ void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 		}
 		mymidilink=CAMD_getMyMidiLink(clustername);
 	}
+#endif
 
 	fseek(file,mmd0song,SEEK_SET);
 	fread(mmd0sample,sizeof(struct MMD0sample)*63,1,file);
 
-	for(lokke=0;lokke<63;lokke++){		//Why 63 and not 64?
 
-		patch=ListFindElement1_r0(&instrument->patches->l,lokke);
+#if 1
+	for(lokke=0;lokke<63;lokke++){		//Why 63 and not 64?
+          createNewInstrument("midi", MMD_GetInstrumentName(file,lokke));
+        }
+#else
+        struct Instruments *instrument=get_MIDI_instrument();
+
+	for(lokke=0;lokke<63;lokke++){		//Why 63 and not 64?
+                
+
+          	struct Patch *patch=instrument->patches.num_elements>=lokke ? NULL : instrument->patches.elements[lokke];
+		//patch=ListFindElement1_r0(&instrument->patches->l,lokke);
 		if(patch==NULL){
 			patch=talloc(sizeof(struct Patch));
-			patch->l.num=lokke;
-			ListAddElement1(&instrument->patches,&patch->l);
+			patch->id=lokke;
+			VECTOR_push_back(&instrument->patches,patch);
 		}
 
 		patch->name=MMD_GetInstrumentName(file,lokke);
+                /*
+                  // FIX
 		patch->minvel=0;
 		patch->maxvel=127;
 		patch->standardvel=max(0,min(mmd0sample->svol*2-1,127));
+
 		patch->playnote=CAMDplaynote;
 		patch->stopnote=CAMDstopnote;
 		patch->changevelocity=CAMDchangevelocity;
 		patch->closePatch=CAMDclosePatch;
 		patch->changeTrackPan=CAMDchangeTrackPan;
+
+                struct PatchData *patchdata;
 
 		if(patch->patchdata==NULL){
 			patchdata=talloc(sizeof(struct PatchData));
@@ -407,14 +450,17 @@ void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 		patchdata->MSB=-1;
 		patchdata->LSB=-1;
 
-		patchdata->mymidilink=mymidilink;
+                // FIX!!
+		//patchdata->mymidilink=mymidilink;
 
 		patch->patchdata=patchdata;
 
 		CAMDPP_Update_doit(instrument,patch);
+                */
 
 		mmd0sample+=1;
 	}
+#endif
 
 	tfree(mmd0sample);
 
@@ -431,28 +477,35 @@ void MMD_LoadPlayList(struct Tracker_Windows *window,FILE *file,ULONG mmd2song){
 	struct WBlocks *wblock;
 
 	fseek(file,mmd2song+(sizeof(struct MMD0sample)*63)+4,SEEK_SET);
-	fread(&playseq,4,1,file);
+	//fread(&playseq,4,1,file);
+        playseq = read_be32uint(file);
+
 	printf("play: %x\n",playseq);
 	fseek(file,playseq,SEEK_SET);
-	fread(&playseq,4,1,file);
+        playseq = read_be32uint(file);
+	//fread(&playseq,4,1,file);
+
 	printf("play: %x\n",playseq);
 	fseek(file,playseq+40,SEEK_SET);
-	fread(&length,2,1,file);
+        length = read_be16uint(file);
+	//fread(&length,2,1,file);
+
 	printf("length: %x\n",length);
 
 	root->song->length=length;
 	root->song->playlist=talloc_atomic(sizeof(struct Blocks *)*length);
 
 	for(lokke=0;lokke<length;lokke++){
-		fread(&blocknum,2,1,file);
-		wblock=ListFindElement1(&window->wblocks->l,(NInt)blocknum);
-		root->song->playlist[lokke]=wblock->block;
+          //fread(&blocknum,2,1,file);
+          blocknum = read_be16uint(file);
+          wblock=ListFindElement1(&window->wblocks->l,(NInt)blocknum);
+          root->song->playlist[lokke]=wblock->block;
 	}
 }
 
 
 
-bool LoadMMP2(struct Tracker_Windows *window,char *filename){
+bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 	FILE *file;
 	NInt lokke;
 	int lokke2;
@@ -483,24 +536,29 @@ bool LoadMMP2(struct Tracker_Windows *window,char *filename){
 		return false;
 	}
 
-	fread(&ID,4,1,file);
+        ID = read_be32uint(file);
+	//fread(&ID,4,1,file);
 	if(ID!=0x4d4d4432 && ID!=0x4d4d4433){
-		RError("This is not an MMD2 or MMD3 octamed module\n");
-		return false;
+          RError("This is not an MMD2 or MMD3 octamed module: %p\n",ID);
+          return false;
 	}
 
 	ResetUndo();
 
 	fseek(file,8,SEEK_SET);
-	fread(&mmd0song,4,1,file);
+        mmd0song = read_be32uint(file);
+	//fread(&mmd0song,4,1,file);
 
 	MMD_LoadInstruments(file,mmd0song);
 
 	fseek(file,mmd0song+(sizeof(struct MMD0sample)*63),SEEK_SET);
-	fread(&numblocks,2,1,file);
+        numblocks = read_be16uint(file);
+	//fread(&numblocks,2,1,file);
 
 	fseek(file,mmd0song+764,SEEK_SET);
-	fread(&deftempo,2,1,file);
+        deftempo = read_be16uint(file);
+	//fread(&deftempo,2,1,file);
+
 	root->tempo=deftempo;
 	fseek(file,mmd0song+768,SEEK_SET);
 	fread(&flags2,1,1,file);
@@ -510,23 +568,36 @@ bool LoadMMP2(struct Tracker_Windows *window,char *filename){
 	root->lpb=flags2*(tempo2/6);
 
 	fseek(file,16,SEEK_SET);
-	fread(&blockarr,4,1,file);
+        blockarr = read_be32uint(file);
+	//fread(&blockarr,4,1,file);
+
 
 	printf("numblocks: %d,blockarr: %x\n",numblocks,blockarr);
 
 	for(lokke=0;lokke<numblocks;lokke++){
 		fseek(file,blockarr+(lokke*4),SEEK_SET);
-		fread(&blockpointer,4,1,file);
+                blockpointer = read_be32uint(file);
+		//fread(&blockpointer,4,1,file);
+
 		fseek(file,blockpointer,SEEK_SET);
-		fread(&numtracks,2,1,file);
-		fread(&numlines,2,1,file);
+                numtracks = read_be16uint(file);
+		//fread(&numtracks,2,1,file);
+                numlines = read_be16uint(file);
+		//fread(&numlines,2,1,file);
 		numlines++;							//Strange, had this "problem" when making nsm too. Wonder why Teijjo did it this way?
-		fread(&blockinfo,4,1,file);
+
+                blockinfo = read_be32uint(file);
+		//fread(&blockinfo,4,1,file);
 		if(blockinfo>0){
 			fseek(file,blockinfo+4,SEEK_SET);
-			fread(&blocknamepos,4,1,file);
-			fread(&blocknamelen,4,1,file);
-			fread(&cmdpagepointer,4,1,file);
+                        blocknamepos = read_be32uint(file);
+			//fread(&blocknamepos,4,1,file);
+
+                        blocknamelen = read_be32uint(file);
+			//fread(&blocknamelen,4,1,file);
+
+                        cmdpagepointer = read_be32uint(file);
+			//fread(&cmdpagepointer,4,1,file);
 
 			if(blocknamelen>0 && blocknamepos>0){
 				blockname=talloc_atomic((size_t)(blocknamelen));
@@ -548,11 +619,14 @@ bool LoadMMP2(struct Tracker_Windows *window,char *filename){
 
 		if(cmdpagepointer>0){
 			fseek(file,cmdpagepointer,SEEK_SET);
-			fread(&numpages,2,1,file);
+                        numpages = read_be16uint(file);
+			//fread(&numpages,2,1,file);
+
 			cmdpagetable=talloc(numpages*sizeof(struct CmdTrackLine *));
 			for(lokke2=0;lokke2<numpages;lokke2++){
 				fseek(file,cmdpagepointer+4+(lokke2*4),SEEK_SET);		
-				fread(&pagepointer,4,1,file);
+                                pagepointer = read_be32uint(file);
+				//fread(&pagepointer,4,1,file);
 				cmdpagetable[lokke2]=talloc_atomic(sizeof(struct CmdTrackLine)*numtracks*numlines);
 				fseek(file,pagepointer,SEEK_SET);
 				fread(cmdpagetable[lokke2],sizeof(struct CmdTrackLine)*numtracks*numlines,1,file);

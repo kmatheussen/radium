@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "windows_proc.h"
 #include "OS_settings_proc.h"
+#include "../mmd2loader/mmd2load_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_bs.h"
@@ -163,9 +164,9 @@ static bool Load(const char *filename){
 
 }
 
-#ifdef _AMIGA
-extern const char *mmp2filename;
-#endif
+//#ifdef _AMIGA
+static const char *mmp2filename;
+//#endif
 
 static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filename){
 	bool ret = false;
@@ -193,14 +194,20 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filenam
 
 	if(strlen(filename)>4){
 		if(
+			!strcmp(filename+strlen(filename)-5,".MMD2") ||
+			!strcmp(filename+strlen(filename)-5,".MMD3") ||
+			!strcmp(filename+strlen(filename)-4,".MMD") ||
 			!strcmp(filename+strlen(filename)-5,".mmd2") ||
 			!strcmp(filename+strlen(filename)-5,".mmd3") ||
 			!strcmp(filename+strlen(filename)-4,".mmd")
 		){
-#ifdef _AMIGA
+                  //#ifdef _AMIGA
 			mmp2filename=filename;
-#endif
-			ret = Load("radium:Init.rad");
+                        //#endif
+                        char temp[4098];
+                        sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
+
+			ret = Load(temp);
                         goto exit;
 		}
 	}
@@ -229,6 +236,9 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filenam
         {
           GC_enable();
         }
+
+	if(mmp2filename!=NULL) LoadMMP2(root->song->tracker_windows,mmp2filename);
+	mmp2filename=NULL;
 
         return ret;
 

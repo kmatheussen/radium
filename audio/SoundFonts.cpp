@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/read_binary.h"
 
 #include "SoundFonts_proc.h"
 
@@ -387,15 +388,6 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 }
 #endif
 
-
-static int16_t get_le_16 (char *src)
-{
-#if IS_LITTLE_ENDIAN // Previously, G_LITTLE_ENDIAN (or something like that) was used, provided by glib. But it didn't work with cross compilation. IS_LITTLE_ENDIAN is set in the Makefile.
-    return *(int16_t*)src;
-#else
-    return (src[0] << 0) + (src[1] << 8);
-#endif
-}
 
 float *SF2_load_sample(const char *filename, int sample_num){
   RIFF::File riff(filename);

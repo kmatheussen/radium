@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/trackreallines_proc.h"
+#include "../common/read_binary.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -929,67 +930,6 @@ static double get_ratio(int sample_note_num, int play_note_num){
 }
 #endif
 
-// based on code from soundtracker
-static int32_t get_le_32 (char *src)
-{
-#if IS_LITTLE_ENDIAN
-    return *(int32_t*)src;
-#else
-    return (src[0] << 0) + (src[1] << 8) + (src[2] << 16) + (src[3] << 24);
-#endif
-}
-
-static int read_le32int(FILE *file){
-  char size_chars[4] = {0}; // {0} is here to keep valgrind quiet.
-  if(fread(size_chars,4,1,file)!=1)
-    fprintf(stderr,"Reading file failed\n");
-  return get_le_32(size_chars);
-}
-
-
-// based on code from soundtracker
-static int16_t get_le_16 (char *src)
-{
-#if IS_LITTLE_ENDIAN
-    return *(int16_t*)src;
-#else
-    return (src[0] << 0) + (src[1] << 8);
-#endif
-}
-
-static void convert_16_bit_little_endian_to_native(int16_t *src, int num_frames){
-#if IS_LITTLE_ENDIAN
-  return;
-#else
-#error "Something is probably wrong. We dont target any big endian platforms."
-  int i;
-  for(i=0;i<num_frames;i++){
-    src[i] = get_le_16(&src[i]);
-  }
-#endif
-}
-
-static int read_le16int(FILE *file){
-  char size_chars[2];
-  if(fread(size_chars,2,1,file)!=1)
-    fprintf(stderr,"Reading file failed\n");
-  return get_le_16(size_chars);
-}
-
-
-static unsigned int read_8int(FILE *file){
-  unsigned char size_chars[1];
-  if(fread(size_chars,1,1,file)!=1)
-    fprintf(stderr,"Reading file failed\n");
-  return size_chars[0];
-}
-
-static int read_8int_signed(FILE *file){
-  int8_t size_chars[1];
-  if(fread(size_chars,1,1,file)!=1)
-    fprintf(stderr,"Reading file failed\n");
-  return size_chars[0];
-}
 
 
 // Note, if start==-1 and end==-1, loop_start is set to 0 and loop_end is set to sample->num_frames, and loop_onoff is not set.
