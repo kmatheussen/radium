@@ -563,9 +563,17 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 	fseek(file,mmd0song+768,SEEK_SET);
 	fread(&flags2,1,1,file);
 	fread(&tempo2,1,1,file);
+        printf("flags2 before: %x\n",(uint32_t)flags2);
+
 	flags2&=0x1f;
 	flags2+=1;
-	root->lpb=flags2*(tempo2/6);
+	//root->lpb=flags2*(tempo2/6);
+	root->lpb=flags2*tempo2/6;
+
+        printf("flags2 after: %x, temp2: %d, lpb: %d\n",(uint32_t)flags2,(int)tempo2,root->lpb);
+
+        //char gakk[1024];
+        //fgets(gakk,100,stdin);
 
 	fseek(file,16,SEEK_SET);
         blockarr = read_be32uint(file);
