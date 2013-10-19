@@ -623,7 +623,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 			blockname="NN";
 		}
 
-		printf("block: %s: blocknamelen: %d, numtracks: %d, numlines %d\n",blockname,blocknamelen,numtracks,numlines);
+		//printf("block: %s: blocknamelen: %d, numtracks: %d, numlines %d\n",blockname,blocknamelen,numtracks,numlines);
 
 		fseek(file,blockpointer+8,SEEK_SET);
 		octablock=talloc_atomic(numlines*numtracks*sizeof(struct TrackLine));

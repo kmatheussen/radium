@@ -798,10 +798,11 @@ void AddStopsElements(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
+	int realline = 0;
 	struct Stops *stop=wtrack->track->stops;
 
 	while(stop!=NULL){
-		int realline=FindRealLineFor(wblock,R_MAX(stop->Tline,realline),&stop->l.p);
+		realline=FindRealLineFor(wblock,R_MAX(stop->Tline,realline),&stop->l.p);
 
 		int subrealline=FindSubRealLine(window,wblock,realline,&stop->l.p);
 		InsertTRLElementS(
@@ -829,10 +830,14 @@ void AddPitchElements(
 	struct WTracks *wtrack
 ){
   struct Notes *note=wtrack->track->notes;
+
   while(note!=NULL){
     struct Pitches *pitch=note->pitches;
+    int realline = 0;
+
     while(pitch!=NULL){
-      int realline=FindRealLineFor(wblock,R_MAX(pitch->Tline,realline),&pitch->l.p);
+
+      realline=FindRealLineFor(wblock,R_MAX(pitch->Tline,realline),&pitch->l.p);
       int subrealline=FindSubRealLine(window,wblock,realline,&pitch->l.p);
 
       InsertTRLElementS(
