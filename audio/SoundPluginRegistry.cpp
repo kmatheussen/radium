@@ -81,7 +81,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *p
     QMessageBox msgBox;
     msgBox.setText("Plugin " + QString(type_name) + " / " + QString(plugin_name) + " not found. Replacing with a Pipe.");
     if(!strcmp(type_name,"Ladspa") && getenv("LADSPA_PATH")==NULL)
-      msgBox.setInformativeText("LADSPA_PATH is not set.");
+      msgBox.setInformativeText("(LADSPA_PATH is not set)");
 
     msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();

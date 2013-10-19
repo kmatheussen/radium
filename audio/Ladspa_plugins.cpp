@@ -861,10 +861,11 @@ void create_ladspa_plugins(void){
 
 #if __linux__
   if(getenv("LADSPA_PATH")==NULL){
-    QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
-    return;
-  }
-  sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
+    //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
+    //return;
+    sprintf(ladspa_path, "%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa");
+  } else 
+    sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
 #endif
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
