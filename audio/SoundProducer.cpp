@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/OS_visual_input.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -144,7 +145,7 @@ static float RT_get_max_val(float *array, int num_elements){
       minus_ret = val;
     }
   }
-  
+
   return ret;
 }
 
@@ -219,18 +220,39 @@ static RSemaphore *signal_from_RT = NULL;
 static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
 
-#if 0
-  static bool printed = false;
+  float sum=0.0f;
 
   for(int ch=0;ch<plugin->type->num_outputs;ch++)
     for(int i=0;i<num_frames;i++)
-      if(!isfinite(outputs[ch][i])){
-        if(printed==false)
-          printf("NOT FINITE %s %s\n",plugin->type->type_name, plugin->type->name);
-        printed=true;
-        outputs[ch][i]=0.0f;
-      }
-#endif
+      sum += outputs[ch][i];
+
+  if(sum!=0.0f && !isnormal(sum)){
+    for(int ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int i=0;i<num_frames;i++)
+        outputs[ch][i] = 0.0f;
+
+    struct Patch *patch=plugin->patch;
+    const char *sigtype = isnan(sum)?"nan":isinf(sum)?"inf":fpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
+    RT_message("Error!\n"
+               "\n"
+               "The instrument named \"%s\" of type %s/%s\n"
+               "generated one or more signals of type \"%s\".\n"
+               "\n"
+               "These signals have now been replaced with silence.\n"
+               "\n"
+               "This warning will pop up as long as the instrument misbehaves.\n"
+               "\n"
+               "If the instrument is a third party instrument, for instance a\n"
+               "VST plugin, a LADSPA plugin, or a Pd patch, please contact the\n"
+               "third party to fix the bug.\n"
+               "\n"
+               "Note that this check is not a bug in Radium. Other plugin hosts\n"
+               "will usually just misbehave silently when an instrument generate\n"
+               "abnormal signals (with the exception of denormals).\n",
+               patch==NULL?"<no name>":patch->name,
+               plugin->type->type_name, plugin->type->name,
+               sigtype);
+  }
 }
 
 struct SoundProducer : DoublyLinkedList{

@@ -224,9 +224,11 @@ void Ptask2Mtask(void){
 #if !GTK_IS_USED
 
 #include <QTimer>
+#include <QMessageBox>
 #include "../midi/midi_i_input_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/gfx_op_queue_proc.h"
+#include "../common/player_proc.h"
 
 //#define TEST_GC
 
@@ -234,18 +236,45 @@ void Ptask2Mtask(void){
 #  include "gc.h"
 #endif
 
-class CalledPeriodically : public QTimer{
+enum RT_MESSAGE_STATUS {
+  RT_MESSAGE_READY,
+  RT_MESSAGE_READY_FOR_SHOWING,
+  RT_MESSAGE_SHOWING
+};
+
+volatile RT_MESSAGE_STATUS rt_message_status = RT_MESSAGE_READY;
+static char rt_message[1024];
+
+
+class CalledPeriodically : public QTimer {
+
+  QMessageBox msgBox;
+
 public:
   CalledPeriodically(){
     setInterval(10);
     start();
+    msgBox.setModal(false);
+    msgBox.open();
+    msgBox.hide();
   }
 protected:
+
   void 	timerEvent ( QTimerEvent * e ){
 #ifdef TEST_GC
     printf("triggering full collect\n");
     GC_gcollect();
 #endif
+
+
+    if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
+      msgBox.setText(QString(rt_message));
+      msgBox.show();
+
+      rt_message_status = RT_MESSAGE_SHOWING;
+    } else if (rt_message_status == RT_MESSAGE_SHOWING && msgBox.isHidden())
+      rt_message_status = RT_MESSAGE_READY;
+
 
     if(num_users_of_keyboard==0){
       {
@@ -276,7 +305,24 @@ protected:
     }
   }
 };
+
+void RT_message(const char *fmt,...){
+  va_list argp;
+
+  if(rt_message_status != RT_MESSAGE_READY)
+    return;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(rt_message,fmt,argp);
+  va_end(argp);
+
+  rt_message_status = RT_MESSAGE_READY_FOR_SHOWING;
+}
+
+
 #endif
+
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
@@ -307,7 +353,6 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   X11_ResetKeysUpDowns();
 #endif
 }
-
 
 
 

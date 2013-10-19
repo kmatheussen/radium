@@ -305,12 +305,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   pd_t *pd = data->pd;
 
   libpds_process_float_noninterleaved(pd, num_frames / libpds_blocksize(pd), (const float**) inputs, outputs);
-
-  // TODO: Pop up a window with a warning if !isfinite sample.
-  for(int ch=0;ch<plugin->type->num_outputs;ch++)
-    for(int i=0;i<num_frames;i++)
-      if(!isfinite(outputs[ch][i]))
-        outputs[ch][i]=0.0f;
 }
 
 static void RT_play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
