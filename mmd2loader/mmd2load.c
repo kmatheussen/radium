@@ -107,7 +107,7 @@ static UBYTE tempo2;
 
 extern struct Root *root;
 
-bool MMD_findEndNote(
+static bool MMD_findEndNote(
 	NInt track,
 	NInt numtracks,
 	int line,
@@ -135,8 +135,12 @@ bool MMD_findEndNote(
 	return false;
 }
 
+static int mmd_volume_to_radium_velocity(int vel){
+  vel = scale(vel,0,64,0,MAX_VELOCITY);
+  return R_BOUNDARIES(0,vel,MAX_VELOCITY);
+}
 
-int MMD_findVelocity(
+static int MMD_findVelocity(
 	NInt track,
 	NInt numtracks,
 	int line,
@@ -148,13 +152,13 @@ int MMD_findVelocity(
 	int lokke;
 	struct CmdTrackLine *cmdtrackline;
 
-	if(trackline->cmd==0xc) return (int)R_MAX(0,R_MIN(trackline->val*2-1,127));
+	if(trackline->cmd==0xc) return mmd_volume_to_radium_velocity(trackline->val);
 
 	if(numpages>0){
 		for(lokke=0;lokke<numpages;lokke++){
 			cmdtrackline=cmdpagetable[lokke];
 			cmdtrackline=&cmdtrackline[numtracks*line+track];
-			if(cmdtrackline->cmd==0xc) return (int)R_MAX(0,R_MIN(cmdtrackline->val*2-1,127));
+			if(cmdtrackline->cmd==0xc) return mmd_volume_to_radium_velocity(trackline->val);
 		}
 	}
 	if(patch==NULL){
@@ -164,7 +168,7 @@ int MMD_findVelocity(
 }
 
 
-void MMD_HandleTempo(
+static void MMD_HandleTempo(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt track,
@@ -221,7 +225,7 @@ void MMD_HandleTempo(
 }
 
 
-void LoadOctaBlock(
+static void LoadOctaBlock(
 	struct Tracker_Windows *window,
 	NInt blocknum,
 	NInt numtracks,
@@ -348,7 +352,7 @@ void LoadOctaBlock(
 }
 
 
-char *MMD_GetInstrumentName(FILE *file,NInt num){
+static char *MMD_GetInstrumentName(FILE *file,NInt num){
 	ULONG expdata;
 	ULONG iinfo;
 	UWORD i_ext_entries;
@@ -384,7 +388,7 @@ char *MMD_GetInstrumentName(FILE *file,NInt num){
 }
 
 
-void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
+static void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 	NInt lokke;
 
 	struct MMD0sample *mmd0sample=talloc_atomic(sizeof(struct MMD0sample)*63);
@@ -469,7 +473,7 @@ void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 
 /* Uses the first Playseq only. */
 
-void MMD_LoadPlayList(struct Tracker_Windows *window,FILE *file,ULONG mmd2song){
+static void MMD_LoadPlayList(struct Tracker_Windows *window,FILE *file,ULONG mmd2song){
 	ULONG playseq;
 	UWORD length;
 	UWORD blocknum;
