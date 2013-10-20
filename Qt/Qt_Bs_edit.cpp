@@ -365,20 +365,12 @@ void BS_resizewindow(void){
 void BS_UpdateBlockList(void){
   ScopedVisitors v;
 
-  int num_blocks=root->song->num_blocks;
-  struct Blocks *block=root->song->blocks;
-  int lokke;
-
   while(bs->blocklist.count()>0)
     bs->blocklist.removeItem(0);
 
-  for(lokke=0;lokke<num_blocks;lokke++){
-    char temp[20];
-
-    sprintf(temp,"%d: %s",lokke,block->name);
-
-    bs->blocklist.insertItem(temp);
-
+  struct Blocks *block=root->song->blocks;
+  while(block!=NULL){
+    bs->blocklist.insertItem(QString::number(block->l.num)+": "+QString(block->name));
     block=NextBlock(block);
   }
 
@@ -399,10 +391,7 @@ void BS_UpdatePlayList(void){
   struct Blocks *block=BL_GetBlockFromPos(lokke);
 
   while(block!=NULL){
-    char temp[500];
-    sprintf(temp,"%d: %d/%s",lokke,block->l.num,block->name);
-
-    bs->playlist.insertItem(temp);
+    bs->playlist.insertItem(QString::number(lokke)+": "+QString::number(block->l.num)+"/"+QString(block->name));
 
     lokke++;
     block=BL_GetBlockFromPos(lokke);
