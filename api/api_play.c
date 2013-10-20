@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/player_proc.h"
+#include "../common/OS_Player_proc.h"
 
 #include "api_common_proc.h"
 
@@ -60,3 +61,14 @@ void playStop(void){
   PlayStop();
 }
 
+void volumeUp(void){
+  PLAYER_volumeUp(1);
+}
+
+void volumeDown(void){
+  PLAYER_volumeDown(1);
+}
+
+void mute(void){
+  PLAYER_mute();
+}

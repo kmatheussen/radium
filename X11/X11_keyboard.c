@@ -283,26 +283,36 @@ int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
   KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  if(sym > keytable_size) {
-    if (sym==XF86XK_AudioLowerVolume)
-      PLAYER_volumeDown(3);
+  int n;
 
-    else if (sym==XF86XK_AudioRaiseVolume)
-      PLAYER_volumeUp(3);
-
-    else if (sym==XF86XK_AudioMute)
-      PLAYER_mute();
-
-    else if (sym==XF86XK_AudioPlay)
-      PlayBlockFromStart(window,true); // true == do_loop
-
-    else if (sym==XF86XK_AudioStop)
-      PlayStop();
-
-    return 0;
+  // Some of the sym values are very large. Can not add them since the keytable would be very large.
+  switch(sym){
+  case XK_Menu:
+    n = EVENT_MENU;
+    break;
+  case XF86XK_AudioLowerVolume:
+    n = EVENT_VOLUME_DOWN;
+    break;
+  case XF86XK_AudioRaiseVolume:
+    n = EVENT_VOLUME_UP;
+    break;
+  case XF86XK_AudioMute:
+    n = EVENT_MUTE;
+    break;
+  case XF86XK_AudioPlay:
+    n = EVENT_PLAY;
+    break;
+  case XF86XK_AudioStop:
+    n = EVENT_STOP;
+    break;
+  default:
+    if(sym > keytable_size) {
+      return 0;
+    } else
+      n = keytable[sym];
   }
 
-  return X11Event_KeyPress(keytable[sym],event->state,window);
+  return X11Event_KeyPress(n,event->state,window);
 }
 
 
@@ -348,7 +358,6 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    //printf("Got keypress event %d.\n",num++);
     if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       //this->quit();
       //doquit = true;

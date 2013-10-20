@@ -119,6 +119,13 @@ keysub=(
 "KP_8",
 "KP_9",
 
+"MENU",
+"VOLUME_DOWN",
+"VOLUME_UP",
+"MUTE",
+"PLAY",
+"STOP",
+
 "SPACE"
 
 )

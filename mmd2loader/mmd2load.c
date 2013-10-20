@@ -536,6 +536,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 	file=fopen(filename,"rb");
 
 	if(file==NULL){
+          perror(filename);
 		RError("Could not open file\n");
 		return false;
 	}
