@@ -133,9 +133,7 @@ static const char** get_lines(const char* key){
   }
 #endif
 
-  char version_string[500];
-  sprintf(version_string,"settings_version = %s # dont change this one",OS_get_string_from_double(SETTINGSVERSION));
-  ret[version_linenum] = talloc_strdup(version_string);
+  ret[version_linenum] = talloc_format("settings_version = %s # dont change this one",OS_get_string_from_double(SETTINGSVERSION));
 
   return ret;
 }

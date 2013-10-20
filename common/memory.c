@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
+
 
 #include "t_gc_proc.h"
 #include "nsmtracker.h"
@@ -246,4 +248,25 @@ char *talloc_floatstring(float number){
   char s[1000];
   snprintf(s,999,"%f",number);
   return talloc_strdup(s);
+}
+
+char *talloc_format(const char *fmt,...){
+  int size = 16;
+  char *ret = talloc_atomic(size);
+
+  for(;;){
+    va_list argp;
+
+    va_start(argp,fmt);
+    int len = vsnprintf(ret,size,fmt,argp);
+    va_end(argp);
+
+    if (len >= size) {
+      size = len + 2;
+      ret = talloc_realloc(ret, size);
+    } else
+      break;
+  }
+
+  return ret;
 }

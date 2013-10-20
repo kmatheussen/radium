@@ -44,5 +44,8 @@ extern LANGSPEC char *talloc_strdup(const char *input);
 extern LANGSPEC char *talloc_numberstring(int number);
 
 extern LANGSPEC char *talloc_floatstring(float number);
+
+extern LANGSPEC char *talloc_format(const char *fmt,...);
+
 #endif
 

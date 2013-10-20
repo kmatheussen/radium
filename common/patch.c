@@ -261,9 +261,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
         vector_t v={0};
         VECTOR_FOR_EACH(struct Patch *patch,patches){
-          char temp[strlen(patch->name)+16];
-          sprintf(temp,"%d. %s",iterator666,patch->name);
-          VECTOR_push_back(&v,talloc_strdup(temp));
+          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
         }END_VECTOR_FOR_EACH;
 
         VECTOR_push_back(&v,"<New MIDI Instrument>");

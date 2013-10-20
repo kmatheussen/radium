@@ -33,8 +33,7 @@ char *OS_get_config_filename(void){
   if(system(temp)==-1)
     RWarning("Unable to create \"%s/.radium\" directory",getenv("HOME"));
 
-  sprintf(temp,"%s/.radium/config",getenv("HOME"));
-  return talloc_strdup(temp);
+  return talloc_format("%s/.radium/config",getenv("HOME"));
 #endif // __linux__
 
 #if FOR_WINDOWS
