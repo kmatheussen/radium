@@ -849,6 +849,16 @@ void AddPitchElements(
       }
       note = NextNote(note);
     }
+
+    float pitch_range = max_pitch - min_pitch;
+
+    min_pitch = min_pitch - pitch_range/8.0f;
+    if(min_pitch < 0)
+      min_pitch = 0;
+
+    max_pitch = max_pitch + pitch_range/8.0f;
+    if(max_pitch >127)
+      max_pitch = 127;
   }
 
 

@@ -810,7 +810,7 @@ static void draw_wtrack_pitches(struct Tracker_Windows *window,
   within2.y1=within.y1;
   within2.y2=within.y2;
   within2.x1 = wtrack->x;
-  within2.x2 = wtrack->fxarea.x;
+  within2.x2 = wtrack->fxarea.x - 2;
 
   WArea warea;
   warea.x=within2.x1;
@@ -825,7 +825,7 @@ static void draw_wtrack_pitches(struct Tracker_Windows *window,
     case TRE_PITCHLINE:
       if(wpitch->x1 != wpitch->x2 || show_read_lines) {
         GetNodeLine(wpitch,&warea,&within2,&get);
-        GFX_T_Line(window, 5, get.x1,get.y1, get.x2,get.y2, PAINT_BUFFER);
+        GFX_T_Line(window, 7, get.x1,get.y1, get.x2,get.y2, PAINT_BUFFER);
       }
       break;
     case TRE_PITCHNODE:
