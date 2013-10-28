@@ -144,9 +144,8 @@ void SetMouseActionWTrackBorder(
 		wtrack=next;
 		next=NextWTrack(wtrack);
 	}
-
-	// Changing trackwidth of a partly shown track doesnt work quite well.
-	if(wtrack->x < wblock->t.x1) return;
+	
+	if(wtrack->x < wblock->t.x1) return; // Changing trackwidth of a partly shown track doesnt work quite well.
 
 	action->eint1=wtrack->l.num;
 	action->action=TRACKBORDER;

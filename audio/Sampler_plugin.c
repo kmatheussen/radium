@@ -1147,6 +1147,7 @@ static Data *create_data(float samplerate, Data *old_data, const char *filename,
     data->d = old_data->d;
     data->s = old_data->s;
     data->r = old_data->r;
+    data->loop_onoff = old_data->loop_onoff;
 
   }
   
