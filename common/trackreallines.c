@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "patch_proc.h"
 #include "time_proc.h"
 #include "tracks_proc.h"
+#include "pitchnodes_proc.h"
 
 #include "trackreallines_proc.h"
 
@@ -74,6 +75,7 @@ void NewTrackRealLines(
 	struct WTracks *wtrack
 ){
   wtrack->trackreallines=talloc(wblock->num_reallines * sizeof(struct TrackRealline));
+  wtrack->wpitches=talloc(sizeof(WPitches *) * wblock->num_reallines);
 }
 
 
@@ -829,6 +831,27 @@ void AddPitchElements(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
+
+  float min_pitch = 10000.0f;
+  float max_pitch = -10000.0f;
+
+  // find min_pitch and max_pitch
+  {
+    struct Notes *note = wtrack->track->notes;
+    while(note!=NULL){
+      min_pitch = R_MIN(note->note, min_pitch);
+      max_pitch = R_MAX(note->note, max_pitch);
+      struct Pitches *pitch = note->pitches;
+      while(pitch != NULL){
+        min_pitch = R_MIN(pitch->note, min_pitch);
+        max_pitch = R_MAX(pitch->note, max_pitch);
+        pitch = NextPitch(pitch);
+      }
+      note = NextNote(note);
+    }
+  }
+
+
   struct Notes *note=wtrack->track->notes;
 
   while(note!=NULL){
@@ -857,6 +880,9 @@ void AddPitchElements(
 
       pitch=NextPitch(pitch);
     }
+
+    UpdateWPitches(window, wblock, wtrack, note, min_pitch, max_pitch);
+
     note=NextNote(note);
   }
 }

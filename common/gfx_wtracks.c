@@ -751,10 +751,10 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
         PAINT_BUFFER
         );
       */
-      GetNodeBox(window,wblock,wtrack,wfxnode,&warea,&within,&get);
-      //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-
       if(show_read_lines){
+        GetNodeBox(window,wblock,wtrack,wfxnode,&warea,&within,&get);
+        //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+
         draw_skewed_box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
 #if 0
         GFX_T_Line(window,wfxnode->subtype,
@@ -797,6 +797,49 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
   }
 }
 
+static void draw_wtrack_pitches(struct Tracker_Windows *window,
+                                struct WBlocks *wblock,
+                                struct WTracks *wtrack,
+                                int realline,
+                                TBox within
+                                )
+{
+  TBox get;
+
+  TBox within2;
+  within2.y1=within.y1;
+  within2.y2=within.y2;
+  within2.x1 = wtrack->x;
+  within2.x2 = wtrack->fxarea.x;
+
+  WArea warea;
+  warea.x=within2.x1;
+  warea.x2=within2.x2;
+  warea.width=warea.x2-warea.x;
+
+  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
+
+  WPitches *wpitch=wtrack->wpitches[realline];
+  while(wpitch!=NULL){
+    switch(wpitch->type){
+    case TRE_PITCHLINE:
+      if(wpitch->x1 != wpitch->x2 || show_read_lines) {
+        GetNodeLine(wpitch,&warea,&within2,&get);
+        GFX_T_Line(window, 5, get.x1,get.y1, get.x2,get.y2, PAINT_BUFFER);
+      }
+      break;
+    case TRE_PITCHNODE:
+      if(false && show_read_lines){
+        GetNodeBox(window,wblock,wtrack,wpitch,&warea,&within2,&get);
+        draw_skewed_box(window, 5, get.x1,get.y1, get.x2,get.y2, PAINT_BUFFER);
+      }
+
+      break;
+    }
+    wpitch=wpitch->next;
+  }
+}
+
 void UpdateWTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -804,7 +847,7 @@ void UpdateWTrack(
 	int start_realline,
 	int end_realline
 ){
-	int lokke;
+	int realline;
 
 	TBox within;
 
@@ -841,21 +884,27 @@ void UpdateWTrack(
 		end_subtrack=wtrack->num_vel-1;
 	}
 
-	for(lokke=start_realline;lokke<=end_realline;lokke++){
-	  within.y1=GetReallineY1Pos(window,wblock,lokke);
-	  within.y2=GetReallineY2Pos(window,wblock,lokke);
+	for(realline=start_realline;realline<=end_realline;realline++){
+	  within.y1=GetReallineY1Pos(window,wblock,realline);
+	  within.y2=GetReallineY2Pos(window,wblock,realline);
 
           GFX_SetClipRect(window,R_MAX(within.x1,wblock->temponodearea.x2),within.y1,within.x2,within.y2+1,PAINT_BUFFER);
           {
-            draw_wtrack_peaks(window,wblock,wtrack,lokke,within);
-            draw_wtrack_fxgraphics(window,wblock,wtrack,lokke,within);
+            draw_wtrack_peaks(window,wblock,wtrack,realline,within);
+            draw_wtrack_fxgraphics(window,wblock,wtrack,realline,within);
           }
           GFX_CancelClipRect(window,PAINT_BUFFER);
 
-          draw_wtrack_notegraphics(window,wblock,wtrack,lokke,within);
-          draw_wtrack_text(window,wblock,wtrack,lokke,within);
+          draw_wtrack_notegraphics(window,wblock,wtrack,realline,within);
+          draw_wtrack_text(window,wblock,wtrack,realline,within);
 
-          WTRACK_DrawTrackBorders(window,wblock,wtrack,lokke,start_subtrack,end_subtrack);
+          //GFX_SetClipRect(window,wtrack->x,within.y1,within.x1,within.y2+1,PAINT_BUFFER);
+          {
+            draw_wtrack_pitches(window,wblock,wtrack,realline,within);
+          }
+          //GFX_CancelClipRect(window,PAINT_BUFFER);
+
+          WTRACK_DrawTrackBorders(window,wblock,wtrack,realline,start_subtrack,end_subtrack);
 	}
 
 	Blt_markSTrack(window,wtrack->l.num,start_realline,end_realline);

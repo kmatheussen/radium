@@ -57,6 +57,7 @@ struct WTracks *CB_CopyTrack(
         // Null out some data we don't need so it can be GC-ed.
         towtrack->trackreallines = NULL;
         towtrack->wfxnodes = NULL;
+        towtrack->wpitches = NULL;
 
         towtrack->track->trackname=talloc_strdup(wtrack->track->trackname);
 

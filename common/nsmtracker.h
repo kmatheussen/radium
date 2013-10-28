@@ -212,6 +212,12 @@ struct Pitches{
 };
 #define NextPitch(a) ((struct Pitches *)((a)->l.next))
 
+typedef struct TrackReallineElements WPitches;
+enum{
+  TRE_PITCHLINE,
+  TRE_PITCHNODE
+};
+
 
 /*********************************************************************
 	notes.h
@@ -582,6 +588,7 @@ struct WTracks{
 
 	struct TrackRealline *trackreallines;
 	WFXNodes **wfxnodes;
+	WPitches **wpitches;
 
 	TBox pan;
 	TBox volume;

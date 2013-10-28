@@ -228,15 +228,13 @@ void GetNodeLine(
 		 TBox *ret
 		 ){
 
+  ret->y1 = within->y1 + (tre->y1*(within->y2-within->y1));
+  ret->y2 = within->y1 + (tre->y2*(within->y2-within->y1));
 
-  ret->y1=within->y1+(tre->y1*(within->y2-within->y1));
-  ret->y2=within->y1+(tre->y2*(within->y2-within->y1));
-
-  ret->x1=warea->x+(warea->width*tre->x1);
-  ret->x2=warea->x+(warea->width*tre->x2);
+  ret->x1 = warea->x + (warea->width*tre->x1);
+  ret->x2 = warea->x + (warea->width*tre->x2);
 
   TBOX_within(ret,within);
-
 }
 
 

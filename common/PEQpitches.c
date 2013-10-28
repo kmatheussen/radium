@@ -74,26 +74,29 @@ void InitPEQpitches(
 	if(pitch==NULL)
           return;
 
+
 	peq=GetPEQelement();
 	peq->block=block;
 	peq->track=track;
 	peq->note=note;
         peq->pitch=pitch;
-	peq->time1=Place2STime(block,&pitch->l.p);
+	peq->time1=Place2STime(block,&note->l.p);
 
-        struct Pitches *next_pitch = NextPitch(pitch);
-        if(next_pitch==NULL){
-          peq->time2=Place2STime(peq->block,&peq->note->end);
-          peq->TreatMe=PE_ChangePitchToEnd;
-        } else {
-          peq->nextpitch = next_pitch;
-          peq->time2=Place2STime(block,&next_pitch->l.p);
-          peq->TreatMe=PE_ChangePitch;
-        }
+        peq->nextpitch = pitch;
+        peq->time2=Place2STime(block,&pitch->l.p);
+        peq->TreatMe=PE_ChangePitch;
 
+        int x;
 	PC_InsertElement(
                          peq,playlistaddpos,
-                         peq->time1
+                         PEQ_CalcNextEvent(
+                                           peq->time1,
+                                           peq->time1,
+                                           peq->time2,
+                                           1,
+                                           &x,
+                                           20000000
+                                           )
                          );
 }
 
@@ -156,14 +159,23 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 		return;
 	}
 
+        float pitch1,pitch2;
+        if(peq->pitch==peq->nextpitch){
+          pitch1=peq->note->note;
+          pitch2=peq->pitch->note;
+        }else{
+          pitch1=peq->pitch->note;
+          pitch2=peq->nextpitch->note;
+        }
+
 	ntime=PEQ_CalcNextPitchEvent(
                 peq,
 		peq->time1,
 		btime,
 		peq->time2,
-		peq->pitch->note,
+                pitch1,
 		&x,
-		peq->nextpitch->note
+                pitch2
 	);
 
 	if(btime==ntime){
@@ -219,8 +231,6 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
           ReturnPEQelement(peq);
           return;
 	}
-
-        //printf("next_pitch: %f\n",next_pitch);
 
 	STime ntime=PEQ_CalcNextPitchEvent(
                                      peq,
