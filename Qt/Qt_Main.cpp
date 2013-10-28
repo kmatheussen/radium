@@ -243,7 +243,8 @@ enum RT_MESSAGE_STATUS {
 };
 
 volatile RT_MESSAGE_STATUS rt_message_status = RT_MESSAGE_READY;
-static char rt_message[1024];
+static const int rt_message_length = 1024;
+static char rt_message[rt_message_length];
 
 
 class CalledPeriodically : public QTimer {
@@ -314,7 +315,7 @@ void RT_message(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(rt_message,fmt,argp);
+  vsnprintf(rt_message,rt_message_length,fmt,argp);
   va_end(argp);
 
   rt_message_status = RT_MESSAGE_READY_FOR_SHOWING;

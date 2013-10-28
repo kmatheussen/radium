@@ -601,6 +601,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
       }
       break;
 
+
 #define USE_TRIANGLE 0
 
     case TRE_VELLINEEND:
@@ -666,6 +667,16 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
 
       break;
     case TRE_STOPLINE:
+      GFX_T_Line(
+                 window,Col[1],
+                 wtrack->fxarea.x,
+                 (int)(within.y1+element->y1),
+                 wtrack->fxarea.x2,
+                 (int)(within.y1+element->y1),
+                 PAINT_BUFFER
+                 );
+      break;
+    case TRE_THISPITCHLINES:
       GFX_T_Line(
                  window,Col[1],
                  wtrack->fxarea.x,
