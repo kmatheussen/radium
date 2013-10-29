@@ -835,32 +835,7 @@ void AddPitchElements(
   float min_pitch = 10000.0f;
   float max_pitch = -10000.0f;
 
-  // find min_pitch and max_pitch
-  {
-    struct Notes *note = wtrack->track->notes;
-    while(note!=NULL){
-      min_pitch = R_MIN(note->note, min_pitch);
-      max_pitch = R_MAX(note->note, max_pitch);
-      struct Pitches *pitch = note->pitches;
-      while(pitch != NULL){
-        min_pitch = R_MIN(pitch->note, min_pitch);
-        max_pitch = R_MAX(pitch->note, max_pitch);
-        pitch = NextPitch(pitch);
-      }
-      note = NextNote(note);
-    }
-
-    float pitch_range = max_pitch - min_pitch;
-
-    min_pitch = min_pitch - pitch_range/8.0f;
-    if(min_pitch < 0)
-      min_pitch = 0;
-
-    max_pitch = max_pitch + pitch_range/8.0f;
-    if(max_pitch >127)
-      max_pitch = 127;
-  }
-
+  TRACK_get_min_and_max_pitches(wtrack->track,&min_pitch, &max_pitch);
 
   struct Notes *note=wtrack->track->notes;
 

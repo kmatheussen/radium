@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "mouse_wtrackborder_proc.h"
 #include "mouse_fxarea_proc.h"
+#include "mouse_pitches_proc.h"
 #include "mouse_wtrackheader_proc.h"
 
 #include "mouse_wtrack_proc.h"
@@ -52,13 +53,14 @@ void SetMouseActionWTrack(
 	}
 
 	if(y<wblock->t.y1){
-		SetMouseActionWTrackHeader(window,action,wtrack,x,y,click);
-		return;
+          SetMouseActionWTrackHeader(window,action,wtrack,x,y,click);
+          return;
 	}
 
 	if(x<wtrack->fxarea.x){
-		SetMouseActionWTrackBorder(window,action,x);
-		return;
+          if (SetMouseActionPitches(window,action,wtrack,x,y,click)==false)
+            SetMouseActionWTrackBorder(window,action,x);
+          return;
 	}
 
 	SetMouseActionFXarea(window,action,wtrack,x,y,click);

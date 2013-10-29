@@ -1,4 +1,4 @@
-/* Copyright 2000 Kjetil S. Matheussen
+/* Copyright 2000-2013 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -14,16 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
-
-extern LANGSPEC bool TRACK_get_min_and_max_pitches(struct Tracks *track, float *ret_min_pitch, float *ret_max_pitch);
-extern LANGSPEC bool TRACK_has_peaks(struct Tracks *track);
-extern void CloseTrack(struct Blocks *block, NInt tracknum);
-extern void CloseAllTracks(struct Blocks *block);
-extern void InitTrack(struct Tracks *track);
-extern void AppendTrack(struct Blocks *block);
-
-#endif
+bool SetMouseActionPitches(
+                           struct Tracker_Windows *window,
+                           struct MouseAction *action,
+                           struct WTracks *wtrack,
+                           int x,int y,
+                           int click
+                           );

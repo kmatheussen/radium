@@ -26,6 +26,8 @@ struct MouseAction{
 	int eint1;
 	int eint2;
 	int eint3;
+  float efloat1;
+  float efloat2;
 	void *pointer1;
 	void *pointer2;
 	void *pointer3;
@@ -78,6 +80,8 @@ struct MouseAction{
 #define RELTEMPO 27
 
 #define RELTEMPOSLIDER 28
+
+#define PITCH_NOTENAME 29
 
 #endif /* TRACKER_MOUSE_H */
 

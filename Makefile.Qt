@@ -174,7 +174,7 @@ OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wbloc
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
-OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o range.o
+OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o range.o
 
 OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o subtrack.o velocities.o pixmap.o scroll.o blts.o
 
@@ -538,6 +538,11 @@ mouse_temponodeborder.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_temponodeborder.c
 
 mouse_fxarea.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_fxarea.c
 	$(CC) $(CD)mouse_fxarea.c $(OPT)
+
+
+mouse_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_pitches.c
+	$(CC) $(CD)mouse_pitches.c $(OPT)
+
 
 mouse_vellinenode.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_vellinenode.c
 	$(CC) $(CD)mouse_vellinenode.c $(OPT)
