@@ -24,6 +24,8 @@ extern int PlaceCmp(  Place *p1,  Place *p2);
 extern Place *PlaceMax(  Place *p1,  Place *p2);
 extern Place *PlaceMin(  Place *p1,  Place *p2);
 
+#define PlaceBetween(p1, p, p2) PlaceMin(PlaceMax(p1, p), p2)
+
 extern void PlaceHandleOverflow(Place *p);
 
 extern void PlaceAdd(Place *p1,  Place *p2);

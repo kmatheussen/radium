@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
+#include "list_proc.h"
 #include "common_proc.h"
 #include "tracks_proc.h"
 #include "gfx_wtracks_proc.h"
@@ -25,6 +26,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 
 #include "mouse_fxarea_proc.h"
+
+static Place *getNextLegalNotePlace(struct Notes *note){
+  Place *end = &note->end;
+
+  if (note->velocities != NULL)
+    end = PlaceMin(end, &note->velocities->l.p);
+
+  if (note->pitches != NULL)
+    end = PlaceMin(end, &note->pitches->l.p);
+
+  return end;
+}
+
+
+static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
+  Place *end = PlaceGetFirstPos();
+
+  struct Notes *prev = ListPrevElement3(&track->notes->l, &note->l);
+
+  if (prev != NULL)
+    end = PlaceMax(end, &prev->end);
+
+  return end;
+}
+
 
 static int MoveNoteName(
 	struct Tracker_Windows *window,
@@ -48,7 +74,7 @@ static int MoveNoteName(
   float pitch=org_pitch + (x-org_x)/20.0f; // 20 pixels per note.
   note->note = R_BOUNDARIES(1,pitch,127);
 
-  PlaceCopy(&note->l.p, &place);
+  PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
 
   UpdateTrackReallines(window,wblock,wtrack);
   DrawUpWTrack(window,wblock,wtrack);
