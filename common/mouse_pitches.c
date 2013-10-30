@@ -37,11 +37,12 @@ static int MoveNoteName(
   //struct Tracks *track=wtrack->track;
   struct Notes *note=(struct Notes *)action->pointer2;
 
-  Place place;
-  GetReallineAndPlaceFromY(window, wblock, y, &place, NULL, NULL);
-
   int org_x = action->eint1;
-  //int org_y = action->eint2;
+  int delta_y = action->eint2;
+  
+  Place place;
+  GetReallineAndPlaceFromY(window, wblock, y-delta_y, &place, NULL, NULL);
+
   float org_pitch = action->efloat1;
 
   float pitch=org_pitch + (x-org_x)/20.0f; // 20 pixels per note.
@@ -86,14 +87,19 @@ bool SetMouseActionPitches(
 	if(realline<0)
           return false;
 
+        int realline_y1 = Common_oldGetReallineY1Pos(window,wblock,realline);
+        int realline_y2 = Common_oldGetReallineY2Pos(window,wblock,realline);
+
         struct Notes *note = GetNoteNameUnderMouse(window, wtrack, realline, x, y);
         if (note!= NULL) {
+          int note_delta_y = scale((float)note->l.p.counter/(float)note->l.p.dividor,0,1,realline_y1,realline_y2);
+
           action->action = PITCH_NOTENAME;
           action->pointer1 = wtrack;
           action->pointer2 = note;
 
           action->eint1 = x;
-          action->eint2 = y;
+          action->eint2 = y - note_delta_y;
           action->efloat1 = note->note;
 
           action->MouseUpFunction = &MoveNoteName;
