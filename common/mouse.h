@@ -85,7 +85,8 @@ struct MouseAction{
 
 #define RELTEMPOSLIDER 28
 
-#define PITCH_NOTENAME 29
+#define PITCH_NOTE 29
+#define PITCH_PITCH 29
 
 #endif /* TRACKER_MOUSE_H */
 
