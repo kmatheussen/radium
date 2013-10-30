@@ -95,10 +95,10 @@ void UpdateWPitches(
                                      wtrack,                       \
                                      prev_place, curr_place,       \
                                      prev_note, curr_note,         \
-                                     min_pitch, max_pitch,                       \
+                                     min_pitch, max_pitch,         \
                                      NULL,                         \
                                      &MakeWPitchesCallBack         \
-                                    )
+                                                                   )
 
 #define SetNextPitch()                             \
   prev_place = curr_place;                         \
@@ -112,6 +112,11 @@ void UpdateWPitches(
 	struct Pitches *curr=note->pitches;
         Place *curr_place = curr==NULL ? &note->end : &curr->l.p;
         float curr_note = curr==NULL ? note->note : curr->note;
+
+        if (min_pitch==max_pitch) {
+          min_pitch = curr_note - 1.0f;
+          max_pitch = curr_note + 1.0f;
+        }
 
         MakeNodeLine();
 

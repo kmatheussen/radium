@@ -44,7 +44,7 @@ static int MoveNoteName(
   //int org_y = action->eint2;
   float org_pitch = action->efloat1;
 
-  float pitch=org_pitch + (x-org_x)/20; // 20 pixels per note.
+  float pitch=org_pitch + (x-org_x)/20.0f; // 20 pixels per note.
   note->note = R_BOUNDARIES(1,pitch,127);
 
   PlaceCopy(&note->l.p, &place);
