@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "placement_proc.h"
+#include "pitches_proc.h"
 
 #include "mouse_fxarea_proc.h"
 
@@ -158,21 +159,49 @@ static int MovePitch(
 }
 
 static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *wtrack, int realline, int x, int y, struct Notes **note, struct Pitches **pitch){
-  struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
-  struct TrackReallineElements *element;
+  {
+    struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
+    struct TrackReallineElements *element;
+    
+    for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
+      switch(element->type){
+      case TRE_THISPITCHLINES:
+        *note = element->note;
+        *pitch = element->pointer;
+        return true;
+      }
+    }
+  }
 
-  for(element=trackrealline->trackreallineelements;element!=NULL;element=element->next){
-    switch(element->type){
-    case TRE_THISPITCHLINES:
-      *note = element->note;
-      *pitch = element->pointer;
+
+
+  /*********************************************
+   * Create new pitch
+   *********************************************/
+  if (x > wtrack->x+(wtrack->fxarea.x-wtrack->x)/5) { // 20% left for track width adjustment
+    WPitches *wpitches = wtrack->wpitches[realline];
+
+    if(wpitches != NULL){
+      *note = wpitches->note;
+      struct WBlocks *wblock = window->wblock;
+      Place *place = &wblock->reallines[realline]->l.p;
+      *pitch = AddPitch(window, wblock, wtrack, wpitches->note, place, wpitches->note->note);
       return true;
     }
   }
 
+
   return false;
 }
 
+
+
+
+
+
+/*********************************************
+ * Public function
+ *********************************************/
 
 
 bool SetMouseActionPitches(

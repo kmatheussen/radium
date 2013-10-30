@@ -28,6 +28,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "pitchnodes_proc.h"
 
+struct ExtraInfo{
+  struct Pitches *pitch;
+  struct Notes *note;
+};
+
+static struct ExtraInfo *MakeExtraInfo(struct Pitches *pitch, struct Notes *note){
+  struct ExtraInfo *e=talloc(sizeof(struct ExtraInfo));
+  e->pitch = pitch;
+  e->note = note;
+  return e;
+}
 
 static void MakeWPitchesCallBack(
 	struct Tracker_Windows *window,
@@ -39,7 +50,8 @@ static void MakeWPitchesCallBack(
 	float u_y1,float u_y2,
 	float u_x1,float u_x2
 ){
-	struct Pitches *pitchnode=(struct Pitches *)extrainfo;
+        struct ExtraInfo *e=extrainfo;
+
 	WPitches *wpitch = talloc(sizeof(WPitches));
 
 	wpitch->type=TRE_PITCHLINE;
@@ -47,7 +59,8 @@ static void MakeWPitchesCallBack(
 	wpitch->y2=u_y2;
 	wpitch->x1=u_x1;
 	wpitch->x2=u_x2;
-	wpitch->pointer=pitchnode;
+	wpitch->pointer = e->pitch;
+        wpitch->note = e->note;
 
 	wpitch->next=wtrack->wpitches[realline];
 	wtrack->wpitches[realline]=wpitch;
@@ -60,7 +73,9 @@ static void MakeWPitchesCallBack(
 		wpitch->x1=u_x1;
 		wpitch->y1=u_y1;
 
-		wpitch->pointer=pitchnode;
+                wpitch->pointer = e->pitch;
+                wpitch->note = e->note;
+
 		wpitch->next=wtrack->wpitches[realline];
 		wtrack->wpitches[realline]=wpitch;
 	}
@@ -73,7 +88,9 @@ static void MakeWPitchesCallBack(
           wpitch->x1=u_x2;
           wpitch->y1=u_y2;
 
-          wpitch->pointer=pitchnode;
+          wpitch->pointer = e->pitch;
+          wpitch->note = e->note;
+
           wpitch->next=wtrack->wpitches[realline];
           wtrack->wpitches[realline]=wpitch;
 	}
@@ -89,16 +106,16 @@ void UpdateWPitches(
         float max_pitch
 ){
   
-#define MakeNodeLine() MakeNodeLines(                              \
-                                     window,                       \
-                                     wblock,                       \
-                                     wtrack,                       \
-                                     prev_place, curr_place,       \
-                                     prev_note, curr_note,         \
-                                     min_pitch, max_pitch,         \
-                                     NULL,                         \
-                                     &MakeWPitchesCallBack         \
-                                                                   )
+#define MakeNodeLine() MakeNodeLines(                                   \
+                                     window,                            \
+                                     wblock,                            \
+                                     wtrack,                            \
+                                     prev_place, curr_place,            \
+                                     prev_note, curr_note,              \
+                                     min_pitch, max_pitch,              \
+                                     MakeExtraInfo(curr,note),          \
+                                     &MakeWPitchesCallBack              \
+                                     )
 
 #define SetNextPitch()                             \
   prev_place = curr_place;                         \

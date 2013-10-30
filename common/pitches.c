@@ -129,6 +129,23 @@ static int notenum_from_notetext(char *notetext){
     return notenum;
 }
 
+struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float notenum){
+  struct Pitches *pitch = talloc(sizeof(struct Pitches));
+  PlaceCopy(&pitch->l.p,place);
+  pitch->note = notenum;
+  //pitch->note_note = note;
+  
+  PC_Pause(); {
+    ListAddElement3(&note->pitches, &pitch->l);
+  }PC_StopPause();
+  
+  UpdateTrackReallines(window,wblock,wtrack);
+  ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+  UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+
+  return pitch;
+}
+
 void SetPitchCurrPos(struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
@@ -169,20 +186,7 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
     
     printf("notenum: %d\n",notenum);
 
-    if(notetext!=NULL){
-      struct Pitches *pitch = talloc(sizeof(struct Pitches));
-      PlaceCopy(&pitch->l.p,&realline->l.p);
-      pitch->note = notenum;
-      //pitch->note_note = note;
-
-      PC_Pause(); {
-        ListAddElement3(&note->pitches, &pitch->l);
-      }PC_StopPause();
-
-      UpdateTrackReallines(window,wblock,wtrack);
-      ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-      UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-    }
-
+    if(notetext!=NULL)
+      AddPitch(window, wblock, wtrack, note, &realline->l.p, notenum);
   }
 }
