@@ -19,11 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-extern void MouseMove(struct Tracker_Windows *window,int x,int y);
+extern void MouseMove(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y);
 
-extern void LeftMouseDown(struct Tracker_Windows *window,int x,int y);
+extern void LeftMouseDown(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y);
 
-extern int LeftMouseUp(struct Tracker_Windows *window,int x,int y);
+extern int LeftMouseUp(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y);
 
 #endif
 

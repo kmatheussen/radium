@@ -107,14 +107,42 @@ void SetMouseAction(
           DrawUpWTempoNodes(window,wblock);
 }
 
-void MouseMove(struct Tracker_Windows *window,int x,int y){
+static int getX(uint32_t keyswitch, struct MouseAction *action, int x){
+  if (LeftShift(keyswitch))
+    return action->org_x;
+
+  else if (LeftCtrl(keyswitch) || RightCtrl(keyswitch)) {
+    int dx = x - action->org_x;
+    return action->org_x + dx/10;
+
+  } else
+    return x;
+}
+
+static int getY(uint32_t keyswitch, struct MouseAction *action, int y){
+  if (LeftExtra(keyswitch))
+    return action->org_y;
+
+  else if (LeftCtrl(keyswitch) || RightCtrl(keyswitch)) {
+    int dy = y - action->org_y;
+    return action->org_y + dy/10;
+
+  } else
+    return y;
+}
+
+void MouseMove(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	struct MouseAction *curraction= &window->curraction;
 	struct MouseAction *prevaction= &window->prevaction;
 
 	if(prevaction->action!=NOACTION){
-		(*prevaction->MouseUpFunction)(window,x,y);
-		return;
+          (*prevaction->MouseUpFunction)(window, getX(keyswitch,prevaction,x), getY(keyswitch,prevaction,y));
+          return;
 	}
+
+        curraction->org_x = x;
+        curraction->org_y = y;
+
 	SetMouseAction(window,curraction,x,y,0);
 
 	if(prevaction->action!=NOACTION) return;
@@ -131,21 +159,24 @@ void MouseMove(struct Tracker_Windows *window,int x,int y){
 	}
 }
 
-void LeftMouseDown(struct Tracker_Windows *window,int x,int y){
+void LeftMouseDown(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	struct MouseAction *prevaction= &window->prevaction;
+
+        prevaction->org_x = x;
+        prevaction->org_y = y;
 
 	SetMouseAction(window,prevaction,x,y,1);
 }
 
 extern char firstringinstatusbar[32];
 
-int LeftMouseUp(struct Tracker_Windows *window,int x,int y){
+int LeftMouseUp(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	struct MouseAction *prevaction= &window->prevaction;
 	int ret=0;
 
 	if(prevaction->action!=NOACTION){
 		prevaction->action=NOACTION;
-		ret=(*prevaction->MouseUpFunction)(window,x,y);
+		ret=(*prevaction->MouseUpFunction)(window, getX(keyswitch,prevaction,x), getY(keyswitch,prevaction,y));
 	}
 
 	if(firstringinstatusbar[0]!=0){

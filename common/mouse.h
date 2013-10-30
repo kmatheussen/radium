@@ -32,6 +32,10 @@ struct MouseAction{
 	void *pointer2;
 	void *pointer3;
 	void *pointer4;
+
+  int org_x;
+  int org_y;
+
 	int (*MouseUpFunction)(
 		struct Tracker_Windows *window,
 		int x,int y
