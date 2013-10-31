@@ -169,6 +169,12 @@ static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *w
       case TRE_THISPITCHLINES:
         *note = element->note;
         *pitch = element->pointer;
+
+        if (create_new_pitch==true) {
+          PlayStop();
+          Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);
+        }
+
         return true;
       }
     }
@@ -183,13 +189,17 @@ static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *w
     WPitches *wpitches = wtrack->wpitches[realline];
 
     if(wpitches != NULL){
-      if (create_new_pitch==false)
-        return true;
+      if (create_new_pitch==true) {
+      
+        PlayStop();
+        Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);
 
-      *note = wpitches->note;
-      struct WBlocks *wblock = window->wblock;
-      Place *place = &wblock->reallines[realline]->l.p;
-      *pitch = AddPitch(window, wblock, wtrack, wpitches->note, place, wpitches->note->note);
+        *note = wpitches->note;
+        struct WBlocks *wblock = window->wblock;
+        Place *place = &wblock->reallines[realline]->l.p;
+        *pitch = AddPitch(window, wblock, wtrack, wpitches->note, place, wpitches->note->note);
+      }
+
       return true;
     }
   }
@@ -222,10 +232,11 @@ bool SetMouseActionPitches(
           return false;
 
         if (click != 1) {
-          struct Notes *note = GetNoteUnderMouse(window, wtrack, realline, x, y);
+          struct Notes *note = NULL;
           struct Pitches *pitch = NULL;
-          if (GetPitchUnderMouse(window, wtrack, realline, x, y, false, &note, &pitch)==true ||
-              GetNoteUnderMouse(window, wtrack, realline, x, y) != NULL)
+
+          if (GetNoteUnderMouse(window, wtrack, realline, x, y) != NULL ||
+              GetPitchUnderMouse(window, wtrack, realline, x, y, false, &note, &pitch)==true)
           {
             SetNormalPointer(window);
           } else {
@@ -274,8 +285,6 @@ bool SetMouseActionPitches(
 
           action->MouseUpFunction = &MovePitch;
 
-          PlayStop();
-          Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);
           return true;
 
         }
