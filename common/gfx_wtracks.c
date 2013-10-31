@@ -611,8 +611,9 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                  );
       break;
     case TRE_THISPITCHLINES:
+      GFX_SetMixColor(window, 11, 1, 800);
       GFX_T_Line(
-                 window,Col[1],
+                 window,11,
                  wtrack->fxarea.x,
                  (int)(within.y1+element->y1),
                  wtrack->fxarea.x2,

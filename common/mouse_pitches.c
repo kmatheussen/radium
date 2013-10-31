@@ -91,6 +91,7 @@ static int MoveNote(
   return 0;
 }
 
+
 static struct Notes *GetNoteUnderMouse(struct Tracker_Windows *window, struct WTracks *wtrack, int realline, int x, int y){
   struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
   struct TrackReallineElements *element;
