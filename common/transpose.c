@@ -32,14 +32,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "transpose_proc.h"
 
+static float getTransposed(float val, int trans){
+  if(val+trans<128 && val+trans>0)
+    return val + trans;
+  else
+    return val;  
+}
 
 void Transpose_note(
 	struct Notes *note,
 	int trans
 ){
-	if(note->note+trans<128 && note->note+trans>0){
-		note->note+=trans;
-	}
+  note->note = getTransposed(note->note, trans);
+  struct Pitches *pitch = note->pitches;
+  while(pitch!=NULL){
+    pitch->note = getTransposed(pitch->note, trans);
+    pitch = NextPitch(pitch);
+  }
 }
 
 void Transpose_notes(
@@ -91,10 +100,8 @@ void TransposeTrack(
 	struct Notes *note=track->notes;
 
 	while(note!=NULL){
-		if(note->note+trans<128 && note->note+trans>0){
-			note->note+=trans;
-		}
-		note=NextNote(note);
+          Transpose_note(note, trans);
+          note=NextNote(note);
 	}
 
 }
