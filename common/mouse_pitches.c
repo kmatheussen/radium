@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "mouse_fxarea_proc.h"
 
+#define PIXELS_PER_NOTE 5.0f
+
 
 /*********************************************
  * Move Note
@@ -77,7 +79,7 @@ static int MoveNote(
 
   float org_pitch = action->efloat1;
 
-  float pitch=org_pitch + (x-org_x)/20.0f; // 20 pixels per note.
+  float pitch=org_pitch + (x-org_x)/PIXELS_PER_NOTE;
   note->note = R_BOUNDARIES(1,pitch,127);
 
   PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
@@ -148,7 +150,7 @@ static int MovePitch(
 
   float org_pitch = action->efloat1;
 
-  float pitchvalue=org_pitch + (x-org_x)/20.0f; // 20 pixels per note.
+  float pitchvalue=org_pitch + (x-org_x)/PIXELS_PER_NOTE;
   pitch->note = R_BOUNDARIES(1,pitchvalue,127);
 
   PlaceCopy(&pitch->l.p, PlaceBetween(getPrevLegalPitchPlace(note, pitch), &place, getNextLegalPitchPlace(note, pitch)));
