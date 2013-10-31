@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "list_proc.h"
 
+#include "visual_proc.h"
+
 #include "mouse_wtrackborder_proc.h"
 #include "mouse_fxarea_proc.h"
 #include "mouse_pitches_proc.h"

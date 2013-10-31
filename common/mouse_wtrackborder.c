@@ -151,6 +151,3 @@ void SetMouseActionWTrackBorder(
 	action->action=TRACKBORDER;
 	action->MouseUpFunction= &MoveWTrackBorder_Mouse;
 }
-
-
-

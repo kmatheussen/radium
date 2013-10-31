@@ -327,8 +327,18 @@ void RT_message(const char *fmt,...){
 
 int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
 
-void SetNormalPointer(struct Tracker_Windows *tvisual){return ;}
-void SetResizePointer(struct Tracker_Windows *tvisual){return ;}
+void SetNormalPointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::ArrowCursor);
+}
+void SetDiagResizePointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::SizeFDiagCursor);
+}
+void SetHorizResizePointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::SizeHorCursor);
+}
 
 
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
@@ -622,7 +632,7 @@ int main(int argc, char **argv){
 #endif
 
   // for mingw
-  putenv("LC_NUMERIC=C");
+  putenv(strdup("LC_NUMERIC=C"));
 
   //QLocale::setDefault(QLocale::C);
   QLocale::setDefault(QLocale::c());

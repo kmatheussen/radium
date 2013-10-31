@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "placement_proc.h"
 #include "pitches_proc.h"
+#include "visual_proc.h"
 
 #include "mouse_fxarea_proc.h"
 
@@ -158,7 +159,7 @@ static int MovePitch(
   return 0;
 }
 
-static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *wtrack, int realline, int x, int y, struct Notes **note, struct Pitches **pitch){
+static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *wtrack, int realline, int x, int y, bool create_new_pitch, struct Notes **note, struct Pitches **pitch){
   {
     struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
     struct TrackReallineElements *element;
@@ -182,6 +183,9 @@ static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *w
     WPitches *wpitches = wtrack->wpitches[realline];
 
     if(wpitches != NULL){
+      if (create_new_pitch==false)
+        return true;
+
       *note = wpitches->note;
       struct WBlocks *wblock = window->wblock;
       Place *place = &wblock->reallines[realline]->l.p;
@@ -189,7 +193,6 @@ static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *w
       return true;
     }
   }
-
 
   return false;
 }
@@ -214,12 +217,23 @@ bool SetMouseActionPitches(
 	struct WBlocks *wblock=window->wblock;
         Place place;
 
-        if (click != 1)
-          return false;
-
 	int realline = GetReallineAndPlaceFromY(window,wblock,y,&place,NULL,NULL);
 	if(realline<0)
           return false;
+
+        if (click != 1) {
+          struct Notes *note = GetNoteUnderMouse(window, wtrack, realline, x, y);
+          struct Pitches *pitch = NULL;
+          if (GetPitchUnderMouse(window, wtrack, realline, x, y, false, &note, &pitch)==true ||
+              GetNoteUnderMouse(window, wtrack, realline, x, y) != NULL)
+          {
+            SetNormalPointer(window);
+          } else {
+            SetHorizResizePointer(window);
+          }
+
+          return false;
+        }
 
         int realline_y1 = Common_oldGetReallineY1Pos(window,wblock,realline);
         int realline_y2 = Common_oldGetReallineY2Pos(window,wblock,realline);
@@ -245,7 +259,7 @@ bool SetMouseActionPitches(
         }
 
         struct Pitches *pitch = NULL;
-        if (GetPitchUnderMouse(window, wtrack, realline, x, y, &note, &pitch)==true) {
+        if (GetPitchUnderMouse(window, wtrack, realline, x, y, true, &note, &pitch)==true) {
           printf("Got it. note: %d, pitch: %f\n",note->note,pitch->note);
           int pitch_delta_y = scale((float)pitch->l.p.counter/(float)pitch->l.p.dividor,0,1,realline_y1,realline_y2);
 

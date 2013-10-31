@@ -135,6 +135,8 @@ void MouseMove(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	struct MouseAction *curraction= &window->curraction;
 	struct MouseAction *prevaction= &window->prevaction;
 
+        SetNormalPointer(window);
+
 	if(prevaction->action!=NOACTION){
           (*prevaction->MouseUpFunction)(window, getX(keyswitch,prevaction,x), getY(keyswitch,prevaction,y));
           return;
