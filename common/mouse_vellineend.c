@@ -33,6 +33,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
+
+static Place *FindLastPitchPlace(struct Notes *note){
+  struct Pitches *pitch = note->pitches;
+  while(NextPitch(pitch)!=NULL)
+    pitch = NextPitch(pitch);
+  return &pitch->l.p;
+}
+
+
 /* Everything needs to be drawn up if:
    1. wtrack->num_vel is changed, or
    2. wtrack->num_vel>1
@@ -98,6 +107,12 @@ int MoveVelEnd_Mouse(
 	if(note->velocities==NULL && note->velocity==velocity_end_org){
 		note->velocity=note->velocity_end;
 	}
+
+        if (note->pitches != NULL){
+          Place *last_pitch_place = FindLastPitchPlace(note);
+          if (PlaceGreaterThan(last_pitch_place, &place))
+            PlaceCopy(&place, last_pitch_place);
+        }
 
 	PlaceCopy(&note->end,&place);
 
