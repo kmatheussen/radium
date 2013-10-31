@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "visual_proc.h"
 #include "windows_proc.h"
+#include "wtracks_proc.h"
 #include "tbox_proc.h"
 #include "area_proc.h"
 #include "mouse_wtrack_proc.h"
@@ -100,7 +101,9 @@ void SetMouseAction(
 
         if(old_mouse_track!=wblock->mouse_track || old_mouse_note!=wblock->mouse_note){
           //printf("mouse.c: Drawing up tracks\n");
-          DrawUpAllWTracks(window,wblock,NULL);
+          UpdateAllWTracksCoordinates(window,wblock);
+          //DrawUpAllWTracks(window,wblock,NULL);
+          DrawUpTrackerWindow(window);
         }
 
         if(old_mouse_track!=wblock->mouse_track && (old_mouse_track==TEMPONODETRACK || wblock->mouse_track==TEMPONODETRACK))

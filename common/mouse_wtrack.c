@@ -49,7 +49,7 @@ void SetMouseActionWTrack(
 
         wblock->mouse_track=wtrack->l.num;
 
-	if(wtrack->l.num==rwtracknum && x>=rwtrack->fxarea.x2 && x<=rwtrack->fxarea.x2+5){
+	if(wtrack->l.num==rwtracknum && x>=rwtrack->fxarea.x2 && x<=rwtrack->fxarea.x2+5){ // ???
 		SetMouseActionWTrackBorder(window,action,x);
 		return;
 	}

@@ -265,10 +265,9 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
 
     if(notenum!=0 && wtrack->noteshowtype==TEXTTYPE){
 
-      if(notenum>0 && notenum<128){
+      if( (true || wblock->mouse_track!=wtrack->l.num) && notenum>0 && notenum<128){
 
 
-#if 1
         //GFX_SetMixColor(window,6,5,scale(notenum,0,127,0,1000));
         set_note_color(window,notenum);
         GFX_T_FilledBox(
@@ -277,91 +276,14 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                         wtrack->notearea.x,within.y1+2,
                         wtrack->notearea.x2-1,within.y2,
                         PAINT_BUFFER);
-
-#if 0
-        int x = scale(notenum,0,127,wtrack->notearea.x,wtrack->notearea.x2);
-
-        GFX_SetMixColor(window, 11, 1, 800);
-        GFX_T_Line(
-                   window,
-                   1,
-                   x,within.y1,
-                   x,within.y2,
-                   PAINT_BUFFER
-                   );
-#endif
-
-#else
-        // left fill
-#if 1
-        int x = scale(notenum,0,127,wtrack->notearea.x,wtrack->notearea.x2);
-        int c = 14;
-
-        GFX_SetMixColor(window,5,15,200);
-        GFX_T_FilledBox(
-                        window,
-                        5,
-                        wtrack->notearea.x,within.y1+2,
-                        x,within.y2-2,
-                        PAINT_BUFFER);
-#endif
-
-        // right fill
-        GFX_SetMixColor(window,c,15,400);
-        GFX_T_FilledBox(
-                        window,
-                        c,
-                        x,within.y1+2,
-                        wtrack->notearea.x2-1,within.y2-2,
-                        PAINT_BUFFER);
-                        
-                        
-        GFX_SetMixColor(window, 11, 1, 800);
-        GFX_T_Line(
-                   window,
-                   1,
-                   x,within.y1,
-                   x,within.y2,
-                   PAINT_BUFFER
-                   );
-
-#endif
-
-#if 0
-        int height = 2;
-
-        // middle
-        GFX_T_Line(
-                   window,
-                   1,
-                   x,within.y1,
-                   x,within.y1+height,
-                   PAINT_BUFFER
-                   );
-
-        // left
-        GFX_SetMixColor(window, 1, 15, 500);
-        GFX_T_Line(
-                   window,
-                   3,
-                   x-1,within.y1,
-                   x-1,within.y1+height,
-                   PAINT_BUFFER
-                   );
-
-        // right
-        GFX_SetMixColor(window, 1, 15, 500);
-        GFX_T_Line(
-                   window,
-                   3,
-                   x+1,within.y1,
-                   x+1,within.y1+height,
-                   PAINT_BUFFER
-                   );
-#endif
       }
 
 
+      if (wblock->mouse_track == wtrack->l.num) {
+
+        GFX_T_Text(window,colnum,NotesTexts[notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_BUFFER);
+
+      } else {
       SetTextLine(
                   window,
                   wblock,
@@ -371,6 +293,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                   realline,
                   true
                   );
+      }
     }
   }
 }
