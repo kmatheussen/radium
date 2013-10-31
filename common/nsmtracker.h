@@ -227,8 +227,7 @@ enum{
 struct Notes{
 	struct ListHeader3 l;
 
-	int note;
-	int cents;
+	float note;
 	int velocity;
 
 	Place end;
@@ -521,7 +520,7 @@ enum{
 
 
 struct TrackRealline{
-  int note;										/* Is 0 if no note. */
+  float note;										/* Is 0 if no note. */
   struct TrackReallineElements *trackreallineelements;
 };
 #define NOTE_END_NORMAL 128

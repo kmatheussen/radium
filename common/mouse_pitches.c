@@ -81,6 +81,7 @@ static int MoveNote(
 
   float pitch=org_pitch + (x-org_x)/PIXELS_PER_NOTE;
   note->note = R_BOUNDARIES(1,pitch,127);
+  //printf("note->note: %f, pitch: %f\n",note->note, pitch);
 
   PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
 
@@ -273,7 +274,7 @@ bool SetMouseActionPitches(
 
         struct Pitches *pitch = NULL;
         if (GetPitchUnderMouse(window, wtrack, realline, x, y, true, &note, &pitch)==true) {
-          printf("Got it. note: %d, pitch: %f\n",note->note,pitch->note);
+          //printf("Got it. note: %f, pitch: %f\n",note->note,pitch->note);
           int pitch_delta_y = scale((float)pitch->l.p.counter/(float)pitch->l.p.dividor,0,1,realline_y1,realline_y2);
 
           action->action = PITCH_PITCH;

@@ -58,7 +58,7 @@ int FindFirstFreeSubTrack(
 
 	if(note==NULL){RError("\nnote=NULL\n");}else{
 		RError("\nprevnote: %s line: %d, counter: %d, dividor: %d\n\n",
-			NotesTexts3[note->note],realline,&note->end.line,&note->end.counter,&note->end.dividor);
+                       NotesTexts3[(int)note->note],realline,&note->end.line,&note->end.counter,&note->end.dividor);
 	}
 
 	return -1; /* Should never happen. */

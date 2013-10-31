@@ -154,7 +154,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                              )
 {
   struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
-  int notenum = trackrealline->note;
+  float notenum = trackrealline->note;
   //bool isgliding = false;
   int colnum = Col[1];
 
@@ -203,7 +203,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                               window,
                               wblock,
                               colnum,
-                              NotesTexts[notenum],
+                              NotesTexts[(int)notenum],
                               wtrack->notearea.x,
                               realline,
                               true
@@ -213,7 +213,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                         window,
                         wblock,
                         colnum,
-                        NotesTexts[notenum],
+                        NotesTexts[(int)notenum],
                         wtrack->notearea.x,
                         realline,
                         true
@@ -231,7 +231,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                             window,
                             wblock,
                             colnum,
-                            NotesTexts[notenum],
+                            NotesTexts[(int)notenum],
                             wtrack->notearea.x,
                             realline,
                             true
@@ -242,7 +242,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                       wblock,
                       //								colnum,
                       notenum==NOTE_STP||notenum==NOTE_MUL ? 1 : notenum+16, //  NCol[notenum/12],
-                      NotesTexts[notenum],
+                      NotesTexts[(int)notenum],
                       wtrack->notearea.x,
                       realline,
                       true
@@ -280,15 +280,26 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
 
 
       if (wblock->mouse_track == wtrack->l.num) {
+          ///printf("notenum: %f\n",notenum);
 
-        GFX_T_Text(window,colnum,NotesTexts[notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_BUFFER);
+        int cents = R_BOUNDARIES(0,(notenum - (int)notenum)*100,99);
+        if (cents==0)
+
+          GFX_T_Text(window,colnum,NotesTexts[(int)notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_BUFFER);
+
+        else {
+          GFX_T_Text(window,colnum,NotesTexts[(int)notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x+3*12,TEXT_CENTER,PAINT_BUFFER);
+          char temp[10];
+          sprintf(temp,",%d",cents);
+          GFX_T_Text(window,colnum,temp,wtrack->notearea.x+3*12,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_BUFFER);
+        }
 
       } else {
       SetTextLine(
                   window,
                   wblock,
                   colnum, //(notenum==NOTE_STP || notenum==NOTE_MUL) ? 1 : notenum+16, //NCol[notenum/12],
-                  NotesTexts[notenum],
+                  NotesTexts[(int)notenum],
                   wtrack->notearea.x,
                   realline,
                   true

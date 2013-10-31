@@ -166,7 +166,7 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
   
   if (note != NULL) {
     
-    printf("note: %d\n",note==NULL ? -1 : note->note);
+    printf("note: %f\n",note==NULL ? -1 : note->note);
     ReqType reqtype=GFX_OpenReq(window,30,12,"Set Pitch");
     char *notetext;
 

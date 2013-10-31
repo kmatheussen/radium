@@ -36,8 +36,8 @@ DC_start("NOTE");
 
 	SavePlace(&note->l.p);
 
-	DC_SaveI(note->note);
-	DC_SaveI(note->cents);
+	DC_SaveF(note->note);
+	DC_SaveI(0); // cents
 	DC_SaveI(note->velocity);
 	SavePlace(&note->end);
 	DC_SaveI(note->velocity_end);
@@ -55,8 +55,8 @@ struct Notes *LoadNote(void){
 	struct Notes *note=DC_alloc(sizeof(struct Notes));
 
 	LoadPlace(&note->l.p);
-	note->note=DC_LoadI();
-	note->cents=DC_LoadI();
+	note->note=DC_LoadF();
+	DC_LoadI(); // cents
 	note->velocity=DC_LoadI(); if(disk_load_version<0.67) note->velocity=note->velocity*MAX_VELOCITY/127;
 	LoadPlace(&note->end);
 	note->velocity_end=DC_LoadI(); if(disk_load_version<0.67) note->velocity_end=note->velocity_end*MAX_VELOCITY/127;
