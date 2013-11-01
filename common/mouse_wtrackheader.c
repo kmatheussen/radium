@@ -62,7 +62,7 @@ static void update_volume_status(struct Tracker_Windows *window,
 
 static int MoveWTrackPan_Mouse(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=(struct WTracks *)window->prevaction.pointer1;
@@ -90,7 +90,7 @@ static int MoveWTrackPan_Mouse(
 
 static int MoveWTrackVolume_Mouse(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=(struct WTracks *)window->prevaction.pointer1;

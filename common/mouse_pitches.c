@@ -62,7 +62,7 @@ static Place *getNextLegalNotePlace(struct Notes *note){
 
 static int MoveNote(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
   struct WBlocks *wblock=window->wblock;
   struct MouseAction *action= &window->prevaction;
@@ -71,17 +71,20 @@ static int MoveNote(
   //struct Tracks *track=wtrack->track;
   struct Notes *note=(struct Notes *)action->pointer2;
 
-  int org_x = action->eint1;
-  int delta_y = action->eint2;
+  float org_x = action->efloat1;
+  float delta_y = action->efloat2;
   
   Place place;
   GetReallineAndPlaceFromY(window, wblock, y-delta_y, &place, NULL, NULL);
 
-  float org_pitch = action->efloat1;
+  float org_pitch = action->efloat3;
 
   float pitch=org_pitch + (x-org_x)/PIXELS_PER_NOTE;
   note->note = R_BOUNDARIES(1,pitch,127);
   //printf("note->note: %f, pitch: %f\n",note->note, pitch);
+
+  //printf("org_pitch: %f. pitch: %f. x: %f, org_x: %f\n",org_pitch,pitch,x,org_x);
+  
 
   PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
 
@@ -134,7 +137,7 @@ static Place *getNextLegalPitchPlace(struct Notes *note, struct Pitches *pitch){
 
 static int MovePitch(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
   struct WBlocks *wblock=window->wblock;
   struct MouseAction *action= &window->prevaction;
@@ -144,13 +147,13 @@ static int MovePitch(
   struct Notes *note=action->pointer2;
   struct Pitches *pitch=action->pointer3;
 
-  int org_x = action->eint1;
-  int delta_y = action->eint2;
+  float org_x = action->efloat1;
+  float delta_y = action->efloat2;
   
   Place place;
   GetReallineAndPlaceFromY(window, wblock, y-delta_y, &place, NULL, NULL);
 
-  float org_pitch = action->efloat1;
+  float org_pitch = action->efloat3;
 
   float pitchvalue=org_pitch + (x-org_x)/PIXELS_PER_NOTE;
   pitch->note = R_BOUNDARIES(1,pitchvalue,127);
@@ -255,15 +258,15 @@ bool SetMouseActionPitches(
 
         struct Notes *note = GetNoteUnderMouse(window, wtrack, realline, x, y);
         if (note!= NULL) {
-          int note_delta_y = scale((float)note->l.p.counter/(float)note->l.p.dividor,0,1,realline_y1,realline_y2);
+          float note_delta_y = scale((float)note->l.p.counter/(float)note->l.p.dividor,0,1,realline_y1,realline_y2);
 
           action->action = PITCH_NOTE;
           action->pointer1 = wtrack;
           action->pointer2 = note;
 
-          action->eint1 = x;
-          action->eint2 = y - note_delta_y;
-          action->efloat1 = note->note;
+          action->efloat1 = x;
+          action->efloat2 = y - note_delta_y;
+          action->efloat3 = note->note;
 
           action->MouseUpFunction = &MoveNote;
 
@@ -276,16 +279,16 @@ bool SetMouseActionPitches(
         struct Pitches *pitch = NULL;
         if (GetPitchUnderMouse(window, wtrack, realline, x, y, true, &note, &pitch)==true) {
           //printf("Got it. note: %f, pitch: %f\n",note->note,pitch->note);
-          int pitch_delta_y = scale((float)pitch->l.p.counter/(float)pitch->l.p.dividor,0,1,realline_y1,realline_y2);
+          float pitch_delta_y = scale((float)pitch->l.p.counter/(float)pitch->l.p.dividor,0,1,realline_y1,realline_y2);
 
           action->action = PITCH_PITCH;
           action->pointer1 = wtrack;
           action->pointer2 = note;
           action->pointer3 = pitch;
 
-          action->eint1 = x;
-          action->eint2 = y - pitch_delta_y;
-          action->efloat1 = pitch->note;
+          action->efloat1 = x;
+          action->efloat2 = y - pitch_delta_y;
+          action->efloat3 = pitch->note;
 
           action->MouseUpFunction = &MovePitch;
 

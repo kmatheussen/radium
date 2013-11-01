@@ -23,11 +23,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct MouseAction{
 	int action;
+
 	int eint1;
 	int eint2;
 	int eint3;
-  float efloat1;
-  float efloat2;
+
+	float efloat1;
+	float efloat2;
+	float efloat3;
+
 	void *pointer1;
 	void *pointer2;
 	void *pointer3;
@@ -38,7 +42,7 @@ struct MouseAction{
 
 	int (*MouseUpFunction)(
 		struct Tracker_Windows *window,
-		int x,int y
+		float x,float y
 	);
 };
 

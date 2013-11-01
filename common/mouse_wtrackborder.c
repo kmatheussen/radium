@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 int MoveWTrackBorder_Mouse(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
 	int oldfxwidth;
 	struct WBlocks *wblock=window->wblock;

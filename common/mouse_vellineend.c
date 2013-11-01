@@ -49,7 +49,7 @@ static Place *FindLastPitchPlace(struct Notes *note){
 
 int MoveVelEnd_Mouse(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
 	struct WBlocks *wblock=window->wblock;
 	struct MouseAction *action= &window->prevaction;

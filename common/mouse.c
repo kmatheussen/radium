@@ -110,25 +110,25 @@ void SetMouseAction(
           DrawUpWTempoNodes(window,wblock);
 }
 
-static int getX(uint32_t keyswitch, struct MouseAction *action, int x){
+static float getX(uint32_t keyswitch, struct MouseAction *action, int x){
   if (LeftShift(keyswitch))
     return action->org_x;
 
   else if (LeftCtrl(keyswitch) || RightCtrl(keyswitch)) {
     int dx = x - action->org_x;
-    return action->org_x + dx/10;
+    return action->org_x + dx/10.0f;
 
   } else
     return x;
 }
 
-static int getY(uint32_t keyswitch, struct MouseAction *action, int y){
+static float getY(uint32_t keyswitch, struct MouseAction *action, int y){
   if (LeftExtra(keyswitch))
     return action->org_y;
 
   else if (LeftCtrl(keyswitch) || RightCtrl(keyswitch)) {
     int dy = y - action->org_y;
-    return action->org_y + dy/10;
+    return action->org_y + dy/10.0f;
 
   } else
     return y;

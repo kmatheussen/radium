@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 int MoveTempoNodeBorder_Mouse(
 	struct Tracker_Windows *window,
-	int x,int y
+	float x,float y
 ){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack2;
@@ -49,7 +49,7 @@ int MoveTempoNodeBorder_Mouse(
 
 //	PlayStop();
 
-	x-=window->prevaction.eint1;
+	x-=window->prevaction.efloat1;
 
 	int old_width=wblock->temponodearea.width;
 	oldrighttrack=wblock->right_track;
@@ -166,7 +166,7 @@ int MoveTempoNodeBorder_Mouse(
 void SetMouseActionTempoNodeBorder(struct Tracker_Windows *window, struct MouseAction *action,int x){
 	action->action=TEMPONODEBORDER;
 	action->MouseUpFunction= &MoveTempoNodeBorder_Mouse;
-	action->eint1=x-window->wblock->temponodearea.x2;
+	action->efloat1=x-window->wblock->temponodearea.x2;
 }
 
 
