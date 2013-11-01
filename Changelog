@@ -1,4 +1,24 @@
 
+Most important changes 1.9.32 -> 1.9.33:
+* Pitch glide between notes. Implemented for the Pd instrument, the sampler instrument
+  and all the Physical modelling instruments.
+* Edit pitches with mouse
+* Automatically make current track wider
+* Show Resize cursor when its possible to resize track
+* mouse: ctrl: slows down, lshift: limit horizontal, lextra: limit vertial
+* sampler instrument: Fix saving loop on off button state
+* Made MENU button open block configuration (left meta is often unavailable)
+* Made VOLUME/PLAY/STOP/MUTE keys configurable in keybindings.conf
+* Fixed memory corruption in blocklist when name of block was longer than 20 (!)
+* Use standard paths for LADSPA plugins if LADSPA_PATH is not set
+* Give message if a plugin generates abnormal signals, plus zero the signal.
+* menues: Be more intelligent about which program to open keybindings.conf/menues.conf/externals_list.txt with.
+* pd: Upgrade libpds to latest version (Use system clipboard to store cut/copy/paste data (to cut/copy/paste between different pd instances))
+* Fix MMD loader
+* Note play indicator visual improvement (blinking circle)
+* Enable volume up/volume down/mute/play keyboard buttons
+
+
 Most important changes 1.9.31 -> 1.9.32:
 * Button for setting random effect values.
 
