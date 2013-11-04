@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
+#include "../common/playerclass.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/blocklist_proc.h"
@@ -67,6 +68,7 @@ public:
 
 
 extern struct Root *root;
+extern PlayerClass *pc;
 
 
 static const int xborder = 0;
@@ -315,11 +317,18 @@ private slots:
     if(num_visitors>0) // event created internally
       return;
 
+    bool wasplaying = pc->isplaying;
+
+    PlayStop();
+
     struct Tracker_Windows *window=getWindowFromNum(-1);
     struct WBlocks *wblock=getWBlockFromNum(-1,num);
     DO_GFX(SelectWBlock(window,wblock));
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     editor->updateEditor();
+
+    if(wasplaying)
+      PlayBlockFromStart(window,true);
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){
