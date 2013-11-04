@@ -1,7 +1,7 @@
 
 
 #define VERSION_LETTER ""
-#define DISKVERSION 0.70
+#define DISKVERSION 0.71
 #define SETTINGSVERSION 0.72
 
 

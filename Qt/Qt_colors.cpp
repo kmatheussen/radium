@@ -117,11 +117,32 @@ static void configure_note_colors(EditorWidget *editor){
   }
 }
 
+
+QHash<int, QColor> custom_colors;
+static const int first_custom_colornum = 1024; // just start somewhere.
+
+// if colornum==-1, create new color
+int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
+  static int num_colors = first_custom_colornum;
+
+  if (colornum==-1)
+    colornum = num_colors++;
+
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+
+  custom_colors[colornum] = mix_colors(QColor(qrand()%255,qrand()%255,qrand()%255), editor->colors[15], 0.10f);
+
+  return colornum;
+}
+
 QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   if(colornum < 16)
     return editor->colors[colornum];
+
+  if(colornum >= first_custom_colornum)
+    return custom_colors[colornum];
 
   if(colornum > 16+128){
     RError("Illegal colornum: %d",colornum);
@@ -484,3 +505,4 @@ void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
   DrawUpTrackerWindow(tvisual);
   updateAll(editorwidget);
 }
+

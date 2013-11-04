@@ -282,6 +282,8 @@ struct Patch{
 
   const char *name;
 
+  int colornum;
+
   STime last_time; // player lock must be held when setting this value.
 
   void (*playnote)(struct Patch *patch,int notenum,int velocity,STime time,float pan);

@@ -1,6 +1,7 @@
 
 #include "nsmtracker.h"
 #include "disk.h"
+#include "visual_proc.h"
 
 #include "patch_proc.h"
 #include "instruments_proc.h"
@@ -24,6 +25,9 @@
 
 
 #include "disk_patches_proc.h"
+
+extern struct Root *root;
+
 
 static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
   DC_start("VOICE");
@@ -270,6 +274,10 @@ end:
 
         if(is_MIDI_instrument==false)
           AUDIO_InitPatch(patch,NULL);
+
+
+        if(patch->colornum==0)
+          patch->colornum = GFX_MakeRandomCustomColor(root->song->tracker_windows, -1);
 
 	return patch;
 }

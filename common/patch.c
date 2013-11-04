@@ -116,15 +116,16 @@ void PATCH_init_voices(struct Patch *patch){
   patch->voices[5].time_format = TIME_IN_MS;
 }
 
-struct Patch *NewPatchCurrPos(int instrumenttype, void *patchdata, const char *name){
-  struct Patch *patch=(struct Patch*)talloc(sizeof(struct Patch));
+static struct Patch *PATCH_create(int instrumenttype, void *patchdata, const char *name){
+  struct Patch *patch = talloc(sizeof(struct Patch));
   patch->id = PATCH_get_new_id();
   patch->forward_events = true;
 
   patch->name = talloc_strdup(name);
-  
+  patch->colornum = GFX_MakeRandomCustomColor(root->song->tracker_windows, -1);
+
   PATCH_init_voices(patch);
-  
+
   if(instrumenttype==MIDI_INSTRUMENT_TYPE){
     MIDI_InitPatch(patch, patchdata);
   }else if(instrumenttype==AUDIO_INSTRUMENT_TYPE){
@@ -134,11 +135,13 @@ struct Patch *NewPatchCurrPos(int instrumenttype, void *patchdata, const char *n
     abort();
   }
   
-  {
-    VECTOR_push_back(&patch->instrument->patches,patch);
-  }
-  
+  VECTOR_push_back(&patch->instrument->patches,patch);
+
   return patch;
+}
+
+struct Patch *NewPatchCurrPos(int instrumenttype, void *patchdata, const char *name){
+  return PATCH_create(instrumenttype, patchdata, name);
 }
 
 struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, const char *name){
@@ -154,34 +157,16 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
                            -1
                            );
 
-  if(wtrack==NULL) return NULL;
+  if(wtrack==NULL)
+    return NULL;
 
   {
-    struct Patch *patch=(struct Patch*)talloc(sizeof(struct Patch));
-    patch->id = PATCH_get_new_id();
-    patch->forward_events = true;
-
-    patch->name = talloc_strdup(name);
-
-    PATCH_init_voices(patch);
-
-    if(instrumenttype==MIDI_INSTRUMENT_TYPE){
-      MIDI_InitPatch(patch, patchdata);
-    }else if(instrumenttype==AUDIO_INSTRUMENT_TYPE){
-      AUDIO_InitPatch(patch, patchdata);
-    }else{
-      fprintf(stderr,"Unkown instrumenttype %d\n",instrumenttype);
-      abort();
-    }
+    struct Patch *patch=PATCH_create(instrumenttype, patchdata, name);
 
     {
       Undo_Track_CurrPos(window);
       handle_fx_when_theres_a_new_patch_for_track(wtrack->track,wtrack->track->patch,patch);
       wtrack->track->patch = patch;
-    }
-
-    {
-      VECTOR_push_back(&patch->instrument->patches,patch);
     }
 
     UpdateTrackReallines(window,wblock,wtrack);

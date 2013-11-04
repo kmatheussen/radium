@@ -102,6 +102,8 @@ extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetDefaultColors(struct Tracker_Windows *tvisual);
 
+extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
+extern LANGSPEC int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum);
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 

@@ -818,6 +818,8 @@ inline static void CHECKBOX_paint_arc(QPainter *painter, bool is_checked, bool i
     }
 }
 
+extern QHash<int, QColor> custom_colors;
+
 void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
   Q_UNUSED(widget);
@@ -905,12 +907,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     get_name_coordinates(x1,y1,x2,y2);
     x1 = get_note_indicator_x2() + 2;
 
+    QColor patchcolor(custom_colors[patch->colornum]);
+
     if(is_selected){
-      QColor c(30,25,70,60);
+      QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.05);
       //painter->fillRect(x1-1,y1+1,x2-x1+2,y2-y1-2, g_editor->colors[9].light(86));
       painter->fillRect(x1-1,y1+1,button_x2-x1+2,y2-y1-2, c);
     }else{
-      QColor c(30,65,70,35);
+      QColor c = mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
       painter->fillRect(x1-1,y1+1,button_x2-x1+2,y2-y1-2, c);
     }
 

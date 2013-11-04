@@ -80,8 +80,14 @@ void ClearTrack(
 	}
 
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
+          int colornum = Col[0];
+
+          if (wtrack->track->patch!=NULL)
+            colornum = wtrack->track->patch->colornum;
+
+          printf("Clearing track with colornum %d %p\n",colornum,wtrack->track->patch);
 	  GFX_T_FilledBox(
-			  window,Col[0],
+			  window,colornum,
 			  R_MAX(wtrack->notearea.x,wblock->temponodearea.x2+2),
 			  GetReallineY1Pos(window,wblock,lokke),
 			  R_MIN(wtrack->fxarea.x2,wblock->a.x2),
