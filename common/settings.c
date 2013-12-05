@@ -117,6 +117,8 @@ static const char** get_lines(const char* key){
   fclose(file);
 
   int version_linenum = find_linenum("settings_version",ret);
+  if(version_linenum==-1)
+    version_linenum=linenum;
 
 #if 0
   // Check that the file is not too old.
