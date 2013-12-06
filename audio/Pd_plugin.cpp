@@ -253,6 +253,8 @@ $1 = (SoundPlugin *) 0x0
 
                                 */
 
+#ifdef WITH_PD
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -940,3 +942,22 @@ void create_pd_plugin(void){
 }
 
 
+#else // WITH_PD
+
+#include "../common/nsmtracker.h"
+#include "SoundPlugin.h"
+#include "Pd_plugin.h"
+#include "Pd_plugin_proc.h"
+
+void create_pd_plugin(void){
+}
+
+void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name) {}
+Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n) {return NULL;}
+void PD_set_qtgui(SoundPlugin *plugin, void *qtgui) {}
+void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}
+
+void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state) {}
+void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state) {}
+
+#endif // WITH_PD

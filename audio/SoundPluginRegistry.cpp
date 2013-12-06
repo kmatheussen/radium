@@ -73,7 +73,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *p
       }
     }
 
-  }else if(!strcmp(type_name,"Pd")){ // type_name doesn't mean anything for already saved files. Without this excpetion, plugins would be replaced by pipes if a pd patch file was renamed.
+  }else if(!strcmp(type_name,"Pd") && strcmp(plugin_name, "")){ // type_name doesn't mean anything for already saved files. Without this excpetion, plugins would be replaced by pipes if a pd patch file was renamed.
     return PR_get_plugin_type_by_name("Pd", "");
 
   }else{
