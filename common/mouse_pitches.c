@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define PIXELS_PER_NOTE 5.0f
 
+extern struct Root *root;
 
 /*********************************************
  * Move Note
@@ -73,6 +74,20 @@ static int MoveNote(
 
   float org_x = action->efloat1;
   float delta_y = action->efloat2;
+
+  PlayStop();
+
+  /* Do a check to see if all data is still valid. */
+  if(isInList1_m(
+                 &window->wblocks->l,&wblock->l,
+                 &wblock->wtracks->l,&wtrack->l,
+                 &wtrack->track->notes->l,&note->l,
+                 root
+                 )==false){
+    action->action=NOACTION;
+    return 0;
+  }
+  
   
   Place place;
   GetReallineAndPlaceFromY(window, wblock, y-delta_y, &place, NULL, NULL);
@@ -149,6 +164,20 @@ static int MovePitch(
 
   float org_x = action->efloat1;
   float delta_y = action->efloat2;
+
+  PlayStop();
+
+  /* Do a check to see if all data is still valid. */
+  if(isInList1_m(
+                 &window->wblocks->l,&wblock->l,
+                 &wblock->wtracks->l,&wtrack->l,
+                 &wtrack->track->notes->l,&note->l,
+                 &note->pitches->l,&pitch->l,
+                 root
+                 )==false){
+    action->action=NOACTION;
+    return 0;
+  }
   
   Place place;
   GetReallineAndPlaceFromY(window, wblock, y-delta_y, &place, NULL, NULL);

@@ -147,6 +147,13 @@ static void init_keymap(void){
   keymap[VK_DELETE] = EVENT_DEL;
   keymap[VK_END] = EVENT_END;
 
+  keymap[VK_VOLUME_MUTE] = EVENT_MUTE;
+  keymap[VK_VOLUME_DOWN] = EVENT_VOLUME_DOWN;
+  keymap[VK_VOLUME_UP] = EVENT_VOLUME_UP;
+  keymap[VK_MEDIA_STOP] = EVENT_STOP;
+  keymap[VK_MEDIA_PLAY_PAUSE] = EVENT_PLAY;
+
+
   // arrows
   keymap[VK_LEFT]  = EVENT_LEFTARROW;
   keymap[VK_UP]    = EVENT_UPARROW;
