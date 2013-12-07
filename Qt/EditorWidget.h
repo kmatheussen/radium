@@ -40,6 +40,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <Q3PointArray>
 #include <QPainter>
+#ifdef FOR_WINDOWS
+#  include <QKeyEvent>
+#endif
 #endif
 
 #ifdef USE_QT3
@@ -185,6 +188,17 @@ protected:
 #if 0 // Using X11filter for keys
     void        keyPressEvent(QKeyEvent *);
     void        keyReleaseEvent(QKeyEvent *qkeyevent);
+#endif
+
+#if 0
+#ifdef FOR_WINDOWS
+    void keyPressEvent(QKeyEvent *qkeyevent){
+      qkeyevent->accept();
+    }
+    void keyReleaseEvent(QKeyEvent *qkeyevent){
+      qkeyevent->accept();
+    }
+#endif
 #endif
 
 #if USE_QT_VISUAL
