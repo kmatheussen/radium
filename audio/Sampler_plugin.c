@@ -45,6 +45,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define POLYPHONY 256
 #define MAX_NUM_SAMPLES 256
+#define CROSSFADE_BUFFER_LENGTH 128
+#define MAX_CROSSFADE_LENGTH (48000*5) // in samples.
 
 #define DEFAULT_A 20
 #define DEFAULT_H 5
@@ -70,6 +72,7 @@ enum{
   EFF_S,
   EFF_R,
   EFF_LOOP_ONOFF,
+  EFF_CROSSFADE_LENGTH,
   EFF_NUM_EFFECTS
   };
 
@@ -110,6 +113,8 @@ typedef struct _Voice{
   float end_volume;
   //double gain;
 
+  float crossfade_buffer[CROSSFADE_BUFFER_LENGTH];
+
   // Same for pitch
   float start_pitch;
   float end_pitch;
@@ -147,6 +152,7 @@ struct _Data{
   float a,h,d,s,r;
 
   bool loop_onoff;
+  int crossfade_length;
 
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
@@ -221,10 +227,175 @@ static void RT_remove_voice(Voice **root, Voice *voice){
 }
 
 
+/**********************************
+  Crossfading code
+***********************************/
+static void RT_fade_replace(float *dst, float *src, int num_frames, float start_val, float end_val){
+  float mul = start_val;
+  float inc = (end_val-start_val)/(float)num_frames;
+  int i;
+  for(i=0;i<num_frames;i++){
+    dst[i] = src[i]*mul;
+    mul += inc;
+  }
+}
+
+static void RT_fade_add(float *dst, float *src, int num_frames, float start_val, float end_val){
+  float mul = start_val;
+  float inc = (end_val-start_val)/(float)num_frames;
+  int i;
+  for(i=0;i<num_frames;i++){
+    dst[i] += src[i]*mul;
+    mul += inc;
+  }
+}
+
+static long RT_crossfade(int start_pos, int end_pos, int crossfade_start, int crossfade_end, float *out_data, float *in_data){
+  int num_frames = end_pos - start_pos;
+
+  float start_fade_val = scale(start_pos,
+                               crossfade_start, crossfade_end,
+                               1.0f, 0.0f
+                               );
+
+  float end_fade_val  = scale(end_pos,
+                              crossfade_start, crossfade_end,
+                              1.0f, 0.0f
+                              );
+
+  //printf("fade out: %d -> %d\n",start_pos, start_pos+num_frames);
+  //printf("fade in:  %d -> %d\n\n", start_pos2, start_pos2+num_frames);
+  //len_in_data-end_pos, len_in_data-end_pos+num_frames);
+  //printf("%f -> %f\n\n",start_fade_val,end_fade_val);
+
+  RT_fade_replace(
+                  out_data,
+                  in_data + start_pos,
+                  num_frames,
+                  start_fade_val, end_fade_val
+                  );
+  RT_fade_add(
+                 out_data,
+                 in_data + (start_pos - crossfade_start),
+                 num_frames,
+                 1.0f - start_fade_val, 1.0f - end_fade_val
+              );
+
+  return num_frames;
+}
+
+static int RT_legal_crossfade_length(const Sample *sample, Data *data){
+  int crossfade_length = data->crossfade_length;
+  int loop_length = sample->loop_end - sample->loop_start;
+
+  return R_MIN(crossfade_length, loop_length/2);
+}
+
+static long RT_src_callback_with_crossfade_do_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  *out_data = voice->crossfade_buffer;
+  int len_out_data = CROSSFADE_BUFFER_LENGTH;
+
+  int end_pos = start_pos + len_out_data;
+  if (end_pos > sample->loop_end)
+    end_pos = sample->loop_end;
+
+  int legal_crossfade_length = RT_legal_crossfade_length(sample, data);
+
+  voice->pos = end_pos; // next
+  if (voice->pos==sample->loop_end)
+    voice->pos = sample->loop_start + legal_crossfade_length;
+  //printf("crossfading %d -> %d-%d -> %d (%d)\n",sample->loop_start,start_pos,end_pos,sample->loop_end,voice->pos);
+
+  //printf("do looping %d\n");
+
+  float *in_data = voice->sample->sound;
+
+  return RT_crossfade(start_pos, end_pos,
+                      sample->loop_end - legal_crossfade_length, sample->loop_end,
+                      *out_data, in_data
+                      );
+}
+
+static long RT_src_callback_with_crossfade_between_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  printf("between looping\n");
+  *out_data = sample->sound + voice->pos;
+  int prev_voice_pos = voice->pos;
+  voice->pos = sample->loop_end - RT_legal_crossfade_length(sample, data); // next
+  return voice->pos - prev_voice_pos;
+}
+
+static long RT_src_callback_with_crossfade_before_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  printf("before looping\n");
+  *out_data = sample->sound;
+  voice->pos = sample->loop_end - RT_legal_crossfade_length(sample, data); // next
+  return voice->pos; // start_pos==0 here.
+}
+
+static long RT_src_callback_with_crossfade_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  //printf("crossfading %d -> %d -> %d (%d)\n",sample->loop_start,start_pos,sample->loop_end,voice->pos);
+
+  if(start_pos==0 && sample->loop_start>0)
+    return RT_src_callback_with_crossfade_before_looping(voice, sample, data, start_pos, out_data);
+
+  else if (start_pos >= sample->loop_end - RT_legal_crossfade_length(sample, data))
+    return RT_src_callback_with_crossfade_do_looping(voice, sample, data, start_pos, out_data);
+
+  else
+    return RT_src_callback_with_crossfade_between_looping(voice, sample, data, start_pos, out_data);
+}
+/**********************************
+  End of crossfading code
+***********************************/
+
+
+
+static long RT_src_callback_with_normal_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  *out_data = &sample->sound[start_pos];
+
+  voice->pos = sample->loop_start; // next
+
+  if(start_pos >= sample->loop_end) // just in case. not sure if this can happen
+    return 0;
+
+  else
+    return sample->loop_end - start_pos;
+}
+
+
+
+static long RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
+  *out_data = &sample->sound[start_pos];
+
+  if(start_pos==sample->num_frames)
+    return 0;
+
+  voice->pos=sample->num_frames; // next
+  return sample->num_frames - start_pos;
+}
+
+
+
+static long RT_src_callback(void *cb_data, float **out_data){
+  Voice *voice         = cb_data;
+  const Sample *sample = voice->sample;
+  int start_pos        = voice->pos;
+  Data  *data          = sample->data;
+
+  if(sample->data->loop_onoff==false || sample->loop_end <= sample->loop_start)
+    return RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
+
+  else if(data->crossfade_length > 0)
+    return RT_src_callback_with_crossfade_looping(voice, sample, data, start_pos, out_data);
+
+  else
+    return RT_src_callback_with_normal_looping(voice, sample, data, start_pos, out_data);
+}
+
+#if 0
 static long RT_src_callback(void *cb_data, float **data){
-  Voice *voice=cb_data;
-  const Sample *sample=voice->sample;
-  int pos = voice->pos;
+  Voice        *voice  = cb_data;
+  const Sample *sample = voice->sample;
+  int           pos    = voice->pos;
 
   *data = &voice->sample->sound[pos];
 
@@ -237,6 +408,7 @@ static long RT_src_callback(void *cb_data, float **data){
       return 0;
 
     return sample->loop_end - pos;
+
   }else{
 
     if(pos==sample->num_frames)
@@ -246,6 +418,7 @@ static long RT_src_callback(void *cb_data, float **data){
     return sample->num_frames - pos;
   }
 }
+#endif
 
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
   if(pitch<=0.0)
@@ -736,7 +909,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       set_loop_onoff(data, value>=0.5f);
       update_peaks(plugin);
       break;
-
+      
+    case EFF_CROSSFADE_LENGTH:
+      data->crossfade_length = scale(value,
+                                     0.0, 1.0,
+                                     0, MAX_CROSSFADE_LENGTH
+                                     );
+      break;
+      
     default:
       RError("Unknown effect number %d\n",effect_num);
     }
@@ -782,6 +962,11 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       set_loop_onoff(data, value>=0.5f);
       update_peaks(plugin);
       break;
+
+    case EFF_CROSSFADE_LENGTH:
+      data->crossfade_length = value;
+      break;
+
     default:
       RError("Unknown effect number %d\n",effect_num);
     }
@@ -831,6 +1016,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return get_loop_onoff(data)==true?1.0f:0.0f;
       break;
 
+    case EFF_CROSSFADE_LENGTH:
+      return scale(data->crossfade_length,0,MAX_CROSSFADE_LENGTH,0,1);
+      break;
+
     default:
       RError("Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -859,7 +1048,9 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 #endif
     case EFF_LOOP_ONOFF:
       return get_loop_onoff(data)==true?1.0f:0.0f;
-      break;
+
+    case EFF_CROSSFADE_LENGTH:
+      return data->crossfade_length;
 
     default:
       RError("Unknown effect number %d\n",effect_num);
@@ -910,6 +1101,10 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     }
     break;
 #endif
+  case EFF_CROSSFADE_LENGTH:
+    snprintf(buffer,buffersize-1,"%d samples",(int)data->crossfade_length);
+    break;
+
   default:
     RError("Unknown effect number %d\n",effect_num);
   }
@@ -1148,7 +1343,7 @@ static Data *create_data(float samplerate, Data *old_data, const char *filename,
     data->s = old_data->s;
     data->r = old_data->r;
     data->loop_onoff = old_data->loop_onoff;
-
+    data->crossfade_length = old_data->crossfade_length;
   }
   
   data->samplerate = samplerate;
@@ -1333,6 +1528,9 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 #endif
   case EFF_LOOP_ONOFF:
     return "Loop";
+  case EFF_CROSSFADE_LENGTH:
+    return "Crossfade";
+
   default:
     RError("Unknown effect number %d\n",effect_num);
     return NULL;
@@ -1342,6 +1540,8 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   if(effect_num==EFF_LOOP_ONOFF)
     return EFFECT_FORMAT_BOOL;
+  else if (effect_num==EFF_CROSSFADE_LENGTH)
+    return EFFECT_FORMAT_INT;
   else
     return EFFECT_FORMAT_FLOAT;
 }
