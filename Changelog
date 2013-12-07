@@ -1,4 +1,18 @@
 
+Most important changes 1.9.33 -> 1.9.34:
+* Disable pd for all builds except linux (since libpds only exists on linux for now)
+* windows: Add media keys (mute, volume down/up, stop and play).
+* dont crash when a pitch is deleted while its being moved with the mouse
+* Avoid memory corruption if settings_version is not in settings
+* Patch color, step 1: some experimentation (some diffuse colors used in track headers
+  and the mixer sound objects.
+* When switching to a new block where current line is the last line,
+  set current line to first line instead.
+* Possible to switch block while playing.
+* Adjustable crossfade length (when looping) for the Sampler instrument
+* windows: Add EVENT_MENU button
+
+
 Most important changes 1.9.32 -> 1.9.33:
 * Pitch glide between notes. Implemented for the Pd instrument, the sampler instrument
   and all the Physical modelling instruments.
