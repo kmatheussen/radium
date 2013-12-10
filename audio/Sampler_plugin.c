@@ -317,7 +317,6 @@ static long RT_src_callback_with_crossfade_do_looping(Voice *voice, const Sample
 }
 
 static long RT_src_callback_with_crossfade_between_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
-  printf("between looping\n");
   *out_data = sample->sound + voice->pos;
   int prev_voice_pos = voice->pos;
   voice->pos = sample->loop_end - RT_legal_crossfade_length(sample, data); // next
@@ -325,7 +324,6 @@ static long RT_src_callback_with_crossfade_between_looping(Voice *voice, const S
 }
 
 static long RT_src_callback_with_crossfade_before_looping(Voice *voice, const Sample *sample, Data *data, int start_pos, float **out_data){
-  printf("before looping\n");
   *out_data = sample->sound;
   voice->pos = sample->loop_end - RT_legal_crossfade_length(sample, data); // next
   return voice->pos; // start_pos==0 here.
