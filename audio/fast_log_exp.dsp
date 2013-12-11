@@ -72,7 +72,7 @@ quitefastlinear2db(x) = 20*log10(e)*log(x) with{e=2.7182818284590452353602874713
 
 
 pun_int_to_float = ffunction(float pun_int_to_float(int), "typepunning.h", "");
-pun_float_to_int = ffunction(float pun_float_to_int(int), "typepunning.h", "");
+pun_float_to_int = ffunction(int pun_float_to_int(float), "typepunning.h", "");
 
 ll2_pow2(x) = pun_int_to_float(( (1 << 23) * (clipp + 126.94269504))) with{
     clipp = max(-126.0,x);
