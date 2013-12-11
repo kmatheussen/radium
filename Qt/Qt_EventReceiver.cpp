@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "EditorWidget.h"
+#include "GfxTimer_proc.h"
 
 #include <qpainter.h>
 
@@ -63,27 +64,6 @@ extern PlayerClass *pc;
 extern bool is_starting_up;
 
 
-void EditorWidget::customEvent(QEvent *e){
-  if(is_starting_up==true)
-    return;
-
-  //printf("Got customEvent\n");
-  DO_GFX({
-      if(pc->isplaying)
-        P2MUpdateSongPosCallBack();
-      UpdateClock(this->window);
-      //MIDI_HandleInputMessage();
-    });
-
-#if USE_GTK_VISUAL
-  GFX_play_op_queue(this->window);
-#endif
-
-#if USE_QT_VISUAL
-  updateEditor();
-#endif
-}
-
 
 #if USE_QT_VISUAL && USE_QT4
 #if 0
@@ -101,15 +81,33 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 #if USE_QT_VISUAL
+
+// These two variables are used to make sure paintEvent isn't called more often than vertical blank. (any call to update() may cause paintEvent() to be called)
+static int vblank_counter = 0;
+static int paint_counter = 0;
+
 void EditorWidget::paintEvent( QPaintEvent *e ){
   if(is_starting_up==true)
     return;
+
+  if (paint_counter==vblank_counter)
+    return;
+  else
+    paint_counter++;
 
   if(window->must_redraw==true){
     //printf("** Drawing up everything!\n");
     window->must_redraw=false;
     GFX_clear_op_queue(this->window);
     DO_GFX(DrawUpTrackerWindow(this->window));
+  }
+
+  if (pc->isplaying) {
+    if (GFX_get_op_queue_size(window)==0)
+      Blt_markVisible(window);
+    P2MUpdateSongPosCallBack();
+    Blt_clearNotUsedVisible(window);
+    Blt_blt(window);
   }
 
   //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
@@ -127,15 +125,20 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     this->painter = NULL;
   }
 }
-#endif
 
-void EditorWidget::updateEditor(){
-  if(is_starting_up==true)
-    return;
+static void vertical_blank_callback(void *data){
+  EditorWidget *editor = (EditorWidget*)data;
 
-  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0)
-    update();
+  vblank_counter++;
+  editor->repaint();
+  //editor->update();
 }
+
+void EditorWidget::start_vertical_blank_callback(){
+  call_function_at_vertical_blank(vertical_blank_callback, this);
+}
+
+#endif
 
 struct TEvent tevent={0};
 
@@ -287,8 +290,6 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   EventReciever(&tevent,this->window);
 
   setFocus();
-
-  updateEditor();
 }
 
 
@@ -310,8 +311,6 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
 
 
   EventReciever(&tevent,this->window);
-
-  updateEditor();
 }
 
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
@@ -322,10 +321,6 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
   EventReciever(&tevent,this->window);
-
-  //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
-
-  updateEditor();
 }
 
 #endif // USE_QT_VISUAL
@@ -366,7 +361,6 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
 
 #if 1
   DO_GFX(DrawUpTrackerWindow(window));
-  updateEditor();
 #else
   update();
 #endif

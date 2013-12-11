@@ -335,10 +335,6 @@ public:
              else
                ScrollEditorUp(window,num_lines);
            });
-
-#if USE_QT_VISUAL
-    g_editor->updateEditor();
-#endif
   }
 };
 

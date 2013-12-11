@@ -74,7 +74,7 @@ void P2MUpdateSongPosCallBack(void){
 	while(window!=NULL){
 		if(window->playalong==true){
 
-                  DO_GFX({
+                  //                  DO_GFX({
 			wblock=ListFindElement1(&window->wblocks->l,curr_block);
 			till_curr_realline=wblock->till_curr_realline;
                         
@@ -130,7 +130,7 @@ void P2MUpdateSongPosCallBack(void){
                         }
 #endif
 
-                    });
+                        //                    });
         }
 		window=NextWindow(window);
 }

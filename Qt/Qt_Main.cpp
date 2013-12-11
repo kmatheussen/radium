@@ -106,9 +106,6 @@ protected:
 
     bool ret = X11_KeyboardFilter(event);
 
-    if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-
     if(doquit==true)
       QApplication::quit();
 
@@ -123,9 +120,6 @@ protected:
 
     bool ret = W_KeyboardFilter(msg);
 
-    if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-
     return ret;
   }
 #endif
@@ -136,9 +130,6 @@ protected:
       return false;
 
     bool ret = cocoa_KeyboardFilter(event);
-
-    if(ret==true)
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
 
     return ret;
   }
@@ -287,23 +278,10 @@ protected:
       }
       
       {
-        struct Tracker_Windows *window=root->song->tracker_windows;
-        DO_GFX({
-            MIDI_HandleInputMessage();
-            TRACKREALLINES_call_very_often(window);
-          });
-        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
-        
         if(doquit==true)
           QApplication::quit();
       }
     } // num_users_of_keyboard==0
-
-    // Update graphics when playing
-    {
-      struct Tracker_Windows *window=root->song->tracker_windows;
-      static_cast<EditorWidget*>(window->os_visual.widget)->callCustomEvent();
-    }
   }
 };
 
@@ -494,6 +472,7 @@ int radium_main(char *arg){
 
   {
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    editor->start_vertical_blank_callback();
 
     {
       QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);

@@ -122,13 +122,9 @@ public:
       return this->height();
     }
 
+    void start_vertical_blank_callback();
+
     Q3PointArray qpa;
-
-    void updateEditor();
-
-    void callCustomEvent(){
-      customEvent(NULL);
-    }
 
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
     void init_buffers(){
@@ -208,7 +204,6 @@ protected:
 #endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
-    void        customEvent(QEvent *);
 };
 
 #endif

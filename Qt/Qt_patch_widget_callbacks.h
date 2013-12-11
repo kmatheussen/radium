@@ -267,8 +267,6 @@ public slots:
              _patch->name = talloc_strdup((char*)new_name.ascii());
              DrawWTrackHeader(window,wblock,wtrack);
              );
-      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-      editor->updateEditor();
     }
 
     if(_patch->instrument==get_audio_instrument()){

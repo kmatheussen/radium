@@ -408,7 +408,6 @@ void testColorInRealtime(int num, QColor color){
     DO_GFX({
         DrawUpTrackerWindow(window);
       });
-    my_widget->updateEditor();
   }
 
 }

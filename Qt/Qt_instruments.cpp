@@ -792,8 +792,6 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
            g_currpatch->name = talloc_strdup((char*)new_name.ascii());
            DrawWTrackHeader(window,wblock,wtrack);
            );
-    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-    editor->updateEditor();
   }
 }
 
@@ -831,9 +829,6 @@ static void tab_selected(){
            wtrack->track->patch = g_currpatch;
            DrawWTrackHeader(window,wblock,wtrack);
            );
-
-    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-    editor->updateEditor();
   }
 #endif
 

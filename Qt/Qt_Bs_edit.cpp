@@ -327,8 +327,6 @@ private slots:
       wblock->curr_realline = 0;
 
     DO_GFX(SelectWBlock(window,wblock));
-    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    editor->updateEditor();
 
     if(wasplaying)
       PlayBlockFromStart(window,true);
