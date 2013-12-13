@@ -176,7 +176,7 @@ void PixMap_erase(
 				PixMap_getY1(window,lokke),
 				window->wblock->t.x2,
 				PixMap_getY2(window,lokke),
-                                PAINT_BUFFER
+                                PAINT_LINES
 			);
 			window->pixmapdefs[realvisible]=-1;
 		}
@@ -215,7 +215,7 @@ void PixMap_makeNewDefs(
 		      0,
 		      wblock->a.x1, PixMap_getY1(window,curr),
 		      x2, PixMap_getY2(window,curr),
-                      PAINT_BUFFER
+                      PAINT_LINES
 		      );
 //      printf("clear: curr: %d, pixdef: %d\n",curr,lokke);
 
@@ -317,7 +317,7 @@ void PixMap_private_bltLines(
 	       )
 	      {
 	      
-		QUEUE_GFX_P2V_bitBlt(
+		QUEUE_GFX_P2V_bitBlt_from_lines(
 			       window,
 			       x1,PixMap_getY1(window,lokke1),
 			       x1,(window->fontheight*lokke1)+window->wblock->t.y1,

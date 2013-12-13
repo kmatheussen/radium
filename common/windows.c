@@ -243,11 +243,13 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	GFX_FilledBox(window,0,
                       0,window->wblock->t.y1,
                       x2-1,window->height-1,
-                      PAINT_BUFFER);
+                      PAINT_LINES);
+
 	GFX_FilledBox(window,0,
-                      x2,0,
+                      x2,             0,
                       window->width-1,window->height-1,
-                      PAINT_BUFFER);
+                      PAINT_LINES);
+
 #endif
 
 	DrawWBlock(window,window->wblock);

@@ -45,16 +45,16 @@ void GWT_P_Text(
 		     y,
                      x2-x,
                      TEXT_CENTER,
-                     PAINT_BUFFER
+                     PAINT_LINES
 		     );
 	  
 	  if(strcmp(text,"---")){
-	    //GFX_T_Line(window,9,x,y+1,x,y2+1,PAINT_BUFFER);
-	    GFX_T_Line(window,9,x,y+1,x2-1,y+1,PAINT_BUFFER);
+	    //GFX_T_Line(window,9,x,y+1,x,y2+1,PAINT_LINES);
+	    GFX_T_Line(window,9,x,y+1,x2-1,y+1,PAINT_LINES);
             GFX_SetMixColor(window, 11, 1, 800);
-            GFX_T_Line(window,1,x2-1,y,x2-1,y2+1,PAINT_BUFFER);
+            GFX_T_Line(window,1,x2-1,y,x2-1,y2+1,PAINT_LINES);
             GFX_SetMixColor(window, 11, 1, 800);
-	    GFX_T_Line(window,1,x,y2+1,x2-1,y2+1,PAINT_BUFFER);
+	    GFX_T_Line(window,1,x,y2+1,x2-1,y2+1,PAINT_LINES);
 	  }
 	}else{
 	  GFX_Text(
@@ -65,21 +65,21 @@ void GWT_P_Text(
 		     y,
                      x2-x,
                      TEXT_CENTER,
-                     PAINT_BUFFER
+                     PAINT_LINES
 		     );
 	  
 #if 1
-	    GFX_Line(window,9,x,y,x,y2,PAINT_BUFFER);
-	    GFX_Line(window,9,x,y,x2,y,PAINT_BUFFER);
+	    GFX_Line(window,9,x,y,x,y2,PAINT_LINES);
+	    GFX_Line(window,9,x,y,x2,y,PAINT_LINES);
             GFX_SetMixColor(window, 11, 1, 800);
-	    GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
+	    GFX_Line(window,1,x2,y,x2,y2,PAINT_LINES);
             GFX_SetMixColor(window, 11, 1, 800);
-	    GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
+	    GFX_Line(window,1,x,y2,x2,y2,PAINT_LINES);
 #else
-	    GFX_Line(window,2,x,y,x,y2,PAINT_BUFFER);
-	    GFX_Line(window,2,x,y,x2,y,PAINT_BUFFER);
-	    GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
-	    GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
+	    GFX_Line(window,2,x,y,x,y2,PAINT_LINES);
+	    GFX_Line(window,2,x,y,x2,y,PAINT_LINES);
+	    GFX_Line(window,1,x2,y,x2,y2,PAINT_LINES);
+	    GFX_Line(window,1,x,y2,x2,y2,PAINT_LINES);
 #endif
 	}
 }
@@ -196,7 +196,7 @@ int SetInvertTextLine(
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
                 TEXT_CENTER | TEXT_INVERT,
-                PAINT_BUFFER
+                PAINT_LINES
 	);
   }else{
 	GFX_Text(
@@ -207,7 +207,7 @@ int SetInvertTextLine(
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
                 TEXT_CENTER | TEXT_INVERT,
-                PAINT_BUFFER
+                PAINT_LINES
 	);
   }
 	return 0;
@@ -237,7 +237,7 @@ int SetInvertTextLineNotext(
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
                 TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT,
-                PAINT_BUFFER
+                PAINT_LINES
 	);
   }else{
 	GFX_Text(
@@ -248,7 +248,7 @@ int SetInvertTextLineNotext(
 		GetReallineY1Pos(window,wblock,realline),
                 x2-x,
                 TEXT_CENTER | TEXT_NOTEXT | TEXT_INVERT,
-                PAINT_BUFFER
+                PAINT_LINES
 	);
   }
 	return 0;

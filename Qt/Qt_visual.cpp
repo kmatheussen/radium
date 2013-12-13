@@ -202,7 +202,7 @@ void OS_GFX_C_DrawCursor(
     editor->cursorbuffer_painter->setOpacity(1.0);
 
   editor->cursorbuffer_painter->drawImage(x1+1,1,
-                                          *editor->paintbuffer,
+                                          *editor->linesbuffer,
     x1+1,y_pixmap+1,
     x4-x1-2,height-2);
 
@@ -212,7 +212,7 @@ void OS_GFX_C_DrawCursor(
 #else
   DRAW_PIXMAP_ON_PIXMAP(editor->cursorbuffer,
                         x1+1,1,
-                        editor->paintbuffer,
+                        editor->linesbuffer,
                         x1+1,y_pixmap+1,
                         x4-x1-2,height-2);
 #endif
@@ -246,6 +246,38 @@ void OS_GFX_C_DrawCursor(
          ,Qt::XorROP
          );
 #endif
+}
+
+
+void OS_GFX_P2V_bitBlt_from_lines(
+		    struct Tracker_Windows *window,
+		    int from_x,int from_y,
+		    int to_x,int to_y,
+		    int width,int height
+		    ){
+  
+  EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+
+#if !USE_QIMAGE_BUFFER
+  DRAW_PIXMAP_ON_WIDGET(
+                        editor,
+                        to_x,to_y,
+                        editor->paintbuffer,
+                        from_x,from_y,
+                        width,height
+                        );
+#else
+
+  editor->painter->drawImage(to_x,to_y,*editor->linesbuffer,from_x,from_y,width,height);
+
+#endif
+  /*
+  OS_GFX_C2V_bitBlt(
+		 window,
+		 from_x,width,
+		 (window->wblock->curr_realline-window->wblock->top_realline)*window->fontheight+window->wblock->t.y1
+		 );
+  */
 }
 
 
@@ -332,7 +364,7 @@ void OS_GFX_BitBlt(
 }
 
 
-#define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : editor->paintbuffer_painter)
+#define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : where==PAINT_BUFFER ? editor->paintbuffer_painter : editor->linesbuffer_painter)
 
 #if 0
 static void setColor(QPainter *painter, int colornum, int where){
@@ -348,7 +380,7 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  if(where==PAINT_BUFFER && colornum==0){
+  if(where==PAINT_LINES && colornum==0){
     if(y>=tvisual->wblock->t.y1){
       colornum = 15;
 

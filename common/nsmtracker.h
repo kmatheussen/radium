@@ -97,7 +97,8 @@ typedef int32_t NInt;
 
 enum{
   PAINT_DIRECTLY = 0,
-  PAINT_BUFFER = 1
+  PAINT_BUFFER = 1,
+  PAINT_LINES = 2
 };
 
 #include <OS_Visual.h>

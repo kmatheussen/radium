@@ -53,6 +53,13 @@ extern LANGSPEC void QUEUE_GFX_C_DrawCursor(
 				      int y_pixmap
 				      );
 
+extern LANGSPEC void QUEUE_GFX_P2V_bitBlt_from_lines(
+				struct Tracker_Windows *window,
+				int from_x,int from_y,
+				int to_x,int to_y,
+				int width,int height
+			);
+
 extern LANGSPEC void QUEUE_GFX_P2V_bitBlt(
 				struct Tracker_Windows *window,
 				int from_x,int from_y,

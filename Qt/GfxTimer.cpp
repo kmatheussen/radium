@@ -23,7 +23,7 @@ class VBlankCallback : public QGLWidget {
   virtual void initializeGL()
   {
     // Set the clear color to blue
-    glClearColor( 0.0f, 0.0f, 1.0f, 1.0f );
+    //glClearColor( 0.0f, 0.0f, 1.0f, 1.0f );
   }
 
   virtual void paintGL(){
@@ -44,11 +44,13 @@ class VBlankCallback : public QGLWidget {
   }
 
   virtual void resizeGL( int w, int h ){
+    /*
     if ( h == 0 )
       h = 1;
     glViewport( 0, 0, w, h);
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
+    */
   }
 
 public:

@@ -52,6 +52,13 @@ void GFX_C_DrawCursor(
 				      int y_pixmap
 				      );
 
+void GFX_P2V_bitBlt_from_lines(
+				struct Tracker_Windows* window,
+				int from_x,int from_y,
+				int to_x,int to_y,
+				int width,int height
+			);
+
 void GFX_P2V_bitBlt(
 				struct Tracker_Windows* window,
 				int from_x,int from_y,

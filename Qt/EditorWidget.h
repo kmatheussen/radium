@@ -88,8 +88,8 @@ public:
 
 #if USE_QT_VISUAL
     PaintBuffer *paintbuffer;
-
     PaintBuffer *cursorbuffer;
+    PaintBuffer *linesbuffer;
 #endif
 
     //void timerEvent(QTimerEvent *);
@@ -99,9 +99,10 @@ public:
     QMainWindow *main_window;
 
 #if USE_QT_VISUAL
-    QPainter *painter; // Set in paintEvent
-    QPainter *paintbuffer_painter; // Set in paintEvent
-    QPainter *cursorbuffer_painter; // Set in paintEvent
+    QPainter *painter;
+    QPainter *paintbuffer_painter;
+    QPainter *cursorbuffer_painter;
+    QPainter *linesbuffer_painter;
 
     QFont font;
 #endif
@@ -133,16 +134,21 @@ public:
        if(this->paintbuffer==NULL || this->cursorbuffer==NULL || this->paintbuffer->width()<this->width() || this->paintbuffer->height()<this->height()){
          delete this->paintbuffer_painter;
          delete this->cursorbuffer_painter;
+         delete this->linesbuffer_painter;
 
          delete this->paintbuffer;
          delete this->cursorbuffer;
+         delete this->linesbuffer;
          this->paintbuffer = new QImage(this->width(), this->height(), image_format);
          this->cursorbuffer = new QImage(this->width(), this->height(), image_format);
+         this->linesbuffer =  new QImage(this->width(), this->height(), image_format);
 
          this->paintbuffer_painter = new QPainter(this->paintbuffer);
          this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
+         this->linesbuffer_painter = new QPainter(this->linesbuffer);
 
          this->paintbuffer_painter->setFont(this->font);
+         this->linesbuffer_painter->setFont(this->font);
        }
 
 #if 1

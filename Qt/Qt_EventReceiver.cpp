@@ -87,13 +87,13 @@ static int vblank_counter = 0;
 static int paint_counter = 0;
 
 void EditorWidget::paintEvent( QPaintEvent *e ){
-  if(is_starting_up==true)
-    return;
-
   if (paint_counter==vblank_counter)
     return;
   else
     paint_counter++;
+
+  if(is_starting_up==true)
+    return;
 
   if(window->must_redraw==true){
     //printf("** Drawing up everything!\n");
@@ -131,7 +131,6 @@ static void vertical_blank_callback(void *data){
 
   vblank_counter++;
   editor->repaint();
-  //editor->update();
 }
 
 void EditorWidget::start_vertical_blank_callback(){

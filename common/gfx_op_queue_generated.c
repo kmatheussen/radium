@@ -3,6 +3,7 @@
 #ifdef OP_ENUMS 
 ENUM_GFX_C2V_bitBlt, 
 ENUM_GFX_C_DrawCursor, 
+ENUM_GFX_P2V_bitBlt_from_lines, 
 ENUM_GFX_P2V_bitBlt, 
 ENUM_GFX_FilledBox, 
 ENUM_GFX_Box, 
@@ -19,6 +20,7 @@ ENUM_GFX_BitBlt,
 #ifdef OP_CASES 
 case ENUM_GFX_C2V_bitBlt: OS_GFX_C2V_bitBlt(window, el->i1, el->i2, el->i3); break; 
 case ENUM_GFX_C_DrawCursor: OS_GFX_C_DrawCursor(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
+case ENUM_GFX_P2V_bitBlt_from_lines: OS_GFX_P2V_bitBlt_from_lines(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_P2V_bitBlt: OS_GFX_P2V_bitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_FilledBox: OS_GFX_FilledBox(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_Box: OS_GFX_Box(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
@@ -52,6 +54,18 @@ void QUEUE_GFX_C_DrawCursor(struct Tracker_Windows* window, int x1, int x2, int 
   el->i4 = x4 ; 
   el->i5 = height ; 
   el->i6 = y_pixmap ; 
+} 
+
+void QUEUE_GFX_P2V_bitBlt_from_lines(struct Tracker_Windows* window, int from_x, int from_y, int to_x, int to_y, int width, int height){ 
+  if(window->must_redraw==true) return; 
+  queue_element_t *el = get_next_element(window->op_queue); 
+  el->type = ENUM_GFX_P2V_bitBlt_from_lines ; 
+  el->i1 = from_x ; 
+  el->i2 = from_y ; 
+  el->i3 = to_x ; 
+  el->i4 = to_y ; 
+  el->i5 = width ; 
+  el->i6 = height ; 
 } 
 
 void QUEUE_GFX_P2V_bitBlt(struct Tracker_Windows* window, int from_x, int from_y, int to_x, int to_y, int width, int height){ 

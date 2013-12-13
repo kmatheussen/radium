@@ -282,7 +282,7 @@ void DrawWTempoNodes(
                                            get.y1,
                                            get.x2,
                                            get.y2,
-                                           PAINT_BUFFER
+                                           PAINT_LINES
                                            );
 				  /*
 					GFX_P_Line(
@@ -303,9 +303,9 @@ void DrawWTempoNodes(
                                                   get.y1+1,
                                                   get.x2-2,
                                                   get.y2-2,
-                                                  PAINT_BUFFER
+                                                  PAINT_LINES
                                                   );
-                                    draw_skewed_box(window,1,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+                                    draw_skewed_box(window,1,get.x1,get.y1,get.x2,get.y2,PAINT_LINES);
                                   }
 			}
 			wtemponode=wtemponode->next;
@@ -334,35 +334,35 @@ void WBLOCK_DrawBorders(
                                   window,
                                   wblock->linenumarea.x2+1,
                                   y1,y2,
-                                  PAINT_BUFFER
+                                  PAINT_LINES
                                   );
 
 	GFX_DrawTrackBorderDouble(
                                   window,
                                   wblock->zoomlinearea.x2+1,
                                   y1,y2,
-                                  PAINT_BUFFER
+                                  PAINT_LINES
                                   );
 
 	GFX_DrawTrackBorderDouble(
                                   window,
                                   wblock->lpbarea.x2+1,
                                   y1,y2,
-                                  PAINT_BUFFER
+                                  PAINT_LINES
                                   );
 
 	GFX_DrawTrackBorderSingle(
                                   window,
                                   wblock->tempoarea.x2+1,
                                   y1,y2,
-                                  PAINT_BUFFER
+                                  PAINT_LINES
                                   );
 
 	GFX_DrawTrackBorderDouble(
                                   window,
                                   wblock->temponodearea.x2+1,
                                   y1,y2,
-                                  PAINT_BUFFER
+                                  PAINT_LINES
                                   );
 
 }
@@ -379,7 +379,7 @@ void DrawUpWTempoNodes(
 		wblock->t.y1,
 		wblock->temponodearea.x2,
 		wblock->t.y2,
-                PAINT_BUFFER
+                PAINT_LINES
                 );
 
   DrawWTempoNodes(window,wblock,wblock->top_realline,wblock->bot_realline);
@@ -396,7 +396,7 @@ void DrawUpTempos(
 		wblock->t.y1,
 		wblock->tempoarea.x2,
 		wblock->t.y2,
-                PAINT_BUFFER
+                PAINT_LINES
                 );
 
   DrawTempos(window,wblock,wblock->top_realline,wblock->bot_realline);
@@ -413,7 +413,7 @@ void DrawUpLPBs(
 		wblock->t.y1,
 		wblock->lpbarea.x2,
 		wblock->t.y2,
-                PAINT_BUFFER
+                PAINT_LINES
                 );
 
   DrawLPBs(window,wblock,wblock->top_realline,wblock->bot_realline);

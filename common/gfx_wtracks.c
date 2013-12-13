@@ -88,13 +88,14 @@ void ClearTrack(
 
           printf("Clearing track with colornum %d %p\n",colornum,wtrack->track->patch);
 #endif
+          // We clear line by line here. Would there be anything to earn by sending fewer FilledBox calls?
 	  GFX_T_FilledBox(
 			  window,colornum,
 			  R_MAX(wtrack->notearea.x,wblock->temponodearea.x2+2),
 			  GetReallineY1Pos(window,wblock,lokke),
 			  R_MIN(wtrack->fxarea.x2,wblock->a.x2),
 			  GetReallineY2Pos(window,wblock,lokke),
-                          PAINT_BUFFER
+                          PAINT_LINES
 			  );
 	}
 	//	SetCursorPos(window);
@@ -118,7 +119,7 @@ void WTRACK_DrawTrackBorders(
 				wtrack->x2+1,
 				y1,
 				y2,
-                                PAINT_BUFFER
+                                PAINT_LINES
 				);
 
   if(wtrack->notearea.x2>wblock->temponodearea.x2 && wtrack->notearea.x2+1<wblock->a.x2)
@@ -127,7 +128,7 @@ void WTRACK_DrawTrackBorders(
 				wtrack->notearea.x2+1,
 				y1,
 				y2,
-                                PAINT_BUFFER
+                                PAINT_LINES
 				);
 
   for(lokke=start_subtrack>0 ? start_subtrack : 1;lokke<=end_subtrack;lokke++){
@@ -136,7 +137,7 @@ void WTRACK_DrawTrackBorders(
 				GetXSubTrack1(wtrack,lokke)-1,
 				y1,
 				y2,
-                                PAINT_BUFFER
+                                PAINT_LINES
 				);
   }
 }
@@ -283,7 +284,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
                         5,
                         wtrack->notearea.x,within.y1+2,
                         wtrack->notearea.x2-1,within.y2,
-                        PAINT_BUFFER);
+                        PAINT_LINES);
       }
 
 
@@ -293,13 +294,13 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
         int cents = R_BOUNDARIES(0,(notenum - (int)notenum)*100,99);
         if (cents==0)
 
-          GFX_T_Text(window,colnum,NotesTexts[(int)notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_BUFFER);
+          GFX_T_Text(window,colnum,NotesTexts[(int)notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_LINES);
 
         else {
-          GFX_T_Text(window,colnum,NotesTexts[(int)notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x+3*12,TEXT_CENTER,PAINT_BUFFER);
+          GFX_T_Text(window,colnum,NotesTexts[(int)notenum],wtrack->notearea.x,within.y1,wtrack->notearea.x+3*12,TEXT_CENTER,PAINT_LINES);
           char temp[10];
           sprintf(temp,",%d",cents);
-          GFX_T_Text(window,colnum,temp,wtrack->notearea.x+3*12,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_BUFFER);
+          GFX_T_Text(window,colnum,temp,wtrack->notearea.x+3*12,within.y1,wtrack->notearea.x2,TEXT_CENTER,PAINT_LINES);
         }
 
       } else {
@@ -351,7 +352,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                     x2, within.y2,
                     4,
                     element->velocity_polygon,
-                    PAINT_BUFFER
+                    PAINT_LINES
                     );
       }
             
@@ -368,7 +369,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                       x2-1, within.y2,
                       num_peaks*2,
                       element->peaks[0],
-                      PAINT_BUFFER
+                      PAINT_LINES
                       );
           
           // For stereo. This is the right channel.
@@ -379,7 +380,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                         x2-1, within.y2,
                         num_peaks*2,
                         element->peaks[1],
-                        PAINT_BUFFER
+                        PAINT_LINES
                         );
 
 #if 0 // waveform border
@@ -390,7 +391,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                       x2-1, within.y2,
                       num_peaks,
                       element->peaks[0],
-                      PAINT_BUFFER
+                      PAINT_LINES
                       );
           GFX_SetMixColor(window, 1, 15, 500);
           GFX_Polyline(window,
@@ -399,7 +400,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                       x2, within.y2,
                       num_peaks,
                       &element->peaks[0][num_peaks],
-                      PAINT_BUFFER
+                      PAINT_LINES
                       );
 #endif // waveform border
         }
@@ -415,7 +416,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                    x2, within.y2,
                    2,
                    &element->velocity_polygon[2],
-                   PAINT_BUFFER
+                   PAINT_LINES
                    );
 #else
       GFX_T_Line(window,
@@ -424,7 +425,7 @@ static void draw_wtrack_peaks(struct Tracker_Windows *window,
                  scale(element->y1,0,1,within.y1,within.y2),
                  scale(element->x2,0,1,x,x2),
                  scale(element->y2,0,1,within.y1,within.y2),
-                 PAINT_BUFFER);
+                 PAINT_LINES);
 #endif
 
     }
@@ -538,7 +539,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                    (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
                    R_MIN(wblock->t.x2,(int)(warea2.x+(warea2.width*element->x2))-1),
                    (int)(within2.y1+(element->y2*(within2.y2-within2.y1))),
-                   PAINT_BUFFER
+                   PAINT_LINES
                    );
       }
       break;
@@ -551,14 +552,14 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
       GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
       if(show_read_lines){
 #if USE_TRIANGLE 
-        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_BUFFER);
-        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_BUFFER);
-        GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x1, get.y1, PAINT_LINES);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y2, get.x2, get.y1, PAINT_LINES);
+        GFX_T_Line(window,Col[3], get.x1, get.y1, get.x2, get.y1, PAINT_LINES);
 #else
-        //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
-        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        draw_skewed_box(window,5,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+        //GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_LINES);
+        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
+        draw_skewed_box(window,5,get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
+        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_LINES);
 #endif
       }
       break;
@@ -566,22 +567,22 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
       GetNodeBox_customsize(element,&warea2,&within2,&get,dasize*3/2,dasize*2/3);
       if(show_read_lines){
 #if USE_TRIANGLE
-        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_BUFFER);
-        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_BUFFER);
-        GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_BUFFER);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x1, get.y2, PAINT_LINES);
+        GFX_T_Line(window,Col[3], (get.x1+get.x2)/2, get.y1, get.x2, get.y2, PAINT_LINES);
+        GFX_T_Line(window,Col[3], get.x1, get.y2, get.x2, get.y2, PAINT_LINES);
 #else
-        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        draw_skewed_box(window,4,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
+        draw_skewed_box(window,4,get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
+        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_LINES);
 #endif
       }
       break;
     case TRE_VELLINENODE:
       GetNodeBox(window,wblock,wtrack,element,&warea2,&within2,&get);
       if(show_read_lines){
-        draw_skewed_box(window,8,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
-        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_BUFFER);
+        draw_skewed_box(window,8,get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
+        //GFX_T_Box(window,Col[3],get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
+        //GFX_T_FilledBox(window,Col[2],get.x1+1,get.y1+1,get.x2-1,get.y2-1, PAINT_LINES);
       }
       break;
 
@@ -598,13 +599,13 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                    (int)(within.y1+(element->y1*(within.y2-within.y1))),
                    (int)(wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)*(note->note-((note->note/12)*12))/12),
                    (int)(within.y1+(element->y2*(within.y2-within.y1))),
-                   PAINT_BUFFER
+                   PAINT_LINES
                    );
       }
 #if 0
       // drawn up in draw_wtrack_peaks (drawn up by a polygon instead now)
       GetNodeLine(element,&warea2,&within2,&get);
-      GFX_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+      GFX_T_Line(window,Col[1],get.x1,get.y1,get.x2,get.y2,PAINT_LINES);
 #endif
 
       break;
@@ -615,7 +616,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                  (int)(within.y1+element->y1),
                  wtrack->fxarea.x2,
                  (int)(within.y1+element->y1),
-                 PAINT_BUFFER
+                 PAINT_LINES
                  );
       break;
     case TRE_THISPITCHLINES:
@@ -626,7 +627,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                  (int)(within.y1+element->y1),
                  wtrack->fxarea.x2,
                  (int)(within.y1+element->y1),
-                 PAINT_BUFFER
+                 PAINT_LINES
                  );
       break;
     case TRE_REALSTARTSTOP:
@@ -641,7 +642,7 @@ static void draw_wtrack_notegraphics(struct Tracker_Windows *window,
                    (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
                    within2.x2,
                    (int)(within2.y1+(element->y1*(within2.y2-within2.y1))),
-                   PAINT_BUFFER
+                   PAINT_LINES
                    );
       }
       break;
@@ -670,7 +671,7 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
     switch(wfxnode->type){
     case TRE_FXLINE:
       GetNodeLine(wfxnode,&warea,&within,&get);
-      GFX_T_Line(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+      GFX_T_Line(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
 
       /*
         GFX_T_Line(
@@ -679,7 +680,7 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
         GetReallineY1Pos(window,wblock,lokke)+wfxnode->y1,
         wtrack->fxarea.x+wfxnode->x2,
         GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2,
-        PAINT_BUFFER
+        PAINT_LINES
         );
       */
       break;
@@ -691,34 +692,34 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
         GetReallineY1Pos(window,wblock,lokke)+wfxnode->y1+1,
         wtrack->fxarea.x+wfxnode->x2-1,
         GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2-1,
-        PAINT_BUFFER
+        PAINT_LINES
         );
       */
       if(show_read_lines){
         GetNodeBox(window,wblock,wtrack,wfxnode,&warea,&within,&get);
-        //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_BUFFER);
+        //GFX_T_Box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2, PAINT_LINES);
 
-        draw_skewed_box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2,PAINT_BUFFER);
+        draw_skewed_box(window,wfxnode->subtype,get.x1,get.y1,get.x2,get.y2,PAINT_LINES);
 #if 0
         GFX_T_Line(window,wfxnode->subtype,
                    get.x1+1,get.y1+1,
                    get.x1+2,get.y2-1,
-                   PAINT_BUFFER);
+                   PAINT_LINES);
 
         GFX_T_Line(window,wfxnode->subtype,
                    get.x1+2,get.y2-1,
                  get.x2-1,get.y2-2,
-                   PAINT_BUFFER);
+                   PAINT_LINES);
         
         GFX_T_Line(window,wfxnode->subtype,
                    get.x2-1,get.y2-2,
                    get.x2-2,get.y1+2,
-                   PAINT_BUFFER);
+                   PAINT_LINES);
         
         GFX_T_Line(window,wfxnode->subtype,
                    get.x2-2,get.y1+2,
                    get.x1+1,get.y1+1,
-                   PAINT_BUFFER);
+                   PAINT_LINES);
 #endif
       }
 
@@ -731,7 +732,7 @@ static void draw_wtrack_fxgraphics(struct Tracker_Windows *window,
         GetReallineY1Pos(window,wblock,lokke)+wfxnode->y1,
         wtrack->fxarea.x+wfxnode->x2,
         GetReallineY1Pos(window,wblock,lokke)+wfxnode->y2,
-        PAINT_BUFFER
+        PAINT_LINES
         );
       */
       break;
@@ -768,13 +769,13 @@ static void draw_wtrack_pitches(struct Tracker_Windows *window,
     case TRE_PITCHLINE:
       if(wpitch->x1 != wpitch->x2 || show_read_lines) {
         GetNodeLine(wpitch,&warea,&within2,&get);
-        GFX_T_Line(window, 7, get.x1,get.y1, get.x2,get.y2, PAINT_BUFFER);
+        GFX_T_Line(window, 7, get.x1,get.y1, get.x2,get.y2, PAINT_LINES);
       }
       break;
     case TRE_PITCHNODE:
       if(false && show_read_lines){
         GetNodeBox(window,wblock,wtrack,wpitch,&warea,&within2,&get);
-        draw_skewed_box(window, 5, get.x1,get.y1, get.x2,get.y2, PAINT_BUFFER);
+        draw_skewed_box(window, 5, get.x1,get.y1, get.x2,get.y2, PAINT_LINES);
       }
 
       break;
@@ -831,21 +832,21 @@ void UpdateWTrack(
 	  within.y1=GetReallineY1Pos(window,wblock,realline);
 	  within.y2=GetReallineY2Pos(window,wblock,realline);
 
-          GFX_SetClipRect(window,R_MAX(within.x1,wblock->temponodearea.x2),within.y1,within.x2,within.y2+1,PAINT_BUFFER);
+          GFX_SetClipRect(window,R_MAX(within.x1,wblock->temponodearea.x2),within.y1,within.x2,within.y2+1,PAINT_LINES);
           {
             draw_wtrack_peaks(window,wblock,wtrack,realline,within);
             draw_wtrack_fxgraphics(window,wblock,wtrack,realline,within);
           }
-          GFX_CancelClipRect(window,PAINT_BUFFER);
+          GFX_CancelClipRect(window,PAINT_LINES);
 
           draw_wtrack_notegraphics(window,wblock,wtrack,realline,within);
           draw_wtrack_text(window,wblock,wtrack,realline,within);
 
-          //GFX_SetClipRect(window,wtrack->x,within.y1,within.x1,within.y2+1,PAINT_BUFFER);
+          //GFX_SetClipRect(window,wtrack->x,within.y1,within.x1,within.y2+1,PAINT_LINES);
           {
             draw_wtrack_pitches(window,wblock,wtrack,realline,within);
           }
-          //GFX_CancelClipRect(window,PAINT_BUFFER);
+          //GFX_CancelClipRect(window,PAINT_LINES);
 
           WTRACK_DrawTrackBorders(window,wblock,wtrack,realline,start_subtrack,end_subtrack);
 	}

@@ -38,7 +38,7 @@ void WBLOCK_DrawLineTempoColor(
                   window,color1,256,
                   x+(int)(mixfactor*width),
                   y,
-                  PAINT_BUFFER
+                  PAINT_LINES
 	);
 }
 
@@ -74,7 +74,7 @@ void WBLOCK_DrawMixedTempoColor(
               window,(float)rand()/(float)RAND_MAX>mixfactor?color2:color1,256,
               x+lokke,
               y,
-              PAINT_BUFFER
+              PAINT_LINES
               );
     
   }
@@ -96,7 +96,7 @@ void WBLOCK_DrawNotMixedTempoColor(
 	     y,
 	     x+(int)(width*mixfactor),
 	     y,
-             PAINT_BUFFER
+             PAINT_LINES
 	     );
   GFX_Line(
 	     window,color2,
@@ -104,7 +104,7 @@ void WBLOCK_DrawNotMixedTempoColor(
 	     y,
 	     x+width,
 	     y,
-             PAINT_BUFFER
+             PAINT_LINES
 	     );
 
 }
@@ -134,7 +134,7 @@ void WBLOCK_DrawProperlyMixedTempoColor(
 	     y,
 	     x+width,
 	     y,
-             PAINT_BUFFER
+             PAINT_LINES
 	     );
 }
 

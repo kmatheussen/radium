@@ -86,6 +86,7 @@ void GFX_play_op_queue(struct Tracker_Windows *window){
        || el->type==ENUM_GFX_C2V_bitBlt
        || el->type==ENUM_GFX_C_DrawCursor
        || el->type==ENUM_GFX_P2V_bitBlt 
+       || el->type==ENUM_GFX_P2V_bitBlt_from_lines
        || el->type==ENUM_GFX_BitBlt
        )
       GFX_BouncePoints(window);
