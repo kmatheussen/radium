@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#define XOFFSET 5
 //#define YOFFSET 2
 
+#define NUM_LINESBUFFERS 8
 
 class QMainWindow;
 class QSplitter;
@@ -89,7 +90,7 @@ public:
 #if USE_QT_VISUAL
     PaintBuffer *paintbuffer;
     PaintBuffer *cursorbuffer;
-    PaintBuffer *linesbuffer;
+    PaintBuffer *linesbuffer[NUM_LINESBUFFERS];
 #endif
 
     //void timerEvent(QTimerEvent *);
@@ -102,7 +103,7 @@ public:
     QPainter *painter;
     QPainter *paintbuffer_painter;
     QPainter *cursorbuffer_painter;
-    QPainter *linesbuffer_painter;
+    QPainter *linesbuffer_painter[NUM_LINESBUFFERS];
 
     QFont font;
 #endif
@@ -134,21 +135,26 @@ public:
        if(this->paintbuffer==NULL || this->cursorbuffer==NULL || this->paintbuffer->width()<this->width() || this->paintbuffer->height()<this->height()){
          delete this->paintbuffer_painter;
          delete this->cursorbuffer_painter;
-         delete this->linesbuffer_painter;
+         for(int i=0;i<NUM_LINESBUFFERS;i++)
+           delete this->linesbuffer_painter[i];
 
          delete this->paintbuffer;
          delete this->cursorbuffer;
-         delete this->linesbuffer;
+         for(int i=0;i<NUM_LINESBUFFERS;i++)
+           delete this->linesbuffer[i];
          this->paintbuffer = new QImage(this->width(), this->height(), image_format);
          this->cursorbuffer = new QImage(this->width(), this->height(), image_format);
-         this->linesbuffer =  new QImage(this->width(), this->height(), image_format);
+         for(int i=0;i<NUM_LINESBUFFERS;i++)
+           this->linesbuffer[i] =  new QImage(this->width(), this->height(), image_format);
 
          this->paintbuffer_painter = new QPainter(this->paintbuffer);
          this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
-         this->linesbuffer_painter = new QPainter(this->linesbuffer);
+         for(int i=0;i<NUM_LINESBUFFERS;i++)
+           this->linesbuffer_painter[i] = new QPainter(this->linesbuffer[i]);
 
          this->paintbuffer_painter->setFont(this->font);
-         this->linesbuffer_painter->setFont(this->font);
+         for(int i=0;i<NUM_LINESBUFFERS;i++)
+           this->linesbuffer_painter[i]->setFont(this->font);
        }
 
 #if 1

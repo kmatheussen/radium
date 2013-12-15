@@ -428,6 +428,7 @@ int radium_main(char *arg){
 
   //QApplication::setGraphicsSystem("native");
   //QApplication::setGraphicsSystem("raster");
+  //QApplication::setGraphicsSystem("opengl");
 
 
   setApplicationColors(qapplication);

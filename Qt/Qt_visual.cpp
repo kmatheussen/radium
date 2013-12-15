@@ -202,9 +202,9 @@ void OS_GFX_C_DrawCursor(
     editor->cursorbuffer_painter->setOpacity(1.0);
 
   editor->cursorbuffer_painter->drawImage(x1+1,1,
-                                          *editor->linesbuffer,
-    x1+1,y_pixmap+1,
-    x4-x1-2,height-2);
+                                          *editor->linesbuffer[0],
+                                          x1+1,y_pixmap+1,
+                                          x4-x1-2,height-2);
 
   editor->cursorbuffer_painter->setOpacity(0.2);
   editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
@@ -269,9 +269,14 @@ void OS_GFX_P2V_bitBlt_from_lines(
                         width,height
                         );
 #else
-
-  editor->painter->drawImage(QRectF(to_x,to_y-g_curr_subrealline,width,height),
-                             *editor->linesbuffer,
+  int subline = (int)g_curr_subrealline;
+  double subpixel = g_curr_subrealline - (double)subline;
+  int buffernum = (int)scale(subpixel,0,1,0,NUM_LINESBUFFERS);
+  if(buffernum==NUM_LINESBUFFERS)
+    buffernum--;
+  printf("buffernum: %d, subpixel: %f\n",buffernum,subpixel);
+  editor->painter->drawImage(QRectF(to_x,to_y-subline,width,height),
+                             *editor->linesbuffer[buffernum],
                              QRectF(from_x,from_y,width,height)
                              );
 
@@ -371,7 +376,7 @@ void OS_GFX_BitBlt(
 }
 
 
-#define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : where==PAINT_BUFFER ? editor->paintbuffer_painter : editor->linesbuffer_painter)
+#define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : where==PAINT_BUFFER ? editor->paintbuffer_painter : editor->linesbuffer_painter[0])
 
 #if 0
 static void setColor(QPainter *painter, int colornum, int where){
@@ -425,12 +430,15 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
       gradient.setColorAt(1,qcolor.darker(90));
       //gradient.setColorAt(1,editor->colors[7]);
 #endif 
-      painter->setPen(Qt::NoPen);
-      painter->setBrush(gradient);
+      for(int i=0;i<NUM_LINESBUFFERS;i++) {
+        QPainter *painter=editor->linesbuffer_painter[i];
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(gradient);
       
-      painter->drawRect(x,y,x2-x+1,y2-y+1);
+        painter->drawRect(x,y,x2-x+1,y2-y+1);
       
-      painter->setBrush(QBrush());
+        painter->setBrush(QBrush());
+      }
       return;
     }
   }
@@ -745,18 +753,38 @@ void OS_GFX_Text(
         painter->drawText(x/s, (y+tvisual->org_fontheight-1), text);
         painter->restore();
       }else{
+
         painter->drawText(x,y+tvisual->org_fontheight-1,text);
         //painter->drawText(rect, Qt::AlignVCenter, text);
       }
 
     }else if(flags & TEXT_CENTER){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
-      painter->drawText(rect, Qt::AlignVCenter, text);
-
+      if (where==PAINT_LINES) {
+        for(int i=0;i<NUM_LINESBUFFERS;i++) {
+          float add_y=scale(i, 0,NUM_LINESBUFFERS, 1.0,0.0);
+          QRectF rect((float)x,(float)y+add_y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+          //printf("drawing at %f, %f\n",(float)x,(float)y+add_y);
+          editor->linesbuffer_painter[i]->setPen(qcolor);
+          editor->linesbuffer_painter[i]->setRenderHint(QPainter::SmoothPixmapTransform, true);
+          editor->linesbuffer_painter[i]->setRenderHint(QPainter::Antialiasing, true);
+          editor->linesbuffer_painter[i]->setRenderHint(QPainter::TextAntialiasing, true);
+          editor->linesbuffer_painter[i]->setRenderHint(QPainter::HighQualityAntialiasing, true);
+          editor->linesbuffer_painter[i]->save();
+          //editor->linesbuffer_painter[i]->translate(QPointF(0.0, add_y));
+          editor->linesbuffer_painter[i]->drawText(rect, Qt::AlignVCenter, text);
+          editor->linesbuffer_painter[i]->restore();
+          //editor->linesbuffer_painter[i]->setRenderHint(QPainter::SmoothPixmapTransform, false);
+        }
+      } else {
+        QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+        painter->drawText(rect, Qt::AlignVCenter, text);
+      }
     }else{
 
       painter->drawText(x,y+tvisual->org_fontheight-1,text);
+
+      //painter->drawText(x,y+tvisual->org_fontheight-1,text);
 
     }
   }

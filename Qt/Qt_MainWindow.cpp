@@ -132,13 +132,18 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #if USE_QT_VISUAL
   , paintbuffer(NULL)
   , cursorbuffer(NULL)
-  , linesbuffer(NULL)
+    //, linesbuffer(NULL)
   , paintbuffer_painter(NULL)
   , cursorbuffer_painter(NULL)
-  , linesbuffer_painter(NULL)
+    //, linesbuffer_painter(NULL)
 #endif
   , qpa(256)
 {
+
+  for(int i=0;i<NUM_LINESBUFFERS;i++)
+    linesbuffer[i]=NULL;
+  for(int i=0;i<NUM_LINESBUFFERS;i++)
+    linesbuffer_painter[i]=NULL;
 
 #if USE_GTK_VISUAL
   if(sizeof(int64_t) < sizeof(WId))
