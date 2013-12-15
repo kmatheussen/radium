@@ -408,6 +408,7 @@ struct Mixer{
 
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
+
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 

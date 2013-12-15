@@ -38,10 +38,10 @@ extern struct Root *root;
 
 extern LANGSPEC void OS_InitMidiTiming();
 
-void PlayerTask(STime reltime){
-	static STime addreltime=0;
+void PlayerTask(STime blocksize){
+	static STime addblocksize=0;
 
-        pc->reltime     = reltime;
+        pc->blocksize     = blocksize;
 
         struct Blocks *block = pc->isplaying ? pc->block : NULL;
 
@@ -54,42 +54,43 @@ void PlayerTask(STime reltime){
             return;
         }
 
-	addreltime+=reltime;
+	addblocksize+=blocksize;
 
-        STime tempoadjusted_reltime=addreltime*block->reltempo;
-        if(tempoadjusted_reltime<1)
+        STime tempoadjusted_blocksize=addblocksize*block->reltempo;
+        if(tempoadjusted_blocksize<1)
           return;
         else
-          addreltime=0;
+          addblocksize=0;
 
 	if( ! pc->isplaying){
+          pc->therealtime=0;
           if( ! pc->initplaying)
             PC_ReturnElements();
-          SCHEDULER_called_per_block(tempoadjusted_reltime);
+          SCHEDULER_called_per_block(tempoadjusted_blocksize);
           return;
 	}
         
         if(pc->end_time==0){
-          pc->therealtime=reltime;
+          pc->therealtime=blocksize;
           OS_InitMidiTiming();
           OS_InitAudioTiming();
         }else{
-          pc->therealtime+=reltime;
+          pc->therealtime+=blocksize;
         }
 
 
 #if 0
         // This debug print is helpful to understand the timing.
         printf("pc->realtime_to_add: %d (%f), now: %d (%f). Actual time: %f\n",
-               (int)pc->reltime_to_add,pc->reltime_to_add/(double)pc->pfreq,
-               reltime_to_add_now,reltime_to_add_now/(double)pc->pfreq,
-               (pc->end_time+tempoadjusted_reltime+pc->reltime_to_add)/(double)pc->pfreq
+               (int)pc->blocksize_to_add,pc->blocksize_to_add/(double)pc->pfreq,
+               blocksize_to_add_now,blocksize_to_add_now/(double)pc->pfreq,
+               (pc->end_time+tempoadjusted_blocksize+pc->blocksize_to_add)/(double)pc->pfreq
                );
         fflush(stdout);
 #endif
           
         pc->start_time  = pc->end_time;
-        pc->end_time   += tempoadjusted_reltime;
+        pc->end_time   += tempoadjusted_blocksize;
 
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
@@ -114,7 +115,7 @@ void PlayerTask(STime reltime){
             }
         }
 
-        SCHEDULER_called_per_block(tempoadjusted_reltime); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
+        SCHEDULER_called_per_block(tempoadjusted_blocksize); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
 }
 
 STime PLAYER_get_delta_time(STime time){
@@ -122,13 +123,13 @@ STime PLAYER_get_delta_time(STime time){
     return 0;
 
   if(pc->isplaying){
-    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time));
+    STime ret = ((time - pc->start_time) * pc->blocksize / (pc->end_time - pc->start_time)); // i.e. scale(time, pc->start_time, pc->end_time, 0, pc->blocksize)
     if(ret<0){
       RWarning("ret<0: %d",ret);
       return 0;
     }
-    if(ret>pc->reltime){
-      RWarning("ret>pc->reltime: %d > %d",ret,pc->reltime);
+    if(ret>pc->blocksize){
+      RWarning("ret>pc->blocksize: %d > %d",ret,pc->blocksize);
       return 0;
     }
     return ret;

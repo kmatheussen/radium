@@ -249,6 +249,8 @@ void OS_GFX_C_DrawCursor(
 }
 
 
+extern double g_curr_subrealline;
+
 void OS_GFX_P2V_bitBlt_from_lines(
 		    struct Tracker_Windows *window,
 		    int from_x,int from_y,
@@ -268,7 +270,12 @@ void OS_GFX_P2V_bitBlt_from_lines(
                         );
 #else
 
-  editor->painter->drawImage(to_x,to_y,*editor->linesbuffer,from_x,from_y,width,height);
+  editor->painter->drawImage(QRectF(to_x,to_y-g_curr_subrealline,width,height),
+                             *editor->linesbuffer,
+                             QRectF(from_x,from_y,width,height)
+                             );
+
+  //editor->painter->drawImage(to_x,to_y,*editor->linesbuffer,from_x,from_y,width,height);
 
 #endif
   /*
@@ -375,6 +382,26 @@ static QColor get_note_color(EditorWidget *editor, QColor base){
   return mix_colors(base,editor->colors[15],0.4);
 }
 
+/*
+setPen
+setBrush
+setClipRect
+setClipping
+setFont
+setRenderHints
+save
+scale
+restore
+
+drawRect
+fillRect
+drawLine
+drawPoint
+drawPoints
+drawPolygon
+drawPolyline
+drawText
+*/
 
 void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
@@ -446,7 +473,6 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,
   painter->drawRect(x,y,x2-x+1,y2-y+1);
 #endif
 }
-
 void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);

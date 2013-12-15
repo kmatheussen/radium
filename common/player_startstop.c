@@ -66,7 +66,7 @@ static void PlayStopReally(bool doit){
 
 	StopAllInstruments();
 
-	if(doit) (*Ptask2MtaskCallBack)();
+	//if(doit) (*Ptask2MtaskCallBack)();
 
 	pc->end_time=0;
 
@@ -119,7 +119,7 @@ static void PlayBlock(
                 fflush(stdout);
 
 		pc->isplaying=true;
-		(*Ptask2MtaskCallBack)();
+		//(*Ptask2MtaskCallBack)();
 		pc->isplaying=false;
 
 		InitPEQclock();
@@ -212,7 +212,7 @@ void PlaySong(
 
 		root->curr_block=block->l.num;
 		pc->isplaying=true;
-		(*Ptask2MtaskCallBack)();
+		//(*Ptask2MtaskCallBack)();
 		pc->isplaying=false;
 
 		InitPEQclock();
