@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qmainwindow.h>
 #include <qapplication.h>
 #include <qdesktopwidget.h>
+#include <qrawfont.h>
+#include <qhash.h>
 
 #include "Qt_instruments_proc.h"
 #include "Qt_colors_proc.h"
@@ -708,6 +710,69 @@ void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual,int where){
 }
 
 
+namespace{
+  struct GlyphpathAndWidth{
+    QPainterPath path;
+    float width;
+    GlyphpathAndWidth(QPainterPath _path, float _width)
+      : path(_path)
+      , width(_width)
+    {}
+    GlyphpathAndWidth()
+      : width(0.0f)
+    {}
+  };
+}
+
+static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
+  static QFont cacheFont;
+  static QRawFont rawFont = QRawFont::fromFont(font);
+  static QHash<QChar,GlyphpathAndWidth> glyphpathCache;
+  static QFontMetricsF fn(font);
+
+  if (font != cacheFont){
+    glyphpathCache.clear();
+    cacheFont = font;
+    rawFont = QRawFont::fromFont(font);
+    fn = QFontMetrics(font);
+  }
+
+  if (glyphpathCache.contains(c))
+    return glyphpathCache[c];
+
+
+  QVector<quint32> indexes = rawFont.glyphIndexesForString(c);
+
+  GlyphpathAndWidth g(rawFont.pathForGlyph(indexes[0]), fn.width(c));
+  
+  glyphpathCache[c] = g;
+
+  return g;
+}
+
+static void myDrawText(QPainter *painter, QPointF p, QString text){
+  QRawFont rawFont = QRawFont::fromFont(painter->font());
+  QVector<quint32> indexes = rawFont.glyphIndexesForString(text);
+
+  float x = p.x();
+
+  QBrush brush = painter->pen().brush();
+
+  //printf("num indexes: %d\n",indexes.count());
+  //QPainterPath path = rawFont.pathForGlyph(indexes[0]);
+  for(int i=0; i<indexes.count(); i++){
+    GlyphpathAndWidth g = getGlyphpathAndWidth(painter->font(), text.at(i));
+
+    painter->save();
+    painter->translate(QPointF(x, p.y()));
+    painter->fillPath(g.path,brush);
+    painter->restore();
+
+    x += g.width;
+  }
+}
+
+
 void OS_GFX_Text(
                  struct Tracker_Windows *tvisual,
                  int color,
@@ -766,15 +831,9 @@ void OS_GFX_Text(
           QRectF rect((float)x,(float)y+add_y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
           //printf("drawing at %f, %f\n",(float)x,(float)y+add_y);
           editor->linesbuffer_painter[i]->setPen(qcolor);
-          editor->linesbuffer_painter[i]->setRenderHint(QPainter::SmoothPixmapTransform, true);
-          editor->linesbuffer_painter[i]->setRenderHint(QPainter::Antialiasing, true);
-          editor->linesbuffer_painter[i]->setRenderHint(QPainter::TextAntialiasing, true);
-          editor->linesbuffer_painter[i]->setRenderHint(QPainter::HighQualityAntialiasing, true);
-          editor->linesbuffer_painter[i]->save();
-          //editor->linesbuffer_painter[i]->translate(QPointF(0.0, add_y));
-          editor->linesbuffer_painter[i]->drawText(rect, Qt::AlignVCenter, text);
-          editor->linesbuffer_painter[i]->restore();
-          //editor->linesbuffer_painter[i]->setRenderHint(QPainter::SmoothPixmapTransform, false);
+          editor->linesbuffer_painter[i]->setRenderHints(QPainter::Antialiasing,true);
+          myDrawText(editor->linesbuffer_painter[i], QPointF(x, y+1.0-add_y), text);
+          //painter->setRenderHints(QPainter::Antialiasing,false);
         }
       } else {
         QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
