@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdbool.h>
+#include <math.h>
 
 #include "EditorWidget.h"
 
@@ -276,7 +277,7 @@ void OS_GFX_P2V_bitBlt_from_lines(
   int buffernum = (int)scale(subpixel,0,1,0,NUM_LINESBUFFERS);
   if(buffernum==NUM_LINESBUFFERS)
     buffernum--;
-  printf("buffernum: %d, subpixel: %f\n",buffernum,subpixel);
+  //printf("buffernum: %d, subpixel: %f\n",buffernum,subpixel);
   editor->painter->drawImage(QRectF(to_x,to_y-subline,width,height),
                              *editor->linesbuffer[buffernum],
                              QRectF(from_x,from_y,width,height)
@@ -357,9 +358,9 @@ void OS_GFX_BitBlt(
      // drawPixmap into itself works on mac, probably since all graphic is buffered.
 
      editor->paintbuffer_painter->drawPixmap(x+dx,y+dy,
-                                         *editor->paintbuffer,
-                                         x,y,
-                                         x2-x+1,y2-y+1);
+                                             *editor->paintbuffer,
+                                             x,y,
+                                             x2-x+1,y2-y+1);
 #    else // FOR_MACOSX
      // scroll doesn't work on MACOSX. (that's weird)
 
@@ -379,6 +380,17 @@ void OS_GFX_BitBlt(
 
 
 #define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : where==PAINT_BUFFER ? editor->paintbuffer_painter : editor->linesbuffer_painter[0])
+
+#define PL(OP) {                                                        \
+    int buffernum = 0;                                                  \
+    do{                                                                 \
+      QPainter *painter = where==PAINT_DIRECTLY ? editor->painter : where==PAINT_LINES ? editor->linesbuffer_painter[buffernum] : editor->paintbuffer_painter; \
+      float add_y = scale(buffernum, 0,NUM_LINESBUFFERS, 1.0,0.0);      \
+      OP;                                                               \
+    } while(where==PAINT_LINES && (++buffernum)<NUM_LINESBUFFERS);      \
+  }
+
+
 
 #if 0
 static void setColor(QPainter *painter, int colornum, int where){
@@ -412,7 +424,6 @@ drawText
 
 void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
   if(where==PAINT_LINES && colornum==0){
     if(y>=tvisual->wblock->t.y1){
@@ -432,18 +443,17 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
       gradient.setColorAt(1,qcolor.darker(90));
       //gradient.setColorAt(1,editor->colors[7]);
 #endif 
-      for(int i=0;i<NUM_LINESBUFFERS;i++) {
-        QPainter *painter=editor->linesbuffer_painter[i];
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(gradient);
+      PL(painter->setPen(Qt::NoPen));
+      PL(painter->setBrush(gradient));
       
-        painter->drawRect(x,y,x2-x+1,y2-y+1);
+      PL(painter->drawRect(QRectF(x,y+add_y, x2-x+1 , y2-y+1 + add_y)));
       
-        painter->setBrush(QBrush());
-      }
+      PL(painter->setBrush(QBrush()));
+ 
       return;
     }
-  }
+ }
+
 #if 0
     else{
       struct WBlocks *wblock = tvisual->wblock;
@@ -463,20 +473,19 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
     qcolor = get_note_color(editor,qcolor);
   //qcolor.setAlpha(100);
   g_use_custom_color = false;
-  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+  PL(painter->fillRect(QRectF(x,y+add_y, x2-x+1,y2-y+1+add_y),qcolor));
 }
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
   QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
   g_use_custom_color = false;
 
-  painter->setPen(qcolor);
+  PL(painter->setPen(qcolor));
 #if USE_QT4
   //painter->setRenderHints(QPainter::Antialiasing,true);
-  painter->drawRect(x,y,x2-x,y2-y);
+  PL(painter->drawRect(QRect(x,y+add_y,x2-x,y2-y+add_y)));
   //painter->setRenderHints(QPainter::Antialiasing,false);
 #endif
 #if USE_QT3
@@ -491,14 +500,14 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
   g_use_custom_color = false;
 
   if(x!=x2 && y!=y2){
-    painter->setRenderHints(QPainter::Antialiasing,true);
+    //painter->setRenderHints(QPainter::Antialiasing,true);
     qcolor.setAlpha(100);
     QPen pen(qcolor,2,Qt::SolidLine);  
     pen.setCapStyle(Qt::RoundCap);
     //pen.setCapStyle(Qt::SquareCap);
     pen.setJoinStyle(Qt::RoundJoin);
     //pen.setJoinStyle(Qt::BevelJoin);
-    painter->setPen(pen);    
+    PL(painter->setPen(pen));
 #if 0
     // if thicker lines than 2:
     y2-=1;
@@ -526,16 +535,20 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
     QPen pen;
     pen.setBrush(gradient);
     //painter->setBrush(gradient);
-    painter->setPen(pen);//qcolor);
+    PL(painter->setPen(pen));
   }
 
-  painter->drawLine(x,y,x2,y2);
+  PL(painter->drawLine(QLineF(x,y+add_y,x2,y2+add_y)));
   //  printf("drawline, x: %d, y: %d, x2: %d, y2: %d\n",x,y,x2,y2);
 
-  if(x!=x2 && y!=y2)
+#if 0
+  if(x!=x2 && y!=y2)    
     painter->setRenderHints(QPainter::Antialiasing,false);
   else
-    painter->setBrush(QBrush());
+    PL(painter->setBrush(QBrush()));
+#endif
+  if( ! (x!=x2 && y!=y2))
+    PL(painter->setBrush(QBrush()));
 }
 
 void OS_GFX_Point(
@@ -547,15 +560,14 @@ void OS_GFX_Point(
 	)
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
   if(brightness==MAX_BRIGHTNESS && color!=1){
-    painter->setPen(editor->colors[color]);
+    PL(painter->setPen(editor->colors[color]));
   }else{
-    painter->setPen(mix_colors(editor->colors[color], editor->colors[15], brightness/(float)MAX_BRIGHTNESS));
+    PL(painter->setPen(mix_colors(editor->colors[color], editor->colors[15], brightness/(float)MAX_BRIGHTNESS)));
   }
 
-  painter->drawPoint(x,y);
+  PL(painter->drawPoint(QPointF(x,y+add_y)));
 }
 
 
@@ -569,20 +581,20 @@ void OS_GFX_Points(
                    )
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
-  if(brightness==MAX_BRIGHTNESS && color!=1)
-    painter->setPen(editor->colors[color]);
-  else
-    painter->setPen(mix_colors(editor->colors[color], editor->colors[0], brightness/(float)MAX_BRIGHTNESS));
+  if(brightness==MAX_BRIGHTNESS && color!=1) {
+    PL(painter->setPen(editor->colors[color]));
+  } else
+    PL(painter->setPen(mix_colors(editor->colors[color], editor->colors[0], brightness/(float)MAX_BRIGHTNESS)));
 
   while((int)editor->qpa.size() <= num_points)
     editor->qpa.resize(editor->qpa.size()*2);
-  
-  for(int i=0;i<num_points;i++)
-    editor->qpa.setPoint(i,x[i],y[i]);
 
-  painter->drawPoints(editor->qpa,0,num_points);
+  PL({
+      for(int i=0;i<num_points;i++)
+        editor->qpa.setPoint(i,x[i],y[i]+add_y);
+      painter->drawPoints(editor->qpa,0,num_points);
+    });
 }
 
 void OS_GFX_Polygon(
@@ -595,17 +607,12 @@ void OS_GFX_Polygon(
                     )
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
 
-  int width=x2-x1;
-  int height=1+y2-y1;
+  float width=x2-x1;
+  float height=1+y2-y1;
 
-  QPolygon polygon(num_points);
-  for(int i=0;i<num_points;i++){
-    polygon.setPoint(i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
-    //printf("point %d set to %d/%d\n",i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
-  }
+  QPolygonF polygon(num_points);
 
   QColor col = editor->colors[color];
 
@@ -628,20 +635,46 @@ void OS_GFX_Polygon(
     gradient.setColorAt(1,editor->colors[10]);
 #endif
     
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(gradient);
+    PL(painter->setPen(Qt::NoPen));
+    PL(painter->setBrush(gradient));
     
   }else{
 
-    painter->setPen(col);
-    painter->setBrush(QBrush(col,Qt::SolidPattern));
+    PL(painter->setPen(col));
+    PL(painter->setBrush(QBrush(col,Qt::SolidPattern)));
     
   }
 
-  painter->drawPolygon(polygon);
-  painter->setBrush(QBrush());
+  PL({
+      //painter->save();
+      //painter->translate(0.0f,add_y);
+
+      for(int i=0;i<num_points;i++){
+        polygon[i] = QPointF(x1 + peaks[i].x*width, y1 + peaks[i].y*height + add_y);
+        //printf("point %d set to %d/%d\n",i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
+      }
+      //painter->drawPolygon(polygon);
+
+      QPainterPath path;
+      path.addPolygon(polygon);
+      painter->drawPath(path);
+
+      //painter->restore();
+    });
+  PL(painter->setBrush(QBrush()));
 }
-                    
+
+// QPainter::drawPolyline doesn't have floating point precision.                    
+static void MyDrawPolyline(QPainter *painter, QPointF p, QPolygonF polygon){
+  QPointF last = polygon[0];
+  float x = p.x();
+  float y = p.y();
+  for(int i=1; i<polygon.size(); i++){
+    QPointF next = polygon[i];
+    painter->drawLine(QLineF(last.x()+x, last.y()+y, next.x()+x, next.y()+y));
+    last=next;
+  }
+}
 
 void OS_GFX_Polyline(
                     struct Tracker_Windows *tvisual,
@@ -653,7 +686,6 @@ void OS_GFX_Polyline(
                     )
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
   QColor color = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
   g_use_custom_color = false;
@@ -662,19 +694,25 @@ void OS_GFX_Polyline(
 
   QPen pen(color);
   pen.setWidth(2);
-  painter->setPen(pen);
+  PL(painter->setPen(pen));
 
   int width=x2-x1;
   int height=y2-y1;
 
-  QPolygon polygon(num_points);
+  QPolygonF polygon(num_points);
   for(int i=0;i<num_points;i++){
-    polygon.setPoint(i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
+    polygon[i] = QPointF(x1 + peaks[i].x*width, y1 + peaks[i].y*height);
   }
 
-  painter->setRenderHint(QPainter::Antialiasing, true);
-  painter->drawPolyline(polygon);
-  painter->setRenderHint(QPainter::Antialiasing, false);
+  PL({
+      //painter->save();
+      //painter->translate(0.0f,add_y);
+
+      MyDrawPolyline(painter, QPointF(0.0f, add_y), polygon);
+      //PL(painter->drawPolyline(polygon));
+
+      //painter->restore();
+    });
 }
                     
 
@@ -695,18 +733,16 @@ void OS_GFX_SetClipRect(
                         )
 {
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
   
-  painter->setClipRect(x,y,x2-x,y2-y);
-  painter->setClipping(true);
+  PL(painter->setClipRect(QRectF(x,y+add_y,x2-x,y2-y+add_y)));
+  PL(painter->setClipping(true));
 }
 
 
 void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  QPainter *painter=GET_QPAINTER(editor,where);
 
-  painter->setClipping(false);
+  PL(painter->setClipping(false));
 }
 
 
@@ -725,7 +761,7 @@ namespace{
 }
 
 static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
-  static QFont cacheFont;
+  static QFont cacheFont = font;
   static QRawFont rawFont = QRawFont::fromFont(font);
   static QHash<QChar,GlyphpathAndWidth> glyphpathCache;
   static QFontMetricsF fn(font);
@@ -750,21 +786,19 @@ static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
   return g;
 }
 
+// QPainter::drawText doesn't have floating point precision.
 static void myDrawText(QPainter *painter, QPointF p, QString text){
-  QRawFont rawFont = QRawFont::fromFont(painter->font());
-  QVector<quint32> indexes = rawFont.glyphIndexesForString(text);
+  int len=text.length();
 
   float x = p.x();
 
   QBrush brush = painter->pen().brush();
 
-  //printf("num indexes: %d\n",indexes.count());
-  //QPainterPath path = rawFont.pathForGlyph(indexes[0]);
-  for(int i=0; i<indexes.count(); i++){
+  for(int i=0; i<len; i++){
     GlyphpathAndWidth g = getGlyphpathAndWidth(painter->font(), text.at(i));
 
     painter->save();
-    painter->translate(QPointF(x, p.y()));
+    painter->translate(x, p.y());
     painter->fillPath(g.path,brush);
     painter->restore();
 
@@ -826,15 +860,8 @@ void OS_GFX_Text(
     }else if(flags & TEXT_CENTER){
 
       if (where==PAINT_LINES) {
-        for(int i=0;i<NUM_LINESBUFFERS;i++) {
-          float add_y=scale(i, 0,NUM_LINESBUFFERS, 1.0,0.0);
-          QRectF rect((float)x,(float)y+add_y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
-          //printf("drawing at %f, %f\n",(float)x,(float)y+add_y);
-          editor->linesbuffer_painter[i]->setPen(qcolor);
-          editor->linesbuffer_painter[i]->setRenderHints(QPainter::Antialiasing,true);
-          myDrawText(editor->linesbuffer_painter[i], QPointF(x, y+1.0-add_y), text);
-          //painter->setRenderHints(QPainter::Antialiasing,false);
-        }
+        PL(painter->setPen(qcolor));
+        PL(myDrawText(painter, QPointF(x, y+add_y+tvisual->org_fontheight), text));
       } else {
         QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
         painter->drawText(rect, Qt::AlignVCenter, text);

@@ -949,7 +949,7 @@ Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_inst
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) -Wno-error $(IS_LINUX_BINARY)
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
-	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
+	$(CCC) $(P)Qt_visual.cpp $(QTOPT) -Wno-unused-variable
 
 GfxTimer.o:  $(BUILD_DEPENDENCIES) $(P)GfxTimer.cpp $(P)GfxTimer_proc.h
 	$(CCC) $(P)GfxTimer.cpp $(QTOPT)

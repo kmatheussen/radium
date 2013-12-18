@@ -149,8 +149,10 @@ public:
 
          this->paintbuffer_painter = new QPainter(this->paintbuffer);
          this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
-         for(int i=0;i<NUM_LINESBUFFERS;i++)
+         for(int i=0;i<NUM_LINESBUFFERS;i++) {
            this->linesbuffer_painter[i] = new QPainter(this->linesbuffer[i]);
+           this->linesbuffer_painter[i]->setRenderHints(QPainter::Antialiasing,true);
+         }
 
          this->paintbuffer_painter->setFont(this->font);
          for(int i=0;i<NUM_LINESBUFFERS;i++)
