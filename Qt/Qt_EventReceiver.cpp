@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #endif
 
+#include <QTime>
+
 #include "../common/blts_proc.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
@@ -86,7 +88,11 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 static int vblank_counter = 0;
 static int paint_counter = 0;
 
+static QTime dastime;
+
 void EditorWidget::paintEvent( QPaintEvent *e ){
+  int time1 = dastime.elapsed();
+
   if (paint_counter==vblank_counter)
     return;
   else
@@ -102,6 +108,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     DO_GFX(DrawUpTrackerWindow(this->window));
   }
 
+  int time2 = dastime.elapsed();
+
   if (pc->isplaying) {
     if (GFX_get_op_queue_size(window)==0)
       Blt_markVisible(window);
@@ -109,6 +117,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     Blt_clearNotUsedVisible(window);
     Blt_blt(window);
   }
+
+  int time3 = dastime.elapsed();
 
   //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
   //printf("paintevent. width: %d, height: %d\n",this->width(),this->height());
@@ -124,12 +134,22 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
     this->painter = NULL;
   }
+
+  int time4 = dastime.elapsed();
+
+  if(time4 > 10)
+    printf("time1: %d, time2: %d (%df), time3: %d (%d), time4: %d (%d)\n",time1,time2,time2-time1,time3,time3-time2,time4,time4-time3);
 }
 
 static void vertical_blank_callback(void *data){
   EditorWidget *editor = (EditorWidget*)data;
 
   vblank_counter++;
+  if(vblank_counter==1)
+    dastime.start();
+
+  dastime.restart();
+
   editor->repaint();
 }
 

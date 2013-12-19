@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#define XOFFSET 5
 //#define YOFFSET 2
 
-#define NUM_LINESBUFFERS 8
+#define NUM_LINESBUFFERS 4
 
 class QMainWindow;
 class QSplitter;
