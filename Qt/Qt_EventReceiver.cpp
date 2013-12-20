@@ -90,6 +90,15 @@ static int paint_counter = 0;
 
 static QTime dastime;
 
+static int average[8] = {0};
+static int avg_n = 0;
+static float sum_average(){
+  float ret=0.0f;
+  for(int i=0;i<8;i++)
+    ret+=average[i];
+  return ret;
+}
+
 void EditorWidget::paintEvent( QPaintEvent *e ){
   int time1 = dastime.elapsed();
 
@@ -137,8 +146,14 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
   int time4 = dastime.elapsed();
 
-  if(time4 > 10)
+  average[(avg_n++) & 7] = time4;
+
+  if(sum_average() / 8.0f > 14)
+    printf("\n\n AVERAGE: %f\n",sum_average() / 8.0f);
+
+  if(time4 > 90)
     printf("time1: %d, time2: %d (%df), time3: %d (%d), time4: %d (%d)\n",time1,time2,time2-time1,time3,time3-time2,time4,time4-time3);
+
 }
 
 static void vertical_blank_callback(void *data){
