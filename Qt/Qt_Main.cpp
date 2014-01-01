@@ -69,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_instruments_proc.h"
 #include "Qt_MainWindow_proc.h"
+#include "Qt_GraphicsThread_proc.h"
 
 #include "../GTK/GTK_visual_proc.h"
 
@@ -473,7 +474,6 @@ int radium_main(char *arg){
 
   {
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    editor->start_vertical_blank_callback();
 
     {
       QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
@@ -535,6 +535,7 @@ int radium_main(char *arg){
 
   show_nag_window("");
 
+
   //QApplication::quit();
 
 #if !GTK_IS_USED
@@ -559,8 +560,14 @@ int radium_main(char *arg){
     SETTINGS_write_string("last_system_font_version","1.9.21");
   }
 
-
+  GTHREAD_init();
   is_starting_up=false;
+
+  {
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    editor->start_vertical_blank_callback();
+  }
+
 
 #if USE_QT_VISUAL
   qapplication->exec();
@@ -607,6 +614,8 @@ int main(int argc, char **argv){
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
 
+  QCoreApplication::setAttribute(Qt::AA_X11InitThreads); 
+
 #if !defined(FOR_WINDOWS)
   setenv("LC_NUMERIC", "C", 1); // Qt insists on doing strange things with locale settings, causing commans to appear instead of punctation. In an ideal world, LC_NUMERIC/LANG should never be set to anything else than "C", but unfortunately, many computers runs with uncommon language settings such as french or swedish. By default, programs seems to respect the sane behaviour (in the programming world), namely to never use commas when converting between strings and floats, but Qt does something strange with the world inside the QApplication contructor, and causes commas to be used everywhere if there is an uncommon LC_NUMERIC settings (or uncommon LANG setting). This setenv call is the only way I was able to make Pd work, without modifying Pd itself. (I modified Pd too though, but kept this line to prevent similar errors to appear in other libraries.) This behaviour should be changed in Qt.)
 #endif
@@ -625,6 +634,8 @@ int main(int argc, char **argv){
   QApplication::setDesktopSettingsAware(false);
 
   QLocale::setDefault(QLocale::C);
+
+
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);

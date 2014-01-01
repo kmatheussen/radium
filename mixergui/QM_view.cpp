@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #ifndef QT_NO_OPENGL
-#include <QtOpenGL>
+//#include <QtOpenGL>
 #endif
 
 #include "../common/nsmtracker.h"

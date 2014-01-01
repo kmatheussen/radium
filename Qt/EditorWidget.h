@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <Q3PointArray>
 #include <QPainter>
+#include <QGLWidget>
 #ifdef FOR_WINDOWS
 #  include <QKeyEvent>
 #endif
@@ -58,10 +59,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_op_queue_proc.h"
 
 
-// Don't paint on the frame.
-//#define XOFFSET 5
-//#define YOFFSET 2
-
 #define NUM_LINESBUFFERS 4
 
 class QMainWindow;
@@ -74,6 +71,7 @@ typedef QPixmap PaintBuffer;
 #endif
 
 class EditorWidget : public QWidget //QFrame
+//class EditorWidget : public QGLWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
 {
 
@@ -113,16 +111,6 @@ public:
 
     QSplitter *xsplitter;
     QSplitter *ysplitter;
-
-    int get_editor_width(){
-      //return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
-      return this->width();
-    }
-
-    int get_editor_height(){
-      //return this->height()-YOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
-      return this->height();
-    }
 
     void start_vertical_blank_callback();
 
@@ -193,6 +181,9 @@ protected:
     //    bool        event(QEvent *);
 #if 1 //USE_QT_VISUAL
     void	paintEvent( QPaintEvent * );
+    //void	paintGL();
+    void initializeGL();
+    void resizeGL(int w, int h);
 #endif
 
 #if 0 // Using X11filter for keys

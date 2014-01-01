@@ -124,9 +124,20 @@ public:
 };
 #endif
 
+#if 0
+static QGLFormat desiredFormat(){
+  QGLFormat fmt;
+  fmt.setSwapInterval(1);
+  return fmt;
+}
+#endif
+
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+  //  : QGLWidget(desiredFormat(), parent, NULL, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase)
+    //: QGLWidget(parent, NULL, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase)
+    //: QGLWidget()
     //: QWidget( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
     //: EditorWidgetParent( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
 #if USE_QT_VISUAL
@@ -139,6 +150,27 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
   , qpa(256)
 {
+  //setAutoBufferSwap(false);
+  resize(400,400);
+
+#if 0
+  QTimer* timer = new QTimer( this );
+  connect(timer, SIGNAL(timeout()), this, SLOT(repaint()));
+
+  if(format().swapInterval() == -1){
+    // V_blank synchronization not available (tearing likely to happen)
+    printf("Swap Buffers at v_blank not available: refresh at approx 60fps.");
+    timer->setInterval(16); // TODO: Make this one better.
+    
+  }else{
+    
+    // V_blank synchronization available
+    printf("Swap Buffers interval: %d\n",format().swapInterval());
+    timer->setInterval(0);
+  }
+  //timer->start();
+#endif
+
 
   for(int i=0;i<NUM_LINESBUFFERS;i++)
     linesbuffer[i]=NULL;
@@ -386,6 +418,8 @@ void SetupMainWindow(void){
 #ifdef USE_QT3
   main_window->setBackgroundMode(Qt::NoBackground);
 #endif
+
+  //editor->setAttribute(Qt::WA_PaintOnScreen);
 
   main_window->resize(1024,600);
   editor->setMinimumWidth(600);

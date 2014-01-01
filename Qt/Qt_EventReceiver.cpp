@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 #include "GfxTimer_proc.h"
+#include "Qt_GraphicsThread_proc.h"
 
 #include <qpainter.h>
 
@@ -32,7 +33,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #endif
 
+#include <QTimer>
 #include <QTime>
+#include <QApplication>
+#include <QThread>
+#include <QGLFramebufferObject>
+#include <QGLPixelBuffer>
+
 
 #include "../common/blts_proc.h"
 #include "../common/eventreciever_proc.h"
@@ -84,12 +91,14 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 
 #if USE_QT_VISUAL
 
-// These two variables are used to make sure paintEvent isn't called more often than vertical blank. (any call to update() may cause paintEvent() to be called)
+// These two variables are used to make sure paintEvent isn't called more often than vertical blank. (any call to update() may cause a call to paintEvent())
 static int vblank_counter = 0;
 static int paint_counter = 0;
 
 static QTime dastime;
+static QTime dastime2;
 
+/*
 static int average[8] = {0};
 static int avg_n = 0;
 static float sum_average(){
@@ -98,64 +107,275 @@ static float sum_average(){
     ret+=average[i];
   return ret;
 }
+*/
+
+extern QApplication *g_qapplication;
+
+
+namespace{
+
+  class GLPainterThread : public QThread
+  {
+  public:
+    GLPainterThread(QGLWidget* _glw)
+      : glw(_glw)
+      , fbo(NULL)
+    {
+      //start();
+    }
+
+    void run(){
+      int width = 0;
+      int height = 0;
+
+      //QImage image2("/home/kjetil/snap.png");
+
+      //QGLPixelBuffer pbuffer(1024,1024);
+
+      glw->makeCurrent();
+
+      QPainter p;
+      int last_time = 0;
+
+      //BackBuffer *back_buffer2 = NULL;
+
+      while(1) {
+        
+
+        if(dastime2.elapsed()>25)
+          fprintf(stderr,"PaintGL. Since last: %d\n",dastime2.elapsed());
+        dastime2.restart();
+
+        int time1=0,time2=0,time3=0,time4=0,time5=0,time6=0,time7=0,time8=0,time9=0,time10=0;
+
+        BackBuffer *back_buffer=GTHREAD_get_image();
+
+        {
+          if(back_buffer==NULL){
+            printf("NO BUFFER FROM GTHREAD (xrun)\n");
+          } else {
+
+            //QImage das_image = QGLWidget::convertToGLFormat(*back_buffer);
+            //QImage *image = &das_image;
+            QImage image = *back_buffer;
+            
+            if(image.width()!=width || image.height()!=height){
+              width = image.width();
+              height = image.height();
+              glViewport (0, 0, width, height);
+              glMatrixMode (GL_PROJECTION);     
+              glLoadIdentity();
+              glOrtho(0, width,0,height,-1,1);
+              glMatrixMode (GL_MODELVIEW);
+
+              delete fbo;
+              fbo = new QGLFramebufferObject(width,height,QGLFramebufferObject::CombinedDepthStencil);
+
+              printf("width: %d, height: %d\n",width,height);
+              //back_buffer2 = back_buffer;
+            }
+            //else image = *back_buffer2;
+
+            time1=dastime2.elapsed();
+
+            //QImage gldata = *image; //glw->convertToGLFormat(*image);
+
+            //glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, gldata.bits());
+            p.begin(fbo);
+            p.beginNativePainting();
+            //printf("image.format: %d, image2.format: %d\n",image.format(), image2.format());
+
+            time2=dastime2.elapsed();
+
+            //p.drawImage(QPointF(0,0),image2);
+            p.drawImage(QPoint(0,0),image); // commented out
+            //p.drawPixmap(QPoint(0,0),*image); // commented out
+            /*
+            p.fillRect(0,0,width,height,QColor(0,0,0));
+            p.setPen(QColor(128,128,128));
+            p.drawLine(0,0,width,height);
+            */
+
+            time3=dastime2.elapsed();
+
+            p.endNativePainting();
+            p.end();
+
+            time4=dastime2.elapsed();
+
+            // start
+            glEnable(GL_TEXTURE_2D);
+            time5=dastime2.elapsed();            
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+            time6=dastime2.elapsed();            
+            glBindTexture(GL_TEXTURE_2D, fbo->texture());
+            time7=dastime2.elapsed();
+            glBegin(GL_QUADS);
+            time8=dastime2.elapsed();
+            QRect target(0,0,width,height);
+            glTexCoord2d(0.0,1.0); glVertex2d(target.left(),      target.top());
+            glTexCoord2d(1.0,1.0); glVertex2d(target.right() + 1, target.top());
+            glTexCoord2d(1.0,0.0); glVertex2d(target.right() + 1, target.bottom() + 1);
+            glTexCoord2d(0.0,0.0); glVertex2d(target.left(),      target.bottom() + 1);
+            time9=dastime2.elapsed();
+            glEnd();
+            // end
+
+            time10=dastime2.elapsed();
+            GTHREAD_putback_image(back_buffer);
+          }
+        }
+
+        if(dastime2.elapsed()>12)
+          fprintf(stderr,"Painting time: %d (1: %d, 2: %d, 3: %d (%d), 4: %d, 5: %d, 6: %d, 7: %d, 8: %d, 9: %d, 10: %d)\n",dastime2.elapsed(),time1,time2,time3,last_time,time4,time5,time6,time7,time8,time9,time10);
+        last_time = time3-time2;
+
+        QTime time;
+        time.start();
+        QApplication::processEvents(QEventLoop::AllEvents, 3);
+        if(time.elapsed()>4)
+          printf("elapsed: %d\n",time.elapsed());
+
+        {
+          QTime time2;
+          time2.start();
+          
+          //glw->setUpdatesEnabled(true);
+          glw->swapBuffers();
+          //glw->doneCurrent();
+
+          if(time2.elapsed()>16)
+            printf("swap time: %d\n",time2.elapsed());
+        }
+
+      }
+    }
+    
+  private:
+    QGLWidget* glw;
+    QGLFramebufferObject *fbo;
+  };
+}
+
+//#include <GL/glut.h>
+
+void EditorWidget::initializeGL(){
+}
+
+void EditorWidget::resizeGL(int w, int h)
+{
+
+  printf("resizeGL %d %d\n",w,h);
+  /*
+  if(is_starting_up==true)
+    return;
+
+
+  GTHREAD_resize(width(), height());
+  */
+}
+
 
 void EditorWidget::paintEvent( QPaintEvent *e ){
-  int time1 = dastime.elapsed();
+
+  if (paint_counter==vblank_counter)
+    return;
+  else
+    paint_counter++;
+  //printf("hepp2\n");
+  if(dastime.elapsed()>25)
+    printf("PaintEvent. Since last: %d\n",dastime.elapsed());
+  dastime.restart();
+
+  QPainter p(this);
+  int time1=dastime.elapsed();
+  BackBuffer *image = GTHREAD_get_image();
+  int time2=dastime.elapsed();
+  int time3=0,time4=0,time5=0;
+  if(image==NULL){
+    printf("NO BUFFER FROM GTHREAD (xrun)\n");
+  }else{
+    time3=dastime.elapsed();
+    p.drawImage(0,0,*image); // commented out.
+    time4=dastime.elapsed();
+    GTHREAD_putback_image(image);
+    time5=dastime.elapsed();
+  }
+
+  if(dastime.elapsed()>3)
+    printf("Long time painting: %d (%d,%d,%d,%d,%d)\n",dastime.elapsed(),time1,time2,time3,time4,time5);
+}
+
+namespace{
+  struct VBlankWidget : public QGLWidget {
+    
+    QGLFormat desiredFormat(){
+      QGLFormat fmt;
+      fmt.setSwapInterval(1);
+      return fmt;
+    }
+    
+    VBlankWidget()
+      : QGLWidget(desiredFormat())
+    {
+      if(format().swapInterval() == -1)
+        // V_blank synchronization not available (tearing likely to happen)
+        printf("Swap Buffers at v_blank not available: refresh at approx 60fps.");
+    }
+  };
+}
+
+static QGLWidget *glw;
+
+void gakk();
+static void main_loop(EditorWidget *editor){
+  //QGLWidget *glw = editor; //new VBlankWidget();
+  glw = new VBlankWidget();
+  gakk();
+  glw->makeCurrent();
+  QTime main_time;
+  main_time.start();
+
+  while(true){
+    //printf("Hepp %d\n",vblank_counter);
+    //glw->makeCurrent();
+
+
+    vblank_counter++;
+    editor->repaint();
+
+
+    if(main_time.elapsed()<=16)
+      glw->swapBuffers();
+    main_time.restart();
+
+    //glw->doneCurrent();    
+    
+    QTime time;
+    time.start();
+    
+    //editor->setUpdatesEnabled(true);
+    QApplication::processEvents(QEventLoop::AllEvents, 3);
+    //editor->setUpdatesEnabled(false);
+
+    if(time.elapsed()>10)
+      printf("elapsed: %d\n",time.elapsed());
+
+  }
+}
+
+/*
+void EditorWidget::paintGL(){
 
   if (paint_counter==vblank_counter)
     return;
   else
     paint_counter++;
 
-  if(is_starting_up==true)
-    return;
-
-  if(window->must_redraw==true){
-    //printf("** Drawing up everything!\n");
-    window->must_redraw=false;
-    GFX_clear_op_queue(this->window);
-    DO_GFX(DrawUpTrackerWindow(this->window));
-  }
-
-  int time2 = dastime.elapsed();
-
-  if (pc->isplaying) {
-    if (GFX_get_op_queue_size(window)==0)
-      Blt_markVisible(window);
-    P2MUpdateSongPosCallBack();
-    Blt_clearNotUsedVisible(window);
-    Blt_blt(window);
-  }
-
-  int time3 = dastime.elapsed();
-
-  //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
-  //printf("paintevent. width: %d, height: %d\n",this->width(),this->height());
-
-  if(GFX_get_op_queue_size(this->window) > 0){
-    QPainter paint(this);
-    this->painter = &paint;
-    this->painter->setFont(this->font);
-
-    {
-      GFX_play_op_queue(this->window);
-    }
-
-    this->painter = NULL;
-  }
-
-  int time4 = dastime.elapsed();
-
-  average[(avg_n++) & 7] = time4;
-
-  if(sum_average() / 8.0f > 14)
-    printf("\n\n AVERAGE: %f\n",sum_average() / 8.0f);
-
-  if(time4 > 90)
-    printf("time1: %d, time2: %d (%df), time3: %d (%d), time4: %d (%d)\n",time1,time2,time2-time1,time3,time3-time2,time4,time4-time3);
-
 }
+*/
 
+/*
 static void vertical_blank_callback(void *data){
   EditorWidget *editor = (EditorWidget*)data;
 
@@ -167,9 +387,19 @@ static void vertical_blank_callback(void *data){
 
   editor->repaint();
 }
+*/
 
 void EditorWidget::start_vertical_blank_callback(){
-  call_function_at_vertical_blank(vertical_blank_callback, this);
+  #if 0
+  // *thread = 
+  GLPainterThread *glPainterThread = new GLPainterThread(this);
+  //GLPainterThread *glPainterThread = new GLPainterThread(glw);
+  //call_function_at_vertical_blank(vertical_blank_callback, this);
+  
+  glPainterThread->run();
+#endif
+  main_loop(this);
+  
 }
 
 #endif
@@ -380,25 +610,12 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 #if USE_QT_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
-  this->init_buffers();
-
-  this->window->width=this->get_editor_width();
-  this->window->height=this->get_editor_height();
-
   if(is_starting_up==true)
     return;
 
-#if 0
-  printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
-         this->height(),qresizeevent->size().height());
-#endif
-
-#if 1
-  DO_GFX(DrawUpTrackerWindow(window));
-#else
-  update();
-#endif
+  GTHREAD_resize(width(), height());
 }
+
 #endif // USE_QT_VISUAL
 
 

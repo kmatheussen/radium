@@ -83,8 +83,8 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
   tvisual->os_visual.main_window = main_window;
   tvisual->os_visual.widget      = g_editor;
 
-  tvisual->width  = g_editor->get_editor_width();
-  tvisual->height = g_editor->get_editor_height();
+  tvisual->width  = g_editor->width();
+  tvisual->height = g_editor->height();
     
   g_editor->window = tvisual;
 
