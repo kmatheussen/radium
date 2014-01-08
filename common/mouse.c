@@ -44,6 +44,7 @@ void SetMouseAction(
     struct MouseAction *action,
     int x,int y, int click
 ){
+
   struct WBlocks *wblock=window->wblock;
 
   struct Notes *old_mouse_note = wblock->mouse_note;
@@ -164,6 +165,15 @@ void MouseMove(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	}
 }
 
+void RightMouseDown(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
+	struct MouseAction *prevaction= &window->prevaction;
+
+        prevaction->org_x = x;
+        prevaction->org_y = y;
+
+	SetMouseAction(window,prevaction,x,y,2);
+}
+
 void LeftMouseDown(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	struct MouseAction *prevaction= &window->prevaction;
 
@@ -189,6 +199,8 @@ int LeftMouseUp(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y)
 	  GFX_DrawStatusBar(window,window->wblock);
 	}
 	return ret;
-
 }
 
+int RightMouseUp(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
+  return LeftMouseUp(window, keyswitch, x,y);
+}

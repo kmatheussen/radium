@@ -126,7 +126,7 @@ void UpdateWTrackCoordinates(
 
 	wtrack->notearea.x  = wtrack_notearea_x;
 	wtrack->notearea.x2 = wtrack->notearea.x  + wtrack->notesonoff*(wtrack->notewidth+(window->fontwidth*(0+wtrack->notelength)));
-        if(wtrack->l.num==wblock->mouse_track)
+        if(wtrack->is_wide)
           wtrack->notearea.x2 += 100;
 
 	wtrack->fxarea.x    = wtrack->notearea.x2 + 2;

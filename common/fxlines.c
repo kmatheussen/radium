@@ -381,16 +381,10 @@ void AddFXNodeLine(
 
 }
 
-void AddFXNodeLineCurrPos(struct Tracker_Windows *window){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
+void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
 	struct FX *fx;
 
 	PlayStop();
-
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-
 
 	fx=selectFX(window,wblock,wtrack);
 	if(fx==NULL) return;

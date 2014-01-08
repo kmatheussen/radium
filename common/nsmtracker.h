@@ -583,6 +583,9 @@ struct WTracks{
 	int fxwidth;						/* is fxarea.x2-fxarea.x */
 	Area fxarea;
 
+        bool is_wide;
+
+
 	int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */

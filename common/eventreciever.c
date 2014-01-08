@@ -296,10 +296,12 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 			break;
 		case TR_LEFTMOUSEUP:
 			return LeftMouseUp(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-		case TR_RIGHTMOUSEUP:
-		 // return RightMouseDown(window,in_tevent->x,in_tevent->y);
-		 			AddFXNodeLineCurrPos(window);
+		case TR_RIGHTMOUSEDOWN:
+		        RightMouseDown(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
+                        //			AddFXNodeLineCurrPos(window);
 			break;
+		case TR_RIGHTMOUSEUP:
+		        return RightMouseUp(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
 	}
 
 	if(doquit==true){return 1;}

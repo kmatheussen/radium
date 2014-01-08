@@ -211,6 +211,11 @@ void SetMouseActionFXarea(
 
 	action->action=NOACTION;
 
+        if(click==2) {
+          AddFXNodeLineCurrPos(window, wblock, wtrack);
+          return;
+        }
+
 	realline=GetReallineAndPlaceFromY(window,wblock,y,&place,NULL,NULL);
 	if(realline<0) return;
 

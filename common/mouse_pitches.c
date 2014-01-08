@@ -267,6 +267,13 @@ bool SetMouseActionPitches(
 	if(realline<0)
           return false;
 
+        if (click==2){
+          wtrack->is_wide = !wtrack->is_wide;
+          SetNormalPointer(window);
+          wblock->block->is_dirty=true; // redraw.
+          return true;
+        }
+
         if (click != 1) {
           struct Notes *note = NULL;
           struct Pitches *pitch = NULL;

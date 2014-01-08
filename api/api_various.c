@@ -149,9 +149,22 @@ void switchWindowConfiguration(void){
   GFX_HideMixer();
 }
 
-void addFX(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  AddFXNodeLineCurrPos(window);
+void addFX(int windownum, int blocknum, int tracknum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  AddFXNodeLineCurrPos(window, wblock, wtrack);
 }
 
 void insertReallines(int toinsert,int windownum){
