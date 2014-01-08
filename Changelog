@@ -1,4 +1,12 @@
 
+Most important changes 1.9.34 -> 1.9.35:
+* sampler instrument/crossfade: Remove debug printing in realtime code
+* fast_log_exp.dsp: Fix pun_float_to_int proto in the faust "ffunction"
+* build: Print out message if a command isn't found (make "which" more verbose)
+* Pitch area widens when right-clicking inside it, not when moving mouse on top of it.
+* Add effect to correct track when right clicking.
+
+
 Most important changes 1.9.33 -> 1.9.34:
 * Disable pd for all builds except linux (since libpds only exists on linux for now)
 * windows: Add media keys (mute, volume down/up, stop and play).
