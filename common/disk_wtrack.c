@@ -40,6 +40,7 @@ DC_start("WTRACK");
 	DC_SSI("notelength",wtrack->notelength);
 	DC_SSI("fxwidth",wtrack->fxwidth);
 	DC_SSI("num_vel",wtrack->num_vel);
+        DC_SSB("is_wide",wtrack->is_wide);
 
 
 DC_end();
@@ -50,16 +51,17 @@ SaveWTrack(NextWTrack(wtrack));
 
 struct WTracks *LoadWTrack(void){
 	static char **objs=NULL;
-	static char *vars[4]={
+	static char *vars[5]={
 		"notesonoff",
 		"notelength",
 		"fxwidth",
-		"num_vel"
+		"num_vel",
+                "is_wide"
 	};
 	struct WTracks *wtrack=DC_alloc(sizeof(struct WTracks));
 	wtrack->l.num=DC_LoadN();
 
-	GENERAL_LOAD(0,4);
+	GENERAL_LOAD(0,5);
 
 
 var0:
@@ -74,9 +76,11 @@ var2:
 var3:
 	wtrack->num_vel=DC_LoadI();
 	goto start;
-
-
 var4:
+	wtrack->is_wide=DC_LoadB();
+	goto start;
+
+
 var5:
 var6:
 var7:
