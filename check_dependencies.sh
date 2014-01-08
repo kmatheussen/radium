@@ -7,12 +7,21 @@ UIC=$3
 
 set -e
 
+mywhich() {
+    if which $1 ; then
+        echo $1 found
+    else
+        echo $1 not found
+        exit -1
+    fi
+}
+
 echo
 echo "Checking dependencies: "
-which sed
-which $PYTHONEXE
+mywhich sed
+mywhich $PYTHONEXE
 #which guile-1.8
-which guile
+mywhich guile
 
 if [ $4 == "test_packages" ] ; then
     echo "testing packages"
