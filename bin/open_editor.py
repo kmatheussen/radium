@@ -6,7 +6,7 @@ def startit(editor,filename):
 
 def open_editor(filename):
     editor = os.environ.get('EDITOR')
-    if editor != None:
+    if editor != None and editor!='emacs -nw':
         startit(editor,filename)
     elif os.system("which emacs")==0:
         startit("emacs",filename)
