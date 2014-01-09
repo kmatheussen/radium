@@ -76,7 +76,9 @@ BUILD DEPENDENCIES FEDORA:
 
 
 
-BUILD DEPENDENCIES UBUNTU:
+BUILD DEPENDENCIES UBUNTU (plus Debian):
+      * Main packages, Ubuntu 12:
+
       libqt4-dev
       qt4-dev-tools
       libxaw7-dev
@@ -99,17 +101,15 @@ BUILD DEPENDENCIES UBUNTU:
       fftw3-dev
       guile
 
-      In one line:
+      * Or in one line:
 
       sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile
 
 
-      (Tested on Ubuntu 12 32 bit and 64 bit)
-
-      On Ubuntu LTS, I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.
+      * Ubuntu LTS: I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.
       I also needed to install python2.7-dev instead of python2-dev.
 
-
+      * On debian stable, it has been reported that you also need guile-2.0-dev and libfftw3-dev.
 
 
 TO ENABLE ALL KEYBOARD SHORTCUTS ON MAC OS X
