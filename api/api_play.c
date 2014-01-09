@@ -18,11 +18,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/playerclass.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
 
 #include "api_common_proc.h"
 
+
+extern PlayerClass *pc;
 
 
 void playBlockFromStart(int windownum){
@@ -71,4 +74,9 @@ void volumeDown(void){
 
 void mute(void){
   PLAYER_mute();
+}
+
+
+int isPlaying(void){
+  return pc->isplaying;
 }
