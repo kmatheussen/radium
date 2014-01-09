@@ -134,9 +134,9 @@ namespace{
       if(event->key()>0){
         QLineEdit::keyPressEvent(event);
       
-        if(event->key()==Qt::Key_Return)
+        if(event->key()==Qt::Key_Return || Qt::Key_Escape)
           gotit = true;
-      
+
 #if USE_GTK_VISUAL
         if(event->key()==Qt::Key_Return)
           GTK_MainQuit();
