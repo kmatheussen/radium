@@ -264,6 +264,9 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   tevent.ID=TR_KEYBOARD;
   tevent.SubID=keynum;
 
+  if(keynum==EVENT_ALT_R)
+    printf("> Pressing alt_gr\n");
+
   g_last_pressed_key = keynum;
   g_last_pressed_key_time = MIXER_get_time();
 
@@ -320,6 +323,9 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARDUP;
   tevent.SubID=keynum;
+
+  if(keynum==EVENT_ALT_R)
+    printf("< Releasing alt_gr\n");
 
   int64_t time_now = MIXER_get_time();
 
