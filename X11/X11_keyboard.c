@@ -308,6 +308,9 @@ int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
   case XF86XK_AudioStop:
     n = EVENT_STOP;
     break;
+  case XK_ISO_Level3_Shift:
+    n = EVENT_ALT_R;
+    break;
   default:
     if(sym > keytable_size) {
       return 0;
