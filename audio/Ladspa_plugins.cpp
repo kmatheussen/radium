@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <algorithm>
 #include <vector>
 
+#include <QDesktopServices>
+
 #include <math.h>
 #include <dirent.h>
 #include <errno.h>
@@ -863,7 +865,8 @@ void create_ladspa_plugins(void){
   if(getenv("LADSPA_PATH")==NULL){
     //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
-    sprintf(ladspa_path, "%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa");
+    QString home_ladspa_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.ladspa";
+    sprintf(ladspa_path, "%s:%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",home_ladspa_path.ascii());
   } else 
     sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
 #endif
