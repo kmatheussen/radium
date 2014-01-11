@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/disk_load_proc.h"
 #include "../common/undo.h"
 #include "../common/nag.h"
+#include "../common/OS_settings_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -704,7 +705,7 @@ int main(int argc, char **argv){
     //PyRun_SimpleString("sys.path = [sys.g_program_path]");
     
     // Set sys.argv[0]
-    sprintf(temp,"sys.argv=[\"%s\",os.path.join(sys.g_program_path,\"keybindings.conf\")]",argv[0]);
+    sprintf(temp,"sys.argv=[\"%s\",\"%s\"]", argv[0], OS_get_keybindings_conf_filename());
     PyRun_SimpleString(temp);
     
     printf("argv[0]: %s\n",argv[0]);

@@ -51,8 +51,8 @@ bool OS_config_key_is_color(const char *key){
   return QString(key).contains("color", Qt::CaseInsensitive);
 }
 
-char *OS_get_config_filename(const char *key){
-  bool is_color_config = OS_config_key_is_color(key);
+static QDir get_dot_radium_dir(int *error){
+  *error = 0;
 
   QString home_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
 
@@ -65,14 +65,48 @@ char *OS_get_config_filename(const char *key){
 
   if(dir.mkpath(".radium")==false){
     RError("Unable to create config directory");
-    return NULL;
+    *error = 1;
   }
 
-  if(dir.cd(".radium")==false){
+  else if(dir.cd(".radium")==false){
     RError("Unable to read config directory\n");
-    return NULL;
+    *error = 1;
   }
 
+  return dir;
+}
+
+static char *get_conf_filename(const char *filename){
+  QString path;
+
+  int error;
+  QDir dir = get_dot_radium_dir(&error);
+  if(error!=0)
+    return NULL;
+
+  QFileInfo info(dir, filename);
+
+  if(info.exists()==false)
+    info = QFileInfo(QDir(OS_get_program_path()), filename);
+
+  return talloc_strdup(info.absoluteFilePath().ascii());
+}
+
+char *OS_get_keybindings_conf_filename(void){
+  return get_conf_filename("keybindings.conf");
+}
+
+char *OS_get_menues_conf_filename(void){
+  return get_conf_filename("menues.conf");
+}
+
+char *OS_get_config_filename(const char *key){
+  bool is_color_config = OS_config_key_is_color(key);
+
+  int error;
+  QDir dir = get_dot_radium_dir(&error);
+  if(error!=0)
+    return NULL;
 
   QFileInfo config_info(dir, is_color_config ? "colors" : "config");
 

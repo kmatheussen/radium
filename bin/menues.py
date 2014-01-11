@@ -182,8 +182,8 @@ class Menu:
         menu.append(menu_item)
         #print str(self.level)+". "+item
 
-    
-menu=Menu(LineParser(os.path.join(sys.g_program_path,"menues.conf")),0)
+import radium as ra
+menu=Menu(LineParser(ra.getMenuesConfPath()), 0)
 
 if __name__=="__main__":
   menu.printit()
