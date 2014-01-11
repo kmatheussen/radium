@@ -509,7 +509,9 @@ const char *GFX_GetLoadFileName(
 
   num_users_of_keyboard++;
 
-  QString filename = QFileDialog::getOpenFileName(editor,seltext);
+  QString filename = QFileDialog::getOpenFileName(editor,seltext, "",
+                                                  "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3)"
+                                                  );
 
   if(filename == ""){
     ret=NULL;
@@ -532,7 +534,11 @@ const char *GFX_GetSaveFileName(
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   num_users_of_keyboard++;
-  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName(editor,seltext).ascii());
+  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName(editor,
+                                                                      seltext,
+                                                                      "",
+                                                                      "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3)"
+                                                                      ).ascii());
   num_users_of_keyboard--;
   return ret==NULL || strlen(ret)==0 
     ? NULL 
