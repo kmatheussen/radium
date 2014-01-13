@@ -62,8 +62,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   struct Timer2 : public QTimer{
     Bottom_bar_widget *bottom_bar_widget;
     void timerEvent(QTimerEvent * e){
-      if (bottom_bar_widget->midi_input_onoff->isChecked() != root->editonoff)
-        bottom_bar_widget->midi_input_onoff->setChecked(root->editonoff);
+      if (bottom_bar_widget->edit_onoff->isChecked() != root->editonoff)
+        bottom_bar_widget->edit_onoff->setChecked(root->editonoff);
     }
   };
 
@@ -200,7 +200,7 @@ public slots:
     Redo();
   }
 
-  void on_midi_input_onoff_toggled(bool val){
+  void on_edit_onoff_toggled(bool val){
     if(val!=root->editonoff)
       switchEditOnOff();
   }

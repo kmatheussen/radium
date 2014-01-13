@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1215</width>
+    <width>1242</width>
     <height>34</height>
    </rect>
   </property>
@@ -2835,7 +2835,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="midi_input_onoff">
+       <widget class="QCheckBox" name="edit_onoff">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -2849,7 +2849,7 @@
          </size>
         </property>
         <property name="text">
-         <string>MIDI input</string>
+         <string>Edit</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -3388,7 +3388,7 @@
          <string/>
         </property>
         <property name="buttonSymbols">
-         <enum>QAbstractSpinBox::PlusMinus</enum>
+         <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
         <property name="minimum">
          <number>1</number>

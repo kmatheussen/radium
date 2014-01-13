@@ -67,6 +67,7 @@ struct Root *LoadRoot(void){
 	struct Root *ret=DC_alloc(sizeof(struct Root));
 	ret->scrollplayonoff=true;
         ret->min_standardvel=MAX_VELOCITY*40/100;
+        ret->editonoff=true;
 
 	GENERAL_LOAD(1,8)
 
