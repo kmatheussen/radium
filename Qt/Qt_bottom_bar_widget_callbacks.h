@@ -150,6 +150,10 @@ public slots:
     SETTINGS_write_int("scrolls_per_second", val);
   }
 
+  void on_sps_editingFinished(){
+    set_editor_focus();
+  }
+
   void on_drunk_velocity_onoff_toggled(bool val){
     drunk_velocity = val;
     update_velocity_sliders();
