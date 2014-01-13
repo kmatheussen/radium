@@ -59,9 +59,18 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     }
   };
 
+  struct Timer2 : public QTimer{
+    Bottom_bar_widget *bottom_bar_widget;
+    void timerEvent(QTimerEvent * e){
+      if (bottom_bar_widget->midi_input_onoff->isChecked() != root->editonoff)
+        bottom_bar_widget->midi_input_onoff->setChecked(root->editonoff);
+    }
+  };
+
  public:
   bool _initing;
   Timer _timer;
+  Timer2 _timer2;
 
  Bottom_bar_widget(QWidget *parent=NULL)
     : QWidget(parent)
@@ -105,6 +114,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     _timer.bottom_bar_widget = this;
     _timer.setInterval(1000);
     _timer.start();
+
+    _timer2.bottom_bar_widget = this;
+    _timer2.setInterval(70);
+    _timer2.start();
   }
 
   void update_velocity_sliders(){
