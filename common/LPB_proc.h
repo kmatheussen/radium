@@ -21,6 +21,11 @@ extern void UpdateWLPBs(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
+
+extern void UpdateAllWLPBs(
+                           struct Tracker_Windows *window
+                           );
+
 extern struct LPBs *SetLPB(
                            struct Blocks *block,
                            Place *place,

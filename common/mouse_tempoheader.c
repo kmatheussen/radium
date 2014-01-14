@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "time_proc.h"
+#include "LPB_proc.h"
 #include "undo_reltempomax_proc.h"
 #include "undo_maintempos_proc.h"
 #include "gfx_statusbar_proc.h"
@@ -56,6 +57,7 @@ void SetMouseActionMainLPB(
 	);
 
 	UpdateAllSTimes();
+        UpdateAllWLPBs(window);
 
         wblock->block->is_dirty = true;
 
