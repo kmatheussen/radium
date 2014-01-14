@@ -124,7 +124,7 @@ void SetLPBOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New Opacity (0-1000) (now %d) >",lpb_opacity);
+	sprintf(temp,"New LPB Opacity (0-1000) (now %d) >",lpb_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -182,7 +182,7 @@ void Window_config(
         vector_t v={0};
         VECTOR_push_back(&v,"Left Slider width");
         VECTOR_push_back(&v,"Bottom Slider height");
-        VECTOR_push_back(&v, "LPB Line color");
+        VECTOR_push_back(&v, "LPB Line color opacity");
         //VECTOR_push_back(&v,"Minimum node-size");
 
 	int sel=GFX_Menu(window,reqtype,"Select operation",&v);
