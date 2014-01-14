@@ -74,6 +74,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
                         struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
                         int x2=wtrack->fxarea.x2;
 
+                        /*
 			GFX_FilledBox(
 				window,
 				0,
@@ -81,6 +82,8 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 				x2,wblock->t.y2,
                                 PAINT_BUFFER
 			);
+                        */
+                        EraseAllLines(window, wblock, wblock->a.x1, x2);
 
 			DrawWBlockSpesific(
 				window,
@@ -146,13 +149,8 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
                         struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
                         int x2=wtrack->fxarea.x2;
 
-			GFX_FilledBox(
-				window,
-				0,
-				wblock->a.x1,wblock->t.y1,
-				x2,wblock->t.y2,
-                                PAINT_BUFFER
-			);
+                        EraseAllLines(window, wblock, wblock->a.x1, x2);
+
 			DrawWBlockSpesific(
 				window,
 				wblock,

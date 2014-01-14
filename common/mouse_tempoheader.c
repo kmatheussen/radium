@@ -57,7 +57,7 @@ void SetMouseActionMainLPB(
 
 	UpdateAllSTimes();
 
-	WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+        wblock->block->is_dirty = true;
 
 	GFX_DrawStatusBar(window,wblock);
 }

@@ -105,6 +105,8 @@ int MoveWTrackBorder_Mouse(
                         wblock->a.x2,wblock->t.y1,
                         PAINT_BUFFER);
 	  GFX_FilledBox(window,0,wtrack2->fxarea.x2+3,wblock->a.y1,wblock->a.x2,wblock->t.y2,PAINT_BUFFER);
+          EraseAllLines(window,wblock,
+                        wtrack2->x, wtrack2->x2);
 	}
 
 	UpdateBottomSlider(window);

@@ -232,6 +232,16 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	PixMap_reset(window);
 
 #if 1
+	struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+        int x2=wtrack->fxarea.x2;
+        EraseAllLines(window, window->wblock, 0, x2);
+
+	GFX_FilledBox(window,0,
+                      x2,0,
+                      window->width-1,window->height-1,
+                      PAINT_BUFFER);
+
+#else
         // TODO: Decide in common/ if using color 0 or 15. (not in GFX_FilledBox)
 
 	GFX_FilledBox(window,0,0,0,window->width-1,window->wblock->t.y1,PAINT_BUFFER);

@@ -114,6 +114,35 @@ void SelectBottomSliderHeight(
         SETTINGS_write_int("bottom_slider_height",newwidth);
 }
 
+
+extern int lpb_opacity;
+
+void SetLPBOpacity(
+	struct Tracker_Windows *window,
+	ReqType reqtype
+){
+	char temp[1000];
+	int new_opacity;
+
+	sprintf(temp,"New Opacity (0-1000) (now %d) >",lpb_opacity);
+
+        new_opacity = GFX_GetInteger(
+		window,
+		reqtype,
+		temp,
+		0,
+		1000
+	);
+	if(new_opacity<0 || new_opacity>1000)
+          return;
+
+        lpb_opacity = new_opacity;
+
+        window->wblock->block->is_dirty = true;
+
+        SETTINGS_write_int("lpb_opacity", new_opacity);
+}
+
 #if 0
 void SelectMinNodeSize(
 	struct Tracker_Windows *window,
@@ -153,6 +182,7 @@ void Window_config(
         vector_t v={0};
         VECTOR_push_back(&v,"Left Slider width");
         VECTOR_push_back(&v,"Bottom Slider height");
+        VECTOR_push_back(&v, "LPB Line color");
         //VECTOR_push_back(&v,"Minimum node-size");
 
 	int sel=GFX_Menu(window,reqtype,"Select operation",&v);
@@ -164,12 +194,15 @@ void Window_config(
 			SelectEditFont(window);
 			break;
 #endif
-		case 1:
+		case 0:
 			SelectLeftSliderWidth(window,reqtype);
 			break;
-		case 2:
+		case 1:
 			SelectBottomSliderHeight(window,reqtype);
 			break;
+                case 2:
+                        SetLPBOpacity(window, reqtype);
+                        break;
 #if 0
 		case 4:
 			SelectMinNodeSize(window,reqtype);

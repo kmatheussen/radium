@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "list_proc.h"
 #include "pixmap_proc.h"
 #include "wblocks_proc.h"
 #include "gfx_wblocks_proc.h"
@@ -79,6 +80,16 @@ void Scroll_makePixMapLines(
 		startrealline-wblock->top_realline,
 		endrealline-wblock->top_realline
 	);
+
+        {
+          struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+          int x2=wtrack->fxarea.x2;
+          EraseLines(
+                     window,wblock,
+                     wblock->a.x1, x2,
+                     startrealline, endrealline+1
+                     );
+        }
 
 	DrawWBlockSpesific(
 		window,

@@ -397,6 +397,11 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	  DrawUpAllWTracks(window,wblock,NULL);
 	  UpdateLeftSlider(window);
 
+          EraseAllLines(window,wblock,
+                        wblock->linenumarea.x,
+                        wblock->temponodearea.x2
+                        );
+          /*
 	  GFX_FilledBox(
                         window,0,
                         wblock->linenumarea.x,
@@ -405,6 +410,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
                         wblock->t.y2,
                         PAINT_BUFFER
                         );
+          */
 
 	  DrawWBlockSpesific(
 			     window,

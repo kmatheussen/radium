@@ -361,24 +361,22 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  if(where==PAINT_BUFFER && colornum==0){
-    if(y>=tvisual->wblock->t.y1){
-      colornum = 15;
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  if(g_use_custom_color==true) {
+    qcolor = get_note_color(editor,qcolor);
+    g_use_custom_color = false;
+  }
 
-      QColor qcolor = get_qcolor(tvisual,colornum);
+
+  if(where==PAINT_BUFFER && (colornum==15 || colornum==12)){
+    if(y>=tvisual->wblock->t.y1){
+      //colornum = 15;
 
       QLinearGradient gradient(0,0,QApplication::desktop()->width(), QApplication::desktop()->height()); //editor->get_editor_width(),editor->get_editor_height());
       gradient.setStart(0,0);
       gradient.setFinalStop(QApplication::desktop()->width(),0);
       gradient.setColorAt(0,qcolor.darker(100));
       gradient.setColorAt(1,qcolor.darker(112));
-#if 0
-      gradient.setColorAt(0,qcolor.darker(90));
-      gradient.setColorAt(0.5,qcolor.darker(112));
-      //gradient.setColorAt(0.5,mix_colors(qcolor,editor->colors[7],0.9));
-      gradient.setColorAt(1,qcolor.darker(90));
-      //gradient.setColorAt(1,editor->colors[7]);
-#endif 
       painter->setPen(Qt::NoPen);
       painter->setBrush(gradient);
       
@@ -387,27 +385,12 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
       painter->setBrush(QBrush());
       return;
     }
-  }
-#if 0
-    else{
-      struct WBlocks *wblock = tvisual->wblock;
-      struct WTracks *wtrack = wblock->wtracks;
-      while(wtrack!=NULL){
-        if(x < wtrack->x2)
-          break;
-        wtrack = NextWTrack(wtrack);
-      }
-      if(wtrack==NULL)
-        colornum=15;
-    }
-#endif
 
-  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
-  if(g_use_custom_color==true)
-    qcolor = get_note_color(editor,qcolor);
-  //qcolor.setAlpha(100);
-  g_use_custom_color = false;
-  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+  } else {
+
+    painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+
+  }
 }
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){

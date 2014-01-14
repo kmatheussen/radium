@@ -68,6 +68,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "gfx_shrink_proc.h"
 #include "list_proc.h"
+#include "gfx_wblocks_proc.h"
 
 #include "pixmap_proc.h"
 
@@ -202,13 +203,18 @@ void PixMap_makeNewDefs(
     }
   }
 
-  struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
-  int x2=wtrack->fxarea.x2;
-  
+  //struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+  //int x2=wtrack->fxarea.x2;
+
   for(lokke=0;lokke<wblock->num_visiblelines;lokke++){
     if(window->pixmapdefs_calc[lokke]==0){
       
       window->pixmapdefs[curr]=lokke;
+
+
+      /*
+          struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
+          int x2=wtrack->fxarea.x2;
 
       GFX_FilledBox(
 		      window,
@@ -217,6 +223,8 @@ void PixMap_makeNewDefs(
 		      x2, PixMap_getY2(window,curr),
                       PAINT_BUFFER
 		      );
+      */
+
 //      printf("clear: curr: %d, pixdef: %d\n",curr,lokke);
 
       if(curr==end_visible) return;

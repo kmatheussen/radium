@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
+#include "gfx_wblocks_proc.h"
 #include "gfx_wtext_proc.h"
 #include "list_proc.h"
 #include "common_proc.h"
@@ -70,7 +71,6 @@ void ClearTrack(
 	int start_realline,
 	int end_realline
 ){
-        int lokke;
 
         if(window->must_redraw==true)
           return;
@@ -79,9 +79,16 @@ void ClearTrack(
 	  return;
 	}
 
+        EraseLines(window, wblock, 
+                   R_MAX(wtrack->notearea.x,wblock->temponodearea.x2+2),
+                   R_MIN(wtrack->fxarea.x2,wblock->a.x2),
+                   start_realline, end_realline+1);
+#if 0
+        int lokke;
+
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
           int colornum = Col[0];
-
+          
 #if 0
           if (wtrack->track->patch!=NULL)
             colornum = wtrack->track->patch->colornum;
@@ -98,6 +105,7 @@ void ClearTrack(
 			  );
 	}
 	//	SetCursorPos(window);
+#endif
 }
 
 void WTRACK_DrawTrackBorders(

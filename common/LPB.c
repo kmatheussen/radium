@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "LPB_proc.h"
 
 
-
+extern struct Root *root;
 
 void UpdateWLPBs(
 	struct Tracker_Windows *window,
@@ -63,6 +63,32 @@ void UpdateWLPBs(
 		wblock->wlpbs[realline].LPB=lpb;
 		lpb=NextLPB(lpb);
 	}
+
+        // fill in is_beat
+        int curr_lpb = root->lpb;
+        int counter = 0;
+        int last_line = 0;
+        for(realline=0;realline<wblock->num_reallines;realline++){
+          struct WLPBs *wlpb = &wblock->wlpbs[realline];
+
+          int line = wblock->reallines[realline]->Tline;
+          if(line>last_line){
+            last_line = line;
+            counter++;
+            if(counter==curr_lpb){
+              counter = 0;
+            }
+          }
+
+          if(wlpb->lpb != 0) {
+            curr_lpb = wlpb->lpb;
+            counter = 0;
+            wlpb->is_beat = true;
+          }
+
+          if(counter==0)
+            wlpb->is_beat = true;
+        }
 }
 
 
@@ -102,9 +128,11 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 	SetLPB(wblock->block,place,newlpb);
 
 	UpdateWLPBs(window,wblock);
-	DrawLPBs(window,wblock,curr_realline,curr_realline);
+	//DrawLPBs(window,wblock,curr_realline,curr_realline);
 
-	WBLOCK_DrawTempoColor(window,wblock,curr_realline,wblock->num_reallines);
+        wblock->block->is_dirty = true;
+
+	//WBLOCK_DrawTempoColor(window,wblock,curr_realline,wblock->num_reallines);
 
 	GFX_DrawStatusBar(window,wblock);
 }
@@ -129,11 +157,9 @@ void RemoveLPBsCurrPos(struct Tracker_Windows *window){
 	RemoveLPBs(wblock->block,&p1,&p2);
 
 	UpdateWLPBs(window,wblock);
-	DrawUpLPBs(window,wblock);
-
 	UpdateSTimes(wblock->block);
 
-	WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+        wblock->block->is_dirty = true;
 
 	GFX_DrawStatusBar(window,wblock);
 }

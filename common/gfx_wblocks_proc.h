@@ -15,6 +15,26 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+extern void EraseLine(
+                      struct Tracker_Windows *window,
+                      struct WBlocks *wblock,
+                      int x1, int x2,
+                      int realline
+                      );
+
+extern void EraseLines(
+                       struct Tracker_Windows *window,
+                       struct WBlocks *wblock,
+                       int x1, int x2,
+                       int start_realline,
+                       int end_realline
+                       );
+
+extern void EraseAllLines(
+                          struct Tracker_Windows *window,
+                          struct WBlocks *wblock,
+                          int x1, int x2
+                          );
 
 extern void DrawWBlockSpesific(
 	struct Tracker_Windows *window,

@@ -37,10 +37,55 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "nodeboxes_proc.h"
 #include "nodelines_proc.h"
+#include "settings_proc.h"
 
 #include "gfx_wblocks_proc.h"
 
+int lpb_opacity = -1;
 
+void EraseLine(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+        int x1, int x2,
+	int realline
+){
+
+  if(lpb_opacity == -1)
+    lpb_opacity = SETTINGS_read_int("lpb_opacity", 900);
+
+  if( (wblock->wlpbs[realline].is_beat))
+    GFX_SetMixColor(window, 15, 1, lpb_opacity);
+
+  GFX_FilledBox(
+                window,
+                15,
+                x1, GetReallineY1Pos(window, wblock, realline),
+                x2, GetReallineY2Pos(window, wblock, realline),
+                PAINT_BUFFER
+                );
+
+}
+
+void EraseLines(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+        int x1, int x2,
+	int start_realline,
+        int end_realline
+){
+  int realline;
+  for(realline = start_realline ; realline<end_realline ; realline++)
+    EraseLine(window, wblock, x1, x2, realline);
+}
+
+void EraseAllLines(
+                   struct Tracker_Windows *window,
+                   struct WBlocks *wblock,
+                   int x1, int x2
+                   )
+{
+  EraseLines(window, wblock, x1, x2, wblock->top_realline, wblock->bot_realline+1);
+}
 
 void DrawUpLineNums(
 	struct Tracker_Windows *window,
@@ -373,6 +418,10 @@ void DrawUpWTempoNodes(
 	struct WBlocks *wblock
 ){
 
+  EraseAllLines(window, wblock,
+		wblock->temponodearea.x,
+		wblock->temponodearea.x2);
+  /*
   GFX_FilledBox(
 		window,0,
 		wblock->temponodearea.x,
@@ -381,6 +430,7 @@ void DrawUpWTempoNodes(
 		wblock->t.y2,
                 PAINT_BUFFER
                 );
+  */
 
   DrawWTempoNodes(window,wblock,wblock->top_realline,wblock->bot_realline);
 }
@@ -390,6 +440,10 @@ void DrawUpTempos(
 	struct WBlocks *wblock
 ){
 
+  EraseAllLines(window, wblock,
+		wblock->tempoarea.x,
+		wblock->tempoarea.x2);
+  /*
   GFX_FilledBox(
 		window,0,
 		wblock->tempoarea.x,
@@ -398,7 +452,7 @@ void DrawUpTempos(
 		wblock->t.y2,
                 PAINT_BUFFER
                 );
-
+  */
   DrawTempos(window,wblock,wblock->top_realline,wblock->bot_realline);
 }
 
@@ -407,6 +461,10 @@ void DrawUpLPBs(
 	struct WBlocks *wblock
 ){
 
+  EraseAllLines(window, wblock,
+		wblock->lpbarea.x,
+		wblock->lpbarea.x2);
+  /*
   GFX_FilledBox(
 		window,0,
 		wblock->lpbarea.x,
@@ -415,6 +473,7 @@ void DrawUpLPBs(
 		wblock->t.y2,
                 PAINT_BUFFER
                 );
+  */
 
   DrawLPBs(window,wblock,wblock->top_realline,wblock->bot_realline);
 }
@@ -493,14 +552,6 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	DrawBlockRelTempo(window,wblock);
 }
-
-
-
-
-
-
-
-
 
 
 

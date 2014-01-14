@@ -51,7 +51,6 @@ int MoveTempoNode_Mouse(
 	Place place,*prev_vel=NULL,*next_vel=NULL;
 	int realline;
 	int lx,dx;
-	int lokke;
 
 	int start_realline,end_realline;
 
@@ -118,6 +117,14 @@ int MoveTempoNode_Mouse(
 
         //	printf("start: %d,end: %d\n",start_realline,end_realline);
 	
+        EraseLines(window, wblock,
+                   wblock->temponodearea.x, wblock->temponodearea.x2,
+                   start_realline, end_realline+1
+                   );
+
+        /*
+	int lokke;
+
 	for(lokke=start_realline;lokke<=end_realline;lokke++){
 	  GFX_FilledBox(
                         window,0,
@@ -128,6 +135,7 @@ int MoveTempoNode_Mouse(
                         PAINT_BUFFER
                         );
 	}
+        */
 
 	DrawWTempoNodes(window,wblock,start_realline,end_realline);
 

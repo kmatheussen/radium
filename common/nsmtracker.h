@@ -623,7 +623,9 @@ struct LPBs{
 struct WLPBs{
 	int lpb;
 	int type;					/* 0=normal, 1=below positioned, 2=mul. */
-   
+
+	bool is_beat;
+
 	struct LPBs *LPB;			/* Only referenced. */
 };
 #define LPB_NORMAL 0

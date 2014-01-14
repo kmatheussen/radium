@@ -38,13 +38,19 @@ extern bool doquit;
 extern struct Root *root;
 extern QApplication *qapplication;
 
-
+namespace{
+struct MyQMenuBar{
+  void keyPressEvent(QKeyEvent *qkeyevent){
+    printf("hepp\n");
+  }
+};
 
 struct Menues{
   struct Menues *up;
   Q3PopupMenu *menu;
   QMenuBar *base;
 };
+}
 
 static struct Menues *current_menu = NULL;
 
@@ -66,10 +72,8 @@ public:
         current_menu->menu->connectItem(id, this, SLOT(clicked()));
       }
     }else{
-      if(current_menu->base!=NULL){
-        current_menu->base->insertItem(name, this, SLOT(clicked()));
-      }else{
-        int id = current_menu->menu->insertItem(name, this, SLOT(clicked()));
+      int id = current_menu->menu->insertItem(name, this, SLOT(clicked()));
+      if(current_menu->base==NULL){
         if(checkable==true)
           current_menu->menu->setItemChecked(id, checkval);
       }
