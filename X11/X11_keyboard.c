@@ -202,7 +202,6 @@ extern struct TEvent tevent;
 
 static void setKeySwitch(unsigned int state){
   int lokke;
-  const int numswitches=9;
 
   static int x11switch[]={EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPS,
                           EVENT_EXTRA_L,EVENT_ALT_L,EVENT_ALT_R,
@@ -215,6 +214,8 @@ static void setKeySwitch(unsigned int state){
 			     EVENT_RIGHTEXTRA1,EVENT_RIGHTCTRL,EVENT_RIGHTSHIFT,
                              XK_ISO_Level3_Shift
                             };
+
+  int numswitches = sizeof(x11switch)/sizeof(int);
 
   tevent.keyswitch=0;
   for(lokke=0;lokke<numswitches;lokke++){
