@@ -66,7 +66,7 @@ void EraseLine(
                 );
 
   if(line_opacity == -1)
-    line_opacity = SETTINGS_read_int("line_opacity", 950);
+    line_opacity = SETTINGS_read_int("line_opacity", 800);
 
   if(line_opacity != 1000) {
     GFX_SetMixColor(window, 15, 1, line_opacity);
