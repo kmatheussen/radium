@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wblocks_proc.h"
 
 int lpb_opacity = -1;
+int line_opacity = -1;
 
 void EraseLine(
 	struct Tracker_Windows *window,
@@ -64,6 +65,19 @@ void EraseLine(
                 PAINT_BUFFER
                 );
 
+  if(line_opacity == -1)
+    line_opacity = SETTINGS_read_int("line_opacity", 950);
+
+  if(line_opacity != 1000) {
+    GFX_SetMixColor(window, 15, 1, line_opacity);
+
+    GFX_Line(
+             window,
+             2,
+             x1, GetReallineY1Pos(window, wblock, realline),
+             x2, GetReallineY1Pos(window, wblock, realline),
+             PAINT_BUFFER);
+  }
 }
 
 void EraseLines(
