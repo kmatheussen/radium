@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC hash_t *HASH_create(int approx_size);
 
+extern LANGSPEC const char *HASH_get_key(hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_has_key(hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_has_key_at(hash_t *hash, const char *key, int i);
 

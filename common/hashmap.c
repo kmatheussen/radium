@@ -221,7 +221,7 @@ void HASH_put_string_at(hash_t *hash, const char *key, int i, const char *val){
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
 }
-void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
+ void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
   put_int(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
@@ -252,6 +252,15 @@ static hash_element_t *HASH_get_no_complaining(hash_t *hash, const char *key, in
   //fprintf(stderr,"end searching\n");
 
   return element;
+}
+
+// Returns the stored pointed, if it needs to be reused.
+const char *HASH_get_key(hash_t *hash, const char *key){
+  hash_element_t *element = HASH_get_no_complaining(hash,key,0);
+  if(element==NULL)
+    return NULL;
+  else
+    return element->key;
 }
 
 bool HASH_has_key_at(hash_t *hash, const char *key, int i){

@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/hashmap_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "X11_keyboard_proc.h"
@@ -82,6 +83,8 @@ extern PlayerClass *pc;
 
 static int keytable_size = 0;
 static int *keytable = NULL;
+static hash_t *keyupdowns = NULL;
+
 
 static void add_key(int X11_val, int EVENT_val){
   if (X11_val >= keytable_size) {
@@ -176,11 +179,67 @@ static void init_keytable(void) {
 # undef S
 }
 
-void X11_init_keyboard(void) {
-  init_keytable();
+void X11_ResetKeysUpDowns(void){
+  keyupdowns = HASH_create(keytable_size+100);
 }
 
-static int keyupdowns[EVENT_DASMAX+1]={0};
+static const char *get_keyupdown_key(int keynum){
+  char raw_key[128];
+  sprintf(raw_key,"%d",keynum);
+  const char *key = HASH_get_key(keyupdowns, raw_key);
+
+  if(key!=NULL)
+    return key;
+  else
+    return (const char*)talloc_format("%d",keynum);
+}
+
+static void set_keydown(int keynum){
+  const char *key = get_keyupdown_key(keynum);
+  HASH_put_int(keyupdowns,key,1);
+}
+
+static void set_keyup(int keynum){
+  const char *key = get_keyupdown_key(keynum);
+  HASH_put_int(keyupdowns,key,0);
+}
+
+static bool get_keyupdown(keynum){
+  char key[128];
+  sprintf(key,"%d",keynum);
+  return HASH_has_key(keyupdowns,key) && HASH_get_int(keyupdowns,key)==1;
+}
+
+void X11_init_keyboard(void) {
+  init_keytable();
+  X11_ResetKeysUpDowns();
+}
+
+static int get_keynum(KeySym sym){
+  // Some of the sym values are very large. Can not add them since the keytable would be very large.
+  switch(sym){
+  case XK_Menu:
+    return EVENT_MENU;
+  case XF86XK_AudioLowerVolume:
+    return EVENT_VOLUME_DOWN;
+  case XF86XK_AudioRaiseVolume:
+    return EVENT_VOLUME_UP;
+  case XF86XK_AudioMute:
+    return EVENT_MUTE;
+  case XF86XK_AudioPlay:
+    return EVENT_PLAY;
+  case XF86XK_AudioStop:
+    return EVENT_STOP;
+  case XK_ISO_Level3_Shift:
+    return EVENT_ALT_R;
+  }
+
+  if(sym > keytable_size) {
+    return -1;
+  } else
+    return keytable[sym];
+}
+
 
 
 extern struct TEvent tevent;
@@ -205,21 +264,20 @@ static void setKeySwitch(unsigned int state){
 
   static int x11switch[]={EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPS,
                           EVENT_EXTRA_L,EVENT_ALT_L,EVENT_ALT_R,
-                          EVENT_EXTRA_R, EVENT_CTRL_R, EVENT_SHIFT_R,
-                          EVENT_ALT_R
+                          EVENT_EXTRA_R, EVENT_CTRL_R, EVENT_SHIFT_R
                          };
 
   static int radiumswitch[]={EVENT_LEFTCTRL,EVENT_LEFTSHIFT,EVENT_CAPSLOCK,
 			     EVENT_LEFTEXTRA1,EVENT_LEFTALT,EVENT_RIGHTALT,
-			     EVENT_RIGHTEXTRA1,EVENT_RIGHTCTRL,EVENT_RIGHTSHIFT,
-                             XK_ISO_Level3_Shift
+			     EVENT_RIGHTEXTRA1,EVENT_RIGHTCTRL,EVENT_RIGHTSHIFT
                             };
 
   int numswitches = sizeof(x11switch)/sizeof(int);
 
   tevent.keyswitch=0;
   for(lokke=0;lokke<numswitches;lokke++){
-    if(keyupdowns[x11switch[lokke]]==1){
+    int keynum = x11switch[lokke];
+    if(get_keyupdown(keynum)==true){
       tevent.keyswitch |= radiumswitch[lokke];
     }
   }
@@ -250,15 +308,15 @@ static void setKeyUpDowns(XEvent *event){
   XKeyEvent *key_event = (XKeyEvent *)event;
 
   KeySym sym = XkbKeycodeToKeysym(key_event->display, key_event->keycode, 0, 0);
-  if(sym > keytable_size)
+
+  int keynum = get_keynum(sym); //keytable[sym];
+  if(keynum==-1)
     return;
 
-  int keynum = keytable[sym];
-
   if(event->type==KeyPress)
-    keyupdowns[keynum]=1;
+    set_keydown(keynum);
   else
-    keyupdowns[keynum]=0;
+    set_keyup(keynum);
 }
 
 static int g_last_pressed_key = -1;
@@ -283,47 +341,16 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   return EventReciever(&tevent,window);
 }
 
-void X11_ResetKeysUpDowns(void){
-  memset(keyupdowns,0,sizeof(int)*EVENT_DASMAX);
-}
-
 int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
   KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int n;
+  int keynum = get_keynum(sym);
 
-  // Some of the sym values are very large. Can not add them since the keytable would be very large.
-  switch(sym){
-  case XK_Menu:
-    n = EVENT_MENU;
-    break;
-  case XF86XK_AudioLowerVolume:
-    n = EVENT_VOLUME_DOWN;
-    break;
-  case XF86XK_AudioRaiseVolume:
-    n = EVENT_VOLUME_UP;
-    break;
-  case XF86XK_AudioMute:
-    n = EVENT_MUTE;
-    break;
-  case XF86XK_AudioPlay:
-    n = EVENT_PLAY;
-    break;
-  case XF86XK_AudioStop:
-    n = EVENT_STOP;
-    break;
-  case XK_ISO_Level3_Shift:
-    n = EVENT_ALT_R;
-    break;
-  default:
-    if(sym > keytable_size) {
-      return 0;
-    } else
-      n = keytable[sym];
-  }
-
-  return X11Event_KeyPress(n,event->state,window);
+  if (keynum==-1)
+    return 0;
+  else
+    return X11Event_KeyPress(keynum,event->state,window);
 }
 
 
