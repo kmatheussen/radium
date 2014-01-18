@@ -87,6 +87,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     velocity_slider->setValue(8000);
     update_velocity_sliders();
 
+    drunk_velocity_onoff->setChecked(drunk_velocity);
+
     if(scrolls_per_second==-1)
       scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
 
@@ -121,10 +123,13 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   }
 
   void update_velocity_sliders(){
-    if(drunk_velocity==true)
+    if(drunk_velocity==true){
       SLIDERPAINTER_set_string(velocity_slider->_painter, QString("Max Vel: ") + QString::number(velocity_slider->value()*100/10000) + "%");
-    else
+      min_velocity_slider->setEnabled(true);
+    }else{
       SLIDERPAINTER_set_string(velocity_slider->_painter, QString("Vel: ") + QString::number(velocity_slider->value()*100/10000) + "%");
+      min_velocity_slider->setEnabled(false);
+    }
 
     SLIDERPAINTER_set_string(min_velocity_slider->_painter, QString("Min. Vel: ") + QString::number(min_velocity_slider->value()*100/10000) + "%");
 
@@ -170,11 +175,6 @@ public slots:
   void on_drunk_velocity_onoff_toggled(bool val){
     drunk_velocity = val;
     update_velocity_sliders();
-    if(drunk_velocity==true)
-      min_velocity_slider->setEnabled(true);
-    else
-      min_velocity_slider->setEnabled(false);
-
     velocity_slider->update();
   }
 

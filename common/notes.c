@@ -184,7 +184,7 @@ struct Notes *InsertNote(
         return note;
 }
 
-bool drunk_velocity=true;
+bool drunk_velocity=false;
 static int64_t last_velocity = MAX_VELOCITY / 2;
 
 static int get_velocity(struct Patch *patch){
