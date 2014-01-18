@@ -245,15 +245,15 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
           reqtype=GFX_OpenReq(window,70,(int)(num_patches+50),"Select Patch");
 
         vector_t v={0};
-        VECTOR_FOR_EACH(struct Patch *patch,patches){
-          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
-        }END_VECTOR_FOR_EACH;
-
         VECTOR_push_back(&v,"<New MIDI Instrument>");
         VECTOR_push_back(&v,"<New Sample Player>");
         VECTOR_push_back(&v,"<New FluidSynth>");
         VECTOR_push_back(&v,"<New Pd Instrument>");
         VECTOR_push_back(&v,"<New Audio Instrument>");
+
+        VECTOR_FOR_EACH(struct Patch *patch,patches){
+          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
+        }END_VECTOR_FOR_EACH;
 
         {
           struct Patch *patch = NULL;
@@ -266,29 +266,29 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
               Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
               
-              if(selection<num_patches){
-                patch=patches->elements[selection];
+              if(selection>=5){
+                patch=patches->elements[selection-5];
 
-              }else if(selection==num_patches){
+              }else if(selection==0){
                 patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
                 GFX_PP_Update(patch);
 
-              }else if(selection==num_patches+1){
+              }else if(selection==1){
                 SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
                 if(plugin!=NULL)
                   patch = plugin->patch;
             
-              }else if(selection==num_patches+2){
+              }else if(selection==2){
                 SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
                 if(plugin!=NULL)
                   patch = plugin->patch;
             
-              }else if(selection==num_patches+3){
+              }else if(selection==3){
                 SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","Simple Midi Synth"),-100000,-100000,true,NULL);
                 if(plugin!=NULL)
                   patch = plugin->patch;
 
-              }else if(selection==num_patches+4){
+              }else if(selection==4){
                 SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
                 if(plugin!=NULL)
                   patch = plugin->patch;
