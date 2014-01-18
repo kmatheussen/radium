@@ -295,7 +295,7 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
       }
 
 
-      if (wblock->mouse_track == wtrack->l.num) {
+      if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
           ///printf("notenum: %f\n",notenum);
 
         int cents = R_BOUNDARIES(0,(notenum - (int)notenum)*100,99);
