@@ -48,11 +48,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define CROSSFADE_BUFFER_LENGTH 128
 #define MAX_CROSSFADE_LENGTH (48000*5) // in samples.
 
-#define DEFAULT_A 20
-#define DEFAULT_H 5
-#define DEFAULT_D 20
-#define DEFAULT_S 0.5
-#define DEFAULT_R 20
+//#define DEFAULT_A 20
+//#define DEFAULT_H 5
+//#define DEFAULT_D 20
+//#define DEFAULT_S 0.5
+//#define DEFAULT_R 20
+
+#define DEFAULT_A 0
+#define DEFAULT_H 0
+#define DEFAULT_D 0
+#define DEFAULT_S 1.0
+#define DEFAULT_R 0
 
 #define MAX_A 1000
 #define MAX_H 40
