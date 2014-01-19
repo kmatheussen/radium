@@ -126,8 +126,12 @@ keysub=(
 "PLAY",
 "STOP",
 
-"SPACE"
+"CALCULATOR",
+"MAIL",
+"HOMEPAGE",
 
+
+"SPACE"
 )
 
 

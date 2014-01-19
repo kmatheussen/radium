@@ -270,6 +270,12 @@ static int get_keynum(KeySym sym){
     return EVENT_PLAY;
   case XF86XK_AudioStop:
     return EVENT_STOP;
+  case XF86XK_Calculator:
+    return EVENT_CALCULATOR;
+  case XF86XK_Mail:
+    return EVENT_MAIL;
+  case XF86XK_HomePage:
+    return EVENT_HOMEPAGE;
   }
 
   if(sym > keytable_size) {
@@ -346,6 +352,7 @@ static void setKeyUpDowns(XEvent *event){
   XKeyEvent *key_event = (XKeyEvent *)event;
 
   KeySym sym = XkbKeycodeToKeysym(key_event->display, key_event->keycode, 0, 0);
+  //printf("sym: %x. keycode: %x\n",(int)sym, (int)key_event->keycode);
 
   int keynum = get_keynum(sym); //keytable[sym];
   if(keynum==-1)
