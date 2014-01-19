@@ -134,7 +134,7 @@ static void init_keytable(void) {
 
   S(Tab, TAB);
   S(q,Q);S(w,W);S(e,E);S(r,R);S(t,T);S(y,Y);S(u,U);S(i,I);S(o,O);S(p,P);
-  S(quotedbl,PR1);S(numbersign,PR2);
+  S(bracketleft,PR1);S(bracketright,PR2);
   S(Return, RETURN);
 
 
