@@ -108,13 +108,10 @@ void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
 void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
   QFont font;
 
-  //RWarning("GFX_ResetFontSize not implemented\n");
-  SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
   {
     const char *fontstring = SETTINGS_read_string("font",NULL);
     font.fromString(fontstring);
   }
-  SETTINGS_unset_custom_configfile();
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font.setPointSize(font.pointSize());
