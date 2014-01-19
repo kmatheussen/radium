@@ -112,25 +112,69 @@ static void init_keytable(void) {
 # define S(X11_VAL, EVENT_VAL) add_key(XK_##X11_VAL, EVENT_##EVENT_VAL)
 # define T(VAL) add_key(XK_##VAL, EVENT_##VAL)
 
+  // row 1
+  /////////////////////
   S(Escape,ESC);
   T(F1);T(F2);T(F3);T(F4);T(F5);T(F6);T(F7);T(F8);T(F9);T(F10);T(F11);T(F12);
 
-  // 1L1
+
+
+  // row 2
+  /////////////////////
+
+  S(grave, 1L1);
   T(1);T(2);T(3);T(4);T(5);T(6);T(7);T(8);T(9);T(0);
-  // 0R1, 0R2, 0R3
+  S(minus, 0R1);S(equal, 0R2); // Missing 0R3!
   S(BackSpace, BACKSPACE);
+
+
+
+  // row 3
+  /////////////////////
 
   S(Tab, TAB);
   S(q,Q);S(w,W);S(e,E);S(r,R);S(t,T);S(y,Y);S(u,U);S(i,I);S(o,O);S(p,P);
-  // PR1 PR2
+  S(quotedbl,PR1);S(numbersign,PR2);
   S(Return, RETURN);
 
+
+
+  // row 4
+  /////////////////////
+  S(ISO_Next_Group, CAPS);
   S(a,A);S(s,S);S(d,D);S(f,F);S(g,G);S(h,H);S(j,J);S(k,K);S(l,L);
-  // LR1, LR2, LR3
+  S(semicolon,LR1);S(apostrophe,LR2);S(backslash,LR3);
+
+
+  // row 5
+  /////////////////////
 
   // ZL1
+  S(less,ZL1);
   S(z,Z);S(x,X);S(c,C);S(v,V);S(b,B);S(n,N);S(m,M);
-  // MR1, MR2, MR3
+  S(comma,MR1);S(period,MR2);S(slash,MR3);
+
+  
+
+  // Row 6
+  /////////////////////
+
+
+  S(space, SPACE);
+
+  S(Control_L, CTRL_L);
+  S(Control_R, CTRL_R);
+  S(Shift_L, SHIFT_L);
+  S(Shift_R, SHIFT_R);
+  S(Alt_L, ALT_L);
+  S(Alt_R, ALT_R); S(ISO_Level3_Shift, ALT_R);
+  S(Super_L, EXTRA_L);
+  S(Super_R, EXTRA_R);
+
+
+
+  // Between keyboard and keypad
+  ///////////////////////////////
 
   S(Insert, INSERT);
   S(Home, HOME);
@@ -145,7 +189,13 @@ static void init_keytable(void) {
   S(Right, RIGHTARROW);
   S(Left, LEFTARROW);
 
-  // KP_E1, KP_E2
+
+
+  // Keypad
+  /////////////////////
+
+
+  // KP_E1, KP_E2 (??)
   S(KP_Divide, KP_DIV);
   S(KP_Multiply, KP_MUL);
   S(KP_Subtract, KP_SUB);
@@ -163,17 +213,7 @@ static void init_keytable(void) {
   S(KP_Up, KP_8);
   S(KP_Prior, KP_9);
 
-  S(space, SPACE);
 
-  S(Control_L, CTRL_L);
-  S(Control_R, CTRL_R);
-  // Caps-lock
-  S(Shift_L, SHIFT_L);
-  S(Shift_R, SHIFT_R);
-  S(Alt_L, ALT_L);
-  S(Alt_R, ALT_R);
-  S(Super_L, EXTRA_L);
-  S(Super_R, EXTRA_R);
 
 # undef T
 # undef S
@@ -230,8 +270,6 @@ static int get_keynum(KeySym sym){
     return EVENT_PLAY;
   case XF86XK_AudioStop:
     return EVENT_STOP;
-  case XK_ISO_Level3_Shift:
-    return EVENT_ALT_R;
   }
 
   if(sym > keytable_size) {
