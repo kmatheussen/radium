@@ -18,6 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __linux__
 
+#include "Python.h"
+
+
 #include "X11.h"
 
 #include "../common/nsmtracker.h"
@@ -85,6 +88,27 @@ static int keytable_size = 0;
 static int *keytable = NULL;
 static hash_t *keyupdowns = NULL;
 
+static KeySym keysyms[256];
+
+static void init_keysyms(Display *display){
+  static bool inited = false;
+
+  if(inited==true)
+    return;
+
+  PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+  {
+    PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
+
+    int i;
+    for(i=0;i<256;i++)
+      keysyms[i] = XkbKeycodeToKeysym(display, i, 0, 0);
+  }
+  PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+
+
+  inited = true;
+}
 
 static void add_key(int X11_val, int EVENT_val){
   if (X11_val >= keytable_size) {
@@ -255,9 +279,8 @@ void X11_init_keyboard(void) {
   X11_ResetKeysUpDowns();
 }
 
-static int get_keynum(XEvent *event){
-  XKeyEvent *key_event = (XKeyEvent *)event;
-  KeySym sym = XkbKeycodeToKeysym(key_event->display, key_event->keycode, 0, 0);
+static int get_keynum(XKeyEvent *key_event){
+  KeySym sym = keysyms[key_event->keycode];
 
   // Some of the sym values are very large. Can not add them since the keytable would be very large.
   switch(sym){
@@ -348,10 +371,7 @@ static void fixBrokenKeySwitch(unsigned int state){
 }
 */
 
-static void setKeyUpDowns(XEvent *event){
-  if(event->type!=KeyPress && event->type!=KeyRelease)
-    return;
-
+static void setKeyUpDowns(XKeyEvent *event){
   int keynum = get_keynum(event);
   if(keynum==-1)
     return;
@@ -384,15 +404,15 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   return EventReciever(&tevent,window);
 }
 
-int X11_MyKeyPress(XEvent *event,struct Tracker_Windows *window){
+int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = get_keynum(event);
+  int keynum = get_keynum(key_event);
 
   if (keynum==-1)
     return 0;
   else
-    return X11Event_KeyPress(keynum,((XKeyEvent*)event)->state,window);
+    return X11Event_KeyPress(keynum,key_event->state,window);
 }
 
 
@@ -421,21 +441,29 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   return 0;
 }
 
-int X11_MyKeyRelease(XEvent *event,struct Tracker_Windows *window){
-  int keynum = get_keynum(event);
+int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
+  int keynum = get_keynum(key_event);
 
   if (keynum==-1)
     return 0;
   else
 
-  return X11Event_KeyRelease(keynum,((XKeyEvent*)event)->state,window);
+  return X11Event_KeyRelease(keynum,key_event->state,window);
 }
 
 
 extern int num_users_of_keyboard;
 
 bool X11_KeyboardFilter(XEvent *event){
-  setKeyUpDowns(event);
+  {
+    XAnyEvent *key_event = (XAnyEvent *)event;
+    init_keysyms(key_event->display);
+  }
+
+  if(event->type==KeyPress || event->type==KeyRelease) {
+    XKeyEvent *key_event = (XKeyEvent *)event;
+    setKeyUpDowns(key_event);
+  }
 
   //static int num=0;
   //printf("Got event %d\n",num++);
@@ -444,7 +472,7 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    if(X11_MyKeyPress(event,root->song->tracker_windows)==1){
+    if(X11_MyKeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
       //this->quit();
       //doquit = true;
     }
@@ -453,7 +481,7 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    X11_MyKeyRelease(event,root->song->tracker_windows);
+    X11_MyKeyRelease((XKeyEvent *)event,root->song->tracker_windows);
     return true;
   case EnterNotify:
     {

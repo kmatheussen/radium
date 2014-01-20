@@ -52,6 +52,14 @@ if test $2 = "yes" ; then
     cd ..
 fi
 
+tar xvf setxkbmap_56346c72127303a445a273217f7633c2afb29cfc.tar
+cd setxkbmap
+make clean
+./configure --prefix=/usr
+make
+cd ..
+
+
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
 make clean

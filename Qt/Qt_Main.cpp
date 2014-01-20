@@ -464,6 +464,7 @@ int radium_main(char *arg){
 
   SetupMainWindow();
 
+
   //X11_StartBlockSelector();
   //X11_StartMidiProperties();
 
