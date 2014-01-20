@@ -255,7 +255,10 @@ void X11_init_keyboard(void) {
   X11_ResetKeysUpDowns();
 }
 
-static int get_keynum(KeySym sym){
+static int get_keynum(XEvent *event){
+  XKeyEvent *key_event = (XKeyEvent *)event;
+  KeySym sym = XkbKeycodeToKeysym(key_event->display, key_event->keycode, 0, 0);
+
   // Some of the sym values are very large. Can not add them since the keytable would be very large.
   switch(sym){
   case XK_Menu:
@@ -349,12 +352,7 @@ static void setKeyUpDowns(XEvent *event){
   if(event->type!=KeyPress && event->type!=KeyRelease)
     return;
 
-  XKeyEvent *key_event = (XKeyEvent *)event;
-
-  KeySym sym = XkbKeycodeToKeysym(key_event->display, key_event->keycode, 0, 0);
-  //printf("sym: %x. keycode: %x\n",(int)sym, (int)key_event->keycode);
-
-  int keynum = get_keynum(sym); //keytable[sym];
+  int keynum = get_keynum(event);
   if(keynum==-1)
     return;
 
@@ -386,16 +384,15 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   return EventReciever(&tevent,window);
 }
 
-int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window){
-  KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+int X11_MyKeyPress(XEvent *event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = get_keynum(sym);
+  int keynum = get_keynum(event);
 
   if (keynum==-1)
     return 0;
   else
-    return X11Event_KeyPress(keynum,event->state,window);
+    return X11Event_KeyPress(keynum,((XKeyEvent*)event)->state,window);
 }
 
 
@@ -424,11 +421,14 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   return 0;
 }
 
-int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window){
-  KeySym sym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
-  if(sym > keytable_size)
+int X11_MyKeyRelease(XEvent *event,struct Tracker_Windows *window){
+  int keynum = get_keynum(event);
+
+  if (keynum==-1)
     return 0;
-  return X11Event_KeyRelease(keytable[sym],event->state,window);
+  else
+
+  return X11Event_KeyRelease(keynum,((XKeyEvent*)event)->state,window);
 }
 
 
@@ -444,7 +444,7 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    if(X11_KeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
+    if(X11_MyKeyPress(event,root->song->tracker_windows)==1){
       //this->quit();
       //doquit = true;
     }
@@ -453,7 +453,7 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    X11_KeyRelease((XKeyEvent *)event,root->song->tracker_windows);
+    X11_MyKeyRelease(event,root->song->tracker_windows);
     return true;
   case EnterNotify:
     {
