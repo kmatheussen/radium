@@ -21,16 +21,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void X11_init_keyboard(void);
 
+/*
 extern LANGSPEC int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window);
 extern LANGSPEC int X11_KeyPress(XKeyEvent *event,struct Tracker_Windows *window);
 
-extern LANGSPEC void X11_ResetKeysUpDowns(void);
-
 extern LANGSPEC int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window);
 extern LANGSPEC int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *window);
+*/
+
+extern LANGSPEC void X11_ResetKeysUpDowns(void);
+
 
 extern LANGSPEC bool X11_KeyboardFilter(XEvent *event);
-
-extern LANGSPEC void X11_init_keyboard(void);
 
 #endif

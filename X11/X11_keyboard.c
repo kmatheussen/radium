@@ -81,8 +81,6 @@ void X11_init_keyboard(void) {
 
 
 static int keysym_to_keynum(KeySym keysym) {
-# define S(X11_VAL, EVENT_VAL) if(keysym==XK_##X11_VAL) return EVENT_##EVENT_VAL;
-# define T(VAL) if(keysym==XK_##VAL) return EVENT_##VAL;
 
   // Handle some special keys first.
   switch(keysym){
@@ -105,6 +103,10 @@ static int keysym_to_keynum(KeySym keysym) {
   case XF86XK_HomePage:
     return EVENT_HOMEPAGE;
   }
+
+
+# define S(X11_VAL, EVENT_VAL) if(keysym==XK_##X11_VAL) return EVENT_##EVENT_VAL;
+# define T(VAL) if(keysym==XK_##VAL) return EVENT_##VAL;
 
 
   // row 1
@@ -233,20 +235,6 @@ static void init_keynums(Display *display){
 extern struct TEvent tevent;
 
 
-/*
-37: EVENT_LEFTCTRL
-50: EVENT_LEFTSHIFT
-66: EVENT_CAPSLOCK
-115: EVENT_LEFTEXTRA
-64: EVENT_LEFTALT
-
-113: EVENT_RIGHTALT
-116: EVENT_RIGHTEXTRA
-109: EVENT_RIGHTCTRL
-62: EVENT_RIGHTSHIFT
-
- */
-
 static void setKeySwitch(unsigned int state){
   int lokke;
 
@@ -275,20 +263,6 @@ static void setKeySwitch(unsigned int state){
 
 
 
-// This function fixes situations where keyswitches is registered by radium to be pressed, but in fact
-// are not since they were unreleased in another window. Happens quite often.
-/*
-static void fixBrokenKeySwitch(unsigned int state){
-  if(state&ShiftMask) printf("shift\n");
-  if(state&ControlMask) printf("control\n");
-  if(state&Mod1Mask) printf("mod1\n");
-  if(state&Mod2Mask) printf("mod2\n");
-  if(state&Mod3Mask) printf("mod3\n");
-  if(state&Mod4Mask) printf("mod4\n");
-  if(state&Mod5Mask) printf("mod5\n");
-}
-*/
-
 static void setKeyUpDowns(XKeyEvent *key_event){
   int keynum = keycode_to_keynum[key_event->keycode];
   if(keynum==-1)
@@ -303,7 +277,7 @@ static void setKeyUpDowns(XKeyEvent *key_event){
 static int g_last_pressed_key = -1;
 static int64_t g_last_pressed_key_time = 0;
 
-int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
+static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARD;
   tevent.SubID=keynum;
@@ -317,12 +291,10 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
   if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
     tevent.SubID=EVENT_NO;
 
-  //fixBrokenKeySwitch(keystate);
-
   return EventReciever(&tevent,window);
 }
 
-int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
+static int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
   int keynum = keycode_to_keynum[key_event->keycode];
@@ -334,7 +306,7 @@ int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
 }
 
 
-int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
+static int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   setKeySwitch(keystate);
   tevent.ID=TR_KEYBOARDUP;
   tevent.SubID=keynum;
@@ -359,7 +331,7 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
   return 0;
 }
 
-int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
+static int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
   int keynum = keycode_to_keynum[key_event->keycode];
 
   if (keynum==-1)
