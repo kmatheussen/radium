@@ -34,107 +34,78 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "X11_keyboard_proc.h"
 
 
-/*
-  X11 key array -> Radium key array:
-
-  9: ESC
-  10-22: 1-0,0R1,0R2,BACKSPACE
-  23-35: TAB-PR2
-  36: RETURN
-  38-48: A-L,LR1,LR2
-  49: 1L1
-  51: LR3
-  52-61: Z-MR3
-  63: KP_MUL
-  65: SPACE
-
-  67-76: F1-F10
-  79-81: KP_7-KP_9
-  82: KP_SUB
-  83-85: KP_4-KP_6
-  86: KP_ADD
-  87-89: KP_1-KØ_3
-  90: KP_0
-  91: KP_DOT
-  94: ZL1
-  95-96: F11,F12
-  97: MIDDLE2
-  98: UPARROW
-  99: MIDDLE3
-  100: LEFTARROW
-  102: RIGHTARROW
-  103: HELP
-  104: DOWNARROW
-  105: MIDDLE6
-  106: MIDDLE1
-  107: DEL
-  108: KP_ENTER
-  111: F13
-  112: KP_DIV
-  117: HELP (nede)
-
-  Switch:
-  66: CAPS
-
- */
-
 extern bool doquit;
 extern struct Root *root;
 
 extern PlayerClass *pc;
 
-
-static int keytable_size = 0;
-static int *keytable = NULL;
 static hash_t *keyupdowns = NULL;
 
-static KeySym keysyms[256];
-
-static void init_keysyms(Display *display){
-  static bool inited = false;
-
-  if(inited==true)
-    return;
-
-  PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-  {
-    PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
-
-    int i;
-    for(i=0;i<256;i++)
-      keysyms[i] = XkbKeycodeToKeysym(display, i, 0, 0);
-  }
-  PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+static int keycode_to_keynum[256];
 
 
-  inited = true;
+void X11_ResetKeysUpDowns(void){
+  keyupdowns = HASH_create(EVENT_DASMAX);
 }
 
-static void add_key(int X11_val, int EVENT_val){
-  if (X11_val >= keytable_size) {
-    int new_size = 128;
-    while (X11_val >= new_size)
-      new_size *= 2;
-    int *new_keytable = talloc_atomic_uncollectable(sizeof(int)*new_size);
-    {
-      int i=0;
-      for(i=0 ; i<new_size ; i++)
-        if (i<keytable_size)
-          new_keytable[i] = keytable[i];
-        else
-          new_keytable[i] = EVENT_NO;
-    }
-    if(keytable!=NULL)
-      tfree(keytable);
-    keytable = new_keytable;
-    keytable_size = new_size;
-  }
-  keytable[X11_val] = EVENT_val;
+static const char *get_keyupdown_key(int keynum){
+  char raw_key[128];
+  sprintf(raw_key,"%d",keynum);
+  const char *key = HASH_get_key(keyupdowns, raw_key);
+
+  if(key!=NULL)
+    return key;
+  else
+    return (const char*)talloc_format("%d",keynum);
 }
 
-static void init_keytable(void) {
-# define S(X11_VAL, EVENT_VAL) add_key(XK_##X11_VAL, EVENT_##EVENT_VAL)
-# define T(VAL) add_key(XK_##VAL, EVENT_##VAL)
+static void set_keydown(int keynum){
+  const char *key = get_keyupdown_key(keynum);
+  HASH_put_int(keyupdowns,key,1);
+}
+
+static void set_keyup(int keynum){
+  const char *key = get_keyupdown_key(keynum);
+  HASH_put_int(keyupdowns,key,0);
+}
+
+static bool get_keyupdown(keynum){
+  char key[128];
+  sprintf(key,"%d",keynum);
+  return HASH_has_key(keyupdowns,key) && HASH_get_int(keyupdowns,key)==1;
+}
+
+void X11_init_keyboard(void) {
+  X11_ResetKeysUpDowns();
+}
+
+
+static int keysym_to_keynum(KeySym keysym) {
+# define S(X11_VAL, EVENT_VAL) if(keysym==XK_##X11_VAL) return EVENT_##EVENT_VAL;
+# define T(VAL) if(keysym==XK_##VAL) return EVENT_##VAL;
+
+  // Handle some special keys first.
+  switch(keysym){
+  case XK_Menu:
+    return EVENT_MENU;
+  case XF86XK_AudioLowerVolume:
+    return EVENT_VOLUME_DOWN;
+  case XF86XK_AudioRaiseVolume:
+    return EVENT_VOLUME_UP;
+  case XF86XK_AudioMute:
+    return EVENT_MUTE;
+  case XF86XK_AudioPlay:
+    return EVENT_PLAY;
+  case XF86XK_AudioStop:
+    return EVENT_STOP;
+  case XF86XK_Calculator:
+    return EVENT_CALCULATOR;
+  case XF86XK_Mail:
+    return EVENT_MAIL;
+  case XF86XK_HomePage:
+    return EVENT_HOMEPAGE;
+  }
+
 
   // row 1
   /////////////////////
@@ -237,77 +208,24 @@ static void init_keytable(void) {
   S(KP_Up, KP_8);
   S(KP_Prior, KP_9);
 
-
+  return -1;
 
 # undef T
 # undef S
 }
 
-void X11_ResetKeysUpDowns(void){
-  keyupdowns = HASH_create(keytable_size+100);
-}
 
-static const char *get_keyupdown_key(int keynum){
-  char raw_key[128];
-  sprintf(raw_key,"%d",keynum);
-  const char *key = HASH_get_key(keyupdowns, raw_key);
 
-  if(key!=NULL)
-    return key;
-  else
-    return (const char*)talloc_format("%d",keynum);
-}
+static void init_keynums(Display *display){
+  PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+  {
+    PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
 
-static void set_keydown(int keynum){
-  const char *key = get_keyupdown_key(keynum);
-  HASH_put_int(keyupdowns,key,1);
-}
-
-static void set_keyup(int keynum){
-  const char *key = get_keyupdown_key(keynum);
-  HASH_put_int(keyupdowns,key,0);
-}
-
-static bool get_keyupdown(keynum){
-  char key[128];
-  sprintf(key,"%d",keynum);
-  return HASH_has_key(keyupdowns,key) && HASH_get_int(keyupdowns,key)==1;
-}
-
-void X11_init_keyboard(void) {
-  init_keytable();
-  X11_ResetKeysUpDowns();
-}
-
-static int get_keynum(XKeyEvent *key_event){
-  KeySym sym = keysyms[key_event->keycode];
-
-  // Some of the sym values are very large. Can not add them since the keytable would be very large.
-  switch(sym){
-  case XK_Menu:
-    return EVENT_MENU;
-  case XF86XK_AudioLowerVolume:
-    return EVENT_VOLUME_DOWN;
-  case XF86XK_AudioRaiseVolume:
-    return EVENT_VOLUME_UP;
-  case XF86XK_AudioMute:
-    return EVENT_MUTE;
-  case XF86XK_AudioPlay:
-    return EVENT_PLAY;
-  case XF86XK_AudioStop:
-    return EVENT_STOP;
-  case XF86XK_Calculator:
-    return EVENT_CALCULATOR;
-  case XF86XK_Mail:
-    return EVENT_MAIL;
-  case XF86XK_HomePage:
-    return EVENT_HOMEPAGE;
+    int i;
+    for(i=0;i<256;i++)
+      keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(display, i, 0, 0));
   }
-
-  if(sym > keytable_size) {
-    return -1;
-  } else
-    return keytable[sym];
+  PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
 }
 
 
@@ -371,12 +289,12 @@ static void fixBrokenKeySwitch(unsigned int state){
 }
 */
 
-static void setKeyUpDowns(XKeyEvent *event){
-  int keynum = get_keynum(event);
+static void setKeyUpDowns(XKeyEvent *key_event){
+  int keynum = keycode_to_keynum[key_event->keycode];
   if(keynum==-1)
     return;
 
-  if(event->type==KeyPress)
+  if(key_event->type==KeyPress)
     set_keydown(keynum);
   else
     set_keyup(keynum);
@@ -407,7 +325,7 @@ int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *window){
 int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = get_keynum(key_event);
+  int keynum = keycode_to_keynum[key_event->keycode];
 
   if (keynum==-1)
     return 0;
@@ -442,7 +360,7 @@ int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *window){
 }
 
 int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
-  int keynum = get_keynum(key_event);
+  int keynum = keycode_to_keynum[key_event->keycode];
 
   if (keynum==-1)
     return 0;
@@ -455,9 +373,13 @@ int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
 extern int num_users_of_keyboard;
 
 bool X11_KeyboardFilter(XEvent *event){
-  {
+  static bool inited_keynums = false;
+
+  if(inited_keynums==false){
     XAnyEvent *key_event = (XAnyEvent *)event;
-    init_keysyms(key_event->display);
+    init_keynums(key_event->display);
+
+    inited_keynums = true;
   }
 
   if(event->type==KeyPress || event->type==KeyRelease) {
