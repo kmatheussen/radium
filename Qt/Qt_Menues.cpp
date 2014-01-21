@@ -39,12 +39,6 @@ extern struct Root *root;
 extern QApplication *qapplication;
 
 namespace{
-struct MyQMenuBar{
-  void keyPressEvent(QKeyEvent *qkeyevent){
-    printf("hepp\n");
-  }
-};
-
 struct Menues{
   struct Menues *up;
   Q3PopupMenu *menu;
@@ -152,9 +146,24 @@ void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual){
   current_menu = current_menu->up;
 }
 
+/*
+static Menues *g_base_menues;
+void gakk(){
+  //g_base_menues->base->setActiveAction(g_base_menues->up->base->actionAt(QPoint(0,0)));
+  //g_base_menu->setActiveAction(g_base_menu->actionAt(QPoint(0,0)));
+  g_base_menues->base->show();
+  current_menu->base->show();
+  //current_menu->menu->show();
+}
+*/
+
+bool GFX_MenuActive(){
+  return current_menu->base->activeAction() != NULL;
+}
 
 void initMenues(QMenuBar *base_menu){
   current_menu = (struct Menues*)calloc(1, sizeof(struct Menues));
+  //g_base_menues = current_menu;
   current_menu->base = base_menu;
 
 #if 0

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <X11/Xlib.h>
 
+extern LANGSPEC int X11_get_keynum(XKeyEvent *key_event);
 extern LANGSPEC void X11_init_keyboard(void);
 
 /*

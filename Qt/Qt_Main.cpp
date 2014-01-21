@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qpalette.h>
 #include <qtabwidget.h>
 #include <qfontdatabase.h>
+#include <QEvent>
+#include <QKeyEvent>
+#include <Qt>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -70,6 +73,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_instruments_proc.h"
 #include "Qt_MainWindow_proc.h"
+#include "Qt_Menues_proc.h"
 
 #include "../GTK/GTK_visual_proc.h"
 
@@ -92,6 +96,7 @@ extern struct Root *root;
 int num_users_of_keyboard = 0;
 
 bool is_starting_up = true;
+//void gakk();
 
 class MyApplication : public QApplication{
 public:
@@ -100,10 +105,45 @@ public:
 
 protected:
 
+  bool last_key_was_lalt;
+
 #ifdef __linux__
   bool x11EventFilter(XEvent *event){
-    if(is_starting_up==true)
+    if(is_starting_up==true)// || return_false_now)
       return false;
+
+    bool must_return_false = false;
+
+    if(event->type==KeyPress || event->type==KeyRelease){
+      XKeyEvent *key_event = (XKeyEvent*)event;
+
+      int keynum = X11_get_keynum(key_event);
+
+      if (keynum==EVENT_ALT_L){
+        if (event->type==KeyPress)
+          last_key_was_lalt = true;
+        else if (event->type==KeyRelease) {
+          if(last_key_was_lalt==true){
+            must_return_false = true;
+            last_key_was_lalt = false;
+          }
+        }
+      }else
+        last_key_was_lalt = false;
+
+      switch(X11_get_keynum(key_event))
+      case EVENT_ESC:
+      case EVENT_UPARROW:
+      case EVENT_DOWNARROW:
+      case EVENT_LEFTARROW:
+      case EVENT_RIGHTARROW:
+      case EVENT_RETURN:
+      case EVENT_KP_ENTER: {
+        if(GFX_MenuActive()==true)
+          return false;
+        break;
+      }
+    }
 
     bool ret = X11_KeyboardFilter(event);
 
@@ -113,7 +153,10 @@ protected:
     if(doquit==true)
       QApplication::quit();
 
-    return ret;
+    if (must_return_false==true)
+      return false;
+    else
+      return ret;
   }
 #endif
 
@@ -148,6 +191,7 @@ protected:
 
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
+  , last_key_was_lalt(false)
 {
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 }

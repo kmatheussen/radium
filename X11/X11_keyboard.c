@@ -218,16 +218,30 @@ static int keysym_to_keynum(KeySym keysym) {
 
 
 
-static void init_keynums(Display *display){
-  PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-  {
-    PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
+static void init_keynums(XEvent *event){
+  static bool inited_keynums = false;
 
-    int i;
-    for(i=0;i<256;i++)
-      keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(display, i, 0, 0));
+  if(inited_keynums==false){
+    XAnyEvent *any_event = (XAnyEvent *)event;
+
+    PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+    {
+      PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
+      
+      int i;
+      for(i=0;i<256;i++)
+        keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(any_event->display, i, 0, 0));
+    }
+    PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+
+    inited_keynums = true;
   }
-  PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+}
+
+
+int X11_get_keynum(XKeyEvent *key_event){
+  init_keynums((XEvent*)key_event);
+  return keycode_to_keynum[key_event->keycode];
 }
 
 
@@ -264,7 +278,7 @@ static void setKeySwitch(unsigned int state){
 
 
 static void setKeyUpDowns(XKeyEvent *key_event){
-  int keynum = keycode_to_keynum[key_event->keycode];
+  int keynum = X11_get_keynum(key_event);
   if(keynum==-1)
     return;
 
@@ -297,7 +311,7 @@ static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *win
 static int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = keycode_to_keynum[key_event->keycode];
+  int keynum = X11_get_keynum(key_event);
 
   if (keynum==-1)
     return 0;
@@ -332,7 +346,7 @@ static int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *w
 }
 
 static int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
-  int keynum = keycode_to_keynum[key_event->keycode];
+  int keynum = X11_get_keynum(key_event);
 
   if (keynum==-1)
     return 0;
@@ -345,14 +359,8 @@ static int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window)
 extern int num_users_of_keyboard;
 
 bool X11_KeyboardFilter(XEvent *event){
-  static bool inited_keynums = false;
 
-  if(inited_keynums==false){
-    XAnyEvent *key_event = (XAnyEvent *)event;
-    init_keynums(key_event->display);
-
-    inited_keynums = true;
-  }
+  init_keynums(event);
 
   if(event->type==KeyPress || event->type==KeyRelease) {
     XKeyEvent *key_event = (XKeyEvent *)event;
