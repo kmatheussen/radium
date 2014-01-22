@@ -119,11 +119,12 @@ protected:
 
       int keynum = X11_get_keynum(key_event);
 
-      /*
+
       if (keynum==EVENT_ALT_L){
-        if (event->type==KeyPress)
+        if (event->type==KeyPress){
           last_key_was_lalt = true;
-        else if (event->type==KeyRelease) {
+          must_return_false = true;
+        }else if (event->type==KeyRelease) {
           if(last_key_was_lalt==true){
             must_return_false = true;
             last_key_was_lalt = false;
@@ -131,7 +132,7 @@ protected:
         }
       }else
         last_key_was_lalt = false;
-      */
+
 
       switch(keynum){
       case EVENT_ESC:
