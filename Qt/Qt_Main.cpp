@@ -119,6 +119,7 @@ protected:
 
       int keynum = X11_get_keynum(key_event);
 
+      /*
       if (keynum==EVENT_ALT_L){
         if (event->type==KeyPress)
           last_key_was_lalt = true;
@@ -130,8 +131,9 @@ protected:
         }
       }else
         last_key_was_lalt = false;
+      */
 
-      switch(X11_get_keynum(key_event))
+      switch(keynum){
       case EVENT_ESC:
       case EVENT_UPARROW:
       case EVENT_DOWNARROW:
@@ -142,6 +144,7 @@ protected:
         if(GFX_MenuActive()==true)
           return false;
         break;
+      }
       }
     }
 
