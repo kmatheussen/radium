@@ -17,6 +17,7 @@
 import sys
 
 import string,sys,os,cPickle
+user_keys = os.path.expanduser('~/.radium/keys')
 
 if __name__!="__main__":
   import radium
@@ -29,6 +30,25 @@ def get_command(menutext):
     return commands[menutext]
   else:
     return ""
+
+def parse_user_keys(user_key_file):
+  import codecs
+  try:
+    f = open(user_key_file,'r')
+    filecontent = f.read()
+    f.close()
+  except:
+    filecontent = codecs.open(user_key_file, "r", "latin-1" ).read()
+
+  for line in filecontent.split('\n'):
+    if len(line.strip()) == 0 or line[0].strip == '#':
+      continue
+    split = line.split('=')
+    if len(split) > 1:
+      var = split[0].strip()
+      val = split[1].strip()
+      code2read[var] = val
+
 
 import platform
 
@@ -50,6 +70,9 @@ code2read={"CTRL_L":"Left Ctrl",
            #import platform
            #if platform.system() != "Linux" and platform.system() != "mingw":
            #  code2read["BACKSPACE"] = "Delete"
+
+if os.path.isfile(user_keys):
+  parse_user_keys(user_keys)
 
 
 def get_key_name(code):    
