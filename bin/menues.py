@@ -41,7 +41,7 @@ def parse_user_keys(user_key_file):
     filecontent = codecs.open(user_key_file, "r", "latin-1" ).read()
 
   for line in filecontent.split('\n'):
-    if len(line.strip()) == 0 or line[0].strip == '#':
+    if len(line.strip()) == 0 or line.strip()[0] == '#':
       continue
     split = line.split('=')
     if len(split) > 1:
