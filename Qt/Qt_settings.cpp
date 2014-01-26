@@ -76,7 +76,7 @@ static QDir get_dot_radium_dir(int *error){
   return dir;
 }
 
-static char *get_conf_filename(const char *filename){
+char *OS_get_conf_filename(const char *filename){
   QString path;
 
   int error;
@@ -93,11 +93,11 @@ static char *get_conf_filename(const char *filename){
 }
 
 char *OS_get_keybindings_conf_filename(void){
-  return get_conf_filename("keybindings.conf");
+  return OS_get_conf_filename("keybindings.conf");
 }
 
 char *OS_get_menues_conf_filename(void){
-  return get_conf_filename("menues.conf");
+  return OS_get_conf_filename("menues.conf");
 }
 
 char *OS_get_config_filename(const char *key){
