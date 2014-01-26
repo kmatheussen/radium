@@ -732,6 +732,9 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>System Out Level.</string>
+        </property>
         <property name="maximum">
          <number>10000</number>
         </property>
@@ -1232,6 +1235,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Input octave for lowest octave (Z-M on the keyboard).</string>
         </property>
         <property name="text">
          <string>Octave: 4</string>
@@ -1810,6 +1816,9 @@
           <height>5134134</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Drunk velocity: Inserted notes will be given a velocity between min vel and max vel using a random walk algorithm.</string>
+        </property>
         <property name="text">
          <string>Drunk velocity</string>
         </property>
@@ -2319,6 +2328,9 @@
           <width>22</width>
           <height>0</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>Number of undo's available</string>
         </property>
         <property name="text">
          <string>0</string>
@@ -2848,6 +2860,9 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Edit mode: When on, notes played on the keyboard or from midi are recorded into the editor, when off, notes are only played back, but not placed in the editor.</string>
+        </property>
         <property name="text">
          <string>Edit</string>
         </property>
@@ -3374,6 +3389,11 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="toolTip">
+         <string>Scrolls Per Second.
+Maximum number of times per second the player will scroll the editor to a new line.
+Scrolling too often can be tiresome for the eyes.</string>
+        </property>
         <property name="text">
          <string>sps:</string>
         </property>
@@ -3382,7 +3402,9 @@
       <item>
        <widget class="QSpinBox" name="sps">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;S&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;crolls &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;er &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:600;&quot;&gt;S&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;econd.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Maximum number of times per second the player will scroll the editor to a new line.&lt;/p&gt;&lt;p&gt;Scrolling too often can be tiresome for the eyes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>Scrolls Per Second.
+Maximum number of times per second the player will scroll the editor to a new line.
+Scrolling too often can be tiresome for the eyes.</string>
         </property>
         <property name="statusTip">
          <string/>
