@@ -12,7 +12,7 @@ def get_xkb(setxkbmap):
     return layout
 
 def set_xkb(setxkbmap,layout):
-    os.system(setxkbmap+" -layout "+layout)
+    os.system(setxkbmap+" -synch -layout "+layout)
 
 def save_xkb(setxkbmap):
     global global_layout

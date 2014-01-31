@@ -217,24 +217,49 @@ static int keysym_to_keynum(KeySym keysym) {
 }
 
 
+struct displays_t{
+  struct displays_t *next;
+  Display *display;
+};
 
 static void init_keynums(XEvent *event){
+  static struct displays_t *displays = NULL;
   static bool inited_keynums = false;
 
-  if(inited_keynums==false){
+
+  if(event->type==KeyPress || event->type==KeyRelease) {
+
     XAnyEvent *any_event = (XAnyEvent *)event;
 
-    PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-    {
-      PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
+    if(inited_keynums==false){
       
-      int i;
-      for(i=0;i<256;i++)
-        keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(any_event->display, i, 0, 0));
+      PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+      {
+        PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
+        
+        int i;
+        for(i=0;i<256;i++)
+          keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(any_event->display, i, 0, 0));
+      }
+      //sleep(1);
+      //PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+      
+      inited_keynums = true;
     }
-    PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-
-    inited_keynums = true;
+    
+    struct displays_t *display = displays;
+    
+    while(display!=NULL && display->display!=any_event->display)
+      display=display->next;
+    
+    if(display==NULL){
+      printf("\n\nSetting back keyboards for display %p\n\n",any_event->display);
+      PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+      display = calloc(1,sizeof(struct displays_t));
+      display->display = any_event->display;
+      display->next = displays;
+      displays = display;
+    }
   }
 }
 
