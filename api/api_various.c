@@ -313,6 +313,10 @@ char *getProgramPath(void){
   return (char*)OS_get_program_path();
 }
 
+char *getConfPath(char *filename){
+  return (char*)OS_get_conf_filename(filename);
+}
+
 char *getKeybindingsConfPath(void){
   return (char*)OS_get_keybindings_conf_filename();
 }

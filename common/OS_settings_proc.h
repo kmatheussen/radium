@@ -26,6 +26,7 @@ extern LANGSPEC const char *OS_get_program_path(void);
 
 extern LANGSPEC bool OS_config_key_is_color(const char *key);
 extern LANGSPEC char *OS_get_config_filename(const char *key);
+extern LANGSPEC char *OS_get_conf_filename(const char *filename);
 extern LANGSPEC char *OS_get_keybindings_conf_filename(void);
 extern LANGSPEC char *OS_get_menues_conf_filename(void);
 

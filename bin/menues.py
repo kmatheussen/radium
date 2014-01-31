@@ -17,13 +17,18 @@
 import sys
 
 import string,sys,os,cPickle
-user_keys = os.path.expanduser('~/.radium/keys')
 
 if __name__!="__main__":
-  import radium
+  import radium as ra
 else:
+  class Mock:
+    def getConfPath(self, key):
+      return os.path.join(os.getenv("HOME"),".radium/",key)
+  ra = Mock()
   sys.g_program_path = ""
-  
+
+
+
 commands = {}
 def get_command(menutext):
   if menutext in commands:
@@ -31,8 +36,15 @@ def get_command(menutext):
   else:
     return ""
 
-def parse_user_keys(user_key_file):
+def parse_user_keys():
   import codecs
+
+  user_key_file = ra.getConfPath("keys")
+  
+  if os.path.isfile(user_key_file)==False:
+    return
+
+
   try:
     f = open(user_key_file,'r')
     filecontent = f.read()
@@ -41,13 +53,15 @@ def parse_user_keys(user_key_file):
     filecontent = codecs.open(user_key_file, "r", "latin-1" ).read()
 
   for line in filecontent.split('\n'):
-    if len(line.strip()) == 0 or line.strip()[0] == '#':
+    line = line.split('#')[0].strip()
+    if len(line) == 0:
       continue
-    split = line.split('=')
-    if len(split) > 1:
-      var = split[0].strip()
-      val = split[1].strip()
-      code2read[var] = val
+    elif '=' not in line:
+      print '"Error: Malformed line in "'+user_key_file+'": '+"'"+line+"'"
+      sys.exit(-1)
+    else:
+      key, value = line.split("=")
+      code2read[key.strip()] = value.strip()
 
 
 import platform
@@ -70,9 +84,6 @@ code2read={"CTRL_L":"Left Ctrl",
            #import platform
            #if platform.system() != "Linux" and platform.system() != "mingw":
            #  code2read["BACKSPACE"] = "Delete"
-
-if os.path.isfile(user_keys):
-  parse_user_keys(user_keys)
 
 
 def get_key_name(code):    
@@ -178,15 +189,15 @@ class Menu:
       if items==[]:
         return
       if len(items)>1 and isinstance(items[1],Menu):
-        radium.addMenuMenu(items[0], get_command(items[0]))
+        ra.addMenuMenu(items[0], get_command(items[0]))
         items[1].createRadiumMenues()
-        radium.goPreviousMenuLevel()
+        ra.goPreviousMenuLevel()
         rec(items[2:])
       elif items[0].startswith("--"):
-        radium.addMenuSeparator()
+        ra.addMenuSeparator()
         rec(items[1:])
       else:
-        radium.addMenuItem(items[0],get_command(items[0]))
+        ra.addMenuItem(items[0],get_command(items[0]))
         rec(items[1:])
     rec(self.items)
     
@@ -205,11 +216,12 @@ class Menu:
         menu.append(menu_item)
         #print str(self.level)+". "+item
 
-import radium as ra
-menu=Menu(LineParser(ra.getMenuesConfPath()), 0)
 
 if __name__=="__main__":
+  parse_user_keys()
+  menu=Menu(LineParser("menues.conf"), 0)
   menu.printit()
 else:
+  parse_user_keys()
+  menu=Menu(LineParser(ra.getMenuesConfPath()), 0)
   menu.createRadiumMenues()
-  
