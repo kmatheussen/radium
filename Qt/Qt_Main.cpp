@@ -119,7 +119,7 @@ protected:
     if(event->type==KeyPress || event->type==KeyRelease){
       XKeyEvent *key_event = (XKeyEvent*)event;
 
-      int keynum = X11_get_keynum(key_event);
+      int keynum = X11_get_keynum(QApplication::focusWidget(), key_event);
 
 
       if (keynum==EVENT_ALT_L){
@@ -151,7 +151,7 @@ protected:
       }
     }
 
-    bool ret = X11_KeyboardFilter(event);
+    bool ret = X11_KeyboardFilter(QApplication::focusWidget(), event);
 
     if(ret==true)
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();

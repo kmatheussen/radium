@@ -219,10 +219,10 @@ static int keysym_to_keynum(KeySym keysym) {
 
 struct displays_t{
   struct displays_t *next;
-  Display *display;
+  void *focused_widget;
 };
 
-static void init_keynums(XEvent *event){
+static void init_keynums(void *focused_widget, XEvent *event){
   static struct displays_t *displays = NULL;
   static bool inited_keynums = false;
 
@@ -249,14 +249,14 @@ static void init_keynums(XEvent *event){
     
     struct displays_t *display = displays;
     
-    while(display!=NULL && display->display!=any_event->display)
+    while(display!=NULL && display->focused_widget!=focused_widget)
       display=display->next;
     
     if(display==NULL){
       printf("\n\nSetting back keyboards for display %p\n\n",any_event->display);
       PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
       display = calloc(1,sizeof(struct displays_t));
-      display->display = any_event->display;
+      display->focused_widget = focused_widget;
       display->next = displays;
       displays = display;
     }
@@ -264,8 +264,8 @@ static void init_keynums(XEvent *event){
 }
 
 
-int X11_get_keynum(XKeyEvent *key_event){
-  init_keynums((XEvent*)key_event);
+int X11_get_keynum(void *focused_widget, XKeyEvent *key_event){
+  init_keynums(focused_widget, (XEvent*)key_event);
   return keycode_to_keynum[key_event->keycode];
 }
 
@@ -302,8 +302,8 @@ static void setKeySwitch(unsigned int state){
 
 
 
-static void setKeyUpDowns(XKeyEvent *key_event){
-  int keynum = X11_get_keynum(key_event);
+static void setKeyUpDowns(void *focused_widget, XKeyEvent *key_event){
+  int keynum = X11_get_keynum(focused_widget, key_event);
   if(keynum==-1)
     return;
 
@@ -333,10 +333,10 @@ static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *win
   return EventReciever(&tevent,window);
 }
 
-static int X11_MyKeyPress(XKeyEvent *key_event,struct Tracker_Windows *window){
+static int X11_MyKeyPress(void *focused_widget, XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = X11_get_keynum(key_event);
+  int keynum = X11_get_keynum(focused_widget, key_event);
 
   if (keynum==-1)
     return 0;
@@ -370,8 +370,8 @@ static int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *w
   return 0;
 }
 
-static int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window){
-  int keynum = X11_get_keynum(key_event);
+static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tracker_Windows *window){
+  int keynum = X11_get_keynum(focused_widget, key_event);
 
   if (keynum==-1)
     return 0;
@@ -383,13 +383,13 @@ static int X11_MyKeyRelease(XKeyEvent *key_event,struct Tracker_Windows *window)
 
 extern int num_users_of_keyboard;
 
-bool X11_KeyboardFilter(XEvent *event){
+bool X11_KeyboardFilter(void *focused_widget, XEvent *event){
 
-  init_keynums(event);
+  init_keynums(focused_widget, event);
 
   if(event->type==KeyPress || event->type==KeyRelease) {
     XKeyEvent *key_event = (XKeyEvent *)event;
-    setKeyUpDowns(key_event);
+    setKeyUpDowns(focused_widget, key_event);
   }
 
   //static int num=0;
@@ -399,7 +399,7 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    if(X11_MyKeyPress((XKeyEvent *)event,root->song->tracker_windows)==1){
+    if(X11_MyKeyPress(focused_widget, (XKeyEvent *)event,root->song->tracker_windows)==1){
       //this->quit();
       //doquit = true;
     }
@@ -408,7 +408,7 @@ bool X11_KeyboardFilter(XEvent *event){
     if(num_users_of_keyboard>0)
       return false;
 
-    X11_MyKeyRelease((XKeyEvent *)event,root->song->tracker_windows);
+    X11_MyKeyRelease(focused_widget, (XKeyEvent *)event,root->song->tracker_windows);
     return true;
   case EnterNotify:
     {

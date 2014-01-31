@@ -23,7 +23,7 @@ if __name__!="__main__":
 else:
   class Mock:
     def getConfPath(self, key):
-      return os.path.join(os.getenv("HOME"),".radium/",key)
+      return os.path.join(os.getenv("HOME"),".radium",key)
   ra = Mock()
   sys.g_program_path = ""
 
@@ -43,7 +43,6 @@ def parse_user_keys():
   
   if os.path.isfile(user_key_file)==False:
     return
-
 
   try:
     f = open(user_key_file,'r')
