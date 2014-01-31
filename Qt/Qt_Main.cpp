@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QEvent>
 #include <QKeyEvent>
 #include <Qt>
+#include <QDir>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -467,6 +468,8 @@ void Qt_EventHandler(void){
 #endif
 }
 
+
+
 //extern void updateAllFonts(QWidget *widget);
 
 static bool load_new_song=true;
@@ -632,6 +635,7 @@ int radium_main(char *arg){
 
 
   is_starting_up=false;
+
 
 #if USE_QT_VISUAL
   qapplication->exec();

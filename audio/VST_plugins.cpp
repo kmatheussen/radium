@@ -1038,6 +1038,27 @@ void add_vst_plugin_type(QFileInfo file_info){
   }
 }
 
+static void create_vst_plugins_recursively(const QString& sDir)
+{
+  QDir dir(sDir);
+  dir.setSorting(QDir::Name);
+
+  QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+
+  for (int i=0;i<list.count();i++){
+    QFileInfo file_info = list[i];
+    
+    QString file_path = file_info.filePath();
+    printf("hepp: %s\n",file_path.ascii());
+    if (file_info.isDir())
+      create_vst_plugins_recursively(file_path);
+    else if(file_info.suffix()==VST_SUFFIX){
+      add_vst_plugin_type(file_info);
+    }
+  }
+}
+
+
 void create_vst_plugins(void){
 
 #if defined(FOR_MACOSX)
@@ -1061,31 +1082,23 @@ void create_vst_plugins(void){
     }
   }
 
-
-#else // defined(FOR_MACOSX)
+#else // !defined(FOR_MACOSX)
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
     const char *vst_path = SETTINGS_read_string(QString("vst_path")+QString::number(i), NULL);
     if(vst_path==NULL)
       continue;
-
-    QDir dir(vst_path);
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-    dir.setSorting(QDir::Name);
-    
-    QFileInfoList list = dir.entryInfoList();
-    for (int i = 0; i < list.size(); ++i) {
-      QFileInfo fileInfo = list.at(i);
-      if(fileInfo.suffix()==VST_SUFFIX)
-        add_vst_plugin_type(fileInfo);
-    }
-    
+    printf("vst_path: %s\n",vst_path);
+    create_vst_plugins_recursively(vst_path);
     PR_add_menu_entry(PluginMenuEntry::separator());
   }    
-#endif // defined(FOR_MACOSX)
+
+#endif // !defined(FOR_MACOSX)
 }
 
+
+//static std::vector<QString> VST_get_vst_paths_recursively(void){
 
 std::vector<QString> VST_get_vst_paths(void){
   std::vector<QString> paths;
