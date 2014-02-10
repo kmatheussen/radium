@@ -269,6 +269,7 @@ $1 = (SoundPlugin *) 0x0
 #include <QDir>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QVector>
 
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
@@ -281,6 +282,7 @@ $1 = (SoundPlugin *) 0x0
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
 #include "SoundPluginRegistry_proc.h"
+#include "Mixer_proc.h"
 
 #include "Qt_instruments_proc.h"
 
@@ -300,6 +302,7 @@ typedef struct{
   void *qtgui;
 } Data;
 
+static QVector<Data*> g_instances;
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -327,9 +330,20 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note
   pd_t *pd = data->pd;
 
   t_atom v[2]; 
-  SETFLOAT(v, note_num);
+  SETFLOAT(v + 0, note_num);
   SETFLOAT(v + 1, pitch);
   libpds_list(pd, "radium_note_pitch", 2, v);
+}
+
+void RT_PD_set_time(int64_t time, Place *p){
+  for (int i = 0; i < g_instances.size(); ++i) {
+    t_atom v[4];
+    SETFLOAT(v + 0, (double)time / MIXER_get_sample_rate());
+    SETFLOAT(v + 1, p->line);
+    SETFLOAT(v + 2, p->counter);
+    SETFLOAT(v + 3, p->dividor);
+    libpds_list(g_instances.at(i)->pd, "radium_time", 4, v);
+  }
 }
 
 static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
@@ -690,12 +704,16 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   if(state!=NULL)
     PD_recreate_controllers_from_state(plugin, state);
 
+  g_instances.push_back(data);
+
   return data;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
+
+  g_instances.remove(g_instances.indexOf(data));
 
   libpds_closefile(data->pd, data->file);  
   libpds_delete(data->pd);

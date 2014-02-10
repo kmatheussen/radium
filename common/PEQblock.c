@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "blocklist_proc.h"
 
+#include "../audio/SoundPlugin.h"
+#include "../audio/Pd_plugin_proc.h"
+
 #ifdef _AMIGA
 #include <proto/exec.h>					//Has to be removed!
 #endif
@@ -94,6 +97,7 @@ void PlayerNewBlockGFX(struct PEventQueue *peq,int doit){
 
 void PlayerNewBlock(struct PEventQueue *peq,int doit){
 	Place firstplace;
+	PlaceSetFirstPos(&firstplace);
 
 	Pdebug("New block, peq->time: %d, time: %d, blocklength: %d, pc->seqtime: %d. visit: %d\n",peq->l.time,pc->start_time,getBlockSTimeLength(pc->block),pc->seqtime,visit++);
 
@@ -107,7 +111,6 @@ void PlayerNewBlock(struct PEventQueue *peq,int doit){
 #endif
 		return;
 	}
-
 
 	// Update playerclass and root information about current playpos and such.
 
