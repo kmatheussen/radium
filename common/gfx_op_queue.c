@@ -52,7 +52,7 @@ typedef struct{
   int i6;
   union{
     int i7;
-    struct APoint *p7;
+    APoint *p7;
   };
   int i8;
 #if 0

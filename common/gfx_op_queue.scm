@@ -78,7 +78,7 @@ void GFX_Polygon(
                                     int color,
                                     int x1, int y1, int x2, int y2,
                                     int num_points,
-                                    struct APoint* peaks,
+                                    APoint* peaks,
                                     int where
                                     );
 
@@ -87,7 +87,7 @@ void GFX_Polyline(
                                      int color,
                                      int x1, int y1, int x2, int y2,
                                      int num_points,
-                                     struct APoint* peaks,
+                                     APoint* peaks,
                                      int where
                                      );
 
@@ -165,7 +165,7 @@ void GFX_BitBlt(
              ((string=? type "bool") "b")
              ((string=? type "char*") "s")
              ((string=? type "const char*") "s")
-             ((string=? type "struct APoint*") "p"))
+             ((string=? type "APoint*") "p"))
        (number->string (+ n 1))))
 
 (define (create-gfx-func funcdef)

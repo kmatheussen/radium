@@ -120,7 +120,7 @@ void QUEUE_GFX_Line(struct Tracker_Windows* tvisual, int color, int x, int y, in
   el->i6 = where ; 
 } 
 
-void QUEUE_GFX_Polygon(struct Tracker_Windows* tvisual, int color, int x1, int y1, int x2, int y2, int num_points, struct APoint* peaks, int where){ 
+void QUEUE_GFX_Polygon(struct Tracker_Windows* tvisual, int color, int x1, int y1, int x2, int y2, int num_points, APoint* peaks, int where){ 
   if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Polygon ; 
@@ -134,7 +134,7 @@ void QUEUE_GFX_Polygon(struct Tracker_Windows* tvisual, int color, int x1, int y
   el->i8 = where ; 
 } 
 
-void QUEUE_GFX_Polyline(struct Tracker_Windows* tvisual, int color, int x1, int y1, int x2, int y2, int num_points, struct APoint* peaks, int where){ 
+void QUEUE_GFX_Polyline(struct Tracker_Windows* tvisual, int color, int x1, int y1, int x2, int y2, int num_points, APoint* peaks, int where){ 
   if(tvisual->must_redraw==true) return; 
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Polyline ; 
