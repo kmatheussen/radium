@@ -167,7 +167,7 @@ int GFX_ReqTypeMenu(
   
   while(ret<=0 || ret>v->num_elements){
     GFX_WriteString(reqtype,"> ");
-    GFX_ReadString(reqtype,temp,3);
+    GFX_ReadString(reqtype,temp,5);
     if(temp[0]=='\0'){
       ret=0;
       break;

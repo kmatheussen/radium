@@ -518,7 +518,7 @@ void OS_GFX_Polygon(
                     int color,
                     int x1, int y1, int x2, int y2,
                     int num_points,
-                    struct APoint *peaks,
+                    APoint *peaks,
                     int where
                     )
 {
@@ -576,7 +576,7 @@ void OS_GFX_Polyline(
                     int colornum,
                     int x1, int y1, int x2, int y2,
                     int num_points,
-                    struct APoint *peaks,
+                    APoint *peaks,
                     int where
                     )
 {

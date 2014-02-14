@@ -1,0 +1,4 @@
+#N canvas 259 506 450 300 8;
+#X obj 64 101 r radium_time;
+#X obj 69 162 print;
+#X connect 0 0 1 0;

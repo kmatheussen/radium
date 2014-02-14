@@ -922,7 +922,7 @@ static void create_peaks(
             int ch;
 
             for(ch=0;ch<num_channels;ch++){
-              struct APoint *peaks=talloc_atomic(element->num_peaks*2*sizeof(struct APoint));        
+              APoint *peaks=talloc_atomic(element->num_peaks*2*sizeof(APoint));
               
               element->peaks[ch] = peaks;
 
@@ -958,7 +958,7 @@ static void create_peaks(
           }
         }
 
-        element->velocity_polygon=talloc_atomic(2*2*sizeof(struct APoint));
+        element->velocity_polygon=talloc_atomic(2*2*sizeof(APoint));
           
         element->velocity_polygon[0].x = 0.0f;
         element->velocity_polygon[0].y = element->y1;

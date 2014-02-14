@@ -481,9 +481,9 @@ typedef struct{
 *********************************************************************/
 
 #define NUM_PEAKS_PER_LINE 8
-struct APoint{
+typedef struct{
   float x,y;
-};
+} APoint;
 
 #define TRE_Max INT16_MAX
 struct TrackReallineElements{
@@ -497,10 +497,10 @@ struct TrackReallineElements{
   float x1,x2;
   void *pointer;
 
-  struct APoint *velocity_polygon;
+  APoint *velocity_polygon;
 
   int num_peaks;
-  struct APoint *peaks[2];
+  APoint *peaks[2];
 };
 
 /************* Types: */

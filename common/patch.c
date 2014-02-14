@@ -265,7 +265,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
             Undo_Open();{
 
               Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
-              
+
               if(selection>=5){
                 patch=patches->elements[selection-5];
 
