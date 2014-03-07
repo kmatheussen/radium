@@ -31,7 +31,7 @@ export PKG=pkg-config
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
 export QT_CFLAGS="`$PKG --cflags Qt3Support`"
-export QT_LDFLAGS="`$PKG --libs Qt3Support`"
+export QT_LDFLAGS="`$PKG --libs Qt3Support --libs QtOpenGL`"
 
 #export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"

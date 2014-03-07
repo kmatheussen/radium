@@ -522,7 +522,8 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     fprintf(stderr,"VST master dispatcher: Size Window\n");
     break;
   case 	audioMasterGetBlockSize:	
-    fprintf(stderr,"VST master dispatcher: GetBlockSize\n");
+    //fprintf(stderr,"VST master dispatcher: GetBlockSize\n");
+    return RADIUM_BLOCKSIZE;
     break;
   case 	audioMasterGetInputLatency:	
     fprintf(stderr,"VST master dispatcher: GetInLatency\n");
