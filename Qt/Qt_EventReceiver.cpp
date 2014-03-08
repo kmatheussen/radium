@@ -41,6 +41,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/visual_proc.h"
 
+#include "../OpenGL/GfxElements.h"
+#include "../OpenGL/Render_proc.h"
+
+
 #if USE_GTK_VISUAL
 #  ifdef __linux__
 #    if USE_QT4
@@ -133,8 +137,10 @@ void EditorWidget::updateEditor(){
   if(is_starting_up==true)
     return;
 
-  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0)
+  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
     update();
+    GL_create(window, window->wblock);
+  }
 }
 
 struct TEvent tevent={0};
@@ -358,6 +364,9 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
 
   if(is_starting_up==true)
     return;
+
+  GE_set_height(this->height());
+  GL_create(window, window->wblock);
 
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),

@@ -10,7 +10,7 @@
 #include <QGLWidget>
 
 
-static const char *chars="CDEFGABcdefgabhlo0123456789.-MULR#m";
+static const char *chars="CDEFGABcdefgabhlo0123456789.-MULR# m";
 
 namespace{
 

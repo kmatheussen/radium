@@ -6,6 +6,7 @@
 #include "GfxElements.h"
 
 
+#include "Render_proc.h"
 
 
 
@@ -99,7 +100,7 @@ static void create_background_realline(struct Tracker_Windows *window, struct WB
     if(line_opacity != 1000) {
       GE_Context *c = GE_static_x(GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity / 1000.0f, Z_LINENUMBERS - 1));
 
-      GE_line(c,x1,y1,x2,y2,line_width);
+      GE_line(c,x1,y1,x2,y1,line_width);
     }
   }
 }

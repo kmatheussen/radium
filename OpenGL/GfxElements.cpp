@@ -356,6 +356,10 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 
 /* Scheduling drawing operations */
 
+void GE_set_font(QFont font){
+  GE_set_new_font(font);
+}
+
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
   int key = get_key_from_pen_width(pen_width);
 

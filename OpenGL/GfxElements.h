@@ -76,6 +76,8 @@ static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
 }
 
 
+//void GE_set_font(QFont font);
+
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_text(GE_Context *c, const char *text, float x, float y);
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);

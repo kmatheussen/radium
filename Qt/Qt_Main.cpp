@@ -45,7 +45,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../mixergui/QM_MixerWidget.h"
 
-
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
@@ -86,6 +85,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef FOR_MACOSX
 #  include "../macosx/cocoa_Keyboard_proc.h"
 #endif
+
+#include "../OpenGL/Render_proc.h"
+#include "../OpenGL/Widget_proc.h"
+
 
 #include "Qt_Main_proc.h"
 
@@ -604,6 +607,8 @@ int radium_main(char *arg){
 
   //updateAllFonts(QApplication::mainWidget());
 
+  QWidget *gl_widget = GL_create_widget();
+
   main_window->repaint();
   DrawUpTrackerWindow(root->song->tracker_windows);
 
@@ -637,11 +642,17 @@ int radium_main(char *arg){
   is_starting_up=false;
 
 
+
+  GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
   GTK_MainLoop();
 #endif
+
+  GL_stop_widget(gl_widget);
 
 #if 0
   while(doquit==false){
@@ -677,6 +688,8 @@ extern "C" {
 #endif
   extern void initradium(void);
 }
+
+
 
 int main(int argc, char **argv){
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);

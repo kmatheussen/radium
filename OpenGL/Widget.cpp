@@ -15,6 +15,9 @@
 #include "GfxElements.h"
 
 
+#include "Widget_proc.h"
+
+
 static float das_pos = 1000.0f; //_rendering->camera()->viewport()->height();
 
 
@@ -236,6 +239,8 @@ public:
 };
 
 
+static vl::ref<MyQt4ThreadedWidget> widget;
+
 QWidget *GL_create_widget(void){
   vl::VisualizationLibrary::init();
 
@@ -250,7 +255,7 @@ QWidget *GL_create_widget(void){
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
   
-  vl::ref<MyQt4ThreadedWidget> widget = new MyQt4ThreadedWidget(vlFormat, NULL);
+  widget = new MyQt4ThreadedWidget(vlFormat, NULL);
   widget->resize(1000,1000);
   widget->show();
 
