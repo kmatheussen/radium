@@ -354,6 +354,12 @@ GE_Context *GE_color_z(int colornum, int z){
   return get_context_from_rgb(GE_get_rgb(colornum), z);
 }
 
+GE_Context *GE_textcolor_z(int colornum, int z){
+  GE_Rgb rgb = GE_get_rgb(colornum);
+  rgb.a=200;
+  return get_context_from_rgb(rgb, z);
+}
+
 GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z){
 #if 0
   // Reduce number of contexts. May also reduce cpu usage significantly.
@@ -416,7 +422,7 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 /* Scheduling drawing operations. Called from main thread. */
 /**********************************************************/
 
-void GE_set_font(QFont font){
+void GE_set_font(const QFont &font){
   GE_set_new_font(font);
 }
 

@@ -12,8 +12,6 @@
 #include <QMutex>
 
 
-// TODO: Don't paint space. That's very inefficent.
-
 static const char *chars="CDEFGABcdefgabhlo0123456789.-MULR# m";
 
 namespace{
@@ -52,7 +50,7 @@ static QHash<char,ImageHolder> g_imageholders;
 static MyMutex image_mutex;
 
 
-static inline void GE_set_new_font(QFont font){
+static inline void GE_set_new_font(const QFont &font){
   QFontMetrics metrics(font);
 
   int real_width = metrics.width("#");
@@ -118,11 +116,14 @@ struct TextBitmaps{
     assert(g_imageholders.contains(c));
 
     ImageHolder holder = g_imageholders[c];
-    vl::ImagePBO *image = holder.image.get();
-    //float x2 = x + image->width()-1;
-    //float y2 = y + image->height()-1;
 
-    points[c].push_back(vl::dvec2(x+holder.width,y-image->height()/2.0));//(y+y2)/2));
+    if (c != ' '){
+      vl::ImagePBO *image = holder.image.get();
+      //float x2 = x + image->width()-1;
+      //float y2 = y + image->height()-1;
+      
+      points[c].push_back(vl::dvec2(x+holder.width,y-image->height()/2.0));//(y+y2)/2));
+    }
 
     return x + holder.width;
   }

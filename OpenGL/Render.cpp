@@ -144,7 +144,7 @@ static void create_background_linenumber(struct Tracker_Windows *window, struct 
     colornum=1;
   }
 
-  GE_Context *c = GE_static_x(GE_color_z(colornum, Z_LINENUMBERS));
+  GE_Context *c = GE_static_x(GE_textcolor_z(colornum, Z_LINENUMBERS));
   
   if(localzoom->level>0 && localzoom->zoomline>0){
     draw_text_num(
@@ -226,7 +226,7 @@ static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,in
   int tempo=wblock->wtempos[realline].tempo;
   int type=wblock->wtempos[realline].type;
   GE_Context *c = GE_color(1);
-
+  
   if(tempo!=0){
     draw_text_num(
                   c,

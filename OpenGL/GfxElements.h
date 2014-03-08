@@ -1,7 +1,7 @@
 #include <assert.h>
 
 #include <QColor>
-
+#include <QFont>
 
 
 typedef struct{
@@ -51,11 +51,13 @@ static inline GE_Context *GE_static_x(GE_Context *c){
   return GE_linenumber(c);
 }
 
+
 bool GE_new_read_contexts(void); // returns false if a new read context couldn't be made. (I.e. returns false if nothing was written since last call to the function.)
 void GE_start_writing(void);
 void GE_end_writing(void);
 
 GE_Context *GE_color_z(int colornum, int z);
+GE_Context *GE_textcolor_z(int colornum, int z);
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z);
 GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z);
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
@@ -79,6 +81,7 @@ static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
 
 
 //void GE_set_font(QFont font);
+void GE_set_font(const QFont &font);
 
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_text(GE_Context *c, const char *text, float x, float y);
