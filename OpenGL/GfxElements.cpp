@@ -142,6 +142,17 @@ static QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > g_contexts;
 //          z             color
 
 
+
+
+
+
+
+/*****************************************/
+/* Drawing.  Called from OpenGL thread. */
+/****************************************/
+
+
+
 static void setColorBegin(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
   if(c->gradient.get() != NULL) {
     vg->setImage(c->gradient.get());
@@ -155,8 +166,12 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
     vg->setImage(NULL);
 }
 
-void GE_clear(void){
-  g_contexts.clear();
+
+static int schedule_level = 0;
+static int drawing_level = 0;
+
+bool GE_needs_drawing(void){
+  return schedule_level != drawing_level;
 }
 
 void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform){
@@ -260,7 +275,11 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
 
 
 
-/* Creating context */
+
+
+/*************************************************/
+/* Creating contexts.  Called from main thread. */
+/***********************************************/
 
 static GE_Context *get_context(const GE_Context::Color color, int z){
   static bool inited = false;
@@ -354,7 +373,13 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 
 
 
-/* Scheduling drawing operations */
+/************************************************************/
+/* Scheduling drawing operations. Called from main thread. */
+/**********************************************************/
+
+void GE_clear(void){
+  g_contexts.clear();
+}
 
 void GE_set_font(QFont font){
   GE_set_new_font(font);
