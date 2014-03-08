@@ -147,7 +147,7 @@ extern NInt ListFindElementPos3(
                                 );
 
 extern void *ListLast3(struct ListHeader3 *list);
-extern void *ListLast1(struct ListHeader1 *list);
+extern LANGSPEC void *ListLast1(struct ListHeader1 *list);
 
 extern void List_InsertLines3(
 	void *to,

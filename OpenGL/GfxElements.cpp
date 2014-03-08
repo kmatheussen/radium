@@ -4,6 +4,8 @@
 #include <vector>
 
 #include <QMap>
+#include <QMutex>
+#include <QMutexLocker>
 
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
@@ -136,14 +138,43 @@ static float get_pen_width_from_key(int key){
 
 
 
-static QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > g_contexts;
-//          ^             ^
-//          |             |
-//          z             color
+static QMutex mutex;
+
+typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
+//                         ^             ^
+//                         |             |
+//                         z             color
+
+static Contexts *g_read_contexts = NULL;
+static Contexts *g_write_contexts = NULL;
+static Contexts g_contexts;
 
 
+bool GE_new_read_contexts(void){
+  QMutexLocker locker(&mutex);
+  
+  if(g_write_contexts==NULL)
+    return false;
+  
+  delete g_read_contexts;
+  g_read_contexts = g_write_contexts;
+  g_write_contexts = NULL;
+  
+  return true;
+}
 
+void GE_start_writing(void){
+}
 
+void GE_end_writing(void){
+  QMutexLocker locker(&mutex);
+
+  if (g_write_contexts != NULL) // I know the check is unnecessary, but the code is clearer this way. (shows that the variable might be NULL)
+    delete g_write_contexts;
+
+  g_write_contexts = new Contexts(g_contexts);
+  g_contexts.clear();
+}
 
 
 
@@ -167,13 +198,6 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
 }
 
 
-static int schedule_level = 0;
-static int drawing_level = 0;
-
-bool GE_needs_drawing(void){
-  return schedule_level != drawing_level;
-}
-
 void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform){
   vg->setLineSmoothing(true);
   vg->setPolygonSmoothing(true);
@@ -184,13 +208,23 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
 
   vg->startDrawing(); {
 
-    QMapIterator<int, std::map<uint64_t, vl::ref<GE_Context> > > it(g_contexts);
-    while (it.hasNext()) {
-      it.next();
+    Contexts *main_contexts;
+
+    mutex.lock(); {
+      assert(g_read_contexts != NULL);
+      
+      main_contexts = g_read_contexts;
+      g_read_contexts = NULL;
+    } mutex.unlock();
+
+    //QMapIterator<int, std::map<uint64_t, vl::ref<GE_Context> > > it(&contexts);
+    //begin();//(*contexts);
+
+    for (Contexts::Iterator it = main_contexts->begin(); it != main_contexts->end(); ++it) {
 
       //int z = it.key();
       std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
-
+      
 
       // 1. Filled boxes
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
@@ -269,6 +303,9 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
 
       //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
     }
+
+    delete main_contexts;
+
   }vg->endDrawing();
 }
 
@@ -376,10 +413,6 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 /************************************************************/
 /* Scheduling drawing operations. Called from main thread. */
 /**********************************************************/
-
-void GE_clear(void){
-  g_contexts.clear();
-}
 
 void GE_set_font(QFont font){
   GE_set_new_font(font);

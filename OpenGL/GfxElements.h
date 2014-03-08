@@ -51,7 +51,9 @@ static inline GE_Context *GE_static_x(GE_Context *c){
   return GE_linenumber(c);
 }
 
-void GE_clear(void);
+bool GE_new_read_contexts(void); // returns false if a new read context couldn't be made. (I.e. returns false if nothing was written since last call to the function.)
+void GE_start_writing(void);
+void GE_end_writing(void);
 
 GE_Context *GE_color_z(int colornum, int z);
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z);

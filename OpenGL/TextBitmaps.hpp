@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include <vlCore/Image.hpp>
+#include <vlCore/IMutex.hpp>
 #include <vlGraphics/ImagePBO.hpp>
 
 #include <QFont>
@@ -8,16 +9,40 @@
 #include <QHash>
 #include <QPainter>
 #include <QGLWidget>
+#include <QMutex>
 
 
 static const char *chars="CDEFGABcdefgabhlo0123456789.-MULR# m";
 
 namespace{
 
-struct ImageHolder{
-  vl::ref<vl::Image> image;
-  int width;
-};
+  struct MyMutex : public vl::IMutex{
+    QMutex mutex;
+    int is_locked;
+
+    MyMutex() : is_locked(0) {}
+
+    virtual void 	lock () {
+      mutex.lock();
+      is_locked = 1;
+    }
+
+    virtual void 	unlock () {
+      is_locked = 0;
+      mutex.unlock();
+    }
+
+    virtual int isLocked () const {
+      //Returns 1 if locked, 0 if non locked, -1 if unknown. 
+      return is_locked;
+    }
+
+  };
+
+  struct ImageHolder {
+    vl::ref<vl::ImagePBO> image;
+    int width;
+  };
 
 
 QHash<char,ImageHolder> g_imageholders;
@@ -49,7 +74,10 @@ static inline void GE_set_new_font(QFont font){
     QImage qtgl_image = qt_image;
     //QImage qtgl_image = QGLWidget::convertToGLFormat(qt_image);
     
-    vl::ref<vl::Image> vl_image = new vl::ImagePBO;
+    //vl::ImagePBO *vl_image = new vl::ImagePBO;
+    vl::ImagePBO *vl_image = new vl::ImagePBO;
+    vl_image->setRefCountMutex(new MyMutex);
+
     vl_image->allocate2D(width,height,4,vl::IF_RGBA, vl::IT_UNSIGNED_BYTE);
     
     unsigned char *qt_bits = qtgl_image.bits();
@@ -58,7 +86,9 @@ static inline void GE_set_new_font(QFont font){
     int s = width*height*4;
     memcpy(vl_bits,qt_bits,s);
     
-    ImageHolder holder = {vl_image, real_width};
+    ImageHolder holder;
+    holder.image = vl_image;
+    holder.width = real_width;
     
     g_imageholders[c] = holder;
   }
@@ -80,8 +110,11 @@ struct TextBitmaps{
 
     x = (int)x;
     y = (int)y;
-    const ImageHolder holder = g_imageholders[c];
-    vl::ref<vl::Image> image = holder.image;
+
+    assert(g_imageholders.contains(c));
+
+    ImageHolder holder = g_imageholders[c];
+    vl::ImagePBO *image = holder.image.get();
     //float x2 = x + image->width()-1;
     //float y2 = y + image->height()-1;
 
@@ -103,6 +136,7 @@ struct TextBitmaps{
       if(points[c].size()>0) {
         //printf("char: %c, size: %d\n",c,(int)points[c].size());
 
+        //vg->setPoint(holder.image.get());
         vg->setPoint(holder.image.get());
         //vg->setColor(vl::fvec4(0.1,0.05,0.1,0.8));
         if(transform)

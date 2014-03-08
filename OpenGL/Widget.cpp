@@ -77,14 +77,19 @@ public:
 
     /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
   virtual void initEvent() {
-    printf("initEvent\n");
-    vl::ref<vl::VectorGraphics> vg = new vl::VectorGraphics;
+    if(GE_new_read_contexts()==true) {
+      printf("initEvent\n");
 
-    vl::ref<vl::SceneManagerVectorGraphics> vgscene = new vl::SceneManagerVectorGraphics;
-    vgscene->vectorGraphicObjects()->push_back(vg.get());
-    _rendering->sceneManagers()->push_back(vgscene.get());
+      _rendering->sceneManagers()->clear();
 
-    GE_draw_vl(vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+      vl::ref<vl::VectorGraphics> vg = new vl::VectorGraphics;
+      
+      vl::ref<vl::SceneManagerVectorGraphics> vgscene = new vl::SceneManagerVectorGraphics;
+      vgscene->vectorGraphicObjects()->push_back(vg.get());
+      _rendering->sceneManagers()->push_back(vgscene.get());
+
+      GE_draw_vl(vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+    }
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
@@ -98,6 +103,8 @@ public:
     //printf("updateEvent\n");
 
     static float pos = -123412;
+
+    initEvent();
 
     if(true || pos != das_pos) {
 

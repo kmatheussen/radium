@@ -2,6 +2,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
+#include "../common/list_proc.h"
 
 #include "GfxElements.h"
 
@@ -71,8 +72,10 @@ extern int line_opacity;
 
 static void create_background_realline(struct Tracker_Windows *window, struct WBlocks *wblock, int realline){
 
+  struct WTracks *last_wtrack = (struct WTracks*)ListLast1(&wblock->wtracks->l);
+
   int x1 = 0;
-  int x2 = wblock->a.x2;
+  int x2 = last_wtrack->x2;
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);
 
@@ -266,12 +269,16 @@ static void create_bpmtrack(struct Tracker_Windows *window, struct WBlocks *wblo
  ************************************/
 
 void GL_create(struct Tracker_Windows *window, struct WBlocks *wblock){
-  create_background(window, wblock);
-  create_linenumbers(window, wblock);
-  create_lpbtrack(window, wblock);
-  create_bpmtrack(window, wblock);
+  GE_start_writing(); {
+
+    create_background(window, wblock);
+    create_linenumbers(window, wblock);
+    create_lpbtrack(window, wblock);
+    create_bpmtrack(window, wblock);
 #if 0
-  create_reltempotrack(window, wblock);
-  create_tracks(window, wblock);
+    create_reltempotrack(window, wblock);
+    create_tracks(window, wblock);
 #endif
+
+  } GE_end_writing();
 }
