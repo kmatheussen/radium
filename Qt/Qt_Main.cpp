@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #include <Qt>
 #include <QDir>
+#include <QTextEdit>
+
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -641,9 +643,19 @@ int radium_main(char *arg){
 
   is_starting_up=false;
 
-
-
   GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+
+
+  // Hack to make Qt text input widgets not crash the program when using the intel driver and running opengl in separate thread. (strange stuff)
+  GL_lock();
+  {
+    QTextEdit e;
+    e.show();
+    e.setFocus();
+    QCoreApplication::processEvents();
+  }
+  GL_unlock();
+
 
 
 #if USE_QT_VISUAL
@@ -692,6 +704,7 @@ extern "C" {
 
 
 int main(int argc, char **argv){
+
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
 

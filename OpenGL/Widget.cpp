@@ -8,6 +8,8 @@
 
 #include <QWidget>
 #include <QGLWidget>
+#include <QMutex>
+#include <QTextEdit>
 
 #include "../common/nsmtracker.h"
 
@@ -20,6 +22,15 @@
 
 static float das_pos = 1000.0f; //_rendering->camera()->viewport()->height();
 
+static QMutex mutex;
+
+void GL_lock(void){
+  mutex.lock();
+}
+
+void GL_unlock(void){
+  mutex.unlock();
+}
 
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
@@ -102,6 +113,8 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
+    GL_lock();
+
     static float pos = -123412;
 
     initEvent();
@@ -158,6 +171,8 @@ public:
     // show rendering
     if ( openglContext()->hasDoubleBuffer() )
       openglContext()->swapBuffers();
+
+    GL_unlock();
   }
     
   /** Event generated whenever setEnabled() is called. */

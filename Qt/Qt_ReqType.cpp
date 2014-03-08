@@ -156,6 +156,7 @@ void gotchar(char c){
 }
 
 void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
+
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
   int x = x_margin;
