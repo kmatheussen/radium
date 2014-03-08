@@ -128,7 +128,7 @@ public:
 
 #if 1
       das_pos += 2.03;
-      if(das_pos>512*20 + 1200)
+      if(das_pos>64*20)
         das_pos=_rendering->camera()->viewport()->height();
 #endif
 

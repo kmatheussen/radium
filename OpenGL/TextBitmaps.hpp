@@ -12,6 +12,8 @@
 #include <QMutex>
 
 
+// TODO: Don't paint space. That's very inefficent.
+
 static const char *chars="CDEFGABcdefgabhlo0123456789.-MULR# m";
 
 namespace{
@@ -45,7 +47,9 @@ namespace{
   };
 
 
-QHash<char,ImageHolder> g_imageholders;
+static QHash<char,ImageHolder> g_imageholders;
+
+static MyMutex image_mutex;
 
 
 static inline void GE_set_new_font(QFont font){
@@ -76,7 +80,7 @@ static inline void GE_set_new_font(QFont font){
     
     //vl::ImagePBO *vl_image = new vl::ImagePBO;
     vl::ImagePBO *vl_image = new vl::ImagePBO;
-    vl_image->setRefCountMutex(new MyMutex);
+    vl_image->setRefCountMutex(&image_mutex);
 
     vl_image->allocate2D(width,height,4,vl::IF_RGBA, vl::IT_UNSIGNED_BYTE);
     
