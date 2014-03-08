@@ -145,9 +145,11 @@ typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 //                         |             |
 //                         z             color
 
+
+// this is somewhat complicated, but very efficient.
 static Contexts *g_read_contexts = NULL;
 static Contexts *g_write_contexts = NULL;
-static Contexts g_contexts;
+static Contexts *g_contexts = NULL;
 
 
 bool GE_new_read_contexts(void){
@@ -164,6 +166,7 @@ bool GE_new_read_contexts(void){
 }
 
 void GE_start_writing(void){
+  g_contexts = new Contexts;
 }
 
 void GE_end_writing(void){
@@ -172,8 +175,7 @@ void GE_end_writing(void){
   if (g_write_contexts != NULL) // I know the check is unnecessary, but the code is clearer this way. (shows that the variable might be NULL)
     delete g_write_contexts;
 
-  g_write_contexts = new Contexts(g_contexts);
-  g_contexts.clear();
+  g_write_contexts = g_contexts;
 }
 
 
@@ -329,12 +331,12 @@ static GE_Context *get_context(const GE_Context::Color color, int z){
     inited=true;
   }
 
-  if(g_contexts[z].count(color.key)>0)
-    return g_contexts[z][color.key].get();
+  if((*g_contexts)[z].count(color.key)>0)
+    return (*g_contexts)[z][color.key].get();
 
   GE_Context *c = new GE_Context(color, z);
 
-  g_contexts[z][color.key] = c;
+  (*g_contexts)[z][color.key] = c;
   return c;
 }
 
