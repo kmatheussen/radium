@@ -39,34 +39,20 @@ static void draw_bordered_text(
 
   GE_text(c, text, x, y);
 
-
-  //GFX_Line(window,9,x,y,x,y2,PAINT_BUFFER);
   GE_line(GE_color_z(9, z),
           x,y,x,y2,1.0f);
 
-  //GE_Context *c2 = GE_mix_color(GE_get_rgb(9), GE_get_rgb(11), 800);
-  GE_Context *c2 = GE_gradient_z(GE_get_rgb(9), GE_get_rgb(11), z);
+  QColor qc1 = GE_qcolor(9).darker(90);
+  QColor qc2 = GE_qcolor(9).darker(110);
+  GE_Context *c2 = GE_gradient_z(qc1, qc2, z); //GE_get_rgb(9), GE_get_rgb(11), z);
 
-  //GFX_Line(window,9,x,y,x2,y,PAINT_BUFFER);
   GE_line(c2,
           x,y,x2,y,1.0f);
 
-  //GFX_SetMixColor(window, 11, 1, 800);
-  //GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
-  /*
-  QColor qcolor(c2
-  QColor q1 = qcolor.darker(90);
-  QColor q2 = qcolor.darker(110);
-  */
-
-  GE_Context *c3 = GE_color_z(11, z);
+  GE_Context *c3 = GE_mix_color_z(GE_get_rgb(11), GE_get_rgb(1), 800, z);
 
   GE_line(c3, x2,y, x2,y2, 1.0f);
-
-  //GFX_SetMixColor(window, 11, 1, 800);
-  //GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
   GE_line(c3,x,y2,x2,y2,1.0f);
-
 }
 
 

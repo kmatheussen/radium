@@ -1,7 +1,9 @@
 #include <assert.h>
 
+#ifdef __cplusplus
 #include <QColor>
 #include <QFont>
+#endif
 
 
 typedef struct{
@@ -68,6 +70,14 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z);
 GE_Context *GE_color_z(const QColor &color, int z);
 static inline GE_Context *GE_color(const QColor &color) {
   return GE_color_z(color, Z_ZERO);
+}
+GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z);
+
+#include "../Qt/EditorWidget.h"
+extern struct Root *root;
+static inline QColor GE_qcolor(int colornum){
+  EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
+  return editor->colors[colornum];
 }
 #endif
 
