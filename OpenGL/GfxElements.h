@@ -27,14 +27,18 @@ typedef struct _GE_Context GE_Context;
 void GE_set_height(int height);
 int GE_get_height(void);
 
-#ifdef GE_DRAW_VL
+#if defined(GE_DRAW_VL)
 void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
 #endif
+
+#define Z_ABOVE(z) ((z)+2)
+#define Z_BELOW(z) ((z)-2)
+#define Z_STATIC_X 1
+#define Z_IS_STATIC_X(z) ((z)&1)
 
 enum{
   Z_BACKGROUND = -10,
   Z_ZERO = 0,
-  Z_ABOVE = 10,
 
   Z_LINENUMBERS = 50,
 
@@ -46,10 +50,7 @@ enum{
   Z_STATIC = 400
 };
 
-GE_Context *GE_linenumber(GE_Context *c);
-static inline GE_Context *GE_static_x(GE_Context *c){
-  return GE_linenumber(c);
-}
+GE_Context *GE_set_static_x(GE_Context *c);
 
 
 bool GE_new_read_contexts(void); // returns false if a new read context couldn't be made. (I.e. returns false if nothing was written since last call to the function.)
@@ -63,8 +64,18 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
 GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z);
 
+#ifdef __cplusplus
+GE_Context *GE_color_z(const QColor &color, int z);
+static inline GE_Context *GE_color(const QColor &color) {
+  return GE_color_z(color, Z_ZERO);
+}
+#endif
+
 static inline GE_Context *GE_color(int colornum) {
   return GE_color_z(colornum, Z_ZERO);
+}
+static inline GE_Context *GE_textcolor(int colornum) {
+  return GE_textcolor_z(colornum, Z_ZERO);
 }
 static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b) {
   return GE_rgb_color_z(r,g,b, Z_ZERO);
@@ -80,8 +91,10 @@ static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
 }
 
 
+#ifdef __cplusplus
 //void GE_set_font(QFont font);
 void GE_set_font(const QFont &font);
+#endif
 
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_text(GE_Context *c, const char *text, float x, float y);

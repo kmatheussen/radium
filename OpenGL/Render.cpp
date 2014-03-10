@@ -24,10 +24,55 @@ static int get_realline_y2(struct Tracker_Windows *window, int realline){
 }
 
 
+static void draw_bordered_text(
+                               struct Tracker_Windows *window,
+                               int colornum, int z,
+                               char *text,
+                               int x,
+                               int y
+                               )
+{
+  int x2=x+(strlen(text)*window->fontwidth);
+  int y2=y+window->fontheight-1;
+
+  GE_Context *c = GE_textcolor_z(colornum, z);
+
+  GE_text(c, text, x, y);
+
+
+  //GFX_Line(window,9,x,y,x,y2,PAINT_BUFFER);
+  GE_line(GE_color_z(9, z),
+          x,y,x,y2,1.0f);
+
+  //GE_Context *c2 = GE_mix_color(GE_get_rgb(9), GE_get_rgb(11), 800);
+  GE_Context *c2 = GE_gradient_z(GE_get_rgb(9), GE_get_rgb(11), z);
+
+  //GFX_Line(window,9,x,y,x2,y,PAINT_BUFFER);
+  GE_line(c2,
+          x,y,x2,y,1.0f);
+
+  //GFX_SetMixColor(window, 11, 1, 800);
+  //GFX_Line(window,1,x2,y,x2,y2,PAINT_BUFFER);
+  /*
+  QColor qcolor(c2
+  QColor q1 = qcolor.darker(90);
+  QColor q2 = qcolor.darker(110);
+  */
+
+  GE_Context *c3 = GE_color_z(11, z);
+
+  GE_line(c3, x2,y, x2,y2, 1.0f);
+
+  //GFX_SetMixColor(window, 11, 1, 800);
+  //GFX_Line(window,1,x,y2,x2,y2,PAINT_BUFFER);
+  GE_line(c3,x,y2,x2,y2,1.0f);
+
+}
 
 
 static void draw_text_num(
-                          GE_Context *c,
+                          struct Tracker_Windows *window,
+                          int colornum, int z,
                           int num,
                           int length,
                           int x,
@@ -54,7 +99,7 @@ static void draw_text_num(
   sprintf(temp3,"%s%s",temp2,temp);
   temp3[length+1]=0;
   
-  GE_text(c, temp3, x, y);
+  draw_bordered_text(window, colornum, z, temp3, x, y);
 }
 
 
@@ -79,16 +124,17 @@ static void create_background_realline(struct Tracker_Windows *window, struct WB
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);
 
-  // background color
+  // background
   {
     if(lpb_opacity == -1)
       lpb_opacity = SETTINGS_read_int("lpb_opacity", 900);
     
     GE_Context *c;
+ 
     if( (wblock->wlpbs[realline].is_beat))
-      c = GE_static_x(GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), lpb_opacity / 1000.0f, Z_BACKGROUND));
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), lpb_opacity, Z_BACKGROUND | Z_STATIC_X);
     else
-      c = GE_static_x(GE_color_z(15, Z_BACKGROUND));
+      c = GE_color_z(15, Z_BACKGROUND | Z_STATIC_X);
     
     GE_filledBox(c,x1,y1,x2,y2);
   }
@@ -101,7 +147,7 @@ static void create_background_realline(struct Tracker_Windows *window, struct WB
       line_opacity = SETTINGS_read_int("line_opacity", 800);
     
     if(line_opacity != 1000) {
-      GE_Context *c = GE_static_x(GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity / 1000.0f, Z_LINENUMBERS - 1));
+      GE_Context *c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
 
       GE_line(c,x1,y1,x2,y1,line_width);
     }
@@ -144,18 +190,20 @@ static void create_background_linenumber(struct Tracker_Windows *window, struct 
     colornum=1;
   }
 
-  GE_Context *c = GE_static_x(GE_textcolor_z(colornum, Z_LINENUMBERS));
+  int z = Z_LINENUMBERS | Z_STATIC_X;
   
   if(localzoom->level>0 && localzoom->zoomline>0){
     draw_text_num(
-                  c,
+                  window,
+                  colornum, z,
                   localzoom->zoomline,
                   wblock->zoomlinearea.width/window->fontwidth,
                   wblock->zoomlinearea.x,
                   y);
   }else{
     draw_text_num(
-                  c,
+                  window,
+                  colornum, z,
                   localzoom->Tline,
                   (wblock->linenumarea.width)/window->fontwidth,
                   wblock->linenumarea.x,
@@ -181,17 +229,17 @@ static void create_lpb(struct Tracker_Windows *window, struct WBlocks *wblock,in
   int y = get_realline_y1(window, realline);
   int lpb=wblock->wlpbs[realline].lpb;
   int type=wblock->wlpbs[realline].type;
-  GE_Context *c = GE_color(1);
-
+  
   if(lpb!=0){
     draw_text_num(
-                  c,
+                  window,
+                  1, Z_ZERO,
                   lpb,
                   wblock->lpbarea.width/window->fontwidth,
                   wblock->lpbarea.x,
                   y);
   }
-
+  
   if(type!=LPB_NORMAL){
     const char *typetext;
     switch(type){
@@ -204,9 +252,12 @@ static void create_lpb(struct Tracker_Windows *window, struct WBlocks *wblock,in
     default:
       abort();
     };
+    
+    GE_Context *c = GE_textcolor_z(1, Z_ZERO);
     GE_text(c, typetext, wblock->lpbTypearea.x, y);
   }
 }
+
 
 
 static void create_lpbtrack(struct Tracker_Windows *window, struct WBlocks *wblock){
@@ -225,11 +276,11 @@ static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,in
   int y = get_realline_y1(window, realline);
   int tempo=wblock->wtempos[realline].tempo;
   int type=wblock->wtempos[realline].type;
-  GE_Context *c = GE_color(1);
   
   if(tempo!=0){
     draw_text_num(
-                  c,
+                  window,
+                  1, Z_ZERO,
                   tempo,
                   wblock->tempoarea.width/window->fontwidth,
                   wblock->tempoarea.x,
@@ -248,6 +299,8 @@ static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,in
     default:
       abort();
     };
+
+    GE_Context *c = GE_color(1);
     GE_text(c, typetext, wblock->tempoTypearea.x, y);
   }
 }

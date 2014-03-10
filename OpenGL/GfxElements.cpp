@@ -69,7 +69,6 @@ struct _GE_Context : public vl::Object{
 
   int _z;
   bool is_static;
-  bool is_linenumber;
 
   vl::ref<vl::Image> gradient;
 
@@ -77,7 +76,6 @@ struct _GE_Context : public vl::Object{
     : color(_color)
     , _z(z)
     , is_static(z >= Z_MIN_STATIC)
-    , is_linenumber(false)
     , gradient(NULL)
   {
     assert(sizeof(Color)==sizeof(uint64_t));
@@ -97,9 +95,9 @@ struct _GE_Context : public vl::Object{
       return -y;
   }
 
-  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform){
-    if (is_linenumber)
-      return linenumbers_transform.get();
+  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+    if (Z_IS_STATIC_X(_z))
+      return static_x_transform.get();
     else if (_z <= Z_MAX_SCROLLTRANSFORM)
       return scroll_transform.get();
     else if (_z < Z_MIN_STATIC)
@@ -110,16 +108,11 @@ struct _GE_Context : public vl::Object{
 
 };
 
-GE_Context *GE_linenumber(GE_Context *c){
-  c->is_linenumber = true;
-  return c;
-}
-
 
 /* Drawing */
 
-static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform){
-  vl::Transform *transform = c->get_transform(scroll_transform, linenumbers_transform, scrollbar_transform);
+static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+  vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform);
   if (transform != NULL)
     actor->setTransform(transform);
 }
@@ -200,7 +193,7 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
 }
 
 
-void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform){
+void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
   vg->setLineSmoothing(true);
   vg->setPolygonSmoothing(true);
   //vg->setPointSmoothing(true); /* default value */
@@ -236,7 +229,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
         if(c->boxes.size() > 0) {
           setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, linenumbers_transform, scrollbar_transform);
+          setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform);
           
           setColorEnd(vg, c);
         }
@@ -252,7 +245,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
         if(c->trianglestrips.size() > 0) {
           setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, linenumbers_transform, scrollbar_transform);
+          setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform);
           //vg->fillPolygons(c->trianglestrips);
           
           setColorEnd(vg, c);
@@ -261,7 +254,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
         if(c->triangles.size() > 0) {
           setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, linenumbers_transform, scrollbar_transform);
+          setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
           //printf("triangles size: %d\n",(int)c->triangles.size());
           
           setColorEnd(vg, c);
@@ -276,7 +269,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
         
         if(c->textbitmaps.points.size()>0){
           setColorBegin(vg, c);
-          c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, linenumbers_transform, scrollbar_transform));
+          c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
         setColorEnd(vg, c);
         }
       }
@@ -296,7 +289,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
           has_set_color=true;
           
           vg->setLineWidth(get_pen_width_from_key(iterator->first));
-          setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, linenumbers_transform, scrollbar_transform);
+          setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform);
         }
         
         if(has_set_color==false)
@@ -349,6 +342,11 @@ static GE_Context *get_context_from_rgb(const GE_Rgb rgb, int z){
   return get_context(color, z);
 }
 
+GE_Context *GE_color_z(const QColor &color, int z){
+  GE_Rgb rgb = {(unsigned char)color.red(), (unsigned char)color.green(), (unsigned char)color.blue(), (unsigned char)color.alpha()};
+  return get_context_from_rgb(rgb, z);
+}
+
 GE_Context *GE_color_z(int colornum, int z){
   //const QColor c = get_qcolor(window, colornum);
   return get_context_from_rgb(GE_get_rgb(colornum), z);
@@ -381,7 +379,7 @@ GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, in
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z){
   GE_Rgb rgb;
 
-  float a1 = how_much;
+  float a1 = how_much / 1000.0f;
   float a2 = 1.0f-a1;
 
   if(c1.r==0 && c1.g==0 && c1.b==0){ // some of the black lines doesn't look look very good.
@@ -390,11 +388,12 @@ GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int
     rgb.b = 74*a1 + c2.b*a2;
     rgb.a = c1.a*a1 + c2.a*a2;
   }else{
-    rgb.r = c1.r*a1 + c2.r*a2;
-    rgb.g = c1.g*a1 + c2.g*a2;
-    rgb.b = c1.b*a1 + c2.b*a2;
-    rgb.a = c1.a*a1 + c2.a*a2;
-  }
+    rgb.r = (float)c1.r*a1 + (float)c2.r*a2;
+    rgb.g = (float)c1.g*a1 + (float)c2.g*a2;
+    rgb.b = (float)c1.b*a1 + (float)c2.b*a2;
+    rgb.a = (float)c1.a*a1 + (float)c2.a*a2;
+    //printf("r: %d, g: %d, b: %d, a: %d. a1: %f, a2: %f\n",rgb.r,rgb.g,rgb.b,rgb.a,a1,a2);
+ }
 
   return get_context_from_rgb(rgb, z);
 }

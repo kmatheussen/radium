@@ -174,7 +174,7 @@ static bool set_wav_loop_points_using_cues(Sample *sample, FILE *file){
   if(cue_id_loop_start==-1 || cue_id_loop_end==-1)
     return false;
 
-  if(spool_to_wav_chunk(file, "cue ", 0)==-1)
+  if(spool_to_wav_chunk(file, "cue ", 0)==false)
     return false;
 
   fseek(file,8,SEEK_CUR);
@@ -210,7 +210,7 @@ static int get_bytes_per_frame_in_wav(FILE *file){
 #endif
 
 static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, FILE *file){
-  if(spool_to_wav_chunk(file, "smpl", 0)==-1)
+  if(spool_to_wav_chunk(file, "smpl", 0)==false)
     return false;
 
   fseek(file,0x24,SEEK_CUR);

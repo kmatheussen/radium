@@ -309,7 +309,7 @@ class CalledPeriodically : public QTimer {
 
 public:
   CalledPeriodically(){
-    setInterval(10);
+    setInterval(20);
     start();
     msgBox.setModal(false);
     msgBox.open();

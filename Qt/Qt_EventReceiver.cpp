@@ -138,8 +138,8 @@ void EditorWidget::updateEditor(){
     return;
 
   if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
-    update();
     GL_create(window, window->wblock);
+    update();
   }
 }
 

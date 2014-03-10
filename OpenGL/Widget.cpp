@@ -125,7 +125,8 @@ public:
       {
         vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
         //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-        mat.translate(-(das_pos-1000)/16.0f,das_pos,0);
+        //mat.translate(-(das_pos-1000)/16.0f,das_pos,0);
+        mat.translate(0,das_pos,0);
         //mat.scale(das_pos/16.0f,0,0);
         _scroll_transform->setLocalAndWorldMatrix(mat);
       }

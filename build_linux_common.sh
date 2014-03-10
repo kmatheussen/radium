@@ -23,8 +23,10 @@ fi
 export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 #export CPUOPT=
 
-export CCC=g++
-export CC=gcc
+export CCC="g++ -mfpmath=sse"
+export CC="gcc -mfpmath=sse"
+#export CCC=clang++
+#export CC="clang -Wno-gnu-designator "
 export LINKER=g++
 
 export PKG=pkg-config
@@ -38,8 +40,9 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse -mfpmath=sse -DFOR_LINUX -DWITH_PD"
+export OS_OPTS="-Werror=array-bounds -msse -DFOR_LINUX -DWITH_PD  -Wno-unused-function"
 #export OS_OPTS="-Werror=array-bounds -march=native"
+ 
 
 export VST_OPTS="-DUSE_VESTIGE=1"
 
