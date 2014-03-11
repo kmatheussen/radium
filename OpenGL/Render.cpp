@@ -32,12 +32,13 @@ static void draw_bordered_text(
                                int y
                                )
 {
-  int x2=x+(strlen(text)*window->fontwidth);
-  int y2=y+window->fontheight-1;
-
   GE_Context *c = GE_textcolor_z(colornum, z);
 
   GE_text(c, text, x, y);
+
+#if 1
+  int x2=x+(strlen(text)*window->fontwidth);
+  int y2=y+window->fontheight-1;
 
   GE_line(GE_color_z(9, z),
           x,y,x,y2,1.0f);
@@ -53,6 +54,7 @@ static void draw_bordered_text(
 
   GE_line(c3, x2,y, x2,y2, 1.0f);
   GE_line(c3,x,y2,x2,y2,1.0f);
+#endif
 }
 
 
@@ -254,8 +256,9 @@ static void create_lpbtrack(struct Tracker_Windows *window, struct WBlocks *wblo
 
 
 
+
 /************************************
-   lpb track
+   bpm track
  ************************************/
 
 static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,int realline){
@@ -300,6 +303,22 @@ static void create_bpmtrack(struct Tracker_Windows *window, struct WBlocks *wblo
 
 
 
+/************************************
+   reltempo track
+ ************************************/
+
+static void create_reltempo(struct Tracker_Windows *window, struct WBlocks *wblock,int realline){
+}
+
+
+static void create_reltempotrack(struct Tracker_Windows *window, struct WBlocks *wblock){
+  int realline;
+  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
+    create_reltempo(window, wblock, realline);
+}
+
+
+
 
 
 
@@ -314,8 +333,8 @@ void GL_create(struct Tracker_Windows *window, struct WBlocks *wblock){
     create_linenumbers(window, wblock);
     create_lpbtrack(window, wblock);
     create_bpmtrack(window, wblock);
-#if 0
     create_reltempotrack(window, wblock);
+#if 0
     create_tracks(window, wblock);
 #endif
 

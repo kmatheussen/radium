@@ -314,15 +314,15 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
 /***********************************************/
 
 static GE_Context *get_context(const GE_Context::Color color, int z){
+#if 0
   static bool inited = false;
 
   if(inited==false){
     QFont font;
-    font.fromString("DejaVu Sans Mono,12,-1,5,75,0,0,0,0,0");
-    font.setStyleName("Bold");
     GE_set_new_font(font);
     inited=true;
   }
+#endif
 
   if((*g_contexts)[z].count(color.key)>0)
     return (*g_contexts)[z][color.key].get();
