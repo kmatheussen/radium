@@ -4,6 +4,7 @@
 #include "../common/settings_proc.h"
 #include "../common/list_proc.h"
 #include "../common/realline_calc_proc.h"
+#include "../common/gfx_subtrack_proc.h"
 
 #include "GfxElements.h"
 
@@ -430,6 +431,46 @@ void create_block_borders(
 
 
 /************************************
+   tracks
+ ************************************/
+void create_track_borders(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  int y1=get_realline_y1(window, 0);
+  int y2=get_realline_y2(window, wblock->num_reallines-1);
+  
+  create_double_border(
+                       wtrack->x2+1,
+                       y1,
+                       y2);
+
+  create_single_border(
+                       wtrack->notearea.x2+1,
+                       y1,
+                       y2);
+
+  for(int lokke=1 ; lokke<wtrack->num_vel;lokke++){
+    create_single_border(
+                         GetXSubTrack1(wtrack,lokke)-1,
+                         y1,
+                         y2);
+  }
+
+}
+
+void create_track(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  create_track_borders(window, wblock, wtrack);
+}
+
+
+void create_tracks(struct Tracker_Windows *window, struct WBlocks *wblock){
+  struct WTracks *wtrack=wblock->wtracks;
+
+  while(wtrack!=NULL){
+    create_track(window, wblock, wtrack);
+    wtrack=NextWTrack(wtrack);
+  }
+}
+
+/************************************
    block
  ************************************/
 
@@ -442,9 +483,7 @@ void GL_create(struct Tracker_Windows *window, struct WBlocks *wblock){
     create_lpbtrack(window, wblock);
     create_bpmtrack(window, wblock);
     create_reltempotrack(window, wblock);
-#if 0
     create_tracks(window, wblock);
-#endif
 
   } GE_end_writing();
 }
