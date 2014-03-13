@@ -3,6 +3,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
 #include "../common/list_proc.h"
+#include "../common/realline_calc_proc.h"
 
 #include "GfxElements.h"
 
@@ -23,6 +24,9 @@ static int get_realline_y2(struct Tracker_Windows *window, int realline){
   return window->fontheight*(realline+1);
 }
 
+static float get_realline_y(struct Tracker_Windows *window, float reallineF){
+  return window->fontheight*reallineF;
+}
 
 static void draw_bordered_text(
                                struct Tracker_Windows *window,
@@ -93,6 +97,51 @@ static void draw_text_num(
 
 
 
+static void draw_skewed_box(struct Tracker_Windows *window,
+                            int color,
+                            int x1,int y1,int x2, int y2)
+{
+
+  // vertical left
+  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(2), 100),
+          x1+1, y1+1,
+          x1+2,y2-1,
+          1.0f);
+
+  // horizontal bottom
+  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(1), 300),
+          x1+2,y2-1,
+          x2-1,y2-2,
+          1.0f);
+
+  // vertical right
+  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(1), 400),
+          x2-1,y2-2,
+          x2-2,y1+2,
+          1.0f);
+
+  // horizontal top
+  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(2), 300),
+          x2-2,y1+2,
+          x1+1,y1+1,
+          1.0f);
+}
+
+
+void create_double_border(
+                          int x, int y, int y2
+                          )
+{
+  GE_line(GE_color(1),x,y,x,y2,1.0);
+  GE_line(GE_color(9),x+1,y,x+1,y2,1.0);
+}
+
+void create_single_border(
+                          int x, int y, int y2
+                          )
+{
+  GE_line(GE_color(7),x,y,x,y2,1.0);
+}
 
 
 /************************************
@@ -312,13 +361,71 @@ static void create_reltempo(struct Tracker_Windows *window, struct WBlocks *wblo
 
 
 static void create_reltempotrack(struct Tracker_Windows *window, struct WBlocks *wblock){
-  int realline;
-  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_reltempo(window, wblock, realline);
+  struct TempoNodes *temponodes = wblock->block->temponodes;
+
+  GE_Context *line_color = GE_color(4);
+  //GE_Context *c = GE_color(3);
+  float reallineF = 0.0f;
+
+  float last_x = -1;
+  float last_y = -1;
+
+  while(temponodes != NULL){
+    reallineF = FindReallineForF(wblock, reallineF, &temponodes->l.p);
+    float x = scale(temponodes->reltempo, (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f), wblock->temponodearea.x, wblock->temponodearea.x2);
+    float y = get_realline_y(window, reallineF);
+
+    draw_skewed_box(window, 1, x-15, y-15, x+15, y+15);
+
+    if(last_x>=0)
+      GE_line(line_color, last_x, last_y, x, y, 1.5);
+
+    last_x = x;
+    last_y = y;
+
+    temponodes = NextTempoNode(temponodes);
+  }
 }
 
 
 
+
+/************************************
+    block borders
+ ************************************/
+void create_block_borders(
+                          struct Tracker_Windows *window,
+                          struct WBlocks *wblock
+                          ){
+
+  int y1=get_realline_y1(window, 0);
+  int y2=get_realline_y2(window, wblock->num_reallines-1);
+
+  create_double_border(
+                       wblock->linenumarea.x2+1,
+                       y1,y2
+                       );
+  
+  create_double_border(
+                       wblock->zoomlinearea.x2+1,
+                       y1,y2
+                       );
+  
+  create_double_border(
+                       wblock->lpbarea.x2+1,
+                       y1,y2
+                       );
+  
+  create_single_border(
+                       wblock->tempoarea.x2+1,
+                       y1,y2
+                       );
+  
+  create_double_border(
+                       wblock->temponodearea.x2+1,
+                       y1,y2
+                       );
+}
 
 
 
@@ -330,6 +437,7 @@ void GL_create(struct Tracker_Windows *window, struct WBlocks *wblock){
   GE_start_writing(); {
 
     create_background(window, wblock);
+    create_block_borders(window, wblock);
     create_linenumbers(window, wblock);
     create_lpbtrack(window, wblock);
     create_bpmtrack(window, wblock);
