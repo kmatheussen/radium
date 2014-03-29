@@ -311,15 +311,15 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
         }
 
       } else {
-      SetTextLine(
-                  window,
-                  wblock,
-                  colnum, //(notenum==NOTE_STP || notenum==NOTE_MUL) ? 1 : notenum+16, //NCol[notenum/12],
-                  NotesTexts[(int)notenum],
-                  wtrack->notearea.x,
-                  realline,
-                  true
-                  );
+        SetTextLine(
+                    window,
+                    wblock,
+                    colnum, //(notenum==NOTE_STP || notenum==NOTE_MUL) ? 1 : notenum+16, //NCol[notenum/12],
+                    NotesTexts[(int)notenum],
+                    wtrack->notearea.x,
+                    realline,
+                    true
+                    );
       }
     }
   }

@@ -161,10 +161,10 @@ void create_single_border(
 struct NodeLine{
   struct NodeLine *next;
 
-  float x1,y1; // A value between 0 and track-width.
-  float x2,y2; // A value between 0 and num_reallines*fontheight.
+  float x1,y1;
+  float x2,y2;
 
-  struct ListHeader3 *element1; // If null, then the breakpoint line that changes direction because of realline level change. In case: No node.
+  struct ListHeader3 *element1;
   struct ListHeader3 *element2;
 
   bool is_node;
@@ -172,7 +172,7 @@ struct NodeLine{
 
 
 // Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
-static void insert_non_nodeline(struct NodeLine *nodelines, struct ListHeader3 *element, float y){
+static void insert_nonnode_nodeline(struct NodeLine *nodelines, struct ListHeader3 *element, float y){
 
   if(y <= nodelines->y1)
     return;
@@ -212,12 +212,12 @@ static void insert_non_nodeline(struct NodeLine *nodelines, struct ListHeader3 *
   }
 }
 
-struct NodeLine *create_nodeline(
-                                 struct Tracker_Windows *window,
-                                 struct WBlocks *wblock,
-                                 struct ListHeader3 *list,
-                                 float (*get_x)(struct WBlocks *wblock, struct ListHeader3 *element) // should return a value between 0 and 1.
-                                 )
+struct NodeLine *create_nodelines(
+                                  struct Tracker_Windows *window,
+                                  struct WBlocks *wblock,
+                                  struct ListHeader3 *list,
+                                  float (*get_x)(struct WBlocks *wblock, struct ListHeader3 *element) // should return a value between 0 and 1.
+                                  )
 {
   struct NodeLine *nodelines = NULL;
 
@@ -513,12 +513,13 @@ static float get_temponode_x(struct WBlocks *wblock, struct ListHeader3 *element
 static void create_reltempotrack(struct Tracker_Windows *window, struct WBlocks *wblock){
   GE_Context *line_color = GE_color(4);
 
-  struct NodeLine *nodelines = create_nodeline(window,
-                                               wblock,
-                                               &wblock->block->temponodes->l,
-                                               get_temponode_x
-                                               );
+  struct NodeLine *nodelines = create_nodelines(window,
+                                                wblock,
+                                                &wblock->block->temponodes->l,
+                                                get_temponode_x
+                                                );
   do{
+
     if(nodelines->is_node && wblock->mouse_track==TEMPONODETRACK)
       draw_skewed_box(window, 1, nodelines->x1, nodelines->y1);
 
