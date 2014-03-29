@@ -20,6 +20,30 @@
 #include "Widget_proc.h"
 
 
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
+
+static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
+  struct sched_param par={0};
+  par.sched_priority=priority;
+
+  //if((sched_setscheduler(pid,policy,&par)!=0)){
+  if ((pthread_setschedparam(pthread, policy, &par)) != 0) {
+    fprintf(stderr,message,policy==SCHED_FIFO?"SCHED_FIFO":policy==SCHED_RR?"SCHED_RR":policy==SCHED_OTHER?"SCHED_OTHER":"SCHED_UNKNOWN",priority,getpid(),name,strerror(errno));
+    //abort();
+    return 0;
+  }
+  return 1;
+}
+
+static void set_realtime(int type, int priority){
+  //bound_thread_to_cpu(0);
+  set_pthread_priority(pthread_self(),type,priority,"Unable to set %s/%d for %d (\"%s\"). (%s)\n", "a gc thread");
+}
+
+
 static float das_pos = 1000.0f; //_rendering->camera()->viewport()->height();
 
 static QMutex mutex;
@@ -83,7 +107,7 @@ public:
     glContext->initGLContext();
     glContext->addEventListener(this);
 
-    //set_realtime(SCHED_FIFO,1);
+    if(0)set_realtime(SCHED_FIFO,1);
   }
 
     /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
