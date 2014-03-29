@@ -3,6 +3,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
 #include "../common/list_proc.h"
+#include "../common/placement_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/gfx_subtrack_proc.h"
 
@@ -12,7 +13,7 @@
 #include "Render_proc.h"
 
 
-
+// Functions in this file are called from the main thread.
 
 
 
@@ -100,8 +101,14 @@ static void draw_text_num(
 
 static void draw_skewed_box(struct Tracker_Windows *window,
                             int color,
-                            int x1,int y1,int x2, int y2)
+                            int x, int y
+                            )
 {
+ 
+  int x1 = x-15;
+  int x2 = x+15;
+  int y1 = y-15;
+  int y2 = y+15;
 
   // vertical left
   GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(2), 100),
@@ -143,6 +150,147 @@ void create_single_border(
 {
   GE_line(GE_color(7),x,y,x,y2,1.0);
 }
+
+
+
+
+/******************************************************************************************
+   NodeLine. Will replace the old type of nodelines. Placed here for convenience, for now.
+*******************************************************************************************/
+
+struct NodeLine{
+  struct NodeLine *next;
+
+  float x1,y1; // A value between 0 and track-width.
+  float x2,y2; // A value between 0 and num_reallines*fontheight.
+
+  struct ListHeader3 *element1; // If null, then the breakpoint line that changes direction because of realline level change. In case: No node.
+  struct ListHeader3 *element2;
+
+  bool is_node;
+};
+
+
+// Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
+static void insert_non_nodeline(struct NodeLine *nodelines, struct ListHeader3 *element, float y){
+
+  if(y <= nodelines->y1)
+    return;
+
+  while(nodelines != NULL) {
+    if(y>nodelines->y1 && y<nodelines->y2){
+
+      // put it after
+
+      struct NodeLine *n = (struct NodeLine *)talloc(sizeof(struct NodeLine));
+      n->element1 = element;
+      n->y1 = y;
+
+      n->x1 = scale(GetfloatFromPlace(&element->p),
+                    GetfloatFromPlace(&nodelines->element1->p),
+                    GetfloatFromPlace(&nodelines->element2->p),
+                    nodelines->x1, nodelines->x2
+                    );
+
+      //n->x1 = scale(y, nodelines->y1, nodelines->y2, nodelines->x1, nodelines->x2);
+
+      n->next = nodelines->next ;
+      nodelines->next = n;
+
+      n->x2 = nodelines->x2;
+      n->y2 = nodelines->y2;
+      n->element2 = nodelines->element2;
+
+      nodelines->x2 = n->x1;
+      nodelines->y2 = n->y1;
+      nodelines->element2 = n->element1;
+
+      return;
+    }
+
+    nodelines = nodelines->next;
+  }
+}
+
+struct NodeLine *create_nodeline(
+                                 struct Tracker_Windows *window,
+                                 struct WBlocks *wblock,
+                                 struct ListHeader3 *list,
+                                 float (*get_x)(struct WBlocks *wblock, struct ListHeader3 *element) // should return a value between 0 and 1.
+                                 )
+{
+  struct NodeLine *nodelines = NULL;
+
+  assert(list != NULL);
+  assert(list->next != NULL);
+
+
+  // 1. Create straight forward nodelines from the list
+  {
+    float reallineF = 0.0f;
+    struct NodeLine *nodelines_last = NULL;
+
+    while(list != NULL){
+      struct NodeLine *nodeline = (struct NodeLine *)talloc(sizeof(struct NodeLine));
+
+      nodeline->x1 = get_x(wblock, list);
+      reallineF = FindReallineForF(wblock, reallineF, &list->p);
+      nodeline->y1 = get_realline_y(window, reallineF);
+      nodeline->element1 = list;
+      nodeline->is_node = true;
+
+      if(nodelines_last==NULL)
+        nodelines = nodelines_last = nodeline;
+      else {
+        nodelines_last->next = nodeline;
+        nodelines_last = nodeline;
+      }
+
+      list = list->next;
+    }
+  }
+
+
+  // 2. Insert x2, y2 and element2 attributes, and remove last element.
+  {
+    struct NodeLine *ns = nodelines;
+    struct NodeLine *next = ns->next;
+    for(;;){
+      ns->x2 = next->x1;
+      ns->y2 = next->y1;
+      ns->element2 = next->element1;
+      if(next->next==NULL)
+        break;
+      ns = next;
+      next = next->next;
+    }
+    ns->next = NULL; // Cut the last element
+  }
+
+
+  // 3. Insert all non-node break-points. (caused by realline level changes)
+  {
+    struct LocalZooms **reallines=wblock->reallines;
+    int curr_level = reallines[0]->level;
+    int realline;
+    float reallineF = 0.0f;
+    
+    for(realline = 1; realline < wblock->num_reallines ; realline++) {
+          
+      struct LocalZooms *localzoom = reallines[realline];
+      
+      if (localzoom->level != curr_level){
+        reallineF = FindReallineForF(wblock, reallineF, &localzoom->l.p);
+        insert_nonnode_nodeline(nodelines, &localzoom->l, get_realline_y(window, reallineF));
+        curr_level = localzoom->level;
+      }
+    }
+  }
+
+
+  return nodelines;
+}
+
 
 
 /************************************
@@ -312,9 +460,9 @@ static void create_lpbtrack(struct Tracker_Windows *window, struct WBlocks *wblo
  ************************************/
 
 static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,int realline){
-  int y = get_realline_y1(window, realline);
-  int tempo=wblock->wtempos[realline].tempo;
-  int type=wblock->wtempos[realline].type;
+  int y     = get_realline_y1(window, realline);
+  int tempo = wblock->wtempos[realline].tempo;
+  int type  = wblock->wtempos[realline].type;
   
   if(tempo!=0){
     draw_text_num(
@@ -357,35 +505,29 @@ static void create_bpmtrack(struct Tracker_Windows *window, struct WBlocks *wblo
    reltempo track
  ************************************/
 
-static void create_reltempo(struct Tracker_Windows *window, struct WBlocks *wblock,int realline){
+static float get_temponode_x(struct WBlocks *wblock, struct ListHeader3 *element){
+  struct TempoNodes *temponode = (struct TempoNodes*)element;
+  return scale(temponode->reltempo, (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f), wblock->temponodearea.x, wblock->temponodearea.x2);
 }
 
-
 static void create_reltempotrack(struct Tracker_Windows *window, struct WBlocks *wblock){
-  struct TempoNodes *temponodes = wblock->block->temponodes;
-
   GE_Context *line_color = GE_color(4);
-  //GE_Context *c = GE_color(3);
-  float reallineF = 0.0f;
 
-  float last_x = -1;
-  float last_y = -1;
+  struct NodeLine *nodelines = create_nodeline(window,
+                                               wblock,
+                                               &wblock->block->temponodes->l,
+                                               get_temponode_x
+                                               );
+  do{
+    if(nodelines->is_node && wblock->mouse_track==TEMPONODETRACK)
+      draw_skewed_box(window, 1, nodelines->x1, nodelines->y1);
 
-  while(temponodes != NULL){
-    reallineF = FindReallineForF(wblock, reallineF, &temponodes->l.p);
-    float x = scale(temponodes->reltempo, (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f), wblock->temponodearea.x, wblock->temponodearea.x2);
-    float y = get_realline_y(window, reallineF);
+    GE_line(line_color, nodelines->x1, nodelines->y1, nodelines->x2, nodelines->y2, 1.5);
 
-    draw_skewed_box(window, 1, x-15, y-15, x+15, y+15);
+  }while(nodelines->next!=NULL && (nodelines=nodelines->next));
 
-    if(last_x>=0)
-      GE_line(line_color, last_x, last_y, x, y, 1.5);
-
-    last_x = x;
-    last_y = y;
-
-    temponodes = NextTempoNode(temponodes);
-  }
+  if(wblock->mouse_track==TEMPONODETRACK)
+    draw_skewed_box(window, 1, nodelines->x2, nodelines->y2);
 }
 
 
@@ -469,6 +611,7 @@ void create_tracks(struct Tracker_Windows *window, struct WBlocks *wblock){
     wtrack=NextWTrack(wtrack);
   }
 }
+
 
 /************************************
    block
