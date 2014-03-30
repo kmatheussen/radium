@@ -16,6 +16,8 @@
 // Functions in this file are called from the main thread.
 
 
+extern char *NotesTexts3[131];
+extern char *NotesTexts2[131];
 
 
 static int get_realline_y1(struct Tracker_Windows *window, int realline){
@@ -599,8 +601,72 @@ void create_track_borders(struct Tracker_Windows *window, struct WBlocks *wblock
 
 }
 
+static GE_Context *get_note_background(int notenum){
+  notenum = R_BOUNDARIES(0,notenum,127);
+  const int split1 = 50;
+  const int split2 = 95;
+
+  GE_Rgb rgb;
+
+  if(notenum<split1)
+    rgb = GE_mix(GE_get_rgb(5), GE_get_rgb(1), scale(notenum,0,split1,0,1000));
+  else if(notenum<split2)
+    rgb = GE_mix(GE_get_rgb(6), GE_get_rgb(5), scale(notenum,split1,split2,0,1000));
+  else
+    rgb = GE_mix(GE_get_rgb(2), GE_get_rgb(6), scale(notenum,split2,160,0,1000));
+
+  return GE_mix_color(rgb, GE_get_rgb(15), 400);
+}
+
+void create_track_text(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline){
+  char                 **NotesTexts    = wtrack->notelength==3?NotesTexts3:NotesTexts2;
+  struct TrackRealline  *trackrealline = &wtrack->trackreallines[realline];
+  float                  notenum       = trackrealline->note;
+  int                    colnum        = 1;
+  bool                   isranged      = wblock->isranged && wblock->rangex1<=wtrack->l.num && wblock->rangex2>=wtrack->l.num && realline>=wblock->rangey1 && realline<wblock->rangey2;
+
+  int y1 = get_realline_y1(window, realline);
+  int y2 = get_realline_y2(window, realline);
+
+  if(notenum>=NOTE_PITCH_START){
+    //isgliding = true;
+    notenum -= NOTE_PITCH_START;
+    colnum = 5;
+  }
+
+  if (isranged) {
+    colnum = 1;
+    GE_filledBox(GE_color(0),wtrack->notearea.x,y1,wtrack->notearea.x2,y2);
+  }
+
+  if(notenum!=0 && wtrack->noteshowtype==TEXTTYPE){
+    
+    if(!isranged && notenum>0 && notenum<128)
+      GE_filledBox(get_note_background(notenum), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+
+    if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
+      GE_Context *foreground = GE_textcolor(colnum);
+
+      int cents = R_BOUNDARIES(0,(notenum - (int)notenum)*100,99);
+
+      if (cents==0)
+        GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
+      else{
+        char temp[32];
+        sprintf(temp,"%s, %d",NotesTexts[(int)notenum],cents);
+        GE_text(foreground, temp, wtrack->notearea.x, y1); 
+      }
+      
+    }else
+      draw_bordered_text(window, colnum, Z_ZERO, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+
+  }
+}
+
 void create_track(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
+  for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+    create_track_text(window, wblock, wtrack, realline);
 }
 
 

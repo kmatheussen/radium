@@ -333,7 +333,7 @@ static GE_Context *get_context(const GE_Context::Color color, int z){
   return c;
 }
 
-static GE_Context *get_context_from_rgb(const GE_Rgb rgb, int z){
+GE_Context *GE_z(const GE_Rgb rgb, int z){
   GE_Context::Color color;
 
   color.key = 0;
@@ -348,18 +348,18 @@ static GE_Rgb rgb_from_qcolor(const QColor &color){
 }
 
 GE_Context *GE_color_z(const QColor &color, int z){
-  return get_context_from_rgb(rgb_from_qcolor(color), z);
+  return GE_z(rgb_from_qcolor(color), z);
 }
 
 GE_Context *GE_color_z(int colornum, int z){
   //const QColor c = get_qcolor(window, colornum);
-  return get_context_from_rgb(GE_get_rgb(colornum), z);
+  return GE_z(GE_get_rgb(colornum), z);
 }
 
 GE_Context *GE_textcolor_z(int colornum, int z){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a=200;
-  return get_context_from_rgb(rgb, z);
+  return GE_z(rgb, z);
 }
 
 GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z){
@@ -373,14 +373,20 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 
   GE_Rgb rgb = {r,g,b,a};
 
-  return get_context_from_rgb(rgb, z);
+  return GE_z(rgb, z);
+}
+
+GE_Context *GE_withAlpha(const GE_Context *c, float alpha){
+  GE_Rgb rgb = c->color.c;
+  rgb.a = alpha*255;
+  return GE_z(rgb, c->_z);
 }
 
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z){
   return GE_rgba_color_z(r,g,b,255, z);
 }
 
-GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z){
+GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
   GE_Rgb rgb;
 
   float a1 = how_much / 1000.0f;
@@ -399,7 +405,11 @@ GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int
     //printf("r: %d, g: %d, b: %d, a: %d. a1: %f, a2: %f\n",rgb.r,rgb.g,rgb.b,rgb.a,a1,a2);
  }
 
-  return get_context_from_rgb(rgb, z);
+  return rgb;
+}
+
+GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z){
+  return GE_z(GE_mix(c1, c2, how_much), z);
 }
 
 GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
@@ -421,8 +431,6 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z){
   return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), z);
 }
-
-
 
 
 /************************************************************/

@@ -22,6 +22,9 @@ static inline GE_Rgb GE_rgba(unsigned char r, unsigned char g, unsigned char b, 
   return ret;
 }
 
+GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much);
+
+
 typedef struct _GE_Context GE_Context;
 
 // OpenGL draws from the bottom and up, so we need to know the height in order for the scheduling calls to accept "normal" y values.
@@ -59,6 +62,7 @@ bool GE_new_read_contexts(void); // returns false if a new read context couldn't
 void GE_start_writing(void);
 void GE_end_writing(void);
 
+GE_Context *GE_z(const GE_Rgb rgb, int z);
 GE_Context *GE_color_z(int colornum, int z);
 GE_Context *GE_textcolor_z(int colornum, int z);
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z);
@@ -99,6 +103,9 @@ static inline GE_Context *GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float h
 static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
   return GE_gradient_z(c1,c2, Z_ZERO);
 }
+
+// Should probably only be used for testing.
+GE_Context *GE_withAlpha(const GE_Context *c, float alpha);
 
 
 #ifdef __cplusplus
