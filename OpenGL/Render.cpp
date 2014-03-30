@@ -21,20 +21,20 @@ extern char *NotesTexts3[131];
 extern char *NotesTexts2[131];
 
 
-static int get_realline_y1(struct Tracker_Windows *window, int realline){
+static int get_realline_y1(const struct Tracker_Windows *window, int realline){
   return window->fontheight*realline;
 }
 
-static int get_realline_y2(struct Tracker_Windows *window, int realline){
+static int get_realline_y2(const struct Tracker_Windows *window, int realline){
   return window->fontheight*(realline+1);
 }
 
-static float get_realline_y(struct Tracker_Windows *window, float reallineF){
+static float get_realline_y(const struct Tracker_Windows *window, float reallineF){
   return window->fontheight*reallineF;
 }
 
 static void draw_bordered_text(
-                               struct Tracker_Windows *window,
+                               const struct Tracker_Windows *window,
                                int colornum, int z,
                                char *text,
                                int x,
@@ -68,7 +68,7 @@ static void draw_bordered_text(
 
 
 static void draw_text_num(
-                          struct Tracker_Windows *window,
+                          const struct Tracker_Windows *window,
                           int colornum, int z,
                           int num,
                           int length,
@@ -102,7 +102,7 @@ static void draw_text_num(
 
 
 
-static void draw_skewed_box(struct Tracker_Windows *window,
+static void draw_skewed_box(const struct Tracker_Windows *window,
                             int color,
                             int x, int y
                             )
@@ -167,15 +167,15 @@ struct NodeLine{
   float x1,y1;
   float x2,y2;
 
-  struct ListHeader3 *element1;
-  struct ListHeader3 *element2;
+  const struct ListHeader3 *element1;
+  const struct ListHeader3 *element2;
 
   bool is_node;
 };
 
 
 // Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
-static void insert_nonnode_nodeline(struct NodeLine *nodelines, struct ListHeader3 *element, float y){
+static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct ListHeader3 *element, float y){
 
   if(y <= nodelines->y1)
     return;
@@ -216,16 +216,17 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, struct ListHeade
 }
 
 struct NodeLine *create_nodelines(
-                                  struct Tracker_Windows *window,
-                                  struct WBlocks *wblock,
-                                  struct ListHeader3 *list,
-                                  float (*get_x)(struct WBlocks *wblock, struct ListHeader3 *element) // should return a value between 0 and 1.
+                                  const struct Tracker_Windows *window,
+                                  const struct WBlocks *wblock,
+                                  const struct ListHeader3 *list,                                  
+                                  float (*get_x)(const struct WBlocks *wblock, const struct ListHeader3 *element), // should return a value between 0 and 1.
+                                  const struct ListHeader3 *last_element // may be null. may also contain more than one element.
                                   )
 {
   struct NodeLine *nodelines = NULL;
 
   assert(list != NULL);
-  assert(list->next != NULL);
+  assert(list->next != NULL || last_element!=NULL);
 
 
   // 1. Create straight forward nodelines from the list
@@ -250,6 +251,10 @@ struct NodeLine *create_nodelines(
       }
 
       list = list->next;
+      if (list==NULL) {
+        list = last_element;
+        last_element = NULL;
+      }
     }
   }
 
@@ -304,9 +309,9 @@ struct NodeLine *create_nodelines(
 extern int lpb_opacity;
 extern int line_opacity;
 
-static void create_background_realline(struct Tracker_Windows *window, struct WBlocks *wblock, int realline){
+static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline){
 
-  struct WTracks *last_wtrack = (struct WTracks*)ListLast1(&wblock->wtracks->l);
+  const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
 
   int x1 = 0;
   int x2 = last_wtrack->x2;
@@ -344,7 +349,7 @@ static void create_background_realline(struct Tracker_Windows *window, struct WB
 }
 
 
-static void create_background(struct Tracker_Windows *window, struct WBlocks *wblock){
+static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
     create_background_realline(window, wblock, realline);
@@ -358,7 +363,7 @@ static void create_background(struct Tracker_Windows *window, struct WBlocks *wb
    Linenumbers
  ************************************/
 
-static void create_background_linenumber(struct Tracker_Windows *window, struct WBlocks *wblock, int realline){
+static void create_background_linenumber(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline){
   int y = get_realline_y1(window, realline);
 
   struct LocalZooms *localzoom = wblock->reallines[realline];
@@ -400,7 +405,7 @@ static void create_background_linenumber(struct Tracker_Windows *window, struct 
   }  
 }
 
-static void create_linenumbers(struct Tracker_Windows *window, struct WBlocks *wblock){
+static void create_linenumbers(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
     create_background_linenumber(window, wblock, realline);
@@ -414,7 +419,7 @@ static void create_linenumbers(struct Tracker_Windows *window, struct WBlocks *w
    lpb track
  ************************************/
 
-static void create_lpb(struct Tracker_Windows *window, struct WBlocks *wblock,int realline){
+static void create_lpb(const struct Tracker_Windows *window, const struct WBlocks *wblock,int realline){
   int y = get_realline_y1(window, realline);
   int lpb=wblock->wlpbs[realline].lpb;
   int type=wblock->wlpbs[realline].type;
@@ -449,7 +454,7 @@ static void create_lpb(struct Tracker_Windows *window, struct WBlocks *wblock,in
 
 
 
-static void create_lpbtrack(struct Tracker_Windows *window, struct WBlocks *wblock){
+static void create_lpbtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
     create_lpb(window, wblock, realline);
@@ -462,7 +467,7 @@ static void create_lpbtrack(struct Tracker_Windows *window, struct WBlocks *wblo
    bpm track
  ************************************/
 
-static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,int realline){
+static void create_bpm(const struct Tracker_Windows *window, const struct WBlocks *wblock,int realline){
   int y     = get_realline_y1(window, realline);
   int tempo = wblock->wtempos[realline].tempo;
   int type  = wblock->wtempos[realline].type;
@@ -496,7 +501,7 @@ static void create_bpm(struct Tracker_Windows *window, struct WBlocks *wblock,in
 }
 
 
-static void create_bpmtrack(struct Tracker_Windows *window, struct WBlocks *wblock){
+static void create_bpmtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
     create_bpm(window, wblock, realline);
@@ -508,18 +513,19 @@ static void create_bpmtrack(struct Tracker_Windows *window, struct WBlocks *wblo
    reltempo track
  ************************************/
 
-static float get_temponode_x(struct WBlocks *wblock, struct ListHeader3 *element){
+static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
   struct TempoNodes *temponode = (struct TempoNodes*)element;
   return scale(temponode->reltempo, (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f), wblock->temponodearea.x, wblock->temponodearea.x2);
 }
 
-static void create_reltempotrack(struct Tracker_Windows *window, struct WBlocks *wblock){
+static void create_reltempotrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   GE_Context *line_color = GE_color(4);
 
   struct NodeLine *nodelines = create_nodelines(window,
                                                 wblock,
                                                 &wblock->block->temponodes->l,
-                                                get_temponode_x
+                                                get_temponode_x,
+                                                NULL
                                                 );
   do{
 
@@ -541,8 +547,8 @@ static void create_reltempotrack(struct Tracker_Windows *window, struct WBlocks 
     block borders
  ************************************/
 void create_block_borders(
-                          struct Tracker_Windows *window,
-                          struct WBlocks *wblock
+                          const struct Tracker_Windows *window,
+                          const struct WBlocks *wblock
                           ){
 
   int y1=get_realline_y1(window, 0);
@@ -579,7 +585,7 @@ void create_block_borders(
 /************************************
    tracks
  ************************************/
-void create_track_borders(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   int y1=get_realline_y1(window, 0);
   int y2=get_realline_y2(window, wblock->num_reallines-1);
   
@@ -619,7 +625,7 @@ static GE_Context *get_note_background(int notenum){
   return GE_mix_color(rgb, GE_get_rgb(15), 400);
 }
 
-void create_track_text(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline){
+void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
   char                 **NotesTexts    = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   struct TrackRealline  *trackrealline = &wtrack->trackreallines[realline];
   float                  notenum       = trackrealline->note;
@@ -664,7 +670,7 @@ void create_track_text(struct Tracker_Windows *window, struct WBlocks *wblock, s
   }
 }
 
-void create_track_pitches(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline){
+void create_track_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);
 
@@ -693,17 +699,77 @@ void create_track_pitches(struct Tracker_Windows *window, struct WBlocks *wblock
   }
 }
 
-void create_track(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+static float subtrack_x1, subtrack_x2;
+
+static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct Velocities *velocity = (struct Velocities*)element;
+  return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
+}
+
+void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
+  struct Velocities first_velocity;
+  first_velocity.l.p = note->l.p;
+  first_velocity.l.next = &note->velocities->l;
+  first_velocity.velocity = note->velocity;
+
+  struct Velocities last_velocity;
+  last_velocity.l.p = note->end;
+  last_velocity.l.next = NULL;
+  last_velocity.velocity = note->velocity_end;
+
+  subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
+  subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
+
+  struct NodeLine *nodelines = create_nodelines(window,
+                                                wblock,
+                                                &first_velocity.l,
+                                                get_velocity_x,
+                                                &last_velocity.l
+                                                );
+
+  // background
+  {
+    GE_Context *c = get_note_background(note->note);
+    
+    GE_trianglestrip_start();
+    
+    for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+      GE_trianglestrip_add(c, subtrack_x1, ns->y1);
+      GE_trianglestrip_add(c, ns->x1, ns->y1);
+      GE_trianglestrip_add(c, subtrack_x1, ns->y2);
+      GE_trianglestrip_add(c, ns->x2, ns->y2);
+    }
+    GE_trianglestrip_end(c);
+  }
+
+  // border
+  {
+    float width = 1.75;
+    GE_Context *c = GE_mix_color(GE_get_rgb(1), GE_get_rgb(15), 300);
+
+    for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
+      GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
+  }
+}
+
+void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
+
   for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
     create_track_text(window, wblock, wtrack, realline);
     create_track_pitches(window, wblock, wtrack, realline);
   }
+
+  const struct Notes *note=wtrack->track->notes;
+  while(note != NULL){
+    create_track_velocities(window, wblock, wtrack, note);
+    note = NextNote(note);
+  }
 }
 
 
-void create_tracks(struct Tracker_Windows *window, struct WBlocks *wblock){
-  struct WTracks *wtrack=wblock->wtracks;
+void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  const struct WTracks *wtrack=wblock->wtracks;
 
   while(wtrack!=NULL){
     create_track(window, wblock, wtrack);
@@ -716,7 +782,7 @@ void create_tracks(struct Tracker_Windows *window, struct WBlocks *wblock){
    block
  ************************************/
 
-void GL_create(struct Tracker_Windows *window, struct WBlocks *wblock){
+void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   GE_start_writing(); {
 
     create_background(window, wblock);

@@ -18,22 +18,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern LANGSPEC int GetRelXSubTrack1(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
 extern LANGSPEC int GetXSubTrack1(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
 extern LANGSPEC int GetRelXSubTrack2(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
 extern LANGSPEC int GetXSubTrack2(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
@@ -49,19 +49,19 @@ extern LANGSPEC int GetXSubTrack_B2(
 	int subtrack
 );
 
-extern LANGSPEC int SubtrackBoundaries(struct WTracks *wtrack,int subtrack,int x);
+extern LANGSPEC int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x);
 
-extern LANGSPEC int GetSubTrackWidth(struct WTracks *wtrack,int subtrack);
+extern LANGSPEC int GetSubTrackWidth(const struct WTracks *wtrack,int subtrack);
 
 extern LANGSPEC int GetSubTrackPos(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	float x,
 	int maxx,
 	int subtrack
 );
 
 extern LANGSPEC int GetSubTrack(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int x
 );
 

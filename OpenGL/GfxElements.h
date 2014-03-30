@@ -122,3 +122,6 @@ void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2);
 void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width);
 //void GE_polygon(GE_Context *c, int num_points, const APoint *points);
 void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points);
+void GE_trianglestrip_start();
+void GE_trianglestrip_add(GE_Context *c, float x, float y);
+void GE_trianglestrip_end(GE_Context *c);

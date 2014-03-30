@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     'subtrack'.
 ************************************************************************/
 int GetRelXSubTrack1(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 ){
 	return (wtrack->fxwidth*subtrack/wtrack->num_vel) + (subtrack>0 ? 1 : 0 ) ;
@@ -42,7 +42,7 @@ int GetRelXSubTrack1(
     'subtrack'.
 ************************************************************************/
 int GetXSubTrack1(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 ){
 	if(subtrack==-1) return wtrack->notearea.x;
@@ -55,7 +55,7 @@ int GetXSubTrack1(
     'subtrack'.
 ************************************************************************/
 int GetRelXSubTrack2(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 ){
 	return
@@ -70,7 +70,7 @@ int GetRelXSubTrack2(
     'subtrack'.
 ************************************************************************/
 int GetXSubTrack2(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int subtrack
 ){
 	if(subtrack==-1) return wtrack->notearea.x2;
@@ -129,7 +129,7 @@ int GetXSubTrack_B2(
   FUNCTION
     Make shure that x is placed within the boundaries of the subtrack.
 ************************************************************************/
-int SubtrackBoundaries(struct WTracks *wtrack,int subtrack,int x){
+int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x){
 	int x1=GetRelXSubTrack1(wtrack,subtrack);
 	int x2=GetRelXSubTrack2(wtrack,subtrack);
 	if(x<x1) return x1;
@@ -138,7 +138,7 @@ int SubtrackBoundaries(struct WTracks *wtrack,int subtrack,int x){
 }
 
 
-int GetSubTrackWidth(struct WTracks *wtrack,int subtrack){
+int GetSubTrackWidth(const struct WTracks *wtrack,int subtrack){
 	return GetXSubTrack2(wtrack,subtrack)-GetXSubTrack1(wtrack,subtrack);
 }
 
@@ -151,7 +151,7 @@ int GetSubTrackWidth(struct WTracks *wtrack,int subtrack){
     subtrack - Start at zero.
 **************************************************************/
 int GetSubTrackPos(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	float x,
 	int maxx,
 	int subtrack
@@ -170,7 +170,7 @@ int GetSubTrackPos(
     If it doesn't belong to a subtrack. Returns -2;
 **************************************************************/
 int GetSubTrack(
-	struct WTracks *wtrack,
+	const struct WTracks *wtrack,
 	int x
 ){
 	int lokke;

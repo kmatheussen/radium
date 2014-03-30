@@ -221,6 +221,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
       std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
       
 
+#if 1
       // 1. Filled boxes
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
@@ -234,8 +235,22 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
           setColorEnd(vg, c);
         }
       }
+#endif 
       
       
+      // 2. Text
+      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+        
+        vl::ref<GE_Context> c = iterator->second;
+        
+        if(c->textbitmaps.points.size()>0){
+          setColorBegin(vg, c);
+          c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+          setColorEnd(vg, c);
+        }
+      }
+
+
       // 2. triangle strips
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
 
@@ -244,7 +259,6 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
 #if USE_TRIANGLE_STRIPS
         if(c->trianglestrips.size() > 0) {
           setColorBegin(vg, c);
-          
           setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform);
           //vg->fillPolygons(c->trianglestrips);
           
@@ -261,18 +275,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
         }
 #endif
       }
-      
-      // 2. Text
-      for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
-        
-        vl::ref<GE_Context> c = iterator->second;
-        
-        if(c->textbitmaps.points.size()>0){
-          setColorBegin(vg, c);
-          c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
-        setColorEnd(vg, c);
-        }
-      }
+
       
       // 3. Polylines
       // 4. Boxes
@@ -290,6 +293,8 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
           
           vg->setLineWidth(get_pen_width_from_key(iterator->first));
           setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform);
+          //if(c->triangles.size()>0)
+          //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
         }
         
         if(has_set_color==false)
@@ -297,6 +302,7 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
       }
 
       //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
+
     }
 
     delete main_contexts;
@@ -495,18 +501,42 @@ void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points){
   }
 }
 
-static std::vector<vl::dvec2> trianglestrip;
+#if USE_TRIANGLE_STRIPS
 
+static std::vector<vl::dvec2> trianglestrip;
 void GE_trianglestrip_start(){
   trianglestrip.clear();
 }
-
 void GE_trianglestrip_add(float x, float y){
   trianglestrip.push_back(vl::dvec2(x,y));
 }
-
 void GE_trianglestrip_end(GE_Context *c){
   c->trianglestrips.push_back(trianglestrip);
 }
 
+#else //  USE_TRIANGLE_STRIPS
 
+static float num_trianglestrips;
+
+void GE_trianglestrip_start(){
+  num_trianglestrips = 0;
+}
+void GE_trianglestrip_add(GE_Context *c, float x, float y){
+  static float y2,y1;
+  static float x2,x1;
+
+  num_trianglestrips++;
+  
+  if(num_trianglestrips>=3){
+    c->triangles.push_back(vl::dvec2(x, c->y(y)));
+    c->triangles.push_back(vl::dvec2(x1, c->y(y1)));
+    c->triangles.push_back(vl::dvec2(x2, c->y(y2)));
+  }
+  
+  y2 = y1;  y1 = y;
+  x2 = x1;  x1 = x;
+}
+void GE_trianglestrip_end(GE_Context *c){
+}
+
+#endif //  !USE_TRIANGLE_STRIPS

@@ -237,6 +237,8 @@ struct Notes{
 
 	struct Pitches *pitches;
 
+	int subtrack;
+
 	int noend;
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))

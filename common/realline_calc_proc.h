@@ -18,9 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern LANGSPEC float FindReallineForF(
-                                       struct WBlocks *wblock,
+                                       const struct WBlocks *wblock,
                                        float reallineF, // start search from here. Use 0 to search all.
-                                       Place *place
+                                       const Place *place
                                        );
 
 extern int FindRealLineFor(
