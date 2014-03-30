@@ -240,6 +240,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
         struct TrackReallineElements *element=trackrealline->trackreallineelements;
         while(element->type!=TRE_THISNOTELINES && element->type!=TRE_STOPLINE){
           element=element->next;
+          if(element==NULL) // quick fix for bug. This code will be removed soon anyway.
+            return;
         }
         struct ListHeader3 *l=element->pointer;
         if( isPlaceRanged(wblock,&l->p) ){
