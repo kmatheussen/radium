@@ -88,6 +88,12 @@ static inline QColor GE_qcolor(int colornum){
 static inline GE_Context *GE_color(int colornum) {
   return GE_color_z(colornum, Z_ZERO);
 }
+
+GE_Context *GE_color_alpha_z(int colornum, float alpha, int z);
+static inline GE_Context *GE_color_alpha(int colornum, float alpha) {
+  return GE_color_alpha_z(colornum, alpha, Z_ZERO);
+}
+
 static inline GE_Context *GE_textcolor(int colornum) {
   return GE_textcolor_z(colornum, Z_ZERO);
 }
@@ -103,10 +109,6 @@ static inline GE_Context *GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float h
 static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
   return GE_gradient_z(c1,c2, Z_ZERO);
 }
-
-// Should probably only be used for testing.
-GE_Context *GE_withAlpha(const GE_Context *c, float alpha);
-
 
 #ifdef __cplusplus
 //void GE_set_font(QFont font);

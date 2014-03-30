@@ -6,6 +6,7 @@
 #include "../common/placement_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/gfx_subtrack_proc.h"
+#include "../common/nodelines_proc.h"
 
 #include "GfxElements.h"
 
@@ -641,7 +642,7 @@ void create_track_text(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
   if(notenum!=0 && wtrack->noteshowtype==TEXTTYPE){
     
-    if(!isranged && notenum>0 && notenum<128)
+    if(isranged==false && notenum>0 && notenum<128)
       GE_filledBox(get_note_background(notenum), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
 
     if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
@@ -663,10 +664,41 @@ void create_track_text(struct Tracker_Windows *window, struct WBlocks *wblock, s
   }
 }
 
+void create_track_pitches(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline){
+  int y1 = get_realline_y1(window, realline);
+  int y2 = get_realline_y2(window, realline);
+
+  TBox within2;
+  within2.y1 = y1;
+  within2.y2 = y2;
+  within2.x1 = wtrack->x;
+  within2.x2 = wtrack->fxarea.x - 2;
+
+  WArea warea;
+  warea.x=within2.x1;
+  warea.x2=within2.x2;
+  warea.width=warea.x2-warea.x;
+
+  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
+
+  WPitches *wpitch=wtrack->wpitches[realline];
+  while(wpitch!=NULL){
+    if(wpitch->type==TRE_PITCHLINE)
+      if(wpitch->x1 != wpitch->x2 || show_read_lines) {
+        TBox get;
+        GetNodeLine(wpitch,&warea,&within2,&get);
+        GE_line(GE_color_alpha(7,0.5), get.x1,get.y1, get.x2,get.y2, 1.75);
+      }
+    wpitch=wpitch->next;
+  }
+}
+
 void create_track(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
-  for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+  for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
     create_track_text(window, wblock, wtrack, realline);
+    create_track_pitches(window, wblock, wtrack, realline);
+  }
 }
 
 

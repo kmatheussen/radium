@@ -356,6 +356,12 @@ GE_Context *GE_color_z(int colornum, int z){
   return GE_z(GE_get_rgb(colornum), z);
 }
 
+GE_Context *GE_color_alpha_z(int colornum, float alpha, int z){
+  GE_Rgb rgb = GE_get_rgb(colornum);
+  rgb.a = alpha * 255;
+  return GE_z(rgb, z);
+}
+
 GE_Context *GE_textcolor_z(int colornum, int z){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a=200;
@@ -374,12 +380,6 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
   GE_Rgb rgb = {r,g,b,a};
 
   return GE_z(rgb, z);
-}
-
-GE_Context *GE_withAlpha(const GE_Context *c, float alpha){
-  GE_Rgb rgb = c->color.c;
-  rgb.a = alpha*255;
-  return GE_z(rgb, c->_z);
 }
 
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z){
