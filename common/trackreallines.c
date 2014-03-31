@@ -916,7 +916,6 @@ static void create_peaks(
 
             const int num_channels=PATCH_get_peaks(patch, 0,
                                                    -1,
-                                                   0.0f,0.0f,
                                                    wtrack->track,
                                                    0,0,
                                                    NULL,NULL);
@@ -939,8 +938,6 @@ static void create_peaks(
                 PATCH_get_peaks(patch, 
                                 note->note,
                                 ch,
-                                scale(y1,element->y1,element->y2,element->x1,element->x2),
-                                scale(y2,element->y1,element->y2,element->x1,element->x2),
                                 wtrack->track,
                                 scale(y1,0,1,time1,time2) / block->reltempo,
                                 scale(y2,0,1,time1,time2) / block->reltempo,

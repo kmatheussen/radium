@@ -56,4 +56,4 @@ extern LANGSPEC void PATCH_turn_voice_on(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_turn_voice_off(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_tranpose);
 
-extern LANGSPEC int PATCH_get_peaks(struct Patch *patch, int notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min, float *max);
+extern LANGSPEC int PATCH_get_peaks(struct Patch *patch, int notenum, int ch, struct Tracks *track, int64_t start_time, int64_t end_time, float *min, float *max);

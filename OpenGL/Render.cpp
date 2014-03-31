@@ -1,3 +1,4 @@
+#include <math.h>
 
 
 #include "../common/nsmtracker.h"
@@ -7,6 +8,9 @@
 #include "../common/realline_calc_proc.h"
 #include "../common/gfx_subtrack_proc.h"
 #include "../common/nodelines_proc.h"
+#include "../common/time_proc.h"
+#include "../common/tracks_proc.h"
+#include "../common/patch_proc.h"
 
 #include "GfxElements.h"
 
@@ -738,6 +742,9 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
       GE_trianglestrip_add(c, ns->x1, ns->y1);
       GE_trianglestrip_add(c, subtrack_x1, ns->y2);
       GE_trianglestrip_add(c, ns->x2, ns->y2);
+
+      if(ns->is_node && wblock->mouse_track==wtrack->l.num && wblock->mouse_note==note)
+        draw_skewed_box(window, 5, ns->x1, ns->y1);
     }
     GE_trianglestrip_end(c);
   }
@@ -749,6 +756,91 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
 
     for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
       GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
+  }
+
+  // peaks
+  if(TRACK_has_peaks(wtrack->track)){
+    struct Patch *patch = wtrack->track->patch;
+    float note_time = Place2STime(wblock->block, &note->l.p);
+
+    GE_Context *c = GE_color(0);
+
+    GE_trianglestrip_start();
+
+#define NUM_LINES_PER_PEAK 2
+
+    for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+      int num_peaks = (ns->y2-ns->y1) / NUM_LINES_PER_PEAK;
+
+      if(num_peaks<0){
+
+        RError("num_peaks<0: %d",num_peaks);
+        continue;
+
+      }
+
+      for(int n=0;n<num_peaks;n++){
+        struct Velocities *velocity1 = (struct Velocities*)ns->element1;
+        struct Velocities *velocity2 = (struct Velocities*)ns->element2;
+        
+        float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
+        float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+        
+        float track_volume =  wtrack->track->volumeonoff ? (float)wtrack->track->volume / MAXTRACKVOL : 1.0f;
+        //float velocity = scale(n,0,num_peaks, velocity1->velocity, velocity2->velocity);
+
+        const int num_channels=PATCH_get_peaks(patch, 0,
+                                               -1,
+                                               wtrack->track,
+                                               0,0,
+                                               NULL,NULL);
+
+        for(int ch=0;ch<num_channels;ch++){
+        
+          float min,max;
+        
+          PATCH_get_peaks(patch, 
+                          note->note,
+                          ch,
+                          wtrack->track,
+                          scale(n,0,num_peaks,time1,time2) / wblock->block->reltempo,
+                          scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / wblock->block->reltempo,
+                          &min,
+                          &max);
+
+          float velocity = (float)scale(n,0,num_peaks,velocity1->velocity,velocity2->velocity) / (float)MAX_VELOCITY;
+
+          float bound_x1 = scale(scale(ch,0,num_channels,0.0f,velocity),
+                                 0, 1, subtrack_x1, subtrack_x2);
+          float bound_x2 = scale(scale(ch+1,0,num_channels,0.0f,velocity),
+                                 0, 1, subtrack_x1, subtrack_x2);
+
+          float x1 = scale(min*track_volume, -1,1, bound_x1, bound_x2);
+          float x2 = scale(max*track_volume, -1,1, bound_x1, bound_x2);
+          
+          float y = ns->y1 + n*NUM_LINES_PER_PEAK;
+
+#if 0
+          printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
+                 scale(n,0,num_peaks,velocity1->velocity, velocity2->velocity),
+                 scale(n+NUM_LINES_PER_PEAK,0,num_peaks,velocity1->velocity, velocity2->velocity),
+                 scale(n,0,num_peaks,time1,time2) / wblock->block->reltempo,
+                 scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / wblock->block->reltempo);
+#endif
+
+          if(fabsf(x1-x2) < 0.5)
+            GE_line(c, (x1+x2)/2.0f, y, (x1+x2)/2.0f, y+NUM_LINES_PER_PEAK, 1.0);
+          else{
+            GE_trianglestrip_add(c, x1, y);
+            GE_trianglestrip_add(c, x2, y);
+          }
+        }
+      }
+    }
+
+
+    GE_trianglestrip_end(c);
+
   }
 }
 

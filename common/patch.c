@@ -934,7 +934,14 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum){
 }
 
 // Must only be called if TRACK_has_peaks(track)==true.
-int PATCH_get_peaks(struct Patch *patch, int notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
+int PATCH_get_peaks(struct Patch *patch,
+                    int notenum, 
+                    int ch, 
+                    struct Tracks *track, 
+                    int64_t start_time, int64_t end_time, 
+                    float *min_value, float *max_value
+                    )
+{
   int ret = 0;
   SoundPlugin *plugin=patch->patchdata;
 

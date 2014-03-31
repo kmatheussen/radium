@@ -59,7 +59,7 @@ extern PlayerClass *pc;
 
 STime Place2STime(
 	struct Blocks *block,
-	Place *p
+	const Place *p
 ){
 	STime time1,time2;
 	float fp,fp1,fp2,orgfp2;
