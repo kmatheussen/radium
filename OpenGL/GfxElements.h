@@ -23,7 +23,11 @@ static inline GE_Rgb GE_rgba(unsigned char r, unsigned char g, unsigned char b, 
 }
 
 GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much);
-
+static inline GE_Rgb GE_alpha(const GE_Rgb c, float alpha){
+  GE_Rgb ret = c;
+  ret.a = alpha*255;
+  return ret;
+}
 
 typedef struct _GE_Context GE_Context;
 
@@ -63,6 +67,9 @@ void GE_start_writing(void);
 void GE_end_writing(void);
 
 GE_Context *GE_z(const GE_Rgb rgb, int z);
+static inline GE_Context *GE(const GE_Rgb rgb){
+  return GE_z(rgb, Z_ZERO);
+}
 GE_Context *GE_color_z(int colornum, int z);
 GE_Context *GE_textcolor_z(int colornum, int z);
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z);
@@ -76,6 +83,9 @@ static inline GE_Context *GE_color(const QColor &color) {
   return GE_color_z(color, Z_ZERO);
 }
 GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z);
+static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha){
+  return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha));
+}
 
 #include "../Qt/EditorWidget.h"
 extern struct Root *root;

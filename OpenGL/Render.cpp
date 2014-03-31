@@ -21,8 +21,8 @@
 // Functions in this file are called from the main thread.
 
 
-extern char *NotesTexts3[131];
-extern char *NotesTexts2[131];
+extern char *NotesTexts3[];
+extern char *NotesTexts2[];
 
 
 static int get_realline_y1(const struct Tracker_Windows *window, int realline){
@@ -116,30 +116,31 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
   int x2 = x+15;
   int y1 = y-15;
   int y2 = y+15;
+  const float width = 2.3;
 
   // vertical left
-  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(2), 100),
+  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 100, 0.3),
           x1+1, y1+1,
           x1+2,y2-1,
-          1.0f);
+          width);
 
   // horizontal bottom
-  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(1), 300),
+  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(1), 300, 0.3),
           x1+2,y2-1,
           x2-1,y2-2,
-          1.0f);
+          width);
 
   // vertical right
-  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(1), 400),
+  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(1), 400, 0.3),
           x2-1,y2-2,
           x2-2,y1+2,
-          1.0f);
+          width);
 
   // horizontal top
-  GE_line(GE_mix_color(GE_get_rgb(color), GE_get_rgb(2), 300),
+  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 300, 0.3),
           x2-2,y1+2,
           x1+1,y1+1,
-          1.0f);
+          width);
 }
 
 
