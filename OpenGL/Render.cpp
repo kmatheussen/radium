@@ -810,7 +810,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          NULL,NULL);
     
 
-  GE_Context *c = GE_color(0);
+  GE_Context *c = GE_mix_alpha(GE_get_rgb(0), GE_get_rgb(2), 900, 0.5);
 
   GE_trianglestrip_start();
 
