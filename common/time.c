@@ -61,39 +61,29 @@ STime Place2STime(
 	struct Blocks *block,
 	const Place *p
 ){
-	STime time1,time2;
-	float fp,fp1,fp2,orgfp2;
-	float tempo;
 
-        if(block->times==NULL){
-          RError("Oh no 2\n");
-          return 0;
-        }
-
-	int line=p->line;
-	struct STimes *stime= &block->times[line];
-	struct STimeChanges *stc,*next;
+	int line1 = p->line;
+        int line2 = line1+1;
+	struct STimes *stime= &block->times[line1];
 
 //	printf("P2ST, block: %x, stime: %x, line: %d\n",block,stime,line);
 
-        if(stime==NULL){
-          RError("Oh no\n");
-          return 0;
-        }
-
-	time1=stime->time;
+	STime time1=stime->time;
 
 	if(0==p->counter) return time1;
 
-	time2=block->times[line+1].time;
+	STime time2=block->times[line2].time;
 
-	fp=GetfloatFromPlacement(p);
-	fp1=(float)line;
-	orgfp2=fp2=fp1+1.0;
+	float fp = GetfloatFromPlacement(p);
+	float fp1 = line1;
+        float fp2 = fp1+1.0;
 
-	stc=stime->timechanges;
+	struct STimeChanges *stc=stime->timechanges;
 	if(stc!=NULL){
-		next=NextSTimeChange(stc);
+
+		float orgfp2 = fp2;
+
+		struct STimeChanges *next=NextSTimeChange(stc);
 		while(next!=NULL){
 			if(PlaceGreaterOrEqual(&next->l.p,p)){
 				fp2=GetfloatFromPlacement(&next->l.p);
@@ -108,11 +98,11 @@ STime Place2STime(
 		time1=stc->time;
 
 		if(stc->tempo1!=0.0f){
-			tempo=stc->tempo1 * (
-				RelTempo2RealRelTempo( (float) (
-					stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1)))
-				))
-			);
+			float tempo=stc->tempo1 * (
+                                                   RelTempo2RealRelTempo( (float) (
+                                                                                   stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1)))
+                                                                                   ))
+                                                   );
 
 			return (STime) (
 				time1 + (
@@ -129,8 +119,7 @@ STime Place2STime(
 	}
 
 
-
-	return (STime) ((time2-time1)*(fp-fp1)/(fp2-fp1)) + time1;
+        return scale(fp, fp1, fp2, time1, time2);
 }
 
 

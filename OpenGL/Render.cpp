@@ -419,6 +419,91 @@ static void create_linenumbers(const struct Tracker_Windows *window, const struc
 
 
 
+/************************************
+   Tempograph
+ ************************************/
+
+#define TEMPOGRAPH_POINTS_PER_LINE 3
+struct TempoGraph{
+  float line_period;
+  int num_points;
+  STime *times;
+  float min;
+  float max;  
+};
+
+struct TempoGraph *create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  struct TempoGraph *tg = (struct TempoGraph*)talloc(sizeof(struct TempoGraph));
+  
+  tg->line_period = window->fontheight / (float)TEMPOGRAPH_POINTS_PER_LINE;
+  tg->num_points  = (wblock->num_reallines * TEMPOGRAPH_POINTS_PER_LINE) + 1;
+  tg->times       = (STime*)talloc_atomic(tg->num_points*sizeof(STime));
+
+  STime last_time = -1;
+
+  for(int realline = 0 ; realline < wblock->num_reallines ; realline++){
+    float fp1=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
+    float fp2;
+    if(realline<wblock->num_reallines-1){
+      fp2=GetfloatFromPlace(&wblock->reallines[realline+1]->l.p);
+    }else{
+      fp2=(float)wblock->block->num_lines;
+    }
+
+    for(int n = 0 ; n<TEMPOGRAPH_POINTS_PER_LINE ; n++){
+      Place p;
+      Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_LINE,fp1,fp2), &p);
+      STime time = Place2STime(wblock->block,&p);
+      if(realline>0 || n>0){
+        tg->times[realline*TEMPOGRAPH_POINTS_PER_LINE + n - 1] = time-last_time;
+        //printf("Setting %d (of %d)\n",realline*TEMPOGRAPH_POINTS_PER_LINE + n - 1, tg->num_points);
+      }
+      last_time = time;
+    }
+  }
+  tg->times[tg->num_points-2] = getBlockSTimeLength(wblock->block) - last_time;
+  tg->times[tg->num_points-1] = tg->times[tg->num_points-2];
+  
+
+  tg->min=tg->times[0];
+  tg->max=tg->times[0];
+  for(int n=1;n<tg->num_points;n++){
+    STime time = tg->times[n];
+    if(tg->min<time)
+      tg->min = time;
+    if(tg->max>time)
+      tg->max = time;
+  }
+
+  return tg;
+}
+
+static void create_tempograph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  struct TempoGraph *tg = create_TempoGraph(window,wblock);
+
+  float width = 2.3;
+  GE_Context *c = GE_color(5);
+
+  //printf("min/max: %d, %d\n",(int)min,(int)max);
+
+  if(abs(tg->min-tg->max)<20) {
+    float middle = (wblock->tempocolorarea.x+wblock->tempocolorarea.x2) / 2.0f;
+    GE_line(c,
+            middle, get_realline_y1(window, 0),
+            middle, get_realline_y2(window, wblock->num_reallines-1),
+            width);
+  }else{
+    for(int n=0;n<tg->num_points-1;n++){
+      GE_line(c, 
+              scale(tg->times[n],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), n * tg->line_period,
+              scale(tg->times[n+1],tg->min,tg->max,wblock->tempocolorarea.x,wblock->tempocolorarea.x2), (n+1) * tg->line_period,
+              width);
+    }
+  }
+ 
+}
+
+
 
 /************************************
    lpb track
@@ -566,6 +651,11 @@ void create_block_borders(
   
   create_double_border(
                        wblock->zoomlinearea.x2+1,
+                       y1,y2
+                       );
+  
+  create_double_border(
+                       wblock->tempocolorarea.x2+1,
                        y1,y2
                        );
   
@@ -759,9 +849,11 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         float velocity = (float)scale(n,0,num_peaks,velocity1->velocity,velocity2->velocity) / (float)MAX_VELOCITY;
 
         float bound_x1 = scale(scale(ch,0,num_channels,0.0f,velocity),
-                               0, 1, subtrack_x1, subtrack_x2);
+                               0, 1,
+                               subtrack_x1, subtrack_x2);
         float bound_x2 = scale(scale(ch+1,0,num_channels,0.0f,velocity),
-                               0, 1, subtrack_x1, subtrack_x2);
+                               0, 1,
+                               subtrack_x1, subtrack_x2);
 
         float x1 = scale(min*track_volume, -1,1, bound_x1, bound_x2);
         float x2 = scale(max*track_volume, -1,1, bound_x1, bound_x2);
@@ -776,9 +868,12 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / wblock->block->reltempo);
 #endif
 
-        if(fabsf(x1-x2) < 0.5)
-          GE_line(c, (x1+x2)/2.0f, y, (x1+x2)/2.0f, y+NUM_LINES_PER_PEAK, 1.0);
-        else{
+        if(fabsf(x1-x2) < 0.5) {
+          GE_trianglestrip_end(c);
+          float x = (x1+x2)/2.0f;
+          GE_line(c, x, y, x, y+NUM_LINES_PER_PEAK, 1.0);
+          GE_trianglestrip_start();
+        }else{
           GE_trianglestrip_add(c, x1, y);
           GE_trianglestrip_add(c, x2, y);
         }
@@ -926,6 +1021,7 @@ void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wbloc
     create_background(window, wblock);
     create_block_borders(window, wblock);
     create_linenumbers(window, wblock);
+    create_tempograph(window, wblock);
     create_lpbtrack(window, wblock);
     create_bpmtrack(window, wblock);
     create_reltempotrack(window, wblock);

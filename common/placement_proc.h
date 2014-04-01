@@ -38,7 +38,7 @@ extern float GetfloatFromLineCounterDividor(Place *placement);
 extern float GetfloatFromPlacement(Place *placement);
 extern float GetfloatFromPlace(Place *placement);
 
-extern void Float2Placement(float f,Place *p);
+extern LANGSPEC void Float2Placement(float f,Place *p);
 extern void PlaceAddfloat(Place *p,float f);
 extern void PlaceSubfloat(Place *p,float f);
 

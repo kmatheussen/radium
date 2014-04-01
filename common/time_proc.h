@@ -22,8 +22,8 @@ extern LANGSPEC STime Place2STime(
                                   const Place *p
                                   );
 
-extern bool isSTimeInBlock(struct Blocks *block,STime time);
-extern STime getBlockSTimeLength(struct Blocks *block);
+extern LANGSPEC bool isSTimeInBlock(struct Blocks *block,STime time);
+extern LANGSPEC STime getBlockSTimeLength(struct Blocks *block);
 
 extern void UpdateSTimes(struct Blocks *block);
 
