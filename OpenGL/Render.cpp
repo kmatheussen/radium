@@ -627,7 +627,7 @@ static GE_Context *get_note_background(int notenum){
   else
     rgb = GE_mix(GE_get_rgb(2), GE_get_rgb(6), scale(notenum,split2,160,0,1000));
 
-  return GE_mix_color(rgb, GE_get_rgb(15), 400);
+  return GE(GE_alpha(rgb, 0.4));
 }
 
 void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
