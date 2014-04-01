@@ -38,13 +38,13 @@ extern LANGSPEC int GetXSubTrack2(
 );
 
 extern LANGSPEC int GetXSubTrack_B1(
-	struct WBlocks *wblock,
+	const struct WBlocks *wblock,
 	NInt track,
 	int subtrack
 );
 
 extern LANGSPEC int GetXSubTrack_B2(
-	struct WBlocks *wblock,
+	const struct WBlocks *wblock,
 	NInt track,
 	int subtrack
 );

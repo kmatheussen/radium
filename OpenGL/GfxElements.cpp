@@ -459,8 +459,21 @@ void GE_text(GE_Context *c, const char *text, float x, float y){
 }
 
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-  fprintf(stderr,"Not implemented, seems like\n");
-  abort();
+  int key = get_key_from_pen_width(pen_width);
+  y1=c->y(y1);
+  y2=c->y(y2);
+
+  c->lines[key].push_back(vl::dvec2(x1, y1));
+  c->lines[key].push_back(vl::dvec2(x2, y1));
+
+  c->lines[key].push_back(vl::dvec2(x2, y1));
+  c->lines[key].push_back(vl::dvec2(x2, y2));
+
+  c->lines[key].push_back(vl::dvec2(x2, y2));
+  c->lines[key].push_back(vl::dvec2(x1, y2));
+
+  c->lines[key].push_back(vl::dvec2(x1, y2));
+  c->lines[key].push_back(vl::dvec2(x1, y1));
 }
 
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2){

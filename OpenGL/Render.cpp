@@ -11,6 +11,7 @@
 #include "../common/time_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/common_proc.h"
 
 #include "GfxElements.h"
 
@@ -1012,6 +1013,53 @@ void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *w
   }
 }
 
+void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(12), 0.2), Z_STATIC);
+  
+  NInt track    = window->curr_track;
+  int  subtrack = window->curr_track_sub;
+  
+  int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-3;
+  int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+3;
+
+  int x1 = 0;
+  int x2 = xb1;
+  int x3 = xb2;
+  int x4 = window->width;
+
+  int y1 = GetCursorY1Pos(window, wblock);
+  int y2 = GetCursorY2Pos(window, wblock);
+  
+  GE_filledBox(c, 
+               x1,   y1,
+               x2, y2
+               );
+  
+  GE_filledBox(c, 
+               x3, y1,
+               x4, y2
+               );
+
+
+  c = GE_z(GE_alpha(GE_get_rgb(1), 0.75), Z_STATIC);
+
+  float width = 1.5f;
+  GE_box(c,
+         x1+2,y1,
+         x4-3,y2-1,
+         width
+         );
+
+  GE_box(c,
+         x2+2,y1+1,
+         x3-3,y2-2,
+         width
+         );
+
+  
+}
+
 
 /************************************
    block
@@ -1028,6 +1076,6 @@ void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wbloc
     create_bpmtrack(window, wblock);
     create_reltempotrack(window, wblock);
     create_tracks(window, wblock);
-
+    create_cursor(window, wblock);
   } GE_end_writing();
 }

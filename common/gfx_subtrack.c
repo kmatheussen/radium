@@ -84,7 +84,7 @@ int GetXSubTrack2(
     is the lpb-track, tempo-track, and the temponode-track.
 ************************************************************************/
 int GetXSubTrack_B1(
-	struct WBlocks *wblock,
+	const struct WBlocks *wblock,
 	NInt track,
 	int subtrack
 ){
@@ -105,7 +105,7 @@ int GetXSubTrack_B1(
 }
 
 int GetXSubTrack_B2(
-	struct WBlocks *wblock,
+	const struct WBlocks *wblock,
 	NInt track,
 	int subtrack
 ){

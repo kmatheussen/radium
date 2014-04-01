@@ -216,9 +216,9 @@ void OS_GFX_C_DrawCursor(
 
   editor->cursorbuffer_painter->drawImage(x1+1,1,
                                           *editor->paintbuffer,
-    x1+1,y_pixmap+1,
-    x4-x1-2,height-2);
-
+                                          x1+1,y_pixmap+1,
+                                          x4-x1-2,height-2);
+  
   editor->cursorbuffer_painter->setOpacity(0.2);
   editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
 

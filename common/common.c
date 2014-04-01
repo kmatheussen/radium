@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   FUNCTION
     Returns the top Y coordinate for the cursor.
 *************************************************************************/
-int GetCursorY1Pos(struct Tracker_Windows *window,struct WBlocks *wblock){
+int GetCursorY1Pos(const struct Tracker_Windows *window,const struct WBlocks *wblock){
   int curr_visualline=wblock->curr_realline - wblock->top_realline;
   return (curr_visualline*window->fontheight) + wblock->t.y1;
 }
@@ -47,7 +47,7 @@ int GetCursorY1Pos(struct Tracker_Windows *window,struct WBlocks *wblock){
   FUNCTION
     Returns the bot Y coordinate for the cursor.
 *************************************************************************/
-int GetCursorY2Pos(struct Tracker_Windows *window,struct WBlocks *wblock){
+int GetCursorY2Pos(const struct Tracker_Windows *window,const struct WBlocks *wblock){
   return GetCursorY1Pos(window,wblock)+window->fontheight-1;
 }
 
