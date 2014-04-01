@@ -817,6 +817,12 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 #define NUM_LINES_PER_PEAK 2
 
   for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+    float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
+    float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+
+    float velocity1 = scale(ns->x1, subtrack_x1, subtrack_x2, 0, 1);
+    float velocity2 = scale(ns->x2, subtrack_x1, subtrack_x2, 0, 1);
+
     int num_peaks = (ns->y2-ns->y1) / NUM_LINES_PER_PEAK;
 
     if(num_peaks<0){
@@ -826,12 +832,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
     }
 
-    float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
-    float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
         
     for(int n=0;n<num_peaks;n++){
-      struct Velocities *velocity1 = (struct Velocities*)ns->element1;
-      struct Velocities *velocity2 = (struct Velocities*)ns->element2;
         
       for(int ch=0;ch<num_channels;ch++){
         
@@ -846,7 +848,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                         &min,
                         &max);
 
-        float velocity = (float)scale(n,0,num_peaks,velocity1->velocity,velocity2->velocity) / (float)MAX_VELOCITY;
+        float velocity = (float)scale(n,0,num_peaks,velocity1, velocity2);
 
         float bound_x1 = scale(scale(ch,0,num_channels,0.0f,velocity),
                                0, 1,
