@@ -732,7 +732,6 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
   int y2 = get_realline_y2(window, realline);
 
   if(notenum>=NOTE_PITCH_START){
-    //isgliding = true;
     notenum -= NOTE_PITCH_START;
     colnum = 5;
   }
@@ -743,6 +742,19 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
   }
 
   if(notenum!=0 && wtrack->noteshowtype==TEXTTYPE){
+
+    // Paint THISNOTELINES
+    struct Notes *note = trackrealline->dasnote;
+    if(note!=NULL && note->subtrack>0) {
+      //printf("Gakk: %s (%s), %d, pointer: %p\n",NotesTexts[(int)notenum],NotesTexts[(int)note->note],note->subtrack,note);
+      float y = (y1+y2) / 2.0f;
+      float x1 = wtrack->notearea.x2;
+      float x2 = (GetXSubTrack1(wtrack,note->subtrack) + GetXSubTrack2(wtrack,note->subtrack)) / 2.0f;
+      GE_line(GE_color(13),
+              x1, y,
+              x2, y,
+              1.6);
+    }
     
     if(isranged==false && notenum>0 && notenum<128)
       GE_filledBox(get_note_background(notenum), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
@@ -903,6 +915,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   last_velocity.l.next = NULL;
   last_velocity.velocity = note->velocity_end;
 
+  //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
   subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
 
@@ -1032,7 +1045,7 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
   int y2 = GetCursorY2Pos(window, wblock);
   
   GE_filledBox(c, 
-               x1,   y1,
+               x1, y1,
                x2, y2
                );
   
@@ -1077,5 +1090,6 @@ void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wbloc
     create_reltempotrack(window, wblock);
     create_tracks(window, wblock);
     create_cursor(window, wblock);
+
   } GE_end_writing();
 }

@@ -524,6 +524,7 @@ enum{
 
 
 struct TrackRealline{
+  struct Notes *dasnote;
   float note;										/* Is 0 if no note. */
   struct TrackReallineElements *trackreallineelements;
 };

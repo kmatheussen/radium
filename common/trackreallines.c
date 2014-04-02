@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 *******************************************************************/
 
+#include <assert.h>
 #include <string.h>
 
 #include "nsmtracker.h"
@@ -157,7 +158,8 @@ static void InsertTRLElement(
 	int realline,
 	int type,int subtype,float y1,float y2,
 	int x1,int x2,
-	void *pointer
+	void *pointer,
+        void *note
 ){
 	struct TrackReallineElements *element = talloc(sizeof(struct TrackReallineElements));
 
@@ -177,6 +179,7 @@ static void InsertTRLElement(
 	element->x1=x1;
 	element->x2=x2;
 	element->pointer=pointer;
+        element->note=note;
 
 	if(type==TRE_REALSTARTSTOP){
 		InsertTRLElement_start(element,realline);
@@ -441,6 +444,7 @@ static void AddTrackReallineNote(
 
 	float maxx = MAX_VELOCITY;
 
+        assert(note!=NULL);
 	InsertTRLElement(
 		window,
 		wtrack,
@@ -449,7 +453,8 @@ static void AddTrackReallineNote(
 		TRE_THISNOTELINES,
 		subtrack,
 		0.0f,0.0f,0,0,					/* Will be filled in in the OrganizeThisNoteLines part. */
-		note
+		note,
+                note
 	);
 
 	nodeinfo.wtrack=wtrack;
@@ -623,6 +628,7 @@ void InsertCoordinatesForThisNoteLines(
 	element->subtype=temp->subtype;
 
 	wtrack->trackreallines[realline].note=((struct Notes *)(element->pointer))->note;
+	wtrack->trackreallines[realline].dasnote=(struct Notes *)element->pointer;
 }
 
 
@@ -724,6 +730,7 @@ void InsertNotesFromRealline(
 	}else{
 		while(element->type!=TRE_THISNOTELINES) element=element->next;
 		wtrack->trackreallines[realline].note=((struct Notes *)(element->pointer))->note;
+                wtrack->trackreallines[realline].dasnote=(struct Notes *)element->pointer;
 		InsertCoordinatesForThisNoteLines(window,wtrack,realline,element);
 	}
 
@@ -740,6 +747,7 @@ void InsertNotesFromRealline(
 
 	if(1==mul){
 		wtrack->trackreallines[realline].note=NOTE_MUL;
+                wtrack->trackreallines[realline].dasnote=NULL;
 	}
 
 
@@ -777,6 +785,7 @@ void OrganizeThisNoteLines(
 				while(temp->type!=TRE_THISNOTELINES) temp=temp->next;
 				note=temp->pointer;
 				trackreallines[realline].note=note->note;
+                                trackreallines[realline].dasnote=note;
 				InsertCoordinatesForThisNoteLines(window,wtrack,realline,temp);
 			}
 		}
@@ -822,6 +831,7 @@ void AddStopsElements(
 		}else{
 			wtrack->trackreallines[realline].note=NOTE_STP;
 		}
+                wtrack->trackreallines[realline].dasnote=NULL;
 		stop=NextStop(stop);
 	}
 
@@ -860,6 +870,7 @@ void AddPitchElements(
       
       if(wtrack->trackreallines[realline].note!=0){
         wtrack->trackreallines[realline].note=NOTE_MUL;
+	wtrack->trackreallines[realline].dasnote=NULL;
       }else{
         wtrack->trackreallines[realline].note=NOTE_PITCH_START + pitch->note;
       }
