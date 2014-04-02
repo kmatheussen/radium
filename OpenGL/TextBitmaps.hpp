@@ -48,7 +48,7 @@ namespace{
   };
 
 
-static QHash<char,ImageHolder> g_imageholders;
+static QHash<char,ImageHolder> *g_imageholders; // It's a pointer to avoid auto-desctruction at program exit.
 
 static MyMutex image_mutex;
 
@@ -95,7 +95,10 @@ static inline void GE_set_new_font(const QFont &font){
     holder.image = vl_image;
     holder.width = real_width;
     
-    g_imageholders[c] = holder;
+    if (g_imageholders==NULL)
+      g_imageholders = new QHash<char,ImageHolder>;
+
+    (*g_imageholders)[c] = holder;
   }
 }
 
@@ -116,9 +119,9 @@ struct TextBitmaps{
     x = (int)x;
     y = (int)y;
 
-    assert(g_imageholders.contains(c));
+    assert(g_imageholders->contains(c));
 
-    ImageHolder holder = g_imageholders[c];
+    ImageHolder holder = (*g_imageholders)[c];
 
     if (c != ' '){
       vl::ImagePBO *image = holder.image.get();
@@ -139,7 +142,7 @@ struct TextBitmaps{
   void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform){
     for(int i=0;i<(int)strlen(chars)-1;i++){
       char c = chars[i];
-      ImageHolder holder = g_imageholders[c];
+      ImageHolder holder = (*g_imageholders)[c];
 
       if(points[c].size()>0) {
         //printf("char: %c, size: %d\n",c,(int)points[c].size());

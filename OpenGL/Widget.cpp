@@ -306,6 +306,8 @@ QWidget *GL_create_widget(void){
   widget->resize(1000,1000);
   widget->show();
 
+  widget->incReference();  // dont want auto-desctruction at program exit.
+
   return widget.get();
 }
 
@@ -314,4 +316,5 @@ void GL_stop_widget(QWidget *widget){
   MyQt4ThreadedWidget *mywidget = static_cast<MyQt4ThreadedWidget*>(widget);
 
   mywidget->stop();
+  //delete mywidget;
 }
