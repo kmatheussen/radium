@@ -18,23 +18,26 @@ namespace{
 
   struct MyMutex : public vl::IMutex{
     QMutex mutex;
-    int is_locked;
+    int num_visitors;
 
-    MyMutex() : is_locked(0) {}
+    MyMutex() 
+      : mutex(QMutex::Recursive)
+      , num_visitors(0) 
+    {}
 
     virtual void 	lock () {
       mutex.lock();
-      is_locked = 1;
+      num_visitors++;
     }
 
     virtual void 	unlock () {
-      is_locked = 0;
+      num_visitors--;
       mutex.unlock();
     }
 
     virtual int isLocked () const {
       //Returns 1 if locked, 0 if non locked, -1 if unknown. 
-      return is_locked;
+      return num_visitors>0;
     }
 
   };
