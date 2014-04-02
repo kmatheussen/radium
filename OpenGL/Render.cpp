@@ -995,6 +995,24 @@ void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks
     draw_skewed_box(window, 1, nodelines->x2, nodelines->y2);
 }
 
+void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+  struct Stops *stops = wtrack->track->stops;
+
+  float reallineF = 0.0f;
+  GE_Context *c = GE_color_alpha(1,0.2);
+
+  while(stops != NULL){
+    reallineF = FindReallineForF(wblock, reallineF, &stops->l.p);
+    float y = get_realline_y(window, reallineF);
+    GE_line(c,
+            wtrack->fxarea.x, y,
+            wtrack->x2, y,
+            1.0f
+            );
+    stops = NextStop(stops);
+  }
+}
+
 void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
 
@@ -1014,6 +1032,8 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
     create_track_fxs(window, wblock, wtrack, fxs);
     fxs = NextFX(fxs);
   }
+
+  create_track_stops(window, wblock, wtrack);
 }
 
 
