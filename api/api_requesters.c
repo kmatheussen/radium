@@ -85,7 +85,7 @@ void configVST(int windownum){
 
 const char *getLoadFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const char *ret = GFX_GetLoadFileName(window, NULL, text, dir);
+  const char *ret = GFX_GetLoadFileName(window, NULL, text, dir, "*.mid *.MID *.midi *.MIDI)");
   if(ret==NULL)
     return "";
   else
@@ -94,7 +94,7 @@ const char *getLoadFilename(char *text, char *dir){
 
 const char *getSaveFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const char *ret = GFX_GetSaveFileName(window, NULL, text, dir);
+  const char *ret = GFX_GetSaveFileName(window, NULL, text, dir, "*.mid *.MID *.midi *.MIDI)");
   if(ret==NULL)
     return "";
   else
