@@ -109,14 +109,15 @@ static void draw_text_num(
 
 static void draw_skewed_box(const struct Tracker_Windows *window,
                             int color,
-                            int x, int y
+                            float x, float y
                             )
 {
  
-  int x1 = x-15;
-  int x2 = x+15;
-  int y1 = y-15;
-  int y2 = y+15;
+  float minnodesize = window->fontheight / 1.5;
+  float x1 = x-minnodesize;
+  float x2 = x+minnodesize;
+  float y1 = y-minnodesize;
+  float y2 = y+minnodesize;
   const float width = 2.3;
 
   // vertical left
