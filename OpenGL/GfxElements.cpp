@@ -221,7 +221,6 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
       std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
       
 
-#if 1
       // 1. Filled boxes
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
@@ -235,8 +234,6 @@ void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_tr
           setColorEnd(vg, c);
         }
       }
-#endif 
-      
       
       // 2. Text
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {

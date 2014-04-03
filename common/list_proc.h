@@ -76,7 +76,7 @@ extern void ListAddElement1_ff(
 	struct ListHeader1 *element
 );
 
-extern void *ListFindElement1(struct ListHeader1 *list,NInt num);
+extern LANGSPEC void *ListFindElement1(struct ListHeader1 *list,NInt num);
 extern void *ListFindElementP(struct ListHeaderP *list,NInt num);
 extern void *ListFindElement1_r0(struct ListHeader1 *list,NInt num);
 

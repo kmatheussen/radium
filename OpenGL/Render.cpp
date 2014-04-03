@@ -681,7 +681,7 @@ void create_block_borders(
 /************************************
    tracks
  ************************************/
-void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int left_subtrack){
   int y1=get_realline_y1(window, 0);
   int y2=get_realline_y2(window, wblock->num_reallines-1);
   
@@ -690,12 +690,13 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                        y1,
                        y2);
 
-  create_single_border(
-                       wtrack->notearea.x2+1,
-                       y1,
-                       y2);
+  if(left_subtrack==-1)
+    create_single_border(
+                         wtrack->notearea.x2+1,
+                         y1,
+                         y2);
 
-  for(int lokke=1 ; lokke<wtrack->num_vel;lokke++){
+  for(int lokke=R_MAX(1, left_subtrack) ; lokke<wtrack->num_vel;lokke++){
     create_single_border(
                          GetXSubTrack1(wtrack,lokke)-1,
                          y1,
@@ -1013,35 +1014,40 @@ void create_track_stops(const struct Tracker_Windows *window, const struct WBloc
   }
 }
 
-void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
-  create_track_borders(window, wblock, wtrack);
+void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int left_subtrack){
+  create_track_borders(window, wblock, wtrack, left_subtrack);
 
-  for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
-    create_track_text(window, wblock, wtrack, realline);
-    create_track_pitches(window, wblock, wtrack, realline);
-  }
+  if(left_subtrack==-1)
+    for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
+      create_track_text(window, wblock, wtrack, realline);
+      create_track_pitches(window, wblock, wtrack, realline);
+    }
 
   const struct Notes *note=wtrack->track->notes;
   while(note != NULL){
-    create_track_velocities(window, wblock, wtrack, note);
+    if(note->subtrack >= left_subtrack)
+      create_track_velocities(window, wblock, wtrack, note);
     note = NextNote(note);
   }
 
-  const struct FXs *fxs=wtrack->track->fxs;
-  while(fxs != NULL){
-    create_track_fxs(window, wblock, wtrack, fxs);
-    fxs = NextFX(fxs);
-  }
+  if(left_subtrack<=0){
+    const struct FXs *fxs=wtrack->track->fxs;
+    while(fxs != NULL){
+      create_track_fxs(window, wblock, wtrack, fxs);
+      fxs = NextFX(fxs);
+    }
 
-  create_track_stops(window, wblock, wtrack);
+    create_track_stops(window, wblock, wtrack);
+  }
 }
 
 
 void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  const struct WTracks *wtrack=wblock->wtracks;
+  struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 
-  while(wtrack!=NULL){
-    create_track(window, wblock, wtrack);
+  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+    int left_subtrack = wtrack->l.num==wblock->left_track ? wblock->left_subtrack : -1;
+    create_track(window, wblock, wtrack, left_subtrack);
     wtrack=NextWTrack(wtrack);
   }
 }
