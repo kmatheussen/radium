@@ -80,7 +80,7 @@ void SaveAs(struct Root *theroot){
 
 	PlayStop();
 
-	filename=GFX_GetSaveFileName(theroot->song->tracker_windows,NULL,"Select file to save","obsolete");
+	filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", "obsolete", NULL);
 
 	if(filename==NULL) return;
 

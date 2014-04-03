@@ -61,14 +61,16 @@ extern LANGSPEC const char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
-	char *dir
+	char *dir,
+        char *postfixes
 );
 
 extern LANGSPEC const char *GFX_GetSaveFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
-	char *dir
+	char *dir,
+        char *postfixes
 );
 
 extern LANGSPEC void GFX_OS_UpdateKeyOctave(void);

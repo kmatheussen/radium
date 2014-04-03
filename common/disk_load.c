@@ -188,7 +188,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filenam
           goto exit;
 
         if(filename==NULL)
-          filename=GFX_GetLoadFileName(window,NULL,"Select file to load","obsolete");
+          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", "obsolete", NULL);
 
 	if(filename==NULL) goto exit;
 

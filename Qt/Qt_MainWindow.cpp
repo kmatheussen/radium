@@ -498,20 +498,25 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   editor->status_label->setText(title);
 }
 
+static QString get_postfixes_filter(char *postfixes){
+  return postfixes==NULL 
+         ? "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3)"
+         : QString("Song files (") + QString(postfixes) + ")";
+}
+
 const char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
-	char *dir
+	char *dir,
+        char *postfixes
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   const char *ret;
 
   num_users_of_keyboard++;
 
-  QString filename = QFileDialog::getOpenFileName(editor,seltext, "",
-                                                  "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3)"
-                                                  );
+  QString filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
 
   if(filename == ""){
     ret=NULL;
@@ -529,7 +534,8 @@ const char *GFX_GetSaveFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
 	char *seltext,
-	char *dir
+	char *dir,
+        char *postfixes
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
@@ -537,7 +543,7 @@ const char *GFX_GetSaveFileName(
   const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName(editor,
                                                                       seltext,
                                                                       "",
-                                                                      "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3)"
+                                                                      get_postfixes_filter(postfixes)
                                                                       ).ascii());
   num_users_of_keyboard--;
   return ret==NULL || strlen(ret)==0 
