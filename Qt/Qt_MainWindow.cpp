@@ -500,8 +500,8 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
 
 static QString get_postfixes_filter(char *postfixes){
   return postfixes==NULL 
-         ? "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3)"
-         : QString("Song files (") + QString(postfixes) + ")";
+         ? "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3) ;; All files (*)"
+         : QString("Song files (") + QString(postfixes) + ") ;; All files (*)";
 }
 
 const char *GFX_GetLoadFileName(
