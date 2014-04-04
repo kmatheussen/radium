@@ -128,14 +128,16 @@ public:
   }
 
 private:
-  void maybeRedraw(){
+  bool maybeRedraw(){
     if (vg.get()==NULL)
-      initEvent();
+      return false;
 
     if(GE_new_read_contexts()==true) {
       vg->clear();
       GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
+
+    return true;
   }
 public:
 
@@ -166,65 +168,67 @@ public:
 
     static float pos = -123412;
 
-    maybeRedraw();
+    if(maybeRedraw()) {
 
-    if(true || pos != das_pos) {
+      if(true || pos != das_pos) {
 
-      // scroll
-      {
-        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-        //mat.translate(-(das_pos-1000)/16.0f,das_pos,0);
-        mat.translate(0,das_pos,0);
-        //mat.scale(das_pos/16.0f,0,0);
-        _scroll_transform->setLocalAndWorldMatrix(mat);
-      }
+        // scroll
+        {
+          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
+          //mat.translate(-(das_pos-1000)/16.0f,das_pos,0);
+          mat.translate(0,das_pos,0);
+          //mat.scale(das_pos/16.0f,0,0);
+          _scroll_transform->setLocalAndWorldMatrix(mat);
+        }
 
-      int extra = root->song->tracker_windows->wblock->curr_realline - root->song->tracker_windows->wblock->top_realline;
-      //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
-      das_pos = (extra + root->song->tracker_windows->wblock->curr_realline) * root->song->tracker_windows->fontheight;
+        int extra = root->song->tracker_windows->wblock->curr_realline - root->song->tracker_windows->wblock->top_realline;
+        //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
+        das_pos = (extra + root->song->tracker_windows->wblock->curr_realline) * root->song->tracker_windows->fontheight;
 
-      // linenumbers
-      {
-        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-        mat.translate(0,das_pos,0);
-        _linenumbers_transform->setLocalAndWorldMatrix(mat);
-      }
+        // linenumbers
+        {
+          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
+          mat.translate(0,das_pos,0);
+          _linenumbers_transform->setLocalAndWorldMatrix(mat);
+        }
       
 
 #if 0
-      das_pos += 2.03;
-      if(das_pos>64*20)
-        das_pos=_rendering->camera()->viewport()->height();
+        das_pos += 2.03;
+        if(das_pos>64*20)
+          das_pos=_rendering->camera()->viewport()->height();
 #endif
 
-      //_vg->scale(pos / 10.0,pos / 10.0);
+        //_vg->scale(pos / 10.0,pos / 10.0);
       
-      _rendering->render();
+        _rendering->render();
 
-      pos = das_pos;
+        pos = das_pos;
 
-      // scrollbar
-      {
-        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-        mat.translate(0,
-                      scale(das_pos,
-                            0,512*20 + 1200,
-                            _rendering->camera()->viewport()->height(),100
-                            ),
-                      0);
+        // scrollbar
+        {
+          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
+          mat.translate(0,
+                        scale(das_pos,
+                              0,512*20 + 1200,
+                              _rendering->camera()->viewport()->height(),100
+                              ),
+                        0);
 
-        _scrollbar_transform->setLocalAndWorldMatrix(mat);
+          _scrollbar_transform->setLocalAndWorldMatrix(mat);
+        }
+
       }
 
-    }
 
+      // show rendering
+      if ( openglContext()->hasDoubleBuffer() )
+        openglContext()->swapBuffers();
 
-    // show rendering
-    if ( openglContext()->hasDoubleBuffer() )
-      openglContext()->swapBuffers();
+    } // maybeRedraw
 
     GL_unlock();
   }
