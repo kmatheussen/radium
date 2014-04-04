@@ -310,7 +310,7 @@ void GE_draw_vl(vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<
           //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
         }
         
-        if(has_set_color==false)
+        if(has_set_color==true)
           setColorEnd(vg, c);
       }
 

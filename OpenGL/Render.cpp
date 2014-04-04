@@ -320,7 +320,7 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
          1.0f);
 
   //GE_Context *scrollbar = GE_color_z(2, Z_SCROLLBAR);
-  GE_Context *scrollbar = GE_color_z(3, Z_STATIC);
+  GE_Context *scrollbar = GE_color_z(2, Z_STATIC);
   GE_filledBox(scrollbar,
                2,
                window->leftslider.lx,
@@ -1077,7 +1077,7 @@ void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *w
 
 void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(12), 0.2), Z_STATIC);
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(7), 0.2), Z_STATIC);
   
   NInt track    = window->curr_track;
   int  subtrack = window->curr_track_sub;
