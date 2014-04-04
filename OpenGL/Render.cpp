@@ -1118,5 +1118,5 @@ void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wbloc
     create_tracks(window, wblock);
     create_cursor(window, wblock);
 
-  } GE_end_writing();
+  } GE_end_writing(GE_get_rgb(0));
 }

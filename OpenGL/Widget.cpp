@@ -66,9 +66,13 @@ public:
   vl::ref<vl::Transform> _scrollbar_transform;
   vl::ref<vl::SceneManagerActorTree> _sceneManager;
 
+  vl::ref<vl::VectorGraphics> vg;
+  vl::ref<vl::SceneManagerVectorGraphics> vgscene;
+
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
   {
+    setMouseTracking(true);
   }
 
   ~MyQt4ThreadedWidget(){
@@ -81,7 +85,7 @@ public:
 
     _rendering = new vl::Rendering;
     _rendering->renderer()->setFramebuffer(glContext->framebuffer() );
-    _rendering->camera()->viewport()->setClearColor( vl::white );
+    //_rendering->camera()->viewport()->setClearColor( vl::green );
 
     _scroll_transform = new vl::Transform;
     _rendering->transform()->addChild(_scroll_transform.get());
@@ -112,19 +116,40 @@ public:
 
     /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
   virtual void initEvent() {
+    printf("initEvent\n");
+    
+    _rendering->sceneManagers()->clear();
+    
+    vg = new vl::VectorGraphics;
+    
+    vgscene = new vl::SceneManagerVectorGraphics;
+    vgscene->vectorGraphicObjects()->push_back(vg.get());
+    _rendering->sceneManagers()->push_back(vgscene.get());
+  }
+
+private:
+  void maybeRedraw(){
+    if (vg.get()==NULL)
+      initEvent();
+
     if(GE_new_read_contexts()==true) {
-      printf("initEvent\n");
-
-      _rendering->sceneManagers()->clear();
-
-      vl::ref<vl::VectorGraphics> vg = new vl::VectorGraphics;
-      
-      vl::ref<vl::SceneManagerVectorGraphics> vgscene = new vl::SceneManagerVectorGraphics;
-      vgscene->vectorGraphicObjects()->push_back(vg.get());
-      _rendering->sceneManagers()->push_back(vgscene.get());
-
-      GE_draw_vl(vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+      vg->clear();
+      GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
+  }
+public:
+
+  virtual void mousePressEvent( QMouseEvent *qmouseevent){
+    printf("Pressing das button\n");
+  }
+
+  virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
+    //tevent.ID=TR_MOUSEMOVE;
+    //tevent.x=qmouseevent->x();//-XOFFSET;
+    //tevent.y=qmouseevent->y();//-YOFFSET;
+    //EventReciever(&tevent,this->window);
+    fprintf(stderr, "mouse %d / %d\n", (int)qmouseevent->x(), (int)qmouseevent->y());
+
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
@@ -141,7 +166,7 @@ public:
 
     static float pos = -123412;
 
-    initEvent();
+    maybeRedraw();
 
     if(true || pos != das_pos) {
 
@@ -154,7 +179,11 @@ public:
         //mat.scale(das_pos/16.0f,0,0);
         _scroll_transform->setLocalAndWorldMatrix(mat);
       }
-      
+
+      int extra = root->song->tracker_windows->wblock->curr_realline - root->song->tracker_windows->wblock->top_realline;
+      //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
+      das_pos = (extra + root->song->tracker_windows->wblock->curr_realline) * root->song->tracker_windows->fontheight;
+
       // linenumbers
       {
         vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
@@ -164,7 +193,7 @@ public:
       }
       
 
-#if 1
+#if 0
       das_pos += 2.03;
       if(das_pos>64*20)
         das_pos=_rendering->camera()->viewport()->height();
@@ -272,7 +301,8 @@ public:
     //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
 
     initEvent();
-    _rendering->render();
+
+    updateEvent();
   }
   
   /** Event generated when one or more files are dropped on the bound OpenGLContext's area. */

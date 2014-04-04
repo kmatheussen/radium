@@ -133,13 +133,15 @@ static float get_pen_width_from_key(int key){
 
 static QMutex mutex;
 
+static GE_Rgb background_color;
+
 typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 //                         ^             ^
 //                         |             |
 //                         z             color
 
 
-// this is somewhat complicated, but very efficient.
+// this is somewhat complicated, but very efficient. It can be seen as a ringbuffer with room for only one element. If writing to a full ringbuffer, we overwrite what's already there.
 static Contexts *g_read_contexts = NULL;
 static Contexts *g_write_contexts = NULL;
 static Contexts *g_contexts = NULL;
@@ -162,13 +164,21 @@ void GE_start_writing(void){
   g_contexts = new Contexts;
 }
 
-void GE_end_writing(void){
+void GE_set_background_color(GE_Rgb c){
+  QMutexLocker locker(&mutex);
+
+}
+
+
+void GE_end_writing(GE_Rgb new_background_color){
   QMutexLocker locker(&mutex);
 
   if (g_write_contexts != NULL) // I know the check is unnecessary, but the code is clearer this way. (shows that the variable might be NULL)
     delete g_write_contexts;
 
   g_write_contexts = g_contexts;
+
+  background_color = new_background_color;
 }
 
 
@@ -193,24 +203,30 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
 }
 
 
-void GE_draw_vl(vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+void GE_draw_vl(vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
   vg->setLineSmoothing(true);
   vg->setPolygonSmoothing(true);
   //vg->setPointSmoothing(true); /* default value */
-  vg->setPointSmoothing(false); // images are drawin using drawPoint.
+  vg->setPointSmoothing(false); // images are drawn using drawPoint.
   //vg->setTextureMode(vl::TextureMode_Repeat 	);
 
+  Contexts *main_contexts;
+
+  GE_Rgb new_background_color;
+
+  {
+    QMutexLocker locker(&mutex);
+    new_background_color = background_color;
+    
+    assert(g_read_contexts != NULL);
+    
+    main_contexts = g_read_contexts;
+    g_read_contexts = NULL;
+  }
+
+  viewport->setClearColor(vl::fvec4(new_background_color.r/255.0f, new_background_color.g/255.0f, new_background_color.b/255.0f, new_background_color.a/255.0f));
 
   vg->startDrawing(); {
-
-    Contexts *main_contexts;
-
-    mutex.lock(); {
-      assert(g_read_contexts != NULL);
-      
-      main_contexts = g_read_contexts;
-      g_read_contexts = NULL;
-    } mutex.unlock();
 
     //QMapIterator<int, std::map<uint64_t, vl::ref<GE_Context> > > it(&contexts);
     //begin();//(*contexts);
@@ -434,6 +450,7 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z){
   return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), z);
 }
+
 
 
 /************************************************************/
