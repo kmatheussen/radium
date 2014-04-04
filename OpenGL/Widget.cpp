@@ -56,6 +56,20 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
+static int GE_num_reallines(void){
+  return root->song->tracker_windows->wblock->num_reallines;
+}
+
+static int GE_curr_realline(void){
+  return root->song->tracker_windows->wblock->curr_realline;
+}
+
+static float GE_cursor_pos(void){
+  int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
+  //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
+  return (extra + GE_curr_realline()) * root->song->tracker_windows->fontheight;
+}
+
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
 public:
@@ -182,9 +196,7 @@ public:
           _scroll_transform->setLocalAndWorldMatrix(mat);
         }
 
-        int extra = root->song->tracker_windows->wblock->curr_realline - root->song->tracker_windows->wblock->top_realline;
-        //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
-        das_pos = (extra + root->song->tracker_windows->wblock->curr_realline) * root->song->tracker_windows->fontheight;
+        das_pos = GE_cursor_pos();
 
         // linenumbers
         {
