@@ -1,5 +1,5 @@
 
-Most important changes 1.9.35 -> 1.9.36:
+Most important changes 1.9.35 -> 1.9.37:
 * Add "All files" option to the file requesters
 * Proper postfix filter in filerequester when importing midi file
 * text draw: Fix for crash when painting ranged notes with subpitch
