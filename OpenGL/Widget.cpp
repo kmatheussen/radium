@@ -12,6 +12,11 @@
 #include <QTextEdit>
 
 #include "../common/nsmtracker.h"
+#include "../common/playerclass.h"
+#include "../common/list_proc.h"
+#include "../common/realline_calc_proc.h"
+#include "../common/time_proc.h"
+#include "../common/settings_proc.h"
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
@@ -69,6 +74,107 @@ static float GE_cursor_pos(void){
   //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
   return (extra + GE_curr_realline()) * root->song->tracker_windows->fontheight;
 }
+
+
+extern PlayerClass *pc;
+extern struct Root *root;
+
+extern int scrolls_per_second;
+extern int default_scrolls_per_second;
+
+// TODO / WARNING, this value must be calculated. (this value is calculated from 48000/60)
+static double g_vblank_stime_interval = 800.0;
+
+static double get_realline_stime(struct WBlocks *wblock, int realline){  
+  return Place2STime(wblock->block, &wblock->reallines[realline]->l.p);
+}
+
+static double get_current_time(double ideally, double g_vblank_stime_interval){
+  if (fabs(pc->start_time - ideally) > g_vblank_stime_interval*8)
+    return pc->start_time;
+  else
+    return ideally;
+}
+
+static void find_current_wblock_and_realline(struct Tracker_Windows *window, struct WBlocks **wblock, double *realline){
+  static double s_last_stime = 0.0;
+
+  double ideally = s_last_stime + (g_vblank_stime_interval*(double)pc->block->reltempo);
+  double current_stime = get_current_time(ideally, g_vblank_stime_interval);
+  double block_stime;
+
+  if(ideally != current_stime)
+    printf("NOT RETURNING IDEALLY: %f - %f\n",ideally,current_stime);
+
+  s_last_stime = current_stime;
+
+  if (pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP) {
+    *wblock = window->wblock;
+    double current_block_sduration = getBlockSTimeLength((*wblock)->block);
+    block_stime = fmod(current_stime, current_block_sduration);
+  } else {
+    abort();
+    block_stime = 0.0;
+  }
+
+  double prev_line_stime = 0.0;
+  int i_realline;
+  for(i_realline=1; i_realline<(*wblock)->num_reallines; i_realline++){
+    double curr_line_stime = get_realline_stime(*wblock, i_realline);
+    if (curr_line_stime >= block_stime) {
+      *realline = scale_double(block_stime,
+                               prev_line_stime, curr_line_stime,
+                               i_realline-1, i_realline);
+      return;
+    }
+    prev_line_stime = curr_line_stime;
+  }
+
+  *realline = (*wblock)->num_reallines-0.001; // should not happen that we get here.
+}
+
+
+#if 0
+static void UpdateReallineByLines(struct Tracker_Windows *window, struct WBlocks *wblock, double d_till_curr_realline){
+  static STime last_time = 0;
+  static struct WBlocks *last_wblock = NULL;
+
+  int till_curr_realline = (int)d_till_curr_realline;
+
+  if(scrolls_per_second==-1)
+    scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
+
+  bool do_scrolling = false;
+  
+  if(wblock != last_wblock)
+    do_scrolling = true;
+  
+  else if (last_time > pc->therealtime)
+    do_scrolling = true;
+  
+  else if(till_curr_realline < wblock->curr_realline)
+    do_scrolling = true;
+  
+  else if(till_curr_realline > wblock->curr_realline){
+    STime from_time = (STime) ((double)Place2STime(wblock->block, &wblock->reallines[wblock->curr_realline]->l.p) / wblock->block->reltempo);
+    STime to_time   = (STime) ((double)Place2STime(wblock->block, &wblock->reallines[till_curr_realline]->l.p) / wblock->block->reltempo);
+    
+    STime time = to_time - from_time;
+    
+    STime time_necessary_to_scroll = pc->pfreq / scrolls_per_second;
+    
+    if(time>=time_necessary_to_scroll)
+      do_scrolling = true;
+  }
+  
+  if(do_scrolling==true) {
+    ScrollEditorToRealLine(window,wblock,till_curr_realline);
+    last_time = pc->therealtime;
+    last_wblock = wblock;
+  }
+}
+#endif
+
 
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
@@ -196,7 +302,19 @@ public:
           _scroll_transform->setLocalAndWorldMatrix(mat);
         }
 
-        das_pos = GE_cursor_pos();
+        if(pc->isplaying) {
+          NInt            curr_block           = root->curr_block;
+          struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
+          //int             till_curr_realline   = wblock->till_curr_realline;
+          double          d_till_curr_realline = wblock->till_curr_realline;
+          
+          find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
+          
+          int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
+          das_pos = (extra + d_till_curr_realline) * root->song->tracker_windows->fontheight;
+
+        } else
+          das_pos = GE_cursor_pos();
 
         // linenumbers
         {
