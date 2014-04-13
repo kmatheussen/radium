@@ -20,6 +20,7 @@
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
+#include "Timing.hpp"
 
 
 #include "Widget_proc.h"
@@ -82,31 +83,16 @@ extern struct Root *root;
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
-// TODO / WARNING, this value must be calculated. (this value is calculated from 48000/60)
-static double g_vblank_stime_interval = 800.0;
-
 static double get_realline_stime(struct WBlocks *wblock, int realline){  
   return Place2STime(wblock->block, &wblock->reallines[realline]->l.p);
 }
 
-static double get_current_time(double ideally, double g_vblank_stime_interval){
-  if (fabs(pc->start_time - ideally) > g_vblank_stime_interval*8)
-    return pc->start_time;
-  else
-    return ideally;
-}
+TimeEstimator time_estimator;
 
 static void find_current_wblock_and_realline(struct Tracker_Windows *window, struct WBlocks **wblock, double *realline){
-  static double s_last_stime = 0.0;
+  double current_stime = time_estimator.get((double)pc->start_time * 1000.0 / (double)pc->pfreq, pc->block->reltempo) * (double)pc->pfreq / 1000.0;
 
-  double ideally = s_last_stime + (g_vblank_stime_interval*(double)pc->block->reltempo);
-  double current_stime = get_current_time(ideally, g_vblank_stime_interval);
   double block_stime;
-
-  if(ideally != current_stime)
-    printf("NOT RETURNING IDEALLY: %f - %f\n",ideally,current_stime);
-
-  s_last_stime = current_stime;
 
   if (pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP) {
     *wblock = window->wblock;
@@ -189,8 +175,11 @@ public:
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
+  bool training_estimator;
+
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
+    , training_estimator(true)
   {
     setMouseTracking(true);
   }
@@ -284,6 +273,15 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
+    if(training_estimator)
+      training_estimator = time_estimator.train();
+        
+    if(training_estimator) {
+      if ( openglContext()->hasDoubleBuffer() )
+        openglContext()->swapBuffers();
+      return;
+    }
+
     GL_lock();
 
     static float pos = -123412;
@@ -303,6 +301,7 @@ public:
         }
 
         if(pc->isplaying) {
+          static float last = 0.0f;
           NInt            curr_block           = root->curr_block;
           struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
           //int             till_curr_realline   = wblock->till_curr_realline;
@@ -312,6 +311,12 @@ public:
           
           int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
           das_pos = (extra + d_till_curr_realline) * root->song->tracker_windows->fontheight;
+
+          //if(last-das_pos < -2)
+          //  das_pos = last+2.7073;
+
+          printf("%f\n",last-das_pos);
+          last=das_pos;
 
         } else
           das_pos = GE_cursor_pos();

@@ -1600,7 +1600,7 @@ GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h
 	g++ OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h
+Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp
 	g++ OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
