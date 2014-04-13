@@ -315,7 +315,7 @@ public:
           //if(last-das_pos < -2)
           //  das_pos = last+2.7073;
 
-          printf("%f\n",last-das_pos);
+          if(0)printf("%f\n",last-das_pos);
           last=das_pos;
 
         } else

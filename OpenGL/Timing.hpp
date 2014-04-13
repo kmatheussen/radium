@@ -24,7 +24,8 @@ struct VBlankEstimator{
   VBlankEstimator(int num_trainings)
     : i_trainings(0)
     , num_trainings(num_trainings)
-  { }
+  {
+  }
 
   bool train(){
     if(i_trainings==0)
@@ -46,6 +47,10 @@ struct VBlankEstimator{
 
   Result get(){
     //time.restart();
+    double elapsed = time.elapsed();
+    i_trainings++;
+    base_interval = elapsed / (double)i_trainings;
+    //printf("**************************** Estimated vblank to be %f ms\n",base_interval);
     return Result(base_interval, 1); //16.6666666666666666666666666666666666666666666666666666666667, 1);
   }
 };
