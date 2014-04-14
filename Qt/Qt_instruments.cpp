@@ -71,12 +71,18 @@ extern struct Patch *g_currpatch;
 
 #include "EditorWidget.h"
 #include "../GTK/GTK_visual_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 void set_editor_focus(void){
   if(root==NULL)
     return;
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-  editor->setFocus();
+
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    editor->setFocus();
+  }GL_unlock();
+
 #ifdef USE_GTK_VISUAL
   //GTK_SetFocus();
 #endif

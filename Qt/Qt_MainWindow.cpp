@@ -81,6 +81,7 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 #include "mQt_bottom_bar_widget_callbacks.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "Qt_MainWindow_proc.h"
 
@@ -250,7 +251,10 @@ void grabKeyboard(void){
   //g_embed_container->grabKeyboard();
   //g_editor->main_window->grabKeyboard();
   //abort(); // This function should not be used.
-  g_editor->setFocus();
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    g_editor->setFocus();
+  }GL_unlock();
 }
 
 static bool widgets_are_disabled = false;
@@ -366,7 +370,10 @@ void SetupMainWindow(void){
 
   EditorWidget *editor=new EditorWidget(main_window,"name");
 #if USE_QT_VISUAL
-  editor->setFocus(); // Lots of trouble with focus with the qt_visual backend.
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    editor->setFocus(); // Lots of trouble with focus with the qt_visual backend.
+  }GL_unlock();
 #endif
 
 #ifdef USE_QT4

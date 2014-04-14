@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../OpenGL/GfxElements.h"
 #include "../OpenGL/Render_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 
 #if USE_GTK_VISUAL
@@ -292,7 +293,10 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   EventReciever(&tevent,this->window);
 
-  setFocus();
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    setFocus();
+  }GL_unlock();
 
   updateEditor();
 }
