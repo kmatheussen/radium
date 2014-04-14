@@ -80,8 +80,10 @@ struct TimeSmoother{
 };
 
 
-static const int num_periods_to_adjust = 4;
+static const int num_periods_to_adjust = 3;
 static  const int num_periods_to_correct = 8;
+
+// static int counter=0;
 
 struct TimeEstimator{
   TimeSmoother smoother;
@@ -109,14 +111,26 @@ struct TimeEstimator{
     double ideally = last_value + (vblank.num_periods * vblank.period * period_multiplier);
     double new_value;
 
-    double num_periods_wrong = fabs(approx_correct - ideally);
+    double wrong = fabs(approx_correct - ideally);
+    double num_periods_wrong = wrong / vblank.period;
 
-    if (num_periods_wrong > vblank.period*num_periods_to_correct) {
+    if (num_periods_wrong > num_periods_to_correct) {
       new_value = approx_correct;
       printf("NOT RETURNING IDEALLY. Ideally: %f. Returning instead: %f\n",(float)ideally,(float)new_value);
 
-    } else if (num_periods_wrong > vblank.period*num_periods_to_adjust) {
-      new_value = smoother.get(ideally, approx_correct);
+    } else if (num_periods_wrong > num_periods_to_adjust) {      
+      // try to adjust.
+      double adjustment = scale_double(num_periods_wrong,
+                                       num_periods_to_adjust,num_periods_to_correct,
+                                       0,0.5);
+      adjustment = adjustment*adjustment;
+
+      //printf("adjusting %s%f: %f\n",approx_correct > ideally ? "" : "-",num_periods_wrong,adjustment);
+      
+      if (approx_correct > ideally)
+        new_value = ideally + wrong*adjustment;
+      else
+        new_value = ideally - wrong*adjustment;
 
     } else
       new_value = ideally;
