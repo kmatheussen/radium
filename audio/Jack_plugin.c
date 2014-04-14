@@ -7,6 +7,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"
+#include "../common/visual_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -45,8 +46,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
                                                   0
                                                   )
         )==NULL)
-      fprintf(stderr, "Error. Could not register jack port.\n");
-
+      GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 
   if(!strcmp(plugin_type->name,"System In")){
@@ -54,13 +54,14 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     const char **outportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
     for (ch=0;outportnames && outportnames[ch]!=NULL && ch<num_outputs;ch++){
       if (
+          data->input_ports[ch]!= NULL &&
 	  jack_connect(
                        client,
 		       outportnames[ch],
 		       jack_port_name(data->input_ports[ch])
 		       )
 	  )
-	  fprintf(stderr,"Warning. Cannot connect to jack capture port %d: \"%s\".\n",ch,outportnames[ch]);
+        GFX_Message(NULL, "Warning. Cannot connect to jack capture port %d: \"%s\".\n",ch,outportnames[ch]);
     }
     jack_free(outportnames);
   }
@@ -78,7 +79,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
                                                    0
                                                  )
         )==NULL)
-      fprintf(stderr, "Error. Could not register jack port.\n");
+      GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 
   if(!strcmp(plugin_type->name,"System Out")){
@@ -86,13 +87,14 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
     for (ch=0;inportnames && inportnames[ch]!=NULL && ch<num_inputs;ch++){
       if (
+          data->output_ports[ch] != NULL &&
 	  jack_connect(
                        client,
 		       jack_port_name(data->output_ports[ch]),
 		       inportnames[ch]
 		       )
 	  )
-	  fprintf(stderr,"Warning. Cannot connect to jack playback port %d: \"%s\".\n",ch,inportnames[ch]);
+        GFX_Message(NULL, "Warning. Cannot connect to jack playback port %d: \"%s\".\n",ch,inportnames[ch]);
     }
     jack_free(inportnames);
   }
@@ -126,15 +128,17 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     int ch;
     
     for(ch=0;ch<type->num_inputs;ch++)
-      memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],jackblock_size))+jackblock_delta_time,
-             inputs[ch],
-             sizeof(float)*num_frames);
+      if (data->output_ports[ch]!=NULL)
+        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],jackblock_size))+jackblock_delta_time,
+               inputs[ch],
+               sizeof(float)*num_frames);
     
     for(ch=0;ch<type->num_outputs;ch++)
-      memcpy(outputs[ch],
-             ((float*)jack_port_get_buffer(data->input_ports[ch],jackblock_size))+jackblock_delta_time,
-             sizeof(float)*num_frames);
-
+      if (data->input_ports[ch]!=NULL)
+        memcpy(outputs[ch],
+               ((float*)jack_port_get_buffer(data->input_ports[ch],jackblock_size))+jackblock_delta_time,
+               sizeof(float)*num_frames);
+    
   }
 }
 
@@ -170,10 +174,12 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   }
 
   for(i=0;i<plugin->type->num_outputs;i++)
-    jack_port_unregister(data->client,data->input_ports[i]);
+    if(data->input_ports[i]!=NULL)
+      jack_port_unregister(data->client,data->input_ports[i]);
 
   for(i=0;i<plugin->type->num_inputs;i++)
-    jack_port_unregister(data->client,data->output_ports[i]);
+    if(data->output_ports[i]!=NULL)
+      jack_port_unregister(data->client,data->output_ports[i]);
 
   free(data->input_ports);
   free(data->output_ports);
