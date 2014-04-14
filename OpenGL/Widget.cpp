@@ -468,7 +468,6 @@ QWidget *GL_create_widget(void){
   box.button(QMessageBox::Ok)->hide();
   qApp->processEvents();
 
-
   vl::VisualizationLibrary::init();
 
   vl::OpenGLContextFormat vlFormat;
