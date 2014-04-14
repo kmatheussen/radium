@@ -1,16 +1,18 @@
 
-#include <QTime>
+#include <vlCore/Time.hpp>
 
 
 // All time values are in milliseconds
 namespace{
 
 struct VBlankEstimator{
-  QTime time;
+  vl::Time time;
 
   int i_trainings;
   int num_trainings;
   double base_interval;
+  double last_base_interval;
+  double last_diff;
 
   struct Result{
     double period;
@@ -24,11 +26,15 @@ struct VBlankEstimator{
   VBlankEstimator(int num_trainings)
     : i_trainings(0)
     , num_trainings(num_trainings)
+    , base_interval(0)
+    , last_base_interval(0)
+    , last_diff(500)
   {
+    assert(num_trainings>=60);
   }
 
   bool train(){
-    if(i_trainings==0)
+    if(i_trainings==30)
       time.start();
 
     //printf("__________________ i_tr: %d, num: %d (%d)\n",i_trainings,num_trainings,(int)time.elapsed());
@@ -38,18 +44,28 @@ struct VBlankEstimator{
       return true;
 
     else {
-      double elapsed = time.elapsed();
-      base_interval = elapsed / (double)num_trainings;
-      printf("**************************** Time: %d, num: %d. Estimated vblank to be %f ms\n",(int)elapsed,num_trainings,base_interval);
-      return false;
+      double elapsed = time.elapsed() * 1000.0;
+      base_interval = elapsed / (double)(i_trainings-30);
+      double diff = fabs(last_base_interval-base_interval);
+      last_base_interval = base_interval;
+
+      if(i_trainings>600 || (diff<0.0001 && last_diff<0.0001)) {
+        printf("**************************** Time: %f, num: %d. Estimated vblank to be %f ms (change: %f)\n",elapsed,num_trainings,base_interval,diff);
+        return false;
+
+      }else{
+        last_diff = diff;
+        return true;
+      }
     }
   }
 
   Result get(){
     //time.restart();
-    double elapsed = time.elapsed();
-    i_trainings++;
-    base_interval = elapsed / (double)i_trainings;
+    //double elapsed = time.elapsed();
+    //i_trainings++;
+    //base_interval = elapsed / (double)i_trainings;
+    //base_interval = 16.666666666666666666666666666666666666666666666666666666666666667;
     //printf("**************************** Estimated vblank to be %f ms\n",base_interval);
     return Result(base_interval, 1); //16.6666666666666666666666666666666666666666666666666666666667, 1);
   }
@@ -71,7 +87,7 @@ struct TimeEstimator{
   double last_value;
 
   TimeEstimator()
-    : vblank_estimator(60)
+    : vblank_estimator(360)
     , last_value(0.0)
   { }
 
@@ -85,6 +101,8 @@ struct TimeEstimator{
 
   double get(double approx_correct, double period_multiplier){
     VBlankEstimator::Result vblank=vblank_estimator.get();
+
+    //return approx_correct;
 
     double ideally = last_value + (vblank.num_periods * vblank.period * period_multiplier);
     double new_value;

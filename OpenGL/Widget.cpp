@@ -10,6 +10,9 @@
 #include <QGLWidget>
 #include <QMutex>
 #include <QTextEdit>
+#include <QMessageBox>
+#include <QApplication>
+#include <QAbstractButton>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -175,7 +178,7 @@ public:
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
-  bool training_estimator;
+  volatile bool training_estimator;
 
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
@@ -458,6 +461,14 @@ public:
 static vl::ref<MyQt4ThreadedWidget> widget;
 
 QWidget *GL_create_widget(void){
+  QMessageBox box;
+  box.setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
+  box.setInformativeText("!!! Do not move any windows !!!");
+  box.show();
+  box.button(QMessageBox::Ok)->hide();
+  qApp->processEvents();
+
+
   vl::VisualizationLibrary::init();
 
   vl::OpenGLContextFormat vlFormat;
@@ -476,6 +487,11 @@ QWidget *GL_create_widget(void){
   widget->show();
 
   widget->incReference();  // dont want auto-desctruction at program exit.
+
+  while(widget->training_estimator==true)
+    qApp->processEvents();
+
+  box.close();
 
   return widget.get();
 }
