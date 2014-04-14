@@ -8,6 +8,8 @@ namespace{
 struct VBlankEstimator{
   vl::Time time;
 
+  double last_time;
+
   int i_trainings;
   int num_trainings;
   double base_interval;
@@ -24,7 +26,8 @@ struct VBlankEstimator{
   };
 
   VBlankEstimator(int num_trainings)
-    : i_trainings(0)
+    : last_time(0)
+    , i_trainings(0)
     , num_trainings(num_trainings)
     , base_interval(0)
     , last_base_interval(0)
@@ -61,13 +64,12 @@ struct VBlankEstimator{
   }
 
   Result get(){
-    //time.restart();
-    //double elapsed = time.elapsed();
-    //i_trainings++;
-    //base_interval = elapsed / (double)i_trainings;
-    //base_interval = 16.666666666666666666666666666666666666666666666666666666666666667;
-    //printf("**************************** Estimated vblank to be %f ms\n",base_interval);
-    return Result(base_interval, 1); //16.6666666666666666666666666666666666666666666666666666666667, 1);
+    double time_now = time.elapsed();
+    double interval = (time_now - last_time)*1000.0;
+    int num_periods = (interval+(base_interval/2.0)) / base_interval;
+    last_time = time_now;
+    //printf("interval: %f, num_periods: %d, base_interval: %f\n",interval,num_periods,base_interval);
+    return Result(base_interval, num_periods); //16.6666666666666666666666666666666666666666666666666666666667, 1);
   }
 };
 

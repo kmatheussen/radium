@@ -463,7 +463,7 @@ static vl::ref<MyQt4ThreadedWidget> widget;
 QWidget *GL_create_widget(void){
   QMessageBox box;
   box.setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
-  box.setInformativeText("!!! Do not move any windows !!!");
+  box.setInformativeText("!!! Don't move the mouse or press any key !!!");
   box.show();
   box.button(QMessageBox::Ok)->hide();
   qApp->processEvents();
