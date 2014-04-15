@@ -302,16 +302,20 @@ volatile RT_MESSAGE_STATUS rt_message_status = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
 
-
 class CalledPeriodically : public QTimer {
 
   QMessageBox msgBox;
+  QAbstractButton *msgBox_ok;
+  QAbstractButton *msgBox_dontshowagain;
+  QSet<QString> dontshow;
 
 public:
   CalledPeriodically(){
     setInterval(20);
     start();
     msgBox.setModal(false);
+    msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
+    msgBox_ok = (QAbstractButton*)msgBox.addButton("Ok",QMessageBox::AcceptRole);
     msgBox.open();
     msgBox.hide();
   }
@@ -325,12 +329,24 @@ protected:
 
 
     if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
-      msgBox.setText(QString(rt_message));
-      msgBox.show();
+
+      QString message(rt_message);
+
+      if (dontshow.contains(message)==false){
+        msgBox.setText(message);
+        msgBox.show();
+      }
 
       rt_message_status = RT_MESSAGE_SHOWING;
-    } else if (rt_message_status == RT_MESSAGE_SHOWING && msgBox.isHidden())
+    } else if (rt_message_status == RT_MESSAGE_SHOWING && msgBox.isHidden()) {
+
+      if (msgBox.clickedButton() == msgBox_dontshowagain){
+        //printf("Dontshowagain\n");
+        dontshow.insert(rt_message);
+      }
+          
       rt_message_status = RT_MESSAGE_READY;
+    }
 
 
     if(num_users_of_keyboard==0){
