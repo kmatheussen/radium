@@ -1,4 +1,10 @@
 
+Most important changes 1.9.37 -> 1.9.38:
+* Fix crash-bug when inserting lines
+* Add "dontshowagain" button to RT_Message
+* Give proper warning when jack port init fails, and dont crash
+
+
 Most important changes 1.9.35 -> 1.9.37:
 * Add "All files" option to the file requesters
 * Proper postfix filter in filerequester when importing midi file
