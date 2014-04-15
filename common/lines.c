@@ -131,6 +131,8 @@ void InsertLines(
 	List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
 	List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
 
+	UpdateSTimes(block);
+
 	while(track!=NULL){
 		List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
 		LegalizeNotes(block,track);
@@ -169,8 +171,6 @@ void InsertLines(
 		}
 		window=NextWindow(window);
 	}
-
-	UpdateSTimes(block);
 
 	blocktobelongtoforinsertlines_notes_a_terrible_hack=NULL;
 }
