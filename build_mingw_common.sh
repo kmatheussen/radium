@@ -37,7 +37,7 @@ export PKG=mingw32-pkg-config
 
 export PYPATH=`pwd`/mingw/include/python2.7/
 
-export JACKOPT="-I/home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/includes"
+export JACKOPT="-I/home/kjetil/.wine/drive_c/Program\ Files/Jack/includes"
 
 export QT_CFLAGS="`mingw32-pkg-config --cflags Qt3Support`"
 export QT_LDFLAGS="`mingw32-pkg-config --libs Qt3Support`"
@@ -48,7 +48,7 @@ export OS_OPTS="$OS_OPTS -DFOR_WINDOWS -I`pwd`/mingw/include/ -DUSE_VESTIGE=0 -I
 # MEMORY_DEBUG is defined since bdw-gc doesn't work properly under wine. (It does in real windows though.)
 #export OS_OPTS="$OS_OPTS -DMEMORY_DEBUG"
 
-export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files\ \(x86\)/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib `$PKG --libs lrdf` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` /home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd/libbfd.a /home/kjetil/radium-qt4/mingw/binutils-2.23.1/libiberty/libiberty.a -lz -limagehlp"
+export OS_LDFLAGS="`pwd`/mingw/gc-7.2d/.libs/libgc.a `pwd`/mingw/fluidsynth-1.1.6/src/.libs/libfluidsynth-1.dll `pwd`/mingw/libgig/src/.libs/libgig.a `pwd`/mingw/lib/python2.7/libpython2.7.dll -lpthread /home/kjetil/.wine/drive_c/Program\ Files/Jack/lib/libjack.lib -lole32 mingw/lib/WbemUuid.Lib `$PKG --libs lrdf` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` /home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd/libbfd.a /home/kjetil/radium-qt4/mingw/binutils-2.23.1/libiberty/libiberty.a -lz -limagehlp"
 
 # -msse -msse2 -msse3 -mfpmath=sse -ffast-math
 

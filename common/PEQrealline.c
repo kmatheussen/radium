@@ -88,7 +88,9 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
 	Place firstplace;
 	PlaceSetFirstPos(&firstplace);
 
+#ifdef WITH_PD
         RT_PD_set_time(peq->l.time, &firstplace);
+#endif
 
         ReturnPEQelement(peq);
 }
@@ -100,7 +102,9 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	//int orgrealline=realline;
 	struct Blocks *nextblock;
 
+#ifdef WITH_PD
         RT_PD_set_time(peq->l.time, &peq->wblock->reallines[peq->realline]->l.p);
+#endif
 
 	peq->wblock->till_curr_realline=realline;
 
