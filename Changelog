@@ -1,4 +1,8 @@
 
+Most important changes 1.9.38 -> 1.9.39:
+* Never disable the voices widget (instrument widget)
+
+
 Most important changes 1.9.37 -> 1.9.38:
 * Fix crash-bug when inserting lines
 * Add "dontshowagain" button to RT_Message
