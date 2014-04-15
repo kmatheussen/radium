@@ -73,26 +73,60 @@ struct VBlankEstimator{
   }
 };
 
-struct TimeSmoother{
-  double get(double time, double approx_correct){
-    return time;
+
+static const double smallest_diff = 0.0001;
+
+struct Smoother{
+  double smoothness;
+  double last_val;
+
+  Smoother(double smoothness)
+    : smoothness(smoothness)
+    , last_val(0)
+  { }
+
+  void reset(){
+    last_val=0.0;
+  }
+
+  double get(double to){
+    float ret = last_val;
+    if(ret == to)
+      return to;
+    else if(fabs(to-last_val) < smallest_diff)
+      last_val = to;
+    else
+      last_val = (float) (to*(1.0-smoothness) + last_val*smoothness);
+    return ret;
   }
 };
 
 
 static const int num_periods_to_adjust = 3;
-static  const int num_periods_to_correct = 8;
+static const int num_periods_to_adjust_max = 8;
+static const int num_periods_to_correct = 20;
 
 // static int counter=0;
 
+#define DEBUG_PRINT 0
+
 struct TimeEstimator{
-  TimeSmoother smoother;
+  Smoother smoother;
   VBlankEstimator vblank_estimator;
   double last_value;
 
+  bool is_adjusting;
+  bool adjusting_down;
+  bool adjusting_up;
+  double adjustment;
+
   TimeEstimator()
-    : vblank_estimator(360)
+    : smoother(0.9)
+    , vblank_estimator(360)
     , last_value(0.0)
+    , is_adjusting(false)
+    , adjusting_up(false)
+    , adjustment(0.0)
   { }
 
   bool train(){
@@ -109,34 +143,65 @@ struct TimeEstimator{
     //return approx_correct;
 
     double ideally = last_value + (vblank.num_periods * vblank.period * period_multiplier);
-    double new_value;
 
-    double wrong = fabs(approx_correct - ideally);
+    double wrong = ideally - approx_correct;
     double num_periods_wrong = wrong / vblank.period;
+    double a_num_periods_wrong = fabs(num_periods_wrong);
 
-    if (num_periods_wrong > num_periods_to_correct) {
-      new_value = approx_correct;
+    if (a_num_periods_wrong > num_periods_to_correct) {
+      double new_value = approx_correct;
+      last_value = new_value;
+      adjustment = 0.0;
+      is_adjusting = false;
+      smoother.reset();
       printf("NOT RETURNING IDEALLY. Ideally: %f. Returning instead: %f\n",(float)ideally,(float)new_value);
 
-    } else if (num_periods_wrong > num_periods_to_adjust) {      
-      // try to adjust.
-      double adjustment = scale_double(num_periods_wrong,
-                                       num_periods_to_adjust,num_periods_to_correct,
-                                       0,0.5);
-      adjustment = adjustment*adjustment;
+      return new_value;
 
-      //printf("adjusting %s%f: %f\n",approx_correct > ideally ? "" : "-",num_periods_wrong,adjustment);
+    } else if (a_num_periods_wrong > num_periods_to_adjust) {      
+      // try to adjust.
+      adjustment = scale_double(a_num_periods_wrong,
+                                num_periods_to_adjust,num_periods_to_adjust_max,
+                                0,0.3);
+      adjustment = -wrong*adjustment;
       
-      if (approx_correct > ideally)
-        new_value = ideally + wrong*adjustment;
-      else
-        new_value = ideally - wrong*adjustment;
+      if (adjustment < 0) {
+        adjusting_down = true;
+        adjusting_up = false;
+      } else {
+        adjusting_down = false;
+        adjusting_up = true;
+      }
+
+      if(DEBUG_PRINT) printf("adjusting   %f: %f",num_periods_wrong,adjustment / vblank.period);
+
+      is_adjusting = true;
+
+    } else if (is_adjusting) {
+
+      if(DEBUG_PRINT) printf("--adjusting %f: %f",num_periods_wrong,adjustment / vblank.period);
+        
+      if (adjusting_up && wrong>0) {
+        adjustment = 0.0;
+        is_adjusting = false;
+        if(DEBUG_PRINT) printf("---got it");
+
+      } else if(adjusting_down && wrong<0) {
+        adjustment = 0.0;
+        is_adjusting = false;
+        if(DEBUG_PRINT) printf("---got it");
+
+      }
 
     } else
-      new_value = ideally;
+      adjustment = 0.0;
 
+    double smoothed_adjustment = smoother.get(adjustment);
+    if(DEBUG_PRINT) printf(". smoothed_adjustment: %f\n",smoothed_adjustment);
 
+    double new_value = ideally + smoothed_adjustment;
     last_value = new_value;
+
     return new_value;
   }
 };
