@@ -93,8 +93,8 @@ public:
 
     _patch_widget = new Patch_widget(this,patch);
     voiceBox_layout->insertWidget(0,_patch_widget);
-    if(plugin->type->play_note==NULL)
-      _patch_widget->voices_widget->setDisabled(true);
+    //if(false && plugin->type->play_note==NULL)
+    //  _patch_widget->voices_widget->setDisabled(true);
 
     SLIDERPAINTER_set_string(input_volume_slider->_painter, "In");
     SLIDERPAINTER_set_string(volume_slider->_painter, "Volume");
