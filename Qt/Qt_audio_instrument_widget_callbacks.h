@@ -571,12 +571,14 @@ public slots:
   }
 
   void on_input_volume_slider_valueChanged(int val){
-    set_plugin_value(val, EFFNUM_INPUT_VOLUME);
+    if(_patch->patchdata != NULL) { // temp fix
+      set_plugin_value(val, EFFNUM_INPUT_VOLUME);
+      
+      if(_i_am_system_out==true)
+        OS_GFX_SetVolume(val);
 
-    if(_i_am_system_out==true)
-      OS_GFX_SetVolume(val);
-
-    CHIP_update((SoundPlugin*)_patch->patchdata);
+      CHIP_update((SoundPlugin*)_patch->patchdata);
+    }
   }
 
   void on_volume_slider_valueChanged(int val){
