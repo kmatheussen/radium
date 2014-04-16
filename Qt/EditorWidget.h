@@ -201,6 +201,7 @@ protected:
 #endif
 #endif
 
+ public:
 #if USE_QT_VISUAL
     void	mousePressEvent( QMouseEvent *);
     void	mouseReleaseEvent( QMouseEvent *);

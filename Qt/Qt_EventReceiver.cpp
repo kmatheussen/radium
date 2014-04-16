@@ -288,8 +288,11 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEDOWN;
     }
   }
+
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
+
+  printf("Got mousepress %d %d\n",tevent.x,tevent.y);
 
   EventReciever(&tevent,this->window);
 

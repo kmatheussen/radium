@@ -76,7 +76,9 @@ static int GE_curr_realline(void){
 static float GE_cursor_pos(void){
   int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
   //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
-  return (extra + GE_curr_realline()) * root->song->tracker_windows->fontheight;
+  return
+    (   (extra + GE_curr_realline()) * root->song->tracker_windows->fontheight  )
+    ; //+ root->song->tracker_windows->wblock->t.y1;
 }
 
 
@@ -164,6 +166,21 @@ static void UpdateReallineByLines(struct Tracker_Windows *window, struct WBlocks
 }
 #endif
 
+
+static EditorWidget *get_editorwidget(void){
+  return (EditorWidget *)root->song->tracker_windows->os_visual.widget;
+}
+
+static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
+  const QPoint p = qmouseevent->pos();
+
+  return QMouseEvent(qmouseevent->type(),
+                     QPoint(p.x(), p.y() + root->song->tracker_windows->wblock->t.y1),
+                     qmouseevent->globalPos(),
+                     qmouseevent->button(),
+                     qmouseevent->buttons()
+                     );
+}
 
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
@@ -253,17 +270,19 @@ private:
   }
 public:
 
+  virtual void mouseReleaseEvent( QMouseEvent *qmouseevent){
+    QMouseEvent event = translate_qmouseevent(qmouseevent);
+    get_editorwidget()->mouseReleaseEvent(&event);
+  }
+
   virtual void mousePressEvent( QMouseEvent *qmouseevent){
-    printf("Pressing das button\n");
+    QMouseEvent event = translate_qmouseevent(qmouseevent);
+    get_editorwidget()->mousePressEvent(&event);
   }
 
   virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
-    //tevent.ID=TR_MOUSEMOVE;
-    //tevent.x=qmouseevent->x();//-XOFFSET;
-    //tevent.y=qmouseevent->y();//-YOFFSET;
-    //EventReciever(&tevent,this->window);
-    fprintf(stderr, "mouse %d / %d\n", (int)qmouseevent->x(), (int)qmouseevent->y());
-
+    QMouseEvent event = translate_qmouseevent(qmouseevent);
+    get_editorwidget()->mouseMoveEvent(&event);
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
@@ -311,9 +330,11 @@ public:
           double          d_till_curr_realline = wblock->till_curr_realline;
           
           find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
+
+          //float dy = root->song->tracker_windows->wblock->t.y1;
           
           int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
-          das_pos = (extra + d_till_curr_realline) * root->song->tracker_windows->fontheight;
+          das_pos = ((extra + d_till_curr_realline) * root->song->tracker_windows->fontheight); // + dy;
 
           //if(last-das_pos < -2)
           //  das_pos = last+2.7073;
@@ -323,6 +344,7 @@ public:
 
         } else
           das_pos = GE_cursor_pos();
+
 
         // linenumbers
         {

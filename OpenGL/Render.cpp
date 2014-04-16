@@ -314,18 +314,20 @@ struct NodeLine *create_nodelines(
 
 static void create_left_slider(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   GE_Context *border = GE_color_z(1, Z_STATIC);
+  float dy = root->song->tracker_windows->wblock->t.y1;
+  float y = window->leftslider.x - dy;
+  float y2 = window->leftslider.x2 - dy;
+
   GE_box(border,
-         0,                        window->leftslider.x,
-         window->leftslider.width, window->leftslider.x2,
+         0,                        y,
+         window->leftslider.width, y2,
          1.0f);
 
   //GE_Context *scrollbar = GE_color_z(2, Z_SCROLLBAR);
   GE_Context *scrollbar = GE_color_z(2, Z_STATIC);
   GE_filledBox(scrollbar,
-               2,
-               window->leftslider.lx,
-               window->leftslider.width - 2,
-               window->leftslider.lx2
+               2,                            window->leftslider.lx - dy,
+               window->leftslider.width - 2, window->leftslider.lx2 - dy
                );
 }
 
@@ -1128,6 +1130,9 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
  ************************************/
 
 void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  static int n=0;
+  printf("GL_create called %d\n",n++);
+
   GE_start_writing(); {
 
     create_left_slider(window, wblock);
