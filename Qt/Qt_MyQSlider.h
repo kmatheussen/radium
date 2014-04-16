@@ -134,12 +134,15 @@ struct MyQSlider : public QSlider{
   // mousePressEvent 
   void mousePressEvent ( QMouseEvent * event )
   {
+    if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
+      return;
+
     //printf("Got mouse pres event %d / %d\n",(int)event->x(),(int)event->y());
     if (event->button() == Qt::LeftButton){
 
 #ifdef COMPILING_RADIUM
       if(_patch!=NULL && _patch->instrument==get_audio_instrument()){
-        Undo_AudioEffect_CurrPos(_patch, _effect_num);
+          Undo_AudioEffect_CurrPos(_patch, _effect_num);
         //handle_system_delay(true);
       }
 #endif
