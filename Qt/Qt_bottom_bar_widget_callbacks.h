@@ -147,12 +147,14 @@ public slots:
     g_system_audio_instrument_widget->input_volume_slider->setValue(val);
     
     SoundPlugin *plugin = (SoundPlugin*)g_system_out_patch->patchdata;
-    const SoundPluginType *type = plugin->type;
+    if (plugin != NULL) { // temp fix
+      const SoundPluginType *type = plugin->type;
     
-    char buf[64]={0};
-    PLUGIN_get_display_value_string(plugin, type->num_effects+EFFNUM_INPUT_VOLUME, buf, 64);
+      char buf[64]={0};
+      PLUGIN_get_display_value_string(plugin, type->num_effects+EFFNUM_INPUT_VOLUME, buf, 64);
     
-    SLIDERPAINTER_set_string(system_volume_slider->_painter, buf);
+      SLIDERPAINTER_set_string(system_volume_slider->_painter, buf);
+    }
   }
 
   void on_octave_up_button_pressed(){
