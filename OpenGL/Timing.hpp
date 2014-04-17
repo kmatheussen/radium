@@ -43,7 +43,7 @@ struct VBlankEstimator{
   }
 
   bool train(){
-    if(i_trainings==30)
+    if(i_trainings==60)
       time.start();
 
     //printf("__________________ i_tr: %d, num: %d (%d)\n",i_trainings,num_trainings,(int)time.elapsed());
@@ -54,7 +54,7 @@ struct VBlankEstimator{
 
     else {
       double elapsed = time.elapsed() * 1000.0;
-      base_interval = elapsed / (double)(i_trainings-30);
+      base_interval = elapsed / (double)(i_trainings-60);
       double diff = fabs(last_base_interval-base_interval);
       last_base_interval = base_interval;
 
