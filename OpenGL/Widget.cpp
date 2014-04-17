@@ -53,8 +53,6 @@ static void set_realtime(int type, int priority){
 }
 
 
-static float das_pos = 1000.0f; //_rendering->camera()->viewport()->height();
-
 static QMutex mutex;
 
 void GL_lock(void){
@@ -198,11 +196,15 @@ public:
   volatile double override_vblank_value;
   bool has_overridden_vblank_value;
 
+  float last_pos;
+
+
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
     , training_estimator(true)
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
+    , last_pos(-1.0f)
   {
     setMouseTracking(true);
   }
@@ -260,16 +262,11 @@ public:
   }
 
 private:
-  bool maybeRedraw(){
+  bool canDraw(){
     if (vg.get()==NULL)
       return false;
-
-    if(GE_new_read_contexts()==true) {
-      vg->clear();
-      GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
-    }
-
-    return true;
+    else
+      return true;
   }
 public:
 
@@ -293,84 +290,81 @@ public:
     fprintf(stderr,"destroyEvent\n");
   }
 
+private:
+  float find_pos(){
+    if(pc->isplaying) {
+      NInt            curr_block           = root->curr_block;
+      struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
+      double          d_till_curr_realline = wblock->till_curr_realline;
+      
+      find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
+      
+      return GE_scroll_pos(d_till_curr_realline);
+      
+    } else
+
+      return GE_scroll_pos(GE_curr_realline());
+  }
+public:
+
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
     if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
+
       time_estimator.set_vblank(override_vblank_value);
       training_estimator = false;
       has_overridden_vblank_value = true;
-    }
 
-    if(training_estimator)
-      training_estimator = time_estimator.train();
+    } else {
+
+      if(training_estimator)
+        training_estimator = time_estimator.train();
         
-    if(training_estimator) {
-      if ( openglContext()->hasDoubleBuffer() )
-        openglContext()->swapBuffers();
-      return;
+      if(training_estimator) {
+        if ( openglContext()->hasDoubleBuffer() )
+          openglContext()->swapBuffers();
+        return;
+      }
+
     }
 
-    GL_lock();
 
-    static float pos = -123412;
+    if(canDraw()) {
 
-    if(maybeRedraw()) {
+      bool is_redrawn = false;
 
-      if(true || pos != das_pos) {
+      if(GE_new_read_contexts()==true) {
+        vg->clear();
+        GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+        is_redrawn = true;
+      }
 
-        if(pc->isplaying) {
-          NInt            curr_block           = root->curr_block;
-          struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
-          //int             till_curr_realline   = wblock->till_curr_realline;
-          double          d_till_curr_realline = wblock->till_curr_realline;
-          
-          find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
+      float pos = find_pos();
 
-          das_pos = GE_scroll_pos(d_till_curr_realline);
-
-        } else
-          das_pos = GE_scroll_pos(GE_curr_realline());
-
+      if (is_redrawn || pos!=last_pos) {
+    
         // scroll
         {
           vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-          //mat.translate(-(das_pos-1000)/16.0f,das_pos,0);
-          mat.translate(0,das_pos,0);
-          //mat.scale(das_pos/16.0f,0,0);
+          mat.translate(0,pos,0);
           _scroll_transform->setLocalAndWorldMatrix(mat);
         }
 
         // linenumbers
         {
           vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-          mat.translate(0,das_pos,0);
+          mat.translate(0,pos,0);
           _linenumbers_transform->setLocalAndWorldMatrix(mat);
         }
       
-
-#if 0
-        das_pos += 2.03;
-        if(das_pos>64*20)
-          das_pos=_rendering->camera()->viewport()->height();
-#endif
-
-        //_vg->scale(pos / 10.0,pos / 10.0);
-      
-        _rendering->render();
-
-        pos = das_pos;
-
         // scrollbar
         {
           vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
           mat.translate(0,
-                        scale(das_pos,
+                        scale(pos,
                               0,512*20 + 1200,
                               _rendering->camera()->viewport()->height(),100
                               ),
@@ -379,16 +373,20 @@ public:
           _scrollbar_transform->setLocalAndWorldMatrix(mat);
         }
 
+        _rendering->render();
+
+        last_pos = pos;
       }
 
 
-      // show rendering
-      if ( openglContext()->hasDoubleBuffer() )
-        openglContext()->swapBuffers();
-
-    } // maybeRedraw
-
-    GL_unlock();
+      GL_lock();
+      {
+        // show rendering
+        if ( openglContext()->hasDoubleBuffer() )
+          openglContext()->swapBuffers();
+      }
+      GL_unlock();
+    }
   }
 
   void set_vblank(double value){
@@ -413,7 +411,6 @@ public:
   /** Event generated when the mouse moves. */
   virtual void mouseMoveEvent(int x, int y) {
     printf("mouseMove %d %d\n",x,y);
-    das_pos -= 5;//2.03;
     //_rendering->sceneManagers()->clear();
     //create_block();
     //initEvent();
@@ -430,7 +427,6 @@ public:
   /** Event generated when one of the mouse buttons is pressed. */
   virtual void mouseDownEvent(vl::EMouseButton button, int x, int y) {
     printf("mouseMove %d %d\n",x,y);
-    das_pos -= 5;//2.03;
     //_rendering->sceneManagers()->clear();
     //create_block();
     //initEvent(); 
@@ -443,8 +439,6 @@ public:
   /** Event generated when a key is pressed. */
   virtual void keyPressEvent(unsigned short unicode_ch, vl::EKey key) {
     printf("key pressed\n");
-
-    das_pos += 20;//2.03;
 
     //_rendering->sceneManagers()->clear();
     //create_block();
