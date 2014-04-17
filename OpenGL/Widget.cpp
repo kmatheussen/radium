@@ -106,8 +106,16 @@ static void find_current_wblock_and_realline(struct Tracker_Windows *window, str
   }
 
   double prev_line_stime = 0.0;
-  int i_realline;
-  for(i_realline=1; i_realline<(*wblock)->num_reallines; i_realline++){
+  int i_realline = GE_curr_realline();
+
+  if(i_realline>0)
+    i_realline--;
+
+  while (i_realline>1 && get_realline_stime(*wblock, i_realline) >= block_stime) // shouldn't happen often.
+    i_realline--;
+
+
+  for(; i_realline<(*wblock)->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(*wblock, i_realline);
     if (curr_line_stime >= block_stime) {
       *realline = scale_double(block_stime,
@@ -192,6 +200,8 @@ public:
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
+  void *painting_data;
+
   volatile bool is_training_vblank_estimator;
   volatile double override_vblank_value;
   bool has_overridden_vblank_value;
@@ -201,6 +211,7 @@ public:
 
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
+    , painting_data(NULL)
     , is_training_vblank_estimator(true)
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
@@ -295,8 +306,8 @@ private:
     if(pc->isplaying) {
       NInt            curr_block           = root->curr_block;
       struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
-      double          d_till_curr_realline = wblock->till_curr_realline;
-      
+      double          d_till_curr_realline;
+    
       find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
       
       return d_till_curr_realline;
@@ -307,18 +318,19 @@ private:
   }
 
   void draw(){
-    bool is_redrawn = false;
+    bool needs_repaint;
 
-    if(GE_new_read_contexts()==true) {
+    painting_data = GE_get_painting_data(painting_data, &needs_repaint);
+
+    if (needs_repaint) {
       vg->clear();
-      GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
-      is_redrawn = true;
+      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
 
     double till_realline = find_till_realline();
     float pos = GE_scroll_pos(till_realline);
 
-    if (is_redrawn || pos!=last_pos) {
+    if (needs_repaint || pos!=last_pos) {
     
       // scroll
       {

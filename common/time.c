@@ -57,14 +57,15 @@ extern PlayerClass *pc;
     much time now, so its allso probably no use at all optimizing.
 ********************************************************/
 
-STime Place2STime(
-	struct Blocks *block,
-	const Place *p
-){
+STime Place2STime_from_times(
+                             const struct STimes *times,
+                             const Place *p
+                             )
+{
 
 	int line1 = p->line;
         int line2 = line1+1;
-	struct STimes *stime= &block->times[line1];
+	const struct STimes *stime= &times[line1];
 
 //	printf("P2ST, block: %x, stime: %x, line: %d\n",block,stime,line);
 
@@ -72,13 +73,13 @@ STime Place2STime(
 
 	if(0==p->counter) return time1;
 
-	STime time2=block->times[line2].time;
+	STime time2=times[line2].time;
 
 	float fp = GetfloatFromPlacement(p);
 	float fp1 = line1;
         float fp2 = fp1+1.0;
 
-	struct STimeChanges *stc=stime->timechanges;
+	const struct STimeChanges *stc = stime->timechanges;
 	if(stc!=NULL){
 
 		float orgfp2 = fp2;
@@ -122,6 +123,12 @@ STime Place2STime(
         return scale(fp, fp1, fp2, time1, time2);
 }
 
+STime Place2STime(
+	struct Blocks *block,
+	const Place *p
+){
+  return Place2STime_from_times(block->times, p);
+}
 
 bool isSTimeInBlock(struct Blocks *block,STime time){
 	if(time > block->times[block->num_lines].time) return false;
@@ -262,7 +269,7 @@ static void STP_fillinSTimes2(
 	}
 
 	if(0==p1->counter){
-		stp->times[p1->line].time=stp->nexttime;
+          stp->times[p1->line].time = stp->nexttime;
 	}
 
 	tfp1=GetfloatFromPlacement(p1);
@@ -474,7 +481,7 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block){
 	stp->breltempo=false;
 
 	/* Times */
-	stp->times=block->times=talloc(sizeof(struct STimes)*(block->num_lines+1));
+	stp->times = talloc(sizeof(struct STimes)*(block->num_lines+1));
 
 
 	/* Tempos */
@@ -617,6 +624,8 @@ void UpdateSTimes(struct Blocks *block){
 	do{
 		STP_fillinSTimeTempos(&stp);
 	}while(STP_getNextTimePlace(&stp));
+
+        block->times = (const struct STimes*)stp.times;
 
 	STP_fillinLastSTimeTempos(&stp);
 

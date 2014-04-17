@@ -37,7 +37,7 @@ void GE_set_height(int height);
 int GE_get_height(void);
 
 #if defined(GE_DRAW_VL)
-void GE_draw_vl(vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
+void GE_draw_vl(void *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -62,7 +62,8 @@ enum{
 GE_Context *GE_set_static_x(GE_Context *c);
 
 
-bool GE_new_read_contexts(void); // returns false if a new read context couldn't be made. (I.e. returns false if nothing was written since last call to the function.)
+void *GE_get_painting_data(void *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
+
 void GE_start_writing(void);
 void GE_end_writing(GE_Rgb new_background_color);
 
@@ -77,7 +78,6 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
 GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z);
 
-void GE_set_background_color(GE_Rgb color);
 
 #ifdef __cplusplus
 GE_Context *GE_color_z(const QColor &color, int z);

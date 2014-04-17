@@ -706,9 +706,9 @@ struct STimeChanges{
 
 
 struct STimes{									/* One element for each line. */
-	STime time;									/* Start-time for the line. */
+	STime time;							/* Start-time for the line. */
    SDB
-	struct STimeChanges *timechanges;
+	const struct STimeChanges *timechanges;
 };
 
 
@@ -730,8 +730,8 @@ struct Blocks{
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
-
-	struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
+  
+	const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
 	float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
