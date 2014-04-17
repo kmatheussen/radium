@@ -323,11 +323,10 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
          window->leftslider.width, y2,
          1.0f);
 
-  //GE_Context *scrollbar = GE_color_z(2, Z_SCROLLBAR);
-  GE_Context *scrollbar = GE_color_z(2, Z_STATIC);
+  GE_Context *scrollbar = GE_color_z(2, Z_SCROLLBAR);
   GE_filledBox(scrollbar,
-               2,                            window->leftslider.lx - dy,
-               window->leftslider.width - 2, window->leftslider.lx2 - dy
+               2,                            0,
+               window->leftslider.width - 2, window->leftslider.lx2 - window->leftslider.lx
                );
 }
 

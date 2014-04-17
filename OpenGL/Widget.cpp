@@ -291,7 +291,7 @@ public:
   }
 
 private:
-  float find_pos(){
+  double find_till_realline(){
     if(pc->isplaying) {
       NInt            curr_block           = root->curr_block;
       struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
@@ -299,11 +299,11 @@ private:
       
       find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
       
-      return GE_scroll_pos(d_till_curr_realline);
+      return d_till_curr_realline;
       
     } else
 
-      return GE_scroll_pos(GE_curr_realline());
+      return GE_curr_realline();
   }
 public:
 
@@ -342,7 +342,8 @@ public:
         is_redrawn = true;
       }
 
-      float pos = find_pos();
+      double till_realline = find_till_realline();
+      float pos = GE_scroll_pos(till_realline);
 
       if (is_redrawn || pos!=last_pos) {
     
@@ -363,13 +364,15 @@ public:
         // scrollbar
         {
           vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          mat.translate(0,
-                        scale(pos,
-                              0,512*20 + 1200,
-                              _rendering->camera()->viewport()->height(),100
-                              ),
-                        0);
-
+          struct Tracker_Windows *window = root->song->tracker_windows;
+          float scrollbar_length = window->leftslider.x2 - window->leftslider.x;
+          float bar_length = window->leftslider.lx2 - window->leftslider.lx;
+          float scrollpos = -2 + scale(till_realline,
+                                       0, GE_num_reallines(),
+                                       0, -(scrollbar_length - bar_length)
+                                       );
+          //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
+          mat.translate(0,scrollpos,0);
           _scrollbar_transform->setLocalAndWorldMatrix(mat);
         }
 
