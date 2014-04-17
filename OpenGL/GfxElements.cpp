@@ -144,15 +144,14 @@ typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 
 // Contains all data necessary to paint the editor.
 // Created in the main thread, and then transfered to the OpenGL thread.
-namespace{
-  struct PaintingData{
-    Contexts contexts;
-    void *shared_variables;
-    PaintingData()
-      : shared_variables(NULL)
-    {}
-  };
-}
+struct PaintingData{
+  Contexts contexts;
+  void *shared_variables;
+  PaintingData()
+    : shared_variables(NULL)
+  {}
+};
+
 
 
 
@@ -167,7 +166,7 @@ static PaintingData *g_painting_data = NULL;
 
 
 // Called from the OpenGL thread
-void *GE_get_painting_data(void *current_painting_data, bool *needs_repaint){
+PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint){
   PaintingData *ret;
 
   {
@@ -183,10 +182,8 @@ void *GE_get_painting_data(void *current_painting_data, bool *needs_repaint){
     }
   }
 
-  if(current_painting_data != NULL){
-    PaintingData *current = static_cast<PaintingData*>(current_painting_data);
-    delete current;
-  }
+  if(current_painting_data != NULL)
+    delete current_painting_data;
   
   return ret;
 }
@@ -230,14 +227,12 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
 }
 
 
-void GE_draw_vl(void *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
   vg->setLineSmoothing(true);
   vg->setPolygonSmoothing(true);
   //vg->setPointSmoothing(true); /* default value */
   vg->setPointSmoothing(false); // images are drawn using drawPoint.
   //vg->setTextureMode(vl::TextureMode_Repeat 	);
-
-  PaintingData *painting_data = static_cast<PaintingData*>(das_painting_data);
 
   GE_Rgb new_background_color;
 

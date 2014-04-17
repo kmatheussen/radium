@@ -31,13 +31,17 @@ static inline GE_Rgb GE_alpha(const GE_Rgb c, float alpha){
 
 typedef struct _GE_Context GE_Context;
 
+#ifdef __cplusplus
+struct PaintingData;
+#endif
+
 // OpenGL draws from the bottom and up, so we need to know the height in order for the scheduling calls to accept "normal" y values.
 // All drawing operations must be submitted again after changing the height.
 void GE_set_height(int height);
 int GE_get_height(void);
 
 #if defined(GE_DRAW_VL)
-void GE_draw_vl(void *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
+void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -61,8 +65,9 @@ enum{
 
 GE_Context *GE_set_static_x(GE_Context *c);
 
-
-void *GE_get_painting_data(void *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
+#ifdef __cplusplus
+PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
+#endif
 
 void GE_start_writing(void);
 void GE_end_writing(GE_Rgb new_background_color);

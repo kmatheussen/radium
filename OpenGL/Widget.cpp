@@ -200,7 +200,7 @@ public:
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
-  void *painting_data;
+  PaintingData *painting_data;
 
   volatile bool is_training_vblank_estimator;
   volatile double override_vblank_value;
