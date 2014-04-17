@@ -25,15 +25,21 @@ struct VBlankEstimator{
     {}
   };
 
-  VBlankEstimator(int num_trainings)
+  VBlankEstimator(int num_trainings, double base_interval = 0.0)
     : last_time(0)
     , i_trainings(0)
     , num_trainings(num_trainings)
-    , base_interval(0)
+    , base_interval(base_interval)
     , last_base_interval(0)
     , last_diff(500)
   {
     assert(num_trainings>=60);
+  }
+
+  void set_vblank(double period){
+    base_interval = period;
+    time.start();
+    printf("\n\n\n\n ************* Setting vblank to %f ************\n\n\n",period);
   }
 
   bool train(){
@@ -137,6 +143,14 @@ struct TimeEstimator{
     last_value = 0.0;
   }
 
+  void set_vblank(double period){
+    vblank_estimator.set_vblank(period);
+  }
+
+  double get_vblank(){
+    return vblank_estimator.base_interval;
+  }
+
   double get(double approx_correct, double period_multiplier){
     VBlankEstimator::Result vblank=vblank_estimator.get();
 
@@ -154,7 +168,7 @@ struct TimeEstimator{
       adjustment = 0.0;
       is_adjusting = false;
       smoother.reset();
-      printf("NOT RETURNING IDEALLY. Ideally: %f. Returning instead: %f\n",(float)ideally,(float)new_value);
+      printf("NOT RETURNING IDEALLY. Ideally (calculated): %f. Returning instead (approx correct): %f\n",(float)ideally,(float)new_value);
 
       return new_value;
 

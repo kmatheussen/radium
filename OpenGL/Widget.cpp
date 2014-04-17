@@ -195,10 +195,14 @@ public:
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
   volatile bool training_estimator;
+  volatile double override_vblank_value;
+  bool has_overridden_vblank_value;
 
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
     , training_estimator(true)
+    , override_vblank_value(-1.0)
+    , has_overridden_vblank_value(false)
   {
     setMouseTracking(true);
   }
@@ -294,6 +298,12 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
+    if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
+      time_estimator.set_vblank(override_vblank_value);
+      training_estimator = false;
+      has_overridden_vblank_value = true;
+    }
+
     if(training_estimator)
       training_estimator = time_estimator.train();
         
@@ -379,6 +389,10 @@ public:
     } // maybeRedraw
 
     GL_unlock();
+  }
+
+  void set_vblank(double value){
+    override_vblank_value = value;
   }
     
   /** Event generated whenever setEnabled() is called. */
@@ -470,14 +484,49 @@ public:
 
 static vl::ref<MyQt4ThreadedWidget> widget;
 
-QWidget *GL_create_widget(void){
-  QMessageBox box;
-  box.setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
-  box.setInformativeText("!!! Don't move the mouse or press any key !!!");
-  box.show();
-  box.button(QMessageBox::Ok)->hide();
-  qApp->processEvents();
+static bool do_estimate_questionmark(){
+  return SETTINGS_read_bool("use_estimated_vblank", true);
+}
 
+static void store_do_estimate(bool value){
+  return SETTINGS_write_bool("use_estimated_vblank", value);
+}
+
+static bool have_earlier_estimated_value(){
+  return SETTINGS_read_double("vblank", -1.0) > 0.0;
+}
+
+static double get_earlier_estimated(){
+  return 1000.0 / SETTINGS_read_double("vblank", 60.0);
+}
+
+static void store_estimated_value(double period){
+  printf("***************** Storing %f\n",1000.0 / period);
+  SETTINGS_write_double("vblank", 1000.0 / period);
+}
+
+static void show_message_box(QMessageBox *box){
+  box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
+  box->setInformativeText("!!! Don't move the mouse or press any key !!!");
+
+  if(have_earlier_estimated_value()){
+
+    QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/get_earlier_estimated())+" Hz).";
+    QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
+    if(0)printf((char*)msgBox_useStoredValue);
+    box->show();
+
+  } else {
+
+    box->show();
+    box->button(QMessageBox::Ok)->hide();
+
+  }
+
+  qApp->processEvents();
+}
+
+static void setup_widget(void){
   vl::VisualizationLibrary::init();
 
   vl::OpenGLContextFormat vlFormat;
@@ -496,11 +545,37 @@ QWidget *GL_create_widget(void){
   widget->show();
 
   widget->incReference();  // dont want auto-desctruction at program exit.
+}
 
-  while(widget->training_estimator==true)
-    qApp->processEvents();
+QWidget *GL_create_widget(void){
 
-  box.close();
+  if (do_estimate_questionmark() == false) {
+
+    setup_widget();
+    widget->set_vblank(get_earlier_estimated());
+
+  } else {
+
+    QMessageBox box;
+
+    show_message_box(&box);
+
+    setup_widget();
+
+    while(widget->training_estimator==true) {
+      if(box.clickedButton()!=NULL){
+        widget->set_vblank(get_earlier_estimated());
+        store_do_estimate(false);
+        break;
+      }
+      qApp->processEvents();
+    }
+
+    if (box.clickedButton()==NULL)
+      store_estimated_value(time_estimator.get_vblank());
+
+    box.close();
+  }
 
   return widget.get();
 }
