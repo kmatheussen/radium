@@ -63,18 +63,10 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
-static int GE_num_reallines(void){
-  return root->song->tracker_windows->wblock->num_reallines;
-}
-
-static int GE_curr_realline(void){
-  return root->song->tracker_windows->wblock->curr_realline;
-}
-
-static float GE_scroll_pos(double realline){
-  double extra = root->song->tracker_windows->wblock->top_realline - GE_curr_realline();
+static float GE_scroll_pos(SharedVariables *sv, double realline){
+  double extra = sv->top_realline - sv->curr_realline;
   return
-    (   (realline+extra) * root->song->tracker_windows->fontheight  );
+    (   (realline+extra) * sv->fontheight  );
 }
 
 
@@ -85,48 +77,39 @@ extern struct Root *root;
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
-static double get_realline_stime(struct WBlocks *wblock, int realline){  
-  return Place2STime(wblock->block, &wblock->reallines[realline]->l.p);
-}
-
 TimeEstimator time_estimator;
 
-static void find_current_wblock_and_realline(struct Tracker_Windows *window, struct WBlocks **wblock, double *realline){
-  double current_stime = time_estimator.get((double)pc->start_time * 1000.0 / (double)pc->pfreq, pc->block->reltempo) * (double)pc->pfreq / 1000.0;
 
-  double block_stime;
+static double get_realline_stime(SharedVariables *sv, int realline){  
+  return Place2STime_from_times(sv->times, &sv->realline_places[realline]);
+}
 
-  if (pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP) {
-    *wblock = window->wblock;
-    double current_block_sduration = getBlockSTimeLength((*wblock)->block);
-    block_stime = fmod(current_stime, current_block_sduration);
-  } else {
-    abort();
-    block_stime = 0.0;
-  }
+
+static double find_current_realline(SharedVariables *sv){
+  double current_stime = time_estimator.get((double)pc->start_time * 1000.0 / (double)pc->pfreq, sv->reltempo) * (double)pc->pfreq / 1000.0;
+
+  double block_stime = fmod(current_stime, sv->block_duration);
 
   double prev_line_stime = 0.0;
-  int i_realline = GE_curr_realline();
+  int i_realline = sv->curr_realline; // We only use sv->curr_realline as a hint.
 
   if(i_realline>0)
     i_realline--;
 
-  while (i_realline>1 && get_realline_stime(*wblock, i_realline) >= block_stime) // shouldn't happen often.
+  while (i_realline>1 && get_realline_stime(sv, i_realline) >= block_stime) // shouldn't happen often.
     i_realline--;
 
-
-  for(; i_realline<(*wblock)->num_reallines; i_realline++){
-    double curr_line_stime = get_realline_stime(*wblock, i_realline);
-    if (curr_line_stime >= block_stime) {
-      *realline = scale_double(block_stime,
-                               prev_line_stime, curr_line_stime,
-                               i_realline-1, i_realline);
-      return;
-    }
+  for(; i_realline<sv->num_reallines; i_realline++){
+    double curr_line_stime = get_realline_stime(sv, i_realline);
+    if (curr_line_stime >= block_stime)
+      return scale_double(block_stime,
+                          prev_line_stime, curr_line_stime,
+                          i_realline-1, i_realline
+                          );
     prev_line_stime = curr_line_stime;
   }
 
-  *realline = (*wblock)->num_reallines-0.001; // should not happen that we get here.
+  return sv->num_reallines-0.000001; // should not happen that we get here.
 }
 
 
@@ -302,19 +285,11 @@ public:
   }
 
 private:
-  double find_till_realline(){
-    if(pc->isplaying) {
-      NInt            curr_block           = root->curr_block;
-      struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
-      double          d_till_curr_realline;
-    
-      find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
-      
-      return d_till_curr_realline;
-      
-    } else
-
-      return GE_curr_realline();
+  double find_till_realline(SharedVariables *sv){
+    if(pc->isplaying)
+      return find_current_realline(sv);
+    else
+      return sv->curr_realline;
   }
 
   void draw(){
@@ -322,13 +297,18 @@ private:
 
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
 
+    if (painting_data==NULL)
+      return;
+
+    SharedVariables *sv = GE_get_shared_variables(painting_data);
+
     if (needs_repaint) {
       vg->clear();
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
 
-    double till_realline = find_till_realline();
-    float pos = GE_scroll_pos(till_realline);
+    double till_realline = find_till_realline(sv);
+    float pos = GE_scroll_pos(sv, till_realline);
 
     if (needs_repaint || pos!=last_pos) {
     
@@ -349,12 +329,9 @@ private:
       // scrollbar
       {
         vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        struct Tracker_Windows *window = root->song->tracker_windows;
-        float scrollbar_length = window->leftslider.x2 - window->leftslider.x;
-        float bar_length = window->leftslider.lx2 - window->leftslider.lx;
         float scrollpos = -2 + scale(till_realline,
-                                     0, GE_num_reallines(),
-                                     0, -(scrollbar_length - bar_length)
+                                     0, sv->num_reallines,
+                                     0, -(sv->scrollbar_height - sv->scrollbar_scroller_height)
                                      );
         //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
         mat.translate(0,scrollpos,0);

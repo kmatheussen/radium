@@ -1,3 +1,4 @@
+
 #include <stdint.h>
 
 #include <map>
@@ -17,6 +18,7 @@
 
 #include "../Qt/Qt_colors_proc.h"
 
+#define OPENGL_GFXELEMENTS_CPP
 #include "GfxElements.h"
 
 
@@ -146,10 +148,7 @@ typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 // Created in the main thread, and then transfered to the OpenGL thread.
 struct PaintingData{
   Contexts contexts;
-  void *shared_variables;
-  PaintingData()
-    : shared_variables(NULL)
-  {}
+  SharedVariables shared_variables;
 };
 
 
@@ -164,6 +163,10 @@ static PaintingData *g_last_written_painting_data = NULL;
 // However, by letting it be global, we don't have to send it around everywhere.
 static PaintingData *g_painting_data = NULL;
 
+// Called from the OpenGL thread
+SharedVariables *GE_get_shared_variables(PaintingData *painting_data){
+  return &painting_data->shared_variables;
+}
 
 // Called from the OpenGL thread
 PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint){
@@ -191,6 +194,7 @@ PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *ne
 // Called from the main thread
 void GE_start_writing(void){
   g_painting_data = new PaintingData();
+  GE_fill_in_shared_variables(&g_painting_data->shared_variables);
 }
 
 // Called from the main thread

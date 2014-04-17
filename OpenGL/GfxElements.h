@@ -1,9 +1,15 @@
+#ifndef OPENGL_GFXELEMENTS_H
+#define OPENGL_GFXELEMENTS_H
+
+
 #include <assert.h>
 
 #ifdef __cplusplus
 #include <QColor>
 #include <QFont>
 #endif
+
+#include "SharedVariables.hpp"
 
 
 typedef struct{
@@ -66,6 +72,7 @@ enum{
 GE_Context *GE_set_static_x(GE_Context *c);
 
 #ifdef __cplusplus
+SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
 PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
 #endif
 
@@ -142,3 +149,6 @@ void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points);
 void GE_trianglestrip_start();
 void GE_trianglestrip_add(GE_Context *c, float x, float y);
 void GE_trianglestrip_end(GE_Context *c);
+
+
+#endif
