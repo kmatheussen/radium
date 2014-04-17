@@ -558,9 +558,8 @@ QWidget *GL_create_widget(void){
 
     QMessageBox box;
 
-    show_message_box(&box);
-
     setup_widget();
+    show_message_box(&box);
 
     while(widget->training_estimator==true) {
       if(box.clickedButton()!=NULL){
