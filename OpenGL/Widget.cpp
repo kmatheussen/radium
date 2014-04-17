@@ -73,13 +73,12 @@ static int GE_curr_realline(void){
   return root->song->tracker_windows->wblock->curr_realline;
 }
 
-static float GE_cursor_pos(void){
-  int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
-  //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
+static float GE_scroll_pos(double realline){
+  double extra = root->song->tracker_windows->wblock->top_realline - GE_curr_realline();
   return
-    (   (extra + GE_curr_realline()) * root->song->tracker_windows->fontheight  )
-    ; //+ root->song->tracker_windows->wblock->t.y1;
+    (   (realline+extra) * root->song->tracker_windows->fontheight  );
 }
+
 
 
 extern PlayerClass *pc;
@@ -312,6 +311,19 @@ public:
 
       if(true || pos != das_pos) {
 
+        if(pc->isplaying) {
+          NInt            curr_block           = root->curr_block;
+          struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
+          //int             till_curr_realline   = wblock->till_curr_realline;
+          double          d_till_curr_realline = wblock->till_curr_realline;
+          
+          find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
+
+          das_pos = GE_scroll_pos(d_till_curr_realline);
+
+        } else
+          das_pos = GE_scroll_pos(GE_curr_realline());
+
         // scroll
         {
           vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
@@ -321,30 +333,6 @@ public:
           //mat.scale(das_pos/16.0f,0,0);
           _scroll_transform->setLocalAndWorldMatrix(mat);
         }
-
-        if(pc->isplaying) {
-          static float last = 0.0f;
-          NInt            curr_block           = root->curr_block;
-          struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
-          //int             till_curr_realline   = wblock->till_curr_realline;
-          double          d_till_curr_realline = wblock->till_curr_realline;
-          
-          find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
-
-          //float dy = root->song->tracker_windows->wblock->t.y1;
-          
-          int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
-          das_pos = ((extra + d_till_curr_realline) * root->song->tracker_windows->fontheight); // + dy;
-
-          //if(last-das_pos < -2)
-          //  das_pos = last+2.7073;
-
-          if(0)printf("%f\n",last-das_pos);
-          last=das_pos;
-
-        } else
-          das_pos = GE_cursor_pos();
-
 
         // linenumbers
         {

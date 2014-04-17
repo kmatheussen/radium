@@ -26,16 +26,20 @@
 
 
 
-static int g_height = 512;
+static float g_height = 512;
 
 void GE_set_height(int height){
   g_height = height;
 }
 
 int GE_get_height(void){
+  //return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
   return g_height;
 }
 
+int GE_get_tracker_height(){
+  return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
+}
 
 extern struct Root *root;
 
@@ -88,11 +92,8 @@ struct _GE_Context : public vl::Object{
 #endif
 
   float y(float y){
-    if (is_static)
-      return scale(y,0,g_height,
-                   g_height,0);
-    else
-      return -y;
+    return scale(y,0,g_height,
+                 g_height,0);
   }
 
   vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){

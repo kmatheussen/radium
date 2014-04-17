@@ -1092,8 +1092,9 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
   int x3 = xb2;
   int x4 = window->width;
 
-  int y1 = GetCursorY1Pos(window, wblock);
-  int y2 = GetCursorY2Pos(window, wblock);
+  int dy = root->song->tracker_windows->wblock->t.y1;
+  int y1 = GetCursorY1Pos(window, wblock) - dy;
+  int y2 = GetCursorY2Pos(window, wblock) - dy;
   
   GE_filledBox(c, 
                x1, y1,
