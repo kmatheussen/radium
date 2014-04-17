@@ -192,7 +192,7 @@ public:
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
-  volatile bool training_estimator;
+  volatile bool is_training_vblank_estimator;
   volatile double override_vblank_value;
   bool has_overridden_vblank_value;
 
@@ -201,7 +201,7 @@ public:
 
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
-    , training_estimator(true)
+    , is_training_vblank_estimator(true)
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
     , last_pos(-1.0f)
@@ -305,6 +305,66 @@ private:
 
       return GE_curr_realline();
   }
+
+  void draw(){
+    bool is_redrawn = false;
+
+    if(GE_new_read_contexts()==true) {
+      vg->clear();
+      GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+      is_redrawn = true;
+    }
+
+    double till_realline = find_till_realline();
+    float pos = GE_scroll_pos(till_realline);
+
+    if (is_redrawn || pos!=last_pos) {
+    
+      // scroll
+      {
+        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+        mat.translate(0,pos,0);
+        _scroll_transform->setLocalAndWorldMatrix(mat);
+      }
+
+      // linenumbers
+      {
+        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+        mat.translate(0,pos,0);
+        _linenumbers_transform->setLocalAndWorldMatrix(mat);
+      }
+      
+      // scrollbar
+      {
+        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+        struct Tracker_Windows *window = root->song->tracker_windows;
+        float scrollbar_length = window->leftslider.x2 - window->leftslider.x;
+        float bar_length = window->leftslider.lx2 - window->leftslider.lx;
+        float scrollpos = -2 + scale(till_realline,
+                                     0, GE_num_reallines(),
+                                     0, -(scrollbar_length - bar_length)
+                                     );
+        //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
+        mat.translate(0,scrollpos,0);
+        _scrollbar_transform->setLocalAndWorldMatrix(mat);
+      }
+
+      _rendering->render();
+
+      last_pos = pos;
+    }
+  }
+
+  void swap(){
+    GL_lock();
+    {
+      // show rendering
+      if ( openglContext()->hasDoubleBuffer() )
+        openglContext()->swapBuffers();
+    }
+    GL_unlock();
+  }
+
 public:
 
   /** Event generated when the bound OpenGLContext does not have any other message to process 
@@ -315,81 +375,20 @@ public:
     if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
 
       time_estimator.set_vblank(override_vblank_value);
-      training_estimator = false;
+      is_training_vblank_estimator = false;
       has_overridden_vblank_value = true;
 
     } else {
 
-      if(training_estimator)
-        training_estimator = time_estimator.train();
-        
-      if(training_estimator) {
-        if ( openglContext()->hasDoubleBuffer() )
-          openglContext()->swapBuffers();
-        return;
-      }
+      if(is_training_vblank_estimator)
+        is_training_vblank_estimator = time_estimator.train();
 
     }
 
+    if(is_training_vblank_estimator==false && canDraw())
+      draw();
 
-    if(canDraw()) {
-
-      bool is_redrawn = false;
-
-      if(GE_new_read_contexts()==true) {
-        vg->clear();
-        GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
-        is_redrawn = true;
-      }
-
-      double till_realline = find_till_realline();
-      float pos = GE_scroll_pos(till_realline);
-
-      if (is_redrawn || pos!=last_pos) {
-    
-        // scroll
-        {
-          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          mat.translate(0,pos,0);
-          _scroll_transform->setLocalAndWorldMatrix(mat);
-        }
-
-        // linenumbers
-        {
-          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          mat.translate(0,pos,0);
-          _linenumbers_transform->setLocalAndWorldMatrix(mat);
-        }
-      
-        // scrollbar
-        {
-          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          struct Tracker_Windows *window = root->song->tracker_windows;
-          float scrollbar_length = window->leftslider.x2 - window->leftslider.x;
-          float bar_length = window->leftslider.lx2 - window->leftslider.lx;
-          float scrollpos = -2 + scale(till_realline,
-                                       0, GE_num_reallines(),
-                                       0, -(scrollbar_length - bar_length)
-                                       );
-          //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
-          mat.translate(0,scrollpos,0);
-          _scrollbar_transform->setLocalAndWorldMatrix(mat);
-        }
-
-        _rendering->render();
-
-        last_pos = pos;
-      }
-
-
-      GL_lock();
-      {
-        // show rendering
-        if ( openglContext()->hasDoubleBuffer() )
-          openglContext()->swapBuffers();
-      }
-      GL_unlock();
-    }
+    swap();
   }
 
   void set_vblank(double value){
@@ -558,7 +557,7 @@ QWidget *GL_create_widget(void){
     setup_widget();
     show_message_box(&box);
 
-    while(widget->training_estimator==true) {
+    while(widget->is_training_vblank_estimator==true) {
       if(box.clickedButton()!=NULL){
         widget->set_vblank(get_earlier_estimated());
         store_do_estimate(false);
