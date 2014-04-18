@@ -115,8 +115,6 @@ static double find_current_realline_while_playing(SharedVariables *sv){
     }
   }
 
-  i_realline = 0;
-
   for(; i_realline<=sv->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(sv, i_realline);
     if (stime <= curr_line_stime)

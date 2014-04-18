@@ -108,9 +108,10 @@ struct Smoother{
 };
 
 
-static const int num_periods_to_adjust = 3;
-static const int num_periods_to_adjust_max = 8;
-static const int num_periods_to_correct = 20;
+static const double k_num_periods_to_adjust = 3;
+static const double k_num_periods_to_adjust_max = 8;
+static const double k_num_periods_to_correct = 20;
+
 
 // static int counter=0;
 
@@ -162,7 +163,7 @@ struct TimeEstimator{
     double num_periods_wrong = wrong / vblank.period;
     double a_num_periods_wrong = fabs(num_periods_wrong);
 
-    if (a_num_periods_wrong > num_periods_to_correct) {
+    if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct)) {
       double new_value = approx_correct;
       last_value = new_value;
       adjustment = 0.0;
@@ -172,10 +173,10 @@ struct TimeEstimator{
 
       return new_value;
 
-    } else if (a_num_periods_wrong > num_periods_to_adjust) {      
+    } else if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_adjust)) {      
       // try to adjust.
       adjustment = scale_double(a_num_periods_wrong,
-                                num_periods_to_adjust,num_periods_to_adjust_max,
+                                period_multiplier*k_num_periods_to_adjust, period_multiplier*k_num_periods_to_adjust_max,
                                 0,0.3);
       adjustment = -wrong*adjustment;
       
