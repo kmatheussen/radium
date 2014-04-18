@@ -63,6 +63,8 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
+
+// OpenGL thread
 static float GE_scroll_pos(SharedVariables *sv, double realline){
   double extra = sv->top_realline - sv->curr_realline;
   return
@@ -80,29 +82,41 @@ extern int default_scrolls_per_second;
 TimeEstimator time_estimator;
 
 
+// OpenGL thread
 static double get_realline_stime(SharedVariables *sv, int realline){  
   return Place2STime_from_times(sv->times, &sv->realline_places[realline]);
 }
 
 
+// OpenGL thread
 static double find_current_realline(SharedVariables *sv){
+
   double current_stime = time_estimator.get((double)pc->start_time * 1000.0 / (double)pc->pfreq, sv->reltempo) * (double)pc->pfreq / 1000.0;
 
-  double block_stime = fmod(current_stime, sv->block_duration);
+  double stime = fmod(current_stime, sv->block_duration);
 
   double prev_line_stime = 0.0;
-  int i_realline = sv->curr_realline; // We only use sv->curr_realline as a hint.
 
-  if(i_realline>0)
-    i_realline--;
+  static int i_realline = 0; // Slight optimization to make it static.
 
-  while (i_realline>1 && get_realline_stime(sv, i_realline) >= block_stime) // shouldn't happen often.
-    i_realline--;
+  // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
+  {
+    if(i_realline>sv->num_reallines) // First check that i_realline is within the range of the block.
+      i_realline = 0;
+    
+    else {
+      if(i_realline>0) // Common situation. We are usually on the same line as the last visit, but we need to go one step back to reload prev_line_stime.
+        i_realline--;
+
+      if(stime < get_realline_stime(sv, i_realline)) // Behind the time of the last visit. Start searching from 0 again.
+        i_realline = 0;
+    }
+  }
 
   for(; i_realline<sv->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(sv, i_realline);
-    if (curr_line_stime >= block_stime)
-      return scale_double(block_stime,
+    if (stime < curr_line_stime)
+      return scale_double(stime,
                           prev_line_stime, curr_line_stime,
                           i_realline-1, i_realline
                           );
@@ -111,6 +125,8 @@ static double find_current_realline(SharedVariables *sv){
 
   return sv->num_reallines-0.000001; // should not happen that we get here.
 }
+
+
 
 
 #if 0
@@ -155,10 +171,12 @@ static void UpdateReallineByLines(struct Tracker_Windows *window, struct WBlocks
 #endif
 
 
+// Main thread
 static EditorWidget *get_editorwidget(void){
   return (EditorWidget *)root->song->tracker_windows->os_visual.widget;
 }
 
+// Main thread
 static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
   const QPoint p = qmouseevent->pos();
 
@@ -191,7 +209,7 @@ public:
 
   float last_pos;
 
-
+  // Main thread
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
     , painting_data(NULL)
@@ -203,10 +221,12 @@ public:
     setMouseTracking(true);
   }
 
+  // Main thread
   ~MyQt4ThreadedWidget(){
     fprintf(stderr,"Exit myqt4threaderwidget\n");
   }
 
+  // OpenGL thread
   virtual void init_vl(vl::OpenGLContext *glContext) {
 
     printf("init_vl\n");
@@ -242,7 +262,8 @@ public:
     if(0)set_realtime(SCHED_FIFO,1);
   }
 
-    /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
+  /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
+  // OpenGL thread
   virtual void initEvent() {
     printf("initEvent\n");
     
@@ -256,6 +277,7 @@ public:
   }
 
 private:
+  // OpenGL thread
   bool canDraw(){
     if (vg.get()==NULL)
       return false;
@@ -264,16 +286,19 @@ private:
   }
 public:
 
+  // Main thread
   virtual void mouseReleaseEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseReleaseEvent(&event);
   }
 
+  // Main thread
   virtual void mousePressEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mousePressEvent(&event);
   }
 
+  // Main thread
   virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseMoveEvent(&event);
@@ -285,6 +310,7 @@ public:
   }
 
 private:
+  // OpenGL thread
   double find_till_realline(SharedVariables *sv){
     if(pc->isplaying)
       return find_current_realline(sv);
@@ -292,6 +318,7 @@ private:
       return sv->curr_realline;
   }
 
+  // OpenGL thread
   void draw(){
     bool needs_repaint;
 
@@ -344,6 +371,7 @@ private:
     }
   }
 
+  // OpenGL thread
   void swap(){
     GL_lock();
     {
@@ -358,6 +386,7 @@ public:
 
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
+  // OpenGL thread
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
@@ -380,10 +409,32 @@ public:
     swap();
   }
 
+  // Main thread
   void set_vblank(double value){
     override_vblank_value = value;
   }
-    
+
+  /** Event generated when the bound OpenGLContext is resized. */
+  // OpenGL thread
+  virtual void resizeEvent(int w, int h) {
+    _rendering->sceneManagers()->clear();
+
+    _rendering->camera()->viewport()->setWidth(w);
+    _rendering->camera()->viewport()->setHeight(h);
+    _rendering->camera()->setProjectionOrtho(-0.5f);
+
+    GE_set_height(h);
+    //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
+
+    initEvent();
+
+    updateEvent();
+  }
+  
+
+
+  // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
+
   /** Event generated whenever setEnabled() is called. */
   virtual void enableEvent(bool enabled){
     printf("enableEvent %d\n",(int)enabled);
@@ -438,22 +489,6 @@ public:
   
   /** Event generated when a key is released. */
   virtual void keyReleaseEvent(unsigned short unicode_ch, vl::EKey key) {
-  }
-  
-  /** Event generated when the bound OpenGLContext is resized. */
-  virtual void resizeEvent(int w, int h) {
-    _rendering->sceneManagers()->clear();
-
-    _rendering->camera()->viewport()->setWidth(w);
-    _rendering->camera()->viewport()->setHeight(h);
-    _rendering->camera()->setProjectionOrtho(-0.5f);
-
-    GE_set_height(h);
-    //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
-
-    initEvent();
-
-    updateEvent();
   }
   
   /** Event generated when one or more files are dropped on the bound OpenGLContext's area. */
