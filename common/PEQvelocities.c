@@ -60,15 +60,15 @@ static void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit);
 static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit);
 
 void InitPEQvelocities(
-	struct Blocks *block,
-	struct Tracks *track,
-	struct Notes *note,
+	const struct Blocks *block,
+	const struct Tracks *track,
+	const struct Notes *note,
 	int playlistaddpos
 ){
 	int x;
 	struct PEventQueue *peq;
 
-	struct Velocities *velocity=note->velocities;
+	const struct Velocities *velocity=note->velocities;
 
         if(track->patch==NULL)
           return;
@@ -121,8 +121,8 @@ void InitPEQvelocities(
 
 
 static void scheduled_change_velocity(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
-  struct Notes  *note  = args[1].pointer;
+  const struct Tracks *track = args[0].const_pointer;
+  const struct Notes  *note  = args[1].const_pointer;
   int            x     = args[2].int_num;
 
   RT_PATCH_change_velocity(track->patch,
@@ -136,8 +136,8 @@ static void scheduled_change_velocity(int64_t time, union SuperType *args){
 static void SendVelocityChange(int x,struct PEventQueue *peq){
 	if(peq->track->patch!=NULL && peq->track->onoff==1){
           union SuperType args[3];
-          args[0].pointer = peq->track;
-          args[1].pointer = peq->note;
+          args[0].const_pointer = peq->track;
+          args[1].const_pointer = peq->note;
           args[2].int_num = x;
 
           SCHEDULER_add_event(peq->l.time, scheduled_change_velocity, &args[0], 3, SCHEDULER_ADDORDER_DOESNT_MATTER);

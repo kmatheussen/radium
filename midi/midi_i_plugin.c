@@ -260,7 +260,7 @@ static void MIDIchangepitch(struct Patch *patch,int notenum, float pitch,STime t
 
 /******************** patch **************************/
 
-static void MIDIchangeTrackPan(int newpan,struct Tracks *track){
+static void MIDIchangeTrackPan(int newpan,const struct Tracks *track){
 	struct PatchData *patchdata=(struct PatchData *)track->patch->patchdata;
 
         if(patchdata==NULL)
@@ -318,7 +318,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
     RWarning("MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
 }
 
-char *MIDIGetPatchData(struct Patch *patch, char *key){
+static char *MIDIGetPatchData(struct Patch *patch, char *key){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
@@ -514,7 +514,7 @@ void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
 int MIDIgetPatch(
 	struct Tracker_Windows *window,
 	ReqType reqtype,
-	struct Tracks *track,
+	const struct Tracks *track,
 	struct Patch *patch
 ){
         MIDI_InitPatch(patch, NULL);
@@ -538,7 +538,7 @@ int MIDIgetPatch(
 
 /******************* instrument ***********************/
 
-int MIDIgetMaxVelocity(struct Patch *patch){
+static int MIDIgetMaxVelocity(const struct Patch *patch){
 	return 127;
 }
 

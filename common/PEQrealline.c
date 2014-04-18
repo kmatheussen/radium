@@ -100,7 +100,6 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
 	int realline=peq->realline;
 	//int orgrealline=realline;
-	struct Blocks *nextblock;
 
 #ifdef WITH_PD
         RT_PD_set_time(peq->l.time, &peq->wblock->reallines[peq->realline]->l.p);
@@ -119,7 +118,7 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 		}
 	}else{
 		if(realline>=peq->wblock->num_reallines){
-		  nextblock=PC_GetPlayBlock(1);
+		        const struct Blocks *nextblock=PC_GetPlayBlock(1);
 			if(nextblock==NULL){
 				ReturnPEQelement(peq);
 				return;

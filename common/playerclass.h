@@ -37,11 +37,11 @@ struct PEventQueue{
 
 
 // Used by various functions.
-	struct Tracker_Windows *window;
-	struct WBlocks *wblock;
-	struct Blocks *block;
-	struct Tracks *track;
-	struct Notes *note;
+	const struct Tracker_Windows *window;
+        struct WBlocks *wblock; // not const.
+	const struct Blocks *block;
+	const struct Tracks *track;
+	const struct Notes *note;
 
 
 // Used by PEQrealline
@@ -49,18 +49,18 @@ struct PEventQueue{
 
 
 // Used by PEQvelocities
-	struct Velocities *velocity;
-	struct Velocities *nextvelocity;
+	const struct Velocities *velocity;
+	const struct Velocities *nextvelocity;
 
 // Used by PEQpitches
-	struct Pitches *pitch;
-	struct Pitches *nextpitch;
+	const struct Pitches *pitch;
+	const struct Pitches *nextpitch;
 
 
 // Used by PEQfxs
-	struct FXs *fxs;
-	struct FXNodeLines *fxnodeline;
-	struct FXNodeLines *nextfxnodeline;
+	const struct FXs *fxs;
+	const struct FXNodeLines *fxnodeline;
+	const struct FXNodeLines *nextfxnodeline;
 
 
 // Used by PEQvelocities and PEQfxs
@@ -107,7 +107,7 @@ typedef struct{
 
 	int playtype;
 
-	struct Blocks *block;		// The block now playing.
+	const struct Blocks *block;		// The block now playing.
 
 	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;

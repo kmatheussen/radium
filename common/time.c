@@ -124,18 +124,18 @@ STime Place2STime_from_times(
 }
 
 STime Place2STime(
-	struct Blocks *block,
+	const struct Blocks *block,
 	const Place *p
 ){
   return Place2STime_from_times(block->times, p);
 }
 
-bool isSTimeInBlock(struct Blocks *block,STime time){
+bool isSTimeInBlock(const struct Blocks *block,STime time){
 	if(time > block->times[block->num_lines].time) return false;
 	return true;
 }
 
-STime getBlockSTimeLength(struct Blocks *block){
+STime getBlockSTimeLength(const struct Blocks *block){
 	return block->times[block->num_lines].time;
 }
 

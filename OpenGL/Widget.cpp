@@ -99,7 +99,7 @@ static double find_current_realline_while_playing(SharedVariables *sv){
 
   double prev_line_stime = 0.0;
 
-  static int i_realline = 0; // Slight optimization to make it static.
+  static int i_realline = 0;
 
   // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
   {

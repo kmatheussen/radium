@@ -34,7 +34,7 @@ struct SharedVariables{
 
 #ifdef OPENGL_GFXELEMENTS_CPP
 
-static vector_t g_times_storage; // We just copy the 'times' pointer from 'root, so we need to store it somewhere where the GC can get hold of it.
+static vector_t g_times_storage; // We just copy the 'times' pointer from 'root' (not the content), so we need to store the pointer somewhere where the GC can get hold of it.
 
 SharedVariables::~SharedVariables(){
   free(realline_places);

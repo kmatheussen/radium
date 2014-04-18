@@ -18,8 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern void InitAllPEQnotes(
-	struct Blocks *block,
-	Place *p
+	const struct Blocks *block,
+	const Place *p
 );
 
 extern void PEQ_FindNextNote(struct PEventQueue *peq);
