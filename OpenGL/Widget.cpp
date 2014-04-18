@@ -339,8 +339,18 @@ private:
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
 
+    
+    if(sv->block != pc->block) // sanity check
+      return;
+
+
     double till_realline = find_till_realline(sv);
     float pos = GE_scroll_pos(sv, till_realline);
+
+    
+    if(sv->block != pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
+      return;
+
 
     if (needs_repaint || pos!=last_pos) {
     

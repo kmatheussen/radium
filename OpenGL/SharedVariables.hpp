@@ -18,6 +18,8 @@ struct SharedVariables{
 
   float scrollbar_height;
   float scrollbar_scroller_height;
+
+  const struct Blocks *block; // Only used like this: if(sv->block==pc->block){...}. Reading anything inside 'block' would be dangerous.
   
   const struct STimes *times;
 
@@ -58,6 +60,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->scrollbar_height          = window->leftslider.x2 - window->leftslider.x;
   sv->scrollbar_scroller_height = window->leftslider.lx2 - window->leftslider.lx;
+
+  sv->block          = block;
 
   sv->times          = block->times;
 
