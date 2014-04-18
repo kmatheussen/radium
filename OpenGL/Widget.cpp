@@ -340,7 +340,7 @@ private:
     }
 
     
-    if(sv->block != pc->block) // sanity check
+    if(pc->isplaying && sv->block!=pc->block) // sanity check
       return;
 
 
@@ -348,7 +348,7 @@ private:
     float pos = GE_scroll_pos(sv, till_realline);
 
     
-    if(sv->block != pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
+    if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return;
 
 
@@ -432,6 +432,8 @@ public:
   /** Event generated when the bound OpenGLContext is resized. */
   // OpenGL thread
   virtual void resizeEvent(int w, int h) {
+    printf("resisizing %d %d\n",w,h);
+
     _rendering->sceneManagers()->clear();
 
     _rendering->camera()->viewport()->setWidth(w);

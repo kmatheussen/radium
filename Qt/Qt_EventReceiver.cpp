@@ -292,7 +292,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
 
-  printf("Got mousepress %d %d\n",tevent.x,tevent.y);
+  //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
   EventReciever(&tevent,this->window);
 
@@ -321,7 +321,7 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
 
-
+  //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
   EventReciever(&tevent,this->window);
 
   updateEditor();
@@ -337,6 +337,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
+  //printf("----Got mouse move %d %d\n",tevent.x,tevent.y);
 
   updateEditor();
 }
