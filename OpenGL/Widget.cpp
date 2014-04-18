@@ -84,16 +84,18 @@ TimeEstimator time_estimator;
 
 // OpenGL thread
 static double get_realline_stime(SharedVariables *sv, int realline){  
-  return Place2STime_from_times(sv->times, &sv->realline_places[realline]);
+  if(realline==sv->num_reallines)
+    return sv->block_duration;
+  else
+    return Place2STime_from_times(sv->times, &sv->realline_places[realline]);
 }
 
 
 // OpenGL thread
-static double find_current_realline(SharedVariables *sv){
+static double find_current_realline_while_playing(SharedVariables *sv){
 
-  double current_stime = time_estimator.get((double)pc->start_time * 1000.0 / (double)pc->pfreq, sv->reltempo) * (double)pc->pfreq / 1000.0;
-
-  double stime = fmod(current_stime, sv->block_duration);
+  double time_in_ms = (double)(pc->start_time - pc->seqtime) * 1000.0 / (double)pc->pfreq;
+  double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
 
   double prev_line_stime = 0.0;
 
@@ -105,7 +107,7 @@ static double find_current_realline(SharedVariables *sv){
       i_realline = 0;
     
     else {
-      if(i_realline>0) // Common situation. We are usually on the same line as the last visit, but we need to go one step back to reload prev_line_stime.
+      if(i_realline>0) // Common situation. We are usually on the same line as the last visit, but we need to go one step back to reload prev_line_stime. (we cant store prev_line_stime, because it could have been calculated from a different block)
         i_realline--;
 
       if(stime < get_realline_stime(sv, i_realline)) // Behind the time of the last visit. Start searching from 0 again.
@@ -113,9 +115,11 @@ static double find_current_realline(SharedVariables *sv){
     }
   }
 
-  for(; i_realline<sv->num_reallines; i_realline++){
+  i_realline = 0;
+
+  for(; i_realline<=sv->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(sv, i_realline);
-    if (stime < curr_line_stime)
+    if (stime <= curr_line_stime)
       return scale_double(stime,
                           prev_line_stime, curr_line_stime,
                           i_realline-1, i_realline
@@ -123,7 +127,7 @@ static double find_current_realline(SharedVariables *sv){
     prev_line_stime = curr_line_stime;
   }
 
-  return sv->num_reallines-0.000001; // should not happen that we get here.
+  return sv->num_reallines;
 }
 
 
@@ -310,10 +314,11 @@ public:
   }
 
 private:
+
   // OpenGL thread
   double find_till_realline(SharedVariables *sv){
     if(pc->isplaying)
-      return find_current_realline(sv);
+      return find_current_realline_while_playing(sv);
     else
       return sv->curr_realline;
   }

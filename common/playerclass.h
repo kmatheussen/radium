@@ -93,10 +93,10 @@ typedef struct{
 
         int pfreq; // player frequency. i.e. sample rate.
 
-        STime start_time; // During current call to peq->treatMe
-        STime end_time;   // During current call to peq->treatMe
+        volatile STime start_time; // During current call to peq->treatMe
+        volatile STime end_time;   // During current call to peq->treatMe
 
-	STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
+	volatile STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 
@@ -109,7 +109,7 @@ typedef struct{
 
 	struct Blocks *block;		// The block now playing.
 
-	int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
+	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;
 	bool nowpausing;
 
