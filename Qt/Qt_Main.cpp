@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <Qt>
 #include <QDir>
 #include <QTextEdit>
+#include <QLayout>
 
 
 #ifdef USE_QT4
@@ -626,9 +627,17 @@ int radium_main(char *arg){
   //updateAllFonts(QApplication::mainWidget());
 
   QWidget *gl_widget = GL_create_widget();
-
+  
   main_window->repaint();
   DrawUpTrackerWindow(root->song->tracker_windows);
+
+  if(0){
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(gl_widget);
+    editor->setLayout(layout);
+    gl_widget->move(50,200);
+  }
 
   show_nag_window("");
 

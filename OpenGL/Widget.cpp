@@ -53,7 +53,7 @@ static void set_realtime(int type, int priority){
 }
 
 
-static QMutex mutex;
+static QMutex mutex(QMutex::Recursive);
 
 void GL_lock(void){
   mutex.lock();
@@ -419,7 +419,7 @@ public:
     if(is_training_vblank_estimator==false && canDraw())
       draw();
 
-    swap();
+    swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
   }
 
   // Main thread

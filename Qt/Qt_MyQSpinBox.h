@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
 
+#include "../OpenGL/Widget_proc.h"
+
+
 extern int num_users_of_keyboard;
 
 extern void set_editor_focus(void);
@@ -41,14 +44,18 @@ struct MyQSpinBox : public QSpinBox{
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
     num_users_of_keyboard++;                                          
+    GL_lock();
     QSpinBox::focusInEvent(e);                                             
+    GL_unlock();
   }                                                                     
   void focusOutEvent ( QFocusEvent *e ){                                
     printf("Got focusOutEvent\n");
     num_users_of_keyboard--;                                          
     if(num_users_of_keyboard<0)                                       
       num_users_of_keyboard = 0;                                      
+    GL_lock();
     QSpinBox::focusOutEvent(e);                                            
+    GL_unlock();
   }                                                                     
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");
