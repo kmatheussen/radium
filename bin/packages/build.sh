@@ -64,7 +64,7 @@ cd ..
 rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
-cmake -DVL_GUI_QT4_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVL_GUI_QT4_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
 make -j8
 cd ..
 
