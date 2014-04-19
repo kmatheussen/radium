@@ -675,8 +675,9 @@ int radium_main(char *arg){
 
 
   is_starting_up=false;
-
+  window->must_redraw = true;
   editor->update();
+  editor->resize(editor->width(),editor->height());
 
 #if USE_OPENGL
   GL_create(window, window->wblock);

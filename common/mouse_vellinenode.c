@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-int MoveVelNode_Mouse(
+static int MoveVelNode_Mouse(
 	struct Tracker_Windows *window,
 	float x,float y
 ){

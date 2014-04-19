@@ -109,6 +109,8 @@ void MakeNodeLines(
 
   float ry1,ry2;
 
+  //printf("x1: %f, x2: %f, minx: %f, maxx: %f\n", x1,x2,minx,maxx);
+
   /* Get rid of minx. */
   x1-=minx;
   x2-=minx;
@@ -151,6 +153,8 @@ void MakeNodeLines(
     }else{
       ry2=GetFloatFromPlace(&(wblock->reallines[realline1+1]->l.p));
     }
+
+    //printf("direction: %f, ry1: %f, ry2: %f\n",direction,ry1,ry2);
 
     FillInLineRealLine(
 		       window,

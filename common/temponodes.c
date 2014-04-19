@@ -106,7 +106,7 @@ void UpdateWTempoNodes(
 			&temponode->l.p,
 			prev->reltempo,
 			temponode->reltempo,
-			(float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
+			(float)(-wblock->reltempomax+1.0f), (float)(wblock->reltempomax-1.0f),
 			prev,
 			&MakeWTempoNodesCallBack
 		);
