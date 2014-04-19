@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#if FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
   struct sched_param par={0};
   par.sched_priority=priority;
@@ -51,6 +52,7 @@ static void set_realtime(int type, int priority){
   //bound_thread_to_cpu(0);
   set_pthread_priority(pthread_self(),type,priority,"Unable to set %s/%d for %d (\"%s\"). (%s)\n", "a gc thread");
 }
+#endif
 
 
 static QMutex mutex(QMutex::Recursive);
@@ -266,7 +268,9 @@ public:
     glContext->initGLContext();
     glContext->addEventListener(this);
 
+#if FOR_LINUX
     if(0)set_realtime(SCHED_FIFO,1);
+#endif
   }
 
   /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */

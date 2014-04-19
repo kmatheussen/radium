@@ -57,7 +57,7 @@ int MoveVelEnd_Mouse(
 	struct Tracks *track=wtrack->track;
 	struct Notes *note=(struct Notes *)action->pointer2;
 	int subtrack=action->eint1;
-	Place place;
+	Place place = {0};
 	int maxvel=MAX_VELOCITY;
 	int sx1=GetXSubTrack1(wtrack,subtrack);
 	int sx2=GetXSubTrack2(wtrack,subtrack);

@@ -184,7 +184,7 @@ protected:
 
     if(ret==true) {
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-      if(event->type==KeyPress)
+      //if(event->type==KeyPress) TODO!
         GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
     }
     return ret;
