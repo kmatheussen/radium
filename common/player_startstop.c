@@ -66,7 +66,9 @@ static void PlayStopReally(bool doit){
 
 	StopAllInstruments();
 
+#if !USE_OPENGL
 	if(doit) (*Ptask2MtaskCallBack)();
+#endif
 
 	pc->end_time=0;
 
@@ -120,8 +122,10 @@ static void PlayBlock(
                 //abort();
                 fflush(stdout);
 
+#if !USE_OPENGL
 		pc->isplaying=true;
 		(*Ptask2MtaskCallBack)();
+#endif
 		pc->isplaying=false;
 
 		InitPEQclock();
@@ -213,8 +217,10 @@ void PlaySong(
 		pc->block=block;
 
 		root->curr_block=block->l.num;
+#if !USE_OPENGL
 		pc->isplaying=true;
 		(*Ptask2MtaskCallBack)();
+#endif
 		pc->isplaying=false;
 
 		InitPEQclock();

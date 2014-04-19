@@ -74,8 +74,10 @@ void EditorWidget::customEvent(QEvent *e){
 
   //printf("Got customEvent\n");
   DO_GFX({
+#if !USE_OPENGL
       if(pc->isplaying)
         P2MUpdateSongPosCallBack();
+#endif
       UpdateClock(this->window);
       //MIDI_HandleInputMessage();
     });
