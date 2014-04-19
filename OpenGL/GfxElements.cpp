@@ -28,7 +28,7 @@
 
 
 
-static float g_height = 512;
+static volatile float g_height = 512;
 
 void GE_set_height(int height){
   g_height = height;
