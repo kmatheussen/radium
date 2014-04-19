@@ -115,6 +115,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     window->must_redraw=false;
     GFX_clear_op_queue(this->window);
     DO_GFX(DrawUpTrackerWindow(this->window));
+
+    GL_create(window, window->wblock);
   }
 
   //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
@@ -139,7 +141,6 @@ void EditorWidget::updateEditor(){
     return;
 
   if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
-    GL_create(window, window->wblock);
     update();
   }
 }
@@ -373,9 +374,6 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   if(is_starting_up==true)
     return;
 
-  GE_set_height(this->height());
-  GL_create(window, window->wblock);
-
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
          this->height(),qresizeevent->size().height());
@@ -386,6 +384,12 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   updateEditor();
 #else
   update();
+#endif
+
+#if USE_OPENGL
+  GE_set_height(this->height());
+  position_gl_widget(window);
+  GL_create(window, window->wblock);
 #endif
 }
 #endif // USE_QT_VISUAL

@@ -314,19 +314,16 @@ struct NodeLine *create_nodelines(
 
 static void create_left_slider(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   GE_Context *border = GE_color_z(1, Z_STATIC);
-  float dy = root->song->tracker_windows->wblock->t.y1;
-  float y = window->leftslider.x - dy;
-  float y2 = window->leftslider.x2 - dy;
 
   GE_box(border,
-         0,                        y,
-         window->leftslider.width, y2,
+         0,                        get_scrollbar_y1(window, wblock),
+         window->leftslider.width, get_scrollbar_y2(window, wblock),
          1.0f);
 
   GE_Context *scrollbar = GE_color_z(2, Z_SCROLLBAR);
   GE_filledBox(scrollbar,
                2,                            0,
-               window->leftslider.width - 2, window->leftslider.lx2 - window->leftslider.lx
+               window->leftslider.width - 2, get_scrollbar_scroller_height(window,wblock)
                );
 }
 

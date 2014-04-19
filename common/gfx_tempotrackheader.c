@@ -26,6 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "gfx_tempotrackheader_proc.h"
 
+#if !USE_OPENGL
+#  define PAINT_WHERE PAINT_BUFFER
+#else
+#  define PAINT_WHERE PAINT_DIRECTLY
+#endif
+
 extern struct Root *root;
 
 void UpdateTempoTrackHeader_reltempo(
@@ -59,7 +65,7 @@ void UpdateTempoTrackHeader_reltempo(
 		wblock->a.y1,
 		wblock->temponodearea.x2,
 		wblock->t.y1-2,
-                PAINT_BUFFER
+                PAINT_WHERE
 	);
 
 	GFX_Text(
@@ -68,7 +74,7 @@ void UpdateTempoTrackHeader_reltempo(
 		wblock->a.y1+window->org_fontheight,
                 width,
                 TEXT_CLIPRECT,
-                PAINT_BUFFER
+                PAINT_WHERE
 	);
 
 	GFX_Text(
@@ -77,13 +83,15 @@ void UpdateTempoTrackHeader_reltempo(
                    wblock->a.y1,
                    width,
                    TEXT_CLIPRECT,
-                   PAINT_BUFFER
+                   PAINT_WHERE
 	);
 
 	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1,PAINT_DIRECTLY);
-	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1,PAINT_BUFFER);
+	GFX_Line(window,1,wblock->temponodearea.x+1,wblock->t.y1-1,wblock->temponodearea.x2+1,wblock->t.y1-1,PAINT_WHERE);
 
+#if !USE_OPENGL
 	Blt_marktrackheader(window,TEMPONODETRACK,TEMPONODETRACK);
+#endif
 }
 
 void UpdateTempoTrackHeader_LPB(

@@ -33,6 +33,20 @@ struct SharedVariables{
 };
 
 
+static inline float get_scrollbar_y1(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  return 1.0;
+}
+
+static inline float get_scrollbar_y2(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  return wblock->t.y2 - wblock->t.y1;
+}
+
+static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  return  (wblock->t.y2 - wblock->t.y1 - 4)
+    * wblock->num_visiblelines
+    / (wblock->num_reallines + wblock->num_visiblelines - 2);
+}
+
 
 #ifdef OPENGL_GFXELEMENTS_CPP
 
@@ -58,8 +72,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   sv->reltempo       = block->reltempo;
   sv->block_duration = getBlockSTimeLength(block);
 
-  sv->scrollbar_height          = window->leftslider.x2 - window->leftslider.x;
-  sv->scrollbar_scroller_height = window->leftslider.lx2 - window->leftslider.lx;
+  sv->scrollbar_height          = get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock);
+  sv->scrollbar_scroller_height = get_scrollbar_scroller_height(window,wblock);
 
   sv->block          = block;
 

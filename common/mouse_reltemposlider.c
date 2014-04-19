@@ -38,9 +38,12 @@ static int MoveRelTempoSlider_Mouse(
 	DrawBlockRelTempo(window,wblock);
 
         TRACKREALLINES_update_peak_tracks(window,NULL);
+
+#if !USE_OPENGL
         WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
 
         DrawUpAllWTracks(window,wblock,NULL);
+#endif
 
 	return 0;
 }

@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#if !USE_OPENGL
+
 
 #include "nsmtracker.h"
 #include <math.h>
@@ -26,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 
 #include "gfx_tempocolor_proc.h"
+
 
 void WBLOCK_DrawLineTempoColor(
 				struct Tracker_Windows *window,
@@ -247,8 +250,4 @@ void WBLOCK_DrawTempoColor(
 
 
 
-
-
-
-
-
+#endif

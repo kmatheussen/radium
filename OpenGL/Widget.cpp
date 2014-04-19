@@ -24,7 +24,7 @@
 #define GE_DRAW_VL
 #include "GfxElements.h"
 #include "Timing.hpp"
-
+#include "Render_proc.h"
 
 #include "Widget_proc.h"
 
@@ -174,8 +174,13 @@ static void UpdateReallineByLines(struct Tracker_Windows *window, struct WBlocks
 
 
 // Main thread
+static Tracker_Windows *get_window(void){
+  return root->song->tracker_windows;
+}
+
+// Main thread
 static EditorWidget *get_editorwidget(void){
-  return (EditorWidget *)root->song->tracker_windows->os_visual.widget;
+  return (EditorWidget *)get_window()->os_visual.widget;
 }
 
 // Main thread
@@ -292,18 +297,21 @@ public:
   virtual void mouseReleaseEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseReleaseEvent(&event);
+    GL_create(get_window(), get_window()->wblock);
   }
 
   // Main thread
   virtual void mousePressEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mousePressEvent(&event);
+    GL_create(get_window(), get_window()->wblock);
   }
 
   // Main thread
   virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseMoveEvent(&event);
+    GL_create(get_window(), get_window()->wblock);
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
@@ -369,10 +377,10 @@ private:
       // scrollbar
       {
         vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        float scrollpos = -2 + scale(till_realline,
-                                     0, sv->num_reallines,
-                                     0, -(sv->scrollbar_height - sv->scrollbar_scroller_height)
-                                     );
+        float scrollpos = scale(till_realline,
+                                0, sv->num_reallines - (pc->isplaying?0:1),
+                                -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
+                                );
         //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
         mat.translate(0,scrollpos,0);
         _scrollbar_transform->setLocalAndWorldMatrix(mat);
@@ -561,7 +569,7 @@ static void show_message_box(QMessageBox *box){
   qApp->processEvents();
 }
 
-static void setup_widget(void){
+static void setup_widget(QWidget *parent){
   vl::VisualizationLibrary::init();
 
   vl::OpenGLContextFormat vlFormat;
@@ -575,25 +583,25 @@ static void setup_widget(void){
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
   
-  widget = new MyQt4ThreadedWidget(vlFormat, NULL);
+  widget = new MyQt4ThreadedWidget(vlFormat, parent);
   widget->resize(1000,1000);
   widget->show();
 
   widget->incReference();  // dont want auto-desctruction at program exit.
 }
 
-QWidget *GL_create_widget(void){
+QWidget *GL_create_widget(QWidget *parent){
 
   if (do_estimate_questionmark() == false) {
 
-    setup_widget();
+    setup_widget(parent);
     widget->set_vblank(get_earlier_estimated());
 
   } else {
 
     QMessageBox box;
 
-    setup_widget();
+    setup_widget(parent);
     show_message_box(&box);
 
     while(widget->is_training_vblank_estimator==true) {

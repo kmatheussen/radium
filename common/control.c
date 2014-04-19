@@ -125,11 +125,13 @@ bool InitProgram(void){
 
 	ret=NewSong();
 
+#if !USE_OPENGL
 	printf("...Blitting\n");
 
 	if(ret==true){
 	  Blt_blt(root->song->tracker_windows);
 	}
+#endif
 
 	printf("Initialization finished.\n");
 

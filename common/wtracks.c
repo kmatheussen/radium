@@ -273,7 +273,9 @@ void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 
 	UpdateSomeTrackReallines(window,wblock,starttrack,endtrack);
 	UpdateSomeFXNodeLines(window,wblock,starttrack,endtrack);
+#if !USE_OPENGL
 	UpdateAndClearSomeWTracks(window,wblock,starttrack,endtrack,wblock->top_realline,wblock->bot_realline);
+#endif
 
 	//	startwtrack=ListFindElement1(&wblock->wtracks->l,starttrack);
 	//	endwtrack=ListFindElement1(&wblock->wtracks->l,endtrack);

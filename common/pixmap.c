@@ -61,6 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
         how the cursor is made.
 */
 
+#if !USE_OPENGL
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -379,3 +380,5 @@ void PixMap_bltLines(
     PixMap_private_bltLines(window,startvisibleline,endvisibleline,x1,x2);
   }
 }
+
+#endif

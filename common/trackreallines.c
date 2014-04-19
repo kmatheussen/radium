@@ -884,6 +884,7 @@ void AddPitchElements(
   }
 }
 
+#if !USE_OPENGL
 static void create_peaks(
                          struct Tracker_Windows *window,
                          struct WBlocks *wblock,
@@ -984,6 +985,7 @@ static void create_peaks(
     }
   }
 }
+#endif
 
 /****************************************************************
   FUNCTION
@@ -1023,8 +1025,9 @@ void UpdateTrackReallines(
 
         AddPitchElements(window,wblock,wtrack);
 
+#if !USE_OPENGL
         create_peaks(window,wblock,wtrack);
-        
+#endif        
 	if(window->curr_track==wtrack->l.num)
 		if(window->curr_track_sub >= wtrack->num_vel)
 			window->curr_track_sub=wtrack->num_vel-1;
@@ -1075,13 +1078,12 @@ void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Pa
 
 static bool g_peaks_are_dirty;
 
+// TODO: Check if this one can be disabled completely if using OpenGL
 void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){
   if(g_peaks_are_dirty==false)
     return;
   else
     g_peaks_are_dirty=false;
-
-  struct WBlocks *wblock=window->wblocks;
 
   struct Instruments *instrument = get_all_instruments();
   while(instrument!=NULL){
@@ -1089,7 +1091,9 @@ void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){
       if(patch->peaks_are_dirty==true){
         patch->peaks_are_dirty=false;
         TRACKREALLINES_update_peak_tracks(window,patch);
-        DrawUpAllPeakWTracks(window,wblock,patch);
+#if !USE_OPENGL
+        DrawUpAllPeakWTracks(window,window->wblock,patch);
+#endif
       }
     }END_VECTOR_FOR_EACH;
     instrument = NextInstrument(instrument);

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 */
 
 
+#if !USE_OPENGL
 
 /****************************************************************
    Blitting.								 
@@ -88,6 +89,7 @@ void Blt_blt(struct Tracker_Windows *window){
 //  printf("blitted. X: %d,%d  Realline: %d,%d\n",blt->x1,min(blt->x2,wblock->t.x2),blt->startrealline,blt->endrealline);
 
 }
+
 
 
 /****************************************************************
@@ -448,4 +450,6 @@ void Blt_unMarkVisible(struct Tracker_Windows *window){
 }
 
 
+
+#endif // !USE_OPENGL
 

@@ -106,6 +106,10 @@ public:
     QFont font;
 #endif
 
+#if USE_OPENGL
+    QWidget *gl_widget;
+#endif
+
     //QFrame *status_frame;
     QLabel *status_label;
 
@@ -160,6 +164,13 @@ public:
 #endif
 #endif
     }
+
+#if USE_OPENGL
+    void position_gl_widget(struct Tracker_Windows *window){
+      gl_widget->move(0,window->wblock->t.y1);
+      gl_widget->resize(width(), 1 + window->wblock->t.y2 - window->wblock->t.y1);
+    }
+#endif
 
 #else
     void init_buffers(){

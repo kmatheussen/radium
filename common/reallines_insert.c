@@ -170,21 +170,27 @@ void InsertRealLines_CurrPos(
 			Undo_Tempos_CurrPos(window);
 			InsertPlace_tempos(block,place,toplace);
 			UpdateWTempos(window,wblock);
+#if !USE_OPENGL
 			DrawUpTempos(window,wblock);
+#endif
 			UpdateSTimes(wblock->block);
 			break;
 		case LPBTRACK:
 			Undo_LPBs_CurrPos(window);
 			InsertPlace_lpbs(block,place,toplace);
 			UpdateWLPBs(window,wblock);
+#if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
+#endif
 			UpdateSTimes(wblock->block);
 			break;
 		case TEMPONODETRACK:
 			Undo_TempoNodes_CurrPos(window);
 			InsertPlace_temponodes(block,place,toplace);
 			UpdateWTempoNodes(window,wblock);
+#if !USE_OPENGL
 			DrawUpWTempoNodes(window,wblock);
+#endif
 			UpdateSTimes(wblock->block);
 			break;
 		default:
@@ -198,9 +204,10 @@ void InsertRealLines_CurrPos(
 			InsertPlace_notes(block,wblock->wtrack->track,place,toplace);
 			InsertPlace_stops(block,wblock->wtrack->track,place,toplace);
 			UpdateTrackReallines(window,wblock,wblock->wtrack);
+#if !USE_OPENGL
 			ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 			UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 			break;
 	}
 

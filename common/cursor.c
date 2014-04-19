@@ -36,9 +36,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 void SetCursorPos(struct Tracker_Windows *window){
+#if !USE_OPENGL
 	struct WBlocks *wblock=window->wblock;
-
 	Blt_markAll(window,LINENUMBTRACK,wblock->right_track,wblock->curr_realline,wblock->curr_realline);
+#endif
 }
 
 

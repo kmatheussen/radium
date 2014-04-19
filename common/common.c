@@ -52,6 +52,8 @@ int GetCursorY2Pos(const struct Tracker_Windows *window,const struct WBlocks *wb
 }
 
 
+#if !USE_OPENGL
+
 /*************************************************************************
   FUNCTION
     Calculate the top Y value for realline 'realline'.
@@ -99,6 +101,7 @@ int GetReallineY2Pos(
 	if(realline==-1) return -1;
 	return realline+window->fontheight - 1;
 }
+#endif
 
 
 // Returns the actual Y1 pos. (GetReallineY1Pos returns the pixmap pos)
@@ -122,6 +125,7 @@ int Common_oldGetReallineY2Pos(
 }
 
 
+#if !USE_OPENGL
 /*************************************************************************
   FUNCTION
     Calculate the top Y value for realline 'realline'.
@@ -158,6 +162,7 @@ int GetReallineY2SmartPos(
 ){
 	return GetReallineY1SmartPos(window,wblock,realline)+window->fontheight;
 }
+#endif
 
 
 

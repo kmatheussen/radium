@@ -408,9 +408,11 @@ void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
 
   wtrack->noteshowtype=type;
 
+#if !USE_OPENGL
   if(window->wblock==wblock){
     DrawUpWTrack(window,wblock,wtrack);
   }
+#endif
 }
 
 void setTrackVolume(float volume,int tracknum,int blocknum,int windownum){
@@ -481,9 +483,11 @@ void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
   wtrack->noteshowtype++;
   if(wtrack->noteshowtype>MAXTYPE) wtrack->noteshowtype=0;
 
+#if !USE_OPENGL
   if(window->wblock==wblock){
     DrawUpWTrack(window,wblock,wtrack);
   }
+#endif
 }
 
 
@@ -506,10 +510,11 @@ void setBlockNoteShowType(int type,int blocknum,int windownum){
     wtrack=NextWTrack(wtrack);
   }
 
+#if !USE_OPENGL
   if(window->wblock==wblock){
     DrawUpAllWTracks(window,wblock,NULL);
   }
-  
+#endif
 }
 
 void switchBlockNoteShowType(int blocknum,int windownum){

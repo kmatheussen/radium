@@ -95,10 +95,17 @@ typedef int32_t NInt;
 // Higher than 255 is no point.
 #define MAX_BRIGHTNESS 63
 
+#if !USE_OPENGL
 enum{
   PAINT_DIRECTLY = 0,
   PAINT_BUFFER = 1
 };
+#else
+enum{
+  PAINT_DIRECTLY = 0,
+  PAINT_BUFFER = PAINT_DIRECTLY
+};
+#endif
 
 #include <OS_Visual.h>
 

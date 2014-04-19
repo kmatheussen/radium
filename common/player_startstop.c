@@ -73,8 +73,10 @@ static void PlayStopReally(bool doit){
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
 	GFX_UpdateQuantitize(window,wblock);
+#if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
+#endif
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
 
         //while(GC_is_disabled())

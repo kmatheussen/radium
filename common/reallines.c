@@ -389,11 +389,14 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	  window->must_redraw = true;
 
 	}else{
-	  PixMap_reset(window);
 
+#if !USE_OPENGL
+	  PixMap_reset(window);
+#endif
 	  //	  GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFEr);
 	  
 	  UpdateReallinesDependens(window,wblock);
+#if !USE_OPENGL
 	  DrawUpAllWTracks(window,wblock,NULL);
 	  UpdateLeftSlider(window);
 
@@ -422,6 +425,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 	  
 	  //UpdateAllWTracks(window,wblock,wblock->top_realline,wblock->bot_realline);
 	  //	  DrawWBlock(window,wblock);
+#endif
 	}
 }
 

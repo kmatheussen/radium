@@ -113,12 +113,15 @@ int MoveFXNode_Mouse(
 
 	UpdateFXNodeLines(window,wblock,wtrack);
 
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,
                    wblock->top_realline,
                    wblock->bot_realline
 		   );
 
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
+
 	return 0;
 }
 

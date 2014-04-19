@@ -104,7 +104,10 @@ static int MoveNote(
   PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
 
   UpdateTrackReallines(window,wblock,wtrack);
+
+#if !USE_OPENGL
   DrawUpWTrack(window,wblock,wtrack);
+#endif
 
   return 0;
 }
@@ -190,7 +193,10 @@ static int MovePitch(
   PlaceCopy(&pitch->l.p, PlaceBetween(getPrevLegalPitchPlace(note, pitch), &place, getNextLegalPitchPlace(note, pitch)));
 
   UpdateTrackReallines(window,wblock,wtrack);
+
+#if !USE_OPENGL
   DrawUpWTrack(window,wblock,wtrack);
+#endif
 
   return 0;
 }
