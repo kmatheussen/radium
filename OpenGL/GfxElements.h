@@ -101,12 +101,15 @@ static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float h
   return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha));
 }
 
+#ifndef EDITOR_WIDGET_H
 #include "../Qt/EditorWidget.h"
 extern struct Root *root;
 static inline QColor GE_qcolor(int colornum){
   EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
   return editor->colors[colornum];
 }
+#endif
+
 #endif
 
 static inline GE_Context *GE_color(int colornum) {

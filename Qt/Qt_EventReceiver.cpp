@@ -40,8 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/wblocks_proc.h"
 
-#include "../OpenGL/GfxElements.h"
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
@@ -370,11 +370,13 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->init_buffers();
 
-  this->window->width=this->get_editor_width();
-  this->window->height=this->get_editor_height();
+  this->window->width=qresizeevent->size().width(); //this->get_editor_width();
+  this->window->height=qresizeevent->size().height(); //this->get_editor_height();
 
   if(is_starting_up==true)
     return;
+
+  UpdateWBlockCoordinates(window, window->wblock);
 
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
@@ -388,10 +390,11 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   update();
 #endif
 
+  UpdateWBlockCoordinates(window, window->wblock);
+
 #if USE_OPENGL
-  GE_set_height(this->height());
+  printf("********* height: %d\n",qresizeevent->size().height());
   position_gl_widget(window);
-  GL_create(window, window->wblock);
 #endif
 }
 #endif // USE_QT_VISUAL
