@@ -1,1 +1,0 @@
-build_darwinx_qt_visual.sh
