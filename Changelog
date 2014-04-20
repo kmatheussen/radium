@@ -1,5 +1,9 @@
 
 Most important changes 1.9.39 -> 1.9.40:
+* Fix VST plugin scan
+
+
+Most important changes 1.9.39 -> 1.9.40:
 * Temporary fixes for crashing if deleting System Out.
 * Ask each 30th seconds if continuing searching for vst plugins.
   (prevent program from spending a long time if, for instance, searching root)
