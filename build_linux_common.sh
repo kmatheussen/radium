@@ -23,23 +23,30 @@ fi
 export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 #export CPUOPT=
 
-export CCC=g++
-export CC=gcc
+export CCC="g++ -mfpmath=sse"
+export CC="gcc -mfpmath=sse"
+#export CCC=clang++
+#export CC="clang -Wno-gnu-designator "
 export LINKER=g++
 
 export PKG=pkg-config
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
 export QT_CFLAGS="`$PKG --cflags Qt3Support`"
-export QT_LDFLAGS="`$PKG --libs Qt3Support`"
+export QT_LDFLAGS="`$PKG --libs Qt3Support --libs QtOpenGL`"
+
+VL_PATH="$HOME/Visualization-Library"
+export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
+export VL_LIBS="$VL_PATH/src/vlQt4/lib/libVLQt4.a  $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a $VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a -lGL -lGLU "
 
 #export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse -mfpmath=sse -DFOR_LINUX -DWITH_PD"
+export OS_OPTS="-Werror=array-bounds -msse -DFOR_LINUX -DWITH_PD  -Wno-unused-function"
 #export OS_OPTS="-Werror=array-bounds -march=native"
+ 
 
 export VST_OPTS="-DUSE_VESTIGE=1"
 

@@ -1070,7 +1070,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
-    printf("hepp: %s\n",file_path.ascii());
+    printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
 
     if (time->elapsed() > 1000*4){ //1000*30) {
       QMessageBox msgBox;
@@ -1084,10 +1084,10 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
         return false;
     }
 
-    if (file_info.isDir())
+    if (file_info.isDir()) {
       if (create_vst_plugins_recursively(file_path, time)==false)
         return false;
-    else if(file_info.suffix()==VST_SUFFIX){
+    }else if(file_info.suffix()==VST_SUFFIX){
       add_vst_plugin_type(file_info);
     }
   }
