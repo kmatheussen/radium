@@ -304,6 +304,8 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
     plugin->comp.was_on = false;
   }
 
+  plugin->show_browser_gui = true;
+  plugin->show_controls_gui = true;
   plugin->show_equalizer_gui = true;
   plugin->show_compressor_gui = false;
 
