@@ -154,7 +154,10 @@ public:
 #endif
 
     effects_layout->insertWidget(3,_plugin_widget);
+    _plugin_widget->setVisible(plugin->show_controls_gui);
+    spacer_holder->setVisible(!plugin->show_controls_gui);
     
+
     if(plugin->type==PR_get_plugin_type_by_name("Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name("FluidSynth","FluidSynth")){
       _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
       effects_layout->insertWidget(2,_sample_requester_widget);
@@ -206,8 +209,6 @@ public:
     }
 
 
-    updateWidgets();
-
 #if 0
     if(plugin->type->num_inputs==0){
       input_volume_layout->setDisabled(true);
@@ -216,6 +217,8 @@ public:
 
 
     scrollArea->horizontalScrollBar()->setFixedHeight(10);
+
+    updateWidgets();
   }
 
 
