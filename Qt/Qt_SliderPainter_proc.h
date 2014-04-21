@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct SliderPainter;
 
-SliderPainter *SLIDERPAINTER_create(QSlider *qslider);
+SliderPainter *SLIDERPAINTER_create(QAbstractSlider *qslider);
 SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1, int x2, int y2);
 void SLIDERPAINTER_delete(SliderPainter *painter);
 void SLIDERPAINTER_start_auto_updater(SliderPainter *painter);

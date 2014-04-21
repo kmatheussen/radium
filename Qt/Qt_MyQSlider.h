@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define QT_MYQSLIDER_H
 
 #include <QSlider>
+#include <QScrollBar>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QVector>
@@ -55,7 +56,7 @@ QVector<MyQSlider*> g_all_myqsliders;
 
 static int g_minimum_height = 0;
 
-struct MyQSlider : public QSlider{
+struct MyQSlider : public QSlider {
 
  public:
   struct Patch *_patch;
@@ -247,5 +248,7 @@ struct MyQSlider : public QSlider{
   }
 
 };
+
+
 
 #endif // QT_MYQSLIDER_H

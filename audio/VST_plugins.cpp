@@ -1072,7 +1072,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     QString file_path = file_info.filePath();
     printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
 
-    if (time->elapsed() > 1000*4){ //1000*30) {
+    if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;
       msgBox.setText("Have used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
       msgBox.addButton(QMessageBox::Yes);

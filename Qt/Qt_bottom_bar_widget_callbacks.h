@@ -124,14 +124,19 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
   void update_velocity_sliders(){
     if(drunk_velocity==true){
-      SLIDERPAINTER_set_string(velocity_slider->_painter, QString("Max Vel: ") + QString::number(velocity_slider->value()*100/10000) + "%");
-      min_velocity_slider->setEnabled(true);
-    }else{
-      SLIDERPAINTER_set_string(velocity_slider->_painter, QString("Vel: ") + QString::number(velocity_slider->value()*100/10000) + "%");
-      min_velocity_slider->setEnabled(false);
-    }
 
-    SLIDERPAINTER_set_string(min_velocity_slider->_painter, QString("Min. Vel: ") + QString::number(min_velocity_slider->value()*100/10000) + "%");
+      SLIDERPAINTER_set_string(velocity_slider->_painter, QString("Max. Vel: ") + QString::number(velocity_slider->value()*100/10000) + "%");
+      //min_velocity_slider->setEnabled(true);
+      min_velocity_slider->show();
+      SLIDERPAINTER_set_string(min_velocity_slider->_painter, QString("Min. Vel: ") + QString::number(min_velocity_slider->value()*100/10000) + "%");
+
+    }else{
+
+      SLIDERPAINTER_set_string(velocity_slider->_painter, QString("Vel: ") + QString::number(velocity_slider->value()*100/10000) + "%");
+      //min_velocity_slider->setEnabled(false);
+      min_velocity_slider->hide();
+
+    }
 
     min_velocity_slider->setMaximum(velocity_slider->value());
 

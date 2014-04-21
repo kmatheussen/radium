@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWidget>
 #include <QGraphicsItem>
 #include <QTimer>
-#include <QSlider>
+#include <QAbstractSlider>
 #include <QTimerEvent>
 
 #include "EditorWidget.h"
@@ -173,7 +173,7 @@ struct SliderPainter{
 
   std::vector<AutomationOrPeakData*>_data;
   
-  QSlider *_qslider;
+  QAbstractSlider *_qslider;
   QGraphicsItem *_graphics_item;  // Either widget or _graphics_item must be set.
 
   int _x1;
@@ -280,7 +280,7 @@ struct SliderPainter{
     _alternative_color = false;
   }
 
-  SliderPainter(QSlider *widget)
+  SliderPainter(QAbstractSlider *widget)
     : _qslider(widget)
     , _graphics_item(NULL)
     , _automation_value(0.0f)
@@ -409,7 +409,7 @@ struct SliderPainter{
 };
 //}
 
-SliderPainter *SLIDERPAINTER_create(QSlider *qslider){
+SliderPainter *SLIDERPAINTER_create(QAbstractSlider *qslider){
   return new SliderPainter(qslider);
 }
 
