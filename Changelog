@@ -1,5 +1,10 @@
 
-Most important changes 1.9.39 -> 1.9.40:
+Most important changes 1.9.41 -> 1.9.42:
+* Support 1024x800 screens
+* Add show/hide buttons for sample browser and plugin controls.
+
+
+Most important changes 1.9.40 -> 1.9.41:
 * Fix VST plugin scan
 
 
