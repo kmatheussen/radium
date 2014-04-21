@@ -387,6 +387,8 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   instruments_widget->tabs->setCurrentWidget(instrument);
   MW_update_all_chips();
 
+  instrument->updateWidgets();
+
   return instrument;
 }
 

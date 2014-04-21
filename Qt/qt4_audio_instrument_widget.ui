@@ -83,7 +83,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1232</width>
+        <width>1214</width>
         <height>166</height>
        </rect>
       </property>
@@ -395,7 +395,13 @@
              <height>0</height>
             </size>
            </property>
+           <property name="autoFillBackground">
+            <bool>false</bool>
+           </property>
            <layout class="QHBoxLayout" name="horizontalLayout">
+            <property name="margin">
+             <number>0</number>
+            </property>
             <item>
              <spacer name="horizontalSpacer">
               <property name="orientation">
@@ -403,7 +409,7 @@
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>40</width>
+                <width>6</width>
                 <height>20</height>
                </size>
               </property>
