@@ -1,7 +1,6 @@
 
 #include <vlCore/Time.hpp>
 
-
 // All time values are in milliseconds
 namespace{
 
@@ -82,27 +81,28 @@ struct VBlankEstimator{
 
 static const double smallest_diff = 0.0001;
 
+// one-pole filter (low-pass filter). Logic copied from code written for Faust by Julius O. Smith.
 struct Smoother{
-  double smoothness;
-  double last_val;
+  double _smoothness;
+  double _last_val;
 
   Smoother(double smoothness)
-    : smoothness(smoothness)
-    , last_val(0)
+    : _smoothness(smoothness)
+    , _last_val(0)
   { }
 
   void reset(){
-    last_val=0.0;
+    _last_val=0.0;
   }
 
   double get(double to){
-    float ret = last_val;
+    float ret = _last_val;
     if(ret == to)
       return to;
-    else if(fabs(to-last_val) < smallest_diff)
-      last_val = to;
+    else if(fabs(to-_last_val) < smallest_diff)
+      _last_val = to;
     else
-      last_val = (float) (to*(1.0-smoothness) + last_val*smoothness);
+      _last_val = (float) (to*(1.0-_smoothness) + _last_val*_smoothness);
     return ret;
   }
 };
@@ -118,104 +118,104 @@ static const double k_num_periods_to_correct = 20;
 #define DEBUG_PRINT 0
 
 struct TimeEstimator{
-  Smoother smoother;
-  VBlankEstimator vblank_estimator;
-  double last_value;
+  Smoother _smoother;
+  VBlankEstimator _vblank_estimator;
+  double _last_value;
 
-  bool is_adjusting;
-  bool adjusting_down;
-  bool adjusting_up;
-  double adjustment;
+  bool _is_adjusting;
+  bool _adjusting_down;
+  bool _adjusting_up;
+  double _adjustment;
 
   TimeEstimator()
-    : smoother(0.9)
-    , vblank_estimator(360)
-    , last_value(0.0)
-    , is_adjusting(false)
-    , adjusting_up(false)
-    , adjustment(0.0)
+    : _smoother(0.9)
+    , _vblank_estimator(360)
+    , _last_value(0.0)
+    , _is_adjusting(false)
+    , _adjusting_up(false)
+    , _adjustment(0.0)
   { }
 
   bool train(){
-    return vblank_estimator.train();
+    return _vblank_estimator.train();
   }
 
   void reset(){
-    last_value = 0.0;
+    _last_value = 0.0;
   }
 
   void set_vblank(double period){
-    vblank_estimator.set_vblank(period);
+    _vblank_estimator.set_vblank(period);
   }
 
   double get_vblank(){
-    return vblank_estimator.base_interval;
+    return _vblank_estimator.base_interval;
   }
 
   double get(double approx_correct, double period_multiplier){
-    VBlankEstimator::Result vblank=vblank_estimator.get();
+    VBlankEstimator::Result vblank=_vblank_estimator.get();
 
     //return approx_correct;
 
-    double ideally = last_value + (vblank.num_periods * vblank.period * period_multiplier);
+    double new_value = _last_value + (vblank.num_periods * vblank.period * period_multiplier);
 
-    double wrong = ideally - approx_correct;
+    double wrong = new_value - approx_correct;
     double num_periods_wrong = wrong / vblank.period;
     double a_num_periods_wrong = fabs(num_periods_wrong);
 
     if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct)) {
       double new_value = approx_correct;
-      last_value = new_value;
-      adjustment = 0.0;
-      is_adjusting = false;
-      smoother.reset();
-      printf("NOT RETURNING IDEALLY. Ideally (calculated): %f. Returning instead (approx correct): %f\n",(float)ideally,(float)new_value);
+      _last_value = new_value;
+      _adjustment = 0.0;
+      _is_adjusting = false;
+      _smoother.reset();
+      printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)new_value);
 
       return new_value;
 
     } else if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_adjust)) {      
       // try to adjust.
-      adjustment = scale_double(a_num_periods_wrong,
+      _adjustment = scale_double(a_num_periods_wrong,
                                 period_multiplier*k_num_periods_to_adjust, period_multiplier*k_num_periods_to_adjust_max,
                                 0,0.3);
-      adjustment = -wrong*adjustment;
+      _adjustment = -wrong*_adjustment;
       
-      if (adjustment < 0) {
-        adjusting_down = true;
-        adjusting_up = false;
+      _is_adjusting = true;
+
+      if (_adjustment < 0) {
+        _adjusting_down = true;
+        _adjusting_up = false;
       } else {
-        adjusting_down = false;
-        adjusting_up = true;
+        _adjusting_down = false;
+        _adjusting_up = true;
       }
 
-      if(DEBUG_PRINT) printf("adjusting   %f: %f",num_periods_wrong,adjustment / vblank.period);
+      if(DEBUG_PRINT) printf("adjusting   %f: %f",num_periods_wrong,_adjustment / vblank.period);
 
-      is_adjusting = true;
+    } else if (_is_adjusting) {
 
-    } else if (is_adjusting) {
-
-      if(DEBUG_PRINT) printf("--adjusting %f: %f",num_periods_wrong,adjustment / vblank.period);
+      if(DEBUG_PRINT) printf("--adjusting %f: %f",num_periods_wrong,_adjustment / vblank.period);
         
-      if (adjusting_up && wrong>0) {
-        adjustment = 0.0;
-        is_adjusting = false;
+      if (_adjusting_up && wrong>0) {
+        _adjustment = 0.0;
+        _is_adjusting = false;
         if(DEBUG_PRINT) printf("---got it");
 
-      } else if(adjusting_down && wrong<0) {
-        adjustment = 0.0;
-        is_adjusting = false;
+      } else if(_adjusting_down && wrong<0) {
+        _adjustment = 0.0;
+        _is_adjusting = false;
         if(DEBUG_PRINT) printf("---got it");
 
       }
 
     } else
-      adjustment = 0.0;
+      _adjustment = 0.0;
 
-    double smoothed_adjustment = smoother.get(adjustment);
+    double smoothed_adjustment = _smoother.get(_adjustment);
     if(DEBUG_PRINT) printf(". smoothed_adjustment: %f\n",smoothed_adjustment);
 
-    double new_value = ideally + smoothed_adjustment;
-    last_value = new_value;
+    new_value += smoothed_adjustment;
+    _last_value = new_value;
 
     return new_value;
   }

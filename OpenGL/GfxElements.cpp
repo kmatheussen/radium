@@ -74,14 +74,12 @@ struct _GE_Context : public vl::Object{
   } color;
 
   int _z;
-  bool is_static;
 
   vl::ref<vl::Image> gradient;
 
   _GE_Context(const Color _color, int z)
     : color(_color)
     , _z(z)
-    , is_static(z >= Z_MIN_STATIC)
     , gradient(NULL)
   {
     assert(sizeof(Color)==sizeof(uint64_t));
