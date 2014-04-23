@@ -891,8 +891,8 @@ static void RT_PATCH_turn_voice_off(struct Patch *patch, int voicenum){
                     NULL,
                     -1
                     );
-      voice->is_on = false;
     }
+    voice->is_on = false;
   }
 }
 
