@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk.h"
 #include "disk_placement_proc.h"
 #include "disk_velocities_proc.h"
+#include "notes_proc.h"
 
 #include "disk_notes_proc.h"
 
@@ -52,7 +53,8 @@ SaveNotes(NextNote(note));
 
 
 struct Notes *LoadNote(void){
-	struct Notes *note=DC_alloc(sizeof(struct Notes));
+        //struct Notes *note=DC_alloc(sizeof(struct Notes));
+        struct Notes *note = NewNote(); // DC_alloc just checks if there is enough memory, and handle failure gracefully.
 
 	LoadPlace(&note->l.p);
 	note->note=DC_LoadF();
@@ -79,8 +81,9 @@ struct Notes *LoadNote(void){
             DC_Next();
         }
 
-
+        /*
 error:
+        */
 	if(!dc.success) debug("note not okey\n");else debug("note okey\n");
 	return note;
 }

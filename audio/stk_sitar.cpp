@@ -4,7 +4,7 @@
 // copyright: "Romain Michon"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.65 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -206,6 +206,11 @@ class Sitar_dsp : public dsp {
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/version", "1.33");
 		m->declare("effect.lib/license", "STK-4.3");
+		m->declare("effect.lib/exciter_name", "Harmonic Exciter");
+		m->declare("effect.lib/exciter_author", "Priyanka Shekar (pshekar@ccrma.stanford.edu)");
+		m->declare("effect.lib/exciter_copyright", "Copyright (c) 2013 Priyanka Shekar");
+		m->declare("effect.lib/exciter_version", "1.0");
+		m->declare("effect.lib/exciter_license", "MIT License (MIT)");
 	}
 
 	virtual int getNumInputs() 	{ return 0; }
@@ -263,30 +268,30 @@ class Sitar_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = fentry0;
+		float 	fSlow0 = float(fentry0);
 		float 	fSlow1 = (float(iConst0) / fSlow0);
-		float 	fSlow2 = (0.895f + ((5e-07f * fSlow0) + (0.1f * fslider0)));
-		float 	fSlow3 = (0.9900990099009901f * fSlow2);
-		float 	fSlow4 = fbutton0;
-		int 	iSlow5 = (fSlow4 > 0);
-		int 	iSlow6 = (fSlow4 <= 0);
-		float 	fSlow7 = (4.656612875245797e-11f * fentry1);
-		float 	fSlow8 = fslider1;
+		float 	fSlow2 = (0.895f + ((0.1f * float(fslider0)) + (5e-07f * fSlow0)));
+		float 	fSlow3 = float(fbutton0);
+		int 	iSlow4 = (fSlow3 > 0);
+		int 	iSlow5 = (fSlow3 <= 0);
+		float 	fSlow6 = (4.656612875245797e-11f * float(fentry1));
+		float 	fSlow7 = (0.9900990099009901f * fSlow2);
+		float 	fSlow8 = float(fslider1);
 		float 	fSlow9 = (8 * (1.0f - fSlow8));
-		int 	iSlow10 = int((int((fConst4 * (fslider2 / fSlow0))) & 4095));
+		int 	iSlow10 = int((int((fConst4 * (float(fslider2) / fSlow0))) & 4095));
 		float 	fSlow11 = (8 * fSlow8);
 		FAUSTFLOAT* output0 = output[0];
 		FAUSTFLOAT* output1 = output[1];
 		for (int i=0; i<count; i++) {
 			iRec2[0] = (12345 + (1103515245 * iRec2[1]));
-			fRec1[0] = ((0.0008000000000000229f * (1 + (2.3283064376228985e-10f * iRec2[0]))) + (0.9992f * fRec1[1]));
+			fRec1[0] = ((0.9992f * fRec1[1]) + (0.0008000000000000229f * (1 + (2.3283064376228985e-10f * iRec2[0]))));
 			float fTemp0 = fRec0[(IOTA-int((1 + int((int((fSlow1 * fRec1[0])) & 4095)))))&8191];
 			fVec0[0] = (fSlow2 * fTemp0);
-			iRec3[0] = (iSlow5 & (iRec3[1] | (fRec4[1] >= 1)));
+			iRec3[0] = (iSlow4 & (iRec3[1] | (fRec4[1] >= 1)));
 			int iTemp1 = (fRec4[1] > 0);
-			int iTemp2 = (iSlow6 & iTemp1);
-			fRec4[0] = (((iTemp2 == 0) | (fRec4[1] >= 1e-06f)) * ((fConst3 * (((iRec3[1] == 0) & iSlow5) & (fRec4[1] < 1))) + (fRec4[1] * ((1 - (fConst2 * (iRec3[1] & iTemp1))) - (fConst1 * iTemp2)))));
-			fRec0[IOTA&8191] = (((fSlow7 * (iRec2[0] * fRec4[0])) + (fSlow3 * fTemp0)) - (0.009900990099009901f * fVec0[1]));
+			int iTemp2 = (iSlow5 & iTemp1);
+			fRec4[0] = (((fConst3 * (((iRec3[1] == 0) & iSlow4) & (fRec4[1] < 1))) + (fRec4[1] * ((1 - (fConst2 * (iRec3[1] & iTemp1))) - (fConst1 * iTemp2)))) * ((iTemp2 == 0) | (fRec4[1] >= 1e-06f)));
+			fRec0[IOTA&8191] = (((fSlow7 * fTemp0) + (fSlow6 * (iRec2[0] * fRec4[0]))) - (0.009900990099009901f * fVec0[1]));
 			output0[i] = (FAUSTFLOAT)(fSlow9 * fRec0[(IOTA-0)&8191]);
 			output1[i] = (FAUSTFLOAT)(fSlow11 * fRec0[(IOTA-iSlow10)&8191]);
 			// post processing
@@ -510,7 +515,8 @@ struct Voice{
   struct Voice *next;
   dsp *dsp_instance;
   MyUI myUI;
-  int note_num;
+  float note_num;
+  int64_t note_id;
 
   int frames_since_stop;
 
@@ -522,6 +528,7 @@ struct Voice{
     , next(NULL)
     , dsp_instance(NULL)
     , note_num(0)
+    , note_id(-1)
     , delta_pos_at_start(0)
     , delta_pos_at_end(-1)
   { }
@@ -674,7 +681,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //printf("Playing %d\n",note_num);
@@ -696,39 +703,40 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   *(voice->myUI._gain_control) = velocity2gain(volume);
 
   voice->note_num = note_num;
+  voice->note_id = note_id;
 
   voice->frames_since_stop = 0;
   voice->delta_pos_at_start = time;
   voice->delta_pos_at_end = -1;
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._gain_control) = velocity2gain(volume);
     voice=voice->next;
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._freq_control) = midi_to_hz(pitch);
     voice=voice->next;
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       voice->delta_pos_at_end = time;
     voice=voice->next;
   }

@@ -207,7 +207,6 @@ static void PLAYER_drop_same_priority(void){
 
 #endif // defined(__linux__) || defined(FOR_MACOSX)
 
-
 static LockType player_lock;
 
 // This function will deadlock if called from the player thread!

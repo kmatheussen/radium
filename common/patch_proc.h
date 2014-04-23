@@ -33,21 +33,21 @@ extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch);
 extern LANGSPEC int PATCH_radiumvelocity_to_patchvelocity(struct Patch *patch,int velocity);
 extern LANGSPEC int PATCH_patchvelocity_to_radiumvelocity(struct Patch *patch,int velocity);
 
-extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time);
-extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time);
-extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, float notenum, int64_t note_id,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, float notenum, int64_t note_id,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, float notenum, int64_t note_id,int velocity,struct Tracks *track,STime time);
 
-extern LANGSPEC void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time);
-extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time);
-extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time);
-extern LANGSPEC void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_play_note(struct Patch *patch,float notenum, int64_t note_id,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch,float notenum, int64_t note_id,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,float notenum, int64_t note_id,int velocity,struct Tracks *track,STime time);
+extern LANGSPEC void RT_PATCH_change_pitch(struct Patch *patch,float notenum, int64_t note_id,float pitch,struct Tracks *track,STime time);
 
-extern LANGSPEC void PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track);
-extern LANGSPEC void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track);
-extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct Tracks *track);
+extern LANGSPEC void PATCH_play_note(struct Patch *patch,float notenum, int64_t note_id,int velocity,struct Tracks *track);
+extern LANGSPEC void PATCH_stop_note(struct Patch *patch,float notenum, int64_t note_id,int velocity,struct Tracks *track);
+extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,float notenum, int64_t note_id,int velocity,struct Tracks *track);
 extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
-extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window,int notenum);
-extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum);
+extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t note_id);
+extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t note_id);
 
 extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,struct Tracks *track,STime time,int skip);
 extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,struct Tracks *track,int skip);
@@ -56,4 +56,4 @@ extern LANGSPEC void PATCH_turn_voice_on(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_turn_voice_off(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_tranpose);
 
-extern LANGSPEC int PATCH_get_peaks(struct Patch *patch, int notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min, float *max);
+extern LANGSPEC int PATCH_get_peaks(struct Patch *patch, float notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min, float *max);

@@ -127,6 +127,7 @@ static void scheduled_change_velocity(int64_t time, union SuperType *args){
 
   RT_PATCH_change_velocity(track->patch,
                            note->note,
+                           note->id,
                            x,
                            track,
                            time

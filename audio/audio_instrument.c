@@ -41,19 +41,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 /* Audio Patch */
 
-static void AUDIO_playnote(struct Patch *patch,int notenum,int velocity,STime time,float pan){
+static void AUDIO_playnote(struct Patch *patch,float notenum,int64_t note_id, int velocity,STime time,float pan){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
     return;
 
   if(plugin->type->play_note != NULL)
-    plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL, pan);
+    plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, note_id, velocity/(float)MAX_FX_VAL, pan);
 
   //printf("playing audio note %d, velocity: %d, delta time: %d. Absolute time: %d\n",notenum,velocity,(int)MIXER_get_block_delta_time(time),(int)time);
 }
 
-static void AUDIO_changevelocity(struct Patch *patch,int notenum,int velocity,STime time){
+static void AUDIO_changevelocity(struct Patch *patch,float notenum,int64_t note_id, int velocity,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -62,11 +62,11 @@ static void AUDIO_changevelocity(struct Patch *patch,int notenum,int velocity,ST
   //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
 
   if(plugin->type->set_note_volume != NULL)
-    plugin->type->set_note_volume(plugin, PLAYER_get_delta_time(time), notenum, velocity/(float)MAX_FX_VAL);
+    plugin->type->set_note_volume(plugin, PLAYER_get_delta_time(time), notenum, note_id, velocity/(float)MAX_FX_VAL);
  
 }
 
-static void AUDIO_changepitch(struct Patch *patch,int notenum,float pitch,STime time){
+static void AUDIO_changepitch(struct Patch *patch,float notenum,int64_t note_id, float pitch,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -75,11 +75,11 @@ static void AUDIO_changepitch(struct Patch *patch,int notenum,float pitch,STime 
   //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
 
   if(plugin->type->set_note_pitch != NULL)
-    plugin->type->set_note_pitch(plugin, PLAYER_get_delta_time(time), notenum, pitch);
+    plugin->type->set_note_pitch(plugin, PLAYER_get_delta_time(time), notenum, note_id, pitch);
  
 }
 
-static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime time){
+static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,int velocity,STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL)
@@ -88,7 +88,7 @@ static void AUDIO_stopnote(struct Patch *patch,int notenum,int velocity,STime ti
   //printf("stopping audio note %d\n",notenum);
 
   if(plugin->type->stop_note != NULL)
-    plugin->type->stop_note(plugin, PLAYER_get_delta_time(time), notenum, 0.0f);//note->velocity/127.0f);
+    plugin->type->stop_note(plugin, PLAYER_get_delta_time(time), notenum, note_id, 0.0f);//note->velocity/127.0f);
 
 }
 

@@ -57,9 +57,9 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
     if(patch!=NULL){
       //printf("%d: got note %s (0x%x 0x%x)\n",num-1,NotesTexts3[data1],cc,data2);
       if(data2>0 && cc>=0x90)
-        PATCH_play_note(patch,data1,data2*MAX_VELOCITY/127,NULL);
+        PATCH_play_note(patch,data1,data1+128,data2*MAX_VELOCITY/127,NULL);
       else
-        PATCH_stop_note(patch,data1,data2*MAX_VELOCITY/127,NULL);
+        PATCH_stop_note(patch,data1,data1+128,data2*MAX_VELOCITY/127,NULL);
     //MyMyPutMidi(patchdata->midi_port,(cc&0xf0)|patchdata->channel,data1,data2); // send out the message again to the patch and channel specified at the current track
     }
   }

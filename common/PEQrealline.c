@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "playerclass.h"
+#include "time_proc.h"
 #include "PEQmempool_proc.h"
 #include "OS_Ptask2Mtask_proc.h"
 #include "PEQcommon_proc.h"
@@ -60,6 +61,8 @@ void InitPEQrealline(struct Blocks *block,Place *place){
 		if(realline==0) {
                   peq=GetPEQelement();
                   peq->TreatMe=PlayerFirstRealline;
+                  peq->block=block;
+                  peq->wblock=wblock;
                   PC_InsertElement2_latencycompencated(
                                                        peq, addplaypos,&wblock->reallines[0]->l.p
                                                        );
@@ -89,7 +92,12 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
 	PlaceSetFirstPos(&firstplace);
 
 #ifdef WITH_PD
-        RT_PD_set_time(peq->l.time, &firstplace);
+        int64_t next_time = Place2STime(
+                                        peq->block,
+                                        &peq->wblock->reallines[peq->realline]->l.p
+                                        );
+
+        RT_PD_set_subline(peq->l.time, next_time, &firstplace);
 #endif
 
         ReturnPEQelement(peq);
@@ -103,7 +111,9 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	struct Blocks *nextblock;
 
 #ifdef WITH_PD
-        RT_PD_set_time(peq->l.time, &peq->wblock->reallines[peq->realline]->l.p);
+        bool inserted_pd_subline = false;
+        int64_t org_time = peq->l.time;
+        Place *org_pos = &peq->wblock->reallines[realline]->l.p;
 #endif
 
 	peq->wblock->till_curr_realline=realline;
@@ -130,14 +140,22 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 
                           struct PEventQueue *peq2=GetPEQelement();
                           peq2->TreatMe=PlayerFirstRealline;
-                          PC_InsertElement2_latencycompencated(
-                                                               peq2, addplaypos,&firstplace
-                                                               );
-                          
-                          realline=1;
-                          peq->wblock= (struct WBlocks *)ListFindElement1(
+                          peq2->block=nextblock;
+                          peq2->wblock=(struct WBlocks *)ListFindElement1(
                                                                           &peq->window->wblocks->l,nextblock->l.num
                                                                           );
+                          PC_InsertElement2_latencycompencated(
+                                                               peq2, 1,&firstplace
+                                                               );
+#ifdef WITH_PD
+                          printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
+                          RT_PD_set_subline(org_time, peq2->l.time, org_pos);
+                          inserted_pd_subline=true;
+#endif
+
+                          realline=1;
+                          peq->wblock= peq2->wblock;
+                          peq->block=nextblock;
                           addplaypos=1;
 			}
 		}
@@ -148,6 +166,11 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
         PC_InsertElement2_latencycompencated(
                                              peq, addplaypos ,&peq->wblock->reallines[realline]->l.p
                                              );
+
+#ifdef WITH_PD
+        if(inserted_pd_subline==false)
+          RT_PD_set_subline(org_time, peq->l.time, org_pos);
+#endif
 
 
 	//printf("NewRealline: %d, time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",(int)orgrealline,(int)time,(int)peq->realline,(int)peq->l.time,(int)addplaypos,(int)pc->seqtime);

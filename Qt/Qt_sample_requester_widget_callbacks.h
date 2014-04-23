@@ -323,10 +323,11 @@ class Sample_requester_widget : public QWidget
       _sample_name_label->setText(get_display_name(_sf2_file.ascii(),bank_num,preset_num));
     }
 
-    if(successfully_selected==true && pc->isplaying==false)
+    if(successfully_selected==true && pc->isplaying==false) {
       printf("playing note 1\n");
-      PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
+      PATCH_play_note(g_currpatch, 12*_preview_octave, 0, MAX_VELOCITY/2, NULL);
     }
+  }
 
   void handle_sf2_bank_pressed(QString item_text){
     printf("bank: Pressed \"%s\"\n",item_text.ascii());
@@ -388,7 +389,7 @@ class Sample_requester_widget : public QWidget
     if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
       if(pc->isplaying==false){
         printf("playing note 2\n");
-        PATCH_play_note(g_currpatch, 12*_preview_octave, MAX_VELOCITY/2, NULL);
+        PATCH_play_note(g_currpatch, 0, 12*_preview_octave, MAX_VELOCITY/2, NULL);
       }
       _sample_name_label->setText(get_display_name(filename));
     }

@@ -610,7 +610,7 @@ PEQ_calc.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc.c
 PEQfxs.o:  $(BUILD_DEPENDENCIES) $(CD)PEQfxs.c
 	$(CC) $(CD)PEQfxs.c $(OPT)
 
-patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.c
+patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.c $(CD)nsmtracker.h
 	$(CC) $(CD)patch.c $(OPT)
 
 clipboard_range.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range.c $(CD)clipboard_range.h

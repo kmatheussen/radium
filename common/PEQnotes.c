@@ -231,6 +231,7 @@ static void scheduled_play_note(int64_t time, union SuperType *args){
 
   RT_PATCH_play_note(track->patch,
                      note->note,
+                     note->id,
                      note->velocity,
                      track,
                      time);
@@ -261,6 +262,7 @@ static void scheduled_stop_note(int64_t time, union SuperType *args){
   
   RT_PATCH_stop_note(track->patch,
                      note->note,
+                     note->id,
                      note->velocity_end,
                      track,
                      time);

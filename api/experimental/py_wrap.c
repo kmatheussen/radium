@@ -99,7 +99,7 @@ void RA_addNote_FloatPlace(
   Place p2;
   if(track==NULL) return;
 
-  note=talloc(sizeof(struct Notes));
+  note=NewNote();
 
   Float2Placement(start,&note->l.p);
   Float2Placement(end,&note->end);

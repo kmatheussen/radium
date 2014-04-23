@@ -339,13 +339,13 @@ static void RT_play_note(struct SoundPlugin *plugin, int64_t time, float note_nu
   }
 }
 
-static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_polyaftertouch(pd, 0, note_num, volume*127);
 }
 
-static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -399,7 +399,7 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
   }
 }
 
-static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_noteon(pd, 0, note_num, 0);
@@ -590,9 +590,9 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
     return;
 
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
+    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
   else
-    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, 0, NULL, -1);
+    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, pitch, 0, NULL, -1);
 
   //printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
@@ -602,7 +602,7 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
   if(plugin->patch==NULL)
     return;
 
-  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
+  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 

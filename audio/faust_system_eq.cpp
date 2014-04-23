@@ -1,6 +1,6 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.65 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -211,8 +211,8 @@ class System_Eq_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = powf(10,(0.05f * fslider0));
-		float 	fSlow1 = fslider1;
+		float 	fSlow0 = powf(10,(0.05f * float(fslider0)));
+		float 	fSlow1 = float(fslider1);
 		float 	fSlow2 = (fConst0 * (fSlow1 / sqrtf(max((float)0, fSlow0))));
 		float 	fSlow3 = (0.0010000000000000009f * ((1.0f - fSlow2) / (1.0f + fSlow2)));
 		float 	fSlow4 = (0.0010000000000000009f * (0 - cosf((fConst0 * fSlow1))));
@@ -224,10 +224,10 @@ class System_Eq_dsp : public dsp {
 			fRec1[0] = (fSlow3 + (0.999f * fRec1[1]));
 			fRec2[0] = (fSlow4 + (0.999f * fRec2[1]));
 			float fTemp1 = ((fRec2[0] * (1 + fRec1[0])) * fRec0[1]);
-			fRec0[0] = (0 - (((fRec1[0] * fRec0[2]) + fTemp1) - fTemp0));
+			fRec0[0] = (0 - ((fTemp1 + (fRec1[0] * fRec0[2])) - fTemp0));
 			float fTemp2 = (fRec1[0] * fRec0[0]);
-			fRec3[0] = (fSlow5 + (0.999f * fRec3[1]));
-			output0[i] = (FAUSTFLOAT)((fRec3[0] * ((fTemp2 + (fRec0[2] + fTemp1)) - fTemp0)) + (0.5f * (fTemp2 + (fTemp1 + (fTemp0 + fRec0[2])))));
+			fRec3[0] = ((0.999f * fRec3[1]) + fSlow5);
+			output0[i] = (FAUSTFLOAT)((0.5f * (fTemp2 + (fRec0[2] + (fTemp0 + fTemp1)))) + (fRec3[0] * ((fTemp2 + (fTemp1 + fRec0[2])) - fTemp0)));
 			// post processing
 			fRec3[1] = fRec3[0];
 			fRec0[2] = fRec0[1]; fRec0[1] = fRec0[0];
@@ -447,7 +447,8 @@ struct Voice{
   struct Voice *next;
   dsp *dsp_instance;
   MyUI myUI;
-  int note_num;
+  float note_num;
+  int64_t note_id;
 
   int frames_since_stop;
 
@@ -459,6 +460,7 @@ struct Voice{
     , next(NULL)
     , dsp_instance(NULL)
     , note_num(0)
+    , note_id(-1)
     , delta_pos_at_start(0)
     , delta_pos_at_end(-1)
   { }
@@ -611,7 +613,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //printf("Playing %d\n",note_num);
@@ -633,39 +635,40 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   *(voice->myUI._gain_control) = velocity2gain(volume);
 
   voice->note_num = note_num;
+  voice->note_id = note_id;
 
   voice->frames_since_stop = 0;
   voice->delta_pos_at_start = time;
   voice->delta_pos_at_end = -1;
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._gain_control) = velocity2gain(volume);
     voice=voice->next;
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._freq_control) = midi_to_hz(pitch);
     voice=voice->next;
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       voice->delta_pos_at_end = time;
     voice=voice->next;
   }

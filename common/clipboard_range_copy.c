@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "clipboard_range.h"
 #include "wtracks_proc.h"
+#include "notes_proc.h"
 
 #include "clipboard_range_copy_proc.h"
 
@@ -97,7 +98,7 @@ void CopyRange_notes(
 		return;
 	}
 
-	note=talloc(sizeof(struct Notes));
+	note=NewNote();
 	note->note=fromnote->note;
 	note->velocity=fromnote->velocity;
 	note->noend=fromnote->noend;
