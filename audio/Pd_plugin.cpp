@@ -291,7 +291,7 @@ $1 = (SoundPlugin *) 0x0
 #include "Pd_plugin_proc.h"
 
 
-typedef struct{
+typedef struct _Data{
   pd_t *pd;
 
   Pd_Controller controllers[NUM_PD_CONTROLLERS];
@@ -300,9 +300,12 @@ typedef struct{
   QTemporaryFile *pdfile;
 
   void *qtgui;
+
+  struct _Data *next;
 } Data;
 
-static QVector<Data*> g_instances;
+
+static Data *g_instances; // protected by the player lock
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -312,11 +315,28 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   libpds_process_float_noninterleaved(pd, num_frames / libpds_blocksize(pd), (const float**) inputs, outputs);
 }
 
-static void RT_play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
-  Data *data = (Data*)plugin->data;
-  pd_t *pd = data->pd;
-  //printf("RT_play_note. %d %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
-  libpds_noteon(pd, 0, note_num, volume*127);
+static void RT_play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
+  if(g_instances != NULL) {
+
+    Data *data = (Data*)plugin->data;
+    pd_t *pd = data->pd;
+    //printf("RT_play_note. %d %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
+    libpds_noteon(pd, 0, note_num, volume*127);
+
+#if 0
+    {
+      t_atom v_line[6];
+      int sample_rate = MIXER_get_sample_rate();
+      
+      SETFLOAT(v + 0, int(time / sample_rate));
+      SETFLOAT(v + 1, time % sample_rate);
+      SETFLOAT(v + 2, note_num);
+      SETFLOAT(v + 3, volume);
+      SETFLOAT(v + 4, pan);
+      SETFLOAT(v + 5, note_id);
+    }
+#endif
+  }
 }
 
 static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
@@ -335,14 +355,47 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note
   libpds_list(pd, "radium_note_pitch", 2, v);
 }
 
-void RT_PD_set_time(int64_t time, Place *p){
-  for (int i = 0; i < g_instances.size(); ++i) {
-    t_atom v[4];
-    SETFLOAT(v + 0, (double)time / MIXER_get_sample_rate());
-    SETFLOAT(v + 1, p->line);
-    SETFLOAT(v + 2, p->counter);
-    SETFLOAT(v + 3, p->dividor);
-    libpds_list(g_instances.at(i)->pd, "radium_time", 4, v);
+#include "../common/playerclass.h"
+extern PlayerClass *pc;
+
+void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
+
+  if(g_instances != NULL) {
+    t_atom v[8];
+    t_atom v_line[6];
+    int sample_rate = MIXER_get_sample_rate();
+
+    SETFLOAT(v + 0, int(time / sample_rate));
+    SETFLOAT(v + 1, time % sample_rate);
+    SETFLOAT(v + 2, sample_rate);
+    SETFLOAT(v + 3, p->line);
+    SETFLOAT(v + 4, p->counter);
+    SETFLOAT(v + 5, p->dividor);
+    int64_t duration = time_nextsubline-time;
+    SETFLOAT(v + 6, int(duration / sample_rate));
+    SETFLOAT(v + 7, duration % sample_rate);
+
+    if(p->counter==0){
+        struct Blocks *block = pc->block;
+        int64_t duration = block->times[p->line+1].time - time;
+
+        SETFLOAT(v_line + 0, int(time / sample_rate));
+        SETFLOAT(v_line + 1, time % sample_rate);
+        SETFLOAT(v_line + 2, sample_rate);
+        SETFLOAT(v_line + 3, p->line);
+        SETFLOAT(v_line + 4, int(duration/sample_rate));
+        SETFLOAT(v_line + 5, duration % sample_rate);
+    }
+
+    Data *instance = g_instances;
+    while(instance != NULL){
+      libpds_list(instance->pd, "radium_subline", 8, v);
+
+      if (p->counter==0)
+        libpds_list(instance->pd, "radium_line", 6, v_line);
+
+      instance = instance->next;
+    }
   }
 }
 
@@ -704,7 +757,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   if(state!=NULL)
     PD_recreate_controllers_from_state(plugin, state);
 
-  g_instances.push_back(data);
+  PLAYER_lock();{
+    data->next = g_instances;    
+    g_instances = data;
+  }PLAYER_unlock();
 
   return data;
 }
@@ -713,7 +769,21 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
 
-  g_instances.remove(g_instances.indexOf(data));
+  // remove element from g_instances
+  {
+    Data *prev = NULL;
+    Data *instance = g_instances;
+    while(instance != data){
+      prev = instance;
+      instance = instance->next;
+    }
+    PLAYER_lock();{
+      if(prev==NULL)
+        g_instances = instance->next;
+      else
+        prev->next = instance->next;
+    }PLAYER_unlock();
+  }
 
   libpds_closefile(data->pd, data->file);  
   libpds_delete(data->pd);
