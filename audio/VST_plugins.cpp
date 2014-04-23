@@ -75,6 +75,8 @@ const int kVstMaxParamStrLen = 8;
 #endif //  USE_VESTIGE
 
 #include <QApplication>
+#include <QTime>
+#include <QMessageBox>
 #include <QBoxLayout>
 
 #include <QWidget>
@@ -1057,7 +1059,7 @@ void add_vst_plugin_type(QFileInfo file_info){
   }
 }
 
-static void create_vst_plugins_recursively(const QString& sDir)
+static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
 {
   QDir dir(sDir);
   dir.setSorting(QDir::Name);
@@ -1068,13 +1070,29 @@ static void create_vst_plugins_recursively(const QString& sDir)
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
-    printf("hepp: %s\n",file_path.ascii());
-    if (file_info.isDir())
-      create_vst_plugins_recursively(file_path);
-    else if(file_info.suffix()==VST_SUFFIX){
+    printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
+
+    if (time->elapsed() > 1000*30) {
+      QMessageBox msgBox;
+      msgBox.setText("Have used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
+      msgBox.addButton(QMessageBox::Yes);
+      msgBox.addButton(QMessageBox::No);
+      int ret = msgBox.exec();
+      if(ret==QMessageBox::Yes){
+        time->restart();
+      } else
+        return false;
+    }
+
+    if (file_info.isDir()) {
+      if (create_vst_plugins_recursively(file_path, time)==false)
+        return false;
+    }else if(file_info.suffix()==VST_SUFFIX){
       add_vst_plugin_type(file_info);
     }
   }
+
+  return true;
 }
 
 
@@ -1102,6 +1120,9 @@ void create_vst_plugins(void){
   }
 
 #else // !defined(FOR_MACOSX)
+  QTime time;
+  time.start();
+
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
@@ -1109,15 +1130,13 @@ void create_vst_plugins(void){
     if(vst_path==NULL)
       continue;
     printf("vst_path: %s\n",vst_path);
-    create_vst_plugins_recursively(vst_path);
+    create_vst_plugins_recursively(vst_path, &time);
     PR_add_menu_entry(PluginMenuEntry::separator());
   }    
 
 #endif // !defined(FOR_MACOSX)
 }
 
-
-//static std::vector<QString> VST_get_vst_paths_recursively(void){
 
 std::vector<QString> VST_get_vst_paths(void){
   std::vector<QString> paths;

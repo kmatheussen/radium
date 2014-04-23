@@ -1768,6 +1768,34 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="drunk_velocity_onoff">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>5134134</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Drunk velocity: Inserted notes will be given a velocity between min vel and max vel using a random walk algorithm.</string>
+        </property>
+        <property name="text">
+         <string>Drunk velocity</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QSlider" name="min_velocity_slider">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -1799,34 +1827,6 @@
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="drunk_velocity_onoff">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>5134134</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Drunk velocity: Inserted notes will be given a velocity between min vel and max vel using a random walk algorithm.</string>
-        </property>
-        <property name="text">
-         <string>Drunk velocity</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
