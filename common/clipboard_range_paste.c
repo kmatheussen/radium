@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "undo_range_proc.h"
 #include "player_proc.h"
+#include "notes_proc.h"
 
 #include "clipboard_range_paste_proc.h"
 
@@ -96,7 +97,7 @@ void PasteRange_notes(
 
 	if(fromnote==NULL) return;
 
-	note=talloc(sizeof(struct Notes));
+	note=NewNote();
 
 	note->noend=fromnote->noend;
 

@@ -97,10 +97,10 @@ end:
 static void SavePatchVoices(struct Patch *patch){
   DC_start("VOICES");
 
-  DC_SSI("max_voices",MAX_PATCH_VOICES);
+  DC_SSI("max_voices",NUM_PATCH_VOICES);
 
   int i;
-  for(i=0;i<MAX_PATCH_VOICES;i++){
+  for(i=0;i<NUM_PATCH_VOICES;i++){
     struct PatchVoice *voice=&patch->voices[i];
     SavePatchVoice(voice, i);
   }
@@ -117,7 +117,7 @@ static void LoadPatchVoices(struct Patch *patch){
   GENERAL_LOAD(1,1);
 
  var0:
-  if(DC_LoadI()!=MAX_PATCH_VOICES)
+  if(DC_LoadI()!=NUM_PATCH_VOICES)
     RError("wrong number of voices in file");
   goto start;
 

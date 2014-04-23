@@ -343,7 +343,8 @@ struct Voice{
   struct Voice *next;
   dsp *dsp_instance;
   MyUI myUI;
-  int note_num;
+  float note_num;
+  int64_t note_id;
 
   int frames_since_stop;
 
@@ -355,6 +356,7 @@ struct Voice{
     , next(NULL)
     , dsp_instance(NULL)
     , note_num(0)
+    , note_id(-1)
     , delta_pos_at_start(0)
     , delta_pos_at_end(-1)
   { }
@@ -507,7 +509,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //printf("Playing %d\n",note_num);
@@ -529,39 +531,40 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   *(voice->myUI._gain_control) = velocity2gain(volume);
 
   voice->note_num = note_num;
+  voice->note_id = note_id;
 
   voice->frames_since_stop = 0;
   voice->delta_pos_at_start = time;
   voice->delta_pos_at_end = -1;
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._gain_control) = velocity2gain(volume);
     voice=voice->next;
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._freq_control) = midi_to_hz(pitch);
     voice=voice->next;
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       voice->delta_pos_at_end = time;
     voice=voice->next;
   }

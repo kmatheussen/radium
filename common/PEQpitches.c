@@ -107,11 +107,12 @@ static void scheduled_change_pitch(int64_t time, union SuperType *args){
   float          x     = args[2].float_num;
 
   RT_PATCH_change_pitch(track->patch,
-                           note->note,
-                           x,
-                           track,
-                           time
-                           );
+                        note->note,
+                        note->id,
+                        x,
+                        track,
+                        time
+                        );
 }
 
 static void SendPitchChange(float x,struct PEventQueue *peq){

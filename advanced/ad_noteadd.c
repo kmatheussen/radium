@@ -105,7 +105,7 @@ void AD_installNoteAdds_track(
 			next=&nats[lokke+1];
 		}
 
-		note=talloc(sizeof(struct Notes));
+		note=NewNote();
 
 		Float2Placement((float)(nat->place+startplace),&note->l.p);
 

@@ -1,15 +1,18 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.65 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
+#ifndef FAUSTPOWER
+#define FAUSTPOWER
 #include <cmath>
-template <int N> inline float faustpower(float x) 		{ return powf(x,N); } 
-template <int N> inline double faustpower(double x) 	{ return pow(x,N); }
-template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
-template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
-template <> 	 inline int faustpower<1>(int x) 		{ return x; }
+template <int N> inline float faustpower(float x)          { return powf(x,N); } 
+template <int N> inline double faustpower(double x)        { return pow(x,N); }
+template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
+template <> 	 inline int faustpower<0>(int x)            { return 1; }
+template <> 	 inline int faustpower<1>(int x)            { return x; }
+#endif
 #include <math.h>
 #include <string>
 
@@ -162,10 +165,10 @@ class System_Highshelf_dsp : public dsp {
 	float 	fVec0[2];
 	float 	fRec2[2];
 	float 	fRec1[3];
+	float 	fRec4[2];
+	float 	fRec3[3];
 	FAUSTFLOAT 	fslider1;
-	float 	fRec3[2];
 	float 	fRec5[2];
-	float 	fRec4[3];
   public:
 	static void metadata(Meta* m) 	{ 
 		m->declare("filter_smoothing.lib/name", "Faust Filter Library");
@@ -198,10 +201,10 @@ class System_Highshelf_dsp : public dsp {
 		for (int i=0; i<2; i++) fVec0[i] = 0;
 		for (int i=0; i<2; i++) fRec2[i] = 0;
 		for (int i=0; i<3; i++) fRec1[i] = 0;
+		for (int i=0; i<2; i++) fRec4[i] = 0;
+		for (int i=0; i<3; i++) fRec3[i] = 0;
 		fslider1 = 0.0f;
-		for (int i=0; i<2; i++) fRec3[i] = 0;
 		for (int i=0; i<2; i++) fRec5[i] = 0;
-		for (int i=0; i<3; i++) fRec4[i] = 0;
 	}
 	virtual void init(int samplingFreq) {
 		classInit(samplingFreq);
@@ -218,8 +221,8 @@ class System_Highshelf_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = (0.0010000000000000009f / tanf((fConst0 * fslider0)));
-		float 	fSlow1 = (0.0010000000000000009f * powf(10,(0.05f * fslider1)));
+		float 	fSlow0 = (0.0010000000000000009f / tanf((fConst0 * float(fslider0))));
+		float 	fSlow1 = (0.0010000000000000009f * powf(10,(0.05f * float(fslider1))));
 		FAUSTFLOAT* input0 = input[0];
 		FAUSTFLOAT* output0 = output[0];
 		for (int i=0; i<count; i++) {
@@ -229,19 +232,19 @@ class System_Highshelf_dsp : public dsp {
 			float fTemp2 = (1 - fTemp1);
 			float fTemp3 = (1 + (fRec0[0] * (fRec0[0] - 1.0000000000000004f)));
 			float fTemp4 = (1 + fRec0[0]);
-			float fTemp5 = (0 - ((1 - fRec0[0]) / fTemp4));
-			float fTemp6 = (float)input0[i];
-			fVec0[0] = fTemp6;
-			fRec2[0] = ((((fVec0[1] * (0 - fRec0[0])) + (fVec0[0] * fRec0[0])) / fTemp4) + (fTemp5 * fRec2[1]));
+			float fTemp5 = (float)input0[i];
+			fVec0[0] = fTemp5;
+			float fTemp6 = (0 - ((1 - fRec0[0]) / fTemp4));
+			fRec2[0] = ((fTemp6 * fRec2[1]) + ((fVec0[0] + fVec0[1]) / fTemp4));
 			fRec1[0] = (fRec2[0] - (((fTemp3 * fRec1[2]) + (2 * (fTemp2 * fRec1[1]))) / fTemp0));
-			fRec3[0] = (fSlow1 + (0.999f * fRec3[1]));
-			fRec5[0] = (((fVec0[0] + fVec0[1]) / fTemp4) + (fTemp5 * fRec5[1]));
-			fRec4[0] = (fRec5[0] - (((fRec4[2] * fTemp3) + (2 * (fRec4[1] * fTemp2))) / fTemp0));
-			output0[i] = (FAUSTFLOAT)(((fRec4[2] + (fRec4[0] + (2 * fRec4[1]))) + (fRec3[0] * ((fTemp1 * fRec1[2]) + ((fTemp1 * fRec1[0]) + (2 * (fRec1[1] * (0 - fTemp1))))))) / fTemp0);
+			fRec4[0] = ((fTemp6 * fRec4[1]) + (((fVec0[0] * fRec0[0]) + (fVec0[1] * (0 - fRec0[0]))) / fTemp4));
+			fRec3[0] = (fRec4[0] - (((fTemp3 * fRec3[2]) + (2 * (fTemp2 * fRec3[1]))) / fTemp0));
+			fRec5[0] = ((0.999f * fRec5[1]) + fSlow1);
+			output0[i] = (FAUSTFLOAT)(((fRec5[0] * (((fTemp1 * fRec3[0]) + (2 * (fRec3[1] * (0 - fTemp1)))) + (fTemp1 * fRec3[2]))) + (fRec1[2] + (fRec1[0] + (2 * fRec1[1])))) / fTemp0);
 			// post processing
-			fRec4[2] = fRec4[1]; fRec4[1] = fRec4[0];
 			fRec5[1] = fRec5[0];
-			fRec3[1] = fRec3[0];
+			fRec3[2] = fRec3[1]; fRec3[1] = fRec3[0];
+			fRec4[1] = fRec4[0];
 			fRec1[2] = fRec1[1]; fRec1[1] = fRec1[0];
 			fRec2[1] = fRec2[0];
 			fVec0[1] = fVec0[0];
@@ -460,7 +463,8 @@ struct Voice{
   struct Voice *next;
   dsp *dsp_instance;
   MyUI myUI;
-  int note_num;
+  float note_num;
+  int64_t note_id;
 
   int frames_since_stop;
 
@@ -472,6 +476,7 @@ struct Voice{
     , next(NULL)
     , dsp_instance(NULL)
     , note_num(0)
+    , note_id(-1)
     , delta_pos_at_start(0)
     , delta_pos_at_end(-1)
   { }
@@ -624,7 +629,7 @@ static void RT_process_instrument(SoundPlugin *plugin, int64_t time, int num_fra
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //printf("Playing %d\n",note_num);
@@ -646,39 +651,40 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   *(voice->myUI._gain_control) = velocity2gain(volume);
 
   voice->note_num = note_num;
+  voice->note_id = note_id;
 
   voice->frames_since_stop = 0;
   voice->delta_pos_at_start = time;
   voice->delta_pos_at_end = -1;
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._gain_control) = velocity2gain(volume);
     voice=voice->next;
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       *(voice->myUI._freq_control) = midi_to_hz(pitch);
     voice=voice->next;
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       voice->delta_pos_at_end = time;
     voice=voice->next;
   }

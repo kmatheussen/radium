@@ -306,7 +306,7 @@ static void LoadOctaBlock(
                           patch=get_MIDI_instrument()->patches.elements[trackline->instrument-1];
 			}
 			if(trackline->note!=0){
-				note=talloc(sizeof(struct Notes));
+                                note=NewNote();
 				note->note=trackline->note-1;
 				if(note->note>0){
 					note->velocity=note->velocity_end=MMD_findVelocity(

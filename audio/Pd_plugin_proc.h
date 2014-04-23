@@ -28,6 +28,6 @@ extern LANGSPEC void PD_delete_controller(SoundPlugin *plugin, int controller_nu
 extern LANGSPEC void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state);
 extern LANGSPEC void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state);
 
-extern LANGSPEC void RT_PD_set_time(int64_t time, Place *p);
+extern LANGSPEC void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p);
 
 #endif // AUDIO_PD_PLUGIN_PROC_H

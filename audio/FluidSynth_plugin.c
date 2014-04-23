@@ -180,15 +180,15 @@ static void sendpitchbend(Data *data, int chan, int pitch, int time)
     printf("Unable to send pitchbend\n");
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //fluid_synth_noteon(data->synth, 0, note_num, volume*127);
-  sendnoteon(data, 0, note_num, volume*127, data->time + time);
+  sendnoteon(data, 0, (int)note_num, volume*127, data->time + time);
   //printf("Sending out note at time %d. Time now: %d. Delta: %d\n",(int)get_fluidsynth_time(data,data->time+time),(int)get_fluidsynth_time(data,data->time),(int)get_fluidsynth_time(data,time));
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   // fluidsynth doesn't seem to support polyphonic aftertouch.
 #if 0
   Data *data = (Data*)plugin->data;
@@ -196,7 +196,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_n
 #endif
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id,float volume){
   Data *data = (Data*)plugin->data;
   //fluid_synth_noteoff(data->synth, 0, note_num);
   sendnoteoff(data, 0, note_num, volume*127, data->time + time);

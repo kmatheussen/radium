@@ -113,7 +113,8 @@ void MyPutMidi(
 /******************** notes **************************/
 
 static void MIDIplaynote(struct Patch *patch,
-                         int notenum,
+                         float das_notenum,
+                         int64_t note_id,
                          int velocity,
                          STime time,
                          float pan
@@ -126,6 +127,8 @@ static void MIDIplaynote(struct Patch *patch,
         struct MidiPort *midi_port = patchdata->midi_port;
 	const int channel=patchdata->channel;
 	int maxbuf=70;
+
+        int notenum = das_notenum;
 
         if(velocity>127)
           velocity=127;
@@ -203,14 +206,17 @@ static void MIDIplaynote(struct Patch *patch,
 bool useOx90ForNoteOff=false;
 
 static void MIDIstopnote(struct Patch *patch,
-                  int notenum,
-                  int velocity, 
-                  STime time
+                         float das_notenum,
+                         int64_t note_id,
+                         int velocity, 
+                         STime time
 ){
   struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
   if(patchdata==NULL)
     return;
+
+  int notenum = das_notenum;
 
   if(velocity>127)
     velocity=127;
@@ -234,11 +240,13 @@ static void MIDIstopnote(struct Patch *patch,
 
 /******************* Velocity *************************/
 
-static void MIDIchangevelocity(struct Patch *patch,int notenum, int velocity,STime time){
+static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id, int velocity,STime time){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
         if(patchdata==NULL)
           return;
+
+        int notenum = das_notenum;
 
         if(velocity>127)
           velocity=127;
@@ -255,7 +263,7 @@ static void MIDIchangevelocity(struct Patch *patch,int notenum, int velocity,STi
 }
 
 
-static void MIDIchangepitch(struct Patch *patch,int notenum, float pitch,STime time){
+static void MIDIchangepitch(struct Patch *patch,float notenum, int64_t note_id, float pitch,STime time){
 }
 
 /******************** patch **************************/

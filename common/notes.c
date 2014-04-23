@@ -144,6 +144,17 @@ void StopAllNotesAtPlace(
 	}
 }
 
+struct Notes *NewNote(void){
+  static int64_t curr_id = 2*128; // 0 = sample requester, 1-127 = computer keyboard, 128 - 2*128 = midi keyboard
+
+  struct Notes *note=talloc(sizeof(struct Notes));
+  note->id = curr_id;
+  curr_id += NUM_PATCH_VOICES; // Temp hack. Maybe.
+  //printf("note->id: %d\n",(int)note->id);
+
+  return note;
+}
+
 struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -156,7 +167,7 @@ struct Notes *InsertNote(
 	struct Blocks *block=wblock->block;
 	struct Tracks *track=wtrack->track;
 
-	struct Notes *note=talloc(sizeof(struct Notes));
+	struct Notes *note=NewNote();
 
 	PlaceCopy(&note->l.p,placement);
 

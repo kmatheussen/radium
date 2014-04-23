@@ -112,7 +112,8 @@ typedef struct _Voice{
 
   float last_finetune_value;
 
-  int note_num;
+  float note_num;
+  int64_t note_id;
 
   // These two variables are used when setting velocity after a note has started playing.
   float start_volume;
@@ -586,12 +587,12 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume, float pan){
+static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
   //printf("playing note %d, pan: %f\n",note_num,pan);
 
-  const Note *note = &data->notes[note_num];
+  const Note *note = &data->notes[(int)note_num];
 
   int i;
   for(i=0;i<note->num_samples;i++){
@@ -609,12 +610,13 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
     voice->last_finetune_value = data->finetune;
     
     voice->note_num = note_num;
+    voice->note_id = note_id;
 
     voice->start_volume = velocity2gain(volume);
     voice->end_volume = voice->start_volume;
 
     voice->start_pitch = note_num;
-    voice->end_pitch   = voice->start_pitch;
+    voice->end_pitch   = note_num;
 
     voice->sample = note->samples[i];
     
@@ -640,7 +642,7 @@ static void play_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
 }
 
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;
@@ -648,14 +650,14 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, int note_n
   while(voice!=NULL){
     //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
 
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       voice->end_volume = velocity2gain(volume);
 
     voice = voice->next;
   }
 }
 
-static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_num, float pitch){
+static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;
@@ -663,14 +665,14 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, int note_nu
   while(voice!=NULL){
     //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
 
-    if(voice->note_num==note_num)
+    if(voice->note_id==note_id)
       voice->end_pitch = pitch;
 
     voice = voice->next;
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;
@@ -681,8 +683,9 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
   }
 
   while(voice!=NULL){
-    if(voice->note_num==note_num && voice->delta_pos_at_end == -1){
-      voice->delta_pos_at_end = time;
+    if(voice->note_id==note_id){
+      if(voice->delta_pos_at_end == -1)
+        voice->delta_pos_at_end = time;
       //voice->end_volume = velocity2gain(volume); // no no no. end_volume is for change velocity only. If volume==0, note ends here, not when release is finished. (the volume argument for stop_note is probably completely useless)
     }
 
@@ -691,9 +694,9 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, int note_num, fl
 }
 
 
-static int time_to_frame(Data *data, double time, int note_num){
+static int time_to_frame(Data *data, double time, float note_num){
   
-  const Sample *sample=data->notes[note_num].samples[0];
+  const Sample *sample=data->notes[(int)note_num].samples[0];
 
   double src_ratio = RT_get_src_ratio2(data, sample, note_num+data->note_adjust);
 
@@ -775,7 +778,7 @@ static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int
   *max_value = max;
 }
 
-static int get_peaks(struct SoundPlugin *plugin, int note_num, int ch, float das_pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
+static int get_peaks(struct SoundPlugin *plugin, float note_num, int ch, float das_pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
   Data *data = (Data*)plugin->data;
 
   if(ch==-1){
@@ -794,7 +797,7 @@ static int get_peaks(struct SoundPlugin *plugin, int note_num, int ch, float das
   int end_frame = time_to_frame(data, end_time, note_num);
 
   {
-    const Note *note=&data->notes[note_num];
+    const Note *note=&data->notes[(int)note_num];
 
     float min=0.0f;
     float max=0.0f;
