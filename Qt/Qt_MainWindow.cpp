@@ -394,8 +394,8 @@ void SetupMainWindow(void){
   main_window->setBackgroundMode(Qt::NoBackground);
 #endif
 
-  main_window->resize(1024,600);
-  editor->setMinimumWidth(600);
+  main_window->resize(1024,550);
+  editor->setMinimumWidth(550);
   editor->setMinimumHeight(400);
 
   main_window->setCaption("Radium editor window");

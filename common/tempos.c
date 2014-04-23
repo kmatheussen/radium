@@ -94,8 +94,11 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 	SetTempo(wblock->block,place,newtempo);
 
 	UpdateWTempos(window,wblock);
+
+#if !USE_OPENGL
 	DrawTempos(window,wblock,curr_realline,curr_realline);
 	WBLOCK_DrawTempoColor(window,wblock,curr_realline,wblock->num_reallines);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }
@@ -120,11 +123,16 @@ void RemoveTemposCurrPos(struct Tracker_Windows *window){
 	RemoveTempos(wblock->block,&p1,&p2);
 
 	UpdateWTempos(window,wblock);
+
+#if !USE_OPENGL
 	DrawUpTempos(window,wblock);
+#endif
 
 	UpdateSTimes(wblock->block);
 
+#if !USE_OPENGL
 	WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }

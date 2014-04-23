@@ -66,15 +66,19 @@ static void PlayStopReally(bool doit){
 
 	StopAllInstruments();
 
+#if !USE_OPENGL
 	if(doit) (*Ptask2MtaskCallBack)();
+#endif
 
 	pc->end_time=0;
 
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
 	GFX_UpdateQuantitize(window,wblock);
+#if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
+#endif
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
 
         //while(GC_is_disabled())
@@ -118,8 +122,10 @@ static void PlayBlock(
                 //abort();
                 fflush(stdout);
 
+#if !USE_OPENGL
 		pc->isplaying=true;
 		(*Ptask2MtaskCallBack)();
+#endif
 		pc->isplaying=false;
 
 		InitPEQclock();
@@ -211,8 +217,10 @@ void PlaySong(
 		pc->block=block;
 
 		root->curr_block=block->l.num;
+#if !USE_OPENGL
 		pc->isplaying=true;
 		(*Ptask2MtaskCallBack)();
+#endif
 		pc->isplaying=false;
 
 		InitPEQclock();

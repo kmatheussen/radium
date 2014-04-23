@@ -106,7 +106,7 @@ void UpdateWTempoNodes(
 			&temponode->l.p,
 			prev->reltempo,
 			temponode->reltempo,
-			(float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
+			(float)(-wblock->reltempomax+1.0f), (float)(wblock->reltempomax-1.0f),
 			prev,
 			&MakeWTempoNodesCallBack
 		);
@@ -151,8 +151,11 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 	);
 
 	UpdateWTempoNodes(window,wblock);
+
+#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }
@@ -177,8 +180,11 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 	LegalizeTempoNodes(wblock->block);
 
 	UpdateWTempoNodes(window,wblock);
+
+#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }

@@ -1,7 +1,7 @@
 
 
-Radium V1.9.35
-Released 2014-01-08
+Radium V3.0.beta2
+Released 2014-04-19
 
 
 
@@ -51,6 +51,9 @@ INTRODUCTION
 
 
 BUILD DEPENDENCIES FEDORA:
+
+        In addition to OpenGL, you also need:
+
         qt4-devel
         libXaw-devel
         python2-devel
@@ -73,6 +76,7 @@ BUILD DEPENDENCIES FEDORA:
         guile
         libxkbfile-devel
         xorg-x11-util-macros
+        cmake
 
         (tested on Fedora 17/19 64 bit)
 
@@ -80,6 +84,8 @@ BUILD DEPENDENCIES FEDORA:
 
 BUILD DEPENDENCIES UBUNTU (plus Debian):
       * Main packages, Ubuntu 12:
+
+      In addition to OpenGL, you also need:
 
       libqt4-dev
       qt4-dev-tools
@@ -104,10 +110,11 @@ BUILD DEPENDENCIES UBUNTU (plus Debian):
       guile
       libxkbfile-dev
       xorg-x11-util-macros
+      cmake
 
       * Or in one line:
 
-      sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros
+      sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros cmake
 
 
       * Ubuntu LTS: I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.

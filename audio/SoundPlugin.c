@@ -209,7 +209,10 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Show Compressor GUI",
 
   "System Width",
-  "System Width On/Off"
+  "System Width On/Off",
+
+  "System Sample Browser On/Off",
+  "System Controls On/Off"
 };
 
 static void init_system_filter(SystemFilter *filter, int num_channels, const char *name){
@@ -301,6 +304,8 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
     plugin->comp.was_on = false;
   }
 
+  plugin->show_browser_gui = true;
+  plugin->show_controls_gui = true;
   plugin->show_equalizer_gui = true;
   plugin->show_compressor_gui = false;
 
@@ -792,6 +797,14 @@ void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       plugin->show_equalizer_gui = store_value > 0.5f;
       break;
 
+    case EFFNUM_BROWSER_SHOW_GUI:
+      plugin->show_browser_gui = store_value > 0.5f;
+      break;
+
+    case EFFNUM_CONTROLS_SHOW_GUI:
+      plugin->show_controls_gui = store_value > 0.5f;
+      break;
+
       // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
     case EFFNUM_COMP_RATIO:
       //printf("Setting ratio to %f\n",store_value);
@@ -965,6 +978,10 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 
   case EFFNUM_EQ_SHOW_GUI:
     return plugin->show_equalizer_gui==true ? 1.0 : 0.0f;
+  case EFFNUM_BROWSER_SHOW_GUI:
+    return plugin->show_browser_gui==true ? 1.0 : 0.0f;
+  case EFFNUM_CONTROLS_SHOW_GUI:
+    return plugin->show_controls_gui==true ? 1.0 : 0.0f;
 
   case EFFNUM_COMP_RATIO:
     return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_RATIO);
@@ -990,6 +1007,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   case EFFNUM_EDITOR_ONOFF:
     return plugin->editor_is_on==true ? 1.0 : 0.0f;
 #endif
+
   default:
     RError("Unknown effect number: %d",effect_num);
     return 0.0f;

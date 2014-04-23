@@ -156,8 +156,11 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 	);
 
 	UpdateTrackReallines(window,wblock,wblock->wtrack);
+
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
 
 	PC_StopPause();
 }
@@ -234,8 +237,10 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
             note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
 
           UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
           ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
           UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
         }
 
 	PC_StopPause();

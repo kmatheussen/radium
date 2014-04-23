@@ -43,7 +43,7 @@ void PlayerTask(STime reltime){
 
         pc->reltime     = reltime;
 
-        struct Blocks *block = pc->isplaying ? pc->block : NULL;
+        const struct Blocks *block = pc->isplaying ? pc->block : NULL;
 
         if(block==NULL){
           if(root->song->tracker_windows != NULL && 

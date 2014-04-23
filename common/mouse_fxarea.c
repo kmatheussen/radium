@@ -307,9 +307,10 @@ void SetMouseActionFXarea(
 
 		UpdateFXNodeLines(window,wblock,wtrack);
 
+#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 		y+=Common_oldGetReallineY1Pos(window,wblock,realline);
 		x+=wtrack->fxarea.x;
 
@@ -338,9 +339,10 @@ void SetMouseActionFXarea(
 		GFX_DrawStatusBar(window,wblock);
 
 		UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 		y+=Common_oldGetReallineY1Pos(window,wblock,realline);
 		x+=wtrack->fxarea.x;
 

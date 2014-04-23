@@ -1,4 +1,68 @@
 
+
+Most important changes 3.0.beta1 -> 3.0.beta2
+* Set CMAKE_BUILD_TYPE for Visualisation library to RelWithDebInfo
+
+
+Most important changes 1.9.x -> 3.0.beta1
+* Rewritten editor graphics. Using OpenGL instead of Qt.
+* Smooth scrolling.
+
+
+Most important changes 1.9.39 -> 1.9.40:
+* Temporary fixes for crashing if deleting System Out.
+* Ask each 30th seconds if continuing searching for vst plugins.
+  (prevent program from spending a long time if, for instance, searching root)
+
+Most important changes 1.9.38 -> 1.9.39:
+* Never disable the voices widget (instrument widget)
+
+
+Most important changes 1.9.37 -> 1.9.38:
+* Fix crash-bug when inserting lines
+* Add "dontshowagain" button to RT_Message
+* Give proper warning when jack port init fails, and dont crash
+
+
+Most important changes 1.9.35 -> 1.9.37:
+* Add "All files" option to the file requesters
+* Proper postfix filter in filerequester when importing midi file
+* text draw: Fix for crash when painting ranged notes with subpitch
+* vst: Return correct samplePos in audioMasterGetTime
+* Fix GFX_Menu not being able to return selection higher than 9
+* Pd: radium_time message (containing time and line information)
+* Non-OSX: Search for VST plugins recursively
+* Get "keys" file path the same way as color and config, plus support comment after key
+* Bottom bar and mixer widget tooltips (Atte Jensen)
+* Atte Jensen's patch to read key names from ~/.radium/keys
+* Make left alt open menues
+* Fix ESC and Arrow keys while navigating menues.
+* Fix keys for non-US language setting
+* Reset Font size resetted to the default font size, not user font size. Fixed
+* New event keys: CALCULATOR, MAIL, HOMEPAGE
+* Add missing key events, such as 0R1, LR1, etc.
+* Turn off drunk velocity by default
+* Changed default ADSR(+H) values to neutral
+* Put the <new> instruments first when selecting track instrument (F12)
+* Always write cents if track is wide
+* Fix keyboard modifier keys
+* Configurable line separator opacity
+* LPB line coloring (opacity can be set in edit -> global config)
+* Renamed "MIDI input on/off" to "Edit On/off" (because that's what it really is)
+* Update midi input checkbutton when pressing esc
+* Fix SPS spinbox focus
+* Only show song files in load/save requesters
+* Added $HOME/.ladspa to the list of ladspa paths, when LADSPA_PATH is not defined
+* Instructions on where radium gets menues.conf and keybindings.conf
+* Use $HOME/.radium/menues.conf and $HOME/.radium/keybindings.conf if they exist
+* Mapped XK_ISO_Level3_Shift to EVENT_ALT_R
+* Fix open editor when editor is "emacs -nw"
+* Make escape key exit string req, same as return
+* Add "import radium as ra" in top of keybindings.conf, plus example code how to make space play/stop depending on whether you are playing
+* New API function: isPlaying
+* Updated ubuntu/debian package list in README
+
+
 Most important changes 1.9.34 -> 1.9.35:
 * sampler instrument/crossfade: Remove debug printing in realtime code
 * fast_log_exp.dsp: Fix pun_float_to_int proto in the faust "ffunction"

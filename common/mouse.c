@@ -104,11 +104,15 @@ void SetMouseAction(
           //printf("mouse.c: Drawing up tracks\n");
           UpdateAllWTracksCoordinates(window,wblock);
           //DrawUpAllWTracks(window,wblock,NULL);
+#if !USE_OPENGL
           DrawUpTrackerWindow(window);
+#endif
         }
 
+#if !USE_OPENGL
         if(old_mouse_track!=wblock->mouse_track && (old_mouse_track==TEMPONODETRACK || wblock->mouse_track==TEMPONODETRACK))
           DrawUpWTempoNodes(window,wblock);
+#endif
 }
 
 static float getX(uint32_t keyswitch, struct MouseAction *action, int x){

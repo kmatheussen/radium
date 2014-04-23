@@ -17,13 +17,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
+extern LANGSPEC STime Place2STime_from_times(
+                                             const struct STimes *times,
+                                             const Place *p
+                                             );
+
 extern LANGSPEC STime Place2STime(
-                                  struct Blocks *block,
+                                  const struct Blocks *block,
                                   const Place *p
                                   );
 
-extern LANGSPEC bool isSTimeInBlock(struct Blocks *block,STime time);
-extern LANGSPEC STime getBlockSTimeLength(struct Blocks *block);
+extern LANGSPEC bool isSTimeInBlock(const struct Blocks *block,STime time);
+extern LANGSPEC STime getBlockSTimeLength(const struct Blocks *block);
 
 extern void UpdateSTimes(struct Blocks *block);
 

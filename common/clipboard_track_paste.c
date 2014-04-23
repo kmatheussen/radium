@@ -165,7 +165,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			CutListAt_a(&block->lpbs,&lastplace);
 			UpdateSTimes(block);
 			UpdateWLPBs(window,wblock);
+#if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
+#endif
 			break;
 		case TEMPOTRACK:
 			if(cb_tempo==NULL) return;
@@ -173,7 +175,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			block->tempos=CB_CopyTempos(cb_tempo);
 			CutListAt_a(&block->tempos,&lastplace);
 			UpdateWTempos(window,wblock);
+#if !USE_OPENGL
 			DrawUpTempos(window,wblock);
+#endif
 			UpdateSTimes(block);
 			break;
 		case TEMPONODETRACK:
@@ -183,7 +187,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			CutListAt_a(&block->temponodes,&lastplace);
 			LegalizeTempoNodes(block);
 			UpdateWTempoNodes(window,wblock);
+#if !USE_OPENGL
 			DrawUpWTempoNodes(window,wblock);
+#endif
 			UpdateSTimes(block);
 			break;
 		default:
@@ -195,12 +201,14 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 					UpdateTrackReallines(window,wblock,wtrack);
 					window->must_redraw = true;
 				}else{
+#if !USE_OPENGL
 					UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 						window,
 						wblock,
 						window->curr_track,
 						window->curr_track
 					);
+#endif
 				}
 			}else{
 				if(CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
@@ -208,12 +216,14 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 					UpdateTrackReallines(window,wblock,wtrack);
 					window->must_redraw = true;
 				}else{
+#if !USE_OPENGL
 					UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 						window,
 						wblock,
 						window->curr_track,
 						window->curr_track
 					);
+#endif
 				}
 			}
 			break;

@@ -108,6 +108,8 @@ int MoveTempoNode_Mouse(
 		}
 	}
 
+	UpdateSTimes(wblock->block);
+
 	UpdateWTempoNodes(window,wblock);
 
 	start_realline=FindRealLineFor(wblock,0,prev_vel);
@@ -117,11 +119,11 @@ int MoveTempoNode_Mouse(
 
         //	printf("start: %d,end: %d\n",start_realline,end_realline);
 	
+#if !USE_OPENGL
         EraseLines(window, wblock,
                    wblock->temponodearea.x, wblock->temponodearea.x2,
                    start_realline, end_realline+1
                    );
-
         /*
 	int lokke;
 
@@ -138,15 +140,21 @@ int MoveTempoNode_Mouse(
         */
 
 	DrawWTempoNodes(window,wblock,start_realline,end_realline);
+#endif
 
 	//	DrawUpWTempoNodes(window,wblock);
-	UpdateSTimes(wblock->block);
 
 	GFX_DrawStatusBar(window,wblock);
+
+#if !USE_OPENGL
 	WBLOCK_DrawTempoColor(window,wblock,start_realline,end_realline);
+#endif
 
         UpdateAllTrackReallines(window,wblock);
+
+#if !USE_OPENGL
         DrawUpAllPeakWTracks(window,wblock,NULL);
+#endif
 
 	return 0;
 }
@@ -179,18 +187,18 @@ void SetMouseActionTempoNodes(
 	within.y1=Common_oldGetReallineY1Pos(window,wblock,realline);
 	within.y2=Common_oldGetReallineY2Pos(window,wblock,realline);
 
-	x=R_MAX(temponodearea->x+1,x);
-	x=R_MIN(temponodearea->x2-1,x);
+	x = R_MAX(temponodearea->x+1,x);
+	x = R_MIN(temponodearea->x2-1,x);
 
-	dx=x - temponodearea->x -1;
+	dx = x - temponodearea->x -1;
 
 	if(realline<0) return;
 
 	wtemponode=wblock->wtemponodes[realline];
-
+        //printf("wtemponode, : %p\n",wtemponode);
 	while(wtemponode!=NULL){
-
 		if(wtemponode->type==TEMPONODE_NODE){
+
 			if(
 			   /*
 				insideNArea(
@@ -234,12 +242,17 @@ void SetMouseActionTempoNodes(
 		Undo_TempoNodes_CurrPos(window);
 		AddTempoNode(window,wblock,&place,Gfx2RelTempo(wblock,dx));
 		GFX_SetChangeFloat(window,wblock,"Reltempo",RelTempo2RealRelTempo(Gfx2RelTempo(wblock,dx)));
-		UpdateWTempoNodes(window,wblock);
-		DrawUpWTempoNodes(window,wblock);
 		UpdateSTimes(wblock->block);
+
+		UpdateWTempoNodes(window,wblock);
+#if !USE_OPENGL
+		DrawUpWTempoNodes(window,wblock);
+#endif
 		SetMouseActionTempoNodes(window,action,x,y,0);
 		GFX_DrawStatusBar(window,wblock);
+#if !USE_OPENGL
 		WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+#endif
 	}
 }
 

@@ -186,6 +186,8 @@ void TransposeNote_CurrPos(
 
 	Transpose_note(note,trans);
 	wtrack->trackreallines[wblock->curr_realline].note=note->note;
+
+#if !USE_OPENGL
 	UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
@@ -194,6 +196,7 @@ void TransposeNote_CurrPos(
 		window->wblock->wtrack->l.num,
 		window->wblock->wtrack->l.num
 	);
+#endif
 }
 
 

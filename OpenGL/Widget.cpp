@@ -24,7 +24,7 @@
 #define GE_DRAW_VL
 #include "GfxElements.h"
 #include "Timing.hpp"
-
+#include "Render_proc.h"
 
 #include "Widget_proc.h"
 
@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#if FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
   struct sched_param par={0};
   par.sched_priority=priority;
@@ -51,11 +52,10 @@ static void set_realtime(int type, int priority){
   //bound_thread_to_cpu(0);
   set_pthread_priority(pthread_self(),type,priority,"Unable to set %s/%d for %d (\"%s\"). (%s)\n", "a gc thread");
 }
+#endif
 
 
-static float das_pos = 1000.0f; //_rendering->camera()->viewport()->height();
-
-static QMutex mutex;
+static QMutex mutex(QMutex::Recursive);
 
 void GL_lock(void){
   mutex.lock();
@@ -65,21 +65,14 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
-static int GE_num_reallines(void){
-  return root->song->tracker_windows->wblock->num_reallines;
-}
 
-static int GE_curr_realline(void){
-  return root->song->tracker_windows->wblock->curr_realline;
-}
-
-static float GE_cursor_pos(void){
-  int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
-  //printf("%d %d (%d)\n",root->song->tracker_windows->wblock->curr_realline, root->song->tracker_windows->wblock->top_realline, extra);
+// OpenGL thread
+static float GE_scroll_pos(SharedVariables *sv, double realline){
+  double extra = sv->top_realline - sv->curr_realline;
   return
-    (   (extra + GE_curr_realline()) * root->song->tracker_windows->fontheight  )
-    ; //+ root->song->tracker_windows->wblock->t.y1;
+    (   (realline+extra) * sv->fontheight  );
 }
+
 
 
 extern PlayerClass *pc;
@@ -88,41 +81,56 @@ extern struct Root *root;
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
-static double get_realline_stime(struct WBlocks *wblock, int realline){  
-  return Place2STime(wblock->block, &wblock->reallines[realline]->l.p);
-}
-
 TimeEstimator time_estimator;
 
-static void find_current_wblock_and_realline(struct Tracker_Windows *window, struct WBlocks **wblock, double *realline){
-  double current_stime = time_estimator.get((double)pc->start_time * 1000.0 / (double)pc->pfreq, pc->block->reltempo) * (double)pc->pfreq / 1000.0;
 
-  double block_stime;
+// OpenGL thread
+static double get_realline_stime(SharedVariables *sv, int realline){  
+  if(realline==sv->num_reallines)
+    return sv->block_duration;
+  else
+    return Place2STime_from_times(sv->times, &sv->realline_places[realline]);
+}
 
-  if (pc->playtype==PLAYBLOCK || pc->playtype==PLAYBLOCK_NONLOOP) {
-    *wblock = window->wblock;
-    double current_block_sduration = getBlockSTimeLength((*wblock)->block);
-    block_stime = fmod(current_stime, current_block_sduration);
-  } else {
-    abort();
-    block_stime = 0.0;
-  }
+
+// OpenGL thread
+static double find_current_realline_while_playing(SharedVariables *sv){
+
+  double time_in_ms = (double)(pc->start_time - pc->seqtime) * 1000.0 / (double)pc->pfreq;
+  double stime      = time_estimator.get(time_in_ms, sv->reltempo) * (double)pc->pfreq / 1000.0;
 
   double prev_line_stime = 0.0;
-  int i_realline;
-  for(i_realline=1; i_realline<(*wblock)->num_reallines; i_realline++){
-    double curr_line_stime = get_realline_stime(*wblock, i_realline);
-    if (curr_line_stime >= block_stime) {
-      *realline = scale_double(block_stime,
-                               prev_line_stime, curr_line_stime,
-                               i_realline-1, i_realline);
-      return;
+
+  static int i_realline = 0;
+
+  // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
+  {
+    if(i_realline>sv->num_reallines) // First check that i_realline is within the range of the block.
+      i_realline = 0;
+    
+    else {
+      if(i_realline>0) // Common situation. We are usually on the same line as the last visit, but we need to go one step back to reload prev_line_stime. (we cant store prev_line_stime, because it could have been calculated from a different block)
+        i_realline--;
+
+      if(stime < get_realline_stime(sv, i_realline)) // Behind the time of the last visit. Start searching from 0 again.
+        i_realline = 0;
     }
+  }
+
+  for(; i_realline<=sv->num_reallines; i_realline++){
+    double curr_line_stime = get_realline_stime(sv, i_realline);
+    if (stime <= curr_line_stime)
+      return scale_double(stime,
+                          prev_line_stime, curr_line_stime,
+                          i_realline-1, i_realline
+                          );
     prev_line_stime = curr_line_stime;
   }
 
-  *realline = (*wblock)->num_reallines-0.001; // should not happen that we get here.
+  return sv->num_reallines;
 }
+
+
 
 
 #if 0
@@ -167,10 +175,17 @@ static void UpdateReallineByLines(struct Tracker_Windows *window, struct WBlocks
 #endif
 
 
-static EditorWidget *get_editorwidget(void){
-  return (EditorWidget *)root->song->tracker_windows->os_visual.widget;
+// Main thread
+static Tracker_Windows *get_window(void){
+  return root->song->tracker_windows;
 }
 
+// Main thread
+static EditorWidget *get_editorwidget(void){
+  return (EditorWidget *)get_window()->os_visual.widget;
+}
+
+// Main thread
 static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
   const QPoint p = qmouseevent->pos();
 
@@ -195,19 +210,32 @@ public:
   vl::ref<vl::VectorGraphics> vg;
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
-  volatile bool training_estimator;
+  PaintingData *painting_data;
 
+  volatile bool is_training_vblank_estimator;
+  volatile double override_vblank_value;
+  bool has_overridden_vblank_value;
+
+  float last_pos;
+
+  // Main thread
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
-    , training_estimator(true)
+    , painting_data(NULL)
+    , is_training_vblank_estimator(true)
+    , override_vblank_value(-1.0)
+    , has_overridden_vblank_value(false)
+    , last_pos(-1.0f)
   {
     setMouseTracking(true);
   }
 
+  // Main thread
   ~MyQt4ThreadedWidget(){
     fprintf(stderr,"Exit myqt4threaderwidget\n");
   }
 
+  // OpenGL thread
   virtual void init_vl(vl::OpenGLContext *glContext) {
 
     printf("init_vl\n");
@@ -240,10 +268,13 @@ public:
     glContext->initGLContext();
     glContext->addEventListener(this);
 
+#if FOR_LINUX
     if(0)set_realtime(SCHED_FIFO,1);
+#endif
   }
 
-    /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
+  /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
+  // OpenGL thread
   virtual void initEvent() {
     printf("initEvent\n");
     
@@ -257,32 +288,34 @@ public:
   }
 
 private:
-  bool maybeRedraw(){
+  // OpenGL thread
+  bool canDraw(){
     if (vg.get()==NULL)
       return false;
-
-    if(GE_new_read_contexts()==true) {
-      vg->clear();
-      GE_draw_vl(_rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
-    }
-
-    return true;
+    else
+      return true;
   }
 public:
 
+  // Main thread
   virtual void mouseReleaseEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseReleaseEvent(&event);
+    GL_create(get_window(), get_window()->wblock);
   }
 
+  // Main thread
   virtual void mousePressEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mousePressEvent(&event);
+    GL_create(get_window(), get_window()->wblock);
   }
 
+  // Main thread
   virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseMoveEvent(&event);
+    GL_create(get_window(), get_window()->wblock);
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
@@ -290,109 +323,145 @@ public:
     fprintf(stderr,"destroyEvent\n");
   }
 
-  /** Event generated when the bound OpenGLContext does not have any other message to process 
-      and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
-  virtual void updateEvent() {
-    //printf("updateEvent\n");
+private:
 
-    if(training_estimator)
-      training_estimator = time_estimator.train();
-        
-    if(training_estimator) {
-      if ( openglContext()->hasDoubleBuffer() )
-        openglContext()->swapBuffers();
+  // OpenGL thread
+  double find_till_realline(SharedVariables *sv){
+    if(pc->isplaying)
+      return find_current_realline_while_playing(sv);
+    else
+      return sv->curr_realline;
+  }
+
+  // OpenGL thread
+  void draw(){
+    bool needs_repaint;
+
+    painting_data = GE_get_painting_data(painting_data, &needs_repaint);
+
+    if (painting_data==NULL)
       return;
+
+    SharedVariables *sv = GE_get_shared_variables(painting_data);
+
+    if (needs_repaint) {
+      vg->clear();
+      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
 
-    GL_lock();
-
-    static float pos = -123412;
-
-    if(maybeRedraw()) {
-
-      if(true || pos != das_pos) {
-
-        // scroll
-        {
-          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-          //mat.translate(-(das_pos-1000)/16.0f,das_pos,0);
-          mat.translate(0,das_pos,0);
-          //mat.scale(das_pos/16.0f,0,0);
-          _scroll_transform->setLocalAndWorldMatrix(mat);
-        }
-
-        if(pc->isplaying) {
-          static float last = 0.0f;
-          NInt            curr_block           = root->curr_block;
-          struct WBlocks *wblock               = (struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,curr_block);
-          //int             till_curr_realline   = wblock->till_curr_realline;
-          double          d_till_curr_realline = wblock->till_curr_realline;
-          
-          find_current_wblock_and_realline(root->song->tracker_windows, &wblock, &d_till_curr_realline);
-
-          //float dy = root->song->tracker_windows->wblock->t.y1;
-          
-          int extra = GE_curr_realline() - root->song->tracker_windows->wblock->top_realline;
-          das_pos = ((extra + d_till_curr_realline) * root->song->tracker_windows->fontheight); // + dy;
-
-          //if(last-das_pos < -2)
-          //  das_pos = last+2.7073;
-
-          if(0)printf("%f\n",last-das_pos);
-          last=das_pos;
-
-        } else
-          das_pos = GE_cursor_pos();
+    
+    if(pc->isplaying && sv->block!=pc->block) // sanity check
+      return;
 
 
-        // linenumbers
-        {
-          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-          mat.translate(0,das_pos,0);
-          _linenumbers_transform->setLocalAndWorldMatrix(mat);
-        }
-      
+    double till_realline = find_till_realline(sv);
+    float pos = GE_scroll_pos(sv, till_realline);
 
-#if 0
-        das_pos += 2.03;
-        if(das_pos>64*20)
-          das_pos=_rendering->camera()->viewport()->height();
-#endif
+    
+    if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
+      return;
 
-        //_vg->scale(pos / 10.0,pos / 10.0);
-      
-        _rendering->render();
 
-        pos = das_pos;
-
-        // scrollbar
-        {
-          vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-          //mat.translate(200*cos(vl::Time::currentTime()*vl::fPi*2.0f/17.0f),0,0);
-          mat.translate(0,
-                        scale(das_pos,
-                              0,512*20 + 1200,
-                              _rendering->camera()->viewport()->height(),100
-                              ),
-                        0);
-
-          _scrollbar_transform->setLocalAndWorldMatrix(mat);
-        }
-
+    if (needs_repaint || pos!=last_pos) {
+    
+      // scroll
+      {
+        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+        mat.translate(0,pos,0);
+        _scroll_transform->setLocalAndWorldMatrix(mat);
       }
 
+      // linenumbers
+      {
+        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+        mat.translate(0,pos,0);
+        _linenumbers_transform->setLocalAndWorldMatrix(mat);
+      }
+      
+      // scrollbar
+      {
+        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+        float scrollpos = scale(till_realline,
+                                0, sv->num_reallines - (pc->isplaying?0:1),
+                                -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
+                                );
+        //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
+        mat.translate(0,scrollpos,0);
+        _scrollbar_transform->setLocalAndWorldMatrix(mat);
+      }
 
+      _rendering->render();
+
+      last_pos = pos;
+    }
+  }
+
+  // OpenGL thread
+  void swap(){
+    GL_lock();
+    {
       // show rendering
       if ( openglContext()->hasDoubleBuffer() )
         openglContext()->swapBuffers();
-
-    } // maybeRedraw
-
+    }
     GL_unlock();
   }
-    
+
+public:
+
+  /** Event generated when the bound OpenGLContext does not have any other message to process 
+      and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
+  // OpenGL thread
+  virtual void updateEvent() {
+    //printf("updateEvent\n");
+
+    if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
+
+      time_estimator.set_vblank(override_vblank_value);
+      is_training_vblank_estimator = false;
+      has_overridden_vblank_value = true;
+
+    } else {
+
+      if(is_training_vblank_estimator)
+        is_training_vblank_estimator = time_estimator.train();
+
+    }
+
+    if(is_training_vblank_estimator==false && canDraw())
+      draw();
+
+    swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
+  }
+
+  // Main thread
+  void set_vblank(double value){
+    override_vblank_value = value;
+  }
+
+  /** Event generated when the bound OpenGLContext is resized. */
+  // OpenGL thread
+  virtual void resizeEvent(int w, int h) {
+    printf("resisizing %d %d\n",w,h);
+
+    _rendering->sceneManagers()->clear();
+
+    _rendering->camera()->viewport()->setWidth(w);
+    _rendering->camera()->viewport()->setHeight(h);
+    _rendering->camera()->setProjectionOrtho(-0.5f);
+
+    GE_set_height(h);
+    //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
+
+    initEvent();
+
+    updateEvent();
+  }
+  
+
+
+  // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
+
   /** Event generated whenever setEnabled() is called. */
   virtual void enableEvent(bool enabled){
     printf("enableEvent %d\n",(int)enabled);
@@ -411,7 +480,6 @@ public:
   /** Event generated when the mouse moves. */
   virtual void mouseMoveEvent(int x, int y) {
     printf("mouseMove %d %d\n",x,y);
-    das_pos -= 5;//2.03;
     //_rendering->sceneManagers()->clear();
     //create_block();
     //initEvent();
@@ -428,7 +496,6 @@ public:
   /** Event generated when one of the mouse buttons is pressed. */
   virtual void mouseDownEvent(vl::EMouseButton button, int x, int y) {
     printf("mouseMove %d %d\n",x,y);
-    das_pos -= 5;//2.03;
     //_rendering->sceneManagers()->clear();
     //create_block();
     //initEvent(); 
@@ -442,8 +509,6 @@ public:
   virtual void keyPressEvent(unsigned short unicode_ch, vl::EKey key) {
     printf("key pressed\n");
 
-    das_pos += 20;//2.03;
-
     //_rendering->sceneManagers()->clear();
     //create_block();
     //initEvent();
@@ -451,22 +516,6 @@ public:
   
   /** Event generated when a key is released. */
   virtual void keyReleaseEvent(unsigned short unicode_ch, vl::EKey key) {
-  }
-  
-  /** Event generated when the bound OpenGLContext is resized. */
-  virtual void resizeEvent(int w, int h) {
-    _rendering->sceneManagers()->clear();
-
-    _rendering->camera()->viewport()->setWidth(w);
-    _rendering->camera()->viewport()->setHeight(h);
-    _rendering->camera()->setProjectionOrtho(-0.5f);
-
-    GE_set_height(h);
-    //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
-
-    initEvent();
-
-    updateEvent();
   }
   
   /** Event generated when one or more files are dropped on the bound OpenGLContext's area. */
@@ -482,14 +531,49 @@ public:
 
 static vl::ref<MyQt4ThreadedWidget> widget;
 
-QWidget *GL_create_widget(void){
-  QMessageBox box;
-  box.setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
-  box.setInformativeText("!!! Don't move the mouse or press any key !!!");
-  box.show();
-  box.button(QMessageBox::Ok)->hide();
-  qApp->processEvents();
+static bool do_estimate_questionmark(){
+  return SETTINGS_read_bool("use_estimated_vblank", true);
+}
 
+static void store_do_estimate(bool value){
+  return SETTINGS_write_bool("use_estimated_vblank", value);
+}
+
+static bool have_earlier_estimated_value(){
+  return SETTINGS_read_double("vblank", -1.0) > 0.0;
+}
+
+static double get_earlier_estimated(){
+  return 1000.0 / SETTINGS_read_double("vblank", 60.0);
+}
+
+static void store_estimated_value(double period){
+  printf("***************** Storing %f\n",1000.0 / period);
+  SETTINGS_write_double("vblank", 1000.0 / period);
+}
+
+static void show_message_box(QMessageBox *box){
+  box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
+  box->setInformativeText("!!! Don't move the mouse or press any key !!!");
+
+  if(have_earlier_estimated_value()){
+
+    QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/get_earlier_estimated())+" Hz).";
+    QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
+    if(0)printf((char*)msgBox_useStoredValue);
+    box->show();
+
+  } else {
+
+    box->show();
+    box->button(QMessageBox::Ok)->hide();
+
+  }
+
+  qApp->processEvents();
+}
+
+static void setup_widget(QWidget *parent){
   vl::VisualizationLibrary::init();
 
   vl::OpenGLContextFormat vlFormat;
@@ -503,16 +587,41 @@ QWidget *GL_create_widget(void){
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
   
-  widget = new MyQt4ThreadedWidget(vlFormat, NULL);
+  widget = new MyQt4ThreadedWidget(vlFormat, parent);
   widget->resize(1000,1000);
   widget->show();
 
   widget->incReference();  // dont want auto-desctruction at program exit.
+}
 
-  while(widget->training_estimator==true)
-    qApp->processEvents();
+QWidget *GL_create_widget(QWidget *parent){
 
-  box.close();
+  if (do_estimate_questionmark() == false) {
+
+    setup_widget(parent);
+    widget->set_vblank(get_earlier_estimated());
+
+  } else {
+
+    QMessageBox box;
+
+    setup_widget(parent);
+    show_message_box(&box);
+
+    while(widget->is_training_vblank_estimator==true) {
+      if(box.clickedButton()!=NULL){
+        widget->set_vblank(get_earlier_estimated());
+        store_do_estimate(false);
+        break;
+      }
+      qApp->processEvents();
+    }
+
+    if (box.clickedButton()==NULL)
+      store_estimated_value(time_estimator.get_vblank());
+
+    box.close();
+  }
 
   return widget.get();
 }

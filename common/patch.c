@@ -400,7 +400,7 @@ void PATCH_init(void){
 
 
 
-int PATCH_radiumvelocity_to_patchvelocity(struct Patch *patch,int velocity){
+int PATCH_radiumvelocity_to_patchvelocity(const struct Patch *patch,int velocity){
   if(patch->instrument==NULL)
     return velocity;
   else
@@ -409,7 +409,7 @@ int PATCH_radiumvelocity_to_patchvelocity(struct Patch *patch,int velocity){
                  0,patch->instrument->getMaxVelocity(patch));
 }
 
-int PATCH_patchvelocity_to_radiumvelocity(struct Patch *patch,int velocity){
+int PATCH_patchvelocity_to_radiumvelocity(const struct Patch *patch,int velocity){
   if(patch->instrument==NULL)
     return velocity;
   else
@@ -429,7 +429,7 @@ static float get_voice_velocity(struct PatchVoice *voice){
     return scale(voice->volume,35,70,2,7);
 }
 
-void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, int notenum,int velocity,const struct Tracks *track,STime time){
   int i;
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -437,7 +437,7 @@ void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, int notenum,int v
   }
 }
 
-static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+static void RT_play_voice(struct Patch *patch, int notenum,int velocity,const struct Tracks *track,STime time){ // struct Patch can not be const
   //printf("\n\n___RT_play_voice. note %d, time: %d, velocity: %d\n\n",notenum,(int)time,velocity);
 
   if(notenum < 1 || notenum>127)
@@ -468,7 +468,7 @@ static void RT_play_voice(struct Patch *patch, int notenum,int velocity,struct T
 }
 
 static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
+  const struct Tracks *track = args[0].const_pointer;
   struct Patch *patch = args[1].pointer;
 
   int notenum = args[2].int_num;
@@ -486,7 +486,7 @@ static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
 
 static void RT_scheduled_stop_voice(int64_t time_into_the_future, union SuperType *args);
 
-void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time){
+void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,const struct Tracks *track,STime time){
   //printf("\n\n___Starting note %d, time: %d\n\n",notenum,(int)time);
 
   if(time==-1)
@@ -507,7 +507,7 @@ void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Trac
 
       union SuperType args[4];
 
-      args[0].pointer = track;
+      args[0].const_pointer = track;
       args[1].pointer = patch;
       args[2].int_num = voice_notenum;
       args[3].int_num = voice_velocity;
@@ -528,7 +528,7 @@ void RT_PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Trac
 
 //extern const char *NotesTexts3[131];
 
-void PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track){
+void PATCH_play_note(struct Patch *patch,int notenum,int velocity,const struct Tracks *track){
   //printf("** playing note %s\n",NotesTexts3[notenum]);
   PLAYER_lock();{
     RT_PATCH_play_note(patch,notenum,velocity,track,-1);
@@ -539,7 +539,7 @@ void PATCH_play_note(struct Patch *patch,int notenum,int velocity,struct Tracks 
 ////////////////////////////////////
 // Stop note
 
-void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, int notenum,int velocity,const struct Tracks *track,STime time){
   int i;
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -547,7 +547,7 @@ void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, int notenum,int v
   }
 }
 
-static void RT_stop_voice(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+static void RT_stop_voice(struct Patch *patch, int notenum,int velocity,const struct Tracks *track,STime time){
   if(notenum < 1 || notenum>127)
     return;
 
@@ -569,7 +569,7 @@ static void RT_stop_voice(struct Patch *patch, int notenum,int velocity,struct T
 }
 
 static void RT_scheduled_stop_voice(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
+  const struct Tracks *track = args[0].const_pointer;
   struct Patch *patch = args[1].pointer;
 
   int notenum = args[2].int_num;
@@ -584,7 +584,7 @@ static void RT_scheduled_stop_voice(int64_t time, union SuperType *args){
   RT_stop_voice(patch,notenum,velocity,track,time);
 }
 
-void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time){
+void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,const struct Tracks *track,STime time){
   //printf("\n\nRT_PATCH_STOP_NOTE. ___Stopping note %d, time: %d\n\n",notenum,(int)time);
 
   if(time==-1)
@@ -614,7 +614,7 @@ void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Trac
 
           union SuperType args[4];
 
-          args[0].pointer = track;
+          args[0].const_pointer = track;
           args[1].pointer = patch;
           args[2].int_num = voice_notenum;
           args[3].int_num = voice_velocity;
@@ -626,7 +626,7 @@ void RT_PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Trac
   }
 }
 
-void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks *track){
+void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,const struct Tracks *track){
   //printf("** stopping note %s\n\n",NotesTexts3[notenum]);
   PLAYER_lock();{
     RT_PATCH_stop_note(patch,notenum,velocity,track,-1);
@@ -638,7 +638,7 @@ void PATCH_stop_note(struct Patch *patch,int notenum,int velocity,struct Tracks 
 ////////////////////////////////////
 // Change velocity
 
-void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, int notenum,int velocity,const struct Tracks *track,STime time){
   int i;
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -646,7 +646,7 @@ void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, int notenum
   }
 }
 
-static void RT_change_voice_velocity(struct Patch *patch, int notenum,int velocity,struct Tracks *track,STime time){
+static void RT_change_voice_velocity(struct Patch *patch, int notenum,int velocity,const struct Tracks *track,STime time){
   if(notenum < 1 || notenum>127)
     return;
 
@@ -667,7 +667,7 @@ static void RT_change_voice_velocity(struct Patch *patch, int notenum,int veloci
 }
 
 static void RT_scheduled_change_voice_velocity(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
+  const struct Tracks *track = args[0].const_pointer;
   struct Patch *patch = args[1].pointer;
 
   int notenum = args[3].int_num;
@@ -682,7 +682,7 @@ static void RT_scheduled_change_voice_velocity(int64_t time, union SuperType *ar
   RT_change_voice_velocity(patch,notenum,velocity,track,time);
 }
 
-void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct Tracks *track,STime time){
+void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,const struct Tracks *track,STime time){
   //printf("vel: %d\n",velocity);
   if(time==-1)
     time = patch->last_time;
@@ -708,7 +708,7 @@ void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struc
 
         union SuperType args[4];
 
-        args[0].pointer = track;
+        args[0].const_pointer = track;
         args[1].pointer = patch;
         args[2].int_num = voice_notenum;
         args[3].int_num = voice_velocity;
@@ -719,7 +719,7 @@ void RT_PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struc
   }
 }
 
-void PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct Tracks *track){
+void PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,const struct Tracks *track){
   PLAYER_lock();{
     RT_PATCH_change_velocity(patch,notenum,velocity,track,-1);
   }PLAYER_unlock();
@@ -730,7 +730,7 @@ void PATCH_change_velocity(struct Patch *patch,int notenum,int velocity,struct T
 ////////////////////////////////////
 // Change pitch
 
-void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, int notenum,float pitch,struct Tracks *track,STime time){
+void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, int notenum,float pitch,const struct Tracks *track,STime time){
   int i;
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
@@ -738,7 +738,7 @@ void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, int notenum,fl
   }
 }
 
-static void RT_change_voice_pitch(struct Patch *patch, int notenum,float pitch,struct Tracks *track,STime time){
+static void RT_change_voice_pitch(struct Patch *patch, int notenum,float pitch,const struct Tracks *track,STime time){
   if(notenum < 1 || notenum>127)
     return;
 
@@ -755,7 +755,7 @@ static void RT_change_voice_pitch(struct Patch *patch, int notenum,float pitch,s
 }
 
 static void RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
+  const struct Tracks *track = args[0].const_pointer;
   struct Patch *patch = args[1].pointer;
 
   int notenum = args[3].int_num;
@@ -767,7 +767,7 @@ static void RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args)
   RT_change_voice_pitch(patch,notenum,pitch,track,time);
 }
 
-void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tracks *track,STime time){
+void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,const struct Tracks *track,STime time){
   //printf("vel: %d\n",pitch);
   if(time==-1)
     time = patch->last_time;
@@ -793,7 +793,7 @@ void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tr
 
         union SuperType args[4];
 
-        args[0].pointer = track;
+        args[0].const_pointer = track;
         args[1].pointer = patch;
         args[2].int_num = voice_notenum;
         args[3].float_num = voice_pitch;
@@ -804,7 +804,7 @@ void RT_PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tr
   }
 }
 
-void PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Tracks *track){
+void PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,const struct Tracks *track){
   PLAYER_lock();{
     RT_PATCH_change_pitch(patch,notenum,pitch,track,-1);
   }PLAYER_unlock();
@@ -817,7 +817,7 @@ void PATCH_change_pitch(struct Patch *patch,int notenum,float pitch,struct Track
 
 // All FX goes through this function.
 
-void RT_FX_treat_fx(struct FX *fx,int val,struct Tracks *track,STime time,int skip){
+void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip){
   if(track->patch!=NULL){ // This function should take patch as first argument. The track argument is [probably not / should not be] needed.
     if(time==-1)
       time = track->patch->last_time;
@@ -827,7 +827,7 @@ void RT_FX_treat_fx(struct FX *fx,int val,struct Tracks *track,STime time,int sk
   fx->treatFX(fx,val,track,time,skip);
 }
 
-void FX_treat_fx(struct FX *fx,int val,struct Tracks *track,int skip){
+void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip){
   if(track->patch==NULL){
     RError("FX_treat_fx: track->patch==NULL");
     return;
@@ -937,7 +937,7 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,int notenum){
 int PATCH_get_peaks(struct Patch *patch,
                     int notenum, 
                     int ch, 
-                    struct Tracks *track, 
+                    const struct Tracks *track, 
                     int64_t start_time, int64_t end_time, 
                     float *min_value, float *max_value
                     )

@@ -69,6 +69,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
 
+#if !USE_OPENGL
 			PixMap_reset(window);
 
                         struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
@@ -107,14 +108,17 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 				      Common_oldGetReallineY2Pos(window,wblock,wblock->curr_realline-1)
 				      );
 			*/
+#endif
 		}
 	}
 
 	GFX_UpdateCurrLine(window,wblock);
 
+#if !USE_OPENGL
 	Blt_scrollMark(window);
 
 	UpdateLeftSlider(window);
+#endif
 }
 
 
@@ -144,6 +148,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
 
+#if !USE_OPENGL
 			PixMap_reset(window);
 
                         struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
@@ -174,13 +179,17 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 				      wblock->t.y2
 			      );
 			*/
+#endif
 		}
 	}
 
+	GFX_UpdateCurrLine(window,wblock);
+
+#if !USE_OPENGL
 	Blt_scrollMark(window);
 
-	GFX_UpdateCurrLine(window,wblock);
 	UpdateLeftSlider(window);
+#endif
 }
 
 

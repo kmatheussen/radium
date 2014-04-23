@@ -353,12 +353,12 @@ void ListAddElement1_ff(
 }
 
 
-void *ListFindElement1(struct ListHeader1 *list,NInt num){
+void *ListFindElement1(const struct ListHeader1 *list,NInt num){
 	NInt lastnum;
 
 	while(list!=NULL && list->num<=num){
 		lastnum=list->num;
-		if(list->num==num) return list;
+		if(list->num==num) return (void*)list;
 		list=list->next;
 		if(list!=NULL && lastnum+1!=list->num){
 			RError("Warning. In function 'ListFindElement1' in file 'list.c'. Strange list. Last: %d, now: %d\n",lastnum,list->num);
@@ -391,10 +391,10 @@ void *ListFindElementP(struct ListHeaderP *list,NInt num){
     write out an error-message in that case either.
 ****************************************************************/
 
-void *ListFindElement1_r0(struct ListHeader1 *list,NInt num){
+void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num){
 
 	while(list!=NULL && list->num<=num){
-		if(list->num==num) return list;
+                if(list->num==num) return (void*)list;
 		list=list->next;
 	}
 

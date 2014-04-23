@@ -39,7 +39,7 @@ __inline void PC_RemoveFirst(void){
 	pc->peq=NextPEventQueue(pc->peq);
 }
 
-struct Blocks *PC_GetPlayBlock(int numfromcurrent){
+const struct Blocks *PC_GetPlayBlock(int numfromcurrent){
 
 	if(numfromcurrent==0) return pc->block;
 
@@ -54,7 +54,7 @@ struct Blocks *PC_GetPlayBlock(int numfromcurrent){
 	return BL_GetBlockFromPos(root->curr_playlist+numfromcurrent);
 }
 
-bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, struct Blocks **block){
+bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block){
   *playlistaddpos=0;
 
   for(;;){
@@ -127,7 +127,7 @@ void PC_InsertElement_a(
 }
 
 
-static void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos, Place *p, bool before, bool add_latency){
+static void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos, const Place *p, bool before, bool add_latency){
 
 	PC_InsertElement_private(
 
@@ -146,19 +146,19 @@ static void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos, P
 
 }
 
-void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p){
+void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p){
   PC_InsertElement2_private(peq,addplaypos,p,true,true);
 }
 
-void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, Place *p){
+void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, const Place *p){
   PC_InsertElement2_private(peq,addplaypos,p,true,false);
 }
 
-void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, Place *p){
+void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, const Place *p){
   PC_InsertElement2_private(peq,addplaypos,p,false,false);
 }
 
-void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p){
+void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p){
   PC_InsertElement2_private(peq,addplaypos,p,false,true);
 }
 

@@ -47,14 +47,11 @@ int MoveVelStart_Mouse(
 	struct Tracks *track=wtrack->track;
 	struct Notes *note=(struct Notes *)action->pointer2;
 	int subtrack=action->eint1;
-	Place place,prev_vel,next_vel,*temp;
-	Place *pp_vel,*pn_vel;
+	Place place;
 	int maxvel=MAX_VELOCITY;
 	int sx1=GetXSubTrack1(wtrack,subtrack);
 	int sx2=GetXSubTrack2(wtrack,subtrack);
 	int velocity_org=note->velocity;
-	int num_vel;
-	int start_realline,realline,end_realline;
 
 	/* Do a check to see if all data is still valid. */
 	if(isInList1_m(
@@ -69,13 +66,16 @@ int MoveVelStart_Mouse(
 
 	PlayStop();
 
-	num_vel=wtrack->num_vel;
-	start_realline=FindRealLineFor(wblock,0,&note->l.p);
+#if !USE_OPENGL
+	int num_vel=wtrack->num_vel;
+	int start_realline=FindRealLineFor(wblock,0,&note->l.p);
+
+	Place *pp_vel,*pn_vel, prev_vel;
 
 	if(track->notes==note){
 		pp_vel=NULL;
 	}else{
-		temp=&((struct ListHeader3 *)(ListPrevElement3(&track->notes->l,&note->l)))->p;
+                Place *temp=&((struct ListHeader3 *)(ListPrevElement3(&track->notes->l,&note->l)))->p;
 		PlaceCopy(&prev_vel,temp);
 		pp_vel= &prev_vel;
 	}
@@ -85,19 +85,23 @@ int MoveVelStart_Mouse(
 	}else{
 	  pn_vel=&note->end;
 	}
-	end_realline=FindRealLineFor(wblock,start_realline,pn_vel);
+
+	int end_realline=FindRealLineFor(wblock,start_realline,pn_vel);
 
 	if(NextNote(note)!=NULL)
 	  pn_vel=PlaceMin(pn_vel,&(NextNote(note))->l.p);
 
+        Place next_vel;
 	PlaceCopy(&next_vel,pn_vel);
 
+	int realline;
 	if(PlaceEqual(&next_vel,&PlaceFirstPos) || (pp_vel!=NULL && PlaceEqual(pp_vel,&next_vel))){
 	  PlaceCopy(&place,&next_vel);
 	  realline=GetReallineFromY(window,wblock,y);
 	}else{
 	  realline=GetReallineAndPlaceFromY(window,wblock,y,&place,pp_vel,&next_vel);
 	}
+#endif
 
 	note->velocity=(maxvel*(x-sx1)/(sx2-sx1));
 	note->velocity=R_BOUNDARIES(0,note->velocity,maxvel);
@@ -109,6 +113,7 @@ int MoveVelStart_Mouse(
 
 	UpdateTrackReallines(window,wblock,wtrack);
 
+#if !USE_OPENGL
 	if(num_vel>1 || num_vel!=wtrack->num_vel){
 	  ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	  UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
@@ -118,6 +123,7 @@ int MoveVelStart_Mouse(
 	  ClearTrack(window,wblock,wtrack,start_realline,end_realline);
 	  UpdateWTrack(window,wblock,wtrack,start_realline,end_realline);
 	}
+#endif
 
 	GFX_SetChangeInt(window,wblock,"Velocity Start",note->velocity);
 	GFX_DrawStatusBar(window,wblock);

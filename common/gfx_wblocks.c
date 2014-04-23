@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 int lpb_opacity = -1;
 int line_opacity = -1;
 
+#if !USE_OPENGL
+
 void EraseLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -507,6 +509,8 @@ void DrawWBlockSpesific(
 	WBLOCK_DrawTempoColor(window,wblock,start_realline,end_realline);
 }
 
+#endif // USE_OPENGL
+
 
 
 void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
@@ -540,6 +544,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	);
 
 
+#if !USE_OPENGL
 	DrawWBlockSpesific(
 		window,
 		wblock,
@@ -550,6 +555,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	UpdateAllWTracks(window,wblock,wblock->top_realline,wblock->bot_realline);
 
 	SetCursorPos(window);
+#endif
 
 	DrawBottomSlider(window);
 

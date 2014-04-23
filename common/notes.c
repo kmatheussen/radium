@@ -237,6 +237,8 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 		note=(struct Notes *)element->pointer;
 		note->note=notenum;
 
+#if !USE_OPENGL
+
 		if(wtrack->noteshowtype==TEXTTYPE){
 		  ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
 		  UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
@@ -250,6 +252,8 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 					    );
 					    
 		}
+#endif // !USE_OPENGL
+
 		if(window->curr_track_sub==-1 && !pc->isplaying){
 			ScrollEditorDown(window,g_downscroll);
 		}
@@ -264,8 +268,10 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
           if(pitch!=NULL){
             pitch->note = notenum;
             wtrack->trackreallines[wblock->curr_realline].note = notenum + NOTE_PITCH_START;
+#if !USE_OPENGL
             ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
             UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
+#endif
           }else
             printf("Hmm...\n");
 
@@ -303,8 +309,10 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 		}
 
 		UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
 
 	}
 
@@ -416,9 +424,10 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 		ScrollEditorDown(window,g_downscroll);
 	}
 	UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 	PC_StopPause();
 
 }
@@ -480,9 +489,10 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	}
 
 	UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 	PC_StopPause();
 
 }

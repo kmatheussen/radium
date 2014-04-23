@@ -53,6 +53,9 @@ void GetNodeBox_basic(
 		int boxwidth,
 		int boxheight
 ){
+  //printf("__________w/h: %d/%d\n",boxwidth,boxheight);
+
+
 	ret->y1 = within->y1 + (tre->y1*(within->y2-within->y1)) - (boxheight/2);
 	ret->y2 = within->y1 + (tre->y1*(within->y2-within->y1)) + (boxheight/2);
 
@@ -71,8 +74,8 @@ void GetNodeBox_customsize(
 		int boxwidth,
 		int boxheight
 ){
-
   GetNodeBox_basic(tre,warea,within,ret,boxwidth,boxheight);
+
   tre->x2=(float)boxwidth;
   tre->y2=(float)boxheight;
 }
@@ -104,7 +107,10 @@ bool isInsideNodeBox(
 		 ){
 
   TBox get;
-  GetNodeBox_basic(tre,warea,within,&get,(int)tre->x2-tre->x1,(int)tre->y2-tre->y1);
+  GetNodeBox_basic(tre,warea,within,&get,tre->x2-tre->x1,tre->y2-tre->y1);
+  //GetNodeBox(window,wblock,NULL,wtemponode,temponodearea,&within,&get);
+  tre->x2=20;
+  tre->y2=20;
 
   //printf("tbox: %d/%d -> %d/%d\n",get.x1,get.y1,get.x2,get.y2);
   //printf("tre: %f/%f -> %f/%f\n",tre->x1,tre->y1,tre->x2,tre->y2);

@@ -1,3 +1,4 @@
+
 #include <stdint.h>
 
 #include <map>
@@ -17,6 +18,7 @@
 
 #include "../Qt/Qt_colors_proc.h"
 
+#define OPENGL_GFXELEMENTS_CPP
 #include "GfxElements.h"
 
 
@@ -26,16 +28,20 @@
 
 
 
-static int g_height = 512;
+static volatile float g_height = 512;
 
 void GE_set_height(int height){
   g_height = height;
 }
 
 int GE_get_height(void){
+  //return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
   return g_height;
 }
 
+int GE_get_tracker_height(){
+  return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
+}
 
 extern struct Root *root;
 
@@ -68,14 +74,12 @@ struct _GE_Context : public vl::Object{
   } color;
 
   int _z;
-  bool is_static;
 
   vl::ref<vl::Image> gradient;
 
   _GE_Context(const Color _color, int z)
     : color(_color)
     , _z(z)
-    , is_static(z >= Z_MIN_STATIC)
     , gradient(NULL)
   {
     assert(sizeof(Color)==sizeof(uint64_t));
@@ -88,11 +92,8 @@ struct _GE_Context : public vl::Object{
 #endif
 
   float y(float y){
-    if (is_static)
-      return scale(y,0,g_height,
-                   g_height,0);
-    else
-      return -y;
+    return scale(y,0,g_height,
+                 g_height,0);
   }
 
   vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
@@ -141,42 +142,67 @@ typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 //                         z             color
 
 
-// this is somewhat complicated, but very efficient. It can be seen as a ringbuffer with room for only one element. If writing to a full ringbuffer, we overwrite what's already there.
-static Contexts *g_read_contexts = NULL;
-static Contexts *g_write_contexts = NULL;
-static Contexts *g_contexts = NULL;
+// Contains all data necessary to paint the editor.
+// Created in the main thread, and then transfered to the OpenGL thread.
+struct PaintingData{
+  Contexts contexts;
+  SharedVariables shared_variables;
+};
 
 
-bool GE_new_read_contexts(void){
-  QMutexLocker locker(&mutex);
-  
-  if(g_write_contexts==NULL)
-    return false;
-  
-  delete g_read_contexts;
-  g_read_contexts = g_write_contexts;
-  g_write_contexts = NULL;
-  
-  return true;
+
+
+// Accessed by both the main thread and the OpenGL thread. Access to this variable is protected by the mutex.
+static PaintingData *g_last_written_painting_data = NULL;
+
+
+// This variable is only accessed by the main thread while building up a new PaintingData.
+// It is not necessary for this variable to be global, and the code is more confusing because of that.
+// However, by letting it be global, we don't have to send it around everywhere.
+static PaintingData *g_painting_data = NULL;
+
+// Called from the OpenGL thread
+SharedVariables *GE_get_shared_variables(PaintingData *painting_data){
+  return &painting_data->shared_variables;
 }
 
+// Called from the OpenGL thread
+PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint){
+  PaintingData *ret;
+
+  {
+    QMutexLocker locker(&mutex);
+  
+    if(g_last_written_painting_data==NULL) {
+      *needs_repaint = false;
+      return current_painting_data;
+    } else {
+      *needs_repaint = true;
+      ret = g_last_written_painting_data;
+      g_last_written_painting_data = NULL;
+    }
+  }
+
+  if(current_painting_data != NULL)
+    delete current_painting_data;
+  
+  return ret;
+}
+
+// Called from the main thread
 void GE_start_writing(void){
-  g_contexts = new Contexts;
+  g_painting_data = new PaintingData();
+  GE_fill_in_shared_variables(&g_painting_data->shared_variables);
 }
 
-void GE_set_background_color(GE_Rgb c){
-  QMutexLocker locker(&mutex);
-
-}
-
-
+// Called from the main thread
 void GE_end_writing(GE_Rgb new_background_color){
   QMutexLocker locker(&mutex);
 
-  if (g_write_contexts != NULL) // I know the check is unnecessary, but the code is clearer this way. (shows that the variable might be NULL)
-    delete g_write_contexts;
+  if (g_last_written_painting_data != NULL) // Unnecessary, but the code is clearer this way. It shows that the variable might be NULL.
+    delete g_last_written_painting_data;
 
-  g_write_contexts = g_contexts;
+  g_last_written_painting_data = g_painting_data;
 
   background_color = new_background_color;
 }
@@ -203,35 +229,25 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
 }
 
 
-void GE_draw_vl(vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
   vg->setLineSmoothing(true);
   vg->setPolygonSmoothing(true);
   //vg->setPointSmoothing(true); /* default value */
   vg->setPointSmoothing(false); // images are drawn using drawPoint.
   //vg->setTextureMode(vl::TextureMode_Repeat 	);
 
-  Contexts *main_contexts;
-
   GE_Rgb new_background_color;
 
   {
     QMutexLocker locker(&mutex);
     new_background_color = background_color;
-    
-    assert(g_read_contexts != NULL);
-    
-    main_contexts = g_read_contexts;
-    g_read_contexts = NULL;
   }
 
   viewport->setClearColor(vl::fvec4(new_background_color.r/255.0f, new_background_color.g/255.0f, new_background_color.b/255.0f, new_background_color.a/255.0f));
 
   vg->startDrawing(); {
 
-    //QMapIterator<int, std::map<uint64_t, vl::ref<GE_Context> > > it(&contexts);
-    //begin();//(*contexts);
-
-    for (Contexts::Iterator it = main_contexts->begin(); it != main_contexts->end(); ++it) {
+    for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
 
       //int z = it.key();
       std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
@@ -318,8 +334,6 @@ void GE_draw_vl(vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<
 
     }
 
-    delete main_contexts;
-
   }vg->endDrawing();
 }
 
@@ -329,26 +343,16 @@ void GE_draw_vl(vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<
 
 
 /*************************************************/
-/* Creating contexts.  Called from main thread. */
+/* Creating painting_data.  Called from main thread. */
 /***********************************************/
 
 static GE_Context *get_context(const GE_Context::Color color, int z){
-#if 0
-  static bool inited = false;
-
-  if(inited==false){
-    QFont font;
-    GE_set_new_font(font);
-    inited=true;
-  }
-#endif
-
-  if((*g_contexts)[z].count(color.key)>0)
-    return (*g_contexts)[z][color.key].get();
+  if(g_painting_data->contexts[z].count(color.key)>0)
+    return g_painting_data->contexts[z][color.key].get();
 
   GE_Context *c = new GE_Context(color, z);
 
-  (*g_contexts)[z][color.key] = c;
+  g_painting_data->contexts[z][color.key] = c;
   return c;
 }
 

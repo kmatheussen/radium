@@ -63,7 +63,11 @@ public:
     palette2.setBrush(QPalette::Active, QPalette::WindowText, brush3);
     palette2.setBrush(QPalette::Inactive, QPalette::WindowText, brush3);
     palette2.setBrush(QPalette::Disabled, QPalette::WindowText, brush1);
+    palette2.setBrush(QPalette::Active, QPalette::Text, brush3);
+    palette2.setBrush(QPalette::Inactive, QPalette::Text, brush3);
+    palette2.setBrush(QPalette::Disabled, QPalette::Text, brush1);
     arrow->setPalette(palette2);
+    //static_cast<QLabel*>(arrow)->setText("gakk");
 
 #if 1
     if(set_size_policy){
@@ -149,12 +153,17 @@ public:
     pipe_label = NULL;
 #endif
 
-    effects_layout->insertWidget(2,_plugin_widget);
+    effects_layout->insertWidget(3,_plugin_widget);
+    _plugin_widget->setVisible(plugin->show_controls_gui);
+    spacer_holder->setVisible(!plugin->show_controls_gui);
     
+
     if(plugin->type==PR_get_plugin_type_by_name("Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name("FluidSynth","FluidSynth")){
       _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
       effects_layout->insertWidget(2,_sample_requester_widget);
+      show_browser->setFixedWidth(browserArrow->width());
 
+      /*
       QLabel *arrow = new QLabel("=>",this);
       arrow->setFrameShape(QFrame::Box);
 
@@ -162,12 +171,19 @@ public:
 
       effects_layout->insertWidget(3, arrow, 0, Qt::AlignTop);
       arrow->show();
-    }
+      */
+
+      //MyQCheckBox *checkbox = new MyQCheckBox("hello", this);
+      //effects_layout->
+
+    } else
+      browserLayoutWidget->hide();
 
     // Add compressor
     {
       _comp_widget = new Compressor_widget(patch, this);
-      effects_layout->insertWidget(effects_layout->count()-1, _comp_widget);
+      _comp_widget->setMinimumWidth(150);
+      effects_layout->insertWidget(effects_layout->count()-2, _comp_widget);
 
       // these widgets are only used in the standalone version
       _comp_widget->load_button->hide();
@@ -181,15 +197,6 @@ public:
 
     filters_widget->setVisible(plugin->show_equalizer_gui);
 
-    set_arrow_style(arrow1);
-    set_arrow_style(arrow2);
-    set_arrow_style(arrow3);
-    set_arrow_style(arrow4);
-    set_arrow_style(arrow5);
-    set_arrow_style(arrow6);
-    set_arrow_style(arrow7);
-    if(pipe_label!=NULL)
-      set_arrow_style(pipe_label,false);
 
 
     // Adjust output widget widths
@@ -202,13 +209,16 @@ public:
     }
 
 
-    updateWidgets();
-
 #if 0
     if(plugin->type->num_inputs==0){
       input_volume_layout->setDisabled(true);
     }
 #endif
+
+
+    scrollArea->horizontalScrollBar()->setFixedHeight(10);
+
+    updateWidgets();
   }
 
 
@@ -343,6 +353,11 @@ public:
 
     checkwidget->setChecked(val);
 
+    show_compressor->setFixedWidth(controlsArrow->width());
+    show_equalizer->setFixedWidth(controlsArrow->width());
+    show_browser->setFixedWidth(browserArrow->width());
+    show_controls->setFixedWidth(controlsArrow->width());
+
     if(system_effect==EFFNUM_INPUT_VOLUME_ONOFF)
       input_volume_slider->setEnabled(val);
     if(system_effect==EFFNUM_VOLUME_ONOFF)
@@ -379,6 +394,17 @@ public:
   }
 
   void updateWidgets(){
+    set_arrow_style(controlsArrow);
+    set_arrow_style(arrow2);
+    set_arrow_style(arrow3);
+    set_arrow_style(arrow4);
+    set_arrow_style(arrow5);
+    set_arrow_style(arrow6);
+    set_arrow_style(arrow7);
+    set_arrow_style(browserArrow);
+    if(pipe_label!=NULL)
+      set_arrow_style(pipe_label,false);
+
     updateSlider(EFFNUM_BUS1);
     updateSlider(EFFNUM_BUS2);
     updateSlider(EFFNUM_DRYWET);
@@ -470,6 +496,8 @@ public:
 
     _comp_widget->update_gui();
 
+    show_browser->setChecked(plugin->show_browser_gui);
+    show_controls->setChecked(plugin->show_controls_gui);
     show_equalizer->setChecked(plugin->show_equalizer_gui);
     show_compressor->setChecked(plugin->show_compressor_gui);
 
@@ -506,6 +534,24 @@ public slots:
     outputs_widget2->setVisible(val);
   }
 #endif
+
+  void on_show_browser_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + EFFNUM_BROWSER_SHOW_GUI;
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+    if(_sample_requester_widget!=NULL)
+      _sample_requester_widget->setVisible(val);
+  }
+
+  void on_show_controls_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + EFFNUM_CONTROLS_SHOW_GUI;
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+    _plugin_widget->setVisible(val);
+    spacer_holder->setVisible(!val);
+  }
 
   void on_show_equalizer_toggled(bool val){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;

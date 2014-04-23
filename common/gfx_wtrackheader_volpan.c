@@ -85,7 +85,10 @@ void UpdateVolumeSlider(
                                 PAINT_BUFFER
 		);
 	}
+
+#if !USE_OPENGL
 	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
+#endif
 }
 
 void UpdatePanSlider(
@@ -144,7 +147,10 @@ void UpdatePanSlider(
                           PAINT_BUFFER
                           );
 	}
+
+#if !USE_OPENGL
 	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
+#endif
 }
 
 

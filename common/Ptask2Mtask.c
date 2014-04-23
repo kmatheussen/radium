@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 *******************************************************/
 
 
+
+
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "wblocks_proc.h"
@@ -53,11 +55,15 @@ extern PlayerClass *pc;
 extern struct Root *root;
 
 //static int 
-static STime last_time = 0;
 struct WBlocks *last_wblock = NULL;
 
 int scrolls_per_second = -1;
 int default_scrolls_per_second = 20;
+
+
+#if !USE_OPENGL
+
+static STime last_time = 0;
 
 void P2MUpdateSongPosCallBack(void){
 	struct Tracker_Windows *window=root->song->tracker_windows;
@@ -141,4 +147,6 @@ void P2MUpdateSongPosCallBack(void){
 
 void (*Ptask2MtaskCallBack)(void)= &P2MUpdateSongPosCallBack;
 
+
+#endif
 

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void MIDISaveFX(struct FX *fx,struct Tracks *track){
+void MIDISaveFX(struct FX *fx,const struct Tracks *track){
   //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 
 DC_start("FXDATA");
@@ -42,7 +42,7 @@ DC_end();
 }
 
 
-void *MIDILoadFX(struct FX *fx,struct Tracks *track){
+void *MIDILoadFX(struct FX *fx,const struct Tracks *track){
 	static char **objs=NULL;
 	static char *vars[1]={"cc"};
 

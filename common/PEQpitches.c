@@ -59,9 +59,9 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit);
 static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit);
 
 void InitPEQpitches(
-	struct Blocks *block,
-	struct Tracks *track,
-	struct Notes *note,
+	const struct Blocks *block,
+	const struct Tracks *track,
+	const struct Notes *note,
 	int playlistaddpos
 ){
 	struct PEventQueue *peq;
@@ -102,8 +102,8 @@ void InitPEQpitches(
 
 
 static void scheduled_change_pitch(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
-  struct Notes  *note  = args[1].pointer;
+  const struct Tracks *track = args[0].const_pointer;
+  const struct Notes  *note  = args[1].const_pointer;
   float          x     = args[2].float_num;
 
   RT_PATCH_change_pitch(track->patch,
@@ -117,8 +117,8 @@ static void scheduled_change_pitch(int64_t time, union SuperType *args){
 static void SendPitchChange(float x,struct PEventQueue *peq){
 	if(peq->track->patch!=NULL && peq->track->onoff==1){
           union SuperType args[3];
-          args[0].pointer = peq->track;
-          args[1].pointer = peq->note;
+          args[0].const_pointer = peq->track;
+          args[1].const_pointer = peq->note;
           args[2].float_num = x;
 
           SCHEDULER_add_event(peq->l.time, scheduled_change_pitch, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
@@ -204,7 +204,7 @@ static float FindNextPitch(struct PEventQueue *peq){
 
   else {
 
-    struct Blocks *block;
+    const struct Blocks *block;
     struct Tracks *track;
     struct Notes *note;
     int playlistaddpos=0;

@@ -144,7 +144,9 @@ void UpdateWTrackHeader(
 	}
 	GFX_T_Line(window,1,wtrack->x,wblock->t.y1-1,wtrack->x2,wblock->t.y1-1,PAINT_BUFFER);
 
+#if !USE_OPENGL
 	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
+#endif
 }
 
 
@@ -157,6 +159,7 @@ void DrawWTrackHeader(
 ){
        int colornum = 0;
 
+       //printf("Drawing track header for track %d\n",wtrack->l.num);
        //if (wtrack->track->patch!=NULL)
        //  colornum = wtrack->track->patch->colornum;
 

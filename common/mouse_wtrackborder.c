@@ -44,7 +44,6 @@ int MoveWTrackBorder_Mouse(
 	struct Tracker_Windows *window,
 	float x,float y
 ){
-	int oldfxwidth;
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=(struct WTracks *)ListFindElement1_r0(&wblock->wtracks->l,(NInt)window->prevaction.eint1);
 
@@ -55,8 +54,7 @@ int MoveWTrackBorder_Mouse(
 
 	x=R_BOUNDARIES(wtrack->fxarea.x+3, x, wblock->t.x2-3);
 
-	oldfxwidth=wtrack->fxwidth;
-        NInt oldrighttrack=wblock->right_track;
+	int oldfxwidth=wtrack->fxwidth;
 
 	wtrack->fxwidth=x - wtrack->fxarea.x;
 	wtrack->fxwidth=R_MAX(wtrack->fxwidth,2);
@@ -65,7 +63,9 @@ int MoveWTrackBorder_Mouse(
 	  return 0;
 	}
 
-#if 1
+#if !USE_OPENGL
+        NInt oldrighttrack=wblock->right_track;
+
 	GFX_BitBlt(window,wtrack->fxwidth-oldfxwidth,0,
 		     wtrack->fxarea.x2-2,wblock->a.y1,
 		     wblock->a.x2,wblock->t.y2
@@ -74,9 +74,10 @@ int MoveWTrackBorder_Mouse(
 
 	UpdateWBlockCoordinates(window,wblock);
 
-#if 1
-	DrawUpWTrack(window,wblock,wtrack);
 	DrawWTrackHeader(window,wblock,wtrack);
+
+#if !USE_OPENGL
+	DrawUpWTrack(window,wblock,wtrack);
 	
 	struct WTracks *wtrack2;
 
@@ -117,6 +118,17 @@ int MoveWTrackBorder_Mouse(
 		   );
 	  Blt_marktrackheader(window,wtrack->l.num,wblock->right_track);
 	}
+
+#else
+	UpdateBottomSlider(window);
+        {
+            struct WTracks *wtrack2=wtrack;
+	    while(wtrack2!=NULL && wtrack2->l.num<=wblock->right_track){
+	      DrawWTrackHeader(window,wblock,wtrack2);
+	      wtrack2=NextWTrack(wtrack2);
+	    }
+	  }
+
 #endif
                    //window->must_redraw=true;
 	

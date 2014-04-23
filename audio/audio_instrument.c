@@ -104,7 +104,7 @@ static float scale(float x, float x1, float x2, float y1, float y2){
 }
 #endif
 
-static void AUDIO_changeTrackPan(int newpan,struct Tracks *track){
+static void AUDIO_changeTrackPan(int newpan,const struct Tracks *track){
   struct Patch *patch = track->patch;
 
   //printf("Changing track pan. Val: %d. patc: %p, plugin: %p\n",newpan,patch,patch->patchdata);
@@ -154,11 +154,11 @@ typedef struct{
 } AUDIO_FX_data_t;
 #endif
 
-static int AUDIO_getMaxVelocity(struct Patch *patch){
+static int AUDIO_getMaxVelocity(const struct Patch *patch){
   return MAX_FX_VAL;
 }
 
-static void AUDIO_close_FX(struct FX *fx,struct Tracks *track){
+static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //struct Patch *patch = track->patch;
 
   printf("AUDIO_close_FX called for track %d\n",track->l.num);
@@ -168,7 +168,7 @@ static void AUDIO_close_FX(struct FX *fx,struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
-static void AUDIO_treat_FX(struct FX *fx,int val,struct Tracks *track,STime time,int skip){
+static void AUDIO_treat_FX(struct FX *fx,int val,const struct Tracks *track,STime time,int skip){
   SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
 
@@ -178,7 +178,7 @@ static void AUDIO_treat_FX(struct FX *fx,int val,struct Tracks *track,STime time
 }
 
 #if 0
-static void AUDIO_set_FX_string(struct FX *fx,int val,struct Tracks *track,char *string){
+static void AUDIO_set_FX_string(struct FX *fx,int val,const struct Tracks *track,char *string){
   SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
 
@@ -188,8 +188,8 @@ static void AUDIO_set_FX_string(struct FX *fx,int val,struct Tracks *track,char 
 }
 #endif
 
-static void AUDIO_save_FX(struct FX *fx,struct Tracks *track);
-static void *AUDIO_LoadFX(struct FX *fx,struct Tracks *track);
+static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track);
+static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track);
 
 static void init_fx(struct FX *fx, int effect_num, const char *name){
 
@@ -213,7 +213,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name){
 
 }
 
-static int AUDIO_getFX(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx){
+static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
   struct Patch *patch = track->patch;
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
@@ -252,7 +252,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,struct Tracks *track,struc
   return FX_SUCCESS;
 }
 
-static void AUDIO_save_FX(struct FX *fx,struct Tracks *track){
+static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){
   printf("AUDIO_save_FX called for track %d\n",track->l.num);
 
   DC_start("FXDATA");{
@@ -263,7 +263,7 @@ static void AUDIO_save_FX(struct FX *fx,struct Tracks *track){
   }DC_end();
 }
 
-static void *AUDIO_LoadFX(struct FX *fx,struct Tracks *track){
+static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
   static char **objs=NULL;
   static char *vars[2]={"num","name"};
 
@@ -316,7 +316,7 @@ extern struct Root *root;
 void DLoadAudioInstrument(void){
   struct Blocks *block = root->song->blocks;
   while(block!=NULL){
-    struct Tracks *track = block->tracks;
+    const struct Tracks *track = block->tracks;
     while(track!=NULL){
       struct Patch *patch = track->patch;
       struct FXs *fxs=track->fxs;
@@ -339,12 +339,12 @@ void DLoadAudioInstrument(void){
   }
 }
 
-static int AUDIO_getPatch(struct Tracker_Windows *window,ReqType reqtype,struct Tracks *track,struct Patch *patch){
+static int AUDIO_getPatch(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch){
   return PATCH_SUCCESS;
 }
 
 static void AUDIO_CloseInstrument(struct Instruments *instrument){}
-//static void AUDIO_InitTrack(struct Instruments *instrument,struct Tracks *track){}
+//static void AUDIO_InitTrack(struct Instruments *instrument,const struct Tracks *track){}
 static void AUDIO_StopPlaying(struct Instruments *instrument){
 }
 
@@ -352,7 +352,7 @@ static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch){
   GFX_PP_Update(patch);
 }
 
-static void *AUDIO_CopyInstrumentData(struct Tracks *track){
+static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
   return NULL;
 }
 

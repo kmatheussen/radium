@@ -1,1 +1,0 @@
-build_mingw_qt_visual.sh

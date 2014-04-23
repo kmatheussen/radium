@@ -88,6 +88,9 @@ enum{
   EFFNUM_DELAY_TIME,
   EFFNUM_DELAY_ONOFF,
 
+  EFFNUM_BROWSER_SHOW_GUI,
+  EFFNUM_CONTROLS_SHOW_GUI,
+
   NUM_SYSTEM_EFFECTS
 };
 
@@ -276,6 +279,9 @@ typedef struct SoundPlugin{
 
   SystemFilter delay;
   float delay_time;
+
+  bool show_browser_gui;
+  bool show_controls_gui;
 
   bool show_equalizer_gui;
 
