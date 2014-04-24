@@ -21,6 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
+#define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
+static inline int64_t NotenumId(float notenum){
+  int64_t n = notenum*NOTE_ID_RESOLUTION;
+  return n*NUM_PATCH_VOICES;
+}
+
 struct Notes *NewNote(void);
 
 extern struct Notes *InsertNote(

@@ -590,9 +590,9 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
     return;
 
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
+    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, -1, velocity*MAX_VELOCITY/127, NULL, -1);
   else
-    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, pitch, 0, NULL, -1);
+    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, -1, 0, NULL, -1);
 
   //printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
@@ -602,7 +602,7 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
   if(plugin->patch==NULL)
     return;
 
-  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, pitch, velocity*MAX_VELOCITY/127, NULL, -1);
+  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, -1, velocity*MAX_VELOCITY/127, NULL, -1);
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 

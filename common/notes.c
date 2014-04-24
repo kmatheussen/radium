@@ -145,7 +145,10 @@ void StopAllNotesAtPlace(
 }
 
 struct Notes *NewNote(void){
-  static int64_t curr_id = 2*128; // 0 = sample requester, 1-127 = computer keyboard, 128 - 2*128 = midi keyboard
+  static int64_t curr_id = -1;
+
+  if(curr_id==-1)
+    curr_id = NotenumId(1024);
 
   struct Notes *note=talloc(sizeof(struct Notes));
   note->id = curr_id;
