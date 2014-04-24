@@ -280,6 +280,8 @@ $1 = (SoundPlugin *) 0x0
 #include "../common/OS_settings_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/PEQcommon_proc.h"
+#include "../common/playerclass.h"
+extern PlayerClass *pc;
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
 #include "SoundPluginRegistry_proc.h"
@@ -324,19 +326,23 @@ static void RT_play_note(struct SoundPlugin *plugin, int64_t time, float note_nu
     //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
     libpds_noteon(pd, 0, note_num, volume*127);
 
-#if 0
     {
-      t_atom v_line[6];
+      t_atom v[7];
       int sample_rate = MIXER_get_sample_rate();
+
+      int period_delta_time = time;
+      time += pc->start_time;
       
       SETFLOAT(v + 0, int(time / sample_rate));
       SETFLOAT(v + 1, time % sample_rate);
-      SETFLOAT(v + 2, note_num);
-      SETFLOAT(v + 3, volume);
-      SETFLOAT(v + 4, pan);
-      SETFLOAT(v + 5, note_id);
+      SETFLOAT(v + 2, sample_rate);
+      SETFLOAT(v + 3, period_delta_time);
+      SETFLOAT(v + 4, note_num);
+      SETFLOAT(v + 5, volume);
+      SETFLOAT(v + 6, pan);
+
+      libpds_list(pd, "radium_note_on", 7, v);
     }
-#endif
   }
 }
 
@@ -356,8 +362,6 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, float no
   libpds_list(pd, "radium_note_pitch", 2, v);
 }
 
-#include "../common/playerclass.h"
-extern PlayerClass *pc;
 
 void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
 
@@ -406,9 +410,24 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
 }
 
 static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
-  Data *data = (Data*)plugin->data;
-  pd_t *pd = data->pd;
-  libpds_noteon(pd, 0, note_num, 0);
+  if(g_instances != NULL) {
+    Data *data = (Data*)plugin->data;
+    pd_t *pd = data->pd;
+    libpds_noteon(pd, 0, note_num, 0);
+
+    {
+      t_atom v[4];
+      int sample_rate = MIXER_get_sample_rate();
+
+      SETFLOAT(v + 0, int(time / sample_rate));
+      SETFLOAT(v + 1, time % sample_rate);
+      SETFLOAT(v + 2, sample_rate);
+      SETFLOAT(v + 3, note_num);
+
+      libpds_list(pd, "radium_note_off", 4, v);
+    }
+
+  }
 }
 
 static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format) {
@@ -564,30 +583,60 @@ static void RT_pdmessagehook(void *d, const char *source, const char *controller
 static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
+  int sample_rate = MIXER_get_sample_rate();
   
   //printf("argc: %d\n",argc);
 
-  if( !strcmp(recv, "radium_controller") &&
-      argc==5 &&
-      libpd_is_symbol(argv[0]) &&
-      strcmp("", libpd_get_symbol(argv[0])) &&
-      libpd_is_float(argv[1]) &&
-      libpd_is_float(argv[2]) &&
-      libpd_is_float(argv[3]) &&
-      libpd_is_float(argv[4]))
-    {
-      char  *name      = libpd_get_symbol(argv[0]);
-      int    type      = libpd_get_float(argv[1]);
-      float  min_value = libpd_get_float(argv[2]);
-      float  value     = libpd_get_float(argv[3]);
-      float  max_value = libpd_get_float(argv[4]);
-      //printf("Got something: -%s-, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
-      
-      if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
-        RT_add_controller(plugin, data, name, type, min_value, value, max_value);
-      else
-        printf("Unknown type: -%d-\n",type);
-    }
+  if( !strcmp(recv, "radium_controller")) {
+    if(argc==5 &&
+       libpd_is_symbol(argv[0]) &&
+       strcmp("", libpd_get_symbol(argv[0])) &&
+       libpd_is_float(argv[1]) &&
+       libpd_is_float(argv[2]) &&
+       libpd_is_float(argv[3]) &&
+       libpd_is_float(argv[4]))
+      {
+        char  *name      = libpd_get_symbol(argv[0]);
+        int    type      = libpd_get_float(argv[1]);
+        float  min_value = libpd_get_float(argv[2]);
+        float  value     = libpd_get_float(argv[3]);
+        float  max_value = libpd_get_float(argv[4]);
+        //printf("Got something: -%s-, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
+        
+        if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
+          RT_add_controller(plugin, data, name, type, min_value, value, max_value);
+        else
+          printf("Unknown type: -%d-\n",type);
+      }
+
+  } else if( !strcmp(recv, "radium_receive_note_on")) {
+    if(argc==5 &&
+         libpd_is_float(argv[1]) &&
+         libpd_is_float(argv[2]) &&
+         libpd_is_float(argv[3]) &&
+         libpd_is_float(argv[4]))
+        {
+          float seconds = libpd_get_float(argv[1]);
+          int   frames  = libpd_get_float(argv[2]);
+          int64_t time = seconds*sample_rate + frames;
+          float pitch = libpd_get_float(argv[3]);
+          float velocity = libpd_get_float(argv[4]);
+          RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, -1, velocity, NULL, time);
+        }
+
+  } else if( !strcmp(recv, "radium_receive_note_off")) {
+      if(argc==5 &&
+         libpd_is_float(argv[1]) &&
+         libpd_is_float(argv[2]) &&
+         libpd_is_float(argv[3]))
+        {
+          float seconds = libpd_get_float(argv[1]);
+          int   frames  = libpd_get_float(argv[2]);
+          int64_t time = seconds*sample_rate + frames;
+          float pitch = libpd_get_float(argv[3]);
+          RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, -1, 0, NULL, time);
+        }
+  }
 }
 
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
@@ -717,6 +766,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   plugin->data = data; // plugin->data is used before this function ends. (No, only data, seems like. We can send 'data' instead of 'plugin' to the hooks.) (well, PD_recreate_controllers_from_state uses plugin->data)
 
   libpds_bind(pd, "radium_controller", plugin);
+  libpds_bind(pd, "radium_receive_note_on", plugin);
   libpds_bind(pd, "libpd", plugin);
 
   data->pdfile = pdfile;
