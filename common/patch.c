@@ -431,6 +431,10 @@ static float get_voice_velocity(struct PatchVoice *voice){
 
 void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, float notenum,int64_t note_id,int velocity,struct Tracks *track,STime time){
   int i;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
+
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     RT_PATCH_play_note(receiver, notenum, note_id, velocity, track, time);
@@ -493,6 +497,9 @@ void RT_PATCH_play_note(struct Patch *patch,float notenum,int64_t note_id,int ve
   if(time==-1)
     time = patch->last_time;
 
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
+
   Patch_addPlayingNote(patch, notenum, note_id);
 
   float sample_rate = MIXER_get_sample_rate();
@@ -544,6 +551,10 @@ void PATCH_play_note(struct Patch *patch,float notenum,int64_t note_id,int veloc
 
 void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, float notenum,int64_t note_id,int velocity,struct Tracks *track,STime time){
   int i;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
+
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     RT_PATCH_stop_note(receiver, notenum, note_id,velocity, track, time);
@@ -553,6 +564,9 @@ void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, float notenum,int
 static void RT_stop_voice(struct Patch *patch, float notenum, int64_t note_id, int velocity,struct Tracks *track,STime time){
   if(notenum < 0.0 || notenum>127)
     return;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
 
   if(track!=NULL && track->volumeonoff)
     velocity = PATCH_radiumvelocity_to_patchvelocity(patch,track->volume*velocity)/MAXTRACKVOL;
@@ -592,6 +606,9 @@ void RT_PATCH_stop_note(struct Patch *patch,float notenum,int64_t note_id,int ve
 
   if(time==-1)
     time = patch->last_time;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
 
   Patch_removePlayingNote(patch, note_id);
 
@@ -644,6 +661,10 @@ void PATCH_stop_note(struct Patch *patch,float notenum,int64_t note_id, int velo
 
 void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, float notenum,int64_t note_id, int velocity,struct Tracks *track,STime time){
   int i;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
+
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     RT_PATCH_change_velocity(receiver, notenum, note_id, velocity, track, time);
@@ -692,6 +713,9 @@ void RT_PATCH_change_velocity(struct Patch *patch,float notenum,int64_t note_id,
   if(time==-1)
     time = patch->last_time;
 
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
+
   float sample_rate = MIXER_get_sample_rate();
 
   int i;
@@ -739,6 +763,10 @@ void PATCH_change_velocity(struct Patch *patch,float notenum,int64_t note_id,int
 
 void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, float notenum,int64_t note_id,float pitch,struct Tracks *track,STime time){
   int i;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
+
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     RT_PATCH_change_pitch(receiver, notenum, note_id, pitch, track, time);
@@ -753,6 +781,9 @@ static void RT_change_voice_pitch(struct Patch *patch, float notenum, int64_t no
     time = patch->last_time;
   else
     patch->last_time = time;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
 
   //printf("Calling patch->changeptitch %d %f\n",notenum,pitch);
   patch->changepitch(patch,notenum,note_id,pitch,time);
@@ -779,6 +810,9 @@ void RT_PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id,flo
   //printf("vel: %d\n",pitch);
   if(time==-1)
     time = patch->last_time;
+
+  if(note_id==-1)
+    note_id = NotenumId(notenum);
 
   float sample_rate = MIXER_get_sample_rate();
 
@@ -834,6 +868,7 @@ void RT_FX_treat_fx(struct FX *fx,int val,struct Tracks *track,STime time,int sk
     else
       track->patch->last_time = time;
   }
+
   fx->treatFX(fx,val,track,time,skip);
 }
 
