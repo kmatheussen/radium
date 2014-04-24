@@ -965,7 +965,7 @@ void PATCH_stop_all_notes(struct Patch *patch){
   printf("STOP ALL NOTES.\n");
 
   PLAYER_lock();{
-    while(patch->num_currently_playing_voices > 0)
+    while(patch->num_currently_playing_voices > 0) {
       RT_stop_voice(patch,
                     patch->playing_voices[0].note_num, 
                     patch->playing_voices[0].note_id, 
@@ -973,8 +973,8 @@ void PATCH_stop_all_notes(struct Patch *patch){
                     NULL,
                     -1
                     );
+    }
 
-    patch->num_currently_playing_voices = 0;
     patch->num_currently_playing_notes = 0;
 
   }PLAYER_unlock();
