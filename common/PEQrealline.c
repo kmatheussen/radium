@@ -63,9 +63,9 @@ void InitPEQrealline(struct Blocks *block,Place *place){
                   peq->TreatMe=PlayerFirstRealline;
                   peq->block=block;
                   peq->wblock=wblock;
-                  PC_InsertElement2_latencycompencated(
-                                                       peq, addplaypos,&wblock->reallines[0]->l.p
-                                                       );
+                  PC_InsertElement2_a_latencycompencated(
+                                                         peq, addplaypos,&wblock->reallines[0]->l.p
+                                                         );
                   realline = 1;
                 }
 
@@ -92,10 +92,10 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
 	PlaceSetFirstPos(&firstplace);
 
 #ifdef WITH_PD
-        int64_t next_time = Place2STime(
-                                        peq->block,
-                                        &peq->wblock->reallines[peq->realline]->l.p
-                                        );
+        int64_t next_time = pc->seqtime + Place2STime(
+                                                      pc->block,
+                                                      &peq->wblock->reallines[1]->l.p
+                                                      );
 
         RT_PD_set_subline(peq->l.time, next_time, &firstplace);
 #endif
@@ -144,11 +144,11 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
                           peq2->wblock=(struct WBlocks *)ListFindElement1(
                                                                           &peq->window->wblocks->l,nextblock->l.num
                                                                           );
-                          PC_InsertElement2_latencycompencated(
-                                                               peq2, 1,&firstplace
-                                                               );
+                          PC_InsertElement2_a_latencycompencated(
+                                                                 peq2, 1,&firstplace
+                                                                 );
 #ifdef WITH_PD
-                          printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
+                          //printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
                           RT_PD_set_subline(org_time, peq2->l.time, org_pos);
                           inserted_pd_subline=true;
 #endif
