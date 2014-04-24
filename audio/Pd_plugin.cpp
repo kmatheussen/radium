@@ -279,6 +279,7 @@ $1 = (SoundPlugin *) 0x0
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/PEQcommon_proc.h"
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
 #include "SoundPluginRegistry_proc.h"
@@ -320,7 +321,7 @@ static void RT_play_note(struct SoundPlugin *plugin, int64_t time, float note_nu
 
     Data *data = (Data*)plugin->data;
     pd_t *pd = data->pd;
-    //printf("RT_play_note. %d %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
+    //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
     libpds_noteon(pd, 0, note_num, volume*127);
 
 #if 0
@@ -375,16 +376,21 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
     SETFLOAT(v + 6, int(duration / sample_rate));
     SETFLOAT(v + 7, duration % sample_rate);
 
-    if(p->counter==0){
-        const struct Blocks *block = pc->block;
-        int64_t duration = block->times[p->line+1].time - time;
+    if(false && p->line==0){
+      struct Blocks *block = PC_GetPlayBlock(0);
+      printf("time: %d, next_time: %lld (%lld), duration: %f\n",(int)time,(long long int)time_nextsubline,(long long int)block->times[p->line+1].time,1000.0*duration/sample_rate);
+    }
 
-        SETFLOAT(v_line + 0, int(time / sample_rate));
-        SETFLOAT(v_line + 1, time % sample_rate);
-        SETFLOAT(v_line + 2, sample_rate);
-        SETFLOAT(v_line + 3, p->line);
-        SETFLOAT(v_line + 4, int(duration/sample_rate));
-        SETFLOAT(v_line + 5, duration % sample_rate);
+    if(p->counter==0){
+      const struct Blocks *block = PC_GetPlayBlock(0);
+      int64_t duration = block->times[p->line+1].time - block->times[p->line].time;
+      
+      SETFLOAT(v_line + 0, int(time / sample_rate));
+      SETFLOAT(v_line + 1, time % sample_rate);
+      SETFLOAT(v_line + 2, sample_rate);
+      SETFLOAT(v_line + 3, p->line);
+      SETFLOAT(v_line + 4, int(duration/sample_rate));
+      SETFLOAT(v_line + 5, duration % sample_rate);            
     }
 
     Data *instance = g_instances;

@@ -18,27 +18,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void PC_RemoveFirst(void);
-extern const struct Blocks *PC_GetPlayBlock(int numfromcurrent);
-extern bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block);
+extern LANGSPEC void PC_RemoveFirst(void);
+extern LANGSPEC const struct Blocks *PC_GetPlayBlock(int numfromcurrent);
+extern LANGSPEC bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block);
 
-extern void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
-extern void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
-extern void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, const Place *p);
-extern void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p);
-extern void PC_InsertElement_a(struct PEventQueue *peq, int addplaypos, STime addtime);
-extern void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, const Place *p);
-extern void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p);
+extern LANGSPEC void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, const Place *p);
+extern LANGSPEC void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p);
+extern LANGSPEC void PC_InsertElement_a(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, const Place *p);
+extern LANGSPEC void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p);
 
-extern void PC_ReturnElements(void);
-extern void PC_ReturnElements_fromPlayPos(int playpos);
+extern LANGSPEC void PC_ReturnElements(void);
+extern LANGSPEC void PC_ReturnElements_fromPlayPos(int playpos);
 
-extern void PC_GoNextBlock(void);
+extern LANGSPEC void PC_GoNextBlock(void);
 
-extern bool PC_isPlayingBlock(void);
-extern bool PC_isPlayingSong(void);
+extern LANGSPEC bool PC_isPlayingBlock(void);
+extern LANGSPEC bool PC_isPlayingSong(void);
 
-extern STime PC_TimeToRelBlockStart(STime time);
+extern LANGSPEC STime PC_TimeToRelBlockStart(STime time);
 
 #endif
 
