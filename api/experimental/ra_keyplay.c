@@ -13,7 +13,7 @@ void keyDownPlay(int windownum,int notenum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-	PATCH_playNoteCurrPos(window,notenum);
+	PATCH_playNoteCurrPos(window,notenum,-1);
 	InsertNoteCurrPos(window,notenum,0);
 }
 
@@ -25,7 +25,7 @@ void polyKeyDownPlay(int windownum,int notenum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-	PATCH_playNoteCurrPos(window,notenum);
+	PATCH_playNoteCurrPos(window,notenum,-1);
 	InsertNoteCurrPos(window,notenum,1);
 }
 
