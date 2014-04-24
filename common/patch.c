@@ -896,7 +896,8 @@ static void RT_PATCH_turn_voice_on(struct Patch *patch, int voicenum){
 
   if(voice->is_on==false){
     int i;
-    for(i=0;i<patch->num_currently_playing_notes;i++){
+
+    for(i=0 ; i < patch->num_currently_playing_notes ; i++){
       PatchPlayingNote ppn = patch->playing_notes[i];
 
       RT_play_voice(patch,
@@ -917,6 +918,7 @@ static void RT_PATCH_turn_voice_off(struct Patch *patch, int voicenum){
 
   if(voice->is_on==true){
     int i;
+
     for(i=0;i<patch->num_currently_playing_notes;i++){
       PatchPlayingNote ppn = patch->playing_notes[i];
       RT_stop_voice(patch,
@@ -959,20 +961,21 @@ void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_tra
 }
 
 void PATCH_stop_all_notes(struct Patch *patch){
-  int i;
+
+  printf("STOP ALL NOTES.\n");
 
   PLAYER_lock();{
-
-    for(i=0;i<patch->num_currently_playing_voices;i++)
+    while(patch->num_currently_playing_voices > 0)
       RT_stop_voice(patch,
-                    patch->playing_voices[i].note_num, 
-                    patch->playing_voices[i].note_id, 
+                    patch->playing_voices[0].note_num, 
+                    patch->playing_voices[0].note_id, 
                     root->standardvel, 
                     NULL,
                     -1
                     );
 
     patch->num_currently_playing_voices = 0;
+    patch->num_currently_playing_notes = 0;
 
   }PLAYER_unlock();
 }
