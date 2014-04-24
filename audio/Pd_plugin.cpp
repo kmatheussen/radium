@@ -377,7 +377,7 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
     SETFLOAT(v + 7, duration % sample_rate);
 
     if(false && p->line==0){
-      struct Blocks *block = PC_GetPlayBlock(0);
+      const struct Blocks *block = PC_GetPlayBlock(0);
       printf("time: %d, next_time: %lld (%lld), duration: %f\n",(int)time,(long long int)time_nextsubline,(long long int)block->times[p->line+1].time,1000.0*duration/sample_rate);
     }
 
