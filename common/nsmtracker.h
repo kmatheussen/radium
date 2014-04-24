@@ -336,9 +336,11 @@ struct Patch{
 #define NextPatch(a) ((struct Patch *)((a)->l.next))
 
 static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, int64_t note_id){
+#if 0
   printf("Adding note with id %d\n",(int)note_id);
   if(note_id==52428)
     abort();
+#endif
 
   if(patch->num_currently_playing_voices==MAX_PLAYING_PATCH_NOTES)
     printf("Error. Reached max number of voices there's room for in a patch. Hanging notes are likely to happen.\n");
@@ -356,10 +358,12 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
     }
   }
   printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
+#if 0
   for(i=0;i<patch->num_currently_playing_voices;i++)
     printf("id: %d\n",(int)patch->playing_voices[i].note_id);
   if(patch->num_currently_playing_voices > 3)
     abort();
+#endif
 }
 
 static inline void Patch_addPlayingNote(struct Patch *patch, float note_num, int64_t note_id){

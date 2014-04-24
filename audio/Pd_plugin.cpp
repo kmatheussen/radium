@@ -559,7 +559,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
   
-  printf("argc: %d\n",argc);
+  //printf("argc: %d\n",argc);
 
   if( !strcmp(recv, "radium_controller") &&
       argc==5 &&
@@ -575,7 +575,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
       float  min_value = libpd_get_float(argv[2]);
       float  value     = libpd_get_float(argv[3]);
       float  max_value = libpd_get_float(argv[4]);
-      printf("Got something: -%s-, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
+      //printf("Got something: -%s-, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
       
       if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
         RT_add_controller(plugin, data, name, type, min_value, value, max_value);
