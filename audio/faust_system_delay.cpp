@@ -5,7 +5,7 @@
 // version: "1.0"
 // license: "STK-4.3"
 //
-// Code generated with Faust 0.9.65 (http://faust.grame.fr)
+// Code generated with Faust 0.9.55 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -209,7 +209,7 @@ class System_Delay_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = (fConst0 * float(fslider0));
+		float 	fSlow0 = (fConst0 * fslider0);
 		FAUSTFLOAT* input0 = input[0];
 		FAUSTFLOAT* output0 = output[0];
 		for (int i=0; i<count; i++) {
@@ -220,7 +220,7 @@ class System_Delay_dsp : public dsp {
 			fRec1[0] = max(0.0f, min(1.0f, (fRec1[1] + fTemp1)));
 			fRec2[0] = ((int(((fRec1[1] >= 1.0f) & (fRec3[1] != fSlow0))))?fSlow0:fRec2[1]);
 			fRec3[0] = ((int(((fRec1[1] <= 0.0f) & (fRec2[1] != fSlow0))))?fSlow0:fRec3[1]);
-			output0[i] = (FAUSTFLOAT)(((1.0f - fRec1[0]) * fVec0[(IOTA-int((int(fRec2[0]) & 9599)))&16383]) + (fRec1[0] * fVec0[(IOTA-int((int(fRec3[0]) & 9599)))&16383]));
+			output0[i] = (FAUSTFLOAT)((fRec1[0] * fVec0[(IOTA-int((int(fRec3[0]) & 9599)))&16383]) + ((1.0f - fRec1[0]) * fVec0[(IOTA-int((int(fRec2[0]) & 9599)))&16383]));
 			// post processing
 			fRec3[1] = fRec3[0];
 			fRec2[1] = fRec2[0];
@@ -658,7 +658,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){

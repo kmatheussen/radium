@@ -196,10 +196,10 @@ static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note
 #endif
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id,float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
   //fluid_synth_noteoff(data->synth, 0, note_num);
-  sendnoteoff(data, 0, note_num, volume*127, data->time + time);
+  sendnoteoff(data, 0, note_num, 0, data->time + time);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){

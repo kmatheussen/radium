@@ -805,8 +805,8 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     add_midi_event(plugin,time,0xaa,note_num,volume*127);
   }
 
-  static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
-    add_midi_event(plugin,time,0x90,note_num,volume*127);
+  static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
+    add_midi_event(plugin,time,0x90,note_num,0);
   }
 
   float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){

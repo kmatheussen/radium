@@ -672,7 +672,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
 
   Voice *voice = data->voices_playing;

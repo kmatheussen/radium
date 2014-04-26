@@ -115,7 +115,7 @@ void MyPutMidi(
 static void MIDIplaynote(struct Patch *patch,
                          float das_notenum,
                          int64_t note_id,
-                         int velocity,
+                         float das_velocity,
                          STime time,
                          float pan
 ){
@@ -130,8 +130,18 @@ static void MIDIplaynote(struct Patch *patch,
 
         int notenum = das_notenum;
 
+        if(notenum>127)
+          notenum=127;
+        if(notenum<0)
+          notenum=0;
+
+        int velocity = scale(das_velocity,0,1,0,127);
+
         if(velocity>127)
           velocity=127;
+
+        if(velocity<0)
+          velocity=0;
 
 	/* Check if the patch has other LSB/MSB/Preset than is currently
 	   set for the channel.
@@ -208,7 +218,6 @@ bool useOx90ForNoteOff=false;
 static void MIDIstopnote(struct Patch *patch,
                          float das_notenum,
                          int64_t note_id,
-                         int velocity, 
                          STime time
 ){
   struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
@@ -218,20 +227,24 @@ static void MIDIstopnote(struct Patch *patch,
 
   int notenum = das_notenum;
 
-  if(velocity>127)
-    velocity=127;
+  if(notenum>127)
+    notenum=127;
+  if(notenum<0)
+    notenum=0;
 
+#if 0
   uint32_t tem=(uint32_t)(((0x80)<<24)|((notenum)<<16)|((velocity)<<8));
   if(tem>>24!=0x80){
     Pdebug("NoteStopAI! %x, val: %x\n",tem,notenum);
     return;
   }
+#endif
 
   PutMidi3(
            patchdata->midi_port,
            (useOx90ForNoteOff==true?0x90:0x80)|patchdata->channel,
            notenum,
-           useOx90ForNoteOff==true?0:velocity,
+           0, //useOx90ForNoteOff==true?0:velocity,
            time,
            10
            );
@@ -240,7 +253,7 @@ static void MIDIstopnote(struct Patch *patch,
 
 /******************* Velocity *************************/
 
-static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id, int velocity,STime time){
+static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id, float das_velocity,STime time){
 	struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
 
         if(patchdata==NULL)
@@ -248,8 +261,18 @@ static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id
 
         int notenum = das_notenum;
 
+        if(notenum>127)
+          notenum=127;
+        if(notenum<0)
+          notenum=0;
+
+        int velocity = scale(das_velocity,0,1,0,127);
+
         if(velocity>127)
           velocity=127;
+
+        if(velocity<0)
+          velocity=0;
 
         //printf("Sending aftertouch. channel: %d, note: %d, val: %d\n",patchdata->channel,note->note,velocity);
 	PutMidi3(
@@ -609,7 +632,7 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
   }
 
   instrument->instrumentname="MIDI instrument";
-  instrument->getMaxVelocity= &MIDIgetMaxVelocity;
+  //instrument->getMaxVelocity= &MIDIgetMaxVelocity;
   instrument->getFX= &MIDIgetFX;
   instrument->getPatch= &MIDIgetPatch;
   instrument->CloseInstrument=MIDICloseInstrument;

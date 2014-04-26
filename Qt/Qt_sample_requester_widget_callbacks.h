@@ -325,7 +325,7 @@ class Sample_requester_widget : public QWidget
 
     if(successfully_selected==true && pc->isplaying==false) {
       printf("playing note 1\n");
-      PATCH_play_note(g_currpatch, 12*_preview_octave, -1, MAX_VELOCITY/2, NULL);
+      PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 1.0f);
     }
   }
 
@@ -389,7 +389,7 @@ class Sample_requester_widget : public QWidget
     if(SAMPLER_set_new_sample(plugin,filename,file_list->currentRow()-1)==true){
       if(pc->isplaying==false){
         //printf("playing note 2\n");
-        PATCH_play_note(g_currpatch, 12*_preview_octave, -1, MAX_VELOCITY/2, NULL);
+        PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 1.0f);
       }
       _sample_name_label->setText(get_display_name(filename));
     }

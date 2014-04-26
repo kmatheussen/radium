@@ -110,7 +110,6 @@ static void scheduled_change_pitch(int64_t time, union SuperType *args){
                         note->note,
                         note->id,
                         x,
-                        track,
                         time
                         );
 }

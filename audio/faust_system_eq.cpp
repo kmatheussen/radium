@@ -1,6 +1,6 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.65 (http://faust.grame.fr)
+// Code generated with Faust 0.9.55 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -211,8 +211,8 @@ class System_Eq_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = powf(10,(0.05f * float(fslider0)));
-		float 	fSlow1 = float(fslider1);
+		float 	fSlow0 = powf(10,(0.05f * fslider0));
+		float 	fSlow1 = fslider1;
 		float 	fSlow2 = (fConst0 * (fSlow1 / sqrtf(max((float)0, fSlow0))));
 		float 	fSlow3 = (0.0010000000000000009f * ((1.0f - fSlow2) / (1.0f + fSlow2)));
 		float 	fSlow4 = (0.0010000000000000009f * (0 - cosf((fConst0 * fSlow1))));
@@ -224,10 +224,10 @@ class System_Eq_dsp : public dsp {
 			fRec1[0] = (fSlow3 + (0.999f * fRec1[1]));
 			fRec2[0] = (fSlow4 + (0.999f * fRec2[1]));
 			float fTemp1 = ((fRec2[0] * (1 + fRec1[0])) * fRec0[1]);
-			fRec0[0] = (0 - ((fTemp1 + (fRec1[0] * fRec0[2])) - fTemp0));
+			fRec0[0] = (0 - (((fRec1[0] * fRec0[2]) + fTemp1) - fTemp0));
 			float fTemp2 = (fRec1[0] * fRec0[0]);
-			fRec3[0] = ((0.999f * fRec3[1]) + fSlow5);
-			output0[i] = (FAUSTFLOAT)((0.5f * (fTemp2 + (fRec0[2] + (fTemp0 + fTemp1)))) + (fRec3[0] * ((fTemp2 + (fTemp1 + fRec0[2])) - fTemp0)));
+			fRec3[0] = (fSlow5 + (0.999f * fRec3[1]));
+			output0[i] = (FAUSTFLOAT)((fRec3[0] * ((fTemp2 + (fRec0[2] + fTemp1)) - fTemp0)) + (0.5f * (fTemp2 + (fTemp1 + (fTemp0 + fRec0[2])))));
 			// post processing
 			fRec3[1] = fRec3[0];
 			fRec0[2] = fRec0[1]; fRec0[1] = fRec0[0];
@@ -664,7 +664,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
