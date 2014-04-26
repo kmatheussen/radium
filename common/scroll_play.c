@@ -49,7 +49,7 @@ void Scroll_play_do(
                   while(tre!=NULL){
                     if(tre->type==TRE_VELLINEEND){
                       struct Notes *note=(struct Notes *)tre->pointer;
-                      PATCH_stop_note(patch,note->note,note->id,note->velocity_end,wtrack->track);
+                      PATCH_stop_note(patch,note->note,note->id);
                     }
                     tre=tre->next;
                   }
@@ -62,7 +62,7 @@ void Scroll_play_do(
                   while(tre!=NULL){
                     if(tre->type==TRE_VELLINESTART){
                       struct Notes *note=(struct Notes *)tre->pointer;
-                      PATCH_play_note(patch,note->note,note->id,note->velocity,wtrack->track);
+                      PATCH_play_note(patch,note->note,note->id,VELOCITY_get(note->velocity),TRACK_get_pan(wtrack->track));
                     }
                     tre=tre->next;
                   }

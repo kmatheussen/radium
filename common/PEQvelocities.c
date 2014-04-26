@@ -43,6 +43,7 @@ static STime PEQ_CalcNextVelocityEvent(
                                 int x2
                                 )
 {
+#if 0
   STime ntime=PEQ_CalcNextEvent(
                                 time1,time,time2,
                                 PATCH_radiumvelocity_to_patchvelocity(peq->track->patch, x1),
@@ -51,6 +52,14 @@ static STime PEQ_CalcNextVelocityEvent(
                                 );
   *x = PATCH_patchvelocity_to_radiumvelocity(peq->track->patch, *x); // convert back.
   return ntime;
+#else
+  return PEQ_CalcNextEvent(
+                           time1,time,time2,
+                           x1,
+                           x,
+                           x2
+                           );
+#endif
 }
 
 
@@ -128,8 +137,7 @@ static void scheduled_change_velocity(int64_t time, union SuperType *args){
   RT_PATCH_change_velocity(track->patch,
                            note->note,
                            note->id,
-                           x,
-                           track,
+                           TRACK_get_velocity(track,x),
                            time
                            );
 }

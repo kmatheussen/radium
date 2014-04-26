@@ -207,6 +207,9 @@ struct Velocities{
 };
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
 
+static inline float VELOCITY_get(int velocity){
+  return scale(velocity,0,MAX_VELOCITY,0,1);
+}
 
 /*********************************************************************
 	pitches.h
@@ -293,12 +296,14 @@ struct PatchVoice{
 typedef struct{
   float note_num;
   int64_t note_id;
+  float pan;
 } PatchPlayingNote;
 
-static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_id){
+static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_id,float pan){
   PatchPlayingNote ret;
   ret.note_num=note_num;
   ret.note_id=note_id;
+  ret.pan=pan;
   return ret;
 }
 
@@ -313,10 +318,10 @@ struct Patch{
 
   STime last_time; // player lock must be held when setting this value.
 
-  void (*playnote)(struct Patch *patch,float notenum,int64_t note_id,int velocity,STime time,float pan);
-  void (*changevelocity)(struct Patch *patch,float notenum,int64_t note_id,int velocity,STime time);
+  void (*playnote)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time,float pan);
+  void (*changevelocity)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time);
   void (*changepitch)(struct Patch *patch,float notenum,int64_t note_id,float pitch,STime time);
-  void (*stopnote)(struct Patch *patch,float notenum,int64_t note_id,int velocity,STime time);
+  void (*stopnote)(struct Patch *patch,float notenum,int64_t note_id,STime time);
   void (*closePatch)(struct Patch *patch);
   
   struct Instruments *instrument;
@@ -345,7 +350,7 @@ struct Patch{
 #define PATCH_SUCCESS 1
 #define NextPatch(a) ((struct Patch *)((a)->l.next))
 
-static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, int64_t note_id){
+static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, int64_t note_id, float pan){
 #if 0
   printf("Adding note with id %d\n",(int)note_id);
   if(note_id==52428)
@@ -355,7 +360,7 @@ static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, in
   if(patch->num_currently_playing_voices==MAX_PLAYING_PATCH_NOTES)
     printf("Error. Reached max number of voices there's room for in a patch. Hanging notes are likely to happen.\n");
   else    
-    patch->playing_voices[patch->num_currently_playing_voices++] = NewPatchPlayingNote(note_num, note_id);
+    patch->playing_voices[patch->num_currently_playing_voices++] = NewPatchPlayingNote(note_num, note_id, pan);
 }
 
 static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id){
@@ -376,11 +381,11 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
 #endif
 }
 
-static inline void Patch_addPlayingNote(struct Patch *patch, float note_num, int64_t note_id){
+static inline void Patch_addPlayingNote(struct Patch *patch, float note_num, int64_t note_id, float pan){
   if(patch->num_currently_playing_notes==MAX_PLAYING_PATCH_NOTES)
     printf("Error. Reached max number of notes there's room for in a patch. Hanging notes are likely to happen.\n");
   else    
-    patch->playing_notes[patch->num_currently_playing_notes++] = NewPatchPlayingNote(note_num, note_id);
+    patch->playing_notes[patch->num_currently_playing_notes++] = NewPatchPlayingNote(note_num, note_id, pan);
 }
 
 static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id){
@@ -394,6 +399,7 @@ static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id)
   }
   printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
 }
+
 
 /*********************************************************************
 	fx.h
@@ -449,7 +455,7 @@ struct Instruments{
 
         vector_t patches; // Not safe to traverse from player thread.
 
-	int (*getMaxVelocity)(const struct Patch *patch);
+        //int (*getMaxVelocity)(const struct Patch *patch);
 
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
@@ -528,12 +534,31 @@ struct Tracks{
 	int volume;
 
 	bool panonoff;
-        bool volumeonoff;                      /* The volume-button on/off, not track on/off. */
+        bool volumeonoff;                      /* The volume-button on/off, not track on/off. (i.e. if off, volume=1.0, not 0.0) */
 };
 #define NextTrack(a) ((struct Tracks *)((a)->l.next))
 
 #define MAXTRACKVOL 1000
 #define MAXTRACKPAN 1000
+
+static inline float TRACK_get_pan(struct Tracks *track){
+  if(track->panonoff)
+    return scale(track->pan, -MAXTRACKPAN, MAXTRACKPAN, -1.0, 1.0);
+  else
+    return 0.0f;
+}
+
+static inline float TRACK_get_volume(struct Tracks *track){
+  if(track->volumeonoff)
+    return scale(track->volume, 0, MAXTRACKVOL, 0, 1);
+  else
+    return 1.0f;
+}
+
+static inline float TRACK_get_velocity(struct Tracks *track, int velocity){
+  return TRACK_get_volume(track) * VELOCITY_get(velocity);
+}
+
 
 /*********************************************************************
 	area.h

@@ -1,18 +1,15 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.65 (http://faust.grame.fr)
+// Code generated with Faust 0.9.55 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
-#ifndef FAUSTPOWER
-#define FAUSTPOWER
 #include <cmath>
-template <int N> inline float faustpower(float x)          { return powf(x,N); } 
-template <int N> inline double faustpower(double x)        { return pow(x,N); }
-template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
-template <> 	 inline int faustpower<0>(int x)            { return 1; }
-template <> 	 inline int faustpower<1>(int x)            { return x; }
-#endif
+template <int N> inline float faustpower(float x) 		{ return powf(x,N); } 
+template <int N> inline double faustpower(double x) 	{ return pow(x,N); }
+template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
+template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
+template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
 
@@ -207,13 +204,13 @@ class System_Lowpass_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = (0.0010000000000000009f / tanf((fConst0 * float(fslider0))));
+		float 	fSlow0 = (0.0010000000000000009f / tanf((fConst0 * fslider0)));
 		FAUSTFLOAT* input0 = input[0];
 		FAUSTFLOAT* output0 = output[0];
 		for (int i=0; i<count; i++) {
 			fRec0[0] = (fSlow0 + (0.999f * fRec0[1]));
 			float fTemp0 = (1 + (fRec0[0] * (1.414213562373095f + fRec0[0])));
-			fRec1[0] = ((float)input0[i] - ((((1 + (fRec0[0] * (fRec0[0] - 1.414213562373095f))) * fRec1[2]) + (2 * ((1 - faustpower<2>(fRec0[0])) * fRec1[1]))) / fTemp0));
+			fRec1[0] = ((float)input0[i] - (((fRec1[2] * (1 + (fRec0[0] * (fRec0[0] - 1.414213562373095f)))) + (2 * (fRec1[1] * (1 - faustpower<2>(fRec0[0]))))) / fTemp0));
 			output0[i] = (FAUSTFLOAT)((fRec1[2] + (fRec1[0] + (2 * fRec1[1]))) / fTemp0);
 			// post processing
 			fRec1[2] = fRec1[1]; fRec1[1] = fRec1[0];
@@ -649,7 +646,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
   }
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
