@@ -541,21 +541,21 @@ struct Tracks{
 #define MAXTRACKVOL 1000
 #define MAXTRACKPAN 1000
 
-static inline float TRACK_get_pan(struct Tracks *track){
+static inline float TRACK_get_pan(const struct Tracks *track){
   if(track->panonoff)
     return scale(track->pan, -MAXTRACKPAN, MAXTRACKPAN, -1.0, 1.0);
   else
     return 0.0f;
 }
 
-static inline float TRACK_get_volume(struct Tracks *track){
+static inline float TRACK_get_volume(const struct Tracks *track){
   if(track->volumeonoff)
     return scale(track->volume, 0, MAXTRACKVOL, 0, 1);
   else
     return 1.0f;
 }
 
-static inline float TRACK_get_velocity(struct Tracks *track, int velocity){
+static inline float TRACK_get_velocity(const struct Tracks *track, int velocity){
   return TRACK_get_volume(track) * VELOCITY_get(velocity);
 }
 
