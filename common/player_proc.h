@@ -23,5 +23,5 @@ extern LANGSPEC void PlaySongFromStart(struct Tracker_Windows *window);
 extern LANGSPEC void PlaySongCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void PlayStop(void);
 
-extern LANGSPEC STime PLAYER_get_delta_time(STime time);
+extern LANGSPEC STime PLAYER_get_block_delta_time(STime time);
 

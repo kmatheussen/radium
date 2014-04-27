@@ -439,6 +439,10 @@ void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, float notenum, in
 
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
+    if(receiver==patch){ // unnecessary. We detect recursions when creating connections.
+      fprintf(stderr,"Error. receiver==patch in patch.c");
+      abort();
+    }
     RT_PATCH_play_note(receiver, notenum, note_id, velocity, pan, time);
   }
 }
@@ -524,12 +528,8 @@ void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, flo
       args[4].float_num = pan;
 
       // voice ON
-      if(voice->start<0.001f){
-        RT_play_voice(patch,voice_notenum,voice_id,voice_velocity,pan,time);
-      }else{
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 5, SCHEDULER_ADD_AFTER_SAME_TIME);
-      }
-       
+      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 5, SCHEDULER_ADD_AFTER_SAME_TIME);
+
       // voice OFF
       if(voice->length>0.001) // The voice decides when to stop by itself.
         SCHEDULER_add_event(time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
@@ -618,25 +618,18 @@ void RT_PATCH_stop_note(struct Patch *patch,float notenum,int64_t note_id,STime 
 
     if(voice->is_on==true){
 
-      if(voice->length<=0.001) { // i.e. this voice uses the stopping time which is defined in the editor.
+      if(voice->length<=0.001) { // i.e. this voice does not use a stopping time defined in the editor.
 
         float voice_notenum = notenum + voice->transpose;
         int64_t voice_id = note_id + i;
 
-        if(voice->start<0.001f){
+        union SuperType args[3];
 
-          RT_stop_voice(patch,voice_notenum,voice_id,time);
-
-        }else{
-
-          union SuperType args[3];
-
-          args[0].pointer = patch;
-          args[1].float_num = voice_notenum;
-          args[2].int_num = voice_id;
-          
-          SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
-        }
+        args[0].pointer = patch;
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
+        
+        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
       }
     }
   }
