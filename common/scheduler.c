@@ -61,14 +61,6 @@ static event_t *get_first_event(void){
   return g_queue[1];
 }
 
-/*
-static double scale(double x, double x1, double x2, double y1, double y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
-*/
 
 // SCHEDULER plugs into SEQ, and since they have different timer formats, we need to convert.
 //
@@ -108,7 +100,7 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
     return;
   }
   if(num_args>MAX_ARGS){
-    printf("Max 4 args allowed for scheduler...\n");
+    printf("Max %d args allowed for scheduler...\n",MAX_ARGS);
     return;
   }
 
@@ -143,8 +135,6 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
 }
 
 static void remove_first_event(void){
-  event_t *first = get_first_event();
-
   event_t *last = g_queue[g_queue_size];
   int64_t last_time = last->time;
 
@@ -168,10 +158,12 @@ static void remove_first_event(void){
   g_queue[i] = last;
 
   g_queue[g_queue_size+1] = NULL; // for the gc
+}
 
-  memset(first,0,sizeof(event_t)); // for the gc
-  first->next = g_free_events;
-  g_free_events = first;
+static void release_event(event_t *event){
+  memset(event,0,sizeof(event_t)); // for the gc
+  event->next = g_free_events;
+  g_free_events = event;
 }
 
 void SCHEDULER_called_per_block(int64_t reltime){
@@ -181,8 +173,11 @@ void SCHEDULER_called_per_block(int64_t reltime){
     event_t *event = get_first_event();
     int64_t event_time = event->time/2;  // remove priority bit.
     if(event_time < end_time){
-      event->callback(scheduler_to_seq_time(event_time), &event->args[0]);
       remove_first_event();
+      {
+        event->callback(scheduler_to_seq_time(event_time), &event->args[0]);
+      }
+      release_event(event);
     }else
       break;
   }
