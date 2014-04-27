@@ -281,7 +281,7 @@ struct PatchVoice{
 #define MAX_NUM_EVENT_RECEIVERS 64
 #define MAX_NOTE_INTENCITY 20
 
-#define MAX_PLAYING_PATCH_NOTES 1024
+#define MAX_PLAYING_PATCH_NOTES (1024*32)
 
 typedef struct{
   float note_num;

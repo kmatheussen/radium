@@ -117,7 +117,7 @@ void PlayerTask(STime reltime){
         SCHEDULER_called_per_block(tempoadjusted_reltime); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
 }
 
-STime PLAYER_get_delta_time(STime time){
+STime PLAYER_get_block_delta_time(STime time){
   if(time<pc->start_time || time>pc->end_time) // time may be screwed up if not coming from the player.
     return 0;
 

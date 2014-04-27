@@ -307,121 +307,154 @@ typedef struct _Data{
 
   struct _Data *next;
 
+  int largest_used_ids_pos;
   int ids_pos;
   int64_t note_ids[NUM_NOTE_IDS]; 
 } Data;
 
 
-static Data *g_instances; // protected by the player lock
+static Data *g_instances = NULL; // protected by the player lock
+
+static int RT_add_note_id_pos(Data *data, int64_t note_id){
+  int ids_pos = data->ids_pos;
+
+  data->note_ids[ids_pos] = note_id;
+  if(ids_pos > data->largest_used_ids_pos)
+    data->largest_used_ids_pos = ids_pos;
+
+  // The index is going to be stored in a float. Check that the float can contain the integer. (this code can be optimized, but it probably doesnt matter very much)
+  float new_pos = ids_pos+1;
+  while(ids_pos == (int)new_pos)
+    new_pos++;
+
+  ids_pos = new_pos;
+  if(ids_pos>=NUM_NOTE_IDS)
+    ids_pos = 0;
+
+  data->ids_pos =ids_pos;
+
+  return ids_pos;
+}
 
 static int RT_get_note_id_pos(Data *data, int64_t note_id){
   int ids_pos = data->ids_pos;
-  const int num_check_back = 8;
+  const int num_check_back = 64; // Could get in trouble if the number of simultaneously playing notes are higher than this number.
 
   if(ids_pos>num_check_back)
     for(int i=ids_pos-num_check_back ; i<ids_pos ; i++)
       if(data->note_ids[i]==note_id)
         return i;
 
-  data->note_ids[ids_pos] = note_id;
-
-  // The index is going to be stored in a float. Check that the float can contain the integer. (this code can be optimized, but it doesnt matter very much)
-  float new_pos = ids_pos+1;
-  while(ids_pos == (int)new_pos)
-    new_pos++;
-
-  data->ids_pos = new_pos;
-  if(data->ids_pos>=NUM_NOTE_IDS)
-    data->ids_pos = 0;
-
-  printf("old_pos: %d, new_pos: %f, data->ids_pos: %d\n",ids_pos,new_pos,data->ids_pos);
-
-  return ids_pos;
+  return RT_add_note_id_pos(data, note_id);
 }
 
 static int RT_get_legal_note_id_pos(Data *data, float ids_pos){
-  if(ids_pos<0.0f || ids_pos>=NUM_NOTE_IDS)
+  int i_ids_pos = (int)ids_pos;
+
+  if(i_ids_pos<0)
+    return -1;
+  else if(ids_pos>data->largest_used_ids_pos)
     return -1;
   else
-    return data->note_ids[(int)ids_pos];
+    return data->note_ids[i_ids_pos];
 }
 
-static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
   libpds_process_float_noninterleaved(pd, num_frames / libpds_blocksize(pd), (const float**) inputs, outputs);
 }
 
-static void RT_play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
-  if(g_instances != NULL) {
+static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan){
 
-    Data *data = (Data*)plugin->data;
-    pd_t *pd = data->pd;
-    //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
-    libpds_noteon(pd, 0, note_num, volume*127);
-
-    {
-      t_atom v[8];
-      int sample_rate = MIXER_get_sample_rate();
-
-      int period_delta_time = time;
-      time += pc->start_time;
-
-      printf("got note_id %d, pos: %d\n",(int)note_id,RT_get_note_id_pos(data, note_id));
-      SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-      SETFLOAT(v + 1, note_num);
-      SETFLOAT(v + 2, volume);
-      SETFLOAT(v + 3, pan);
-      SETFLOAT(v + 4, int(time / sample_rate));
-      SETFLOAT(v + 5, time % sample_rate);
-      SETFLOAT(v + 6, period_delta_time);
-      SETFLOAT(v + 7, sample_rate);
-
-      libpds_list(pd, "radium_receive_note_on", 8, v);
-    }
+  Data *data = (Data*)plugin->data;
+  pd_t *pd = data->pd;
+  //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
+  libpds_noteon(pd, 0, note_num, volume*127);
+  
+  {
+    t_atom v[8];
+    int sample_rate = MIXER_get_sample_rate();
+    
+    int64_t time = block_delta_time + pc->start_time;
+    
+    SETFLOAT(v + 0, RT_add_note_id_pos(data, note_id));
+    SETFLOAT(v + 1, note_num);
+    SETFLOAT(v + 2, volume);
+    SETFLOAT(v + 3, pan);
+    SETFLOAT(v + 4, int(time / sample_rate));
+    SETFLOAT(v + 5, time % sample_rate);
+    SETFLOAT(v + 6, block_delta_time);
+    SETFLOAT(v + 7, sample_rate);
+    
+    libpds_list(pd, "radium_receive_note_on", 8, v);
   }
 }
 
-static void RT_stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
-  if(g_instances != NULL) {
-    Data *data = (Data*)plugin->data;
-    pd_t *pd = data->pd;
-    libpds_noteon(pd, 0, note_num, 0);
-
-    {
-      t_atom v[6];
-      int sample_rate = MIXER_get_sample_rate();
-
-      int period_delta_time = time;
-      time += pc->start_time;
-
-      SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-      SETFLOAT(v + 1, note_num);
-      SETFLOAT(v + 2, int(time / sample_rate));
-      SETFLOAT(v + 3, time % sample_rate);
-      SETFLOAT(v + 4, period_delta_time);
-      SETFLOAT(v + 5, sample_rate);
-
-      libpds_list(pd, "radium_receive_note_off", 6, v);
-    }
+static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id){
+  Data *data = (Data*)plugin->data;
+  pd_t *pd = data->pd;
+  libpds_noteon(pd, 0, note_num, 0);
+  
+  {
+    t_atom v[6];
+    int sample_rate = MIXER_get_sample_rate();
+    
+    int64_t time = block_delta_time + pc->start_time;
+    
+    SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
+    SETFLOAT(v + 1, note_num);
+    SETFLOAT(v + 2, int(time / sample_rate));
+    SETFLOAT(v + 3, time % sample_rate);
+    SETFLOAT(v + 4, block_delta_time);
+    SETFLOAT(v + 5, sample_rate);
+    
+    libpds_list(pd, "radium_receive_note_off", 6, v);
   }
 }
 
-static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_polyaftertouch(pd, 0, note_num, volume*127);
+
+  {
+    t_atom v[6]; 
+
+    int sample_rate = MIXER_get_sample_rate();    
+    int64_t time = block_delta_time + pc->start_time;
+
+    SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
+    SETFLOAT(v + 1, volume);
+    SETFLOAT(v + 2, int(time / sample_rate));
+    SETFLOAT(v + 3, time % sample_rate);
+    SETFLOAT(v + 4, block_delta_time);
+    SETFLOAT(v + 5, sample_rate);
+    
+    libpds_list(pd, "radium_note_receive_velocity", 6, v);
+  }
 }
 
-static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
+static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
-  t_atom v[2]; 
-  SETFLOAT(v + 0, note_num);
-  SETFLOAT(v + 1, pitch);
-  libpds_list(pd, "radium_note_pitch", 2, v);
+  {
+    t_atom v[6]; 
+
+    int sample_rate = MIXER_get_sample_rate();    
+    int64_t time = block_delta_time + pc->start_time;
+
+    SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
+    SETFLOAT(v + 1, pitch);
+    SETFLOAT(v + 2, int(time / sample_rate));
+    SETFLOAT(v + 3, time % sample_rate);
+    SETFLOAT(v + 4, block_delta_time);
+    SETFLOAT(v + 5, sample_rate);
+    
+    libpds_list(pd, "radium_note_receive_pitch", 6, v);
+  }
 }
 
 
@@ -441,11 +474,6 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
     int64_t duration = time_nextsubline-time;
     SETFLOAT(v + 6, int(duration / sample_rate));
     SETFLOAT(v + 7, duration % sample_rate);
-
-    if(false && p->line==0){
-      const struct Blocks *block = PC_GetPlayBlock(0);
-      printf("time: %d, next_time: %lld (%lld), duration: %f\n",(int)time,(long long int)time_nextsubline,(long long int)block->times[p->line+1].time,1000.0*duration/sample_rate);
-    }
 
     if(p->counter==0){
       struct Blocks *block = PC_GetPlayBlock(0);
@@ -471,7 +499,7 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
   }
 }
 
-static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format) {
+static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   Pd_Controller *controller = &data->controllers[effect_num];
@@ -630,8 +658,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   Data *data = (Data*)plugin->data;
   int sample_rate = MIXER_get_sample_rate();
   
-  printf("argc: %d\n",argc);
-  printf("recv: %s\n",recv);
+  //printf("argc: %d\n",argc);
+  //printf("recv: %s\n",recv);
 
   if( !strcmp(recv, "radium_controller")) {
     if(argc==5 &&
@@ -669,31 +697,28 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float pan = libpd_get_float(argv[3]);
         float seconds = libpd_get_float(argv[4]);
         int   frames  = libpd_get_float(argv[5]);
-        int64_t time = seconds*sample_rate + frames - pc->start_time;
-        printf("time: %d\n",(int)time);
+        int64_t time = seconds*sample_rate + frames;
         RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, note_id, velocity, pan, time);
       }
     else
       printf("Wrong args for radium_send_note_on\n");
 
-#if 0
   } else if( !strcmp(recv, "radium_send_note_off")) {
-    if(argc==5 &&
-       (libpd_is_float(argv[1]) || (argv[1].a_type==A_BANG)) &&
+    if(argc==4 &&
+       (libpd_is_float(argv[0]) || (is_bang(argv[0]))) &&
+       libpd_is_float(argv[1]) &&
        libpd_is_float(argv[2]) &&
-       libpd_is_float(argv[3]) &&
-       libpd_is_float(argv[4]))
+       libpd_is_float(argv[3]))
       {
-        int64_t note_id = (argv[1].a_type==A_BANG) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[1]));
-        float pitch = libpd_get_float(argv[2]);
-        float seconds = libpd_get_float(argv[3]);
-        int   frames  = libpd_get_float(argv[4]);
+        int64_t note_id = is_bang(argv[0]) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[0]));
+        float pitch = libpd_get_float(argv[1]);
+        float seconds = libpd_get_float(argv[2]);
+        int   frames  = libpd_get_float(argv[3]);
         int64_t time = seconds*sample_rate + frames;
-        RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, note_id, 0, NULL, time);
+        RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, note_id, time);
       }
     else
       printf("Wrong args for radium_send_note_off\n");
-#endif
   }
 }
 
@@ -773,6 +798,8 @@ static QString get_search_path() {
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){
   Data *data = (Data*)calloc(1,sizeof(Data));
+  
+  data->largest_used_ids_pos = -1;
 
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {

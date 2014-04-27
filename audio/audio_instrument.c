@@ -48,9 +48,9 @@ static void AUDIO_playnote(struct Patch *patch,float notenum,int64_t note_id, fl
     return;
 
   if(plugin->type->play_note != NULL)
-    plugin->type->play_note(plugin, PLAYER_get_delta_time(time), notenum, note_id, velocity, pan);
+    plugin->type->play_note(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, velocity, pan);
 
-  //printf("playing audio note %d, velocity: %d, delta time: %d. Absolute time: %d\n",notenum,velocity,(int)MIXER_get_block_delta_time(time),(int)time);
+  //printf("playing audio note %d, player delta time: %d, mixer delta time: %d. Absolute time: %d\n",(int)notenum,(int)PLAYER_get_delta_time(time),(int)MIXER_get_block_delta_time(time),(int)time);
 }
 
 static void AUDIO_changevelocity(struct Patch *patch,float notenum,int64_t note_id, float velocity,STime time){
@@ -62,7 +62,7 @@ static void AUDIO_changevelocity(struct Patch *patch,float notenum,int64_t note_
   //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
 
   if(plugin->type->set_note_volume != NULL)
-    plugin->type->set_note_volume(plugin, PLAYER_get_delta_time(time), notenum, note_id, velocity);
+    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, velocity);
  
 }
 
@@ -75,7 +75,7 @@ static void AUDIO_changepitch(struct Patch *patch,float notenum,int64_t note_id,
   //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
 
   if(plugin->type->set_note_pitch != NULL)
-    plugin->type->set_note_pitch(plugin, PLAYER_get_delta_time(time), notenum, note_id, pitch);
+    plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, pitch);
  
 }
 
@@ -88,7 +88,7 @@ static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,STi
   //printf("stopping audio note %d\n",notenum);
 
   if(plugin->type->stop_note != NULL)
-    plugin->type->stop_note(plugin, PLAYER_get_delta_time(time), notenum, note_id);
+    plugin->type->stop_note(plugin, PLAYER_get_block_delta_time(time), notenum, note_id);
 }
 
 static void AUDIO_closePatch(struct Patch *patch){
@@ -175,7 +175,7 @@ static void AUDIO_treat_FX(struct FX *fx,int val,struct Tracks *track,STime time
 
   float effect_val = val / (float)MAX_FX_VAL;
 
-  PLUGIN_set_effect_value(plugin,PLAYER_get_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE);
+  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE);
 }
 
 #if 0

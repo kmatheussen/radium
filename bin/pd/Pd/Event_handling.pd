@@ -1,0 +1,152 @@
+#N canvas 751 292 938 671 8;
+#N canvas 1262 413 1186 719 send_receive_note_on 0;
+#X floatatom 310 143 10 0 0 0 - - -;
+#X floatatom 310 164 5 0 0 0 - - -;
+#X floatatom 310 185 5 0 0 0 - - -;
+#X floatatom 309 206 5 0 0 0 - - -;
+#X floatatom 309 228 5 0 0 0 - - -;
+#X floatatom 309 251 10 0 0 0 - - -;
+#X floatatom 308 273 5 0 0 0 - - -;
+#X floatatom 308 295 10 0 0 0 - - -;
+#X obj 397 260 +;
+#X obj 434 244 /;
+#X floatatom 397 298 10 0 0 0 - - -;
+#X text 458 298 <- Time in floating number;
+#X text 159 144 1 Note id;
+#X text 159 163 2 Note number (float);
+#X text 164 184 3 Volume (0-1);
+#X text 160 205 4 Track Pan (-1 - 1);
+#X text 158 228 5 Time \, number of seconds \;;
+#X text 161 273 7 Delta time (0 - 64);
+#X text 99 251 6 Time \, number of frames (0 - samplerate);
+#X obj 353 109 r_note_on ____________________________;
+#X text 165 293 8 Sample rate;
+#X obj 491 227 r_send_note_on _____________________;
+#X obj 751 106 r_line __________;
+#X obj 662 183 +;
+#X obj 713 28 r_float note_on_delay 0 0 1;
+#X floatatom 732 203 15 0 0 0 - - -;
+#X floatatom 832 163 15 0 0 0 - - -;
+#X obj 706 151 *;
+#X text 403 58 Receive and send note on;
+#X connect 8 0 10 0;
+#X connect 9 0 8 1;
+#X connect 19 0 0 0;
+#X connect 19 0 21 0;
+#X connect 19 1 1 0;
+#X connect 19 1 21 1;
+#X connect 19 2 2 0;
+#X connect 19 2 21 2;
+#X connect 19 3 3 0;
+#X connect 19 3 21 3;
+#X connect 19 4 4 0;
+#X connect 19 4 8 0;
+#X connect 19 4 21 4;
+#X connect 19 5 5 0;
+#X connect 19 5 9 0;
+#X connect 19 5 23 0;
+#X connect 19 6 6 0;
+#X connect 19 7 7 0;
+#X connect 19 7 9 1;
+#X connect 22 5 26 0;
+#X connect 22 5 27 1;
+#X connect 23 0 21 5;
+#X connect 24 0 27 0;
+#X connect 27 0 23 1;
+#X connect 27 0 25 0;
+#X restore 118 34 pd send_receive_note_on;
+#N canvas 739 475 956 427 send_receove_note_off 1;
+#X floatatom 320 153 10 0 0 0 - - -;
+#X floatatom 320 174 5 0 0 0 - - -;
+#X floatatom 320 195 5 0 0 0 - - -;
+#X floatatom 319 216 5 0 0 0 - - -;
+#X floatatom 319 238 5 0 0 0 - - -;
+#X floatatom 319 261 10 0 0 0 - - -;
+#X obj 407 270 +;
+#X obj 444 254 /;
+#X floatatom 407 308 10 0 0 0 - - -;
+#X text 468 308 <- Time in floating number;
+#X text 169 154 1 Note id;
+#X text 169 173 2 Note number (float);
+#X obj 761 116 r_line __________;
+#X obj 672 193 +;
+#X floatatom 742 213 15 0 0 0 - - -;
+#X floatatom 842 173 15 0 0 0 - - -;
+#X obj 716 161 *;
+#X text 413 68 Receive and send note off;
+#X obj 363 119 r_note_off ____________________________;
+#X obj 501 237 r_send_note_off _____________________;
+#X text 168 193 3 Time \, number of seconds \;;
+#X text 105 214 4 Time \, number of frames (0 - samplerate);
+#X text 169 238 5 Delta time (0 - 64);
+#X text 170 261 6 Sample rate;
+#X obj 723 38 r_float note_off_delay 0 0 1;
+#X connect 6 0 8 0;
+#X connect 7 0 6 1;
+#X connect 12 5 15 0;
+#X connect 12 5 16 1;
+#X connect 13 0 19 3;
+#X connect 16 0 13 1;
+#X connect 16 0 14 0;
+#X connect 18 0 0 0;
+#X connect 18 0 19 0;
+#X connect 18 1 1 0;
+#X connect 18 1 19 1;
+#X connect 18 2 2 0;
+#X connect 18 2 19 2;
+#X connect 18 2 6 0;
+#X connect 18 3 3 0;
+#X connect 18 3 13 0;
+#X connect 18 3 7 0;
+#X connect 18 4 4 0;
+#X connect 18 5 5 0;
+#X connect 18 5 7 1;
+#X connect 24 0 16 0;
+#X restore 120 73 pd send_receove_note_off;
+#X text 479 418 It's also possible to ignore the time values and send
+-1 back to radium for the "seconds" and "frames" parameter. If that
+happens \, Radium will use current time instead.;
+#X text 218 155 About Note Id;
+#X text 586 155 About Time;
+#X text 113 285 If the note id number could wrap around \, it's better
+to ignore it \, and use -1 instead. If Radium receives -1 as note id
+\, it will calculate a new id number based on the pitch. Note that
+it's not safe to use -1 if the patch only handles volume or pitch events.
+"Note on" and "note off" events must be handled as well \, where the
+id must be converted to -1 for these events as well. If not \, you
+risk modifying wrong or non-existing notes. The only disadvantage of
+using -1 instead of the supplied note id is that we modify data for
+all notes with approximately the same pitch \, not just the current
+note.;
+#X text 115 414 Since pitch is used to calculate new note id \, -1
+can not be used as note id if the pitch is changed.;
+#X text 477 260 When sending events back to radium \, time can be maniuplated
+frame-accurately.;
+#X text 482 468 "Delta time" is the number of frames into this Pd audio
+period the note is defined to start playing. This number is useful
+if you want to frame-accurately generate sound from pd \, not just
+send the event back to radium. However \, since the Pd block size is
+only 64 frames \, it is usually not possible to notice any difference
+whether you start playing from frame 0 \, or from frame "delta time"
+\, unless the notes are placed very close together.;
+#X text 477 186 "Time" consists of two numbers. The first number ("seconds")
+denotes number of seconds \, the second number ("frames") denotes the
+number of frames \, which is added to the "seconds" value to create
+a frame-accurate time value. Pd doesn't have a 64 bit integer type
+\, so we need two values for this.;
+#X text 479 295 Note that "frames" is not limited within 0 and sample
+rate. For instance \, if you want to add 1/2 second to the time \,
+it's perfectly fine to just add sample_rate/2 to the "frames" parameter.
+Radium understands. Similarly \, adding 1/2 second can be performed
+by just adding 0.5 to the "seconds" value. Note that the "frames" parameter
+can easily overflow due to limitations of the float format \, so for
+larger values \, it's better to modify "seconds" and not "frames".
+For larger values which has to be frame-accurate (probably extremely
+rare...) \, both "seconds" and "frames" must be modified.;
+#X text 113 187 "Note id" is the identifier used by Radium to recognize
+notes. The id number wraps around when reaching 32768 This means that
+very old id numbers can not be used safely since a newer note might
+have replaced the old id. The reason for doing it this way is that
+there is no 64 bit integer type in Pd (the native note id format in
+Radium) \, so the id numbers are stored in a table instead \, and the
+index to that table is what we see use in Pd.;
