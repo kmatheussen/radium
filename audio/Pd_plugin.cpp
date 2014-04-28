@@ -763,6 +763,20 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
       }
     else
       printf("Wrong args for radium_send_pitch\n");
+
+  } else if( !strcmp(recv, "radium_send_blockreltempo")) {
+    if(argc==1 &&
+       libpd_is_float(argv[0]))
+      {
+        float tempo = libpd_get_float(argv[0]);
+        if(tempo>100 || tempo <0.0001)
+          printf("Illegal tempo: %f\n",tempo);
+        else
+          pc->block->reltempo = tempo;
+      }
+    else
+      printf("Wrong args for radium_send_blockreltempo\n");
+
   }
 }
 
@@ -899,7 +913,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   libpds_bind(pd, "radium_send_note_off", plugin);
   libpds_bind(pd, "radium_send_velocity", plugin);
   libpds_bind(pd, "radium_send_pitch", plugin);
-  //libpds_bind(pd, "radium_send_blockreltempo", plugin);
+  libpds_bind(pd, "radium_send_blockreltempo", plugin);
   libpds_bind(pd, "libpd", plugin);
 
   data->pdfile = pdfile;

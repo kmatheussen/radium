@@ -835,7 +835,7 @@ struct Blocks{
   
 	const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
-	float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
+	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
   // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
   bool is_dirty; 
