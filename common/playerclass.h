@@ -107,7 +107,7 @@ typedef struct{
 
 	int playtype;
 
-	const struct Blocks *block;		// The block now playing.
+	struct Blocks *block;		// The block now playing.
 
 	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;

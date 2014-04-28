@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern LANGSPEC void PC_RemoveFirst(void);
-extern LANGSPEC const struct Blocks *PC_GetPlayBlock(int numfromcurrent);
+extern LANGSPEC struct Blocks *PC_GetPlayBlock(int numfromcurrent);
 extern LANGSPEC bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block);
 
 extern LANGSPEC void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);

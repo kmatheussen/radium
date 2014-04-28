@@ -39,7 +39,7 @@ __inline void PC_RemoveFirst(void){
 	pc->peq=NextPEventQueue(pc->peq);
 }
 
-const struct Blocks *PC_GetPlayBlock(int numfromcurrent){
+struct Blocks *PC_GetPlayBlock(int numfromcurrent){
 
 	if(numfromcurrent==0) return pc->block;
 
