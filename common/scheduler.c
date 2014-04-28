@@ -103,14 +103,10 @@ void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const uni
     printf("Max %d args allowed for scheduler...\n",MAX_ARGS);
     return;
   }
-
+  
   // Add priority bit.
-  time = time * 2;
+  time = time << SCHEDULER_NUM_PRIORITY_BITS;
   time = time + priority;
-
-  if(priority==SCHEDULER_ADD_BEFORE_SAME_TIME){
-    //printf("stop sched.\n");
-  }
 
   event_t *event = get_free_event();
   event->callback=callback;
@@ -171,7 +167,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
 
   while(g_queue_size>0){
     event_t *event = get_first_event();
-    int64_t event_time = event->time/2;  // remove priority bit.
+    int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bit.
     if(event_time < end_time){
       remove_first_event();
       {

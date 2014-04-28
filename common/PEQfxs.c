@@ -100,7 +100,7 @@ static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
     args[3].int_num = skip;
     args[4].int_num = when;
 
-    SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 4, SCHEDULER_ADDORDER_DOESNT_MATTER);
+    SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 4, SCHEDULER_FX_PRIORITY);
 
     /*
       RT_FX_treat_fx(fx, x, peq->track, peq->l.time, skip);

@@ -245,7 +245,7 @@ void PE_StartNote(struct PEventQueue *peq,int doit){
           args[1].pointer = peq->note;
 
           //printf("__PE_StartNote. Scheduling start for %d at %d\n",peq->note->note,(int)peq->l.time);
-          SCHEDULER_add_event(peq->l.time, scheduled_play_note, &args[0], 2, SCHEDULER_ADD_AFTER_SAME_TIME);
+          SCHEDULER_add_event(peq->l.time, scheduled_play_note, &args[0], 2, SCHEDULER_NOTE_ON_PRIORITY);
 
           //RT_PATCH_play_note(peq->track->patch,note->note,note->velocity,peq->track, peq->l.time);
 	}
@@ -275,7 +275,7 @@ void PE_StopNote(struct PEventQueue *peq,int doit){
           args[1].pointer = peq->note;
 
           //printf("__PE_StopNote. Scheduling stop for %d at %d\n",peq->note->note,(int)peq->l.time);
-          SCHEDULER_add_event(peq->l.time, scheduled_stop_note, &args[0], 2, SCHEDULER_ADD_BEFORE_SAME_TIME);
+          SCHEDULER_add_event(peq->l.time, scheduled_stop_note, &args[0], 2, SCHEDULER_NOTE_OFF_PRIORITY);
           /*
           RT_PATCH_stop_note(peq->track->patch,
                              peq->note->note,
