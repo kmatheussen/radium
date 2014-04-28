@@ -98,12 +98,12 @@ void InitPEQvelocities(
 			peq,playlistaddpos,
 			PEQ_CalcNextVelocityEvent(
                                                   peq,
-				peq->time1,
-				peq->time1,
-				peq->time2,
-				note->velocity,
-				&x,
-				note->velocity_end
+                                                  peq->time1,
+                                                  peq->time1,
+                                                  peq->time2,
+                                                  note->velocity,
+                                                  &x,
+                                                  note->velocity_end
 			)
 		);
 		return;
@@ -114,17 +114,17 @@ void InitPEQvelocities(
 	peq->velocity=velocity;
 
 	PC_InsertElement(
-		peq,playlistaddpos,
-		PEQ_CalcNextVelocityEvent(
-                                  peq,
-			peq->time1,
-			peq->time1,
-			peq->time2,
-			note->velocity,
-			&x,
-			velocity->velocity
-		)
-	);
+                         peq,playlistaddpos,
+                         PEQ_CalcNextVelocityEvent(
+                                                   peq,
+                                                   peq->time1,
+                                                   peq->time1,
+                                                   peq->time2,
+                                                   note->velocity,
+                                                   &x,
+                                                   velocity->velocity
+                                                   )
+                         );
 
 }
 
@@ -149,7 +149,8 @@ static void SendVelocityChange(int x,struct PEventQueue *peq){
           args[1].const_pointer = peq->note;
           args[2].int_num = x;
 
-          SCHEDULER_add_event(peq->l.time, scheduled_change_velocity, &args[0], 3, SCHEDULER_ADDORDER_DOESNT_MATTER);
+          // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
+          SCHEDULER_add_event(peq->l.time, scheduled_change_velocity, &args[0], 3, SCHEDULER_VELOCITY_PRIORITY);
 
           /*
           RT_PATCH_change_velocity(peq->track->patch,
@@ -188,13 +189,13 @@ static void PE_ChangeVelocityFromStart(struct PEventQueue *peq,int doit){
 
 	ntime=PEQ_CalcNextVelocityEvent(
                                         peq,
-		peq->time1,
-		btime,
-		peq->time2,
-		peq->note->velocity,
-		&x,
-		peq->velocity->velocity
-	);
+                                        peq->time1,
+                                        btime,
+                                        peq->time2,
+                                        peq->note->velocity,
+                                        &x,
+                                        peq->velocity->velocity
+                                        );
 
 	if(btime==ntime){
 		Pdebug("btime==ntime, stopper, x: %d, btime: %d, x1: %d, x2: %d\n",x,btime,peq->note->velocity,peq->velocity->velocity);
@@ -258,7 +259,7 @@ static void PE_ChangeVelocity(struct PEventQueue *peq,int doit){
 
 //	Pdebug("Player vel->vel, Velocity: %d, ntime: %d, btime: %d, time1: %d, time2: %d\n",x,ntime,btime,peq->time1,peq->time2);
 	if(doit){
-		SendVelocityChange(x,peq);
+          SendVelocityChange(x,peq);
 	}
 
 	PC_InsertElement(peq,0,ntime);
@@ -297,7 +298,7 @@ static void PE_ChangeVelocityToEnd(struct PEventQueue *peq,int doit){
 
 //	Pdebug("Player vel->end, Velocity: %d, ntime: %d, btime: %d, time1: %d, time2: %d\n",x,ntime,btime,peq->time1,peq->time2);
 	if(doit){
-		SendVelocityChange(x,peq);
+          SendVelocityChange(x,peq);
 	}
 
 	PC_InsertElement(peq,0,ntime);
@@ -335,7 +336,7 @@ static void PE_ChangeVelocityFromStartToEnd(struct PEventQueue *peq,int doit){
 
 //	Pdebug("Player start->end, Velocity: %d\n",x);
 	if(doit){
-		SendVelocityChange(x,peq);
+          SendVelocityChange(x,peq);
 	}
 
 	PC_InsertElement(peq,0,ntime);

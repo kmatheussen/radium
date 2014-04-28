@@ -507,11 +507,11 @@ void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, flo
       args[4].float_num = pan;
 
       // voice ON
-      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 5, SCHEDULER_ADD_AFTER_SAME_TIME);
+      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 5, SCHEDULER_NOTE_ON_PRIORITY);
 
       // voice OFF
       if(voice->length>0.001) // The voice decides when to stop by itself.
-        SCHEDULER_add_event(time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
+        SCHEDULER_add_event(time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_NOTE_OFF_PRIORITY);
     }
   }
 }
@@ -608,7 +608,7 @@ void RT_PATCH_stop_note(struct Patch *patch,float notenum,int64_t note_id,STime 
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
         
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
+        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 3, SCHEDULER_NOTE_OFF_PRIORITY);
       }
     }
   }
@@ -693,23 +693,16 @@ void RT_PATCH_change_velocity(struct Patch *patch,float notenum,int64_t note_id,
       int64_t voice_id = note_id + i;
       float voice_velocity = velocity * get_voice_velocity(voice);
 
-      if(voice->start<0.001f){
+      // Should improve this. It might not play anymore. (???)
 
-        RT_change_voice_velocity(patch,voice_notenum,voice_id,voice_velocity,time);
-
-      }else{
-        
-        // Should improve this. It might not play anymore.
-
-        union SuperType args[4];
-
-        args[0].pointer = patch;
-        args[1].float_num = voice_notenum;
-        args[2].int_num = voice_id;
-        args[3].float_num = voice_velocity;
-
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 4, SCHEDULER_ADDORDER_DOESNT_MATTER);
-      }
+      union SuperType args[4];
+      
+      args[0].pointer = patch;
+      args[1].float_num = voice_notenum;
+      args[2].int_num = voice_id;
+      args[3].float_num = voice_velocity;
+      
+      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 4, SCHEDULER_VELOCITY_PRIORITY);
     }
   }
 }
@@ -786,23 +779,16 @@ void RT_PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id,flo
       int64_t voice_id = note_id + i;
       float voice_pitch = pitch + voice->transpose;
 
-      if(voice->start<0.001f){
+      // Should improve this. It might not play anymore. (???)
 
-        RT_change_voice_pitch(patch,voice_notenum,voice_id,voice_pitch,time);
-
-      }else{
-        
-        // Should improve this. It might not play anymore.
-
-        union SuperType args[4];
-
-        args[0].pointer = patch;
-        args[1].float_num = voice_notenum;
-        args[2].int_num = voice_id;
-        args[3].float_num = voice_pitch;
-
-        SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 4, SCHEDULER_ADDORDER_DOESNT_MATTER);
-      }
+      union SuperType args[4];
+      
+      args[0].pointer = patch;
+      args[1].float_num = voice_notenum;
+      args[2].int_num = voice_id;
+      args[3].float_num = voice_pitch;
+      
+      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 4, SCHEDULER_PITCH_PRIORITY);
     }
   }
 }

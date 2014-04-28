@@ -23,10 +23,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 typedef void (*SchedulerCallback)(int64_t time_into_the_future, union SuperType *args);
 
 enum SchedulerPriority{
-  SCHEDULER_ADDORDER_DOESNT_MATTER = 0,
-  SCHEDULER_ADD_BEFORE_SAME_TIME   = 0,
-  SCHEDULER_ADD_AFTER_SAME_TIME    = 1,
+  SCHEDULER_FX_PRIORITY            = 0,
+  SCHEDULER_NOTE_OFF_PRIORITY      = 1,
+  SCHEDULER_NOTE_ON_PRIORITY       = 2,
+  SCHEDULER_VELOCITY_PRIORITY      = 3, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
+  SCHEDULER_PITCH_PRIORITY         = 3 // Same here, I think.
+  /*
+  SCHEDULER_ADDORDER_DOESNT_MATTER = 1,
+  SCHEDULER_ADD_BEFORE_SAME_TIME   = 1,
+  SCHEDULER_ADD_AFTER_SAME_TIME    = 2,
+  */
 };
+#define SCHEDULER_NUM_PRIORITY_BITS 2
+
 
 extern LANGSPEC void SCHEDULER_add_event(int64_t time_into_the_future, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority);
 extern LANGSPEC void SCHEDULER_called_per_block(int64_t reltime);

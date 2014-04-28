@@ -115,23 +115,24 @@ static void scheduled_change_pitch(int64_t time, union SuperType *args){
 }
 
 static void SendPitchChange(float x,struct PEventQueue *peq){
-	if(peq->track->patch!=NULL && peq->track->onoff==1){
-          union SuperType args[3];
-          args[0].const_pointer = peq->track;
-          args[1].const_pointer = peq->note;
-          args[2].float_num = x;
+  if(peq->track->patch!=NULL && peq->track->onoff==1){
 
-          SCHEDULER_add_event(peq->l.time, scheduled_change_pitch, &args[0], 3, SCHEDULER_ADD_BEFORE_SAME_TIME);
+    union SuperType args[3];
+    args[0].const_pointer = peq->track;
+    args[1].const_pointer = peq->note;
+    args[2].float_num = x;
 
-          /*
-          RT_PATCH_change_pitch(peq->track->patch,
-                                   peq->note->note,
-                                   x,
-                                   peq->track,
-                                   peq->l.time
-                                   );
-          */
-	}
+    SCHEDULER_add_event(peq->l.time, scheduled_change_pitch, &args[0], 3, SCHEDULER_PITCH_PRIORITY);
+
+    /*
+      RT_PATCH_change_pitch(peq->track->patch,
+      peq->note->note,
+      x,
+      peq->track,
+      peq->l.time
+      );
+    */
+  }
 }
 
 
@@ -183,7 +184,8 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 		return;
 	}
 
-	if(ntime>peq->time2) ntime=peq->time2;
+	if(ntime>peq->time2)
+          ntime=peq->time2;
 
 //	Pdebug("Player vel->vel, Pitch: %d, ntime: %d, btime: %d, time1: %d, time2: %d\n",x,ntime,btime,peq->time1,peq->time2);
 	if(doit){

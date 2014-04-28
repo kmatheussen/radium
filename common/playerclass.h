@@ -66,7 +66,6 @@ struct PEventQueue{
 // Used by PEQvelocities and PEQfxs
 	STime time1;
 	STime time2;
-
 };
 #define NextPEventQueue(a) ((struct PEventQueue *)(a->l.next))
 
