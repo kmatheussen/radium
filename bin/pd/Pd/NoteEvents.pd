@@ -1,0 +1,287 @@
+#N canvas 616 360 863 779 8;
+#N canvas 1098 1040 957 374 send_receive_note_on 1;
+#X floatatom 310 143 10 0 0 0 - - -;
+#X floatatom 310 164 5 0 0 0 - - -;
+#X floatatom 310 185 5 0 0 0 - - -;
+#X floatatom 309 206 5 0 0 0 - - -;
+#X floatatom 309 228 5 0 0 0 - - -;
+#X floatatom 309 251 10 0 0 0 - - -;
+#X floatatom 308 273 5 0 0 0 - - -;
+#X floatatom 308 295 10 0 0 0 - - -;
+#X obj 397 260 +;
+#X obj 434 244 /;
+#X floatatom 397 298 10 0 0 0 - - -;
+#X text 458 298 <- Time in floating number;
+#X text 159 144 1 Note id;
+#X text 159 163 2 Note number (float);
+#X text 164 184 3 Volume (0-1);
+#X text 160 205 4 Track Pan (-1 - 1);
+#X text 158 228 5 Time \, number of seconds \;;
+#X text 161 273 7 Delta time (0 - 64);
+#X text 99 251 6 Time \, number of frames (0 - samplerate);
+#X obj 353 109 r_note_on ____________________________;
+#X text 165 293 8 Sample rate;
+#X obj 751 106 r_line __________;
+#X obj 662 183 +;
+#X obj 713 28 r_float note_on_delay 0 0 1;
+#X floatatom 732 203 15 0 0 0 - - -;
+#X floatatom 832 163 15 0 0 0 - - -;
+#X obj 706 151 *;
+#X text 403 58 Receive and send note on;
+#X obj 491 227 r_send_note_on _____________________;
+#X obj 600 95 inlet;
+#X obj 497 200 +;
+#X obj 528 199 *;
+#X obj 644 94 inlet;
+#X connect 8 0 10 0;
+#X connect 9 0 8 1;
+#X connect 19 0 0 0;
+#X connect 19 0 28 0;
+#X connect 19 1 1 0;
+#X connect 19 1 30 0;
+#X connect 19 2 2 0;
+#X connect 19 2 31 0;
+#X connect 19 3 3 0;
+#X connect 19 3 28 3;
+#X connect 19 4 4 0;
+#X connect 19 4 8 0;
+#X connect 19 4 28 4;
+#X connect 19 5 5 0;
+#X connect 19 5 9 0;
+#X connect 19 5 22 0;
+#X connect 19 6 6 0;
+#X connect 19 7 7 0;
+#X connect 19 7 9 1;
+#X connect 21 5 25 0;
+#X connect 21 5 26 1;
+#X connect 22 0 28 5;
+#X connect 23 0 26 0;
+#X connect 26 0 22 1;
+#X connect 26 0 24 0;
+#X connect 29 0 30 1;
+#X connect 30 0 28 1;
+#X connect 31 0 28 2;
+#X connect 32 0 31 1;
+#X restore -2756 162 pd send_receive_note_on;
+#N canvas 781 770 956 427 send_receove_note_off 1;
+#X floatatom 320 153 10 0 0 0 - - -;
+#X floatatom 320 174 5 0 0 0 - - -;
+#X floatatom 320 195 5 0 0 0 - - -;
+#X floatatom 319 216 5 0 0 0 - - -;
+#X floatatom 319 238 5 0 0 0 - - -;
+#X floatatom 319 261 10 0 0 0 - - -;
+#X obj 407 270 +;
+#X obj 444 254 /;
+#X floatatom 407 308 10 0 0 0 - - -;
+#X text 468 308 <- Time in floating number;
+#X text 169 154 1 Note id;
+#X text 169 173 2 Note number (float);
+#X obj 761 116 r_line __________;
+#X obj 672 193 +;
+#X floatatom 742 213 15 0 0 0 - - -;
+#X floatatom 842 173 15 0 0 0 - - -;
+#X obj 716 161 *;
+#X text 413 68 Receive and send note off;
+#X obj 363 119 r_note_off ____________________________;
+#X obj 501 237 r_send_note_off _____________________;
+#X text 168 193 3 Time \, number of seconds \;;
+#X text 105 214 4 Time \, number of frames (0 - samplerate);
+#X text 169 238 5 Delta time (0 - 64);
+#X text 170 261 6 Sample rate;
+#X obj 723 38 r_float note_off_delay 0 0 1;
+#X connect 6 0 8 0;
+#X connect 7 0 6 1;
+#X connect 12 5 15 0;
+#X connect 12 5 16 1;
+#X connect 13 0 19 3;
+#X connect 16 0 13 1;
+#X connect 16 0 14 0;
+#X connect 18 0 0 0;
+#X connect 18 0 19 0;
+#X connect 18 1 1 0;
+#X connect 18 1 19 1;
+#X connect 18 2 2 0;
+#X connect 18 2 19 2;
+#X connect 18 2 6 0;
+#X connect 18 3 3 0;
+#X connect 18 3 13 0;
+#X connect 18 3 7 0;
+#X connect 18 4 4 0;
+#X connect 18 5 5 0;
+#X connect 18 5 7 1;
+#X connect 24 0 16 0;
+#X restore -2754 201 pd send_receove_note_off;
+#X text -2396 538 It's also possible to ignore the time values and
+send -1 back to radium for the "seconds" and "frames" parameter. If
+that happens \, Radium will use current time instead.;
+#X text -2656 283 About Note Id;
+#X text -2288 283 About Time;
+#X text -2761 413 If the note id number could wrap around \, it's better
+to ignore it \, and use -1 instead. If Radium receives -1 as note id
+\, it will calculate a new id number based on the pitch. Note that
+it's not safe to use -1 if the patch only handles volume or pitch events.
+"Note on" and "note off" events must be handled as well \, where the
+id must be converted to -1 for these events as well. If not \, you
+risk modifying wrong or non-existing notes. The only disadvantage of
+using -1 instead of the supplied note id is that we modify data for
+all notes with approximately the same pitch \, not just the current
+note.;
+#X text -2398 380 When sending events back to radium \, time can be
+maniuplated frame-accurately.;
+#X text -2393 588 "Delta time" is the number of frames into this Pd
+audio period the note is defined to start playing. This number is useful
+if you want to frame-accurately generate sound from pd \, not just
+send the event back to radium. However \, since the Pd block size is
+only 64 frames \, it is usually not possible to notice any difference
+whether you start playing from frame 0 \, or from frame "delta time"
+\, unless the notes are placed very close together.;
+#X text -2396 415 Note that "frames" is not limited within 0 and sample
+rate. For instance \, if you want to add 1/2 second to the time \,
+it's perfectly fine to just add sample_rate/2 to the "frames" parameter.
+Radium understands. Similarly \, adding 1/2 second can be performed
+by just adding 0.5 to the "seconds" value. Note that the "frames" parameter
+can easily overflow due to limitations of the float format \, so for
+larger values \, it's better to modify "seconds" and not "frames".
+For larger values which has to be frame-accurate (probably extremely
+rare...) \, both "seconds" and "frames" must be modified.;
+#X text -2761 315 "Note id" is the identifier used by Radium to recognize
+notes. The id number wraps around when reaching 32768 This means that
+very old id numbers can not be used safely since a newer note might
+have replaced the old id. The reason for doing it this way is that
+there is no 64 bit integer type in Pd (the native note id format in
+Radium) \, so the id numbers are stored in a table instead \, and the
+index to that table is what we see use in Pd.;
+#N canvas 467 634 983 369 send_receive_velocity 0;
+#X floatatom 320 153 10 0 0 0 - - -;
+#X floatatom 320 174 5 0 0 0 - - -;
+#X floatatom 320 195 5 0 0 0 - - -;
+#X floatatom 320 217 5 0 0 0 - - -;
+#X floatatom 320 240 10 0 0 0 - - -;
+#X floatatom 319 262 5 0 0 0 - - -;
+#X floatatom 319 284 10 0 0 0 - - -;
+#X obj 407 270 +;
+#X obj 444 254 /;
+#X floatatom 407 308 10 0 0 0 - - -;
+#X text 468 308 <- Time in floating number;
+#X text 169 154 1 Note id;
+#X text 169 173 2 Note number (float);
+#X obj 761 116 r_line __________;
+#X obj 672 193 +;
+#X floatatom 742 213 15 0 0 0 - - -;
+#X floatatom 842 173 15 0 0 0 - - -;
+#X obj 716 161 *;
+#X text 413 68 Receive and send note velocity;
+#X obj 363 119 r_velocity ____________________________;
+#X obj 501 237 r_send_velocity _____________________;
+#X text 169 217 4 Time \, number of seconds \;;
+#X text 110 240 5 Time \, number of frames (0 - samplerate);
+#X text 167 262 6 Delta time (0 - 64);
+#X text 170 281 7 Sample rate;
+#X text 174 194 3 Velocity (0-1);
+#X obj 723 38 r_float velocity_delay 0 0 1;
+#X obj 623 63 inlet;
+#X obj 550 202 *;
+#X connect 7 0 9 0;
+#X connect 8 0 7 1;
+#X connect 13 5 16 0;
+#X connect 13 5 17 1;
+#X connect 14 0 20 4;
+#X connect 17 0 14 1;
+#X connect 17 0 15 0;
+#X connect 19 0 0 0;
+#X connect 19 0 20 0;
+#X connect 19 1 1 0;
+#X connect 19 1 20 1;
+#X connect 19 2 2 0;
+#X connect 19 2 28 0;
+#X connect 19 3 20 3;
+#X connect 19 3 3 0;
+#X connect 19 3 7 0;
+#X connect 19 4 4 0;
+#X connect 19 4 8 0;
+#X connect 19 4 14 0;
+#X connect 19 5 5 0;
+#X connect 19 6 6 0;
+#X connect 19 6 8 1;
+#X connect 26 0 17 0;
+#X connect 27 0 28 1;
+#X connect 28 0 20 2;
+#X restore -2550 161 pd send_receive_velocity;
+#N canvas 715 632 1154 449 send_receive_pitch 0;
+#X floatatom 330 163 10 0 0 0 - - -;
+#X floatatom 330 184 5 0 0 0 - - -;
+#X floatatom 330 205 10 0 0 0 - - -;
+#X floatatom 330 227 5 0 0 0 - - -;
+#X floatatom 330 250 10 0 0 0 - - -;
+#X floatatom 329 272 5 0 0 0 - - -;
+#X floatatom 329 294 10 0 0 0 - - -;
+#X obj 417 280 +;
+#X obj 454 264 /;
+#X floatatom 417 318 10 0 0 0 - - -;
+#X text 478 318 <- Time in floating number;
+#X text 179 164 1 Note id;
+#X text 179 183 2 Note number (float);
+#X obj 971 146 r_line __________;
+#X obj 882 223 +;
+#X floatatom 952 243 15 0 0 0 - - -;
+#X floatatom 1052 203 15 0 0 0 - - -;
+#X obj 926 191 *;
+#X text 179 227 4 Time \, number of seconds \;;
+#X text 120 250 5 Time \, number of frames (0 - samplerate);
+#X text 177 272 6 Delta time (0 - 64);
+#X text 180 291 7 Sample rate;
+#X obj 373 129 r_pitch ____________________________;
+#X text 423 78 Receive and send note pitch;
+#X obj 511 247 r_send_pitch _____________________;
+#X obj 933 68 r_float pitch_delay 0 0 1;
+#X obj 667 44 inlet;
+#X text 184 204 3 Pitch (float) (0-128);
+#X obj 559 217 +;
+#X connect 7 0 9 0;
+#X connect 8 0 7 1;
+#X connect 13 5 16 0;
+#X connect 13 5 17 1;
+#X connect 14 0 24 4;
+#X connect 17 0 14 1;
+#X connect 17 0 15 0;
+#X connect 22 0 0 0;
+#X connect 22 0 24 0;
+#X connect 22 1 1 0;
+#X connect 22 1 24 1;
+#X connect 22 2 2 0;
+#X connect 22 2 28 0;
+#X connect 22 3 3 0;
+#X connect 22 3 7 0;
+#X connect 22 3 24 3;
+#X connect 22 4 4 0;
+#X connect 22 4 8 0;
+#X connect 22 4 14 0;
+#X connect 22 5 5 0;
+#X connect 22 6 6 0;
+#X connect 22 6 8 1;
+#X connect 25 0 17 0;
+#X connect 26 0 28 1;
+#X connect 28 0 24 2;
+#X restore -2549 203 pd send_receive_pitch;
+#X obj -2735 39 r_float pitch_add -128 0 128;
+#X obj -2541 38 r_float main_velocity 0 1 9;
+#X obj -2324 46 cnv 15 300 100 empty empty empty 20 12 0 14 -260097
+-66577 0;
+#X text -2397 314 "Time" consists of two numbers. The first number
+("seconds") denotes number of seconds \, the second number ("frames")
+denotes the number of frames. These two values create a frame-accurate
+time value. Pd doesn't have a 64 bit integer type \, so we need two
+values.;
+#X text -2321 89 It gives you full access to all internal event data
+in Radium. Alternatively \, the much simpler MIDI API can be used instead.
+However \, the MIDI API doesn't give access to frame accuracy \, pitch
+changes and micro-tonality.;
+#X text -2323 52 This is the ADVANCED API to receive and send note
+events from and to Radium.;
+#X obj -2750 238 r_notes ___________________;
+#X text -2593 237 <- Convenience patch to receive both note ons and
+offs;
+#X connect 12 0 11 0;
+#X connect 12 0 0 0;
+#X connect 13 0 10 0;
+#X connect 13 0 0 1;
