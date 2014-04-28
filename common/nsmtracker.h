@@ -405,6 +405,13 @@ static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id)
 	fx.h
 *********************************************************************/
 
+typedef enum {
+  FX_start = 0,
+  FX_middle = 1,
+  FX_end = 2,
+  FX_single = 3
+} FX_when;
+
 struct FX{
   //	struct ListHeader1 l; // The next field in 'l' is not used. FX objects are stored one by one in the FXs object.
 	int num;
@@ -424,7 +431,7 @@ struct FX{
 	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
 	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-	void (*treatFX)(struct FX *fx,int val,const struct Tracks *track,STime time,int skip);
+	void (*treatFX)(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.

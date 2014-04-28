@@ -985,7 +985,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   return controller->name.c_str();
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
+static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
   float scaled_value;
 

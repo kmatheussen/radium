@@ -44,7 +44,7 @@ extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char
 extern LANGSPEC const char *PLUGIN_get_effect_name(struct SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
-extern LANGSPEC void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type);
+extern LANGSPEC void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when);
 extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where);
 
 extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);

@@ -47,7 +47,7 @@ extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
 extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 
-extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip);
+extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
 extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip);
 
 extern LANGSPEC void PATCH_turn_voice_on(struct Patch *patch, int voicenum);

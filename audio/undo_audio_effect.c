@@ -99,7 +99,9 @@ static void *Undo_Do_AudioEffect(
                           undo_ae->effect_num, 
                           undo_ae->value, 
                           PLUGIN_STORED_TYPE,
-                          PLUGIN_STORE_VALUE);
+                          PLUGIN_STORE_VALUE,
+                          FX_single
+                          );
   PLAYER_unlock();
 
   GFX_update_instrument_widget(undo_ae->patch);

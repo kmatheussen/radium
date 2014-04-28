@@ -860,7 +860,7 @@ static bool get_loop_onoff(Data *data){
   return data->loop_onoff;
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
+static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   if(value_format==PLUGIN_FORMAT_SCALED){
@@ -1433,7 +1433,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int
     goto exit;
 
   // Put loop_onoff into storage.
-  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE);
+  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
   if(SP_is_plugin_running(plugin)){
 

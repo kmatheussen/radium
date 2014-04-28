@@ -157,7 +157,7 @@ class ParamWidget : public QWidget{
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     PLAYER_lock();{
-      PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+      PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }PLAYER_unlock();
   }
 

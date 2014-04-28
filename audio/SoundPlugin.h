@@ -193,7 +193,7 @@ typedef struct SoundPluginType{
   const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
-  void (*set_effect_value)(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format);
+  void (*set_effect_value)(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when);
 
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 

@@ -820,7 +820,7 @@ void PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id, float
 
 // All FX goes through this function.
 
-void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip){
+void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
   if(track->patch!=NULL){ // This function should take patch as first argument. The track argument is [probably not / should not be] needed.
     if(time==-1)
       time = track->patch->last_time;
@@ -828,7 +828,7 @@ void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,
       track->patch->last_time = time;
   }
 
-  fx->treatFX(fx,val,track,time,skip);
+  fx->treatFX(fx,val,track,time,skip,when);
 }
 
 void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip){
@@ -839,7 +839,7 @@ void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip){
 
   PLAYER_lock();{
     if(track->patch!=NULL)
-      RT_FX_treat_fx(fx,val,track,-1,skip);
+      RT_FX_treat_fx(fx,val,track,-1,skip, FX_single);
   }PLAYER_unlock();
 }
 

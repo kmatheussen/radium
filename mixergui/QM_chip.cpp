@@ -1064,7 +1064,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = plugin->volume_is_on?0.0f:1.0f;
 
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
         GFX_update_instrument_widget(plugin->patch);
 
@@ -1082,7 +1082,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
         float new_value = plugin->effects_are_on?0.0f:1.0f;
 
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
         GFX_update_instrument_widget(plugin->patch);
 
@@ -1116,7 +1116,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
 
         float value = ::scale(pos.x(),x1,x2,0,1.0);
-        PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+        PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
         CHIP_update(plugin);
 
@@ -1171,7 +1171,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     if(value<0.0)
       value=0.0;
 
-    PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+    PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     CHIP_update(plugin);
 
