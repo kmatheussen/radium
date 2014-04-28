@@ -120,7 +120,7 @@ static void SendPitchChange(float x,struct PEventQueue *peq){
     union SuperType args[3];
     args[0].const_pointer = peq->track;
     args[1].const_pointer = peq->note;
-    args[2].float_num = x;
+     args[2].float_num = x;
 
     SCHEDULER_add_event(peq->l.time, scheduled_change_pitch, &args[0], 3, SCHEDULER_PITCH_PRIORITY);
 
