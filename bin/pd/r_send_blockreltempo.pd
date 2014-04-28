@@ -1,0 +1,6 @@
+#N canvas 589 325 425 232 8;
+#X obj 51 133 pack f;
+#X obj 40 84 inlet;
+#X obj 59 184 s radium_send_blockreltempo;
+#X connect 0 0 2 0;
+#X connect 1 0 0 0;
