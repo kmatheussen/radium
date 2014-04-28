@@ -662,11 +662,14 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
 
   Voice *voice = data->voices_playing;
 
-  while(voice!=NULL){
-    //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
+  //printf("Setting pitch for %d (%f) to %f.\n",(int)note_id,note_num,pitch);
 
-    if(voice->note_id==note_id)
+  while(voice!=NULL){
+
+    if(voice->note_id==note_id){
       voice->end_pitch = pitch;
+      //printf("Got it\n");
+    }
 
     voice = voice->next;
   }

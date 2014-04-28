@@ -30,12 +30,10 @@ extern LANGSPEC bool PATCH_add_event_receiver(struct Patch *source, struct Patch
 extern LANGSPEC void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination);
 extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch);
 
-extern LANGSPEC int PATCH_radiumvelocity_to_patchvelocity(const struct Patch *patch,int velocity);
-extern LANGSPEC int PATCH_patchvelocity_to_radiumvelocity(const struct Patch *patch,int velocity);
-
 extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, float notenum, int64_t note_id,float velocity,float pan,STime time);
 extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, float notenum, int64_t note_id,STime time);
 extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, float notenum, int64_t note_id,float velocity,STime time);
+extern LANGSPEC void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, float notenum,int64_t note_id,float pitch,STime time);
 
 extern LANGSPEC void RT_PATCH_play_note(struct Patch *patch,float notenum, int64_t note_id,float velocity,float pan,STime time);
 extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch,float notenum, int64_t note_id,STime time);

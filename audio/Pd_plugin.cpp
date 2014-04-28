@@ -317,10 +317,13 @@ static Data *g_instances = NULL; // protected by the player lock
 
 static int RT_add_note_id_pos(Data *data, int64_t note_id){
   int ids_pos = data->ids_pos;
+  int ret = ids_pos;
 
   data->note_ids[ids_pos] = note_id;
   if(ids_pos > data->largest_used_ids_pos)
     data->largest_used_ids_pos = ids_pos;
+
+  //printf("Added note_id %d to pos %d. Largest pos: %d\n",(int)note_id,ids_pos,data->largest_used_ids_pos);
 
   // The index is going to be stored in a float. Check that the float can contain the integer. (this code can be optimized, but it probably doesnt matter very much)
   float new_pos = ids_pos+1;
@@ -333,7 +336,7 @@ static int RT_add_note_id_pos(Data *data, int64_t note_id){
 
   data->ids_pos =ids_pos;
 
-  return ids_pos;
+  return ret;
 }
 
 static int RT_get_note_id_pos(Data *data, int64_t note_id){
@@ -420,19 +423,20 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_t
   libpds_polyaftertouch(pd, 0, note_num, volume*127);
 
   {
-    t_atom v[6]; 
+    t_atom v[7];
 
     int sample_rate = MIXER_get_sample_rate();    
     int64_t time = block_delta_time + pc->start_time;
 
     SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-    SETFLOAT(v + 1, volume);
-    SETFLOAT(v + 2, int(time / sample_rate));
-    SETFLOAT(v + 3, time % sample_rate);
-    SETFLOAT(v + 4, block_delta_time);
-    SETFLOAT(v + 5, sample_rate);
+    SETFLOAT(v + 1, note_num);
+    SETFLOAT(v + 2, volume);
+    SETFLOAT(v + 3, int(time / sample_rate));
+    SETFLOAT(v + 4, time % sample_rate);
+    SETFLOAT(v + 5, block_delta_time);
+    SETFLOAT(v + 6, sample_rate);
     
-    libpds_list(pd, "radium_note_receive_velocity", 6, v);
+    libpds_list(pd, "radium_receive_velocity", 7, v);
   }
 }
 
@@ -441,19 +445,20 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_ti
   pd_t *pd = data->pd;
 
   {
-    t_atom v[6]; 
+    t_atom v[7]; 
 
     int sample_rate = MIXER_get_sample_rate();    
     int64_t time = block_delta_time + pc->start_time;
 
     SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
-    SETFLOAT(v + 1, pitch);
-    SETFLOAT(v + 2, int(time / sample_rate));
-    SETFLOAT(v + 3, time % sample_rate);
-    SETFLOAT(v + 4, block_delta_time);
-    SETFLOAT(v + 5, sample_rate);
+    SETFLOAT(v + 1, note_num);
+    SETFLOAT(v + 2, pitch);
+    SETFLOAT(v + 3, int(time / sample_rate));
+    SETFLOAT(v + 4, time % sample_rate);
+    SETFLOAT(v + 5, block_delta_time);
+    SETFLOAT(v + 6, sample_rate);
     
-    libpds_list(pd, "radium_note_receive_pitch", 6, v);
+    libpds_list(pd, "radium_receive_pitch", 7, v);
   }
 }
 
@@ -691,13 +696,13 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
        libpd_is_float(argv[4]) &&
        libpd_is_float(argv[5]))
       {
-        int64_t note_id = is_bang(argv[0]) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[0]));
-        float pitch = libpd_get_float(argv[1]);
-        float velocity = libpd_get_float(argv[2]);
-        float pan = libpd_get_float(argv[3]);
-        float seconds = libpd_get_float(argv[4]);
-        int   frames  = libpd_get_float(argv[5]);
-        int64_t time = seconds*sample_rate + frames;
+        int64_t note_id  = is_bang(argv[0]) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[0]));
+        float   pitch    = libpd_get_float(argv[1]);
+        float   velocity = libpd_get_float(argv[2]);
+        float   pan      = libpd_get_float(argv[3]);
+        float   seconds  = libpd_get_float(argv[4]);
+        int     frames   = libpd_get_float(argv[5]);
+        int64_t time     = seconds*sample_rate + frames;
         RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, note_id, velocity, pan, time);
       }
     else
@@ -711,14 +716,53 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
        libpd_is_float(argv[3]))
       {
         int64_t note_id = is_bang(argv[0]) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[0]));
-        float pitch = libpd_get_float(argv[1]);
-        float seconds = libpd_get_float(argv[2]);
-        int   frames  = libpd_get_float(argv[3]);
-        int64_t time = seconds*sample_rate + frames;
+        float   pitch   = libpd_get_float(argv[1]);
+        float   seconds = libpd_get_float(argv[2]);
+        int     frames  = libpd_get_float(argv[3]);
+        int64_t time    = seconds*sample_rate + frames;
         RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, note_id, time);
       }
     else
       printf("Wrong args for radium_send_note_off\n");
+
+  } else if( !strcmp(recv, "radium_send_velocity")) {
+    if(argc==5 &&
+       (libpd_is_float(argv[0]) || (is_bang(argv[0]))) &&
+       libpd_is_float(argv[1]) &&
+       libpd_is_float(argv[2]) &&
+       libpd_is_float(argv[3]) &&
+       libpd_is_float(argv[4]))
+      {
+        int64_t note_id  = is_bang(argv[0]) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[0]));
+        float   notenum  = libpd_get_float(argv[1]);
+        float   velocity = libpd_get_float(argv[2]);
+        float   seconds  = libpd_get_float(argv[3]);
+        int     frames   = libpd_get_float(argv[4]);
+        int64_t time     = seconds*sample_rate + frames;
+        //printf("send_velocity. id: %d, argv[0]: %f, notenum: %f, velocity: %f, seconds: %f, frames: %d\n",(int)note_id,libpd_get_float(argv[0]),notenum,velocity,seconds,frames);
+        RT_PATCH_send_change_velocity_to_receivers(plugin->patch, notenum, note_id, velocity, time);
+      }
+    else
+      printf("Wrong args for radium_send_velocity\n");
+
+  } else if( !strcmp(recv, "radium_send_pitch")) {
+    if(argc==5 &&
+       (libpd_is_float(argv[0]) || (is_bang(argv[0]))) &&
+       libpd_is_float(argv[1]) &&
+       libpd_is_float(argv[2]) &&
+       libpd_is_float(argv[3]) &&
+       libpd_is_float(argv[4]))
+      {
+        int64_t note_id = is_bang(argv[0]) ? -1 : RT_get_legal_note_id_pos(data, libpd_get_float(argv[0]));
+        float   notenum = libpd_get_float(argv[1]);
+        float   pitch   = libpd_get_float(argv[2]);
+        float   seconds = libpd_get_float(argv[3]);
+        int     frames  = libpd_get_float(argv[4]);
+        int64_t time    = seconds*sample_rate + frames;
+        RT_PATCH_send_change_pitch_to_receivers(plugin->patch, notenum, note_id, pitch, time);
+      }
+    else
+      printf("Wrong args for radium_send_pitch\n");
   }
 }
 
@@ -853,6 +897,9 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   libpds_bind(pd, "radium_controller", plugin);
   libpds_bind(pd, "radium_send_note_on", plugin);
   libpds_bind(pd, "radium_send_note_off", plugin);
+  libpds_bind(pd, "radium_send_velocity", plugin);
+  libpds_bind(pd, "radium_send_pitch", plugin);
+  //libpds_bind(pd, "radium_send_blockreltempo", plugin);
   libpds_bind(pd, "libpd", plugin);
 
   data->pdfile = pdfile;
@@ -1172,7 +1219,9 @@ void create_pd_plugin(void){
 }
 
 
-#else // WITH_PD
+#else
+
+// !WITH_PD
 
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"

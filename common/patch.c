@@ -231,96 +231,96 @@ void PATCH_delete(struct Patch *patch){
 }
 
 void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup){
-	ReqType reqtype;
+  ReqType reqtype;
 
-        vector_t *patches=get_all_patches();
+  vector_t *patches=get_all_patches();
 
-	NInt num_patches=patches->num_elements;
+  NInt num_patches=patches->num_elements;
 
-        if(num_patches==0)
-          return;
+  if(num_patches==0)
+    return;
 
-        if(use_popup==true)
-          reqtype=NULL;
-        else
-          reqtype=GFX_OpenReq(window,70,(int)(num_patches+50),"Select Patch");
+  if(use_popup==true)
+    reqtype=NULL;
+  else
+    reqtype=GFX_OpenReq(window,70,(int)(num_patches+50),"Select Patch");
 
-        vector_t v={0};
-        VECTOR_push_back(&v,"<New MIDI Instrument>");
-        VECTOR_push_back(&v,"<New Sample Player>");
-        VECTOR_push_back(&v,"<New FluidSynth>");
-        VECTOR_push_back(&v,"<New Pd Instrument>");
-        VECTOR_push_back(&v,"<New Audio Instrument>");
+  vector_t v={0};
+  VECTOR_push_back(&v,"<New MIDI Instrument>");
+  VECTOR_push_back(&v,"<New Sample Player>");
+  VECTOR_push_back(&v,"<New FluidSynth>");
+  VECTOR_push_back(&v,"<New Pd Instrument>");
+  VECTOR_push_back(&v,"<New Audio Instrument>");
 
-        VECTOR_FOR_EACH(struct Patch *patch,patches){
-          VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
-        }END_VECTOR_FOR_EACH;
+  VECTOR_FOR_EACH(struct Patch *patch,patches){
+    VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
+  }END_VECTOR_FOR_EACH;
 
-        {
-          struct Patch *patch = NULL;
+  {
+    struct Patch *patch = NULL;
 
-          int selection=GFX_Menu(window,reqtype,"Select Patch",&v);
+    int selection=GFX_Menu(window,reqtype,"Select Patch",&v);
 
-          if(selection>=0){
+    if(selection>=0){
 
-            Undo_Open();{
+      Undo_Open();{
 
-              Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
+        Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
 
-              if(selection>=5){
-                patch=patches->elements[selection-5];
+        if(selection>=5){
+          patch=patches->elements[selection-5];
 
-              }else if(selection==0){
-                patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
-                GFX_PP_Update(patch);
+        }else if(selection==0){
+          patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
+          GFX_PP_Update(patch);
 
-              }else if(selection==1){
-                SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
-                if(plugin!=NULL)
-                  patch = plugin->patch;
+        }else if(selection==1){
+          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
+          if(plugin!=NULL)
+            patch = plugin->patch;
             
-              }else if(selection==2){
-                SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
-                if(plugin!=NULL)
-                  patch = plugin->patch;
+        }else if(selection==2){
+          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
+          if(plugin!=NULL)
+            patch = plugin->patch;
             
-              }else if(selection==3){
-                SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","Simple Midi Synth"),-100000,-100000,true,NULL);
-                if(plugin!=NULL)
-                  patch = plugin->patch;
+        }else if(selection==3){
+          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","Simple Midi Synth"),-100000,-100000,true,NULL);
+          if(plugin!=NULL)
+            patch = plugin->patch;
 
-              }else if(selection==4){
-                SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
-                if(plugin!=NULL)
-                  patch = plugin->patch;
+        }else if(selection==4){
+          SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
+          if(plugin!=NULL)
+            patch = plugin->patch;
 
-              }else
-                printf("Unknown option\n");
+        }else
+          printf("Unknown option\n");
 
-              if(patch!=NULL){
-                struct Tracks *track=wtrack->track;
+        if(patch!=NULL){
+          struct Tracks *track=wtrack->track;
 
-                handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
+          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,patch);
 
-                PLAYER_lock();{
-                  track->patch=patch;
-                }PLAYER_unlock();
+          PLAYER_lock();{
+            track->patch=patch;
+          }PLAYER_unlock();
 
-                UpdateTrackReallines(window,window->wblock,wtrack);
-                UpdateFXNodeLines(window,window->wblock,wtrack);
-                window->must_redraw = true;
+          UpdateTrackReallines(window,window->wblock,wtrack);
+          UpdateFXNodeLines(window,window->wblock,wtrack);
+          window->must_redraw = true;
               
-                (*patch->instrument->PP_Update)(patch->instrument,patch);
-              }
-
-            }Undo_Close();
-          }
-
+          (*patch->instrument->PP_Update)(patch->instrument,patch);
         }
 
+      }Undo_Close();
+    } // if(selection>=0)
 
-        if(reqtype!=NULL)
-          GFX_CloseReq(window,reqtype);
+  }
+
+
+  if(reqtype!=NULL)
+    GFX_CloseReq(window,reqtype);
 }
 
 
@@ -398,27 +398,6 @@ void PATCH_remove_all_event_receivers(struct Patch *patch){
 void PATCH_init(void){
   //MUTEX_INITIALIZE();
 }
-
-
-#if 0
-int PATCH_radiumvelocity_to_patchvelocity(const struct Patch *patch,int velocity){
-  if(patch->instrument==NULL)
-    return velocity;
-  else
-    return scale(velocity,
-                 0,MAX_VELOCITY,
-                 0,patch->instrument->getMaxVelocity(patch));
-}
-
-int PATCH_patchvelocity_to_radiumvelocity(const struct Patch *patch,int velocity){
-  if(patch->instrument==NULL)
-    return velocity;
-  else
-    return scale(velocity,
-                 0,patch->instrument->getMaxVelocity(patch),
-                 0,MAX_VELOCITY);
-}
-#endif
 
 
 ////////////////////////////////////

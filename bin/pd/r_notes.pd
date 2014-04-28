@@ -1,0 +1,33 @@
+#N canvas 305 693 652 428 8;
+#X obj 13 168 outlet;
+#X obj 49 205 outlet;
+#X obj 74 241 outlet;
+#X obj 116 272 outlet;
+#X obj 159 291 outlet;
+#X obj 170 310 outlet;
+#X obj 37 66 r_note_on ______;
+#X obj 133 65 r_note_off ________;
+#X obj 194 329 outlet;
+#X obj 221 348 outlet;
+#X msg 144 120 0;
+#X obj 138 95 t f b;
+#X text 288 32 Convenience patch. Same as r_note_on \, except that
+it also sends out an event with velocity 0 \, when a note_off is received.
+;
+#X connect 6 0 0 0;
+#X connect 6 1 1 0;
+#X connect 6 2 2 0;
+#X connect 6 3 3 0;
+#X connect 6 4 4 0;
+#X connect 6 5 5 0;
+#X connect 6 6 8 0;
+#X connect 6 7 9 0;
+#X connect 7 0 0 0;
+#X connect 7 1 11 0;
+#X connect 7 2 4 0;
+#X connect 7 3 5 0;
+#X connect 7 4 8 0;
+#X connect 7 5 9 0;
+#X connect 10 0 2 0;
+#X connect 11 0 1 0;
+#X connect 11 1 10 0;
