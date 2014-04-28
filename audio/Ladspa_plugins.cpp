@@ -282,7 +282,7 @@ static float slider_2_frequency(float slider, const float min_freq, const float 
                               min_output, 1));
 }
 
-static void set_effect_value(SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
+static void set_effect_value(SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   const SoundPluginType *type = plugin->type;
   TypeData *type_data = (TypeData*)type->data;
   Data *data = (Data*)plugin->data;

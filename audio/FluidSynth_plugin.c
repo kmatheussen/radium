@@ -202,7 +202,7 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
   sendnoteoff(data, 0, note_num, 0, data->time + time);
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
+static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
   if(value_format==PLUGIN_FORMAT_SCALED){

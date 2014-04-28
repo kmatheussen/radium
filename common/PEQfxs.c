@@ -79,8 +79,9 @@ static void scheduled_fx_change(int64_t time, union SuperType *args){
   struct FX     *fx    = args[1].pointer;
   int            x     = args[2].int_num;
   int64_t        skip  = args[3].int_num;
+  FX_when        when  = args[4].int_num;
   
-  RT_FX_treat_fx(fx, x, track, time, skip);
+  RT_FX_treat_fx(fx, x, track, time, skip, when);
   
   if(fx->slider_automation_value!=NULL)
     *fx->slider_automation_value = scale(x,fx->min,fx->max,0.0f,1.0f);
@@ -88,7 +89,7 @@ static void scheduled_fx_change(int64_t time, union SuperType *args){
     *fx->slider_automation_color = fx->color; // There's a race condition here. But it's unlikely to happen and has no bad consequence if it should.
 }
 
-static void fxhandle(int x, struct PEventQueue *peq, int skip){
+static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
   struct FX *fx = peq->fxs->fx;
 
   if(fx!=NULL && peq->track->onoff==1){
@@ -97,6 +98,7 @@ static void fxhandle(int x, struct PEventQueue *peq, int skip){
     args[1].pointer = fx;
     args[2].int_num = x;
     args[3].int_num = skip;
+    args[4].int_num = when;
 
     SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 4, SCHEDULER_ADDORDER_DOESNT_MATTER);
 
@@ -118,7 +120,7 @@ void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 
 //	Pdebug("fx, start: %d\n",peq->fxnodeline->val);
 	if(doit){
-		fxhandle(peq->fxnodeline->val,peq,0);
+          fxhandle(peq->fxnodeline->val,peq,0,FX_start);
 	}
 
 	btime=PC_TimeToRelBlockStart(pc->end_time);
@@ -131,7 +133,7 @@ void PE_HandleFirstFX(struct PEventQueue *peq,int doit){
 		if(next==NULL){
 //			Pdebug("fx, slutt: %d\n",peq->nextfxnodeline->val);
 			if(doit){
-				fxhandle(peq->nextfxnodeline->val,peq,0);
+                          fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
 			}
 			ReturnPEQelement(peq);
 		}else{
@@ -174,7 +176,7 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 		if(next==NULL){
 //			Pdebug("fx, slutt: %d\n",peq->nextfxnodeline->val);
 			if(doit){
-				fxhandle(peq->nextfxnodeline->val,peq,0);
+                          fxhandle(peq->nextfxnodeline->val,peq,0,FX_end);
 			}
 			ReturnPEQelement(peq);
 		}else{
@@ -200,7 +202,7 @@ void PE_HandleFX(struct PEventQueue *peq,int doit){
 
 //	Pdebug("fx: %d\n",x);
 	if(doit){
-		fxhandle(x,peq,1);
+          fxhandle(x,peq,1,FX_middle);
 	}
 
 	PC_InsertElement(peq,0,ntime);

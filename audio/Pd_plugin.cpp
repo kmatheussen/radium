@@ -504,7 +504,7 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
   }
 }
 
-static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format) {
+static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   Pd_Controller *controller = &data->controllers[effect_num];
@@ -584,7 +584,7 @@ static void RT_pdfloathook(void *d, const char *sym, float val){
                                0.0f, 1.0f);
 
     controller->calling_from_pd = true; {
-      PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE); // PLUGIN_set_effect_value only works with NONSTORED_TYPE for system effects. (should be fixed)
+      PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // PLUGIN_set_effect_value only works with NONSTORED_TYPE for system effects. (should be fixed)
     } controller->calling_from_pd = false;
   }
 }

@@ -815,7 +815,7 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     return aeffect->getParameter(aeffect,effect_num);
   }
 
-  static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format){
+  static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
     Data *data = (Data*)plugin->data;
     AEffect *aeffect = data->aeffect;
     aeffect->setParameter(aeffect,effect_num,value);

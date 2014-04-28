@@ -42,7 +42,7 @@ static void  set_compressor_automation_end(struct Patch *patch, int num){
 static void set_compressor_parameter(struct Patch *patch, int num,float value){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   if(plugin!=NULL)
-    PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_RATIO+num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+    PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_RATIO+num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 }
 
 #else // COMPILING_RADIUM
@@ -194,7 +194,7 @@ public slots:
 void on_enable_checkbox_toggled(bool val){
 #ifdef COMPILING_RADIUM
   SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-  PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_ONOFF, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE);
+  PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_ONOFF, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
   attack_slider->setEnabled(val);
   release_slider->setEnabled(val);
