@@ -1,6 +1,9 @@
-#N canvas 589 325 425 232 8;
+#N canvas 421 598 940 232 8;
 #X obj 51 133 pack f;
 #X obj 40 84 inlet;
 #X obj 59 184 s radium_send_blockreltempo;
+#X text 237 183 <- Another way to change the block reltempo. This controller
+allows a wider range of values than the slider in the lower left corner
+of the blocks.;
 #X connect 0 0 2 0;
 #X connect 1 0 0 0;

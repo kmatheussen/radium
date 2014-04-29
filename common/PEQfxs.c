@@ -93,23 +93,14 @@ static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
   struct FX *fx = peq->fxs->fx;
 
   if(fx!=NULL && peq->track->onoff==1){
-    union SuperType args[4];
+    union SuperType args[5];
     args[0].const_pointer = peq->track;
     args[1].pointer = fx;
     args[2].int_num = x;
     args[3].int_num = skip;
     args[4].int_num = when;
 
-    SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 4, SCHEDULER_FX_PRIORITY);
-
-    /*
-      RT_FX_treat_fx(fx, x, peq->track, peq->l.time, skip);
-      
-      if(fx->slider_automation_value!=NULL)
-      *fx->slider_automation_value = scale(x,fx->min,fx->max,0.0f,1.0f);
-      if(fx->slider_automation_color!=NULL)
-      *fx->slider_automation_color = fx->color; // There's a race condition here. But it's unlikely to happen and has no bad consequence if it should.
-    */
+    SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 5, SCHEDULER_FX_PRIORITY);
   }
 }
 
