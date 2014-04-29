@@ -1,9 +1,14 @@
-#N canvas 627 307 708 307 8;
+#N canvas 628 305 708 307 8;
 #X obj 383 139 r_pitch ____________________________;
-#X obj 375 189 r_send_pitch _____________________;
+#X obj 371 235 r_send_pitch _____________________;
 #X text 315 37 Convenience patch to pipe pitch events;
+#X obj 308 191 spigot 1;
+#X obj 298 140 inlet;
 #X connect 0 0 1 0;
+#X connect 0 0 3 0;
 #X connect 0 1 1 1;
 #X connect 0 2 1 2;
 #X connect 0 3 1 3;
 #X connect 0 4 1 4;
+#X connect 3 0 1 0;
+#X connect 4 0 3 1;

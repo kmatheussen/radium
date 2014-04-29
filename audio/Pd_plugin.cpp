@@ -522,8 +522,26 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_
     //printf("####################################################### Setting pd volume to %f / real_value: %f, for -%s-. Coming-from-pd: %d\n",value, real_value,name,controller->calling_from_pd);
     controller->calling_from_set_effect_value = true; {
 
-      if(false==controller->calling_from_pd)
+      if(false==controller->calling_from_pd) {
+        switch(when){
+        case FX_start:
+          libpds_bang(pd, controller->fx_when_start_name);
+          break;
+        case FX_middle:
+          libpds_bang(pd, controller->fx_when_middle_name);
+          break;
+        case FX_end:
+          libpds_bang(pd, controller->fx_when_end_name);
+          break;
+        case FX_single:
+          libpds_bang(pd, controller->fx_when_single_name);
+          break;
+        default:
+          RError("Unknown when value: %d",when);
+        }
+
         libpds_float(pd, controller->name, real_value);
+      }
 
     } controller->calling_from_set_effect_value = false;
   }
@@ -533,7 +551,8 @@ static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enu
   Data *data = (Data*)plugin->data;
   float raw = data->controllers[effect_num].value;
   if(value_format==PLUGIN_FORMAT_SCALED && data->controllers[effect_num].type!=EFFECT_FORMAT_BOOL)
-    return scale(raw, data->controllers[effect_num].min_value, data->controllers[effect_num].max_value,
+    return scale(raw,
+                 data->controllers[effect_num].min_value, data->controllers[effect_num].max_value,
                  0.0f, 1.0f);
   else
     return raw;
@@ -629,6 +648,10 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   controller->value = value;
   controller->max_value = max_value;  
   strncpy(controller->name, controller_name, PD_NAME_LENGTH-1);
+  snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", controller_name);
+  snprintf(controller->fx_when_middle_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_middle", controller_name);
+  snprintf(controller->fx_when_end_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_end", controller_name);
+  snprintf(controller->fx_when_single_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_single", controller_name);
 
   controller->has_gui = true;
 

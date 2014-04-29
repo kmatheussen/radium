@@ -1,16 +1,24 @@
-#N canvas 801 567 450 300 10;
+#N canvas 895 643 790 300 10;
 #X obj 148 225 outlet;
-#X obj 100 125 nbx 5 25 -1e+37 1e+37 0 0 \$1-receiver empty empty 0
--8 0 14 -204786 -1 -1 0 256;
+#X obj 100 122 nbx 5 25 -1e+37 1e+37 0 0 \$1-receiver empty empty 0
+-8 0 14 -204786 -1 -1 99 256;
 #X obj 37 44 s \$1;
 #X obj 37 17 inlet;
 #X obj 98 185 int;
-#X obj 256 41 loadbang;
-#X obj 256 104 symbol \$1;
-#X obj 256 186 s radium_controller;
-#X obj 256 145 pack s 1 \$2 \$3 \$4;
+#X obj 239 21 loadbang;
+#X obj 239 84 symbol \$1;
+#X obj 239 163 s radium_controller;
+#X obj 239 125 pack s 1 \$2 \$3 \$4;
 #X obj 87 45 r \$1;
 #X obj 86 73 int;
+#X obj 234 261 outlet;
+#X obj 232 214 r \$1-fx_start;
+#X obj 335 254 outlet;
+#X obj 443 254 outlet;
+#X obj 543 255 outlet;
+#X obj 336 212 r \$1-fx_middle;
+#X obj 439 211 r \$1-fx_end;
+#X obj 539 212 r \$1-fx_single;
 #X connect 1 0 4 0;
 #X connect 3 0 2 0;
 #X connect 4 0 0 0;
@@ -19,4 +27,8 @@
 #X connect 8 0 7 0;
 #X connect 9 0 10 0;
 #X connect 10 0 1 0;
+#X connect 12 0 11 0;
+#X connect 16 0 13 0;
+#X connect 17 0 14 0;
+#X connect 18 0 15 0;
 #X coords 0 -1 1 1 85 50 1 100 100;
