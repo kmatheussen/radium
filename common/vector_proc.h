@@ -30,15 +30,17 @@ extern LANGSPEC vector_t *VECTOR_list1_to_vector(struct ListHeader1 *list);
 extern LANGSPEC vector_t *VECTOR_list3_to_vector(struct ListHeader3 *list);
 
 #ifdef __cplusplus
-#define VECTOR_FOR_EACH(type,varname,vector) {                              \
+#define VECTOR_FOR_EACH(type,varname,vector) {                          \
   int iterator666;                                                      \
-  for(iterator666=0;iterator666<(vector)->num_elements;iterator666++){  \
-  type varname = (type)((vector)->elements[iterator666]);
+  vector_t *vector666 = vector;                                         \
+  for(iterator666=0;iterator666<(vector666)->num_elements;iterator666++){ \
+  type varname = (type)((vector666)->elements[iterator666]);
 #else
-#define VECTOR_FOR_EACH(var,vector) {                     \
+#define VECTOR_FOR_EACH(var,vector) {                                   \
   int iterator666;                                                      \
-  for(iterator666=0;iterator666<(vector)->num_elements;iterator666++){ \
-  var = (vector)->elements[iterator666];
+  vector_t *vector666 = vector;                                         \
+  for(iterator666=0;iterator666<(vector666)->num_elements;iterator666++){  \
+  var = (vector666)->elements[iterator666];
 #endif
 #define END_VECTOR_FOR_EACH }}
 

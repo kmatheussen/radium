@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC struct Patch *PATCH_get_from_id(int id);
 extern LANGSPEC int PATCH_get_new_id(void);
+extern LANGSPEC void PATCH_reset_time(void);
 extern LANGSPEC void PATCH_init_voices(struct Patch *patch);
 extern LANGSPEC struct Patch *NewPatchCurrPos(int patchtype, void *patchdata, const char *name);
 extern LANGSPEC void PATCH_delete(struct Patch *patch);
