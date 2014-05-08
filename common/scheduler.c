@@ -167,7 +167,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
 
   while(g_queue_size>0){
     event_t *event = get_first_event();
-    int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bit.
+    int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bits.
     if(event_time < end_time){
       remove_first_event();
       {

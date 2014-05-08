@@ -590,7 +590,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
 
-  //printf("playing note %d, pan: %f\n",note_num,pan);
+  //fprintf(stderr,"playing note %d. Pitch: %d, time: %d\n",(int)note_id,(int)note_num,(int)time);
 
   const Note *note = &data->notes[(int)note_num];
 

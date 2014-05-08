@@ -91,6 +91,12 @@ struct Patch *PATCH_get_from_id(int id){
   return NULL;
 }
 
+void PATCH_reset_time(void){
+  VECTOR_FOR_EACH(struct Patch *patch,get_all_patches()){
+    patch->last_time = 0;
+  }END_VECTOR_FOR_EACH;
+}
+
 static void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
   if(old_patch==NULL || new_patch==NULL)
     track->fxs = NULL;

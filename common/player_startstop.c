@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_calc_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "gfx_wtracks_proc.h"
+#include "patch_proc.h"
 
 #include "player_proc.h"
 
@@ -128,6 +129,7 @@ static void PlayBlock(
 #endif
 		pc->isplaying=false;
 
+                PATCH_reset_time();
 		InitPEQclock();
 		InitPEQrealline(block,place);
 		InitPEQblock(block,place);
@@ -197,7 +199,7 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 }
 
 
-void PlaySong(
+static void PlaySong(
 	Place *place,
 	int playpos
 ){
@@ -223,6 +225,7 @@ void PlaySong(
 #endif
 		pc->isplaying=false;
 
+                PATCH_reset_time();
 		InitPEQclock();
 		InitPEQrealline(block,place);
 		InitPEQblock(block,place);
