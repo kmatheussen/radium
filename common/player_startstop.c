@@ -77,6 +77,7 @@ static void PlayStopReally(bool doit){
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
+        PATCH_reset_time();
 
         //while(GC_is_disabled())
         while(GC_dont_gc>0)
