@@ -19,6 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <errno.h>
+
+#if defined(FOR_LINUX)
+#  include <sys/types.h>
+#endif
 
 #include <QSharedMemory>
 #include <QString>
@@ -91,6 +96,10 @@ static QString string_to_file(QString filename){
 int main(int argc, char **argv){
   QString key = argv[1];
 
+#if defined(FOR_LINUX)
+  pid_t parent_pid = atoi(argv[2]);
+#endif
+
   g_sharedmemory = new QSharedMemory(key);
 
   signal(SIGSEGV,exit_handler);
@@ -113,7 +122,25 @@ int main(int argc, char **argv){
 
   while(do_exit==false){
     mysleep(1000);
-    
+
+
+#if defined(FOR_LINUX)
+    // Should something like this be done for windows as well?
+    static int counter = 10; // wait 4 seconds
+
+    //printf("killing: %d / %d\n",(int)kill(parent_pid,0),(int)ESRCH);
+
+    if(kill(parent_pid,0)==-1){
+      counter--;
+      fprintf(stderr, "Crashreporter: Seems like parent process died. %d\n", counter);
+      if(counter==0) {
+        fprintf(stderr, "Crashreporter: Seems like parent process died. Exiting\n");
+        break;
+      }
+    }
+#endif    
+
+
     if(g_sharedmemory->lock()==false){
       fprintf(stderr,"Crashreporter: Couldn't lock...\n");
       continue;
@@ -277,8 +304,7 @@ void CRASHREPORTER_init(void){
     fprintf(stderr,"Crashreporter: Couldn't create... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
 #ifndef RELEASE
     fprintf(stderr,"press return\n");
-    if(fgets(NULL,0,stdin)==NULL)
-      printf("got null\n");
+    abort();
 #endif
   }
 
@@ -307,8 +333,13 @@ void CRASHREPORTER_init(void){
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX)
-  if(system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + "&").toAscii())==-1)
+  if(system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) {
     fprintf(stderr,"Couldn't start crashreporter\n");
+#ifndef RELEASE
+    abort();
+#endif
+  }
+
   CRASHREPORTER_posix_init();
 
 #elif defined(FOR_MACOSX)
