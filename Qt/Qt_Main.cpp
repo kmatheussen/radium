@@ -683,6 +683,7 @@ int radium_main(char *arg){
 
 extern "C" {
   static void finish(int sig){
+    fprintf(stderr,"FINISH!\n");
     QApplication::quit();
   }
 #if 0
@@ -830,6 +831,10 @@ int main(int argc, char **argv){
 #endif
   }
 
+
+  //signal(SIGSEGV,finish);
+  //signal(SIGFPE,finish);
+  //signal(SIGTERM,finish);
 
   signal(SIGINT,finish);
 

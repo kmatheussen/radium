@@ -58,7 +58,7 @@ static bool crash_already_reported(void){
 //static void crash(int sig){
 static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
-  //  fprintf(stderr,"\n\nCrashreporter got signal %d. genpid: %d, this pid: %d. Sending message to external process\n\n",sig,(int)siginfo->si_pid,(int)getpid());
+  //fprintf(stderr,"\n\nCrashreporter got signal %d. genpid: %d, this pid: %d. Sending message to external process\n\n",sig,(int)siginfo->si_pid,(int)getpid());
 
   static int num_crash_reports=0;
 
