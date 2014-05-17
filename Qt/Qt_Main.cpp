@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/nag.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_visual_input.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
