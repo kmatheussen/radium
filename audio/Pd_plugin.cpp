@@ -277,6 +277,7 @@ $1 = (SoundPlugin *) 0x0
 #include "undo_pd_controllers_proc.h"
 
 #include "../common/OS_Player_proc.h"
+#include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/PEQcommon_proc.h"
@@ -377,21 +378,15 @@ static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, f
   libpds_noteon(pd, 0, note_num, volume*127);
   
   {
-    t_atom v[8];
-    int sample_rate = MIXER_get_sample_rate();
-    
-    int64_t time = block_delta_time + pc->start_time;
+    t_atom v[5];
     
     SETFLOAT(v + 0, RT_add_note_id_pos(data, note_id));
     SETFLOAT(v + 1, note_num);
     SETFLOAT(v + 2, volume);
     SETFLOAT(v + 3, pan);
-    SETFLOAT(v + 4, int(time / sample_rate));
-    SETFLOAT(v + 5, time % sample_rate);
-    SETFLOAT(v + 6, block_delta_time);
-    SETFLOAT(v + 7, sample_rate);
+    SETFLOAT(v + 4, block_delta_time);
     
-    libpds_list(pd, "radium_receive_note_on", 8, v);
+    libpds_list(pd, "radium_receive_note_on", 5, v);
   }
 }
 
@@ -401,19 +396,13 @@ static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, f
   libpds_noteon(pd, 0, note_num, 0);
   
   {
-    t_atom v[6];
-    int sample_rate = MIXER_get_sample_rate();
-    
-    int64_t time = block_delta_time + pc->start_time;
+    t_atom v[3];
     
     SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
     SETFLOAT(v + 1, note_num);
-    SETFLOAT(v + 2, int(time / sample_rate));
-    SETFLOAT(v + 3, time % sample_rate);
-    SETFLOAT(v + 4, block_delta_time);
-    SETFLOAT(v + 5, sample_rate);
+    SETFLOAT(v + 2, block_delta_time);
     
-    libpds_list(pd, "radium_receive_note_off", 6, v);
+    libpds_list(pd, "radium_receive_note_off", 3, v);
   }
 }
 
@@ -423,20 +412,14 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_t
   libpds_polyaftertouch(pd, 0, note_num, volume*127);
 
   {
-    t_atom v[7];
-
-    int sample_rate = MIXER_get_sample_rate();    
-    int64_t time = block_delta_time + pc->start_time;
+    t_atom v[4];
 
     SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
     SETFLOAT(v + 1, note_num);
     SETFLOAT(v + 2, volume);
-    SETFLOAT(v + 3, int(time / sample_rate));
-    SETFLOAT(v + 4, time % sample_rate);
-    SETFLOAT(v + 5, block_delta_time);
-    SETFLOAT(v + 6, sample_rate);
+    SETFLOAT(v + 3, block_delta_time);
     
-    libpds_list(pd, "radium_receive_velocity", 7, v);
+    libpds_list(pd, "radium_receive_velocity", 4, v);
   }
 }
 
@@ -445,23 +428,33 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_ti
   pd_t *pd = data->pd;
 
   {
-    t_atom v[7]; 
-
-    int sample_rate = MIXER_get_sample_rate();    
-    int64_t time = block_delta_time + pc->start_time;
+    t_atom v[4]; 
 
     SETFLOAT(v + 0, RT_get_note_id_pos(data, note_id));
     SETFLOAT(v + 1, note_num);
     SETFLOAT(v + 2, pitch);
-    SETFLOAT(v + 3, int(time / sample_rate));
-    SETFLOAT(v + 4, time % sample_rate);
-    SETFLOAT(v + 5, block_delta_time);
-    SETFLOAT(v + 6, sample_rate);
+    SETFLOAT(v + 3, block_delta_time);
     
-    libpds_list(pd, "radium_receive_pitch", 7, v);
+    libpds_list(pd, "radium_receive_pitch", 4, v);
   }
 }
 
+void RT_PD_set_absolute_time(int64_t time){ 
+  if(g_instances != NULL) {
+    t_atom v[3];
+    int sample_rate = MIXER_get_sample_rate();
+
+    SETFLOAT(v + 0, int(time / sample_rate));
+    SETFLOAT(v + 1, time % sample_rate);
+    SETFLOAT(v + 2, sample_rate);
+
+    Data *instance = g_instances;
+    while(instance != NULL){
+      libpds_list(instance->pd, "radium_time", 3, v);
+      instance = instance->next;
+    }
+  } 
+}
 
 void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
 
@@ -537,7 +530,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_
           libpds_bang(pd, controller->fx_when_single_name);
           break;
         default:
-          RError("Unknown when value: %d",when);
+          RT_message("Unknown when value: %d",when);
         }
 
         libpds_float(pd, controller->name, real_value);

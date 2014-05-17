@@ -1,0 +1,14 @@
+#N canvas 450 664 553 300 8;
+#X obj 172 102 unpack f f f;
+#X obj 130 158 outlet;
+#X obj 167 190 outlet;
+#X obj 203 226 outlet;
+#X text 62 160 Seconds ->;
+#X text 97 190 Framnes ->;
+#X text 112 224 Sample rate ->;
+#X obj 175 64 r radium_time;
+#X text 263 65 <- A new value is received every 64 frames;
+#X connect 0 0 1 0;
+#X connect 0 1 2 0;
+#X connect 0 2 3 0;
+#X connect 7 0 0 0;
