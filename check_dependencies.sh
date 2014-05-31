@@ -92,11 +92,11 @@ if [ `uname` == "Linux" ] ; then
     echo "#define PACKAGE_VERSION 1" >>temp$$.c
     echo "#include <bfd.h>"  >>temp$$.c
     echo "#include <dlfcn.h>" >>temp$$.c
-    echo "#include <libiberty.h>" >>temp$$.c
+#    echo "#include <libiberty.h>" >>temp$$.c
     echo "main(){return 0;}" >>temp$$.c
     echo >>temp$$.c
-    if ! gcc temp$$.c -lbfd -ldl ; then
-	echo "Couldn't find -lbfd or -ldl, or header files for bfd, dlfcn or libiberty."
+    if ! gcc temp$$.c -lbfd -ldl -liberty ; then
+	echo "Couldn't find -lbfd, -ldl, -liberty, or header files for bfd or dlfcn."
 	echo "On Fedora, binutils-devel, libtool-ltdl or libtool might be missing."
 	echo "On Debian, libc6-dev or binutils-dev might be missing."
 	exit 5
