@@ -54,9 +54,9 @@ Downloaded from http://opensource.apple.com/source/X11libs/X11libs-40.2/cairo/ca
 #include <stdlib.h>
 #include <execinfo.h>
 #include <bfd.h>
-#if defined(FOR_LINUX)
-#  include <libiberty.h> // mac ports doesn't install this file.
-#endif
+//#if defined(FOR_LINUX)
+//#  include <libiberty.h> // mac ports doesn't install this file.
+//#endif
 #include <dlfcn.h>
 #include <link.h>
 #if 0
@@ -272,7 +272,7 @@ static char **process_file(const char *file_name, bfd_vma *addr, int naddr)
 			list_matching_formats(matching);
 			free(matching);
 		}
-#if defined(FOR_MACOSX)
+#if 1 //defined(FOR_MACOSX)
 		exit(1);
 #else
 		xexit(1);
