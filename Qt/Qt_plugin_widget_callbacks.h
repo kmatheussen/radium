@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_plugin_widget.h"
 
 #include "mQt_pd_plugin_widget_callbacks.h"
+#include "mQt_jack_plugin_widget_callbacks.h"
 
 
 class Plugin_widget : public QWidget, public Ui::Plugin_widget{
@@ -36,6 +37,7 @@ class Plugin_widget : public QWidget, public Ui::Plugin_widget{
 public:
   struct Patch *_patch;
   Pd_Plugin_widget *_pd_plugin_widget;
+  Jack_Plugin_widget *_jack_plugin_widget;
   bool _ignore_show_gui_checkbox_stateChanged;
 
 private:
@@ -47,6 +49,7 @@ public:
     : QWidget(parent,"plugin widget")
     , _patch(patch)
     , _pd_plugin_widget(NULL)
+    , _jack_plugin_widget(NULL)
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
     {
@@ -113,9 +116,23 @@ public:
       delete sample_name_label;
 
     //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
+
+    //   Pd:
     if(!strcmp(plugin->type->type_name, "Pd")) {
       _pd_plugin_widget = new Pd_Plugin_widget(this,_patch);
       vertical_layout->insertWidget(1,_pd_plugin_widget);
+
+      // Jack:
+    }else if(!strcmp(plugin->type->type_name, "Jack")) {
+      new_pd_controller_button->hide();
+      load_button->hide();
+      save_button->hide();
+      reset_button->hide();
+      random_button->hide();
+      _jack_plugin_widget = new Jack_Plugin_widget(this,_patch);
+      vertical_layout->insertWidget(1,_jack_plugin_widget);
+
+      // Others:
     } else {
       new_pd_controller_button->hide();
       _plugin_widget=PluginWidget_create(NULL, _patch);
@@ -141,6 +158,9 @@ public:
 
     if(_pd_plugin_widget != NULL)
       _pd_plugin_widget->update_gui();
+
+    if(_jack_plugin_widget != NULL)
+      _jack_plugin_widget->update_gui();
   }
 
   public slots:
