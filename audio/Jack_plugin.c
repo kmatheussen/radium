@@ -16,6 +16,8 @@
 
 #include "SoundPluginRegistry_proc.h"
 
+#include "Jack_plugin_proc.h"
+
 /*
   Note that plugin_type->num_input corresponds to jack_client->num_outputs, and vica versa.
 */
@@ -26,7 +28,7 @@ typedef struct{
   jack_port_t **output_ports;
 } Data;
 
-static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs){
+static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames){
   Data *data = calloc(1,sizeof(Data));
   data->client = client;
   data->input_ports=calloc(num_outputs,sizeof(jack_port_t*));
@@ -37,8 +39,12 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   for(i=0;i<num_outputs;i++){
     static int n=0;
     char temp[500];
-    sprintf(temp, "in_%d",++n);
 
+    if(input_portnames[i] != NULL)
+      sprintf(temp, "%s", input_portnames[i]);
+    else
+      sprintf(temp, "in_%d",++n);
+    
     if((data->input_ports[i] = jack_port_register(client,
                                                   strdup(temp),
                                                   JACK_DEFAULT_AUDIO_TYPE,
@@ -69,7 +75,11 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   for(i=0;i<num_inputs;i++){
     static int n=0;
     char temp[500];
-    sprintf(temp, "out_%d",n++);
+
+    if(output_portnames[i] != NULL)
+      sprintf(temp, "%s",output_portnames[i]);
+    else
+      sprintf(temp, "out_%d",++n);
 
     if((data->output_ports[i] = jack_port_register(
                                                    client,
@@ -161,7 +171,22 @@ void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin 
     GFX_OS_set_system_volume_peak_pointers(&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
     system_out = plugin;
   }
-  return create_data(plugin_type, (jack_client_t*)plugin_type->data,plugin_type->num_inputs,plugin_type->num_outputs);
+
+  const char *input_portnames[plugin_type->num_outputs];
+  const char *output_portnames[plugin_type->num_inputs];
+  int i;
+  for(i=0;i<plugin_type->num_outputs;i++)
+    input_portnames[i] = state==NULL ? NULL : HASH_get_string_at(state, "input_portname",i);
+  for(i=0;i<plugin_type->num_inputs;i++)
+    output_portnames[i] = state==NULL ? NULL : HASH_get_string_at(state, "output_portname",i);
+
+  return create_data(plugin_type,
+                     (jack_client_t*)plugin_type->data,
+                     plugin_type->num_inputs,
+                     plugin_type->num_outputs,
+                     input_portnames,
+                     output_portnames
+                     );
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
@@ -187,6 +212,16 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   free(data);
 }
 
+static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  if(plugin->type->num_outputs>0) {
+    HASH_put_string_at(state, "input_portname", 0, JACK_get_name(plugin,0));
+    HASH_put_string_at(state, "input_portname", 1, JACK_get_name(plugin,1));
+  } else {
+    HASH_put_string_at(state, "output_portname", 0, JACK_get_name(plugin,0));
+    HASH_put_string_at(state, "output_portname", 1, JACK_get_name(plugin,1));
+  }
+}
+
 static SoundPluginType stereo_in_type = {
  type_name                : "Jack",
  name                     : "Jack Stereo In",
@@ -201,6 +236,8 @@ static SoundPluginType stereo_in_type = {
  effect_is_RT             : NULL,
  create_plugin_data       : create_plugin_data,
  cleanup_plugin_data      : cleanup_plugin_data,
+
+ create_state        : create_state,
 
  RT_process       : RT_process,
  play_note        : NULL,
@@ -226,6 +263,8 @@ static SoundPluginType stereo_out_type = {
  create_plugin_data       : create_plugin_data,
  cleanup_plugin_data      : cleanup_plugin_data,
 
+ create_state        : create_state,
+
  RT_process       : RT_process,
  play_note        : NULL,
  set_note_volume  : NULL,
@@ -249,6 +288,8 @@ static SoundPluginType system_in_type = {
  effect_is_RT             : NULL,
  create_plugin_data       : create_plugin_data,
  cleanup_plugin_data      : cleanup_plugin_data,
+
+ create_state        : create_state,
 
  RT_process       : RT_process,
  play_note        : NULL,
@@ -274,6 +315,8 @@ static SoundPluginType system_out_type = {
  create_plugin_data       : create_plugin_data,
  cleanup_plugin_data      : cleanup_plugin_data,
 
+ create_state        : create_state,
+
  RT_process       : RT_process,
  play_note        : NULL,
  set_note_volume  : NULL,
@@ -297,4 +340,21 @@ void create_jack_plugins(void){
 
   system_out_type.data = g_jack_client;
   PR_add_plugin_type(&system_out_type);
+}
+
+const char *JACK_get_name(SoundPlugin *plugin, int portnum){
+  Data *data = plugin->data;
+
+  if(plugin->type->num_outputs>0)
+    return jack_port_short_name(data->input_ports[portnum]);
+  else
+    return jack_port_short_name(data->output_ports[portnum]);
+}
+
+void JACK_set_name(SoundPlugin *plugin, int portnum, const char *new_name){
+  Data *data = plugin->data;
+  if(plugin->type->num_inputs>0)
+    jack_port_set_name(data->output_ports[portnum], new_name);
+  else
+    jack_port_set_name(data->input_ports[portnum], new_name);
 }
