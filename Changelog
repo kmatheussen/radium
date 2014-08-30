@@ -1,4 +1,28 @@
 
+Most important changes 1.9.42 -> 1.9.43:
+* Remember and edit jack port names
+* Removed use of libiberty.h. Also add check for -liberty in check_dependies.sh
+* Pd: Simplified API a bit and added r_time.pd
+* Simplify install instructions
+* Also exit crashreporter if main program crashes extremely hard
+* Also reset patch timing when stopping to play
+* Pd: Upgraded to latest libpds. It contains a bunch of new radium entries in the Put menu
+* Pd: Finishing the new API. Various fixes, improvements, documentations
+* Make sure FX are scheduled with highest priority (i.e. ensure effects are sent out before note on), plus clean up the scheduler priority system
+* Pd: pipe help patches, and Note_Off_Position.pd example patch
+* Pd: Message for setting block reltempo
+* PD: Finishing the note api
+* Fix bug in scheduler
+* Pd: Add native functions for sending and receiving notes. (r_note_on, r_note_off, and radium_receive_note_on and radium_receive_note_off messages)
+* Pd: Fix duration bugs in r_line and r_subline
+* Fix voice is not turned off
+* Use float for notenum everywhere, and use id as note identifier.
+* Pd: Frame-accurate time information + line and subline duration
+* Temporary fixes for crashing if deleting System Out.
+* 1024x800 tweaks
+* Various smaller bug fixes and internal improvements
+
+
 Most important changes 1.9.41 -> 1.9.42:
 * Support 1024x800 screens
 * Add show/hide buttons for sample browser and plugin controls.
