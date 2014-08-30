@@ -209,15 +209,69 @@ static void PLAYER_drop_same_priority(void){
 
 static LockType player_lock;
 
+#ifdef FOR_LINUX
+#  include <linux/unistd.h>
+#  include <sys/syscall.h>
+#  include <unistd.h>
+  static pid_t player_thread_tid;
+  pid_t gettid( void ){
+    return syscall( __NR_gettid );
+  }
+#endif // FOR_LINUX
+
+static bool someone_has_player_lock = false;
+static bool player_thread_has_player_lock = false;
+
+static void lock_player(void){
+#if !defined(RELEASE)
+  if (PLAYER_current_thread_has_lock())
+    RError("Calling lock_player while holding the player lock");
+#endif
+
+  LOCK_LOCK(player_lock);
+  someone_has_player_lock = true;
+}
+
+static void unlock_player(void){
+  someone_has_player_lock = false;
+  LOCK_UNLOCK(player_lock);
+}
+
+static void RT_lock_player(){
+  lock_player();
+  player_thread_has_player_lock = true;
+}
+
+static void RT_unlock_player(){
+  player_thread_has_player_lock = false;
+  unlock_player();
+}
+
 // This function will deadlock if called from the player thread!
 void PLAYER_lock(void){
   PLAYER_acquire_same_priority();
-  LOCK_LOCK(player_lock);
+  lock_player();
 }
 
 void PLAYER_unlock(void){
-  LOCK_UNLOCK(player_lock);
+  unlock_player();
   PLAYER_drop_same_priority();
+}
+
+// Warning, may very well return wrongly true on windows, or if running prod.
+bool PLAYER_current_thread_has_lock(void){
+  if (someone_has_player_lock==false)
+    return false;
+  else {
+#if defined(FOR_LINUX) && !defined(RELEASE)
+    if (gettid()==player_thread_tid)
+      return player_thread_has_player_lock;
+    else
+      return !player_thread_has_player_lock;
+#else
+    return true;
+#endif
+  }
 }
 
 static void init_player_lock(){
@@ -388,6 +442,10 @@ struct Mixer{
     AVOIDDENORMALS;
     //#endif
 
+#ifdef FOR_LINUX
+    player_thread_tid = gettid();
+#endif //FOR_LINUX
+
 #if 0
 #define CSR_FLUSH_TO_ZERO         (1 << 15)
     unsigned csr = __builtin_ia32_stmxcsr();
@@ -395,22 +453,21 @@ struct Mixer{
     __builtin_ia32_ldmxcsr(csr);
 #endif
 
-    LOCK_LOCK(player_lock);  // This is a RT-safe lock. Priority inversion can not happen.
+    RT_lock_player();  // This is a RT-safe lock. Priority inversion can not happen.
 
     while(true){
 
       // Schedule new notes, etc.
       //PlayerTask(_buffer_size); // The editor player.
 
-
-      LOCK_UNLOCK(player_lock);
+      RT_unlock_player();
 
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
-      LOCK_LOCK(player_lock);
+      RT_lock_player();
 
       jackblock_size = num_frames;
 
@@ -449,7 +506,7 @@ struct Mixer{
 
     } // end while
 
-    LOCK_UNLOCK(player_lock);
+    RT_unlock_player();
   }
       
 
@@ -477,7 +534,7 @@ struct Mixer{
   static int RT_rjack_buffer_size_changed(jack_nframes_t num_frames, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
 
-    LOCK_LOCK(player_lock);{  // Not sure which thread this callback is called from. But since the player thread can not run here anyway, it's safest not to use PLAYER_lock(). (If it's called from the realtime thread, PLAYER_unlock() would set the priority of the realtime thread to non-realtime.)
+    RT_lock_player();{  // Not sure which thread this callback is called from. But since the player thread can not run here anyway, it's safest not to use PLAYER_lock(). (If it's called from the realtime thread, PLAYER_unlock() would set the priority of the realtime thread to non-realtime.)
       mixer->_buffer_size = num_frames;
       if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
         RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
@@ -487,7 +544,7 @@ struct Mixer{
         SP_set_buffer_size((SoundProducer*)sound_producer, mixer->_buffer_size);
         sound_producer = sound_producer->next;
       }
-    }LOCK_UNLOCK(player_lock);
+    }RT_unlock_player();
 
     return 0;
   }
