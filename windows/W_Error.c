@@ -109,6 +109,20 @@ void RWarning(const char *fmt,...){
   show_message(IS_WARNING,message);
 }
 
+void RWarning_not_prod(const char *fmt,...){
+#ifndef RELEASE
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  show_message(IS_WARNING,message);
+#endif
+}
+
 void Error_uninit(void){}
 
 #endif // FOR_WINDOWS

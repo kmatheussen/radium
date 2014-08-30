@@ -26,6 +26,7 @@ extern bool Error_init(void);
 
 extern LANGSPEC void RError(const char *fmt,...);
 extern LANGSPEC void RWarning(const char *fmt,...);
+extern LANGSPEC void RWarning_not_prod(const char *fmt,...);
 extern void Error_uninit(void);
 
 #endif
