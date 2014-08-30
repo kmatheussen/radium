@@ -107,6 +107,7 @@ enum{
 };
 #endif
 
+
 #include <OS_Visual.h>
 
 
@@ -172,6 +173,13 @@ struct ListHeaderP{
 	STime time;
 };
 
+
+/*********************************************************************
+        playerclass
+*********************************************************************/
+
+#include "playerclass.h"
+extern PlayerClass *pc;
 
 /*********************************************************************
 	hashmap.h
@@ -363,6 +371,7 @@ static inline void Patch_addPlayingVoice(struct Patch *patch, float note_num, in
     patch->playing_voices[patch->num_currently_playing_voices++] = NewPatchPlayingNote(note_num, note_id, pan);
 }
 
+
 static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id){
   int i;
   for(i=0;i<patch->num_currently_playing_voices;i++){
@@ -372,7 +381,8 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
       return;
     }
   }
-  printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
+  if (pc->isplaying)
+    printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
 #if 0
   for(i=0;i<patch->num_currently_playing_voices;i++)
     printf("id: %d\n",(int)patch->playing_voices[i].note_id);
@@ -397,7 +407,8 @@ static inline void Patch_removePlayingNote(struct Patch *patch, int64_t note_id)
       return;
     }
   }
-  printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
+  if (pc->isplaying)
+    printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id);
 }
 
 

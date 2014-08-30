@@ -911,7 +911,7 @@ void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_tra
 
 void PATCH_stop_all_notes(struct Patch *patch){
 
-  printf("STOP ALL NOTES.\n");
+  printf("STOP ALL NOTES on \"%s\".\n", patch->name);
 
   PLAYER_lock();{
     while(patch->num_currently_playing_voices > 0) {
