@@ -40,6 +40,57 @@ void BodyData::handleRequest(QHttpRequest *req, QHttpResponse *resp)
     new Responder(req, resp);
 }
 
+// function written by Rick Taube for common music (https://ccrma.stanford.edu/software/snd/snd/s7.html#repl)
+static bool is_balanced(std::string str)
+{
+  int parens = 0;
+  int quotes = 0;
+  unsigned i = 0;
+  while (i < str.size())
+    {
+      if (str[i] == ';')
+	{
+	  for (i = i + 1; i < str.size(); i++)
+	    {
+	      if (str[i] == '\n')
+		break;
+	    }
+	}
+      else if (str[i] == '"')
+	{
+	  if (i == 0 || str[i - 1] != '\\')
+	    {
+	      quotes = 1;
+	      for (i = i + 1; i < str.size(); i++)
+		{
+		  if (str[i] == '"' && str[i - 1] != '\\')
+		    {
+		      quotes = 0;
+		      break;
+		    }
+		}
+	      if (quotes)
+		return false;
+	    }
+	}
+      else if (str[i] == '(')
+	parens++;
+      else if (str[i] == ')')
+	parens--;
+      i++;
+    }
+  return (parens == 0) && (quotes == 0);
+}
+
+// function written by Rick Taube for common music (https://ccrma.stanford.edu/software/snd/snd/s7.html#repl)
+static bool is_not_white(std::string str)
+{
+  for (unsigned i = 0; (i < str.size() && str[i] != ';'); i++)
+    if (str[i] != ' ' && str[i] != '\n' && str[i] != '\t')
+      return true;
+  return false;
+}
+
 /// Responder
 
 Responder::Responder(QHttpRequest *req, QHttpResponse *resp)
@@ -79,9 +130,20 @@ void Responder::accumulate(const QByteArray &data)
     //m_resp->write(data);
 }
 
+
+static std::string str;
+
 void Responder::reply()
 {
   printf("Got code: -%s-\n",code.toLatin1().data());
+  str = str + code.toLatin1().data() + "\n";
+  if (is_balanced(str)) {
+    if (is_not_white(str)) {
+      printf("Got balanced code: -%s-\n",str.c_str());
+    }
+    str = "";
+  }
+
   m_resp->end(QByteArray("-end-"));
 }
 
