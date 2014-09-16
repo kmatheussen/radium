@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <windows.h>
 #  define mysleep(ms) Sleep(ms)
 #else
-#  define mysleep(ms) usleep(ms*1000);
+#  define mysleep(ms) usleep((ms)*1000);
 #endif
 
 #define MESSAGE_LEN (1024*32)
@@ -132,10 +132,11 @@ int main(int argc, char **argv){
 
     if(kill(parent_pid,0)==-1){
       counter--;
-      fprintf(stderr, "Crashreporter: Seems like parent process died. %d\n", counter);
-      if(counter==0) {
-        fprintf(stderr, "Crashreporter: Seems like parent process died. Exiting\n");
-        break;
+      if(counter>0)
+        fprintf(stderr, "Radium crashreporter: Seems like parent process died. Counting down before exit: %d\n", counter);
+      else{
+        fprintf(stderr, "Radium crashreporter: Seems like parent process died. Exiting\n");
+        do_exit=true;
       }
     }
 #endif    

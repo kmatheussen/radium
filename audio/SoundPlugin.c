@@ -596,11 +596,18 @@ static void set_smooth_on_off(Smooth *smooth, bool *on_off, float value, float s
   }
 }
 
-void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when){
+void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
   if(effect_num < plugin->type->num_effects){
+
+    if (PLAYER_current_thread_has_lock()==false && pc->isplaying==true){
+      if (player_lock_required==PLAYERLOCK_REQUIRED)
+        RWarning("PLUGIN_set_effect_value_internal called without holding the player lock");
+      else if (player_lock_required==PLAYERLOCK_MAYBE_REQUIRED)
+        RWarning_not_prod("PLUGIN_set_effect_value_internal called without holding the player lock");
+    }
 
     plugin->type->set_effect_value(plugin,time,effect_num,value,PLUGIN_FORMAT_SCALED,when);
 
@@ -1105,8 +1112,10 @@ void PLUGIN_reset(SoundPlugin *plugin){
       Undo_AudioEffect_CurrPos(plugin->patch, i);
   }Undo_Close();
 
-  for(i=0;i<type->num_effects;i++)
-    PLUGIN_set_effect_value(plugin, 0, i, plugin->initial_effect_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  PLAYER_lock();{
+    for(i=0;i<type->num_effects;i++)
+      PLUGIN_set_effect_value(plugin, 0, i, plugin->initial_effect_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
 }
 
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
@@ -1132,7 +1141,13 @@ void PLUGIN_random(SoundPlugin *plugin){
       Undo_AudioEffect_CurrPos(plugin->patch, i);
   }Undo_Close();
 
+  float values[type->num_effects];
   for(i=0;i<type->num_effects;i++)
-    PLUGIN_set_effect_value(plugin, 0, i, get_rand(), PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    values[i]=get_rand();
+  
+  PLAYER_lock();{
+    for(i=0;i<type->num_effects;i++)
+      PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  };PLAYER_unlock();
 }
 

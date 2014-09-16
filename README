@@ -7,20 +7,10 @@ Released 2014-04-19
 
 HOW TO MAKE IT RUN
 
-        Either (TAR):
+          1. If you have a Fedora or Ubuntu/Debian-based distribution, first install dependencies.
+             Required packages are listed below in this README.
 
-          1. If you downloaded a tar-ball:
-
-          "
-          make packages
-          BUILDTYPE=RELEASE ./build_linux.sh -j7
-          ./start.sh
-          "
-
-
-        Or (GIT):
-
-          2. If you checked out from a git repository:
+          2. Do this:
 
           "
           touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
@@ -78,7 +68,11 @@ BUILD DEPENDENCIES FEDORA:
         xorg-x11-util-macros
         cmake
 
-        (tested on Fedora 17/19 64 bit)
+        * Or in one line:
+
+        qt4-devel libXaw-devel python2-devel alsa-lib-devel jack-audio-connection-kit-devel libsamplerate-devel liblrdf-devel libsndfile-devel ladspa-devel glib2-devel ladspa-calf-plugins binutils-devel libtool-ltdl libtool tk libogg-devel libvorbis-devel speex-devel fftw-devel guile libxkbfile-devel xorg-x11-util-macros cmake
+
+        (tested on Fedora 17/19/20 64 bit)
 
 
 

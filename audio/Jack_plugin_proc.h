@@ -5,3 +5,7 @@
 #endif
 
 extern LANGSPEC void create_jack_plugins();
+
+struct SoundPlugin;
+extern LANGSPEC const char *JACK_get_name(SoundPlugin *plugin, int portnum);
+extern LANGSPEC void JACK_set_name(SoundPlugin *plugin, int portnum, const char *new_name);

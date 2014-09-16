@@ -1,10 +1,12 @@
-#N canvas 838 571 389 227 8;
-#X obj 46 65 noteout;
-#X obj 47 17 notein;
-#X text 111 42 <- Put your note effect here;
-#X obj 49 115 polytouchin;
-#X obj 50 179 polytouchout;
-#X text 131 142 <- Put you note velocity effect here;
+#N canvas 354 433 563 381 8;
+#X obj 45 138 noteout;
+#X obj 46 90 notein;
+#X text 110 115 <- Put your note effect here;
+#X obj 48 188 polytouchin;
+#X obj 49 252 polytouchout;
+#X text 130 215 <- Put you note velocity effect here;
+#X text 86 29 This template uses the MIDI api. See the NoteEvents example
+for how to use the Advanced API.;
 #X connect 1 0 0 0;
 #X connect 1 1 0 1;
 #X connect 1 2 0 2;

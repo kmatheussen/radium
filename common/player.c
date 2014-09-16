@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time2place_proc.h"
 #include "PEQ_type_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../audio/Pd_plugin_proc.h"
 #include "scheduler_proc.h"
 
 #include "player_proc.h"
@@ -90,6 +91,8 @@ void PlayerTask(STime reltime){
           
         pc->start_time  = pc->end_time;
         pc->end_time   += tempoadjusted_reltime;
+
+        RT_PD_set_absolute_time(pc->start_time);
 
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);

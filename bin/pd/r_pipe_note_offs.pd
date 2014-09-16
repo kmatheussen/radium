@@ -1,4 +1,4 @@
-#N canvas 1092 294 708 307 8;
+#N canvas 1093 292 708 307 8;
 #X text 315 37 Convenience patch to pipe note off events;
 #X obj 296 120 r_note_off ____________________________;
 #X obj 305 202 r_send_note_off _____________________;
@@ -6,7 +6,6 @@
 #X obj 230 117 inlet;
 #X connect 1 0 3 0;
 #X connect 1 1 2 1;
-#X connect 1 2 2 2;
-#X connect 1 3 2 3;
+#X connect 1 2 2 3;
 #X connect 3 0 2 0;
 #X connect 4 0 3 1;

@@ -523,7 +523,12 @@ const char *GFX_GetLoadFileName(
 
   num_users_of_keyboard++;
 
-  QString filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
+  QString filename;
+
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
+  }GL_unlock();
 
   if(filename == ""){
     ret=NULL;

@@ -203,7 +203,11 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   //gotchar('b');
 
   while(edit->gotit==false){
-    QCoreApplication::processEvents();
+    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    GL_lock();{
+      QCoreApplication::processEvents();
+    }GL_unlock();
+
     //GTK_HandleEvents();
     if(text!=edit->text()){
       text = edit->text();
