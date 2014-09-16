@@ -76,6 +76,14 @@ make -j7
 cd ..
 
 
+tar xvzf qhttpserver-master.tar.gz
+cd qhttpserver-master/
+echo "CONFIG += staticlib" >> src/src.pro
+`../../../find_moc_and_uic_paths.sh qmake`
+make
+cd ..
+
+
 # gc.tar.gz is currently gc-7.2d, with ABORT made into a dummy operation.
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/

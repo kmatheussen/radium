@@ -93,6 +93,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
+#include "../embedded_scheme/webserver_proc.h"
+
 
 #include "Qt_Main_proc.h"
 
@@ -695,6 +697,7 @@ int radium_main(char *arg){
   GL_unlock();
 
 
+  WEBSERVER_start();
 
 #if USE_QT_VISUAL
   qapplication->exec();

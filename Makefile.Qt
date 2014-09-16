@@ -240,7 +240,11 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 #OpenGL
 OBJ_VL=GfxElements.o Render.o Widget.o
 
-OBJ = $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
+#Embedded scheme
+OBJ_ES=webserver.o moc_webserver.o
+
+
+OBJ = $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL) $(OBJ_ES)
 
 
 
@@ -341,7 +345,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(VL_LIBS)
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) 
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
 
 # `$(PKG) --libs fluidsynth`
 #	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) -fPIC
@@ -1603,7 +1607,23 @@ Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/S
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
 
+
+# embedded scheme
+
+webserver.o: embedded_scheme/webserver.cpp embedded_scheme/webserver.h
+	$(CCC) -c embedded_scheme/webserver.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src
+
+moc_webserver.o: embedded_scheme/moc_webserver.cpp 
+	$(CCC) -c embedded_scheme/moc_webserver.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src
+
+embedded_scheme/moc_webserver.cpp: embedded_scheme/webserver.h
+	$(MOC) embedded_scheme/webserver.h -o embedded_scheme/moc_webserver.cpp
+
+
+
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp
 #	$(CCC) -I /usr/share/faust/ audio/zita_rev_ladspa.cpp -shared -o bin/zita_rev_ladspa.so -fPIC 
+
+
 

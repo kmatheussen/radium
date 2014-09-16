@@ -53,7 +53,7 @@ export VST_OPTS="-DUSE_VESTIGE=1"
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
-export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -ldl bin/packages/libpd-master/libs/libpds.a "
+export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -ldl bin/packages/libpd-master/libs/libpds.a  bin/packages/qhttpserver-master/lib/libqhttpserver.a "
 
 #  -lz -libery -lintl
 
