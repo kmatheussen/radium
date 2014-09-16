@@ -16,6 +16,8 @@
 
 #include "webserver_proc.h"
 
+#include "s7.h"
+
 
 /*
 Test:
@@ -132,6 +134,7 @@ void Responder::accumulate(const QByteArray &data)
 
 
 static std::string str;
+s7_scheme *s7;
 
 void Responder::reply()
 {
@@ -140,16 +143,21 @@ void Responder::reply()
   if (is_balanced(str)) {
     if (is_not_white(str)) {
       printf("Got balanced code: -%s-\n",str.c_str());
+      s7_pointer val = s7_eval_c_string(s7, str.c_str());
+      m_resp->end(QByteArray(s7_object_to_c_string(s7, val)));
+      printf("result: -%s-\n",s7_object_to_c_string(s7, val));
     }
     str = "";
+  } else {
+    m_resp->end(QByteArray("-unbalanced, waiting for more input-"));
   }
-
-  m_resp->end(QByteArray("-end-"));
 }
 
 /// main
 
 void WEBSERVER_start(void){
+
+  s7 = s7_init();
 
   //QCoreApplication app(argc, argv);
   new BodyData(); // bodydata;

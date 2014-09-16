@@ -84,6 +84,9 @@ make
 cd ..
 
 
+tar xvzf s7.tar.gz
+
+
 # gc.tar.gz is currently gc-7.2d, with ABORT made into a dummy operation.
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
