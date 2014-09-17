@@ -2,6 +2,7 @@
 
 import sys
 import httplib        
+import readline
 
 headers = {"Content-type": "text/plain", "Accept": "text/plain"}
 conn = httplib.HTTPConnection("localhost:5080")
@@ -15,9 +16,8 @@ def post(data):
     data = response.read()
     print(data) 
 
-line = sys.stdin.readline()
-while line:
+while 1:
+    line = raw_input("radium> ")
     post(line)
-    line = sys.stdin.readline()
 
 conn.close()
