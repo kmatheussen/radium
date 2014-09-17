@@ -16,8 +16,11 @@ def post(data):
     data = response.read()
     print(data) 
 
-while 1:
-    line = raw_input("radium> ")
-    post(line)
+while True:
+    try:
+        line = raw_input("radium> ")
+        post(line)
+    except EOFError:
+        break
 
 conn.close()
