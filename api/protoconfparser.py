@@ -201,6 +201,133 @@ class Proto:
             oh.write("METH_KEYWORDS|")
         oh.write("METH_VARARGS},\n")
 
+    '''
+static s7_pointer radium_s7_add3(s7_scheme *sc, s7_pointer org_args)
+{
+  s7_pointer args = org_args;
+  s7_pointer arg1_s7,arg2_s7,arg3_s7;
+  int arg1, arg2, arg3;
+  
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+  arg1_s7 = s7_car(args);
+  if (!s7_is_integer(arg1_s7))
+    return s7_wrong_type_arg_error(sc, "add3", 1, arg1_s7, "an integer");
+  arg1 = s7_integer(arg1_s7)
+  args = s7_cdr(args);
+
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+  arg2_s7 = s7_car(args);
+  if (!s7_is_integer(arg2_s7))
+    return s7_wrong_type_arg_error(sc, "add3", 2, arg2_s7, "an integer");
+  arg2 = s7_integer(arg2_s7);
+  args = s7_cdr(args);
+
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+  arg3 = s7_car(args);
+  if (!s7_is_integer(arg3_s7))
+    return s7_wrong_type_arg_error(sc, "add3", 3, arg3_s7, "an integer");
+  arg3 = s7_integer(arg3_s7);
+  args = s7_cdr(args);
+
+  if (!s7_is_null(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+
+  return s7_make_integer(sc, add3(arg1, arg2, arg3));
+}
+'''
+
+    '''
+static s7_pointer radium_s7_add2_secondargumenthasdefaultvalue9(s7_scheme *sc, s7_pointer org_args)
+{
+  s7_pointer args = org_args;
+  s7_pointer arg1_s7,arg2_s7;
+  int arg1, arg2;
+  
+  if (!is_pair(args))
+    return (s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args));
+  arg1_s7 = s7_car(args);
+  if (!s7_is_integer(arg1_s7))
+    s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 1, arg1_s7, "an integer");
+  arg1 = s7_integer(arg1_s7);
+  args = s7_cdr(args);
+
+  if (s7_is_null(args)) {
+    arg2 = 9;
+  } else {
+
+    if (!is_pair(args))
+      return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);
+    arg2_s7 = s7_car(args);
+    if (!s7_is_integer(arg2_s7))
+      return s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 2, arg2_s7, "an integer");
+    arg2 = s7_integer(arg2_s7);
+    args = s7_cdr(args);
+
+    if (!s7_is_null(args))
+      return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);  
+  }
+
+  return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+}
+
+static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // default value for arg1 is 8, default value for arg2 is 9.
+{
+  s7_pointer args = org_args;
+  s7_pointer arg1_s7,arg2_s7;
+  int arg1, arg2;
+
+  if (s7_is_null(args)) {
+    arg1 = 8;
+    arg2 = 9;
+  } else {
+  
+    if (!is_pair(args))
+      return (s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args));
+    arg1_s7 = s7_car(args);
+    if (!s7_is_integer(arg1_s7))
+      s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 1, arg1_s7, "an integer");
+    arg1 = s7_integer(arg1_s7);
+    args = s7_cdr(args);
+
+    if (s7_is_null(args)) {
+      arg2 = 9;
+    } else {
+
+      if (!is_pair(args))
+        return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);
+      arg2_s7 = s7_car(args);
+      if (!s7_is_integer(arg2_s7))
+        return s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 2, arg2_s7, "an integer");
+      arg2 = s7_integer(arg2_s7);
+      args = s7_cdr(args);
+
+      if (!s7_is_null(args))
+        return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);  
+    }
+
+  }
+  
+  return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+}
+'''
+
+    def write_s7_func(self,oh):
+        oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *sc, s7_pointer args){\n")
+        for arg in self.args:
+            if arg.qualifier=="int":
+                oh.write("if (s7_is_integer(s7_car(args)))
+
+  arg: "+arg.varname+"\n")
+        oh.write("}\n\n")
+        
+    def write_s7_define(self,oh):
+        oh.write("  define name "+self.proc.varname+"\n")
+        for arg in self.args:
+            oh.write("    arg: "+arg.varname+"\n")
+        oh.write("\n")
         
     def getUnfoldedCall(self,arguments):
         arglen=len(arguments)
@@ -267,7 +394,13 @@ class Protos:
             self.protos[lokke].write_python_wrap_methodstruct(oh)
         oh.write("{NULL,NULL}\n")
         oh.write("};\n\n")
-        
+    def write_s7_funcs(self,oh):
+        for proto in self.protos:
+            proto.write_s7_func(oh)
+    def write_s7_defines(self,oh):
+        for proto in self.protos:
+            proto.write_s7_define(oh)
+            
     def getUnfoldedCall(self,command,arguments):
         for lokke in range(len(self.protos)):
             if self.protos[lokke].proc.varname==command:
@@ -352,7 +485,15 @@ class Read:
         oh.write("};\n\n")
         oh.close()
 
-
+    def makeRadium_s7_wrap_c(self):
+        oh=sys.stdout
+        oh.write("#include \"s7.h\"\n\n")
+        oh.write("#include \"radium_proc.h\"\n\n")
+        self.protos.write_s7_funcs(oh)
+        oh.write("void init_radium_s7(void){\n")
+        self.protos.write_s7_defines(oh)
+        oh.write("}\n")
+        
     def getUnfoldedCall(self,command,arguments):        
         return self.protos.getUnfoldedCall(command,arguments)
         
@@ -366,5 +507,6 @@ if __name__=="__main__":
         re.makeWrapfunclist_c()
     if sys.argv[1]=="radium_wrap.c":
         re.makeRadium_wrap_c()
-
+    if sys.argv[1]=="radium_s7_wrap.c":
+        re.makeRadium_s7_wrap_c()
 
