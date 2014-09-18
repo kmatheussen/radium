@@ -318,9 +318,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *sc, s7_pointer args){\n")
         for arg in self.args:
             if arg.qualifier=="int":
-                oh.write("if (s7_is_integer(s7_car(args)))
-
-  arg: "+arg.varname+"\n")
+                oh.write("if (s7_is_integer(s7_car(args)))  arg: "+arg.varname+"\n")
         oh.write("}\n\n")
         
     def write_s7_define(self,oh):

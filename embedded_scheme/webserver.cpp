@@ -134,7 +134,15 @@ void Responder::accumulate(const QByteArray &data)
 
 
 static std::string str;
-s7_scheme *s7;
+static std::string printed;
+static s7_scheme *s7;
+
+static void my_print(s7_scheme *sc, unsigned char c, s7_pointer port)
+{
+  fprintf(stderr, "[%c] ", c);
+  printed += c;
+}
+
 
 void Responder::reply()
 {
@@ -143,9 +151,54 @@ void Responder::reply()
   if (is_balanced(str)) {
     if (is_not_white(str)) {
       printf("Got balanced code: -%s-\n",str.c_str());
-      s7_pointer val = s7_eval_c_string(s7, str.c_str());
-      m_resp->end(QByteArray(s7_object_to_c_string(s7, val)));
-      printf("result: -%s-\n",s7_object_to_c_string(s7, val));
+
+
+      // Code in here mostly copied from   https://ccrma.stanford.edu/software/snd/snd/s7.html#Cerrors
+
+      s7_pointer result;
+      const char *errmsg = NULL;
+      QByteArray array(printed.c_str());
+
+      // evaluate with error handling
+      {
+        s7_pointer old_port;
+        int gc_loc = -1;
+
+        /* trap error messages */
+        old_port = s7_set_current_error_port(s7, s7_open_output_string(s7));
+        if (old_port != s7_nil(s7))
+          gc_loc = s7_gc_protect(s7, old_port);
+        
+        // call eval
+        {
+          result = s7_eval_c_string(s7, str.c_str());
+        }
+
+        array.append("result: ");
+        array.append(QByteArray(s7_object_to_c_string(s7, result)));
+
+        /* print out the value wrapped in "{}" so we can tell it from other IO paths */
+        fprintf(stdout, "{%s}", s7_object_to_c_string(s7, result));
+        
+        /* look for error messages */
+        errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
+        
+        /* if we got something, wrap it in "[]" */
+        if ((errmsg) && (*errmsg)) {
+          fprintf(stdout, "error message: [%s]", errmsg);     
+          array.append(QByteArray(errmsg));
+        }
+
+        s7_close_output_port(s7, s7_current_error_port(s7));
+        s7_set_current_error_port(s7, old_port);
+        if (gc_loc != -1)
+          s7_gc_unprotect_at(s7, gc_loc);
+      }
+
+      m_resp->end(array);
+
+      printf("-%s-\n",s7_object_to_c_string(s7, result));
+      printed = "";   
     }
     str = "";
   } else {
@@ -158,8 +211,6 @@ void Responder::reply()
 void WEBSERVER_start(void){
 
   s7 = s7_init();
-
-  //QCoreApplication app(argc, argv);
-  new BodyData(); // bodydata;
-  //app.exec();
+  s7_set_current_output_port(s7, s7_open_output_function(s7, my_print));
+  new BodyData();
 }
