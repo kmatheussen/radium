@@ -42,6 +42,7 @@ private slots:
 
 private:
     QScopedPointer<QHttpRequest> m_req;
+ public:
     QHttpResponse *m_resp;
 };
 

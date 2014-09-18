@@ -3,6 +3,8 @@
  */
 
 
+#include <unistd.h>
+
 #include "webserver.h"
 
 #include <QCoreApplication>
@@ -24,6 +26,7 @@ Test:
 curl -i -X POST -H "Content-Type: plain/text" -d '(display 50)' http://localhost:5080/user/asdf
 */
 
+static Responder *current_responder;
 
 /// BodyData
 
@@ -39,8 +42,9 @@ BodyData::BodyData()
 void BodyData::handleRequest(QHttpRequest *req, QHttpResponse *resp)
 {
   printf("hepp2\n");
-    new Responder(req, resp);
+  new Responder(req, resp);
 }
+
 
 // function written by Rick Taube for common music (https://ccrma.stanford.edu/software/snd/snd/s7.html#repl)
 static bool is_balanced(std::string str)
@@ -113,8 +117,8 @@ Responder::Responder(QHttpRequest *req, QHttpResponse *resp)
     resp->writeHead(200);
     
     QString name = exp.capturedTexts()[1];
-    QString bodyStart = tr("Hello: %1").arg(name);
-    resp->write(bodyStart.toUtf8());
+    //QString bodyStart = tr("Hello: %1").arg(name);
+    //resp->write(bodyStart.toUtf8());
 
     connect(req, SIGNAL(data(const QByteArray&)), this, SLOT(accumulate(const QByteArray&)));
     connect(req, SIGNAL(end()), this, SLOT(reply()));
@@ -129,7 +133,7 @@ void Responder::accumulate(const QByteArray &data)
 {
   code += data.data();
   printf("code so far: %s\n\n\n\n\n\n\n",code.toLatin1().data());
-    //m_resp->write(data);
+  //m_resp->write(data);
 }
 
 
@@ -141,8 +145,20 @@ static void my_print(s7_scheme *sc, unsigned char c, s7_pointer port)
 {
   fprintf(stderr, "[%c] ", c);
   printed += c;
+  std::string temp;
+  temp += c;
+  current_responder->m_resp->write(QByteArray(temp.c_str()));
+  current_responder->m_resp->flush();
+  current_responder->m_resp->waitForBytesWritten();
+  //current_responder->m_resp->write(QByteArray("aiai"));
 }
 
+static s7_pointer our_sleep(s7_scheme *sc, s7_pointer args)
+{
+  /* slow down our infinite loop for demo purposes */
+  sleep(1);
+  return(s7_f(sc));
+}
 
 void Responder::reply()
 {
@@ -157,7 +173,6 @@ void Responder::reply()
 
       s7_pointer result;
       const char *errmsg = NULL;
-      QByteArray array(printed.c_str());
 
       // evaluate with error handling
       {
@@ -171,8 +186,14 @@ void Responder::reply()
         
         // call eval
         {
+          current_responder = this;
           result = s7_eval_c_string(s7, str.c_str());
         }
+
+        //QByteArray array(printed.c_str());
+        //printed = "";   
+
+        QByteArray array;
 
         array.append("result: ");
         array.append(QByteArray(s7_object_to_c_string(s7, result)));
@@ -189,16 +210,16 @@ void Responder::reply()
           array.append(QByteArray(errmsg));
         }
 
+        m_resp->end(array);
+
         s7_close_output_port(s7, s7_current_error_port(s7));
         s7_set_current_error_port(s7, old_port);
         if (gc_loc != -1)
           s7_gc_unprotect_at(s7, gc_loc);
       }
 
-      m_resp->end(array);
 
       printf("-%s-\n",s7_object_to_c_string(s7, result));
-      printed = "";   
     }
     str = "";
   } else {
@@ -212,5 +233,7 @@ void WEBSERVER_start(void){
 
   s7 = s7_init();
   s7_set_current_output_port(s7, s7_open_output_function(s7, my_print));
+  s7_define_function(s7, "sleep", our_sleep, 0, 0, false, "(sleep) sleeps");
+
   new BodyData();
 }
