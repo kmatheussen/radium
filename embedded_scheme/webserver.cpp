@@ -151,10 +151,12 @@ static void my_print(s7_scheme *sc, unsigned char c, s7_pointer port)
   printed += c;
   std::string temp;
   temp += c;
-  current_responder->m_resp->write(QByteArray(temp.c_str()));
-  current_responder->m_resp->flush();
-  current_responder->m_resp->waitForBytesWritten();
-  //current_responder->m_resp->write(QByteArray("aiai"));
+  if (current_responder != NULL) {
+    current_responder->m_resp->write(QByteArray(temp.c_str()));
+    current_responder->m_resp->flush();
+    current_responder->m_resp->waitForBytesWritten();
+    //current_responder->m_resp->write(QByteArray("aiai"));
+  }
 }
 
 static s7_pointer our_sleep(s7_scheme *sc, s7_pointer args)
@@ -192,29 +194,32 @@ void Responder::reply()
         {
           current_responder = this;
           result = s7_eval_c_string(s7, str.c_str());
+          current_responder = NULL;
         }
 
-        //QByteArray array(printed.c_str());
-        //printed = "";   
-
-        QByteArray array;
-
-        array.append("result: ");
-        array.append(QByteArray(s7_object_to_c_string(s7, result)));
-
-        /* print out the value wrapped in "{}" so we can tell it from other IO paths */
-        fprintf(stdout, "{%s}", s7_object_to_c_string(s7, result));
-        
-        /* look for error messages */
-        errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
-        
-        /* if we got something, wrap it in "[]" */
-        if ((errmsg) && (*errmsg)) {
-          fprintf(stdout, "error message: [%s]", errmsg);     
-          array.append(QByteArray(errmsg));
+        {
+          //QByteArray array(printed.c_str());
+          //printed = "";   
+          
+          QByteArray array;
+          
+          array.append("result: ");
+          array.append(QByteArray(s7_object_to_c_string(s7, result)));
+          
+          /* print out the value wrapped in "{}" so we can tell it from other IO paths */
+          fprintf(stdout, "{%s}", s7_object_to_c_string(s7, result));
+          
+          /* look for error messages */
+          errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
+          
+          /* if we got something, wrap it in "[]" */
+          if ((errmsg) && (*errmsg)) {
+            fprintf(stdout, "error message: [%s]", errmsg);     
+            array.append(QByteArray(errmsg));
+          }
+          
+          m_resp->end(array);
         }
-
-        m_resp->end(array);
 
         s7_close_output_port(s7, s7_current_error_port(s7));
         s7_set_current_error_port(s7, old_port);
