@@ -167,9 +167,15 @@ void Responder::reply()
 
   if (!is_balanced(input_code)) {
     m_resp->end(QByteArray("-unbalanced, waiting for more input-"));
+    input_code += "\n";
     return;
   }
 
+  if(!is_not_white(input_code)) {
+    m_resp->end(QByteArray(""));
+    input_code = "";
+    return;
+  }
 
   // Code in here mostly copied from   https://ccrma.stanford.edu/software/snd/snd/s7.html#Cerrors
 

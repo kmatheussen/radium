@@ -23,7 +23,7 @@ def post(data):
 while True:
     try:
         line = raw_input("radium> ")
-        post(line+"\n")
+        post(line)
     except EOFError:
         break
 
