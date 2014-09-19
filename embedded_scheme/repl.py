@@ -1,11 +1,10 @@
 #! /usr/bin/env python
 
 import sys
-import httplib,urllib2
+import urllib2
 import readline
 
 headers = {"Content-type": "text/plain", "Accept": "text/plain"}
-conn = httplib.HTTPConnection("localhost:5080")
 
 
 def post(data):
@@ -17,6 +16,7 @@ def post(data):
         sys.stdout.write( '%s' % data )
         sys.stdout.flush()
         data = response.read(1)
+    response.close()
     print
 
 
@@ -27,4 +27,3 @@ while True:
     except EOFError:
         break
 
-conn.close()
