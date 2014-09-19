@@ -171,7 +171,6 @@ void Responder::reply()
   printf("Got code: -%s-\n",code.toLatin1().data());
   str = str + code.toLatin1().data() + "\n";
   if (is_balanced(str)) {
-    if (is_not_white(str)) {
       printf("Got balanced code: -%s-\n",str.c_str());
 
 
@@ -225,8 +224,6 @@ void Responder::reply()
         s7_set_current_error_port(s7, old_port);
         if (gc_loc != -1)
           s7_gc_unprotect_at(s7, gc_loc);
-      }
-
 
       printf("-%s-\n",s7_object_to_c_string(s7, result));
     }
