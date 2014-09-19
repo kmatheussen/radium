@@ -20,6 +20,10 @@
 
 #include "s7.h"
 
+extern "C" {
+  void init_radium_s7(s7_scheme *s7);
+}
+
 
 /*
 Test:
@@ -234,6 +238,7 @@ void WEBSERVER_start(void){
   s7 = s7_init();
   s7_set_current_output_port(s7, s7_open_output_function(s7, my_print));
   s7_define_function(s7, "sleep", our_sleep, 0, 0, false, "(sleep) sleeps");
+  init_radium_s7(s7);
 
   new BodyData();
 }

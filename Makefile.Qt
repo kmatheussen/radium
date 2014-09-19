@@ -241,7 +241,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o Render.o Widget.o
 
 #Embedded scheme
-OBJ_ES=webserver.o moc_webserver.o s7.o
+OBJ_ES=webserver.o moc_webserver.o s7.o radium_s7_wrap.o
 
 
 OBJ = $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL) $(OBJ_ES)
@@ -1618,6 +1618,12 @@ moc_webserver.o: embedded_scheme/moc_webserver.cpp
 
 embedded_scheme/moc_webserver.cpp: embedded_scheme/webserver.h
 	$(MOC) embedded_scheme/webserver.h -o embedded_scheme/moc_webserver.cpp
+
+radium_s7_wrap.o: api/radium_s7_wrap.c
+	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
+
+api/radium_s7_wrap.c: api/protoconfparser.py api/protos.conf
+	cd api && $(PYTHONEXE) protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
 
 s7.o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -O3 -Iembedded_scheme
