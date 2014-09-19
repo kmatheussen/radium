@@ -31,8 +31,6 @@ public:
     Responder(QHttpRequest *req, QHttpResponse *resp);
     ~Responder();
 
-    QString code;
-
 signals:
     void done();
 

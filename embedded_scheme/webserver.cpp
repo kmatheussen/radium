@@ -133,29 +133,24 @@ Responder::~Responder()
 {
 }
 
+static std::string input_code = "";
+static s7_scheme *s7;
+
+
 void Responder::accumulate(const QByteArray &data)
 {
-  code += data.data();
-  printf("code so far: %s\n\n\n\n\n\n\n",code.toLatin1().data());
-  //m_resp->write(data);
+  input_code += data.data();
+  printf("code so far: %s\n",input_code.c_str());
 }
 
 
-static std::string str;
-static std::string printed;
-static s7_scheme *s7;
-
 static void my_print(s7_scheme *sc, unsigned char c, s7_pointer port)
 {
-  fprintf(stderr, "[%c] ", c);
-  printed += c;
-  std::string temp;
-  temp += c;
+  printf("[%c] ", c);
   if (current_responder != NULL) {
-    current_responder->m_resp->write(QByteArray(temp.c_str()));
+    current_responder->m_resp->write(QByteArray().append(c));
     current_responder->m_resp->flush();
     current_responder->m_resp->waitForBytesWritten();
-    //current_responder->m_resp->write(QByteArray("aiai"));
   }
 }
 
@@ -168,69 +163,62 @@ static s7_pointer our_sleep(s7_scheme *sc, s7_pointer args)
 
 void Responder::reply()
 {
-  printf("Got code: -%s-\n",code.toLatin1().data());
-  str = str + code.toLatin1().data() + "\n";
-  if (is_balanced(str)) {
-      printf("Got balanced code: -%s-\n",str.c_str());
+  printf("Got code: -%s-\n",input_code.c_str());
 
-
-      // Code in here mostly copied from   https://ccrma.stanford.edu/software/snd/snd/s7.html#Cerrors
-
-      s7_pointer result;
-      const char *errmsg = NULL;
-
-      // evaluate with error handling
-      {
-        s7_pointer old_port;
-        int gc_loc = -1;
-
-        /* trap error messages */
-        old_port = s7_set_current_error_port(s7, s7_open_output_string(s7));
-        if (old_port != s7_nil(s7))
-          gc_loc = s7_gc_protect(s7, old_port);
-        
-        // call eval
-        {
-          current_responder = this;
-          result = s7_eval_c_string(s7, str.c_str());
-          current_responder = NULL;
-        }
-
-        {
-          //QByteArray array(printed.c_str());
-          //printed = "";   
-          
-          QByteArray array;
-          
-          array.append("result: ");
-          array.append(QByteArray(s7_object_to_c_string(s7, result)));
-          
-          /* print out the value wrapped in "{}" so we can tell it from other IO paths */
-          fprintf(stdout, "{%s}", s7_object_to_c_string(s7, result));
-          
-          /* look for error messages */
-          errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
-          
-          /* if we got something, wrap it in "[]" */
-          if ((errmsg) && (*errmsg)) {
-            fprintf(stdout, "error message: [%s]", errmsg);     
-            array.append(QByteArray(errmsg));
-          }
-          
-          m_resp->end(array);
-        }
-
-        s7_close_output_port(s7, s7_current_error_port(s7));
-        s7_set_current_error_port(s7, old_port);
-        if (gc_loc != -1)
-          s7_gc_unprotect_at(s7, gc_loc);
-
-      printf("-%s-\n",s7_object_to_c_string(s7, result));
-    }
-    str = "";
-  } else {
+  if (!is_balanced(input_code)) {
     m_resp->end(QByteArray("-unbalanced, waiting for more input-"));
+    return;
   }
+
+
+  // Code in here mostly copied from   https://ccrma.stanford.edu/software/snd/snd/s7.html#Cerrors
+
+  const char *errmsg = NULL;
+
+  // evaluate with error handling
+  {
+    int gc_loc = -1;
+
+    /* trap error messages */
+    s7_pointer old_port = s7_set_current_error_port(s7, s7_open_output_string(s7));
+    if (old_port != s7_nil(s7))
+      gc_loc = s7_gc_protect(s7, old_port);
+        
+
+    {
+      QByteArray array;
+
+      // call eval
+      current_responder = this;
+      s7_pointer result = s7_eval_c_string(s7, input_code.c_str());
+      current_responder = NULL;
+
+      const char *result_as_string = s7_object_to_c_string(s7, result);
+          
+      array.append("result: ");
+      array.append(QByteArray(result_as_string));
+      printf("result: %s\n",result_as_string);
+          
+      /* look for error messages */
+      errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
+          
+      /* if we got something, wrap it in "[]" */
+      if ((errmsg) && (*errmsg)) {
+        fprintf(stdout, "error message: [%s]", errmsg);     
+        array.append(QByteArray(errmsg));
+      }
+          
+      m_resp->end(array);
+    }
+
+    s7_close_output_port(s7, s7_current_error_port(s7));
+    s7_set_current_error_port(s7, old_port);
+
+    if (gc_loc != -1)
+      s7_gc_unprotect_at(s7, gc_loc);
+  }
+
+  input_code = "";
 }
 
 /// main
