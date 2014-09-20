@@ -30,23 +30,6 @@
 |#
 
 
-(define-match delafina-args-to-define*-args
-  ()           :> '()
-  (Key . Rest) :> (keyvalues-to-define-args (cons Key Rest)) :where (keyword? Key)
-  (Var . Rest) :> (cons Var (delafina-args-to-define*-args Rest)))
-
-(define-macro (delafina def . body)
-  `(define* (,(car def) ,@(delafina-args-to-define*-args (cdr def)))
-     ,@body))
-
-#|
-(pretty-print (macroexpand (delafina (testfunc a b :b 30 :c 90)
-                             (+ 2 3)
-                             (+ 5 6))))
-
-(test (macroexpand (delafina (testfunc a b :c 30 :d 90) a b))
-      '(define* (testfunc a b (c 30) (d 90)) a b))
-|#
 
 
 (define-macro (define-struct name . args)
@@ -96,5 +79,40 @@
 (t :c)
 (t :bc)
 
+|#
+
+
+(define-match delafina-args-to-define*-args
+  ()                 :> '()
+  (Var . Rest)       :> (throw (<-> "All parameters for a delafina functions must be keywords. '" Var "' is not a keyword"))
+                        :where (not (keyword? Var))
+  (Key)              :> (list (keyword->symbol Key))
+  (Key1 Key2 . Rest) :> (cons (keyword->symbol Key1)
+                              (delafina-args-to-define*-args (cons Key2 Rest)))
+                        :where (keyword? Key2)                   
+  (Key Value . Rest) :> (cons (list (keyword->symbol Key) Value)
+                              (delafina-args-to-define*-args Rest)))
+
+(define-macro (delafina def . body)
+  `(define* (,(car def) ,@(delafina-args-to-define*-args (cdr def)))
+     ,@body))
+
+#|
+(pretty-print (macroexpand (delafina (testfunc a b :b 30 :c 90)
+                             (+ 2 3)
+                             (+ 5 6))))
+
+
+(pretty-print (macroexpand (delafina (testfunc :a :b :c 30 :d 90 :e f g)
+                             (+ 2 3)
+                             (+ 5 6))))
+
+(test (macroexpand (delafina (testfunc a b :c 30 :d 90) a b))
+      '(define* (testfunc a b (c 30) (d 90)) a b))
+
+(define* (aiai (a 5) b (c 20))
+  (list a b c))
+
+(aiai)
 |#
 
