@@ -285,6 +285,8 @@ bool SCHEME_mouserelease(int x, int y, int button){
 void SCHEME_start(){
 
   s7 = s7_init();
+  if (s7==NULL || true)
+    RError("Can't start s7 scheme");
 
   std::string os_path = OS_get_program_path();
   //printf("%s\n",os_path);
