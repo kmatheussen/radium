@@ -5,6 +5,8 @@
 
 #include <unistd.h>
 
+#include "s7.h"
+
 #include "webserver.h"
 
 #include <QCoreApplication>
@@ -16,9 +18,12 @@
 #include <qhttprequest.h>
 #include <qhttpresponse.h>
 
+#include "../common/nsmtracker.h"
+#include "../common/OS_settings_proc.h"
+
+
 #include "webserver_proc.h"
 
-#include "s7.h"
 
 extern "C" {
   void init_radium_s7(s7_scheme *s7);
@@ -179,7 +184,6 @@ void Responder::reply()
 
   // Code in here mostly copied from   https://ccrma.stanford.edu/software/snd/snd/s7.html#Cerrors
 
-  const char *errmsg = NULL;
 
   // evaluate with error handling
   {
@@ -192,29 +196,33 @@ void Responder::reply()
         
 
     {
-      QByteArray array;
-
       // call eval
       current_responder = this;
       s7_pointer result = s7_eval_c_string(s7, input_code.c_str());
       current_responder = NULL;
 
-      const char *result_as_string = s7_object_to_c_string(s7, result);
+      {
+        const char *result_as_string = s7_object_to_c_string(s7, result);
+        printf("result: %s\n",result_as_string);
+        
+        {
+          QByteArray array("result: ");
+          array.append(QByteArray(result_as_string));
+
+          {
+            /* look for error messages */
+            const char *errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
+            
+            /* if we got something, wrap it in "[]" */
+            if ((errmsg) && (*errmsg)) {
+              fprintf(stdout, "error message: [%s]", errmsg);     
+              array.append(QByteArray(errmsg));
+            }
+          }
           
-      array.append("result: ");
-      array.append(QByteArray(result_as_string));
-      printf("result: %s\n",result_as_string);
-          
-      /* look for error messages */
-      errmsg = s7_get_output_string(s7, s7_current_error_port(s7));
-          
-      /* if we got something, wrap it in "[]" */
-      if ((errmsg) && (*errmsg)) {
-        fprintf(stdout, "error message: [%s]", errmsg);     
-        array.append(QByteArray(errmsg));
+          m_resp->end(array);
+        }
       }
-          
-      m_resp->end(array);
     }
 
     s7_close_output_port(s7, s7_current_error_port(s7));
@@ -229,11 +237,20 @@ void Responder::reply()
 
 /// main
 
-void WEBSERVER_start(void){
+void WEBSERVER_start(){
 
   s7 = s7_init();
+
+  std::string os_path = OS_get_program_path();
+  //printf("%s\n",os_path);
+
   s7_set_current_output_port(s7, s7_open_output_function(s7, my_print));
   s7_define_function(s7, "sleep", our_sleep, 0, 0, false, "(sleep) sleeps");
+
+  s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"scheme").c_str());
+
+  s7_load(s7,"common.scm");
+
   init_radium_s7(s7);
 
   new BodyData();

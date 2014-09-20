@@ -27,7 +27,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 const char *OS_get_directory_separator(void){
   static char ret[2] = {0};
-  ret[0] = QDir::separator().toAscii();
+  static bool is_inited = false;
+
+  if(is_inited==false){
+    ret[0] = QDir::separator().toAscii();
+    is_inited=true;
+  }
+
   return ret;
 }
 
