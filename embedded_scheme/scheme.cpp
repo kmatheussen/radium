@@ -285,7 +285,7 @@ bool SCHEME_mouserelease(int x, int y, int button){
 void SCHEME_start(){
 
   s7 = s7_init();
-  if (s7==NULL || true)
+  if (s7==NULL)
     RError("Can't start s7 scheme");
 
   std::string os_path = OS_get_program_path();
@@ -294,7 +294,8 @@ void SCHEME_start(){
   s7_set_current_output_port(s7, s7_open_output_function(s7, my_print));
   s7_define_function(s7, "sleep", our_sleep, 0, 0, false, "(sleep) sleeps");
 
-  s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"scheme").c_str());
+  s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7
+  s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"scheme").c_str()); // bin/scheme
 
   s7_load(s7,"init.scm");
 

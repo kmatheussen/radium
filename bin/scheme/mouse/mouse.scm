@@ -1,3 +1,4 @@
+(provide 'mouse/mouse.scm)
 
 (define (radium-mouse-press button x y)
   (c-display "mouse press" button x y)
