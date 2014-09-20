@@ -171,7 +171,7 @@ void Responder::reply()
   printf("Got code: -%s-\n",input_code.c_str());
 
   if (!is_balanced(input_code)) {
-    m_resp->end(QByteArray("-unbalanced, waiting for more input-"));
+    m_resp->end(QByteArray(" ")); //-unbalanced, waiting for more input-"));
     input_code += "\n";
     return;
   }
