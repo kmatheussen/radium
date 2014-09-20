@@ -42,6 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/wblocks_proc.h"
 
+#include "../embedded_scheme/scheme_proc.h"
+
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
@@ -297,12 +299,33 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  EventReciever(&tevent,this->window);
+  if (SCHEME_mousepress(tevent.x, tevent.y, tevent.ID)==false) {
 
-  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-  GL_lock();{
-    setFocus();
-  }GL_unlock();
+    EventReciever(&tevent,this->window);
+
+    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    GL_lock();{
+      setFocus();
+    }GL_unlock();
+  }
+
+  updateEditor();
+}
+
+
+void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
+  if(is_starting_up==true)
+    return;
+
+  tevent.ID=TR_MOUSEMOVE;
+  tevent.x=qmouseevent->x();//-XOFFSET;
+  tevent.y=qmouseevent->y();//-YOFFSET;
+
+  if (SCHEME_mousedrag(tevent.x, tevent.y, tevent.ID)==false)
+    EventReciever(&tevent,this->window);
+
+  //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
+  //printf("----Got mouse move %d %d\n",tevent.x,tevent.y);
 
   updateEditor();
 }
@@ -325,22 +348,9 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   tevent.y=qmouseevent->y();//-YOFFSET;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  EventReciever(&tevent,this->window);
+  if (SCHEME_mouserelease(tevent.x, tevent.y, tevent.ID)==false)
+    EventReciever(&tevent,this->window);
 
-  updateEditor();
-}
-
-void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
-  if(is_starting_up==true)
-    return;
-
-  tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
-  EventReciever(&tevent,this->window);
-
-  //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
-  //printf("----Got mouse move %d %d\n",tevent.x,tevent.y);
 
   updateEditor();
 }

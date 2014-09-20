@@ -7,7 +7,7 @@
 
 #include "s7.h"
 
-#include "webserver.h"
+#include "scheme.h"
 
 #include <QCoreApplication>
 #include <QRegExp>
@@ -22,7 +22,7 @@
 #include "../common/OS_settings_proc.h"
 
 
-#include "webserver_proc.h"
+#include "scheme_proc.h"
 
 
 extern "C" {
@@ -151,7 +151,7 @@ void Responder::accumulate(const QByteArray &data)
 
 static void my_print(s7_scheme *sc, unsigned char c, s7_pointer port)
 {
-  printf("[%c] ", c);
+  printf("%c", c);
   if (current_responder != NULL) {
     current_responder->m_resp->write(QByteArray().append(c));
     current_responder->m_resp->flush();
@@ -235,9 +235,54 @@ void Responder::reply()
   input_code = "";
 }
 
-/// main
+bool SCHEME_mousepress(int x, int y, int button){
+  return s7_boolean(s7,
+                    s7_call(s7, 
+                            s7_name_to_value(s7, "radium-mouse-press"), // [1]
+                            s7_list(s7,
+                                    3,
+                                    s7_make_integer(s7, x),
+                                    s7_make_integer(s7, y),
+                                    s7_make_integer(s7, button)
+                                    )
+                            )
+                    );
+  // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+}
 
-void WEBSERVER_start(){
+bool SCHEME_mousedrag(int x, int y, int button){
+  return s7_boolean(s7,
+                    s7_call(s7, 
+                            s7_name_to_value(s7, "radium-mouse-drag"), // [1]
+                            s7_list(s7,
+                                    3,
+                                    s7_make_integer(s7, x),
+                                    s7_make_integer(s7, y),
+                                    s7_make_integer(s7, button)
+                                    )
+                            )
+                    );
+  // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+}
+
+bool SCHEME_mouserelease(int x, int y, int button){
+  return s7_boolean(s7,
+                    s7_call(s7, 
+                            s7_name_to_value(s7, "radium-mouse-release"), // [1]
+                            s7_list(s7,
+                                    3,
+                                    s7_make_integer(s7, x),
+                                    s7_make_integer(s7, y),
+                                    s7_make_integer(s7, button)
+                                    )
+                            )
+                    );
+  // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+}
+
+
+
+void SCHEME_start(){
 
   s7 = s7_init();
 
@@ -249,7 +294,7 @@ void WEBSERVER_start(){
 
   s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"scheme").c_str());
 
-  s7_load(s7,"common.scm");
+  s7_load(s7,"init.scm");
 
   init_radium_s7(s7);
 

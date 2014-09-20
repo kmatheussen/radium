@@ -93,7 +93,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
-#include "../embedded_scheme/webserver_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 
 #include "Qt_Main_proc.h"
@@ -562,6 +562,10 @@ int radium_main(char *arg){
     return 0;
   printf("ending\n");
 
+
+  SCHEME_start();
+
+
   //ProfilerStop();
 
   posix_InitPlayer();
@@ -678,6 +682,7 @@ int radium_main(char *arg){
 
 
   is_starting_up=false;
+
   window->must_redraw = true;
   editor->update();
   editor->resize(editor->width(),editor->height());
@@ -695,9 +700,6 @@ int radium_main(char *arg){
     qApp->processEvents();
   }
   GL_unlock();
-
-
-  WEBSERVER_start();
 
 #if USE_QT_VISUAL
   qapplication->exec();
