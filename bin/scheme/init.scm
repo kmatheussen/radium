@@ -1,8 +1,9 @@
 (provide 'init.scm)
 
+(require stuff.scm)
 (require write.scm)
 
-(load "common.scm")
+(load "common1.scm")
 
 (define (my-require what)
   (if (provided? what)
@@ -13,11 +14,11 @@
             (let ((filename (<-> (car load-path) "/" what)))
               (if (file-exists? filename)
                   (load filename)
-                  (loop (cdr filename))))))))
+                  (loop (cdr load-path))))))))
                       
 
 (my-require 'define-match.scm)
 
+(my-require 'common2.scm)
+
 (my-require 'mouse/mouse.scm)
-
-
