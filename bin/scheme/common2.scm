@@ -23,10 +23,30 @@
                               (keyvalues-to-define-args Rest)))
 
 #|
-(keyvalues-to-define-args '(:a 90 :b 50 :c :d 80))
-(keyvalues-to-define-args '(:a 90 :b 50 :c))
+(test (keyvalues-to-define-args '(:a 90 :b 50 :c :d 80))
+      '((a 90) (b 50) (c 'must-be-defined) (d 80)))
+(test (keyvalues-to-define-args '(:a 90 :b 50 :c))
+      '((a 90) (b 50) (c 'must-be-defined)))
 |#
 
+
+(define-match delafina-args-to-define*-args
+  ()           :> '()
+  (Key . Rest) :> (keyvalues-to-define-args (cons Key Rest)) :where (keyword? Key)
+  (Var . Rest) :> (cons Var (delafina-args-to-define*-args Rest)))
+
+(define-macro (delafina def . body)
+  `(define* (,(car def) ,@(delafina-args-to-define*-args (cdr def)))
+     ,@body))
+
+#|
+(pretty-print (macroexpand (delafina (testfunc a b :b 30 :c 90)
+                             (+ 2 3)
+                             (+ 5 6))))
+
+(test (macroexpand (delafina (testfunc a b :c 30 :d 90) a b))
+      '(define* (testfunc a b (c 30) (d 90)) a b))
+|#
 
 
 (define-macro (define-struct name . args)
