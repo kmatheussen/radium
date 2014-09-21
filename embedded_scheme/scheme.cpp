@@ -241,39 +241,39 @@ bool SCHEME_mousepress(int x, int y, int button){
                             s7_name_to_value(s7, "radium-mouse-press"), // [1]
                             s7_list(s7,
                                     3,
+                                    s7_make_integer(s7, button),
                                     s7_make_integer(s7, x),
-                                    s7_make_integer(s7, y),
-                                    s7_make_integer(s7, button)
+                                    s7_make_integer(s7, y)
                                     )
                             )
                     );
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-bool SCHEME_mousedrag(int x, int y, int button){
+bool SCHEME_mousemove(int button, int x, int y){
   return s7_boolean(s7,
                     s7_call(s7, 
-                            s7_name_to_value(s7, "radium-mouse-drag"), // [1]
+                            s7_name_to_value(s7, "radium-mouse-move"), // [1]
                             s7_list(s7,
                                     3,
+                                    s7_make_integer(s7, button),
                                     s7_make_integer(s7, x),
-                                    s7_make_integer(s7, y),
-                                    s7_make_integer(s7, button)
+                                    s7_make_integer(s7, y)
                                     )
                             )
                     );
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-bool SCHEME_mouserelease(int x, int y, int button){
+bool SCHEME_mouserelease(int button, int x, int y){
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-release"), // [1]
                             s7_list(s7,
                                     3,
+                                    s7_make_integer(s7, button),
                                     s7_make_integer(s7, x),
-                                    s7_make_integer(s7, y),
-                                    s7_make_integer(s7, button)
+                                    s7_make_integer(s7, y)
                                     )
                             )
                     );

@@ -105,7 +105,6 @@ struct WBlocks *getWBlockFromNumA(
         return ret;
 }
 
-
 struct Blocks *getBlockFromNum(int blocknum){
   struct Blocks *ret = ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
   if (ret==NULL)

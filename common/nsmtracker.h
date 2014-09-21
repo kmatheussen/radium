@@ -89,8 +89,8 @@ typedef int32_t NInt;
 #define RADIUM_BLOCKSIZE 64
 
 
-#define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
+#define MAXBLOCKRELTIME 6.0f
 
 // Higher than 255 is no point.
 #define MAX_BRIGHTNESS 63
@@ -683,7 +683,8 @@ struct WFXNodes{
 	tbox.h
 *********************************************************************/
 struct TBoxstruct{
-	int x1,y1,x2,y2;
+  int x1,y1;
+  int x2,y2;
 };
 typedef struct TBoxstruct TBox;
 
@@ -957,14 +958,7 @@ struct WBlocks{
 
 	bool isgfxdatahere;
 
-	TBox reltempo;
-
-  //tempocolor stuff
-  bool tc_onoff;
-  int tc_numcolors;
-  int tc_maxtime;
-  int tc_mintime;
-  int tc_type;
+	TBox reltempo; // API: (x1 y1 x2 y2) getWBlockFromNum(-1,-1)
 };
 #define NextWBlock(a) (struct WBlocks *)((a)->l.next)
 

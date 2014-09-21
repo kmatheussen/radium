@@ -11,6 +11,13 @@
 
 ;;(keep (lambda (x) (= x 1)) (list 1 3 1 5))
 
+(define-macro (push-back! list el)
+  `(set! ,list (append ,list (list ,el))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-match keyvalues-to-define-args
   ()                 :> '()
@@ -82,6 +89,14 @@
 |#
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; delafina ;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 (define-match delafina-args-to-define*-args
   ()                 :> '()
   (Var . Rest)       :> (throw (<-> "All parameters for a delafina functions must be keywords. '" Var "' is not a keyword"))
@@ -116,3 +131,42 @@
 (aiai)
 |#
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; Box handling ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-struct box :x1 :y1 :x2 :y2 :width :height)
+  
+(define-macro (r-get-box prefix)
+  `(let ((x1 ( ,(<_> 'r-get- prefix '-x1)))
+         (y1 ( ,(<_> 'r-get- prefix '-y1)))
+         (x2 ( ,(<_> 'r-get- prefix '-x2)))
+         (y2 ( ,(<_> 'r-get- prefix '-y2))))             
+     (make-box :x1 x1
+               :y1 y1
+               :x2 x2
+               :y2 y2
+               :width (- x2 x1)
+               :height (- y2 y1))))
+
+#|
+(pretty-print (macroexpand (define-struct box :x1 :y1 :x2 :y2)))
+
+(list
+ ((r-get-box reltempo-slider) :x1)
+ ((r-get-box reltempo-slider) :y1)
+ ((r-get-box reltempo-slider) :x2)
+ ((r-get-box reltempo-slider) :y2)
+ ((r-get-box reltempo-slider) :width)
+ ((r-get-box reltempo-slider) :height))
+|#
+
+(define (inside-box box x y)
+  (and (>= x (box :x1))
+       (<  x (box :x2))
+       (>= y (box :y1))
+       (>  y (box :y2))))
+
+#|
+|#

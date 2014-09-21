@@ -221,7 +221,7 @@ OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Error.o W_Keyboard.o
 OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o W_Error.o cocoa_Keyboard.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_rtmidi.o RtMidi.o midi_i_input.o midi_menues.o
@@ -1214,6 +1214,9 @@ api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.c $(API)radium_
 
 api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_proc.h
 	$(CC)  $(API)api_requesters.c $(OPT)
+
+api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
+	$(CC)  $(API)api_mouse.c $(OPT)
 
 radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
 	$(CC)  $(API)radium_wrap.c $(OPT) -w
