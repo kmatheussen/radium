@@ -25,17 +25,26 @@
 (define *mouse-cycles* '())
 (define *current-mouse-cycle* #f)
 
-(define (add-mouse-cycle mouse-cycle)
-  (push-back! mouse-cycle
-              mouse-cycles)
-  )
+(define (add-mouse-cycle ^mouse-cycle)
+  (push-back! ^mouse-cycle
+              *mouse-cycles*))
+
+
+(define (get-mouse-cycle button x y)
+  #f)
 
 
 ;; Functions called from radium
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (radium-mouse-press button x y)
-  (c-display "mouse press" button x y)
-  #f)
+(define (radium-mouse-press button^ x^ y^)
+  (if (not *current-mouse-cycle*)
+      (set! *current-mouse-cycle* (get-mouse-cycle button^ x^ y^)))
+  current-mouse-cycle)
+
+(define (radium-mouse-press $button $x $y)
+  (if (not *current-mouse-cycle*)
+      (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
+  current-mouse-cycle)
 
 (define (radium-mouse-move button x y)
   (c-display "mouse move" button x y)
@@ -47,9 +56,14 @@
         (run-mouse-move-handlers button x y)
         #f)))
 
-(define (radium-mouse-release button x y)
-  (c-display "mouse release" button x y)
-  #f)
+(define (radium-mouse-release $button $x $y)
+  (c-display "mouse release" $button $x $y)
+  (if *current-mouse-cycle*
+      (begin
+        ((*current-mouse-cycle* :relase-func) $button $x $y)
+        (set! *current-mouse-cycle* #f)
+        #t)
+      #f))
 
 
 
