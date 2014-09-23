@@ -15,6 +15,11 @@
   `(set! ,list (append ,list (list ,el))))
 
 
+(define (scale x x1 x2 y1 y2)
+  (+ y1 (/ (* (- x x1)
+              (- y2 y1))
+           (- x2 x1))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -150,6 +155,17 @@
                :width (- x2 x1)
                :height (- y2 y1))))
 
+
+(define (box-to-string box)
+  (<-> "(box"
+       " :x1 "     (box :x1)
+       " :y1 "     (box :y1)
+       " :x2 "     (box :x2)
+       " :y1 "     (box :y2)
+       " :width "  (box :width)
+       " :height " (box :height)
+       ")"))
+
 #|
 (pretty-print (macroexpand (define-struct box :x1 :y1 :x2 :y2)))
 
@@ -166,7 +182,7 @@
   (and (>= x (box :x1))
        (<  x (box :x2))
        (>= y (box :y1))
-       (>  y (box :y2))))
+       (<  y (box :y2))))
 
 #|
 |#

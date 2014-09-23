@@ -37,15 +37,15 @@ int getReltempoSliderY2(void){
 return root->song->tracker_windows->wblock->reltempo.y2;
 }
 
-float getReltempo(int blocknum){
-  struct Blocks *block = getBlockFromNum(blocknum);
-  if (block==NULL)
+float getReltempo(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if (wblock==NULL)
     return 0.0f;
   else
-    return block->reltempo;
+    return wblock->block->reltempo;
 }
 
-void undoRelTempo(void){
+void undoReltempo(void){
   struct Tracker_Windows *window = root->song->tracker_windows;
   Undo_RelTempoSlider(window,window->wblock);
 }

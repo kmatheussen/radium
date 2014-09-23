@@ -235,7 +235,7 @@ void Responder::reply()
   input_code = "";
 }
 
-bool SCHEME_mousepress(int x, int y, int button){
+bool SCHEME_mousepress(int button, int x, int y){
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-press"), // [1]
