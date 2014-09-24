@@ -99,8 +99,6 @@
   (define value #f)
   (define (call-move-and-release $button $x $y)
     (move-and-release $button
-                      start-x
-                      start-y
                       (- $x start-x)
                       (- $y start-y)
                       value))
@@ -128,7 +126,7 @@
                  (r-undo-reltempo)
                  (r-get-reltempo))))
 
- :move-and-release (lambda ($button $start-x $start-y $dx $dy $org-reltempo)
+ :move-and-release (lambda ($button $dx $dy $org-reltempo)
                      (define box          (r-get-box reltempo-slider))
                      (define reltempo     (r-get-reltempo))
                      (define min-reltempo (r-get-min-reltempo))

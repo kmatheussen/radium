@@ -235,7 +235,7 @@ void Responder::reply()
   input_code = "";
 }
 
-bool SCHEME_mousepress(int button, int x, int y){
+bool SCHEME_mousepress(int button, float x, float y){
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-press"), // [1]
@@ -250,7 +250,7 @@ bool SCHEME_mousepress(int button, int x, int y){
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-bool SCHEME_mousemove(int button, int x, int y){
+bool SCHEME_mousemove(int button, float x, float y){
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-move"), // [1]
@@ -265,7 +265,7 @@ bool SCHEME_mousemove(int button, int x, int y){
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-bool SCHEME_mouserelease(int button, int x, int y){
+bool SCHEME_mouserelease(int button, float x, float y){
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-release"), // [1]

@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QResizeEvent>
 #include <QPixmap>
 #include <QMouseEvent>
+#include <QPointF>
 #include <QKeyEvent>
 #endif
 
@@ -299,7 +300,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  if (SCHEME_mousepress(tevent.ID, tevent.x, tevent.y)==false) {
+  if (SCHEME_mousepress(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
 
     EventReciever(&tevent,this->window);
 
@@ -312,7 +313,6 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   updateEditor();
 }
 
-
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   if(is_starting_up==true)
     return;
@@ -321,11 +321,11 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
 
-  if (SCHEME_mousemove(tevent.ID, tevent.x, tevent.y)==false)
+  if (SCHEME_mousemove(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
-  //printf("----Got mouse move %d %d\n",tevent.x,tevent.y);
+//  printf("----Got mouse move %d %d %f %f\n",tevent.x,tevent.y,qmouseevent->posF().x(),qmouseevent->posF().y());
 
   updateEditor();
 }
@@ -348,7 +348,7 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   tevent.y=qmouseevent->y();//-YOFFSET;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  if (SCHEME_mouserelease(tevent.ID, tevent.x, tevent.y)==false)
+  if (SCHEME_mouserelease(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 
 
