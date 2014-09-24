@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define NoSwitch(a) (a==0)
 #define LeftCtrl(a) (a&EVENT_LEFTCTRL)
 #define RightCtrl(a) (a&EVENT_RIGHTCTRL)
+#define AnyCtrl(a) (LeftCtrl(a) | RightCtrl(a))
 #define CapsLock(a) (a&EVENT_CAPSLOCK)
 #define LeftShift(a) (a&EVENT_LEFTSHIFT)
 #define RightShift(a) (a&EVENT_RIGHTSHIFT)

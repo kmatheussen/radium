@@ -321,6 +321,9 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
 
+  //Qt::ButtonState buttonstate=qmouseevent->state();
+  //printf("buttonstate: %d, %d\n",buttonstate,tevent.keyswitch);
+
   if (SCHEME_mousemove(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 

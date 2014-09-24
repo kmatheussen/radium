@@ -68,6 +68,8 @@ class Argument:
             return "s7_make_real"
         elif self.type_string=="char*":
             return "s7_make_string"
+        elif self.type_string=="bool":
+            return "s7_make_boolean"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -79,6 +81,8 @@ class Argument:
             return "s7_real"
         elif self.type_string=="char*":
             return "(char*)s7_string"
+        elif self.type_string=="bool":
+            return "s7_bool"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -90,6 +94,8 @@ class Argument:
             return "s7_is_real"
         elif self.type_string=="char*":
             return "s7_is_string"
+        elif self.type_string=="bool":
+            return "s7_is_bool"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -206,6 +212,8 @@ class Proto:
                 t="O"
             elif qualifier=="char*":
                 t="s"
+            elif qualifier=="bool":
+                t="b"
             else:
                 sys.stderr.write("Unknown type '"+qualifier+"'")
                 raise "Unknown type '"+qualifier+"'"
@@ -246,6 +254,8 @@ class Proto:
                     t="PyFloat_FromDouble("
                 elif qualifier=="char*":
                     t="PyString_FromString("
+                elif qualifier=="bool":
+                    t="PyBool_FromLong((long)"
                 oh.write(t+"result);\n")
 
         oh.write("return resultobj;\n")

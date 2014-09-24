@@ -53,7 +53,7 @@
   *current-mouse-cycle*)
 
 (define (radium-mouse-move $button $x $y)
-  ;;(c-display "mouse move" $button $x $y)
+  (c-display "mouse move" $button $x $y (r-ctrl-pressed) (r-shift-pressed))
   (if *current-mouse-cycle*
       (begin 
         ((*current-mouse-cycle* :drag-func) $button $x $y)

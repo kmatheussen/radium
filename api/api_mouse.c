@@ -81,3 +81,14 @@ float getMinReltempo(void){
 float getMaxReltempo(void){
   return MAXBLOCKRELTIME;
 }
+
+
+extern struct TEvent tevent;
+
+bool ctrlPressed(void){
+  return AnyCtrl(tevent.keyswitch);
+}
+
+bool shiftPressed(void){
+  return AnyShift(tevent.keyswitch);
+}
