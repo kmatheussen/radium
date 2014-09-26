@@ -120,15 +120,15 @@
 ;; reltempo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; status bar
 (add-mouse-move-handler
- :move (lambda (button x y)
-         (if (inside-box (r-get-box reltempo-slider) x y)
+ :move (lambda ($button $x $y)
+         (if (inside-box (r-get-box reltempo-slider) $x $y)
              (r-show-reltempo-in-statusbar))))
 
 
 
 ;; slider
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-delta-mouse-handler
  :press (lambda ($button $x $y)
           ;;(c-display "inside? " (inside-box (r-get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (r-get-box reltempo-slider)))
@@ -150,6 +150,16 @@
                      (r-set-reltempo new-value)
                      new-value)
  )
+
+
+
+;; temponodearea
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (if (inside-box (r-get-box temponode-area) $x $y)
+             (c-display "inside" $x $y))))
 
 
 

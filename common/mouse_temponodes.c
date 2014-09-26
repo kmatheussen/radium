@@ -233,7 +233,7 @@ void SetMouseActionTempoNodes(
 	}
 
 	if(firstringinstatusbar[0]!=0){
-	   firstringinstatusbar[0]=0;
+          firstringinstatusbar[0] = 0;
 	  GFX_DrawStatusBar(window,window->wblock);
 	}
 

@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
+// reltempo
+
 int getReltempoSliderX1(void){
   return root->song->tracker_windows->wblock->reltempo.x1;
 }
@@ -83,6 +85,27 @@ float getMaxReltempo(void){
 }
 
 
+
+// temponodearea
+
+
+int getTemponodeAreaX1(void){
+  return root->song->tracker_windows->wblock->temponodearea.x;
+}
+int getTemponodeAreaY1(void){
+  return root->song->tracker_windows->wblock->t.y1;
+}
+int getTemponodeAreaX2(void){
+  return root->song->tracker_windows->wblock->temponodearea.x2;
+}
+int getTemponodeAreaY2(void){
+  return root->song->tracker_windows->wblock->t.y2;
+}
+
+
+
+// ctrl / shift keys
+
 extern struct TEvent tevent;
 
 bool ctrlPressed(void){
@@ -92,3 +115,4 @@ bool ctrlPressed(void){
 bool shiftPressed(void){
   return AnyShift(tevent.keyswitch);
 }
+
