@@ -34,6 +34,35 @@
   #f)
 
 
+(delafina (add-delta-mouse-handler :press :move-and-release)
+  (define start-x #f)
+  (define start-y #f)
+  (define value #f)
+  (define (call-move-and-release $button $x $y)
+    (define new-x (if (r-ctrl-pressed)
+                      (/ (- $x start-x) 10.0)
+                      (- $x start-x)))
+    (define new-y (- $y start-y))
+    (set! start-x $x)
+    (set! start-y $y)
+    (set! value (move-and-release $button
+                                  new-x
+                                  new-y
+                                  value)))
+  (add-mouse-cycle (make-mouse-cycle
+                    :press-func (lambda ($button $x $y)
+                                  (set! value (press $button $x $y))
+                                  (if value
+                                      (begin
+                                        (set! start-x $x)
+                                        (set! start-y $y)
+                                        #t)
+                                      #f))
+                    :drag-func  call-move-and-release
+                    :release-func call-move-and-release)))
+  
+
+
 ;; Functions called from radium
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (radium-mouse-press $button $x $y)
@@ -93,27 +122,6 @@
              (r-show-reltempo-in-statusbar))))
 
 
-(delafina (add-delta-mouse-handler :press :move-and-release)
-  (define start-x #f)
-  (define start-y #f)
-  (define value #f)
-  (define (call-move-and-release $button $x $y)
-    (move-and-release $button
-                      (- $x start-x)
-                      (- $y start-y)
-                      value))
-  (add-mouse-cycle (make-mouse-cycle
-                    :press-func (lambda ($button $x $y)
-                                  (set! value (press $button $x $y))
-                                  (if value
-                                      (begin
-                                        (set! start-x $x)
-                                        (set! start-y $y)
-                                        #t)
-                                      #f))
-                    :drag-func  call-move-and-release
-                    :release-func call-move-and-release)))
-  
 
 ;; slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -131,15 +139,19 @@
                      (define reltempo     (r-get-reltempo))
                      (define min-reltempo (r-get-min-reltempo))
                      (define max-reltempo (r-get-max-reltempo))
-                     (r-set-reltempo (+ $org-reltempo
-                                        (scale $dx
-                                               0 (box :width)
-                                               min-reltempo max-reltempo))))
+                     (define new-value    (+ $org-reltempo
+                                             (scale $dx
+                                                    0 (box :width)
+                                                    min-reltempo max-reltempo)))
+                     (r-set-reltempo new-value)
+                     new-value)
  )
 
 
 
 #|
+
+(r-ctrl-pressed)
 
 (define (mouse-press button x* y*)
   (if (not curr-mouse-cycle)
