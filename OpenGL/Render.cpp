@@ -168,17 +168,16 @@ void create_single_border(
    NodeLine. Will replace the old type of nodelines. Placed here for convenience, for now.
 *******************************************************************************************/
 
-struct NodeLine{
-  struct NodeLine *next;
 
-  float x1,y1;
-  float x2,y2;
-
-  const struct ListHeader3 *element1;
-  const struct ListHeader3 *element2;
-
-  bool is_node;
-};
+static vector_t *get_nodeline_nodes(struct NodeLine *nodelines){
+  vector_t *vector = (vector_t*)talloc(sizeof(vector_t));
+  while(nodelines != NULL) {
+    if (nodelines->is_node)
+      VECTOR_push_back(vector, nodelines);
+    nodelines = nodelines->next;
+  }
+  return vector;
+}
 
 
 // Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
@@ -627,10 +626,13 @@ static void create_bpmtrack(const struct Tracker_Windows *window, const struct W
 
 static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
   struct TempoNodes *temponode = (struct TempoNodes*)element;
-  return scale(temponode->reltempo, (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f), wblock->temponodearea.x, wblock->temponodearea.x2);
+  return scale(temponode->reltempo,
+               (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
+               wblock->temponodearea.x, wblock->temponodearea.x2
+               );
 }
 
-static void create_reltempotrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+static void create_reltempotrack(const struct Tracker_Windows *window, struct WBlocks *wblock){
   GE_Context *line_color = GE_color(4);
 
   struct NodeLine *nodelines = create_nodelines(window,
@@ -639,6 +641,9 @@ static void create_reltempotrack(const struct Tracker_Windows *window, const str
                                                 get_temponode_x,
                                                 NULL
                                                 );
+
+  wblock->reltempo_nodes = get_nodeline_nodes(nodelines);
+
   do{
 
     if(nodelines->is_node && wblock->mouse_track==TEMPONODETRACK)
@@ -1126,7 +1131,7 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
    block
  ************************************/
 
-void GL_create(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
   
   //static int n=0; printf("GL_create called %d\n",n++);
 

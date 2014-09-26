@@ -658,6 +658,24 @@ enum{
 
 
 /*********************************************************************
+	OpenGL/Render.h
+*********************************************************************/
+
+struct NodeLine{
+  struct NodeLine *next;
+
+  float x1,y1;
+  float x2,y2;
+
+  const struct ListHeader3 *element1;
+  const struct ListHeader3 *element2;
+
+  bool is_node;
+};
+
+
+
+/*********************************************************************
 	wfxnodes.h
 *********************************************************************/
 
@@ -947,6 +965,7 @@ struct WBlocks{
 
 	struct WTempos *wtempos;
 	WTempoNodes **wtemponodes;
+	vector_t *reltempo_nodes;
 	struct WLPBs *wlpbs;
 	float reltempomax;
 

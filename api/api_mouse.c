@@ -102,6 +102,34 @@ int getTemponodeAreaY2(void){
   return root->song->tracker_windows->wblock->t.y2;
 }
 
+static struct NodeLine *get_temponodeline(int boxnum){
+  vector_t *nodes = root->song->tracker_windows->wblock->reltempo_nodes;
+  if (boxnum < 0 || boxnum>=nodes->num_elements) {
+    RError("There is no temponode box %d",boxnum);
+    return NULL;
+  }else
+    return nodes->elements[boxnum];
+}
+
+int getTempoNodeBoxX1(int boxnum){
+  struct NodeLine *nodeline = get_temponodeline(boxnum);
+  return nodeline==NULL ? 0 : nodeline->x1;
+}
+
+int getTempoNodeBoxY1(int boxnum){
+  struct NodeLine *nodeline = get_temponodeline(boxnum);
+  return nodeline==NULL ? 0 : nodeline->y1;
+}
+
+int getTempoNodeBoxX2(int boxnum){
+  struct NodeLine *nodeline = get_temponodeline(boxnum);
+  return nodeline==NULL ? 0 : nodeline->x2;
+}
+
+int getTempoNodeBoxY2(int boxnum){
+  struct NodeLine *nodeline = get_temponodeline(boxnum);
+  return nodeline==NULL ? 0 : nodeline->y2;
+}
 
 
 // ctrl / shift keys
