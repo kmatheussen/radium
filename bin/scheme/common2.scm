@@ -20,6 +20,10 @@
               (- y2 y1))
            (- x2 x1))))
 
+(define (average . numbers)
+  (/ (apply + numbers)
+     (length numbers)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,18 +146,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-struct box :x1 :y1 :x2 :y2 :width :height)
+
+(define (make-box2 $x1 $y1 $x2 $y2)
+  (make-box :x1 $x1
+            :y1 $y1
+            :x2 $x2
+            :y2 $y2
+            :width (- $x2 $x1)
+            :height (- $y2 $y1)))
   
-(define-macro (r-get-box prefix)
-  `(let ((x1 ( ,(<_> 'r-get- prefix '-x1)))
-         (y1 ( ,(<_> 'r-get- prefix '-y1)))
-         (x2 ( ,(<_> 'r-get- prefix '-x2)))
-         (y2 ( ,(<_> 'r-get- prefix '-y2))))             
-     (make-box :x1 x1
-               :y1 y1
-               :x2 x2
-               :y2 y2
-               :width (- x2 x1)
-               :height (- y2 y1))))
+(define-macro (ra:get-box prefix)
+  `(make-box2 ( ,(<_> 'ra:get- prefix '-x1))
+              ( ,(<_> 'ra:get- prefix '-y1))
+              ( ,(<_> 'ra:get- prefix '-x2))
+              ( ,(<_> 'ra:get- prefix '-y2))))
 
 
 (define (box-to-string box)
@@ -170,12 +176,12 @@
 (pretty-print (macroexpand (define-struct box :x1 :y1 :x2 :y2)))
 
 (list
- ((r-get-box reltempo-slider) :x1)
- ((r-get-box reltempo-slider) :y1)
- ((r-get-box reltempo-slider) :x2)
- ((r-get-box reltempo-slider) :y2)
- ((r-get-box reltempo-slider) :width)
- ((r-get-box reltempo-slider) :height))
+ ((ra:get-box reltempo-slider) :x1)
+ ((ra:get-box reltempo-slider) :y1)
+ ((ra:get-box reltempo-slider) :x2)
+ ((ra:get-box reltempo-slider) :y2)
+ ((ra:get-box reltempo-slider) :width)
+ ((ra:get-box reltempo-slider) :height))
 |#
 
 (define (inside-box box x y)

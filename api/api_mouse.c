@@ -16,13 +16,116 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/nsmtracker.h"
+#include "../common/placement_proc.h"
+#include "../common/list_proc.h"
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
 #include "../common/gfx_statusbar_proc.h"
+#include "../common/trackreallines_proc.h"
+#include "../common/time_proc.h"
+#include "../common/common_proc.h"
 
 #include "api_common_proc.h"
 
 extern struct Root *root;
+
+extern volatile float scroll_pos;
+
+
+// placement (block time)
+
+float getPlaceFromY(float y, int blocknum, int windownum) {
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL) {
+    RError("getPlaceFromY: No block %d in window %d",blocknum,windownum);
+    return 0.0;
+  }
+
+  struct Blocks *block = wblock->block;
+  
+  Place *prevplace=PlaceGetFirstPos();
+  Place place;
+  Place nextplace;
+  PlaceSetLastPos(block,&nextplace);
+      
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           y,
+                           &place,
+                           prevplace,
+                           &nextplace
+                           );
+  
+  return GetFloatFromPlace(&place);
+}
+
+static struct ListHeader3 *setPlace(struct Blocks *block, struct ListHeader3 *list, int num, float floatplace){
+  struct ListHeader3 *node;
+
+  // Find prevplace and node
+  
+  Place *prevplace;
+  
+  if (num==0) {
+    prevplace=PlaceGetFirstPos();
+    node = list;
+  } else {
+    struct ListHeader3 *prevnode = ListFindElement3_num(&block->temponodes->l, num-1);
+    if (prevnode==NULL)
+      return NULL;
+    prevplace = &prevnode->p;
+    node = prevnode->next;
+  }
+
+
+  if (node==NULL)
+    return NULL;
+
+
+  // find next place
+  
+  Place temp;
+  Place *nextplace;
+  bool nextplace_is_lastplace = false;
+  struct ListHeader3 *next = node->next;
+
+  if(next==NULL) {
+    PlaceSetLastPos(block,&temp);
+    nextplace = &temp;
+    nextplace_is_lastplace = true;
+  }else
+    nextplace = &next->p;
+
+
+  // legalize place
+  
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  if (PlaceLessOrEqual(&place, prevplace))
+    PlaceFromLimit(&place, prevplace);
+
+  if (nextplace_is_lastplace) {
+    if (PlaceGreaterThan(&place, nextplace))
+      PlaceCopy(&place, nextplace);
+  } else {
+    if (PlaceGreaterOrEqual(&place, nextplace))
+      PlaceTilLimit(&place, nextplace);
+  }
+
+  
+  // set place
+  PlaceCopy(&node->p, &place);
+
+  
+  return node;
+}
+
+
+
+
+
 
 // reltempo
 
@@ -102,7 +205,15 @@ int getTemponodeAreaY2(void){
   return root->song->tracker_windows->wblock->t.y2;
 }
 
-static struct NodeLine *get_temponodeline(int boxnum){
+float getTemponodeMax(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if (wblock==NULL)
+    return 0.0f;
+  else
+    return wblock->reltempomax;
+}
+
+static struct Node *get_temponodeline(int boxnum){
   vector_t *nodes = root->song->tracker_windows->wblock->reltempo_nodes;
   if (boxnum < 0 || boxnum>=nodes->num_elements) {
     RError("There is no temponode box %d",boxnum);
@@ -111,25 +222,85 @@ static struct NodeLine *get_temponodeline(int boxnum){
     return nodes->elements[boxnum];
 }
 
-int getTempoNodeBoxX1(int boxnum){
-  struct NodeLine *nodeline = get_temponodeline(boxnum);
-  return nodeline==NULL ? 0 : nodeline->x1;
+float getTemponodeX(int num){
+  struct Node *nodeline = get_temponodeline(num);
+  return nodeline==NULL ? 0 : nodeline->x;
 }
 
-int getTempoNodeBoxY1(int boxnum){
-  struct NodeLine *nodeline = get_temponodeline(boxnum);
-  return nodeline==NULL ? 0 : nodeline->y1;
+float getTemponodeY(int num){
+  struct Node *nodeline = get_temponodeline(num);
+  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
 }
 
-int getTempoNodeBoxX2(int boxnum){
-  struct NodeLine *nodeline = get_temponodeline(boxnum);
-  return nodeline==NULL ? 0 : nodeline->x2;
+float getTemponodeValue(int num, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL) {
+    RError("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+    return 0.0;
+  }
+
+  struct Blocks *block = wblock->block;
+  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+  if (temponode==NULL) {
+    RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    return 0.0;
+  }
+
+  return temponode->reltempo;
 }
 
-int getTempoNodeBoxY2(int boxnum){
-  struct NodeLine *nodeline = get_temponodeline(boxnum);
-  return nodeline==NULL ? 0 : nodeline->y2;
+void setTemponode(int num, float value, float place, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return;
+
+  struct Blocks *block = wblock->block;
+
+  struct TempoNodes *temponode;
+  if (num==0)
+    temponode = block->temponodes; // don't want to set placement for the first node. It's always at top.
+  else if (num==wblock->reltempo_nodes->num_elements-1)
+    temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
+  else
+    temponode = (struct TempoNodes *)setPlace(block, &block->temponodes->l, num, place);
+  
+  if (temponode==NULL){
+
+    RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+
+  } else {
+
+    if ( (value+1) > wblock->reltempomax) {
+      wblock->reltempomax = value+1;      
+    } else if ( (value-1) < -wblock->reltempomax) {
+      wblock->reltempomax = -1*(value -1);
+    }
+
+    temponode->reltempo = value;
+  
+    UpdateAllTrackReallines(window,wblock);
+  
+    UpdateSTimes(wblock->block);
+
+    block->is_dirty = true;
+
+  }
 }
+
+float getTemponodeWidth(void){
+  return root->song->tracker_windows->fontheight;
+}
+
+int getNumTemponodes(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if (wblock==NULL)
+    return 0.0f;
+  else
+    return wblock->reltempo_nodes->num_elements;
+}
+
 
 
 // ctrl / shift keys

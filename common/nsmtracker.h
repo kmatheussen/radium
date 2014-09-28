@@ -673,6 +673,10 @@ struct NodeLine{
   bool is_node;
 };
 
+struct Node{
+  float x, y;
+  const struct ListHeader3 *element;
+};
 
 
 /*********************************************************************
@@ -965,7 +969,7 @@ struct WBlocks{
 
 	struct WTempos *wtempos;
 	WTempoNodes **wtemponodes;
-	vector_t *reltempo_nodes;
+        vector_t *reltempo_nodes; // contains vector of Nodes
 	struct WLPBs *wlpbs;
 	float reltempomax;
 

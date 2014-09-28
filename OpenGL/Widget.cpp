@@ -185,6 +185,10 @@ static EditorWidget *get_editorwidget(void){
   return (EditorWidget *)get_window()->os_visual.widget;
 }
 
+
+volatile float scroll_pos = 0.0f;
+
+
 // Main thread
 static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
   const QPoint p = qmouseevent->pos();
@@ -356,13 +360,14 @@ private:
 
     double till_realline = find_till_realline(sv);
     float pos = GE_scroll_pos(sv, till_realline);
-
     
     if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return;
 
 
     if (needs_repaint || pos!=last_pos) {
+
+      scroll_pos = pos;
     
       // scroll
       {

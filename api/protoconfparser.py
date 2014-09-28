@@ -76,13 +76,13 @@ class Argument:
 
     def get_s7_get_type_function(self):
         if self.type_string=="int":
-            return "s7_integer"
+            return "s7_integer("
         elif self.type_string=="float":
-            return "s7_real"
+            return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="char*":
-            return "(char*)s7_string"
+            return "(char*)s7_string("
         elif self.type_string=="bool":
-            return "s7_bool"
+            return "s7_bool("
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -91,7 +91,7 @@ class Argument:
         if self.type_string=="int":
             return "s7_is_integer"
         elif self.type_string=="float":
-            return "s7_is_real"
+            return "s7_is_number"
         elif self.type_string=="char*":
             return "s7_is_string"
         elif self.type_string=="bool":
@@ -102,17 +102,18 @@ class Argument:
 
     # keyDownPlay -> r-key-down-play
     # keyDownBPM -> r-key-down-BPM
+    # KeyDownP   -> r-key-down-p
     def get_scheme_varname(self):
         def loop(name, dontconvert):
             if name=="":
                 return ""
-            elif len(name)==1:
-                return name
             elif name[0].islower():
                 return name[0]+loop(name[1:], False)
             elif name[0].isupper():
                 if dontconvert==True:
                     return name[0]+loop(name[1:], False)
+                elif len(name)==1:
+                    return "-"+name[0].lower()
                 elif name[1].isupper():
                     return "-"+name[0]+loop(name[1:], True)
                 else:
@@ -120,7 +121,7 @@ class Argument:
             else:
                 return name[0]+loop(name[1:], False)
 
-        return "r-"+loop(self.varname, False)
+        return "ra:"+loop(self.varname, False)
 
     def write(self,oh,dodefault):
         for lokke in range(len(self.qualifiers)):
@@ -434,7 +435,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
             oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+arg.varname+'", '+str(n)+', '+arg.varname+'_s7, "'+arg.type_string+'");\n')
             oh.write('\n')
-            oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+"("+arg.varname+"_s7);\n")
+            oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+arg.varname+"_s7);\n")
             oh.write("  radiums7_args = s7_cdr(radiums7_args);\n")
             oh.write("\n")
 

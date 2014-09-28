@@ -168,13 +168,36 @@ void create_single_border(
    NodeLine. Will replace the old type of nodelines. Placed here for convenience, for now.
 *******************************************************************************************/
 
+static Node *get_node_from_nodeline1(struct NodeLine *nodeline, float y_offset){
+  struct Node *ret = (struct Node*)talloc(sizeof(Node));
+  ret->x = nodeline->x1;
+  ret->y = nodeline->y1 + y_offset;
+  ret->element = nodeline->element1;
+  return ret;
+}
 
-static vector_t *get_nodeline_nodes(struct NodeLine *nodelines){
+static Node *get_node_from_nodeline2(struct NodeLine *nodeline, float y_offset){
+  struct Node *ret = (struct Node*)talloc(sizeof(Node));
+  ret->x = nodeline->x2;
+  ret->y = nodeline->y2 + y_offset;
+  ret->element = nodeline->element2;
+  return ret;
+}
+
+static vector_t *get_nodeline_nodes(struct NodeLine *nodelines, float y_offset){
   vector_t *vector = (vector_t*)talloc(sizeof(vector_t));
   while(nodelines != NULL) {
     if (nodelines->is_node)
-      VECTOR_push_back(vector, nodelines);
-    nodelines = nodelines->next;
+      VECTOR_push_back(vector, get_node_from_nodeline1(nodelines, y_offset));
+
+    struct NodeLine *next = nodelines->next;
+
+    if (next==NULL) {
+      VECTOR_push_back(vector, get_node_from_nodeline2(nodelines, y_offset));
+      break;
+    }else{
+      nodelines = next;
+    }
   }
   return vector;
 }
@@ -642,7 +665,7 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
                                                 NULL
                                                 );
 
-  wblock->reltempo_nodes = get_nodeline_nodes(nodelines);
+  wblock->reltempo_nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
 
   do{
 

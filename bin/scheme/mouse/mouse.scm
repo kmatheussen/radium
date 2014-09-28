@@ -39,11 +39,11 @@
   (define start-y #f)
   (define value #f)
   (define (call-move-and-release $button $x $y)
-    (define new-x (if (r-ctrl-pressed)
+    (define new-x (if (ra:ctrl-pressed)
                       (/ (- $x start-x)
                          10.0)
                       (- $x start-x)))
-    (define new-y (if (r-ctrl-pressed)
+    (define new-y (if (ra:ctrl-pressed)
                       (/ (- $y start-y)
                          10.0)
                       (- $y start-y)))
@@ -86,7 +86,7 @@
   *current-mouse-cycle*)
 
 (define (radium-mouse-move $button $x $y)
-  (c-display "mouse move" $button $x $y (r-ctrl-pressed) (r-shift-pressed))
+  (c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
   (if *current-mouse-cycle*
       (begin 
         ((*current-mouse-cycle* :drag-func) $button $x $y)
@@ -105,7 +105,7 @@
       #f))
 
 
-#|
+#||
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda ($button $x $y)
                                 (c-display "pressed it" $x $y)
@@ -114,7 +114,7 @@
                                 (c-display "moved it" $x $y))
                   :release-func (lambda ($button $x $y)
                                   (c-display "released it" $x $y))))
-|#
+||#
 
 
 ;; reltempo
@@ -123,50 +123,119 @@
 ;; status bar
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (if (inside-box (r-get-box reltempo-slider) $x $y)
-             (r-show-reltempo-in-statusbar))))
+         (if (inside-box (ra:get-box reltempo-slider) $x $y)
+             (ra:show-reltempo-in-statusbar))))
 
 
 
 ;; slider
 (add-delta-mouse-handler
  :press (lambda ($button $x $y)
-          ;;(c-display "inside? " (inside-box (r-get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (r-get-box reltempo-slider)))
+          ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
           (and (or #t (= $button *left-button*))
-               (inside-box (r-get-box reltempo-slider) $x $y)
+               (inside-box (ra:get-box reltempo-slider) $x $y)
                (begin
-                 (r-undo-reltempo)
-                 (r-get-reltempo))))
+                 (ra:undo-reltempo)
+                 (ra:get-reltempo))))
 
  :move-and-release (lambda ($button $dx $dy $org-reltempo)
-                     (define box          (r-get-box reltempo-slider))
-                     (define reltempo     (r-get-reltempo))
-                     (define min-reltempo (r-get-min-reltempo))
-                     (define max-reltempo (r-get-max-reltempo))
+                     (define box          (ra:get-box reltempo-slider))
+                     (define min-reltempo (ra:get-min-reltempo))
+                     (define max-reltempo (ra:get-max-reltempo))
                      (define new-value    (+ $org-reltempo
                                              (scale $dx
                                                     0 (box :width)
                                                     min-reltempo max-reltempo)))
-                     (r-set-reltempo new-value)
+                     (ra:set-reltempo new-value)
                      new-value)
  )
 
+#|
+(ra:set-reltempo 0.2)
+|#
 
 
 ;; temponodearea
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (get-temponode-box $n $width)
+  (define x (ra:get-temponode-x $n))
+  (define y (ra:get-temponode-y $n))
+  (define width/2 (/ $width 2))
+  (define x1 (- x width/2))
+  (define y1 (- y width/2))
+  (define x2 (+ x width/2))
+  (define y2 (+ y width/2))
+  (make-box2 x1 y1 x2 y2))
+
+#||
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (if (inside-box (r-get-box temponode-area) $x $y)
+         (if (inside-box (ra:get-box temponode-area) $x $y)
              (c-display "inside" $x $y))))
+||#
 
 
+(define-struct temponode
+  :num
+  :box
+  :value
+  :y)
+  
+(delafina (find-temponode :$x
+                          :$y
+                          :$num 0
+                          :$num-temponodes (ra:get-num-temponodes)
+                          :$temponode-width (ra:get-temponode-width))
+  (if (>= $num $num-temponodes)
+      #f
+      (let ((box (get-temponode-box $num $temponode-width)))
+        (if (inside-box box $x $y)
+            (make-temponode :num $num
+                            :box box
+                            :value (ra:get-temponode-value $num)
+                            :y (average (box :y1) (box :y2)))
+            (find-temponode $x $y (1+ $num) $num-temponodes $temponode-width)))))
+      
+  
 
-#|
+(add-delta-mouse-handler
+ :press (lambda ($button $x $y)
+          ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
+          (and (or #t (= $button *left-button*))
+               (inside-box (ra:get-box temponode-area) $x $y)
+               (find-temponode $x $y)))
+ 
+ :move-and-release (lambda ($button $dx $dy $temponode)
+                     ;;(c-display "temponode box" (box-to-string ($temponode :box)))
+                     (define max (1- (ra:get-temponode-max)))
+                     (define min (- max))
+                     (define temponode-area-width ((ra:get-box temponode-area) :width))
+                     (define new-value (+ ($temponode :value)
+                                          (scale $dx
+                                                 (- (/ temponode-area-width 2)) (/ temponode-area-width 2)
+                                                 min max)))
+                     (define new-y (+ ($temponode :y)
+                                      $dy))                                                 
+                     ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
+                     (ra:set-temponode ($temponode :num) new-value (ra:get-place-from-y new-y))
+                     (make-temponode :num ($temponode :num)
+                                     :box ($temponode :box)
+                                     :value new-value
+                                     :y new-y))
+ )
 
+#||
+(box-to-string (get-temponode-box 0 (ra:get-temponode-width)))
+(box-to-string (get-temponode-box 1 (ra:get-temponode-width)))
 
-(r-ctrl-pressed)
+(box-to-string (find-temponode 210 1210))
+
+(ra:set-temponode 1 65/2 8.0)
+(ra:set-temponode 1 0.01 8.0)
+(ra:set-temponode 3 100.01 8.0)
+
+(ra:ctrl-pressed)
 
 (define (mouse-press button x* y*)
   (if (not curr-mouse-cycle)
@@ -182,4 +251,4 @@
     (if mouse-cycle
         ((caddr mouse-cycle) button x* y*))))
 
-|#
+||#
