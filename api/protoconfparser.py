@@ -557,18 +557,18 @@ class Read:
         return self.fh.readline()
 
     def readNextLine(self):
-        line=self.readLine()
+        line = self.readLine()
 
         if line=="":
             self.fh.close()
             return false
 
-        line=string.rstrip(line)
+        line = line.rstrip().split("#")[0].strip()
 
-        while line=="" or line=="\n" or line[0:1]=="#":
+        if line=="" or line=="\n":
             return self.readNextLine()
 
-        if len(line)>0 and line[len(line)-1]=="\n":
+        if line[len(line)-1]=="\n":
             line=line[:-1]
 
         if len(line)>1:

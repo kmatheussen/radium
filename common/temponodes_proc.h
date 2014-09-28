@@ -22,7 +22,7 @@ extern void UpdateWTempoNodes(
 	struct WBlocks *wblock
 );
 
-extern void AddTempoNode(
+extern struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	Place *p,

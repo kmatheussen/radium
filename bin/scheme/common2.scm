@@ -24,6 +24,30 @@
   (/ (apply + numbers)
      (length numbers)))
 
+
+;; force and delay are missing from s7. Simple implementation below.
+(define-macro (delay . body)
+  `(vector #f
+           #f
+           (lambda ()
+             ,@body)))
+
+(define (force something)
+  (if (not (something 0))
+      (begin
+        (set! (something 1) ((something 2)))
+        (set! (something 0) #t)))
+  (something 1))
+
+#||
+(define a (delay
+            (c-display "hello")
+            50))
+(c-display a)
+(force a)
+||#
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

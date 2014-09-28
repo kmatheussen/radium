@@ -86,7 +86,7 @@
   *current-mouse-cycle*)
 
 (define (radium-mouse-move $button $x $y)
-  (c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
+  ;;(c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
   (if *current-mouse-cycle*
       (begin 
         ((*current-mouse-cycle* :drag-func) $button $x $y)
@@ -161,7 +161,7 @@
 (define (get-temponode-box $n $width)
   (define x (ra:get-temponode-x $n))
   (define y (ra:get-temponode-y $n))
-  (define width/2 (/ $width 2))
+  (define width/2 (+ 3 (/ $width 2)))
   (define x1 (- x width/2))
   (define y1 (- y width/2))
   (define x2 (+ x width/2))
@@ -181,22 +181,52 @@
   :box
   :value
   :y)
-  
+
+
+
+      
 (delafina (find-temponode :$x
                           :$y
                           :$num 0
                           :$num-temponodes (ra:get-num-temponodes)
                           :$temponode-width (ra:get-temponode-width))
-  (if (>= $num $num-temponodes)
-      #f
-      (let ((box (get-temponode-box $num $temponode-width)))
-        (if (inside-box box $x $y)
-            (make-temponode :num $num
-                            :box box
-                            :value (ra:get-temponode-value $num)
-                            :y (average (box :y1) (box :y2)))
-            (find-temponode $x $y (1+ $num) $num-temponodes $temponode-width)))))
+
+  (define box (get-temponode-box $num $temponode-width))
+  
+  (cond ((inside-box box $x $y)
+         (make-temponode :num $num
+                         :box box
+                         :value (ra:get-temponode-value $num)
+                         :y (average (box :y1) (box :y2))))
+        ((and (= 0 $num)
+              (< $y (box :y1)))
+         (make-temponode :num $num
+                         :box box
+                         :value (ra:get-temponode-value $num)
+                         :y $y))
+        ((> (box :y1) $y)
+         (define max (1- (ra:get-temponode-max)))
+         (define min (- max))
+         (define temponode-area (ra:get-box temponode-area))
+         (define value (scale $x
+                              (temponode-area :x1) (temponode-area :x2)
+                              min max))
+         (define new-num (ra:create-temponode value (ra:get-place-from-y $y)))
+         (define new-box (get-temponode-box new-num $temponode-width))
+         (make-temponode :num new-num
+                         :box new-box
+                         :value (ra:get-temponode-value new-num)
+                         :y $y))         
+        ((= $num (1- $num-temponodes))
+         (make-temponode :num $num
+                         :box box
+                         :value (ra:get-temponode-value $num)
+                         :y $y))
+        (else
+         (find-temponode $x $y (1+ $num) $num-temponodes $temponode-width))))
       
+  
+
   
 
 (add-delta-mouse-handler
@@ -226,6 +256,8 @@
  )
 
 #||
+(c-display (ra:create-temponode 2.1 -5.0))
+
 (box-to-string (get-temponode-box 0 (ra:get-temponode-width)))
 (box-to-string (get-temponode-box 1 (ra:get-temponode-width)))
 

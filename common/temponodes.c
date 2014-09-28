@@ -117,7 +117,7 @@ void UpdateWTempoNodes(
 }
 
 
-void AddTempoNode(
+struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	Place *p,
@@ -132,8 +132,9 @@ void AddTempoNode(
 	PlaceCopy(&temponode->l.p,p);
 
 	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==NULL)
-		return;
-
+		return NULL;
+        else
+          return temponode;
 }
 
 

@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <Python.h>
+
 
 #include "../common/nsmtracker.h"
 #include "../common/placement_proc.h"
@@ -24,8 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/trackreallines_proc.h"
 #include "../common/time_proc.h"
 #include "../common/common_proc.h"
+#include "../common/temponodes_proc.h"
 
 #include "api_common_proc.h"
+
+#include "radium_proc.h"
+
 
 extern struct Root *root;
 
@@ -253,9 +259,11 @@ float getTemponodeValue(int num, int blocknum, int windownum){
 void setTemponode(int num, float value, float place, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL)
+  if (wblock==NULL) {
+    RError("setTemponode: No block %d in window %d",blocknum,windownum);
     return;
-
+  }
+  
   struct Blocks *block = wblock->block;
 
   struct TempoNodes *temponode;
@@ -279,11 +287,10 @@ void setTemponode(int num, float value, float place, int blocknum, int windownum
     }
 
     temponode->reltempo = value;
-  
+
+    UpdateSTimes(wblock->block);    
     UpdateAllTrackReallines(window,wblock);
   
-    UpdateSTimes(wblock->block);
-
     block->is_dirty = true;
 
   }
@@ -302,6 +309,46 @@ int getNumTemponodes(int blocknum, int windownum){
 }
 
 
+int createTemponode(float value, float floatplace, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL) {
+    RError("createTemponode: No block %d in window %d",blocknum,windownum);
+    return -1;
+  }
+
+  struct Blocks *block = wblock->block;
+  
+  if (floatplace<=0.0f)
+    return -1;
+
+  if (floatplace>=block->num_lines)
+    return -1;
+  
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  if ( (value+1) > wblock->reltempomax) {
+    wblock->reltempomax = value+1;      
+  } else if ( (value-1) < -wblock->reltempomax) {
+    wblock->reltempomax = -1*(value -1);
+  }
+  
+  struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value);
+  if (temponode==NULL)
+    return -1;
+  
+  //GFX_SetChangeFloat(window,wblock,"Reltempo",RelTempo2RealRelTempo(Gfx2RelTempo(wblock,dx)));
+  //UpdateSTimes(wblock->block);
+  //GFX_DrawStatusBar(window,wblock);
+
+  UpdateSTimes(block);
+  UpdateAllTrackReallines(window,wblock);
+
+  block->is_dirty = true;
+
+  return ListFindElementPos3(&block->temponodes->l, &temponode->l);
+}
 
 // ctrl / shift keys
 
