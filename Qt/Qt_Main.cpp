@@ -701,6 +701,13 @@ int radium_main(char *arg){
   }
   GL_unlock();
 
+#if 0
+  while(1){
+    qApp->processEvents();
+    usleep(500000);
+  }
+#endif
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else

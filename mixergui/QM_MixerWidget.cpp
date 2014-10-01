@@ -980,7 +980,7 @@ MixerWidget::MixerWidget(QWidget *parent)
 
     {
       MixerWidgetTimer *timer = new MixerWidgetTimer;
-      timer->setInterval(20);
+      timer->setInterval(30);
       timer->start();
     }
 }

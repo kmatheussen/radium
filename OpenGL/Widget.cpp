@@ -222,6 +222,8 @@ public:
 
   float last_pos;
 
+  bool sleep_when_not_painting;
+
   // Main thread
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
@@ -230,6 +232,7 @@ public:
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
     , last_pos(-1.0f)
+    , sleep_when_not_painting(SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     setMouseTracking(true);
   }
@@ -338,13 +341,14 @@ private:
   }
 
   // OpenGL thread
-  void draw(){
+  bool draw(){
     bool needs_repaint;
 
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
 
-    if (painting_data==NULL)
-      return;
+    if (painting_data==NULL){
+      return false;
+    }
 
     SharedVariables *sv = GE_get_shared_variables(painting_data);
 
@@ -352,18 +356,16 @@ private:
       vg->clear();
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
-
     
     if(pc->isplaying && sv->block!=pc->block) // sanity check
-      return;
+      return false;
 
 
     double till_realline = find_till_realline(sv);
     float pos = GE_scroll_pos(sv, till_realline);
     
     if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
-      return;
-
+      return false;
 
     if (needs_repaint || pos!=last_pos) {
 
@@ -398,7 +400,10 @@ private:
       _rendering->render();
 
       last_pos = pos;
-    }
+
+      return true;
+    } else
+      return false;
   }
 
   // OpenGL thread
@@ -434,8 +439,14 @@ public:
     }
 
     if(is_training_vblank_estimator==false && canDraw())
-      draw();
+      if (draw()==false) {
+        if (sleep_when_not_painting) {
+          usleep(1000000 / 60);
+          return;
+        }
+      }
 
+    //usleep(1000000 / 60.0);
     swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
   }
 
