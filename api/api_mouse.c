@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/time_proc.h"
 #include "../common/common_proc.h"
 #include "../common/temponodes_proc.h"
+#include "../common/undo_temponodes_proc.h"
 
 #include "api_common_proc.h"
 
@@ -254,6 +255,11 @@ float getTemponodeValue(int num, int blocknum, int windownum){
   }
 
   return temponode->reltempo;
+}
+
+void undoTemponodes(void){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  Undo_TempoNodes_CurrPos(window);
 }
 
 void setTemponode(int num, float value, float place, int blocknum, int windownum){

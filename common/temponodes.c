@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -24,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "reltempo_proc.h"
 #include "undo_temponodes_proc.h"
-#include <string.h>
 #include "temponodes_legalize_proc.h"
 //#include "blackbox_proc.h"
 #include "gfx_statusbar_proc.h"

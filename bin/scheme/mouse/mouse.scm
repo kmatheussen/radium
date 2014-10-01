@@ -194,12 +194,14 @@
   (define box (get-temponode-box $num $temponode-width))
   
   (cond ((inside-box box $x $y)
+         (ra:undo-temponodes)
          (make-temponode :num $num
                          :box box
                          :value (ra:get-temponode-value $num)
                          :y (average (box :y1) (box :y2))))
         ((and (= 0 $num)
               (< $y (box :y1)))
+         (ra:undo-temponodes)
          (make-temponode :num $num
                          :box box
                          :value (ra:get-temponode-value $num)
@@ -211,6 +213,7 @@
          (define value (scale $x
                               (temponode-area :x1) (temponode-area :x2)
                               min max))
+         (ra:undo-temponodes)
          (define new-num (ra:create-temponode value (ra:get-place-from-y $y)))
          (define new-box (get-temponode-box new-num $temponode-width))
          (make-temponode :num new-num
@@ -218,6 +221,7 @@
                          :value (ra:get-temponode-value new-num)
                          :y $y))         
         ((= $num (1- $num-temponodes))
+         (ra:undo-temponodes)
          (make-temponode :num $num
                          :box box
                          :value (ra:get-temponode-value $num)
@@ -255,7 +259,19 @@
                                      :y new-y))
  )
 
+(define (doit)
+  (+ gakkgakk 5))
+
+
 #||
+(load "lint.scm")
+(define *report-unused-parameters* #f)
+(define *report-unused-top-level-functions* #t)
+(define *report-multiply-defined-top-level-functions* #f) ; same name defined at top level in more than one file
+(define *report-shadowed-variables* #t)
+(define *report-minor-stuff* #t)                          ; let*, docstring checks, (= 1.5 x), numerical and boolean simplification
+(lint "/home/kjetil/radium/bin/scheme/mouse/mouse.scm")
+
 (c-display (ra:create-temponode 2.1 -5.0))
 
 (box-to-string (get-temponode-box 0 (ra:get-temponode-width)))
