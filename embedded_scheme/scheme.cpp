@@ -297,9 +297,9 @@ void SCHEME_start(){
   s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7
   s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"scheme").c_str()); // bin/scheme
 
-  s7_load(s7,"init.scm");
-
   init_radium_s7(s7);
+
+  s7_load(s7,"init.scm");
 
   new BodyData();
 }

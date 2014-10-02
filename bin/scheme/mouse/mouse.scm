@@ -224,7 +224,7 @@
                                                     (define value (scale $x
                                                                          (node-area :x1) (node-area :x2)
                                                                          min max))
-                                                    (ra:undo-temponodes)
+                                                    ($make-undo-func)
                                                     (define new-num ($create-node-func value (ra:get-place-from-y $y)))
                                                     (define new-box (get-node-box ($get-node-x-func new-num)
                                                                                   ($get-node-y-func new-num)

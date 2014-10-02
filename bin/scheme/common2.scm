@@ -14,7 +14,7 @@
       5)
 (match (list 'a 'b)
        a b :> 5
-       _ _ :> 9)
+       _ :> 9)
 ||#
 
 (define (keep func list)
