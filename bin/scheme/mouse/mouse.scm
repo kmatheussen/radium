@@ -154,19 +154,111 @@
 (ra:set-reltempo 0.2)
 |#
 
+(define (get-node-box $x $y $num $node-width)
+  (define width/2 (+ 3 (/ $node-width 2)))
+  (define x1 (- $x width/2))
+  (define y1 (- $y width/2))
+  (define x2 (+ $x width/2))
+  (define y2 (+ $y width/2))
+  (make-box2 x1 y1 x2 y2))
+  
+
+(delafina (find-node :$x
+                     :$y
+                     :$get-node-x-func
+                     :$get-node-y-func
+                     :$num-nodes
+                     :$num 0
+                     :$node-width (ra:get-temponode-width))
+
+  (define box (get-node-box ($get-node-x-func $num) ($get-node-y-func $num) $num $node-width))
+  
+  (cond ((inside-box box $x $y)
+         (list 'existing-box $num box))
+        ((and (= 0 $num)
+              (< $y (box :y1)))
+         'before)
+        ((> (box :y1) $y)
+         (list 'new-box $num))
+        ((= $num (1- $num-nodes))
+         'after)
+        (else
+         (find-node $x $y $get-node-x-func $get-node-y-func $num-nodes (1+ $num) $node-width))))
+
+(delafina (add-node-mouse-handler :$get-area-box-func
+                                  :$get-node-x-func
+                                  :$get-node-y-func
+                                  :$get-num-nodes-func
+                                  :$get-node-value-func
+                                  :$get-max-value-func
+                                  :$get-min-value-func
+                                  :$make-undo-func
+                                  :$create-node-func
+                                  :$move-node-func
+                                  )
+
+  (define-struct node
+    :num
+    :box
+    :value
+    :y)
+
+  (add-delta-mouse-handler
+   :press (lambda ($button $x $y)
+            ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
+            (and (or #t (= $button *left-button*))
+                 (inside-box ($get-area-box-func) $x $y)
+                 (match (list (find-node $x $y $get-node-x-func $get-node-y-func ($get-num-nodes-func)))
+                        before :> #f
+                        after  :> #f
+                        (existing-box Num Box) :> (begin
+                                                    ($make-undo-func)
+                                                    (make-node :num Num
+                                                               :box Box
+                                                               :value ($get-node-value-func Num)
+                                                               :y $y))
+                        (new-box _)            :> (begin
+                                                    (define max ($get-max-value-func))
+                                                    (define min ($get-min-value-func))
+                                                    (define node-area ($get-area-box-func))
+                                                    (define value (scale $x
+                                                                         (node-area :x1) (node-area :x2)
+                                                                         min max))
+                                                    (ra:undo-temponodes)
+                                                    (define new-num ($create-node-func value (ra:get-place-from-y $y)))
+                                                    (define new-box (get-node-box ($get-node-x-func new-num)
+                                                                                  ($get-node-y-func new-num)
+                                                                                  new-num
+                                                                                  (ra:get-temponode-width)))
+                                                    (make-node :num new-num
+                                                               :box new-box
+                                                               :value ($get-node-value-func new-num)
+                                                               :y $y)))))
+   
+   :move-and-release (lambda ($button $dx $dy $node)
+                       ;;(c-display "temponode box" (box-to-string ($temponode :box)))
+                       (define max ($get-max-value-func))
+                       (define min ($get-min-value-func))
+                       (define node-area ($get-area-box-func))
+                       (define node-area-width (node-area :width))
+                       (define new-value (+ ($node :value)
+                                            (scale $dx
+                                                   (- (/ node-area-width 2)) (/ node-area-width 2)
+                                                   min max)))
+                       (define new-y (+ ($node :y)
+                                        $dy))                                                 
+                       ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
+                       ($move-node-func ($node :num) new-value (ra:get-place-from-y new-y))
+                       (make-node :num ($node :num)
+                                  :box ($node :box)
+                                  :value new-value
+                                  :y new-y))
+   )
+  )
+      
 
 ;; temponodearea
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (get-temponode-box $n $width)
-  (define x (ra:get-temponode-x $n))
-  (define y (ra:get-temponode-y $n))
-  (define width/2 (+ 3 (/ $width 2)))
-  (define x1 (- x width/2))
-  (define y1 (- y width/2))
-  (define x2 (+ x width/2))
-  (define y2 (+ y width/2))
-  (make-box2 x1 y1 x2 y2))
 
 #||
 (add-mouse-move-handler
@@ -176,91 +268,20 @@
 ||#
 
 
-(define-struct temponode
-  :num
-  :box
-  :value
-  :y)
 
 
 
-      
-(delafina (find-temponode :$x
-                          :$y
-                          :$num 0
-                          :$num-temponodes (ra:get-num-temponodes)
-                          :$temponode-width (ra:get-temponode-width))
-
-  (define box (get-temponode-box $num $temponode-width))
-  
-  (cond ((inside-box box $x $y)
-         (ra:undo-temponodes)
-         (make-temponode :num $num
-                         :box box
-                         :value (ra:get-temponode-value $num)
-                         :y (average (box :y1) (box :y2))))
-        ((and (= 0 $num)
-              (< $y (box :y1)))
-         (ra:undo-temponodes)
-         (make-temponode :num $num
-                         :box box
-                         :value (ra:get-temponode-value $num)
-                         :y $y))
-        ((> (box :y1) $y)
-         (define max (1- (ra:get-temponode-max)))
-         (define min (- max))
-         (define temponode-area (ra:get-box temponode-area))
-         (define value (scale $x
-                              (temponode-area :x1) (temponode-area :x2)
-                              min max))
-         (ra:undo-temponodes)
-         (define new-num (ra:create-temponode value (ra:get-place-from-y $y)))
-         (define new-box (get-temponode-box new-num $temponode-width))
-         (make-temponode :num new-num
-                         :box new-box
-                         :value (ra:get-temponode-value new-num)
-                         :y $y))         
-        ((= $num (1- $num-temponodes))
-         (ra:undo-temponodes)
-         (make-temponode :num $num
-                         :box box
-                         :value (ra:get-temponode-value $num)
-                         :y $y))
-        (else
-         (find-temponode $x $y (1+ $num) $num-temponodes $temponode-width))))
-      
-  
-
-  
-
-(add-delta-mouse-handler
- :press (lambda ($button $x $y)
-          ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
-          (and (or #t (= $button *left-button*))
-               (inside-box (ra:get-box temponode-area) $x $y)
-               (find-temponode $x $y)))
- 
- :move-and-release (lambda ($button $dx $dy $temponode)
-                     ;;(c-display "temponode box" (box-to-string ($temponode :box)))
-                     (define max (1- (ra:get-temponode-max)))
-                     (define min (- max))
-                     (define temponode-area-width ((ra:get-box temponode-area) :width))
-                     (define new-value (+ ($temponode :value)
-                                          (scale $dx
-                                                 (- (/ temponode-area-width 2)) (/ temponode-area-width 2)
-                                                 min max)))
-                     (define new-y (+ ($temponode :y)
-                                      $dy))                                                 
-                     ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
-                     (ra:set-temponode ($temponode :num) new-value (ra:get-place-from-y new-y))
-                     (make-temponode :num ($temponode :num)
-                                     :box ($temponode :box)
-                                     :value new-value
-                                     :y new-y))
- )
-
-(define (doit)
-  (+ gakkgakk 5))
+(add-node-mouse-handler :$get-area-box-func (lambda () (ra:get-box temponode-area))
+                        :$get-node-x-func ra:get-temponode-x
+                        :$get-node-y-func ra:get-temponode-y
+                        :$get-num-nodes-func ra:get-num-temponodes
+                        :$get-node-value-func ra:get-temponode-value
+                        :$get-max-value-func (lambda () (1- (ra:get-temponode-max)))
+                        :$get-min-value-func (lambda () (- (1- (ra:get-temponode-max))))
+                        :$make-undo-func ra:undo-temponodes
+                        :$create-node-func ra:create-temponode
+                        :$move-node-func ra:set-temponode)
+                        
 
 
 #||
@@ -273,9 +294,6 @@
 (lint "/home/kjetil/radium/bin/scheme/mouse/mouse.scm")
 
 (c-display (ra:create-temponode 2.1 -5.0))
-
-(box-to-string (get-temponode-box 0 (ra:get-temponode-width)))
-(box-to-string (get-temponode-box 1 (ra:get-temponode-width)))
 
 (box-to-string (find-temponode 210 1210))
 

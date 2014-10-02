@@ -1,5 +1,22 @@
 (provide 'common2.scm)
 
+(define-macro (match args . matchers)
+  (define matcher-func (gensym "matcher-func"))
+  `(let ()
+     (define-match ,matcher-func
+       ,@matchers)
+     (apply ,matcher-func ,args)))
+
+#||  
+(test (match (list 'a 'b)
+             a b :> 5
+             _ _ :> #f)
+      5)
+(match (list 'a 'b)
+       a b :> 5
+       _ _ :> 9)
+||#
+
 (define (keep func list)
   (if (null? list)
       '()
