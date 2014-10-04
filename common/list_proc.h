@@ -48,6 +48,16 @@ extern void ListAddElementP_a(
 );
 
 
+extern void ListRemoveElement3_fromNum(
+                                       void *voidlistroot,
+                                       int num
+                                       );
+
+extern void ListRemoveElement1_fromNum(
+                                       void *voidlistroot,
+                                       int num
+                                       );
+
 extern void ListRemoveElement3(
 	void *listroot,
 	struct ListHeader3 *element

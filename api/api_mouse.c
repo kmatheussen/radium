@@ -338,6 +338,31 @@ int getNumTemponodes(int blocknum, int windownum){
     return wblock->reltempo_nodes->num_elements;
 }
 
+void deleteTemponode(int num, int blocknum){
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(-1, &window, blocknum);
+  if (wblock==NULL) {
+    RError("deleteTemponode: No block %d",blocknum);
+    return;
+  }
+
+  if (num >= wblock->reltempo_nodes->num_elements){
+    RError("deleteTemponode: No temponode %d in block %d",num,blocknum);
+    return;
+  }
+
+  if (num==0){
+    wblock->block->temponodes->reltempo = 0.0f;
+  } else if (num==wblock->reltempo_nodes->num_elements-1) {
+    struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
+    last->reltempo = 0.0f;
+  } else {
+    ListRemoveElement3_fromNum(&wblock->block->temponodes->l,num);
+  }
+
+  wblock->block->is_dirty = true;
+}
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
   struct Tracker_Windows *window;

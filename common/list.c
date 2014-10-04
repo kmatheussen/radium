@@ -256,6 +256,35 @@ void ListAddElementP_a(
 	}
 }
 
+void ListRemoveElement3_fromNum(
+                                void *voidlistroot,
+                                int num
+                                )
+{
+	struct ListHeaderPointer3 *listroot=voidlistroot;
+	struct ListHeader3 *temp=listroot->root;
+	struct ListHeader3 *prev=NULL;
+        int n = 0;
+        
+	if(n==0){
+          listroot->root=temp->next;
+	}else{
+          while(n!=num){
+            prev=temp;
+            temp=temp->next;
+            n++;
+          }
+          prev->next=temp->next;
+	}
+}
+
+void ListRemoveElement1_fromNum(
+	void *voidlistroot,
+        int num
+){
+  ListRemoveElement3_fromNum(voidlistroot,num);
+}
+
 void ListRemoveElement3(
 	void *voidlistroot,
 	struct ListHeader3 *element

@@ -1,5 +1,8 @@
 (provide 'mouse/mouse.scm)
 
+(define *left-button* 1)
+(define *right-button* 5)
+
 ;; Mouse move handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define *mouse-move-handlers* '())
@@ -18,8 +21,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define-struct mouse-cycle
   :press-func 
-  :drag-func (lambda x #f)
-  :release-func (lambda x #f)
+  :drag-func (lambda _ #f)
+  :release-func (lambda _ #f)
   )
 
 (define *mouse-cycles* '())
@@ -133,7 +136,7 @@
 (add-delta-mouse-handler
  :press (lambda ($button $x $y)
           ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
-          (and (or #t (= $button *left-button*))
+          (and (= $button *left-button*)
                (inside-box (ra:get-box reltempo-slider) $x $y)
                (begin
                  (ra:undo-reltempo)
@@ -207,7 +210,7 @@
   (add-delta-mouse-handler
    :press (lambda ($button $x $y)
             ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
-            (and (or #t (= $button *left-button*))
+            (and (= $button *left-button*)
                  (inside-box ($get-area-box-func) $x $y)
                  (match (list (find-node $x $y $get-node-x-func $get-node-y-func ($get-num-nodes-func)))
                         before :> #f
@@ -271,7 +274,7 @@
 
 
 
-
+;; add and move
 (add-node-mouse-handler :$get-area-box-func (lambda () (ra:get-box temponode-area))
                         :$get-node-x-func ra:get-temponode-x
                         :$get-node-y-func ra:get-temponode-y
@@ -284,6 +287,20 @@
                         :$move-node-func ra:set-temponode)
                         
 
+;; delete
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda ($button $x $y)
+                                (and (= $button *right-button*)
+                                     (inside-box (ra:get-box temponode-area) $x $y)                                     
+                                     (match (list (find-node $x $y ra:get-temponode-x ra:get-temponode-y (ra:get-num-temponodes)))
+                                            (existing-box Num Box) :> (begin
+                                                                        (ra:undo-temponodes)
+                                                                        (ra:delete-temponode Num)
+                                                                        #t)
+                                            _                      :> #f)))))
+
+
+;; show current
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and (inside-box (ra:get-box temponode-area) $x $y)
