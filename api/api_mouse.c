@@ -358,7 +358,7 @@ void deleteTemponode(int num, int blocknum){
     struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
     last->reltempo = 0.0f;
   } else {
-    ListRemoveElement3_fromNum(&wblock->block->temponodes->l,num);
+    ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
   }
 
   wblock->block->is_dirty = true;

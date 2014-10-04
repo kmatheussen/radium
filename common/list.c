@@ -266,7 +266,7 @@ void ListRemoveElement3_fromNum(
 	struct ListHeader3 *prev=NULL;
         int n = 0;
         
-	if(n==0){
+	if(num==0){
           listroot->root=temp->next;
 	}else{
           while(n!=num){
