@@ -105,20 +105,28 @@ static void draw_text_num(
 }
 
 
-
+struct ListHeader3 *current_node = NULL;
 
 static void draw_skewed_box(const struct Tracker_Windows *window,
+                            const struct ListHeader3 *node,
                             int color,
                             float x, float y
                             )
 {
  
-  float minnodesize = window->fontheight / 1.5;
+  float minnodesize = window->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in get-node-box in mouse.scm
   float x1 = x-minnodesize;
   float x2 = x+minnodesize;
   float y1 = y-minnodesize;
   float y2 = y+minnodesize;
   const float width = 2.3;
+
+  if (node == current_node) {
+    GE_filledBox(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 300, 0.3),
+                 x1,y1,
+                 x2-1,y2
+                 );
+  }
 
   // vertical left
   GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 100, 0.3),
@@ -143,6 +151,7 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
           x2-2,y1+2,
           x1+1,y1+1,
           width);
+
 }
 
 
@@ -670,14 +679,14 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
   do{
 
     if(nodelines->is_node && wblock->mouse_track==TEMPONODETRACK)
-      draw_skewed_box(window, 1, nodelines->x1, nodelines->y1);
+      draw_skewed_box(window, nodelines->element1, 1, nodelines->x1, nodelines->y1);
 
     GE_line(line_color, nodelines->x1, nodelines->y1, nodelines->x2, nodelines->y2, 1.5);
 
   }while(nodelines->next!=NULL && (nodelines=nodelines->next));
 
   if(wblock->mouse_track==TEMPONODETRACK)
-    draw_skewed_box(window, 1, nodelines->x2, nodelines->y2);
+    draw_skewed_box(window, nodelines->element2, 1, nodelines->x2, nodelines->y2);
 }
 
 
@@ -989,7 +998,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
       GE_trianglestrip_add(c, ns->x2, ns->y2);
 
       if(ns->is_node && wblock->mouse_track==wtrack->l.num && wblock->mouse_note==note)
-        draw_skewed_box(window, 5, ns->x1, ns->y1);
+        draw_skewed_box(window, nodelines->element1, 5, ns->x1, ns->y1);
     }
     GE_trianglestrip_end(c);
   }
@@ -1035,14 +1044,14 @@ void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks
   do{
 
     if(nodelines->is_node && wblock->mouse_track==wtrack->l.num)
-      draw_skewed_box(window, 1, nodelines->x1, nodelines->y1);
+      draw_skewed_box(window, nodelines->element1, 1, nodelines->x1, nodelines->y1);
 
     GE_line(line_color, nodelines->x1, nodelines->y1, nodelines->x2, nodelines->y2, 1.5);
 
   }while(nodelines->next!=NULL && (nodelines=nodelines->next));
 
   if(wblock->mouse_track==wtrack->l.num)
-    draw_skewed_box(window, 1, nodelines->x2, nodelines->y2);
+    draw_skewed_box(window, nodelines->element2, 1, nodelines->x2, nodelines->y2);
 }
 
 void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){

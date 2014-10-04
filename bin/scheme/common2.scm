@@ -79,12 +79,12 @@
   (Key Value . Rest) :> (cons (list (keyword->symbol Key) Value)
                               (keyvalues-to-define-args Rest)))
 
-#|
+#||
 (test (keyvalues-to-define-args '(:a 90 :b 50 :c :d 80))
       '((a 90) (b 50) (c 'must-be-defined) (d 80)))
 (test (keyvalues-to-define-args '(:a 90 :b 50 :c))
       '((a 90) (b 50) (c 'must-be-defined)))
-|#
+||#
 
 
 
@@ -113,7 +113,7 @@
                (throw (<-> "key '" key ,(<-> "' not found in struct '" name "'")))
                ret))))))
 
-#|
+#||
 (pretty-print (macroexpand (define-struct teststruct
                              :a 'asdf
                              :b
@@ -136,7 +136,7 @@
 (t :c)
 (t :bc)
 
-|#
+|||#
 
 
 
@@ -162,7 +162,7 @@
   `(define* (,(car def) ,@(delafina-args-to-define*-args (cdr def)))
      ,@body))
 
-#|
+#||
 (pretty-print (macroexpand (delafina (testfunc a b :b 30 :c 90)
                              (+ 2 3)
                              (+ 5 6))))
@@ -179,17 +179,19 @@
   (list a b c))
 
 (aiai)
-|#
+||#
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Box handling ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-struct box :x1 :y1 :x2 :y2 :width :height)
+(define-struct box :x :y :x1 :y1 :x2 :y2 :width :height)
 
 (define (make-box2 $x1 $y1 $x2 $y2)
-  (make-box :x1 $x1
+  (make-box :x (average $x1 $x2)
+            :y (average $y1 $y2)
+            :x1 $x1
             :y1 $y1
             :x2 $x2
             :y2 $y2
@@ -213,7 +215,7 @@
        " :height " (box :height)
        ")"))
 
-#|
+#||
 (pretty-print (macroexpand (define-struct box :x1 :y1 :x2 :y2)))
 
 (list
@@ -223,7 +225,7 @@
  ((ra:get-box reltempo-slider) :y2)
  ((ra:get-box reltempo-slider) :width)
  ((ra:get-box reltempo-slider) :height))
-|#
+||#
 
 (define (inside-box box x y)
   (and (>= x (box :x1))
@@ -231,5 +233,5 @@
        (>= y (box :y1))
        (<  y (box :y2))))
 
-#|
-|#
+#||
+||#

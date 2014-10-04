@@ -39,19 +39,19 @@
   (define start-y #f)
   (define value #f)
   (define (call-move-and-release $button $x $y)
-    (define new-x (if (ra:ctrl-pressed)
-                      (/ (- $x start-x)
-                         10.0)
-                      (- $x start-x)))
-    (define new-y (if (ra:ctrl-pressed)
-                      (/ (- $y start-y)
-                         10.0)
-                      (- $y start-y)))
+    (define dx (if (ra:ctrl-pressed)
+                   (/ (- $x start-x)
+                      10.0)
+                   (- $x start-x)))
+    (define dy (if (ra:ctrl-pressed)
+                   (/ (- $y start-y)
+                      10.0)
+                   (- $y start-y)))
     (set! start-x $x)
     (set! start-y $y)
     (set! value (move-and-release $button
-                                  new-x
-                                  new-y
+                                  dx
+                                  dy
                                   value)))
   (add-mouse-cycle (make-mouse-cycle
                     :press-func (lambda ($button $x $y)
@@ -101,6 +101,7 @@
       (begin
         ((*current-mouse-cycle* :release-func) $button $x $y)
         (set! *current-mouse-cycle* #f)
+        (ra:cancel-current-node)
         #t)
       #f))
 
@@ -150,12 +151,12 @@
                      new-value)
  )
 
-#|
+#||
 (ra:set-reltempo 0.2)
-|#
+||#
 
 (define (get-node-box $x $y $num $node-width)
-  (define width/2 (+ 3 (/ $node-width 2)))
+  (define width/2 (/ $node-width 1.5)) ;; if changing 1.5 here, also change 1.5 in draw_skewed_box in Render.cpp
   (define x1 (- $x width/2))
   (define y1 (- $y width/2))
   (define x2 (+ $x width/2))
@@ -216,7 +217,7 @@
                                                     (make-node :num Num
                                                                :box Box
                                                                :value ($get-node-value-func Num)
-                                                               :y $y))
+                                                               :y (Box :y)))
                         (new-box _)            :> (begin
                                                     (define max ($get-max-value-func))
                                                     (define min ($get-min-value-func))
@@ -283,6 +284,17 @@
                         :$move-node-func ra:set-temponode)
                         
 
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and (inside-box (ra:get-box temponode-area) $x $y)
+              (match (list (find-node $x $y ra:get-temponode-x ra:get-temponode-y (ra:get-num-temponodes)))
+                     (existing-box Num Box) :> (begin
+                                                 (ra:set-current-tempo-node Num)
+                                                 #t)
+                     _                      :>  (begin
+                                                  (ra:cancel-current-node)
+                                                  #f)))))
+ 
 
 #||
 (load "lint.scm")

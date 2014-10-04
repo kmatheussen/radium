@@ -39,6 +39,13 @@ extern struct Root *root;
 extern volatile float scroll_pos;
 
 
+extern struct ListHeader3 *current_node;
+
+void cancelCurrentNode(void){
+  current_node = NULL;
+}
+
+
 // placement (block time)
 
 float getPlaceFromY(float y, int blocknum, int windownum) {
@@ -262,6 +269,21 @@ void undoTemponodes(void){
   Undo_TempoNodes_CurrPos(window);
 }
 
+void setCurrentTempoNode(int num, int blocknum){
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+  if (block==NULL) {
+    RError("setCurrentTemponode: No block %d",blocknum);
+    return;
+  }
+  
+  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+
+  if (current_node != &temponode->l) {
+    current_node = &temponode->l;
+    block->is_dirty = true;
+  }
+}
+
 void setTemponode(int num, float value, float place, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
@@ -279,7 +301,9 @@ void setTemponode(int num, float value, float place, int blocknum, int windownum
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
   else
     temponode = (struct TempoNodes *)setPlace(block, &block->temponodes->l, num, place);
-  
+
+  current_node = &temponode->l;
+    
   if (temponode==NULL){
 
     RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
@@ -341,6 +365,8 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   }
   
   struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value);
+  current_node = &temponode->l;
+
   if (temponode==NULL)
     return -1;
   
