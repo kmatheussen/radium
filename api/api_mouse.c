@@ -513,27 +513,6 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
 }
   
 
-static int reallineForPitch(int pitchnum, struct WTracks *wtrack, struct WBlocks *wblock){
-  int realline=0;
-  int pitchnumcounter=0;
-  
-  while(realline<wblock->num_reallines){
-    struct TrackRealline  *trackrealline = &wtrack->trackreallines[realline];
-    float                  notenum       = trackrealline->note;
-    if(notenum!=0) {
-      if (pitchnumcounter==pitchnum)
-        return realline;
-      else
-        pitchnumcounter++;
-    }
-    
-    realline++;
-  }
-
-  RError("Pitch #%d in track #%d in block #%d does not exist",pitchnum,wtrack->l.num, wblock->l.num);
-  return -1;
-}
-
 static int getReallineForPitch(struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note){
   if( pitch!=NULL)
     return FindRealLineFor(wblock,pitch->Tline,&pitch->l.p);
@@ -651,10 +630,6 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
     return;
   
   struct Blocks *block = wblock->block;
-
-  int realline=reallineForPitch(num, wtrack, wblock);
-  if (realline==-1)
-    return;
 
   value = R_BOUNDARIES(1,value,127);
 
