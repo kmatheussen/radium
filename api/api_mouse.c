@@ -652,9 +652,12 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
 
   UpdateTrackReallines(window,wblock,wtrack);
   block->is_dirty = true;
-
 }
 
+int createPitch(float value, float floatplace, int tracknum, int blocknum, int windownum){
+  return 0;
+}
+  
 
 // ctrl / shift keys
 //////////////////////////////////////////////////
