@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/common_proc.h"
 #include "../common/temponodes_proc.h"
 #include "../common/undo_temponodes_proc.h"
+#include "../common/realline_calc_proc.h"
 
 #include "api_common_proc.h"
 
@@ -43,6 +44,14 @@ extern struct ListHeader3 *current_node;
 
 void cancelCurrentNode(void){
   current_node = NULL;
+}
+
+static int get_realline_y1(const struct Tracker_Windows *window, int realline){
+  return window->fontheight*realline - scroll_pos + window->wblock->t.y1;
+}
+
+static int get_realline_y2(const struct Tracker_Windows *window, int realline){
+  return window->fontheight*(realline+1) - scroll_pos + window->wblock->t.y1;
 }
 
 
@@ -74,28 +83,10 @@ float getPlaceFromY(float y, int blocknum, int windownum) {
   return GetFloatFromPlace(&place);
 }
 
-static struct ListHeader3 *setPlace(struct Blocks *block, struct ListHeader3 *list, int num, float floatplace){
-  struct ListHeader3 *node;
+static void setPlace(struct Blocks *block, Place *prevplace, struct ListHeader3 *node, float floatplace){
 
-  // Find prevplace and node
-  
-  Place *prevplace;
-  
-  if (num==0) {
+  if (prevplace==NULL)
     prevplace=PlaceGetFirstPos();
-    node = list;
-  } else {
-    struct ListHeader3 *prevnode = ListFindElement3_num(&block->temponodes->l, num-1);
-    if (prevnode==NULL)
-      return NULL;
-    prevplace = &prevnode->p;
-    node = prevnode->next;
-  }
-
-
-  if (node==NULL)
-    return NULL;
-
 
   // find next place
   
@@ -131,6 +122,32 @@ static struct ListHeader3 *setPlace(struct Blocks *block, struct ListHeader3 *li
   
   // set place
   PlaceCopy(&node->p, &place);
+}
+
+static struct ListHeader3 *setPlaceFromNum(struct Blocks *block, struct ListHeader3 *list, int num, float floatplace){
+  struct ListHeader3 *node;
+
+  // Find prevplace and node
+  
+  Place *prevplace;
+  
+  if (num==0) {
+    prevplace=NULL;
+    node = list;
+  } else {
+    struct ListHeader3 *prevnode = ListFindElement3_num(list, num-1);
+    if (prevnode==NULL)
+      return NULL;
+    prevplace = &prevnode->p;
+    node = prevnode->next;
+  }
+
+
+  if (node==NULL)
+    return NULL;
+
+
+  setPlace(block, prevplace, node, floatplace);
 
   
   return node;
@@ -203,8 +220,32 @@ float getMaxReltempo(void){
 
 
 
-// temponodearea
+// tracks positions
+///////////////////////////////////////////////////
 
+float getTrackX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->x;
+}
+
+float getTrackY1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y;
+}
+
+float getTrackX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->x2;
+}
+
+float getTrackY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+
+// temponodearea
+//////////////////////////////////////////////////
 
 int getTemponodeAreaX1(void){
   return root->song->tracker_windows->wblock->temponodearea.x;
@@ -230,7 +271,7 @@ float getTemponodeMax(int blocknum, int windownum){
 static struct Node *get_temponodeline(int boxnum){
   vector_t *nodes = root->song->tracker_windows->wblock->reltempo_nodes;
   if (boxnum < 0 || boxnum>=nodes->num_elements) {
-    RError("There is no temponode box %d",boxnum);
+    RError("There is no temponode %d",boxnum);
     return NULL;
   }else
     return nodes->elements[boxnum];
@@ -300,7 +341,7 @@ void setTemponode(int num, float value, float place, int blocknum, int windownum
   else if (num==wblock->reltempo_nodes->num_elements-1)
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
   else
-    temponode = (struct TempoNodes *)setPlace(block, &block->temponodes->l, num, place);
+    temponode = (struct TempoNodes *)setPlaceFromNum(block, &block->temponodes->l, num, place);
 
   current_node = &temponode->l;
     
@@ -407,7 +448,241 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
 
+
+// pitches
+//////////////////////////////////////////////////
+
+int getNumPitches(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return 0;
+
+  struct Tracks *track = wtrack->track;
+  
+  int num = 0;
+  struct Notes *notes = track->notes;
+  
+  while(notes!=NULL){
+
+    num++;
+    
+    struct Pitches *pitches = notes->pitches;
+    while(pitches!=NULL){
+      num++;
+      pitches = NextPitch(pitches);
+    }
+      
+    notes = NextNote(notes);
+  }
+
+  return num;
+}
+
+
+static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, struct Tracks *track){
+  int num = 0;
+  struct Notes *notes = track->notes;
+  while(notes!=NULL){
+
+    if(num==pitchnum) {
+      *note = notes;
+      *pitch = NULL;
+      return true;
+    }
+
+    num++;
+    
+    struct Pitches *pitches = notes->pitches;
+    while(pitches!=NULL){
+      if(num==pitchnum) {
+        *note = notes;
+        *pitch = pitches;
+        return true;
+      }
+
+      num++;
+      pitches = NextPitch(pitches);
+    }
+      
+    notes = NextNote(notes);
+  }
+
+  RError("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
+  return false;
+}
+  
+
+static int reallineForPitch(int pitchnum, struct WTracks *wtrack, struct WBlocks *wblock){
+  int realline=0;
+  int pitchnumcounter=0;
+  
+  while(realline<wblock->num_reallines){
+    struct TrackRealline  *trackrealline = &wtrack->trackreallines[realline];
+    float                  notenum       = trackrealline->note;
+    if(notenum!=0) {
+      if (pitchnumcounter==pitchnum)
+        return realline;
+      else
+        pitchnumcounter++;
+    }
+    
+    realline++;
+  }
+
+  RError("Pitch #%d in track #%d in block #%d does not exist",pitchnum,wtrack->l.num, wblock->l.num);
+  return -1;
+}
+
+static int getReallineForPitch(struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note){
+  if( pitch!=NULL)
+    return FindRealLineFor(wblock,pitch->Tline,&pitch->l.p);
+  else
+    return FindRealLineFor(wblock,note->Tline,&note->l.p);
+}
+
+static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if (wtrack==NULL)
+    return 0;
+
+  struct Notes *note;
+  struct Pitches *pitch;
+
+  if (getPitch(pitchnum, &pitch, &note, wtrack->track)==false)
+    return 0;
+  
+  switch (what_to_get){
+  case 0:
+    return get_realline_y1(window, getReallineForPitch(wblock, pitch, note));
+  case 1:
+    return get_realline_y2(window, getReallineForPitch(wblock, pitch, note));
+  case 2:
+    {
+      if (pitch!=NULL)
+        return pitch->note;
+      else
+        return note->note;
+    }
+  }
+
+  RError("internal error (getPitchInfo)\n");
+  return 0;
+}
+
+float getPitchY1(int pitchnum, int tracknum, int blocknum, int windownum){
+  return getPitchInfo(0, pitchnum, tracknum, blocknum, windownum);
+}
+
+float getPitchY2(int pitchnum, int tracknum, int blocknum, int windownum){
+  return getPitchInfo(1, pitchnum, tracknum, blocknum, windownum);
+}
+
+float getPitchX1(int pitchnum, int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0.0f : wtrack->notearea.x;
+}
+
+float getPitchX2(int pitchnum, int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0.0f : wtrack->notearea.x2;
+}
+
+float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
+  float pitch = getPitchInfo(2, pitchnum, tracknum, blocknum, windownum);
+  if (pitch>=NOTE_PITCH_START) // not sure I like this hack very much.
+    pitch -= NOTE_PITCH_START;
+  return pitch;
+}
+
+static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
+  Place *end = PlaceGetFirstPos();
+
+  struct Notes *prev = ListPrevElement3(&track->notes->l, &note->l);
+
+  if (prev != NULL)
+    end = PlaceMax(end, &prev->end);
+
+  return end;
+}
+
+static Place *getNextLegalNotePlace(struct Notes *note){
+  Place *end = &note->end;
+
+  if (note->velocities != NULL)
+    end = PlaceMin(end, &note->velocities->l.p);
+
+  if (note->pitches != NULL)
+    end = PlaceMin(end, &note->pitches->l.p);
+
+  return end;
+}
+
+static Place *getPrevLegalPitchPlace(struct Notes *note, struct Pitches *pitch){
+  Place *end = &note->l.p;
+
+  struct Pitches *prev = ListPrevElement3(&note->pitches->l, &pitch->l);
+
+  if (prev != NULL)
+    end = PlaceMax(end, &prev->l.p);
+
+  return end;
+}
+
+static Place *getNextLegalPitchPlace(struct Notes *note, struct Pitches *pitch){
+  Place *end = &note->end;
+
+  if (NextPitch(pitch) != NULL)
+    end = PlaceMin(end, &NextPitch(pitch)->l.p);
+
+  return end;
+}
+
+
+void setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if (wtrack==NULL)
+    return;
+  
+  struct Blocks *block = wblock->block;
+
+  int realline=reallineForPitch(num, wtrack, wblock);
+  if (realline==-1)
+    return;
+
+  value = R_BOUNDARIES(1,value,127);
+
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  struct Notes *note;
+  struct Pitches *pitch;
+
+  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+    return;
+
+  if (pitch != NULL) {    
+    pitch->note = value;
+    PlaceCopy(&pitch->l.p, PlaceBetween(getPrevLegalPitchPlace(note, pitch), &place, getNextLegalPitchPlace(note, pitch)));
+  } else {
+    note->note = value;    
+    PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
+  }
+
+  UpdateTrackReallines(window,wblock,wtrack);
+  block->is_dirty = true;
+
+}
+
+
 // ctrl / shift keys
+//////////////////////////////////////////////////
 
 extern struct TEvent tevent;
 

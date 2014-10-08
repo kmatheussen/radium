@@ -136,7 +136,7 @@
 (t :c)
 (t :bc)
 
-|||#
+||#
 
 
 
@@ -163,7 +163,7 @@
      ,@body))
 
 #||
-(pretty-print (macroexpand (delafina (testfunc a b :b 30 :c 90)
+(pretty-print (macroexpand (delafina (testfunc :b 30 :c 90)
                              (+ 2 3)
                              (+ 5 6))))
 
@@ -179,6 +179,11 @@
   (list a b c))
 
 (aiai)
+
+(define* (aiai2 a b c)
+  (list a b c))
+
+(aiai2 2 3 4 5 6)
 ||#
 
 
@@ -198,22 +203,24 @@
             :width (- $x2 $x1)
             :height (- $y2 $y1)))
   
-(define-macro (ra:get-box prefix)
-  `(make-box2 ( ,(<_> 'ra:get- prefix '-x1))
-              ( ,(<_> 'ra:get- prefix '-y1))
-              ( ,(<_> 'ra:get- prefix '-x2))
-              ( ,(<_> 'ra:get- prefix '-y2))))
+(define-macro (ra:get-box prefix . rest)
+  `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
+              ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
 
 
 (define (box-to-string box)
-  (<-> "(box"
-       " :x1 "     (box :x1)
-       " :y1 "     (box :y1)
-       " :x2 "     (box :x2)
-       " :y1 "     (box :y2)
-       " :width "  (box :width)
-       " :height " (box :height)
-       ")"))
+  (if (not box)
+      "<box is #f>"
+      (<-> "(box"
+           " :x1 "     (box :x1)
+           " :y1 "     (box :y1)
+           " :x2 "     (box :x2)
+           " :y1 "     (box :y2)
+           " :width "  (box :width)
+           " :height " (box :height)
+           ")")))
 
 #||
 (pretty-print (macroexpand (define-struct box :x1 :y1 :x2 :y2)))

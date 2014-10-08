@@ -101,7 +101,7 @@ def addNoteAdds(noteadds,track=-1,startplace=-1.0,transpose=0,sort=1):
 
 def getNoteAdds(windownum=-1,blocknum=-1,tracknum=-1,das_range=false):
 	noteadds=[]
-	numnotes=ra.getNumNotes(blocknum,tracknum)
+	numnotes=ra.getNumNotes(tracknum,blocknum)
 
 	if numnotes==0: return []
 

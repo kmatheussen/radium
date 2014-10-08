@@ -860,7 +860,11 @@ void create_track_pitches(const struct Tracker_Windows *window, const struct WBl
       if(wpitch->x1 != wpitch->x2 || show_read_lines) {
         TBox get;
         GetNodeLine(wpitch,&warea,&within2,&get);
-        GE_line(GE_color_alpha(7,0.5), get.x1,get.y1, get.x2,get.y2, 1.75);
+        GE_line(GE_color_alpha(7, 0.5),
+                get.x1, get.y1,
+                get.x2, get.y2,
+                1.75
+                );
       }
     wpitch=wpitch->next;
   }

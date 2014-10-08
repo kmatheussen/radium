@@ -380,14 +380,14 @@ void insertBlock(int windownum){
   InsertBlock_CurrPos(window);
 }
 
-int numTracks(int blocknum){
+int getNumTracks(int blocknum){
   struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
   if(wblock==NULL) return 0;
 
   return wblock->block->num_tracks;
 }
 
-int numBlocks(void){
+int getNumBlocks(void){
   return root->song->num_blocks;
 }
 

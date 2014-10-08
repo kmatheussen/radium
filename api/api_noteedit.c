@@ -103,7 +103,7 @@ float getNoteEndPlace(int windownum,int blocknum,int tracknum,int notenum){
 }
 
 
-int getNumNotes(int blocknum,int tracknum,int windownum){
+int getNumNotes(int tracknum,int blocknum,int windownum){
 	struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
 
 	if(wtrack==NULL) return 0;

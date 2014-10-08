@@ -969,7 +969,7 @@ struct WBlocks{
 
 	struct WTempos *wtempos;
 	WTempoNodes **wtemponodes;
-        vector_t *reltempo_nodes; // contains vector of Nodes
+        vector_t *reltempo_nodes; // contains vector of Node's
 	struct WLPBs *wlpbs;
 	float reltempomax;
 

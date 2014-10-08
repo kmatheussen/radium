@@ -163,7 +163,8 @@ int MoveTempoNodeBorder_Mouse(
 	  //	}
 
 #else
-	 
+
+          #if 0
 	  GFX_FilledBox(
 			window,0,
 			wblock->reltempo.x2+1,
@@ -184,7 +185,9 @@ int MoveTempoNodeBorder_Mouse(
 	      wtrack2=NextWTrack(wtrack2);
 	    }
 	  }
-
+#endif
+          window->must_redraw=true;
+          
 #endif
 
           //        window->must_redraw=true;

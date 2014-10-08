@@ -501,7 +501,7 @@ def get_last_tick(tracks):
     
 # Quick hack.
 def clear_radium_editor():
-    while radium.numBlocks()>1:
+    while radium.getNumBlocks()>1:
         radium.deleteBlock()
     radium.appendBlock()
     radium.selectPrevBlock()
@@ -639,7 +639,7 @@ if __name__ == "__main__":
     radium.createNewInstrument = dummy
     radium.setInstrumentData = dummy
     radium.setInstrumentForTrack = dummy
-    radium.numBlocks = dummy
+    radium.getNumBlocks = dummy
     radium.appendBlock=dummy
     radium.selectPrevBlock=dummy
     radium.deleteBlock=dummy

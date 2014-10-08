@@ -16,7 +16,7 @@ class note:
 class tracks:
 
     def getNoteArray(self):
-        num_notes=self.ra.RA_getNumNotes(self.blocknum,self.tracknum)
+        num_notes=self.ra.RA_getNumNotes(self.tracknum,self.blocknum)
         notearray=[]
         for lokke in range(num_notes):
             notarray[lokke]=note(ra,blocknum,self.tracknum,lokke)
