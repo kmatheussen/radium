@@ -967,7 +967,7 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
   return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
 }
 
-void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
+void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
   struct Velocities first_velocity;
   first_velocity.l.p = note->l.p;
   first_velocity.l.next = &note->velocities->l;
@@ -989,6 +989,8 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
                                                 &last_velocity.l
                                                 );
 
+  VECTOR_push_back(&wtrack->velocity_nodes, get_nodeline_nodes(nodelines, wblock->t.y1));
+  
   // background
   {
     GE_Context *c = get_note_background(note->note);
@@ -1076,7 +1078,7 @@ void create_track_stops(const struct Tracker_Windows *window, const struct WBloc
   }
 }
 
-void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int left_subtrack){
+void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
   if(left_subtrack==-1)
@@ -1085,6 +1087,9 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
       create_track_pitches(window, wblock, wtrack, realline);
     }
 
+
+  VECTOR_clean(&wtrack->velocity_nodes);
+  
   const struct Notes *note=wtrack->track->notes;
   while(note != NULL){
     if(note->subtrack >= left_subtrack)

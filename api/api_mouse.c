@@ -268,6 +268,26 @@ float getTrackNotesY2(int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0 : wtrack->y2;
 }
 
+float getTrackFxX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->fxarea.x;
+}
+
+float getTrackFxY1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y;
+}
+
+float getTrackFxX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->fxarea.x2;
+}
+
+float getTrackFxY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
 
 // temponodearea
 //////////////////////////////////////////////////
@@ -843,6 +863,70 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
     return addPitch(window, wblock, wtrack, note, &place, value);
 }
   
+
+
+// velocities
+//////////////////////////////////////////////////
+
+static struct Node *get_velocitynodeline(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return NULL;
+
+  if (notenum<0 || notenum>=wtrack->velocity_nodes.num_elements){
+    RError("There is no note %d in track %d in block %d",notenum,tracknum,blocknum);
+    return NULL;
+  }
+
+  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
+    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    return NULL;
+  }
+  
+  return nodes->elements[velocitynum];
+}
+
+
+float getVelocitynodeX(int num, int notenum, int tracknum, int blocknum, int windownum){
+  struct Node *nodeline = get_velocitynodeline(num, notenum, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->x;
+}
+
+float getVelocitynodeY(int num, int notenum, int tracknum, int blocknum, int windownum){
+  struct Node *nodeline = get_velocitynodeline(num, notenum, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+}
+
+
+float getVelocityValue(int num, int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note = getNoteFromNumA(windownum, blocknum, tracknum, notenum);
+  if (note==NULL) {
+    RError("no note %d in track %d in block %d",num,notenum,tracknum,blocknum);
+    return 0.0;
+  }
+
+  if (num==0)
+    return note->velocity;
+
+  num--;
+  
+  int num_velocities = ListFindNumElements3(&note->velocities->l);
+  if(num==num_velocities)
+    return note->velocity_end;
+  
+  if (num>num_velocities) {
+    RError("no velocity %d in note %d in track %d in block %d",num,notenum,tracknum,blocknum);
+    return 0.0;
+  }
+  
+  struct Velocities *velocity = ListFindElement3_num_r0(&note->velocities->l, num-1);
+  return velocity->velocity;
+}
+
+
 
 // ctrl / shift keys
 //////////////////////////////////////////////////

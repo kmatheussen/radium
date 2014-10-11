@@ -459,6 +459,21 @@ void *ListFindElement3_num(
 	return element;
 }
 
+void *ListFindElement3_num_r0(
+	struct ListHeader3 *element,
+	NInt num
+){
+	int lokke;
+
+	for(lokke=0;lokke<num && element!=NULL;lokke++)
+          if (element==NULL)
+            return NULL;
+          else
+            element=element->next;
+
+	return element;
+}
+
 /**********************************************************************
   FUNCTION
     Returns true if the element is in a list.

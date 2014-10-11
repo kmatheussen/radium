@@ -740,6 +740,8 @@ struct WTracks{
 	WFXNodes **wfxnodes;
 	WPitches **wpitches;
 
+        vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
+  
 	TBox pan;
 	TBox volume;
 

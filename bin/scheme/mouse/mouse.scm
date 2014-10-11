@@ -297,7 +297,7 @@
   )
       
 
-;; temponodearea
+;; temponodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #||
@@ -475,6 +475,61 @@
                                                         (ra:delete-pitch Num *current-track-num*)
                                                         #t)
                             _                      :> #f)))))
+
+
+
+
+
+
+;; velocities
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (get-velocity-box $num)
+  (get-common-node-box (ra:get-velocity-x $num)
+                       (ra:get-velocity-y $num)))
+
+;; add and move velocity
+(add-node-mouse-handler :$get-area-box-func (lambda () (ra:get-box track-fx))
+                        :$get-node-box get-velocity-box
+                        :$get-num-nodes-func ra:get-num-velocitys
+                        :$get-node-value-func ra:get-velocity-value
+                        :$get-min-value-func (lambda () (- (1- (ra:get-velocity-max))))
+                        :$get-max-value-func (lambda () (1- (ra:get-velocity-max)))
+                        :$make-undo-func ra:undo-velocitys
+                        :$create-node-func ra:create-velocity
+                        :$move-node-func ra:set-velocity)
+                        
+#||
+(ra:get-velocitynode-y 0 0)
+(ra:get-velocitynode-y 2 0)
+(ra:get-velocity-value 3 0)
+
+;; delete velocity
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     (inside-box (ra:get-box velocity-area) $x $y)                                     
+                     (match (list (find-node $x $y get-velocity-box (ra:get-num-velocitys)))
+                            (existing-box Num Box) :> (begin
+                                                        (ra:undo-velocitys)
+                                                        (ra:delete-velocity Num)
+                                                        #t)
+                            _                      :> #f)))))
+
+;; show current velocity
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and (inside-box (ra:get-box velocity-area) $x $y)
+              (match (list (find-node $x $y get-velocity-box (ra:get-num-velocitys)))
+                     (existing-box Num Box) :> (begin
+                                                 (ra:set-current-tempo-node Num)
+                                                 #t)
+                     _                      :> (begin
+                                                 (ra:cancel-current-node)
+                                                 #f)))))
+
+||#
 
 
 ;; track borders

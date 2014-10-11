@@ -94,10 +94,17 @@ extern void *ListFindElement3(
 	struct ListHeader3 *element,
 	Place *placement
 );
+
 void *ListFindElement3_num(
 	struct ListHeader3 *element,
 	NInt num
 );
+
+void *ListFindElement3_num_r0(
+                              struct ListHeader3 *element,
+                              NInt num
+                              );
+
 
 #define ListFindElement1_num(a,b) ListFindElement3_num((struct ListHeader3 *)(a),b)
 
