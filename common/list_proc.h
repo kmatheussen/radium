@@ -156,6 +156,7 @@ extern NInt ListFindElementPos3(
                                 struct ListHeader3 *element
                                 );
 
+extern Place *ListLastPlace3(struct ListHeader3 *list);
 extern void *ListLast3(struct ListHeader3 *list);
 extern LANGSPEC void *ListLast1(struct ListHeader1 *list);
 

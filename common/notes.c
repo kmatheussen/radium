@@ -356,7 +356,7 @@ void InsertStop(
     Set the end attributes of all notes that previously was stopped
     at position 'placement' to the next stop wherever that may be.
 **********************************************************************/
-static void LengthenNotesTo(
+void LengthenNotesTo(
 	struct Blocks *block,
 	struct Tracks *track,
 	Place *placement
@@ -366,6 +366,26 @@ static void LengthenNotesTo(
 		if(PlaceGreaterThan(&note->l.p,placement)) break;
 		if(PlaceEqual(&note->end,placement))
 			SetEndAttributes(block,track,note);
+		note=NextNote(note);
+	}
+}
+
+/**********************************************************************
+  FUNCTION
+    Set the end attributes of all notes that previously was stopped
+    at position 'old_placement' to 'new_placement'.
+**********************************************************************/
+void ReplaceNoteEnds(
+	struct Blocks *block,
+	struct Tracks *track,
+	Place *old_placement,
+        Place *new_placement
+){
+	struct Notes *note=track->notes;
+	while(note!=NULL){
+		if(PlaceGreaterThan(&note->l.p,old_placement)) break;
+		if(PlaceEqual(&note->end,old_placement))
+                  note->end = *new_placement;
 		note=NextNote(note);
 	}
 }

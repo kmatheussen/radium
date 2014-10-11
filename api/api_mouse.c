@@ -685,13 +685,18 @@ void undoPitches(int tracknum, int blocknum){
 }
 
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
-  Place *end = PlaceGetFirstPos();
+  Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
 
   struct Notes *prev = ListPrevElement3(&track->notes->l, &note->l);
 
-  if (prev != NULL)
-    end = PlaceMax(end, &prev->end);
-
+  if (prev != NULL) {
+    end = &prev->l.p;
+    if (prev->velocities!=NULL)
+      end = ListLastPlace3(&prev->velocities->l);
+    if (prev->pitches!=NULL)
+      end = PlaceMax(end, ListLastPlace3(&prev->pitches->l));
+  }
+  
   return end;
 }
 
@@ -749,12 +754,29 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   if (getPitch(num, &pitch, &note, wtrack->track)==false)
     return;
 
-  if (pitch != NULL) {    
+  if (pitch != NULL) {
+    
     pitch->note = value;
-    PlaceCopy(&pitch->l.p, PlaceBetween(getPrevLegalPitchPlace(note, pitch), &place, getNextLegalPitchPlace(note, pitch)));
+    pitch->l.p = *PlaceBetween(getPrevLegalPitchPlace(note, pitch), &place, getNextLegalPitchPlace(note, pitch));
+    
   } else {
+    
     note->note = value;    
-    PlaceCopy(&note->l.p, PlaceBetween(getPrevLegalNotePlace(wtrack->track, note), &place, getNextLegalNotePlace(note)));
+    Place old_place = note->l.p;
+    
+    if (PlaceLessThan(&place, &old_place)) {
+      Place *prev_legal = getPrevLegalNotePlace(wtrack->track, note);
+      if (PlaceLessOrEqual(&place, prev_legal))
+        PlaceFromLimit(&place, prev_legal);
+    } else {
+      Place *next_legal = getNextLegalNotePlace(note);
+      if (PlaceGreaterOrEqual(&place, next_legal))
+        PlaceTilLimit(&place, next_legal);
+    }
+
+    note->l.p = place;
+    ReplaceNoteEnds(block, wtrack->track, &old_place, &place);
+    
   }
 
   UpdateTrackReallines(window,wblock,wtrack);

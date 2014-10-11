@@ -744,6 +744,14 @@ NInt ListFindElementPos3(
     Finds the last element in a list. 'list' may be NULL.
 ******************************************************************************/
 
+Place *ListLastPlace3(struct ListHeader3 *list){
+	while(list!=NULL){
+		if(list->next==NULL) break;
+		list=list->next;
+	}
+	return &list->p;
+}
+
 void *ListLast3(struct ListHeader3 *list){
 	while(list!=NULL){
 		if(list->next==NULL) break;

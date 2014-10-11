@@ -53,7 +53,10 @@ extern void PlaceSetReallinePlace(
 	Place *p
 );
 
+// Puts 'p' as near as possible 'tp' so that p<tp.
 extern void PlaceTilLimit(Place *p,  Place *tp);
+
+// Puts 'p' as near as possible 'tp' so that p>tp.
 extern void PlaceFromLimit(Place *p,  Place *tp);
 
 
