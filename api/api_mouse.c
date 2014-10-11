@@ -535,6 +535,50 @@ int getNumPitches(int tracknum, int blocknum, int windownum){
   return num;
 }
 
+void deletePitch(int pitchnum, int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  struct Tracks *track = wtrack->track;
+  
+  int num = 0;
+  struct Notes *notes = track->notes;
+  
+  while(notes!=NULL){
+
+    if (pitchnum==num) {
+      RemoveNote(wblock->block, track, notes);
+      goto gotit;
+    }
+    
+    num++;
+    
+    struct Pitches *pitches = notes->pitches;
+    while(pitches!=NULL){
+      if (pitchnum==num){
+        ListRemoveElement3(&notes->pitches,&pitches->l);
+        goto gotit;
+      }
+      
+      num++;
+      pitches = NextPitch(pitches);
+    }
+      
+    notes = NextNote(notes);
+  }
+
+  RError("no pitch %d in track %d in block %d\n",pitchnum,tracknum,blocknum);
+  return;
+  
+ gotit:
+  UpdateTrackReallines(window,wblock,wtrack);
+  wblock->block->is_dirty = true;
+}
+
+
 
 static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, struct Tracks *track){
   int num = 0;

@@ -443,7 +443,7 @@
   (1+ (get-max-pitch-in-current-track-0 0
                                         (ra:get-num-pitches *current-track-num*)
                                         #f)))
-       
+
 ;; add and move
 (add-node-mouse-handler :$get-area-box-func (lambda ()
                                               (and *current-track-num*
@@ -460,6 +460,21 @@
                         :$move-node-func (lambda ($num $value $place) (ra:set-pitch $num $value $place *current-track-num*))
                         :$get-pixels-per-value-unit (lambda ()
                                                       5.0))
+
+
+;; delete pitch
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     *current-track-num*
+                     (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
+                     (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+                            (existing-box Num Box) :> (begin
+                                                        (ra:undo-pitches *current-track-num*)
+                                                        (ra:delete-pitch Num *current-track-num*)
+                                                        #t)
+                            _                      :> #f)))))
 
 
 ;; track borders

@@ -356,31 +356,27 @@ void InsertStop(
     Set the end attributes of all notes that previously was stopped
     at position 'placement' to the next stop wherever that may be.
 **********************************************************************/
-void LengthenNotesTo(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
+static void LengthenNotesTo(
+	struct Blocks *block,
+	struct Tracks *track,
 	Place *placement
 ){
-	struct Notes *note=wtrack->track->notes;
+	struct Notes *note=track->notes;
 	while(note!=NULL){
 		if(PlaceGreaterThan(&note->l.p,placement)) break;
 		if(PlaceEqual(&note->end,placement))
-			SetEndAttributes(wblock->block,wtrack->track,note);
+			SetEndAttributes(block,track,note);
 		note=NextNote(note);
 	}
 }
 
 void RemoveNote(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
+	struct Blocks *block,
+	struct Tracks *track,
 	struct Notes *note
 ){
-	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
-
-	ListRemoveElement3(&wtrack->track->notes,&note->l);
-
-	LengthenNotesTo(wblock,wtrack,&realline->l.p);
+	ListRemoveElement3(&track->notes,&note->l);
+        LengthenNotesTo(block,track,&note->l.p);
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
@@ -429,7 +425,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 //			nextnote=NextNote(note);
 		}
 
-		LengthenNotesTo(wblock,wtrack,&realline->l.p);
+		LengthenNotesTo(wblock->block,wtrack->track,&realline->l.p);
 
 	}else{
 		InsertStop(window,wblock,wtrack,&realline->l.p);
@@ -496,7 +492,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	}
 
 	if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
-		RemoveNote(window,wblock,wtrack,note);
+		RemoveNote(wblock->block,wtrack->track,note);
 	}else{
 		CutListAt(&note->velocities,&realline->l.p);
 		PlaceCopy(&note->end,&realline->l.p);

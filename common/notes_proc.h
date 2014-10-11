@@ -43,6 +43,11 @@ int NOTE_get_velocity(struct Tracks *track);
 
 extern void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum,int override);
 
+void RemoveNote(struct Blocks *block,
+                struct Tracks *track,
+                struct Notes *note
+                );
+
 extern void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
 extern struct Notes *FindNoteOnSubTrack(
