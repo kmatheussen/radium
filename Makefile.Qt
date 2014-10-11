@@ -1629,7 +1629,7 @@ api/radium_s7_wrap.c: api/protoconfparser.py api/protos.conf
 	cd api && $(PYTHONEXE) protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
 
 s7.o: bin/packages/s7/s7.c
-	$(CC) -c bin/packages/s7/s7.c -O3 -Iembedded_scheme
+	$(CC) -c bin/packages/s7/s7.c `cat buildtype.opt` -Iembedded_scheme
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp

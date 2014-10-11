@@ -94,6 +94,7 @@ extern void PlaceFromLimit(Place *p,  Place *tp);
 
 #define PlaceIsBetween(a,b,c) (PlaceGreaterOrEqual((a),(b)) && PlaceLessOrEqual((a),(c)))
 #define PlaceIsBetween2(a,b,c) (PlaceGreaterOrEqual((a),(b)) && PlaceLessThan((a),(c)))
+#define PlaceIsBetween3(a,b,c) (PlaceGreaterThan((a),(b)) && PlaceLessThan((a),(c)))
 
 
 

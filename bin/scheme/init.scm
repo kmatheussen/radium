@@ -1,5 +1,9 @@
 (provide 'init.scm)
 
+(set! (*stacktrace* 'max-frames) 100)
+(set! (*stacktrace* 'code-cols) 100)
+(set! (*stacktrace* 'total-cols) 145)
+
 (require stuff.scm)
 (require write.scm)
 

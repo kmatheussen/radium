@@ -34,10 +34,12 @@ extern struct Notes *InsertNote(
 	struct WTracks *wtrack,
 	Place *placement,
         Place *end_placement,
-	int notenum,
+	float notenum,
 	int velocity,
 	int override
 );
+
+int NOTE_get_velocity(struct Tracks *track);
 
 extern void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum,int override);
 

@@ -172,8 +172,8 @@
 
  :move-and-release (lambda ($button $dx $dy $org-reltempo)
                      (define box          (ra:get-box reltempo-slider))
-                     (define min-reltempo (ra:get-min-reltempo))
                      (define max-reltempo (ra:get-max-reltempo))
+                     (define min-reltempo (ra:get-min-reltempo))
                      (define new-value    (+ $org-reltempo
                                              (scale $dx
                                                     0 (box :width)
@@ -202,27 +202,29 @@
                      :$num 0
                      )
 
-  (define box ($get-node-box $num))
-  
-  (cond ((inside-box box $x $y)
-         (list 'existing-box $num box))
-        ((and (= 0 $num)
-              (< $y (box :y1)))
-         'before)
-        ((> (box :y1) $y)
-         (list 'new-box $num))
-        ((= $num (1- $num-nodes))
-         'after)
+  (cond ((= 0 $num-nodes)
+         (list 'new-box 0))
         (else
-         (find-node $x $y $get-node-box $num-nodes (1+ $num)))))
+         (define box ($get-node-box $num))
+         (cond ((inside-box box $x $y)
+                (list 'existing-box $num box))
+               ((and (= 0 $num)
+                     (< $y (box :y1)))
+                'before)
+               ((> (box :y1) $y)
+                (list 'new-box $num))
+               ((= $num (1- $num-nodes))
+                'after)
+               (else
+                (find-node $x $y $get-node-box $num-nodes (1+ $num)))))))
 
 
 (delafina (add-node-mouse-handler :$get-area-box-func
                                   :$get-node-box
                                   :$get-num-nodes-func
                                   :$get-node-value-func
-                                  :$get-max-value-func
                                   :$get-min-value-func
+                                  :$get-max-value-func
                                   :$make-undo-func
                                   :$create-node-func
                                   :$move-node-func
@@ -239,25 +241,29 @@
    :press (lambda ($button $x $y)
             ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
             (and (= $button *left-button*)
+                 ($get-area-box-func)
                  (inside-box ($get-area-box-func) $x $y)
                  (match (list (find-node $x $y $get-node-box ($get-num-nodes-func)))
-                        before :> #f
-                        after  :> #f
+                        ;not-found :> #f
+                        ;before    :> #f
+                        ;after     :> #f
                         (existing-box Num Box) :> (begin
                                                     ($make-undo-func)
                                                     (make-node :num Num
                                                                :box Box
                                                                :value ($get-node-value-func Num)
                                                                :y (Box :y)))
-                        (new-box _)            :> (begin
-                                                    (define max ($get-max-value-func))
+                        _                      :> (begin
                                                     (define min ($get-min-value-func))
+                                                    (define max ($get-max-value-func))
+                                                    (c-display "min/max" min max)
                                                     (define node-area ($get-area-box-func))
                                                     (define value (scale $x
                                                                          (node-area :x1) (node-area :x2)
                                                                          min max))
                                                     (define new-num ($create-node-func value (ra:get-place-from-y $y)))
-                                                    (if new-num
+                                                    (if (and new-num
+                                                             (not (= -1 new-num)))
                                                         (let ((new-box ($get-node-box new-num)))
                                                           (make-node :num new-num
                                                                      :box new-box
@@ -267,8 +273,8 @@
    
    :move-and-release (lambda ($button $dx $dy $node)
                        ;;(c-display "temponode box" (box-to-string ($temponode :box)))
-                       (define max ($get-max-value-func))
                        (define min ($get-min-value-func))
+                       (define max ($get-max-value-func))
                        (define node-area ($get-area-box-func))
                        (define node-area-width (node-area :width))
                        (define pixels-per-value-unit (if $get-pixels-per-value-unit
@@ -278,7 +284,7 @@
                        (define new-value (+ ($node :value)
                                             (/ $dx
                                                pixels-per-value-unit)))
-                       (c-display "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
+                       ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
                        (define new-y (+ ($node :y)
                                         $dy))                                                 
                        ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
@@ -311,8 +317,8 @@
                         :$get-node-box get-temponode-box
                         :$get-num-nodes-func ra:get-num-temponodes
                         :$get-node-value-func ra:get-temponode-value
-                        :$get-max-value-func (lambda () (1- (ra:get-temponode-max)))
                         :$get-min-value-func (lambda () (- (1- (ra:get-temponode-max))))
+                        :$get-max-value-func (lambda () (1- (ra:get-temponode-max)))
                         :$make-undo-func ra:undo-temponodes
                         :$create-node-func ra:create-temponode
                         :$move-node-func ra:set-temponode)
@@ -331,7 +337,6 @@
                                                         #t)
                             _                      :> #f)))))
 
-
 ;; show current temponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
@@ -343,7 +348,7 @@
                      _                      :> (begin
                                                  (ra:cancel-current-node)
                                                  #f)))))
- 
+
 
 
 ;; current note
@@ -382,7 +387,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (get-pitch-box $num)
-  (c-display "get-pitch-box" $num)
+  ;;(c-display "get-pitch-box" $num)
   (make-box2 (ra:get-pitch-x1 $num *current-track-num*)
              (ra:get-pitch-y1 $num *current-track-num*)
              (ra:get-pitch-x2 $num *current-track-num*)
@@ -407,17 +412,51 @@
           (c-display $x $y)
           #f))
 
+(define-match get-min-pitch-in-current-track-0
+  N N   #f           :> 0
+  N N   Least-So-Far :> Least-So-Far
+  N Max #f           :> (get-min-pitch-in-current-track-0 (1+ N)
+                                                          Max
+                                                          (ra:get-pitch-value N *current-track-num*))
+  N Max Least-So-Far :> (get-min-pitch-in-current-track-0 (1+ N)
+                                                          Max
+                                                          (min Least-So-Far
+                                                               (ra:get-pitch-value N *current-track-num*))))
+  
+(define (get-min-pitch-in-current-track)
+  (1- (get-min-pitch-in-current-track-0 0
+                                        (ra:get-num-pitches *current-track-num*)
+                                        #f)))
+       
+(define-match get-max-pitch-in-current-track-0
+  N N   #f           :> 127
+  N N   Least-So-Far :> Least-So-Far
+  N Max #f           :> (get-max-pitch-in-current-track-0 (1+ N)
+                                                          Max
+                                                          (ra:get-pitch-value N *current-track-num*))
+  N Max Least-So-Far :> (get-max-pitch-in-current-track-0 (1+ N)
+                                                          Max
+                                                          (max Least-So-Far
+                                                               (ra:get-pitch-value N *current-track-num*))))
+  
+(define (get-max-pitch-in-current-track)
+  (1+ (get-max-pitch-in-current-track-0 0
+                                        (ra:get-num-pitches *current-track-num*)
+                                        #f)))
+       
 ;; add and move
 (add-node-mouse-handler :$get-area-box-func (lambda ()
-                                              (if *current-track-num*
-                                                  (ra:get-box track *current-track-num*)))
+                                              (and *current-track-num*
+                                                   (ra:get-box track-notes *current-track-num*)))
                         :$get-node-box get-pitch-box
                         :$get-num-nodes-func (lambda () (ra:get-num-pitches *current-track-num*))
                         :$get-node-value-func (lambda ($num) (ra:get-pitch-value $num *current-track-num*))
-                        :$get-max-value-func (lambda () 40)
-                        :$get-min-value-func (lambda () 60)
-                        :$make-undo-func (todofunc "make-pitch-undo")
-                        :$create-node-func (todofunc "create-pitch" #f)
+                        :$get-min-value-func get-min-pitch-in-current-track
+                        :$get-max-value-func get-max-pitch-in-current-track
+                        :$make-undo-func (lambda () (ra:undo-pitches *current-track-num*))
+                        :$create-node-func (lambda ($value $place)
+                                             (ra:undo-pitches *current-track-num*) ;; impossible for ra:create-pitch to fail, so it doesn't create undo for us.
+                                             (ra:create-pitch $value $place *current-track-num*))
                         :$move-node-func (lambda ($num $value $place) (ra:set-pitch $num $value $place *current-track-num*))
                         :$get-pixels-per-value-unit (lambda ()
                                                       5.0))

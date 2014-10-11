@@ -163,7 +163,7 @@ struct Notes *InsertNote(
 	struct WTracks *wtrack,
 	Place *placement,
         Place *end_placement,
-	int notenum,
+	float notenum,
 	int velocity,
 	int override
 ){
@@ -201,7 +201,8 @@ struct Notes *InsertNote(
 bool drunk_velocity=false;
 static int64_t last_velocity = MAX_VELOCITY / 2;
 
-static int get_velocity(struct Patch *patch){
+int NOTE_get_velocity(struct Tracks *track){
+
   if(drunk_velocity==false)
     return root->standardvel;
 
@@ -311,7 +312,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 
 		InsertNote(
                            wblock,wtrack,&realline->l.p,NULL,notenum,
-                           get_velocity(wtrack->track->patch),
+                           NOTE_get_velocity(wtrack->track),
                            override
 		);
 

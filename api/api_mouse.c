@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/temponodes_proc.h"
 #include "../common/undo_temponodes_proc.h"
 #include "../common/realline_calc_proc.h"
+#include "../common/notes_proc.h"
+#include "../common/pitches_proc.h"
+#include "../common/undo_notes_proc.h"
 
 #include "api_common_proc.h"
 
@@ -243,6 +246,26 @@ float getTrackY2(int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0 : wtrack->y2;
 }
 
+float getTrackNotesX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->notearea.x;
+}
+
+float getTrackNotesY1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y;
+}
+
+float getTrackNotesX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->notearea.x2;
+}
+
+float getTrackNotesY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
 
 // temponodearea
 //////////////////////////////////////////////////
@@ -452,6 +475,39 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
 // pitches
 //////////////////////////////////////////////////
 
+static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches *pitch){
+  int num = 0;
+  struct Notes *note2 = track->notes;
+  
+  while(note2!=NULL){
+
+    if (note==note2 && pitch==NULL)
+      return num;
+
+    num++;
+    
+    struct Pitches *pitch2 = note2->pitches;
+    while(pitch2!=NULL){
+      if (note==note && pitch==pitch2)
+        return num;
+
+      num++;
+
+      pitch2 = NextPitch(pitch2);
+    }
+
+    if (note==note2) {
+      RError("getPitchNum: Could not find pitch in note.");
+      return 0;
+    }
+
+    note2 = NextNote(note2);
+  }
+
+  RError("getPitchNum: Could not find it");
+  return 0;
+}
+
 int getNumPitches(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
 
@@ -577,6 +633,13 @@ float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
   return pitch;
 }
 
+void undoPitches(int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);
+}
+
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
   Place *end = PlaceGetFirstPos();
 
@@ -654,8 +717,62 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   block->is_dirty = true;
 }
 
+static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
+  struct Notes *note = track->notes;
+
+  while(note != NULL){
+    if (PlaceIsBetween3(place, &note->l.p, &note->end))
+      return note;
+    else
+      note = NextNote(note);
+  }
+
+  return NULL;
+}
+
+static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *place, float value){
+
+  printf("adding NOTE. num before: %d\n",getNumPitches(wtrack->l.num, wblock->l.num, window->l.num));
+
+  struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
+
+  UpdateTrackReallines(window,wblock,wtrack);
+  wblock->block->is_dirty = true;
+             
+  return getPitchNum(wtrack->track, note, NULL);
+}
+
+static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
+
+  printf("adding pitch. num before: %d\n",getNumPitches(wtrack->l.num, wblock->l.num, window->l.num));
+
+  struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, note->note);
+
+  printf("num after: %d\n\n",getNumPitches(wtrack->l.num, wblock->l.num, window->l.num));
+
+  UpdateTrackReallines(window,wblock,wtrack);
+  wblock->block->is_dirty = true;
+
+  return getPitchNum(wtrack->track, note, pitch);
+}
+
 int createPitch(float value, float floatplace, int tracknum, int blocknum, int windownum){
-  return 0;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if (wtrack==NULL)
+    return 0;
+
+  Place place;
+  Float2Placement(floatplace, &place);
+  
+  struct Notes *note = getNoteAtPlace(wtrack->track, &place);
+
+  if(note==NULL)
+    return addNote2(window, wblock, wtrack, &place, value);
+  else
+    return addPitch(window, wblock, wtrack, note, &place, value);
 }
   
 
