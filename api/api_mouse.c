@@ -206,6 +206,8 @@ void setReltempo(float reltempo){
 
   update_statusbar(window);
   DrawBlockRelTempo(window,wblock);
+
+  wblock->block->is_dirty = true;
 }
 
 void showReltempoInStatusbar(void){
