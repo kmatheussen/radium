@@ -563,33 +563,42 @@ const char *GFX_GetSaveFileName(
     : ret;
 }
 
+
 static int show_message(vector_t *buttons, const char *message){
         
 
+  QMessageBox msgBox;
+  msgBox.setText(QString(message));
+
   if(buttons==NULL){
 
-    QMessageBox msgBox;
-    msgBox.setText(QString(message));
     msgBox.setStandardButtons(QMessageBox::Ok);
 
-    num_users_of_keyboard++;
-    {
-      msgBox.exec();
-    }
-    num_users_of_keyboard--;
+  } else {
 
-    return 0;
+    VECTOR_FOR_EACH(const char *,button_text,buttons){
+      msgBox.addButton(button_text, QMessageBox::AcceptRole);
+    }END_VECTOR_FOR_EACH;
+
   }
 
-  RWarning("what?");
 
+  num_users_of_keyboard++;
+  {
+    msgBox.exec();
+  }
+  num_users_of_keyboard--;
+
+  QAbstractButton *clicked_button = msgBox.clickedButton();
+
+  for(int i=0;i<buttons->num_elements;i++)
+    if(QString((char*)buttons->elements[i])==clicked_button->text())
+      return i;
+
+  fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+  
   return 0;
 
-#if 0
-  VECTOR_FOR_EACH(const char *,button_text,buttons){
-    msgBox.addButton(button_text);
-  }END_VECTOR_FOR_EACH;
-#endif
 }
 
 

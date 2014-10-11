@@ -507,8 +507,12 @@ void Qt_EventHandler(void){
 
 static bool load_new_song=true;
 
+extern void TIME_init(void);
+
 int radium_main(char *arg){
 
+  TIME_init();
+    
   default_style_name = QApplication::style()->objectName();
 
 #if 0
@@ -708,6 +712,16 @@ int radium_main(char *arg){
   }
 #endif
 
+  #if 0
+  vector_t v = {0};
+  VECTOR_push_back(&v,"hepp1");
+  VECTOR_push_back(&v,"hepp2");
+  VECTOR_push_back(&v,"hepp3");
+  GFX_Message(&v, "hepp hepp");
+  #endif
+
+  //  RWarning("warning!");
+  
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
