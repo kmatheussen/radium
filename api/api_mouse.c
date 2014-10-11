@@ -903,10 +903,8 @@ float getVelocitynodeY(int num, int notenum, int tracknum, int blocknum, int win
 
 float getVelocityValue(int num, int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note = getNoteFromNumA(windownum, blocknum, tracknum, notenum);
-  if (note==NULL) {
-    RError("no note %d in track %d in block %d",num,notenum,tracknum,blocknum);
+  if (note==NULL)
     return 0.0;
-  }
 
   if (num==0)
     return note->velocity;

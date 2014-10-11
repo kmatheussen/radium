@@ -175,18 +175,22 @@ struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenu
 	struct WBlocks *wblock=NULL;
 
 	if(notenum==-1){
-		return GetCurrNote(getWindowFromNum(windownum));
-	}else{
-		if(blocknum==-1 || tracknum==-1){
-			wblock=getWBlockFromNum(windownum,blocknum);
-			blocknum=wblock->l.num;
-			if(tracknum==-1){
-				tracknum=wblock->wtrack->l.num;
-			}
-		}
-		return getNoteFromNum(blocknum,tracknum,notenum);
+          struct Notes *note = GetCurrNote(getWindowFromNum(windownum));
+          if (note==NULL) {
+            RError("Note #%d in track #%d in block #%d in window #%d does not exist",notenum,tracknum,blocknum,windownum);
+            return NULL;
+          }else
+            return note;
+        }else{
+          if(blocknum==-1 || tracknum==-1){
+            wblock=getWBlockFromNum(windownum,blocknum);
+            blocknum=wblock->l.num;
+            if(tracknum==-1){
+              tracknum=wblock->wtrack->l.num;
+            }
+          }
+          return getNoteFromNum(blocknum,tracknum,notenum);
 	}
-
 }
 
 const static int num_instrument_types = 1;
@@ -195,7 +199,7 @@ int getInstrumentPatchNum(int instrument_num, int patch_num){
   return (patch_num*num_instrument_types) + instrument_num;
 }
 
-static int getPatchNum(int instrument_num, int instrument_patch_num){
+ static int getPatchNum(int instrument_num, int instrument_patch_num){
   return (instrument_patch_num - instrument_num) / num_instrument_types;
 }
 
