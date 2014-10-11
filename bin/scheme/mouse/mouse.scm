@@ -314,9 +314,7 @@
                         :$get-max-value-func (lambda () (1- (ra:get-temponode-max)))
                         :$get-min-value-func (lambda () (- (1- (ra:get-temponode-max))))
                         :$make-undo-func ra:undo-temponodes
-                        :$create-node-func (lambda (value pos)
-                                             (ra:undo-temponodes)
-                                             (ra:create-temponode value pos))
+                        :$create-node-func ra:create-temponode
                         :$move-node-func ra:set-temponode)
                         
 

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "blackbox_proc.h"
 #include "gfx_statusbar_proc.h"
 #include "player_proc.h"
+#include "undo.h"
 
 #include "temponodes_proc.h"
 
@@ -131,9 +132,12 @@ struct TempoNodes *AddTempoNode(
 
 	PlaceCopy(&temponode->l.p,p);
 
-	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==NULL)
-		return NULL;
-        else
+        Undo_TempoNodes_CurrPos(window);
+
+	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==NULL) {
+          Undo_CancelLastUndo();
+          return NULL;
+        } else
           return temponode;
 }
 
@@ -142,8 +146,6 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 	struct WBlocks *wblock=window->wblock;
 
 	PlayStop();
-
-	Undo_TempoNodes_CurrPos(window);
 
 	AddTempoNode(
 		window,wblock,
