@@ -243,7 +243,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 	if(
 		0==override &&
 		wtrack->trackreallines[wblock->curr_realline].note>0 &&
-		wtrack->trackreallines[wblock->curr_realline].note<NOTE_END_NORMAL
+		wtrack->trackreallines[wblock->curr_realline].daspitch == NULL
 	){
 
 		wtrack->trackreallines[wblock->curr_realline].note=notenum;
@@ -273,7 +273,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 			ScrollEditorDown(window,g_downscroll);
 		}
 
-        } else if(wtrack->trackreallines[wblock->curr_realline].note>NOTE_PITCH_START) {
+        } else if(wtrack->trackreallines[wblock->curr_realline].daspitch != NULL) {
 
           WFXNodes *wpitch = wtrack->wpitches[wblock->curr_realline];
           while(wpitch->pointer==NULL && wpitch->next!=NULL)
@@ -282,7 +282,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
           struct Pitches *pitch = wpitch->pointer;
           if(pitch!=NULL){
             pitch->note = notenum;
-            wtrack->trackreallines[wblock->curr_realline].note = notenum + NOTE_PITCH_START;
+            wtrack->trackreallines[wblock->curr_realline].daspitch = pitch;
 #if !USE_OPENGL
             ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
             UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);

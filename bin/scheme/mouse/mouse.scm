@@ -337,7 +337,7 @@
                                                         #t)
                             _                      :> #f)))))
 
-;; show current temponode
+;; highlight current temponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and (inside-box (ra:get-box temponode-area) $x $y)
@@ -478,6 +478,20 @@
 
 
 
+;; highlight current pitch
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and *current-track-num*
+              (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
+              (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+                     (existing-box Num Box) :> (begin
+                                                 (c-display "--" Num "highlight")
+                                                 (ra:set-current-pitch Num *current-track-num*)
+                                                 #t)
+                     _                      :> (begin
+                                                 (ra:cancel-current-node)
+                                                 #f)))))
+
 
 
 
@@ -487,6 +501,8 @@
 (define (get-velocity-box $num)
   (get-common-node-box (ra:get-velocity-x $num)
                        (ra:get-velocity-y $num)))
+
+#||
 
 ;; add and move velocity
 (add-node-mouse-handler :$get-area-box-func (lambda () (ra:get-box track-fx))
@@ -498,11 +514,13 @@
                         :$make-undo-func ra:undo-velocitys
                         :$create-node-func ra:create-velocity
                         :$move-node-func ra:set-velocity)
-                        
+||#
+
+
 #||
 (ra:get-velocitynode-y 0 0)
 (ra:get-velocitynode-y 2 0)
-(ra:get-velocity-value 3 0)
+(ra:get-velocity-value 7 1)
 
 ;; delete velocity
 (add-mouse-cycle

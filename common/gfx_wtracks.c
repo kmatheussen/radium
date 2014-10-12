@@ -168,9 +168,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
   //bool isgliding = false;
   int colnum = Col[1];
 
-  if(notenum>=NOTE_PITCH_START){
+  if(trackrealline->pitch!=NULL){
     //isgliding = true;
-    notenum -= NOTE_PITCH_START;
     colnum = 5;
   }
 

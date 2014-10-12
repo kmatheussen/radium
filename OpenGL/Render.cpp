@@ -763,7 +763,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
 
 }
 
-static GE_Context *get_note_background(int notenum){
+static GE_Context *get_note_background(int notenum, bool hightlight){
   notenum = R_BOUNDARIES(0,notenum,127);
   const int split1 = 50;
   const int split2 = 95;
@@ -777,7 +777,10 @@ static GE_Context *get_note_background(int notenum){
   else
     rgb = GE_mix(GE_get_rgb(2), GE_get_rgb(6), scale(notenum,split2,160,0,1000));
 
-  return GE(GE_alpha(rgb, 0.4));
+  if (hightlight)
+    return GE(GE_alpha(rgb, 0.9));
+  else
+    return GE(GE_alpha(rgb, 0.4));
 }
 
 void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
@@ -790,10 +793,8 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);
 
-  if(notenum>=NOTE_PITCH_START){
-    notenum -= NOTE_PITCH_START;
+  if(trackrealline->daspitch != NULL)
     colnum = 5;
-  }
 
   if (isranged) {
     colnum = 1;
@@ -814,9 +815,18 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
               x2, y,
               1.6);
     }
+
+    bool hightlight;
+    
+    if (trackrealline->daspitch != NULL && &trackrealline->daspitch->l==current_node)
+      hightlight = true;
+    else if (trackrealline->dasnote != NULL && &trackrealline->dasnote->l==current_node)
+      hightlight = true;
+    else
+      hightlight = false;
     
     if(isranged==false && notenum>0 && notenum<128)
-      GE_filledBox(get_note_background(notenum), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+      GE_filledBox(get_note_background(notenum, hightlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
 
     if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
       GE_Context *foreground = GE_textcolor(colnum);
@@ -993,7 +1003,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   
   // background
   {
-    GE_Context *c = get_note_background(note->note);
+    GE_Context *c = get_note_background(note->note, false);
     
     GE_trianglestrip_start();
     

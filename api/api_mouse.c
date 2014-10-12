@@ -46,7 +46,10 @@ extern volatile float scroll_pos;
 extern struct ListHeader3 *current_node;
 
 void cancelCurrentNode(void){
-  current_node = NULL;
+  if (current_node != NULL){
+    current_node = NULL;
+    root->song->tracker_windows->wblock->block->is_dirty = true;
+  }
 }
 
 static int get_realline_y1(const struct Tracker_Windows *window, int realline){
@@ -693,17 +696,36 @@ float getPitchX2(int pitchnum, int tracknum, int blocknum, int windownum){
 }
 
 float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
-  float pitch = getPitchInfo(2, pitchnum, tracknum, blocknum, windownum);
-  if (pitch>=NOTE_PITCH_START) // not sure I like this hack very much.
-    pitch -= NOTE_PITCH_START;
-  return pitch;
+  return getPitchInfo(2, pitchnum, tracknum, blocknum, windownum);
 }
 
 void undoPitches(int tracknum, int blocknum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return;
   Undo_Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline);
+}
+
+void setCurrentPitch(int num, int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return;
+
+  struct Notes *note;
+  struct Pitches *pitch;
+  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+    return;
+
+  struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
+  
+  if (current_node != listHeader3){
+    current_node = listHeader3;
+    wblock->block->is_dirty = true;
+  }
 }
 
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){

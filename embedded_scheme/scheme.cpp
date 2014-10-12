@@ -1,5 +1,9 @@
 /*
   This file is based on the "bodydata" example from qhttpserver.
+
+Test:
+curl -i -X POST -H "Content-Type: plain/text" -d '(display 50)' http://localhost:5080/user/asdf
+
  */
 
 
@@ -29,11 +33,6 @@ extern "C" {
   void init_radium_s7(s7_scheme *s7);
 }
 
-
-/*
-Test:
-curl -i -X POST -H "Content-Type: plain/text" -d '(display 50)' http://localhost:5080/user/asdf
-*/
 
 static Responder *current_responder;
 

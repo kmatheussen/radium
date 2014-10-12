@@ -645,6 +645,7 @@ enum{
 
 struct TrackRealline{
   struct Notes *dasnote;
+  struct Pitches *daspitch;
   float note;										/* Is 0 if no note. */
   struct TrackReallineElements *trackreallineelements;
 };
@@ -652,8 +653,7 @@ struct TrackRealline{
 enum{
   NOTE_MUL=NOTE_END_NORMAL,
   NOTE_STP,
-  NOTE_MUR,
-  NOTE_PITCH_START
+  NOTE_MUR
 };
 
 

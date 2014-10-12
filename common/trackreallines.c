@@ -872,7 +872,8 @@ void AddPitchElements(
         wtrack->trackreallines[realline].note=NOTE_MUL;
 	wtrack->trackreallines[realline].dasnote=NULL;
       }else{
-        wtrack->trackreallines[realline].note=NOTE_PITCH_START + pitch->note;
+        wtrack->trackreallines[realline].note=pitch->note;
+        wtrack->trackreallines[realline].daspitch=pitch;
       }
 
       pitch=NextPitch(pitch);
