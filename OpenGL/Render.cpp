@@ -763,7 +763,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
 
 }
 
-static GE_Context *get_note_background(int notenum, bool hightlight){
+static GE_Context *get_note_background(int notenum, bool highlight){
   notenum = R_BOUNDARIES(0,notenum,127);
   const int split1 = 50;
   const int split2 = 95;
@@ -777,10 +777,10 @@ static GE_Context *get_note_background(int notenum, bool hightlight){
   else
     rgb = GE_mix(GE_get_rgb(2), GE_get_rgb(6), scale(notenum,split2,160,0,1000));
 
-  if (hightlight)
-    return GE(GE_alpha(rgb, 0.9));
-  else
-    return GE(GE_alpha(rgb, 0.4));
+  if (highlight)
+    rgb = GE_mix(rgb, GE_get_rgb(2), 650);
+
+  return GE(GE_alpha(rgb, 0.7));
 }
 
 void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
@@ -794,7 +794,7 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
   int y2 = get_realline_y2(window, realline);
 
   if(trackrealline->daspitch != NULL)
-    colnum = 5;
+    colnum = 2;
 
   if (isranged) {
     colnum = 1;
@@ -816,17 +816,17 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
               1.6);
     }
 
-    bool hightlight;
+    bool highlight;
     
     if (trackrealline->daspitch != NULL && &trackrealline->daspitch->l==current_node)
-      hightlight = true;
+      highlight = true;
     else if (trackrealline->dasnote != NULL && &trackrealline->dasnote->l==current_node)
-      hightlight = true;
+      highlight = true;
     else
-      hightlight = false;
+      highlight = false;
     
     if(isranged==false && notenum>0 && notenum<128)
-      GE_filledBox(get_note_background(notenum, hightlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+      GE_filledBox(get_note_background(notenum, highlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
 
     if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
       GE_Context *foreground = GE_textcolor(colnum);
@@ -896,7 +896,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          NULL,NULL);
     
 
-  GE_Context *c = GE_mix_alpha(GE_get_rgb(0), GE_get_rgb(2), 900, 0.5);
+  GE_Context *c = GE_mix_alpha(GE_get_rgb(0), GE_get_rgb(2), 700, 0.7);
 
   GE_trianglestrip_start();
 

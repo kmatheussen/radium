@@ -31,7 +31,7 @@ static inline GE_Rgb GE_rgba(unsigned char r, unsigned char g, unsigned char b, 
 GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much);
 static inline GE_Rgb GE_alpha(const GE_Rgb c, float alpha){
   GE_Rgb ret = c;
-  ret.a = alpha*255;
+  ret.a = alpha*255.0f;  
   return ret;
 }
 
