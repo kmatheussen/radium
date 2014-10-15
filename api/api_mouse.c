@@ -842,9 +842,9 @@ static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
 
 static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *place, float value){
 
-  printf("adding NOTE. num before: %d\n",getNumPitches(wtrack->l.num, wblock->l.num, window->l.num));
-
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
+
+  current_node = &note->l;
 
   UpdateTrackReallines(window,wblock,wtrack);
   wblock->block->is_dirty = true;
@@ -854,11 +854,9 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
 static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
 
-  printf("adding pitch. num before: %d\n",getNumPitches(wtrack->l.num, wblock->l.num, window->l.num));
-
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, note->note);
 
-  printf("num after: %d\n\n",getNumPitches(wtrack->l.num, wblock->l.num, window->l.num));
+  current_node = &pitch->l;
 
   UpdateTrackReallines(window,wblock,wtrack);
   wblock->block->is_dirty = true;
