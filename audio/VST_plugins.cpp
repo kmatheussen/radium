@@ -973,7 +973,7 @@ void add_vst_plugin_type(QFileInfo file_info){
   QString filename = file_info.absoluteFilePath();
 
   //fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
-  fprintf(stderr,"\"%s\... ",filename.ascii());
+  fprintf(stderr,"\"%s\"... ",filename.ascii());
   fflush(stderr);
   
   QLibrary myLib(filename);
@@ -996,7 +996,7 @@ void add_vst_plugin_type(QFileInfo file_info){
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
   if (get_plugin_instance == NULL){
-    fprintf(stderr,"(failed) ",filename.ascii());
+    fprintf(stderr,"(failed) ");
     fflush(stderr);
     return;
   }
