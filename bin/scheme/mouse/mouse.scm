@@ -149,6 +149,36 @@
          ;;(c-display "curr: " *current-track-num*)
          #f))
 
+(define *current-subtrack-num* #f)
+
+(define-match get-subtrack-from-x-0
+  __ _ Num Num   ________ :> #f  
+  X1 X Num Total Tracknum :> (let ((X2 (if (= Num (1- Total))
+                                           (ra:get-subtrack-x2 Num Tracknum)                                           
+                                           (ra:get-subtrack-x1 (1+ Num) Tracknum))))
+                               (if (and (>= X X1)
+                                        (<  X X2))
+                                   Num
+                                   (get-subtrack-from-x-0 X2
+                                                          X
+                                                          (1+ Num)
+                                                          Total
+                                                          Tracknum))))
+
+(define-match get-subtrack-from-x
+  X Tracknum :> (get-subtrack-from-x-0 (ra:get-subtrack-x1 0 Tracknum)
+                                       X
+                                       0
+                                       (ra:get-num-subtracks Tracknum) Tracknum))
+
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (set! *current-subtrack-num* (and *current-track-num*
+                                           (inside-box (ra:get-box track-fx) $x $y)
+                                           (get-subtrack-from-x $x *current-track-num*)))
+         ;;(c-display "current-subtrack-num" *current-subtrack-num*)
+         #f))
+
 ;; reltempo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -453,9 +483,9 @@
                         :$get-node-value-func (lambda ($num) (ra:get-pitch-value $num *current-track-num*))
                         :$get-min-value-func get-min-pitch-in-current-track
                         :$get-max-value-func get-max-pitch-in-current-track
-                        :$make-undo-func (lambda () (ra:undo-pitches *current-track-num*))
+                        :$make-undo-func (lambda () (ra:undo-notes *current-track-num*))
                         :$create-node-func (lambda ($value $place)
-                                             (ra:undo-pitches *current-track-num*) ;; impossible for ra:create-pitch to fail, so it doesn't create undo for us.
+                                             (ra:undo-notes *current-track-num*)
                                              (ra:create-pitch $value $place *current-track-num*))
                         :$move-node-func (lambda ($num $value $place) (ra:set-pitch $num $value $place *current-track-num*))
                         :$get-pixels-per-value-unit (lambda ()
@@ -471,7 +501,7 @@
                      (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
                             (existing-box Num Box) :> (begin
-                                                        (ra:undo-pitches *current-track-num*)
+                                                        (ra:undo-notes *current-track-num*)
                                                         (ra:delete-pitch Num *current-track-num*)
                                                         #t)
                             _                      :> #f)))))
@@ -485,7 +515,7 @@
               (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
               (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
                      (existing-box Num Box) :> (begin
-                                                 (c-display "--" Num "highlight")
+                                                 ;;(c-display "--" Num "highlight")
                                                  (ra:set-current-pitch Num *current-track-num*)
                                                  #t)
                      _                      :> (begin
@@ -498,26 +528,59 @@
 ;; velocities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (get-velocity-box $num)
-  (get-common-node-box (ra:get-velocity-x $num)
-                       (ra:get-velocity-y $num)))
+(define *current-note-num* #f)
 
-#||
+
+(define-match get-note-num-0
+  _____ ________ Num Num   :> #f
+  Place Subtrack Num Total :> (if (and (>= Place
+                                           (ra:get-note-start Num *current-track-num*))
+                                       (<  Place
+                                           (ra:get-note-end Num *current-track-num*))
+                                       (=  Subtrack
+                                           (ra:get-note-subtrack Num *current-track-num*)))
+                                  Num
+                                  (get-note-num-0 Place
+                                                  Subtrack
+                                                  (1+ Num)
+                                                  Total)))
+                                                 
+(define-match get-note-num
+  X Y :> (get-note-num-0 (ra:get-place-from-y Y)
+                         *current-subtrack-num*
+                         0
+                         (ra:get-num-notes *current-track-num*)))
+                         
+;; Set *current-note-num*
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (set! *current-note-num* (and *current-subtrack-num*
+                                       (get-note-num $x $y)))
+         (c-display "current-note-num" *current-note-num*)
+         #f))
+
+(define (get-velocity-box $num)
+  (get-common-node-box (ra:get-velocity-x $num *current-note-num* *current-track-num*)
+                       (ra:get-velocity-y $num *current-note-num* *current-track-num*)))
 
 ;; add and move velocity
 (add-node-mouse-handler :$get-area-box-func (lambda () (ra:get-box track-fx))
                         :$get-node-box get-velocity-box
-                        :$get-num-nodes-func ra:get-num-velocitys
-                        :$get-node-value-func ra:get-velocity-value
-                        :$get-min-value-func (lambda () (- (1- (ra:get-velocity-max))))
-                        :$get-max-value-func (lambda () (1- (ra:get-velocity-max)))
-                        :$make-undo-func ra:undo-velocitys
-                        :$create-node-func ra:create-velocity
-                        :$move-node-func ra:set-velocity)
-||#
+                        :$get-num-nodes-func (lambda () (ra:get-num-velocities *current-note-num* *current-track-num*))
+                        :$get-node-value-func (lambda (Num) (ra:get-velocity-value Num *current-note-num* *current-track-num*))
+                        :$get-min-value-func (lambda () 0.0)
+                        :$get-max-value-func (lambda () 1.0)
+                        :$make-undo-func (lambda () (ra:undo-notes *current-track-num*))
+                        :$create-node-func (lambda (Value Place)
+                                             (ra:undo-notes *current-track-num*)
+                                             (ra:create-velocity Value Place *current-note-num* *current-track-num*))
+                        :$move-node-func (lambda (Num Value Place)
+                                           (ra:set-velocity Num Value Place *current-note-num* *current-track-num*)))
 
 
 #||
+(ra:get-num-velocities 0 0)
+
 (ra:get-velocitynode-y 0 0)
 (ra:get-velocitynode-y 2 0)
 (ra:get-velocity-value 7 1)

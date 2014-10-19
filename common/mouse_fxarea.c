@@ -325,6 +325,8 @@ void SetMouseActionFXarea(
 
 		Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
 
+                RError("dead code");
+                /*
 		AddVelocity(
 			window,
 			wblock,
@@ -334,7 +336,7 @@ void SetMouseActionFXarea(
 			&place,
 			realline
 		);
-
+                */
 		GFX_SetChangeInt(window,wblock,"Velocity",MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/subtrackwidth);
 		GFX_DrawStatusBar(window,wblock);
 

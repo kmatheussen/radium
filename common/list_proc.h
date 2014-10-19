@@ -74,7 +74,23 @@ extern void ListRemoveElements3(
 	Place *p2
 );
 
-extern struct ListHeader3 *ListAddElement3_ns(
+extern void ListMoveElement3_ns(
+                                void *voidlistroot,
+                                struct ListHeader3 *element,
+                                Place *newplace,
+                                Place *firstlegalpos,
+                                Place *lastlegalpos
+                                );
+
+struct ListHeader3 *ListMoveElement3_FromNum_ns(
+                                                void *voidlistroot,
+                                                int num,
+                                                Place *newplace,
+                                                Place *firstlegalpos,
+                                                Place *lastlegalpos
+                                                );
+
+extern int ListAddElement3_ns(
 	void *listroot,
 	struct ListHeader3 *element
 );
@@ -134,6 +150,10 @@ extern void *ListPrevElement3(
 extern void CutListAt(void *listroot,Place *place);
 extern void CutListAt_a(void *listroot,Place *place);
 extern void CutListAt1(void *listroot,NInt num);
+
+extern int ListPostition3(struct ListHeader3 *list,
+                          struct ListHeader3 *element
+                          );
 
 extern int ForAllListElements1(
 	void *voidlistroot,

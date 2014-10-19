@@ -134,7 +134,7 @@ struct TempoNodes *AddTempoNode(
 
         Undo_TempoNodes_CurrPos(window);
 
-	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==NULL) {
+	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
           Undo_CancelLastUndo();
           return NULL;
         } else

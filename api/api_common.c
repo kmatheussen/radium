@@ -144,12 +144,13 @@ struct WTracks *getWTrackFromNumA(
 	struct WBlocks **wblock,
 	int wtracknum
 ){
-	(*wblock)=getWBlockFromNumA(windownum,window,wblocknum);
-
 	if(wblock==NULL){
 		RError("Warning, might be a program-error, wblock==NULL at function getWTrackFromNumA in file api/api_common.c\n");
 		return NULL;
 	}
+
+      	(*wblock)=getWBlockFromNumA(windownum,window,wblocknum);
+
 	if(wtracknum==-1) return (*wblock)->wtrack;
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
 	struct WTracks *ret = ListFindElement1_num(&(*wblock)->wtracks->l,(NInt)wtracknum);
@@ -158,40 +159,39 @@ struct WTracks *getWTrackFromNumA(
         return ret;
 }
 
-struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum){
-	struct Tracks *track=getTrackFromNum(blocknum,tracknum);
-	if(track==NULL) return NULL;
+                             
+struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum){
+  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
+  if ((*wtrack)==NULL)
+    return NULL;
 
-	if(notenum==-1) notenum=0;
-
-	struct Notes *ret = ListFindElement3_num(&track->notes->l,(NInt)notenum);
-        if (ret==NULL)
-          RError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
-        return ret;
+  if(notenum==-1){
+    
+    struct Notes *note = GetCurrNote(*window);
+    if (note==NULL) {
+      RError("Note #%d in track #%d in block #%d in window #%d does not exist",notenum,tracknum,blocknum,windownum);
+      return NULL;
+    }else
+      return note;
+    
+  }else{
+    
+    struct Tracks *track = (*wtrack)->track;
+    struct Notes *ret = ListFindElement3_num(&track->notes->l,(NInt)notenum);
+    if (ret==NULL)
+      RError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
+    
+    return ret;
+  }
 }
 
-
-struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenum){
-	struct WBlocks *wblock=NULL;
-
-	if(notenum==-1){
-          struct Notes *note = GetCurrNote(getWindowFromNum(windownum));
-          if (note==NULL) {
-            RError("Note #%d in track #%d in block #%d in window #%d does not exist",notenum,tracknum,blocknum,windownum);
-            return NULL;
-          }else
-            return note;
-        }else{
-          if(blocknum==-1 || tracknum==-1){
-            wblock=getWBlockFromNum(windownum,blocknum);
-            blocknum=wblock->l.num;
-            if(tracknum==-1){
-              tracknum=wblock->wtrack->l.num;
-            }
-          }
-          return getNoteFromNum(blocknum,tracknum,notenum);
-	}
+struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
 }
+
 
 const static int num_instrument_types = 1;
 

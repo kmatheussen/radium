@@ -45,7 +45,7 @@ void incNoteVolume(int incvolume,int windownum){
 }
 
 int getNoteNote(int windownum,int blocknum,int tracknum,int notenum){
-	struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+	struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
 	if(note==NULL) return -1;
 
@@ -54,7 +54,7 @@ int getNoteNote(int windownum,int blocknum,int tracknum,int notenum){
 
 void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
-  struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
   if(window==NULL) return;
   if(note==NULL) return;
@@ -79,25 +79,29 @@ int getMaxVolume(){
 }
 
 int getNoteVolume(int windownum,int blocknum,int tracknum,int notenum){
-	struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+	struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
 	if(note==NULL) return -1;
 
   return note->velocity;
 }
 
+// deprecated
 float getNotePlace(int windownum,int blocknum,int tracknum,int notenum){
-	struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
-	if(note==NULL) return -1.0f;
+  if(note==NULL)
+    return -1.0f;
 
   return GetfloatFromPlace(&note->l.p);
 }
 
+// deprecated
 float getNoteEndPlace(int windownum,int blocknum,int tracknum,int notenum){
-	struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
-	if(note==NULL) return -1.0f;
+  if(note==NULL)
+    return -1.0f;
 
   return GetfloatFromPlace(&note->end);
 }
@@ -168,7 +172,7 @@ int addBPM(int bpm,
 
 void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
-  struct Notes *note=getNoteFromNumA(windownum,blocknum,tracknum,notenum);
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
 
   if(window==NULL) return;
   if(note==NULL) return;

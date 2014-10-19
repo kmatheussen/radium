@@ -174,6 +174,15 @@ struct Notes *InsertNote(
 
 	PlaceCopy(&note->l.p,placement);
 
+        if (notenum<=0.0f){
+          RError("notenum<=0.0f: %f. Setting to 0.1",notenum);
+          notenum=0.1f;
+        }
+        if(notenum>=128.0f){
+          RError("notenum>=128.0f: %f. Setting to 127.9",notenum);
+          notenum=127.9;
+        }
+        
 	note->note=notenum;
 	note->velocity=velocity;
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);

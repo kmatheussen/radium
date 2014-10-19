@@ -335,24 +335,83 @@ void ListRemoveElements3(
 }
 
 
+
+/*****************************************************************************
+  FUNCTION
+    Moves the element to new place 'p', or closest legal position.
+    A "legal position" means that it can not be positioned before the
+    previous element, or after the next element. In addition, it can not be
+    position at the same position as the previous element or next element
+    ("ns" means "not same").
+
+    The value for 'firstlegalpos' is only used if prev element is NULL.
+    The value for 'lastlegalpos' is only used if next element is NULL.
+******************************************************************************/
+void ListMoveElement3_ns(
+                         void *voidlistroot,
+                         struct ListHeader3 *element,
+                         Place *newplace,
+                         Place *firstlegalpos,
+                         Place *lastlegalpos
+){
+  struct ListHeaderPointer3 *listroot=voidlistroot;
+  struct ListHeader3 *prev=NULL;
+  struct ListHeader3 *next = element->next;
+  struct ListHeader3 *l=listroot->root;
+
+  while(l!=element){    
+    prev = l;
+    l=l->next;
+  }
+
+  if (prev!=NULL)
+    firstlegalpos = &prev->p;
+
+  if (next!=NULL)
+    lastlegalpos = &next->p;
+
+  element->p = *PlaceBetween(firstlegalpos, newplace, lastlegalpos);
+}
+
+struct ListHeader3 *ListMoveElement3_FromNum_ns(
+                                                void *voidlistroot,
+                                                int num,
+                                                Place *newplace,
+                                                Place *firstlegalpos,
+                                                Place *lastlegalpos
+){
+  struct ListHeaderPointer3 *listroot=voidlistroot;
+  
+  struct ListHeader3 *element = ListFindElement3_num(listroot->root, num);
+  if (element!=NULL)
+    ListMoveElement3_ns(voidlistroot, element, newplace, firstlegalpos, lastlegalpos);
+  
+  return element;
+}
+
+
 /*****************************************************************************
   FUNCTION
     Adds an element only if the list doesn't allready contain an element
     with the same placement attributes.
 ******************************************************************************/
-struct ListHeader3 *ListAddElement3_ns(
-	void *listroot,
+int ListAddElement3_ns(
+	void *voidlistroot,
 	struct ListHeader3 *element
 ){
-	if(element==NULL) return NULL;
+	if(element==NULL) return -1;
+
+        struct ListHeaderPointer3 *listroot=voidlistroot;
 
 	ListAddElement3(listroot,element);
 	if(element->next!=NULL)
 		if(PlaceEqual(&element->p,&element->next->p)){
 			ListRemoveElement3(listroot,element);
-			return NULL;
+			return -1;
 		}
-	return element;
+
+        struct ListHeader3 *list=listroot->root;
+	return ListPostition3(list,element);
 }
 
 NInt ListFindFirstFreePlace1(struct ListHeader1 *list){
@@ -649,6 +708,18 @@ void CutListAt1(void *listroot,NInt num){
 	
 }
 
+int ListPostition3(struct ListHeader3 *list,
+                   struct ListHeader3 *element
+                   )
+{
+  int ret = 0;
+  while(list!=element) {
+    ret++;
+    list = list->next;
+  }
+  return ret;
+}
+                  
 /******************************************************************************
   FUNCTION
     Calls 'function' for all list elements with each list element as argument.
