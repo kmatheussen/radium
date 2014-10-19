@@ -674,19 +674,15 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
                                                 NULL
                                                 );
 
+  for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
+    GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
+
   wblock->reltempo_nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
-
-  do{
-
-    if(nodelines->is_node && wblock->mouse_track==TEMPONODETRACK)
-      draw_skewed_box(window, nodelines->element1, 1, nodelines->x1, nodelines->y1);
-
-    GE_line(line_color, nodelines->x1, nodelines->y1, nodelines->x2, nodelines->y2, 1.5);
-
-  }while(nodelines->next!=NULL && (nodelines=nodelines->next));
-
+  
   if(wblock->mouse_track==TEMPONODETRACK)
-    draw_skewed_box(window, nodelines->element2, 1, nodelines->x2, nodelines->y2);
+    VECTOR_FOR_EACH(Node *, node, wblock->reltempo_nodes){
+      draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
+    }END_VECTOR_FOR_EACH;
 }
 
 
@@ -999,7 +995,8 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
                                                 &last_velocity.l
                                                 );
 
-  VECTOR_push_back(&wtrack->velocity_nodes, get_nodeline_nodes(nodelines, wblock->t.y1));
+  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  VECTOR_push_back(&wtrack->velocity_nodes, nodes);
   
   // background
   {
@@ -1012,12 +1009,11 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
       GE_trianglestrip_add(c, ns->x1, ns->y1);
       GE_trianglestrip_add(c, subtrack_x1, ns->y2);
       GE_trianglestrip_add(c, ns->x2, ns->y2);
-
-      if(ns->is_node && wblock->mouse_track==wtrack->l.num && wblock->mouse_note==note)
-        draw_skewed_box(window, nodelines->element1, 5, ns->x1, ns->y1);
     }
+
     GE_trianglestrip_end(c);
   }
+
 
   // border
   {
@@ -1028,9 +1024,18 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
       GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
   }
 
+
   // peaks
   if(TRACK_has_peaks(wtrack->track))
     create_track_peaks(window, wblock, wtrack, note, nodelines);
+
+
+  // nodes
+  if (wblock->mouse_track==wtrack->l.num && wblock->mouse_note==note)
+    VECTOR_FOR_EACH(Node *, node, nodes){
+      draw_skewed_box(window, node->element, 5, node->x, node->y - wblock->t.y1);
+    }END_VECTOR_FOR_EACH;
+
 }
 
 

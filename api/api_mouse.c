@@ -937,6 +937,8 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
   if (note==NULL)
     return 0.0;
 
+  printf("getting velocity for %d\n",velocitynum);
+
   vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
@@ -1000,7 +1002,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
 }
   
 void setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
-  //printf("Trying to set velocity %d to %f / %f\n",velocitynum,value,floatplace);
+  printf("Trying to set velocity %d to %f / %f\n",velocitynum,value,floatplace);
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
