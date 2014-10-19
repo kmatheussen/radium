@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_subtrack_proc.h"
 #include "../common/velocities_proc.h"
 
+#include "../OpenGL/Render_proc.h"
+
 #include "api_common_proc.h"
 
 #include "radium_proc.h"
@@ -937,8 +939,6 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
   if (note==NULL)
     return 0.0;
 
-  printf("getting velocity for %d\n",velocitynum);
-
   vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
@@ -952,6 +952,9 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
     return note->velocity_end / (float)MAX_VELOCITY;
 
   struct Velocities *velocity = ListFindElement3_num_r0(&note->velocities->l, velocitynum-1);
+
+  //printf("getting velocity for %d (%f)\n",velocitynum, velocity->velocity / (float)MAX_VELOCITY);
+
   return velocity->velocity / (float)MAX_VELOCITY;
 }
 
@@ -990,19 +993,19 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }
 
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
-  printf("Created velocit number %d\n",ret);
   
   if (ret==-1){
     RError("createVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
-  wblock->block->is_dirty = true;
+  GL_create(window, wblock); // Need to update wtrack->velocity_nodes before returning to the qt event dispatcher.
+  //wblock->block->is_dirty = true;
+
   return ret+1;
 }
   
 void setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
-  printf("Trying to set velocity %d to %f / %f\n",velocitynum,value,floatplace);
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
