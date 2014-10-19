@@ -972,8 +972,10 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 void add_vst_plugin_type(QFileInfo file_info){
   QString filename = file_info.absoluteFilePath();
 
-  fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
-
+  //fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
+  fprintf(stderr,"\"%s\... ",filename.ascii());
+  fflush(stderr);
+  
   QLibrary myLib(filename);
 
 
@@ -994,7 +996,8 @@ void add_vst_plugin_type(QFileInfo file_info){
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
   if (get_plugin_instance == NULL){
-    fprintf(stderr,"nope: \"%s\"\n",filename.ascii());
+    fprintf(stderr,"(failed) ",filename.ascii());
+    fflush(stderr);
     return;
   }
 
@@ -1052,7 +1055,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
-    printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
+    //printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
 
     if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;
