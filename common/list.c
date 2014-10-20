@@ -348,13 +348,13 @@ void ListRemoveElements3(
     The value for 'lastlegalpos' is only used if next element is NULL.
 ******************************************************************************/
 void ListMoveElement3_ns(
-                         void *voidlistroot,
+                         const void *voidlistroot,
                          struct ListHeader3 *element,
                          Place *newplace,
-                         Place *firstlegalpos,
-                         Place *lastlegalpos
+                         const Place *firstlegalpos,
+                         const Place *lastlegalpos
 ){
-  struct ListHeaderPointer3 *listroot=voidlistroot;
+  const struct ListHeaderPointer3 *listroot=voidlistroot;
   struct ListHeader3 *prev=NULL;
   struct ListHeader3 *next = element->next;
   struct ListHeader3 *l=listroot->root;
@@ -364,6 +364,15 @@ void ListMoveElement3_ns(
     l=l->next;
   }
 
+#if 0
+  if (prev!=NULL)
+    PlaceFromLimit(firstlegalpos, &prev->p);
+
+  if (next!=NULL)
+    PlaceTilLimit(lastlegalpos, &next->p);
+
+  element->p = *PlaceBetween(firstlegalpos, newplace, lastlegalpos);
+#else
   if (prev!=NULL)
     firstlegalpos = &prev->p;
 
@@ -371,16 +380,17 @@ void ListMoveElement3_ns(
     lastlegalpos = &next->p;
 
   element->p = *PlaceBetween(firstlegalpos, newplace, lastlegalpos);
+#endif
 }
 
 struct ListHeader3 *ListMoveElement3_FromNum_ns(
-                                                void *voidlistroot,
+                                                const void *voidlistroot,
                                                 int num,
                                                 Place *newplace,
-                                                Place *firstlegalpos,
-                                                Place *lastlegalpos
+                                                const Place *firstlegalpos,
+                                                const Place *lastlegalpos
 ){
-  struct ListHeaderPointer3 *listroot=voidlistroot;
+  const struct ListHeaderPointer3 *listroot=voidlistroot;
   
   struct ListHeader3 *element = ListFindElement3_num(listroot->root, num);
   if (element!=NULL)

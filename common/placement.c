@@ -450,7 +450,7 @@ void PlaceSetReallinePlace(
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p<tp.
 **********************************************************/
-void PlaceTilLimit(Place *p,  Place *tp){
+void PlaceTilLimit(Place *p, Place *tp){
 	Place temp;
 
 	PlaceCopy(&temp,tp);
@@ -477,7 +477,7 @@ void PlaceTilLimit(Place *p,  Place *tp){
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p>tp.
 **********************************************************/
-void PlaceFromLimit(Place *p,  Place *tp){
+void PlaceFromLimit(Place *p, Place *tp){
 	Place temp;
 
 	PlaceCopy(&temp,tp);

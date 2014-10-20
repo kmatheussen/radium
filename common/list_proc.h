@@ -75,19 +75,19 @@ extern void ListRemoveElements3(
 );
 
 extern void ListMoveElement3_ns(
-                                void *voidlistroot,
+                                const void *voidlistroot,
                                 struct ListHeader3 *element,
                                 Place *newplace,
-                                Place *firstlegalpos,
-                                Place *lastlegalpos
+                                const Place *firstlegalpos,
+                                const Place *lastlegalpos
                                 );
 
 struct ListHeader3 *ListMoveElement3_FromNum_ns(
-                                                void *voidlistroot,
+                                                const void *voidlistroot,
                                                 int num,
                                                 Place *newplace,
-                                                Place *firstlegalpos,
-                                                Place *lastlegalpos
+                                                const Place *firstlegalpos,
+                                                const Place *lastlegalpos
                                                 );
 
 extern int ListAddElement3_ns(

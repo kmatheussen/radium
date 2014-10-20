@@ -727,7 +727,16 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   if (pitch != NULL) {
     
     pitch->note = value;
+
+#if 1
+    Place firstLegalPlace,lastLegalPlace;
+    PlaceFromLimit(&firstLegalPlace, &note->l.p);
+    PlaceTilLimit(&lastLegalPlace, &note->end);
+
+    ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+#else
     ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &note->l.p, &note->end);
+#endif
                         
   } else {
     
