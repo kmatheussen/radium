@@ -364,23 +364,19 @@ void ListMoveElement3_ns(
     l=l->next;
   }
 
-#if 0
+  Place firstlegalpos2;
   if (prev!=NULL)
-    PlaceFromLimit(firstlegalpos, &prev->p);
+    PlaceFromLimit(&firstlegalpos2, &prev->p);
+  else
+    PlaceCopy(&firstlegalpos2, firstlegalpos);
 
+  Place lastlegalpos2;
   if (next!=NULL)
-    PlaceTilLimit(lastlegalpos, &next->p);
+    PlaceTilLimit(&lastlegalpos2, &next->p);
+  else
+    PlaceCopy(&lastlegalpos2, lastlegalpos);
 
-  element->p = *PlaceBetween(firstlegalpos, newplace, lastlegalpos);
-#else
-  if (prev!=NULL)
-    firstlegalpos = &prev->p;
-
-  if (next!=NULL)
-    lastlegalpos = &next->p;
-
-  element->p = *PlaceBetween(firstlegalpos, newplace, lastlegalpos);
-#endif
+  element->p = *PlaceBetween(&firstlegalpos2, newplace, &lastlegalpos2);
 }
 
 struct ListHeader3 *ListMoveElement3_FromNum_ns(

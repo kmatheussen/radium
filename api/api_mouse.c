@@ -728,15 +728,11 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
     
     pitch->note = value;
 
-#if 1
     Place firstLegalPlace,lastLegalPlace;
     PlaceFromLimit(&firstLegalPlace, &note->l.p);
     PlaceTilLimit(&lastLegalPlace, &note->end);
 
     ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
-#else
-    ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &note->l.p, &note->end);
-#endif
                         
   } else {
     
@@ -1038,7 +1034,11 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     Place place;
     Float2Placement(floatplace, &place);
 
-    struct Velocities *velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &note->l.p, &note->end);
+    Place firstLegalPlace,lastLegalPlace;
+    PlaceFromLimit(&firstLegalPlace, &note->l.p);
+    PlaceTilLimit(&lastLegalPlace, &note->end);
+
+    struct Velocities *velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
 
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }

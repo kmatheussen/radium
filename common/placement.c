@@ -53,6 +53,16 @@ Place *PlaceCreate(int line, int counter, int dividor) {
   return place;
 }
 
+/*
+Place *PlaceCopy(Place *p){
+  Place *place=talloc(sizeof(Place));
+  place->line = p->line;
+  place->counter = p->counter;
+  place->dividor = p->dividor;
+  return place;
+}
+*/
+
 
 /*************************************************************
   FUNCTION
