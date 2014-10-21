@@ -682,6 +682,31 @@ static Place *getNextLegalNotePlace(struct Notes *note){
   return end;
 }
 
+static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
+  Place firstLegal, lastLegal;
+
+  struct Notes *next = NextNote(note);
+  
+  if(next!=NULL)
+    PlaceTilLimit(&lastLegal, &next->l.p);
+  else
+    PlaceSetLastPos(block, &lastLegal);
+
+  Place *last_pitch = ListLastPlace3(&note->pitches->l);
+  Place *last_velocity = ListLastPlace3(&note->velocities->l);
+  Place *startPlace = &note->l.p;
+
+  if (last_pitch==NULL)
+    last_pitch = startPlace;
+  if (last_velocity==NULL)
+    last_velocity = startPlace;
+
+  Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
+  PlaceFromLimit(&firstLegal, firstLegalConst);
+
+  note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+}
+
 static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
   Place old_place = note->l.p;
 
@@ -1015,10 +1040,11 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     MoveNote(wblock->block, wtrack->track, note, &place);
 
-  } else if (velocitynum==nodes->num_elements-1)
+  } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
+    MoveEndNote(wblock->block, wtrack->track, note, &place);
 
-  else {
+  } else {
     Place firstLegalPlace,lastLegalPlace;
     PlaceFromLimit(&firstLegalPlace, &note->l.p);
     PlaceTilLimit(&lastLegalPlace, &note->end);

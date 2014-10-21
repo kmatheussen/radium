@@ -841,7 +841,10 @@ Place *ListLastPlace3(struct ListHeader3 *list){
 		if(list->next==NULL) break;
 		list=list->next;
 	}
-	return &list->p;
+        if (list==NULL)
+          return NULL;
+        else
+          return &list->p;
 }
 
 void *ListLast3(struct ListHeader3 *list){
