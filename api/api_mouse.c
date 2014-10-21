@@ -682,26 +682,22 @@ static Place *getNextLegalNotePlace(struct Notes *note){
   return end;
 }
 
-static Place *getPrevLegalPitchPlace(struct Notes *note, struct Pitches *pitch){
-  Place *end = &note->l.p;
+static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
+  Place old_place = note->l.p;
 
-  struct Pitches *prev = ListPrevElement3(&note->pitches->l, &pitch->l);
-
-  if (prev != NULL)
-    end = PlaceMax(end, &prev->l.p);
-
-  return end;
+  if (PlaceLessThan(place, &old_place)) {
+    Place *prev_legal = getPrevLegalNotePlace(track, note);
+    if (PlaceLessOrEqual(place, prev_legal))
+      PlaceFromLimit(place, prev_legal);
+  } else {
+    Place *next_legal = getNextLegalNotePlace(note);
+    if (PlaceGreaterOrEqual(place, next_legal))
+      PlaceTilLimit(place, next_legal);
+  }
+  
+  note->l.p = *place;
+  ReplaceNoteEnds(block, track, &old_place, place);    
 }
-
-static Place *getNextLegalPitchPlace(struct Notes *note, struct Pitches *pitch){
-  Place *end = &note->end;
-
-  if (NextPitch(pitch) != NULL)
-    end = PlaceMin(end, &NextPitch(pitch)->l.p);
-
-  return end;
-}
-
 
 void setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -711,6 +707,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   if (wtrack==NULL)
     return;
   
+  struct Tracks *track = wtrack->track;
   struct Blocks *block = wblock->block;
 
   value = R_BOUNDARIES(1,value,127);
@@ -721,7 +718,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   struct Notes *note;
   struct Pitches *pitch;
 
-  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+  if (getPitch(num, &pitch, &note, track)==false)
     return;
 
   if (pitch != NULL) {
@@ -737,20 +734,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   } else {
     
     note->note = value;    
-    Place old_place = note->l.p;
-
-    if (PlaceLessThan(&place, &old_place)) {
-      Place *prev_legal = getPrevLegalNotePlace(wtrack->track, note);
-      if (PlaceLessOrEqual(&place, prev_legal))
-        PlaceFromLimit(&place, prev_legal);
-    } else {
-      Place *next_legal = getNextLegalNotePlace(note);
-      if (PlaceGreaterOrEqual(&place, next_legal))
-        PlaceTilLimit(&place, next_legal);
-    }
-
-    note->l.p = place;
-    ReplaceNoteEnds(block, wtrack->track, &old_place, &place);    
+    MoveNote(block, track, note, &place);
   }
 
   UpdateTrackReallines(window,wblock,wtrack);
@@ -1024,16 +1008,17 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     return;
   }
 
-  if (velocitynum==0)
-    note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
+  Place place;
+  Float2Placement(floatplace, &place);
 
-  else if (velocitynum==nodes->num_elements-1)
+  if (velocitynum==0) {
+    note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
+    MoveNote(wblock->block, wtrack->track, note, &place);
+
+  } else if (velocitynum==nodes->num_elements-1)
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
 
   else {
-    Place place;
-    Float2Placement(floatplace, &place);
-
     Place firstLegalPlace,lastLegalPlace;
     PlaceFromLimit(&firstLegalPlace, &note->l.p);
     PlaceTilLimit(&lastLegalPlace, &note->end);
