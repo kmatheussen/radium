@@ -1096,6 +1096,25 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   wblock->block->is_dirty = true;
 }
 
+void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+ struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
+    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[velocitynum];
+  struct Velocities *current = (struct Velocities*)node->element;
+  current_node = &current->l;
+}
+
 
 // ctrl / shift keys
 //////////////////////////////////////////////////

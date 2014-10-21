@@ -592,6 +592,20 @@
                                                         #t)
                             _                      :> #f)))))
 
+
+;; show current velocity
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and *current-note-num*
+              (inside-box (ra:get-box track-fx) $x $y)
+              (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
+                     (existing-box Num Box) :> (begin
+                                                 (ra:set-current-velocity-node Num *current-note-num*)
+                                                 #t)
+                     _                      :> (begin
+                                                 (ra:cancel-current-node)
+                                                 #f)))))
+
 #||
 (ra:get-num-velocities 0 0)
 
@@ -600,17 +614,6 @@
 (ra:get-velocity-value 7 1)
 
 
-;; show current velocity
-(add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (and (inside-box (ra:get-box velocity-area) $x $y)
-              (match (list (find-node $x $y get-velocity-box (ra:get-num-velocitys)))
-                     (existing-box Num Box) :> (begin
-                                                 (ra:set-current-tempo-node Num)
-                                                 #t)
-                     _                      :> (begin
-                                                 (ra:cancel-current-node)
-                                                 #f)))))
 
 ||#
 
