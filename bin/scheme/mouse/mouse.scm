@@ -578,6 +578,20 @@
                                            (ra:set-velocity Num Value Place *current-note-num* *current-track-num*)))
 
 
+;; delete velocity
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     *current-note-num*
+                     (inside-box (ra:get-box track-fx) $x $y)
+                     (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
+                            (existing-box Num Box) :> (begin
+                                                        (ra:undo-notes *current-track-num*)
+                                                        (ra:delete-velocity Num *current-note-num* *current-track-num*)
+                                                        #t)
+                            _                      :> #f)))))
+
 #||
 (ra:get-num-velocities 0 0)
 
@@ -585,18 +599,6 @@
 (ra:get-velocitynode-y 2 0)
 (ra:get-velocity-value 7 1)
 
-;; delete velocity
-(add-mouse-cycle
- (make-mouse-cycle
-  :press-func (lambda ($button $x $y)
-                (and (= $button *right-button*)
-                     (inside-box (ra:get-box velocity-area) $x $y)                                     
-                     (match (list (find-node $x $y get-velocity-box (ra:get-num-velocitys)))
-                            (existing-box Num Box) :> (begin
-                                                        (ra:undo-velocitys)
-                                                        (ra:delete-velocity Num)
-                                                        #t)
-                            _                      :> #f)))))
 
 ;; show current velocity
 (add-mouse-move-handler

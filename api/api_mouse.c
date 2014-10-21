@@ -1057,6 +1057,46 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
   wblock->block->is_dirty = true;
 }
 
+void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+ struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  struct Blocks *block=wblock->block;
+  struct Tracks *track=wtrack->track;
+
+  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
+    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    return;
+  }
+
+  bool is_first = velocitynum==0;
+  bool is_last_and_no_velocities = nodes->num_elements==2;
+  bool is_last_and_there_are_pitches = velocitynum==nodes->num_elements-1 && note->pitches!=NULL;
+
+  if (is_first || is_last_and_no_velocities || is_last_and_there_are_pitches){
+    RemoveNote(block, track, note);
+    UpdateTrackReallines(window,wblock,wtrack);
+
+  } else if (velocitynum==nodes->num_elements-1) {
+    struct Velocities *last = (struct Velocities*)ListLast3(&note->velocities->l);
+    note->end = last->l.p;
+    note->velocity_end = last->velocity;
+    ListRemoveElement3(&note->velocities, &last->l);
+
+  } else {
+    ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
+
+  }
+
+  wblock->block->is_dirty = true;
+}
+
+
 // ctrl / shift keys
 //////////////////////////////////////////////////
 
