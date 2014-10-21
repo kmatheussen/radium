@@ -137,7 +137,7 @@ void OS_PlayFromStart(MidiPortOs port){
 }
 
 
-extern LANGSPEC void OS_InitMidiTiming();
+extern LANGSPEC void OS_InitMidiTiming(void);
 
 // quick hack, called from player.c (TODO: find a better API without making spaghetti) (well, maybe this is the cleanest way...)
 void OS_InitMidiTiming(void){

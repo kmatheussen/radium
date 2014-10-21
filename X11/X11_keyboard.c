@@ -69,7 +69,7 @@ static void set_keyup(int keynum){
   HASH_put_int(keyupdowns,key,0);
 }
 
-static bool get_keyupdown(keynum){
+static bool get_keyupdown(int keynum){
   char key[128];
   sprintf(key,"%d",keynum);
   return HASH_has_key(keyupdowns,key) && HASH_get_int(keyupdowns,key)==1;

@@ -110,7 +110,7 @@ void openRequester(char *text, int width, int height){
   requester = GFX_OpenReq(window,width,height,text);
 }
 
-void closeRequester(){
+void closeRequester(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
   if(requester!=NULL){

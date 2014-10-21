@@ -4,7 +4,7 @@
 #  define LANGSPEC
 #endif
 
-extern LANGSPEC void create_jack_plugins();
+extern LANGSPEC void create_jack_plugins(void);
 
 struct SoundPlugin;
 extern LANGSPEC const char *JACK_get_name(SoundPlugin *plugin, int portnum);

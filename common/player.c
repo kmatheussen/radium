@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 extern struct Root *root;
 
-extern LANGSPEC void OS_InitMidiTiming();
+extern LANGSPEC void OS_InitMidiTiming(void);
 
 void PlayerTask(STime reltime){
 	static STime addreltime=0;
