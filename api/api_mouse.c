@@ -819,7 +819,9 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
   struct Notes *note = getNoteAtPlace(wtrack->track, &place);
 
   value = R_BOUNDARIES(0,value,127);
-  
+
+  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
+    
   if(note==NULL)
     return addNote2(window, wblock, wtrack, &place, value);
   else

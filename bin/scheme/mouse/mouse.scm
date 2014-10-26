@@ -489,9 +489,10 @@
                         :Get-max-value get-max-pitch-in-current-track
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
-                                           (ra:undo-notes *current-track-num*) ;; ra:create-pitch cant fail
                                            (define Num (ra:create-pitch Value Place *current-track-num*))
-                                           (callback Num (ra:get-pitch-value Num *current-track-num*)))
+                                           (if (= -1 Num)
+                                               #f
+                                               (callback Num (ra:get-pitch-value Num *current-track-num*))))
                         :Move-node (lambda (Num Value Place) (ra:set-pitch Num Value Place *current-track-num*))
                         :Get-pixels-per-value-unit (lambda ()
                                                      5.0)
