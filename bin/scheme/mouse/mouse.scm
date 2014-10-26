@@ -217,7 +217,7 @@
 ||#
 
 (define (get-common-node-box $x $y)
-  (define width/2 (/ (ra:get-temponode-width) 1.5)) ;; if changing 1.5 here, also change 1.5 in draw_skewed_box in Render.cpp
+  (define width/2 (ra:get-half-of-node-width))
   (define x1 (- $x width/2))
   (define y1 (- $y width/2))
   (define x2 (+ $x width/2))
@@ -248,6 +248,10 @@
                (else
                 (find-node $x $y $get-node-box $num-nodes (1+ $num)))))))
 
+(define-struct node-data
+  :num
+  :box
+  )
 
 (delafina (add-node-mouse-handler :$get-area-box-func
                                   :$get-node-box
@@ -326,6 +330,76 @@
    )
   )
       
+(delafina (add-node-mouse-handler3 :Get-area-box
+                                   :Get-existing-node-info
+                                   :Get-min-value
+                                   :Get-max-value
+                                   :Make-undo
+                                   :Create-new-node
+                                   :Move-node
+                                   :Get-pixels-per-value-unit #f
+                                   )
+
+  (define-struct node
+    :num
+    :value
+    :y)
+
+  (add-delta-mouse-handler
+   :press (lambda (Button X Y)
+            ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
+            (define area-box (Get-area-box))
+            (and (= Button *left-button*)
+                 (and area-box
+                      (or (and (inside-box-forgiving area-box X Y)
+                               (Get-existing-node-info X
+                                                       Y
+                                                       (lambda (Num Value Node-y)
+                                                         (Make-undo)
+                                                         (make-node :num Num
+                                                                    :value Value
+                                                                    :y Node-y
+                                                                    ))))
+                          (and (inside-box area-box X Y)
+                               (begin
+                                 (define min (Get-min-value))
+                                 (define max (Get-max-value))
+                                 (c-display "min/max" min max)
+                                 (define value (scale X
+                                                      (area-box :x1) (area-box :x2)
+                                                      min max))
+                                 (Create-new-node value
+                                                  (ra:get-place-from-y Y)
+                                                  (lambda (Num Value)
+                                                    (make-node :num Num
+                                                               :value Value
+                                                               :y Y)))))))))
+
+   :move-and-release (lambda (Button Dx Dy Node)
+                       ;;(c-display "temponode box" (box-to-string ($temponode :box)))
+                       (define min (Get-min-value))
+                       (define max (Get-max-value))
+                       (define area-box (Get-area-box))
+                       (define node-area-width (area-box :width))
+                       (define pixels-per-value-unit (if Get-pixels-per-value-unit
+                                                         (Get-pixels-per-value-unit)
+                                                         (/ node-area-width
+                                                            (- max min))))
+                       (define new-value (+ (Node :value)
+                                            (/ Dx
+                                               pixels-per-value-unit)))
+                       ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
+                       (define new-y (+ (Node :y)
+                                        Dy))                                                 
+                       ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
+                       (Move-node (Node :num) new-value (ra:get-place-from-y new-y))
+                       (make-node :num (Node :num)
+                                  :value new-value
+                                  :y new-y))
+   )
+  )
+      
+      
 
 ;; temponodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -342,16 +416,24 @@
   (get-common-node-box (ra:get-temponode-x $num)
                        (ra:get-temponode-y $num)))
 
-;; add and move temponode
-(add-node-mouse-handler :$get-area-box-func (lambda () (ra:get-box temponode-area))
-                        :$get-node-box get-temponode-box
-                        :$get-num-nodes-func ra:get-num-temponodes
-                        :$get-node-value-func ra:get-temponode-value
-                        :$get-min-value-func (lambda () (- (1- (ra:get-temponode-max))))
-                        :$get-max-value-func (lambda () (1- (ra:get-temponode-max)))
-                        :$make-undo-func ra:undo-temponodes
-                        :$create-node-func ra:create-temponode
-                        :$move-node-func ra:set-temponode)
+
+(add-node-mouse-handler3 :Get-area-box (lambda () (ra:get-box temponode-area))
+                         :Get-existing-node-info (lambda (X Y callback)
+                                                   (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
+                                                          (existing-box Num Box) :> (callback Num (ra:get-temponode-value Num) (Box :y))
+                                                          _                      :> #f))
+                         :Get-min-value (lambda () (- (1- (ra:get-temponode-max))))
+                         :Get-max-value (lambda () (1- (ra:get-temponode-max)))
+                         :Make-undo ra:undo-temponodes
+                         :Create-new-node (lambda (Value Place callback)
+                                            (define Num (ra:create-temponode Value Place))
+                                            (if (= -1 Num)
+                                                #f
+                                                (callback Num (ra:get-temponode-value Num))))
+                         :Move-node ra:set-temponode
+                         :Get-pixels-per-value-unit #f
+                         )
+
                         
 
 ;; delete temponode
@@ -370,7 +452,7 @@
 ;; highlight current temponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (and (inside-box (ra:get-box temponode-area) $x $y)
+         (and (inside-box-forgiving (ra:get-box temponode-area) $x $y)
               (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                      (existing-box Num Box) :> (begin
                                                  (ra:set-current-tempo-node Num)

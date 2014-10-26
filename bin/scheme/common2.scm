@@ -242,3 +242,10 @@
 
 #||
 ||#
+
+(define (inside-box-forgiving Box X Y) ;; Inside a box, inluding half the width of a node.
+  (define width/2 (1+ (ra:get-half-of-node-width)))
+  (and (>= X (- (Box :x1) width/2))
+       (<  X (+ (Box :x2) width/2))
+       (>= Y (Box :y1))
+       (<  Y (Box :y2))))

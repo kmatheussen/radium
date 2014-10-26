@@ -56,6 +56,10 @@ void cancelCurrentNode(void){
   }
 }
 
+float getHalfOfNodeWidth(void){
+  return root->song->tracker_windows->fontheight / 1.5;
+}
+
 static int get_realline_y1(const struct Tracker_Windows *window, int realline){
   return window->fontheight*realline - scroll_pos + window->wblock->t.y1;
 }
@@ -348,10 +352,6 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   UpdateAllTrackReallines(window,wblock);
   
   block->is_dirty = true;
-}
-
-float getTemponodeWidth(void){
-  return root->song->tracker_windows->fontheight;
 }
 
 int getNumTemponodes(int blocknum, int windownum){

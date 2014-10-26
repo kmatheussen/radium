@@ -114,7 +114,7 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
                             )
 {
  
-  float minnodesize = window->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in get-node-box in mouse.scm
+  float minnodesize = window->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api_mouse.c
   float x1 = x-minnodesize;
   float x2 = x+minnodesize;
   float y1 = y-minnodesize;
