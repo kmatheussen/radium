@@ -253,84 +253,7 @@
   :box
   )
 
-(delafina (add-node-mouse-handler :$get-area-box-func
-                                  :$get-node-box
-                                  :$get-num-nodes-func
-                                  :$get-node-value-func
-                                  :$get-min-value-func
-                                  :$get-max-value-func
-                                  :$make-undo-func
-                                  :$create-node-func
-                                  :$move-node-func
-                                  :$get-pixels-per-value-unit #f
-                                  )
-
-  (define-struct node
-    :num
-    :box
-    :value
-    :y)
-
-  (add-delta-mouse-handler
-   :press (lambda ($button $x $y)
-            ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
-            (and (= $button *left-button*)
-                 ($get-area-box-func)
-                 (inside-box ($get-area-box-func) $x $y)
-                 (match (list (find-node $x $y $get-node-box ($get-num-nodes-func)))
-                        ;not-found :> #f
-                        ;before    :> #f
-                        ;after     :> #f
-                        (existing-box Num Box) :> (begin
-                                                    ($make-undo-func)
-                                                    (make-node :num Num
-                                                               :box Box
-                                                               :value ($get-node-value-func Num)
-                                                               :y (Box :y)))
-                        _                      :> (begin
-                                                    (define min ($get-min-value-func))
-                                                    (define max ($get-max-value-func))
-                                                    ;;(c-display "min/max" min max)
-                                                    (define node-area ($get-area-box-func))
-                                                    (define value (scale $x
-                                                                         (node-area :x1) (node-area :x2)
-                                                                         min max))
-                                                    (define new-num ($create-node-func value (ra:get-place-from-y $y)))
-                                                    (if (and new-num
-                                                             (not (= -1 new-num)))
-                                                        (let ((new-box ($get-node-box new-num)))
-                                                          (make-node :num new-num
-                                                                     :box new-box
-                                                                     :value ($get-node-value-func new-num)
-                                                                     :y $y))
-                                                        #f)))))
-   
-   :move-and-release (lambda ($button $dx $dy $node)
-                       ;;(c-display "temponode box" (box-to-string ($temponode :box)))
-                       (define min ($get-min-value-func))
-                       (define max ($get-max-value-func))
-                       (define node-area ($get-area-box-func))
-                       (define node-area-width (node-area :width))
-                       (define pixels-per-value-unit (if $get-pixels-per-value-unit
-                                                         ($get-pixels-per-value-unit)
-                                                         (/ node-area-width
-                                                            (- max min))))
-                       (define new-value (+ ($node :value)
-                                            (/ $dx
-                                               pixels-per-value-unit)))
-                       ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
-                       (define new-y (+ ($node :y)
-                                        $dy))                                                 
-                       ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
-                       ($move-node-func ($node :num) new-value (ra:get-place-from-y new-y))
-                       (make-node :num ($node :num)
-                                  :box ($node :box)
-                                  :value new-value
-                                  :y new-y))
-   )
-  )
-      
-(delafina (add-node-mouse-handler3 :Get-area-box
+(delafina (add-node-mouse-handler :Get-area-box
                                    :Get-existing-node-info
                                    :Get-min-value
                                    :Get-max-value
@@ -417,22 +340,22 @@
                        (ra:get-temponode-y $num)))
 
 
-(add-node-mouse-handler3 :Get-area-box (lambda () (ra:get-box temponode-area))
-                         :Get-existing-node-info (lambda (X Y callback)
-                                                   (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
-                                                          (existing-box Num Box) :> (callback Num (ra:get-temponode-value Num) (Box :y))
-                                                          _                      :> #f))
-                         :Get-min-value (lambda () (- (1- (ra:get-temponode-max))))
-                         :Get-max-value (lambda () (1- (ra:get-temponode-max)))
-                         :Make-undo ra:undo-temponodes
-                         :Create-new-node (lambda (Value Place callback)
-                                            (define Num (ra:create-temponode Value Place))
-                                            (if (= -1 Num)
-                                                #f
-                                                (callback Num (ra:get-temponode-value Num))))
-                         :Move-node ra:set-temponode
-                         :Get-pixels-per-value-unit #f
-                         )                        
+(add-node-mouse-handler :Get-area-box (lambda () (ra:get-box temponode-area))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
+                                                         (existing-box Num Box) :> (callback Num (ra:get-temponode-value Num) (Box :y))
+                                                         _                      :> #f))
+                        :Get-min-value (lambda () (- (1- (ra:get-temponode-max))))
+                        :Get-max-value (lambda () (1- (ra:get-temponode-max)))
+                        :Make-undo ra:undo-temponodes
+                        :Create-new-node (lambda (Value Place callback)
+                                           (define Num (ra:create-temponode Value Place))
+                                           (if (= -1 Num)
+                                               #f
+                                               (callback Num (ra:get-temponode-value Num))))
+                        :Move-node ra:set-temponode
+                        :Get-pixels-per-value-unit #f
+                        )                        
 
 ;; delete temponode
 (add-mouse-cycle
@@ -555,24 +478,24 @@
                                         #f)))
 
 ;; add and move
-(add-node-mouse-handler3 :Get-area-box (lambda ()
-                                         (and *current-track-num*
-                                              (ra:get-box track-notes *current-track-num*)))
-                         :Get-existing-node-info (lambda (X Y callback)
-                                                   (match (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*)))
-                                                          (existing-box Num Box) :> (callback Num (ra:get-pitch-value Num *current-track-num*) (Box :y))
-                                                          _                      :> #f))
-                         :Get-min-value get-min-pitch-in-current-track
-                         :Get-max-value get-max-pitch-in-current-track
-                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
-                         :Create-new-node (lambda (Value Place callback)
-                                            (ra:undo-notes *current-track-num*) ;; ra:create-pitch cant fail
-                                            (define Num (ra:create-pitch Value Place *current-track-num*))
-                                            (callback Num (ra:get-pitch-value Num *current-track-num*)))
-                         :Move-node (lambda (Num Value Place) (ra:set-pitch Num Value Place *current-track-num*))
-                         :Get-pixels-per-value-unit (lambda ()
-                                                      5.0)
-                         )
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (and *current-track-num*
+                                             (ra:get-box track-notes *current-track-num*)))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (match (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+                                                         (existing-box Num Box) :> (callback Num (ra:get-pitch-value Num *current-track-num*) (Box :y))
+                                                         _                      :> #f))
+                        :Get-min-value get-min-pitch-in-current-track
+                        :Get-max-value get-max-pitch-in-current-track
+                        :Make-undo (lambda () (ra:undo-notes *current-track-num*))
+                        :Create-new-node (lambda (Value Place callback)
+                                           (ra:undo-notes *current-track-num*) ;; ra:create-pitch cant fail
+                                           (define Num (ra:create-pitch Value Place *current-track-num*))
+                                           (callback Num (ra:get-pitch-value Num *current-track-num*)))
+                        :Move-node (lambda (Num Value Place) (ra:set-pitch Num Value Place *current-track-num*))
+                        :Get-pixels-per-value-unit (lambda ()
+                                                     5.0)
+                        )
 
 
 ;; delete pitch
@@ -650,25 +573,25 @@
   (ra:get-num-velocities *current-note-num* *current-track-num*))
 
 ;; add and move velocity
-(add-node-mouse-handler3 :Get-area-box (lambda () (ra:get-box track-fx))
-                         :Get-existing-node-info (lambda (X Y callback)
-                                                   (and *current-note-num*
-                                                        (match (list (find-node X Y get-velocity-box (get-current-num-velocities)))
-                                                               (existing-box Num Box) :> (callback Num (ra:get-velocity-value Num *current-note-num* *current-track-num*) (Box :y))
-                                                               _                      :> #f)))
-                         :Get-min-value (lambda () 0.0)
-                         :Get-max-value (lambda () 1.0)
-                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
-                         :Create-new-node (lambda (Value Place callback)
-                                            (and *current-note-num*
-                                                 (begin
-                                                   (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
-                                                   (if (= -1 Num)
-                                                       #f
-                                                       (callback Num (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
-                         :Move-node (lambda (Num Value Place)
-                                      (ra:set-velocity Num Value Place *current-note-num* *current-track-num*))
-                         )
+(add-node-mouse-handler :Get-area-box (lambda () (ra:get-box track-fx))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (and *current-note-num*
+                                                       (match (list (find-node X Y get-velocity-box (get-current-num-velocities)))
+                                                              (existing-box Num Box) :> (callback Num (ra:get-velocity-value Num *current-note-num* *current-track-num*) (Box :y))
+                                                              _                      :> #f)))
+                        :Get-min-value (lambda () 0.0)
+                        :Get-max-value (lambda () 1.0)
+                        :Make-undo (lambda () (ra:undo-notes *current-track-num*))
+                        :Create-new-node (lambda (Value Place callback)
+                                           (and *current-note-num*
+                                                (begin
+                                                  (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
+                                                  (if (= -1 Num)
+                                                      #f
+                                                      (callback Num (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
+                        :Move-node (lambda (Num Value Place)
+                                     (ra:set-velocity Num Value Place *current-note-num* *current-track-num*))
+                        )
 
 ;; delete velocity
 (add-mouse-cycle
