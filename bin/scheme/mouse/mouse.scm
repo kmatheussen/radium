@@ -290,7 +290,7 @@
                         _                      :> (begin
                                                     (define min ($get-min-value-func))
                                                     (define max ($get-max-value-func))
-                                                    (c-display "min/max" min max)
+                                                    ;;(c-display "min/max" min max)
                                                     (define node-area ($get-area-box-func))
                                                     (define value (scale $x
                                                                          (node-area :x1) (node-area :x2)
@@ -432,9 +432,7 @@
                                                 (callback Num (ra:get-temponode-value Num))))
                          :Move-node ra:set-temponode
                          :Get-pixels-per-value-unit #f
-                         )
-
-                        
+                         )                        
 
 ;; delete temponode
 (add-mouse-cycle
@@ -557,21 +555,24 @@
                                         #f)))
 
 ;; add and move
-(add-node-mouse-handler :$get-area-box-func (lambda ()
-                                              (and *current-track-num*
-                                                   (ra:get-box track-notes *current-track-num*)))
-                        :$get-node-box get-pitch-box
-                        :$get-num-nodes-func (lambda () (ra:get-num-pitches *current-track-num*))
-                        :$get-node-value-func (lambda ($num) (ra:get-pitch-value $num *current-track-num*))
-                        :$get-min-value-func get-min-pitch-in-current-track
-                        :$get-max-value-func get-max-pitch-in-current-track
-                        :$make-undo-func (lambda () (ra:undo-notes *current-track-num*))
-                        :$create-node-func (lambda ($value $place)
-                                             (ra:undo-notes *current-track-num*)
-                                             (ra:create-pitch $value $place *current-track-num*))
-                        :$move-node-func (lambda ($num $value $place) (ra:set-pitch $num $value $place *current-track-num*))
-                        :$get-pixels-per-value-unit (lambda ()
-                                                      5.0))
+(add-node-mouse-handler3 :Get-area-box (lambda ()
+                                         (and *current-track-num*
+                                              (ra:get-box track-notes *current-track-num*)))
+                         :Get-existing-node-info (lambda (X Y callback)
+                                                   (match (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+                                                          (existing-box Num Box) :> (callback Num (ra:get-pitch-value Num *current-track-num*) (Box :y))
+                                                          _                      :> #f))
+                         :Get-min-value get-min-pitch-in-current-track
+                         :Get-max-value get-max-pitch-in-current-track
+                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
+                         :Create-new-node (lambda (Value Place callback)
+                                            (ra:undo-notes *current-track-num*) ;; ra:create-pitch cant fail
+                                            (define Num (ra:create-pitch Value Place *current-track-num*))
+                                            (callback Num (ra:get-pitch-value Num *current-track-num*)))
+                         :Move-node (lambda (Num Value Place) (ra:set-pitch Num Value Place *current-track-num*))
+                         :Get-pixels-per-value-unit (lambda ()
+                                                      5.0)
+                         )
 
 
 ;; delete pitch
