@@ -1006,6 +1006,8 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
     return -1;
   }
 
+  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
+  
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
   
   if (ret==-1){
