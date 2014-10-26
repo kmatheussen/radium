@@ -535,6 +535,69 @@
 ;; velocities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-struct velocity-info
+  :tracknum
+  :notenum
+  :velocitynum
+  :value
+  :y  
+  )
+
+(define (highest-rated-velocity-info . Args)
+  (match (list Args)
+         ()          :> #f
+         (#f . Rest) :> (apply highest-rated-velocity-info Rest)
+         (A  . ____) :> A))
+#||
+(highest-rated-velocity-info)
+(highest-rated-velocity-info 2)
+(highest-rated-velocity-info #f 3)
+(highest-rated-velocity-info 4 #f)
+||#
+
+(define-match get-velocity-2
+  X Y Tracknum Notenum Velocitynum Velocitynum      :> #f
+  X Y Tracknum Notenum Velocitynum Total-Velocities :> (begin                                                                     
+                                                         (define box (get-common-node-box (ra:get-velocity-x Velocitynum Notenum Tracknum)
+                                                                                          (ra:get-velocity-y Velocitynum Notenum Tracknum)))
+                                                         (if (> (box :y1) Y)
+                                                             #f
+                                                             (highest-rated-velocity-info (get-velocity-2 X Y Tracknum Notenum (1+ Velocitynum) Total-Velocities)
+                                                                                          (and (inside-box box X Y)
+                                                                                               (make-velocity-info :velocitynum Velocitynum
+                                                                                                                   :notenum Notenum
+                                                                                                                   :tracknum Tracknum
+                                                                                                                   :value (ra:get-velocity-value Velocitynum Notenum Tracknum)
+                                                                                                                   :y (box :y)
+                                                                                                                   ))))))
+
+(define-match get-velocity-1
+  X Y Tracknum Notenum Notenum     :> #f
+  X Y Tracknum Notenum Total-Notes :> (highest-rated-velocity-info (get-velocity-1 X Y Tracknum (1+ Notenum) Total-Notes)
+                                                                   (get-velocity-2 X Y Tracknum Notenum 0 (ra:get-num-velocities Notenum Tracknum))))
+                                   
+  
+(define-match get-velocity-0
+  X Y -1       :> #f
+  X Y Tracknum :> #f :where (>= Tracknum (ra:get-num-tracks))
+  X Y Tracknum :> (get-velocity-1 X Y Tracknum 0 (ra:get-num-notes Tracknum)))
+  
+(define-match get-velocity-info
+  X Y #f       :> (get-velocity-info X Y 0)
+  X Y Tracknum :> (highest-rated-velocity-info (get-velocity-0 X Y (1- Tracknum))
+                                               (get-velocity-0 X Y Tracknum)
+                                               (get-velocity-0 X Y (1+ Tracknum))))
+
+
+#||
+(let ((node (get-velocity-info 319 169 0)))
+  (c-display (node :velocitynum) (node :notenum) (node :tracknum)))
+        
+
+(ra:get-velocity-x 1 0 0)
+(ra:get-velocity-y 1 0 0)
+||#
+
 (define *current-note-num* #f)
 
 
@@ -576,22 +639,27 @@
 ;; add and move velocity
 (add-node-mouse-handler :Get-area-box (lambda () (ra:get-box track-fx))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and *current-note-num*
-                                                       (match (list (find-node X Y get-velocity-box (get-current-num-velocities)))
-                                                              (existing-box Num Box) :> (callback Num (ra:get-velocity-value Num *current-note-num* *current-track-num*) (Box :y))
-                                                              _                      :> #f)))
+                                                  (define velocity-info (get-velocity-info X Y *current-track-num*))
+                                                  (and velocity-info
+                                                       (callback velocity-info (velocity-info :value) (velocity-info :y))))
                         :Get-min-value (lambda () 0.0)
                         :Get-max-value (lambda () 1.0)
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
-                                           (and *current-note-num*
+                                           (and #t *current-note-num*
                                                 (begin
                                                   (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
                                                       #f
-                                                      (callback Num (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
-                        :Move-node (lambda (Num Value Place)
-                                     (ra:set-velocity Num Value Place *current-note-num* *current-track-num*))
+                                                      (callback (make-velocity-info :tracknum *current-track-num*
+                                                                                    :notenum *current-note-num*
+                                                                                    :velocitynum Num
+                                                                                    :value Value
+                                                                                    :y #f ;; dont need it.
+                                                                                    )
+                                                                (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
+                        :Move-node (lambda (velocity-info Value Place)
+                                     (ra:set-velocity (velocity-info :velocitynum) Value Place (velocity-info :notenum) (velocity-info :tracknum)))
                         )
 
 ;; delete velocity
@@ -600,7 +668,7 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      *current-note-num*
-                     (inside-box (ra:get-box track-fx) $x $y)
+                     (inside-box-forgiving (ra:get-box track-fx) $x $y)
                      (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
                             (existing-box Num Box) :> (begin
                                                         (ra:undo-notes *current-track-num*)
@@ -613,7 +681,7 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-note-num*
-              (inside-box (ra:get-box track-fx) $x $y)
+              (inside-box-forgiving (ra:get-box track-fx) $x $y)
               (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
                      (existing-box Num Box) :> (begin
                                                  (ra:set-current-velocity-node Num *current-note-num*)
