@@ -32,10 +32,10 @@
   (push-back! *mouse-cycles*
               $mouse-cycle))
 
-
-(define (get-mouse-cycle button x y)
-  #f)
-
+(define (get-mouse-cycle $button $x $y)
+  (find-if (lambda (cycle)
+             ((cycle :press-func) $button $x $y))
+           *mouse-cycles*))
 
 (delafina (add-delta-mouse-handler :press :move-and-release)
   (define start-x #f)
@@ -76,11 +76,6 @@
   (if (not *current-mouse-cycle*)
       (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
   current-mouse-cycle)
-
-(define (get-mouse-cycle $button $x $y)
-  (find-if (lambda (cycle)
-             ((cycle :press-func) $button $x $y))
-           *mouse-cycles*))
   
 (define (radium-mouse-press $button $x $y)
   ;;(c-display "mouse press" $button $x $y)
@@ -248,80 +243,125 @@
                (else
                 (find-node $x $y $get-node-box $num-nodes (1+ $num)))))))
 
-(define-struct node-data
-  :num
-  :box
+
+(define-struct move-node-handler
+  :move
+  :node)
+
+(define-struct node-mouse-cycle
+  :press
+  :move-and-release
   )
 
-(delafina (add-node-mouse-handler :Get-area-box
-                                   :Get-existing-node-info
-                                   :Get-min-value
-                                   :Get-max-value
-                                   :Make-undo
-                                   :Create-new-node
-                                   :Move-node
-                                   :Get-pixels-per-value-unit #f
-                                   )
+(define *move-existing-node-mouse-cycles* '())
+(define *create-new-node-mouse-cycles* '())
 
+(define-match get-cycle-and-node
+  ______ _ _ ()             :> #f
+  Button X Y (Cycle . Rest) :> (let ((Node ((Cycle :press) Button X Y)))
+                                 (if Node
+                                     (make-move-node-handler :move (Cycle :move-and-release) :node Node)
+                                     (get-cycle-and-node Button X Y Rest))))
+  
+;; This cycle handler makes sure all move-existing-node cycles are given a chance to run before the create-new-node cycles.
+(add-delta-mouse-handler
+ :press (lambda (Button X Y)
+          (get-cycle-and-node Button
+                              X
+                              Y
+                              (append *move-existing-node-mouse-cycles*
+                                      *create-new-node-mouse-cycles*)))
+ 
+ :move-and-release (lambda (Button Dx Dy Cycle-and-node)
+                     (define Move (Cycle-and-node :move))
+                     (define Old-node (Cycle-and-node :node))
+                     (define New-node (Move Button Dx Dy Old-node))
+                     (make-move-node-handler :move Move :node New-node))
+ )
+
+
+
+(delafina (add-node-mouse-handler :Get-area-box
+                                  :Get-existing-node-info
+                                  :Get-min-value
+                                  :Get-max-value
+                                  :Make-undo
+                                  :Create-new-node
+                                  :Move-node
+                                  :Get-pixels-per-value-unit #f
+                                  )
+  
   (define-struct node
     :node-info
     :value
     :y)
 
-  (add-delta-mouse-handler
-   :press (lambda (Button X Y)
-            ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
-            (define area-box (Get-area-box))
-            (and (= Button *left-button*)
-                 (and area-box
-                      (or (and (inside-box-forgiving area-box X Y)
-                               (Get-existing-node-info X
-                                                       Y
-                                                       (lambda (Node-info Value Node-y)
-                                                         (Make-undo)
-                                                         (make-node :node-info Node-info
-                                                                    :value Value
-                                                                    :y Node-y
-                                                                    ))))
-                          (and (inside-box area-box X Y)
-                               (begin
-                                 (define min (Get-min-value))
-                                 (define max (Get-max-value))
-                                 (c-display "min/max" min max)
-                                 (define value (scale X
-                                                      (area-box :x1) (area-box :x2)
-                                                      min max))
-                                 (Create-new-node value
-                                                  (ra:get-place-from-y Y)
-                                                  (lambda (Node-info Value)
-                                                    (make-node :node-info Node-info
-                                                               :value Value
-                                                               :y Y)))))))))
+  (define (press-and-move-existing-node Button X Y)
+    (define area-box (Get-area-box))
+    (and (= Button *left-button*)
+         area-box
+         (inside-box-forgiving area-box X Y)
+         (Get-existing-node-info X
+                                 Y
+                                 (lambda (Node-info Value Node-y)
+                                   (Make-undo)
+                                   (make-node :node-info Node-info
+                                              :value Value
+                                              :y Node-y
+                                              )))))
 
-   :move-and-release (lambda (Button Dx Dy Node)
-                       ;;(c-display "temponode box" (box-to-string ($temponode :box)))
-                       (define min (Get-min-value))
-                       (define max (Get-max-value))
-                       (define area-box (Get-area-box))
-                       (define node-area-width (area-box :width))
-                       (define pixels-per-value-unit (if Get-pixels-per-value-unit
-                                                         (Get-pixels-per-value-unit)
-                                                         (/ node-area-width
-                                                            (- max min))))
-                       (define new-value (+ (Node :value)
-                                            (/ Dx
-                                               pixels-per-value-unit)))
-                       ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
-                       (define new-y (+ (Node :y)
-                                        Dy))                                                 
-                       ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
-                       (Move-node (Node :node-info) new-value (ra:get-place-from-y new-y))
-                       (make-node :node-info (Node :node-info)
-                                  :value new-value
-                                  :y new-y))
-   )
+  (define (press-and-create-new-node Button X Y)
+    (define area-box (Get-area-box))
+    (and (= Button *left-button*)
+         area-box
+         (inside-box area-box X Y)
+         (begin
+           (define min (Get-min-value))
+           (define max (Get-max-value))
+           ;;(c-display "min/max" min max)
+           (define value (scale X
+                                (area-box :x1) (area-box :x2)
+                                min max))
+           (Create-new-node value
+                            (ra:get-place-from-y Y)
+                            (lambda (Node-info Value)
+                              (make-node :node-info Node-info
+                                         :value Value
+                                         :y Y))))))
+
+  (define (move-and-release Button Dx Dy Node)
+    ;;(c-display "temponode box" (box-to-string ($temponode :box)))
+    (define min (Get-min-value))
+    (define max (Get-max-value))
+    (define area-box (Get-area-box))
+    (define node-area-width (area-box :width))
+    (define pixels-per-value-unit (if Get-pixels-per-value-unit
+                                      (Get-pixels-per-value-unit)
+                                      (/ node-area-width
+                                         (- max min))))
+    (define new-value (+ (Node :value)
+                         (/ Dx
+                            pixels-per-value-unit)))
+    ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
+    (define new-y (+ (Node :y)
+                     Dy))                                                 
+    ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
+    (Move-node (Node :node-info) new-value (ra:get-place-from-y new-y))
+    (make-node :node-info (Node :node-info)
+               :value new-value
+               :y new-y))
+
+  (define move-existing-node-mouse-cycle (make-node-mouse-cycle :press press-and-move-existing-node
+                                                                :move-and-release move-and-release))
+  
+  (define create-new-node-mouse-cycle (make-node-mouse-cycle :press press-and-create-new-node
+                                                             :move-and-release move-and-release))
+
+  (push-back! *move-existing-node-mouse-cycles* move-existing-node-mouse-cycle)
+  (push-back! *create-new-node-mouse-cycles* create-new-node-mouse-cycle)
+
   )
-      
+
       
 
 ;; temponodes
