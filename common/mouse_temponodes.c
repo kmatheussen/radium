@@ -176,7 +176,7 @@ void SetMouseActionTempoNodes(
 
         TBox within;
 
-        wblock->mouse_track=TEMPONODETRACK;
+        //wblock->mouse_track=TEMPONODETRACK;
 
 	realline=GetReallineAndPlaceFromY(window,wblock,y,&place,NULL,NULL);
 

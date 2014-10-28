@@ -1031,7 +1031,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
 
 
   // nodes
-  if (wblock->mouse_track==wtrack->l.num && wblock->mouse_note==note)
+  if (wblock->mouse_note==note)
     VECTOR_FOR_EACH(Node *, node, nodes){
       draw_skewed_box(window, node->element, 5, node->x, node->y - wblock->t.y1);
     }END_VECTOR_FOR_EACH;

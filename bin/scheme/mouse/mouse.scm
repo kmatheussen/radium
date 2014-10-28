@@ -139,9 +139,15 @@
 (define *current-track-num* #f)
 
 (add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (set! *current-track-num* (get-track-num $x $y))
+ :move (lambda (Button X Y)
+         (set! *current-track-num* (get-track-num X Y))
          ;;(c-display "curr: " *current-track-num*)
+         (cond (*current-track-num*
+                (ra:set-mouse-track *current-track-num*))
+               ((inside-box (ra:get-box temponode-area) X Y)
+                (ra:set-mouse-track-to-reltempo))
+               (else
+                (ra:set-no-mouse-track)))
          #f))
 
 (define *current-subtrack-num* #f)
@@ -169,7 +175,7 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (set! *current-subtrack-num* (and *current-track-num*
-                                           (inside-box (ra:get-box track-fx) $x $y)
+                                           (inside-box (ra:get-box track-fx *current-track-num*) $x $y)
                                            (get-subtrack-from-x $x *current-track-num*)))
          ;;(c-display "current-subtrack-num" *current-subtrack-num*)
          #f))
@@ -624,9 +630,9 @@
   
 (define-match get-velocity-info
   X Y #f       :> (get-velocity-info X Y 0)
-  X Y Tracknum :> (highest-rated-velocity-info (get-velocity-0 X Y (1- Tracknum))
+  X Y Tracknum :> (highest-rated-velocity-info (get-velocity-0 X Y (1- Tracknum)) ;; node in the prev track can overlap into the current track
                                                (get-velocity-0 X Y Tracknum)
-                                               (get-velocity-0 X Y (1+ Tracknum))))
+                                               (get-velocity-0 X Y (1+ Tracknum)))) ;; node in the next track can overlap into the current track
 
 
 #||
@@ -666,7 +672,9 @@
  :move (lambda ($button $x $y)
          (set! *current-note-num* (and *current-subtrack-num*
                                        (get-note-num $x $y)))
-         (c-display "current-note-num" *current-note-num*)
+         ;;(c-display "current-note-num" *current-note-num* ", subtrack: " *current-subtrack-num* ", track: " *current-track-num*)
+         (if *current-note-num*
+             (ra:set-mouse-note *current-note-num* *current-track-num*))
          #f))
 
 (define (get-velocity-box $num)
@@ -677,7 +685,9 @@
   (ra:get-num-velocities *current-note-num* *current-track-num*))
 
 ;; add and move velocity
-(add-node-mouse-handler :Get-area-box (lambda () (ra:get-box track-fx))
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (and *current-track-num*
+                                             (ra:get-box track *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (define velocity-info (get-velocity-info X Y *current-track-num*))
                                                   (and velocity-info
@@ -708,7 +718,8 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      *current-note-num*
-                     (inside-box-forgiving (ra:get-box track-fx) $x $y)
+                     *current-track-num* 
+                     (inside-box-forgiving (ra:get-box track-fx *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
                             (existing-box Num Box) :> (begin
                                                         (ra:undo-notes *current-track-num*)
@@ -721,10 +732,11 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-note-num*
-              (inside-box-forgiving (ra:get-box track-fx) $x $y)
+              *current-track-num*
+              (inside-box-forgiving (ra:get-box track-fx *current-track-num*) $x $y)
               (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
                      (existing-box Num Box) :> (begin
-                                                 (ra:set-current-velocity-node Num *current-note-num*)
+                                                 (ra:set-current-velocity-node Num *current-note-num* *current-track-num*)
                                                  #t)
                      _                      :> (begin
                                                  (ra:cancel-current-node)

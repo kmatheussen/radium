@@ -42,16 +42,20 @@ int lastpointer=NOACTION;
 void SetMouseAction(
     struct Tracker_Windows *window,
     struct MouseAction *action,
-    int x,int y, int click
+    int x, int y, int click
 ){
 
   struct WBlocks *wblock=window->wblock;
 
+#if 0
   struct Notes *old_mouse_note = wblock->mouse_note;
+
   int old_mouse_track = wblock->mouse_track;
 
   //wblock->mouse_note = NULL;
   wblock->mouse_track = NOTRACK;
+#endif
+
 
   if(
      y>window->height ||
@@ -99,7 +103,9 @@ void SetMouseAction(
 	action->action=NOACTION;
 
  exit:
+        return;
 
+#if 0
         if(old_mouse_track!=wblock->mouse_track || old_mouse_note!=wblock->mouse_note){
           //printf("mouse.c: Drawing up tracks\n");
           UpdateAllWTracksCoordinates(window,wblock);
@@ -112,6 +118,8 @@ void SetMouseAction(
 #if !USE_OPENGL
         if(old_mouse_track!=wblock->mouse_track && (old_mouse_track==TEMPONODETRACK || wblock->mouse_track==TEMPONODETRACK))
           DrawUpWTempoNodes(window,wblock);
+#endif
+
 #endif
 }
 

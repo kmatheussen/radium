@@ -53,6 +53,7 @@ void SetMouseActionVelocities(
 	within.y1=Common_oldGetReallineY1Pos(window,wblock,realline);
 	within.y2=Common_oldGetReallineY2Pos(window,wblock,realline);
 
+#if 0
         // Find wblock->mouse_note
 
         {
@@ -78,7 +79,7 @@ void SetMouseActionVelocities(
             element=element->next;
           }
         }
-
+#endif
 
 	struct TrackReallineElements *element=wtrack->trackreallines[realline].trackreallineelements;
 

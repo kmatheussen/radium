@@ -49,6 +49,10 @@ extern volatile float scroll_pos;
 
 extern struct ListHeader3 *current_node;
 
+
+// various
+///////////////////////////////////////////////////
+
 void cancelCurrentNode(void){
   if (current_node != NULL){
     current_node = NULL;
@@ -68,8 +72,26 @@ static int get_realline_y2(const struct Tracker_Windows *window, int realline){
   return window->fontheight*(realline+1) - scroll_pos + window->wblock->t.y1;
 }
 
+void setNoMouseTrack(void){
+  setMouseTrack(NOTRACK);
+}
+
+void setMouseTrackToReltempo(void){
+  setMouseTrack(TEMPONODETRACK);
+}
+
+void setMouseTrack(int tracknum){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  if(tracknum != wblock->mouse_track){
+    wblock->mouse_track = tracknum;
+    wblock->block->is_dirty = true;
+  }
+}
 
 // placement (block time)
+///////////////////////////////////////////////////
 
 float getPlaceFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
@@ -101,6 +123,7 @@ float getPlaceFromY(float y, int blocknum, int windownum) {
 
 
 // reltempo
+///////////////////////////////////////////////////
 
 int getReltempoSliderX1(void){
   return root->song->tracker_windows->wblock->reltempo.x1;
@@ -910,6 +933,18 @@ int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
 
   return note->subtrack;
 }
+
+void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+  else
+    wblock->mouse_note = note;
+}
+
 
 // velocities
 //////////////////////////////////////////////////
