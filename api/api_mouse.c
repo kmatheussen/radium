@@ -934,6 +934,10 @@ int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
   return note->subtrack;
 }
 
+void setNoMouseNote(void){
+  root->song->tracker_windows->wblock->mouse_note = NULL;
+}
+
 void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;

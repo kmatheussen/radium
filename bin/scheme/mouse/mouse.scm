@@ -674,7 +674,8 @@
                                        (get-note-num $x $y)))
          ;;(c-display "current-note-num" *current-note-num* ", subtrack: " *current-subtrack-num* ", track: " *current-track-num*)
          (if *current-note-num*
-             (ra:set-mouse-note *current-note-num* *current-track-num*))
+             (ra:set-mouse-note *current-note-num* *current-track-num*)
+             (ra:set-no-mouse-note))
          #f))
 
 (define (get-velocity-box $num)
