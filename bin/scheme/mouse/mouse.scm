@@ -117,10 +117,10 @@
 
 
 (define-match get-track-num-0
-  X _ ___ X1 __ __________ :> #f :where (< X X1)
-  X Y Num X1 X2 __________ :> Num :where (and (>= X X1)
+  X _ ___ X1 __ __________ :> #f  :where (< X X1)
+  X _ Num X1 X2 __________ :> Num :where (and (>= X X1)
                                               (< X X2))
-  _ _ Num __ __ Num-tracks :> #f :where (= (1+ Num) Num-tracks)
+  _ _ Num __ __ Num-tracks :> #f  :where (= (1+ Num) Num-tracks)
   X Y Num X1 X2 Num-tracks :> (get-track-num-0 X
                                                Y
                                                (1+ Num)
