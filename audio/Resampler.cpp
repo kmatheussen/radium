@@ -1,7 +1,28 @@
+/* Copyright 2012 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+#include <assert.h>
+#include <math.h>
 
 #include "../common/nsmtracker.h"
 
 #include "Resampler_proc.h"
+
+
+// The cubic interpolation code is just horror. Is there any ready-made code out there which can be just plugged in here? (seems like it's just horror when it comes to cubic interpolation in other programs too)
 
 
 struct Resampler{
@@ -63,7 +84,7 @@ static float cubic_interpolate(
 
   //float mu2 = mu*mu;
 
-#if 0
+  #if 0
   // This sounds horrible! Far far worse than linear interpolation. Is there an error on the web page of Paul Burke? (most likely an error in the code in this file though)
   a0 = y3 - y2 - y0 + y1;
   a1 = y0 - y1 - a0;
@@ -72,7 +93,7 @@ static float cubic_interpolate(
 
   // The "Catmull-Rom splines" sounds correct though:
 
-#else
+  #else
 
   float c = -0.5*y0;
   float d = 0.5*y3;
@@ -82,7 +103,7 @@ static float cubic_interpolate(
   a2 = c + 0.5*y2;
   a3 = y1;
 
-#endif
+  #endif
 
   //return (a0*mu*mu2 + a1*mu2 + a2*mu + a3);
   //return mu*(a0*mu2 + a1*mu + a2) + a3; // one less multiplication.
@@ -95,7 +116,7 @@ static float cubic_interpolate(
   float h_y3 = 0.5f * y3;
   return y1 + (mu * (((0.5f * y2) - h_y0) + (mu * (((y0 + (2 * y2)) - (h_y3 + (2.5f * y1))) + (mu * ((h_y3 + (1.5f * y1)) - ((1.5f * y2) + h_y0)))))));
 
-#if 0
+  #if 0
 [1]
 process(y0,y1,y2,y3,mu) =  a0*mu*mu2 + a1*mu2 + a2*mu + a3 with{
    mu2 = mu*mu;
@@ -104,7 +125,7 @@ process(y0,y1,y2,y3,mu) =  a0*mu*mu2 + a1*mu2 + a2*mu + a3 with{
    a2 = -0.5*y0 + 0.5*y2;
    a3 = y1;
 };
-#endif
+  #endif
 
 #endif
 }
@@ -136,14 +157,24 @@ struct InterpolatedResampler : public Resampler{
     _data_pos=0;
   }
 
-  float getNextSample(){
+  float getNextSample(){    
+    assert(_data_pos <= _data_length);
+    assert(_data_pos >= 0);
+
     if(_data_pos==_data_length)
       pull_more_data();
     if(_data_length==0)
       return 0.0f;
 
+    assert(_data_pos < _data_length);
+    assert(_data_pos >= 0);
+
     float ret=_data[_data_pos];
     _data_pos++;
+
+    assert(_data_pos <= _data_length);
+    assert(_data_pos >= 0);
+
     return ret;
   }
 
@@ -172,17 +203,31 @@ struct InterpolatedResampler : public Resampler{
   }
 
   float getCubicInterpolatedSample(double read_increment){
-    while(_curr_read_pos > 1.0){
-      _curr_read_pos-=1.0;
-      _y0=_y1;
-      _y1=_y2;
-      _y2=_y3;
-      _y3=getNextSample();
+    assert(isfinite(_curr_read_pos));
+    assert(isfinite(read_increment));
+    assert(isfinite(_curr_read_pos));
+    
+    while(_curr_read_pos >= 1.0){
+      _curr_read_pos -= 1.0;
+      _y0             = _y1;
+      _y1             = _y2;
+      _y2             = _y3;
+      _y3             = getNextSample();
+
+      assert(isfinite(_y0));
+      assert(isfinite(_y1));
+      assert(isfinite(_y2));
+      assert(isfinite(_y3));
     }
+
+    assert(_curr_read_pos >= 0);
+    assert(_curr_read_pos < 1.0);
+    
     if(_data_length==0)
       return 0.0f;
-
+        
     float ret=cubic_interpolate(_y0,_y1,_y2,_y3,_curr_read_pos);
+    assert(isfinite(ret));
     
     _curr_read_pos += read_increment;
     
@@ -204,30 +249,43 @@ struct InterpolatedResampler : public Resampler{
       if(curr_read_pos>=1.0){
         int offset = curr_read_pos;
         data_pos += offset;
+
+        assert(data_pos <= _data_length);
+        assert(data_pos >= 0);
+
         y0 = _data[data_pos-4];
         y1 = _data[data_pos-3];
         y2 = _data[data_pos-2];
         y3 = _data[data_pos-1];
-        curr_read_pos = curr_read_pos - offset;
+
+        curr_read_pos -= offset;
       }
+
+      assert(curr_read_pos >= 0);
+      assert(curr_read_pos < 1.0);
 
       out[i] = cubic_interpolate(y0,y1,y2,y3,curr_read_pos);
       
       curr_read_pos += read_increment;
     }
-
     _y0=y0;
     _y1=y1;
     _y2=y2;
     _y3=y3;
     _curr_read_pos = curr_read_pos;
+
     _data_pos = data_pos;
+
+    assert(_data_pos <= _data_length);
+    assert(_data_pos >= 0);
 
     return num_frames;
   }
 
   int find_num_samples_left_before_pulling(double read_increment){
-    return ((_data_length - _data_pos) / read_increment) - 2; // somewhat conservative;
+    assert(isfinite(read_increment));
+
+    return ( (double)(_data_length - _data_pos) / read_increment) - 2; // somewhat conservative;
   }
 
 
@@ -235,9 +293,16 @@ struct InterpolatedResampler : public Resampler{
   int read(double ratio,int num_frames, float *out){
     double read_increment = 1.0 / ratio;
 
+    assert(isfinite(read_increment));
+    assert(isfinite(ratio));
+    
     int i=0;
     int frames_left = num_frames;
 
+    bool use_opt = true;
+
+#if 0
+    // There's something wrong with this (very complex) code. Don't think it should affect performance very much just commenting it out.
     if(_data_pos>6){
       int num_frames_left_before_pulling = R_MIN(num_frames, find_num_samples_left_before_pulling(read_increment));
       if(num_frames_left_before_pulling>0){
@@ -246,15 +311,16 @@ struct InterpolatedResampler : public Resampler{
         frames_left -= num_frames_left_before_pulling;
       }
     }
-
+#endif
+    
     //printf("num samples left: %d. (%d/%d) %f\n",find_num_samples_left_before_pulling(read_increment),_data_pos,_data_length,read_increment);
 
     for(;i<num_frames;i++){
-      if(_data_pos>6 && find_num_samples_left_before_pulling(read_increment) > frames_left){
+      if(use_opt && _data_pos>6 && find_num_samples_left_before_pulling(read_increment) > frames_left){
         read_without_pulling(frames_left,out+i,read_increment); // should be a little bit faster than iterating inside this loop.
         break;
       }
-
+      
       float val = getCubicInterpolatedSample(read_increment);
       //float val = getLinearlyInterpolatedSample(read_increment);
       if(_data_length==0)

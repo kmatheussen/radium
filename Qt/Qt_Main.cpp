@@ -334,6 +334,7 @@ protected:
       }
 
       rt_message_status = RT_MESSAGE_SHOWING;
+      
     } else if (rt_message_status == RT_MESSAGE_SHOWING && msgBox.isHidden()) {
 
       if (msgBox.clickedButton() == msgBox_dontshowagain){
@@ -347,11 +348,13 @@ protected:
 
     if(num_users_of_keyboard==0){
       {
+#if !USE_OPENGL
         static int num_calls = 0;
         if(num_calls<1000/20){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
           root->song->tracker_windows->must_redraw = true;
           num_calls++;
         }
+#endif
       }
       
       {
@@ -383,7 +386,7 @@ void RT_message(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsnprintf(rt_message,rt_message_length,fmt,argp);
+  vsnprintf(rt_message,rt_message_length-1,fmt,argp);
   va_end(argp);
 
   rt_message_status = RT_MESSAGE_READY_FOR_SHOWING;
