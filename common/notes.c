@@ -76,28 +76,29 @@ void SetEndAttributes(
 	struct Tracks *track,
 	struct Notes *note
 ){
-	struct ListHeader3 *nextnote;
-	struct ListHeader3 *stop;
 	Place *place;
 	Place *p1=NULL,*p2=NULL;
 
-	nextnote=note->l.next;
-	while(nextnote!=NULL){
-		if(PlaceLessThan(&note->l.p,&nextnote->p)){
-			p1= &nextnote->p;
-			break;
-		}
-		nextnote=nextnote->next;
-	}
+        bool endSetEarlier = PlaceGreaterThan(&note->end, &note->l.p);
+        Place *earliest = endSetEarlier ? &note->end : &note->l.p;
 
-	stop= &track->stops->l;
-	while(stop!=NULL){
-		if(PlaceLessThan(&note->l.p,&stop->p)){
-			p2= &stop->p;
-			break;
-		}
-		stop=stop->next;
-	}
+        struct ListHeader3 *nextnote=note->l.next;
+        while(nextnote!=NULL){
+          if(PlaceGreaterThan(&nextnote->p, earliest)){
+            p1 = &nextnote->p;
+            break;
+          }
+          nextnote=nextnote->next;
+        }
+
+        struct ListHeader3 *stop= &track->stops->l;
+        while(stop!=NULL){
+          if(PlaceGreaterThan(&stop->p, earliest)){
+            p2 = &stop->p;
+            break;
+          }
+          stop=stop->next;
+        }
 
 	place=PlaceMin(p1,p2);
 
@@ -106,10 +107,8 @@ void SetEndAttributes(
 		note->end.counter=place->counter;
 		note->end.dividor=place->dividor;
 	}else{
-		note->end.line=block->num_lines-1;
-		note->end.counter=MAX_UINT32-1;
-		note->end.dividor=MAX_UINT32;
-		note->noend=1;
+        	PlaceSetLastPos(block, &note->end);
+        	note->noend=1;
 	}
 
 }

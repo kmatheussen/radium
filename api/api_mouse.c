@@ -1119,9 +1119,10 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
     return;
   }
 
-  bool is_first = velocitynum==0;
-  bool is_last_and_no_velocities = nodes->num_elements==2;
-  bool is_last_and_there_are_pitches = velocitynum==nodes->num_elements-1 && note->pitches!=NULL;
+  bool is_first                      = velocitynum==0;
+  bool is_last                       = velocitynum==nodes->num_elements-1;
+  bool is_last_and_no_velocities     = is_last && nodes->num_elements==2;
+  bool is_last_and_there_are_pitches = is_last && note->pitches!=NULL;
 
   if (is_first || is_last_and_no_velocities || is_last_and_there_are_pitches){
     RemoveNote(block, track, note);
