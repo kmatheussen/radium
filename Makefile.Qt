@@ -329,6 +329,10 @@ run-valgrind:
 
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 
+test: dotesting
+
+dotesting:
+	gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
 
 packages: bin/packages/deletemetorebuild
 

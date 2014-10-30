@@ -710,8 +710,8 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
 
   struct Notes *next = NextNote(note);
   
-  if(next!=NULL)
-    PlaceTilLimit(&lastLegal, &next->l.p);
+  if (next!=NULL)
+    PlaceCopy(&lastLegal, &next->l.p);
   else
     PlaceSetLastPos(block, &lastLegal);
 
@@ -728,6 +728,8 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
   note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+
+  assert(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
 static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
