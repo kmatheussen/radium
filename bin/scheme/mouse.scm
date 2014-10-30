@@ -586,6 +586,10 @@
 ;; velocities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (get-velocity-box Tracknum Notenum Velocitynum)
+  (get-common-node-box (ra:get-velocity-x Velocitynum Notenum Tracknum)
+                       (ra:get-velocity-y Velocitynum Notenum Tracknum)))
+
 (define-struct velocity-info
   :tracknum
   :notenum
@@ -594,38 +598,66 @@
   :y  
   )
 
-(define (highest-rated-velocity-info . Args)
-  (match (list Args)
-         ()          :> #f
-         (#f . Rest) :> (apply highest-rated-velocity-info Rest)
-         (A  . ____) :> A))
+(define (velocity-info-rating Y Vi)
+  (define box (get-velocity-box (Vi :tracknum)
+                                (Vi :notenum)
+                                (Vi :velocitynum)))
+  (cond ((and (= 0
+                 (Vi :velocitynum))
+              (> Y
+                 (box :y)))
+         10)
+        ((and (= (1- (ra:get-num-velocities (Vi :notenum) (Vi :tracknum)))
+                 (Vi :velocitynum))
+              (< Y
+                 (box :y)))
+         10)
+        (else
+         0)))
+
+(define (highest-rated-velocity-info-0 Y A B)
+  (if (> (velocity-info-rating Y A)
+         (velocity-info-rating Y B))
+      A
+      B))
+         
+(define-match highest-rated-velocity-info
+  _ (#f)        :> #f
+  Y (#f . Rest) :> (highest-rated-velocity-info Y Rest)
+  _ (A)         :> A
+  Y (A  . Rest) :> (let ((B (highest-rated-velocity-info Y Rest)))
+                     (if B
+                         (highest-rated-velocity-info-0 Y A B)
+                         A)))
+
 #||
-(highest-rated-velocity-info)
-(highest-rated-velocity-info 2)
-(highest-rated-velocity-info #f 3)
-(highest-rated-velocity-info 4 #f)
+(highest-rated-velocity-info 'b )
+(highest-rated-velocity-info 'b 2)
+(highest-rated-velocity-info 'b #f 3)
+(highest-rated-velocity-info 'b 4 #f)
 ||#
 
 (define-match get-velocity-2
   X Y Tracknum Notenum Velocitynum Velocitynum      :> #f
   X Y Tracknum Notenum Velocitynum Total-Velocities :> (begin                                                                     
-                                                         (define box (get-common-node-box (ra:get-velocity-x Velocitynum Notenum Tracknum)
-                                                                                          (ra:get-velocity-y Velocitynum Notenum Tracknum)))
+                                                         (define box (get-velocity-box Tracknum Notenum Velocitynum))
                                                          (if (> (box :y1) Y)
                                                              #f
-                                                             (highest-rated-velocity-info (get-velocity-2 X Y Tracknum Notenum (1+ Velocitynum) Total-Velocities)
-                                                                                          (and (inside-box box X Y)
-                                                                                               (make-velocity-info :velocitynum Velocitynum
-                                                                                                                   :notenum Notenum
-                                                                                                                   :tracknum Tracknum
-                                                                                                                   :value (ra:get-velocity-value Velocitynum Notenum Tracknum)
-                                                                                                                   :y (box :y)
-                                                                                                                   ))))))
+                                                             (highest-rated-velocity-info Y
+                                                                                          (list (get-velocity-2 X Y Tracknum Notenum (1+ Velocitynum) Total-Velocities)
+                                                                                                (and (inside-box box X Y)
+                                                                                                     (make-velocity-info :velocitynum Velocitynum
+                                                                                                                         :notenum Notenum
+                                                                                                                         :tracknum Tracknum
+                                                                                                                         :value (ra:get-velocity-value Velocitynum Notenum Tracknum)
+                                                                                                                         :y (box :y)
+                                                                                                                         )))))))
 
 (define-match get-velocity-1
   X Y Tracknum Notenum Notenum     :> #f
-  X Y Tracknum Notenum Total-Notes :> (highest-rated-velocity-info (get-velocity-1 X Y Tracknum (1+ Notenum) Total-Notes)
-                                                                   (get-velocity-2 X Y Tracknum Notenum 0 (ra:get-num-velocities Notenum Tracknum))))
+  X Y Tracknum Notenum Total-Notes :> (highest-rated-velocity-info Y
+                                                                   (list (get-velocity-1 X Y Tracknum (1+ Notenum) Total-Notes)
+                                                                         (get-velocity-2 X Y Tracknum Notenum 0 (ra:get-num-velocities Notenum Tracknum)))))
                                    
   
 (define-match get-velocity-0
@@ -635,9 +667,10 @@
   
 (define-match get-velocity-info
   X Y #f       :> (get-velocity-info X Y 0)
-  X Y Tracknum :> (highest-rated-velocity-info (get-velocity-0 X Y (1- Tracknum)) ;; node in the prev track can overlap into the current track
-                                               (get-velocity-0 X Y Tracknum)
-                                               (get-velocity-0 X Y (1+ Tracknum)))) ;; node in the next track can overlap into the current track
+  X Y Tracknum :> (highest-rated-velocity-info Y
+                                               (list (get-velocity-0 X Y (1- Tracknum)) ;; node in the prev track can overlap into the current track
+                                                     (get-velocity-0 X Y Tracknum)
+                                                     (get-velocity-0 X Y (1+ Tracknum))))) ;; node in the next track can overlap into the current track
 
 
 #||
@@ -683,7 +716,7 @@
              (ra:set-no-mouse-note))
          #f))
 
-(define (get-velocity-box $num)
+(define (get-velocity-box-old $num) ;; still used though, but should be deleted soon.
   (get-common-node-box (ra:get-velocity-x $num *current-note-num* *current-track-num*)
                        (ra:get-velocity-y $num *current-note-num* *current-track-num*)))
 
@@ -728,7 +761,7 @@
                      *current-note-num*
                      *current-track-num* 
                      (inside-box-forgiving (ra:get-box track-fx *current-track-num*) $x $y)
-                     (match (list (find-node $x $y get-velocity-box (ra:get-num-velocities *current-note-num* *current-track-num*)))
+                     (match (list (find-node $x $y get-velocity-box-old (ra:get-num-velocities *current-note-num* *current-track-num*)))
                             (existing-box Num Box) :> (begin
                                                         (ra:undo-notes *current-track-num*)
                                                         (ra:delete-velocity Num *current-note-num* *current-track-num*)
@@ -743,6 +776,7 @@
               (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
               (begin
                 (define velocity-info (get-velocity-info X Y *current-track-num*))
+                (c-display "got velocity info " velocity-info)
                 (if velocity-info
                     (begin
                       (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
