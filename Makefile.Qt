@@ -110,7 +110,7 @@ VISUAL ?= -DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 FULL_VERSION ?= 1
 
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
-RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
+RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -DNDEBUG -Wall -g $(OPTIMIZE)
 
 OS_OPTS ?= 
 #OS_OPTS = -fPIC -I/usr/X11R6/include
@@ -1568,6 +1568,7 @@ Envelope.o: audio/Envelope.cpp
 	$(CCC) audio/Envelope.cpp $(CPPOPT) $(CPUOPT)
 
 Resampler.o: audio/Resampler.cpp
+#	$(CCC) audio/Resampler.cpp $(CPPOPT) `$(PKG) --cflags samplerate`
 	$(CCC) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate`
 
 SoundFonts.o: audio/SoundFonts.cpp
