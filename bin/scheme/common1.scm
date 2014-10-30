@@ -1,11 +1,13 @@
 (provide 'common1.scm)
 
+#|
 (define (c-display . rest)
   (for-each (lambda (d)
               (display d)
               (display " "))
             rest)
   (newline))
+|#
 
 (define (to-string a)
   (cond ((symbol? a)

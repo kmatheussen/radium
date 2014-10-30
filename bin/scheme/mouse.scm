@@ -1,4 +1,4 @@
-(provide 'mouse/mouse.scm)
+(provide 'mouse.scm)
 
 (define *left-button* 1)
 (define *right-button* 5)
@@ -599,18 +599,16 @@
   )
 
 (define (velocity-info-rating Y Vi)
-  (define box (get-velocity-box (Vi :tracknum)
-                                (Vi :notenum)
-                                (Vi :velocitynum)))
+  (define velocity-y (ra:get-velocity-y (Vi :velocitynum) (Vi :notenum) (Vi :tracknum)))
   (cond ((and (= 0
                  (Vi :velocitynum))
               (> Y
-                 (box :y)))
+                 velocity-y))
          10)
         ((and (= (1- (ra:get-num-velocities (Vi :notenum) (Vi :tracknum)))
                  (Vi :velocitynum))
               (< Y
-                 (box :y)))
+                 velocity-y))
          10)
         (else
          0)))
@@ -622,9 +620,9 @@
       B))
          
 (define-match highest-rated-velocity-info
-  _ (#f)        :> #f
+  _ (#f       ) :> #f
   Y (#f . Rest) :> (highest-rated-velocity-info Y Rest)
-  _ (A)         :> A
+  _ (A        ) :> A
   Y (A  . Rest) :> (let ((B (highest-rated-velocity-info Y Rest)))
                      (if B
                          (highest-rated-velocity-info-0 Y A B)
@@ -863,6 +861,7 @@
 
 
 ||#
+
 
 
 #||

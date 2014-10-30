@@ -25,4 +25,4 @@
 
 (my-require 'common2.scm)
 
-(my-require 'mouse/mouse.scm)
+(my-require 'mouse.scm)
