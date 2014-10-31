@@ -41,8 +41,6 @@ int MoveTempoNodeBorder_Mouse(
 	float x,float y
 ){
 	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack2;
-	NInt oldrighttrack;
 
         if(window->prevaction.action==NOACTION)
           window->must_redraw=true; // fix up slightly skewed gradient caused by the direct blitting. (blitting is wrong, but it's faster)
@@ -52,7 +50,9 @@ int MoveTempoNodeBorder_Mouse(
 	x-=window->prevaction.efloat1;
 
 	int old_width=wblock->temponodearea.width;
-	oldrighttrack=wblock->right_track;
+#if !USE_OPENGL
+	NInt oldrighttrack=wblock->right_track;
+#endif
 
         //int max_x2 = R_MAX(wblock->t.x2-window->fontwidth*10, leftmost_track->x2 - 5);
         //printf("max_x2: %d, leftmost_track->x2-5: %d\n",max_x2,leftmost_track->x2-5);
@@ -78,7 +78,8 @@ int MoveTempoNodeBorder_Mouse(
 
 	wblock->temponodearea.width = new_width;
 
-#if 1
+#if !USE_OPENGL
+
 	//	UpdateWTempoNodes(window,wblock);
 
 	//	if(window->prevaction.action==NOACTION){
@@ -99,9 +100,11 @@ int MoveTempoNodeBorder_Mouse(
 
 	  UpdateWBlockCoordinates(window,wblock);
 
-#if 1
+#if !USE_OPENGL
 	  DrawUpWTempoNodes(window,wblock);
 	  //	  Blt_blt(window);
+
+          struct WTracks *wtrack2;
 
 	  if(old_width>wblock->temponodearea.width){
 	    wtrack2=ListFindElement1(&wblock->wtracks->l,oldrighttrack);
@@ -158,6 +161,33 @@ int MoveTempoNodeBorder_Mouse(
 
 	  Blt_marktrackheader(window,wblock->left_track,wblock->right_track);
 	  //	}
+
+#else
+
+          #if 0
+	  GFX_FilledBox(
+			window,0,
+			wblock->reltempo.x2+1,
+			window->height - window->bottomslider.width+1,
+			window->bottomslider.x-1,
+			window->height-1,
+                        PAINT_DIRECTLY
+                        );
+
+	  DrawBlockRelTempo(window,wblock);
+	  UpdateTempoTrackHeader_reltempo(window,wblock,2);
+	  DrawBottomSlider(window);
+
+          {
+            struct WTracks *wtrack2=leftmost_track;
+	    while(wtrack2!=NULL && wtrack2->l.num<=wblock->right_track){
+	      DrawWTrackHeader(window,wblock,wtrack2);
+	      wtrack2=NextWTrack(wtrack2);
+	    }
+	  }
+#endif
+          window->must_redraw=true;
+          
 #endif
 
           //        window->must_redraw=true;

@@ -100,14 +100,18 @@ void CB_CutTrack_CurrPos(
 			block->lpbs=NULL;
 			UpdateSTimes(block);
 			UpdateWLPBs(window,wblock);
+#if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
+#endif
 			break;
 		case TEMPOTRACK:
 			Undo_Tempos_CurrPos(window);
 			cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
 			UpdateWTempos(window,wblock);
+#if !USE_OPENGL
 			DrawUpTempos(window,wblock);
+#endif
 			UpdateSTimes(block);
 			break;
 		case TEMPONODETRACK:
@@ -116,19 +120,22 @@ void CB_CutTrack_CurrPos(
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
 			UpdateWTempoNodes(window,wblock);
+#if !USE_OPENGL
 			DrawUpWTempoNodes(window,wblock);
+#endif
 			UpdateSTimes(block);
 			break;
 		default:
 			Undo_Track_CurrPos(window);
 			CB_CutTrack(window,wblock,wtrack);
-
+#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,
 				window->wblock,
 				window->curr_track,
 				window->curr_track
 			);
+#endif
 			break;
 	}
 }

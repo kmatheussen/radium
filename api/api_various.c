@@ -380,14 +380,14 @@ void insertBlock(int windownum){
   InsertBlock_CurrPos(window);
 }
 
-int numTracks(int blocknum){
+int getNumTracks(int blocknum){
   struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
   if(wblock==NULL) return 0;
 
   return wblock->block->num_tracks;
 }
 
-int numBlocks(void){
+int getNumBlocks(void){
   return root->song->num_blocks;
 }
 
@@ -408,9 +408,11 @@ void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
 
   wtrack->noteshowtype=type;
 
+#if !USE_OPENGL
   if(window->wblock==wblock){
     DrawUpWTrack(window,wblock,wtrack);
   }
+#endif
 }
 
 void setTrackVolume(float volume,int tracknum,int blocknum,int windownum){
@@ -481,9 +483,11 @@ void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
   wtrack->noteshowtype++;
   if(wtrack->noteshowtype>MAXTYPE) wtrack->noteshowtype=0;
 
+#if !USE_OPENGL
   if(window->wblock==wblock){
     DrawUpWTrack(window,wblock,wtrack);
   }
+#endif
 }
 
 
@@ -506,10 +510,11 @@ void setBlockNoteShowType(int type,int blocknum,int windownum){
     wtrack=NextWTrack(wtrack);
   }
 
+#if !USE_OPENGL
   if(window->wblock==wblock){
     DrawUpAllWTracks(window,wblock,NULL);
   }
-  
+#endif
 }
 
 void switchBlockNoteShowType(int blocknum,int windownum){

@@ -153,11 +153,16 @@ void QT_RepaintEditor(struct Tracker_Windows *window){
      bitBlt(dst_pixmap,x,y,src_pixmap,from_x,from_y,width,height)
 #endif
 
+
 void OS_GFX_C2V_bitBlt(
                        struct Tracker_Windows *window,
 		    int from_x1,int from_x2,
 		    int to_y
 		    ){
+#if USE_OPENGL
+  RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
+#endif
+
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
 #if USE_QIMAGE_BUFFER
@@ -178,12 +183,18 @@ void OS_GFX_C2V_bitBlt(
 #include "../common/playerclass.h"
 extern PlayerClass *pc;
 
+
 /* window,x1,x2,x3,x4,height, y pixmap */
 void OS_GFX_C_DrawCursor(
 				      struct Tracker_Windows *window,
 				      int x1,int x2,int x3,int x4,int height,
 				      int y_pixmap
 				      ){
+
+#if USE_OPENGL
+  RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
+#endif
+
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 
 #ifdef USE_QT4
@@ -216,9 +227,9 @@ void OS_GFX_C_DrawCursor(
 
   editor->cursorbuffer_painter->drawImage(x1+1,1,
                                           *editor->paintbuffer,
-    x1+1,y_pixmap+1,
-    x4-x1-2,height-2);
-
+                                          x1+1,y_pixmap+1,
+                                          x4-x1-2,height-2);
+  
   editor->cursorbuffer_painter->setOpacity(0.2);
   editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
 
@@ -262,12 +273,17 @@ void OS_GFX_C_DrawCursor(
 }
 
 
+
+
 void OS_GFX_P2V_bitBlt(
 		    struct Tracker_Windows *window,
 		    int from_x,int from_y,
 		    int to_x,int to_y,
 		    int width,int height
 		    ){
+#if USE_OPENGL
+  RWarning("\"%s\" not supposed to be called when using OpenGL",__FUNCTION__ );
+#endif
   
   EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
 

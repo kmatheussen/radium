@@ -48,6 +48,16 @@ extern void ListAddElementP_a(
 );
 
 
+extern void ListRemoveElement3_fromNum(
+                                       void *voidlistroot,
+                                       int num
+                                       );
+
+extern void ListRemoveElement1_fromNum(
+                                       void *voidlistroot,
+                                       int num
+                                       );
+
 extern void ListRemoveElement3(
 	void *listroot,
 	struct ListHeader3 *element
@@ -64,7 +74,23 @@ extern void ListRemoveElements3(
 	Place *p2
 );
 
-extern struct ListHeader3 *ListAddElement3_ns(
+extern void ListMoveElement3_ns(
+                                const void *voidlistroot,
+                                struct ListHeader3 *element,
+                                Place *newplace,
+                                const Place *firstlegalpos,
+                                const Place *lastlegalpos
+                                );
+
+struct ListHeader3 *ListMoveElement3_FromNum_ns(
+                                                const void *voidlistroot,
+                                                int num,
+                                                Place *newplace,
+                                                const Place *firstlegalpos,
+                                                const Place *lastlegalpos
+                                                );
+
+extern int ListAddElement3_ns(
 	void *listroot,
 	struct ListHeader3 *element
 );
@@ -76,18 +102,25 @@ extern void ListAddElement1_ff(
 	struct ListHeader1 *element
 );
 
-extern void *ListFindElement1(struct ListHeader1 *list,NInt num);
+extern LANGSPEC void *ListFindElement1(const struct ListHeader1 *list,NInt num);
 extern void *ListFindElementP(struct ListHeaderP *list,NInt num);
-extern void *ListFindElement1_r0(struct ListHeader1 *list,NInt num);
+extern void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num);
 
 extern void *ListFindElement3(
 	struct ListHeader3 *element,
 	Place *placement
 );
+
 void *ListFindElement3_num(
 	struct ListHeader3 *element,
 	NInt num
 );
+
+void *ListFindElement3_num_r0(
+                              struct ListHeader3 *element,
+                              NInt num
+                              );
+
 
 #define ListFindElement1_num(a,b) ListFindElement3_num((struct ListHeader3 *)(a),b)
 
@@ -118,6 +151,10 @@ extern void CutListAt(void *listroot,Place *place);
 extern void CutListAt_a(void *listroot,Place *place);
 extern void CutListAt1(void *listroot,NInt num);
 
+extern int ListPostition3(struct ListHeader3 *list,
+                          struct ListHeader3 *element
+                          );
+
 extern int ForAllListElements1(
 	void *voidlistroot,
 	int (*function)(struct ListHeader1 *list)
@@ -146,8 +183,9 @@ extern NInt ListFindElementPos3(
                                 struct ListHeader3 *element
                                 );
 
+extern Place *ListLastPlace3(struct ListHeader3 *list);
 extern void *ListLast3(struct ListHeader3 *list);
-extern void *ListLast1(struct ListHeader1 *list);
+extern LANGSPEC void *ListLast1(struct ListHeader1 *list);
 
 extern void List_InsertLines3(
 	void *to,

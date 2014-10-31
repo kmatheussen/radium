@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 *******************************************************************/
 
+#include <assert.h>
 #include <string.h>
 
 #include "nsmtracker.h"
@@ -157,7 +158,8 @@ static void InsertTRLElement(
 	int realline,
 	int type,int subtype,float y1,float y2,
 	int x1,int x2,
-	void *pointer
+	void *pointer,
+        void *note
 ){
 	struct TrackReallineElements *element = talloc(sizeof(struct TrackReallineElements));
 
@@ -177,6 +179,7 @@ static void InsertTRLElement(
 	element->x1=x1;
 	element->x2=x2;
 	element->pointer=pointer;
+        element->note=note;
 
 	if(type==TRE_REALSTARTSTOP){
 		InsertTRLElement_start(element,realline);
@@ -437,9 +440,11 @@ static void AddTrackReallineNote(
 
 	int realline=FindRealLineForNote(wblock,note->Tline,note);
 	int subtrack=FindFirstFreeSubTrack(wtrack,realline,&note->l.p);
+        note->subtrack = subtrack;
 
 	float maxx = MAX_VELOCITY;
 
+        assert(note!=NULL);
 	InsertTRLElement(
 		window,
 		wtrack,
@@ -448,7 +453,8 @@ static void AddTrackReallineNote(
 		TRE_THISNOTELINES,
 		subtrack,
 		0.0f,0.0f,0,0,					/* Will be filled in in the OrganizeThisNoteLines part. */
-		note
+		note,
+                note
 	);
 
 	nodeinfo.wtrack=wtrack;
@@ -622,6 +628,7 @@ void InsertCoordinatesForThisNoteLines(
 	element->subtype=temp->subtype;
 
 	wtrack->trackreallines[realline].note=((struct Notes *)(element->pointer))->note;
+	wtrack->trackreallines[realline].dasnote=(struct Notes *)element->pointer;
 }
 
 
@@ -723,6 +730,7 @@ void InsertNotesFromRealline(
 	}else{
 		while(element->type!=TRE_THISNOTELINES) element=element->next;
 		wtrack->trackreallines[realline].note=((struct Notes *)(element->pointer))->note;
+                wtrack->trackreallines[realline].dasnote=(struct Notes *)element->pointer;
 		InsertCoordinatesForThisNoteLines(window,wtrack,realline,element);
 	}
 
@@ -739,6 +747,7 @@ void InsertNotesFromRealline(
 
 	if(1==mul){
 		wtrack->trackreallines[realline].note=NOTE_MUL;
+                wtrack->trackreallines[realline].dasnote=NULL;
 	}
 
 
@@ -776,6 +785,7 @@ void OrganizeThisNoteLines(
 				while(temp->type!=TRE_THISNOTELINES) temp=temp->next;
 				note=temp->pointer;
 				trackreallines[realline].note=note->note;
+                                trackreallines[realline].dasnote=note;
 				InsertCoordinatesForThisNoteLines(window,wtrack,realline,temp);
 			}
 		}
@@ -821,6 +831,7 @@ void AddStopsElements(
 		}else{
 			wtrack->trackreallines[realline].note=NOTE_STP;
 		}
+                wtrack->trackreallines[realline].dasnote=NULL;
 		stop=NextStop(stop);
 	}
 
@@ -859,8 +870,10 @@ void AddPitchElements(
       
       if(wtrack->trackreallines[realline].note!=0){
         wtrack->trackreallines[realline].note=NOTE_MUL;
+	wtrack->trackreallines[realline].dasnote=NULL;
       }else{
-        wtrack->trackreallines[realline].note=NOTE_PITCH_START + pitch->note;
+        wtrack->trackreallines[realline].note=pitch->note;
+        wtrack->trackreallines[realline].daspitch=pitch;
       }
 
       pitch=NextPitch(pitch);
@@ -872,6 +885,7 @@ void AddPitchElements(
   }
 }
 
+#if !USE_OPENGL
 static void create_peaks(
                          struct Tracker_Windows *window,
                          struct WBlocks *wblock,
@@ -915,7 +929,6 @@ static void create_peaks(
 
             const int num_channels=PATCH_get_peaks(patch, 0,
                                                    -1,
-                                                   0.0f,0.0f,
                                                    wtrack->track,
                                                    0,0,
                                                    NULL,NULL);
@@ -938,8 +951,6 @@ static void create_peaks(
                 PATCH_get_peaks(patch, 
                                 note->note,
                                 ch,
-                                scale(y1,element->y1,element->y2,element->x1,element->x2),
-                                scale(y2,element->y1,element->y2,element->x1,element->x2),
                                 wtrack->track,
                                 scale(y1,0,1,time1,time2) / block->reltempo,
                                 scale(y2,0,1,time1,time2) / block->reltempo,
@@ -975,6 +986,7 @@ static void create_peaks(
     }
   }
 }
+#endif
 
 /****************************************************************
   FUNCTION
@@ -1014,8 +1026,9 @@ void UpdateTrackReallines(
 
         AddPitchElements(window,wblock,wtrack);
 
+#if !USE_OPENGL
         create_peaks(window,wblock,wtrack);
-        
+#endif        
 	if(window->curr_track==wtrack->l.num)
 		if(window->curr_track_sub >= wtrack->num_vel)
 			window->curr_track_sub=wtrack->num_vel-1;
@@ -1066,13 +1079,12 @@ void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Pa
 
 static bool g_peaks_are_dirty;
 
+// TODO: Check if this one can be disabled completely if using OpenGL
 void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){
   if(g_peaks_are_dirty==false)
     return;
   else
     g_peaks_are_dirty=false;
-
-  struct WBlocks *wblock=window->wblocks;
 
   struct Instruments *instrument = get_all_instruments();
   while(instrument!=NULL){
@@ -1080,7 +1092,9 @@ void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){
       if(patch->peaks_are_dirty==true){
         patch->peaks_are_dirty=false;
         TRACKREALLINES_update_peak_tracks(window,patch);
-        DrawUpAllPeakWTracks(window,wblock,patch);
+#if !USE_OPENGL
+        DrawUpAllPeakWTracks(window,window->wblock,patch);
+#endif
       }
     }END_VECTOR_FOR_EACH;
     instrument = NextInstrument(instrument);

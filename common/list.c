@@ -256,6 +256,35 @@ void ListAddElementP_a(
 	}
 }
 
+void ListRemoveElement3_fromNum(
+                                void *voidlistroot,
+                                int num
+                                )
+{
+	struct ListHeaderPointer3 *listroot=voidlistroot;
+	struct ListHeader3 *temp=listroot->root;
+	struct ListHeader3 *prev=NULL;
+        int n = 0;
+        
+	if(num==0){
+          listroot->root=temp->next;
+	}else{
+          while(n!=num){
+            prev=temp;
+            temp=temp->next;
+            n++;
+          }
+          prev->next=temp->next;
+	}
+}
+
+void ListRemoveElement1_fromNum(
+	void *voidlistroot,
+        int num
+){
+  ListRemoveElement3_fromNum(voidlistroot,num);
+}
+
 void ListRemoveElement3(
 	void *voidlistroot,
 	struct ListHeader3 *element
@@ -306,24 +335,89 @@ void ListRemoveElements3(
 }
 
 
+
+/*****************************************************************************
+  FUNCTION
+    Moves the element to new place 'p', or closest legal position.
+    A "legal position" means that it can not be positioned before the
+    previous element, or after the next element. In addition, it can not be
+    position at the same position as the previous element or next element
+    ("ns" means "not same").
+
+    The value for 'firstlegalpos' is only used if prev element is NULL.
+    The value for 'lastlegalpos' is only used if next element is NULL.
+******************************************************************************/
+void ListMoveElement3_ns(
+                         const void *voidlistroot,
+                         struct ListHeader3 *element,
+                         Place *newplace,
+                         const Place *firstlegalpos,
+                         const Place *lastlegalpos
+){
+  const struct ListHeaderPointer3 *listroot=voidlistroot;
+  struct ListHeader3 *prev=NULL;
+  struct ListHeader3 *next = element->next;
+  struct ListHeader3 *l=listroot->root;
+
+  while(l!=element){    
+    prev = l;
+    l=l->next;
+  }
+
+  Place firstlegalpos2;
+  if (prev!=NULL)
+    PlaceFromLimit(&firstlegalpos2, &prev->p);
+  else
+    PlaceCopy(&firstlegalpos2, firstlegalpos);
+
+  Place lastlegalpos2;
+  if (next!=NULL)
+    PlaceTilLimit(&lastlegalpos2, &next->p);
+  else
+    PlaceCopy(&lastlegalpos2, lastlegalpos);
+
+  element->p = *PlaceBetween(&firstlegalpos2, newplace, &lastlegalpos2);
+}
+
+struct ListHeader3 *ListMoveElement3_FromNum_ns(
+                                                const void *voidlistroot,
+                                                int num,
+                                                Place *newplace,
+                                                const Place *firstlegalpos,
+                                                const Place *lastlegalpos
+){
+  const struct ListHeaderPointer3 *listroot=voidlistroot;
+  
+  struct ListHeader3 *element = ListFindElement3_num(listroot->root, num);
+  if (element!=NULL)
+    ListMoveElement3_ns(voidlistroot, element, newplace, firstlegalpos, lastlegalpos);
+  
+  return element;
+}
+
+
 /*****************************************************************************
   FUNCTION
     Adds an element only if the list doesn't allready contain an element
     with the same placement attributes.
 ******************************************************************************/
-struct ListHeader3 *ListAddElement3_ns(
-	void *listroot,
+int ListAddElement3_ns(
+	void *voidlistroot,
 	struct ListHeader3 *element
 ){
-	if(element==NULL) return NULL;
+	if(element==NULL) return -1;
+
+        struct ListHeaderPointer3 *listroot=voidlistroot;
 
 	ListAddElement3(listroot,element);
 	if(element->next!=NULL)
 		if(PlaceEqual(&element->p,&element->next->p)){
 			ListRemoveElement3(listroot,element);
-			return NULL;
+			return -1;
 		}
-	return element;
+
+        struct ListHeader3 *list=listroot->root;
+	return ListPostition3(list,element);
 }
 
 NInt ListFindFirstFreePlace1(struct ListHeader1 *list){
@@ -353,12 +447,12 @@ void ListAddElement1_ff(
 }
 
 
-void *ListFindElement1(struct ListHeader1 *list,NInt num){
+void *ListFindElement1(const struct ListHeader1 *list,NInt num){
 	NInt lastnum;
 
 	while(list!=NULL && list->num<=num){
 		lastnum=list->num;
-		if(list->num==num) return list;
+		if(list->num==num) return (void*)list;
 		list=list->next;
 		if(list!=NULL && lastnum+1!=list->num){
 			RError("Warning. In function 'ListFindElement1' in file 'list.c'. Strange list. Last: %d, now: %d\n",lastnum,list->num);
@@ -391,10 +485,10 @@ void *ListFindElementP(struct ListHeaderP *list,NInt num){
     write out an error-message in that case either.
 ****************************************************************/
 
-void *ListFindElement1_r0(struct ListHeader1 *list,NInt num){
+void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num){
 
 	while(list!=NULL && list->num<=num){
-		if(list->num==num) return list;
+                if(list->num==num) return (void*)list;
 		list=list->next;
 	}
 
@@ -426,6 +520,21 @@ void *ListFindElement3_num(
 
 	for(lokke=0;lokke<num && element!=NULL;lokke++)
 		element=element->next;
+
+	return element;
+}
+
+void *ListFindElement3_num_r0(
+	struct ListHeader3 *element,
+	NInt num
+){
+	int lokke;
+
+	for(lokke=0;lokke<num && element!=NULL;lokke++)
+          if (element==NULL)
+            return NULL;
+          else
+            element=element->next;
 
 	return element;
 }
@@ -605,6 +714,18 @@ void CutListAt1(void *listroot,NInt num){
 	
 }
 
+int ListPostition3(struct ListHeader3 *list,
+                   struct ListHeader3 *element
+                   )
+{
+  int ret = 0;
+  while(list!=element) {
+    ret++;
+    list = list->next;
+  }
+  return ret;
+}
+                  
 /******************************************************************************
   FUNCTION
     Calls 'function' for all list elements with each list element as argument.
@@ -714,6 +835,17 @@ NInt ListFindElementPos3(
   FUNCTION
     Finds the last element in a list. 'list' may be NULL.
 ******************************************************************************/
+
+Place *ListLastPlace3(struct ListHeader3 *list){
+	while(list!=NULL){
+		if(list->next==NULL) break;
+		list=list->next;
+	}
+        if (list==NULL)
+          return NULL;
+        else
+          return &list->p;
+}
 
 void *ListLast3(struct ListHeader3 *list){
 	while(list!=NULL){

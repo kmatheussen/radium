@@ -157,7 +157,7 @@ extern LANGSPEC void MW_create_connections_from_state(hash_t *connections);
 extern LANGSPEC void MW_create_from_state(hash_t *state);
 extern LANGSPEC void MW_delete_plugin(SoundPlugin *plugin); // Deletes chip, plugin soundproducer and connections.
 
-extern LANGSPEC void MW_create_plain();
+extern LANGSPEC void MW_create_plain(void);
 
 extern LANGSPEC SoundPlugin *get_main_pipe(void);
 

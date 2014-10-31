@@ -39,98 +39,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define RADIUM_PLACEMENTISCALLINGNOW
 
-#include "nsmtracker.h"
 #include <math.h>
+#include <assert.h>
+
+#include "nsmtracker.h"
 
 #include "placement_proc.h"
 
 
-Place *PlaceCreate(int line, int counter, int dividor) {
+
+/*
+Place *PlaceCopy(Place *p){
   Place *place=talloc(sizeof(Place));
-  place->line = line;
-  place->counter = counter;
-  place->dividor = dividor;
+  place->line = p->line;
+  place->counter = p->counter;
+  place->dividor = p->dividor;
   return place;
 }
+*/
 
 
-/*************************************************************
-  FUNCTION
-    Returns 0 if placement1 is the same as placement2,
-    -1 if placement1 is before placement2, and 1 if after.
-  NOTE
-    See also placement_proc.h for macros that makes use of this
-    function.
-*************************************************************/
-int PlaceCmp(  Place *p1,  Place *p2){
 
-	if(p1->line < p2->line) return -1;
-	if(p1->line > p2->line) return 1;
-
-	if(p1->counter*p2->dividor < p2->counter*p1->dividor) return -1;
-	if(p1->counter*p2->dividor > p2->counter*p1->dividor) return 1;
-
-	return 0;
-}
-
-/*************************************************************
-  FUNCTION
-    Returns the latest placement. If both placements are NULL,
-    NULL is allso returned. (don't bother optimizing the
-    obvious things, unless you really really have to, you
-    think. :)
-*************************************************************/
-Place *PlaceMax(  Place *p1,  Place *p2){
-	if(p1!=NULL){
-		if(p2!=NULL){
-			if(PlaceCmp(p1,p2) > 0){
-				return p1;
-			}else{
-				return p2;
-			}
-		}else{
-			return p1;
-		}
-	}else{
-		if(p2!=NULL){
-			return p2;
-		}else{
-			return NULL;
-		}
-	}
-
-}
-
-
-/*************************************************************
-  FUNCTION
-    Returns the first placement. If both placements are NULL,
-    NULL is also returned. If only one placement is NULL,
-    the other placement is returned. (don't bother optimizing the
-    obvious things, unless you really really have to, you
-    think. :)
-*************************************************************/
-Place *PlaceMin(  Place *p1,  Place *p2){
-
-	if(p1!=NULL){
-		if(p2!=NULL){
-			if(PlaceCmp(p1,p2) > 0){
-				return p2;
-			}else{
-				return p1;
-			}
-		}else{
-			return p1;
-		}
-	}else{
-		if(p2!=NULL){
-			return p2;
-		}else{
-			return NULL;
-		}
-	}
-
-}
 
 /*************************************************************
   FUNCTION
@@ -187,7 +116,7 @@ void PlaceHandleOverflow(Place *p){
     convert the result back to a Place. (the result can not
     be negative either).
 *************************************************************/
-void PlaceAdd(Place *p1,  Place *p2){
+void PlaceAdd(Place *p1,  const Place *p2){
 
 	p1->line+=p2->line;
 	p1->counter*=p2->dividor;
@@ -230,7 +159,7 @@ void PlaceSub(Place *p1,  Place *p2){
 */
 
 
-void PlaceSub(Place *p1,  Place *p2){
+void PlaceSub(Place *p1,  const Place *p2){
 
 	uint_32 temp=p2->counter*p1->dividor;		// temp=16
 
@@ -269,7 +198,7 @@ void PlaceSub(Place *p1,  Place *p2){
    floats instead. But there will still be overflow problems.
 */
 
-void PlaceMul(Place *p1,  Place *p2){
+void PlaceMul(Place *p1,  const Place *p2){
 	Place temp1,temp2;
 	temp1.line=0;
 	temp1.counter=p1->line*p2->line;
@@ -309,7 +238,7 @@ p1->counter*=p2->line*p2->dividor
 p1->dividor*=p2->dividor
 */
 
-void PlaceDiv(Place *p1,  Place *p2){
+void PlaceDiv(Place *p1,  const Place *p2){
 	Place temp;
 	temp.line=0;
 	temp.counter=p2->dividor;
@@ -337,22 +266,6 @@ float GetfloatFromPlace(Place *placement){
 	return (float)((float)(placement->line)+GetfloatFromCounterDividor(placement->counter,placement->dividor));
 }
 */
-
-/**********************************************************
-  FUNCTION
-    Convert a float into a placement.
-**********************************************************/
-void Float2Placement(float f,Place *p){
-
-	p->line=(int)f;
-
-	f=f-(float)p->line;
-
-	p->counter=f*MAX_UINT32;
-	p->dividor=MAX_UINT32;
-
-	PlaceHandleOverflow(p);		//Probably not necesarry
-}
 
 void PlaceAddfloat(Place *p,float f){
 	float temp;
@@ -386,7 +299,7 @@ void PlaceSetLastPos(struct Blocks *block,Place *p){
     Returns false if 'p' is below the last legal position
     in the block.
 **********************************************************/
-bool PlaceLegal(struct Blocks *block,  Place *p){
+bool PlaceLegal(const struct Blocks *block,  const Place *p){
 	Place temp;
 	PlaceSetLastPos(block,&temp);
 	if(PlaceGreaterThan(p,&temp)) return false;
@@ -429,9 +342,9 @@ Place *PlaceGetFirstPos(void){
     used for calculation.
 **********************************************************/
 void PlaceSetReallinePlace(
-	  struct WBlocks *wblock,
-	int realline,
-	Place *p
+                           const struct WBlocks *wblock,
+                           int realline,
+                           Place *p
 ){
 	if(realline>=wblock->num_reallines){
 		if(realline>wblock->num_reallines){
@@ -450,26 +363,27 @@ void PlaceSetReallinePlace(
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p<tp.
 **********************************************************/
-void PlaceTilLimit(Place *p,  Place *tp){
-	Place temp;
+void PlaceTilLimit(Place *p, const Place *tp){
 
-	PlaceCopy(&temp,tp);
+  if(0==tp->counter){
+    p->line=tp->line-1;
+    p->counter=MAX_UINT32-1;
+    p->dividor=MAX_UINT32;
 
-	if(0==temp.counter){
-		p->line=temp.line-1;
-		p->counter=MAX_UINT32-1;
-		p->dividor=MAX_UINT32;
-	}else{
-		p->line=temp.line;
-		temp.counter*=MAX_UINT32;
-		temp.dividor*=MAX_UINT32;
-		PlaceHandleOverflow(&temp);
-		p->counter=temp.counter-1;
-		p->dividor=temp.dividor;
-		if(0==PlaceCmp(p,&temp)){
-			p->counter--;
-		}
-	}
+    assert(p->line>=0);
+
+  }else{
+
+    p->line=tp->line;
+    
+    uint32_t new_counter = scale_double(tp->counter, // first scale it up as much as possible
+                                        0,tp->dividor,
+                                        0,MAX_UINT32);
+    new_counter--; // then subtract one.
+    
+    p->counter=new_counter;
+    p->dividor=MAX_UINT32;
+  }
 }
 
 
@@ -477,41 +391,117 @@ void PlaceTilLimit(Place *p,  Place *tp){
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p>tp.
 **********************************************************/
-void PlaceFromLimit(Place *p,  Place *tp){
-	Place temp;
+void PlaceFromLimit(Place *p, const Place *tp){
 
-	PlaceCopy(&temp,tp);
+  uint32_t new_counter = scale_double(tp->counter, // first scale it up as much as possible
+                                      0,tp->dividor,
+                                      0,MAX_UINT32);
+  new_counter++; // then add one.
 
-	p->line=temp.line;
-	temp.counter*=MAX_UINT32;
-	temp.dividor*=MAX_UINT32;
-//	printf("temp->c: %u, temp->di: %u\n",temp.counter,temp.dividor);
-	PlaceHandleOverflow(&temp);
-
-	p->counter=temp.counter+1;
-	p->dividor=temp.dividor;
-//	printf("tp->c: %u, tp->di: %u\n",tp->counter,tp->dividor);
-//	printf("c: %u, di: %u\n\n",p->counter,p->dividor);
-
-	if(0==PlaceCmp(p,&temp)){
-		p->line=tp->line+1;
-		p->counter=0;
-		p->dividor=1;
-	};
+  if (new_counter==MAX_UINT32){
+    p->line=tp->line+1;
+    p->counter=0;
+    p->dividor=1;
+  } else {
+    p->line=tp->line;
+    p->counter=new_counter;
+    p->dividor = MAX_UINT32;
+  }
 }
 
 
+#ifdef TEST_PLACEMENT
+
+#if 0
+gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
+#endif
+
+#include <stdarg.h>
+
+void EndProgram(void){
+  printf("ENDPROGRAM called\n");
+}
+
+void RError(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  fprintf(stderr,"error: %s\n",message);
+}
+
+#define VALIDATE(_p, _line, _counter, _dividor)  do{ \
+    assert(_p->line==_line);                       \
+    assert(_p->counter==_counter);                 \
+    assert(_p->dividor==_dividor);                 \
+  }while(0)
+
+int main(void){
+
+  Place *p = PlaceCreate(0,0,0);
+  const Place *p1 = PlaceCreate(5,0,50);
+  const Place *p2 = PlaceCreate(5,1,MAX_UINT32);
+  const Place *p3 = PlaceCreate(5,MAX_UINT32-1,MAX_UINT32);
+
+  Place *p1b = (Place*)p1;
+  Place *p2b = (Place*)p2;
+  Place *p3b = (Place*)p3;
+
+  // Float2Placement
+  //assert(Float2Placement(
+
+  // compare and min/max
+  assert(PlaceCmp(p1,p2)==-1);
+  assert(PlaceCmp(p2,p1)==1);
+  assert(PlaceCmp(p1,p1)==0);
+
+  assert(p1==PlaceMin(p1b,p2b));
+  assert(p2==PlaceMax(p1b,p2b));
+
+  assert(p2==PlaceBetween(p1b,p2b,p3b));
+  assert(p1==PlaceBetween(p1b,p1b,p3b));
+  assert(p3==PlaceBetween(p1b,p3b,p3b));
 
 
+  // PlaceTilLimit
+
+  PlaceTilLimit(p, p1);
+  VALIDATE(p,4,MAX_UINT32-1,MAX_UINT32);
+
+  PlaceTilLimit(p, p2); 
+  VALIDATE(p,5,0,MAX_UINT32);
+
+  PlaceTilLimit(p, p3);
+  VALIDATE(p,5,MAX_UINT32-2,MAX_UINT32);
+
+  // PlaceFromLimit
+
+  PlaceFromLimit(p, p1);
+  VALIDATE(p,5,1,MAX_UINT32);
+
+  PlaceFromLimit(p, p2); 
+  VALIDATE(p,5,2,MAX_UINT32);
+
+  PlaceFromLimit(p, p3); 
+  assert(p->line==6);
+  assert(p->counter==0);
+  assert(p->dividor>0);
 
 
+  // Check that the test placements haven't been modified during testing.
+  assert(PlaceCmp(p1,p1b)==0);
+  assert(PlaceCmp(p2,p2b)==0);
+  assert(PlaceCmp(p3,p3b)==0);
+  VALIDATE(p1b, 5,0,50);
+  VALIDATE(p2b, 5,1,MAX_UINT32);
+  VALIDATE(p3b, 5,MAX_UINT32-1,MAX_UINT32);
 
+  printf("Success, no errors\n");
+  return 0;
+}
 
-
-
-
-
-
-
-
-
+#endif // TEST_PLACEMENT

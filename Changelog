@@ -1,4 +1,13 @@
 
+Most important changes 3.0.beta1 -> 3.0.beta2
+* Set CMAKE_BUILD_TYPE for Visualisation library to RelWithDebInfo
+
+
+Most important changes 1.9.x -> 3.0.beta1
+* Rewritten editor graphics. Using OpenGL instead of Qt.
+* Smooth scrolling.
+
+
 Most important changes 1.9.42 -> 1.9.43:
 * Remember and edit jack port names
 * Removed use of libiberty.h. Also add check for -liberty in check_dependies.sh

@@ -76,28 +76,29 @@ void SetEndAttributes(
 	struct Tracks *track,
 	struct Notes *note
 ){
-	struct ListHeader3 *nextnote;
-	struct ListHeader3 *stop;
 	Place *place;
 	Place *p1=NULL,*p2=NULL;
 
-	nextnote=note->l.next;
-	while(nextnote!=NULL){
-		if(PlaceLessThan(&note->l.p,&nextnote->p)){
-			p1= &nextnote->p;
-			break;
-		}
-		nextnote=nextnote->next;
-	}
+        bool endSetEarlier = PlaceGreaterThan(&note->end, &note->l.p);
+        Place *earliest = endSetEarlier ? &note->end : &note->l.p;
 
-	stop= &track->stops->l;
-	while(stop!=NULL){
-		if(PlaceLessThan(&note->l.p,&stop->p)){
-			p2= &stop->p;
-			break;
-		}
-		stop=stop->next;
-	}
+        struct ListHeader3 *nextnote=note->l.next;
+        while(nextnote!=NULL){
+          if(PlaceGreaterThan(&nextnote->p, earliest)){
+            p1 = &nextnote->p;
+            break;
+          }
+          nextnote=nextnote->next;
+        }
+
+        struct ListHeader3 *stop= &track->stops->l;
+        while(stop!=NULL){
+          if(PlaceGreaterThan(&stop->p, earliest)){
+            p2 = &stop->p;
+            break;
+          }
+          stop=stop->next;
+        }
 
 	place=PlaceMin(p1,p2);
 
@@ -106,10 +107,8 @@ void SetEndAttributes(
 		note->end.counter=place->counter;
 		note->end.dividor=place->dividor;
 	}else{
-		note->end.line=block->num_lines-1;
-		note->end.counter=MAX_UINT32-1;
-		note->end.dividor=MAX_UINT32;
-		note->noend=1;
+        	PlaceSetLastPos(block, &note->end);
+        	note->noend=1;
 	}
 
 }
@@ -163,7 +162,7 @@ struct Notes *InsertNote(
 	struct WTracks *wtrack,
 	Place *placement,
         Place *end_placement,
-	int notenum,
+	float notenum,
 	int velocity,
 	int override
 ){
@@ -174,6 +173,15 @@ struct Notes *InsertNote(
 
 	PlaceCopy(&note->l.p,placement);
 
+        if (notenum<=0.0f){
+          RError("notenum<=0.0f: %f. Setting to 0.1",notenum);
+          notenum=0.1f;
+        }
+        if(notenum>=128.0f){
+          RError("notenum>=128.0f: %f. Setting to 127.9",notenum);
+          notenum=127.9;
+        }
+        
 	note->note=notenum;
 	note->velocity=velocity;
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
@@ -201,7 +209,8 @@ struct Notes *InsertNote(
 bool drunk_velocity=false;
 static int64_t last_velocity = MAX_VELOCITY / 2;
 
-static int get_velocity(struct Patch *patch){
+int NOTE_get_velocity(struct Tracks *track){
+
   if(drunk_velocity==false)
     return root->standardvel;
 
@@ -242,7 +251,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 	if(
 		0==override &&
 		wtrack->trackreallines[wblock->curr_realline].note>0 &&
-		wtrack->trackreallines[wblock->curr_realline].note<NOTE_END_NORMAL
+		wtrack->trackreallines[wblock->curr_realline].daspitch == NULL
 	){
 
 		wtrack->trackreallines[wblock->curr_realline].note=notenum;
@@ -250,6 +259,8 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 		while(element->type!=TRE_THISNOTELINES) element=element->next;
 		note=(struct Notes *)element->pointer;
 		note->note=notenum;
+
+#if !USE_OPENGL
 
 		if(wtrack->noteshowtype==TEXTTYPE){
 		  ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
@@ -264,11 +275,13 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 					    );
 					    
 		}
+#endif // !USE_OPENGL
+
 		if(window->curr_track_sub==-1 && !pc->isplaying){
 			ScrollEditorDown(window,g_downscroll);
 		}
 
-        } else if(wtrack->trackreallines[wblock->curr_realline].note>NOTE_PITCH_START) {
+        } else if(wtrack->trackreallines[wblock->curr_realline].daspitch != NULL) {
 
           WFXNodes *wpitch = wtrack->wpitches[wblock->curr_realline];
           while(wpitch->pointer==NULL && wpitch->next!=NULL)
@@ -277,9 +290,11 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
           struct Pitches *pitch = wpitch->pointer;
           if(pitch!=NULL){
             pitch->note = notenum;
-            wtrack->trackreallines[wblock->curr_realline].note = notenum + NOTE_PITCH_START;
+            wtrack->trackreallines[wblock->curr_realline].daspitch = pitch;
+#if !USE_OPENGL
             ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
             UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
+#endif
           }else
             printf("Hmm...\n");
 
@@ -305,7 +320,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 
 		InsertNote(
                            wblock,wtrack,&realline->l.p,NULL,notenum,
-                           get_velocity(wtrack->track->patch),
+                           NOTE_get_velocity(wtrack->track),
                            override
 		);
 
@@ -317,8 +332,10 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 		}
 
 		UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
 
 	}
 
@@ -348,30 +365,46 @@ void InsertStop(
     at position 'placement' to the next stop wherever that may be.
 **********************************************************************/
 void LengthenNotesTo(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
+	struct Blocks *block,
+	struct Tracks *track,
 	Place *placement
 ){
-	struct Notes *note=wtrack->track->notes;
+	struct Notes *note=track->notes;
 	while(note!=NULL){
 		if(PlaceGreaterThan(&note->l.p,placement)) break;
 		if(PlaceEqual(&note->end,placement))
-			SetEndAttributes(wblock->block,wtrack->track,note);
+			SetEndAttributes(block,track,note);
+		note=NextNote(note);
+	}
+}
+
+/**********************************************************************
+  FUNCTION
+    Set the end attributes of all notes that previously was stopped
+    at position 'old_placement' to 'new_placement'.
+**********************************************************************/
+void ReplaceNoteEnds(
+	struct Blocks *block,
+	struct Tracks *track,
+	Place *old_placement,
+        Place *new_placement
+){
+	struct Notes *note=track->notes;
+	while(note!=NULL){
+		if(PlaceGreaterThan(&note->l.p,old_placement)) break;
+		if(PlaceEqual(&note->end,old_placement))
+                  note->end = *new_placement;
 		note=NextNote(note);
 	}
 }
 
 void RemoveNote(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
+	struct Blocks *block,
+	struct Tracks *track,
 	struct Notes *note
 ){
-	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
-
-	ListRemoveElement3(&wtrack->track->notes,&note->l);
-
-	LengthenNotesTo(wblock,wtrack,&realline->l.p);
+	ListRemoveElement3(&track->notes,&note->l);
+        LengthenNotesTo(block,track,&note->l.p);
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
@@ -420,7 +453,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 //			nextnote=NextNote(note);
 		}
 
-		LengthenNotesTo(wblock,wtrack,&realline->l.p);
+		LengthenNotesTo(wblock->block,wtrack->track,&realline->l.p);
 
 	}else{
 		InsertStop(window,wblock,wtrack,&realline->l.p);
@@ -430,9 +463,10 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 		ScrollEditorDown(window,g_downscroll);
 	}
 	UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 	PC_StopPause();
 
 }
@@ -486,7 +520,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	}
 
 	if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
-		RemoveNote(window,wblock,wtrack,note);
+		RemoveNote(wblock->block,wtrack->track,note);
 	}else{
 		CutListAt(&note->velocities,&realline->l.p);
 		PlaceCopy(&note->end,&realline->l.p);
@@ -494,9 +528,10 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	}
 
 	UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 	PC_StopPause();
 
 }

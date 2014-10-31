@@ -57,6 +57,72 @@ class Argument:
 
         self.varname=parts[len(parts)-1]
 
+        self.type_string = self.qualifiers[len(self.qualifiers)-1]
+        self.full_type_string = reduce(lambda x,y: x+" "+y, self.qualifiers)
+
+
+    def get_s7_make_type_function(self):
+        if self.type_string=="int":
+            return "s7_make_integer"
+        elif self.type_string=="float":
+            return "s7_make_real"
+        elif self.type_string=="char*":
+            return "s7_make_string"
+        elif self.type_string=="bool":
+            return "s7_make_boolean"
+        else:
+            sys.stderr.write("Unknown type '"+type_string+"'")
+            raise "Unknown type '"+type_string+"'"
+
+    def get_s7_get_type_function(self):
+        if self.type_string=="int":
+            return "s7_integer("
+        elif self.type_string=="float":
+            return "s7_number_to_real(radiums7_sc, "
+        elif self.type_string=="char*":
+            return "(char*)s7_string("
+        elif self.type_string=="bool":
+            return "s7_bool("
+        else:
+            sys.stderr.write("Unknown type '"+type_string+"'")
+            raise "Unknown type '"+type_string+"'"
+
+    def get_s7_variable_check_function(self):
+        if self.type_string=="int":
+            return "s7_is_integer"
+        elif self.type_string=="float":
+            return "s7_is_number"
+        elif self.type_string=="char*":
+            return "s7_is_string"
+        elif self.type_string=="bool":
+            return "s7_is_bool"
+        else:
+            sys.stderr.write("Unknown type '"+type_string+"'")
+            raise "Unknown type '"+type_string+"'"
+
+    # keyDownPlay -> r-key-down-play
+    # keyDownBPM -> r-key-down-BPM
+    # KeyDownP   -> r-key-down-p
+    def get_scheme_varname(self):
+        def loop(name, dontconvert):
+            if name=="":
+                return ""
+            elif name[0].islower():
+                return name[0]+loop(name[1:], False)
+            elif name[0].isupper():
+                if dontconvert==True:
+                    return name[0]+loop(name[1:], False)
+                elif len(name)==1:
+                    return "-"+name[0].lower()
+                elif name[1].isupper():
+                    return "-"+name[0]+loop(name[1:], True)
+                else:
+                    return "-"+name[0].lower()+loop(name[1:], False)
+            else:
+                return name[0]+loop(name[1:], False)
+
+        return "ra:"+loop(self.varname, False)
+
     def write(self,oh,dodefault):
         for lokke in range(len(self.qualifiers)):
             oh.write(self.qualifiers[lokke]+" ")
@@ -147,6 +213,8 @@ class Proto:
                 t="O"
             elif qualifier=="char*":
                 t="s"
+            elif qualifier=="bool":
+                t="b"
             else:
                 sys.stderr.write("Unknown type '"+qualifier+"'")
                 raise "Unknown type '"+qualifier+"'"
@@ -187,6 +255,8 @@ class Proto:
                     t="PyFloat_FromDouble("
                 elif qualifier=="char*":
                     t="PyString_FromString("
+                elif qualifier=="bool":
+                    t="PyBool_FromLong((long)"
                 oh.write(t+"result);\n")
 
         oh.write("return resultobj;\n")
@@ -201,6 +271,193 @@ class Proto:
             oh.write("METH_KEYWORDS|")
         oh.write("METH_VARARGS},\n")
 
+    '''
+static s7_pointer radium_s7_add3(s7_scheme *sc, s7_pointer org_args)
+{
+  s7_pointer args = org_args;
+  s7_pointer arg1_s7,arg2_s7,arg3_s7;
+  int arg1, arg2, arg3;
+  
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+  arg1_s7 = s7_car(args);
+  if (!s7_is_integer(arg1_s7))
+    return s7_wrong_type_arg_error(sc, "add3", 1, arg1_s7, "an integer");
+  arg1 = s7_integer(arg1_s7)
+  args = s7_cdr(args);
+
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+  arg2_s7 = s7_car(args);
+  if (!s7_is_integer(arg2_s7))
+    return s7_wrong_type_arg_error(sc, "add3", 2, arg2_s7, "an integer");
+  arg2 = s7_integer(arg2_s7);
+  args = s7_cdr(args);
+
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+  arg3 = s7_car(args);
+  if (!s7_is_integer(arg3_s7))
+    return s7_wrong_type_arg_error(sc, "add3", 3, arg3_s7, "an integer");
+  arg3 = s7_integer(arg3_s7);
+  args = s7_cdr(args);
+
+  if (!s7_is_null(args))
+    return s7_wrong_number_of_args_error(sc, "add3: wrong number of args: ~A", org_args);
+
+  return s7_make_integer(sc, add3(arg1, arg2, arg3));
+}
+'''
+
+    '''
+static s7_pointer radium_s7_add2_secondargumenthasdefaultvalue9(s7_scheme *sc, s7_pointer org_args)
+{
+  s7_pointer args = org_args;
+  s7_pointer arg1_s7,arg2_s7;
+  int arg1, arg2;
+  
+  if (!is_pair(args))
+    return (s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args));
+  arg1_s7 = s7_car(args);
+  if (!s7_is_integer(arg1_s7))
+    s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 1, arg1_s7, "an integer");
+  arg1 = s7_integer(arg1_s7);
+  args = s7_cdr(args);
+
+  if (s7_is_null(args)) {
+    arg2 = 9;
+    return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+  }
+
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);
+  arg2_s7 = s7_car(args);
+  if (!s7_is_integer(arg2_s7))
+    return s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 2, arg2_s7, "an integer");
+  arg2 = s7_integer(arg2_s7);
+  args = s7_cdr(args);
+
+  if (!s7_is_null(args))
+    return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);  
+
+  return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+}
+
+static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // default value for arg1 is 8, default value for arg2 is 9.
+{
+  s7_pointer args = org_args;
+  int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
+
+  if (s7_is_null(args)) {
+    arg1 = 8;
+    arg2 = 9;
+    return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+  }
+  
+  if (!is_pair(args))
+    return (s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args));
+  arg1_s7 = s7_car(args);
+  if (!s7_is_integer(arg1_s7))
+    s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 1, arg1_s7, "an integer");
+  arg1 = s7_integer(arg1_s7);
+  args = s7_cdr(args);
+
+  if (s7_is_null(args)) {
+    arg2 = 9;
+    return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+  }
+
+  if (!is_pair(args))
+    return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);
+  arg2_s7 = s7_car(args);
+  if (!s7_is_integer(arg2_s7))
+    return s7_wrong_type_arg_error(sc, "add2_secondargumenthasdefaultvalue9", 2, arg2_s7, "an integer");
+  arg2 = s7_integer(arg2_s7);
+  args = s7_cdr(args);
+
+  if (!s7_is_null(args))
+    return s7_wrong_number_of_args_error(sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_args);  
+
+  return s7_make_integer(sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+}
+'''
+
+    # int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
+    def write_s7_args(self,oh):
+        for arg in self.args:
+            oh.write("  "+arg.full_type_string + " " + arg.varname + "; s7_pointer " + arg.varname+"_s7;\n")
+
+    # arg2 = 9 ; arg3 = 10, ...
+    def write_s7_defaults(self, oh, args):
+        for arg in args:
+            oh.write("    "+arg.varname+" = "+arg.default+";\n")
+
+    def get_arg_list(self, args, separator = ", "):
+        if len(args)==0:
+            return ""
+        elif len(args)==1:
+            return args[0].varname
+        else:
+            return args[0].varname + separator + self.get_arg_list(args[1:])
+
+    # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+    def write_s7_call_c_function(self,oh):
+        callstring = self.proc.varname+"("+self.get_arg_list(self.args)+")"
+        if self.proc.type_string=="void":
+            oh.write("  "+callstring+"; return s7_undefined(radiums7_sc);\n")
+        else:
+            conversion_function = self.proc.get_s7_make_type_function()
+            oh.write("  return "+conversion_function+"(radiums7_sc, "+callstring+");\n")
+
+    def write_s7_func(self,oh):
+        if "PyObject*" in map(lambda arg: arg.type_string, self.args):
+            return
+
+        oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *radiums7_sc, s7_pointer radiums7_args){\n")
+        oh.write("  s7_pointer org_radiums7_args = radiums7_args;\n")
+        self.write_s7_args(oh) # int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
+
+        oh.write("\n")
+
+        for n in range(len(self.args)):
+            arg = self.args[n]
+
+            if arg.default != "":
+                 oh.write("  if (s7_is_null(radiums7_sc, radiums7_args)) {\n")
+                 self.write_s7_defaults(oh, self.args[n:]) # arg2 = 9 ; arg3 = 10, ...
+                 oh.write("  ") ; self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+                 oh.write("  }\n")
+
+            oh.write("  if (!s7_is_pair(radiums7_args))\n")
+            oh.write('    return (s7_wrong_number_of_args_error(radiums7_sc, "'+self.proc.varname+': wrong number of args: ~A", org_radiums7_args));\n')
+            oh.write('\n')
+            oh.write("  "+arg.varname+"_s7 = s7_car(radiums7_args);\n")
+            oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
+            oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+arg.varname+'", '+str(n)+', '+arg.varname+'_s7, "'+arg.type_string+'");\n')
+            oh.write('\n')
+            oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+arg.varname+"_s7);\n")
+            oh.write("  radiums7_args = s7_cdr(radiums7_args);\n")
+            oh.write("\n")
+
+        oh.write("  if (!s7_is_null(radiums7_sc, radiums7_args))\n")
+        oh.write('    return s7_wrong_number_of_args_error(radiums7_sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_radiums7_args);\n')
+        oh.write("\n")
+        self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+        oh.write("}\n")
+        oh.write("\n")
+        
+    def write_s7_define(self,oh):
+        if "PyObject*" in map(lambda arg: arg.type_string, self.args):
+            return
+
+        scheme_funcname   = self.proc.get_scheme_varname()
+        c_funcname        = "radium_s7_"+self.proc.varname
+        num_required_args = len(filter(lambda x: x.default == "", self.args))
+        num_optional_args = len(self.args) - num_required_args
+        has_rest_arg      = "false"
+        description       = "("+scheme_funcname+" "+self.get_arg_list(self.args," ")+")"
+
+        oh.write('  s7_define_function(s7, "'+scheme_funcname+'", '+c_funcname+", "+str(num_required_args)+", "+str(num_optional_args)+", "+has_rest_arg+', "'+description+'");\n')
         
     def getUnfoldedCall(self,arguments):
         arglen=len(arguments)
@@ -267,7 +524,13 @@ class Protos:
             self.protos[lokke].write_python_wrap_methodstruct(oh)
         oh.write("{NULL,NULL}\n")
         oh.write("};\n\n")
-        
+    def write_s7_funcs(self,oh):
+        for proto in self.protos:
+            proto.write_s7_func(oh)
+    def write_s7_defines(self,oh):
+        for proto in self.protos:
+            proto.write_s7_define(oh)
+            
     def getUnfoldedCall(self,command,arguments):
         for lokke in range(len(self.protos)):
             if self.protos[lokke].proc.varname==command:
@@ -294,18 +557,18 @@ class Read:
         return self.fh.readline()
 
     def readNextLine(self):
-        line=self.readLine()
+        line = self.readLine()
 
         if line=="":
             self.fh.close()
             return false
 
-        line=string.rstrip(line)
+        line = line.rstrip().split("#")[0].strip()
 
-        while line=="" or line=="\n" or line[0:1]=="#":
+        if line=="" or line=="\n":
             return self.readNextLine()
 
-        if len(line)>0 and line[len(line)-1]=="\n":
+        if line[len(line)-1]=="\n":
             line=line[:-1]
 
         if len(line)>1:
@@ -352,7 +615,16 @@ class Read:
         oh.write("};\n\n")
         oh.close()
 
-
+    def makeRadium_s7_wrap_c(self):
+        oh=sys.stdout
+        oh.write("#include \"Python.h\"\n\n")
+        oh.write("#include \"s7.h\"\n\n")
+        oh.write("#include \"radium_proc.h\"\n\n")
+        self.protos.write_s7_funcs(oh)
+        oh.write("void init_radium_s7(s7_scheme *s7){\n")
+        self.protos.write_s7_defines(oh)
+        oh.write("}\n")
+        
     def getUnfoldedCall(self,command,arguments):        
         return self.protos.getUnfoldedCall(command,arguments)
         
@@ -366,5 +638,6 @@ if __name__=="__main__":
         re.makeWrapfunclist_c()
     if sys.argv[1]=="radium_wrap.c":
         re.makeRadium_wrap_c()
-
+    if sys.argv[1]=="radium_s7_wrap.c":
+        re.makeRadium_s7_wrap_c()
 

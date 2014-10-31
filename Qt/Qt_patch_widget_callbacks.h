@@ -104,9 +104,11 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
 
   void update_peaks(){
     struct Tracker_Windows *window=root->song->tracker_windows;
-    struct WBlocks *wblock=window->wblock;
     TRACKREALLINES_update_peak_tracks(window,_patch);
+#if !USE_OPENGL
+    struct WBlocks *wblock=window->wblock;
     DrawUpAllPeakWTracks(window,wblock,_patch);
+#endif
   }
 
   void onoff_toggled(int voicenum,bool val){

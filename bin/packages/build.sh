@@ -52,6 +52,7 @@ if test $2 = "yes" ; then
     cd ..
 fi
 
+
 tar xvf setxkbmap_56346c72127303a445a273217f7633c2afb29cfc.tar
 cd setxkbmap
 make clean
@@ -60,11 +61,30 @@ make
 cd ..
 
 
+rm -fr Visualization-Library-master
+tar xvzf Visualization-Library-master.tar.gz 
+cd Visualization-Library-master/
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVL_GUI_QT4_SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+make -j8
+cd ..
+
+
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
 make clean
 make -j7
 cd ..
+
+
+tar xvzf qhttpserver-master.tar.gz
+cd qhttpserver-master/
+echo "CONFIG += staticlib" >> src/src.pro
+`../../../find_moc_and_uic_paths.sh qmake`
+make
+cd ..
+
+
+tar xvzf s7.tar.gz
 
 
 # gc.tar.gz is currently gc-7.2d, with ABORT made into a dummy operation.
@@ -77,11 +97,11 @@ CFLAGS=-fPIC ./configure --prefix=$PREFIX
 CFLAGS=-fPIC make -j3
 cd ..
 
-tar xvjf xmessage-1.0.3.tar.bz2
-cd xmessage-1.0.3
-./configure --prefix=$PREFIX
-make -j3
-cd ..
+#tar xvjf xmessage-1.0.3.tar.bz2
+#cd xmessage-1.0.3
+#./configure --prefix=$PREFIX
+#make -j3
+#cd ..
 
 tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void CloseWBlock(struct Tracker_Windows *window, NInt blocknum);
 extern LANGSPEC void CloseAllWBlocks(struct Tracker_Windows *window);
 
-extern LANGSPEC bool WBlock_legalizeStartEndReallines(struct WBlocks *wblock,int *start_realline,int *end_realline);
+extern LANGSPEC bool WBlock_legalizeStartEndReallines(const struct WBlocks *wblock,int *start_realline,int *end_realline);
 
 extern LANGSPEC void UpdateWBlockCoordinates(
 	struct Tracker_Windows *window,

@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-int MoveVelNode_Mouse(
+static int MoveVelNode_Mouse(
 	struct Tracker_Windows *window,
 	float x,float y
 ){
@@ -50,7 +50,6 @@ int MoveVelNode_Mouse(
 	int sx1=GetXSubTrack1(wtrack,subtrack);
 	int sx2=GetXSubTrack2(wtrack,subtrack);
 
-	int start_realline,end_realline;
 
 	/* Do a check to see if all data is still valid. */
 	if(isInList1_m(
@@ -99,8 +98,9 @@ int MoveVelNode_Mouse(
 
 	UpdateTrackReallines(window,wblock,wtrack);
 
-	start_realline=FindRealLineFor(wblock,0,&prev_vel);
-	end_realline=FindRealLineFor(wblock,start_realline,&next_vel);
+#if !USE_OPENGL
+	int start_realline=FindRealLineFor(wblock,0,&prev_vel);
+	int end_realline=FindRealLineFor(wblock,start_realline,&next_vel);
 
 	ClearTrack(window,wblock,wtrack,
 		   start_realline,
@@ -113,6 +113,7 @@ int MoveVelNode_Mouse(
 		   end_realline
 		     //		     wblock->top_realline,wblock->bot_realline
 		     );
+#endif
 
 	return 0;
 }

@@ -17,51 +17,51 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern int GetRelXSubTrack1(
-	struct WTracks *wtrack,
+extern LANGSPEC int GetRelXSubTrack1(
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
-extern int GetXSubTrack1(
-	struct WTracks *wtrack,
+extern LANGSPEC int GetXSubTrack1(
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
-extern int GetRelXSubTrack2(
-	struct WTracks *wtrack,
+extern LANGSPEC int GetRelXSubTrack2(
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
-extern int GetXSubTrack2(
-	struct WTracks *wtrack,
+extern LANGSPEC int GetXSubTrack2(
+	const struct WTracks *wtrack,
 	int subtrack
 );
 
-extern int GetXSubTrack_B1(
-	struct WBlocks *wblock,
+extern LANGSPEC int GetXSubTrack_B1(
+	const struct WBlocks *wblock,
 	NInt track,
 	int subtrack
 );
 
-extern int GetXSubTrack_B2(
-	struct WBlocks *wblock,
+extern LANGSPEC int GetXSubTrack_B2(
+	const struct WBlocks *wblock,
 	NInt track,
 	int subtrack
 );
 
-extern int SubtrackBoundaries(struct WTracks *wtrack,int subtrack,int x);
+extern LANGSPEC int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x);
 
-extern int GetSubTrackWidth(struct WTracks *wtrack,int subtrack);
+extern LANGSPEC int GetSubTrackWidth(const struct WTracks *wtrack,int subtrack);
 
-extern int GetSubTrackPos(
-	struct WTracks *wtrack,
+extern LANGSPEC int GetSubTrackPos(
+	const struct WTracks *wtrack,
 	float x,
 	int maxx,
 	int subtrack
 );
 
-extern int GetSubTrack(
-	struct WTracks *wtrack,
+extern LANGSPEC int GetSubTrack(
+	const struct WTracks *wtrack,
 	int x
 );
 

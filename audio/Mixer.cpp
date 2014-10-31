@@ -42,6 +42,43 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
+
+/*
+
+  TODO/FIX. This sometimes happens during startup:
+
+-3.14.3-1.fc17.x86_64 openldap-2.4.33-3.fc17.x86_64 qt4-theme-quarticurve-0.0-0.17.beta8.fc17.x86_64 raptor2-2.0.7-1.fc17.x86_64 xz-libs-5.1.2-1alpha.fc17.x86_64 yajl-2.0.4-1.fc17.x86_64
+(gdb) bt
+#0  0x0000003b49435935 in raise () from /lib64/libc.so.6
+#1  0x0000003b494370e8 in abort () from /lib64/libc.so.6
+#2  0x00000000004ec954 in show_message (type=0, message=0x7fffffffa0b0 "Calling lock_player while holding the player lock") at X11/X11_error.c:71
+#3  0x00000000004eca31 in RError (fmt=0xa4e898 "Calling lock_player while holding the player lock") at X11/X11_error.c:87
+#4  0x00000000005d38e1 in lock_player () at audio/Mixer.cpp:228
+#5  PLAYER_lock () at audio/Mixer.cpp:253
+#6  0x00000000005b23f5 in remove_SoundProducerInput (ch=<optimized out>, sound_producer_ch=<optimized out>, sound_producer=<optimized out>, this=<optimized out>) at audio/SoundProducer.cpp:415
+#7  SP_remove_link (target=<optimized out>, target_ch=<optimized out>, source=<optimized out>, source_ch=<optimized out>) at audio/SoundProducer.cpp:728
+#8  0x00000000005de1fc in CONNECTION_delete_connection (connection=0x4959180) at mixergui/QM_chip.cpp:626
+#9  0x00000000005deb5f in Chip::~Chip (this=0x48bfe90, __in_chrg=<optimized out>) at mixergui/QM_chip.cpp:761
+#10 0x00000000005dece0 in Chip::~Chip (this=0x48bfe90, __in_chrg=<optimized out>) at mixergui/QM_chip.cpp:772
+#11 0x00000000005e8924 in MW_delete_plugin (plugin=0x488f5b0) at mixergui/QM_MixerWidget.cpp:1110
+#12 0x00000000005e9044 in delete_a_chip () at mixergui/QM_MixerWidget.cpp:1223
+#13 0x00000000005e90a6 in MW_cleanup () at mixergui/QM_MixerWidget.cpp:1231
+#14 0x00000000005e9486 in MW_create_from_state (state=0x2584340) at mixergui/QM_MixerWidget.cpp:1298
+#15 0x0000000000472a2e in DLoadSong (newroot=0x2bab380, song=0x2af90a0) at common/disk_song.c:168
+#16 0x0000000000473563 in DLoadRoot (theroot=0x2bab380) at common/disk_root.c:139
+#17 0x00000000004742fa in Load (filename=0x2a60630 "/home/kjetil/radium3.0/bin/new_song.rad") at common/disk_load.c:154
+#18 0x000000000047453d in Load_CurrPos_org (window=0x2affe00, filename=0x2a60630 "/home/kjetil/radium3.0/bin/new_song.rad") at common/disk_load.c:218
+#19 0x00000000004746db in NewSong_CurrPos (window=0x2affe00) at common/disk_load.c:258
+#20 0x000000000047b4de in radium_main (arg=0x23a152c "") at Qt/Qt_Main.cpp:642
+#21 0x00000000004e5f7a in init_radium (arg=0x23a152c "", gkf=<function at remote 0x261a140>) at api/api_common.c:61
+#22 0x00000000004dfa90 in _wrap_init_radium (self=0x0, args=('', <function at remote 0x261a140>)) at api/radium_wrap.c:572
+#23 0x0000003b5d4dd0e1 in call_function (oparg=<optimized out>, pp_stack=0x7fffffffcb88) at /usr/src/debug/Python-2.7.3/Python/ceval.c:4098
+#24 PyEval_EvalFrameEx (f=f@entry=Frame 0x25e8b50, for file /home/kjetil/radium3.0/bin/start.py, line 137, in <module> (), throwflag=throwflag@entry=0) at /usr/src/debug/Python-2.7.3/Python/ceval.c:2740
+#25 0x0000003b5d4ddb1f in PyEval_EvalCodeEx (co=co@entry=0x25af0b0, globals=globals@entry=
+
+*/
+
+
 extern PlayerClass *pc;
 extern int num_users_of_keyboard;
 

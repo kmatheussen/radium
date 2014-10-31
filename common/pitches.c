@@ -134,15 +134,20 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   PlaceCopy(&pitch->l.p,place);
   pitch->note = notenum;
   //pitch->note_note = note;
-  
+
+  int pos;
   PC_Pause(); {
-    ListAddElement3(&note->pitches, &pitch->l);
+    pos=ListAddElement3_ns(&note->pitches, &pitch->l);
   }PC_StopPause();
+
+  if(pos==-1)
+    return NULL;
   
   UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
   ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
   UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
   return pitch;
 }
 

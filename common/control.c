@@ -43,7 +43,7 @@ struct Root *root=NULL;
 
 extern PlayerClass *pc;
 
-extern void RADIUM_ensure_bin_packages_gc_is_used();
+extern void RADIUM_ensure_bin_packages_gc_is_used(void);
 
 bool InitProgram(void){
 //	GC_INIT();
@@ -125,11 +125,13 @@ bool InitProgram(void){
 
 	ret=NewSong();
 
+#if !USE_OPENGL
 	printf("...Blitting\n");
 
 	if(ret==true){
 	  Blt_blt(root->song->tracker_windows);
 	}
+#endif
 
 	printf("Initialization finished.\n");
 

@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 
+#include "../OpenGL/GfxElements.h"
+
 #include "Qt_Fonts_proc.h"
 
 
@@ -36,6 +38,8 @@ void setFontValues(struct Tracker_Windows *tvisual){
 
   editor->cursorbuffer_painter->setFont(editor->font);
   editor->paintbuffer_painter->setFont(editor->font);
+
+  GE_set_font(editor->font);
 
   const QFont &font=editor->font;
 

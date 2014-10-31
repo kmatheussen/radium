@@ -84,7 +84,9 @@ void SetMouseActionMainBPM(
 
 	UpdateAllSTimes();
 
+#if !USE_OPENGL
 	WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }
@@ -119,8 +121,9 @@ void SetMouseActionRelTempo(
 		2
 	);
 
+#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
-
+#endif
 }
 
 void SetMouseActionTempoHeader(

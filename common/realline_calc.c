@@ -22,6 +22,47 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+float FindReallineForF(
+                       const struct WBlocks *wblock,
+                       float reallineF, // start search from here. Use 0 to search all.
+                       const Place *place
+                       )
+{
+        int realline = reallineF;
+	struct LocalZooms **reallines=wblock->reallines;
+
+	if(realline>=wblock->num_reallines){
+		RError("\n\nError In the function \"FindReallineForF\" in the file \"realline_calc.c\"\n"
+                       "Input parameter 'realline' is below last realline.\n\n");
+		return wblock->num_reallines-0.001f;
+	}
+
+        if(place->line > realline)
+          realline = place->line;
+
+        // find next realline higher than place.
+        {
+          realline++;
+        
+          for(;;){
+            if(realline>=wblock->num_reallines)
+              break;
+            if(PlaceGreaterOrEqual(&reallines[realline]->l.p, place))
+              break;
+            realline++;
+          }
+        }
+
+        Place *p1 = &reallines[realline-1]->l.p;
+        Place *p2 = realline==wblock->num_reallines ? NULL  : &reallines[realline]->l.p;
+
+        float y=GetFloatFromPlace(place);
+        float y1=GetFloatFromPlace(p1);
+        float y2=p2==NULL ? wblock->block->num_lines : GetFloatFromPlace(p2);
+
+	return scale(y,y1,y2,realline-1,realline);
+}
+
 
 /*******************************************************************
   FUNCTION

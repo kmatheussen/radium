@@ -413,14 +413,16 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
 static void add_ladspa_plugin_type(QFileInfo file_info){
   QString filename = file_info.absoluteFilePath();
 
-  fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
+  fprintf(stderr,"\"%s\"... ",filename.ascii());
+  fflush(stderr);
 
   QLibrary myLib(filename);
 
   LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) myLib.resolve("ladspa_descriptor");
 
   if(get_descriptor_func==NULL){
-    fprintf(stderr,"nope: \"%s\"\n",filename.ascii());
+    fprintf(stderr,"(failed) ");
+    fflush(stderr);
     return;
   }
 
@@ -787,11 +789,11 @@ static void init_lrdf (){
   fflush(stdout);
 
   for(unsigned int i=0;i<lrdf_uris.size();i++){
-    printf("Trying to read %d, size: %d. data: %s\n",i,(int)lrdf_uris.size(),lrdf_uris.at(i));
+    //printf("Trying to read %d, size: %d. data: %s\n",i,(int)lrdf_uris.size(),lrdf_uris.at(i));
     fflush(stdout);
     err = lrdf_read_file (lrdf_uris.at(i));
-    printf("Finished reading %d. Success? %s\n", i, err ? "no":"yes");
-    fflush(stdout);
+    //printf("Finished reading %d. Success? %s\n", i, err ? "no":"yes");
+    //fflush(stdout);
 
     if (err)
       fprintf (stderr, "%s: could not parse LRDF file '%s'\n", __FUNCTION__, lrdf_uris.at(i));

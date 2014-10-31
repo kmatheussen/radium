@@ -19,8 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-extern int GetCursorY1Pos(struct Tracker_Windows *window,struct WBlocks *wblock);
-extern int GetCursorY2Pos(struct Tracker_Windows *window,struct WBlocks *wblock);
+extern LANGSPEC int GetCursorY1Pos(const struct Tracker_Windows *window, const struct WBlocks *wblock);
+extern LANGSPEC int GetCursorY2Pos(const struct Tracker_Windows *window, const struct WBlocks *wblock);
 
 int Common_oldGetReallineY1Pos(
 			       struct Tracker_Windows *window,

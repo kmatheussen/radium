@@ -19,15 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern void SetNum_Vel(struct WTracks *wtrack);
 
-extern void AddVelocity(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int subtrack,
-	int velocityvelocity,
-	Place *placement,
-	int realline
-);
+extern int AddVelocity(
+                       int velocityvelocity,
+                       const Place *placement,
+                       struct Notes *note
+                       );
 
 extern void AddVelocityCurrPos(struct Tracker_Windows *window);
 

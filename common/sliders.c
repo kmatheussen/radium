@@ -166,6 +166,8 @@ void DrawBottomSlider(struct Tracker_Windows *window){
     Updates the left slider. Call whenever necesarry.
 *********************************************************/
 
+#if !USE_OPENGL
+
 #define LeftSliderBox(color,b,c) GFX_FilledBox(window,color,2,b,window->leftslider.width-2,c,PAINT_DIRECTLY)
 void UpdateLeftSlider(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
@@ -185,7 +187,8 @@ void UpdateLeftSlider(struct Tracker_Windows *window){
 	int lx=window->leftslider.lx;
 	int lx2=window->leftslider.lx2;
 
-	if(wblock->curr_realline==wblock->num_reallines-1) x2=window->leftslider.x2-2;
+	if(wblock->curr_realline==wblock->num_reallines-1)
+          x2=window->leftslider.x2-2;
 
 	if(lx2<=x || x2<=lx){
 		LeftSliderBox(0,lx,lx2);
@@ -243,6 +246,9 @@ void DrawLeftSlider(struct Tracker_Windows *window){
 
 	UpdateLeftSlider(window);
 }
+#endif // !USE_OPENGL
+
+
 
 void InitSliderValues(struct Tracker_Windows *window){
   window->leftslider.show=1;

@@ -48,9 +48,8 @@ extern LANGSPEC struct WTracks *getWTrackFromNumA(
 	int wtracknum
 );
 
-extern LANGSPEC struct Notes *getNoteFromNum(int blocknum,int tracknum,int notenum);
-
-extern LANGSPEC struct Notes *getNoteFromNumA(int windownum,int blocknum,int tracknum,int notenum);
+extern LANGSPEC struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum);
+extern LANGSPEC struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum);
 
 extern LANGSPEC int getInstrumentPatchNum(int instrument_num, int patch_num);
 extern LANGSPEC struct Instruments *getInstrumentFromNum(int instrument_num);

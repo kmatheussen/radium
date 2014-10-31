@@ -36,9 +36,9 @@ extern PlayerClass *pc;
 void PE_HandleFirstFX(struct PEventQueue *peq,int doit);
 void PE_HandleFX(struct PEventQueue *peq,int doit);
 
-void InitPEQfxs(
-	struct Blocks *block,
-	struct Tracks *track,
+static void InitPEQfxs(
+	const struct Blocks *block,
+	const struct Tracks *track,
 	struct FXs *fxs
 ){
 	struct PEventQueue *peq=GetPEQelement();
@@ -57,8 +57,8 @@ void InitPEQfxs(
 
 
 void InitPEQBlockfxs(
-	struct Blocks *block,
-	Place *p
+	const struct Blocks *block,
+	const Place *p
 ){
 	struct Tracks *track=block->tracks;
 	struct FXs *fxs;
@@ -75,7 +75,7 @@ void InitPEQBlockfxs(
 }
 
 static void scheduled_fx_change(int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
+  const struct Tracks *track = args[0].const_pointer;
   struct FX     *fx    = args[1].pointer;
   int            x     = args[2].int_num;
   int64_t        skip  = args[3].int_num;
@@ -94,7 +94,7 @@ static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
 
   if(fx!=NULL && peq->track->onoff==1){
     union SuperType args[5];
-    args[0].pointer = peq->track;
+    args[0].const_pointer = peq->track;
     args[1].pointer = fx;
     args[2].int_num = x;
     args[3].int_num = skip;

@@ -47,7 +47,7 @@ void SetMouseActionWTrack(
 		wtrack=NextWTrack(wtrack);
 	}
 
-        wblock->mouse_track=wtrack->l.num;
+        //wblock->mouse_track=wtrack->l.num;
 
 	if(wtrack->l.num==rwtracknum && x>=rwtrack->fxarea.x2 && x<=rwtrack->fxarea.x2+5){ // ???
           if (click==1)

@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QResizeEvent>
 #include <QPixmap>
 #include <QMouseEvent>
+#include <QPointF>
 #include <QKeyEvent>
 #endif
 
@@ -40,6 +41,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/wblocks_proc.h"
+
+#include "../embedded_scheme/scheme_proc.h"
+
+#include "../OpenGL/Render_proc.h"
+#include "../OpenGL/Widget_proc.h"
+
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -69,8 +77,10 @@ void EditorWidget::customEvent(QEvent *e){
 
   //printf("Got customEvent\n");
   DO_GFX({
+#if !USE_OPENGL
       if(pc->isplaying)
         P2MUpdateSongPosCallBack();
+#endif
       UpdateClock(this->window);
       //MIDI_HandleInputMessage();
     });
@@ -110,6 +120,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     window->must_redraw=false;
     GFX_clear_op_queue(this->window);
     DO_GFX(DrawUpTrackerWindow(this->window));
+
+    GL_create(window, window->wblock);
   }
 
   //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
@@ -133,8 +145,9 @@ void EditorWidget::updateEditor(){
   if(is_starting_up==true)
     return;
 
-  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0)
+  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
     update();
+  }
 }
 
 struct TEvent tevent={0};
@@ -281,12 +294,41 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEDOWN;
     }
   }
+
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
 
-  EventReciever(&tevent,this->window);
+  //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  setFocus();
+  if (SCHEME_mousepress(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
+
+    EventReciever(&tevent,this->window);
+
+    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    GL_lock();{
+      setFocus();
+    }GL_unlock();
+  }
+
+  updateEditor();
+}
+
+void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
+  if(is_starting_up==true)
+    return;
+
+  tevent.ID=TR_MOUSEMOVE;
+  tevent.x=qmouseevent->x();//-XOFFSET;
+  tevent.y=qmouseevent->y();//-YOFFSET;
+
+  //Qt::ButtonState buttonstate=qmouseevent->state();
+  //printf("buttonstate: %d, %d\n",buttonstate,tevent.keyswitch);
+
+  if (SCHEME_mousemove(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+    EventReciever(&tevent,this->window);
+
+  //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
+//  printf("----Got mouse move %d %d %f %f\n",tevent.x,tevent.y,qmouseevent->posF().x(),qmouseevent->posF().y());
 
   updateEditor();
 }
@@ -308,22 +350,10 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   tevent.x=qmouseevent->x();//-XOFFSET;
   tevent.y=qmouseevent->y();//-YOFFSET;
 
+  //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
+  if (SCHEME_mouserelease(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+    EventReciever(&tevent,this->window);
 
-  EventReciever(&tevent,this->window);
-
-  updateEditor();
-}
-
-void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
-  if(is_starting_up==true)
-    return;
-
-  tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
-  EventReciever(&tevent,this->window);
-
-  //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 
   updateEditor();
 }
@@ -353,11 +383,13 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   this->init_buffers();
 
-  this->window->width=this->get_editor_width();
-  this->window->height=this->get_editor_height();
+  this->window->width=qresizeevent->size().width(); //this->get_editor_width();
+  this->window->height=qresizeevent->size().height(); //this->get_editor_height();
 
   if(is_starting_up==true)
     return;
+
+  UpdateWBlockCoordinates(window, window->wblock);
 
 #if 0
   printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
@@ -369,6 +401,13 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
   updateEditor();
 #else
   update();
+#endif
+
+  UpdateWBlockCoordinates(window, window->wblock);
+
+#if USE_OPENGL
+  printf("********* height: %d\n",qresizeevent->size().height());
+  position_gl_widget(window);
 #endif
 }
 #endif // USE_QT_VISUAL

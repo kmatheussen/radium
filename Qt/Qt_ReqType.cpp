@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../common/OS_visual_input.h"
+#include "../OpenGL/Widget_proc.h"
 
 
 #ifdef TEST_MAIN
@@ -156,6 +157,7 @@ void gotchar(char c){
 }
 
 void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
+
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
   int x = x_margin;
@@ -178,7 +180,10 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   reqtype->frame->adjustSize();
   reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
 
-  edit->setFocus();
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    edit->setFocus();
+  }GL_unlock();
 
   if(reqtype->widgets_disabled==false){
     Qt_DisableAllWidgets(reqtype->frame);
@@ -198,7 +203,11 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   //gotchar('b');
 
   while(edit->gotit==false){
-    QCoreApplication::processEvents();
+    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    GL_lock();{
+      QCoreApplication::processEvents();
+    }GL_unlock();
+
     //GTK_HandleEvents();
     if(text!=edit->text()){
       text = edit->text();

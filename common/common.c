@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   FUNCTION
     Returns the top Y coordinate for the cursor.
 *************************************************************************/
-int GetCursorY1Pos(struct Tracker_Windows *window,struct WBlocks *wblock){
+int GetCursorY1Pos(const struct Tracker_Windows *window,const struct WBlocks *wblock){
   int curr_visualline=wblock->curr_realline - wblock->top_realline;
   return (curr_visualline*window->fontheight) + wblock->t.y1;
 }
@@ -47,10 +47,12 @@ int GetCursorY1Pos(struct Tracker_Windows *window,struct WBlocks *wblock){
   FUNCTION
     Returns the bot Y coordinate for the cursor.
 *************************************************************************/
-int GetCursorY2Pos(struct Tracker_Windows *window,struct WBlocks *wblock){
+int GetCursorY2Pos(const struct Tracker_Windows *window,const struct WBlocks *wblock){
   return GetCursorY1Pos(window,wblock)+window->fontheight-1;
 }
 
+
+#if !USE_OPENGL
 
 /*************************************************************************
   FUNCTION
@@ -99,6 +101,7 @@ int GetReallineY2Pos(
 	if(realline==-1) return -1;
 	return realline+window->fontheight - 1;
 }
+#endif
 
 
 // Returns the actual Y1 pos. (GetReallineY1Pos returns the pixmap pos)
@@ -122,6 +125,7 @@ int Common_oldGetReallineY2Pos(
 }
 
 
+#if !USE_OPENGL
 /*************************************************************************
   FUNCTION
     Calculate the top Y value for realline 'realline'.
@@ -158,6 +162,7 @@ int GetReallineY2SmartPos(
 ){
 	return GetReallineY1SmartPos(window,wblock,realline)+window->fontheight;
 }
+#endif
 
 
 

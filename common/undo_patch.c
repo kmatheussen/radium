@@ -38,7 +38,7 @@ void *Undo_Do_Patch(
 	void *pointer
 );
 
-static vector_t *get_all_patches(){
+static vector_t *get_all_patches(void){
   vector_t *patches = talloc(sizeof(vector_t));
   VECTOR_push_back(patches,VECTOR_copy(&get_MIDI_instrument()->patches));
   VECTOR_push_back(patches,VECTOR_copy(&get_audio_instrument()->patches));

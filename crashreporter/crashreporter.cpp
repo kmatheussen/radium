@@ -132,11 +132,12 @@ int main(int argc, char **argv){
 
     if(kill(parent_pid,0)==-1){
       counter--;
-      
-      if(counter>0)
-        fprintf(stderr, "Radium crashreporter: Seems like parent process died. Counting down before exit: %d\n", counter);
-      else{
-        fprintf(stderr, "Radium crashreporter: Seems like parent process died. Exiting\n");
+      if(counter>0){
+        if(0)
+          fprintf(stderr, "Radium crashreporter: Seems like parent process died. Counting down before exit: %d\n", counter);
+      }else{
+        if(0)
+          fprintf(stderr, "Radium crashreporter: Seems like parent process died. Exiting\n");
         do_exit=true;
       }
     }

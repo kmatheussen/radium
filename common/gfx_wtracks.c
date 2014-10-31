@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern struct Root *root;
+
+#if !USE_OPENGL
+
 extern char *NotesTexts3[131];
 extern char *NotesTexts2[131];
 
@@ -54,15 +57,6 @@ int *Col=OffC;
 */
 static const int Col[4]={0,1,2,3};
 static const int NCol[11]={1,1,2,3,4,5,6,8,12,13,14};
-
-#if 0
-static float scale(float x, float x1, float x2, float y1, float y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
-#endif
 
 void ClearTrack(
 	struct Tracker_Windows *window,
@@ -174,9 +168,8 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
   //bool isgliding = false;
   int colnum = Col[1];
 
-  if(notenum>=NOTE_PITCH_START){
+  if(trackrealline->pitch!=NULL){
     //isgliding = true;
-    notenum -= NOTE_PITCH_START;
     colnum = 5;
   }
 
@@ -313,15 +306,15 @@ static void draw_wtrack_text(struct Tracker_Windows *window,
         }
 
       } else {
-      SetTextLine(
-                  window,
-                  wblock,
-                  colnum, //(notenum==NOTE_STP || notenum==NOTE_MUL) ? 1 : notenum+16, //NCol[notenum/12],
-                  NotesTexts[(int)notenum],
-                  wtrack->notearea.x,
-                  realline,
-                  true
-                  );
+        SetTextLine(
+                    window,
+                    wblock,
+                    colnum, //(notenum==NOTE_STP || notenum==NOTE_MUL) ? 1 : notenum+16, //NCol[notenum/12],
+                    NotesTexts[(int)notenum],
+                    wtrack->notearea.x,
+                    realline,
+                    true
+                    );
       }
     }
   }
@@ -793,6 +786,7 @@ static void draw_wtrack_pitches(struct Tracker_Windows *window,
   }
 }
 
+
 void UpdateWTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -948,3 +942,4 @@ void UpdateAndClearSomeWTracks(
 
 
 
+#endif // !USE_OPENGL

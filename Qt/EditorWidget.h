@@ -57,6 +57,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/visual_op_queue_proc.h"
 
+#include "../OpenGL/Render_proc.h"
+#include "../OpenGL/GfxElements.h"
 
 // Don't paint on the frame.
 //#define XOFFSET 5
@@ -104,6 +106,10 @@ public:
     QPainter *cursorbuffer_painter; // Set in paintEvent
 
     QFont font;
+#endif
+
+#if USE_OPENGL
+    QWidget *gl_widget;
 #endif
 
     //QFrame *status_frame;
@@ -161,6 +167,16 @@ public:
 #endif
     }
 
+#if USE_OPENGL
+    void position_gl_widget(struct Tracker_Windows *window){
+      gl_widget->move(0,window->wblock->t.y1);
+      int height = 1 + window->wblock->t.y2 - window->wblock->t.y1;
+      gl_widget->resize(width(), height);
+      GE_set_height(height);
+      GL_create(window, window->wblock);
+    }
+#endif
+
 #else
     void init_buffers(){
 #if USE_QT_VISUAL
@@ -201,6 +217,7 @@ protected:
 #endif
 #endif
 
+ public:
 #if USE_QT_VISUAL
     void	mousePressEvent( QMouseEvent *);
     void	mouseReleaseEvent( QMouseEvent *);

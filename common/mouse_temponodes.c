@@ -48,11 +48,9 @@ int MoveTempoNode_Mouse(
 	struct MouseAction *action= &window->prevaction;
 	struct TempoNodes *temponode=(struct TempoNodes *)action->pointer1;
 	struct TempoNodes *prev;
-	Place place,*prev_vel=NULL,*next_vel=NULL;
+	Place *prev_vel=NULL,*next_vel=NULL;
 	int realline;
 	int lx,dx;
-
-	int start_realline,end_realline;
 
 	if(isInList1_m(
 		     &window->wblocks->l,&wblock->l,
@@ -86,6 +84,7 @@ int MoveTempoNode_Mouse(
 		  next_vel=&temponode->l.p;
 		}
 	}else{
+		Place place;
 		prev=ListPrevElement3(&wblock->block->temponodes->l,&temponode->l);
 		prev_vel=&prev->l.p;
 		next_vel=&(NextTempoNode(temponode)->l.p);
@@ -108,20 +107,23 @@ int MoveTempoNode_Mouse(
 		}
 	}
 
+	UpdateSTimes(wblock->block);
+
 	UpdateWTempoNodes(window,wblock);
 
-	start_realline=FindRealLineFor(wblock,0,prev_vel);
-	end_realline=FindRealLineFor(wblock,start_realline,next_vel);
-	
-	WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline);
 
         //	printf("start: %d,end: %d\n",start_realline,end_realline);
 	
+#if !USE_OPENGL
+	int start_realline=FindRealLineFor(wblock,0,prev_vel);
+	int end_realline=FindRealLineFor(wblock,start_realline,next_vel);
+	
+	WBlock_legalizeStartEndReallines(wblock,&start_realline,&end_realline);
+
         EraseLines(window, wblock,
                    wblock->temponodearea.x, wblock->temponodearea.x2,
                    start_realline, end_realline+1
                    );
-
         /*
 	int lokke;
 
@@ -138,15 +140,21 @@ int MoveTempoNode_Mouse(
         */
 
 	DrawWTempoNodes(window,wblock,start_realline,end_realline);
+#endif
 
 	//	DrawUpWTempoNodes(window,wblock);
-	UpdateSTimes(wblock->block);
 
 	GFX_DrawStatusBar(window,wblock);
+
+#if !USE_OPENGL
 	WBLOCK_DrawTempoColor(window,wblock,start_realline,end_realline);
+#endif
 
         UpdateAllTrackReallines(window,wblock);
+
+#if !USE_OPENGL
         DrawUpAllPeakWTracks(window,wblock,NULL);
+#endif
 
 	return 0;
 }
@@ -168,7 +176,7 @@ void SetMouseActionTempoNodes(
 
         TBox within;
 
-        wblock->mouse_track=TEMPONODETRACK;
+        //wblock->mouse_track=TEMPONODETRACK;
 
 	realline=GetReallineAndPlaceFromY(window,wblock,y,&place,NULL,NULL);
 
@@ -179,18 +187,18 @@ void SetMouseActionTempoNodes(
 	within.y1=Common_oldGetReallineY1Pos(window,wblock,realline);
 	within.y2=Common_oldGetReallineY2Pos(window,wblock,realline);
 
-	x=R_MAX(temponodearea->x+1,x);
-	x=R_MIN(temponodearea->x2-1,x);
+	x = R_MAX(temponodearea->x+1,x);
+	x = R_MIN(temponodearea->x2-1,x);
 
-	dx=x - temponodearea->x -1;
+	dx = x - temponodearea->x -1;
 
 	if(realline<0) return;
 
 	wtemponode=wblock->wtemponodes[realline];
-
+        //printf("wtemponode, : %p\n",wtemponode);
 	while(wtemponode!=NULL){
-
 		if(wtemponode->type==TEMPONODE_NODE){
+
 			if(
 			   /*
 				insideNArea(
@@ -225,7 +233,7 @@ void SetMouseActionTempoNodes(
 	}
 
 	if(firstringinstatusbar[0]!=0){
-	   firstringinstatusbar[0]=0;
+          firstringinstatusbar[0] = 0;
 	  GFX_DrawStatusBar(window,window->wblock);
 	}
 
@@ -234,12 +242,17 @@ void SetMouseActionTempoNodes(
 		Undo_TempoNodes_CurrPos(window);
 		AddTempoNode(window,wblock,&place,Gfx2RelTempo(wblock,dx));
 		GFX_SetChangeFloat(window,wblock,"Reltempo",RelTempo2RealRelTempo(Gfx2RelTempo(wblock,dx)));
-		UpdateWTempoNodes(window,wblock);
-		DrawUpWTempoNodes(window,wblock);
 		UpdateSTimes(wblock->block);
+
+		UpdateWTempoNodes(window,wblock);
+#if !USE_OPENGL
+		DrawUpWTempoNodes(window,wblock);
+#endif
 		SetMouseActionTempoNodes(window,action,x,y,0);
 		GFX_DrawStatusBar(window,wblock);
+#if !USE_OPENGL
 		WBLOCK_DrawTempoColor(window,wblock,0,wblock->num_reallines);
+#endif
 	}
 }
 

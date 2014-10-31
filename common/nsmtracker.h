@@ -89,16 +89,24 @@ typedef int32_t NInt;
 #define RADIUM_BLOCKSIZE 64
 
 
-#define MAXBLOCKRELTIME 6.0f
 #define MINBLOCKRELTIME 0.001f
+#define MAXBLOCKRELTIME 6.0f
 
 // Higher than 255 is no point.
 #define MAX_BRIGHTNESS 63
 
+#if !USE_OPENGL
 enum{
   PAINT_DIRECTLY = 0,
   PAINT_BUFFER = 1
 };
+#else
+enum{
+  PAINT_DIRECTLY = 0,
+  PAINT_BUFFER = PAINT_DIRECTLY
+};
+#endif
+
 
 
 #include <OS_Visual.h>
@@ -248,6 +256,8 @@ struct Notes{
 
 	struct Pitches *pitches;
 
+	int subtrack;
+
 	int noend;
 
         int64_t id;
@@ -266,6 +276,7 @@ struct Instruments;
 
 union SuperType{
   void *pointer;
+  const void *const_pointer;
   int64_t int_num;
   double float_num;
 };
@@ -326,7 +337,7 @@ struct Patch{
 
   void *patchdata;		// Free use by the instrument plug-in.
 
-  void (*changeTrackPan)(int newpan,struct Tracks *track);
+  void (*changeTrackPan)(int newpan,const struct Tracks *track);
 
   struct PatchVoice voices[NUM_PATCH_VOICES];
 
@@ -432,11 +443,11 @@ struct FX{
 	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
 	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-	void (*treatFX)(struct FX *fx,int val,struct Tracks *track,STime time,int skip, FX_when when);
+	void (*treatFX)(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
 
-	void (*closeFX)(struct FX *fx,struct Tracks *track);
+	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
-	void (*SaveFX)(struct FX *fx,struct Tracks *track);
+	void (*SaveFX)(struct FX *fx,const struct Tracks *track);
 
   //void (*setFXstring)(struct FX *fx,struct Tracks *track, char *string);
 };
@@ -463,19 +474,19 @@ struct Instruments{
 
         vector_t patches; // Not safe to traverse from player thread.
 
-  //int (*getMaxVelocity)(struct Patch *patch);
+        //int (*getMaxVelocity)(const struct Patch *patch);
 
-	int (*getFX)(struct Tracker_Windows *window,struct Tracks *track,struct FX *fx);
-	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,struct Tracks *track,struct Patch *patch);
+	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
+	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*StopPlaying)(struct Instruments *instrument);
 	void (*PP_Update)(struct Instruments *instrument,struct Patch *patch);
-	void *(*CopyInstrumentData)(struct Tracks *track);		//Necesarry for undo.
+	void *(*CopyInstrumentData)(const struct Tracks *track);		//Necesarry for undo.
 
 	void (*PlayFromStartHook)(struct Instruments *instrument);
 
-	void *(*LoadFX)(struct FX *fx,struct Tracks *track);
+	void *(*LoadFX)(struct FX *fx,const struct Tracks *track);
 
 	void (*handle_fx_when_theres_a_new_patch_for_track)(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
         void (*remove_patch)(struct Patch *patch);
@@ -634,6 +645,8 @@ enum{
 
 
 struct TrackRealline{
+  struct Notes *dasnote;
+  struct Pitches *daspitch;
   float note;										/* Is 0 if no note. */
   struct TrackReallineElements *trackreallineelements;
 };
@@ -641,8 +654,29 @@ struct TrackRealline{
 enum{
   NOTE_MUL=NOTE_END_NORMAL,
   NOTE_STP,
-  NOTE_MUR,
-  NOTE_PITCH_START
+  NOTE_MUR
+};
+
+
+/*********************************************************************
+	OpenGL/Render.h
+*********************************************************************/
+
+struct NodeLine{
+  struct NodeLine *next;
+
+  float x1,y1;
+  float x2,y2;
+
+  const struct ListHeader3 *element1;
+  const struct ListHeader3 *element2;
+
+  bool is_node;
+};
+
+struct Node{
+  float x, y;
+  const struct ListHeader3 *element;
 };
 
 
@@ -672,7 +706,8 @@ struct WFXNodes{
 	tbox.h
 *********************************************************************/
 struct TBoxstruct{
-	int x1,y1,x2,y2;
+  int x1,y1;
+  int x2,y2;
 };
 typedef struct TBoxstruct TBox;
 
@@ -706,6 +741,8 @@ struct WTracks{
 	WFXNodes **wfxnodes;
 	WPitches **wpitches;
 
+        vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
+  
 	TBox pan;
 	TBox volume;
 
@@ -815,9 +852,9 @@ struct STimeChanges{
 
 
 struct STimes{									/* One element for each line. */
-	STime time;									/* Start-time for the line. */
+	STime time;							/* Start-time for the line. */
    SDB
-	struct STimeChanges *timechanges;
+	const struct STimeChanges *timechanges;
 };
 
 
@@ -839,8 +876,8 @@ struct Blocks{
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
-
-	struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
+  
+	const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
 	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
@@ -935,6 +972,7 @@ struct WBlocks{
 
 	struct WTempos *wtempos;
 	WTempoNodes **wtemponodes;
+        vector_t *reltempo_nodes; // contains vector of Node's
 	struct WLPBs *wlpbs;
 	float reltempomax;
 
@@ -946,14 +984,7 @@ struct WBlocks{
 
 	bool isgfxdatahere;
 
-	TBox reltempo;
-
-  //tempocolor stuff
-  bool tc_onoff;
-  int tc_numcolors;
-  int tc_maxtime;
-  int tc_mintime;
-  int tc_type;
+	TBox reltempo; // API: (x1 y1 x2 y2) getWBlockFromNum(-1,-1)
 };
 #define NextWBlock(a) (struct WBlocks *)((a)->l.next)
 

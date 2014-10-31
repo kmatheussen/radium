@@ -53,6 +53,7 @@ void SetMouseActionVelocities(
 	within.y1=Common_oldGetReallineY1Pos(window,wblock,realline);
 	within.y2=Common_oldGetReallineY2Pos(window,wblock,realline);
 
+#if 0
         // Find wblock->mouse_note
 
         {
@@ -78,7 +79,7 @@ void SetMouseActionVelocities(
             element=element->next;
           }
         }
-
+#endif
 
 	struct TrackReallineElements *element=wtrack->trackreallines[realline].trackreallineelements;
 
@@ -307,9 +308,10 @@ void SetMouseActionFXarea(
 
 		UpdateFXNodeLines(window,wblock,wtrack);
 
+#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 		y+=Common_oldGetReallineY1Pos(window,wblock,realline);
 		x+=wtrack->fxarea.x;
 
@@ -324,6 +326,8 @@ void SetMouseActionFXarea(
 
 		Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
 
+                RError("dead code");
+                /*
 		AddVelocity(
 			window,
 			wblock,
@@ -333,14 +337,15 @@ void SetMouseActionFXarea(
 			&place,
 			realline
 		);
-
+                */
 		GFX_SetChangeInt(window,wblock,"Velocity",MAX_VELOCITY*(x-GetRelXSubTrack1(wtrack,subtrack))/subtrackwidth);
 		GFX_DrawStatusBar(window,wblock);
 
 		UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-
+#endif
 		y+=Common_oldGetReallineY1Pos(window,wblock,realline);
 		x+=wtrack->fxarea.x;
 

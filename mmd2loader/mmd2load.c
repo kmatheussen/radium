@@ -86,24 +86,23 @@ typedef uint8_t UBYTE;
 
 int createNewInstrument(char *type, char *name);
 
-
-typedef uint8_t UBYTE;
+typedef uint8_t A_UBYTE;
 
 struct TrackLine{
-	UBYTE note;
-	UBYTE instrument;
-	UBYTE cmd;
-	UBYTE val;
+	A_UBYTE note;
+	A_UBYTE instrument;
+	A_UBYTE cmd;
+	A_UBYTE val;
 };
 
 struct CmdTrackLine{
-	UBYTE cmd;
-	UBYTE val;
+	A_UBYTE cmd;
+	A_UBYTE val;
 };
 
 
-static UBYTE flags2;
-static UBYTE tempo2;
+static A_UBYTE flags2;
+static A_UBYTE tempo2;
 
 extern struct Root *root;
 

@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -24,11 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "reltempo_proc.h"
 #include "undo_temponodes_proc.h"
-#include <string.h>
 #include "temponodes_legalize_proc.h"
 //#include "blackbox_proc.h"
 #include "gfx_statusbar_proc.h"
 #include "player_proc.h"
+#include "undo.h"
 
 #include "temponodes_proc.h"
 
@@ -106,7 +107,7 @@ void UpdateWTempoNodes(
 			&temponode->l.p,
 			prev->reltempo,
 			temponode->reltempo,
-			(float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
+			(float)(-wblock->reltempomax+1.0f), (float)(wblock->reltempomax-1.0f),
 			prev,
 			&MakeWTempoNodesCallBack
 		);
@@ -117,7 +118,7 @@ void UpdateWTempoNodes(
 }
 
 
-void AddTempoNode(
+struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	Place *p,
@@ -131,9 +132,13 @@ void AddTempoNode(
 
 	PlaceCopy(&temponode->l.p,p);
 
-	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==NULL)
-		return;
+        Undo_TempoNodes_CurrPos(window);
 
+	if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
+          Undo_CancelLastUndo();
+          return NULL;
+        } else
+          return temponode;
 }
 
 
@@ -142,8 +147,6 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 
 	PlayStop();
 
-	Undo_TempoNodes_CurrPos(window);
-
 	AddTempoNode(
 		window,wblock,
 		&wblock->reallines[wblock->curr_realline]->l.p,
@@ -151,8 +154,11 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 	);
 
 	UpdateWTempoNodes(window,wblock);
+
+#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }
@@ -177,8 +183,11 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 	LegalizeTempoNodes(wblock->block);
 
 	UpdateWTempoNodes(window,wblock);
+
+#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
+#endif
 
 	GFX_DrawStatusBar(window,wblock);
 }

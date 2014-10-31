@@ -49,7 +49,7 @@ struct FindNum_Velstruct{
     as maximum polyphony for track. The next three procedures are
     to be viewed as one function.
 *******************************************************************/
-void SetNum_Vel_set(
+static void SetNum_Vel_set(
 	struct WTracks *wtrack,
 	struct FindNum_Velstruct **velroot
 ){
@@ -66,7 +66,7 @@ void SetNum_Vel_set(
 	wtrack->num_vel=R_MAX(1,wtrack->num_vel);
 }
 
-void SetNum_Vel_rec(
+static void SetNum_Vel_rec(
 	struct WTracks *wtrack,
 	struct FindNum_Velstruct **velroot,
 	struct Notes *note
@@ -99,40 +99,20 @@ void SetNum_Vel(
 }
 
 
-void AddVelocity(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int subtrack,
-	int velocityvelocity,
-	Place *placement,
-	int realline
+int AddVelocity(
+                int velocityvelocity,
+                const Place *placement,
+                struct Notes *note
 ){
-	struct Velocities *velocity;
-	struct Notes *note;
-
-	if(-1==subtrack) return;
-
-	note=FindNoteOnSubTrack(
-		window,
-		wblock,
-		wtrack,
-		subtrack,
-		realline,
-		placement
-	);
-	if(note==NULL) return;
-	if(PlaceEqual(&note->l.p,placement)) return;
-	if(PlaceEqual(&note->end,placement)) return;
-
-	velocity=talloc(sizeof(struct Velocities));
-	PlaceCopy(&velocity->l.p,placement);
-	velocity->velocity=velocityvelocity;
-
-	/* ListAddElement3_ns returns NULL (and doesnt do anything else)
-	   if there allready is an element with the same placement. */
-	if(ListAddElement3_ns(&note->velocities,&velocity->l)==NULL) return;
-
+  if(PlaceLessOrEqual(placement, &note->l.p)) return -1;
+  if(PlaceGreaterOrEqual(placement, &note->end)) return -1;
+  struct Velocities *velocity=talloc(sizeof(struct Velocities));
+  PlaceCopy(&velocity->l.p,placement);
+  velocity->velocity=R_BOUNDARIES(0,velocityvelocity,MAX_VELOCITY);
+  
+  /* ListAddElement3_ns returns -1 (and doesnt do anything else)
+     if there allready is an element with the same placement. */
+  return ListAddElement3_ns(&note->velocities,&velocity->l);
 }
 
 void AddVelocityCurrPos(struct Tracker_Windows *window){
@@ -142,22 +122,35 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
 	int subtrack=window->curr_track_sub;
 
+        if(-1==subtrack)
+          return;
+
 	Undo_Notes_CurrPos(window);
 
+        struct Notes *note = FindNoteOnSubTrack(
+                                                window,
+                                                wblock,
+                                                wblock->wtrack,
+                                                subtrack,
+                                                wblock->curr_realline,
+                                                &realline->l.p
+                                                );
+
+	if(note==NULL)
+          return;
+
 	AddVelocity(
-		window,
-		wblock,
-		wblock->wtrack,
-		subtrack,
-//		30,
-		root->standardvel,
-		&realline->l.p,
-		wblock->curr_realline
-	);
+                    root->standardvel,
+                    &realline->l.p,
+                    note
+                    );
 
 	UpdateTrackReallines(window,wblock,wblock->wtrack);
+
+#if !USE_OPENGL
 	ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
 
 	PC_StopPause();
 }
@@ -234,8 +227,10 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
             note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
 
           UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
           ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
           UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+#endif
         }
 
 	PC_StopPause();

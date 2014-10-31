@@ -76,6 +76,8 @@
 #include <Q3VBoxLayout>
 #include <QPaintEvent>
 
+#include "../OpenGL/Widget_proc.h"
+
 #ifdef Q_WS_MAC
 #  undef Q_WS_MAC
 #endif
@@ -635,7 +637,11 @@ void QColorWell::mouseMoveEvent( QMouseEvent *e )
 #ifndef QT_NO_DRAGANDDROP
 void QColorWell::dragEnterEvent( QDragEnterEvent *e )
 {
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
     setFocus();
+  }GL_unlock();
+
     if ( Q3ColorDrag::canDecode( e ) )
 	e->accept();
     else
@@ -645,8 +651,12 @@ void QColorWell::dragEnterEvent( QDragEnterEvent *e )
 void QColorWell::dragLeaveEvent( QDragLeaveEvent * )
 {
 
-    if ( hasFocus() )
-	parentWidget()->setFocus();
+  if ( hasFocus() ) {
+    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    GL_lock();{
+      parentWidget()->setFocus();
+    }GL_unlock();
+  }
 }
 
 void QColorWell::dragMoveEvent( QDragMoveEvent *e )
@@ -1705,7 +1715,10 @@ bool QColorDialog3::selectColor( const QColor& col )
                     d->newStandard( i, j );
                     d->standard->setCurrent( i, j );
                     d->standard->setSelected( i, j );
-                    d->standard->setFocus();
+                    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+                    GL_lock();{
+                      d->standard->setFocus();
+                    }GL_unlock();
                     return TRUE;
                 }
             }
@@ -1719,7 +1732,10 @@ bool QColorDialog3::selectColor( const QColor& col )
                     d->newCustom( i, j );
                     d->custom->setCurrent( i, j );
                     d->custom->setSelected( i, j );
-                    d->custom->setFocus();
+                    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+                    GL_lock();{
+                      d->custom->setFocus();
+                    }GL_unlock();
                     return TRUE;
                 }
             }

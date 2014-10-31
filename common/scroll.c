@@ -50,6 +50,7 @@ static void Scroll_freePixMapLines(
 #endif
 
 
+#if !USE_OPENGL
 void Scroll_scrollPixMapDefs(
 	struct Tracker_Windows *window,
 	int num_toscroll
@@ -105,7 +106,7 @@ void Scroll_makePixMapLines(
 		endrealline
 	);
 }
-
+#endif
 
 
 
@@ -117,6 +118,8 @@ void Scroll_scroll(
 ){
 //  int lokke;
 	struct WBlocks *wblock=window->wblock;
+
+#if !USE_OPENGL
 
 	int top_realline=wblock->top_realline;
 	int bot_realline=wblock->bot_realline;
@@ -135,10 +138,12 @@ void Scroll_scroll(
 	*/
 
 	//	Scroll_scrollPixMapDefs(window,num_lines);
+
 	PixMap_scrollDefs(
 		window,
 		num_lines
 	);
+#endif
 
 //	printf("scroll2:\n");
 //  for(lokke=0;lokke<window->wblock->num_visiblelines;lokke++)
@@ -148,11 +153,13 @@ void Scroll_scroll(
 	wblock->curr_realline+=num_lines;
 	wblock->bot_realline+=num_lines;
 
+#if !USE_OPENGL
 	if(num_lines<0){
 		Scroll_makePixMapLines(window,top_realline+num_lines,top_realline-1);
 	}else{
 		Scroll_makePixMapLines(window,bot_realline+1,bot_realline+num_lines);
 	}
+#endif
 
 //	printf("scroll3: n: %d\n",num_lines);
 //  for(lokke=0;lokke<window->wblock->num_visiblelines;lokke++)

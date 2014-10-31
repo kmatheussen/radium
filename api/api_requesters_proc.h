@@ -1,2 +1,2 @@
-extern LANGSPEC void closeRequester();
+extern LANGSPEC void closeRequester(void);
 

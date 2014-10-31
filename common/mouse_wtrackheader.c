@@ -43,7 +43,9 @@ static void update_pan_status(struct Tracker_Windows *window,
 
   if(TRACK_has_peaks(wtrack->track)==true){
     UpdateTrackReallines(window,window->wblock,wtrack);
+#if !USE_OPENGL
     DrawUpWTrack(window,window->wblock,wtrack);
+#endif
   }
 }
 
@@ -56,7 +58,9 @@ static void update_volume_status(struct Tracker_Windows *window,
 
   if(TRACK_has_peaks(wtrack->track)==true){
     UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
     DrawUpWTrack(window,wblock,wtrack);
+#endif
   }
 }
 
@@ -220,7 +224,9 @@ void SetMouseActionWTrackHeader(
 
                 if(TRACK_has_peaks(wtrack->track)==true){
                   UpdateTrackReallines(window,window->wblock,wtrack);
+#if !USE_OPENGL
                   DrawUpWTrack(window,window->wblock,wtrack);
+#endif
                 }
 
 		return;
@@ -237,7 +243,9 @@ void SetMouseActionWTrackHeader(
 
                 if(TRACK_has_peaks(wtrack->track)==true){
                   UpdateTrackReallines(window,window->wblock,wtrack);
+#if !USE_OPENGL
                   DrawUpWTrack(window,window->wblock,wtrack);
+#endif
                 }
 	}
 }

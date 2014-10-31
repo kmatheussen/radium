@@ -81,11 +81,13 @@ void MarkRange(
 
 void MarkRange_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
+
+	MarkRange(window,wblock,wblock->wtrack->l.num,wblock->curr_realline);
+
+#if !USE_OPENGL
 	bool isranged=wblock->isranged;
 	NInt y1=wblock->rangey1;
 	NInt y2=wblock->rangey2;
-
-	MarkRange(window,wblock,wblock->wtrack->l.num,wblock->curr_realline);
 
 	if( isranged && (wblock->rangey1>y1 || wblock->rangey2<y2)){
 		UpdateAndClearSomeTrackReallinesAndGfxWTracks(
@@ -97,7 +99,7 @@ void MarkRange_CurrPos(struct Tracker_Windows *window){
 	}else{
 		UpdateAllWTracks(window,wblock,0,wblock->num_reallines);
 	}
-
+#endif
 }
 
 
@@ -110,12 +112,14 @@ void CancelRange(
 
 void CancelRange_CurrPos(struct Tracker_Windows *window){
 	CancelRange(window,window->wblock);
+#if !USE_OPENGL
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
 		window->wblock->rangex1,
 		window->wblock->rangex2
 	);
+#endif
 }
 
 

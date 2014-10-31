@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #include <Qt>
 #include <QDir>
+#include <QTextEdit>
+#include <QLayout>
+
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -45,7 +48,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 
 #include "../mixergui/QM_MixerWidget.h"
-
 
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
@@ -87,6 +89,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef FOR_MACOSX
 #  include "../macosx/cocoa_Keyboard_proc.h"
 #endif
+
+#include "../OpenGL/Render_proc.h"
+#include "../OpenGL/Widget_proc.h"
+
+#include "../embedded_scheme/scheme_proc.h"
+
 
 #include "Qt_Main_proc.h"
 
@@ -154,8 +162,11 @@ protected:
 
     bool ret = X11_KeyboardFilter(QApplication::focusWidget(), event);
 
-    if(ret==true)
+    if(ret==true) {
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
+      if(event->type==KeyPress)
+        GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+    }
 
     if(doquit==true)
       QApplication::quit();
@@ -174,9 +185,11 @@ protected:
 
     bool ret = W_KeyboardFilter(msg);
 
-    if(ret==true)
+    if(ret==true) {
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-
+      //if(event->type==KeyPress) TODO!
+        GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+    }
     return ret;
   }
 #endif
@@ -188,8 +201,11 @@ protected:
 
     bool ret = cocoa_KeyboardFilter(event);
 
-    if(ret==true)
+    if(ret==true) {
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
+      if(event->type==KeyPress)
+        GL_create(window, window->wblock);
+    }
 
     return ret;
   }
@@ -307,7 +323,7 @@ class CalledPeriodically : public QTimer {
 
 public:
   CalledPeriodically(){
-    setInterval(10);
+    setInterval(20);
     start();
     msgBox.setModal(false);
     msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
@@ -494,8 +510,12 @@ void Qt_EventHandler(void){
 
 static bool load_new_song=true;
 
+extern void TIME_init(void);
+
 int radium_main(char *arg){
 
+  TIME_init();
+    
   default_style_name = QApplication::style()->objectName();
 
 #if 0
@@ -549,6 +569,10 @@ int radium_main(char *arg){
     return 0;
   printf("ending\n");
 
+
+  SCHEME_start();
+
+
   //ProfilerStop();
 
   posix_InitPlayer();
@@ -564,10 +588,12 @@ int radium_main(char *arg){
   BS_SelectBlock(root->song->blocks);
   BS_SelectPlaylistPos(0);
 
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  QMainWindow *main_window = static_cast<QMainWindow*>(window->os_visual.main_window);
 
   {
-    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
 
     {
       QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
@@ -620,12 +646,20 @@ int radium_main(char *arg){
 
   ResetUndo();
   if(load_new_song==true)
-    NewSong_CurrPos(root->song->tracker_windows);
+    NewSong_CurrPos(window);
 
   //updateAllFonts(QApplication::mainWidget());
 
   main_window->repaint();
-  DrawUpTrackerWindow(root->song->tracker_windows);
+  DrawUpTrackerWindow(window);
+  
+
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+
+#if USE_OPENGL
+  editor->gl_widget = GL_create_widget(editor);
+  editor->position_gl_widget(window);
+#endif
 
   show_nag_window("");
 
@@ -635,7 +669,7 @@ int radium_main(char *arg){
   CalledPeriodically periodic_timer;
 #endif
 
-  root->song->tracker_windows->must_redraw = true;
+  window->must_redraw = true;
 
   if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"1.9.13")){
     GFX_Message(NULL,
@@ -656,12 +690,48 @@ int radium_main(char *arg){
 
   is_starting_up=false;
 
+  window->must_redraw = true;
+  editor->update();
+  editor->resize(editor->width(),editor->height());
 
+#if USE_OPENGL
+  GL_create(window, window->wblock);
+#endif
+
+  // Hack to make Qt text input widgets not crash the program when using intel gfx driver and running opengl in separate thread (crash caused by opening two opengl contexts simultaneously from two threads). (strange stuff)
+  GL_lock();
+  {
+    QTextEdit e;
+    e.show();
+    e.setFocus();
+    qApp->processEvents();
+  }
+  GL_unlock();
+
+#if 0
+  while(1){
+    qApp->processEvents();
+    usleep(500000);
+  }
+#endif
+
+  #if 0
+  vector_t v = {0};
+  VECTOR_push_back(&v,"hepp1");
+  VECTOR_push_back(&v,"hepp2");
+  VECTOR_push_back(&v,"hepp3");
+  GFX_Message(&v, "hepp hepp");
+  #endif
+
+  //  RWarning("warning!");
+  
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
   GTK_MainLoop();
 #endif
+
+  GL_stop_widget(editor->gl_widget);
 
 #if 0
   while(doquit==false){
@@ -699,7 +769,13 @@ extern "C" {
   extern void initradium(void);
 }
 
+
+
 int main(int argc, char **argv){
+
+  QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+
+
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
 

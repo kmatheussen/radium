@@ -224,6 +224,10 @@ void Undo_CancelLastUndo(void){
 
   CurrUndo=CurrUndo->prev;
   CurrUndo->next=NULL;
+
+  num_undos--;
+
+  update_gfx();
 }
 
 UndoFunction Undo_get_last_function(void){

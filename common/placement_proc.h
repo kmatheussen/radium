@@ -17,44 +17,136 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_PLACEMENT
 #define TRACKER_PLACEMENT
 
+#include <assert.h>
 
-extern Place *PlaceCreate(int line, int counter, int dividor);
 
-extern int PlaceCmp(  Place *p1,  Place *p2);
-extern Place *PlaceMax(  Place *p1,  Place *p2);
-extern Place *PlaceMin(  Place *p1,  Place *p2);
+static inline Place *PlaceCreate(int line, int counter, int dividor) {
+  Place *place=(Place*)talloc(sizeof(Place));
+  place->line = line;
+  place->counter = counter;
+  place->dividor = dividor;
+  return place;
+}
+
+
+/**********************************************************
+  FUNCTION
+    Convert a float into a placement.
+**********************************************************/
+static inline void Float2Placement(float f,Place *p){
+  assert(f >= 0.0f);
+  
+  p->line = (int)f;
+  f -= p->line;
+
+  p->counter = f * MAX_UINT32;
+  p->dividor = MAX_UINT32;
+}
+
+static inline Place *PlaceCreate2(float f){
+  Place *place=(Place*)talloc(sizeof(Place));
+  Float2Placement(f, place);
+  return place;
+}
+
+
+/*************************************************************
+  FUNCTION
+    Returns 0 if placement1 is the same as placement2,
+    -1 if placement1 is before placement2, and 1 if after.
+  NOTE
+    See also placement_proc.h for macros that makes use of this
+    function.
+*************************************************************/
+static inline int PlaceCmp(  const Place *p1,  const Place *p2){
+
+	if(p1->line < p2->line) return -1;
+	if(p1->line > p2->line) return 1;
+
+	if(p1->counter*p2->dividor < p2->counter*p1->dividor) return -1;
+	if(p1->counter*p2->dividor > p2->counter*p1->dividor) return 1;
+
+	return 0;
+}
+
+
+/*************************************************************
+  FUNCTION
+    Returns the latest placement. If both placements are NULL,
+    NULL is allso returned. (don't bother optimizing the
+    obvious things, unless you really really have to, you
+    think. :)
+*************************************************************/
+static inline Place *PlaceMax(  Place *p1,  Place *p2){
+  if (p1==NULL)
+    return p2;
+  if (p2==NULL)
+    return p1;
+
+  if(PlaceCmp(p1,p2) > 0){
+    return p1;
+  }else{
+    return p2;
+  }
+}
+
+
+/*************************************************************
+  FUNCTION
+    Returns the first placement. If both placements are NULL,
+    NULL is also returned. If only one placement is NULL,
+    the other placement is returned. (don't bother optimizing the
+    obvious things, unless you really really have to, you
+    think. :)
+*************************************************************/
+static inline Place *PlaceMin(  Place *p1,  Place *p2){
+  if (p1==NULL)
+    return p2;
+
+  if (p2==NULL)
+    return p1;
+
+  if(PlaceCmp(p1,p2) > 0){
+    return p2;
+  }else{
+    return p1;
+  }
+}
+
 
 #define PlaceBetween(p1, p, p2) PlaceMin(PlaceMax(p1, p), p2)
 
 extern void PlaceHandleOverflow(Place *p);
 
-extern void PlaceAdd(Place *p1,  Place *p2);
-extern void PlaceSub(Place *p1,  Place *p2);
-extern void PlaceMul(Place *p1,  Place *p2);
-extern void PlaceDiv(Place *p1,  Place *p2);
+extern void PlaceAdd(Place *p1,  const Place *p2);
+extern void PlaceSub(Place *p1,  const Place *p2);
+extern void PlaceMul(Place *p1,  const Place *p2);
+extern void PlaceDiv(Place *p1,  const Place *p2);
 
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
-extern float GetfloatFromLineCounterDividor(Place *placement);
-extern float GetfloatFromPlacement(Place *placement);
-extern float GetfloatFromPlace(Place *placement);
+extern float GetfloatFromLineCounterDividor(const Place *placement);
+extern float GetfloatFromPlacement(const Place *placement);
+extern float GetfloatFromPlace(const Place *placement);
 
-extern void Float2Placement(float f,Place *p);
 extern void PlaceAddfloat(Place *p,float f);
 extern void PlaceSubfloat(Place *p,float f);
 
 //extern void PlaceSetLastPos(struct Blocks *wblock,Place *p);
-extern bool PlaceLegal(struct Blocks *block,  Place *p);
+extern bool PlaceLegal(const struct Blocks *block,  const Place *p);
 extern void PlaceSetFirstPos(Place *p);
 extern Place *PlaceGetFirstPos(void);
 
 extern void PlaceSetReallinePlace(
-	  struct WBlocks *wblock,
-	int realline,
-	Place *p
+                                  const struct WBlocks *wblock,
+                                  int realline,
+                                  Place *p
 );
 
-extern void PlaceTilLimit(Place *p,  Place *tp);
-extern void PlaceFromLimit(Place *p,  Place *tp);
+// Puts 'p' as near as possible 'tp' so that p<tp.
+extern void PlaceTilLimit(Place *p,  const Place *tp);
+
+// Puts 'p' as near as possible 'tp' so that p>tp.
+extern void PlaceFromLimit(Place *p,  const Place *tp);
 
 
 
@@ -94,6 +186,7 @@ extern void PlaceFromLimit(Place *p,  Place *tp);
 
 #define PlaceIsBetween(a,b,c) (PlaceGreaterOrEqual((a),(b)) && PlaceLessOrEqual((a),(c)))
 #define PlaceIsBetween2(a,b,c) (PlaceGreaterOrEqual((a),(b)) && PlaceLessThan((a),(c)))
+#define PlaceIsBetween3(a,b,c) (PlaceGreaterThan((a),(b)) && PlaceLessThan((a),(c)))
 
 
 
@@ -126,7 +219,12 @@ extern Place PlaceFirstPos;
 
 #define GetfloatFromCounterDividor(a,b) ((a)==0 ? 0.0f : (float)((float)(a)/(float)(b)))
 
-#define PlaceSetLastPos(a,b) (b)->line=(a)->num_lines-1;(b)->counter=MAX_UINT32-1;(b)->dividor=MAX_UINT32
-
+#define PlaceSetLastPos(a,b) do{   \
+    (b)->line = (a)->num_lines-1;  \
+    (b)->counter = MAX_UINT32-1;   \
+    (b)->dividor = MAX_UINT32;     \
+  }while(0)
+   
+#define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
 #endif
 

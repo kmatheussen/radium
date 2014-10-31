@@ -81,6 +81,7 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 #include "mQt_bottom_bar_widget_callbacks.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "Qt_MainWindow_proc.h"
 
@@ -250,7 +251,10 @@ void grabKeyboard(void){
   //g_embed_container->grabKeyboard();
   //g_editor->main_window->grabKeyboard();
   //abort(); // This function should not be used.
-  g_editor->setFocus();
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    g_editor->setFocus();
+  }GL_unlock();
 }
 
 static bool widgets_are_disabled = false;
@@ -366,7 +370,10 @@ void SetupMainWindow(void){
 
   EditorWidget *editor=new EditorWidget(main_window,"name");
 #if USE_QT_VISUAL
-  editor->setFocus(); // Lots of trouble with focus with the qt_visual backend.
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    editor->setFocus(); // Lots of trouble with focus with the qt_visual backend.
+  }GL_unlock();
 #endif
 
 #ifdef USE_QT4
@@ -516,7 +523,12 @@ const char *GFX_GetLoadFileName(
 
   num_users_of_keyboard++;
 
-  QString filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
+  QString filename;
+
+  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  GL_lock();{
+    filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
+  }GL_unlock();
 
   if(filename == ""){
     ret=NULL;
@@ -551,33 +563,42 @@ const char *GFX_GetSaveFileName(
     : ret;
 }
 
+
 static int show_message(vector_t *buttons, const char *message){
         
 
+  QMessageBox msgBox;
+  msgBox.setText(QString(message));
+
   if(buttons==NULL){
 
-    QMessageBox msgBox;
-    msgBox.setText(QString(message));
     msgBox.setStandardButtons(QMessageBox::Ok);
 
-    num_users_of_keyboard++;
-    {
-      msgBox.exec();
-    }
-    num_users_of_keyboard--;
+  } else {
 
-    return 0;
+    VECTOR_FOR_EACH(const char *,button_text,buttons){
+      msgBox.addButton(button_text, QMessageBox::AcceptRole);
+    }END_VECTOR_FOR_EACH;
+
   }
 
-  RWarning("what?");
 
+  num_users_of_keyboard++;
+  {
+    msgBox.exec();
+  }
+  num_users_of_keyboard--;
+
+  QAbstractButton *clicked_button = msgBox.clickedButton();
+
+  for(int i=0;i<buttons->num_elements;i++)
+    if(QString((char*)buttons->elements[i])==clicked_button->text())
+      return i;
+
+  fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+  
   return 0;
 
-#if 0
-  VECTOR_FOR_EACH(const char *,button_text,buttons){
-    msgBox.addButton(button_text);
-  }END_VECTOR_FOR_EACH;
-#endif
 }
 
 

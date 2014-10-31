@@ -57,43 +57,34 @@ extern PlayerClass *pc;
     much time now, so its allso probably no use at all optimizing.
 ********************************************************/
 
-STime Place2STime(
-	struct Blocks *block,
-	Place *p
-){
-	STime time1,time2;
-	float fp,fp1,fp2,orgfp2;
-	float tempo;
+STime Place2STime_from_times(
+                             const struct STimes *times,
+                             const Place *p
+                             )
+{
 
-        if(block->times==NULL){
-          RError("Oh no 2\n");
-          return 0;
-        }
-
-	int line=p->line;
-	struct STimes *stime= &block->times[line];
-	struct STimeChanges *stc,*next;
+	int line1 = p->line;
+        int line2 = line1+1;
+	const struct STimes *stime= &times[line1];
 
 //	printf("P2ST, block: %x, stime: %x, line: %d\n",block,stime,line);
 
-        if(stime==NULL){
-          RError("Oh no\n");
-          return 0;
-        }
-
-	time1=stime->time;
+	STime time1=stime->time;
 
 	if(0==p->counter) return time1;
 
-	time2=block->times[line+1].time;
+	STime time2=times[line2].time;
 
-	fp=GetfloatFromPlacement(p);
-	fp1=(float)line;
-	orgfp2=fp2=fp1+1.0;
+	float fp = GetfloatFromPlacement(p);
+	float fp1 = line1;
+        float fp2 = fp1+1.0;
 
-	stc=stime->timechanges;
+	const struct STimeChanges *stc = stime->timechanges;
 	if(stc!=NULL){
-		next=NextSTimeChange(stc);
+
+		float orgfp2 = fp2;
+
+		struct STimeChanges *next=NextSTimeChange(stc);
 		while(next!=NULL){
 			if(PlaceGreaterOrEqual(&next->l.p,p)){
 				fp2=GetfloatFromPlacement(&next->l.p);
@@ -108,11 +99,11 @@ STime Place2STime(
 		time1=stc->time;
 
 		if(stc->tempo1!=0.0f){
-			tempo=stc->tempo1 * (
-				RelTempo2RealRelTempo( (float) (
-					stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1)))
-				))
-			);
+			float tempo=stc->tempo1 * (
+                                                   RelTempo2RealRelTempo( (float) (
+                                                                                   stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1)))
+                                                                                   ))
+                                                   );
 
 			return (STime) (
 				time1 + (
@@ -129,17 +120,22 @@ STime Place2STime(
 	}
 
 
-
-	return (STime) ((time2-time1)*(fp-fp1)/(fp2-fp1)) + time1;
+        return scale(fp, fp1, fp2, time1, time2);
 }
 
+STime Place2STime(
+	const struct Blocks *block,
+	const Place *p
+){
+  return Place2STime_from_times(block->times, p);
+}
 
-bool isSTimeInBlock(struct Blocks *block,STime time){
+bool isSTimeInBlock(const struct Blocks *block,STime time){
 	if(time > block->times[block->num_lines].time) return false;
 	return true;
 }
 
-STime getBlockSTimeLength(struct Blocks *block){
+STime getBlockSTimeLength(const struct Blocks *block){
 	return block->times[block->num_lines].time;
 }
 
@@ -273,7 +269,7 @@ static void STP_fillinSTimes2(
 	}
 
 	if(0==p1->counter){
-		stp->times[p1->line].time=stp->nexttime;
+          stp->times[p1->line].time = stp->nexttime;
 	}
 
 	tfp1=GetfloatFromPlacement(p1);
@@ -485,7 +481,7 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block){
 	stp->breltempo=false;
 
 	/* Times */
-	stp->times=block->times=talloc(sizeof(struct STimes)*(block->num_lines+1));
+	stp->times = talloc(sizeof(struct STimes)*(block->num_lines+1));
 
 
 	/* Tempos */
@@ -628,6 +624,8 @@ void UpdateSTimes(struct Blocks *block){
 	do{
 		STP_fillinSTimeTempos(&stp);
 	}while(STP_getNextTimePlace(&stp));
+
+        block->times = (const struct STimes*)stp.times;
 
 	STP_fillinLastSTimeTempos(&stp);
 

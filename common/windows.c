@@ -83,6 +83,7 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
   const int color = 0;
   struct WBlocks *wblock = window->wblock;
 
+#if !USE_OPENGL
   // Clears the area between the header and the first line, if there is space.
   {
     int top_line_y = Common_oldGetReallineY1Pos(window, wblock, 0);
@@ -106,6 +107,7 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
                     PAINT_DIRECTLY
                     );
   }
+#endif // !USE_OPENGL
 
   // Clear the small area between the temposlider and the bottom slider.
   GFX_FilledBox(
@@ -133,6 +135,8 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
   }
 #endif
 
+
+#if !USE_OPENGL
   // Clear the area between the Left slider and the line numbers.
   //printf("sl.x2: %d / %d\n",                window->leftslider.width+1,wblock->zoomlevelarea.x-1);
   //if(window->leftslider.width+1 < wblock->zoomlevelarea.x-1)
@@ -152,7 +156,9 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
           1, wblock->t.y1+1,
           window->leftslider.width-1, wblock->t.y2,
           PAINT_DIRECTLY
-          );  
+          );
+#endif
+
 }
 
 
@@ -224,14 +230,18 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
         }
 #endif
 
+#if !USE_OPENGL
         GFX_BouncePoints(window); // To clear point buffer. (TODO: Implement a clear point buffer function.)
+#endif
 
 	UpdateTrackerWindowCoordinates(window);
 	UpdateWBlockCoordinates(window,wblock);
 
+#if !USE_OPENGL
 	PixMap_reset(window);
+#endif
 
-#if 1
+#if !USE_OPENGL
 	struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
         int x2=wtrack->fxarea.x2;
         EraseAllLines(window, window->wblock, 0, x2);
@@ -241,33 +251,18 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
                       window->width-1,window->height-1,
                       PAINT_BUFFER);
 
-#else
-        // TODO: Decide in common/ if using color 0 or 15. (not in GFX_FilledBox)
-
-	GFX_FilledBox(window,0,0,0,window->width-1,window->wblock->t.y1,PAINT_BUFFER);
-	//GFX_FilledBox(window,0,0,window->wblock->t.y1,window->width-1,window->height-1,PAINT_BUFFER);
-
-	struct WTracks *wtrack=ListLast1(&wblock->wtracks->l);
-        int x2=wtrack->fxarea.x2;
-        //printf("Width: %d. x2: %d\n",window->width,x2);
-	GFX_FilledBox(window,0,
-                      0,window->wblock->t.y1,
-                      x2-1,window->height-1,
-                      PAINT_BUFFER);
-	GFX_FilledBox(window,0,
-                      x2,0,
-                      window->width-1,window->height-1,
-                      PAINT_BUFFER);
+	DrawLeftSlider(window);
 #endif
 
 	DrawWBlock(window,window->wblock);
-	DrawLeftSlider(window);
 
 	window->wblock->isgfxdatahere=true;
 
         ClearUnusedWindowsAreas(window);
 
+#if !USE_OPENGL
         Blt_unMarkVisible(window); // Need a better name for this function.
+#endif
 }
 
 
