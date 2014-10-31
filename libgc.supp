@@ -1,0 +1,21 @@
+# From https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=642486
+# Don't look into libgc
+{
+  <gc1>
+  Memcheck:Cond
+  fun:GC_*
+}
+{
+  <gc2>
+  Memcheck:Value8
+  fun:GC_*
+}
+{
+  <gc3>
+  Memcheck:Addr4
+  fun:memset
+  fun:GC_stopped_mark
+  fun:GC_try_to_collect_inner
+  fun:GC_init
+}
+
