@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
+
 #if USE_VESTIGE
 
 #warning
@@ -90,6 +91,7 @@ const int kVstMaxParamStrLen = 8;
 #include "../common/visual_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
+#include "../common/playerclass.h"
 
 
 #include "SoundPlugin.h"
@@ -107,6 +109,8 @@ const int kVstMaxParamStrLen = 8;
 typedef void (*XEventProc)(XEvent *);
 #endif
 
+
+extern PlayerClass *pc;
 
 
 extern "C"{
@@ -460,8 +464,23 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
       static VstTimeInfo _timeInfo;
 
       memset(&_timeInfo, 0, sizeof(_timeInfo));
-      _timeInfo.samplePos = 0;
+      //printf("starttime: %d\n",(int)pc->start_time);
+      //_timeInfo.ppqPos = pc->start_time / 24000;
+      _timeInfo.samplePos = pc->start_time;
       _timeInfo.sampleRate = data->sample_rate;
+
+
+      _timeInfo.timeSigNumerator = 4;
+      _timeInfo.timeSigDenominator = 4;
+
+      _timeInfo.tempo = 160;
+
+      //_timeInfo.smpteOffset = pc->start_time / 1000;
+      
+
+      _timeInfo.flags = kVstCyclePosValid;
+      //_timeInfo.flags = kVstCyclePosValid | kVstBarsValid | kVstPpqPosValid | kVstTimeSigValid | kVstSmpteValid;
+      
       return (long)&_timeInfo;
     }
 #endif		
@@ -1055,7 +1074,11 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
+<<<<<<< HEAD
     //printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
+=======
+    printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
     if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;

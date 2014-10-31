@@ -126,18 +126,30 @@ int main(int argc, char **argv){
 
 #if defined(FOR_LINUX)
     // Should something like this be done for windows as well?
+<<<<<<< HEAD
     static int counter = 10; // wait 4 seconds
+=======
+    static int counter = 10; // wait 10 seconds
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
     //printf("killing: %d / %d\n",(int)kill(parent_pid,0),(int)ESRCH);
 
     if(kill(parent_pid,0)==-1){
       counter--;
+<<<<<<< HEAD
       if(counter>0){
         if(0)
           fprintf(stderr, "Radium crashreporter: Seems like parent process died. Counting down before exit: %d\n", counter);
       }else{
         if(0)
           fprintf(stderr, "Radium crashreporter: Seems like parent process died. Exiting\n");
+=======
+      
+      if(counter>0)
+        fprintf(stderr, "Radium crashreporter: Seems like parent process died. Counting down before exit: %d\n", counter);
+      else{
+        fprintf(stderr, "Radium crashreporter: Seems like parent process died. Exiting\n");
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
         do_exit=true;
       }
     }

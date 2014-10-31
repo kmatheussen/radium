@@ -48,13 +48,19 @@ extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
 extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 
+<<<<<<< HEAD
 extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
 extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip);
+=======
+extern LANGSPEC void RT_FX_treat_fx(struct FX *fx,int val,struct Tracks *track,STime time,int skip, FX_when when);
+extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,struct Tracks *track,int skip);
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
 extern LANGSPEC void PATCH_turn_voice_on(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_turn_voice_off(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, int new_tranpose);
 
+<<<<<<< HEAD
 extern LANGSPEC int PATCH_get_peaks(struct Patch *patch,
                                     float notenum, 
                                     int ch, 
@@ -62,3 +68,6 @@ extern LANGSPEC int PATCH_get_peaks(struct Patch *patch,
                                     int64_t start_time, int64_t end_time, 
                                     float *min_value, float *max_value
                                     );
+=======
+extern LANGSPEC int PATCH_get_peaks(struct Patch *patch, float notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min, float *max);
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187

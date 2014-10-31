@@ -2,7 +2,11 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
+<<<<<<< HEAD
 VERSION = 3.0.beta2
+=======
+VERSION = 1.9.43
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
 #----------------USER SETTINGS-------------------------------
 

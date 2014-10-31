@@ -474,7 +474,11 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
     SETFLOAT(v + 7, duration % sample_rate);
 
     if(p->counter==0){
+<<<<<<< HEAD
       const struct Blocks *block = PC_GetPlayBlock(0);
+=======
+      struct Blocks *block = PC_GetPlayBlock(0);
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
       int64_t duration = block->times[p->line+1].time - block->times[p->line].time;
       
       SETFLOAT(v_line + 0, int(time / sample_rate));

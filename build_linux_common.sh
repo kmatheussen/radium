@@ -35,7 +35,11 @@ export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.
 export QT_CFLAGS="`$PKG --cflags Qt3Support`"
 export QT_LDFLAGS="`$PKG --libs Qt3Support --libs QtOpenGL`"
 
+<<<<<<< HEAD
 VL_PATH="bin/packages/Visualization-Library-master"
+=======
+VL_PATH="$HOME/Visualization-Library"
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
 export VL_LIBS="$VL_PATH/src/vlQt4/lib/libVLQt4.a  $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a $VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a -lGL -lGLU "
 

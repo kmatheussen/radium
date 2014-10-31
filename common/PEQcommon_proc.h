@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void PC_RemoveFirst(void);
 extern LANGSPEC struct Blocks *PC_GetPlayBlock(int numfromcurrent);
+<<<<<<< HEAD
 extern LANGSPEC bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, const struct Blocks **block);
 
 extern LANGSPEC void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
@@ -29,6 +30,17 @@ extern LANGSPEC void PC_InsertElement2_latencycompencated(struct PEventQueue *pe
 extern LANGSPEC void PC_InsertElement_a(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern LANGSPEC void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, const Place *p);
 extern LANGSPEC void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p);
+=======
+extern LANGSPEC bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct Notes **note, struct Tracks **track, struct Blocks **block);
+
+extern LANGSPEC void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, Place *p);
+extern LANGSPEC void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p);
+extern LANGSPEC void PC_InsertElement_a(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement2_a(struct PEventQueue *peq, int addplaypos, Place *p);
+extern LANGSPEC void PC_InsertElement2_a_latencycompencated(struct PEventQueue *peq, int addplaypos, Place *p);
+>>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
 extern LANGSPEC void PC_ReturnElements(void);
 extern LANGSPEC void PC_ReturnElements_fromPlayPos(int playpos);
