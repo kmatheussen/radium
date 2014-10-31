@@ -339,6 +339,8 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
     RError("setTemponode: No block %d in window %d",blocknum,windownum);
     return;
   }
+
+  //printf("Set temponode. value: %f. Place: %f\n",value,floatplace);
   
   struct Blocks *block = wblock->block;
 
@@ -354,6 +356,9 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
     RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
+  } else if (floatplace < 0) {
+    temponode = ListFindElement3_num(&block->temponodes->l, num);
+
   } else {
     Place place;
     Float2Placement(floatplace, &place);
@@ -775,11 +780,13 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
     
     pitch->note = value;
 
-    Place firstLegalPlace,lastLegalPlace;
-    PlaceFromLimit(&firstLegalPlace, &note->l.p);
-    PlaceTilLimit(&lastLegalPlace, &note->end);
+    if (floatplace >= 0.0f) {
+      Place firstLegalPlace,lastLegalPlace;
+      PlaceFromLimit(&firstLegalPlace, &note->l.p);
+      PlaceTilLimit(&lastLegalPlace, &note->end);
 
-    ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+      ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+    }
                         
   } else {
     
@@ -1090,12 +1097,19 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     MoveEndNote(wblock->block, wtrack->track, note, &place);
 
   } else {
-    Place firstLegalPlace,lastLegalPlace;
-    PlaceFromLimit(&firstLegalPlace, &note->l.p);
-    PlaceTilLimit(&lastLegalPlace, &note->end);
 
-    struct Velocities *velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+    struct Velocities *velocity;
 
+    if (floatplace < 0 ) {
+      velocity = ListFindElement3_num(&note->velocities->l, velocitynum-1);
+    } else {
+      Place firstLegalPlace,lastLegalPlace;
+      PlaceFromLimit(&firstLegalPlace, &note->l.p);
+      PlaceTilLimit(&lastLegalPlace, &note->end);
+
+      velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+    }
+    
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
   
@@ -1175,3 +1189,13 @@ bool shiftPressed(void){
   return AnyShift(tevent.keyswitch);
 }
 
+/*
+// Doesn't work to check right extra
+bool extraPressed(void){
+  return AnyExtra(tevent.keyswitch);
+}
+*/
+
+bool leftExtraPressed(void){
+  return LeftExtra(tevent.keyswitch);
+}

@@ -329,10 +329,11 @@ run-valgrind:
 
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 
+check: test
 test: dotesting
 
 dotesting:
-	gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
+	$(CC) -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
 
 packages: bin/packages/deletemetorebuild
 
@@ -1644,7 +1645,7 @@ api/radium_s7_wrap.c: api/protoconfparser.py api/protos.conf
 	cd api && $(PYTHONEXE) protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
 
 s7.o: bin/packages/s7/s7.c
-	$(CC) -c bin/packages/s7/s7.c `cat buildtype.opt` -Iembedded_scheme
+	$(CC) -c bin/packages/s7/s7.c `cat buildtype.opt` -Iembedded_scheme -O2
 
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp

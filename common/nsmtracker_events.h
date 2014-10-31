@@ -69,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RightAlt(a) (a&EVENT_RIGHTALT)
 #define LeftExtra(a) (a&EVENT_LEFTEXTRA1)
 #define RightExtra(a) (a&EVENT_RIGHTEXTRA1)
+#define AnyExtra(a) (LeftExtra(a) | RightExtra(a))
 
 #define OnlyLeftShift(a) (a==EVENT_LEFTSHIFT)
 #define OnlyLeftAlt(a) (a==EVENT_LEFTALT)

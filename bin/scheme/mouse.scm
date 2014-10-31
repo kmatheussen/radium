@@ -37,19 +37,31 @@
              ((cycle :press-func) $button $x $y))
            *mouse-cycles*))
 
+(define (only-y-direction)
+  (ra:shift-pressed))
+
+(define (only-x-direction)
+  (ra:left-extra-pressed))
+
 (delafina (add-delta-mouse-handler :press :move-and-release)
   (define start-x #f)
   (define start-y #f)
   (define value #f)
   (define (call-move-and-release $button $x $y)
-    (define dx (if (ra:ctrl-pressed)
-                   (/ (- $x start-x)
-                      10.0)
-                   (- $x start-x)))
-    (define dy (if (ra:ctrl-pressed)
-                   (/ (- $y start-y)
-                      10.0)
-                   (- $y start-y)))
+    (define dx (cond ((only-y-direction)
+                      0)
+                     ((ra:ctrl-pressed)
+                      (/ (- $x start-x)
+                         10.0))
+                     (else
+                      (- $x start-x))))
+    (define dy (cond ((only-x-direction)
+                      0)
+                     ((ra:ctrl-pressed)
+                      (/ (- $y start-y)
+                         10.0))
+                     (else
+                      (- $y start-y))))
     (set! start-x $x)
     (set! start-y $y)
     (set! value (move-and-release $button
@@ -307,7 +319,7 @@
     :value
     :y)
 
-  (define (press-and-move-existing-node Button X Y)
+  (define (press-existing-node Button X Y)
     (define area-box (Get-area-box))
     (and (= Button *left-button*)
          area-box
@@ -354,15 +366,18 @@
                          (/ Dx
                             pixels-per-value-unit)))
     ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
-    (define new-y (+ (Node :y)
-                     Dy))                                                 
+    (define new-y (and (not (= 0 Dy))
+                       (+ (Node :y)
+                          Dy)))
     ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
-    (Move-node (Node :node-info) new-value (ra:get-place-from-y new-y))
+    ;;(c-display "value: old:" (Node :value) ", new: " new-value)
+    ;;(if new-y (c-display "place" (ra:get-place-from-y new-y)))
+    (Move-node (Node :node-info) new-value (and new-y (ra:get-place-from-y new-y)))
     (make-node :node-info (Node :node-info)
                :value new-value
-               :y new-y))
+               :y (or new-y (Node :y))))
 
-  (define move-existing-node-mouse-cycle (make-node-mouse-cycle :press press-and-move-existing-node
+  (define move-existing-node-mouse-cycle (make-node-mouse-cycle :press press-existing-node
                                                                 :move-and-release move-and-release))
   
   (define create-new-node-mouse-cycle (make-node-mouse-cycle :press press-and-create-new-node
@@ -404,7 +419,8 @@
                                            (if (= -1 Num)
                                                #f
                                                (callback Num (ra:get-temponode-value Num))))
-                        :Move-node ra:set-temponode
+                        :Move-node (lambda (Num Value Place)
+                                     (ra:set-temponode Num Value (or Place -1)))
                         :Get-pixels-per-value-unit #f
                         )                        
 
@@ -544,7 +560,8 @@
                                            (if (= -1 Num)
                                                #f
                                                (callback Num (ra:get-pitch-value Num *current-track-num*))))
-                        :Move-node (lambda (Num Value Place) (ra:set-pitch Num Value Place *current-track-num*))
+                        :Move-node (lambda (Num Value Place)
+                                     (ra:set-pitch Num Value (or Place -1) *current-track-num*))
                         :Get-pixels-per-value-unit (lambda ()
                                                      5.0)
                         )
@@ -748,7 +765,7 @@
                                                                                     )
                                                                 (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (ra:set-velocity (velocity-info :velocitynum) Value Place (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                         )
 
 ;; delete velocity
@@ -876,6 +893,24 @@
 (define (a)
   (b))
 (a)
+
+(set! (*s7* 'undefined-identifier-warnings) #t)
+(*s7* 'undefined-identifier-warnings)
+
+(define (happ2)
+  (+ 2 aiai6))
+
+(*s7* 'symbol-table)
+(*s7* 'rootlet-size)
+
+(define (get-func)
+  (define (get-inner)
+    __func__)
+  (get-inner))
+
+(<-> "name: " (symbol->string (get-func)) )
+
+
 
 
 (begin *stacktrace*)

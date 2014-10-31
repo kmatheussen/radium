@@ -392,9 +392,9 @@ void PlaceTilLimit(Place *p, const Place *tp){
 
     p->line=tp->line;
     
-    uint32_t new_counter = scale(tp->counter, // first scale it up as much as possible
-                                 0,tp->dividor,
-                                 0,MAX_UINT32);
+    uint32_t new_counter = scale_double(tp->counter, // first scale it up as much as possible
+                                        0,tp->dividor,
+                                        0,MAX_UINT32);
     new_counter--; // then subtract one.
     
     p->counter=new_counter;
@@ -409,9 +409,9 @@ void PlaceTilLimit(Place *p, const Place *tp){
 **********************************************************/
 void PlaceFromLimit(Place *p, const Place *tp){
 
-  uint32_t new_counter = scale(tp->counter, // first scale it up as much as possible
-                               0,tp->dividor,
-                               0,MAX_UINT32);
+  uint32_t new_counter = scale_double(tp->counter, // first scale it up as much as possible
+                                      0,tp->dividor,
+                                      0,MAX_UINT32);
   new_counter++; // then add one.
 
   if (new_counter==MAX_UINT32){
@@ -456,10 +456,10 @@ void RError(const char *fmt,...){
     assert(_p->dividor==_dividor);                 \
   }while(0)
 
-int main(){
+int main(void){
 
   Place *p = PlaceCreate(0,0,0);
-  const Place *p1 = PlaceCreate(5,0,MAX_UINT32);
+  const Place *p1 = PlaceCreate(5,0,50);
   const Place *p2 = PlaceCreate(5,1,MAX_UINT32);
   const Place *p3 = PlaceCreate(5,MAX_UINT32-1,MAX_UINT32);
 
@@ -506,11 +506,11 @@ int main(){
   assert(p->dividor>0);
 
 
-  // Check that nothing has been changed
+  // Check that the test placements haven't been modified during testing.
   assert(PlaceCmp(p1,p1b)==0);
   assert(PlaceCmp(p2,p2b)==0);
   assert(PlaceCmp(p3,p3b)==0);
-  VALIDATE(p1b, 5,0,MAX_UINT32);
+  VALIDATE(p1b, 5,0,50);
   VALIDATE(p2b, 5,1,MAX_UINT32);
   VALIDATE(p3b, 5,MAX_UINT32-1,MAX_UINT32);
 
