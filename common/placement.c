@@ -267,22 +267,6 @@ float GetfloatFromPlace(Place *placement){
 }
 */
 
-/**********************************************************
-  FUNCTION
-    Convert a float into a placement.
-**********************************************************/
-void Float2Placement(float f,Place *p){
-
-	p->line=(int)f;
-
-	f=f-(float)p->line;
-
-	p->counter=f*MAX_UINT32;
-	p->dividor=MAX_UINT32;
-
-	PlaceHandleOverflow(p);		//Probably not necesarry
-}
-
 void PlaceAddfloat(Place *p,float f){
 	float temp;
 	temp=GetfloatFromPlacement(p);
@@ -467,6 +451,8 @@ int main(void){
   Place *p2b = (Place*)p2;
   Place *p3b = (Place*)p3;
 
+  // Float2Placement
+  //assert(Float2Placement(
 
   // compare and min/max
   assert(PlaceCmp(p1,p2)==-1);

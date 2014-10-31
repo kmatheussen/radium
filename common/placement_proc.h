@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_PLACEMENT
 #define TRACKER_PLACEMENT
 
+#include <assert.h>
+
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
   Place *place=(Place*)talloc(sizeof(Place));
@@ -25,6 +27,28 @@ static inline Place *PlaceCreate(int line, int counter, int dividor) {
   place->dividor = dividor;
   return place;
 }
+
+
+/**********************************************************
+  FUNCTION
+    Convert a float into a placement.
+**********************************************************/
+static inline void Float2Placement(float f,Place *p){
+  assert(f >= 0.0f);
+  
+  p->line = (int)f;
+  f -= p->line;
+
+  p->counter = f * MAX_UINT32;
+  p->dividor = MAX_UINT32;
+}
+
+static inline Place *PlaceCreate2(float f){
+  Place *place=(Place*)talloc(sizeof(Place));
+  Float2Placement(f, place);
+  return place;
+}
+
 
 /*************************************************************
   FUNCTION
@@ -104,7 +128,6 @@ extern float GetfloatFromLineCounterDividor(const Place *placement);
 extern float GetfloatFromPlacement(const Place *placement);
 extern float GetfloatFromPlace(const Place *placement);
 
-extern LANGSPEC void Float2Placement(float f,Place *p);
 extern void PlaceAddfloat(Place *p,float f);
 extern void PlaceSubfloat(Place *p,float f);
 

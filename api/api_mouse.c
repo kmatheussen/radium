@@ -767,9 +767,6 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
 
   value = R_BOUNDARIES(1,value,127);
 
-  Place place;
-  Float2Placement(floatplace, &place);
-
   struct Notes *note;
   struct Pitches *pitch;
 
@@ -785,13 +782,18 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
 
+      Place place;
+      Float2Placement(floatplace, &place);
+
       ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
     }
                         
   } else {
     
-    note->note = value;    
-    MoveNote(block, track, note, &place);
+    note->note = value;
+
+    if (floatplace >= 0)
+      MoveNote(block, track, note, PlaceCreate2(floatplace));
   }
 
   UpdateTrackReallines(window,wblock,wtrack);
@@ -1085,16 +1087,15 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     return;
   }
 
-  Place place;
-  Float2Placement(floatplace, &place);
-
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    MoveNote(wblock->block, wtrack->track, note, &place);
+    if (floatplace>=0)
+      MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
 
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    MoveEndNote(wblock->block, wtrack->track, note, &place);
+    if (floatplace>=0)
+      MoveEndNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
 
   } else {
 
@@ -1106,6 +1107,9 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
+      
+      Place place;
+      Float2Placement(floatplace, &place);
 
       velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
     }
