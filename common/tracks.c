@@ -67,8 +67,13 @@ bool TRACK_get_min_and_max_pitches(struct Tracks *track, float *ret_min_pitch, f
   if(min_pitch == 10000.0f)
     return false;
   else {
-    *ret_min_pitch = min_pitch;
-    *ret_max_pitch = max_pitch;
+    if (min_pitch==max_pitch) {
+      *ret_min_pitch = 0;
+      *ret_max_pitch = 128;
+    } else {
+      *ret_min_pitch = min_pitch;
+      *ret_max_pitch = max_pitch;
+    }
     return true;
   }
 }
