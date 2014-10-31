@@ -38,16 +38,20 @@ bool TRACK_get_min_and_max_pitches(struct Tracks *track, float *ret_min_pitch, f
   float min_pitch = 10000.0f;
   float max_pitch = -10000.0f;
 
+  int num_pitches = 0;
+  
   // find min_pitch and max_pitch
   {
     struct Notes *note = track->notes;
     while(note!=NULL){
       min_pitch = R_MIN(note->note, min_pitch);
       max_pitch = R_MAX(note->note, max_pitch);
+      num_pitches ++;
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
         min_pitch = R_MIN(pitch->note, min_pitch);
         max_pitch = R_MAX(pitch->note, max_pitch);
+        num_pitches ++;
         pitch = NextPitch(pitch);
       }
       note = NextNote(note);
@@ -67,12 +71,12 @@ bool TRACK_get_min_and_max_pitches(struct Tracks *track, float *ret_min_pitch, f
   if(min_pitch == 10000.0f)
     return false;
   else {
-    if (min_pitch==max_pitch) {
-      *ret_min_pitch = 0;
-      *ret_max_pitch = 128;
-    } else {
+    if (num_pitches>3) {
       *ret_min_pitch = min_pitch;
       *ret_max_pitch = max_pitch;
+    } else {
+      *ret_min_pitch = 0;
+      *ret_max_pitch = 128;
     }
     return true;
   }
