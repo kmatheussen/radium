@@ -154,11 +154,7 @@ typedef struct{
 #endif
 
 #if 0
-<<<<<<< HEAD
 static int AUDIO_getMaxVelocity(const struct Patch *patch){
-=======
-static int AUDIO_getMaxVelocity(struct Patch *patch){
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
   return MAX_FX_VAL;
 }
 #endif
@@ -173,11 +169,7 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
-<<<<<<< HEAD
 static void AUDIO_treat_FX(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-=======
-static void AUDIO_treat_FX(struct FX *fx,int val,struct Tracks *track,STime time,int skip, FX_when when){
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
   SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
 

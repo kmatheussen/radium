@@ -1074,11 +1074,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
-<<<<<<< HEAD
     //printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
-=======
-    printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
     if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;

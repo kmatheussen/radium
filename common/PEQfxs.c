@@ -94,11 +94,7 @@ static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
 
   if(fx!=NULL && peq->track->onoff==1){
     union SuperType args[5];
-<<<<<<< HEAD
     args[0].const_pointer = peq->track;
-=======
-    args[0].pointer = peq->track;
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
     args[1].pointer = fx;
     args[2].int_num = x;
     args[3].int_num = skip;

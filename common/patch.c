@@ -406,10 +406,6 @@ void PATCH_init(void){
 }
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 ////////////////////////////////////
 // Play note
 
@@ -816,11 +812,7 @@ void PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id, float
 
 // All FX goes through this function.
 
-<<<<<<< HEAD
 void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-=======
-void RT_FX_treat_fx(struct FX *fx,int val,struct Tracks *track,STime time,int skip, FX_when when){
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
   if(track->patch!=NULL){ // This function should take patch as first argument. The track argument is [probably not / should not be] needed.
     if(time==-1)
       time = track->patch->last_time;
@@ -955,7 +947,6 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t
 }
 
 // Must only be called if TRACK_has_peaks(track)==true.
-<<<<<<< HEAD
 int PATCH_get_peaks(struct Patch *patch,
                     float notenum, 
                     int ch, 
@@ -964,9 +955,6 @@ int PATCH_get_peaks(struct Patch *patch,
                     float *min_value, float *max_value
                     )
 {
-=======
-int PATCH_get_peaks(struct Patch *patch, float notenum, int ch, float start_velocity, float end_velocity, struct Tracks *track, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
   int ret = 0;
   SoundPlugin *plugin=patch->patchdata;
 

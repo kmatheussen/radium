@@ -341,11 +341,6 @@ struct Patch{
 
   struct PatchVoice voices[NUM_PATCH_VOICES];
 
-<<<<<<< HEAD
-=======
-  struct PatchVoice voices[NUM_PATCH_VOICES];
-
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
   int num_currently_playing_voices;
   PatchPlayingNote playing_voices[MAX_PLAYING_PATCH_NOTES];      /* To keep track of how many times a voice has to be turned off. */
 
@@ -448,11 +443,7 @@ struct FX{
 	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
 	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-<<<<<<< HEAD
 	void (*treatFX)(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
-=======
-	void (*treatFX)(struct FX *fx,int val,struct Tracks *track,STime time,int skip, FX_when when);
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
@@ -483,11 +474,7 @@ struct Instruments{
 
         vector_t patches; // Not safe to traverse from player thread.
 
-<<<<<<< HEAD
         //int (*getMaxVelocity)(const struct Patch *patch);
-=======
-  //int (*getMaxVelocity)(struct Patch *patch);
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
 	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
@@ -892,11 +879,6 @@ struct Blocks{
   
 	const struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
 
-<<<<<<< HEAD
-=======
-	struct STimes *times;			/* Pointer to array. Last element (times[num_lines]) is the playtime of the block. */
-
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 	volatile float reltempo;					/* factor that the tempo is multiplied with when playing this block. */
 
   // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.

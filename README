@@ -1,12 +1,7 @@
 
 
-<<<<<<< HEAD
 Radium V3.0.beta2
 Released 2014-04-19
-=======
-Radium V1.9.43
-Released 2014-08-30
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
 
 
@@ -75,11 +70,7 @@ BUILD DEPENDENCIES FEDORA:
 
         * Or in one line:
 
-<<<<<<< HEAD
         qt4-devel libXaw-devel python2-devel alsa-lib-devel jack-audio-connection-kit-devel libsamplerate-devel liblrdf-devel libsndfile-devel ladspa-devel glib2-devel ladspa-calf-plugins binutils-devel libtool-ltdl libtool tk libogg-devel libvorbis-devel speex-devel fftw-devel guile libxkbfile-devel xorg-x11-util-macros cmake
-=======
-        qt4-devel libXaw-devel python2-devel alsa-lib-devel jack-audio-connection-kit-devel libsamplerate-devel liblrdf-devel libsndfile-devel ladspa-devel glib2-devel ladspa-calf-plugins binutils-devel libtool-ltdl libtool tk libogg-devel libvorbis-devel speex-devel fftw-devel guile libxkbfile-devel xorg-x11-util-macros
->>>>>>> d866f9643abae87c36001180994c3d5f26c4d187
 
         (tested on Fedora 17/19/20 64 bit)
 
