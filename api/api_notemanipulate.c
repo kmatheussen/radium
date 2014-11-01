@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 
+extern struct Root *root;
+
 
 /************** Transpose ******************/
 
@@ -156,6 +158,9 @@ void quantitizeRange(int windownum){
   Quantitize_range_CurrPos(window);
 }
 
+float getQuantitize(void){
+  return root->quantitize;
+}
 
 /************** Glissando ******************/
 

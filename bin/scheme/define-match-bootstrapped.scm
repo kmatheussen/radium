@@ -1,7 +1,7 @@
 (define (test -__Arg1 -__Arg2)
   (define (-__Func1)
     (let ((A -__Arg1))
-      (if (equal? A -__Arg2)
+      (if (morally-equal? A -__Arg2)
         (begin
           (pretty-print "Correct: ")
           (pretty-print A)

@@ -1,7 +1,46 @@
 (provide 'mouse.scm)
 
 (define *left-button* 1)
+(define *middle-button* 3)
 (define *right-button* 5)
+
+
+;; Quantitize
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (round 2.5) -> 2
+;; (roundup 2.5) -> 3
+(define (roundup A)
+  (floor (+ A 0.5)))
+
+(define-match quantitize
+  Place Q :> (* (roundup (/ Place Q))
+                Q))
+
+(begin
+  (test (quantitize 0 0.5)
+        0.5)
+  (test (quantitize 0.5 0.5)
+        0.5)
+  (test (quantitize 1.0 0.5)
+        1.0)
+  (test (quantitize 10.0 0.5)
+        10)
+  (test (quantitize 10.3 0.5)
+        10.5)
+  (test (quantitize 10.5 0.5)
+        10.5)
+  (test (quantitize 10.6 0.5)
+        10.5)
+  (test (quantitize 10.9 0.5)
+        11))
+
+(define (get-place-from-y Y)
+  (define place (ra:get-place-from-y Y))
+  (if (ra:ctrl-pressed)
+      place
+      (quantitize place (ra:get-quantitize))))
+
 
 ;; Mouse move handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -308,7 +347,7 @@
  )
 
 
-
+   
 (delafina (add-node-mouse-handler :Get-area-box
                                   :Get-existing-node-info
                                   :Get-min-value
@@ -349,7 +388,7 @@
                                 (area-box :x1) (area-box :x2)
                                 min max))
            (Create-new-node value
-                            (ra:get-place-from-y Y)
+                            (get-place-from-y Y)
                             (lambda (Node-info Value)
                               (make-node :node-info Node-info
                                          :value Value
@@ -375,7 +414,7 @@
     ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
     ;;(c-display "value: old:" (Node :value) ", new: " new-value)
     ;;(if new-y (c-display "place" (ra:get-place-from-y new-y)))
-    (Move-node (Node :node-info) new-value (and new-y (ra:get-place-from-y new-y)))
+    (Move-node (Node :node-info) new-value (and new-y (get-place-from-y new-y)))
     (make-node :node-info (Node :node-info)
                :value new-value
                :y (or new-y (Node :y))))
@@ -681,7 +720,7 @@
                                                   Total)))
                                                  
 (define-match get-note-num
-  X Y :> (get-note-num-0 (ra:get-place-from-y Y)
+  X Y :> (get-note-num-0 (get-place-from-y Y)
                          *current-subtrack-num*
                          0
                          (ra:get-num-notes *current-track-num*)))
