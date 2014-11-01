@@ -84,19 +84,29 @@
 
 ;; Functions called from radium
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: block->is_dirty is set unnecessarily often to true this way.
+(define (cancel-current-stuff)
+  (ra:set-no-mouse-note)
+  (ra:set-no-mouse-track)
+  (ra:cancel-current-node))
+
 (define (radium-mouse-press $button $x $y)
+  (cancel-current-stuff)
   (if (not *current-mouse-cycle*)
       (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
   current-mouse-cycle)
   
 (define (radium-mouse-press $button $x $y)
   ;;(c-display "mouse press" $button $x $y)
+  (cancel-current-stuff)
   (if (not *current-mouse-cycle*)
       (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
   *current-mouse-cycle*)
 
 (define (radium-mouse-move $button $x $y)
   ;;(c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
+  (cancel-current-stuff)
   (if *current-mouse-cycle*
       (begin 
         ((*current-mouse-cycle* :drag-func) $button $x $y)
@@ -111,7 +121,7 @@
       (begin
         ((*current-mouse-cycle* :release-func) $button $x $y)
         (set! *current-mouse-cycle* #f)
-        (ra:cancel-current-node)
+        (run-mouse-move-handlers $button $x $y)
         #t)
       #f))
 
@@ -155,17 +165,14 @@
 
 (define *current-track-num* #f)
 
+;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (set! *current-track-num* (get-track-num X Y))
-         (c-display "curr: " *current-track-num*)
          (cond (*current-track-num*
                 (ra:set-mouse-track *current-track-num*))
                ((inside-box (ra:get-box temponode-area) X Y)
-                (ra:set-mouse-track-to-reltempo))
-               (else
-                (ra:set-no-mouse-track)))
-         #f))
+                (ra:set-mouse-track-to-reltempo)))))
 
 (define *current-subtrack-num* #f)
 
@@ -193,9 +200,7 @@
  :move (lambda ($button $x $y)
          (set! *current-subtrack-num* (and *current-track-num*
                                            (inside-box (ra:get-box track-fx *current-track-num*) $x $y)
-                                           (get-subtrack-from-x $x *current-track-num*)))
-         ;;(c-display "current-subtrack-num" *current-subtrack-num*)
-         #f))
+                                           (get-subtrack-from-x $x *current-track-num*)))))
 
 ;; reltempo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -322,8 +327,6 @@
   (define (press-existing-node Button X Y)
     (define area-box (Get-area-box))
     (and (= Button *left-button*)
-         area-box
-         (inside-box-forgiving area-box X Y)
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
@@ -408,9 +411,10 @@
 
 (add-node-mouse-handler :Get-area-box (lambda () (ra:get-box temponode-area))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
-                                                         (existing-box Num Box) :> (callback Num (ra:get-temponode-value Num) (Box :y))
-                                                         _                      :> #f))
+                                                  (and (inside-box-forgiving (ra:get-box temponode-area) X Y)
+                                                       (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
+                                                              (existing-box Num Box) :> (callback Num (ra:get-temponode-value Num) (Box :y))
+                                                              _                      :> #f)))
                         :Get-min-value (lambda () (- (1- (ra:get-temponode-max))))
                         :Get-max-value (lambda () (1- (ra:get-temponode-max)))
                         :Make-undo ra:undo-temponodes
@@ -433,8 +437,7 @@
                      (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                             (existing-box Num Box) :> (begin
                                                         (ra:undo-temponodes)
-                                                        (ra:delete-temponode Num)
-                                                        #t)
+                                                        (ra:delete-temponode Num))
                             _                      :> #f)))))
 
 ;; highlight current temponode
@@ -443,44 +446,10 @@
          (and (inside-box-forgiving (ra:get-box temponode-area) $x $y)
               (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                      (existing-box Num Box) :> (begin
-                                                 (ra:set-current-tempo-node Num)
-                                                 #t)
-                     _                      :> (begin
-                                                 (ra:cancel-current-node)
-                                                 #f)))))
+                                                 (ra:set-mouse-track-to-reltempo)
+                                                 (ra:set-current-tempo-node Num))
+                     _                      :> #f))))
 
-
-
-;; current note
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-#||
-(delafina (get-note-num :$x
-                        :$y
-                        :$num 0
-                        :$num-notes (and *current-track-num* (ra-get-num-notes *current-track-num*)))
-  
-  (define note-y (delay (ra:get-note-y *num* *current-track-num*)))
-  
-  (cond ((not *current-track-num*)
-         #f)
-        ((= $num $num-notes)
-         #f)
-        ((< $y (force note-y))
-         #f)
-        (else
-         (get-note-num $x $y (1+ $num) $num-notes))))
-        
-
-(define *current-note-num* #f)
-
-(add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (set! *current-note-num* (get-note-num $x $y))
-         (c-display "curr track/note:" *current-track-num* *current-note-num*)
-         #f))
-
-||#
 
 
 ;; pitches
@@ -549,9 +518,10 @@
                                         (and *current-track-num*
                                              (ra:get-box track-notes *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (match (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*)))
-                                                         (existing-box Num Box) :> (callback Num (ra:get-pitch-value Num *current-track-num*) (Box :y))
-                                                         _                      :> #f))
+                                                  (and *current-track-num*
+                                                       (match (list (find-node X Y get-pitch-box (ra:get-num-pitches *current-track-num*)))
+                                                              (existing-box Num Box) :> (callback Num (ra:get-pitch-value Num *current-track-num*) (Box :y))
+                                                              _                      :> #f)))
                         :Get-min-value get-min-pitch-in-current-track
                         :Get-max-value get-max-pitch-in-current-track
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
@@ -590,12 +560,9 @@
               (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
               (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
                      (existing-box Num Box) :> (begin
-                                                 ;;(c-display "--" Num "highlight")
-                                                 (ra:set-current-pitch Num *current-track-num*)
-                                                 #t)
-                     _                      :> (begin
-                                                 (ra:cancel-current-node)
-                                                 #f)))))
+                                                 (c-display "--" Num "highlight")
+                                                 (ra:set-current-pitch Num *current-track-num*))
+                     _                      :> #f))))
 
 
 
@@ -684,8 +651,7 @@
   X Y #f       :> (get-velocity-info X Y 0)
   X Y Tracknum :> (highest-rated-velocity-info Y
                                                (list (get-velocity-0 X Y (1- Tracknum)) ;; node in the prev track can overlap into the current track
-                                                     (get-velocity-0 X Y Tracknum)
-                                                     (get-velocity-0 X Y (1+ Tracknum))))) ;; node in the next track can overlap into the current track
+                                                     (get-velocity-0 X Y Tracknum))))
 
 
 #||
@@ -719,40 +685,32 @@
                          *current-subtrack-num*
                          0
                          (ra:get-num-notes *current-track-num*)))
-                         
-;; Set *current-note-num*
+
+;; Set *current-note-num* and mouse note
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (set! *current-note-num* (and *current-subtrack-num*
                                        (get-note-num $x $y)))
-         ;;(c-display "current-note-num" *current-note-num* ", subtrack: " *current-subtrack-num* ", track: " *current-track-num*)
          (if *current-note-num*
-             (ra:set-mouse-note *current-note-num* *current-track-num*)
-             (ra:set-no-mouse-note))
-         #f))
+             (ra:set-mouse-note *current-note-num* *current-track-num*))))
 
-(define (get-velocity-box-old $num) ;; still used though, but should be deleted soon.
-  (get-common-node-box (ra:get-velocity-x $num *current-note-num* *current-track-num*)
-                       (ra:get-velocity-y $num *current-note-num* *current-track-num*)))
-
-(define (get-current-num-velocities)
-  (ra:get-num-velocities *current-note-num* *current-track-num*))
 
 ;; add and move velocity
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
-                                             (ra:get-box track *current-track-num*)))
+                                             (ra:get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (define velocity-info (get-velocity-info X Y *current-track-num*))
-                                                  (if velocity-info
-                                                      (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum)))
-                                                  (and velocity-info
-                                                       (callback velocity-info (velocity-info :value) (velocity-info :y))))
+                                                  (and *current-track-num*
+                                                       (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
+                                                         (if velocity-info
+                                                             (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum)))
+                                                         (and velocity-info
+                                                              (callback velocity-info (velocity-info :value) (velocity-info :y))))))
                         :Get-min-value (lambda () 0.0)
                         :Get-max-value (lambda () 1.0)
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
-                                           (and #t *current-note-num*
+                                           (and *current-note-num*
                                                 (begin
                                                   (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
@@ -771,17 +729,21 @@
 ;; delete velocity
 (add-mouse-cycle
  (make-mouse-cycle
-  :press-func (lambda ($button $x $y)
-                (and (= $button *right-button*)
-                     *current-note-num*
-                     *current-track-num* 
-                     (inside-box-forgiving (ra:get-box track-fx *current-track-num*) $x $y)
-                     (match (list (find-node $x $y get-velocity-box-old (ra:get-num-velocities *current-note-num* *current-track-num*)))
-                            (existing-box Num Box) :> (begin
-                                                        (ra:undo-notes *current-track-num*)
-                                                        (ra:delete-velocity Num *current-note-num* *current-track-num*)
-                                                        #t)
-                            _                      :> #f)))))
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     *current-track-num*
+                     (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+                     (begin
+                       (define velocity-info (get-velocity-info X Y *current-track-num*))
+                       ;;(c-display "got velocity info " velocity-info)
+                       (if velocity-info
+                           (begin
+                             (ra:undo-notes (velocity-info :tracknum))
+                             (ra:delete-velocity (velocity-info :velocitynum)
+                                                 (velocity-info :notenum)
+                                                 (velocity-info :tracknum))
+                             #t)
+                           #f))))))
 
 
 ;; show current velocity
@@ -795,11 +757,10 @@
                 (if velocity-info
                     (begin
                       (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
-                      (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum))
-                      #t)
-                    (begin
-                      (ra:cancel-current-node)
-                      #f))))))
+                      (c-display "setting current to " (velocity-info :velocitynum))
+                      (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                    (c-display "no current"))))))
+
 
 #||
 (ra:get-num-velocities 0 0)

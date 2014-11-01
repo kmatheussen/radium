@@ -53,15 +53,19 @@ extern struct ListHeader3 *current_node;
 // various
 ///////////////////////////////////////////////////
 
-void cancelCurrentNode(void){
-  if (current_node != NULL){
-    current_node = NULL;
+static void setCurrentNode(struct ListHeader3 *new_current_node){
+  if (current_node != new_current_node){
+    current_node = new_current_node;
     root->song->tracker_windows->wblock->block->is_dirty = true;
   }
 }
 
+void cancelCurrentNode(void){
+  setCurrentNode(NULL);
+}
+
 float getHalfOfNodeWidth(void){
-  return root->song->tracker_windows->fontheight / 1.5;
+  return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in Render.cpp
 }
 
 static int get_realline_y1(const struct Tracker_Windows *window, int realline){
@@ -326,10 +330,7 @@ void setCurrentTempoNode(int num, int blocknum){
   
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
 
-  if (current_node != &temponode->l) {
-    current_node = &temponode->l;
-    block->is_dirty = true;
-  }
+  setCurrentNode(&temponode->l);
 }
 
 void setTemponode(int num, float value, float floatplace, int blocknum, int windownum){
@@ -366,8 +367,6 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
     temponode = (struct TempoNodes *)ListMoveElement3_FromNum_ns(&block->temponodes, num, &place, NULL, NULL);
   }
   
-  current_node = &temponode->l;
-    
   if ( (value+1) > wblock->reltempomax) {
     wblock->reltempomax = value+1;      
   } else if ( (value-1) < -wblock->reltempomax) {
@@ -442,7 +441,6 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   }
   
   struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value);
-  current_node = &temponode->l;
 
   if (temponode==NULL)
     return -1;
@@ -675,11 +673,7 @@ void setCurrentPitch(int num, int tracknum, int blocknum){
     return;
 
   struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
-  
-  if (current_node != listHeader3){
-    current_node = listHeader3;
-    wblock->block->is_dirty = true;
-  }
+  setCurrentNode(listHeader3);
 }
 
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
@@ -817,8 +811,6 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
 
-  current_node = &note->l;
-
   UpdateTrackReallines(window,wblock,wtrack);
   wblock->block->is_dirty = true;
              
@@ -831,8 +823,6 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   if(pitch==NULL)
     return -1;
   
-  current_node = &pitch->l;
-
   UpdateTrackReallines(window,wblock,wtrack);
   wblock->block->is_dirty = true;
 
@@ -956,8 +946,10 @@ void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
     return;
-  else
+  else if (wblock->mouse_note != note){
     wblock->mouse_note = note;
+    wblock->block->is_dirty = true;
+  }
 }
 
 
@@ -1176,7 +1168,8 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
 
   struct Node *node = nodes->elements[velocitynum];
   struct Velocities *current = (struct Velocities*)node->element;
-  current_node = &current->l;
+
+  setCurrentNode(&current->l);
 }
 
 
