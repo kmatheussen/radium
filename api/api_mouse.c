@@ -1196,3 +1196,7 @@ bool extraPressed(void){
 bool leftExtraPressed(void){
   return LeftExtra(tevent.keyswitch);
 }
+
+bool altPressed(void){
+  return AnyAlt(tevent.keyswitch);
+}

@@ -58,15 +58,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define EVENT_UP2 (1<<EVENT_UP) /* Up key, i.e. key is released. */
 
 #define NoSwitch(a) (a==0)
+
 #define LeftCtrl(a) (a&EVENT_LEFTCTRL)
 #define RightCtrl(a) (a&EVENT_RIGHTCTRL)
 #define AnyCtrl(a) (LeftCtrl(a) | RightCtrl(a))
+
 #define CapsLock(a) (a&EVENT_CAPSLOCK)
+
 #define LeftShift(a) (a&EVENT_LEFTSHIFT)
 #define RightShift(a) (a&EVENT_RIGHTSHIFT)
 #define AnyShift(a) (LeftShift(a) | RightShift(a))
+
 #define LeftAlt(a) (a&EVENT_LEFTALT)
 #define RightAlt(a) (a&EVENT_RIGHTALT)
+#define AnyAlt(a) (LeftAlt(a) | RightAlt(a))
+
 #define LeftExtra(a) (a&EVENT_LEFTEXTRA1)
 #define RightExtra(a) (a&EVENT_RIGHTEXTRA1)
 #define AnyExtra(a) (LeftExtra(a) | RightExtra(a))
