@@ -102,10 +102,10 @@ DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM
 # define TRACKER_GB
 
 # If you want QT visual:
-#VISUAL=-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
+VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 # Or, if you want GTK visual: (Less maintained, and doesn't work very well on OSX. Possibly faster though.)
-VISUAL ?= -DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
+#VISUAL ?= -DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1
 
 FULL_VERSION ?= 1
 

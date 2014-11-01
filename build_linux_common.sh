@@ -44,7 +44,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse -DFOR_LINUX -DWITH_PD  -Wno-unused-function"
+export OS_OPTS="-Werror=array-bounds -msse2 -DFOR_LINUX -DWITH_PD  -Wno-unused-function"
 #export OS_OPTS="-Werror=array-bounds -march=native"
  
 
