@@ -67,7 +67,7 @@ bool InitProgram(void){
 	}
 
 	root->keyoct=48;
-	root->quantitize=0.5f;
+	root->quantitize=1.0f;
         root->min_standardvel=MAX_VELOCITY*40/100;
 	root->standardvel=MAX_VELOCITY*80/100;
 	root->scrollplayonoff=true;
