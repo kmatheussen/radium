@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "undo_maintempos_proc.h"
 #include "player_proc.h"
+#include "quantitize_proc.h"
 
 #include "mouse_quantitize_proc.h"
 
@@ -36,24 +37,7 @@ void SetMouseActionQuantitize(
 	struct MouseAction *action,
 	int x,int y, int click
 ){
-	struct WBlocks *wblock=window->wblock;
-	float ret;
-
 	if(click==0) return;
 
-	PlayStop();
-
-	ret=GFX_GetFloat(window,NULL,"Quantitize Value: ",0.1f,99.9f);
-
-	if(ret<0.1f) return;
-
-	Undo_MainTempo(window,wblock);
-
-	root->quantitize=ret;
-
-	GFX_UpdateQuantitize(window,wblock);
-
+        SetQuantitize_CurrPos(window);
 }
-
-
-

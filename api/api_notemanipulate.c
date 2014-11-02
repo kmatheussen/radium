@@ -157,6 +157,13 @@ void quantitizeRange(int windownum){
 }
 
 
+void configQuantitize(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  SetQuantitize_CurrPos(window);
+}
+
 /************** Glissando ******************/
 
 void glissando(int windownum){

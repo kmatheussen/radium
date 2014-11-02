@@ -40,6 +40,10 @@ extern void Quantitize_range_CurrPos(
 	struct Tracker_Windows *window
 );
 
+void SetQuantitize_CurrPos(
+                           struct Tracker_Windows *window
+                           );
+
 #endif
 
 
