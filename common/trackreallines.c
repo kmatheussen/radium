@@ -879,8 +879,10 @@ void AddPitchElements(
       pitch=NextPitch(pitch);
     }
 
+    #if !USE_OPENGL
     UpdateWPitches(window, wblock, wtrack, note, min_pitch, max_pitch);
-
+    #endif
+    
     note=NextNote(note);
   }
 }
