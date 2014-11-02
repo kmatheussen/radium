@@ -110,6 +110,11 @@ struct _GE_Context : public vl::Object{
 };
 
 
+void GE_set_z(GE_Context *c, int new_z) {
+  c->_z = new_z;
+}
+
+
 /* Drawing */
 
 static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){

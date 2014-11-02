@@ -105,6 +105,41 @@ static void draw_text_num(
 }
 
 
+static void draw_node_indicator(GE_Context *c,
+                                float x,
+                                float y)
+{
+  GE_set_z(c, Z_MAX_SCROLLTRANSFORM);
+  
+  float away1 = 1024;
+  float away2 = 5;
+  float thickness = 1.2;
+
+  // horizontal
+  GE_line(c,
+          x - away1, y,
+          x - away2, y,
+          thickness
+          );
+  GE_line(c,
+          x + away2, y,
+          x + away1, y,
+          thickness
+          );
+
+  // vertical
+  GE_line(c,
+          x, y - away1,
+          x, y - away2,
+          thickness
+          );
+  GE_line(c,
+          x, y + away1,
+          x, y + away2,
+          thickness
+          );
+}
+
 struct ListHeader3 *current_node = NULL;
 
 static void draw_skewed_box(const struct Tracker_Windows *window,
@@ -883,6 +918,15 @@ static void create_track_pitchlines(const struct Tracker_Windows *window, const 
   for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
     if(show_read_lines || nodeline->x1!=nodeline->x2)
       GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
+
+  // nodes
+  GE_Context *node_color = GE_color_alpha(14, 0.8);
+  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  if (true)
+    VECTOR_FOR_EACH(Node *, node, nodes){
+      if (node->element == current_node || (node->element==&first_pitch.l && current_node==&note->l))
+        draw_node_indicator(node_color, node->x, node->y-wblock->t.y1);
+    }END_VECTOR_FOR_EACH;
 }
 
 

@@ -71,6 +71,9 @@ enum{
 
 GE_Context *GE_set_static_x(GE_Context *c);
 
+// 'c' should not be used before calling this function.
+void GE_set_z(GE_Context *c, int new_z);
+
 #ifdef __cplusplus
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
 PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
