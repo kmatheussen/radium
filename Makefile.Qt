@@ -245,7 +245,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o Render.o Widget.o
 
 #Embedded scheme
-OBJ_ES=scheme.o moc_scheme.o s7.o radium_s7_wrap.o
+OBJ_ES=scheme.o s7.o s7webserver.o radium_s7_wrap.o
 
 
 OBJ = $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL) $(OBJ_ES)
@@ -1629,24 +1629,23 @@ Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/T
 
 # embedded scheme
 
-scheme.o: embedded_scheme/scheme.cpp embedded_scheme/scheme.h
+s7.o: bin/packages/s7/s7.c
+	$(CC) -c bin/packages/s7/s7.c `cat buildtype.opt` -Iembedded_scheme -O2
+
+s7webserver.o: bin/packages/s7/s7webserver/s7webserver.h bin/packages/s7/s7webserver/s7webserver.cpp bin/packages/s7/s7webserver/moc_s7webserver.cpp
+	$(CCC) -c bin/packages/s7/s7webserver/s7webserver.cpp `$(PKG) --cflags QtNetwork` -Ibin/packages/qhttpserver-master/src -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
+
+bin/packages/s7/s7webserver/moc_s7webserver.cpp: bin/packages/s7/s7webserver/s7webserver.h
+	$(MOC) -DCOMPILING_S7WEBSERVER bin/packages/s7/s7webserver/s7webserver.h -o bin/packages/s7/s7webserver/moc_s7webserver.cpp
+
+scheme.o: embedded_scheme/scheme.cpp
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
-
-moc_scheme.o: embedded_scheme/moc_scheme.cpp 
-	$(CCC) -c embedded_scheme/moc_scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src
-
-embedded_scheme/moc_scheme.cpp: embedded_scheme/scheme.h
-	$(MOC) embedded_scheme/scheme.h -o embedded_scheme/moc_scheme.cpp
 
 radium_s7_wrap.o: api/radium_s7_wrap.c
 	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
 
 api/radium_s7_wrap.c: api/protoconfparser.py api/protos.conf
 	cd api && $(PYTHONEXE) protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
-
-s7.o: bin/packages/s7/s7.c
-	$(CC) -c bin/packages/s7/s7.c `cat buildtype.opt` -Iembedded_scheme -O2
-
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp
