@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notes_legalize_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "player_proc.h"
+#include "visual_proc.h"
+#include "gfx_upperleft_proc.h"
 
 #include "quantitize_proc.h"
 
@@ -291,3 +293,19 @@ void Quantitize_range_CurrPos(
 	);
 }
 
+void SetQuantitize_CurrPos(
+                           struct Tracker_Windows *window
+){
+	struct WBlocks *wblock=window->wblock;
+	float ret;
+
+	PlayStop();
+
+	ret=GFX_GetFloat(window,NULL,"Quantitize Value: ",0.1f,99.9f);
+
+	if(ret<0.1f) return;
+
+	root->quantitize=ret;
+
+	GFX_UpdateQuantitize(window,wblock);
+}
