@@ -20,19 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "vector_proc.h"
 
-void VECTOR_push_back(vector_t *v, const void *element){
-  if(v->num_elements==v->num_elements_allocated){
-    if(v->num_elements_allocated==0){
-      v->num_elements_allocated = 8;
-      v->elements=talloc(v->num_elements_allocated*sizeof(void*));
-    }else{
-      v->num_elements_allocated *= 2;
-      v->elements=talloc_realloc(v->elements,v->num_elements_allocated*sizeof(void*));
-    }
-  }
-  v->elements[v->num_elements++] = (void*)element;
-}
-
 void VECTOR_reverse(vector_t *v){
   int size=v->num_elements;
   int i;

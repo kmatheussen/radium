@@ -17,7 +17,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef VECTOR_PROC_H
 #define VECTOR_PROC_H
 
-extern LANGSPEC void VECTOR_push_back(vector_t *v, const void *element);
+static inline void VECTOR_push_back(vector_t *v, const void *element){
+  int num_elements = v->num_elements;
+  int num_elements_allocated = v->num_elements_allocated;
+
+  if(num_elements==num_elements_allocated){
+    if(num_elements_allocated==0){
+      const int num_init = 8;
+      v->num_elements_allocated = num_init;
+      v->elements = (void**)talloc(num_init*sizeof(void*));
+    }else{
+      num_elements_allocated = num_elements * 2;
+      v->num_elements_allocated = num_elements_allocated;
+      v->elements = (void**)talloc_realloc(v->elements,num_elements_allocated*sizeof(void*));
+    }
+  }
+  v->elements[num_elements] = (void*)element;
+  v->num_elements++;
+}
+
 extern LANGSPEC void VECTOR_reverse(vector_t *v);
 extern LANGSPEC vector_t *VECTOR_copy(vector_t *from);
 extern LANGSPEC void VECTOR_clean(vector_t *v);
