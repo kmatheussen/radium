@@ -868,10 +868,10 @@ void AddPitchElements(
 			pitch
                         );
       
-      if(wtrack->trackreallines[realline].note!=0){
+      if (wtrack->trackreallines[realline].note!=0) {
         wtrack->trackreallines[realline].note=NOTE_MUL;
 	wtrack->trackreallines[realline].dasnote=NULL;
-      }else{
+      } else {
         wtrack->trackreallines[realline].note=pitch->note;
         wtrack->trackreallines[realline].daspitch=pitch;
       }

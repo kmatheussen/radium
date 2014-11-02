@@ -843,38 +843,49 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
   }
 }
 
-void create_track_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
-  int y1 = get_realline_y1(window, realline);
-  int y2 = get_realline_y2(window, realline);
 
-  TBox within2;
-  within2.y1 = y1;
-  within2.y2 = y2;
-  within2.x1 = wtrack->x;
-  within2.x2 = wtrack->fxarea.x - 2;
+static float track_notearea_x1, track_notearea_x2;
+static float track_min_pitch, track_max_pitch;
+static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct Pitches *pitch = (struct Pitches*)element;
+  return scale(pitch->note,
+               track_min_pitch, track_max_pitch,
+               track_notearea_x1, track_notearea_x2
+               );
+}
 
-  WArea warea;
-  warea.x=within2.x1;
-  warea.x2=within2.x2;
-  warea.width=warea.x2-warea.x;
+static void create_track_pitchlines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
+  struct Pitches first_pitch;
+  first_pitch.l.p = note->l.p;
+  first_pitch.l.next = &note->pitches->l;
+  first_pitch.note = note->note;
+
+  struct Pitches last_pitch;  
+  last_pitch.l.p = note->end;
+  last_pitch.l.next = NULL;
+  last_pitch.note = NextNote(note) == NULL ? wtrack->track->notes->note : NextNote(note)->note;
+
+  track_notearea_x1 = wtrack->notearea.x;
+  track_notearea_x2 = wtrack->notearea.x2;
+  TRACK_get_min_and_max_pitches(wtrack->track, &track_min_pitch, &track_max_pitch);
 
   bool show_read_lines = wblock->mouse_track==wtrack->l.num;
 
-  WPitches *wpitch=wtrack->wpitches[realline];
-  while(wpitch!=NULL){
-    if(wpitch->type==TRE_PITCHLINE)
-      if(wpitch->x1 != wpitch->x2 || show_read_lines) {
-        TBox get;
-        GetNodeLine(wpitch,&warea,&within2,&get);
-        GE_line(GE_color_alpha(7, 0.5),
-                get.x1, get.y1,
-                get.x2, get.y2,
-                1.75
-                );
-      }
-    wpitch=wpitch->next;
-  }
+  GE_Context *line_color = GE_color_alpha(7, 0.5);
+  
+  struct NodeLine *nodelines = create_nodelines(window,
+                                                wblock,
+                                                &first_pitch.l,
+                                                get_pitch_x,
+                                                &last_pitch.l
+                                                );
+
+  for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
+    if(show_read_lines || nodeline->x1!=nodeline->x2)
+      GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
 }
+
+
 
 static float subtrack_x1, subtrack_x2;
 
@@ -1096,20 +1107,28 @@ void create_track_stops(const struct Tracker_Windows *window, const struct WBloc
 void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
-  if(left_subtrack==-1)
+  if(left_subtrack==-1) {
     for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
       create_track_text(window, wblock, wtrack, realline);
-      create_track_pitches(window, wblock, wtrack, realline);
+      //create_track_pitches(window, wblock, wtrack, realline);
     }
 
+    const struct Notes *note=wtrack->track->notes;
+    while(note != NULL){
+      create_track_pitchlines(window, wblock, wtrack, note);
+      note = NextNote(note);
+    }
+  }
 
-  VECTOR_clean(&wtrack->velocity_nodes);
+  {
+    VECTOR_clean(&wtrack->velocity_nodes);
   
-  const struct Notes *note=wtrack->track->notes;
-  while(note != NULL){
-    if(note->subtrack >= left_subtrack)
-      create_track_velocities(window, wblock, wtrack, note);
-    note = NextNote(note);
+    const struct Notes *note=wtrack->track->notes;
+    while(note != NULL){
+      if(note->subtrack >= left_subtrack)
+        create_track_velocities(window, wblock, wtrack, note);
+      note = NextNote(note);
+    }
   }
 
   if(left_subtrack<=0){

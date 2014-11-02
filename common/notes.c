@@ -281,22 +281,16 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 			ScrollEditorDown(window,g_downscroll);
 		}
 
-        } else if(wtrack->trackreallines[wblock->curr_realline].daspitch != NULL) {
+        } else if (wtrack->trackreallines[wblock->curr_realline].daspitch != NULL) {
 
-          WFXNodes *wpitch = wtrack->wpitches[wblock->curr_realline];
-          while(wpitch->pointer==NULL && wpitch->next!=NULL)
-            wpitch=wpitch->next;
+          struct Pitches *pitch = wtrack->trackreallines[wblock->curr_realline].daspitch;
 
-          struct Pitches *pitch = wpitch->pointer;
-          if(pitch!=NULL){
-            pitch->note = notenum;
-            wtrack->trackreallines[wblock->curr_realline].daspitch = pitch;
+          pitch->note = notenum;
+
 #if !USE_OPENGL
-            ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
-            UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
+          ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
+          UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
 #endif
-          }else
-            printf("Hmm...\n");
 
 	}else{
 
