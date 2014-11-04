@@ -151,9 +151,9 @@ extern void CutListAt(void *listroot,Place *place);
 extern void CutListAt_a(void *listroot,Place *place);
 extern void CutListAt1(void *listroot,NInt num);
 
-extern int ListPostition3(struct ListHeader3 *list,
-                          struct ListHeader3 *element
-                          );
+extern int ListPosition3(struct ListHeader3 *list,
+                         struct ListHeader3 *element
+                         );
 
 extern int ForAllListElements1(
 	void *voidlistroot,

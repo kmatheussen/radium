@@ -105,15 +105,14 @@ static void draw_text_num(
 }
 
 
-static void draw_node_indicator(GE_Context *c,
-                                float x,
+static void draw_node_indicator(float x,
                                 float y)
-{
-  GE_set_z(c, Z_MAX_SCROLLTRANSFORM);
+{  
+  GE_Context *c = GE_color_alpha_z(14, 0.6, Z_MAX_SCROLLTRANSFORM);
   
   float away1 = 1024;
   float away2 = 5;
-  float thickness = 1.2;
+  float thickness = 1.6;
 
   // horizontal
   GE_line(c,
@@ -141,6 +140,9 @@ static void draw_node_indicator(GE_Context *c,
 }
 
 struct ListHeader3 *current_node = NULL;
+struct ListHeader3 *indicator_node = NULL;
+int indicator_velocity_num = -1;
+int indicator_pitch_num = -1;
 
 static void draw_skewed_box(const struct Tracker_Windows *window,
                             const struct ListHeader3 *node,
@@ -186,7 +188,6 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
           x2-2,y1+2,
           x1+1,y1+1,
           width);
-
 }
 
 
@@ -713,10 +714,13 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
     GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
 
   wblock->reltempo_nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
-  
-  if(wblock->mouse_track==TEMPONODETRACK)
+ 
+  if (indicator_node != NULL || wblock->mouse_track==TEMPONODETRACK)
     VECTOR_FOR_EACH(Node *, node, wblock->reltempo_nodes){
-      draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
+      if(wblock->mouse_track==TEMPONODETRACK)
+        draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
+      if (node->element==indicator_node)
+        draw_node_indicator(node->x, node->y - wblock->t.y1);
     }END_VECTOR_FOR_EACH;
 }
 
@@ -920,13 +924,18 @@ static void create_track_pitchlines(const struct Tracker_Windows *window, const 
       GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
 
   // nodes
-  GE_Context *node_color = GE_color_alpha(14, 0.8);
-  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
-  if (true)
-    VECTOR_FOR_EACH(Node *, node, nodes){
-      if (node->element == current_node || (node->element==&first_pitch.l && current_node==&note->l))
-        draw_node_indicator(node_color, node->x, node->y-wblock->t.y1);
-    }END_VECTOR_FOR_EACH;
+  if (indicator_node == &note->l && indicator_pitch_num!=-1) {
+    vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+
+    if (indicator_pitch_num >= nodes->num_elements)
+      RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
+    else {
+      printf("indicator_pitch_num: %d\n",indicator_pitch_num);
+      struct Node *node = (struct Node *)nodes->elements[indicator_pitch_num];
+      draw_node_indicator(node->x, node->y-wblock->t.y1);
+    }
+
+  }
 }
 
 
@@ -1084,13 +1093,20 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   if(TRACK_has_peaks(wtrack->track))
     create_track_peaks(window, wblock, wtrack, note, nodelines);
 
-
   // nodes
   if (wblock->mouse_note==note)
     VECTOR_FOR_EACH(Node *, node, nodes){
       draw_skewed_box(window, node->element, 5, node->x, node->y - wblock->t.y1);
     }END_VECTOR_FOR_EACH;
 
+  if (indicator_node == &note->l && indicator_velocity_num!=-1) {
+    if (indicator_velocity_num >= nodes->num_elements)
+      RError("indicator_velocity_node_num(%d) >= nodes->num_elements(%d)",indicator_velocity_num,nodes->num_elements);
+    else {
+      struct Node *node = (struct Node *)nodes->elements[indicator_velocity_num];
+      draw_node_indicator(node->x, node->y-wblock->t.y1);
+    }
+  }
 }
 
 

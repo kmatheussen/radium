@@ -48,6 +48,9 @@ extern volatile float scroll_pos;
 
 
 extern struct ListHeader3 *current_node;
+extern struct ListHeader3 *indicator_node;
+extern int indicator_velocity_num;
+extern int indicator_pitch_num;
 
 
 // various
@@ -62,6 +65,21 @@ static void setCurrentNode(struct ListHeader3 *new_current_node){
 
 void cancelCurrentNode(void){
   setCurrentNode(NULL);
+}
+
+static void setIndicatorNode(struct ListHeader3 *new_indicator_node){
+  printf("Trying to SetIndicatorNode %p / %p\n",indicator_node,new_indicator_node);
+  if (indicator_node != new_indicator_node){
+    indicator_node = new_indicator_node;
+    printf("SetIndicatorNode %p\n",new_indicator_node);
+    root->song->tracker_windows->wblock->block->is_dirty = true;
+  }
+}
+
+void cancelIndicatorNode(void){
+  setIndicatorNode(NULL);
+  indicator_velocity_num = -1;
+  indicator_pitch_num = -1;
 }
 
 float getHalfOfNodeWidth(void){
@@ -321,7 +339,7 @@ void undoTemponodes(void){
   Undo_TempoNodes_CurrPos(window);
 }
 
-void setCurrentTempoNode(int num, int blocknum){
+void setCurrentTemponode(int num, int blocknum){
   struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
   if (block==NULL) {
     RError("setCurrentTemponode: No block %d",blocknum);
@@ -331,6 +349,18 @@ void setCurrentTempoNode(int num, int blocknum){
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
 
   setCurrentNode(&temponode->l);
+}
+
+void setIndicatorTemponode(int num, int blocknum){
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+  if (block==NULL) {
+    RError("setCurrentTemponode: No block %d",blocknum);
+    return;
+  }
+  
+  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+
+  setIndicatorNode(&temponode->l);
 }
 
 void setTemponode(int num, float value, float floatplace, int blocknum, int windownum){
@@ -452,7 +482,8 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   UpdateSTimes(block);
   UpdateAllTrackReallines(window,wblock);
 
-  block->is_dirty = true;
+  GL_create(window, wblock); // Need to update wblock->temponodes before returning to the qt event dispatcher.
+  //block->is_dirty = true;
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
@@ -674,6 +705,28 @@ void setCurrentPitch(int num, int tracknum, int blocknum){
 
   struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
   setCurrentNode(listHeader3);
+}
+
+void setIndicatorPitch(int num, int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return;
+
+  struct Notes *note;
+  struct Pitches *pitch;
+  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+    return;
+
+  setIndicatorNode(&note->l);
+
+  if (pitch==NULL)
+    indicator_pitch_num = 0;
+  else {
+    int pitchnum = ListPosition3(&note->pitches->l, &pitch->l);
+    indicator_pitch_num = pitchnum + 1;
+  }
 }
 
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
@@ -1152,6 +1205,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   wblock->block->is_dirty = true;
 }
 
+
 void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
  struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -1170,6 +1224,25 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
   struct Velocities *current = (struct Velocities*)node->element;
 
   setCurrentNode(&current->l);
+}
+
+void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  setIndicatorNode(&note->l);
+
+  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
+    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    return;
+  }
+
+  indicator_velocity_num = velocitynum;
 }
 
 

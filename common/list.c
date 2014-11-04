@@ -417,7 +417,7 @@ int ListAddElement3_ns(
 		}
 
         struct ListHeader3 *list=listroot->root;
-	return ListPostition3(list,element);
+	return ListPosition3(list,element);
 }
 
 NInt ListFindFirstFreePlace1(struct ListHeader1 *list){
@@ -714,9 +714,9 @@ void CutListAt1(void *listroot,NInt num){
 	
 }
 
-int ListPostition3(struct ListHeader3 *list,
-                   struct ListHeader3 *element
-                   )
+int ListPosition3(struct ListHeader3 *list,
+                  struct ListHeader3 *element
+                  )
 {
   int ret = 0;
   while(list!=element) {

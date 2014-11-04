@@ -17,6 +17,7 @@
   Place Q :> (* (roundup (/ Place Q))
                 Q))
 
+#||
 (begin
   (test (quantitize 0 0.5)
         0.5)
@@ -34,6 +35,7 @@
         10.5)
   (test (quantitize 10.9 0.5)
         11))
+||#
 
 (define (get-place-from-y Y)
   (define place (ra:get-place-from-y Y))
@@ -128,7 +130,9 @@
 (define (cancel-current-stuff)
   (ra:set-no-mouse-note)
   (ra:set-no-mouse-track)
-  (ra:cancel-current-node))
+  (ra:cancel-current-node)
+  (ra:cancel-indicator-node)
+  )
 
 (define (radium-mouse-press $button $x $y)
   (cancel-current-stuff)
@@ -355,6 +359,7 @@
                                   :Make-undo
                                   :Create-new-node
                                   :Move-node
+                                  :Set-indicator-node
                                   :Get-pixels-per-value-unit #f
                                   )
   
@@ -370,6 +375,7 @@
                                  Y
                                  (lambda (Node-info Value Node-y)
                                    (Make-undo)
+                                   (Set-indicator-node Node-info)
                                    (make-node :node-info Node-info
                                               :value Value
                                               :y Node-y
@@ -390,12 +396,12 @@
            (Create-new-node value
                             (get-place-from-y Y)
                             (lambda (Node-info Value)
+                              (Set-indicator-node Node-info)
                               (make-node :node-info Node-info
                                          :value Value
                                          :y Y))))))
 
   (define (move-and-release Button Dx Dy Node)
-    ;;(c-display "temponode box" (box-to-string ($temponode :box)))
     (define min (Get-min-value))
     (define max (Get-max-value))
     (define area-box (Get-area-box))
@@ -411,9 +417,7 @@
     (define new-y (and (not (= 0 Dy))
                        (+ (Node :y)
                           Dy)))
-    ;;(c-display "dx:" $dx "value:" (* 1.0 ($temponode :value)) 0 ((ra:get-box temponode-area) :width) "min/max:" min max "new-value: " new-value)
-    ;;(c-display "value: old:" (Node :value) ", new: " new-value)
-    ;;(if new-y (c-display "place" (ra:get-place-from-y new-y)))
+    (Set-indicator-node (Node :node-info))
     (Move-node (Node :node-info) new-value (and new-y (get-place-from-y new-y)))
     (make-node :node-info (Node :node-info)
                :value new-value
@@ -464,6 +468,8 @@
                                                (callback Num (ra:get-temponode-value Num))))
                         :Move-node (lambda (Num Value Place)
                                      (ra:set-temponode Num Value (or Place -1)))
+                        :Set-indicator-node (lambda (Num)
+                                              (ra:set-indicator-temponode Num))
                         :Get-pixels-per-value-unit #f
                         )                        
 
@@ -476,7 +482,8 @@
                      (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                             (existing-box Num Box) :> (begin
                                                         (ra:undo-temponodes)
-                                                        (ra:delete-temponode Num))
+                                                        (ra:delete-temponode Num)
+                                                        #t)
                             _                      :> #f)))))
 
 ;; highlight current temponode
@@ -486,7 +493,9 @@
               (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                      (existing-box Num Box) :> (begin
                                                  (ra:set-mouse-track-to-reltempo)
-                                                 (ra:set-current-tempo-node Num))
+                                                 (ra:set-current-temponode Num)
+                                                 (ra:set-indicator-temponode Num)
+                                                 #t)
                      _                      :> #f))))
 
 
@@ -552,7 +561,7 @@
                                         (ra:get-num-pitches *current-track-num*)
                                         #f)))
 
-;; add and move
+;; add and move pitch
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
                                              (ra:get-box track-notes *current-track-num*)))
@@ -571,6 +580,8 @@
                                                (callback Num (ra:get-pitch-value Num *current-track-num*))))
                         :Move-node (lambda (Num Value Place)
                                      (ra:set-pitch Num Value (or Place -1) *current-track-num*))
+                        :Set-indicator-node (lambda (Num)
+                                              (ra:set-indicator-pitch Num *current-track-num*))
                         :Get-pixels-per-value-unit (lambda ()
                                                      5.0)
                         )
@@ -599,8 +610,10 @@
               (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
               (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
                      (existing-box Num Box) :> (begin
-                                                 (c-display "--" Num "highlight")
-                                                 (ra:set-current-pitch Num *current-track-num*))
+                                                 ;;(c-display "--" Num "highlight")
+                                                 (ra:set-indicator-pitch Num *current-track-num*)
+                                                 (ra:set-current-pitch Num *current-track-num*)
+                                                 #t)
                      _                      :> #f))))
 
 
@@ -761,6 +774,10 @@
                                                                                     :y #f ;; dont need it.
                                                                                     )
                                                                 (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
+                        :Set-indicator-node (lambda (velocity-info)
+                                              (ra:set-indicator-velocity-node (velocity-info :velocitynum)
+                                                                              (velocity-info :notenum)
+                                                                              (velocity-info :tracknum)))
                         :Move-node (lambda (velocity-info Value Place)
                                      (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                         )
@@ -797,6 +814,9 @@
                     (begin
                       (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
                       (c-display "setting current to " (velocity-info :velocitynum))
+                      (ra:set-indicator-velocity-node (velocity-info :velocitynum)
+                                                      (velocity-info :notenum)
+                                                      (velocity-info :tracknum))
                       (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                     (c-display "no current"))))))
 
