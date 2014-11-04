@@ -27,9 +27,12 @@ extern LANGSPEC void RT_message(const char *fmt,...);
 
 extern LANGSPEC void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title);
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title);
+
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void SetBlankPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetDiagResizePointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetHorizResizePointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void MovePointer(struct Tracker_Windows *tvisual, float x, float y);
 
 // Note that For the ReqType functions, tvisual might be NULL. The reasons is that it can be called when loading, or when starting up.
 extern LANGSPEC ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title);

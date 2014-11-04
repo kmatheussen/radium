@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_notes_proc.h"
 #include "../common/gfx_subtrack_proc.h"
 #include "../common/velocities_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -68,10 +69,8 @@ void cancelCurrentNode(void){
 }
 
 static void setIndicatorNode(struct ListHeader3 *new_indicator_node){
-  printf("Trying to SetIndicatorNode %p / %p\n",indicator_node,new_indicator_node);
   if (indicator_node != new_indicator_node){
     indicator_node = new_indicator_node;
-    printf("SetIndicatorNode %p\n",new_indicator_node);
     root->song->tracker_windows->wblock->block->is_dirty = true;
   }
 }
@@ -1272,4 +1271,35 @@ bool leftExtraPressed(void){
 
 bool altPressed(void){
   return AnyAlt(tevent.keyswitch);
+}
+
+
+
+// mouse pointer
+//////////////////////////////////////////////////
+
+void setNormalMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetNormalPointer(window);
+}
+void setBlankMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetBlankPointer(window);
+}
+void setDiagonalResizeMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetDiagResizePointer(window);
+}
+void setHorizontalResizeMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetHorizResizePointer(window);
+}
+void moveMousePointer(float x, float y, int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    MovePointer(window, x, y);
 }

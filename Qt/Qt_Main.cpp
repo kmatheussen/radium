@@ -418,6 +418,10 @@ void SetNormalPointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::ArrowCursor);
 }
+void SetBlankPointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::BlankCursor);
+}
 void SetDiagResizePointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::SizeFDiagCursor);
@@ -426,7 +430,10 @@ void SetHorizResizePointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::SizeHorCursor);
 }
-
+void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  QCursor::setPos(editor->mapToGlobal(QPoint(x,y)));
+}
 
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;

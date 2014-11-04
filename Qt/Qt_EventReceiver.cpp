@@ -313,6 +313,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   updateEditor();
 }
 
+
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   if(is_starting_up==true)
     return;

@@ -84,7 +84,7 @@
 (define (only-x-direction)
   (ra:left-extra-pressed))
 
-(delafina (add-delta-mouse-handler :press :move-and-release)
+(delafina (add-delta-mouse-handler :press :move-and-release :release #f)
   (define start-x #f)
   (define start-y #f)
   (define value #f)
@@ -105,6 +105,12 @@
                       (- $y start-y))))
     (set! start-x $x)
     (set! start-y $y)
+
+    ;; dirty trick below
+    (ra:move-mouse-pointer 100 100)
+    (set! start-x 100)
+    (set! start-y 100)
+
     (set! value (move-and-release $button
                                   dx
                                   dy
@@ -119,7 +125,10 @@
                                         #t)
                                       #f))
                     :drag-func  call-move-and-release
-                    :release-func call-move-and-release)))
+                    :release-func (lambda ($button $x $y)
+                                    (call-move-and-release $button $x $y)
+                                    (if release
+                                        (release $button $x $y value))))))
   
 
 
@@ -165,6 +174,8 @@
         ((*current-mouse-cycle* :release-func) $button $x $y)
         (set! *current-mouse-cycle* #f)
         (run-mouse-move-handlers $button $x $y)
+        (cancel-current-stuff)
+        (ra:set-normal-mouse-pointer)
         #t)
       #f))
 
@@ -317,11 +328,14 @@
 
 (define-struct move-node-handler
   :move
-  :node)
+  :release
+  :node
+  )
 
 (define-struct node-mouse-cycle
   :press
   :move-and-release
+  :release
   )
 
 (define *move-existing-node-mouse-cycles* '())
@@ -331,9 +345,11 @@
   ______ _ _ ()             :> #f
   Button X Y (Cycle . Rest) :> (let ((Node ((Cycle :press) Button X Y)))
                                  (if Node
-                                     (make-move-node-handler :move (Cycle :move-and-release) :node Node)
+                                     (make-move-node-handler :move (Cycle :move-and-release)
+                                                             :release (Cycle :release)
+                                                             :node Node)
                                      (get-cycle-and-node Button X Y Rest))))
-  
+
 ;; This cycle handler makes sure all move-existing-node cycles are given a chance to run before the create-new-node cycles.
 (add-delta-mouse-handler
  :press (lambda (Button X Y)
@@ -345,9 +361,18 @@
  
  :move-and-release (lambda (Button Dx Dy Cycle-and-node)
                      (define Move (Cycle-and-node :move))
+                     (define Release (Cycle-and-node :release))
                      (define Old-node (Cycle-and-node :node))
                      (define New-node (Move Button Dx Dy Old-node))
-                     (make-move-node-handler :move Move :node New-node))
+                     (make-move-node-handler :move Move
+                                             :release Release
+                                             :node New-node))
+
+ :release (lambda (Button X Y Cycle-and-node)
+            (c-display "cycle-and-node: " Cycle-and-node (Cycle-and-node :release))
+            (define Release (Cycle-and-node :release))
+            (define node (Cycle-and-node :node))
+            (Release Button X Y node))
  )
 
 
@@ -356,6 +381,8 @@
                                   :Get-existing-node-info
                                   :Get-min-value
                                   :Get-max-value
+                                  :Get-x
+                                  :Get-y
                                   :Make-undo
                                   :Create-new-node
                                   :Move-node
@@ -376,6 +403,7 @@
                                  (lambda (Node-info Value Node-y)
                                    (Make-undo)
                                    (Set-indicator-node Node-info)
+                                   (ra:set-blank-mouse-pointer)
                                    (make-node :node-info Node-info
                                               :value Value
                                               :y Node-y
@@ -397,6 +425,7 @@
                             (get-place-from-y Y)
                             (lambda (Node-info Value)
                               (Set-indicator-node Node-info)
+                              (ra:set-blank-mouse-pointer)
                               (make-node :node-info Node-info
                                          :value Value
                                          :y Y))))))
@@ -419,15 +448,24 @@
                           Dy)))
     (Set-indicator-node (Node :node-info))
     (Move-node (Node :node-info) new-value (and new-y (get-place-from-y new-y)))
+
     (make-node :node-info (Node :node-info)
                :value new-value
                :y (or new-y (Node :y))))
 
+  (define (release Button Dx Dy Node)
+    (define node-info (Node :node-info))
+    (ra:move-mouse-pointer (Get-x node-info)
+                           (Get-y node-info))
+    )
+
   (define move-existing-node-mouse-cycle (make-node-mouse-cycle :press press-existing-node
-                                                                :move-and-release move-and-release))
+                                                                :move-and-release move-and-release
+                                                                :release release))
   
   (define create-new-node-mouse-cycle (make-node-mouse-cycle :press press-and-create-new-node
-                                                             :move-and-release move-and-release))
+                                                             :move-and-release move-and-release
+                                                             :release release))
 
   (push-back! *move-existing-node-mouse-cycles* move-existing-node-mouse-cycle)
   (push-back! *create-new-node-mouse-cycles* create-new-node-mouse-cycle)
@@ -460,6 +498,8 @@
                                                               _                      :> #f)))
                         :Get-min-value (lambda () (- (1- (ra:get-temponode-max))))
                         :Get-max-value (lambda () (1- (ra:get-temponode-max)))
+                        :Get-x ra:get-temponode-x
+                        :Get-y ra:get-temponode-y
                         :Make-undo ra:undo-temponodes
                         :Create-new-node (lambda (Value Place callback)
                                            (define Num (ra:create-temponode Value Place))
@@ -467,7 +507,9 @@
                                                #f
                                                (callback Num (ra:get-temponode-value Num))))
                         :Move-node (lambda (Num Value Place)
-                                     (ra:set-temponode Num Value (or Place -1)))
+                                     (ra:set-temponode Num Value (or Place -1))
+                                     (define new-value (ra:get-temponode-value Num)) ;; might differ from Value
+                                     )
                         :Set-indicator-node (lambda (Num)
                                               (ra:set-indicator-temponode Num))
                         :Get-pixels-per-value-unit #f
@@ -572,6 +614,8 @@
                                                               _                      :> #f)))
                         :Get-min-value get-min-pitch-in-current-track
                         :Get-max-value get-max-pitch-in-current-track
+                        :Get-x (lambda (Num) 50) ;; fix
+                        :Get-y (lambda (Num) 50) ;; fix
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
                                            (define Num (ra:create-pitch Value Place *current-track-num*))
@@ -760,6 +804,12 @@
                                                               (callback velocity-info (velocity-info :value) (velocity-info :y))))))
                         :Get-min-value (lambda () 0.0)
                         :Get-max-value (lambda () 1.0)
+                        :Get-x (lambda (info) (ra:get-velocity-x (info :velocitynum)
+                                                                 (info :notenum)
+                                                                 (info :tracknum)))
+                        :Get-y (lambda (info) (ra:get-velocity-y (info :velocitynum)
+                                                                 (info :notenum)
+                                                                 (info :tracknum)))
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
                                            (and *current-note-num*
@@ -955,5 +1005,6 @@
            )))
 (load "/home/kjetil/radium3.0/bin/scheme/mouse/bug.scm")
 
+(ra:move-mouse-pointer 50 50)
 ||#
 
