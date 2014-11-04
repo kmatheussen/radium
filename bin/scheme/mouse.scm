@@ -84,7 +84,7 @@
 (define (only-x-direction)
   (ra:left-extra-pressed))
 
-(delafina (add-delta-mouse-handler :press :move-and-release :release #f)
+(delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden #f)
   (define start-x #f)
   (define start-y #f)
   (define value #f)
@@ -107,9 +107,10 @@
     (set! start-y $y)
 
     ;; dirty trick below
-    (ra:move-mouse-pointer 100 100)
-    (set! start-x 100)
-    (set! start-y 100)
+    (when mouse-pointer-is-hidden
+      (ra:move-mouse-pointer 100 100)
+      (set! start-x 100)
+      (set! start-y 100))
 
     (set! value (move-and-release $button
                                   dx
@@ -373,6 +374,8 @@
             (define Release (Cycle-and-node :release))
             (define node (Cycle-and-node :node))
             (Release Button X Y node))
+
+ :mouse-pointer-is-hidden #t
  )
 
 
