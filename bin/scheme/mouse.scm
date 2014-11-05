@@ -88,34 +88,42 @@
   (define start-x #f)
   (define start-y #f)
   (define value #f)
+
   (define (call-move-and-release $button $x $y)
-    (define dx (cond ((only-y-direction)
-                      0)
-                     ((ra:ctrl-pressed)
-                      (/ (- $x start-x)
-                         10.0))
-                     (else
-                      (- $x start-x))))
-    (define dy (cond ((only-x-direction)
-                      0)
-                     ((ra:ctrl-pressed)
-                      (/ (- $y start-y)
-                         10.0))
-                     (else
-                      (- $y start-y))))
-    (set! start-x $x)
-    (set! start-y $y)
+    (if (and (morally-equal? $x start-x)
+             (morally-equal? $y start-y)
+             (not value))
+        value
+        (begin
 
-    ;; dirty trick below
-    (when mouse-pointer-is-hidden
-      (ra:move-mouse-pointer 100 100)
-      (set! start-x 100)
-      (set! start-y 100))
-
-    (set! value (move-and-release $button
-                                  dx
-                                  dy
-                                  value)))
+          (define dx (cond ((only-y-direction)
+                            0)
+                           ((ra:ctrl-pressed)
+                            (/ (- $x start-x)
+                               10.0))
+                           (else
+                            (- $x start-x))))
+          (define dy (cond ((only-x-direction)
+                            0)
+                           ((ra:ctrl-pressed)
+                            (/ (- $y start-y)
+                               10.0))
+                           (else
+                            (- $y start-y))))
+          (set! start-x $x)
+          (set! start-y $y)
+          
+          ;; dirty trick to avoid the screen edges
+          (when mouse-pointer-is-hidden
+            (ra:move-mouse-pointer 100 100)
+            (set! start-x 100)
+            (set! start-y 100))
+          
+          (set! value (move-and-release $button
+                                        dx
+                                        dy
+                                        value)))))
+  
   (add-mouse-cycle (make-mouse-cycle
                     :press-func (lambda ($button $x $y)
                                   (set! value (press $button $x $y))
@@ -617,8 +625,10 @@
                                                               _                      :> #f)))
                         :Get-min-value get-min-pitch-in-current-track
                         :Get-max-value get-max-pitch-in-current-track
-                        :Get-x (lambda (Num) 50) ;; fix
-                        :Get-y (lambda (Num) 50) ;; fix
+                        :Get-x (lambda (Num)
+                                 (ra:get-pitch-x Num *current-track-num*))
+                        :Get-y (lambda (Num)
+                                 (ra:get-pitch-y Num *current-track-num*))
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
                                            (define Num (ra:create-pitch Value Place *current-track-num*))

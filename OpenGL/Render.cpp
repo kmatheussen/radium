@@ -289,6 +289,8 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
   }
 }
 
+// TODO: When OpenGL has replaced the old gfx system completely, move this function and other relevant functions, into wtracks.c, wblocks.c, and so forth.
+// This function, and some others, create structures which are used both by OpenGL and other places (mouse handling), and therefore shouldn't be placed here.
 struct NodeLine *create_nodelines(
                                   const struct Tracker_Windows *window,
                                   const struct WBlocks *wblock,
@@ -893,7 +895,7 @@ static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 
                );
 }
 
-static void create_track_pitchlines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
+static void create_track_pitchlines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
   struct Pitches first_pitch;
   first_pitch.l.p = note->l.p;
   first_pitch.l.next = &note->pitches->l;
@@ -919,14 +921,15 @@ static void create_track_pitchlines(const struct Tracker_Windows *window, const 
                                                 &last_pitch.l
                                                 );
 
+  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  VECTOR_push_back(&wtrack->pitch_nodes, nodes);
+
   for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
     if(show_read_lines || nodeline->x1!=nodeline->x2)
       GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
 
   // nodes
   if (indicator_node == &note->l && indicator_pitch_num!=-1) {
-    vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
-
     if (indicator_pitch_num >= nodes->num_elements)
       RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
     else {
@@ -1168,6 +1171,8 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
   if(left_subtrack==-1) {
+    VECTOR_clean(&wtrack->pitch_nodes);
+
     for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
       create_track_text(window, wblock, wtrack, realline);
       //create_track_pitches(window, wblock, wtrack, realline);

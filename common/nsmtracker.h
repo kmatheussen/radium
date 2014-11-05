@@ -742,6 +742,8 @@ struct WTracks{
         WPitches **wpitches; // Can be removed, plus all usage of it. Not used in OpenGL.
 
         vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
+
+        vector_t pitch_nodes; // contains vector of vectors of Node's. (element 1 contains pitches for note 1, element 2 contains pitches for note 2, etc.)
   
 	TBox pan;
 	TBox volume;

@@ -686,6 +686,44 @@ float getPitchX2(int pitchnum, int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0.0f : wtrack->notearea.x2;
 }
 
+static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return NULL;
+
+  struct Notes *note;
+  struct Pitches *pitch;
+  if (getPitch(pitchnum, &pitch, &note, wtrack->track)==false)
+    return NULL;
+
+  int note_pitchnum;
+
+  if (pitch==NULL)
+    note_pitchnum = 0;
+  else
+    note_pitchnum = ListPosition3(&note->pitches->l, &pitch->l) + 1;
+
+  int notenum = ListPosition3(&wtrack->track->notes->l, &note->l);
+
+  vector_t *nodes = wtrack->pitch_nodes.elements[notenum];
+
+  return nodes->elements[note_pitchnum];
+}
+
+
+float getPitchX(int num,  int tracknum, int blocknum, int windownum){
+  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->x;
+}
+
+float getPitchY(int num, int tracknum, int blocknum, int windownum){
+  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+}
+
+
 float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
   return getPitchInfo(2, pitchnum, tracknum, blocknum, windownum);
 }
