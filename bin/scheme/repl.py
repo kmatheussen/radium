@@ -20,7 +20,11 @@ else:
     
 def post(data):
     request = urllib2.Request(url, data, headers)
-    response = urllib2.urlopen(request)
+    try:
+        response = urllib2.urlopen(request)
+    except urllib2.URLError:
+        print "<Unable to contact Radium>"
+        return
 
     all_data = ""
     
@@ -35,14 +39,17 @@ def post(data):
 
     return all_data
 
-line = raw_input("radium> ")
-while True:
+def get_input(prompt):
     try:
-        result = post(line)
-        if result==" ":
-            line = raw_input("")
-        else:
-            line = raw_input("radium> ")
+        return raw_input(prompt)
     except EOFError:
-        break
+        sys.exit(0)
 
+line = get_input("radium> ")
+while True:
+    result = post(line)
+    if result==" ":
+        line = get_input("")
+    else:
+        line = get_input("radium> ")
+    
