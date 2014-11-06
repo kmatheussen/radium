@@ -4,6 +4,10 @@
 (define *middle-button* 3)
 (define *right-button* 5)
 
+(define (left-or-right-button Button)
+  (or (= *left-button* Button)
+      (= *right-button* Button)))
+
 
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -37,11 +41,11 @@
         11))
 ||#
 
-(define (get-place-from-y Y)
+(define (get-place-from-y Button Y)
   (define place (ra:get-place-from-y Y))
-  (if (ra:ctrl-pressed)
-      place
-      (quantitize place (ra:get-quantitize))))
+  (if (= Button *right-button*)
+      (quantitize place (ra:get-quantitize))
+      place))
 
 
 ;; Mouse move handlers
@@ -85,13 +89,13 @@
   (ra:left-extra-pressed))
 
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden #f)
-  (define start-x #f)
-  (define start-y #f)
+  (define prev-x #f)
+  (define prev-y #f)
   (define value #f)
 
   (define (call-move-and-release $button $x $y)
-    (if (and (morally-equal? $x start-x)
-             (morally-equal? $y start-y)
+    (if (and (morally-equal? $x prev-x)
+             (morally-equal? $y prev-y)
              (not value))
         value
         (begin
@@ -99,25 +103,25 @@
           (define dx (cond ((only-y-direction)
                             0)
                            ((ra:ctrl-pressed)
-                            (/ (- $x start-x)
+                            (/ (- $x prev-x)
                                10.0))
                            (else
-                            (- $x start-x))))
+                            (- $x prev-x))))
           (define dy (cond ((only-x-direction)
                             0)
                            ((ra:ctrl-pressed)
-                            (/ (- $y start-y)
+                            (/ (- $y prev-y)
                                10.0))
                            (else
-                            (- $y start-y))))
-          (set! start-x $x)
-          (set! start-y $y)
+                            (- $y prev-y))))
+          (set! prev-x $x)
+          (set! prev-y $y)
           
           ;; dirty trick to avoid the screen edges
           (when mouse-pointer-is-hidden
             (ra:move-mouse-pointer 100 100)
-            (set! start-x 100)
-            (set! start-y 100))
+            (set! prev-x 100)
+            (set! prev-y 100))
           
           (set! value (move-and-release $button
                                         dx
@@ -129,15 +133,17 @@
                                   (set! value (press $button $x $y))
                                   (if value
                                       (begin
-                                        (set! start-x $x)
-                                        (set! start-y $y)
+                                        (set! prev-x $x)
+                                        (set! prev-y $y)
                                         #t)
                                       #f))
                     :drag-func  call-move-and-release
                     :release-func (lambda ($button $x $y)
                                     (call-move-and-release $button $x $y)
                                     (if release
-                                        (release $button $x $y value))))))
+                                        (release $button $x $y value))
+                                    (set! prev-x #f)
+                                    (set! prev-y #f)))))
   
 
 
@@ -399,6 +405,7 @@
                                   :Move-node
                                   :Set-indicator-node
                                   :Get-pixels-per-value-unit #f
+                                  :Create-button #f
                                   )
   
   (define-struct node
@@ -408,7 +415,7 @@
 
   (define (press-existing-node Button X Y)
     (define area-box (Get-area-box))
-    (and (= Button *left-button*)
+    (and (left-or-right-button Button)
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
@@ -422,7 +429,8 @@
 
   (define (press-and-create-new-node Button X Y)
     (define area-box (Get-area-box))
-    (and (= Button *left-button*)
+    (and (or (and Create-button (= Button Create-button))
+             (and (not Create-button) (left-or-right-button Button)))
          area-box
          (inside-box area-box X Y)
          (begin
@@ -433,7 +441,7 @@
                                 (area-box :x1) (area-box :x2)
                                 min max))
            (Create-new-node value
-                            (get-place-from-y Y)
+                            (get-place-from-y Button Y)
                             (lambda (Node-info Value)
                               (Set-indicator-node Node-info)
                               (ra:set-blank-mouse-pointer)
@@ -458,7 +466,7 @@
                        (+ (Node :y)
                           Dy)))
     (Set-indicator-node (Node :node-info))
-    (Move-node (Node :node-info) new-value (and new-y (get-place-from-y new-y)))
+    (Move-node (Node :node-info) new-value (and new-y (get-place-from-y Button new-y)))
 
     (make-node :node-info (Node :node-info)
                :value new-value
@@ -530,7 +538,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
-                (and (= $button *right-button*)
+                (and (= $button *middle-button*)
                      (inside-box (ra:get-box temponode-area) $x $y)                                     
                      (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                             (existing-box Num Box) :> (begin
@@ -641,6 +649,7 @@
                                               (ra:set-indicator-pitch Num *current-track-num*))
                         :Get-pixels-per-value-unit (lambda ()
                                                      5.0)
+                        :Create-button *left-button*
                         )
 
 
@@ -648,7 +657,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
-                (and (= $button *right-button*)
+                (and (= $button *middle-button*)
                      *current-track-num*
                      (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
@@ -790,7 +799,7 @@
                                                   Total)))
                                                  
 (define-match get-note-num
-  X Y :> (get-note-num-0 (get-place-from-y Y)
+  X Y :> (get-note-num-0 (ra:get-place-from-y Y)
                          *current-subtrack-num*
                          0
                          (ra:get-num-notes *current-track-num*)))
@@ -849,7 +858,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                (and (= Button *right-button*)
+                (and (= Button *middle-button*)
                      *current-track-num*
                      (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
                      (begin

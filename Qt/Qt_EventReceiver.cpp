@@ -280,27 +280,32 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 
 #if USE_QT_VISUAL
 
+static int currentButton = 0;
+
+static int getMouseButtonEventID( QMouseEvent *qmouseevent){
+  if(qmouseevent->button()==Qt::LeftButton)
+    return TR_LEFTMOUSEDOWN;
+  else if(qmouseevent->button()==Qt::RightButton)
+    return TR_RIGHTMOUSEDOWN;
+  else if(qmouseevent->button()==Qt::MiddleButton)
+    return TR_MIDDLEMOUSEDOWN;
+  else
+    return 0;
+}
+
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   if(is_starting_up==true)
     return;
 
-  if(qmouseevent->button()==Qt::LeftButton){
-    tevent.ID=TR_LEFTMOUSEDOWN;
-  }else{
-    if(qmouseevent->button()==Qt::RightButton){
-      tevent.ID=TR_RIGHTMOUSEDOWN;
-      //      exit(2);
-    }else{
-      tevent.ID=TR_MIDDLEMOUSEDOWN;
-    }
-  }
+  tevent.ID = getMouseButtonEventID(qmouseevent);
+  tevent.x  = qmouseevent->x();//-XOFFSET;
+  tevent.y  = qmouseevent->y();//-YOFFSET;
 
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
+  currentButton = tevent.ID;
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  if (SCHEME_mousepress(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
+  if (SCHEME_mousepress(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
 
     EventReciever(&tevent,this->window);
 
@@ -323,9 +328,9 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   tevent.y=qmouseevent->y();//-YOFFSET;
 
   //Qt::ButtonState buttonstate=qmouseevent->state();
-  //printf("buttonstate: %d, %d\n",buttonstate,tevent.keyswitch);
+  //printf("************** buttonstate: %d, %d, %d\n",getMouseButtonEventID(qmouseevent),buttonstate,tevent.keyswitch);
 
-  if (SCHEME_mousemove(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+  if (SCHEME_mousemove(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
@@ -352,9 +357,10 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
   tevent.y=qmouseevent->y();//-YOFFSET;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  if (SCHEME_mouserelease(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+  if (SCHEME_mouserelease(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 
+  currentButton = 0;
 
   updateEditor();
 }
