@@ -904,7 +904,13 @@ static void create_track_pitchlines(const struct Tracker_Windows *window, const 
   struct Pitches last_pitch;  
   last_pitch.l.p = note->end;
   last_pitch.l.next = NULL;
-  last_pitch.note = NextNote(note) == NULL ? wtrack->track->notes->note : NextNote(note)->note;
+
+  if (note->pitches==NULL)
+    last_pitch.note = note->note;
+  else if (NextNote(note)==NULL)
+    last_pitch.note = wtrack->track->notes->note;
+  else
+    last_pitch.note = NextNote(note)->note;
 
   track_notearea_x1 = wtrack->notearea.x;
   track_notearea_x2 = wtrack->notearea.x2;
