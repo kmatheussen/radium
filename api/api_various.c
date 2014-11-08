@@ -281,6 +281,16 @@ void changeBlockNoteLength(int windownum){
   ChangeNoteLength_Block_CurrPos(window);
 }
 
+void changeTrackNoteAreaWidth(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  ChangeNoteAreaWidth_CurrPos(window);
+}
+
+void changeBlockNoteAreaWidth(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  ChangeNoteAreaWidth_Block_CurrPos(window);
+}
+
 void minimizeTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   MinimizeTrack_CurrPos(window);
