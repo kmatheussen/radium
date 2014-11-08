@@ -1633,7 +1633,7 @@ s7.o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c `cat buildtype.opt` -Iembedded_scheme -O2
 
 s7webserver.o: bin/packages/s7/s7webserver/s7webserver.h bin/packages/s7/s7webserver/s7webserver.cpp bin/packages/s7/s7webserver/moc_s7webserver.cpp
-	$(CCC) -c bin/packages/s7/s7webserver/s7webserver.cpp `$(PKG) --cflags QtNetwork` -Ibin/packages/qhttpserver-master/src -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
+	$(CCC) -c bin/packages/s7/s7webserver/s7webserver.cpp -Ibin/packages/s7 `$(PKG) --cflags QtNetwork` -Ibin/packages/qhttpserver-master/src -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
 
 bin/packages/s7/s7webserver/moc_s7webserver.cpp: bin/packages/s7/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/packages/s7/s7webserver/s7webserver.h -o bin/packages/s7/s7webserver/moc_s7webserver.cpp
