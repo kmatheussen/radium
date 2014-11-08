@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   multi-threading, so this is somewhat necesarry for the amiga-port.)
 *********************************************************************/
 
-
-
 #include "nsmtracker.h"
 #include "playerclass.h"
 
@@ -60,7 +58,6 @@ bool InitPEQmempool(int num_elements){
 
 struct PEventQueue *GetPEQelement(void){
 	struct PEventQueue *temp=peqroot;
-	peqroot=NextPEventQueue(temp);
 
 	if(temp==NULL){
 		RError("Warning. Peqmempool empty. (Set it higher, it must be very low now!)\n");
@@ -71,6 +68,8 @@ struct PEventQueue *GetPEQelement(void){
 		}
 	}
 
+        peqroot=NextPEventQueue(temp);
+
 	return temp;
 
 }
@@ -79,6 +78,3 @@ void ReturnPEQelement(struct PEventQueue *element){
 	element->l.next= &peqroot->l;
 	peqroot=element;
 }
-
-
-
