@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+
+<!-- This file is based on the "echo.html" example in jq-console: http://replit.github.io/jq-console/ -->
+
+<html>
+  <head>
+    <style>
+    html, body {
+      background-color: #333;
+      color: white;
+      font-family: monospace;
+      margin: 0;
+      padding: 0;
+    }
+    /* The console container element */
+    #console {
+      height: 400px;
+      width: 750px;
+      position:relative;
+      background-color: black;
+      border: 2px solid #CCC;
+      margin: 0 auto;
+      margin-top: 50px;
+    }
+    /* The inner console element. */
+    .jqconsole {
+        padding: 10px;
+    }
+    /* The cursor. */
+    .jqconsole-cursor {
+        background-color: gray;
+    }
+    /* The cursor color when the console looses focus. */
+    .jqconsole-blurred .jqconsole-cursor {
+        background-color: #666;
+    }
+    /* The current prompt text color */
+    .jqconsole-prompt {
+        color: #0d0;
+    }
+    /* The command history */
+    .jqconsole-old-prompt {
+        color: #0b0;
+        font-weight: normal;
+    }
+    /* The text color when in input mode. */
+    .jqconsole-input {
+        color: #dd0;
+    }
+    /* Previously entered input. */
+    .jqconsole-old-input {
+        color: #bb0;
+        font-weight: normal;
+    }
+    /* The text color of the output. */
+    .jqconsole-output {
+        color: white;
+    }
+    </style>
+  </head>
+  <body>
+
+    <div id="console"></div>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="jqconsole.min.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+
+     $(function () {
+         function formatErrorMessage(jqXHR, exception) { // function copied from http://stackoverflow.com/questions/377644/jquery-ajax-error-handling-show-custom-exception-messages
+             if (jqXHR.status === 0) {
+                 return ('Not connected.\nPlease verify your network connection.');
+             } else if (jqXHR.status == 404) {
+                 return ('The requested page not found. [404]');
+             } else if (jqXHR.status == 500) {
+                 return ('Internal Server Error [500].');
+             } else if (exception === 'parsererror') {
+                 return ('Requested JSON parse failed.');
+             } else if (exception === 'timeout') {
+                 return ('Time out error.');
+             } else if (exception === 'abort') {
+                 return ('Ajax request aborted.');
+             } else {
+                 return ('Uncaught Error.\n' + jqXHR.responseText);
+             }
+         }
+
+        var jqconsole = $('#console').jqconsole('S7 scheme\n', '>>> ');
+        var startPrompt = function () {
+          // Start the prompt with history enabled.
+          jqconsole.Prompt(true, function (input) {
+            // Output input with the class jqconsole-output.
+              $.ajax({
+                  type: "POST",
+                  contentType: "text/plain",
+                  data: input,
+                  dataType: "text",
+                  url: url.value,
+                  success: function (data, status, xhr) {
+                      jqconsole.Write(data+"\n");
+                  },
+                  error: function (xhr, status, thrown) {
+                      jqconsole.Write(formatErrorMessage(xhr, status)+"\n")
+                  }
+              });
+
+            startPrompt();
+          });
+        };
+        startPrompt();
+      });
+    </script>
+
+    <center>
+      URL: <input type="text" id="TEXTBOX_ID" value="http://localhost:5080">
+      <script type="text/javascript">
+        var url = document.getElementById('TEXTBOX_ID');
+      </script>
+      <br>
+    </center>
+
+</body>
+</html>
