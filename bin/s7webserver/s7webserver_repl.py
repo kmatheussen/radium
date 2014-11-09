@@ -7,8 +7,6 @@ import sys
 import urllib2
 import readline
 
-class S7Repl:
-
 headers = {"Content-type": "text/plain", "Accept": "text/plain"}
 
 def post(url, data):

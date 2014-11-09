@@ -4,10 +4,12 @@
 
 
 import sys
+import os
 import urllib2
 import readline
 
-sys.path += ["../s7webserver"]
+
+sys.path += [os.path.join(os.path.dirname(sys.argv[0]),os.path.pardir,"s7webserver")]
 
 import s7webserver_repl
 
