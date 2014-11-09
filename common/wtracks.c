@@ -320,12 +320,35 @@ void ChangeNoteLength_Block_CurrPos(
 	struct Tracker_Windows *window
 ){
 	struct WTracks *wtrack=window->wblock->wtrack;
-	int size=wtrack->notelength=wtrack->notelength==3?2:3;
-	wtrack=window->wblock->wtracks;
+	int size = wtrack->notelength==3?2:3;
 
+        wtrack=window->wblock->wtracks; // not setting the same value
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,size);
 		wtrack=NextWTrack(wtrack);
+	}
+
+	window->must_redraw = true;
+}
+
+void ChangeNoteAreaWidth_CurrPos(
+	struct Tracker_Windows *window
+){
+	struct WTracks *wtrack=window->wblock->wtrack;
+        wtrack->is_wide = !wtrack->is_wide;
+	window->must_redraw = true;
+}
+
+void ChangeNoteAreaWidth_Block_CurrPos(
+	struct Tracker_Windows *window
+){
+	struct WTracks *wtrack=window->wblock->wtrack;
+	bool is_wide = !wtrack->is_wide;
+
+        wtrack=window->wblock->wtracks; // not setting the same value
+	while(wtrack!=NULL){
+          wtrack->is_wide = is_wide;
+          wtrack=NextWTrack(wtrack);
 	}
 
 	window->must_redraw = true;

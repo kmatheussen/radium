@@ -11,50 +11,51 @@
 #include <QGLWidget>
 #include <QMutex>
 
+#include "../common/nsmtracker.h"
+#include "../common/OS_error_proc.h"
 
-static const char *chars="CDEFGABcdefgabhlo0123456789.,-MULR# m";
 
 namespace{
 
-  struct MyMutex : public vl::IMutex{
-    QMutex mutex;
-    int num_visitors;
+struct MyMutex : public vl::IMutex{
+  QMutex mutex;
+  int num_visitors;
+  
+  MyMutex() 
+    : mutex(QMutex::Recursive)
+    , num_visitors(0) 
+  {}
+  
+  virtual void 	lock () {
+    mutex.lock();
+    num_visitors++;
+  }
+  
+  virtual void 	unlock () {
+    num_visitors--;
+    mutex.unlock();
+  }
+  
+  virtual int isLocked () const {
+    //Returns 1 if locked, 0 if non locked, -1 if unknown. 
+    return num_visitors>0;
+  }
+  
+};
 
-    MyMutex() 
-      : mutex(QMutex::Recursive)
-      , num_visitors(0) 
-    {}
-
-    virtual void 	lock () {
-      mutex.lock();
-      num_visitors++;
-    }
-
-    virtual void 	unlock () {
-      num_visitors--;
-      mutex.unlock();
-    }
-
-    virtual int isLocked () const {
-      //Returns 1 if locked, 0 if non locked, -1 if unknown. 
-      return num_visitors>0;
-    }
-
-  };
-
-  struct ImageHolder {
-    vl::ref<vl::ImagePBO> image;
-    int width;
-  };
+struct ImageHolder {
+  vl::ref<vl::ImagePBO> image;
+  int width;
+};
 
 
+static QFont g_qfont;
 static QHash<char,ImageHolder> *g_imageholders; // It's a pointer to avoid auto-desctruction at program exit.
 
 static MyMutex image_mutex;
 
-
-static inline void GE_set_new_font(const QFont &font){
-  QFontMetrics metrics(font);
+static inline void GE_add_imageholder(const char *chars){
+  QFontMetrics metrics(g_qfont);
 
   int real_width = metrics.width("#");
   int height = metrics.height();
@@ -65,11 +66,10 @@ static inline void GE_set_new_font(const QFont &font){
   QPainter p(&qt_image);
   p.setPen(QColor(255, 255, 255, 255));
 
-  p.setFont(font);
-  
-  for(int i=0;i<(int)strlen(chars)-1;i++){
+  p.setFont(g_qfont);
+
+  for(int i=0;i<(int)strlen(chars);i++){
     char c = chars[i];
-    //p.drawText(20,12,"hello");//QString(c));
     
     qt_image.fill(QColor(0.0, 0.0, 0.0, 0));
     
@@ -82,7 +82,7 @@ static inline void GE_set_new_font(const QFont &font){
     //vl::ImagePBO *vl_image = new vl::ImagePBO;
     vl::ImagePBO *vl_image = new vl::ImagePBO;
     vl_image->setRefCountMutex(&image_mutex);
-
+    
     vl_image->allocate2D(width,height,4,vl::IF_RGBA, vl::IT_UNSIGNED_BYTE);
     
     unsigned char *qt_bits = qtgl_image.bits();
@@ -95,11 +95,21 @@ static inline void GE_set_new_font(const QFont &font){
     holder.image = vl_image;
     holder.width = real_width;
     
-    if (g_imageholders==NULL)
-      g_imageholders = new QHash<char,ImageHolder>;
-
-    (*g_imageholders)[c] = holder;
+    g_imageholders->insert(c, holder);
+    //printf("Added '%c' (%d) to g_imageholders. image: %p\n",c,c,vl_image);
   }
+}
+  
+static inline void GE_set_new_font(const QFont &font){
+  g_qfont = font;
+  
+  const char *chars="CDEFGABcdefgabhlo0123456789.,-MULR# m";
+  //const char *chars="";
+
+  if (g_imageholders==NULL)
+    g_imageholders = new QHash<char,ImageHolder>;
+
+  GE_add_imageholder(chars);
 }
 
 
@@ -107,21 +117,26 @@ struct TextBitmaps{
   QHash<char, std::vector<vl::dvec2> > points;
 
   void clearCharBoxes(){
-    for(int i=0;i<(int)strlen(chars)-1;i++){
-      char c = chars[i];
-      points[c].clear();
-    }
+    QHash<char, std::vector<vl::dvec2> >::iterator i;
+    for (i = points.begin(); i != points.end(); ++i)
+      i.value().clear();
   }
-
+  
   float addCharBox(char c, float x, float y){
     //fprintf(stderr,"adding %c\n",c);
 
     x = (int)x;
     y = (int)y;
 
-    assert(g_imageholders->contains(c));
+    if(!g_imageholders->contains(c)) {
+      RWarning("TextBitmaps.hpp: '%c' was not precomputed\n",c);
+      char chars[2];
+      chars[0] = c;
+      chars[1] = 0;
+      GE_add_imageholder(chars);
+    }
 
-    ImageHolder holder = (*g_imageholders)[c];
+    ImageHolder holder = g_imageholders->value(c);
 
     if (c != ' '){
       vl::ImagePBO *image = holder.image.get();
@@ -140,20 +155,22 @@ struct TextBitmaps{
   }
 
   void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform){
-    for(int i=0;i<(int)strlen(chars)-1;i++){
-      char c = chars[i];
+    QHash<char, std::vector<vl::dvec2> >::iterator i;
+    for (i = points.begin(); i != points.end(); ++i) {
+      char c = i.key();
+      std::vector<vl::dvec2> pointspoints = i.value();
       ImageHolder holder = (*g_imageholders)[c];
 
-      if(points[c].size()>0) {
+      if(pointspoints.size()>0) {
         //printf("char: %c, size: %d\n",c,(int)points[c].size());
 
         //vg->setPoint(holder.image.get());
         vg->setPoint(holder.image.get());
         //vg->setColor(vl::fvec4(0.1,0.05,0.1,0.8));
         if(transform)
-          vg->drawPoints(points[c])->setTransform(transform);
+          vg->drawPoints(pointspoints)->setTransform(transform);
         else
-          vg->drawPoints(points[c]);
+          vg->drawPoints(pointspoints);
       }
     }
 

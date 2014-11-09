@@ -57,6 +57,14 @@ void ChangeNoteLength_Block_CurrPos(
 	struct Tracker_Windows *window
 );
 
+void ChangeNoteAreaWidth_CurrPos(
+                                 struct Tracker_Windows *window
+                                 );
+
+void ChangeNoteAreaWidth_Block_CurrPos(
+                                       struct Tracker_Windows *window
+                                       );
+  
 void MinimizeTrack_CurrPos(
 	struct Tracker_Windows *window
 );

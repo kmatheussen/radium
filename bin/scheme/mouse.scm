@@ -649,7 +649,6 @@
                                               (ra:set-indicator-pitch Num *current-track-num*))
                         :Get-pixels-per-value-unit (lambda ()
                                                      5.0)
-                        :Create-button *left-button*
                         )
 
 
