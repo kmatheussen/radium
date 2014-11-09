@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 
-#include "../s7.h"
+#include "s7.h"
 
 #define COMPILING_S7WEBSERVER 1
 #include "s7webserver.h"

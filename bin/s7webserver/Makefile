@@ -13,7 +13,7 @@ s7webserver: s7webserver.o qhttpserver-master/lib/libqhttpserver.a s7.o mus-conf
 	$(CCC) s7webserver.o `$(PKG) --libs QtNetwork` qhttpserver-master/lib/libqhttpserver.a s7.o -ldl -o s7webserver
 
 s7webserver.o: s7webserver.h s7webserver.cpp moc_s7webserver.cpp qhttpserver-master/lib/libqhttpserver.a mus-config.h
-	$(CCC) -c s7webserver.cpp -DWITH_MAIN `$(PKG) --cflags QtNetwork` -Iqhttpserver-master/src -I. -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
+	$(CCC) -c s7webserver.cpp -DWITH_MAIN `$(PKG) --cflags QtNetwork` -Iqhttpserver-master/src -I. -I.. -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
 
 moc_s7webserver.cpp: s7webserver.h qhttpserver-master/lib/libqhttpserver.a mus-config.h
 	$(MOC) -DCOMPILING_S7WEBSERVER s7webserver.h -o moc_s7webserver.cpp
