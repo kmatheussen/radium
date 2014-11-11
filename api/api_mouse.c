@@ -1474,8 +1474,9 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   }
 
   Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
-  
-  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)nodes->elements[fxnodenum];
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
   DeleteFxNodeLine(wtrack, fxs, fxnodeline);
 

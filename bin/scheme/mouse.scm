@@ -1052,6 +1052,44 @@
                                      (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum)))
                         )
 
+;; delete fx
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *middle-button*)
+                     *current-track-num*
+                     (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+                     (begin
+                       (define fxnode-info (get-fxnode-info X Y *current-track-num*))
+                       ;;(c-display "got fx info " fxnode-info)
+                       (if fxnode-info
+                           (begin
+                             (ra:undo-fxs *current-track-num*)
+                             (ra:delete-fxnode (fxnode-info :fxnodenum)
+                                               (fxnode-info :fxnum)
+                                               (fxnode-info :tracknum))
+                             #t)
+                           #f))))))
+
+#||
+;; show and set current fx
+(add-mouse-move-handler
+ :move (lambda (Button X Y)
+         (and *current-track-num*
+              (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
+              (begin
+                (define velocity-info (get-velocity-info X Y *current-track-num*))
+                (c-display "got velocity info " velocity-info)
+                (if velocity-info
+                    (begin
+                      (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
+                      (c-display "setting current to " (velocity-info :velocitynum))
+                      (ra:set-indicator-velocity-node (velocity-info :velocitynum)
+                                                      (velocity-info :notenum)
+                                                      (velocity-info :tracknum))
+                      (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                    (c-display "no current"))))))
+||#
 
 
 ;; track borders
