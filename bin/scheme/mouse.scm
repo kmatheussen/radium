@@ -458,13 +458,19 @@
                                       (Get-pixels-per-value-unit)
                                       (/ node-area-width
                                          (- max min))))
-    (define new-value (+ (Node :value)
-                         (/ Dx
-                            pixels-per-value-unit)))
+    (define new-value (let ((try-it (+ (Node :value)
+                                       (/ Dx
+                                          pixels-per-value-unit))))
+                        (between min try-it max)))
+    
     ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
     (define new-y (and (not (= 0 Dy))
-                       (+ (Node :y)
-                          Dy)))
+                       (let ((try-it (+ (Node :y)
+                                        Dy)))
+                         (between (1- (ra:get-top-visible-y))
+                                  try-it
+                                  (+ 2 (ra:get-bot-visible-y))))))
+                                   
     (Set-indicator-node (Node :node-info))
     (Move-node (Node :node-info) new-value (and new-y (get-place-from-y Button new-y)))
 
@@ -902,6 +908,150 @@
 
 
 ||#
+
+
+
+;; fxnodes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (get-fxnode-box Tracknum FX-num FX-nodenum)
+  (get-common-node-box (ra:get-fxnode-x FX-nodenum FX-num Tracknum)
+                       (ra:get-fxnode-y FX-nodenum FX-num Tracknum)))
+
+#||
+(box-to-string (get-fxnode-box 0 0 1))
+||#
+
+(define-struct fxnode-info
+  :tracknum
+  :fxnum
+  :fxnodenum
+  :value
+  :y  
+  )
+
+(define (fxnode-info-rating Y Fi)
+  (define fxnode-y (ra:get-fxnode-y (Fi :fxnodenum) (Fi :fxnum) (Fi :tracknum)))
+  (cond ((and (= 0
+                 (Fi :fxnodenum))
+              (> Y
+                 fxnode-y))
+         10)
+        ((and (= (1- (ra:get-num-fxnodes (Fi :fxnum) (Fi :tracknum)))
+                 (Fi :fxnodenum))
+              (< Y
+                 fxnode-y))
+         10)
+        (else
+         0)))
+
+(define (highest-rated-fxnode-info-0 Y A B)
+  (if (> (fxnode-info-rating Y A)
+         (fxnode-info-rating Y B))
+      A
+      B))
+         
+(define-match highest-rated-fxnode-info
+  _ (#f       ) :> #f
+  Y (#f . Rest) :> (highest-rated-fxnode-info Y Rest)
+  _ (A        ) :> A
+  Y (A  . Rest) :> (let ((B (highest-rated-fxnode-info Y Rest)))
+                     (if B
+                         (highest-rated-fxnode-info-0 Y A B)
+                         A)))
+
+(define-match get-fxnode-2
+  X Y Tracknum Fxnum Fxnodenum Fxnodenum      :> #f
+  X Y Tracknum Fxnum Fxnodenum Total-Fxnodes :> (begin                                                                     
+                                                         (define box (get-fxnode-box Tracknum Fxnum Fxnodenum))
+                                                         (if (> (box :y1) Y)
+                                                             #f
+                                                             (highest-rated-fxnode-info Y
+                                                                                          (list (get-fxnode-2 X Y Tracknum Fxnum (1+ Fxnodenum) Total-Fxnodes)
+                                                                                                (and (inside-box box X Y)
+                                                                                                     (make-fxnode-info :fxnodenum Fxnodenum
+                                                                                                                       :fxnum Fxnum
+                                                                                                                       :tracknum Tracknum
+                                                                                                                       :value (ra:get-fxnode-value Fxnodenum Fxnum Tracknum)
+                                                                                                                       :y (box :y)
+                                                                                                                       )))))))
+
+(define-match get-fxnode-1
+  X Y Tracknum Fxnum Fxnum     :> #f
+  X Y Tracknum Fxnum Total-Fxs :> (highest-rated-fxnode-info Y
+                                                             (list (get-fxnode-1 X Y Tracknum (1+ Fxnum) Total-Fxs)
+                                                                   (get-fxnode-2 X Y Tracknum Fxnum 0 (ra:get-num-fxnodes Fxnum Tracknum)))))
+
+
+(define-match get-fxnode-0
+  X Y -1       :> #f
+  X Y Tracknum :> #f :where (>= Tracknum (ra:get-num-tracks))
+  X Y Tracknum :> (get-fxnode-1 X Y Tracknum 0 (ra:get-num-fxes Tracknum)))
+
+(define-match get-fxnode-info
+  X Y #f       :> (get-fxnode-info X Y 0)
+  X Y Tracknum :> (highest-rated-fxnode-info Y
+                                             (list (get-fxnode-0 X Y (1- Tracknum)) ;; node in the prev track can overlap into the current track
+                                                   (get-fxnode-0 X Y Tracknum))))
+
+
+#||
+(ra:get-num-fxes 0)
+(let ((node (get-fxnode-info 347 211 0)))
+  (c-display "hm?" node)
+  (if node
+      (c-display "node:" (node :fxnodenum) "value:" (node :value))))
+        
+(ra:get-fxnode-x 0 0 0)
+(ra:get-fxnode-y 0 0 0)
+(ra:get-fxnode-value 0 0 0)
+||#
+
+
+(define *current-fx-num* 0)
+
+;; add and move fxnode
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (and *current-track-num*
+                                             (ra:get-box track-fx *current-track-num*)))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (and *current-track-num*
+                                                       (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
+                                                         ;(if fxnode-info
+                                                         ;    (ra:set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum)))
+                                                         (and fxnode-info
+                                                              (callback fxnode-info (fxnode-info :value) (fxnode-info :y))))))
+                        :Get-min-value (lambda () (ra:get-fx-min-value 0))
+                        :Get-max-value (lambda () (ra:get-fx-max-value 0))
+                        :Get-x (lambda (info) (ra:get-fxnode-x (info :fxnodenum)
+                                                               (info :fxnum)
+                                                               (info :tracknum)))
+                        :Get-y (lambda (info) (ra:get-fxnode-y (info :fxnodenum)
+                                                               (info :fxnum)
+                                                               (info :tracknum)))
+                        :Make-undo (lambda () (ra:undo-fxs *current-track-num*))
+                        :Create-new-node (lambda (Value Place callback)
+                                           (and *current-fx-num*
+                                                (begin
+                                                  (define Num (ra:create-fxnode Value Place *current-fx-num* *current-track-num*))
+                                                  (c-display "in:" Value ", out:" (ra:get-fxnode-value Num *current-fx-num* *current-track-num*))
+                                                  (if (= -1 Num)
+                                                      #f
+                                                      (callback (make-fxnode-info :tracknum *current-track-num*
+                                                                                  :fxnum *current-fx-num*
+                                                                                  :fxnodenum Num
+                                                                                  :value Value
+                                                                                  :y #f ;; dont need it.
+                                                                                  )
+                                                                (ra:get-fxnode-value Num *current-fx-num* *current-track-num*))))))
+                        :Set-indicator-node (lambda (fxnode-info)
+                                              (ra:set-indicator-fxnode (fxnode-info :fxnodenum)
+                                                                       (fxnode-info :fxnum)
+                                                                       (fxnode-info :tracknum)))
+                        :Move-node (lambda (fxnode-info Value Place)
+                                     (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum)))
+                        )
+
 
 
 ;; track borders

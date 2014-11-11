@@ -41,6 +41,10 @@
   (/ (apply + numbers)
      (length numbers)))
 
+(define (between Min Try-it Max)
+  (min Max
+       (max Min Try-it)))
+
 
 ;; force and delay are missing from s7. Simple implementation below.
 (define-macro (delay . body)

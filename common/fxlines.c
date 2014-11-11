@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-
+#if !USE_OPENGL
 struct FXextrainfo{
 	int color;
 	void *FXs;
@@ -196,6 +196,7 @@ void UpdateAllFXNodeLines(
 		wtrack=NextWTrack(wtrack);
 	}
 }
+#endif
 
 int getNumUsedFX(struct Tracks *track){
 	int ret;
@@ -341,67 +342,89 @@ static struct FX *selectFX(
 	return fx;
 }
 
-void AddFXNodeLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	struct FX *fx,
-	int val,
-	Place *p1
+int AddFXNodeLine(
+                  struct Tracker_Windows *window,
+                  struct WBlocks *wblock,
+                  struct WTracks *wtrack,
+                  int fxnum,
+                  int val,
+                  const Place *p1
 ){
-	int realline;
-	Place p2;
-	struct FXs *fxs;
-	struct FXNodeLines *fxnodeline;
-
-	fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
-	if(fxs==NULL){
-          printf("new, fx->num: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
-		fxs=talloc(sizeof(struct FXs));
-		fxs->l.num=fx->num;
-		fxs->fx=fx;
-		ListAddElement1(&wtrack->track->fxs,&fxs->l);
-
-		realline=FindRealLineFor(wblock,0,p1);
-		if(realline==wblock->num_reallines-1){
-			PlaceSetLastPos(wblock->block,&p2);
-		}else{
-			PlaceCopy(&p2,&wblock->reallines[wblock->curr_realline+1]->l.p);
-		}
-		fxnodeline=talloc(sizeof(struct FXNodeLines));
-		fxnodeline->val=val;
-		PlaceCopy(&fxnodeline->l.p,&p2);
-		ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
-	}
-
-	fxnodeline=talloc(sizeof(struct FXNodeLines));
+	struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum);
+	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+        
 	fxnodeline->val=val;
 	PlaceCopy(&fxnodeline->l.p,p1);
-	ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
-
+	return ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
 }
 
-void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-	struct FX *fx;
+static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
+  printf("new, fxnum: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
+  
+  struct FXs *fxs=talloc(sizeof(struct FXs));
+  fxs->l.num=fx->num;
+  fxs->fx=fx;
+  ListAddElement1(&wtrack->track->fxs,&fxs->l);
+  
+  struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+  fxnodeline->val=val;
+  PlaceCopy(&fxnodeline->l.p,&p2);
+  ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
+}
 
+
+void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
 	PlayStop();
 
-	fx=selectFX(window,wblock,wtrack);
+	struct FX *fx=selectFX(window,wblock,wtrack);
 	if(fx==NULL) return;
 
 	Undo_FXs_CurrPos(window);
 
-	AddFXNodeLine(
-		window,wblock,wtrack,
-		fx,
-		(fx->max + fx->min)/2,
-		&wblock->reallines[wblock->curr_realline]->l.p
-	);
+        Place p1;
+        PlaceCopy(&p1, &wblock->reallines[wblock->curr_realline]->l.p);
 
-	UpdateFXNodeLines(window,wblock,wtrack);
+        int val = (fx->max + fx->min)/2;
+        
+        {
+          Place p2;
+
+          int realline=FindRealLineFor(wblock,0,&p1);
+          if(realline==wblock->num_reallines-1){
+            PlaceSetLastPos(wblock->block,&p2);
+          }else{
+            PlaceCopy(&p2,&wblock->reallines[wblock->curr_realline+1]->l.p);
+          }
+
+          AddNewTypeOfFxNodeLine(wblock, wtrack, fx, &p2, val);
+        }
+        
+	AddFXNodeLine(
+                      window,wblock,wtrack,
+                      fx->num,
+                      val,
+                      &p1
+                      );
 
 #if !USE_OPENGL
+	UpdateFXNodeLines(window,wblock,wtrack);
+
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
+}
+
+
+void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
+  
+  ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
+  
+  if (ListFindNumElements3(&fxs->fxnodelines->l) <= 1 ){
+    struct FX *fx = fxs->fx;
+    struct Tracks *track = wtrack->track;
+    
+    OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
+    (*fx->closeFX)(fx,track);
+    ListRemoveElement1(&track->fxs,&fxs->l);
+  }
 }

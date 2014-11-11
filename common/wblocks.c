@@ -279,8 +279,10 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	window->wblock=wblock;
 	if( ! wblock->isgfxdatahere){
+#if !USE_OPENGL
 		UpdateWTempoNodes(window,wblock);
 		UpdateAllFXNodeLines(window,wblock);
+#endif              
 		UpdateAllTrackReallines(window,wblock);
 		wblock->isgfxdatahere=true;
 	}

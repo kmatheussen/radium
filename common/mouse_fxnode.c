@@ -111,9 +111,9 @@ int MoveFXNode_Mouse(
 	}
 
 
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
 
-#if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,
                    wblock->top_realline,
                    wblock->bot_realline

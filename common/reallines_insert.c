@@ -197,7 +197,9 @@ void InsertRealLines_CurrPos(
 			if(window->curr_track_sub>=0){
 				Undo_NotesAndFXs_CurrPos(window);
 				InsertPlace_fxs(block,wblock->wtrack->track,place,toplace);
+#if !USE_OPENGL
 				UpdateFXNodeLines(window,wblock,wblock->wtrack);
+#endif
 			}else{
 				Undo_Notes_CurrPos(window);
 			}

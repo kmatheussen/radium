@@ -96,9 +96,9 @@ void *Undo_Do_FXs(
 
 	track->fxs=undo_fxs->fxs;
 	track->midi_instrumentdata=undo_fxs->midi_instrumentdata;
-
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
-
+#endif
 	undo_fxs->fxs=temp;
 	undo_fxs->midi_instrumentdata=midi_instrumentdata;
 

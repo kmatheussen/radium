@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
+#if !USE_OPENGL
 extern LANGSPEC void UpdateFXNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -32,18 +32,19 @@ extern LANGSPEC void UpdateSomeFXNodeLines(
 	NInt starttrack,
 	NInt endtrack
 );
+#endif
 
 extern LANGSPEC void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float old_min, float old_max, float new_min, float new_max);
 
 extern LANGSPEC void FX_update_all_slider_automation_visuals(void);
 
-extern LANGSPEC void AddFXNodeLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	struct FX *fx,
-	int val,
-	Place *p1
+extern LANGSPEC int AddFXNodeLine(
+                                  struct Tracker_Windows *window,
+                                  struct WBlocks *wblock,
+                                  struct WTracks *wtrack,
+                                  int fxnum,
+                                  int val,
+                                  const Place *p1
 );
 
 extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
@@ -52,3 +53,5 @@ extern LANGSPEC void FreeAllWFXnodes(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 );
+
+extern LANGSPEC void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline);

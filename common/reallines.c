@@ -66,7 +66,9 @@ void UpdateReallinesDependens(
 	UpdateWTempos(window,wblock);
 	UpdateWLPBs(window,wblock);
 	UpdateWTempoNodes(window,wblock);
+#if !USE_OPENGL
 	UpdateAllFXNodeLines(window,wblock);
+#endif
 	wblock->num_reallines_last=wblock->num_reallines;
 	wblock->isgfxdatahere=true;
 }

@@ -74,7 +74,9 @@ void *Undo_Do_Track(
 
 	CB_PasteTrack(wblock,undo_wtrack,wtrack);
 
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
+#endif
 	UpdateTrackReallines(window,wblock,wtrack);
 
 	undo_wtrack=wblock->wtracks;

@@ -155,8 +155,9 @@ void InsertTracks_CurrPos(
 	SetCursorPosConcrete(window,wblock,0,-1);
 
 	UpdateAllTrackReallines(window,wblock);
+#if !USE_OPENGL
 	UpdateAllFXNodeLines(window,wblock);
-
+#endif
 	SetCursorPosConcrete(window,wblock,curr_track,-1);
 
 	window->must_redraw = true;

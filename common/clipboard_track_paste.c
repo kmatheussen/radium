@@ -197,7 +197,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			Undo_Track_CurrPos(window);
 			if(window->curr_track_sub==-1){
 				if(CB_PasteTrack(wblock,cb_wtrack,wtrack)){
+#if !USE_OPENGL
 					UpdateFXNodeLines(window,wblock,wtrack);
+#endif
 					UpdateTrackReallines(window,wblock,wtrack);
 					window->must_redraw = true;
 				}else{
@@ -212,7 +214,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 				}
 			}else{
 				if(CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
-					UpdateFXNodeLines(window,wblock,wtrack);
+#if !USE_OPENGL
+                                  UpdateFXNodeLines(window,wblock,wtrack);
+#endif
 					UpdateTrackReallines(window,wblock,wtrack);
 					window->must_redraw = true;
 				}else{

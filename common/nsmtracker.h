@@ -684,8 +684,8 @@ struct Node{
 	wfxnodes.h
 *********************************************************************/
 
-
 typedef struct TrackReallineElements WFXNodes;
+
 /*
 struct WFXNodes{
 	struct WFXNodes *next;
@@ -738,9 +738,12 @@ struct WTracks{
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 
 	struct TrackRealline *trackreallines;
+#if !USE_OPENGL
 	WFXNodes **wfxnodes;
+#endif
         WPitches **wpitches; // Can be removed, plus all usage of it. Not used in OpenGL.
 
+        vector_t fx_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for fx 1, element 2 contains nodes for fx 2, etc.)
         vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
 
         vector_t pitch_nodes; // contains vector of vectors of Node's. (element 1 contains pitches for note 1, element 2 contains pitches for note 2, etc.)

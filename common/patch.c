@@ -177,7 +177,9 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
     }
 
     UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
     UpdateFXNodeLines(window,wblock,wtrack);
+#endif
     window->must_redraw = true;
 
     return patch;
@@ -200,7 +202,9 @@ static void remove_patch_from_song(struct Patch *patch){
         handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
         track->patch = NULL;
         UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
         UpdateFXNodeLines(window,wblock,wtrack);
+#endif
       }
       wtrack = NextWTrack(wtrack);
     }
@@ -313,7 +317,9 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
           }PLAYER_unlock();
 
           UpdateTrackReallines(window,window->wblock,wtrack);
+#if !USE_OPENGL
           UpdateFXNodeLines(window,window->wblock,wtrack);
+#endif
           window->must_redraw = true;
               
           (*patch->instrument->PP_Update)(patch->instrument,patch);

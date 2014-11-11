@@ -149,6 +149,7 @@ void SetMouseActionFXNodes(
 	int realline,
 	int click
 ){
+#if !USE_OPENGL
 	struct WBlocks *wblock=window->wblock;
 	WFXNodes *wfxnode=wtrack->wfxnodes[realline];
 	WArea warea;
@@ -188,6 +189,7 @@ void SetMouseActionFXNodes(
 		}
 		wfxnode=wfxnode->next;
 	}
+#endif
 }
 
 void SetMouseActionFXarea(
@@ -198,7 +200,7 @@ void SetMouseActionFXarea(
 	int click
 ){
 	struct WBlocks *wblock=window->wblock;
-	WFXNodes *wfxnode;
+
 	struct TrackReallineElements *element;
 	WFXNodes *wfxnodemin=NULL;
 	struct FX *fx;
@@ -238,7 +240,9 @@ void SetMouseActionFXarea(
 	rel_y=((float)y)/window->fontheight;
 	rel_x=((float)x)/(wtrack->fxarea.x2-wtrack->fxarea.x);
 
-	wfxnode=wtrack->wfxnodes[realline];
+        
+#if !USE_OPENGL
+        WFXNodes *wfxnode=wtrack->wfxnodes[realline];
 
 	while(wfxnode!=NULL){
 		if(wfxnode->type==TRE_FXLINE){
@@ -259,7 +263,7 @@ void SetMouseActionFXarea(
 		}
 		wfxnode=wfxnode->next;
 	}
-
+#endif
 	element=wtrack->trackreallines[realline].trackreallineelements;
 	subtrack=GetSubTrack(wtrack,x);
 
@@ -298,7 +302,7 @@ void SetMouseActionFXarea(
 			window,
 			wblock,
 			wtrack,
-			fx,
+			fx->num,
 			((fx->max-fx->min)*x/(wtrack->fxwidth-1))+fx->min,
 			&place
 		);
@@ -306,9 +310,9 @@ void SetMouseActionFXarea(
 		GFX_SetChangeInt(window,wblock,fx->name,((fx->max-fx->min)*x/(wtrack->fxwidth-1))+fx->min);
 		GFX_DrawStatusBar(window,wblock);
 
+#if !USE_OPENGL
 		UpdateFXNodeLines(window,wblock,wtrack);
 
-#if !USE_OPENGL
 		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif

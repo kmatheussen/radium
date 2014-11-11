@@ -139,8 +139,8 @@ static void draw_node_indicator(float x,
           );
 }
 
-struct ListHeader3 *current_node = NULL;
-struct ListHeader3 *indicator_node = NULL;
+const struct ListHeader3 *current_node = NULL;
+const struct ListHeader3 *indicator_node = NULL;
 int indicator_velocity_num = -1;
 int indicator_pitch_num = -1;
 
@@ -1047,15 +1047,15 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
 }
 
 void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
-  struct Velocities first_velocity;
-  first_velocity.l.p = note->l.p;
-  first_velocity.l.next = &note->velocities->l;
-  first_velocity.velocity = note->velocity;
+  struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
+  first_velocity->l.p = note->l.p;
+  first_velocity->l.next = &note->velocities->l;
+  first_velocity->velocity = note->velocity;
 
-  struct Velocities last_velocity;
-  last_velocity.l.p = note->end;
-  last_velocity.l.next = NULL;
-  last_velocity.velocity = note->velocity_end;
+  struct Velocities *last_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
+  last_velocity->l.p = note->end;
+  last_velocity->l.next = NULL;
+  last_velocity->velocity = note->velocity_end;
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
@@ -1063,9 +1063,9 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
 
   struct NodeLine *nodelines = create_nodelines(window,
                                                 wblock,
-                                                &first_velocity.l,
+                                                &first_velocity->l,
                                                 get_velocity_x,
-                                                &last_velocity.l
+                                                &last_velocity->l
                                                 );
 
   vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
@@ -1127,7 +1127,7 @@ static float get_fxs_x(const struct WBlocks *wblock, const struct ListHeader3 *e
 }
 
 
-void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
+static void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct FXs *fxs){
   fx_min = fxs->fx->min;
   fx_max = fxs->fx->max;
   wtrackfx_x1 = wtrack->fxarea.x;
@@ -1140,22 +1140,24 @@ void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks
                                                 NULL
                                                 );  
 
+  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  VECTOR_push_back(&wtrack->fx_nodes, nodes);
+
   GE_Context *line_color = GE_color(fxs->fx->color);
 
-  do{
+  for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
+    GE_line(line_color, ns->x1, ns->y1, ns->x2, ns->y2, 1.5);
 
-    if(nodelines->is_node && wblock->mouse_track==wtrack->l.num)
-      draw_skewed_box(window, nodelines->element1, 1, nodelines->x1, nodelines->y1);
-
-    GE_line(line_color, nodelines->x1, nodelines->y1, nodelines->x2, nodelines->y2, 1.5);
-
-  }while(nodelines->next!=NULL && (nodelines=nodelines->next));
-
-  if(wblock->mouse_track==wtrack->l.num)
-    draw_skewed_box(window, nodelines->element2, 1, nodelines->x2, nodelines->y2);
+  if (indicator_node != NULL || wblock->mouse_track==wtrack->l.num)
+    VECTOR_FOR_EACH(Node *, node, nodes){
+      if (wblock->mouse_track==wtrack->l.num)
+        draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
+      if (node->element==indicator_node)
+        draw_node_indicator(node->x, node->y - wblock->t.y1);
+    }END_VECTOR_FOR_EACH;
 }
 
-void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+static void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   struct Stops *stops = wtrack->track->stops;
 
   float reallineF = 0.0f;
@@ -1203,6 +1205,8 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
   }
 
   if(left_subtrack<=0){
+    VECTOR_clean(&wtrack->fx_nodes);
+    
     const struct FXs *fxs=wtrack->track->fxs;
     while(fxs != NULL){
       create_track_fxs(window, wblock, wtrack, fxs);

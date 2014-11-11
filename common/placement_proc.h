@@ -34,7 +34,12 @@ static inline Place *PlaceCreate(int line, int counter, int dividor) {
     Convert a float into a placement.
 **********************************************************/
 static inline void Float2Placement(float f,Place *p){
-  assert(f >= 0.0f);
+  if (f<0.0f){
+    RError("Float2Placement: Position can not start before block starts: %f",f);
+    p->line=0;
+    p->counter=0;
+    p->dividor=1;
+  }
   
   p->line = (int)f;
   f -= p->line;
@@ -224,7 +229,11 @@ extern Place PlaceFirstPos;
     (b)->counter = MAX_UINT32-1;   \
     (b)->dividor = MAX_UINT32;     \
   }while(0)
-   
+
+static inline Place *PlaceGetLastPos(struct Blocks *block){
+  return PlaceCreate(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+}
+
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
 #endif
 

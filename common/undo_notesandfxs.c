@@ -107,8 +107,9 @@ void *Undo_Do_NotesAndFXs(
 	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
 	UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
-
+#endif
 	return undo_notesandfxs;
 }
 

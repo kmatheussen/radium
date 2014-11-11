@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_subtrack_proc.h"
 #include "../common/velocities_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/undo_fxs_proc.h"
+#include "../common/fxlines_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -48,8 +50,8 @@ extern struct Root *root;
 extern volatile float scroll_pos;
 
 
-extern struct ListHeader3 *current_node;
-extern struct ListHeader3 *indicator_node;
+extern const struct ListHeader3 *current_node;
+extern const struct ListHeader3 *indicator_node;
 extern int indicator_velocity_num;
 extern int indicator_pitch_num;
 
@@ -68,7 +70,7 @@ void cancelCurrentNode(void){
   setCurrentNode(NULL);
 }
 
-static void setIndicatorNode(struct ListHeader3 *new_indicator_node){
+static void setIndicatorNode(const struct ListHeader3 *new_indicator_node){
   if (indicator_node != new_indicator_node){
     indicator_node = new_indicator_node;
     root->song->tracker_windows->wblock->block->is_dirty = true;
@@ -91,6 +93,24 @@ static int get_realline_y1(const struct Tracker_Windows *window, int realline){
 
 static int get_realline_y2(const struct Tracker_Windows *window, int realline){
   return window->fontheight*(realline+1) - scroll_pos + window->wblock->t.y1;
+}
+
+float getTopVisibleY(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return get_realline_y1(window, R_MAX(0, wblock->top_realline));
+}
+
+float getBotVisibleY(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return get_realline_y2(window, R_MIN(wblock->num_reallines-1, wblock->bot_realline));
 }
 
 void setNoMouseTrack(void){
@@ -636,7 +656,13 @@ static int getReallineForPitch(struct WBlocks *wblock, struct Pitches *pitch, st
     return FindRealLineFor(wblock,note->Tline,&note->l.p);
 }
 
-static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int blocknum, int windownum){
+enum PitchInfoWhatToGet {
+  PITCH_INFO_Y1,
+  PITCH_INFO_Y2,
+  PITCH_INFO_VALUE,
+};
+
+static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -651,11 +677,11 @@ static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int block
     return 0;
   
   switch (what_to_get){
-  case 0:
+  case PITCH_INFO_Y1:
     return get_realline_y1(window, getReallineForPitch(wblock, pitch, note));
-  case 1:
+  case PITCH_INFO_Y2:
     return get_realline_y2(window, getReallineForPitch(wblock, pitch, note));
-  case 2:
+  case PITCH_INFO_VALUE:
     {
       if (pitch!=NULL)
         return pitch->note;
@@ -669,11 +695,11 @@ static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int block
 }
 
 float getPitchY1(int pitchnum, int tracknum, int blocknum, int windownum){
-  return getPitchInfo(0, pitchnum, tracknum, blocknum, windownum);
+  return getPitchInfo(PITCH_INFO_Y1, pitchnum, tracknum, blocknum, windownum);
 }
 
 float getPitchY2(int pitchnum, int tracknum, int blocknum, int windownum){
-  return getPitchInfo(1, pitchnum, tracknum, blocknum, windownum);
+  return getPitchInfo(PITCH_INFO_Y2, pitchnum, tracknum, blocknum, windownum);
 }
 
 float getPitchX1(int pitchnum, int tracknum, int blocknum, int windownum){
@@ -725,7 +751,7 @@ float getPitchY(int num, int tracknum, int blocknum, int windownum){
 
 
 float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
-  return getPitchInfo(2, pitchnum, tracknum, blocknum, windownum);
+  return getPitchInfo(PITCH_INFO_VALUE, pitchnum, tracknum, blocknum, windownum);
 }
 
 void setCurrentPitch(int num, int tracknum, int blocknum){
@@ -1046,7 +1072,7 @@ void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
 // velocities
 //////////////////////////////////////////////////
 
-static struct Node *get_velocitynodeline(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1069,40 +1095,22 @@ static struct Node *get_velocitynodeline(int velocitynum, int notenum, int track
 
 
 float getVelocityX(int num, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *nodeline = get_velocitynodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->x;
+  struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->x;
 }
 
 float getVelocityY(int num, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *nodeline = get_velocitynodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+  struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->y-scroll_pos;
 }
 
 
 float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
-  if (note==NULL)
-    return 0.0;
+  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
+  if (node==NULL)
+    return 0;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
-  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
-    return 0.0f;
-  }
-
-  if (velocitynum==0)
-    return note->velocity / (float)MAX_VELOCITY;
-
-  if (velocitynum==nodes->num_elements-1)
-    return note->velocity_end / (float)MAX_VELOCITY;
-
-  struct Velocities *velocity = ListFindElement3_num_r0(&note->velocities->l, velocitynum-1);
-
-  //printf("getting velocity for %d (%f)\n",velocitynum, velocity->velocity / (float)MAX_VELOCITY);
-
+  struct Velocities *velocity = (struct Velocities*)node->element;
   return velocity->velocity / (float)MAX_VELOCITY;
 }
 
@@ -1282,6 +1290,247 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
   indicator_velocity_num = velocitynum;
 }
 
+
+// fxes
+//////////////////////////////////////////////////
+
+static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return NULL;
+
+  if (fxnum<0 || fxnum>=wtrack->fx_nodes.num_elements){
+    RError("There is no fx node %d in track %d in block %d",fxnum,tracknum,blocknum);
+    return NULL;
+  }
+
+  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d in fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return NULL;
+  }
+  
+  return nodes->elements[fxnodenum];
+}
+
+
+float getFxnodeX(int num, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_fxnode(num, fxnum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->x;
+}
+
+float getFxnodeY(int num, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_fxnode(num, fxnum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->y-scroll_pos;
+}
+
+
+float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_fxnode(fxnodenum, fxnum, tracknum, blocknum, windownum);
+  if (node==NULL)
+    return 0;
+
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines*)node->element;
+  return fxnodeline->val;
+}
+
+
+int getNumFxes(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack == NULL)
+    return 0;
+  return wtrack->fx_nodes.num_elements;
+}
+
+int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack == NULL)
+    return 0;
+
+  if (fxnum<0 || fxnum>=wtrack->fx_nodes.num_elements) {
+    RError("There is no fx node %d in track %d in block %d",fxnum, tracknum, blocknum);
+    return 0;
+  }
+  
+  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+
+  return nodes->num_elements;
+}
+
+float getFxMinValue(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return 0;
+
+  return fx->fx->min;
+}
+
+float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return 1;
+
+  return fx->fx->max;
+}
+
+int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return -1;
+
+  Place lastplace;
+  PlaceSetLastPos(wblock->block, &lastplace);
+                  
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  if (PlaceLessOrEqual(&place, PlaceGetFirstPos())){
+    RError("createFx: placement before top of block for fx #%d", fxnum);
+    return -1;
+  }
+
+  if (PlaceGreaterOrEqual(&place, &lastplace)) {
+    RError("createFx: placement after fx end for fx #%d", fxnum);
+    return -1;
+  }
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+
+  int ret = AddFXNodeLine(
+                          window,
+                          wblock,
+                          wtrack,
+                          fx->l.num,
+                          value,
+                          &place
+                          );
+
+  if (ret==-1){
+    RError("createFx: Can not create new fx with the same position as another fx");
+    return -1;
+  }
+
+  GL_create(window, wblock); // Need to update wtrack->fx_nodes before returning to the qt event dispatcher.
+  //wblock->block->is_dirty = true;
+
+  return ret;
+}
+  
+void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return;
+
+  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
+  
+  if (floatplace >= 0.0f){
+    Place place;
+    Float2Placement(floatplace, &place);
+  
+    ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), PlaceGetLastPos(wblock->block));
+  }
+  
+  int max = fx->fx->max;
+  int min = fx->fx->min;
+  
+  fxnodeline->val=R_BOUNDARIES(min,value,max);
+  
+  wblock->block->is_dirty = true;
+}
+
+void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+ struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+
+  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+  
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)nodes->elements[fxnodenum];
+  
+  DeleteFxNodeLine(wtrack, fxs, fxnodeline);
+
+  wblock->block->is_dirty = true;
+}
+
+
+void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+ struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return;
+
+  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *current = (struct FXNodeLines*)node->element;
+
+  setCurrentNode(&current->l);
+}
+
+void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return;
+
+  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[fxnodenum];
+  setIndicatorNode(node->element);
+}
+
+
+void undoFxs(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
 
 // ctrl / shift keys
 //////////////////////////////////////////////////
