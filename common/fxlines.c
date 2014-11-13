@@ -283,6 +283,20 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
   }
 }
 
+static int newFXColor(void){
+  int color = rand() % 15;
+
+  switch(color) {
+  case 0:
+  case 9:
+  case 10:
+  case 11:
+  case 15:
+    return newFXColor();
+  }
+  return color;
+}
+
 static struct FX *selectFX(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -309,24 +323,7 @@ static struct FX *selectFX(
 
 	fx=talloc(sizeof(struct FX));
 
-        {
-          if(fx->color==0){
-            static int nextcolor=3;
-
-            nextcolor++;
-
-            if(nextcolor==3)
-              nextcolor=4;
-            if(nextcolor==7)
-              nextcolor=8;
-            if(nextcolor==9||nextcolor==10||nextcolor==11)
-              nextcolor=12;
-            if(nextcolor==15)
-              nextcolor=1;
-
-            fx->color=nextcolor;
-          }
-        }
+        fx->color = newFXColor();
 
 	if(
 		(*wtrack->track->patch->instrument->getFX)(window,wtrack->track,fx)
