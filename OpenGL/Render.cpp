@@ -301,8 +301,8 @@ struct NodeLine *create_nodelines(
 {
   struct NodeLine *nodelines = NULL;
 
-  assert(list != NULL);
-  assert(list->next != NULL || last_element!=NULL);
+  R_ASSERT(list != NULL);
+  R_ASSERT(list->next != NULL || last_element!=NULL);
 
 
   // 1. Create straight forward nodelines from the list

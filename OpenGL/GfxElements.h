@@ -2,8 +2,6 @@
 #define OPENGL_GFXELEMENTS_H
 
 
-#include <assert.h>
-
 #ifdef __cplusplus
 #include <QColor>
 #include <QFont>

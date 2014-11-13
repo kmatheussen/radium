@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_PLACEMENTISCALLINGNOW
 
 #include <math.h>
-#include <assert.h>
 
 #include "nsmtracker.h"
 
@@ -370,7 +369,7 @@ void PlaceTilLimit(Place *p, const Place *tp){
     p->counter=MAX_UINT32-1;
     p->dividor=MAX_UINT32;
 
-    assert(p->line>=0);
+    R_ASSERT(p->line>=0);
 
   }else{
 

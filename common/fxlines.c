@@ -373,8 +373,8 @@ static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks 
 }
 
 
-void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-	PlayStop();
+void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){  
+  PlayStop();
 
 	struct FX *fx=selectFX(window,wblock,wtrack);
 	if(fx==NULL) return;
@@ -397,12 +397,8 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
           }
 
           AddNewTypeOfFxNodeLine(wblock, wtrack, fx, &p2, val);
-          PrintPlace("p2:", &p2);
-
         }
 
-        PrintPlace("p1:", &p1);
-        
 	AddFXNodeLine(
                       window,wblock,wtrack,
                       fx->num,

@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include <assert.h>
 #include <math.h>
 
 #include "../common/nsmtracker.h"
@@ -158,22 +157,22 @@ struct InterpolatedResampler : public Resampler{
   }
 
   float getNextSample(){    
-    assert(_data_pos <= _data_length);
-    assert(_data_pos >= 0);
+    R_ASSERT(_data_pos <= _data_length);
+    R_ASSERT(_data_pos >= 0);
 
     if(_data_pos==_data_length)
       pull_more_data();
     if(_data_length==0)
       return 0.0f;
 
-    assert(_data_pos < _data_length);
-    assert(_data_pos >= 0);
+    R_ASSERT(_data_pos < _data_length);
+    R_ASSERT(_data_pos >= 0);
 
     float ret=_data[_data_pos];
     _data_pos++;
 
-    assert(_data_pos <= _data_length);
-    assert(_data_pos >= 0);
+    R_ASSERT(_data_pos <= _data_length);
+    R_ASSERT(_data_pos >= 0);
 
     return ret;
   }
@@ -203,9 +202,9 @@ struct InterpolatedResampler : public Resampler{
   }
 
   float getCubicInterpolatedSample(double read_increment){
-    assert(isfinite(_curr_read_pos));
-    assert(isfinite(read_increment));
-    assert(isfinite(_curr_read_pos));
+    R_ASSERT(isfinite(_curr_read_pos));
+    R_ASSERT(isfinite(read_increment));
+    R_ASSERT(isfinite(_curr_read_pos));
     
     while(_curr_read_pos >= 1.0){
       _curr_read_pos -= 1.0;
@@ -214,20 +213,20 @@ struct InterpolatedResampler : public Resampler{
       _y2             = _y3;
       _y3             = getNextSample();
 
-      assert(isfinite(_y0));
-      assert(isfinite(_y1));
-      assert(isfinite(_y2));
-      assert(isfinite(_y3));
+      R_ASSERT(isfinite(_y0));
+      R_ASSERT(isfinite(_y1));
+      R_ASSERT(isfinite(_y2));
+      R_ASSERT(isfinite(_y3));
     }
 
-    assert(_curr_read_pos >= 0);
-    assert(_curr_read_pos < 1.0);
+    R_ASSERT(_curr_read_pos >= 0);
+    R_ASSERT(_curr_read_pos < 1.0);
     
     if(_data_length==0)
       return 0.0f;
         
     float ret=cubic_interpolate(_y0,_y1,_y2,_y3,_curr_read_pos);
-    assert(isfinite(ret));
+    R_ASSERT(isfinite(ret));
     
     _curr_read_pos += read_increment;
     
@@ -250,8 +249,8 @@ struct InterpolatedResampler : public Resampler{
         int offset = curr_read_pos;
         data_pos += offset;
 
-        assert(data_pos <= _data_length);
-        assert(data_pos >= 0);
+        R_ASSERT(data_pos <= _data_length);
+        R_ASSERT(data_pos >= 0);
 
         y0 = _data[data_pos-4];
         y1 = _data[data_pos-3];
@@ -261,8 +260,8 @@ struct InterpolatedResampler : public Resampler{
         curr_read_pos -= offset;
       }
 
-      assert(curr_read_pos >= 0);
-      assert(curr_read_pos < 1.0);
+      R_ASSERT(curr_read_pos >= 0);
+      R_ASSERT(curr_read_pos < 1.0);
 
       out[i] = cubic_interpolate(y0,y1,y2,y3,curr_read_pos);
       
@@ -276,14 +275,14 @@ struct InterpolatedResampler : public Resampler{
 
     _data_pos = data_pos;
 
-    assert(_data_pos <= _data_length);
-    assert(_data_pos >= 0);
+    R_ASSERT(_data_pos <= _data_length);
+    R_ASSERT(_data_pos >= 0);
 
     return num_frames;
   }
 
   int find_num_samples_left_before_pulling(double read_increment){
-    assert(isfinite(read_increment));
+    R_ASSERT(isfinite(read_increment));
 
     return ( (double)(_data_length - _data_pos) / read_increment) - 2; // somewhat conservative;
   }
@@ -293,8 +292,8 @@ struct InterpolatedResampler : public Resampler{
   int read(double ratio,int num_frames, float *out){
     double read_increment = 1.0 / ratio;
 
-    assert(isfinite(read_increment));
-    assert(isfinite(ratio));
+    R_ASSERT(isfinite(read_increment));
+    R_ASSERT(isfinite(ratio));
     
     int i=0;
     int frames_left = num_frames;

@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 *******************************************************************/
 
-#include <assert.h>
 #include <string.h>
 
 #include "nsmtracker.h"
@@ -444,7 +443,7 @@ static void AddTrackReallineNote(
 
 	float maxx = MAX_VELOCITY;
 
-        assert(note!=NULL);
+        R_ASSERT(note!=NULL);
 	InsertTRLElement(
 		window,
 		wtrack,

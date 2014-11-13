@@ -117,6 +117,12 @@ enum{
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
+#ifdef RELEASE
+  #define R_ASSERT(a)
+#else
+  #define R_ASSERT(a) if(!(a))RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__)
+#endif
+
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){
   return y1 + ( ((x-x1)*(y2-y1))
                 /

@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_PLACEMENT
 #define TRACKER_PLACEMENT
 
-#include <assert.h>
-
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
   Place *place=(Place*)talloc(sizeof(Place));

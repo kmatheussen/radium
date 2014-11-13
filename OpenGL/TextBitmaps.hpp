@@ -1,4 +1,3 @@
-#include <assert.h>
 
 #include <vlCore/Image.hpp>
 #include <vlCore/IMutex.hpp>

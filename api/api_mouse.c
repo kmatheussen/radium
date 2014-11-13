@@ -844,7 +844,7 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
 
   note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
 
-  assert(PlaceLessOrEqual(&note->end, &lastLegal));
+  R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
 static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){

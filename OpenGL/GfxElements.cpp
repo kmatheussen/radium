@@ -82,7 +82,7 @@ struct _GE_Context : public vl::Object{
     , _z(z)
     , gradient(NULL)
   {
-    assert(sizeof(Color)==sizeof(uint64_t));
+    R_ASSERT(sizeof(Color)==sizeof(uint64_t));
   }
 
 #if 0

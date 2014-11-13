@@ -32,7 +32,7 @@ struct VBlankEstimator{
     , last_base_interval(0)
     , last_diff(500)
   {
-    assert(num_trainings>=60);
+    R_ASSERT(num_trainings>=60);
   }
 
   void set_vblank(double period){
