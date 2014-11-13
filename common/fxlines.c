@@ -385,8 +385,9 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
         PlaceCopy(&p1, &wblock->reallines[wblock->curr_realline]->l.p);
 
         int val = (fx->max + fx->min)/2;
-        
-        {
+
+        struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
+        if (fxs==NULL){
           Place p2;
 
           int realline=FindRealLineFor(wblock,0,&p1);
@@ -416,6 +417,8 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
 
 void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
+
+  R_ASSERT(ListFindNumElements3(&fxs->fxnodelines->l)>1);
   
   ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
   
