@@ -91,3 +91,5 @@ int WTRACK_getx2(
 	struct WBlocks *wblock,
 	NInt track
 );
+
+struct WTracks *WTRACK_get(struct WBlocks *wblock, int x);

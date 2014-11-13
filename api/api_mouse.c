@@ -142,19 +142,14 @@ float getPlaceFromY(float y, int blocknum, int windownum) {
     return 0.0;
   }
 
-  struct Blocks *block = wblock->block;
-  
-  Place *prevplace=PlaceGetFirstPos();
   Place place;
-  Place nextplace;
-  PlaceSetLastPos(block,&nextplace);
-      
+  
   GetReallineAndPlaceFromY(window,
                            wblock,
                            y,
                            &place,
-                           prevplace,
-                           &nextplace
+                           NULL,
+                           NULL
                            );
   
   return GetFloatFromPlace(&place);
@@ -1317,9 +1312,18 @@ void addFX(int windownum, int blocknum, int tracknum){
 
   if(wtrack==NULL) return;
 
+  //printf("x: %f, y: %f\n",tevent.x, tevent.y);
+  
   AddFXNodeLineCurrPos(window, wblock, wtrack);
 }
 
+void addFXMousePos(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return;
+
+  AddFXNodeLineCurrMousePos(window);
+}
 
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;

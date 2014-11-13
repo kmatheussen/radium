@@ -26,7 +26,7 @@ extern LANGSPEC float FindReallineForF(
 extern int FindRealLineFor(
 	struct WBlocks *wblock,
 	int realline,
-	Place *place
+	const Place *place
 );
 
 extern int FindRealLineForNote(

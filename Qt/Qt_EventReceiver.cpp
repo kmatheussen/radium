@@ -298,8 +298,8 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
     return;
 
   tevent.ID = getMouseButtonEventID(qmouseevent);
-  tevent.x  = qmouseevent->x();//-XOFFSET;
-  tevent.y  = qmouseevent->y();//-YOFFSET;
+  tevent.x  = qmouseevent->posF().x();//-XOFFSET;
+  tevent.y  = qmouseevent->posF().y();//-YOFFSET;
 
   currentButton = tevent.ID;
 
@@ -324,8 +324,8 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
     return;
 
   tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
+  tevent.x=qmouseevent->posF().x();//-XOFFSET;
+  tevent.y=qmouseevent->posF().y();//-YOFFSET;
 
   //Qt::ButtonState buttonstate=qmouseevent->state();
   //printf("************** buttonstate: %d, %d, %d\n",getMouseButtonEventID(qmouseevent),buttonstate,tevent.keyswitch);
@@ -353,8 +353,8 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
+  tevent.x=qmouseevent->posF().x();//-XOFFSET;
+  tevent.y=qmouseevent->posF().y();//-YOFFSET;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
   if (SCHEME_mouserelease(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)

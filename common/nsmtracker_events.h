@@ -87,8 +87,8 @@ struct TEvent{
 	int ID;
 	int SubID;
 	uint32_t keyswitch;
-	int x;
-	int y;
+	float x;
+	float y;
 };
 
 struct TEventFIFO{

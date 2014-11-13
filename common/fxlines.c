@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <string.h>
 
 
 #include "nsmtracker.h"
@@ -27,16 +28,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "realline_calc_proc.h"
 #include "undo_fxs_proc.h"
-#include <string.h>
 #include "player_proc.h"
 #include "nodeboxes_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
+#include "wtracks_proc.h"
+#include "common_proc.h"
 
 #include "fxlines_proc.h"
 
 
 extern struct Root *root;
+extern struct TEvent tevent;
+
 
 #if !USE_OPENGL
 struct FXextrainfo{
@@ -283,7 +287,7 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
   }
 }
 
-static int newFXColor(void){
+static int newFXColor(void){  
   int color = rand() % 15;
 
   switch(color) {
@@ -350,7 +354,7 @@ int AddFXNodeLine(
 	struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum);
 	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
         
-	fxnodeline->val=val;
+	fxnodeline->val=R_BOUNDARIES(fxs->fx->min, val, fxs->fx->max);
 	PlaceCopy(&fxnodeline->l.p,p1);
 	return ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
 }
@@ -369,29 +373,19 @@ static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks 
   ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
 }
 
-
-void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){  
-  PlayStop();
-
-	struct FX *fx=selectFX(window,wblock,wtrack);
-	if(fx==NULL) return;
+static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *place, float val){
 
 	Undo_FXs_CurrPos(window);
-
-        Place p1;
-        PlaceCopy(&p1, &wblock->reallines[wblock->curr_realline]->l.p);
-
-        int val = (fx->max + fx->min)/2;
 
         struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
         if (fxs==NULL){
           Place p2;
 
-          int realline=FindRealLineFor(wblock,0,&p1);
-          if(realline==wblock->num_reallines-1){
+          int realline=FindRealLineFor(wblock,0,place);
+          if(realline>=wblock->num_reallines-5){
             PlaceSetLastPos(wblock->block,&p2);
           }else{
-            PlaceCopy(&p2,&wblock->reallines[wblock->curr_realline+1]->l.p);
+            PlaceCopy(&p2,&wblock->reallines[wblock->curr_realline+3]->l.p);
           }
 
           AddNewTypeOfFxNodeLine(wblock, wtrack, fx, &p2, val);
@@ -401,7 +395,7 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
                       window,wblock,wtrack,
                       fx->num,
                       val,
-                      &p1
+                      place
                       );
 
 #if !USE_OPENGL
@@ -410,6 +404,49 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
+}
+
+void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
+  struct WBlocks *wblock = window->wblock;
+  float x = tevent.x;
+  float y = tevent.y;
+  struct WTracks *wtrack = WTRACK_get(wblock, x);
+  if (wtrack==NULL)
+    return;
+  
+  Place place;
+  
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           y,
+                           &place,
+                           NULL,
+                           NULL
+                           );
+
+  PlayStop();
+  
+  struct FX *fx=selectFX(window,wblock,wtrack);
+  if(fx==NULL)
+    return;
+
+  int val = scale(x, wtrack->fxarea.x, wtrack->fxarea.x2, fx->min, fx->max);
+                  
+  AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
+}
+
+void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  PlayStop();
+  
+  struct FX *fx=selectFX(window,wblock,wtrack);
+  if(fx==NULL) return;
+
+  Place place;
+  PlaceCopy(&place, &wblock->reallines[wblock->curr_realline]->l.p);
+
+  int val = (fx->max + fx->min)/2;
+
+  AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
 }
 
 

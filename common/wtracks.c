@@ -649,3 +649,15 @@ int WTRACK_getx2(
 
 }
 
+struct WTracks *WTRACK_get(struct WBlocks *wblock, int x){
+  struct WTracks *wtrack = wblock->wtracks;
+
+  while(wtrack!=NULL){
+    if(x>=wtrack->x && x<wtrack->x2)
+      break;
+    wtrack = NextWTrack(wtrack);
+  }
+
+  return wtrack;  
+}
+

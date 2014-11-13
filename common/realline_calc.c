@@ -74,7 +74,7 @@ float FindReallineForF(
 int FindRealLineFor(
 	struct WBlocks *wblock,
 	int realline,
-	Place *place
+	const Place *place
 ){
 	struct LocalZooms **reallines=wblock->reallines;
 

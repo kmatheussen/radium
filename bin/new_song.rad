@@ -45,7 +45,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-8
+10
 author
 0
 STRING_TYPE
@@ -70,6 +70,14 @@ comment
 4
 STRING_TYPE
 
+comment
+5
+STRING_TYPE
+
+comment
+6
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -92,10 +100,10 @@ TRACKER_WINDOW
 0
 
 ?width
-727
+913
 
 ?height
-617
+400
 
 ?fontID
 0
@@ -161,7 +169,7 @@ WBLOCK
 0
 
 ?curr_realline
-1
+15
 
 ?num_reallines
 64
@@ -439,10 +447,10 @@ FXNODELINES
 20694
 65534
 54833
-15
-62084
+26
+0
 65534
-55517
+21756
 /
 /
 /
@@ -1987,7 +1995,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.9997119307518005
+0
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -2079,7 +2087,7 @@ FLOAT_TYPE
 Minimum delay
 0
 FLOAT_TYPE
-4.998042583465576
+4.995742797851562
 Modulation depth
 0
 FLOAT_TYPE

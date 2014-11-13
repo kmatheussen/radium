@@ -47,11 +47,8 @@ extern LANGSPEC int AddFXNodeLine(
                                   const Place *p1
 );
 
-extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window);
 
-extern LANGSPEC void FreeAllWFXnodes(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-);
+extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
 extern LANGSPEC void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline);

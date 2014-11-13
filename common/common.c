@@ -206,6 +206,9 @@ int GetReallineFromY(
     the values inside 'place' based on 'y'. If the return from
     GetReallineFromY is negative, 'place' gets the nearest
     legal values.
+
+    If minplace is NULL, FirstPlace will be used instead.
+    If maxplace is NULL, LastPlace will be used instead.
 *************************************************************************/
 int GetReallineAndPlaceFromY(
 	struct Tracker_Windows *window,
@@ -257,12 +260,18 @@ int GetReallineAndPlaceFromY(
 		}
 	}
 
-	if(minplace!=NULL && PlaceLessOrEqual(&temp,minplace)){
+        if(minplace==NULL)
+          minplace = PlaceGetFirstPos();
+        
+        if(maxplace==NULL)
+          maxplace = PlaceGetLastPos(wblock->block);
+        
+	if(PlaceLessOrEqual(&temp,minplace)){
 		if(ret>=0) ret=window->fontheight*(ret-FindRealLineFor(wblock,0,minplace));
 		PlaceFromLimit(&temp,minplace);
 	}
 
-	if(maxplace!=NULL && PlaceGreaterOrEqual(&temp,maxplace)){
+	if(PlaceGreaterOrEqual(&temp,maxplace)){
 		if(ret>=0) ret=window->fontheight*(ret-FindRealLineFor(wblock,ret,maxplace));
 		PlaceTilLimit(&temp,maxplace);
 	}
