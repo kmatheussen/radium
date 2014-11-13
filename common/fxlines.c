@@ -307,9 +307,11 @@ static struct FX *selectFX(
 	struct WTracks *wtrack
 ){
 
-  if(wtrack->track->patch==NULL)
+  if(wtrack->track->patch==NULL) {
+    GFX_Message(NULL, "No instrument set for track %d\n",wtrack->l.num);
     return NULL; // TODO: Ask for new patch.
-
+  }
+  
 	struct FX *fx;
 	int num_usedFX=getNumUsedFX(wtrack->track);
 

@@ -591,11 +591,13 @@ static int show_message(vector_t *buttons, const char *message){
 
   QAbstractButton *clicked_button = msgBox.clickedButton();
 
-  for(int i=0;i<buttons->num_elements;i++)
-    if(QString((char*)buttons->elements[i])==clicked_button->text())
-      return i;
+  if (buttons != NULL) {
+    for(int i=0;i<buttons->num_elements;i++)
+      if(QString((char*)buttons->elements[i])==clicked_button->text())
+        return i;
 
-  fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+    fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+  }
   
   return 0;
 
