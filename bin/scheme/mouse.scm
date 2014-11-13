@@ -1127,15 +1127,13 @@
   :distance)
 
 (define *current-fx/distance* #f)
-(define (getit) ;; temporary workaround for a bug in s7
-  *current-fx/distance*)
 
 (define (get-current-fxnum)
-  (and (getit)
-       ((getit) :fx)))
+  (and *current-fx/distance*
+       (*current-fx/distance* :fx)))
 (define (get-current-fx-distance)
-  (and (getit)
-       ((getit) :distance)))
+  (and *current-fx/distance*
+       (*current-fx/distance* :distance)))
   
   
 (define (min-fx/distance A B)
