@@ -368,7 +368,7 @@ static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks 
   
   struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
   fxnodeline->val=val;
-  PlaceCopy(&fxnodeline->l.p,&p2);
+  PlaceCopy(&fxnodeline->l.p,p2);
   ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
 }
 
@@ -397,7 +397,11 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
           }
 
           AddNewTypeOfFxNodeLine(wblock, wtrack, fx, &p2, val);
+          PrintPlace("p2:", &p2);
+
         }
+
+        PrintPlace("p1:", &p1);
         
 	AddFXNodeLine(
                       window,wblock,wtrack,

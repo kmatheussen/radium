@@ -958,6 +958,8 @@ struct WBlocks{
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.
         struct Notes *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note.
 
+        struct FXs *mouse_fxs; // The fxs the mouse is currently above. NULL if mouse is not above an fx.
+  
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */
 
 	struct LocalZooms *localzooms;

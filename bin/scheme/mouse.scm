@@ -41,6 +41,89 @@
         11))
 ||#
 
+
+;;; Distance
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (square x) (* x x))
+
+;; shortest distance between a point and a non-infinite line. Can be optimized (a lot).
+(define (get-distance x y x1 y1 x2 y2)
+  (define dist-1-to-2 (sqrt (+ (square (- x2 x1))
+                               (square (- y2 y1)))))
+  (define dist-0-to-1 (sqrt (+ (square (- x1 x))
+                               (square (- y1 y)))))
+  (define dist-0-to-2 (sqrt (+ (square (- x2 x))
+                               (square (- y2 y)))))                       
+  (cond ((= 0 dist-1-to-2)
+         dist-0-to-1)
+        ((= 0 dist-0-to-1)
+         0)
+        ((= 0 dist-0-to-2)
+         0)
+        (else
+         (define angle-1 (acos (/ (- (+ (square dist-1-to-2)
+                                        (square dist-0-to-1))
+                                     (square dist-0-to-2))
+                                  (* 2
+                                     dist-1-to-2
+                                     dist-0-to-1))))
+         
+         (define angle-2 (acos (/ (- (+ (square dist-1-to-2)
+                                        (square dist-0-to-2))
+                                     (square dist-0-to-1))
+                                  (* 2
+                                     dist-1-to-2
+                                     dist-0-to-2))))
+         ;;(c-display "angle-1" (/ (* 180 angle-1) pi))
+         ;;(c-display "angle-2" (/ (* 180 angle-2) pi))
+         
+         (if (or (>= angle-1 (/ pi 2))
+                 (>= angle-2 (/ pi 2)))
+             (min dist-0-to-1
+                  dist-0-to-2)
+             (/ (abs (- (* (- x2 x1) ;; http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+                           (- y1 y))
+                        (* (- x1 x)
+                           (- y2 y1))))
+                dist-1-to-2)))))
+
+#||
+(test (get-distance 0 0
+                    10 0
+                    20 0)
+      10)
+
+(test (get-distance 30 0
+                    10 0
+                    20 0)
+      10)
+
+(test (get-distance 0 30
+                    0 10
+                    0 20)
+      10)
+
+(test (get-distance 4 10
+                    5 0              
+                    5 10)
+      1)
+
+(test (get-distance 0 0
+                    0 0
+                    5 5)
+      0.0)
+(test (get-distance 0 0
+                    0 0
+                    0 0)
+      0.0)
+(test (get-distance 0 0
+                    5 0
+                    5 0)
+      5.0)
+||#
+
+
 (define (get-place-from-y Button Y)
   (define place (ra:get-place-from-y Y))
   (if (= Button *right-button*)
@@ -152,6 +235,7 @@
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)
+  (ra:set-no-mouse-fx)
   (ra:set-no-mouse-note)
   (ra:set-no-mouse-track)
   (ra:cancel-current-node)
@@ -365,6 +449,8 @@
                                                              :node Node)
                                      (get-cycle-and-node Button X Y Rest))))
 
+
+                         
 ;; This cycle handler makes sure all move-existing-node cycles are given a chance to run before the create-new-node cycles.
 (add-delta-mouse-handler
  :press (lambda (Button X Y)
@@ -382,15 +468,13 @@
                      (make-move-node-handler :move Move
                                              :release Release
                                              :node New-node))
-
+ 
  :release (lambda (Button X Y Cycle-and-node)
-            (c-display "cycle-and-node: " Cycle-and-node (Cycle-and-node :release))
             (define Release (Cycle-and-node :release))
             (define node (Cycle-and-node :node))
             (Release Button X Y node))
 
- :mouse-pointer-is-hidden #t
- )
+ :mouse-pointer-is-hidden #t)
 
 
    
@@ -427,12 +511,16 @@
                                               :y Node-y
                                               )))))
 
-  (define (press-and-create-new-node Button X Y)
+  (define (can-create Button X Y)
     (define area-box (Get-area-box))
     (and (or (and Create-button (= Button Create-button))
              (and (not Create-button) (left-or-right-button Button)))
          area-box
-         (inside-box area-box X Y)
+         (inside-box area-box X Y)))
+    
+  (define (press-and-create-new-node Button X Y)
+    (define area-box (Get-area-box))
+    (and (can-create Button X Y)
          (begin
            (define min (Get-min-value))
            (define max (Get-max-value))
@@ -448,7 +536,7 @@
                               (make-node :node-info Node-info
                                          :value Value
                                          :y Y))))))
-
+  
   (define (move-and-release Button Dx Dy Node)
     (define min (Get-min-value))
     (define max (Get-max-value))
@@ -534,6 +622,7 @@
                         :Move-node (lambda (Num Value Place)
                                      (ra:set-temponode Num Value (or Place -1))
                                      (define new-value (ra:get-temponode-value Num)) ;; might differ from Value
+                                     new-value
                                      )
                         :Set-indicator-node (lambda (Num)
                                               (ra:set-indicator-temponode Num))
@@ -591,10 +680,13 @@
 (ra:get-pitch-value 1 0)
 ||#
 
+#||
 (add-delta-mouse-handler
  :press (lambda ($button $x $y)
           (c-display $x $y)
           #f))
+||#
+
 
 (define-match get-min-pitch-in-current-track-0
   N N   #f           :> 0
@@ -809,14 +901,34 @@
                          0
                          (ra:get-num-notes *current-track-num*)))
 
-;; Set *current-note-num* and mouse note
+;; Set *current-note-num*
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (set! *current-note-num* (and *current-subtrack-num*
-                                       (get-note-num $x $y)))
-         (if *current-note-num*
-             (ra:set-mouse-note *current-note-num* *current-track-num*))))
+                                       (get-note-num $x $y)))))
 
+         
+(define-match get-shortest-velocity-distance-0
+  ___ _________ X Y X1 Y1 X2 Y2 :> (get-distance X Y X1 Y1 X2 Y2) :where (and (>= Y Y1)
+                                                                              (< Y Y2))
+  Vel Vel       _ _ __ __ __ __ :> #f
+  Vel Total-vel X Y __ __ X2 Y2 :> (get-shortest-velocity-distance-0 (1+ Vel)
+                                                                     Total-vel
+                                                                     X Y
+                                                                     X2 Y2
+                                                                     (ra:get-velocity-x Vel *current-note-num* *current-track-num*)
+                                                                     (ra:get-velocity-y Vel *current-note-num* *current-track-num*)))
+
+(define (get-shortest-velocity-distance X Y)
+  (if (not *current-note-num*)
+      #f
+      (get-shortest-velocity-distance-0 2
+                                        (ra:get-num-velocities *current-note-num* *current-track-num*)
+                                        X Y
+                                        (ra:get-velocity-x 0 *current-note-num* *current-track-num*)
+                                        (ra:get-velocity-y 0 *current-note-num* *current-track-num*)
+                                        (ra:get-velocity-x 1 *current-note-num* *current-track-num*)
+                                        (ra:get-velocity-y 1 *current-note-num* *current-track-num*))))
 
 ;; add and move velocity
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -840,6 +952,7 @@
                         :Make-undo (lambda () (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
                                            (and *current-note-num*
+                                                (not (get-current-fxnum))
                                                 (begin
                                                   (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
@@ -879,6 +992,7 @@
                            #f))))))
 
 
+#||
 ;; show current velocity
 (add-mouse-move-handler
  :move (lambda (Button X Y)
@@ -896,7 +1010,7 @@
                                                       (velocity-info :tracknum))
                       (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                     (c-display "no current"))))))
-
+||#
 
 #||
 (ra:get-num-velocities 0 0)
@@ -963,18 +1077,18 @@
 (define-match get-fxnode-2
   X Y Tracknum Fxnum Fxnodenum Fxnodenum      :> #f
   X Y Tracknum Fxnum Fxnodenum Total-Fxnodes :> (begin                                                                     
-                                                         (define box (get-fxnode-box Tracknum Fxnum Fxnodenum))
-                                                         (if (> (box :y1) Y)
-                                                             #f
-                                                             (highest-rated-fxnode-info Y
-                                                                                          (list (get-fxnode-2 X Y Tracknum Fxnum (1+ Fxnodenum) Total-Fxnodes)
-                                                                                                (and (inside-box box X Y)
-                                                                                                     (make-fxnode-info :fxnodenum Fxnodenum
-                                                                                                                       :fxnum Fxnum
-                                                                                                                       :tracknum Tracknum
-                                                                                                                       :value (ra:get-fxnode-value Fxnodenum Fxnum Tracknum)
-                                                                                                                       :y (box :y)
-                                                                                                                       )))))))
+                                                  (define box (get-fxnode-box Tracknum Fxnum Fxnodenum))
+                                                  (if (> (box :y1) Y)
+                                                      #f
+                                                      (highest-rated-fxnode-info Y
+                                                                                 (list (get-fxnode-2 X Y Tracknum Fxnum (1+ Fxnodenum) Total-Fxnodes)
+                                                                                       (and (inside-box box X Y)
+                                                                                            (make-fxnode-info :fxnodenum Fxnodenum
+                                                                                                              :fxnum Fxnum
+                                                                                                              :tracknum Tracknum
+                                                                                                              :value (ra:get-fxnode-value Fxnodenum Fxnum Tracknum)
+                                                                                                              :y (box :y)
+                                                                                                              )))))))
 
 (define-match get-fxnode-1
   X Y Tracknum Fxnum Fxnum     :> #f
@@ -1008,7 +1122,69 @@
 ||#
 
 
-(define *current-fx-num* 0)
+(define-struct fx/distance
+  :fx
+  :distance)
+
+(define *current-fx/distance* #f)
+(define (getit) ;; temporary workaround for a bug in s7
+  *current-fx/distance*)
+
+(define (get-current-fxnum)
+  (and (getit)
+       ((getit) :fx)))
+(define (get-current-fx-distance)
+  (and (getit)
+       ((getit) :distance)))
+  
+  
+(define (min-fx/distance A B)
+  (cond ((not A)
+         B)
+        ((not B)
+         A)
+        ((<= (A :distance) (B :distance))
+         A)
+        (else
+         B)))
+          
+(define-match get-closest-fx-1
+  _______ ___________ Fx X Y X1 Y1 X2 Y2 :> (make-fx/distance :fx Fx
+                                                              :distance (get-distance X Y X1 Y1 X2 Y2))
+                                            :where (and (>= Y Y1)
+                                                        (< Y Y2))
+  Nodenum Nodenum     __ _ _ __ __ __ __ :> #f
+  Nodenum Total-Nodes Fx X Y __ __ X2 Y2 :> (get-closest-fx-1 (1+ Nodenum)
+                                                              Total-Nodes
+                                                              Fx
+                                                              X Y
+                                                              X2 Y2
+                                                              (ra:get-fxnode-x Nodenum Fx *current-track-num*)
+                                                              (ra:get-fxnode-y Nodenum Fx *current-track-num*)))
+
+(define-match get-closest-fx-0
+  Fx Fx        _ _ :> #f
+  Fx Total-Fxs X Y :> (min-fx/distance (get-closest-fx-1 2
+                                                         (ra:get-num-fxnodes Fx *current-track-num*)
+                                                         Fx
+                                                         X Y
+                                                         (ra:get-fxnode-x 0 Fx *current-track-num*)
+                                                         (ra:get-fxnode-y 0 Fx *current-track-num*)
+                                                         (ra:get-fxnode-x 1 Fx *current-track-num*)
+                                                         (ra:get-fxnode-y 1 Fx *current-track-num*))
+                                       (get-closest-fx-0 (1+ Fx)
+                                                         Total-Fxs
+                                                         X
+                                                         Y)))
+                                                                
+
+
+(define (get-closest-fx X Y)
+  (get-closest-fx-0 0 (ra:get-num-fxes *current-track-num*) X Y))
+
+#||
+(ra:get-num-fxes 0)
+||#
 
 ;; add and move fxnode
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -1017,8 +1193,6 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
                                                        (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
-                                                         ;(if fxnode-info
-                                                         ;    (ra:set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum)))
                                                          (and fxnode-info
                                                               (callback fxnode-info (fxnode-info :value) (fxnode-info :y))))))
                         :Get-min-value (lambda () (ra:get-fx-min-value 0))
@@ -1031,19 +1205,19 @@
                                                                (info :tracknum)))
                         :Make-undo (lambda () (ra:undo-fxs *current-track-num*))
                         :Create-new-node (lambda (Value Place callback)
-                                           (and *current-fx-num*
+                                           (define Fxnum (get-current-fxnum))
+                                           (and Fxnum
                                                 (begin
-                                                  (define Num (ra:create-fxnode Value Place *current-fx-num* *current-track-num*))
-                                                  (c-display "in:" Value ", out:" (ra:get-fxnode-value Num *current-fx-num* *current-track-num*))
-                                                  (if (= -1 Num)
+                                                  (define Nodenum (ra:create-fxnode Value Place Fxnum *current-track-num*))
+                                                  (if (= -1 Nodenum)
                                                       #f
                                                       (callback (make-fxnode-info :tracknum *current-track-num*
-                                                                                  :fxnum *current-fx-num*
-                                                                                  :fxnodenum Num
+                                                                                  :fxnum Fxnum
+                                                                                  :fxnodenum Nodenum
                                                                                   :value Value
                                                                                   :y #f ;; dont need it.
                                                                                   )
-                                                                (ra:get-fxnode-value Num *current-fx-num* *current-track-num*))))))
+                                                                (ra:get-fxnode-value Nodenum Fxnum *current-track-num*))))))
                         :Set-indicator-node (lambda (fxnode-info)
                                               (ra:set-indicator-fxnode (fxnode-info :fxnodenum)
                                                                        (fxnode-info :fxnum)
@@ -1071,25 +1245,71 @@
                              #t)
                            #f))))))
 
-#||
-;; show and set current fx
+;; Show and set:
+;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
+;;  2. current velocity node, or current fxnode
+;;
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (and *current-track-num*
               (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
-              (begin
-                (define velocity-info (get-velocity-info X Y *current-track-num*))
-                (c-display "got velocity info " velocity-info)
-                (if velocity-info
-                    (begin
-                      (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
-                      (c-display "setting current to " (velocity-info :velocitynum))
-                      (ra:set-indicator-velocity-node (velocity-info :velocitynum)
-                                                      (velocity-info :notenum)
-                                                      (velocity-info :tracknum))
-                      (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
-                    (c-display "no current"))))))
-||#
+              (lazy
+                (define-lazy velocity-info (get-velocity-info X Y *current-track-num*))
+                (define-lazy fxnode-info (get-fxnode-info X Y *current-track-num*))
+
+                (define-lazy velocity-dist (get-shortest-velocity-distance X Y))
+                (define-lazy fx-dist (get-closest-fx X Y))
+
+                (define-lazy velocity-dist-is-shortest
+                  (cond ((not velocity-dist)
+                         #f)
+                        ((not fx-dist)
+                         #t)
+                        (else
+                         ;;(c-display "dist:" fx-dist) ;; :distance))
+                         (<= velocity-dist
+                             (fx-dist :distance)))))
+
+                (define-lazy fx-dist-is-shortest
+                  (cond ((not fx-dist)
+                         #f)
+                        ((not velocity-dist)
+                         #t)
+                        (else
+                         (<= (fx-dist :distance)
+                             velocity-dist))))
+
+                (set! *current-fx/distance* #f)
+                
+                (cond (velocity-info
+                       (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
+                       ;;(c-display "setting current to " (velocity-info :velocitynum))
+                       (ra:set-indicator-velocity-node (velocity-info :velocitynum)
+                                                       (velocity-info :notenum)
+                                                       (velocity-info :tracknum))
+                       (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                      
+                      (fxnode-info
+                       (ra:set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum))
+                       (ra:set-indicator-fxnode (fxnode-info :fxnodenum)
+                                                (fxnode-info :fxnum)
+                                                (fxnode-info :tracknum))
+                       (ra:set-current-fxnode  (fxnode-info :fxnodenum)
+                                               (fxnode-info :fxnum)
+                                               (fxnode-info :tracknum))
+                       )
+
+                      (velocity-dist-is-shortest
+                       (ra:set-mouse-note *current-note-num* *current-track-num*))
+
+                      (fx-dist-is-shortest
+                       (set! *current-fx/distance* fx-dist)                                              
+                       (ra:set-mouse-fx (fx-dist :fx) *current-track-num*)
+                       )
+                      
+                      (else
+                       #f))))))
+
 
 
 ;; track borders

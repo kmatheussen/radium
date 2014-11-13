@@ -1051,8 +1051,16 @@ int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
   return note->subtrack;
 }
 
-void setNoMouseNote(void){
-  root->song->tracker_windows->wblock->mouse_note = NULL;
+void setNoMouseNote(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return;
+  
+  if (wblock->mouse_note != NULL){
+    wblock->mouse_note = NULL;
+    wblock->block->is_dirty = true;
+  }
 }
 
 void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
@@ -1294,6 +1302,25 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
 // fxes
 //////////////////////////////////////////////////
 
+void addFX(int windownum, int blocknum, int tracknum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return;
+
+  AddFXNodeLineCurrPos(window, wblock, wtrack);
+}
+
+
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -1522,6 +1549,30 @@ void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, in
   setIndicatorNode(node->element);
 }
 
+void setNoMouseFx(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return;
+  
+  if (wblock->mouse_fxs != NULL){
+    wblock->mouse_fxs = NULL;
+    wblock->block->is_dirty = true;
+  }
+}
+
+void setMouseFx(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+  else if (wblock->mouse_fxs != fxs){
+    wblock->mouse_fxs = fxs;
+    wblock->block->is_dirty = true;
+  }
+}
 
 void undoFxs(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;

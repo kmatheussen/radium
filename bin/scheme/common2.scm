@@ -25,8 +25,15 @@
                 (keep func (cdr list)))
           (keep func (cdr list)))))
 
-
 ;;(keep (lambda (x) (= x 1)) (list 1 3 1 5))
+
+(define (remove func list)
+  (if (null? list)
+      '()
+      (if (func (car list))
+          (remove func (cdr list))
+          (cons (car list)
+                (remove func (cdr list))))))
 
 (define-macro (push-back! list el)
   `(set! ,list (append ,list (list ,el))))
@@ -45,6 +52,53 @@
   (min Max
        (max Min Try-it)))
 
+(define (min-notfalse . Args)
+  (match (list Args)
+         ()          :> #f
+         (N)         :> N
+         (#f . Rest) :> (apply min-notfalse Rest)
+         (N  . Rest) :> (let ((that (apply min-notfalse Rest)))
+                          (if that
+                              (min N that)
+                              N))))
+
+#||
+(test (min-notfalse)
+      #f)
+(test (min-notfalse #f)
+      #f)
+(test (min-notfalse #f 5)
+      5)
+(test (min-notfalse 5 #f)
+      5)
+(test (min-notfalse 8 #f 5)
+      5)
+||#
+
+(define (max-notfalse . Args)
+  (match (list Args)
+         ()          :> #f
+         (N)         :> N
+         (#f . Rest) :> (apply max-notfalse Rest)
+         (N  . Rest) :> (let ((that (apply max-notfalse Rest)))
+                          (if that
+                              (max N that)
+                              N))))
+
+#||
+(test (max-notfalse)
+      #f)
+(test (max-notfalse #f)
+      #f)
+(test (max-notfalse #f 5)
+      5)
+(test (max-notfalse 5 #f)
+      5)
+(test (max-notfalse 8 #f 5)
+      8)
+||#
+
+
 
 ;; force and delay are missing from s7. Simple implementation below.
 (define-macro (delay . body)
@@ -54,11 +108,11 @@
              ,@body)))
 
 (define (force something)
-  (if (not (something 0))
+  (if (not (vector-ref something 0))
       (begin
-        (set! (something 1) ((something 2)))
-        (set! (something 0) #t)))
-  (something 1))
+        (vector-set! something 1 ((vector-ref something 2)))
+        (vector-set! something 0 #t)))
+  (vector-ref something 1))
 
 #||
 (define a (delay
@@ -111,11 +165,13 @@
                 `(hash-table-set! ,table ,(symbol->keyword key) ,key))
               keys)
        (lambda (key)
-         (let ((ret (,table key)))
-           (if (and (not ret)
-                    (not (memq key keys)))
-               (throw (<-> "key '" key ,(<-> "' not found in struct '" name "'")))
-               ret))))))
+         (if (eq? key :dir)
+             ,table
+             (let ((ret (,table key)))
+               (if (and (not ret)
+                        (not (memq key keys)))
+                   (throw (<-> "key '" key ,(<-> "' not found in struct '" name "'")))
+                   ret)))))))
 
 #||
 (pretty-print (macroexpand (define-struct teststruct
@@ -138,6 +194,7 @@
 (define t (make-test :c 2))
 (t :b)
 (t :c)
+(t :dir)
 (t :bc)
 
 ||#
@@ -253,3 +310,129 @@
        (<  X (+ (Box :x2) width/2))
        (>= Y (Box :y1))
        (<  Y (Box :y2))))
+
+
+;; Replaces all occurences of A with B in List
+(define-match deep-list-replace
+  A B A          :> B
+  _ _ (        ) :> '()
+  A B (R . Rest) :> (cons (deep-list-replace A B R)
+                          (deep-list-replace A B Rest))
+  A B C          :> C)
+                           
+#||
+(test (deep-list-replace 1 2 1)
+      2)
+(test (deep-list-replace '() 2 '())
+      2)
+(test (deep-list-replace 1 2 3)
+      3)
+(test (deep-list-replace 1 2 '(1 1))
+      '(2 2))
+(test (deep-list-replace 1 2 '(1 1 . 1))
+      '(2 2 . 2))
+(test (deep-list-replace 1 2 '(1 (1 . 1) 2 (2 . 1) (3 1)))
+      '(2 (2 . 2) 2 (2 . 2) (3 2)))
+||#
+
+(define-match deep-list-replace-several
+  ()            List :> List
+  ((A B) . ABs) List :> (deep-list-replace-several ABs
+                                                   (deep-list-replace A B List)))
+
+#||
+(test (deep-list-replace-several '((1 2)(3 4)) '(1 3))
+      '(2 4))
+(test (deep-list-replace-several '((a (force a))) '(+ a a a))
+      '(+ (force a) (force a) (force a)))
+||#
+
+
+#||
+for .emacs:
+
+(font-lock-add-keywords
+ 'scheme-mode
+ '(("(\\(define-lazy\\)\\>\\s-*(?\\(\\sw+\\)?"
+    (1 font-lock-keyword-face)
+    (2 font-lock-type-face)
+    (3 (cond ((match-beginning 1) font-lock-function-name-face)
+	     ((match-beginning 2) font-lock-variable-name-face)
+	     ((match-beginning 3) font-lock-function-name-face)
+	     (t font-lock-type-face))
+       nil t))))
+
+(font-lock-add-keywords
+ 'scheme-mode
+ '(("(\\(lazy\\)\\>\\s-*(?\\(\\sw+\\)?"
+    (1 font-lock-keyword-face)
+    (2 (cond ((match-beginning 1) font-lock-function-name-face)
+	     ((match-beginning 2) font-lock-variable-name-face)
+	     (t font-lock-type-face))
+       nil t))))
+||#
+
+(define-macro (lazy . body)
+  
+  (define-match is-define-lazy
+    (define-lazy _ _ ) :> #t
+    __________________ :> #f)
+
+  (define-match get-lazy-replacement
+    (define-lazy Name _____) :> `(,Name (force ,Name))
+    ________________________ :> (throw 'something-went-wrong-in-get-lazy-replacement-in-lazy))
+  
+  (define-match transform-lazy-code
+    Replacements (define-lazy Name Value) :> `(define ,Name (delay ,(deep-list-replace-several Replacements Value)))
+    ____________ _________________________ :> #f)
+  
+  (define lazy-vals (keep is-define-lazy body))
+  (define lazy-replacements (map get-lazy-replacement lazy-vals))
+  (define lazy-vals-code (map (lambda (lazy-val)
+                                (transform-lazy-code lazy-replacements lazy-val))
+                              lazy-vals))
+  
+  (define rest-body (remove is-define-lazy body))
+  (define rest-body-code (deep-list-replace-several lazy-replacements rest-body))
+  
+  `(begin
+     ,@lazy-vals-code
+     ,@rest-body-code))
+
+#||
+(test (lazy
+       (define-lazy a 50)
+       (define-lazy b 60)
+       (+ a b))
+      110)
+
+(test (let ((val 0))
+        (lazy
+         (define-lazy a (begin
+                          (set! val (+ val 1))
+                          val))
+         (+ a a a)))
+      3)
+
+(test (lazy
+        (define-lazy a 5)
+        (define-lazy b a)
+        b)
+      5)
+
+(pretty-print (macroexpand (lazy
+                             (define-lazy a 5)
+                             (define-lazy b a)
+                             b)))
+
+(macroexpand (lazy
+              (define-lazy a (begin
+                               (set! val (+ val 1))
+                               val))
+              (+ a a a)))
+
+(macroexpand (lazy
+              (define-lazy a 50)
+              (define-lazy b 60)
+              (+ a b)))
+||#

@@ -712,12 +712,14 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
                                                 NULL
                                                 );
 
+  bool is_current = wblock->mouse_track==TEMPONODETRACK;
+  
   for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
-    GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
+    GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, is_current ? 2.3 : 1.5);
 
   wblock->reltempo_nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
  
-  if (indicator_node != NULL || wblock->mouse_track==TEMPONODETRACK)
+  if (indicator_node != NULL || is_current)
     VECTOR_FOR_EACH(Node *, node, wblock->reltempo_nodes){
       if(wblock->mouse_track==TEMPONODETRACK)
         draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
@@ -1088,10 +1090,12 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   }
 
 
+  bool is_current = wblock->mouse_note==note;
+  
   // border
   {
-    float width = 1.75;
-    GE_Context *c = GE_mix_color(GE_get_rgb(1), GE_get_rgb(15), 300);
+    float width = is_current ? 2.3 : 1.75;
+    GE_Context *c = GE_mix_color(GE_get_rgb(1), GE_get_rgb(15), is_current ? 600 : 300);
 
     for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
       GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
@@ -1103,7 +1107,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
     create_track_peaks(window, wblock, wtrack, note, nodelines);
 
   // nodes
-  if (wblock->mouse_note==note)
+  if (is_current)
     VECTOR_FOR_EACH(Node *, node, nodes){
       draw_skewed_box(window, node->element, 5, node->x, node->y - wblock->t.y1);
     }END_VECTOR_FOR_EACH;
@@ -1145,12 +1149,14 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
 
   GE_Context *line_color = GE_color(fxs->fx->color);
 
+  bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
+  
   for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
-    GE_line(line_color, ns->x1, ns->y1, ns->x2, ns->y2, 1.5);
+    GE_line(line_color, ns->x1, ns->y1, ns->x2, ns->y2, is_current ? 2.3 : 1.5);
 
-  if (indicator_node != NULL || wblock->mouse_track==wtrack->l.num)
+  if (indicator_node != NULL || is_current)
     VECTOR_FOR_EACH(Node *, node, nodes){
-      if (wblock->mouse_track==wtrack->l.num)
+      if (wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs)
         draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
       if (node->element==indicator_node)
         draw_node_indicator(node->x, node->y - wblock->t.y1);
