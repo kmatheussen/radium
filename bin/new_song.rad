@@ -45,7 +45,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-10
+12
 author
 0
 STRING_TYPE
@@ -78,6 +78,14 @@ comment
 6
 STRING_TYPE
 
+comment
+7
+STRING_TYPE
+
+comment
+8
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -103,7 +111,7 @@ TRACKER_WINDOW
 913
 
 ?height
-400
+574
 
 ?fontID
 0
@@ -169,7 +177,7 @@ WBLOCK
 0
 
 ?curr_realline
-15
+7
 
 ?num_reallines
 64
@@ -404,15 +412,50 @@ TRACK
 2
 
 \
-FXS
+NOTE
+3
+37940
+65534
+49.79999923706055
+0
+22418
+63
+65533
+65534
+52428
+1
+
+\
+VELOCITIES
 12
+17245
+65534
+36628
+16
+51737
+65534
+1544
+20
+37940
+65534
+45014
+/
+
+\
+PITCHES
+/
+/
+
+\
+FXS
+11
 
 \
 FX
-12
+11
 
 ?name
-System Volume
+System In On/Off
 
 ?color
 4
@@ -424,33 +467,80 @@ System Volume
 65536
 
 ?effect_num
-12
+11
 
 \
 FXDATA
 
 ?num
-12
+11
 
 ?name
-System Volume
+System In On/Off
 /
 /
 
 \
 FXNODELINES
-2
-1
-19
-34280
-5
+0
+10347
+65534
+46117
+14
+58635
+65534
+11473
+/
+/
+
+\
+FXS
+28
+
+\
+FX
+28
+
+?name
+System Eq1 On/Off
+
+?color
+12
+
+?min
+0
+
+?max
+65536
+
+?effect_num
+28
+
+\
+FXDATA
+
+?num
+28
+
+?name
+System Eq1 On/Off
+/
+/
+
+\
+FXNODELINES
+3
+48288
+65534
+56488
+9
 20694
 65534
-54833
-26
+39056
+16
 0
 65534
-21756
+56046
 /
 /
 /
@@ -2063,7 +2153,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-51
+52
 Amount
 0
 FLOAT_TYPE
@@ -2084,11 +2174,11 @@ Inter-voice phase
 0
 FLOAT_TYPE
 63.97200012207031
-Minimum delay
+Min delay
 0
 FLOAT_TYPE
 4.995742797851562
-Modulation depth
+Mod depth
 0
 FLOAT_TYPE
 5.997910499572754
@@ -2096,6 +2186,10 @@ Modulation rate
 0
 FLOAT_TYPE
 0.499700665473938
+Overlap
+0
+FLOAT_TYPE
+1
 Q
 0
 FLOAT_TYPE

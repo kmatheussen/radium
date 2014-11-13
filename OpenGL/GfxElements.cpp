@@ -543,7 +543,7 @@ static std::vector<vl::dvec2> trianglestrip;
 void GE_trianglestrip_start(){
   trianglestrip.clear();
 }
-void GE_trianglestrip_add(float x, float y){
+void GE_trianglestrip_add(GE_Context *c, float x, float y){
   trianglestrip.push_back(vl::dvec2(x,y));
 }
 void GE_trianglestrip_end(GE_Context *c){

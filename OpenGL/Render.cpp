@@ -821,7 +821,7 @@ static GE_Context *get_note_background(int notenum, bool highlight){
 
   rgb = GE_alpha(rgb, 0.7);
 
-  return GE(rgb);
+  return GE(rgb); //GE_gradient(rgb, GE_get_rgb(1));
 }
 
 void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
@@ -1149,10 +1149,10 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
   vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
   VECTOR_push_back(&wtrack->fx_nodes, nodes);
 
-  GE_Context *line_color = GE_color(fxs->fx->color);
-
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
   
+  GE_Context *line_color = is_current ? GE_color(fxs->fx->color) : GE_mix_color(GE_get_rgb(fxs->fx->color), GE_get_rgb(15), 600);
+
   for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
     GE_line(line_color, ns->x1, ns->y1, ns->x2, ns->y2, is_current ? 2.3 : 1.5);
 
@@ -1186,21 +1186,6 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
 void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
-  if(left_subtrack==-1) {
-    VECTOR_clean(&wtrack->pitch_nodes);
-
-    for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
-      create_track_text(window, wblock, wtrack, realline);
-      //create_track_pitches(window, wblock, wtrack, realline);
-    }
-
-    const struct Notes *note=wtrack->track->notes;
-    while(note != NULL){
-      create_track_pitchlines(window, wblock, wtrack, note);
-      note = NextNote(note);
-    }
-  }
-
   {
     VECTOR_clean(&wtrack->velocity_nodes);
   
@@ -1223,6 +1208,22 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
 
     create_track_stops(window, wblock, wtrack);
   }
+
+  if(left_subtrack==-1) {
+    VECTOR_clean(&wtrack->pitch_nodes);
+
+    for(int realline = 0 ; realline<wblock->num_reallines ; realline++) {
+      create_track_text(window, wblock, wtrack, realline);
+      //create_track_pitches(window, wblock, wtrack, realline);
+    }
+
+    const struct Notes *note=wtrack->track->notes;
+    while(note != NULL){
+      create_track_pitchlines(window, wblock, wtrack, note);
+      note = NextNote(note);
+    }
+  }
+
 }
 
 
