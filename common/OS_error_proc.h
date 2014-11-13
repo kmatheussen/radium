@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
+extern LANGSPEC int SYSTEM_show_message(char *message); // Used before and after Qt is running
+
 extern bool Error_init(void);
 
 extern LANGSPEC void RError(const char *fmt,...);

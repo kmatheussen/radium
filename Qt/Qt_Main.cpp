@@ -106,6 +106,7 @@ extern struct Root *root;
 int num_users_of_keyboard = 0;
 
 bool is_starting_up = true;
+bool g_qt_is_running = false;
 //void gakk();
 
 class MyApplication : public QApplication{
@@ -522,7 +523,7 @@ extern void TIME_init(void);
 int radium_main(char *arg){
 
   TIME_init();
-    
+
   default_style_name = QApplication::style()->objectName();
 
 #if 0
@@ -554,7 +555,15 @@ int radium_main(char *arg){
 
   setApplicationColors(qapplication);
 
+  g_qt_is_running = true;
 
+  #if 0
+    vector_t v = {0};
+  VECTOR_push_back(&v,"hepp1");
+  VECTOR_push_back(&v,"hepp2");
+  VECTOR_push_back(&v,"hepp3");
+  GFX_Message(&v, "hepp hepp");
+#endif
 
 
 #ifdef __linux__
@@ -731,13 +740,15 @@ int radium_main(char *arg){
   #endif
 
   //  RWarning("warning!");
-  
+    
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
   GTK_MainLoop();
 #endif
 
+  g_qt_is_running = false;
+  
   GL_stop_widget(editor->gl_widget);
 
 #if 0

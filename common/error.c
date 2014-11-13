@@ -58,7 +58,9 @@ static void show_message(int type, char *message){
   sprintf(full_message,"%s: %s", typestring, message);
   
   int ret = GFX_Message(&v, full_message);
-  
+  if (ret==-1)
+    ret = SYSTEM_show_message(full_message);
+      
   switch(ret){
   case 0: break;
   case 1: abort();

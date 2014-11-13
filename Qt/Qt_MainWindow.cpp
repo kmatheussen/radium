@@ -30,7 +30,7 @@ extern "C"{
 #include <qfiledialog.h>
 
 extern bool is_starting_up;
-
+extern bool g_qt_is_running;
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -603,6 +603,9 @@ static int show_message(vector_t *buttons, const char *message){
 
 
 int GFX_Message(vector_t *buttons, const char *fmt,...){
+  if (g_qt_is_running==false)
+    return -1;
+ 
   char message[1000];
   va_list argp;
   

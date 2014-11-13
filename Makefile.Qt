@@ -220,9 +220,9 @@ OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_
 OBJ_POSIX=posix_settings.o posix_Player.o 
 
 # Two of the following three must be set empty by the build script.
-OBJ_X11 ?= X11_keyboard.o X11_disk.o X11_Qtstuff.o
-OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
-OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o
+OBJ_X11 ?= X11_keyboard.o X11_disk.o X11_Qtstuff.o X11_error.o
+OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o W_Error.o
+OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o W_Error.o
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o
@@ -924,11 +924,11 @@ X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c
 X11_visual.o:  $(BUILD_DEPENDENCIES) $(P)X11_visual.c 
 	$(CC) $(P)X11_visual.c $(OPT) 
 
-#X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c 
-#	$(CC) X11/X11_error.c $(OPT)
+X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c 
+	$(CC) X11/X11_error.c $(OPT)
 
-#W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c 
-#	$(CC) windows/W_Error.c $(OPT)
+W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c 
+	$(CC) windows/W_Error.c $(OPT)
 
 W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c 
 	$(CC) windows/W_Keyboard.c $(OPT)

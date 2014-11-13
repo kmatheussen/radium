@@ -97,11 +97,11 @@ CFLAGS=-fPIC ./configure --prefix=$PREFIX
 CFLAGS=-fPIC make -j3
 cd ..
 
-#tar xvjf xmessage-1.0.3.tar.bz2
-#cd xmessage-1.0.3
-#./configure --prefix=$PREFIX
-#make -j3
-#cd ..
+tar xvjf xmessage-1.0.3.tar.bz2
+cd xmessage-1.0.3
+./configure --prefix=$PREFIX
+make -j3
+cd ..
 
 tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6
