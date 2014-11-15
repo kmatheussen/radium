@@ -90,6 +90,10 @@ struct MainWidget : public QWidget {
   }
 };
 
+struct PaintingData{
+  int hepp;
+};
+
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
 public:
@@ -153,7 +157,7 @@ public:
     vgscene->vectorGraphicObjects()->push_back(vg.get());
     _rendering->sceneManagers()->push_back(vgscene.get());
 
-    GE_draw_vl(vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+    //GE_draw_vl(NULL, _scroll_transform, _linenumbers_transform, _scrollbar_transform); // fix
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
@@ -315,7 +319,7 @@ static float rnd(float min, float max){
 
 
 static void create_block(int width, int height){
-  GE_clear();
+  //GE_clear();
 
   int num_tracks = 12;
   int num_lines = 512;
@@ -326,18 +330,18 @@ static void create_block(int width, int height){
   float notetrack_width = 3*12+5;
   float line_height = 20;
 
-  GE_Context *linenumberscolor = GE_linenumber(GE_rgba_color_z(255,255,255,150, Z_LINENUMBERS));
-  GE_Context *line_border_color = GE_linenumber(GE_rgba_color_z(150,150,150,50, Z_BACKGROUND + 1));
+  GE_Context *linenumberscolor = GE_rgba_color_z(255,255,255,150, Z_LINENUMBERS);
+  GE_Context *line_border_color = GE_rgba_color_z(150,150,150,50, Z_BACKGROUND + 1);
 
-  GE_Context *waveform = GE_rgba_color_z(145,105,135,250,Z_ABOVE);
+  GE_Context *waveform = GE_rgba_color_z(145,105,135,250,Z_ABOVE(50));
   GE_Context *black = GE_rgb_color(0,0,0);
 
   //GE_Context note_color = GE_rgb_color(20,200,100);
   //GE_Context *velocity_color = GE_rgb_color(50,200,200);
   GE_Context *velocity_border_color = GE_rgb_color(50,50,150);
   GE_Context *track_border_color = GE_rgb_color(20,20,20);
-  GE_Context *background_color = GE_linenumber(GE_gradient_z(GE_rgb(70,100,30), GE_rgba(0,100,200,150), Z_BACKGROUND));
-  GE_Context *background_linecolor = GE_linenumber(GE_rgb_color_z(70,100,30, Z_LINENUMBERS - 1));//, GE_rgb(100,200,70));
+  GE_Context *background_color = GE_gradient_z(GE_rgb(70,100,30), GE_rgba(0,100,200,150), Z_BACKGROUND);
+  GE_Context *background_linecolor = GE_rgb_color_z(70,100,30, Z_LINENUMBERS - 1);//, GE_rgb(100,200,70));
 
   int track1_x1 = 5*12;
 

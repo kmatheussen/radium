@@ -376,6 +376,16 @@ struct NodeLine *create_nodelines(
 }
 
 
+static void drawNodeLines(struct NodeLine *nodelines, int colnum, bool is_selected, float alpha, float alpha_selected){
+  float width = is_selected ? 2.3 : 1.75;
+  GE_Context *c = GE_color_alpha(colnum, is_selected ? alpha_selected : alpha);
+  
+  for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
+    GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
+}
+
+
+
 
 /************************************
    Left slider
@@ -703,7 +713,6 @@ static float get_temponode_x(const struct WBlocks *wblock, const struct ListHead
 }
 
 static void create_reltempotrack(const struct Tracker_Windows *window, struct WBlocks *wblock){
-  GE_Context *line_color = GE_color(4);
 
   struct NodeLine *nodelines = create_nodelines(window,
                                                 wblock,
@@ -713,10 +722,9 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
                                                 );
 
   bool is_current = wblock->mouse_track==TEMPONODETRACK;
-  
-  for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
-    GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, is_current ? 2.3 : 1.5);
 
+  drawNodeLines(nodelines, 4, is_current, 0.6, 0.9);
+  
   wblock->reltempo_nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
  
   if (indicator_node != NULL || is_current)
@@ -823,6 +831,7 @@ static GE_Context *get_note_background(int notenum, bool highlight){
 
   return GE(rgb); //GE_gradient(rgb, GE_get_rgb(1));
 }
+
 
 void create_track_text(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
   char                 **NotesTexts    = wtrack->notelength==3?NotesTexts3:NotesTexts2;
@@ -1091,17 +1100,12 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
     GE_trianglestrip_end(c);
   }
 
-
+  
   bool is_current = wblock->mouse_note==note;
+
   
   // border
-  {
-    float width = is_current ? 2.3 : 1.75;
-    GE_Context *c = GE_mix_color(GE_get_rgb(1), GE_get_rgb(15), is_current ? 600 : 300);
-
-    for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
-      GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
-  }
+  drawNodeLines(nodelines, 1, is_current, 0.3, 0.6);
 
 
   // peaks
@@ -1150,12 +1154,9 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
   VECTOR_push_back(&wtrack->fx_nodes, nodes);
 
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
+
+  drawNodeLines(nodelines, fxs->fx->color, is_current, 0.6, 1.0);
   
-  GE_Context *line_color = is_current ? GE_color(fxs->fx->color) : GE_mix_color(GE_get_rgb(fxs->fx->color), GE_get_rgb(15), 600);
-
-  for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
-    GE_line(line_color, ns->x1, ns->y1, ns->x2, ns->y2, is_current ? 2.3 : 1.5);
-
   if (indicator_node != NULL || is_current)
     VECTOR_FOR_EACH(Node *, node, nodes){
       if (wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs)
