@@ -65,7 +65,13 @@ static vl::GLSLFragmentShader *get_gradient_shader(void){
   static vl::ref<vl::GLSLFragmentShader> gradient_shader = NULL;
 
   if(gradient_shader.get()==NULL) {
-    std::string path = std::string(OS_get_program_path())+std::string(OS_get_directory_separator())+std::string("glsl")+std::string(OS_get_directory_separator())+std::string("gradient.fs");
+    std::string path = std::string(
+                                   OS_get_program_path())
+      + std::string(OS_get_directory_separator())
+      + std::string("glsl")
+      + std::string(OS_get_directory_separator())
+      + std::string("gradient.fs"
+                   );
     gradient_shader = new vl::GLSLFragmentShader(path.c_str());
   }
   
@@ -73,8 +79,8 @@ static vl::GLSLFragmentShader *get_gradient_shader(void){
 }
 
 
-struct GradientTriangles{
-  std::vector<vl::dvec2> triangles; // optimize? copying...
+struct GradientTriangles : public vl::Object{
+  std::vector<vl::dvec2> triangles;
     
   float y, height;
   
@@ -92,6 +98,9 @@ struct GradientTriangles{
     , color2(color2)
   {
   }
+
+  GradientTriangles() {}
+  
 
   vl::Actor *render(vl::VectorGraphics *vg){
     vl::Actor *actor = vg->fillTriangles(triangles);
@@ -144,7 +153,7 @@ struct _GE_Context : public vl::Object{
 
   int _z;
 
-  std::vector<GradientTriangles> gradient_triangles;
+  std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   
 private:
   vl::ref<vl::Image> gradient;
@@ -234,7 +243,7 @@ typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 // Created in the main thread, and then transfered to the OpenGL thread.
 struct PaintingData{
   Contexts contexts;
-  std::vector<GradientTriangles> gradient_triangles;
+  std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   SharedVariables shared_variables;
 };
 
@@ -323,8 +332,9 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
     for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {      
       vl::ref<GE_Context> c = iterator->second;
       
-      for (std::vector<GradientTriangles>::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
-        (*it).set_y_offset(y_offset);
+      for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
+        vl::ref<GradientTriangles> gradient_triangles = *it;
+        gradient_triangles->set_y_offset(y_offset);
       }
     }
   }
@@ -405,8 +415,9 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           setColorEnd(vg, c);
         }
 
-        for (std::vector<GradientTriangles>::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
-          setScrollTransform(c, (*it).render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform);
+        for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
+          vl::ref<GradientTriangles> gradient_triangles = *it;
+          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform);
         }
 #endif
       }
@@ -675,19 +686,22 @@ void GE_trianglestrip_end(GE_Context *c){
 }
 
 
-static std::vector<vl::dvec2> triangles; // optimize?
+
+static int num_gradient_triangles;
+static vl::ref<GradientTriangles> current_gradient_rectangle;
 static float triangles_min_y;
 static float triangles_max_y;
 
 void GE_gradient_triangle_start(void){
-  num_trianglestrips = 0;
-  triangles.clear();
+  current_gradient_rectangle = new GradientTriangles;
+  num_gradient_triangles = 0;
 }
+
 void GE_gradient_triangle_add(GE_Context *c, float x, float y){
   static float y2,y1;
   static float x2,x1;
 
-  if(num_trianglestrips==0){
+  if(num_gradient_triangles==0){
     triangles_min_y = triangles_max_y = y;
   }else{
     if (y<triangles_min_y)
@@ -697,12 +711,12 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
       triangles_max_y = y;
   }
   
-  num_trianglestrips++;
+  num_gradient_triangles++;
   
-  if(num_trianglestrips>=3){
-    triangles.push_back(vl::dvec2(x, c->y(y)));
-    triangles.push_back(vl::dvec2(x1, c->y(y1)));
-    triangles.push_back(vl::dvec2(x2, c->y(y2)));
+  if(num_gradient_triangles>=3){
+    current_gradient_rectangle->triangles.push_back(vl::dvec2(x, c->y(y)));
+    current_gradient_rectangle->triangles.push_back(vl::dvec2(x1, c->y(y1)));
+    current_gradient_rectangle->triangles.push_back(vl::dvec2(x2, c->y(y2)));
   }
   
   y2 = y1;  y1 = y;
@@ -710,15 +724,12 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
 }
 
 void GE_gradient_triangle_end(GE_Context *c){
-  c->gradient_triangles.push_back(
-                                  GradientTriangles(
-                                                    triangles,
-                                                    triangles_min_y,
-                                                    triangles_max_y,
-                                                    get_vec4(c->color.c),
-                                                    get_vec4(c->color.c_gradient)
-                                                    )
-                                  );
+  current_gradient_rectangle->y = triangles_min_y;
+  current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
+  current_gradient_rectangle->color1 = get_vec4(c->color.c);
+  current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);
+
+  c->gradient_triangles.push_back(current_gradient_rectangle);
 }
 
 
