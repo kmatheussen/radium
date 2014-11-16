@@ -397,6 +397,8 @@ private:
         _scrollbar_transform->setLocalAndWorldMatrix(mat);
       }
 
+      GE_update_triangle_gradient_shaders(painting_data, pos);
+      
       _rendering->render();
 
       last_pos = pos;

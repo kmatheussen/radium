@@ -829,7 +829,8 @@ static GE_Context *get_note_background(int notenum, bool highlight){
 
   rgb = GE_alpha(rgb, 0.7);
 
-  return GE(rgb); //GE_gradient(rgb, GE_get_rgb(1));
+  return GE(rgb);
+  //return GE_gradient(rgb, GE_get_rgb(0));
 }
 
 
@@ -1087,17 +1088,30 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   // background
   {
     GE_Context *c = get_note_background(note->note, false);
-    
-    GE_trianglestrip_start();
-    
-    for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
-      GE_trianglestrip_add(c, subtrack_x1, ns->y1);
-      GE_trianglestrip_add(c, ns->x1, ns->y1);
-      GE_trianglestrip_add(c, subtrack_x1, ns->y2);
-      GE_trianglestrip_add(c, ns->x2, ns->y2);
-    }
 
-    GE_trianglestrip_end(c);
+    if(0){
+      GE_trianglestrip_start();
+      
+      for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+        GE_trianglestrip_add(c, subtrack_x1, ns->y1);
+        GE_trianglestrip_add(c, ns->x1, ns->y1);
+        GE_trianglestrip_add(c, subtrack_x1, ns->y2);
+        GE_trianglestrip_add(c, ns->x2, ns->y2);
+      }
+      
+      GE_trianglestrip_end(c);
+    }else{
+      GE_gradient_triangle_start();
+      
+      for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+        GE_gradient_triangle_add(c, subtrack_x1, ns->y1);
+        GE_gradient_triangle_add(c, ns->x1, ns->y1);
+        GE_gradient_triangle_add(c, subtrack_x1, ns->y2);
+        GE_gradient_triangle_add(c, ns->x2, ns->y2);
+      }
+      
+      GE_gradient_triangle_end(c);
+    }
   }
 
   

@@ -45,6 +45,7 @@ void GE_set_height(int height);
 int GE_get_height(void);
 
 #if defined(GE_DRAW_VL)
+void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
 void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
 #endif
 
@@ -150,9 +151,13 @@ void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2);
 void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width);
 //void GE_polygon(GE_Context *c, int num_points, const APoint *points);
 void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points);
+
 void GE_trianglestrip_start();
 void GE_trianglestrip_add(GE_Context *c, float x, float y);
 void GE_trianglestrip_end(GE_Context *c);
 
+void GE_gradient_triangle_start(void);
+void GE_gradient_triangle_add(GE_Context *c, float x, float y);
+void GE_gradient_triangle_end(GE_Context *c);
 
 #endif
