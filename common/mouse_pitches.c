@@ -265,9 +265,9 @@ bool SetMouseActionPitches(
 	struct WTracks *wtrack,
 	int x,int y,
 	int click
-){
+                           ){
   //RError("dead code: SetMouseActionPitches");
-  printf("dead code: SetMouseActionPitches\n");
+  //printf("dead code: SetMouseActionPitches\n");
   return false;
   
 	struct WBlocks *wblock=window->wblock;

@@ -28,8 +28,6 @@
 
 #include "Widget_proc.h"
 
-
-
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>

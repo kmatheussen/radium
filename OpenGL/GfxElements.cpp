@@ -1,4 +1,4 @@
-
+#include <assert.h>
 #include <stdint.h>
 
 #include <map>
@@ -66,12 +66,12 @@ static vl::GLSLFragmentShader *get_gradient_shader(void){
 
   if(gradient_shader.get()==NULL) {
     std::string path = std::string(
-                                   OS_get_program_path())
+        OS_get_program_path())
       + std::string(OS_get_directory_separator())
       + std::string("glsl")
       + std::string(OS_get_directory_separator())
       + std::string("gradient.fs"
-                   );
+    );
     gradient_shader = new vl::GLSLFragmentShader(path.c_str());
   }
   
@@ -79,7 +79,9 @@ static vl::GLSLFragmentShader *get_gradient_shader(void){
 }
 
 
-struct GradientTriangles : public vl::Object{
+struct GradientTriangles : public vl::Effect {
+  GradientTriangles *next;
+  
   std::vector<vl::dvec2> triangles;
     
   float y, height;
@@ -89,46 +91,134 @@ struct GradientTriangles : public vl::Object{
    
   vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
   vl::Uniform *uniform_y;
-  
-  GradientTriangles(std::vector<vl::dvec2> triangles, float y_min, float y_max, vl::fvec4 color1, vl::fvec4 color2)
-    : triangles(triangles)
-    , y(y_min)
-    , height(y_max-y_min)
-    , color1(color1)
-    , color2(color2)
+
+  GradientTriangles()
+    : next(NULL)
   {
+    setAutomaticDelete(false);
   }
 
-  GradientTriangles() {}
+  ~GradientTriangles(){
+    RError("~GradientTriangles was called. That should not happen. Expect crash.");
+    //abort();
+  }
   
-
   vl::Actor *render(vl::VectorGraphics *vg){
+
     vl::Actor *actor = vg->fillTriangles(triangles);
 
-    vl::Effect *effect = new vl::Effect(); //actor->effect();//vg->currentEffect();
-    actor->setEffect(effect);
-        
-    vl::Shader* shader = effect->shader();
-    shader->enable(vl::EN_BLEND);
+    actor->setEffect(this);
 
-    glsl = shader->gocGLSLProgram();
-    
-    glsl->attachShader(get_gradient_shader()); 
+    if (glsl.get()==NULL) {
+      vl::Shader* shader = this->shader();
+      shader->enable(vl::EN_BLEND);
+        
+      glsl = shader->gocGLSLProgram();    
+      glsl->attachShader(get_gradient_shader()); 
+      
+      uniform_y = glsl->gocUniform("y");
+    }
+
 
     glsl->gocUniform("color1")->setUniform(color1);
     glsl->gocUniform("color2")->setUniform(color2);
     glsl->gocUniform("height")->setUniformF(height);
-    
-    uniform_y = glsl->gocUniform("y");
-    uniform_y->setUniformF(y);
 
+    set_y_offset(0.0f);
+    
     return actor;
+  }
+
+  // called from main thread
+  void clean(){
+    triangles.clear();
   }
   
   void set_y_offset(float y_offset){
     uniform_y->setUniformF(y + y_offset);
   }
 };
+
+
+// These two are only accessed by the main thread
+static GradientTriangles *used_gradient_triangles = NULL;
+static GradientTriangles *free_gradient_triangles = NULL;
+
+// main thread
+static void collect_gradient_triangles_garbage(void){
+  GradientTriangles *new_used = NULL;
+  GradientTriangles *new_free = NULL;
+
+  R_ASSERT(free_gradient_triangles == NULL);
+
+  GradientTriangles *gradient = used_gradient_triangles;
+  
+  while(gradient!=NULL){
+    GradientTriangles *next = gradient->next;
+
+    if(gradient->referenceCount()==0) {
+      gradient->clean();
+      gradient->next = new_free;
+      new_free = gradient;
+    } else {
+      gradient->next = new_used;
+      new_used = gradient;
+    }
+
+    gradient = next;
+  }
+
+  used_gradient_triangles = new_used;
+  free_gradient_triangles = new_free;
+}
+
+
+// main thread
+static void add_gradient_triangles(void){
+  for(int i=0;i<15;i++){
+    GradientTriangles *gradient = new GradientTriangles();
+    gradient->next = free_gradient_triangles;
+    free_gradient_triangles = gradient;
+  }
+}
+
+// main thread
+static GradientTriangles *get_gradient_triangles(void){  
+  if (free_gradient_triangles==NULL)
+    collect_gradient_triangles_garbage();
+
+  if (free_gradient_triangles==NULL) {
+    printf("1111. Allocating new gradient triangles\n");
+    add_gradient_triangles();
+  } else {
+    //printf("2222. Using recycled gradient triangles\n");
+  }
+
+  // pop free
+  GradientTriangles *gradient = free_gradient_triangles;
+  free_gradient_triangles = gradient->next;
+
+  // push used
+  gradient->next = used_gradient_triangles;
+  used_gradient_triangles = gradient;
+
+#if 0
+  if(free_gradient_triangles!=NULL)
+    assert(free_gradient_triangles != used_gradient_triangles);
+      
+  if (free_gradient_triangles!=NULL)
+    assert(free_gradient_triangles->next != free_gradient_triangles);
+  
+  assert(used_gradient_triangles->next != used_gradient_triangles);
+
+  if(free_gradient_triangles!=NULL)
+    assert(free_gradient_triangles != used_gradient_triangles);
+#endif
+  
+  return gradient;
+}
+   
+
 
 
 struct _GE_Context : public vl::Object{
@@ -228,7 +318,6 @@ static float get_pen_width_from_key(int key){
 }
 
 
-
 static QMutex mutex;
 
 static GE_Rgb background_color;
@@ -325,6 +414,9 @@ static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
     vg->setImage(NULL);
 }
 
+
+// This function can probably be avoided somehow. The absolute y position of the vertexes should be available for the shader GLSL code, but I haven't
+// figured out how to get it yet.
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
   for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
     std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
@@ -339,6 +431,7 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
     }
   }
 }
+
 
 void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
   vg->setLineSmoothing(true);
@@ -693,7 +786,7 @@ static float triangles_min_y;
 static float triangles_max_y;
 
 void GE_gradient_triangle_start(void){
-  current_gradient_rectangle = new GradientTriangles;
+  current_gradient_rectangle = get_gradient_triangles();
   num_gradient_triangles = 0;
 }
 
@@ -730,6 +823,8 @@ void GE_gradient_triangle_end(GE_Context *c){
   current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);
 
   c->gradient_triangles.push_back(current_gradient_rectangle);
+
+  current_gradient_rectangle = NULL;
 }
 
 
