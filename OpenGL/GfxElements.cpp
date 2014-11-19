@@ -817,10 +817,11 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
 }
 
 void GE_gradient_triangle_end(GE_Context *c){
-  current_gradient_rectangle->y = triangles_min_y;
+  //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
+  current_gradient_rectangle->y = c->y(triangles_max_y);
   current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
-  current_gradient_rectangle->color1 = get_vec4(c->color.c);
-  current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);
+  current_gradient_rectangle->color1 = vl::black; //get_vec4(GE_get_rgb(2));//c->color.c_gradient);
+  current_gradient_rectangle->color2 = get_vec4(c->color.c);
 
   c->gradient_triangles.push_back(current_gradient_rectangle);
 
