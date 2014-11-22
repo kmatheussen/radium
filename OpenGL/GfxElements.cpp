@@ -61,7 +61,7 @@ static vl::vec4 get_vec4(GE_Rgb rgb){
 }
 
 
-static vl::GLSLFragmentShader *get_gradient_shader(void){
+static vl::GLSLFragmentShader *get_gradient_fragment_shader(void){
   static vl::ref<vl::GLSLFragmentShader> gradient_shader = NULL;
 
   if(gradient_shader.get()==NULL) {
@@ -78,6 +78,23 @@ static vl::GLSLFragmentShader *get_gradient_shader(void){
   return gradient_shader.get();
 }
 
+static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
+  static vl::ref<vl::GLSLVertexShader> gradient_shader = NULL;
+
+  if(gradient_shader.get()==NULL) {
+    std::string path = std::string(
+        OS_get_program_path())
+      + std::string(OS_get_directory_separator())
+      + std::string("glsl")
+      + std::string(OS_get_directory_separator())
+      + std::string("gradient.vs"
+    );
+    gradient_shader = new vl::GLSLVertexShader(path.c_str());
+  }
+  
+  return gradient_shader.get();
+}
+
 
 struct GradientTriangles : public vl::Effect {
   GradientTriangles *next;
@@ -85,6 +102,7 @@ struct GradientTriangles : public vl::Effect {
   std::vector<vl::dvec2> triangles;
     
   float y, height;
+  float x, width;
   
   vl::fvec4 color1;
   vl::fvec4 color2;
@@ -114,7 +132,8 @@ struct GradientTriangles : public vl::Effect {
       shader->enable(vl::EN_BLEND);
         
       glsl = shader->gocGLSLProgram();    
-      glsl->attachShader(get_gradient_shader()); 
+      //glsl->attachShader(get_gradient_vertex_shader()); 
+      glsl->attachShader(get_gradient_fragment_shader()); 
       
       uniform_y = glsl->gocUniform("y");
     }
@@ -123,6 +142,8 @@ struct GradientTriangles : public vl::Effect {
     glsl->gocUniform("color1")->setUniform(color1);
     glsl->gocUniform("color2")->setUniform(color2);
     glsl->gocUniform("height")->setUniformF(height);
+    glsl->gocUniform("x")->setUniformF(x);
+    glsl->gocUniform("width")->setUniformF(width);
 
     set_y_offset(0.0f);
     
@@ -817,11 +838,14 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
   x2 = x1;  x1 = x;
 }
 
-void GE_gradient_triangle_end(GE_Context *c){
+void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
   //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
   current_gradient_rectangle->y = c->y(triangles_max_y);
   current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
-  //current_gradient_rectangle->color1 = vl::black;
+
+  current_gradient_rectangle->x = x1;
+  current_gradient_rectangle->width = x2-x1;
+  
   current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
   current_gradient_rectangle->color2 = get_vec4(c->color.c);
 

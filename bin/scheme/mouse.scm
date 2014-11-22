@@ -249,7 +249,7 @@
   current-mouse-cycle)
   
 (define (radium-mouse-press $button $x $y)
-  ;;(c-display "mouse press" $button $x $y)
+  (c-display "mouse press" $button $x $y)
   (cancel-current-stuff)
   (if (not *current-mouse-cycle*)
       (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))

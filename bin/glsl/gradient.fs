@@ -4,8 +4,13 @@
 
 uniform vec4 color1;
 uniform vec4 color2;
+
 uniform float y;
 uniform float height;
+
+uniform float x;
+uniform float width;
+
 
 #if 0
 static GE_Context *get_note_background(int notenum, bool highlight){
@@ -48,14 +53,29 @@ static GE_Context *get_note_background(int notenum, bool highlight){
   //float y2 = (gl_ModelViewMatrix * gl_Vertex)[0].y;
 */
 
+//varying vec4 vertex_position;
+
 void main()
 {    
+
+  //float y = vertex_position.y;//(gl_ModelViewProjectionMatrix*gl_Vertex).x;
+
   //float y2 = (gl_ModelViewMatrix * gl_Vertex)[0].y;
   //float y2 = (1.0*gl_ModelViewProjectionMatrix).y;
-  gl_FragColor = mix(color1,
-                     color2,
-                     //(gl_FragCoord - y) / height // nice effect
-                     (gl_FragCoord.y - y) / height
+  vec4 col = mix(color1,
+                 color2,
+                 //(gl_FragCoord - y) / height // nice effect
+                 (gl_FragCoord.y - y) / height
+                 )
+    ;
+
+  //float x = vertex_position.x;//(gl_ModelViewProjectionMatrix*gl_Vertex).x;
+
+  gl_FragColor = mix(col,
+                     vec4(1.0, 0.0, 0.0, col.a),
+                     (gl_FragCoord.x - x) / (width*12.0)
                      )
     ;
+  
+  //gl_FragColor = vec4(gl_FragCoord.x/1000.0f, gl_FragCoord.y/100.0f, gl_FragCoord.z, 1.0);
 }

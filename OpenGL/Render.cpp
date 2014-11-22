@@ -1107,7 +1107,7 @@ static void create_velocity_gradient_background(
     nodeline = nodeline->next;
   }
 
-  GE_gradient_triangle_end(c);
+  GE_gradient_triangle_end(c, subtrack_x1, subtrack_x2);
 }
 
 static void create_velocities_gradient_background(
@@ -1168,9 +1168,12 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   
   // background
   {
-    GE_Context *c = get_note_background(note->note, false);
 
-    if(note->pitches==NULL){
+    const bool paint_vertical_velocity_gradient = true;
+
+    if(paint_vertical_velocity_gradient==false && note->pitches==NULL){
+      GE_Context *c = get_note_background(note->note, false);
+
       GE_trianglestrip_start();
       
       for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
