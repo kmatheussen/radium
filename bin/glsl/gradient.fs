@@ -72,7 +72,7 @@ void main()
   //float x = vertex_position.x;//(gl_ModelViewProjectionMatrix*gl_Vertex).x;
 
   gl_FragColor = mix(col,
-                     vec4(1.0, 0.0, 0.0, col.a),
+                     vec4(1.0, 0.0, 1.0, col.a),
                      (gl_FragCoord.x - x) / (width*12.0)
                      )
     ;
