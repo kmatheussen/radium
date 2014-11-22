@@ -101,7 +101,7 @@ public:
     QMainWindow *main_window;
 
 #if USE_QT_VISUAL
-    QPainter *painter; // Set in paintEvent
+    QPainter *painter; // Set in paintEvent    
     QPainter *paintbuffer_painter; // Set in paintEvent
     QPainter *cursorbuffer_painter; // Set in paintEvent
 
@@ -199,6 +199,9 @@ protected:
     //    bool        event(QEvent *);
 #if 1 //USE_QT_VISUAL
     void	paintEvent( QPaintEvent * );
+    //void showEvent ( QShowEvent * event ){printf("showevent\n");}
+    //void changeEvent ( QEvent * event ) { printf("changeEvent\n"); }
+
 #endif
 
 #if 0 // Using X11filter for keys

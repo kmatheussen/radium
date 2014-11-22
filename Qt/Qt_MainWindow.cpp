@@ -383,6 +383,11 @@ void SetupMainWindow(void){
 #if USE_QT_VISUAL && !defined(__linux__)  // double buffer actually improves performance on linux. Still not as good as gtk though.
   editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
+
+  //#if USE_OPENGL
+    // editor->setAttribute(Qt::WA_PaintOnScreen);
+  //#endif
+
   //editor->setAttribute(Qt::WA_PaintOnScreen);
 
   editor->setAttribute(Qt::WA_OpaquePaintEvent);

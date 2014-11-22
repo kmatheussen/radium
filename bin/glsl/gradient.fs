@@ -32,11 +32,30 @@ static GE_Context *get_note_background(int notenum, bool highlight){
 }
 #endif
 
+/*
+  GNU nano 2.3.2                                              New Buffer                                                                                          Modified  
+
+  //vec2 texCoord = gl_TexCoord[0].st;
+  //float y2 = gl_TexCoord[1].y;
+  //float y2 = gl_MultiTexCoord0.y;
+  //float y2 = texCoord.y;
+  //vTrans = projection * modelview * incomingVertex
+
+  //float y2 = (gl_ProjectionMatrix * gl_ModelViewMatrix * gl_TexCoord[0] ).y;
+  //float y2 = (gl_ModelViewProjectionMatrix * gl_TexCoord[0]).y;
+  //float y2 = gl_ProjectionMatrix.y;
+
+  //float y2 = (gl_ModelViewMatrix * gl_Vertex)[0].y;
+*/
+
 void main()
-{
+{    
+  //float y2 = (gl_ModelViewMatrix * gl_Vertex)[0].y;
+  //float y2 = (1.0*gl_ModelViewProjectionMatrix).y;
   gl_FragColor = mix(color1,
                      color2,
-                     (gl_FragCoord.y-y) / height
+                     //(gl_FragCoord - y) / height // nice effect
+                     (gl_FragCoord.y - y) / height
                      )
     ;
 }

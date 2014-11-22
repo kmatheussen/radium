@@ -233,6 +233,7 @@ public:
     , sleep_when_not_painting(SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     setMouseTracking(true);
+    //setAttribute(Qt::WA_PaintOnScreen);
   }
 
   // Main thread
@@ -326,6 +327,11 @@ public:
   /** Event generated right before the bound OpenGLContext is destroyed. */
   virtual void destroyEvent() {
     fprintf(stderr,"destroyEvent\n");
+  }
+
+  virtual void paintEvent( QPaintEvent *e ){
+    fprintf(stderr,"GLWindow paintEvent\n");
+    GL_create(get_window(), get_window()->wblock);
   }
 
 private:

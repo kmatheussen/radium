@@ -124,6 +124,11 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     GL_create(window, window->wblock);
   }
 
+  //printf("height: %d, width: %d\n",e->rect().height(),e->rect().width());
+  //printf("update editor\n");
+  //GL_create(window, window->wblock);
+
+
   //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
   //printf("paintevent. width: %d, height: %d\n",this->width(),this->height());
 
@@ -139,6 +144,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     this->painter = NULL;
   }
 }
+
+//void EditorWidget::showEvent ( QShowEvent * event )
 #endif
 
 void EditorWidget::updateEditor(){
