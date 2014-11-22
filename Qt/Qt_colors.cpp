@@ -411,6 +411,7 @@ void testColorInRealtime(int num, QColor color){
     my_widget->updateEditor();
   }
 
+  window->wblock->block->is_dirty = true;
 }
 
 #include "Qt_Main_proc.h"
