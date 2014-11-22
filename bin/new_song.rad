@@ -45,7 +45,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-13
+15
 author
 0
 STRING_TYPE
@@ -90,6 +90,14 @@ comment
 9
 STRING_TYPE
 
+comment
+10
+STRING_TYPE
+
+comment
+11
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -112,10 +120,10 @@ TRACKER_WINDOW
 0
 
 ?width
-913
+1063
 
 ?height
-574
+820
 
 ?fontID
 0
@@ -181,10 +189,10 @@ WBLOCK
 0
 
 ?curr_realline
-10
+21
 
 ?num_reallines
-64
+67
 
 ?reltempomax
 2
@@ -207,6 +215,42 @@ WBLOCK
 \
 LOCALZOOMS
 64
+
+\
+LOCALZOOM
+13
+0
+4
+0
+1
+/
+
+\
+LOCALZOOM
+13
+1
+4
+1
+1
+/
+
+\
+LOCALZOOM
+13
+2
+4
+2
+1
+/
+
+\
+LOCALZOOM
+13
+3
+4
+3
+1
+/
 /
 
 \
@@ -226,7 +270,7 @@ WTRACK
 1
 
 ?is_wide
-0
+1
 /
 
 \
@@ -417,17 +461,17 @@ TRACK
 
 \
 NOTE
-4
-10347
+1
+17245
 65534
-49.79999923706055
+15.80000305175781
 0
-52427
-12
-0
-1
 52428
-1
+7
+0
+65534
+52428
+0
 
 \
 VELOCITIES
@@ -440,10 +484,49 @@ PITCHES
 
 \
 NOTE
-12
+7
 0
+65534
+42.79999923706055
+0
+52427
+20
+41389
+65534
+52428
 1
-57
+
+\
+VELOCITIES
+13
+34491
+65534
+31774
+/
+
+\
+PITCHES
+9
+41389
+65534
+87
+13
+36216
+65534
+39.79999923706055
+17
+10347
+65534
+1
+/
+/
+
+\
+NOTE
+20
+41389
+65534
+78
 0
 52428
 63
@@ -2838,7 +2921,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-51
+52
 Amount
 0
 FLOAT_TYPE
@@ -2859,11 +2942,11 @@ Inter-voice phase
 0
 FLOAT_TYPE
 63.97200012207031
-Minimum delay
+Min delay
 0
 FLOAT_TYPE
-4.998042583465576
-Modulation depth
+4.995742797851562
+Mod depth
 0
 FLOAT_TYPE
 5.997910499572754
@@ -2871,6 +2954,10 @@ Modulation rate
 0
 FLOAT_TYPE
 0.499700665473938
+Overlap
+0
+FLOAT_TYPE
+1
 Q
 0
 FLOAT_TYPE

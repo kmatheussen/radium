@@ -499,6 +499,11 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
         }
         // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
+        for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
+          vl::ref<GradientTriangles> gradient_triangles = *it;
+          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform);
+        }
+
         if(c->triangles.size() > 0) {
           setColorBegin(vg, c);
           
@@ -508,10 +513,6 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           setColorEnd(vg, c);
         }
 
-        for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
-          vl::ref<GradientTriangles> gradient_triangles = *it;
-          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform);
-        }
 #endif
       }
 
@@ -820,7 +821,8 @@ void GE_gradient_triangle_end(GE_Context *c){
   //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
   current_gradient_rectangle->y = c->y(triangles_max_y);
   current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
-  current_gradient_rectangle->color1 = vl::black; //get_vec4(GE_get_rgb(2));//c->color.c_gradient);
+  //current_gradient_rectangle->color1 = vl::black;
+  current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
   current_gradient_rectangle->color2 = get_vec4(c->color.c);
 
   c->gradient_triangles.push_back(current_gradient_rectangle);

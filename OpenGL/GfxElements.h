@@ -102,6 +102,9 @@ GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z);
 static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha){
   return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha));
 }
+static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int z){
+  return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), z);
+}
 
 #ifndef EDITOR_WIDGET_H
 #include "../Qt/EditorWidget.h"
