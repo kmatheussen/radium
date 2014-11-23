@@ -803,9 +803,6 @@ void GE_trianglestrip_end(GE_Context *c){
 
 
 
-// TODO: different type of gradient triangles will now share context if they have the same start and end colors. That would cause wrong colors to be generated.
-// The solution is probably very simple: Just don't use Context, but something else.
-
 
 static int num_gradient_triangles;
 static vl::ref<GradientTriangles> current_gradient_rectangle;

@@ -848,8 +848,15 @@ static void update_peaks(SoundPlugin *plugin){
   TRACKREALLINES_update_peak_tracks(window,plugin->patch);
   DrawUpAllPeakWTracks(window,wblock,plugin->patch);
 #endif
+
+#if USE_OPENGL
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct WBlocks *wblock=window->wblock;
+  wblock->block->is_dirty = true;
+#else
   if(plugin->patch!=NULL)
     RT_TRACKREALLINES_schedule_update_peak_tracks(plugin->patch);
+#endif
 }
 
 static void set_loop_onoff(Data *data, bool loop_onoff){
