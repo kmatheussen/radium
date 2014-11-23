@@ -1004,6 +1004,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 #define NUM_LINES_PER_PEAK 2
 
   for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+
     float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
     float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
 
@@ -1026,12 +1027,22 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         
         float min,max;
         
+        int64_t start_time = scale(n,
+                                   0,num_peaks,
+                                   time1,time2
+                                   );
+
+        int64_t end_time   = scale(n+NUM_LINES_PER_PEAK,
+                                   0,num_peaks,
+                                   time1,time2
+                                   );
+
         PATCH_get_peaks(patch, 
                         note->note,
                         ch,
                         wtrack->track,
-                        scale(n,0,num_peaks,time1,time2) / wblock->block->reltempo,
-                        scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / wblock->block->reltempo,
+                        start_time / wblock->block->reltempo,
+                        end_time / wblock->block->reltempo,
                         &min,
                         &max);
 

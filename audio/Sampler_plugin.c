@@ -781,7 +781,15 @@ static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int
   *max_value = max;
 }
 
-static int get_peaks(struct SoundPlugin *plugin, float note_num, int ch, float das_pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value){
+static int get_peaks(struct SoundPlugin *plugin,
+                     float note_num,
+                     int ch,
+                     float das_pan,
+                     int64_t start_time,
+                     int64_t end_time,
+                     float *min_value, float *max_value
+                     )
+{
   Data *data = (Data*)plugin->data;
 
   if(ch==-1){
