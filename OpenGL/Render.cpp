@@ -158,33 +158,35 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
   float y2 = y+minnodesize;
   const float width = 2.3;
 
+  int z = Z_ABOVE(Z_ZERO);
+
   if (node == current_node) {
-    GE_filledBox(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 300, 0.3),
+    GE_filledBox(GE_mix_alpha_z(GE_get_rgb(color), GE_get_rgb(2), 300, 0.3, z),
                  x1,y1,
                  x2-1,y2
                  );
   }
 
   // vertical left
-  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 100, 0.3),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), GE_get_rgb(2), 100, 0.3, z),
           x1+1, y1+1,
           x1+2,y2-1,
           width);
 
   // horizontal bottom
-  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(1), 300, 0.3),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), GE_get_rgb(1), 300, 0.3, z),
           x1+2,y2-1,
           x2-1,y2-2,
           width);
 
   // vertical right
-  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(1), 400, 0.3),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), GE_get_rgb(1), 400, 0.3, z),
           x2-1,y2-2,
           x2-2,y1+2,
           width);
 
   // horizontal top
-  GE_line(GE_mix_alpha(GE_get_rgb(color), GE_get_rgb(2), 300, 0.3),
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), GE_get_rgb(2), 300, 0.3, z),
           x2-2,y1+2,
           x1+1,y1+1,
           width);
@@ -378,7 +380,7 @@ struct NodeLine *create_nodelines(
 
 static void drawNodeLines(struct NodeLine *nodelines, int colnum, bool is_selected, float alpha, float alpha_selected){
   float width = is_selected ? 2.3 : 1.75;
-  GE_Context *c = GE_color_alpha(colnum, is_selected ? alpha_selected : alpha);
+  GE_Context *c = GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)));
   
   for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
     GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
@@ -997,7 +999,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          NULL,NULL);
     
 
-  GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 700, 0.7, Z_ABOVE(Z_ZERO));
+  GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 700, 0.7, Z_ZERO);
 
   GE_trianglestrip_start();
 
@@ -1096,7 +1098,7 @@ static void create_velocity_gradient_background(
   GE_Rgb rgb1 = get_note_color(start_note);
   GE_Rgb rgb2 = get_note_color(end_note);
 
-  GE_Context *c = GE_gradient(rgb1, rgb2);
+  GE_Context *c = GE_gradient_z(rgb1, rgb2, Z_BELOW(Z_ZERO));
 
   GE_gradient_triangle_start();
 
