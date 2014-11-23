@@ -810,11 +810,16 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
 
 }
 
+
+static const float pitch_split_color_1 = 50;
+static const float pitch_split_color_2 = 95;
+
+
 static GE_Rgb get_note_color(float notenum){
   notenum = R_BOUNDARIES(0,notenum,127);
 
-  const float split1 = 50;
-  const float split2 = 95;
+  const float split1 = pitch_split_color_1;
+  const float split2 = pitch_split_color_2;
 
   GE_Rgb rgb;
 
@@ -909,6 +914,7 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
 
 static float track_notearea_x1, track_notearea_x2;
 static float track_min_pitch, track_max_pitch;
+
 static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
   struct Pitches *pitch = (struct Pitches*)element;
   return scale(pitch->note,
@@ -1070,11 +1076,15 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 static void create_velocity_gradient_background(
                                                 float area_y1,
                                                 float area_y2,
-                                                GE_Rgb rgb1,
-                                                GE_Rgb rgb2,
+                                                float start_note,
+                                                float end_note,
                                                 struct NodeLine *velocity_nodelines
                                                 )
 {
+
+  GE_Rgb rgb1 = get_note_color(start_note);
+  GE_Rgb rgb2 = get_note_color(end_note);
+
   GE_Context *c = GE_gradient(rgb1, rgb2);
 
   GE_gradient_triangle_start();
@@ -1118,19 +1128,60 @@ static void create_velocities_gradient_background(
   struct NodeLine *nodeline = pitch_nodelines;
 
   while(nodeline != NULL){
+    float x1 = nodeline->x1;
+    float x2 = nodeline->x2;
+
     float y1 = nodeline->y1;
     float y2 = nodeline->y2;
 
-    struct Pitches *pitch1 = (struct Pitches*)nodeline->element1;
-    struct Pitches *pitch2 = (struct Pitches*)nodeline->element2;
+    float start_note = scale(x1, track_notearea_x1, track_notearea_x2, track_min_pitch, track_max_pitch);
+    float end_note   = scale(x2, track_notearea_x1, track_notearea_x2, track_min_pitch, track_max_pitch);
 
-    float start_note = pitch1->note;
-    float end_note = pitch2->note;
+    float split1 = pitch_split_color_1;
+    float split2 = pitch_split_color_2;
 
-    GE_Rgb rgb1 = get_note_color(start_note);
-    GE_Rgb rgb2 = get_note_color(end_note);
+    if (start_note < end_note) {
+
+      if (start_note<split1 && end_note>split1) {
+        float y_split1 = scale(split1, start_note, end_note, y1, y2);
+        create_velocity_gradient_background(y1, y_split1, start_note, split1, velocity_nodelines);
+        
+        y1 = y_split1;
+        start_note = split1;
+      }
+      
+      if (start_note<split2 && end_note>split2){
+        float y_split2 = scale(split2, start_note, end_note, y1, y2);
+        
+        create_velocity_gradient_background(y1, y_split2, start_note, split2, velocity_nodelines);
+        
+        y1 = y_split2;
+        start_note = split2;
+      }
+
+    } else  if (end_note < start_note) {
+
+      if (start_note>split2 && end_note<split2) {
+        float y_split2 = scale(split2, start_note, end_note, y1, y2);
+        create_velocity_gradient_background(y1, y_split2, start_note, split2, velocity_nodelines);
+        
+        y1 = y_split2;
+        start_note = split2;
+      }
+      
+      if (start_note>split1 && end_note<split1){
+        float y_split1 = scale(split1, start_note, end_note, y1, y2);
+        
+        create_velocity_gradient_background(y1, y_split1, start_note, split1, velocity_nodelines);
+        
+        y1 = y_split1;
+        start_note = split1;
+      }
   
-    create_velocity_gradient_background(y1, y2, rgb1, rgb2, velocity_nodelines);
+    } 
+
+    create_velocity_gradient_background(y1, y2, start_note, end_note, velocity_nodelines);
+
 
     nodeline = nodeline->next;
   }
