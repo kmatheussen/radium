@@ -416,6 +416,7 @@ gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c
 #endif
 
 #include <stdarg.h>
+#include <assert.h>
 
 void EndProgram(void){
   printf("ENDPROGRAM called\n");

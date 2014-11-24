@@ -334,6 +334,7 @@ test: dotesting
 
 dotesting:
 	$(CC) -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CCC) -std=c++11 audio/Mixer.cpp -DTEST_MIXER -Wall -lpthread && ./a.out
 
 packages: bin/packages/deletemetorebuild
 

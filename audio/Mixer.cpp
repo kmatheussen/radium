@@ -15,6 +15,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#if !defined(TEST_MIXER)
+
 #include <unistd.h>
 #include <stdio.h>
 
@@ -660,4 +662,55 @@ float MIXER_get_sample_rate(void){
 int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
 }
+
+
+#endif // !TEST_MIXER
+
+
+#ifdef TEST_MIXER
+
+#if 0
+g++ -std=c++11  threadlocal.cpp -Wall -lpthread
+#endif
+
+
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <assert.h>
+
+thread_local int a = 0;
+
+pthread_t thread;
+
+static void *autoincrease_func(void* arg){
+  int a_before = a;
+  a = 6;
+
+  assert(a_before==0);
+  assert(a==6);
+
+  printf("a before: %d, a now: %d\n",a_before,a);
+  return NULL;
+}
+
+int main(){
+
+  assert(a==0);
+
+  a = 5;
+
+  assert(a==5);
+
+  pthread_create(&thread, NULL, autoincrease_func, NULL);
+
+  sleep(3);
+
+  assert(a==5);
+
+  return 0;
+}
+
+
+#endif // TEST_MIXER
 
