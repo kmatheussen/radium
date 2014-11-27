@@ -641,7 +641,9 @@
                                      ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
                                      new-value
                                      )
-                        :Set-indicator-node ra:set-indicator-temponode
+                        ;:Set-indicator-node ra:set-indicator-temponode ;; This version makes setting velocities (!) spit out error messages. Really strange.
+                        :Set-indicator-node (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
+                                              (ra:set-indicator-temponode Num))
                         :Get-pixels-per-value-unit #f
                         :Set-Statusbar-text show-temponode-in-statusbar
                                               
