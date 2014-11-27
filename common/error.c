@@ -35,12 +35,10 @@ enum{
 };
 
 static void show_message(int type, char *message){
-  static double last_ignore = 0.0;
+  static double last_ignore = -3000.0; // don't want to ignore errors the first two seconds.
   static bool ignore_rest_of_the_program = false;
 
   char *typestring = type==IS_ERROR?"Error":"Warning";
-
-  fprintf(stderr,"%s: %s\n",typestring, message);
 
   if(ignore_rest_of_the_program==true)
     return;

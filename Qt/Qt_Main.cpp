@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../common/nsmtracker.h"
+#include "../common/threading.h"
 #include "../common/disk_load_proc.h"
 #include "../common/undo.h"
 #include "../common/nag.h"
@@ -791,6 +792,8 @@ extern "C" {
 
 
 int main(int argc, char **argv){
+  THREADING_init_main_thread_type();
+  R_ASSERT(THREADING_is_main_thread());
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 

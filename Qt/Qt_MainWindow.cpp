@@ -59,6 +59,7 @@ static HWND gtk_hwnd = NULL;
 #endif
 
 #include "EditorWidget.h"
+#include "../common/threading.h"
 
 #if USE_GTK_VISUAL
 #  include "../GTK/GTK_visual_proc.h"
@@ -610,7 +611,7 @@ static int show_message(vector_t *buttons, const char *message){
 
 
 int GFX_Message(vector_t *buttons, const char *fmt,...){
-  if (g_qt_is_running==false)
+  if (g_qt_is_running==false || !THREADING_is_main_thread())
     return -1;
  
   char message[1000];

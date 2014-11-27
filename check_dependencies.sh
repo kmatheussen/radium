@@ -105,30 +105,30 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 
-if ! pkg-config --cflags sndfile >/dev/null 2>devnull ; then
+if ! pkg-config --cflags sndfile >/dev/null 2>/dev/null ; then
     echo "libsndfile not found"
     exit 5
 fi
 
-if ! pkg-config --cflags samplerate >/dev/null 2>devnull ; then
+if ! pkg-config --cflags samplerate >/dev/null 2>/dev/null ; then
     echo "libsamplerate not found"
     exit 5
 fi
 
 if [ `uname` == "Linux" ] ; then
-    if ! pkg-config --cflags lrdf >/dev/null 2>devnull ; then
+    if ! pkg-config --cflags lrdf >/dev/null 2>/dev/null ; then
 	echo "liblrdf not found"
 	exit 5
     fi
 fi
 
-if ! pkg-config --cflags glib-2.0 >/dev/null 2>devnull ; then
+if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     echo "glib-2.0 not found"
     exit 5
 fi
 
-if ! pkg-config --cflags Qt3Support >/dev/null 2>devnull ; then
-    echo "Qt4 not found"
+if ! pkg-config --cflags Qt3Support >/dev/null 2>/dev/null ; then
+    echo "Qt3Support for Qt4 not found"
     exit 5
 fi
 

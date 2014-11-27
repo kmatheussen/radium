@@ -15,8 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#if !defined(TEST_MIXER)
-
 #include <unistd.h>
 #include <stdio.h>
 
@@ -34,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/threading.h"
 
 #include "Jack_plugin_proc.h"
 #include "SoundfileSaver_proc.h"
@@ -91,7 +90,6 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 #  include <xmmintrin.h>
 #endif
 
-#if 1
 
 #include <float.h>
 
@@ -101,7 +99,6 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 // flags to avoid costly denormals
 // (Copied from faust)
 #ifdef __SSE__
-
     #ifdef __SSE2__
         #define AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8040)
     #else
@@ -111,68 +108,30 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 #   error "AVOIDDENORMALS is not defined"
     #define AVOIDDENORMALS 
 #endif
-#endif // 0
 
-
-// Mutex and sleeping (copied from RtAudio.h, RtAudio.cpp and tests/qmidiin.cpp)
-
-#if defined(FOR_WINDOWS)
-
-  #include <windows.h>
-  #include <process.h>
-
-  #define LockType CRITICAL_SECTION
-  #define LOCK_INITIALIZE(A) InitializeCriticalSection(&A)
-  #define LOCK_DESTROY(A)    DeleteCriticalSection(&A)
-  #define LOCK_LOCK(A)       EnterCriticalSection(&A)
-  #define LOCK_UNLOCK(A)     LeaveCriticalSection(&A)
-
-#elif defined(__linux__) || defined(FOR_MACOSX)
-
-  #include <pthread.h>
-  #include <unistd.h>
-
-  // pthread API
-  #define LockType pthread_mutex_t
-  #define LOCK_INITIALIZE(A) pthread_mutex_init(&A, NULL)
-  #define LOCK_DESTROY(A)    pthread_mutex_destroy(&A)
-  #define LOCK_LOCK(A)       pthread_mutex_lock(&A)
-  #define LOCK_UNLOCK(A)     pthread_mutex_unlock(&A)
-
-#else
-
-# error "unkwnonw architantaiehnr"
-
-#endif
 
 jack_client_t *g_jack_client;
 static int g_jack_client_priority;
 float g_cpu_usage = 0.0f;
 
-#if defined(FOR_WINDOWS)
-
-#  include <windows.h>
-#  include <comutil.h>
-
 static void PLAYER_acquire_same_priority(void){
   //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
-  //#warning "does this work?"
-  jack_acquire_real_time_scheduling(GetCurrentThread(),g_jack_client_priority);
+  jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority);
 }	
 
 static void PLAYER_drop_same_priority(void){
-  jack_drop_real_time_scheduling(GetCurrentThread());
+  jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
 }
 
-#endif // defined(FOR_WINDOWS)
+
 
 static void check_jackd_arguments(void){
 #if defined(FOR_WINDOWS)
-
+  
   QString mandatory= "The \"-S\" parameter is mandatory to make the jack server work correctly.\n\n"
     "The jackd argument line can be set in QJackCtl (\"Jack Control\") under Setup -> Settings -> Server Prefix. The line should look like this:\n\n"
     "jackd -S";
-
+  
   bool found_jack = false;
   
   vector_t *command_lines = get_windows_command_lines();
@@ -231,32 +190,7 @@ static void check_jackd_arguments(void){
 }
 
 
-#if defined(__linux__) || defined(FOR_MACOSX)
-
-#if 1
-static void PLAYER_acquire_same_priority(void){
-  //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
-  jack_acquire_real_time_scheduling(pthread_self(),g_jack_client_priority);
-}	
-
-static void PLAYER_drop_same_priority(void){
-  jack_drop_real_time_scheduling(pthread_self());
-}
-#endif
-
-#endif // defined(__linux__) || defined(FOR_MACOSX)
-
 static LockType player_lock;
-
-#ifdef FOR_LINUX
-#  include <linux/unistd.h>
-#  include <sys/syscall.h>
-#  include <unistd.h>
-  static pid_t player_thread_tid;
-  pid_t gettid( void ){
-    return syscall( __NR_gettid );
-  }
-#endif // FOR_LINUX
 
 static bool someone_has_player_lock = false;
 static bool player_thread_has_player_lock = false;
@@ -266,7 +200,7 @@ static void lock_player(void){
   if (PLAYER_current_thread_has_lock())
     RError("Calling lock_player while holding the player lock");
 #endif
-
+  
   LOCK_LOCK(player_lock);
   someone_has_player_lock = true;
 }
@@ -277,43 +211,40 @@ static void unlock_player(void){
 }
 
 static void RT_lock_player(){
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_player_thread());
   lock_player();
   player_thread_has_player_lock = true;
 }
 
 static void RT_unlock_player(){
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_player_thread());
   player_thread_has_player_lock = false;
   unlock_player();
 }
 
-// This function will deadlock if called from the player thread!
 void PLAYER_lock(void){
+  R_ASSERT_RETURN_IF_FALSE(!THREADING_is_player_thread());
+
   PLAYER_acquire_same_priority();
   lock_player();
 }
 
 void PLAYER_unlock(void){
+  R_ASSERT_RETURN_IF_FALSE(!THREADING_is_player_thread());
   unlock_player();
   PLAYER_drop_same_priority();
 }
 
-// Warning, may very well return wrongly true on windows, or if running prod.
 bool PLAYER_current_thread_has_lock(void){
   if (someone_has_player_lock==false)
     return false;
-  else {
-#if defined(FOR_LINUX) && !defined(RELEASE)
-    if (gettid()==player_thread_tid)
-      return player_thread_has_player_lock;
-    else
-      return !player_thread_has_player_lock;
-#else
-    return true;
-#endif
-  }
+  else if (THREADING_is_player_thread())
+    return player_thread_has_player_lock;
+  else
+    return !player_thread_has_player_lock;
 }
 
-static void init_player_lock(){
+static void init_player_lock(void){
   LOCK_INITIALIZE(player_lock);
 }
 
@@ -481,10 +412,6 @@ struct Mixer{
     AVOIDDENORMALS;
     //#endif
 
-#ifdef FOR_LINUX
-    player_thread_tid = gettid();
-#endif //FOR_LINUX
-
 #if 0
 #define CSR_FLUSH_TO_ZERO         (1 << 15)
     unsigned csr = __builtin_ia32_stmxcsr();
@@ -552,6 +479,13 @@ struct Mixer{
   static void *RT_rjack_thread(void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
     //printf("RT_rjack_process called %d\n",num_frames);
+
+    THREADING_init_player_thread_type();
+    R_ASSERT(THREADING_is_player_thread());
+    R_ASSERT(!THREADING_is_main_thread());
+
+    PLAYER_acquire_same_priority();
+
     mixer->RT_thread();
     return NULL;
   }
@@ -573,7 +507,7 @@ struct Mixer{
   static int RT_rjack_buffer_size_changed(jack_nframes_t num_frames, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
 
-    RT_lock_player();{  // Not sure which thread this callback is called from. But since the player thread can not run here anyway, it's safest not to use PLAYER_lock(). (If it's called from the realtime thread, PLAYER_unlock() would set the priority of the realtime thread to non-realtime.)
+    lock_player();{  // Not sure which thread this callback is called from.
       mixer->_buffer_size = num_frames;
       if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
         RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
@@ -583,7 +517,7 @@ struct Mixer{
         SP_set_buffer_size((SoundProducer*)sound_producer, mixer->_buffer_size);
         sound_producer = sound_producer->next;
       }
-    }RT_unlock_player();
+    }unlock_player();
 
     return 0;
   }
@@ -593,19 +527,21 @@ struct Mixer{
 static Mixer *g_mixer;
 
 bool MIXER_start(void){
-
+  
+  R_ASSERT(THREADING_is_main_thread());
+  
   init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
-
+  
   g_mixer = new Mixer();
-
+  
   if(g_mixer->start_jack()==false)
     return false;
-
+  
   PR_init_plugin_types();
 
   check_jackd_arguments();
-
+  
   return true;
 }
 
@@ -663,54 +599,4 @@ int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
 }
 
-
-#endif // !TEST_MIXER
-
-
-#ifdef TEST_MIXER
-
-#if 0
-g++ -std=c++11  threadlocal.cpp -Wall -lpthread
-#endif
-
-
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <assert.h>
-
-thread_local int a = 0;
-
-pthread_t thread;
-
-static void *autoincrease_func(void* arg){
-  int a_before = a;
-  a = 6;
-
-  assert(a_before==0);
-  assert(a==6);
-
-  printf("a before: %d, a now: %d\n",a_before,a);
-  return NULL;
-}
-
-int main(){
-
-  assert(a==0);
-
-  a = 5;
-
-  assert(a==5);
-
-  pthread_create(&thread, NULL, autoincrease_func, NULL);
-
-  sleep(3);
-
-  assert(a==5);
-
-  return 0;
-}
-
-
-#endif // TEST_MIXER
 

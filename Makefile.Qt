@@ -192,7 +192,7 @@ OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o subtrack.o ve
 
 OBJ6= realline_calc.o gfx_subtrack.o LPB.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
 
-OBJ7= nodelines.o nodeboxes.o instruments.o patch.o fxlines.o fxlines_legalize.o pitchnodes.o blocklist.o  scroll_play.o gfx_tempocolor.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o
+OBJ7= nodelines.o nodeboxes.o instruments.o patch.o fxlines.o fxlines_legalize.o pitchnodes.o blocklist.o  scroll_play.o gfx_tempocolor.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o
 
 #Tempos and time
 OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o mouse_temponodes.o temponodes_legalize.o
@@ -334,7 +334,11 @@ test: dotesting
 
 dotesting:
 	$(CC) -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
-	$(CCC) -std=c++11 audio/Mixer.cpp -DTEST_MIXER -Wall -lpthread && ./a.out
+	$(CCC) common/threading.cpp -DTEST_THREADING -Wall -lpthread && ./a.out
+	clang common/threading.cpp -DTEST_THREADING -Wall -lpthread && ./a.out
+	i686-w64-mingw32-g++ common/threading.cpp -DTEST_THREADING -Wall -lpthread -o test/a.exe && cd test && wine a.exe
+	@echo
+	@echo " == All tests succeeded, apparently =="
 
 packages: bin/packages/deletemetorebuild
 
@@ -918,6 +922,9 @@ mouse_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)mouse_reltemposlider.c
 
 error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC) $(CD)error.c $(OPT)
+
+threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
+	$(CCC)  $(CD)threading.cpp $(CPPOPT)
 
 X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
 	$(CC) $(P)X11_Main.c $(OPT)

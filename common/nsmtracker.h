@@ -119,9 +119,13 @@ enum{
 
 #ifdef RELEASE
   #define R_ASSERT(a)
+  #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) return
 #else
   #define R_ASSERT(a) if(!(a))RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__)
+  #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return; }while(0)
 #endif
+
+
 
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){
   return y1 + ( ((x-x1)*(y2-y1))
