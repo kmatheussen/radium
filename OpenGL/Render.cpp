@@ -1445,8 +1445,9 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
  ************************************/
 
 void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
-  
+  static int level=0;
   //static int n=0; printf("GL_create called %d\n",n++);
+  printf("GL_create called %d\n",level++);
 
   GE_start_writing(); {
 

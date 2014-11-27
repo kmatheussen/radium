@@ -349,6 +349,7 @@ private:
     bool needs_repaint;
 
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
+    //printf("needs_repaint: %d, painting_data: %p\n",(int)needs_repaint,painting_data);
 
     if (painting_data==NULL){
       return false;

@@ -137,6 +137,9 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   , paintbuffer_painter(NULL)
   , cursorbuffer_painter(NULL)
 #endif
+#if USE_OPENGL
+  , gl_widget(NULL)
+#endif
   , qpa(256)
 {
 #if USE_QT_VISUAL

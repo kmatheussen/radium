@@ -88,6 +88,8 @@ float getHalfOfNodeWidth(void){
 }
 
 static int get_realline_y1(const struct Tracker_Windows *window, int realline){
+  //printf("fontheight: %f\n",(float)window->fontheight);
+  //printf("wblock->t.y1: %f. scroll_pos: %f\n",(float)window->wblock->t.y1,(float)scroll_pos);
   return window->fontheight*realline - scroll_pos + window->wblock->t.y1;
 }
 
@@ -421,6 +423,8 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
 
   UpdateSTimes(wblock->block);    
   UpdateAllTrackReallines(window,wblock);
+
+  //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
   
   block->is_dirty = true;
 }
