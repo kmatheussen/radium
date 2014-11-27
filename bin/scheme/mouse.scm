@@ -197,14 +197,20 @@
                                10.0))
                            (else
                             (- $y prev-y))))
+
           (set! prev-x $x)
           (set! prev-y $y)
           
           ;; dirty trick to avoid the screen edges
           (when mouse-pointer-is-hidden
-            (ra:move-mouse-pointer 100 100)
-            (set! prev-x 100)
-            (set! prev-y 100))
+            (when (or (< (ra:get-mouse-pointer-x) 16)
+                      (< (ra:get-mouse-pointer-y) 16)
+                      (> (ra:get-mouse-pointer-x) 500)
+                      (> (ra:get-mouse-pointer-y) 500))
+              (ra:move-mouse-pointer 100 100)
+              (c-display "x/y" (ra:get-mouse-pointer-x) (ra:get-mouse-pointer-y))
+              (set! prev-x 100)
+              (set! prev-y 100)))
           
           (set! value (move-and-release $button
                                         dx
@@ -622,6 +628,7 @@
                         :Move-node (lambda (Num Value Place)
                                      (ra:set-temponode Num Value (or Place -1))
                                      (define new-value (ra:get-temponode-value Num)) ;; might differ from Value
+                                     ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
                                      new-value
                                      )
                         :Set-indicator-node (lambda (Num)

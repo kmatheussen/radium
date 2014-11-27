@@ -47,8 +47,8 @@ bool SCHEME_mousepress(int button, float x, float y){
                             s7_list(s7,
                                     3,
                                     s7_make_integer(s7, button),
-                                    s7_make_integer(s7, x),
-                                    s7_make_integer(s7, y)
+                                    s7_make_real(s7, x),
+                                    s7_make_real(s7, y)
                                     )
                             )
                     );
@@ -62,8 +62,8 @@ bool SCHEME_mousemove(int button, float x, float y){
                             s7_list(s7,
                                     3,
                                     s7_make_integer(s7, button),
-                                    s7_make_integer(s7, x),
-                                    s7_make_integer(s7, y)
+                                    s7_make_real(s7, x),
+                                    s7_make_real(s7, y)
                                     )
                             )
                     );
@@ -77,8 +77,8 @@ bool SCHEME_mouserelease(int button, float x, float y){
                             s7_list(s7,
                                     3,
                                     s7_make_integer(s7, button),
-                                    s7_make_integer(s7, x),
-                                    s7_make_integer(s7, y)
+                                    s7_make_real(s7, x),
+                                    s7_make_real(s7, y)
                                     )
                             )
                     );

@@ -1650,3 +1650,19 @@ void moveMousePointer(float x, float y, int windownum){
   if (window!=NULL)
     MovePointer(window, x, y);
 }
+float getMousePointerX(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  WPoint ret = GetPointerPos(window);
+  return ret.x;
+}
+float getMousePointerY(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  WPoint ret = GetPointerPos(window);
+  return ret.y;
+}

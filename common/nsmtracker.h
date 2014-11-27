@@ -608,6 +608,10 @@ typedef struct{
 	int x,x2;
 }WArea;
 
+typedef struct{
+  float x,y;
+}WPoint;
+
 
 /*********************************************************************
 	trackreallines.h
