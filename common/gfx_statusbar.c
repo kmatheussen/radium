@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+// TODO: Delete. Doesn't do anything anymore.
 
 
 
@@ -60,7 +60,7 @@ void GFX_DrawStatusBar(
 		wblock->block->name
 	);
 
-	GFX_SetStatusBar(window,wblock->title);
+	//GFX_SetStatusBar(window,wblock->title);
 }
 
 char *GFX_GetChangeString(
@@ -92,6 +92,3 @@ void GFX_SetChangeFloat(
 		Float
 	);
 }
-
-
-

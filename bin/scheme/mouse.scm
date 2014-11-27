@@ -9,13 +9,11 @@
       (= *right-button* Button)))
 
 
+(define (set-statusbar-value val)
+  (ra:set-statusbar-text (<-> val)))
+
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (round 2.5) -> 2
-;; (roundup 2.5) -> 3
-(define (roundup A)
-  (floor (+ A 0.5)))
 
 (define-match quantitize
   Place Q :> (* (roundup (/ Place Q))
@@ -364,11 +362,14 @@
 ;; reltempo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (show-reltempo-in-statusbar)
+  (ra:set-statusbar-text (<-> "Block tempo multiplied by " (two-decimal-string (ra:get-reltempo)))))
+
 ;; status bar
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (if (inside-box (ra:get-box reltempo-slider) $x $y)
-             (ra:show-reltempo-in-statusbar))))
+             (show-reltempo-in-statusbar))))
 
 
 
@@ -391,6 +392,7 @@
                                                     0 (box :width)
                                                     min-reltempo max-reltempo)))
                      (ra:set-reltempo new-value)
+                     (show-reltempo-in-statusbar)                     
                      new-value)
  )
 
@@ -496,6 +498,7 @@
                                   :Set-indicator-node
                                   :Get-pixels-per-value-unit #f
                                   :Create-button #f
+                                  :Set-Statusbar-text #f
                                   )
   
   (define-struct node
@@ -567,7 +570,8 @@
                                    
     (Set-indicator-node (Node :node-info))
     (Move-node (Node :node-info) new-value (and new-y (get-place-from-y Button new-y)))
-
+    (if Set-Statusbar-text
+        (Set-Statusbar-text new-value))
     (make-node :node-info (Node :node-info)
                :value new-value
                :y (or new-y (Node :y))))
@@ -603,6 +607,12 @@
              (c-display "inside" $x $y))))
 ||#
 
+(define (show-temponode-in-statusbar value)
+  (define actual-value (if (< value 0) ;; see reltempo.c
+                           (/ 1
+                              (- 1 value))
+                           (1+ value)))
+  (ra:set-statusbar-text (<-> "Tempo multiplied by " (two-decimal-string actual-value))))
 
 (define (get-temponode-box $num)
   (get-common-node-box (ra:get-temponode-x $num)
@@ -631,9 +641,10 @@
                                      ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
                                      new-value
                                      )
-                        :Set-indicator-node (lambda (Num)
-                                              (ra:set-indicator-temponode Num))
+                        :Set-indicator-node ra:set-indicator-temponode
                         :Get-pixels-per-value-unit #f
+                        :Set-Statusbar-text show-temponode-in-statusbar
+                                              
                         )                        
 
 ;; delete temponode
@@ -658,6 +669,7 @@
                                                  (ra:set-mouse-track-to-reltempo)
                                                  (ra:set-current-temponode Num)
                                                  (ra:set-indicator-temponode Num)
+                                                 (show-temponode-in-statusbar (ra:get-temponode-value Num))
                                                  #t)
                      _                      :> #f))))
 

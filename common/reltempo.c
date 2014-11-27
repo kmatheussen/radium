@@ -37,9 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 float RelTempo2RealRelTempo(float reltempo){
 
-	if(reltempo>=0.0f) return (float)(reltempo+1.0f);
-
-	return (float)(1.0f/((-reltempo)+1.0f));
+  if (reltempo>=0.0f)
+    return (float)(reltempo+1.0f);
+  else
+    return (float)(1.0f / ((-reltempo)+1.0f) );
 
 }
 

@@ -189,12 +189,6 @@ void undoReltempo(void){
   Undo_RelTempoSlider(window,window->wblock);
 }
 
-static void update_statusbar(struct Tracker_Windows *window){
-  struct WBlocks *wblock = window->wblock;
-  GFX_SetChangeInt(window,wblock,"Block RelTempo 0.001*",(int)(wblock->block->reltempo*1000));
-  GFX_DrawStatusBar(window,wblock);
-}
-
 void setReltempo(float reltempo){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
@@ -204,16 +198,12 @@ void setReltempo(float reltempo){
     MAXBLOCKRELTIME
   );
 
-  update_statusbar(window);
+  //update_statusbar(window);
   DrawBlockRelTempo(window,wblock);
 
   wblock->block->is_dirty = true;
 }
 
-void showReltempoInStatusbar(void){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  update_statusbar(window);
-}
 
 float getMinReltempo(void){
   return MINBLOCKRELTIME;

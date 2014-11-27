@@ -52,6 +52,19 @@
   (min Max
        (max Min Try-it)))
 
+;; (round 2.5) -> 2
+;; (roundup 2.5) -> 3
+(define (roundup A)
+  (floor (+ A 0.5)))
+
+(define (two-decimals val)
+  (/ (roundup (* val 100))
+     100.0))
+
+(define (two-decimal-string number)
+  (format #f "~,2F" (* 1.0 number)))
+
+
 (define (min-notfalse . Args)
   (match (list Args)
          ()          :> #f
