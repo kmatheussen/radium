@@ -437,6 +437,15 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   QCursor::setPos(editor->mapToGlobal(QPoint(x,y)));
 }
 
+WPoint GetPointerPos(struct Tracker_Windows *tvisual){
+  WPoint ret;
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  QPoint pos = editor->mapFromGlobal(QCursor::pos());
+  ret.x = pos.x();
+  ret.y = pos.y();
+  return ret;
+}
+
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
 

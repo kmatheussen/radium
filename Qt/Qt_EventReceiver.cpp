@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/OS_Bs_edit_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 
@@ -78,10 +79,8 @@ void EditorWidget::customEvent(QEvent *e){
 
   //printf("Got customEvent\n");
   DO_GFX({
-#if !USE_OPENGL
       if(pc->isplaying)
         P2MUpdateSongPosCallBack();
-#endif
       UpdateClock(this->window);
       //MIDI_HandleInputMessage();
     });

@@ -61,7 +61,33 @@ int scrolls_per_second = -1;
 int default_scrolls_per_second = 20;
 
 
-#if !USE_OPENGL
+#if USE_OPENGL
+
+// Simpler version when using opengl
+void P2MUpdateSongPosCallBack(void){
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,root->curr_block);
+
+  bool setfirstpos=root->setfirstpos;
+
+  if(pc->playtype==PLAYSONG)
+    BS_SelectPlaylistPos(root->curr_playlist);
+
+  if(window->curr_block!=root->curr_block){
+    printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
+    if(setfirstpos){
+      wblock->curr_realline=0;
+      SetWBlock_Top_And_Bot_Realline(window,wblock);
+    }
+    SelectWBlock(
+                 window,
+                 wblock
+                 );
+    printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
+  }      
+}
+
+#else
 
 static STime last_time = 0;
 
@@ -75,13 +101,14 @@ void P2MUpdateSongPosCallBack(void){
         if(scrolls_per_second==-1)
           scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
 
-	if(pc->playtype==PLAYSONG) BS_SelectPlaylistPos(root->curr_playlist);
+	if(pc->playtype==PLAYSONG)
+          BS_SelectPlaylistPos(root->curr_playlist);
 
 	while(window!=NULL){
 		if(window->playalong==true){
 
                   DO_GFX({
-			wblock=ListFindElement1(&window->wblocks->l,curr_block);
+                        wblock=ListFindElement1(&window->wblocks->l,curr_block);
 			till_curr_realline=wblock->till_curr_realline;
                         
 			if(window->curr_block!=curr_block){
