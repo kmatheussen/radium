@@ -58,8 +58,8 @@ struct WTracks *CB_CopyTrack(
         towtrack->trackreallines = NULL;
 #if !USE_OPENGL
         towtrack->wfxnodes = NULL;
-#endif
         towtrack->wpitches = NULL;
+#endif
 
         towtrack->track->trackname=talloc_strdup(wtrack->track->trackname);
 

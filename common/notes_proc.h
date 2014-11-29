@@ -71,6 +71,11 @@ extern struct Notes *FindNoteOnSubTrack(
 	Place *placement
 );
 
+struct Notes *FindNote(
+                       struct Tracks *track,
+                       Place *placement
+                       );
+
 extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
 
 #endif

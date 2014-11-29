@@ -75,7 +75,9 @@ void NewTrackRealLines(
 	struct WTracks *wtrack
 ){
   wtrack->trackreallines=talloc(wblock->num_reallines * sizeof(struct TrackRealline));
+#if !USE_OPENGL
   wtrack->wpitches=talloc(sizeof(WPitches *) * wblock->num_reallines);
+#endif
 }
 
 

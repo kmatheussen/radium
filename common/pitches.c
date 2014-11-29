@@ -152,23 +152,15 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
 }
 
 void SetPitchCurrPos(struct Tracker_Windows *window){
-  struct WBlocks *wblock = window->wblock;
-  struct WTracks *wtrack = wblock->wtrack;
-  int num_subtracks = wtrack->num_vel;
-  int realline_num = wblock->curr_realline;
-  struct LocalZooms *realline= wblock->reallines[realline_num];
+  struct WBlocks       *wblock        = window->wblock;
+  struct WTracks       *wtrack        = wblock->wtrack;    
+  int                   realline_num  = wblock->curr_realline;  
+  struct LocalZooms    *realline= wblock->reallines[realline_num];
 
-  int subtrack_num;
-  struct Notes *note = NULL;
+  struct Notes *note = FindNote(wtrack->track, &realline->l.p);
 
-  for(subtrack_num=0;subtrack_num<num_subtracks;subtrack_num++){
-    note = FindNoteOnSubTrack(window, wblock, wtrack, subtrack_num, realline_num, &realline->l.p);
-    if(note != NULL)
-      break;
-  }
+  float notenum = 0.0f;
 
-  int notenum = -1;
-  
   if (note != NULL) {
     
     printf("note: %f\n",note==NULL ? -1 : note->note);
@@ -189,7 +181,7 @@ void SetPitchCurrPos(struct Tracker_Windows *window){
     
     GFX_CloseReq(window,reqtype);
     
-    printf("notenum: %d\n",notenum);
+    printf("notenum: %f\n",notenum);
 
     if(notetext!=NULL)
       AddPitch(window, wblock, wtrack, note, &realline->l.p, notenum);

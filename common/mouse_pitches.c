@@ -201,6 +201,7 @@ static int MovePitch(
   return 0;
 }
 
+#if !USE_OPENGL
 static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *wtrack, int realline, int x, int y, bool create_new_pitch, struct Notes **note, struct Pitches **pitch){
   {
     struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
@@ -248,7 +249,7 @@ static bool GetPitchUnderMouse(struct Tracker_Windows *window, struct WTracks *w
 
   return false;
 }
-
+#endif
 
 
 
@@ -269,7 +270,7 @@ bool SetMouseActionPitches(
   //RError("dead code: SetMouseActionPitches");
   //printf("dead code: SetMouseActionPitches\n");
   return false;
-  
+#if 0  
 	struct WBlocks *wblock=window->wblock;
         Place place;
 
@@ -343,6 +344,7 @@ bool SetMouseActionPitches(
         }
 
         return false;
+#endif
 }
 
 

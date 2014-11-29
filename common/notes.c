@@ -489,6 +489,21 @@ struct Notes *FindNoteOnSubTrack(
 	return NULL;
 }
 
+struct Notes *FindNote(
+                       struct Tracks *track,
+                       Place *placement
+                       )
+{
+  struct Notes *note = track->notes;
+  while(note != NULL) {
+    if (PlaceBetween(&note->l.p, placement, &note->end))
+      break;
+    note = NextNote(note);
+  }
+  return note;
+}
+
+
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;

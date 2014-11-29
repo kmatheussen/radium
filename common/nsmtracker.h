@@ -754,8 +754,8 @@ struct WTracks{
 	struct TrackRealline *trackreallines;
 #if !USE_OPENGL
 	WFXNodes **wfxnodes;
-#endif
         WPitches **wpitches; // Can be removed, plus all usage of it. Not used in OpenGL.
+#endif
 
         vector_t fx_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for fx 1, element 2 contains nodes for fx 2, etc.)
         vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
