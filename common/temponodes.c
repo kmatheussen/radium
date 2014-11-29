@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "temponodes_proc.h"
 
+#if !USE_OPENGL
 
 void MakeWTempoNodesCallBack(
 	struct Tracker_Windows *window,
@@ -117,6 +118,7 @@ void UpdateWTempoNodes(
 	}
 }
 
+#endif
 
 struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
@@ -153,15 +155,16 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 		reltempo
 	);
 
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 
-#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 #endif
 
 	GFX_DrawStatusBar(window,wblock);
 }
+
 
 void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
@@ -182,9 +185,9 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 
 	LegalizeTempoNodes(wblock->block);
 
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 
-#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 #endif

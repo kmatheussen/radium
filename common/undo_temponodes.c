@@ -75,15 +75,12 @@ void *Undo_Do_TempoNodes(
 	wblock->block->temponodes=undo_temponodes;
 	wblock->block->lasttemponode=ListLast3(&undo_temponodes->l);
 
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
-
+#endif
 	UpdateSTimes(wblock->block);
 
         UpdateAllTrackReallines(window,wblock);
 
 	return temp;
 }
-
-
-
-

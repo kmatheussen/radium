@@ -630,8 +630,8 @@ struct TrackReallineElements{
 
   int type;
   int subtype;
-  float y1,y2;
-  float x1,x2;
+  //  float y1,y2;
+  //  float x1,x2;
   void *pointer;
 
   APoint *velocity_polygon;

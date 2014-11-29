@@ -106,10 +106,12 @@ static void InsertTRLElementS(
         element->note=note;
 	element->type=type;
 	element->subtype=subtype;
+        #if 0
 	element->y1=y1;
 	element->y2=y2;
 	element->x1=x1;
 	element->x2=x2;
+        #endif
 	element->pointer=pointer;
 
 	AddTrackReallineElement(wtrack,element,realline);
@@ -172,11 +174,13 @@ static void InsertTRLElement(
 	
 	element->type=type;
 	element->subtype=subtype;
+#if 0
 	element->y1=y1;
 	element->y2=y2;
 
 	element->x1=x1;
 	element->x2=x2;
+#endif
 	element->pointer=pointer;
         element->note=note;
 
@@ -205,6 +209,7 @@ static void InsertTRLElement(
     Adds a trackreallineelement to the trackline. Does allso ensure that
     all datas are within the trackline area.
 **************************************************************************/
+#if !USE_OPENGL
 static void NodeLineCallBack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -424,8 +429,7 @@ void NodeLineCallBack_vel(
 			    );
 	}
 }
-
-
+#endif
 
 static void AddTrackReallineNote(
 	struct Tracker_Windows *window,
@@ -433,15 +437,9 @@ static void AddTrackReallineNote(
 	struct WTracks *wtrack,
 	struct Notes *note
 ){
-	struct TrackReallineNodeInfo nodeinfo;
-
-	struct Velocities *velocity,*prev;
-
 	int realline=FindRealLineForNote(wblock,note->Tline,note);
 	int subtrack=FindFirstFreeSubTrack(wtrack,realline,&note->l.p);
         note->subtrack = subtrack;
-
-	float maxx = MAX_VELOCITY;
 
         R_ASSERT(note!=NULL);
 	InsertTRLElement(
@@ -456,6 +454,12 @@ static void AddTrackReallineNote(
                 note
 	);
 
+#if !USE_OPENGL
+	struct Velocities *velocity,*prev;
+
+	float maxx = MAX_VELOCITY;
+
+	struct TrackReallineNodeInfo nodeinfo;
 	nodeinfo.wtrack=wtrack;
 	nodeinfo.pointer=note;
 	nodeinfo.type=TRE_VELLINE;
@@ -513,6 +517,7 @@ static void AddTrackReallineNote(
 			&NodeLineCallBack
 		);
 	}
+#endif
 }
 
 
@@ -577,6 +582,7 @@ int FindNumberOfFreeReallinesDown(struct WBlocks *wblock,struct WTracks *wtrack,
     Set x1,y1,x2,y2 values for the TRE_THISNOTELINES trackrealline
     element 'element'.
 ************************************************************************/
+#if !USE_OPENGL
 void InsertCoordinatesForThisNoteLines(
 	struct Tracker_Windows *window,
 	struct WTracks *wtrack,
@@ -629,7 +635,7 @@ void InsertCoordinatesForThisNoteLines(
 	wtrack->trackreallines[realline].note=((struct Notes *)(element->pointer))->note;
 	wtrack->trackreallines[realline].dasnote=(struct Notes *)element->pointer;
 }
-
+#endif
 
 int NoteReachesDownToRealline(
 	struct WBlocks *wblock,
@@ -697,11 +703,15 @@ void InsertNotesFromRealline(
 			)==1
 		){
 			AddTrackReallineElement(wtrack,element,realline+to_insert-lokke+1);
+                        #if !USE_OPENGL
 			InsertCoordinatesForThisNoteLines(window,wtrack,realline+to_insert-lokke+1,element);
+                        #endif
 		}else{
 			element->next=mylist;
 			mylist=element;
+                        #if !USE_OPENGL
 			InsertCoordinatesForThisNoteLines(window,wtrack,realline,element);
+                        #endif
 			mul=1;
 		}
 
@@ -721,7 +731,9 @@ void InsertNotesFromRealline(
 		while(element!=NULL){
 			while(element!=NULL && element->type!=TRE_THISNOTELINES) element=element->next;
 			if(element!=NULL){
+                                #if !USE_OPENGL
 				InsertCoordinatesForThisNoteLines(window,wtrack,realline,element);
+                                #endif
 				element=element->next;
 			}
 		}
@@ -730,7 +742,9 @@ void InsertNotesFromRealline(
 		while(element->type!=TRE_THISNOTELINES) element=element->next;
 		wtrack->trackreallines[realline].note=((struct Notes *)(element->pointer))->note;
                 wtrack->trackreallines[realline].dasnote=(struct Notes *)element->pointer;
+                #if !USE_OPENGL
 		InsertCoordinatesForThisNoteLines(window,wtrack,realline,element);
+                #endif
 	}
 
 
@@ -785,7 +799,9 @@ void OrganizeThisNoteLines(
 				note=temp->pointer;
 				trackreallines[realline].note=note->note;
                                 trackreallines[realline].dasnote=note;
+                                #if !USE_OPENGL
 				InsertCoordinatesForThisNoteLines(window,wtrack,realline,temp);
+                                #endif
 			}
 		}
 	}
@@ -998,7 +1014,6 @@ void UpdateTrackReallines(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	struct Notes *note=wtrack->track->notes;
 
 	SetNum_Vel(wtrack);
 
@@ -1015,10 +1030,13 @@ void UpdateTrackReallines(
 
 	NewTrackRealLines(wblock,wtrack);
 
+	struct Notes *note=wtrack->track->notes;
+
 	while(note!=NULL){
 		AddTrackReallineNote(window,wblock,wtrack,note);
 		note=NextNote(note);
 	}
+
 	InsertStartTREElements(wtrack);
 
 	OrganizeThisNoteLines(window,wblock,wtrack);
@@ -1137,6 +1155,7 @@ void TR_scaleTrackReallines(
 	int oldwidth
 	)
 {
+  #if 0
   struct TrackRealline *tr=wtrack->trackreallines;
   struct TrackReallineElements *tre;
   int num_reallines=wblock->num_reallines;
@@ -1151,7 +1170,7 @@ void TR_scaleTrackReallines(
       tre=tre->next;
     }
   }
-
+#endif
 }
 
 

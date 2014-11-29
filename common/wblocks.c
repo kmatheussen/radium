@@ -213,11 +213,12 @@ void NewWBlock(
 	NewLocalZooms(window,wblock);
 
 	UpdateRealLines(window,wblock);
-
+        
 	UpdateWTempos(window,wblock);
 	UpdateWLPBs(window,wblock);
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
-
+#endif
 	wblock->isgfxdatahere=true;
 
 	ListAddElement1(&window->wblocks,&wblock->l);

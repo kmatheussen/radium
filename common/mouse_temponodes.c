@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "mouse_temponodes_proc.h"
 
+#if !USE_OPENGL
+
 extern struct Root *root;
 
 int MoveTempoNode_Mouse(
@@ -256,22 +258,4 @@ void SetMouseActionTempoNodes(
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif

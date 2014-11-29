@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+// OLD CODE BELOW. Will be deleted
+
+#if !USE_OPENGL
+
 /*
 void FillInLineRealLine(
 	struct Tracker_Windows *window,
@@ -242,3 +246,4 @@ void GetNodeLine(
 }
 
 
+#endif

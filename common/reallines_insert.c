@@ -187,8 +187,8 @@ void InsertRealLines_CurrPos(
 		case TEMPONODETRACK:
 			Undo_TempoNodes_CurrPos(window);
 			InsertPlace_temponodes(block,place,toplace);
-			UpdateWTempoNodes(window,wblock);
 #if !USE_OPENGL
+			UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
 			UpdateSTimes(wblock->block);

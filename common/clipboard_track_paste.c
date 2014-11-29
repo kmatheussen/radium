@@ -186,8 +186,8 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			block->temponodes=CB_CopyTempoNodes(cb_temponode);
 			CutListAt_a(&block->temponodes,&lastplace);
 			LegalizeTempoNodes(block);
-			UpdateWTempoNodes(window,wblock);
 #if !USE_OPENGL
+			UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
 			UpdateSTimes(block);

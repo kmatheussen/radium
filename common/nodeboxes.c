@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
+#if !USE_OPENGL
 
 
 
@@ -54,7 +54,6 @@ void GetNodeBox_basic(
 		int boxheight
 ){
   //printf("__________w/h: %d/%d\n",boxwidth,boxheight);
-
 
 	ret->y1 = within->y1 + (tre->y1*(within->y2-within->y1)) - (boxheight/2);
 	ret->y2 = within->y1 + (tre->y1*(within->y2-within->y1)) + (boxheight/2);
@@ -118,3 +117,5 @@ bool isInsideNodeBox(
   return insideTBox(&get,x,y);
 }
 
+
+#endif

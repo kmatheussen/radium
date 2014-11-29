@@ -45,7 +45,8 @@ void SetMouseActionVelocities(
 	int realline,
 	int click
 ){
-	struct WBlocks *wblock=window->wblock;
+#if !USE_OPENGL
+  struct WBlocks *wblock=window->wblock;
 
 	WArea warea;
         TBox within;
@@ -138,6 +139,7 @@ void SetMouseActionVelocities(
 	   firstringinstatusbar[0]=0;
 	  GFX_DrawStatusBar(window,window->wblock);
 	}
+#endif
 }
 
 
@@ -199,7 +201,9 @@ void SetMouseActionFXarea(
 	int x,int y,
 	int click
 ){
-	struct WBlocks *wblock=window->wblock;
+#if !USE_OPENGL
+
+  struct WBlocks *wblock=window->wblock;
 
 	struct TrackReallineElements *element;
 	WFXNodes *wfxnodemin=NULL;
@@ -241,7 +245,6 @@ void SetMouseActionFXarea(
 	rel_x=((float)x)/(wtrack->fxarea.x2-wtrack->fxarea.x);
 
         
-#if !USE_OPENGL
         WFXNodes *wfxnode=wtrack->wfxnodes[realline];
 
 	while(wfxnode!=NULL){
@@ -263,7 +266,6 @@ void SetMouseActionFXarea(
 		}
 		wfxnode=wfxnode->next;
 	}
-#endif
 	element=wtrack->trackreallines[realline].trackreallineelements;
 	subtrack=GetSubTrack(wtrack,x);
 
@@ -356,6 +358,7 @@ void SetMouseActionFXarea(
 		SetMouseActionVelocities(window,action,wtrack,x,y,realline,0);
 
 	}
+#endif
 
 }
 

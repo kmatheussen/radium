@@ -108,8 +108,8 @@ void CB_CutTrack_CurrPos(
 			Undo_Tempos_CurrPos(window);
 			cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
-			UpdateWTempos(window,wblock);
 #if !USE_OPENGL
+			UpdateWTempos(window,wblock);
 			DrawUpTempos(window,wblock);
 #endif
 			UpdateSTimes(block);
@@ -119,8 +119,8 @@ void CB_CutTrack_CurrPos(
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
-			UpdateWTempoNodes(window,wblock);
 #if !USE_OPENGL
+			UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
 			UpdateSTimes(block);

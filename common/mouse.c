@@ -95,11 +95,13 @@ void SetMouseAction(
           window->must_redraw = true;
 	}
 
+#if !USE_OPENGL
 	if(insideWArea(&wblock->temponodearea,x)){
 		SetMouseActionTempoNodes(window,action,x,y,click);
 		goto exit;
 	}
-
+#endif
+        
 	action->action=NOACTION;
 
  exit:

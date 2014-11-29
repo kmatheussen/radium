@@ -65,8 +65,8 @@ void UpdateReallinesDependens(
 	UpdateAllTrackReallines(window,wblock);
 	UpdateWTempos(window,wblock);
 	UpdateWLPBs(window,wblock);
-	UpdateWTempoNodes(window,wblock);
 #if !USE_OPENGL
+	UpdateWTempoNodes(window,wblock);
 	UpdateAllFXNodeLines(window,wblock);
 #endif
 	wblock->num_reallines_last=wblock->num_reallines;
@@ -171,7 +171,7 @@ int FindNumberOfRealLines(
     one function.)
 ************************************************************************/
 
-int UpdateRealLinesRec(
+static int UpdateRealLinesRec(
 	struct LocalZooms **reallines,
 	struct LocalZooms *localzoom,
 	int realline

@@ -91,6 +91,9 @@ void SetMouseActionMainBPM(
 	GFX_DrawStatusBar(window,wblock);
 }
 
+
+#if !USE_OPENGL
+
 void SetMouseActionRelTempo(
 	struct Tracker_Windows *window
 ){
@@ -126,6 +129,8 @@ void SetMouseActionRelTempo(
 #endif
 }
 
+#endif
+
 void SetMouseActionTempoHeader(
 	struct Tracker_Windows *window,
 	struct MouseAction *action,
@@ -139,6 +144,7 @@ void SetMouseActionTempoHeader(
 		return;
 	}
 
+#if !USE_OPENGL
 	if(x>wblock->temponodearea.x){
 //		action->action=RELTEMPO;
 		if(click==0) return;
@@ -146,7 +152,8 @@ void SetMouseActionTempoHeader(
 		SetMouseActionRelTempo(window);
 		return;
 	}
-
+#endif
+        
 	if(x>wblock->tempoTypearea.x){
 //		action->action=MAINBPM;
 		if(click==0) return;
