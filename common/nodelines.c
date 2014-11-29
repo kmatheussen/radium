@@ -16,18 +16,229 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "vector_proc.h"
 #include "placement_proc.h"
 #include "realline_calc_proc.h"
-#include "nodelines.h"
-#include "tbox_proc.h"
 
 #include "nodelines_proc.h"
+
+
+
+
+typedef struct Node Node;
+
+static const Node *get_node_from_nodeline1(const struct NodeLine *nodeline, float y_offset){
+  struct Node *ret = (struct Node*)talloc(sizeof(Node));
+  ret->x = nodeline->x1;
+  ret->y = nodeline->y1 + y_offset;
+  ret->element = nodeline->element1;
+  return ret;
+}
+
+static const Node *get_node_from_nodeline2(const struct NodeLine *nodeline, float y_offset){
+  struct Node *ret = (struct Node*)talloc(sizeof(Node));
+  ret->x = nodeline->x2;
+  ret->y = nodeline->y2 + y_offset;
+  ret->element = nodeline->element2;
+  return ret;
+}
+
+const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset){
+  vector_t *vector = (vector_t*)talloc(sizeof(vector_t));
+  while(nodelines != NULL) {
+    if (nodelines->is_node)
+      VECTOR_push_back(vector, get_node_from_nodeline1(nodelines, y_offset));
+
+    struct NodeLine *next = nodelines->next;
+
+    if (next==NULL) {
+      VECTOR_push_back(vector, get_node_from_nodeline2(nodelines, y_offset));
+      break;
+    }else{
+      nodelines = next;
+    }
+  }
+  return vector;
+}
+
+
+// Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
+static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct ListHeader3 *element, float y){
+
+  if(y <= nodelines->y1)
+    return;
+
+  while(nodelines != NULL) {
+    if(y>nodelines->y1 && y<nodelines->y2){
+
+      // put it after
+
+      struct NodeLine *n = (struct NodeLine *)talloc(sizeof(struct NodeLine));
+      n->element1 = element;
+      n->y1 = y;
+
+      n->x1 = scale(GetfloatFromPlace(&element->p),
+                    GetfloatFromPlace(&nodelines->element1->p),
+                    GetfloatFromPlace(&nodelines->element2->p),
+                    nodelines->x1, nodelines->x2
+                    );
+
+      //n->x1 = scale(y, nodelines->y1, nodelines->y2, nodelines->x1, nodelines->x2);
+
+      n->next = nodelines->next ;
+      nodelines->next = n;
+
+      n->x2 = nodelines->x2;
+      n->y2 = nodelines->y2;
+      n->element2 = nodelines->element2;
+
+      nodelines->x2 = n->x1;
+      nodelines->y2 = n->y1;
+      nodelines->element2 = n->element1;
+
+      return;
+    }
+
+    nodelines = nodelines->next;
+  }
+}
+
+
+const struct NodeLine *create_nodelines(
+                                        const struct Tracker_Windows *window,
+                                        const struct WBlocks *wblock,
+                                        const struct ListHeader3 *list,                                  
+                                        float (*get_x)(const struct WBlocks *wblock, const struct ListHeader3 *element), // should return a value between 0 and 1.
+                                        const struct ListHeader3 *last_element // may be null. may also contain more than one element.
+                                        )
+{
+  struct NodeLine *nodelines = NULL;
+
+  R_ASSERT(list != NULL);
+  R_ASSERT(list->next != NULL || last_element!=NULL);
+
+
+  // 1. Create straight forward nodelines from the list
+  {
+    float reallineF = 0.0f;
+    struct NodeLine *nodelines_last = NULL;
+
+    while(list != NULL){
+      struct NodeLine *nodeline = (struct NodeLine *)talloc(sizeof(struct NodeLine));
+
+      nodeline->x1 = get_x(wblock, list);
+      reallineF = FindReallineForF(wblock, reallineF, &list->p);
+      nodeline->y1 = get_realline_y(window, reallineF);
+      nodeline->element1 = list;
+      nodeline->is_node = true;
+
+      if(nodelines_last==NULL)
+        nodelines = nodelines_last = nodeline;
+      else {
+        nodelines_last->next = nodeline;
+        nodelines_last = nodeline;
+      }
+
+      list = list->next;
+      if (list==NULL) {
+        list = last_element;
+        last_element = NULL;
+      }
+    }
+  }
+
+
+  // 2. Insert x2, y2 and element2 attributes, and remove last element.
+  {
+    struct NodeLine *ns = nodelines;
+    struct NodeLine *next = ns->next;
+    for(;;){
+      ns->x2 = next->x1;
+      ns->y2 = next->y1;
+      ns->element2 = next->element1;
+      if(next->next==NULL)
+        break;
+      ns = next;
+      next = next->next;
+    }
+    ns->next = NULL; // Cut the last element
+  }
+
+
+  // 3. Insert all non-node break-points. (caused by realline level changes)
+  {
+    struct LocalZooms **reallines=wblock->reallines;
+    int curr_level = reallines[0]->level;
+    int realline;
+    float reallineF = 0.0f;
+    
+    for(realline = 1; realline < wblock->num_reallines ; realline++) {
+          
+      struct LocalZooms *localzoom = reallines[realline];
+      
+      if (localzoom->level != curr_level){
+        reallineF = FindReallineForF(wblock, reallineF, &localzoom->l.p);
+        insert_nonnode_nodeline(nodelines, &localzoom->l, get_realline_y(window, reallineF));
+        curr_level = localzoom->level;
+      }
+    }
+  }
+
+
+  return nodelines;
+}
+
+
+// temponodes
+///////////////////////////////////////////////////////////
+
+void SetTempoNodeLinesDirty(struct WBlocks *wblock){
+  wblock->temponodes_are_dirty = true;
+  wblock->block->is_dirty = true;
+}
+
+static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct TempoNodes *temponode = (struct TempoNodes*)element;
+  return scale(temponode->reltempo,
+               (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
+               wblock->temponodearea.x, wblock->temponodearea.x2
+               );
+}
+
+static void ensureTemponodesAreaNotDirty(const struct Tracker_Windows *window, struct WBlocks *wblock){
+  if (wblock->temponodes_are_dirty || wblock->tempo_nodelines==NULL || wblock->tempo_nodes==NULL) {
+    wblock->tempo_nodelines = create_nodelines(window,
+                                               wblock,
+                                               &wblock->block->temponodes->l,
+                                               get_temponode_x,
+                                               NULL
+                                               );
+    wblock->tempo_nodes = get_nodeline_nodes(wblock->tempo_nodelines, wblock->t.y1);
+    wblock->temponodes_are_dirty = false;
+  }
+}
+
+const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, struct WBlocks *wblock){
+  ensureTemponodesAreaNotDirty(window, wblock);
+  return wblock->tempo_nodelines;
+}
+
+const vector_t *GetTempoNodes(const struct Tracker_Windows *window, struct WBlocks *wblock){
+  ensureTemponodesAreaNotDirty(window, wblock);
+  return wblock->tempo_nodes;
+}
 
 
 
 // OLD CODE BELOW. Will be deleted
 
 #if !USE_OPENGL
+
+#include "placement_proc.h"
+#include "realline_calc_proc.h"
+#include "nodelines.h"
+#include "tbox_proc.h"
+
 
 /*
 void FillInLineRealLine(

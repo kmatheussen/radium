@@ -26,18 +26,6 @@ extern char *NotesTexts3[];
 extern char *NotesTexts2[];
 
 
-static int get_realline_y1(const struct Tracker_Windows *window, int realline){
-  return window->fontheight*realline;
-}
-
-static int get_realline_y2(const struct Tracker_Windows *window, int realline){
-  return window->fontheight*(realline+1);
-}
-
-static float get_realline_y(const struct Tracker_Windows *window, float reallineF){
-  return window->fontheight*reallineF;
-}
-
 static void draw_bordered_text(
                                const struct Tracker_Windows *window,
                                int colornum, int z,
@@ -211,178 +199,13 @@ void create_single_border(
 
 
 
-/******************************************************************************************
-   NodeLine. Will replace the old type of nodelines. Placed here for convenience, for now.
-*******************************************************************************************/
-
-static Node *get_node_from_nodeline1(struct NodeLine *nodeline, float y_offset){
-  struct Node *ret = (struct Node*)talloc(sizeof(Node));
-  ret->x = nodeline->x1;
-  ret->y = nodeline->y1 + y_offset;
-  ret->element = nodeline->element1;
-  return ret;
-}
-
-static Node *get_node_from_nodeline2(struct NodeLine *nodeline, float y_offset){
-  struct Node *ret = (struct Node*)talloc(sizeof(Node));
-  ret->x = nodeline->x2;
-  ret->y = nodeline->y2 + y_offset;
-  ret->element = nodeline->element2;
-  return ret;
-}
-
-static vector_t *get_nodeline_nodes(struct NodeLine *nodelines, float y_offset){
-  vector_t *vector = (vector_t*)talloc(sizeof(vector_t));
-  while(nodelines != NULL) {
-    if (nodelines->is_node)
-      VECTOR_push_back(vector, get_node_from_nodeline1(nodelines, y_offset));
-
-    struct NodeLine *next = nodelines->next;
-
-    if (next==NULL) {
-      VECTOR_push_back(vector, get_node_from_nodeline2(nodelines, y_offset));
-      break;
-    }else{
-      nodelines = next;
-    }
-  }
-  return vector;
-}
 
 
-// Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
-static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct ListHeader3 *element, float y){
-
-  if(y <= nodelines->y1)
-    return;
-
-  while(nodelines != NULL) {
-    if(y>nodelines->y1 && y<nodelines->y2){
-
-      // put it after
-
-      struct NodeLine *n = (struct NodeLine *)talloc(sizeof(struct NodeLine));
-      n->element1 = element;
-      n->y1 = y;
-
-      n->x1 = scale(GetfloatFromPlace(&element->p),
-                    GetfloatFromPlace(&nodelines->element1->p),
-                    GetfloatFromPlace(&nodelines->element2->p),
-                    nodelines->x1, nodelines->x2
-                    );
-
-      //n->x1 = scale(y, nodelines->y1, nodelines->y2, nodelines->x1, nodelines->x2);
-
-      n->next = nodelines->next ;
-      nodelines->next = n;
-
-      n->x2 = nodelines->x2;
-      n->y2 = nodelines->y2;
-      n->element2 = nodelines->element2;
-
-      nodelines->x2 = n->x1;
-      nodelines->y2 = n->y1;
-      nodelines->element2 = n->element1;
-
-      return;
-    }
-
-    nodelines = nodelines->next;
-  }
-}
-
-// TODO: When OpenGL has replaced the old gfx system completely, move this function and other relevant functions, into wtracks.c, wblocks.c, and so forth.
-// This function, and some others, create structures which are used both by OpenGL and other places (mouse handling), and therefore shouldn't be placed here.
-struct NodeLine *create_nodelines(
-                                  const struct Tracker_Windows *window,
-                                  const struct WBlocks *wblock,
-                                  const struct ListHeader3 *list,                                  
-                                  float (*get_x)(const struct WBlocks *wblock, const struct ListHeader3 *element), // should return a value between 0 and 1.
-                                  const struct ListHeader3 *last_element // may be null. may also contain more than one element.
-                                  )
-{
-  struct NodeLine *nodelines = NULL;
-
-  R_ASSERT(list != NULL);
-  R_ASSERT(list->next != NULL || last_element!=NULL);
-
-
-  // 1. Create straight forward nodelines from the list
-  {
-    float reallineF = 0.0f;
-    struct NodeLine *nodelines_last = NULL;
-
-    while(list != NULL){
-      struct NodeLine *nodeline = (struct NodeLine *)talloc(sizeof(struct NodeLine));
-
-      nodeline->x1 = get_x(wblock, list);
-      reallineF = FindReallineForF(wblock, reallineF, &list->p);
-      nodeline->y1 = get_realline_y(window, reallineF);
-      nodeline->element1 = list;
-      nodeline->is_node = true;
-
-      if(nodelines_last==NULL)
-        nodelines = nodelines_last = nodeline;
-      else {
-        nodelines_last->next = nodeline;
-        nodelines_last = nodeline;
-      }
-
-      list = list->next;
-      if (list==NULL) {
-        list = last_element;
-        last_element = NULL;
-      }
-    }
-  }
-
-
-  // 2. Insert x2, y2 and element2 attributes, and remove last element.
-  {
-    struct NodeLine *ns = nodelines;
-    struct NodeLine *next = ns->next;
-    for(;;){
-      ns->x2 = next->x1;
-      ns->y2 = next->y1;
-      ns->element2 = next->element1;
-      if(next->next==NULL)
-        break;
-      ns = next;
-      next = next->next;
-    }
-    ns->next = NULL; // Cut the last element
-  }
-
-
-  // 3. Insert all non-node break-points. (caused by realline level changes)
-  {
-    struct LocalZooms **reallines=wblock->reallines;
-    int curr_level = reallines[0]->level;
-    int realline;
-    float reallineF = 0.0f;
-    
-    for(realline = 1; realline < wblock->num_reallines ; realline++) {
-          
-      struct LocalZooms *localzoom = reallines[realline];
-      
-      if (localzoom->level != curr_level){
-        reallineF = FindReallineForF(wblock, reallineF, &localzoom->l.p);
-        insert_nonnode_nodeline(nodelines, &localzoom->l, get_realline_y(window, reallineF));
-        curr_level = localzoom->level;
-      }
-    }
-  }
-
-
-  return nodelines;
-}
-
-
-static void drawNodeLines(struct NodeLine *nodelines, int colnum, bool is_selected, float alpha, float alpha_selected){
+static void drawNodeLines(const struct NodeLine *nodelines, int colnum, bool is_selected, float alpha, float alpha_selected){
   float width = is_selected ? 2.3 : 1.75;
   GE_Context *c = GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)));
   
-  for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
+  for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
     GE_line(c, ns->x1, ns->y1, ns->x2, ns->y2, width);
 }
 
@@ -706,32 +529,17 @@ static void create_bpmtrack(const struct Tracker_Windows *window, const struct W
    reltempo track
  ************************************/
 
-static float get_temponode_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
-  struct TempoNodes *temponode = (struct TempoNodes*)element;
-  return scale(temponode->reltempo,
-               (float)(-wblock->reltempomax+1.0f),(float)(wblock->reltempomax-1.0f),
-               wblock->temponodearea.x, wblock->temponodearea.x2
-               );
-}
-
 static void create_reltempotrack(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
-  struct NodeLine *nodelines = create_nodelines(window,
-                                                wblock,
-                                                &wblock->block->temponodes->l,
-                                                get_temponode_x,
-                                                NULL
-                                                );
+  const struct NodeLine *nodelines = GetTempoNodeLines(window, wblock);
 
   bool is_current = wblock->mouse_track==TEMPONODETRACK;
 
   drawNodeLines(nodelines, 4, is_current, 0.6, 0.9);
   
-  wblock->reltempo_nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
- 
   if (indicator_node != NULL || is_current)
-    VECTOR_FOR_EACH(Node *, node, wblock->reltempo_nodes){
-      if(wblock->mouse_track==TEMPONODETRACK)
+    VECTOR_FOR_EACH(const Node *, node, GetTempoNodes(window, wblock)) {
+        if(wblock->mouse_track==TEMPONODETRACK)
         draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
       if (node->element==indicator_node)
         draw_node_indicator(node->x, node->y - wblock->t.y1);
@@ -925,7 +733,7 @@ static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 
                );
 }
 
-static struct NodeLine *create_track_pitchlines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, int left_subtrack){
+static const struct NodeLine *create_track_pitchlines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, int left_subtrack){
   struct Pitches *first_pitch = (struct Pitches*)talloc(sizeof(struct Pitches));
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = &note->pitches->l;
@@ -950,7 +758,7 @@ static struct NodeLine *create_track_pitchlines(const struct Tracker_Windows *wi
 
   GE_Context *line_color = GE_color_alpha(7, 0.5);
   
-  struct NodeLine *nodelines = create_nodelines(window,
+  const struct NodeLine *nodelines = create_nodelines(window,
                                                 wblock,
                                                 &first_pitch->l,
                                                 get_pitch_x,
@@ -958,10 +766,10 @@ static struct NodeLine *create_track_pitchlines(const struct Tracker_Windows *wi
                                                 );
 
   if (left_subtrack==-1) {
-    vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+    const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
     VECTOR_push_back(&wtrack->pitch_nodes, nodes);
     
-    for(struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
+    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
       if(show_read_lines || nodeline->x1!=nodeline->x2)
         GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
     
@@ -1091,7 +899,7 @@ static void create_velocity_gradient_background(
                                                 float area_y2,
                                                 float start_note,
                                                 float end_note,
-                                                struct NodeLine *velocity_nodelines
+                                                const struct NodeLine *velocity_nodelines
                                                 )
 {
 
@@ -1102,7 +910,7 @@ static void create_velocity_gradient_background(
 
   GE_gradient_triangle_start();
 
-  struct NodeLine *nodeline = velocity_nodelines;
+  const struct NodeLine *nodeline = velocity_nodelines;
   while (nodeline != NULL){
     float vel_y1 = nodeline->y1;
     float vel_y2 = nodeline->y2;
@@ -1134,11 +942,11 @@ static void create_velocity_gradient_background(
 }
 
 static void create_velocities_gradient_background(
-                                                  struct NodeLine *pitch_nodelines,
-                                                  struct NodeLine *velocity_nodelines
+                                                  const struct NodeLine *pitch_nodelines,
+                                                  const struct NodeLine *velocity_nodelines
                                                   )
 {
-  struct NodeLine *nodeline = pitch_nodelines;
+  const struct NodeLine *nodeline = pitch_nodelines;
 
   while(nodeline != NULL){
     float x1 = nodeline->x1;
@@ -1205,7 +1013,7 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
   return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
 }
 
-void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, struct NodeLine *pitch_nodelines){
+void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, const struct NodeLine *pitch_nodelines){
   struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
@@ -1220,14 +1028,14 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
   subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
 
-  struct NodeLine *nodelines = create_nodelines(window,
+  const struct NodeLine *nodelines = create_nodelines(window,
                                                 wblock,
                                                 &first_velocity->l,
                                                 get_velocity_x,
                                                 &last_velocity->l
                                                 );
 
-  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
   VECTOR_push_back(&wtrack->velocity_nodes, nodes);
   
   // background
@@ -1240,7 +1048,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
 
       GE_trianglestrip_start();
       
-      for(struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+      for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
         GE_trianglestrip_add(c, subtrack_x1, ns->y1);
         GE_trianglestrip_add(c, ns->x1, ns->y1);
         GE_trianglestrip_add(c, subtrack_x1, ns->y2);
@@ -1299,14 +1107,14 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
   wtrackfx_x1 = wtrack->fxarea.x;
   wtrackfx_x2 = wtrack->fxarea.x2;
 
-  struct NodeLine *nodelines = create_nodelines(window,
+  const struct NodeLine *nodelines = create_nodelines(window,
                                                 wblock,
                                                 &fxs->fxnodelines->l,
                                                 get_fxs_x,
                                                 NULL
                                                 );  
 
-  vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
   VECTOR_push_back(&wtrack->fx_nodes, nodes);
 
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
@@ -1314,7 +1122,7 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
   drawNodeLines(nodelines, fxs->fx->color, is_current, 0.6, 1.0);
   
   if (indicator_node != NULL || is_current)
-    VECTOR_FOR_EACH(Node *, node, nodes){
+    VECTOR_FOR_EACH(const Node *, node, nodes){
       if (wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs)
         draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
       if (node->element==indicator_node)
@@ -1359,7 +1167,7 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
       if(note->subtrack >= left_subtrack) {
-        struct NodeLine *pitch_nodelines = create_track_pitchlines(window, wblock, wtrack, note, left_subtrack);
+        const struct NodeLine *pitch_nodelines = create_track_pitchlines(window, wblock, wtrack, note, left_subtrack);
         create_track_velocities(window, wblock, wtrack, note, pitch_nodelines);
       }
       note = NextNote(note);

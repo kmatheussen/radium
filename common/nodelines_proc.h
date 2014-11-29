@@ -14,6 +14,29 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+extern LANGSPEC const struct NodeLine *create_nodelines(
+                                                        const struct Tracker_Windows *window,
+                                                        const struct WBlocks *wblock,
+                                                        const struct ListHeader3 *list,                                  
+                                                        float (*get_x)(const struct WBlocks *wblock, const struct ListHeader3 *element), // should return a value between 0 and 1.
+                                                        const struct ListHeader3 *last_element // may be null. may also contain more than one element.
+                                                        );
+
+extern LANGSPEC const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset);
+
+extern LANGSPEC void SetTempoNodeLinesDirty(struct WBlocks *wblock);
+extern LANGSPEC const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, struct WBlocks *wblock);
+extern LANGSPEC const vector_t *GetTempoNodes(const struct Tracker_Windows *window, struct WBlocks *wblock);
+
+
+
+
+
+
+
+
+
+#if !USE_OPENGL
 extern LANGSPEC void MakeNodeLines(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -41,3 +64,4 @@ extern LANGSPEC void GetNodeLine(
 		 TBox *within,
 		 TBox *ret
 		 );
+#endif

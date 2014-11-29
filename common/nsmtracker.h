@@ -992,11 +992,14 @@ struct WBlocks{
 	int right_subtrack;
 
 	struct WTempos *wtempos;
-	WTempoNodes **wtemponodes;
-        vector_t *reltempo_nodes; // contains vector of Node's
+	WTempoNodes **wtemponodes;        
 	struct WLPBs *wlpbs;
 	float reltempomax;
 
+        bool temponodes_are_dirty;
+        const struct NodeLine *tempo_nodelines;
+        const vector_t *tempo_nodes; // contains vector of Node's
+  
 	bool isranged;
 	NInt rangex1;
 	NInt rangex2;

@@ -15,8 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
 extern LANGSPEC float FindReallineForF(
                                        const struct WBlocks *wblock,
                                        float reallineF, // start search from here. Use 0 to search all.
@@ -48,5 +46,15 @@ extern int FindSubRealLine(
 	Place *p
 );
 
-#endif
+static inline int get_realline_y1(const struct Tracker_Windows *window, int realline){
+  return window->fontheight*realline;
+}
+
+static inline int get_realline_y2(const struct Tracker_Windows *window, int realline){
+  return window->fontheight*(realline+1);
+}
+
+static inline float get_realline_y(const struct Tracker_Windows *window, float reallineF){
+  return window->fontheight*reallineF;
+}
 

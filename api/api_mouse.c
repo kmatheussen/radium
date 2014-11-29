@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/undo_fxs_proc.h"
 #include "../common/fxlines_proc.h"
+#include "../common/nodelines_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -87,13 +88,13 @@ float getHalfOfNodeWidth(void){
   return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in Render.cpp
 }
 
-static int get_realline_y1(const struct Tracker_Windows *window, int realline){
+static float get_mouse_realline_y1(const struct Tracker_Windows *window, int realline){
   //printf("fontheight: %f\n",(float)window->fontheight);
   //printf("wblock->t.y1: %f. scroll_pos: %f\n",(float)window->wblock->t.y1,(float)scroll_pos);
   return window->fontheight*realline - scroll_pos + window->wblock->t.y1;
 }
 
-static int get_realline_y2(const struct Tracker_Windows *window, int realline){
+static float get_mouse_realline_y2(const struct Tracker_Windows *window, int realline){
   return window->fontheight*(realline+1) - scroll_pos + window->wblock->t.y1;
 }
 
@@ -103,7 +104,7 @@ float getTopVisibleY(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  return get_realline_y1(window, R_MAX(0, wblock->top_realline));
+  return get_mouse_realline_y1(window, R_MAX(0, wblock->top_realline));
 }
 
 float getBotVisibleY(int blocknum, int windownum){
@@ -112,15 +113,7 @@ float getBotVisibleY(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  return get_realline_y2(window, R_MIN(wblock->num_reallines-1, wblock->bot_realline));
-}
-
-void setNoMouseTrack(void){
-  setMouseTrack(NOTRACK);
-}
-
-void setMouseTrackToReltempo(void){
-  setMouseTrack(TEMPONODETRACK);
+  return get_mouse_realline_y2(window, R_MIN(wblock->num_reallines-1, wblock->bot_realline));
 }
 
 void setMouseTrack(int tracknum){
@@ -132,6 +125,15 @@ void setMouseTrack(int tracknum){
     wblock->block->is_dirty = true;
   }
 }
+
+void setNoMouseTrack(void){
+  setMouseTrack(NOTRACK);
+}
+
+void setMouseTrackToReltempo(void){
+  setMouseTrack(TEMPONODETRACK);
+}
+
 
 // placement (block time)
 ///////////////////////////////////////////////////
@@ -303,8 +305,8 @@ float getTemponodeMax(int blocknum, int windownum){
     return wblock->reltempomax;
 }
 
-static struct Node *get_temponodeline(int boxnum){
-  vector_t *nodes = root->song->tracker_windows->wblock->reltempo_nodes;
+static const struct Node *get_temponodeline(int boxnum){
+  const vector_t *nodes = GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock);
   if (boxnum < 0 || boxnum>=nodes->num_elements) {
     RError("There is no temponode %d",boxnum);
     return NULL;
@@ -313,12 +315,12 @@ static struct Node *get_temponodeline(int boxnum){
 }
 
 float getTemponodeX(int num){
-  struct Node *nodeline = get_temponodeline(num);
+  const struct Node *nodeline = get_temponodeline(num);
   return nodeline==NULL ? 0 : nodeline->x;
 }
 
 float getTemponodeY(int num){
-  struct Node *nodeline = get_temponodeline(num);
+  const struct Node *nodeline = get_temponodeline(num);
   return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
 }
 
@@ -382,14 +384,16 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   struct Blocks *block = wblock->block;
 
   struct TempoNodes *temponode;
+
+  const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
   
   if (num==0)
     temponode = block->temponodes; // don't want to set placement for the first node. It's always at top.
   
-  else if (num==wblock->reltempo_nodes->num_elements-1)
+  else if (num==tempo_nodes->num_elements-1)
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
 
-  else if (num>=wblock->reltempo_nodes->num_elements) {
+  else if (num>=tempo_nodes->num_elements) {
     RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
@@ -412,45 +416,46 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   temponode->reltempo = value;
 
   UpdateSTimes(wblock->block);    
-  UpdateAllTrackReallines(window,wblock);
+  UpdateAllTrackReallines(window,wblock); // sure?
 
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
-  
-  block->is_dirty = true;
+
+  SetTempoNodeLinesDirty(wblock);
 }
 
 int getNumTemponodes(int blocknum, int windownum){
-  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
     return 0;
-  else
-    return wblock->reltempo_nodes->num_elements;
+  
+  const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
+  return tempo_nodes->num_elements;
 }
 
 void deleteTemponode(int num, int blocknum){
-  
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(-1, &window, blocknum);
-  if (wblock==NULL) {
-    RError("deleteTemponode: No block %d",blocknum);
+  if (wblock==NULL)
     return;
-  }
 
-  if (num >= wblock->reltempo_nodes->num_elements){
+  const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
+
+  if (num >= tempo_nodes->num_elements){
     RError("deleteTemponode: No temponode %d in block %d",num,blocknum);
     return;
   }
 
   if (num==0){
     wblock->block->temponodes->reltempo = 0.0f;
-  } else if (num==wblock->reltempo_nodes->num_elements-1) {
+  } else if (num==tempo_nodes->num_elements-1) {
     struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
     last->reltempo = 0.0f;
   } else {
     ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
   }
 
-  wblock->block->is_dirty = true;
+  SetTempoNodeLinesDirty(wblock);
 }
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
@@ -488,10 +493,9 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   //GFX_DrawStatusBar(window,wblock);
 
   UpdateSTimes(block);
-  UpdateAllTrackReallines(window,wblock);
+  UpdateAllTrackReallines(window,wblock); // sure?
 
-  GL_create(window, wblock); // Need to update wblock->temponodes before returning to the qt event dispatcher.
-  //block->is_dirty = true;
+  SetTempoNodeLinesDirty(wblock);
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
@@ -667,9 +671,9 @@ static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int
   
   switch (what_to_get){
   case PITCH_INFO_Y1:
-    return get_realline_y1(window, getReallineForPitch(wblock, pitch, note));
+    return get_mouse_realline_y1(window, getReallineForPitch(wblock, pitch, note));
   case PITCH_INFO_Y2:
-    return get_realline_y2(window, getReallineForPitch(wblock, pitch, note));
+    return get_mouse_realline_y2(window, getReallineForPitch(wblock, pitch, note));
   case PITCH_INFO_VALUE:
     {
       if (pitch!=NULL)
