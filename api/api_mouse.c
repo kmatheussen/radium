@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/placement_proc.h"
+#include "../common/vector_proc.h"
 #include "../common/list_proc.h"
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
@@ -305,22 +306,20 @@ float getTemponodeMax(int blocknum, int windownum){
     return wblock->reltempomax;
 }
 
-static const struct Node *get_temponodeline(int boxnum){
-  const vector_t *nodes = GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock);
-  if (boxnum < 0 || boxnum>=nodes->num_elements) {
-    RError("There is no temponode %d",boxnum);
-    return NULL;
-  }else
-    return nodes->elements[boxnum];
+static const struct Node *get_temponode(int boxnum){
+  return VECTOR_get(GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock),
+                    boxnum,
+                    "temponode"
+                    );
 }
 
 float getTemponodeX(int num){
-  const struct Node *nodeline = get_temponodeline(num);
+  const struct Node *nodeline = get_temponode(num);
   return nodeline==NULL ? 0 : nodeline->x;
 }
 
 float getTemponodeY(int num){
-  const struct Node *nodeline = get_temponodeline(num);
+  const struct Node *nodeline = get_temponode(num);
   return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
 }
 
@@ -604,7 +603,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   
  gotit:
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  SetPitchNodeLinesDirty(wblock, wtrack);
 }
 
 
@@ -724,9 +723,7 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
   else
     note_pitchnum = ListPosition3(&note->pitches->l, &pitch->l) + 1;
 
-  int notenum = ListPosition3(&wtrack->track->notes->l, &note->l);
-
-  vector_t *nodes = wtrack->pitch_nodes.elements[notenum];
+  const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
 
   return nodes->elements[note_pitchnum];
 }
@@ -836,7 +833,7 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
   note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
-
+  
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
@@ -854,7 +851,7 @@ static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *n
   }
   
   note->l.p = *place;
-  ReplaceNoteEnds(block, track, &old_place, place);    
+  ReplaceNoteEnds(block, track, &old_place, place);
 }
 
 void setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
@@ -900,7 +897,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   }
 
   UpdateTrackReallines(window,wblock,wtrack);
-  block->is_dirty = true;
+  SetPitchNodeLinesDirty(wblock, wtrack);
 }
 
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -921,7 +918,7 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
 
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  SetPitchNodeLinesDirty(wblock, wtrack);
              
   return getPitchNum(wtrack->track, note, NULL);
 }
@@ -933,7 +930,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
     return -1;
   
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  SetPitchNodeLinesDirty(wblock, wtrack);
 
   return getPitchNum(wtrack->track, note, pitch);
 }
@@ -1207,8 +1204,8 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
-  
-  wblock->block->is_dirty = true;
+
+  SetPitchNodeLinesDirty(wblock, wtrack);
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1248,7 +1245,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
 
   }
 
-  wblock->block->is_dirty = true;
+  SetPitchNodeLinesDirty(wblock, wtrack);
 }
 
 

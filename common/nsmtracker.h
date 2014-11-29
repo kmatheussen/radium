@@ -271,6 +271,13 @@ struct Notes{
 	int noend;
 
         int64_t id;
+
+  
+	// Graphical data below
+	////////////////////////
+  
+	const struct NodeLine *pitches_nodelines;
+	const vector_t *pitches_nodes;
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))
 
@@ -673,7 +680,7 @@ enum{
 
 
 /*********************************************************************
-	OpenGL/Render.h
+	nodelinens.h
 *********************************************************************/
 
 struct NodeLine{
@@ -693,6 +700,10 @@ struct Node{
   const struct ListHeader3 *element;
 };
 
+struct MinMax{
+  float min;
+  float max;
+};
 
 /*********************************************************************
 	wfxnodes.h
@@ -760,7 +771,8 @@ struct WTracks{
         vector_t fx_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for fx 1, element 2 contains nodes for fx 2, etc.)
         vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
 
-        vector_t pitch_nodes; // contains vector of vectors of Node's. (element 1 contains pitches for note 1, element 2 contains pitches for note 2, etc.)
+        bool pitchnodes_are_dirty;
+        bool velocitynodes_are_dirty;
   
 	TBox pan;
 	TBox volume;
@@ -999,7 +1011,7 @@ struct WBlocks{
         bool temponodes_are_dirty;
         const struct NodeLine *tempo_nodelines;
         const vector_t *tempo_nodes; // contains vector of Node's
-  
+
 	bool isranged;
 	NInt rangex1;
 	NInt rangex2;

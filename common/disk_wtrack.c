@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "disk.h"
+#include "wtracks_proc.h"
 
 #include "disk_wtrack_proc.h"
 
@@ -58,7 +59,7 @@ struct WTracks *LoadWTrack(void){
 		"num_vel",
                 "is_wide"
 	};
-	struct WTracks *wtrack=DC_alloc(sizeof(struct WTracks));
+	struct WTracks *wtrack = WTRACK_new();
 	wtrack->l.num=DC_LoadN();
 
 	GENERAL_LOAD(0,5);

@@ -16,15 +16,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#include <string.h>
 
 
 
 #include "nsmtracker.h"
 #include "clipboard_range_copy_proc.h"
 #include "clipboard_range_calc_proc.h"
-#include <string.h>
 #include "placement_proc.h"
 #include "clipboard_tempos_copy_proc.h"
+#include "wtracks_proc.h"
 
 #include "clipboard_track_copy_proc.h"
 
@@ -48,7 +49,7 @@ struct WTracks *CB_CopyTrack(
 	struct Tracks *totrack;
 	struct Tracks *track=wtrack->track;
 
-	towtrack=talloc(sizeof(struct WTracks));
+	towtrack=WTRACK_new();
 	memcpy(towtrack,wtrack,sizeof(struct WTracks));
 
 	towtrack->track=totrack=talloc(sizeof(struct Tracks));

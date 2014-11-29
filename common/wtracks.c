@@ -45,6 +45,12 @@ void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 	ListRemoveElement1(&wblock->wtracks,&temp->l);
 }
 
+struct WTracks *WTRACK_new(void){
+  struct WTracks *wtrack=talloc(sizeof(struct WTracks));
+  wtrack->pitchnodes_are_dirty = true;
+  wtrack->velocitynodes_are_dirty = true;
+  return wtrack;
+}
 
 void NewWTrack(
 	struct Tracker_Windows *window,
@@ -60,7 +66,7 @@ void NewWTrack(
 	wtrack->notesonoff=1;
 	wtrack->fxonoff=1;
 	wtrack->num_vel=1;
-
+        
 	NewTrackRealLines(wblock,wtrack);
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
@@ -84,14 +90,13 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 
 	while(track!=NULL){
 		if(wtrack==NULL){
-			wtrack=talloc(sizeof(*new));
-			if(wtrack==NULL) return;
+                        wtrack=WTRACK_new();
 			NewWTrack(window,wblock,(struct WTracks *)wtrack,(struct Tracks *)track);
 		}
 
 		if(track->l.num!=wtrack->l.num){
-			new=talloc(sizeof(*new));
-			NewWTrack(window,wblock,new,track);
+                        new=WTRACK_new();
+  			NewWTrack(window,wblock,new,track);
 			return;
 		}
 

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "placement_proc.h"
 #include "realline_calc_proc.h"
+#include "tracks_proc.h"
 
 #include "nodelines_proc.h"
 
@@ -226,6 +227,83 @@ const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, s
 const vector_t *GetTempoNodes(const struct Tracker_Windows *window, struct WBlocks *wblock){
   ensureTemponodesAreaNotDirty(window, wblock);
   return wblock->tempo_nodes;
+}
+
+
+
+// pitchlines
+///////////////////////////////////////////////////////////
+
+void SetPitchNodeLinesDirty(struct WBlocks *wblock, struct WTracks *wtrack){
+  wtrack->pitchnodes_are_dirty = true;
+  wblock->block->is_dirty = true;
+}
+
+static float track_notearea_x1, track_notearea_x2;
+static float track_pitch_min;
+static float track_pitch_max;
+
+static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct Pitches *pitch = (struct Pitches*)element;
+  return scale(pitch->note,
+               track_pitch_min, track_pitch_max,
+               track_notearea_x1, track_notearea_x2
+               );
+}
+
+
+static void ensurePitchNodesNotDirty(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
+  if (wtrack->pitchnodes_are_dirty){
+
+    track_notearea_x1 = wtrack->notearea.x;
+    track_notearea_x2 = wtrack->notearea.x2;
+    
+    TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
+
+    struct Notes *note = wtrack->track->notes;
+    
+    while(note!=NULL){
+
+      struct Pitches *first_pitch = talloc(sizeof(struct Pitches));
+      first_pitch->l.p = note->l.p;
+      first_pitch->l.next = &note->pitches->l;
+      first_pitch->note = note->note;
+      
+      struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
+      last_pitch->l.p = note->end;
+      last_pitch->l.next = NULL;
+      
+      if (note->pitches==NULL)
+        last_pitch->note = note->note;
+      else if (NextNote(note)==NULL)
+        last_pitch->note = wtrack->track->notes->note;
+      else
+        last_pitch->note = NextNote(note)->note;
+      
+      note->pitches_nodelines = create_nodelines(window,
+                                                 wblock,
+                                                 &first_pitch->l,
+                                                 get_pitch_x,
+                                                 &last_pitch->l
+                                                 );
+
+      note->pitches_nodes = get_nodeline_nodes(note->pitches_nodelines, wblock->t.y1);
+
+      note = NextNote(note);
+    }
+
+    wtrack->pitchnodes_are_dirty = false;
+  }
+}
+
+const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+  ensurePitchNodesNotDirty(window, wblock, wtrack);
+  return note->pitches_nodelines;
+}
+
+const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+  ensurePitchNodesNotDirty(window, wblock, wtrack);
+  return note->pitches_nodes;
 }
 
 

@@ -721,75 +721,36 @@ void create_track_text(const struct Tracker_Windows *window, const struct WBlock
   }
 }
 
-
-static float track_notearea_x1, track_notearea_x2;
-static float track_min_pitch, track_max_pitch;
-
-static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
-  struct Pitches *pitch = (struct Pitches*)element;
-  return scale(pitch->note,
-               track_min_pitch, track_max_pitch,
-               track_notearea_x1, track_notearea_x2
-               );
-}
-
-static const struct NodeLine *create_track_pitchlines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, int left_subtrack){
-  struct Pitches *first_pitch = (struct Pitches*)talloc(sizeof(struct Pitches));
-  first_pitch->l.p = note->l.p;
-  first_pitch->l.next = &note->pitches->l;
-  first_pitch->note = note->note;
-
-  struct Pitches *last_pitch = (struct Pitches*)talloc(sizeof(struct Pitches));
-  last_pitch->l.p = note->end;
-  last_pitch->l.next = NULL;
-
-  if (note->pitches==NULL)
-    last_pitch->note = note->note;
-  else if (NextNote(note)==NULL)
-    last_pitch->note = wtrack->track->notes->note;
-  else
-    last_pitch->note = NextNote(note)->note;
-
-  track_notearea_x1 = wtrack->notearea.x;
-  track_notearea_x2 = wtrack->notearea.x2;
-  TRACK_get_min_and_max_pitches(wtrack->track, &track_min_pitch, &track_max_pitch);
-
+static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
   bool show_read_lines = wblock->mouse_track==wtrack->l.num;
 
   GE_Context *line_color = GE_color_alpha(7, 0.5);
   
-  const struct NodeLine *nodelines = create_nodelines(window,
-                                                wblock,
-                                                &first_pitch->l,
-                                                get_pitch_x,
-                                                &last_pitch->l
-                                                );
+  const struct NodeLine *nodelines = GetPitchNodeLines(window,
+                                                       wblock,
+                                                       wtrack,
+                                                       note
+                                                       );
 
-  if (left_subtrack==-1) {
-    const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
-    VECTOR_push_back(&wtrack->pitch_nodes, nodes);
-    
-    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
-      if(show_read_lines || nodeline->x1!=nodeline->x2)
-        GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
-    
-    // nodes
-    if (indicator_node == &note->l && indicator_pitch_num!=-1) {
-      if (indicator_pitch_num >= nodes->num_elements)
-        RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
-      else {
-        printf("indicator_pitch_num: %d\n",indicator_pitch_num);
-        struct Node *node = (struct Node *)nodes->elements[indicator_pitch_num];
-        draw_node_indicator(node->x, node->y-wblock->t.y1);
-      }
+  
+  const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
 
-    }
+  // lines
+  for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
+    if(show_read_lines || nodeline->x1!=nodeline->x2)
+      GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
+  
+  // nodes
+  if (indicator_node == &note->l && indicator_pitch_num!=-1) {
+    if (indicator_pitch_num >= nodes->num_elements)
+      RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
+    else {
+      printf("indicator_pitch_num: %d\n",indicator_pitch_num);
+      struct Node *node = (struct Node *)nodes->elements[indicator_pitch_num];
+      draw_node_indicator(node->x, node->y-wblock->t.y1);
+    }    
   }
-
-  return nodelines;
 }
-
-
 
 static float subtrack_x1, subtrack_x2;
 
@@ -941,6 +902,11 @@ static void create_velocity_gradient_background(
   GE_gradient_triangle_end(c, subtrack_x1, subtrack_x2);
 }
 
+// all of these are going to be removed soon
+static float track_notearea_x1, track_notearea_x2;
+static float track_pitch_min;
+static float track_pitch_max;
+
 static void create_velocities_gradient_background(
                                                   const struct NodeLine *pitch_nodelines,
                                                   const struct NodeLine *velocity_nodelines
@@ -955,8 +921,8 @@ static void create_velocities_gradient_background(
     float y1 = nodeline->y1;
     float y2 = nodeline->y2;
 
-    float start_note = scale(x1, track_notearea_x1, track_notearea_x2, track_min_pitch, track_max_pitch);
-    float end_note   = scale(x2, track_notearea_x1, track_notearea_x2, track_min_pitch, track_max_pitch);
+    float start_note = scale(x1, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max);
+    float end_note   = scale(x2, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max);
 
     float split1 = pitch_split_color_1;
     float split2 = pitch_split_color_2;
@@ -1013,7 +979,7 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
   return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
 }
 
-void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, const struct NodeLine *pitch_nodelines){
+void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
   struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
@@ -1057,6 +1023,12 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
       
       GE_trianglestrip_end(c);
     }else{
+      TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
+      track_notearea_x1 = wtrack->notearea.x;
+      track_notearea_x2 = wtrack->notearea.x2;
+
+      const struct NodeLine *pitch_nodelines = GetPitchNodeLines(window, wblock, wtrack, note);
+
       create_velocities_gradient_background(
                                             pitch_nodelines,
                                             nodelines
@@ -1151,8 +1123,6 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
 void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
-
-  VECTOR_clean(&wtrack->pitch_nodes);
   VECTOR_clean(&wtrack->velocity_nodes);
 
   if(left_subtrack==-1) {
@@ -1167,8 +1137,9 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
       if(note->subtrack >= left_subtrack) {
-        const struct NodeLine *pitch_nodelines = create_track_pitchlines(window, wblock, wtrack, note, left_subtrack);
-        create_track_velocities(window, wblock, wtrack, note, pitch_nodelines);
+        if (left_subtrack==-1)
+          create_pitches(window, wblock, wtrack, note);
+        create_track_velocities(window, wblock, wtrack, note);
       }
       note = NextNote(note);
     }
