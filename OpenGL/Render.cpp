@@ -975,15 +975,6 @@ static void create_velocities_gradient_background(
 }
 
 void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
-  struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
-  first_velocity->l.p = note->l.p;
-  first_velocity->l.next = &note->velocities->l;
-  first_velocity->velocity = note->velocity;
-
-  struct Velocities *last_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
-  last_velocity->l.p = note->end;
-  last_velocity->l.next = NULL;
-  last_velocity->velocity = note->velocity_end;
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
@@ -1072,11 +1063,11 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
   wtrackfx_x2 = wtrack->fxarea.x2;
 
   const struct NodeLine *nodelines = create_nodelines(window,
-                                                wblock,
-                                                &fxs->fxnodelines->l,
-                                                get_fxs_x,
-                                                NULL
-                                                );  
+                                                      wblock,
+                                                      &fxs->fxnodelines->l,
+                                                      get_fxs_x,
+                                                      NULL
+                                                      );  
 
   const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
   VECTOR_push_back(&wtrack->fx_nodes, nodes);
