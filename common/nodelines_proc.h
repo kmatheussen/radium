@@ -33,7 +33,9 @@ extern LANGSPEC void SetPitchNodeLinesDirty(struct WBlocks *wblock, struct WTrac
 extern LANGSPEC const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 
-
+extern LANGSPEC void SetVelocityNodeLinesDirty(struct WBlocks *wblock, struct WTracks *wtrack);
+extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 
 
 

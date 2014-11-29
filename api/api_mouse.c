@@ -604,6 +604,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
  gotit:
   UpdateTrackReallines(window,wblock,wtrack);
   SetPitchNodeLinesDirty(wblock, wtrack);
+  SetVelocityNodeLinesDirty(wblock, wtrack);
 }
 
 
@@ -898,6 +899,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
 
   UpdateTrackReallines(window,wblock,wtrack);
   SetPitchNodeLinesDirty(wblock, wtrack);
+  SetVelocityNodeLinesDirty(wblock, wtrack);
 }
 
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -919,7 +921,8 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   UpdateTrackReallines(window,wblock,wtrack);
   SetPitchNodeLinesDirty(wblock, wtrack);
-             
+  SetVelocityNodeLinesDirty(wblock, wtrack);
+  
   return getPitchNum(wtrack->track, note, NULL);
 }
 
@@ -1073,16 +1076,12 @@ void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
 static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
     return NULL;
 
-  if (notenum<0 || notenum>=wtrack->velocity_nodes.num_elements){
-    RError("There is no note %d in track %d in block %d",notenum,tracknum,blocknum);
-    return NULL;
-  }
-
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return NULL;
@@ -1113,14 +1112,14 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
 }
 
 int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-
-  if (notenum<0 || notenum>=wtrack->velocity_nodes.num_elements) {
-    RError("There is no note %d in track %d in block %d",notenum, tracknum, blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
     return 0;
-  }
-  
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
 
   return nodes->num_elements;
 }
@@ -1155,8 +1154,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
     return -1;
   }
 
-  GL_create(window, wblock); // Need to update wtrack->velocity_nodes before returning to the qt event dispatcher.
-  //wblock->block->is_dirty = true;
+  SetVelocityNodeLinesDirty(wblock, wtrack);
 
   return ret+1;
 }
@@ -1169,7 +1167,7 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
   if (note==NULL)
     return;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
@@ -1206,6 +1204,7 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
   }
 
   SetPitchNodeLinesDirty(wblock, wtrack);
+  SetVelocityNodeLinesDirty(wblock, wtrack);
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1219,7 +1218,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   struct Blocks *block=wblock->block;
   struct Tracks *track=wtrack->track;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
@@ -1246,6 +1245,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   }
 
   SetPitchNodeLinesDirty(wblock, wtrack);
+  SetVelocityNodeLinesDirty(wblock, wtrack);
 }
 
 
@@ -1257,7 +1257,7 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
   if (note==NULL)
     return;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
@@ -1279,7 +1279,7 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
 
   setIndicatorNode(&note->l);
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;

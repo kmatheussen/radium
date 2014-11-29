@@ -20,10 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "realline_calc_proc.h"
 #include "tracks_proc.h"
+#include "gfx_subtrack_proc.h"
 
 #include "nodelines_proc.h"
-
-
 
 
 typedef struct Node Node;
@@ -207,7 +206,7 @@ static float get_temponode_x(const struct WBlocks *wblock, const struct ListHead
 }
 
 static void ensureTemponodesAreaNotDirty(const struct Tracker_Windows *window, struct WBlocks *wblock){
-  if (wblock->temponodes_are_dirty || wblock->tempo_nodelines==NULL || wblock->tempo_nodes==NULL) {
+  if (true || wblock->temponodes_are_dirty || wblock->tempo_nodelines==NULL || wblock->tempo_nodes==NULL) {
     wblock->tempo_nodelines = create_nodelines(window,
                                                wblock,
                                                &wblock->block->temponodes->l,
@@ -253,7 +252,7 @@ static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 
 
 
 static void ensurePitchNodesNotDirty(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
-  if (wtrack->pitchnodes_are_dirty){
+  if (true || wtrack->pitchnodes_are_dirty){
 
     track_notearea_x1 = wtrack->notearea.x;
     track_notearea_x2 = wtrack->notearea.x2;
@@ -304,6 +303,74 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
 const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
   ensurePitchNodesNotDirty(window, wblock, wtrack);
   return note->pitches_nodes;
+}
+
+
+
+
+
+
+// velocities
+///////////////////////////////////////////////////////////
+
+void SetVelocityNodeLinesDirty(struct WBlocks *wblock, struct WTracks *wtrack){
+  wtrack->velocitynodes_are_dirty = true;
+  wblock->block->is_dirty = true;
+}
+
+static float subtrack_x1, subtrack_x2;
+
+static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct Velocities *velocity = (struct Velocities*)element;
+  return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
+}
+
+static void ensureVelocityNodesNotDirty(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
+  if (true || wtrack->velocitynodes_are_dirty){
+
+    struct Notes *note = wtrack->track->notes;
+    
+    while(note!=NULL){
+
+        struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
+        first_velocity->l.p = note->l.p;
+        first_velocity->l.next = &note->velocities->l;
+        first_velocity->velocity = note->velocity;
+        
+        struct Velocities *last_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
+        last_velocity->l.p = note->end;
+        last_velocity->l.next = NULL;
+        last_velocity->velocity = note->velocity_end;
+        
+        //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
+        subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
+        subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
+        
+        note->velocity_nodelines = create_nodelines(window,
+                                                    wblock,
+                                                    &first_velocity->l,
+                                                    get_velocity_x,
+                                                    &last_velocity->l
+                                                    );
+        
+        note->velocity_nodes = get_nodeline_nodes(note->velocity_nodelines, wblock->t.y1);
+
+        note = NextNote(note);
+    }
+
+    wtrack->velocitynodes_are_dirty = false;
+  }
+}
+
+
+const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+  ensureVelocityNodesNotDirty(window, wblock, wtrack);
+  return note->velocity_nodelines;
+}
+
+const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+  ensureVelocityNodesNotDirty(window, wblock, wtrack);
+  return note->velocity_nodes;
 }
 
 
