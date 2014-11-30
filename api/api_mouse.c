@@ -419,7 +419,7 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
 
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
 
-  SetTempoNodeLinesDirty(wblock);
+  wblock->block->is_dirty = true;
 }
 
 int getNumTemponodes(int blocknum, int windownum){
@@ -454,7 +454,7 @@ void deleteTemponode(int num, int blocknum){
     ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
   }
 
-  SetTempoNodeLinesDirty(wblock);
+  wblock->block->is_dirty = true;
 }
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
@@ -494,7 +494,7 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   UpdateSTimes(block);
   UpdateAllTrackReallines(window,wblock); // sure?
 
-  SetTempoNodeLinesDirty(wblock);
+  wblock->block->is_dirty = true;
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
@@ -603,8 +603,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   
  gotit:
   UpdateTrackReallines(window,wblock,wtrack);
-  SetPitchNodeLinesDirty(wblock, wtrack);
-  SetVelocityNodeLinesDirty(wblock, wtrack);
+  wblock->block->is_dirty = true;
 }
 
 
@@ -898,8 +897,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   }
 
   UpdateTrackReallines(window,wblock,wtrack);
-  SetPitchNodeLinesDirty(wblock, wtrack);
-  SetVelocityNodeLinesDirty(wblock, wtrack);
+  wblock->block->is_dirty = true;
 }
 
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -920,8 +918,7 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
 
   UpdateTrackReallines(window,wblock,wtrack);
-  SetPitchNodeLinesDirty(wblock, wtrack);
-  SetVelocityNodeLinesDirty(wblock, wtrack);
+  wblock->block->is_dirty = true;
   
   return getPitchNum(wtrack->track, note, NULL);
 }
@@ -933,7 +930,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
     return -1;
   
   UpdateTrackReallines(window,wblock,wtrack);
-  SetPitchNodeLinesDirty(wblock, wtrack);
+  wblock->block->is_dirty = true;
 
   return getPitchNum(wtrack->track, note, pitch);
 }
@@ -1154,7 +1151,8 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
     return -1;
   }
 
-  SetVelocityNodeLinesDirty(wblock, wtrack);
+
+  wblock->block->is_dirty = true;
 
   return ret+1;
 }
@@ -1203,8 +1201,7 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
 
-  SetPitchNodeLinesDirty(wblock, wtrack);
-  SetVelocityNodeLinesDirty(wblock, wtrack);
+  wblock->block->is_dirty = true;
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1244,8 +1241,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
 
   }
 
-  SetPitchNodeLinesDirty(wblock, wtrack);
-  SetVelocityNodeLinesDirty(wblock, wtrack);
+  wblock->block->is_dirty = true;
 }
 
 

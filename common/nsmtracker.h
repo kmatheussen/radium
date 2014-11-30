@@ -271,18 +271,6 @@ struct Notes{
 	int noend;
 
         int64_t id;
-
-  
-	// Graphical data below
-	////////////////////////
-
-        // all of these values should be considered private. Access though nodelines.c only.
-	const struct NodeLine *pitches_nodelines;
-	const vector_t *pitches_nodes;
-
-        const struct NodeLine *velocity_nodelines;
-        const vector_t *velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
-  
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))
 
@@ -1011,10 +999,6 @@ struct WBlocks{
 	WTempoNodes **wtemponodes;        
 	struct WLPBs *wlpbs;
 	float reltempomax;
-
-        bool temponodes_are_dirty;
-        const struct NodeLine *tempo_nodelines;
-        const vector_t *tempo_nodes; // contains vector of Node's
 
 	bool isranged;
 	NInt rangex1;

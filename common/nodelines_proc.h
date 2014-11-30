@@ -24,16 +24,13 @@ extern LANGSPEC const struct NodeLine *create_nodelines(
 
 extern LANGSPEC const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset);
 
-extern LANGSPEC void SetTempoNodeLinesDirty(struct WBlocks *wblock);
 extern LANGSPEC const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, struct WBlocks *wblock);
 extern LANGSPEC const vector_t *GetTempoNodes(const struct Tracker_Windows *window, struct WBlocks *wblock);
 
 
-extern LANGSPEC void SetPitchNodeLinesDirty(struct WBlocks *wblock, struct WTracks *wtrack);
 extern LANGSPEC const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 
-extern LANGSPEC void SetVelocityNodeLinesDirty(struct WBlocks *wblock, struct WTracks *wtrack);
 extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
 
