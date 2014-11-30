@@ -761,11 +761,6 @@ struct WTracks{
         WPitches **wpitches; // Can be removed, plus all usage of it. Not used in OpenGL.
 #endif
 
-        vector_t fx_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for fx 1, element 2 contains nodes for fx 2, etc.)
-
-        bool pitchnodes_are_dirty;
-        bool velocitynodes_are_dirty;
-  
 	TBox pan;
 	TBox volume;
 

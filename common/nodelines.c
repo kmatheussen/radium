@@ -200,7 +200,7 @@ static float get_temponode_x(const struct WBlocks *wblock, const struct ListHead
                );
 }
 
-const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, struct WBlocks *wblock){
+const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   return create_nodelines(window,
                           wblock,
                           &wblock->block->temponodes->l,
@@ -209,7 +209,7 @@ const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, s
                           );
 }
 
-const vector_t *GetTempoNodes(const struct Tracker_Windows *window, struct WBlocks *wblock){
+const vector_t *GetTempoNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   return get_nodeline_nodes(GetTempoNodeLines(window, wblock),
                             wblock->t.y1);
 }
@@ -232,7 +232,7 @@ static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 
 }
 
 
-const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
     
   track_notearea_x1 = wtrack->notearea.x;
   track_notearea_x2 = wtrack->notearea.x2;
@@ -263,7 +263,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
                           );
 }
 
-const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
   return get_nodeline_nodes(GetPitchNodeLines(window, wblock, wtrack, note),
                             wblock->t.y1);
 }
@@ -283,7 +283,7 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
   return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
 }
 
-const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
   struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
@@ -306,11 +306,42 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
                           );
 }
 
-const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
   return get_nodeline_nodes(GetVelocityNodeLines(window, wblock, wtrack, note),
                             wblock->t.y1);
 }
 
+
+// velocities
+///////////////////////////////////////////////////////////
+
+static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;
+
+static float get_fxs_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct FXNodeLines *fxnode = (struct FXNodeLines *)element;
+  return scale(fxnode->val, fx_min, fx_max, wtrackfx_x1, wtrackfx_x2);
+}
+
+
+const struct NodeLine *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
+  fx_min = fxs->fx->min;
+  fx_max = fxs->fx->max;
+  wtrackfx_x1 = wtrack->fxarea.x;
+  wtrackfx_x2 = wtrack->fxarea.x2;
+
+  return create_nodelines(window,
+                          wblock,
+                          &fxs->fxnodelines->l,
+                          get_fxs_x,
+                          NULL
+                          );  
+}
+
+const vector_t *GetFxNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
+  const struct NodeLine *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
+  return get_nodeline_nodes(nodelines, wblock->t.y1);
+}
+  
 
 
 // OLD CODE BELOW. Will be deleted

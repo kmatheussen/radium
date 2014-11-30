@@ -532,18 +532,22 @@ static void create_bpmtrack(const struct Tracker_Windows *window, const struct W
 static void create_reltempotrack(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
   const struct NodeLine *nodelines = GetTempoNodeLines(window, wblock);
-
+  
   bool is_current = wblock->mouse_track==TEMPONODETRACK;
 
   drawNodeLines(nodelines, 4, is_current, 0.6, 0.9);
   
-  if (indicator_node != NULL || is_current)
-    VECTOR_FOR_EACH(const Node *, node, GetTempoNodes(window, wblock)) {
+  if (indicator_node != NULL || is_current) {
+    const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+
+    VECTOR_FOR_EACH(const Node *, node, nodes) {
         if(wblock->mouse_track==TEMPONODETRACK)
         draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
       if (node->element==indicator_node)
         draw_node_indicator(node->x, node->y - wblock->t.y1);
     }END_VECTOR_FOR_EACH;
+
+  }
 }
 
 
@@ -740,8 +744,8 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
   
   // indicator node
   if (indicator_node == &note->l && indicator_pitch_num!=-1) {
-    const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
-
+    const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+    
     if (indicator_pitch_num >= nodes->num_elements)
       RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
     else {
@@ -981,8 +985,7 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
   subtrack_x2 = GetXSubTrack2(wtrack,note->subtrack);
 
   const struct NodeLine *nodelines = GetVelocityNodeLines(window, wblock, wtrack, note);
-
-  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
+  const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
   
   // background
   {
@@ -1048,41 +1051,24 @@ void create_track_velocities(const struct Tracker_Windows *window, const struct 
 }
 
 
-static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;
-
-static float get_fxs_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
-  struct FXNodeLines *fxnode = (FXNodeLines *)element;
-  return scale(fxnode->val, fx_min, fx_max, wtrackfx_x1, wtrackfx_x2);
-}
-
-
 static void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct FXs *fxs){
-  fx_min = fxs->fx->min;
-  fx_max = fxs->fx->max;
-  wtrackfx_x1 = wtrack->fxarea.x;
-  wtrackfx_x2 = wtrack->fxarea.x2;
-
-  const struct NodeLine *nodelines = create_nodelines(window,
-                                                      wblock,
-                                                      &fxs->fxnodelines->l,
-                                                      get_fxs_x,
-                                                      NULL
-                                                      );  
-
-  const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
-  VECTOR_push_back(&wtrack->fx_nodes, nodes);
+  const struct NodeLine *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
 
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
 
   drawNodeLines(nodelines, fxs->fx->color, is_current, 0.6, 1.0);
   
-  if (indicator_node != NULL || is_current)
+  if (indicator_node != NULL || is_current) {
+    const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+
     VECTOR_FOR_EACH(const Node *, node, nodes){
       if (wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs)
         draw_skewed_box(window, node->element, 1, node->x, node->y - wblock->t.y1);
       if (node->element==indicator_node)
         draw_node_indicator(node->x, node->y - wblock->t.y1);
     }END_VECTOR_FOR_EACH;
+
+  }
 }
 
 static void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
@@ -1127,7 +1113,6 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
   }
   
   if(left_subtrack<=0){
-    VECTOR_clean(&wtrack->fx_nodes);
     
     const struct FXs *fxs=wtrack->track->fxs;
     while(fxs != NULL){

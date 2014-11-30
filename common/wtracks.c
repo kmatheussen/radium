@@ -47,8 +47,6 @@ void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 
 struct WTracks *WTRACK_new(void){
   struct WTracks *wtrack=talloc(sizeof(struct WTracks));
-  wtrack->pitchnodes_are_dirty = true;
-  wtrack->velocitynodes_are_dirty = true;
   return wtrack;
 }
 

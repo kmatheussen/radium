@@ -1319,22 +1319,13 @@ void addFXMousePos(int windownum){
 static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
     return NULL;
-
-  if (fxnum<0 || fxnum>=wtrack->fx_nodes.num_elements){
-    RError("There is no fx node %d in track %d in block %d",fxnum,tracknum,blocknum);
-    return NULL;
-  }
-
-  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
-  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RError("There is no fx node %d in fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
-    return NULL;
-  }
   
-  return nodes->elements[fxnodenum];
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  return VECTOR_get(nodes, fxnodenum, "fx node");
 }
 
 
@@ -1363,22 +1354,19 @@ int getNumFxes(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack == NULL)
     return 0;
-  return wtrack->fx_nodes.num_elements;
+
+  return ListFindNumElements1(&wtrack->track->fxs->l);
 }
 
 int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  if (wtrack == NULL)
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
     return 0;
 
-  if (fxnum<0 || fxnum>=wtrack->fx_nodes.num_elements) {
-    RError("There is no fx node %d in track %d in block %d",fxnum, tracknum, blocknum);
-    return 0;
-  }
-  
-  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
-
-  return nodes->num_elements;
+  return ListFindNumElements3(&fxs->fxnodelines->l);
 }
 
 float getFxMinValue(int fxnum, int tracknum, int blocknum, int windownum){
@@ -1443,8 +1431,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
     return -1;
   }
 
-  GL_create(window, wblock); // Need to update wtrack->fx_nodes before returning to the qt event dispatcher.
-  //wblock->block->is_dirty = true;
+  wblock->block->is_dirty = true;
 
   return ret;
 }
@@ -1457,7 +1444,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   if (fx==NULL)
     return;
 
-  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
     RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
@@ -1489,7 +1476,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   if (fxs==NULL)
     return;
 
-  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
     RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
@@ -1514,7 +1501,7 @@ void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int 
   if (fx==NULL)
     return;
 
-  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
     RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
@@ -1534,7 +1521,7 @@ void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, in
   if (fx==NULL)
     return;
 
-  vector_t *nodes = wtrack->fx_nodes.elements[fxnum];
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
     RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;

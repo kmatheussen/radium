@@ -24,17 +24,18 @@ extern LANGSPEC const struct NodeLine *create_nodelines(
 
 extern LANGSPEC const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset);
 
-extern LANGSPEC const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, struct WBlocks *wblock);
-extern LANGSPEC const vector_t *GetTempoNodes(const struct Tracker_Windows *window, struct WBlocks *wblock);
+extern LANGSPEC const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock);
+extern LANGSPEC const vector_t *GetTempoNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock);
 
 
-extern LANGSPEC const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
-extern LANGSPEC const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 
-extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
-extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 
-
+extern LANGSPEC const struct NodeLine *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
+extern LANGSPEC const vector_t *GetFxNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 
 
 #if !USE_OPENGL
