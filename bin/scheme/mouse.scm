@@ -206,7 +206,7 @@
                       (> (ra:get-mouse-pointer-x) 500)
                       (> (ra:get-mouse-pointer-y) 500))
               (ra:move-mouse-pointer 100 100)
-              (c-display "x/y" (ra:get-mouse-pointer-x) (ra:get-mouse-pointer-y))
+              ;;(c-display "x/y" (ra:get-mouse-pointer-x) (ra:get-mouse-pointer-y))
               (set! prev-x 100)
               (set! prev-y 100)))
           
@@ -237,6 +237,49 @@
 ;; Functions called from radium
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define mouse-fx-has-been-set #f)
+(define (set-mouse-fx fxnum tracknum)
+  (set! mouse-fx-has-been-set #t)
+  (ra:set-mouse-fx fxnum tracknum))
+
+(define mouse-track-has-been-set #f)
+(define (set-mouse-track tracknum)
+  (set! mouse-track-has-been-set #t)
+  (ra:set-mouse-track tracknum))
+(define (set-mouse-track-to-reltempo)
+  (set! mouse-track-has-been-set #t)
+  (ra:set-mouse-track-to-reltempo))
+
+(define mouse-note-has-been-set #f)
+(define (set-mouse-note notenum tracknum)
+  (set! mouse-note-has-been-set #t)
+  (ra:set-mouse-note notenum tracknum))
+
+(define indicator-node-has-been-set #f)
+(define (set-indicator-temponode num)
+  (set! indicator-node-has-been-set #t)
+  (ra:set-indicator-temponode num))
+(define (set-indicator-pitch num tracknum)
+  (set! indicator-node-has-been-set #t)
+  (ra:set-indicator-pitch num tracknum))
+(define (set-indicator-velocity-node velocitynum notenum tracknum)
+  (set! indicator-node-has-been-set #t)
+  (ra:set-indicator-velocity-node velocitynum notenum tracknum))
+(define (set-indicator-fxnode fxnodenum notenum tracknum)
+  (set! indicator-node-has-been-set #t)
+  (ra:set-indicator-fxnode fxnodenum notenum tracknum))
+
+(define current-node-has-been-set #f)
+(define (set-current-temponode num)
+  (set! current-node-has-been-set #t)
+  (ra:set-current-temponode num))
+(define (set-current-velocity-node velnum notenum tracknum)
+  (set! current-node-has-been-set #t)
+  (ra:set-current-velocity-node velnum notenum tracknum))
+(define (set-current-fxnode fxnodenum fxnum tracknum)
+  (set! current-node-has-been-set #t)
+  (ra:set-current-fxnode fxnodenum fxnum tracknum))
+
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)
   (ra:set-no-mouse-fx)
@@ -246,41 +289,69 @@
   (ra:cancel-indicator-node)
   )
 
+
+(define (handling-nodes thunk)
+  (set! mouse-fx-has-been-set #f)
+  (set! mouse-track-has-been-set #f)
+  (set! mouse-note-has-been-set #f)
+  (set! indicator-node-has-been-set #f)
+  (set! current-node-has-been-set #f)
+
+  (define ret (thunk))
+
+  (if (not mouse-fx-has-been-set)
+      (ra:set-no-mouse-fx))
+
+  (if (not mouse-track-has-been-set)
+      (ra:set-no-mouse-track))
+
+  (if (not mouse-note-has-been-set)
+      (ra:set-no-mouse-note))
+
+  (if (not indicator-node-has-been-set)
+      (ra:cancel-indicator-node))
+
+  (if (not current-node-has-been-set)
+      (ra:cancel-current-node))
+
+  ret)
+
+
 (define (radium-mouse-press $button $x $y)
-  (cancel-current-stuff)
-  (if (not *current-mouse-cycle*)
-      (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
-  current-mouse-cycle)
-  
-(define (radium-mouse-press $button $x $y)
-  (c-display "mouse press" $button $x $y)
-  (cancel-current-stuff)
-  (if (not *current-mouse-cycle*)
-      (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
-  *current-mouse-cycle*)
+  (handling-nodes
+   (lambda()
+     (c-display "mouse press" $button $x $y)
+     ;;(cancel-current-stuff)
+     (if (not *current-mouse-cycle*)
+         (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
+     *current-mouse-cycle*)))
 
 (define (radium-mouse-move $button $x $y)
-  ;;(c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
-  (cancel-current-stuff)
-  (if *current-mouse-cycle*
-      (begin 
-        ((*current-mouse-cycle* :drag-func) $button $x $y)
-        #t)
-      (begin
-        (run-mouse-move-handlers $button $x $y)
-        #f)))
+  (handling-nodes
+   (lambda()
+     ;;(c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
+     ;;(cancel-current-stuff)
+     (if *current-mouse-cycle*
+         (begin 
+           ((*current-mouse-cycle* :drag-func) $button $x $y)
+           #t)
+         (begin
+           (run-mouse-move-handlers $button $x $y)
+           #f)))))
 
 (define (radium-mouse-release $button $x $y)
-  ;;(c-display "mouse release" $button $x $y)
-  (if *current-mouse-cycle*
-      (begin
-        ((*current-mouse-cycle* :release-func) $button $x $y)
-        (set! *current-mouse-cycle* #f)
-        (run-mouse-move-handlers $button $x $y)
-        (cancel-current-stuff)
-        (ra:set-normal-mouse-pointer)
-        #t)
-      #f))
+  (handling-nodes
+   (lambda()
+     ;;(c-display "mouse release" $button $x $y)
+     (if *current-mouse-cycle*
+         (begin
+           ((*current-mouse-cycle* :release-func) $button $x $y)
+           (set! *current-mouse-cycle* #f)
+           (run-mouse-move-handlers $button $x $y)
+           (cancel-current-stuff)
+           (ra:set-normal-mouse-pointer)
+           #t)
+         #f))))
 
 
 #||
@@ -327,9 +398,9 @@
  :move (lambda (Button X Y)
          (set! *current-track-num* (get-track-num X Y))
          (cond (*current-track-num*
-                (ra:set-mouse-track *current-track-num*))
+                (set-mouse-track *current-track-num*))
                ((inside-box (ra:get-box temponode-area) X Y)
-                (ra:set-mouse-track-to-reltempo)))))
+                (set-mouse-track-to-reltempo)))))
 
 (define *current-subtrack-num* #f)
 
@@ -641,9 +712,9 @@
                                      ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
                                      new-value
                                      )
-                        ;:Set-indicator-node ra:set-indicator-temponode ;; This version makes setting velocities (!) spit out error messages. Really strange.
+                        ;:Set-indicator-node set-indicator-temponode ;; This version makes setting velocities (!) spit out error messages. Really strange.
                         :Set-indicator-node (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
-                                              (ra:set-indicator-temponode Num))
+                                              (set-indicator-temponode Num))
                         :Get-pixels-per-value-unit #f
                         :Set-Statusbar-text show-temponode-in-statusbar
                                               
@@ -668,9 +739,9 @@
          (and (inside-box-forgiving (ra:get-box temponode-area) $x $y)
               (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                      (existing-box Num Box) :> (begin
-                                                 (ra:set-mouse-track-to-reltempo)
-                                                 (ra:set-current-temponode Num)
-                                                 (ra:set-indicator-temponode Num)
+                                                 (set-mouse-track-to-reltempo)
+                                                 (set-current-temponode Num)
+                                                 (set-indicator-temponode Num)
                                                  (show-temponode-in-statusbar (ra:get-temponode-value Num))
                                                  #t)
                      _                      :> #f))))
@@ -765,7 +836,7 @@
                         :Move-node (lambda (Num Value Place)
                                      (ra:set-pitch Num Value (or Place -1) *current-track-num*))
                         :Set-indicator-node (lambda (Num)
-                                              (ra:set-indicator-pitch Num *current-track-num*))
+                                              (set-indicator-pitch Num *current-track-num*))
                         :Get-pixels-per-value-unit (lambda ()
                                                      5.0)
                         )
@@ -795,7 +866,7 @@
               (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
                      (existing-box Num Box) :> (begin
                                                  ;;(c-display "--" Num "highlight")
-                                                 (ra:set-indicator-pitch Num *current-track-num*)
+                                                 (set-indicator-pitch Num *current-track-num*)
                                                  (ra:set-current-pitch Num *current-track-num*)
                                                  #t)
                      _                      :> #f))))
@@ -959,7 +1030,7 @@
                                                   (and *current-track-num*
                                                        (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
                                                          (if velocity-info
-                                                             (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum)))
+                                                             (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum)))
                                                          (and velocity-info
                                                               (callback velocity-info (velocity-info :value) (velocity-info :y))))))
                         :Get-min-value (lambda () 0.0)
@@ -986,9 +1057,9 @@
                                                                                     )
                                                                 (ra:get-velocity-value Num *current-note-num* *current-track-num*))))))
                         :Set-indicator-node (lambda (velocity-info)
-                                              (ra:set-indicator-velocity-node (velocity-info :velocitynum)
-                                                                              (velocity-info :notenum)
-                                                                              (velocity-info :tracknum)))
+                                              (set-indicator-velocity-node (velocity-info :velocitynum)
+                                                                           (velocity-info :notenum)
+                                                                           (velocity-info :tracknum)))
                         :Move-node (lambda (velocity-info Value Place)
                                      (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                         )
@@ -1024,12 +1095,12 @@
                 (c-display "got velocity info " velocity-info)
                 (if velocity-info
                     (begin
-                      (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
+                      (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
                       (c-display "setting current to " (velocity-info :velocitynum))
-                      (ra:set-indicator-velocity-node (velocity-info :velocitynum)
-                                                      (velocity-info :notenum)
-                                                      (velocity-info :tracknum))
-                      (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                      (set-indicator-velocity-node (velocity-info :velocitynum)
+                                                   (velocity-info :notenum)
+                                                   (velocity-info :tracknum))
+                      (set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                     (c-display "no current"))))))
 ||#
 
@@ -1238,9 +1309,9 @@
                                                                                   )
                                                                 (ra:get-fxnode-value Nodenum Fxnum *current-track-num*))))))
                         :Set-indicator-node (lambda (fxnode-info)
-                                              (ra:set-indicator-fxnode (fxnode-info :fxnodenum)
-                                                                       (fxnode-info :fxnum)
-                                                                       (fxnode-info :tracknum)))
+                                              (set-indicator-fxnode (fxnode-info :fxnodenum)
+                                                                    (fxnode-info :fxnum)
+                                                                    (fxnode-info :tracknum)))
                         :Move-node (lambda (fxnode-info Value Place)
                                      (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum)))
                         )
@@ -1301,29 +1372,29 @@
                 (set! *current-fx/distance* #f)
                 
                 (cond (velocity-info
-                       (ra:set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
+                       (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
                        ;;(c-display "setting current to " (velocity-info :velocitynum))
-                       (ra:set-indicator-velocity-node (velocity-info :velocitynum)
-                                                       (velocity-info :notenum)
-                                                       (velocity-info :tracknum))
-                       (ra:set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                       (set-indicator-velocity-node (velocity-info :velocitynum)
+                                                    (velocity-info :notenum)
+                                                    (velocity-info :tracknum))
+                       (set-current-velocity-node (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                       
                       (fxnode-info
-                       (ra:set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum))
-                       (ra:set-indicator-fxnode (fxnode-info :fxnodenum)
-                                                (fxnode-info :fxnum)
-                                                (fxnode-info :tracknum))
-                       (ra:set-current-fxnode  (fxnode-info :fxnodenum)
-                                               (fxnode-info :fxnum)
-                                               (fxnode-info :tracknum))
+                       (set-mouse-fx (fxnode-info :fxnum) (fxnode-info :tracknum))
+                       (set-indicator-fxnode (fxnode-info :fxnodenum)
+                                             (fxnode-info :fxnum)
+                                             (fxnode-info :tracknum))
+                       (set-current-fxnode  (fxnode-info :fxnodenum)
+                                            (fxnode-info :fxnum)
+                                            (fxnode-info :tracknum))
                        )
 
                       (velocity-dist-is-shortest
-                       (ra:set-mouse-note *current-note-num* *current-track-num*))
+                       (set-mouse-note *current-note-num* *current-track-num*))
 
                       (fx-dist-is-shortest
                        (set! *current-fx/distance* fx-dist)                                              
-                       (ra:set-mouse-fx (fx-dist :fx) *current-track-num*)
+                       (set-mouse-fx (fx-dist :fx) *current-track-num*)
                        )
                       
                       (else

@@ -1,10 +1,3 @@
-/*
-  This file is based on the "bodydata" example from qhttpserver.
-
-Test:
-curl -i -X POST -H "Content-Type: plain/text" -d '(display 50)' http://localhost:5080/user/asdf
-
- */
 
 
 #include <unistd.h>

@@ -64,7 +64,8 @@ extern int indicator_pitch_num;
 static void setCurrentNode(struct ListHeader3 *new_current_node){
   if (current_node != new_current_node){
     current_node = new_current_node;
-    root->song->tracker_windows->wblock->block->is_dirty = true;
+    root->song->tracker_windows->must_redraw = true;
+    //printf("current node dirty\n");
   }
 }
 
@@ -75,7 +76,8 @@ void cancelCurrentNode(void){
 static void setIndicatorNode(const struct ListHeader3 *new_indicator_node){
   if (indicator_node != new_indicator_node){
     indicator_node = new_indicator_node;
-    root->song->tracker_windows->wblock->block->is_dirty = true;
+    root->song->tracker_windows->must_redraw = true;
+    //printf("indicator node dirty\n");
   }
 }
 
@@ -84,6 +86,7 @@ void cancelIndicatorNode(void){
   indicator_velocity_num = -1;
   indicator_pitch_num = -1;
 }
+
 
 float getHalfOfNodeWidth(void){
   return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in Render.cpp
@@ -123,7 +126,7 @@ void setMouseTrack(int tracknum){
 
   if(tracknum != wblock->mouse_track){
     wblock->mouse_track = tracknum;
-    wblock->block->is_dirty = true;
+    window->must_redraw = true;
   }
 }
 
@@ -204,7 +207,7 @@ void setReltempo(float reltempo){
   //update_statusbar(window);
   DrawBlockRelTempo(window,wblock);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 
@@ -419,7 +422,7 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
 
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 int getNumTemponodes(int blocknum, int windownum){
@@ -454,7 +457,7 @@ void deleteTemponode(int num, int blocknum){
     ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
   }
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
@@ -494,7 +497,7 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   UpdateSTimes(block);
   UpdateAllTrackReallines(window,wblock); // sure?
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
@@ -603,7 +606,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   
  gotit:
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 
@@ -897,7 +900,7 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   }
 
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -918,7 +921,7 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
 
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
   
   return getPitchNum(wtrack->track, note, NULL);
 }
@@ -930,7 +933,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
     return -1;
   
   UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 
   return getPitchNum(wtrack->track, note, pitch);
 }
@@ -1049,7 +1052,8 @@ void setNoMouseNote(int blocknum, int windownum){
   
   if (wblock->mouse_note != NULL){
     wblock->mouse_note = NULL;
-    wblock->block->is_dirty = true;
+    window->must_redraw = true;
+    //printf("no mouse note dirty\n");
   }
 }
 
@@ -1062,7 +1066,8 @@ void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
     return;
   else if (wblock->mouse_note != note){
     wblock->mouse_note = note;
-    wblock->block->is_dirty = true;
+    window->must_redraw = true;
+    //printf("mouse note dirty\n");
   }
 }
 
@@ -1152,7 +1157,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }
 
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 
   return ret+1;
 }
@@ -1201,7 +1206,7 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1241,7 +1246,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
 
   }
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 
@@ -1431,7 +1436,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
     return -1;
   }
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 
   return ret;
 }
@@ -1464,8 +1469,8 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   int min = fx->fx->min;
   
   fxnodeline->val=R_BOUNDARIES(min,value,max);
-  
-  wblock->block->is_dirty = true;
+
+  window->must_redraw = true;
 }
 
 void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -1489,7 +1494,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   
   DeleteFxNodeLine(wtrack, fxs, fxnodeline);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 
@@ -1539,7 +1544,8 @@ void setNoMouseFx(int blocknum, int windownum){
   
   if (wblock->mouse_fxs != NULL){
     wblock->mouse_fxs = NULL;
-    wblock->block->is_dirty = true;
+    window->must_redraw = true;
+    //printf("no mouse fx dirty\n");
   }
 }
 
@@ -1552,7 +1558,8 @@ void setMouseFx(int fxnum, int tracknum, int blocknum, int windownum){
     return;
   else if (wblock->mouse_fxs != fxs){
     wblock->mouse_fxs = fxs;
-    wblock->block->is_dirty = true;
+    window->must_redraw = true;
+    //printf("mouse fx dirty\n");
   }
 }
 
@@ -1598,6 +1605,15 @@ bool altPressed(void){
 
 // mouse pointer
 //////////////////////////////////////////////////
+
+/*
+enum MousePointerType {
+  MP_NORMAL,
+  MP_BLANK,
+  MP_DIAGONAL,
+  MP_HORIZONTAL,  
+};
+*/
 
 void setNormalMousePointer(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);

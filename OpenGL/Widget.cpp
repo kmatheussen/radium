@@ -307,21 +307,21 @@ public:
   virtual void mouseReleaseEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseReleaseEvent(&event);
-    GL_create(get_window(), get_window()->wblock);
+    //GL_create(get_window(), get_window()->wblock);
   }
 
   // Main thread
   virtual void mousePressEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mousePressEvent(&event);
-    GL_create(get_window(), get_window()->wblock);
+    //GL_create(get_window(), get_window()->wblock);
   }
 
   // Main thread
   virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseMoveEvent(&event);
-    GL_create(get_window(), get_window()->wblock);
+    //GL_create(get_window(), get_window()->wblock);
   }
 
   /** Event generated right before the bound OpenGLContext is destroyed. */
