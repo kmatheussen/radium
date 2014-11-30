@@ -46,18 +46,22 @@ static void show_message(int type, char *message){
   if(TIME_get_ms()-last_ignore < 2000)
     return;
 
+  char full_message[1000];
+  sprintf(full_message,"%s: %s", typestring, message);
+
+#if 0 // Always use SYSTEM_show_message.
   vector_t v = {0};
   VECTOR_push_back(&v, "continue");
   VECTOR_push_back(&v, "quit");
   VECTOR_push_back(&v, "ignore warnings and errors for two seconds");
   VECTOR_push_back(&v, "ignore warnings and errors for the rest of the program");
-
-  char full_message[1000];
-  sprintf(full_message,"%s: %s", typestring, message);
   
   int ret = GFX_Message(&v, full_message);
   if (ret==-1)
     ret = SYSTEM_show_message(full_message);
+#else
+  int ret = SYSTEM_show_message(full_message);
+#endif
       
   switch(ret){
   case 0: break;

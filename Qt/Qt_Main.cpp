@@ -801,8 +801,8 @@ extern "C" {
 
 
 int main(int argc, char **argv){
+
   THREADING_init_main_thread_type();
-  R_ASSERT(THREADING_is_main_thread());
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
@@ -835,6 +835,8 @@ int main(int argc, char **argv){
   g_qapplication = qapplication;
 
   OS_set_argv0(argv[0]);
+
+  R_ASSERT(THREADING_is_main_thread());
   
 
   CRASHREPORTER_init();
@@ -960,5 +962,8 @@ int main(int argc, char **argv){
   PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))"); // keybindings.conf start.sh\")");
 
   Py_Finalize();
+
+  //RError("hepp");
+  return 0;
 }
 

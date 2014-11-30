@@ -15,21 +15,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-
-
-
-
-#ifndef TRACKER_INCLUDE
-
+// why doesn't LANGSPEC work here?
 extern LANGSPEC int SYSTEM_show_message(char *message); // Used before and after Qt is running
 
-extern bool Error_init(void);
+extern LANGSPEC bool Error_init(void);
 
 extern LANGSPEC void RError(const char *fmt,...);
 extern LANGSPEC void RWarning(const char *fmt,...);
 extern LANGSPEC void RWarning_not_prod(const char *fmt,...);
-extern void Error_uninit(void);
-
-#endif
+extern LANGSPEC void Error_uninit(void);
 
