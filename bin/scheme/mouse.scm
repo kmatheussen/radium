@@ -834,6 +834,7 @@
                                                #f
                                                (callback Num (ra:get-pitch-value Num *current-track-num*))))
                         :Move-node (lambda (Num Value Place)
+                                     (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string Value)))
                                      (ra:set-pitch Num Value (or Place -1) *current-track-num*))
                         :Set-indicator-node (lambda (Num)
                                               (set-indicator-pitch Num *current-track-num*))
@@ -868,6 +869,7 @@
                                                  ;;(c-display "--" Num "highlight")
                                                  (set-indicator-pitch Num *current-track-num*)
                                                  (ra:set-current-pitch Num *current-track-num*)
+                                                 (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value Num *current-track-num*))))
                                                  #t)
                      _                      :> #f))))
 
