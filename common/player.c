@@ -41,7 +41,7 @@ extern LANGSPEC void OS_InitMidiTiming(void);
 
 void PlayerTask(STime reltime){
 	static STime addreltime=0;
-
+        //RError("hepp");
         pc->reltime     = reltime;
 
         const struct Blocks *block = pc->isplaying ? pc->block : NULL;

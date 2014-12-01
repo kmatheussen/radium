@@ -275,6 +275,7 @@
   (ra:set-current-temponode num))
 (define (set-current-velocity-node velnum notenum tracknum)
   (set! current-node-has-been-set #t)
+  (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string (ra:get-velocity-value velnum notenum tracknum))))
   (ra:set-current-velocity-node velnum notenum tracknum))
 (define (set-current-fxnode fxnodenum fxnum tracknum)
   (set! current-node-has-been-set #t)
@@ -712,7 +713,7 @@
                                      ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
                                      new-value
                                      )
-                        ;:Set-indicator-node set-indicator-temponode ;; This version makes setting velocities (!) spit out error messages. Really strange.
+                        ;;:Set-indicator-node set-indicator-temponode ;; This version makes setting velocities (!) spit out error messages. Really strange.
                         :Set-indicator-node (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
                                               (set-indicator-temponode Num))
                         :Get-pixels-per-value-unit #f
@@ -1022,6 +1023,9 @@
                                         (ra:get-velocity-x 1 *current-note-num* *current-track-num*)
                                         (ra:get-velocity-y 1 *current-note-num* *current-track-num*))))
 
+
+
+
 ;; add and move velocity
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
@@ -1062,6 +1066,9 @@
                                                                            (velocity-info :tracknum)))
                         :Move-node (lambda (velocity-info Value Place)
                                      (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+
+                        :Set-Statusbar-text (lambda (value)
+                                              (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
                         )
 
 ;; delete velocity
@@ -1285,7 +1292,9 @@
                                                        (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
                                                          (and fxnode-info
                                                               (callback fxnode-info (fxnode-info :value) (fxnode-info :y))))))
-                        :Get-min-value (lambda () (ra:get-fx-min-value 0))
+                        :Get-min-value (lambda ()
+                                         (define Fxnum (get-current-fxnum))
+                                         (ra:get-fx-min-value 0))
                         :Get-max-value (lambda () (ra:get-fx-max-value 0))
                         :Get-x (lambda (info) (ra:get-fxnode-x (info :fxnodenum)
                                                                (info :fxnum)
