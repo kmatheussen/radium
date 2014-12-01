@@ -697,7 +697,7 @@ void GE_set_font(const QFont &font){
 
 // TODO/FIXME: pen_width/2.0f is a hack that's not correct for everything.
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-  int key = get_key_from_pen_width(pen_width/2.0f);
+  int key = get_key_from_pen_width(pen_width);
 
   c->lines[key].push_back(vl::dvec2(x1,c->y(y1)));
   c->lines[key].push_back(vl::dvec2(x2,c->y(y2)));

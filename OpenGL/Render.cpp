@@ -25,6 +25,23 @@
 extern char *NotesTexts3[];
 extern char *NotesTexts2[];
 
+static float get_pitchline_width(void){
+  static float width = -1;
+
+  if (width<0)
+    width = 1.2; //SETTINGS_read_double("gfx_pitchline_width", 1.2); // If changing this value, also change bin/config
+
+  return width;
+}
+
+static float get_nodeline_width(void){
+  static float width = -1;
+
+  if (width<0)
+    width = 1.0; //SETTINGS_read_double("gfx_nodeline_width", 1.0); // If changing this value, also change bin/config
+
+  return width;
+}
 
 static void draw_bordered_text(
                                const struct Tracker_Windows *window,
@@ -43,19 +60,19 @@ static void draw_bordered_text(
   int y2=y+window->fontheight-1;
 
   GE_line(GE_color_z(9, z),
-          x,y,x,y2,1.0f);
+          x,y,x,y2,0.5f);
 
   QColor qc1 = GE_qcolor(9).darker(90);
   QColor qc2 = GE_qcolor(9).darker(110);
   GE_Context *c2 = GE_gradient_z(qc1, qc2, z); //GE_get_rgb(9), GE_get_rgb(11), z);
 
   GE_line(c2,
-          x,y,x2,y,1.0f);
+          x,y,x2,y,0.5f);
 
   GE_Context *c3 = GE_mix_color_z(GE_get_rgb(11), GE_get_rgb(1), 800, z);
 
-  GE_line(c3, x2,y, x2,y2, 1.0f);
-  GE_line(c3,x,y2,x2,y2,1.0f);
+  GE_line(c3, x2,y, x2,y2, 0.5f);
+  GE_line(c3,x,y2,x2,y2,0.5f);
 #endif
 }
 
@@ -100,7 +117,7 @@ static void draw_node_indicator(float x,
   
   float away1 = 1024;
   float away2 = 5;
-  float thickness = 1.6;
+  float thickness = 0.8;
 
   // horizontal
   GE_line(c,
@@ -144,7 +161,7 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
   float x2 = x+minnodesize;
   float y1 = y-minnodesize;
   float y2 = y+minnodesize;
-  const float width = 2.3;
+  const float width = 1.2;
 
   int z = Z_ABOVE(Z_ZERO);
 
@@ -185,15 +202,15 @@ void create_double_border(
                           int x, int y, int y2
                           )
 {
-  GE_line(GE_color(1),x,y,x,y2,1.0);
-  GE_line(GE_color(9),x+1,y,x+1,y2,1.0);
+  GE_line(GE_color(1),x,y,x,y2,0.5);
+  GE_line(GE_color(9),x+1,y,x+1,y2,0.5);
 }
 
 void create_single_border(
                           int x, int y, int y2
                           )
 {
-  GE_line(GE_color(7),x,y,x,y2,1.0);
+  GE_line(GE_color(7),x,y,x,y2,0.5);
 }
 
 
@@ -202,7 +219,9 @@ void create_single_border(
 
 
 static void drawNodeLines(const struct NodeLine *nodelines, int colnum, bool is_selected, float alpha, float alpha_selected){
-  float width = is_selected ? 2.3 : 1.75;
+  float width = get_nodeline_width();
+  if (is_selected)
+    width *= 1.8;
   GE_Context *c = GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, Z_ABOVE(Z_ABOVE(Z_ZERO)));
   
   for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next)
@@ -264,7 +283,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     GE_filledBox(c,x1,y1,x2,y2);
   }
 
-  float line_width = 1.0f;
+  float line_width = 0.5f;
 
   // realline separator line
   {
@@ -407,7 +426,7 @@ struct TempoGraph *create_TempoGraph(const struct Tracker_Windows *window, const
 static void create_tempograph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   struct TempoGraph *tg = create_TempoGraph(window,wblock);
 
-  float width = 2.3;
+  float width = 1.3;
   GE_Context *c = GE_color(5);
 
   //printf("min/max: %d, %d\n",(int)min,(int)max);
@@ -740,7 +759,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
   // lines
   for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next)
     if(show_read_lines || nodeline->x1!=nodeline->x2)
-      GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, 1.5);
+      GE_line(line_color, nodeline->x1, nodeline->y1, nodeline->x2, nodeline->y2, get_pitchline_width());
   
   // indicator node
   if (indicator_node == &note->l && indicator_pitch_num!=-1) {
@@ -1075,15 +1094,15 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
   struct Stops *stops = wtrack->track->stops;
 
   float reallineF = 0.0f;
-  GE_Context *c = GE_color_alpha(1,0.2);
+  GE_Context *c = GE_color_alpha(1,0.5);
 
   while(stops != NULL){
     reallineF = FindReallineForF(wblock, reallineF, &stops->l.p);
     float y = get_realline_y(window, reallineF);
     GE_line(c,
-            wtrack->fxarea.x, y,
+            wtrack->notearea.x, y,
             wtrack->x2, y,
-            1.0f
+            0.6
             );
     stops = NextStop(stops);
   }
