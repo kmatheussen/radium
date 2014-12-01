@@ -558,5 +558,18 @@ void addMenuSeparator(void){
 
 void setStatusbarText(char* text, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  GFX_SetStatusBar(window,text);
+  static bool is_empty = false;
+  if (text[0]=='\0') {
+    if (!is_empty) {
+      GFX_SetStatusBar(window,text);
+      is_empty = true;
+    }
+    
+  } else {
+
+    GFX_SetStatusBar(window,text);
+    is_empty = false;
+    
+  }
+  
 }

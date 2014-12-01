@@ -279,6 +279,7 @@
   (ra:set-current-velocity-node velnum notenum tracknum))
 (define (set-current-fxnode fxnodenum fxnum tracknum)
   (set! current-node-has-been-set #t)
+  (ra:set-statusbar-text (ra:get-fx-string fxnodenum fxnum tracknum))
   (ra:set-current-fxnode fxnodenum fxnum tracknum))
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
@@ -297,6 +298,8 @@
   (set! mouse-note-has-been-set #f)
   (set! indicator-node-has-been-set #f)
   (set! current-node-has-been-set #f)
+
+  (ra:set-statusbar-text "")
 
   (define ret (thunk))
 
@@ -570,7 +573,6 @@
                                   :Set-indicator-node
                                   :Get-pixels-per-value-unit #f
                                   :Create-button #f
-                                  :Set-Statusbar-text #f
                                   )
   
   (define-struct node
@@ -642,8 +644,6 @@
                                    
     (Set-indicator-node (Node :node-info))
     (Move-node (Node :node-info) new-value (and new-y (get-place-from-y Button new-y)))
-    (if Set-Statusbar-text
-        (Set-Statusbar-text new-value))
     (make-node :node-info (Node :node-info)
                :value new-value
                :y (or new-y (Node :y))))
@@ -711,14 +711,13 @@
                                      (ra:set-temponode Num Value (or Place -1))
                                      (define new-value (ra:get-temponode-value Num)) ;; might differ from Value
                                      ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
+                                     (show-temponode-in-statusbar new-value)
                                      new-value
                                      )
                         ;;:Set-indicator-node set-indicator-temponode ;; This version makes setting velocities (!) spit out error messages. Really strange.
                         :Set-indicator-node (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
                                               (set-indicator-temponode Num))
                         :Get-pixels-per-value-unit #f
-                        :Set-Statusbar-text show-temponode-in-statusbar
-                                              
                         )                        
 
 ;; delete temponode
@@ -1065,10 +1064,8 @@
                                                                            (velocity-info :notenum)
                                                                            (velocity-info :tracknum)))
                         :Move-node (lambda (velocity-info Value Place)
+                                     (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string Value)))
                                      (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
-
-                        :Set-Statusbar-text (lambda (value)
-                                              (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
                         )
 
 ;; delete velocity
@@ -1321,7 +1318,9 @@
                                               (set-indicator-fxnode (fxnode-info :fxnodenum)
                                                                     (fxnode-info :fxnum)
                                                                     (fxnode-info :tracknum)))
+
                         :Move-node (lambda (fxnode-info Value Place)
+                                     (ra:set-statusbar-text (ra:get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum)))
                                      (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum)))
                         )
 

@@ -1354,6 +1354,33 @@ float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   return fxnodeline->val;
 }
 
+char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return NULL;
+  
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  if (node==NULL)
+    return "<fxnode not found>";
+
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
+
+  float val = fxnodeline->val;
+
+  // Turned out this was a lot of work. Fix later, hopefully.
+  //return fx->getFXstring(fx, wtrack->track, val);
+
+  // instead we just do this:
+  struct FX *fx = fxs->fx;
+  static char ret[512];
+  snprintf(ret, 511, "%s: %.02f", fx->name, scale(val, fx->min, fx->max, 0.0f, 1.0f));
+
+  return ret;
+}
 
 int getNumFxes(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
