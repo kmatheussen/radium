@@ -11,7 +11,7 @@ enum ThreadType{
   PLAYER_THREAD
 };
 
-__thread ThreadType thread_type;
+static __thread ThreadType thread_type = OTHER_THREAD;
 
 
 
