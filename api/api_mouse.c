@@ -1347,22 +1347,34 @@ float getFxnodeY(int num, int fxnum, int tracknum, int blocknum, int windownum){
 
 
 float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
-  struct Node *node = get_fxnode(fxnodenum, fxnum, tracknum, blocknum, windownum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return 0.0f;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
   if (node==NULL)
-    return 0;
+    return 0.0f;
+
+  int max = fxs->fx->max;
+  int min = fxs->fx->min;
 
   struct FXNodeLines *fxnodeline = (struct FXNodeLines*)node->element;
-  return fxnodeline->val;
+
+  return scale(fxnodeline->val, min, max, 0.0f, 1.0f);
 }
 
-char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){  
+char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
   if (fxs==NULL)
     return NULL;
-  
+ 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
   if (node==NULL)
@@ -1407,6 +1419,8 @@ int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
 }
 
 float getFxMinValue(int fxnum, int tracknum, int blocknum, int windownum){
+  return 0.0f;
+#if 0
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1415,9 +1429,12 @@ float getFxMinValue(int fxnum, int tracknum, int blocknum, int windownum){
     return 0;
 
   return fx->fx->min;
+#endif
 }
 
 float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
+  return 1.0f;
+#if 0
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1426,6 +1443,7 @@ float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
     return 1;
 
   return fx->fx->max;
+#endif
 }
 
 int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
@@ -1454,12 +1472,15 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
 
   Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
 
+  int max = fx->fx->max;
+  int min = fx->fx->min;
+
   int ret = AddFXNodeLine(
                           window,
                           wblock,
                           wtrack,
                           fx->l.num,
-                          value,
+                          scale(value, 0,1, min, max),
                           &place
                           );
 
@@ -1500,7 +1521,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   int max = fx->fx->max;
   int min = fx->fx->min;
   
-  fxnodeline->val=R_BOUNDARIES(min,value,max);
+  fxnodeline->val=scale(value, 0.0f, 1.0f, min, max); //R_BOUNDARIES(min,value,max);
 
   window->must_redraw = true;
 }
