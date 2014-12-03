@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_fxs_proc.h"
 #include "../common/fxlines_proc.h"
 #include "../common/nodelines_proc.h"
+#include "../common/instruments_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -1377,7 +1378,11 @@ char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   // instead we just do this:
   struct FX *fx = fxs->fx;
   static char ret[512];
-  snprintf(ret, 511, "%s: %.02f", fx->name, scale(val, fx->min, fx->max, 0.0f, 1.0f));
+
+  if (wtrack->track->patch->instrument==get_MIDI_instrument())
+    snprintf(ret, 511, "%s: %d", fx->name, (int)val);
+  else
+    snprintf(ret, 511, "%s: %.02f", fx->name, scale(val, fx->min, fx->max, 0.0f, 1.0f));
 
   return ret;
 }
