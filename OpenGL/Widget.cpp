@@ -202,7 +202,13 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
 public:
+
+  int current_width;
+  int current_height;
   
+  int new_width;
+  int new_height;
+    
   vl::ref<vl::Rendering> _rendering;
   vl::ref<vl::Transform> _scroll_transform;
   vl::ref<vl::Transform> _linenumbers_transform;
@@ -225,6 +231,10 @@ public:
   // Main thread
   MyQt4ThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
     : Qt4ThreadedWidget(vlFormat, parent)
+    , current_width(-1)
+    , current_height(-1)
+    , new_width(500)
+    , new_height(500)
     , painting_data(NULL)
     , is_training_vblank_estimator(true)
     , override_vblank_value(-1.0)
@@ -358,7 +368,25 @@ private:
     SharedVariables *sv = GE_get_shared_variables(painting_data);
 
     if (needs_repaint) {
-      vg->clear();
+
+      if (current_height != new_height || current_width != new_width){
+        
+        //_rendering->sceneManagers()->clear();
+        _rendering->camera()->viewport()->setWidth(new_width);
+        _rendering->camera()->viewport()->setHeight(new_height);
+        _rendering->camera()->setProjectionOrtho(-0.5f);
+   
+        GE_set_height(new_height);
+        //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
+        
+        //initEvent();
+        
+        current_height = new_height;
+        current_width = new_width;
+
+      } else
+        vg->clear();
+
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
     
@@ -372,45 +400,44 @@ private:
     if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
 
-    if (needs_repaint || pos!=last_pos) {
-
-      scroll_pos = pos;
-    
-      // scroll
-      {
-        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        mat.translate(0,pos,0);
-        _scroll_transform->setLocalAndWorldMatrix(mat);
-      }
-
-      // linenumbers
-      {
-        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        mat.translate(0,pos,0);
-        _linenumbers_transform->setLocalAndWorldMatrix(mat);
-      }
-      
-      // scrollbar
-      {
-        vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-        float scrollpos = scale(till_realline,
-                                0, sv->num_reallines - (pc->isplaying?0:1),
-                                -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
-                                );
-        //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
-        mat.translate(0,scrollpos,0);
-        _scrollbar_transform->setLocalAndWorldMatrix(mat);
-      }
-
-      GE_update_triangle_gradient_shaders(painting_data, pos);
-      
-      _rendering->render();
-
-      last_pos = pos;
-
-      return true;
-    } else
+    if (needs_repaint==false && pos==last_pos)
       return false;
+
+    scroll_pos = pos;
+    
+    // scroll
+    {
+      vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+      mat.translate(0,pos,0);
+      _scroll_transform->setLocalAndWorldMatrix(mat);
+    }
+    
+    // linenumbers
+    {
+      vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+      mat.translate(0,pos,0);
+      _linenumbers_transform->setLocalAndWorldMatrix(mat);
+    }
+    
+    // scrollbar
+    {
+      vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+      float scrollpos = scale(till_realline,
+                              0, sv->num_reallines - (pc->isplaying?0:1),
+                              -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
+                              );
+      //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
+      mat.translate(0,scrollpos,0);
+      _scrollbar_transform->setLocalAndWorldMatrix(mat);
+    }
+    
+    GE_update_triangle_gradient_shaders(painting_data, pos);
+    
+    _rendering->render();
+    
+    last_pos = pos;
+    
+    return true;
   }
 
   // OpenGL thread
@@ -445,16 +472,20 @@ public:
 
     }
 
-    if(is_training_vblank_estimator==false && canDraw())
+    if(is_training_vblank_estimator==false && canDraw()) {
+
       if (draw()==false) {
         if (sleep_when_not_painting) {
           usleep(1000000 / 60);
-          return;
         }
+      } else {
+        swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
       }
 
-    //usleep(1000000 / 60.0);
-    swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
+    } else {
+      //usleep(1000000 / 60.0);
+      swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
+    }
   }
 
   // Main thread
@@ -467,6 +498,10 @@ public:
   virtual void resizeEvent(int w, int h) {
     printf("resisizing %d %d\n",w,h);
 
+    new_width = w;
+    new_height = h;
+
+#if 0
     _rendering->sceneManagers()->clear();
 
     _rendering->camera()->viewport()->setWidth(w);
@@ -477,12 +512,9 @@ public:
     //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
 
     initEvent();
-
-    updateEvent();
+#endif
+    //updateEvent();
   }
-  
-
-
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
 
   /** Event generated whenever setEnabled() is called. */
