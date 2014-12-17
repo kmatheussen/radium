@@ -37,7 +37,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   editor->cursorbuffer_painter->setFont(editor->font);
-  editor->paintbuffer_painter->setFont(editor->font);
+  //editor->paintbuffer_painter->setFont(editor->font);
 
   GE_set_font(editor->font);
 
@@ -74,6 +74,13 @@ static void set_system_font(QFont font){
   SETTINGS_write_string("system_font",font.toString().ascii());
   SETTINGS_write_string("system_font_style",font.styleName().ascii()); // toString doesn't seem to cover this.
 
+  {
+    struct Tracker_Windows *tvisual = root->song->tracker_windows;
+    const QFont &font=QApplication::font();
+    QFontMetrics fm(font);
+    tvisual->systemfontheight=fm.height();
+  }
+
   updateAllFonts(QApplication::mainWidget());
 }
 
@@ -90,7 +97,7 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   num_users_of_keyboard++;
   editor->font = QFontDialog::getFont( 0, editor->font ) ;
   num_users_of_keyboard--;
-  editor->setFont(editor->font);
+  //editor->setFont(editor->font);
 
   printf("Raw font name: \"%s\"\n",editor->font.rawName().ascii());
 
@@ -181,7 +188,7 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font = font;
-  editor->setFont(editor->font);
+  //editor->setFont(editor->font);
   setFontValues(tvisual);
 
   UpdateAllWBlockWidths(tvisual);

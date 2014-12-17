@@ -135,7 +135,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
     this->painter = &paint;
-    this->painter->setFont(this->font);
+    //this->painter->setFont(this->font);
 
     {
       GFX_play_op_queue(this->window);

@@ -166,8 +166,10 @@ protected:
 
     if(ret==true) {
       static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-      if(event->type==KeyPress)
-        GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+      if(event->type==KeyPress){
+        //printf("a1\n");
+        //GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+      }
     }
 
     if(doquit==true)
@@ -687,6 +689,7 @@ int radium_main(char *arg){
   //editor->gl_widget->setAttribute(Qt::WA_PaintOnScreen);
   editor->position_gl_widget(window);
 #endif
+
 
   show_nag_window("");
 

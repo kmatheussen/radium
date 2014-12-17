@@ -34,6 +34,12 @@ IF YOU GOT THE SOURCE FROM GIT
 
 
 
+
+IF YOU ARE A DEVELOPER
+         ./make_and_run_linux.sh
+
+
+
 INTRODUCTION
         Radium is a free (as in speech) music editor with a novel interface.
         It's inspired by trackers, but has fewer limitations and uses graphics to show musical data. 

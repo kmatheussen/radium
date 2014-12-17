@@ -76,6 +76,11 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
     for(int i=0;i<6;i++){
       PatchVoice *voice=&_voices[i];
 
+      get_t(i)->setStyle("cleanlooks");
+      get_v(i)->setStyle("cleanlooks");
+      get_s(i)->setStyle("cleanlooks");
+      get_l(i)->setStyle("cleanlooks");
+
       get_o(i)->setChecked(voice->is_on);
       get_o(i)->_patch = _patch;
       get_o(i)->_effect_num = i;

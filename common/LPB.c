@@ -94,7 +94,7 @@ void UpdateWLPBs(
 void UpdateAllWLPBs(
 	struct Tracker_Windows *window
 ){
-  struct WBlocks *wblock=window->wblock;
+  struct WBlocks *wblock=window->wblocks;
   while(wblock!=NULL){
     UpdateWLPBs(window, wblock);
     wblock = NextWBlock(wblock);

@@ -62,6 +62,7 @@ void main()
 
   //float y2 = (gl_ModelViewMatrix * gl_Vertex)[0].y;
   //float y2 = (1.0*gl_ModelViewProjectionMatrix).y;
+
   vec4 col = mix(color1,
                  color2,
                  //(gl_FragCoord - y) / height // nice effect
@@ -71,11 +72,16 @@ void main()
 
   //float x = vertex_position.x;//(gl_ModelViewProjectionMatrix*gl_Vertex).x;
 
+  //  /*
+    // horizontal gradient effect:
   gl_FragColor = mix(col,
                      vec4(1.0, 0.0, 1.0, col.a),
                      (gl_FragCoord.x - x) / (width*12.0)
                      )
     ;
-  
+  //  */
+
+  //  gl_FragColor = col;
+
   //gl_FragColor = vec4(gl_FragCoord.x/1000.0f, gl_FragCoord.y/100.0f, gl_FragCoord.z, 1.0);
 }

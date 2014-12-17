@@ -95,7 +95,6 @@ static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
   return gradient_shader.get();
 }
 
-
 struct GradientTriangles : public vl::Effect {
   GradientTriangles *next;
   
@@ -202,6 +201,7 @@ static void add_gradient_triangles(void){
     free_gradient_triangles = gradient;
   }
 }
+
 
 // main thread
 static GradientTriangles *get_gradient_triangles(void){  
@@ -397,6 +397,7 @@ PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *ne
   return ret;
 }
 
+
 // Called from the main thread
 void GE_start_writing(void){
   g_painting_data = new PaintingData();
@@ -503,7 +504,6 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           setColorEnd(vg, c);
         }
       }
-
 
       // 2. triangle strips
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {

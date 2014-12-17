@@ -65,6 +65,8 @@ float disk_load_version;
 static bool Load(const char *filename){
 	struct Root *newroot;
 
+        curr_disk_line = 0;
+
 	dc.file=fopen(filename,"r");
 	if(dc.file==NULL){
           GFX_Message(NULL,"Could not open \"%s\" for loading\n",filename);

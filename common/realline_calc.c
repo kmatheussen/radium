@@ -72,9 +72,9 @@ float FindReallineForF(
     in the wblock.
 *******************************************************************/
 int FindRealLineFor(
-	struct WBlocks *wblock,
-	int realline,
-	const Place *place
+                    const struct WBlocks *wblock,
+                    int realline,
+                    const Place *place
 ){
 	struct LocalZooms **reallines=wblock->reallines;
 
@@ -97,17 +97,17 @@ int FindRealLineFor(
 
 
 int FindRealLineForNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+                        const struct WBlocks *wblock,
+                        int realline,
+                        const struct Notes *note
 ){
 	return FindRealLineFor(wblock,realline,&note->l.p);
 }
 
 int FindRealLineForEndNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+                           const struct WBlocks *wblock,
+                           int realline,
+                           const struct Notes *note
 ){
 	return FindRealLineFor(wblock,R_MAX(note->end.line,realline),&note->end);
 }
@@ -141,10 +141,10 @@ int FindRealLineForB(
     the windows font, we get the correct answer.
 ***********************************************************************/
 int FindSubRealLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	int realline,
-	Place *p
+                    const struct Tracker_Windows *window,
+                    const struct WBlocks *wblock,
+                    int realline,
+                    const Place *p
 ){
 	int line=p->line;
 	uint_32 counter=p->counter;

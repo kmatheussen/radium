@@ -39,6 +39,7 @@ extern void set_editor_focus(void);
     {                                                                   \
     }                                                                   \
   void focusInEvent ( QFocusEvent *e ){                                 \
+    printf("got in\n");\
     if(dontsniff==false)                                                \
       num_users_of_keyboard++;                                          \
     Class::focusInEvent(e);                                             \

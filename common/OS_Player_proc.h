@@ -21,7 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // Warning, PLAYER_lock will deadlock if called from the player thread.
 extern LANGSPEC void PLAYER_lock(void);
 extern LANGSPEC void PLAYER_unlock(void);
+
 extern LANGSPEC bool PLAYER_current_thread_has_lock(void);
+extern LANGSPEC bool PLAYER_someone_has_player_lock(void);
+extern LANGSPEC bool PLAYER_player_has_player_lock(void);
 
 extern LANGSPEC void StartPlayer(void);
 

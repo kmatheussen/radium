@@ -518,6 +518,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
   if(window->must_redraw==true)
     return;
 
+#if 0
 	GFX_DrawStatusBar(window,wblock);
 
 	DrawTempoTrackHeader(window,wblock);
@@ -543,6 +544,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
                 PAINT_DIRECTLY
 	);
 
+#endif
 
 #if !USE_OPENGL
 	DrawWBlockSpesific(
@@ -559,18 +561,32 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	DrawBottomSlider(window);
 
+#if 0
 	GFX_Line(
-		window,1,
+		window,4,
 		wblock->a.x1,
 		wblock->t.y2+1,
 		window->bottomslider.x-1,
 		wblock->t.y2+1,
                 PAINT_DIRECTLY
 	);
+#endif
+
+        // fill the gap between wblock->bottombar.y1 and wblock->reltempo.y1
+	GFX_FilledBox(
+		window,11,
+		0,
+		wblock->bottombar.y1,
+		wblock->t.x2,
+		wblock->reltempo.y1,
+                PAINT_DIRECTLY
+	);
 
 	DrawAllWTrackHeaders(window,wblock);
 
 	DrawBlockRelTempo(window,wblock);
+
+        GFX_UpdateUpperLeft(window, wblock);
 }
 
 

@@ -47,7 +47,7 @@ int MoveTempoNodeBorder_Mouse(
 
 //	PlayStop();
 
-	x-=window->prevaction.efloat1;
+	x -= window->prevaction.efloat1;
 
 	int old_width=wblock->temponodearea.width;
 #if !USE_OPENGL
@@ -164,7 +164,7 @@ int MoveTempoNodeBorder_Mouse(
 
 #else
 
-          #if 0
+#if 0
 	  GFX_FilledBox(
 			window,0,
 			wblock->reltempo.x2+1,

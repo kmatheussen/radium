@@ -17,8 +17,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "Qt_upperleft_widget.h"
+#include "../common/undo_reltempomax_proc.h"
+#include "../common/undo_maintempos_proc.h"
+#include "../common/LPB_proc.h"
+#include "../common/player_proc.h"
 
 extern EditorWidget *g_editor;
+
+extern struct Root *root;
 
 
 class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
@@ -34,11 +40,20 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   }
 
   void paintEvent( QPaintEvent *e ){
-  static int upcounter = 0;
+    static int upcounter = 0;
     printf("upperleft paintEvent %d\n",upcounter++);
     QPainter paint(this);
     //paint.fillRect(0,0,width(),height(),g_editor->colors[0]);
     paint.eraseRect(0,0,width(),height());
+  }
+
+  void updateWidgets(struct WBlocks *wblock){
+    lz->setValue(wblock->num_expand_lines);
+    grid->setText(QString::number(root->grid_numerator)+"/"+QString::number(root->grid_denominator));
+
+    lpb->setValue(root->lpb);
+    bpm->setValue(root->tempo);
+    reltempomax->setValue(wblock->reltempomax);
   }
 
   void position(struct WBlocks *wblock){
@@ -47,9 +62,9 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     int x2 = wblock->lpbTypearea.x;
     int x3 = wblock->tempoTypearea.x;
     int x4 = wblock->temponodearea.x;
-    int x5 = wblock->temponodearea.x2;
+    int x5 = wblock->t.x1;
 
-    int y2 = wblock->t.y1-2;
+    int y2 = wblock->t.y1;
 
     printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
 
@@ -75,18 +90,49 @@ public slots:
     printf("lz\n");
     set_editor_focus();
   }
+
   void on_grid_editingFinished(){
     printf("grid\n");
     set_editor_focus();
   }
+
   void on_lpb_editingFinished(){
     printf("lpb\n");
+
+    PlayStop();
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+
+    Undo_MainTempo(window,wblock);
+
+    root->lpb=lpb->value();
+    UpdateAllSTimes();
+
+    UpdateAllWLPBs(window);
+    window->must_redraw = true;
+
     set_editor_focus();
   }
+
   void on_bpm_editingFinished(){
     printf("bpm\n");
+
+    PlayStop();
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+
+    Undo_MainTempo(window,wblock);
+
+    root->tempo=bpm->value();
+    UpdateAllSTimes();
+
+    wblock->block->is_dirty = true;
+
     set_editor_focus();
   }
+
   void on_reltempomax_editingFinished(){
     printf("reltempomax\n");
     set_editor_focus();

@@ -25,7 +25,7 @@ void DrawBlockRelTempo(
 		MINBLOCKRELTIME,
 		MAXBLOCKRELTIME,
 		true,
-		false
+		PAINT_BUFFER
 	);
 }
 

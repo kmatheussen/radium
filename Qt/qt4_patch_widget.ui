@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>200</width>
-    <height>188</height>
+    <width>205</width>
+    <height>223</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -60,7 +60,7 @@
     <widget class="QWidget" name="voices_widget" native="true">
      <layout class="QVBoxLayout" name="verticalLayout_9">
       <property name="spacing">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="margin">
        <number>0</number>
@@ -68,7 +68,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_22">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <property name="rightMargin">
          <number>0</number>
@@ -162,7 +162,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_14">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <item>
          <widget class="QCheckBox" name="o1">
@@ -198,6 +198,9 @@
           <property name="toolTip">
            <string>Transpose voice</string>
           </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -214,6 +217,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="v1">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -230,6 +236,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="s1">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -249,6 +258,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="l1">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -284,7 +296,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_15">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <item>
          <widget class="QCheckBox" name="o2">
@@ -317,6 +329,15 @@
         </item>
         <item>
          <widget class="QSpinBox" name="t2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -336,6 +357,15 @@
         </item>
         <item>
          <widget class="QSpinBox" name="v2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -352,6 +382,15 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="s2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -371,6 +410,15 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="l2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -391,7 +439,7 @@
         <item>
          <widget class="QCheckBox" name="f2">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -406,7 +454,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_16">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <item>
          <widget class="QCheckBox" name="o3">
@@ -439,6 +487,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="t3">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -458,6 +509,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="v3">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -474,6 +528,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="s3">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -493,6 +550,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="l3">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -528,7 +588,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_17">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <item>
          <widget class="QCheckBox" name="o4">
@@ -561,6 +621,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="t4">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -577,6 +640,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="v4">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -593,6 +659,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="s4">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -612,6 +681,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="l4">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -647,10 +719,10 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_18">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <property name="sizeConstraint">
-         <enum>QLayout::SetNoConstraint</enum>
+         <enum>QLayout::SetDefaultConstraint</enum>
         </property>
         <item>
          <widget class="QCheckBox" name="o5">
@@ -689,6 +761,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -714,6 +789,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -736,6 +814,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -755,6 +836,15 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="l5">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -790,7 +880,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_19">
         <property name="spacing">
-         <number>0</number>
+         <number>1</number>
         </property>
         <item>
          <widget class="QCheckBox" name="o6">
@@ -823,6 +913,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="t6">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -842,6 +935,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="v6">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -858,6 +954,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="s6">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -877,6 +976,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="l6">
+          <property name="frame">
+           <bool>false</bool>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>

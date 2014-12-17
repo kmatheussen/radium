@@ -40,6 +40,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/fxlines_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/instruments_proc.h"
+#include "../common/wblocks_proc.h"
+#include "../common/OS_Player_proc.h"
+#include "../common/player_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -146,10 +149,8 @@ void setMouseTrackToReltempo(void){
 float getPlaceFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL) {
-    RError("getPlaceFromY: No block %d in window %d",blocknum,windownum);
+  if (wblock==NULL)
     return 0.0;
-  }
 
   Place place;
   
@@ -375,6 +376,9 @@ void setIndicatorTemponode(int num, int blocknum){
 }
 
 void setTemponode(int num, float value, float floatplace, int blocknum, int windownum){
+
+  PlayStop();
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
@@ -406,7 +410,6 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   } else {
     Place place;
     Float2Placement(floatplace, &place);
-
     temponode = (struct TempoNodes *)ListMoveElement3_FromNum_ns(&block->temponodes, num, &place, NULL, NULL);
   }
   
@@ -419,6 +422,7 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   temponode->reltempo = value;
 
   UpdateSTimes(wblock->block);    
+
   UpdateAllTrackReallines(window,wblock); // sure?
 
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
@@ -437,6 +441,8 @@ int getNumTemponodes(int blocknum, int windownum){
 }
 
 void deleteTemponode(int num, int blocknum){
+  PlayStop();
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(-1, &window, blocknum);
   if (wblock==NULL)
@@ -458,10 +464,14 @@ void deleteTemponode(int num, int blocknum){
     ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
   }
 
+  UpdateSTimes(wblock->block);    
+
   window->must_redraw = true;
 }
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
+  PlayStop();
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
@@ -485,7 +495,7 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   } else if ( (value-1) < -wblock->reltempomax) {
     wblock->reltempomax = -1*(value -1);
   }
-  
+
   struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value);
 
   if (temponode==NULL)
@@ -496,6 +506,7 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   //GFX_DrawStatusBar(window,wblock);
 
   UpdateSTimes(block);
+
   UpdateAllTrackReallines(window,wblock); // sure?
 
   window->must_redraw = true;
@@ -582,7 +593,9 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   while(notes!=NULL){
 
     if (pitchnum==num) {
-      RemoveNote(wblock->block, track, notes);
+      PLAYER_lock();{
+        RemoveNote(wblock->block, track, notes);
+      }PLAYER_unlock();
       goto gotit;
     }
     
@@ -591,7 +604,9 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
     struct Pitches *pitches = notes->pitches;
     while(pitches!=NULL){
       if (pitchnum==num){
-        ListRemoveElement3(&notes->pitches,&pitches->l);
+        PLAYER_lock();{
+          ListRemoveElement3(&notes->pitches,&pitches->l);
+        }PLAYER_unlock();
         goto gotit;
       }
       
@@ -836,8 +851,10 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
-  note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
-  
+  PLAYER_lock();{
+    note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+  }PLAYER_unlock();
+
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
@@ -853,9 +870,11 @@ static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *n
     if (PlaceGreaterOrEqual(place, next_legal))
       PlaceTilLimit(place, next_legal);
   }
-  
-  note->l.p = *place;
-  ReplaceNoteEnds(block, track, &old_place, place);
+
+  PLAYER_lock();{
+    note->l.p = *place;
+    ReplaceNoteEnds(block, track, &old_place, place);
+  }PLAYER_unlock();
 }
 
 void setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
@@ -889,7 +908,9 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
       Place place;
       Float2Placement(floatplace, &place);
 
-      ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+      PLAYER_lock();{
+        ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+      }PLAYER_unlock();
     }
                         
   } else {
@@ -930,10 +951,10 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
 
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, note->note);
+
   if(pitch==NULL)
     return -1;
   
-  UpdateTrackReallines(window,wblock,wtrack);
   window->must_redraw = true;
 
   return getPitchNum(wtrack->track, note, pitch);
@@ -1149,9 +1170,12 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }
 
   Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
-  
-  int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
-  
+
+  int ret;
+  PLAYER_lock();{
+    ret = AddVelocity(value*MAX_VELOCITY, &place, note);
+  }PLAYER_unlock();
+
   if (ret==-1){
     RError("createVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
@@ -1179,9 +1203,10 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
 
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (floatplace>=0)
+    if (floatplace>=0) {
       MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
-
+      UpdateTrackReallines(window,wblock,wtrack);
+    }
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0)
@@ -1201,7 +1226,9 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
       Place place;
       Float2Placement(floatplace, &place);
 
-      velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+      PLAYER_lock();{
+        velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+      }PLAYER_unlock();
     }
     
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
@@ -1233,18 +1260,23 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   bool is_last_and_there_are_pitches = is_last && note->pitches!=NULL;
 
   if (is_first || is_last_and_no_velocities || is_last_and_there_are_pitches){
-    RemoveNote(block, track, note);
+    PLAYER_lock();{
+      RemoveNote(block, track, note);
+    }PLAYER_unlock();
     UpdateTrackReallines(window,wblock,wtrack);
 
   } else if (velocitynum==nodes->num_elements-1) {
     struct Velocities *last = (struct Velocities*)ListLast3(&note->velocities->l);
-    note->end = last->l.p;
-    note->velocity_end = last->velocity;
-    ListRemoveElement3(&note->velocities, &last->l);
+    PLAYER_lock();{
+      note->end = last->l.p;
+      note->velocity_end = last->velocity;
+      ListRemoveElement3(&note->velocities, &last->l);
+    }PLAYER_unlock();
 
   } else {
-    ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
-
+    PLAYER_lock();{
+      ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
+    }PLAYER_unlock();
   }
 
   window->must_redraw = true;
@@ -1367,6 +1399,17 @@ float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   return scale(fxnodeline->val, min, max, 0.0f, 1.0f);
 }
 
+const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return NULL;
+
+  return fxs->fx->name;
+}
+  
 char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -1374,7 +1417,7 @@ char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
   if (fxs==NULL)
     return NULL;
- 
+
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
   if (node==NULL)
@@ -1475,14 +1518,17 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
   int max = fx->fx->max;
   int min = fx->fx->min;
 
-  int ret = AddFXNodeLine(
-                          window,
-                          wblock,
-                          wtrack,
-                          fx->l.num,
-                          scale(value, 0,1, min, max),
-                          &place
-                          );
+  int ret;
+  PLAYER_lock();{
+    ret = AddFXNodeLine(
+                        window,
+                        wblock,
+                        wtrack,
+                        fx->l.num,
+                        scale(value, 0,1, min, max),
+                        &place
+                        );
+  }PLAYER_unlock();
 
   if (ret==-1){
     RError("createFx: Can not create new fx with the same position as another fx");
@@ -1515,7 +1561,9 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
     Place place;
     Float2Placement(floatplace, &place);
   
-    ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), PlaceGetLastPos(wblock->block));
+    PLAYER_lock();{
+      ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), PlaceGetLastPos(wblock->block));
+    }PLAYER_unlock();
   }
   
   int max = fx->fx->max;
@@ -1545,7 +1593,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
-  DeleteFxNodeLine(wtrack, fxs, fxnodeline);
+  DeleteFxNodeLine(wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
 
   window->must_redraw = true;
 }
@@ -1625,6 +1673,59 @@ void undoFxs(int tracknum, int blocknum, int windownum){
 
   Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
 }
+
+
+// track widths
+//////////////////////////////////////////////////
+
+float getTrackWidth(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+    
+  if (tracknum==-1){
+    wblock = getWBlockFromNumA(windownum, &window, blocknum);
+    if (wblock==NULL)
+      return 0.0f;
+    return wblock->temponodearea.width;
+  } else {
+    struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+    if (wtrack==NULL)
+      return 0.0f;
+    return wtrack->fxwidth;
+  }
+}
+
+void setTrackWidth(float new_width, int tracknum, int blocknum, int windownum){
+  if (new_width < 2) {
+#if 0
+    RError("Can not set width smaller than 2");
+    return;
+#else
+    new_width = 2;
+#endif
+  }
+
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+    
+  if (tracknum==-1){
+    wblock = getWBlockFromNumA(windownum, &window, blocknum);
+    if (wblock==NULL)
+      return;
+    wblock->temponodearea.width = new_width;
+  } else {
+    struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+    if (wtrack==NULL)
+      return;
+    printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
+    wtrack->fxwidth = new_width;
+  }
+
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+
+
 
 // ctrl / shift keys
 //////////////////////////////////////////////////

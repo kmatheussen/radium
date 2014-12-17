@@ -21,7 +21,13 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="1" column="0">
-       <widget class="QTextEdit" name="comment"/>
+       <widget class="QTextEdit" name="comment">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+         </font>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

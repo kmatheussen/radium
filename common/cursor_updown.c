@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scroll_play_proc.h"
 #include "blts_proc.h"
 #include "list_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "cursor_updown_proc.h"
 
@@ -66,6 +67,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		}else{
 
 			wblock->curr_realline=0;
+                        GE_set_curr_realline(0);
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
 
@@ -145,6 +147,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 			Scroll_scroll(window,wblock->num_reallines-1);
 		}else{
 			wblock->curr_realline=wblock->num_reallines-1;
+                        GE_set_curr_realline(wblock->curr_realline);
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
 

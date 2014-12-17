@@ -17,23 +17,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern void UpdateWLPBs(
+extern LANGSPEC void UpdateWLPBs(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
 
-extern void UpdateAllWLPBs(
+extern LANGSPEC void UpdateAllWLPBs(
                            struct Tracker_Windows *window
                            );
 
-extern struct LPBs *SetLPB(
+extern LANGSPEC struct LPBs *SetLPB(
                            struct Blocks *block,
                            Place *place,
                            int newlpb
                            );
-extern void SetLPBCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void SetLPBCurrPos(struct Tracker_Windows *window);
 
-extern void RemoveLPBsCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void RemoveLPBsCurrPos(struct Tracker_Windows *window);
 
 #endif
 

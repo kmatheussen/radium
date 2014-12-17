@@ -1,3 +1,19 @@
+/* Copyright 2014 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+-
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
 
 
 #include <unistd.h>
@@ -16,7 +32,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
-
+#include "../common/placement_proc.h"
 
 #include "scheme_proc.h"
 
@@ -29,8 +45,45 @@ extern "C" {
 static s7_scheme *s7;
 static s7webserver_t *s7webserver;
 
+static s7_pointer place_to_ratio(const Place *p){
+  return s7_make_ratio(s7, p->line*p->dividor + p->counter, p->dividor);
+}
 
+static Place *ratio_to_place(s7_pointer ratio){
+  int num = s7_numerator(ratio);
+  int den = s7_denominator(ratio);
 
+  int lines = num/den;
+
+  Place *ret = PlaceCreate(lines, num - (lines*den), den);
+  PlaceHandleOverflow(ret);
+
+  return ret;
+}
+
+Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
+  s7_pointer result = s7_call(s7,
+                              s7_name_to_value(s7, "scale"),
+                              s7_list(s7,
+                                      5,
+                                      place_to_ratio(x),
+                                      place_to_ratio(x1),
+                                      place_to_ratio(x2),
+                                      place_to_ratio(y1),
+                                      place_to_ratio(y2)
+                                      )
+                              );
+
+  if (s7_is_ratio(result))
+    return ratio_to_place(result);
+  else if (s7_is_integer(result))
+    return PlaceCreate(s7_integer(result), 0, 1);
+  else {
+    RError("result was not ratio or integer. Returning 0");
+    return PlaceCreate(0,0,1);
+  }
+}
+  
 
 bool SCHEME_mousepress(int button, float x, float y){
 

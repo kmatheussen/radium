@@ -63,6 +63,8 @@ int default_scrolls_per_second = 20;
 
 #if USE_OPENGL
 
+#include "../OpenGL/Widget_proc.h"
+
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
   struct Tracker_Windows *window=root->song->tracker_windows;
@@ -78,6 +80,7 @@ void P2MUpdateSongPosCallBack(void){
     if(setfirstpos){
       wblock->curr_realline=0;
       SetWBlock_Top_And_Bot_Realline(window,wblock);
+      GE_set_curr_realline(0);
     }
     SelectWBlock(
                  window,
@@ -85,6 +88,9 @@ void P2MUpdateSongPosCallBack(void){
                  );
     printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
   }      
+
+
+  ScrollEditorToRealLine(window,wblock,wblock->till_curr_realline);
 }
 
 #else

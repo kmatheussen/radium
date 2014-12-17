@@ -15,10 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
-
 extern void UpdateReallinesDependens(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
@@ -43,4 +39,5 @@ extern void UnexpandCurrPos(struct Tracker_Windows *window);
 
 extern void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom);
 
-#endif
+extern void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines);
+extern void LineZoomBlockInc(struct Tracker_Windows *window, struct WBlocks *wblock, int inc_num_lines);

@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 class QMainWindow;
 class QSplitter;
+class Upperleft_widget;
 
 #if USE_QIMAGE_BUFFER
 typedef QImage PaintBuffer;
@@ -99,6 +100,8 @@ public:
     struct Tracker_Windows *window; // Not sure if this one is used.
 
     QMainWindow *main_window;
+
+    Upperleft_widget *upperleft_widget;
 
 #if USE_QT_VISUAL
     QPainter *painter; // Set in paintEvent    
@@ -152,7 +155,7 @@ public:
          this->paintbuffer_painter = new QPainter(this->paintbuffer);
          this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
 
-         this->paintbuffer_painter->setFont(this->font);
+         //this->paintbuffer_painter->setFont(this->font);
        }
 
 #if 1
@@ -171,9 +174,10 @@ public:
     void position_gl_widget(struct Tracker_Windows *window){
       if (gl_widget != NULL) {
         gl_widget->move(0,window->wblock->t.y1);
-        int height = 1 + window->wblock->t.y2 - window->wblock->t.y1;
+        int height = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
         gl_widget->resize(width(), height);
         GE_set_height(height);
+        //printf("a2\n");
         GL_create(window, window->wblock);
       }
     }

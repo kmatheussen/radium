@@ -146,6 +146,8 @@ void CutRange_CurrPos(
 		window->wblock->rangex1,
 		window->wblock->rangex2
 	);
+
+        window->must_redraw = true;
 }
 
 

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
+#if 0
 extern void UpdateTempoTrackHeader_reltempo(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -45,6 +46,7 @@ extern void UpdateTempoTrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
+#endif
 
 void DrawTempoTrackHeader(
 	struct Tracker_Windows *window,

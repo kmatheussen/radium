@@ -87,6 +87,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
 
+  {
+    const QFont &font=QApplication::font();
+    QFontMetrics fm(font);
+    tvisual->systemfontheight=fm.height();
+  }
+
 
 #if 0
 #if USE_GTK_VISUAL
@@ -379,7 +385,7 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
 
   QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
   if(g_use_custom_color==true) {
-    qcolor = get_note_color(editor,qcolor);
+    //    qcolor = get_note_color(editor,qcolor);
     g_use_custom_color = false;
   }
 
@@ -678,12 +684,15 @@ void OS_GFX_Text(
   }
 #endif
 
+  const int y_skew = 0;
+
   {  
     if(flags & TEXT_SCALE){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
 
-      const QFontMetrics fn = QFontMetrics(painter->font());
+      //const QFontMetrics fn = QFontMetrics(painter->font());
+      const QFontMetrics fn = QFontMetrics(QApplication::font());
       float text_width = fn.width(text);
 
       //printf("Got TEXT_SCALE. Text: \"%s\". text_width: %f. box_width: %f\n",text, text_width, (float)width);
@@ -696,21 +705,21 @@ void OS_GFX_Text(
 
         painter->save();
         painter->scale(s,1.0);
-        painter->drawText(x/s, (y+tvisual->org_fontheight-1), text);
+        painter->drawText(x/s, (y+tvisual->systemfontheight+y_skew), text);
         painter->restore();
       }else{
-        painter->drawText(x,y+tvisual->org_fontheight-1,text);
-        //painter->drawText(rect, Qt::AlignVCenter, text);
+        //painter->drawText(x,y+tvisual->systemfontheight+y_skew,text);
+        painter->drawText(rect, Qt::AlignVCenter, text);
       }
 
-    }else if(flags & TEXT_CENTER){
+    }else if(true || (flags & TEXT_CENTER)){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
       painter->drawText(rect, Qt::AlignVCenter, text);
 
     }else{
 
-      painter->drawText(x,y+tvisual->org_fontheight-1,text);
+      painter->drawText(x,y+tvisual->systemfontheight+y_skew,text);
 
     }
   }

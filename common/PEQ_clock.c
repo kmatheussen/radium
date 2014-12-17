@@ -125,6 +125,7 @@ void PC_NewSecond(struct PEventQueue *peq,int doit){
 void UpdateClock(
 	struct Tracker_Windows *window
 ){
+#if 0
 	int clock_minutes,clock_seconds;
 	char temp[52];
 	int time=clock_time;
@@ -155,6 +156,8 @@ void UpdateClock(
         last_time = time;
 
 //	ReleaseRSemaphore(ClockSemaphore);
+
+#endif
 }
 
 

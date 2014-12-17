@@ -88,10 +88,10 @@ void InitPEQrealline(struct Blocks *block,Place *place){
 
 
 static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
+#ifdef WITH_PD
 	Place firstplace;
 	PlaceSetFirstPos(&firstplace);
 
-#ifdef WITH_PD
         int64_t next_time = pc->seqtime + Place2STime(
                                                       pc->block,
                                                       &peq->wblock->reallines[1]->l.p

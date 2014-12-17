@@ -34,13 +34,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-void UpdateTempoTrackHeader_reltempo(
+static void UpdateTempoTrackHeader_reltempo(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int color
 ){
 	char temp[500];
-	char *name="RelTempoMax (RelTempoMin is 1/RelTempoMax)";
+	char *name="Max tempo multiplier value";//RelTempoMax (RelTempoMin is 1/RelTempoMax)";
 
         int width = wblock->temponodearea.x2-wblock->temponodearea.x - 10;
 
@@ -71,7 +71,7 @@ void UpdateTempoTrackHeader_reltempo(
 	GFX_Text(
 		window,color,temp,
 		wblock->temponodearea.x+1,
-		wblock->a.y1+window->org_fontheight,
+		wblock->a.y1+window->systemfontheight + WTRACKS_SPACE*3,
                 width,
                 TEXT_CLIPRECT,
                 PAINT_WHERE
@@ -80,7 +80,7 @@ void UpdateTempoTrackHeader_reltempo(
 	GFX_Text(
                    window,1,name,
                    wblock->temponodearea.x+1,
-                   wblock->a.y1,
+                   wblock->a.y1+ WTRACKS_SPACE,
                    width,
                    TEXT_CLIPRECT,
                    PAINT_WHERE
@@ -94,7 +94,7 @@ void UpdateTempoTrackHeader_reltempo(
 #endif
 }
 
-void UpdateTempoTrackHeader_LPB(
+static void UpdateTempoTrackHeader_LPB(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int color
@@ -114,7 +114,7 @@ void UpdateTempoTrackHeader_LPB(
 	GFX_Text(
 		window,1,"LPB",
 		wblock->lpbTypearea.x+1,
-		wblock->a.y1,
+		wblock->a.y1 + WTRACKS_SPACE,
                 width,
                 TEXT_NOFLAGS,
                 PAINT_DIRECTLY
@@ -124,7 +124,7 @@ void UpdateTempoTrackHeader_LPB(
 	GFX_Text(
 		window,color,temp,
 		wblock->lpbTypearea.x+1,
-		wblock->a.y1+window->org_fontheight,
+                wblock->a.y1+window->systemfontheight + WTRACKS_SPACE*3,
                 width,
                 TEXT_NOFLAGS,
                 PAINT_DIRECTLY
@@ -133,7 +133,7 @@ void UpdateTempoTrackHeader_LPB(
 }
 
 
-void UpdateTempoTrackHeader_BPM(
+static void UpdateTempoTrackHeader_BPM(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int color
@@ -154,7 +154,7 @@ void UpdateTempoTrackHeader_BPM(
 	GFX_Text(
 		window,1,"BPM",
 		wblock->tempoTypearea.x+1,
-		wblock->a.y1,
+		wblock->a.y1 + WTRACKS_SPACE,
                 width,
                 TEXT_NOFLAGS,
                 PAINT_DIRECTLY
@@ -164,7 +164,7 @@ void UpdateTempoTrackHeader_BPM(
 	GFX_Text(
 		window,2,temp,
 		wblock->tempoTypearea.x+1,
-		wblock->a.y1+window->org_fontheight,
+                wblock->a.y1+window->systemfontheight + WTRACKS_SPACE*3,
                 width,
                 TEXT_NOFLAGS,
                 PAINT_DIRECTLY
@@ -172,24 +172,27 @@ void UpdateTempoTrackHeader_BPM(
 }
 
 
-void UpdateTempoTrackHeader(
+static void UpdateTempoTrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
+#if 0
 	UpdateTempoTrackHeader_LPB(window,wblock,2);
 	UpdateTempoTrackHeader_BPM(window,wblock,2);
 	UpdateTempoTrackHeader_reltempo(window,wblock,2);
+#endif
 }
 
 void DrawTempoTrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-
 /*
 	This command was commented out for v0.60g. If you read this many version later
 	and there are no problem with gfx-garbage in this area, please remove all this.
 */
+
+#if 0
 
 	GFX_FilledBox(
 		window,0,
@@ -204,5 +207,6 @@ void DrawTempoTrackHeader(
 	UpdateTempoTrackHeader_LPB(window,wblock,2);
 	UpdateTempoTrackHeader_BPM(window,wblock,2);
 	UpdateTempoTrackHeader_reltempo(window,wblock,2);
+#endif
 }
 

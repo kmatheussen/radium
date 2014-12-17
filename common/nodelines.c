@@ -284,12 +284,12 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
 }
 
 const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
-  struct Velocities *first_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
+  struct Velocities *first_velocity = (struct Velocities*)&note->first_velocity;
   first_velocity->l.p = note->l.p;
   first_velocity->l.next = &note->velocities->l;
   first_velocity->velocity = note->velocity;
   
-  struct Velocities *last_velocity = (struct Velocities*)talloc(sizeof(struct Velocities));
+  struct Velocities *last_velocity = (struct Velocities*)&note->last_velocity;
   last_velocity->l.p = note->end;
   last_velocity->l.next = NULL;
   last_velocity->velocity = note->velocity_end;

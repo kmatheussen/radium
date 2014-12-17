@@ -237,6 +237,7 @@ p1->counter*=p2->line*p2->dividor
 p1->dividor*=p2->dividor
 */
 
+
 void PlaceDiv(Place *p1,  const Place *p2){
 	Place temp;
 	temp.line=0;
@@ -246,6 +247,8 @@ void PlaceDiv(Place *p1,  const Place *p2){
 
 	PlaceMul(p1,&temp);
 }
+
+
 
 // most of the time, counter is 0. This is allso the procedure that is called most often.
 /*
@@ -265,6 +268,7 @@ float GetfloatFromPlace(Place *placement){
 	return (float)((float)(placement->line)+GetfloatFromCounterDividor(placement->counter,placement->dividor));
 }
 */
+
 
 void PlaceAddfloat(Place *p,float f){
 	float temp;

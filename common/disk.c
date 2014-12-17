@@ -140,14 +140,17 @@ void DC_SSS(const char *string,const char *string2){
 /*************************************************************
               LOAD FUNCTIONS
 *************************************************************/
+int curr_disk_line;
 
 void DC_fgets(void){
 	int offset=0;
 
+        curr_disk_line++;
+
 	char *ret=fgets(dc.ls,BUFFERLENGTH,dc.file);
 
 	if(ret==NULL){
-          RError("Unable to load string");
+          RError("Unable to load string. Line %d",curr_disk_line);
 		dc.success=false;
 		return;
 	}
@@ -245,6 +248,7 @@ error:
 
 bool DC_LoadB(void){
 	DC_fgets();
+        R_ASSERT(!strcmp(dc.ret,"1") || !strcmp(dc.ret,"0"));
 	return (bool)(atoi(dc.ret)==1?true:false);
 }
 
@@ -284,7 +288,7 @@ int DC_Next(void){
 			dc.type=LS_ENDOBJECT;
 			break;
 		default:
-                  RError("DC_Next: Unknown type: \"%s\" ",dc.ret);
+                  RError("DC_Next: Unknown type: \"%s\". Line: %d ",dc.ret,curr_disk_line);
 			dc.success=false;
 			return LS_ERROR;
 	}
@@ -310,9 +314,11 @@ int DC_whatString(char **variables,int num){
 		ret++;
 		if(ret>=num){
 			RError(
-			       "Error. Unknown identifier '%s', dc.type=%s.\n",
+			       "Error. Unknown identifier '%s', dc.type=%s., line: %d\n",
 			       string,
-			       dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN");
+			       dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN",
+                               curr_disk_line
+                               );
 			dc.success=false;
 			return LS_ERROR;
 		}

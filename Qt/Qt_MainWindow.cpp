@@ -82,6 +82,7 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 #include "mQt_bottom_bar_widget_callbacks.h"
+#include "mQt_upperleft_widget_callbacks.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "Qt_MainWindow_proc.h"
@@ -126,6 +127,17 @@ public:
 };
 #endif
 
+
+void GFX_PositionUpperLeftArea(struct Tracker_Windows *tvisual, struct WBlocks *wblock){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->upperleft_widget->position(wblock);
+}
+
+void GFX_UpdateUpperLeft(struct Tracker_Windows *tvisual, struct WBlocks *wblock){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->upperleft_widget->updateWidgets(wblock);
+}
+
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
@@ -137,6 +149,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   , paintbuffer_painter(NULL)
   , cursorbuffer_painter(NULL)
 #endif
+
 #if USE_OPENGL
   , gl_widget(NULL)
 #endif
@@ -145,6 +158,10 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #if USE_QT_VISUAL
   this->paintbuffer=NULL;
 #endif
+
+
+  upperleft_widget = new Upperleft_widget(this);
+  upperleft_widget->move(0,0);
 
 #if USE_GTK_VISUAL
   if(sizeof(int64_t) < sizeof(WId))

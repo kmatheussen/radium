@@ -30,11 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-
 void GFX_UpdateQuantitize(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
+#if 0
+
 	char temp[52];
 
 	if(root->quantitize<=1.0f){
@@ -51,7 +52,7 @@ void GFX_UpdateQuantitize(
                  TEXT_CLEAR,
                  PAINT_DIRECTLY
 	);
-
+#endif
 }
 
 
@@ -59,16 +60,17 @@ void GFX_UpdateKeyOctave(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
+#if 0
 	char temp[4];
 
 	sprintf(temp,"%X",root->keyoct/12);
 	GFX_Text(
-		 window,3,temp,0,window->org_fontheight+1,
+		 window,3,temp,0,window->systemfontheight+1,
                  wblock->lpbTypearea.x - 2,
                  TEXT_CLEAR,
                  PAINT_DIRECTLY
 	);
-
+#endif
         GFX_OS_UpdateKeyOctave();
 }
 
@@ -76,17 +78,19 @@ void GFX_UpdateCurrLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
+#if 0
 	char temp[40];
 	int line=wblock->reallines[wblock->curr_realline]->Tline;
 
 	sprintf(temp,"  %d",line);
 	GFX_Text(
 		 window,1,temp+(line>99?2:line>9?1:0),wblock->linenumarea.x,
-                 window->org_fontheight+1,
+                 window->systemfontheight+1,
                  wblock->linenumarea.x2-wblock->linenumarea.x,
                  TEXT_CLEAR,
                  PAINT_DIRECTLY
 	);
+#endif
 }
 
 
@@ -104,7 +108,7 @@ void GFX_DrawUpLeft(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-#if 1
+#if 0
 	GFX_FilledBox(
 		window,0,
 		0,

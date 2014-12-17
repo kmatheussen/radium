@@ -68,6 +68,8 @@ class Argument:
             return "s7_make_real"
         elif self.type_string=="char*":
             return "s7_make_string"
+        elif self.type_string=="const_char*":
+            return "s7_make_string"
         elif self.type_string=="bool":
             return "s7_make_boolean"
         else:
@@ -81,6 +83,8 @@ class Argument:
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="char*":
             return "(char*)s7_string("
+        elif self.type_string=="const_char*":
+            return "(const_char*)s7_string("
         elif self.type_string=="bool":
             return "s7_bool("
         else:
@@ -93,6 +97,8 @@ class Argument:
         elif self.type_string=="float":
             return "s7_is_number"
         elif self.type_string=="char*":
+            return "s7_is_string"
+        elif self.type_string=="const_char*":
             return "s7_is_string"
         elif self.type_string=="bool":
             return "s7_is_bool"
@@ -213,6 +219,8 @@ class Proto:
                 t="O"
             elif qualifier=="char*":
                 t="s"
+            elif qualifier=="const_char*":
+                t="s"
             elif qualifier=="bool":
                 t="b"
             else:
@@ -254,6 +262,8 @@ class Proto:
                 elif qualifier=="float":
                     t="PyFloat_FromDouble("
                 elif qualifier=="char*":
+                    t="PyString_FromString("
+                elif qualifier=="const_char*":
                     t="PyString_FromString("
                 elif qualifier=="bool":
                     t="PyBool_FromLong((long)"
@@ -594,6 +604,7 @@ class Read:
     def makeRadium_h(self):
         oh=open("radium_proc.h","w")
         oh.write("/*This file is automaticly generated from protos.conf.*/\n");
+        oh.write("#define const_char const char\n")
         self.hs.write(oh)
         self.protos.writeH(oh)
         oh.close()

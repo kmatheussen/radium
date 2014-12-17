@@ -63,6 +63,11 @@ static void PlayStopReally(bool doit){
 
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
 
+        if (PLAYER_current_thread_has_lock()){
+          RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
+          return;
+        }
+          
 	while(pc->peq!=NULL) OS_WaitForAShortTime(20);
 
 	StopAllInstruments();

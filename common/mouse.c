@@ -67,10 +67,12 @@ void SetMouseAction(
     goto exit;
   }
 
+#if 0
 	if(insideTBox(&window->wblock->reltempo,x,y)){
 		SetMouseActionRelTempoSlider(window,action,x,y,click);
 		goto exit;
 	}
+#endif
 
 	if(y<wblock->t.y2){
 		if(x>wblock->t.x1){
@@ -79,12 +81,14 @@ void SetMouseAction(
 		}else{
 			if(y<wblock->t.y1){
 				if(x>wblock->linenumarea.x2){
-					SetMouseActionTempoHeader(window,action,x,y,click);
+                                        //SetMouseActionTempoHeader(window,action,x,y,click);
 					goto exit;
 				}else{
+#if 0
 					if(y<window->org_fontheight){
 						SetMouseActionQuantitize(window,action,x,y,click);
 					}
+#endif
 				}
 			}
 		}
@@ -153,7 +157,7 @@ void MouseMove(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 	struct MouseAction *curraction= &window->curraction;
 	struct MouseAction *prevaction= &window->prevaction;
 
-        SetNormalPointer(window);
+        //SetNormalPointer(window);
 
 	if(prevaction->action!=NOACTION){
           (*prevaction->MouseUpFunction)(window, getX(keyswitch,prevaction,x), getY(keyswitch,prevaction,y));
@@ -171,7 +175,7 @@ void MouseMove(struct Tracker_Windows *window, uint32_t keyswitch, int x,int y){
 		case NOACTION:
 			if(lastpointer!=NOACTION){
 				lastpointer=NOACTION;
-				SetNormalPointer(window);
+				//SetNormalPointer(window);
 			}
 			break;
 		default:

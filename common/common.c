@@ -246,7 +246,7 @@ int GetReallineAndPlaceFromY(
 	temp.dividor = wblock->reallines[realline]->Tdividor;
 
 	if(ret>=0){
-		dy=y - Common_oldGetReallineY1Pos(window,wblock,realline);
+		dy = y - Common_oldGetReallineY1Pos(window,wblock,realline);
 	
 		temp.counter = (temp.counter*window->fontheight)+(dy);
 		temp.dividor = window->fontheight*temp.dividor;

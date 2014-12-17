@@ -138,6 +138,8 @@ void CB_CutTrack_CurrPos(
                         //#endif
 			break;
 	}
+
+        window->must_redraw=true;
 }
 
 

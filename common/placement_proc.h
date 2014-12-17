@@ -4,7 +4,7 @@ This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,7 +25,6 @@ static inline Place *PlaceCreate(int line, int counter, int dividor) {
   place->dividor = dividor;
   return place;
 }
-
 
 /**********************************************************
   FUNCTION
@@ -119,12 +118,17 @@ static inline Place *PlaceMin(  Place *p1,  Place *p2){
 
 #define PlaceBetween(p1, p, p2) PlaceMin(PlaceMax(p1, p), p2)
 
-extern void PlaceHandleOverflow(Place *p);
+extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
+// These functions should probably not be trusted. The implementation looks awful.
 extern void PlaceAdd(Place *p1,  const Place *p2);
 extern void PlaceSub(Place *p1,  const Place *p2);
 extern void PlaceMul(Place *p1,  const Place *p2);
 extern void PlaceDiv(Place *p1,  const Place *p2);
+
+// Implmentented in embedded_scheme/scheme.cpp
+extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
+
 
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
 extern float GetfloatFromLineCounterDividor(const Place *placement);

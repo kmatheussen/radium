@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
+#if 0
 void SetMouseActionMainLPB(
 	struct Tracker_Windows *window
 ){
@@ -168,4 +169,6 @@ void SetMouseActionTempoHeader(
 	SetMouseActionMainLPB(window);
 }
 
+
+#endif // if 0
 

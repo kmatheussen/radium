@@ -69,6 +69,9 @@ extern LANGSPEC int GFX_CreateVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC int GFX_ShutDownVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width);
 
+extern LANGSPEC void GFX_PositionUpperLeftArea(struct Tracker_Windows *tvisual, struct WBlocks *wblock);
+extern LANGSPEC void GFX_UpdateUpperLeft(struct Tracker_Windows *window, struct WBlocks *wblock);
+
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);
 extern LANGSPEC void GFX_PlayListWindowToBack(void);

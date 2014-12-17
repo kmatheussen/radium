@@ -71,8 +71,8 @@ void UpdateWTrackHeader(
 
           int x1 = wtrack->x;
           int x2 = wtrack->x2; //is_last_track ? wtrack->x2+2 : next_wtrack->x;
-          int y1 = wtrack->y+3;
-          int y2 = wblock->t.y1-1;
+          int y1 = wtrack->y;
+          int y2 = wtrack->panonoff.y1;
 
           if(is_current_track)
             GFX_SetMixColor(window, 7, colornum, 800);
@@ -109,7 +109,7 @@ void UpdateWTrackHeader(
           GFX_T_Text(
                      window,1,temp,
                      wtrack->x+window->fontwidth/2,
-                     wtrack->y,
+                     wtrack->y+WTRACKS_SPACE,
                      wtrack->x2-wtrack->x-1,
                      TEXT_CLIPRECT|TEXT_BOLD,
                      PAINT_BUFFER
@@ -119,7 +119,7 @@ void UpdateWTrackHeader(
           QUEUE_GFX_Text(
                          window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
                          name_x,
-                         wtrack->y,
+                         wtrack->y+WTRACKS_SPACE,
                          (wtrack->x2-window->fontwidth/2) - name_x,
                          TEXT_SCALE,
                          PAINT_BUFFER
@@ -133,12 +133,12 @@ void UpdateWTrackHeader(
 	if(wtrack->track->onoff==0){
 		GFX_T_Line(window,2,
                            wtrack->x+2,wtrack->y+1,
-                           wtrack->x2-2,wtrack->y+(window->org_fontheight*2)-1,
+                           wtrack->x2-2,wtrack->y+(window->systemfontheight*2)-1,
                            PAINT_BUFFER
 		);
 		GFX_T_Line(window,2,
                            wtrack->x2-2,wtrack->y+1,
-                           wtrack->x+2,wtrack->y+(window->org_fontheight*2)-1,
+                           wtrack->x+2,wtrack->y+(window->systemfontheight*2)-1,
                            PAINT_BUFFER
 		);
 	}
@@ -166,7 +166,7 @@ void DrawWTrackHeader(
 	GFX_T_FilledBox(
                         window,colornum,
                         wtrack->x-1,wtrack->y,
-                        wtrack->x2+1,wtrack->y-1+(window->org_fontheight*2),
+                        wtrack->x2+1,wtrack->y-1+(window->systemfontheight*2),
                         PAINT_BUFFER
 	);
 

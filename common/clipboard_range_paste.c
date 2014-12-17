@@ -212,6 +212,7 @@ void PasteRange_CurrPos(
 		curr_track+range->num_tracks-1
 	);
 
+        window->must_redraw = true;
 }
 
 

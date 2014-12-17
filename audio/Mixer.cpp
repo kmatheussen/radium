@@ -224,6 +224,7 @@ static void RT_unlock_player(){
 
 void PLAYER_lock(void){
   R_ASSERT_RETURN_IF_FALSE(!THREADING_is_player_thread());
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
 
   PLAYER_acquire_same_priority();
   lock_player();
@@ -231,6 +232,8 @@ void PLAYER_lock(void){
 
 void PLAYER_unlock(void){
   R_ASSERT_RETURN_IF_FALSE(!THREADING_is_player_thread());
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+
   unlock_player();
   PLAYER_drop_same_priority();
 }
@@ -242,6 +245,14 @@ bool PLAYER_current_thread_has_lock(void){
     return player_thread_has_player_lock;
   else
     return !player_thread_has_player_lock;
+}
+
+bool PLAYER_someone_has_player_lock(void){
+  return someone_has_player_lock;
+}
+
+bool PLAYER_player_has_player_lock(void){
+  return player_thread_has_player_lock;
 }
 
 static void init_player_lock(void){
@@ -599,4 +610,82 @@ int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
 }
 
+
+/*
+
+Mystery backtrace. Happens quite seldom though:
+
+Thread 1 (Thread 0x7ffff7fa5900 (LWP 8234)):
+#0  0x00007ffff2c59877 in raise () from /lib64/libc.so.6
+#1  0x00007ffff2c5af68 in abort () from /lib64/libc.so.6
+#2  0x00000000004683bd in show_message (type=0, message=0x7fffffff9fb0 "Calling lock_player while holding the player lock") at common/error.c:68
+#3  0x000000000046849e in RError (fmt=0x9e38b8 "Calling lock_player while holding the player lock") at common/error.c:83
+#4  0x00000000005def3e in lock_player () at audio/Mixer.cpp:201
+#5  PLAYER_lock () at audio/Mixer.cpp:229
+#6  0x00000000005b92f5 in remove_SoundProducerInput (ch=<optimized out>, sound_producer_ch=<optimized out>, sound_producer=<optimized out>, this=<optimized out>)
+    at audio/SoundProducer.cpp:415
+#7  SP_remove_link (target=<optimized out>, target_ch=<optimized out>, source=<optimized out>, source_ch=<optimized out>) at audio/SoundProducer.cpp:728
+#8  0x00000000005eabe0 in CONNECTION_delete_connection (connection=0x6a27970) at mixergui/QM_chip.cpp:626
+#9  0x00000000005eb463 in Chip::~Chip (this=0x6994f50, __in_chrg=<optimized out>) at mixergui/QM_chip.cpp:761
+#10 0x00000000005eb5e0 in Chip::~Chip (this=0x6994f50, __in_chrg=<optimized out>) at mixergui/QM_chip.cpp:772
+#11 0x00000000005f4d00 in MW_delete_plugin (plugin=0x7385b80) at mixergui/QM_MixerWidget.cpp:1110
+#12 0x00000000005f541f in delete_a_chip () at mixergui/QM_MixerWidget.cpp:1223
+#13 0x00000000005f547f in MW_cleanup () at mixergui/QM_MixerWidget.cpp:1231
+#14 0x00000000005f5863 in MW_create_from_state (state=0x140d2680) at mixergui/QM_MixerWidget.cpp:1298
+#15 0x0000000000470f0e in DLoadSong (newroot=0x140c61c0, song=0x140c10f0) at common/disk_song.c:168
+#16 0x0000000000471a7f in DLoadRoot (theroot=0x140c61c0) at common/disk_root.c:139
+#17 0x00000000004727fa in Load (filename=0x25e8eb4 "/home/kjetil/radium/bin/sounds/song1.rad") at common/disk_load.c:154
+#18 0x0000000000472a40 in Load_CurrPos_org (window=0x2534200, filename=0x25e8eb4 "/home/kjetil/radium/bin/sounds/song1.rad") at common/disk_load.c:218
+#19 0x0000000000472b6d in LoadSong_CurrPos (window=0x2534200, filename=0x25e8eb4 "/home/kjetil/radium/bin/sounds/song1.rad") at common/disk_load.c:252
+#20 0x00000000004e93e3 in loadSong (filename=0x25e8eb4 "/home/kjetil/radium/bin/sounds/song1.rad") at api/api_various.c:338
+#21 0x00000000004e08ad in _wrap_loadSong (self=0x0, args=0x2551110) at api/radium_wrap.c:2018
+#22 0x00007ffff47fbbc4 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#23 0x00007ffff47fd1dd in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#24 0x00007ffff47fd2e2 in PyEval_EvalCode () from /lib64/libpython2.7.so.1.0
+#25 0x00007ffff481671f in ?? () from /lib64/libpython2.7.so.1.0
+#26 0x00007ffff4817585 in PyRun_StringFlags () from /lib64/libpython2.7.so.1.0
+#27 0x00007ffff4818f2b in PyRun_SimpleStringFlags () from /lib64/libpython2.7.so.1.0
+#28 0x0000000000480004 in MenuItem::clicked (this=0x44ccfb0) at Qt/Qt_Menues.cpp:91
+#29 0x000000000047f46e in MenuItem::qt_static_metacall (_o=0x44ccfb0, _c=QMetaObject::InvokeMetaMethod, _id=0, _a=0x7fffffffbd80) at Qt/mQt_Menues.cpp:47
+#30 0x00007ffff5b3737a in QMetaObject::activate(QObject*, QMetaObject const*, int, void**) () from /lib64/libQtCore.so.4
+#31 0x00007ffff604e941 in QAction::activated(int) () from /lib64/libQtGui.so.4
+#32 0x00007ffff605040c in QAction::activate(QAction::ActionEvent) () from /lib64/libQtGui.so.4
+#33 0x00007ffff649967d in QMenuPrivate::activateCausedStack(QList<QPointer<QWidget> > const&, QAction*, QAction::ActionEvent, bool) () from /lib64/libQtGui.so.4
+#34 0x00007ffff649df19 in QMenuPrivate::activateAction(QAction*, QAction::ActionEvent, bool) () from /lib64/libQtGui.so.4
+#35 0x00007ffff60a7cc8 in QWidget::event(QEvent*) () from /lib64/libQtGui.so.4
+#36 0x00007ffff64a1f6b in QMenu::event(QEvent*) () from /lib64/libQtGui.so.4
+#37 0x00007ffff6054e5c in QApplicationPrivate::notify_helper(QObject*, QEvent*) () from /lib64/libQtGui.so.4
+#38 0x00007ffff605b8f1 in QApplication::notify(QObject*, QEvent*) () from /lib64/libQtGui.so.4
+#39 0x00007ffff5b228fd in QCoreApplication::notifyInternal(QObject*, QEvent*) () from /lib64/libQtCore.so.4
+#40 0x00007ffff605b067 in QApplicationPrivate::sendMouseEvent(QWidget*, QMouseEvent*, QWidget*, QWidget*, QWidget**, QPointer<QWidget>&, bool) () from /lib64/libQtGui.so.4
+#41 0x00007ffff60d096c in QETWidget::translateMouseEvent(_XEvent const*) () from /lib64/libQtGui.so.4
+#42 0x00007ffff60cf0ac in QApplication::x11ProcessEvent(_XEvent*) () from /lib64/libQtGui.so.4
+#43 0x00007ffff60f6ac4 in x11EventSourceDispatch(_GSource*, int (*)(void*), void*) () from /lib64/libQtGui.so.4
+#44 0x00007ffff3e6d2a6 in g_main_context_dispatch () from /lib64/libglib-2.0.so.0
+#45 0x00007ffff3e6d628 in g_main_context_iterate.isra () from /lib64/libglib-2.0.so.0
+#46 0x00007ffff3e6d6dc in g_main_context_iteration () from /lib64/libglib-2.0.so.0
+---Type <return> to continue, or q <return> to quit---
+#47 0x00007ffff5b5141e in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () from /lib64/libQtCore.so.4
+#48 0x00007ffff60f6c46 in QGuiEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () from /lib64/libQtGui.so.4
+#49 0x00007ffff5b2138f in QEventLoop::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () from /lib64/libQtCore.so.4
+#50 0x00007ffff5b216dd in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) () from /lib64/libQtCore.so.4
+#51 0x00007ffff5b26da9 in QCoreApplication::exec() () from /lib64/libQtCore.so.4
+#52 0x0000000000479c5c in radium_main (arg=0x7ffff7e9952c "") at Qt/Qt_Main.cpp:758
+#53 0x00000000004e5cfb in init_radium (arg=0x7ffff7e9952c "", gkf=0x248e2a8) at api/api_common.c:61
+#54 0x00000000004dcc8f in _wrap_init_radium (self=0x0, args=0x7fffe1625200) at api/radium_wrap.c:572
+#55 0x00007ffff47fbbc4 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#56 0x00007ffff47fd1dd in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#57 0x00007ffff47fd2e2 in PyEval_EvalCode () from /lib64/libpython2.7.so.1.0
+#58 0x00007ffff481671f in ?? () from /lib64/libpython2.7.so.1.0
+#59 0x00007ffff48178de in PyRun_FileExFlags () from /lib64/libpython2.7.so.1.0
+#60 0x00007ffff47f481c in ?? () from /lib64/libpython2.7.so.1.0
+#61 0x00007ffff47fbbc4 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#62 0x00007ffff47fd1dd in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#63 0x00007ffff47fd2e2 in PyEval_EvalCode () from /lib64/libpython2.7.so.1.0
+#64 0x00007ffff481671f in ?? () from /lib64/libpython2.7.so.1.0
+#65 0x00007ffff4817585 in PyRun_StringFlags () from /lib64/libpython2.7.so.1.0
+#66 0x00007ffff4818f2b in PyRun_SimpleStringFlags () from /lib64/libpython2.7.so.1.0
+#67 0x000000000047a5a5 in main (argc=1, argv=0x7fffffffd888) at Qt/Qt_Main.cpp:964
+(gdb) 
+*/
 

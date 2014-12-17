@@ -334,6 +334,8 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override)
 	}
 
 	//PC_StopPause();
+
+        window->must_redraw=true;
 }
 
 void InsertStop(
@@ -463,6 +465,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 #endif
 	PC_StopPause();
 
+        window->must_redraw=true;
 }
 
 
@@ -543,5 +546,6 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 #endif
 	PC_StopPause();
 
+        window->must_redraw=true;
 }
 

@@ -35,7 +35,7 @@ static int find_next_prime_number(int number){
     if(prime_numbers[i]>number)
       return prime_numbers[i];
 
-  RError("Somethings wrong");
+  R_ASSERT(false);
   return 997;
 }
 
@@ -416,7 +416,11 @@ void HASH_save(hash_t *hash, FILE *file){
   fprintf(file,"<< HASH MAP V2 END\n");
 }
 
+extern int curr_disk_line;
+
 static bool read_line(char *line,int len,FILE *file){
+  curr_disk_line++;
+
   if(fgets(line, len, file)==NULL){
     RError("End of file before finished reading hash map");
     return false;

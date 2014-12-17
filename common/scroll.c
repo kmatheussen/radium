@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "common_proc.h"
 #include "gfx_subtrack_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "scroll_proc.h"
 
@@ -152,6 +153,8 @@ void Scroll_scroll(
 	wblock->top_realline+=num_lines;
 	wblock->curr_realline+=num_lines;
 	wblock->bot_realline+=num_lines;
+
+        GE_set_curr_realline(wblock->curr_realline);
 
 #if !USE_OPENGL
 	if(num_lines<0){

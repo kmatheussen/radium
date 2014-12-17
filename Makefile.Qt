@@ -184,7 +184,7 @@ OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_
 
 OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
-OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
 OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o range.o
 
@@ -257,7 +257,7 @@ OBJ = $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(
 
 BUILD_DEPENDENCIES =  buildtype.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py
+PROGRAM_MODULES = bin/radium bin/crashreporter bin/protoconfparser.py bin/protos.conf bin/common.py bin/X11_Qtstuff.py bin/radium_error_message
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -277,7 +277,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium.bin.exe
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium_error_message bin/radium.bin.exe
 
 dependencies_ok: check_dependencies.sh #Makefile
 	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
@@ -328,6 +328,9 @@ run-valgrind:
 #	killall -9 X11_Qtstuff.py radium
 
 # --tool=memcheck --read-var-info=yes --track-origins=yes
+
+profile:
+	cd bin && operf ./radium && opreport -ca |more
 
 check: test
 test: dotesting
@@ -994,8 +997,6 @@ GTK_ReqType.o:  $(BUILD_DEPENDENCIES) GTK/GTK_ReqType.c
 GTK_PopupMenu.o:  $(BUILD_DEPENDENCIES) GTK/GTK_PopupMenu.c 
 	$(CC) GTK/GTK_PopupMenu.c $(OPT) $(GTK_CFLAGS)
 
-Qt_error.o:  $(BUILD_DEPENDENCIES) $(P)Qt_error.c $(P)EditorWidget.h
-	$(CC) $(P)Qt_error.c $(OPT)
 
 Qt_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Ptask2Mtask.cpp $(P)EditorWidget.h
 	$(CC) $(P)Qt_Ptask2Mtask.cpp $(OPT)
@@ -1033,7 +1034,7 @@ Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
 Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp
 	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT)
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)Qt_audio_instrument_widget.h 
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_audio_instrument_widget.h 
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
@@ -1103,6 +1104,9 @@ $(P)Qt_compressor_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_compressor_widget.ui 
 $(P)Qt_bottom_bar_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_widget.ui $(P)create_source_from_ui.sh $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_MyQButton.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) bottom_bar_widget
 
+$(P)Qt_upperleft_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P)create_source_from_ui.sh $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_MyQButton.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) upperleft_widget
+
 $(P)Qt_vst_paths_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_vst_paths_widget.ui $(P)create_source_from_ui.sh $(P)Qt_vst_paths_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) vst_paths_widget
 #	cd $(P) && $(UIC) qt4_vst_paths_widget.ui > Qt_vst_paths_widget.h
@@ -1152,6 +1156,10 @@ Qt_Semaphores.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_Semaphores.cpp
 Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 	$(CCC) $(P)Qt_Error.cpp $(QTOPT)
 
+bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
+	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) -DCOMPILE_EXECUTABLE `$(PKG) --cflags QtGui` -o errormessagebin.o
+	$(LINKER) errormessagebin.o -o bin/radium_error_message `$(PKG) --libs QtGui`
+	rm errormessagebin.o
 
 posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)
@@ -1198,6 +1206,9 @@ glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.c
 
 pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.c
 	$(CC)  $(CD)new/pitchexpand.c $(OPT)
+
+expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.c
+	$(CC)  $(CD)expand.c $(OPT)
 
 api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.c
 	$(CC)  $(API)api_common.c $(OPT)

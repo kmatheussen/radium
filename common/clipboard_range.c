@@ -100,6 +100,8 @@ void MarkRange_CurrPos(struct Tracker_Windows *window){
 		UpdateAllWTracks(window,wblock,0,wblock->num_reallines);
 	}
 #endif
+
+        window->must_redraw = true;
 }
 
 
@@ -120,6 +122,8 @@ void CancelRange_CurrPos(struct Tracker_Windows *window){
 		window->wblock->rangex2
 	);
 #endif
+
+        window->must_redraw = true;
 }
 
 

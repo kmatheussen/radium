@@ -104,9 +104,9 @@ void UpdateWBlockCoordinates(
 	wblock->a.x1  = R_MAX(window->fontwidth+3,window->leftslider.width+1);
 	wblock->a.y1  = 0;
 	wblock->a.x2 = window->width;
-	wblock->a.y2 = window->height - window->bottomslider.width -1;
+	wblock->a.y2 = window->height - window->bottomslider.width - 2;
 
-	wblock->linearea.y  = wblock->a.y1+(window->org_fontheight*2);
+	wblock->linearea.y  = wblock->a.y1+(window->systemfontheight*2) + WTRACKS_SPACE*3;
 	wblock->linearea.y2 = wblock->a.y2;
 
 	wblock->linenumarea.x    = wblock->a.x1 + 3;
@@ -129,10 +129,15 @@ void UpdateWBlockCoordinates(
 	wblock->temponodearea.x  = wblock->tempoarea.x2     + 2;
 	wblock->temponodearea.x2 = wblock->temponodearea.x  + wblock->temponodearea.width;
 
+        wblock->bottombar.x1 = wblock->a.x1;
+        wblock->bottombar.y1 = wblock->a.y2;
+        wblock->bottombar.x2 = wblock->a.y2;
+        wblock->bottombar.y2 = window->height;
+
 	wblock->reltempo.x1=0;
-	wblock->reltempo.y1=wblock->a.y2+1;
+	wblock->reltempo.y1=wblock->bottombar.y1+3;
 	wblock->reltempo.x2=wblock->temponodearea.x2-3;
-	wblock->reltempo.y2=window->height-1;
+	wblock->reltempo.y2=wblock->bottombar.y2-1;
 
 	wblock->t.x1 = wblock->temponodearea.x2+2;
 	wblock->t.x2 = wblock->a.x2;
@@ -147,6 +152,8 @@ void UpdateWBlockCoordinates(
 	SetWBlock_Top_And_Bot_Realline(window,wblock);
 
 	UpdateAllWTracksCoordinates(window,wblock);
+
+        GFX_PositionUpperLeftArea(window, wblock);
 }
 
 void UpdateAllWBlockCoordinates(
@@ -195,6 +202,7 @@ void NewWBlock(
 	wblock->title=talloc_atomic(128);
 
 	wblock->num_reallines_last=wblock->num_reallines=wblock->block->num_lines;
+        wblock->num_expand_lines = 1;
 
 	wblock->tempotrackonoff=1;
 

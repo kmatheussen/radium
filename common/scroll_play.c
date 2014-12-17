@@ -107,7 +107,7 @@ void Scroll_play(
 	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
 	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
 	
-//	printf("start: %d, end: %d\n",start_realline,end_realline);
+	printf("start: %d, end: %d\n",start_realline,end_realline);
 
 	if(start_realline<=end_realline){
 		Scroll_play_down(wblock,start_realline,end_realline);

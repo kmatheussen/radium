@@ -43,7 +43,7 @@ void UpdateVolumeSlider(
 		0.0f,
 		(float)MAXTRACKVOL,
 		wtrack->track->volumeonoff,
-		true
+		PAINT_BUFFER
 	);
 
 
@@ -105,7 +105,7 @@ void UpdatePanSlider(
 		0.0f,
 		(float)(MAXTRACKPAN*2),
 		wtrack->track->panonoff,
-		true
+		PAINT_BUFFER
 	);
 
 

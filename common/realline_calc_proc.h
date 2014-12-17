@@ -21,29 +21,29 @@ extern LANGSPEC float FindReallineForF(
                                        const Place *place
                                        );
 
-extern int FindRealLineFor(
-	struct WBlocks *wblock,
-	int realline,
-	const Place *place
+extern LANGSPEC int FindRealLineFor(
+                                    const struct WBlocks *wblock,
+                                    int realline,
+                                    const Place *place
+                                    );
+
+extern LANGSPEC int FindRealLineForNote(
+                                        const struct WBlocks *wblock,
+                                        int realline,
+                                        const struct Notes *note
 );
 
-extern int FindRealLineForNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+extern LANGSPEC int FindRealLineForEndNote(
+                                           const struct WBlocks *wblock,
+                                           int realline,
+                                           const struct Notes *note
 );
 
-extern int FindRealLineForEndNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
-);
-
-extern int FindSubRealLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	int realline,
-	Place *p
+extern LANGSPEC int FindSubRealLine(
+                                    const struct Tracker_Windows *window,
+                                    const struct WBlocks *wblock,
+                                    int realline,
+                                    const Place *p
 );
 
 static inline int get_realline_y1(const struct Tracker_Windows *window, int realline){

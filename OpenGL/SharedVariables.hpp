@@ -1,4 +1,6 @@
 
+#include "Widget_proc.h"
+
 #include "../common/time_proc.h"
 #include "../common/vector_proc.h"
 

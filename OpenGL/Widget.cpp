@@ -64,6 +64,13 @@ void GL_unlock(void){
 }
 
 
+static int g_curr_realline;
+
+// TS (called from both main thread and opengl thread)
+void GE_set_curr_realline(int curr_realline){
+  g_curr_realline = curr_realline;
+}
+
 // OpenGL thread
 static float GE_scroll_pos(SharedVariables *sv, double realline){
   double extra = sv->top_realline - sv->curr_realline;
@@ -99,7 +106,7 @@ static double find_current_realline_while_playing(SharedVariables *sv){
 
   double prev_line_stime = 0.0;
 
-  static int i_realline = 0;
+  static int i_realline = 0; // Note that this one is static. The reason is that we are usually placed on the same realline as last time, so we remember last position and start searching from there/
 
   // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
   {
@@ -198,6 +205,9 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      qmouseevent->buttons()
                      );
 }
+
+void freeit(void);
+
 
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
@@ -351,7 +361,7 @@ private:
     if(pc->isplaying)
       return find_current_realline_while_playing(sv);
     else
-      return sv->curr_realline;
+      return g_curr_realline;
   }
 
   // OpenGL thread
@@ -387,12 +397,13 @@ private:
       } else
         vg->clear();
 
+      GE_set_curr_realline(sv->curr_realline);
+
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
     
     if(pc->isplaying && sv->block!=pc->block) // sanity check
       return false;
-
 
     double till_realline = find_till_realline(sv);
     float pos = GE_scroll_pos(sv, till_realline);
@@ -402,6 +413,8 @@ private:
 
     if (needs_repaint==false && pos==last_pos)
       return false;
+
+    //printf("scrolling\n");
 
     scroll_pos = pos;
     
@@ -500,6 +513,7 @@ public:
 
     new_width = w;
     new_height = h;
+
 
 #if 0
     _rendering->sceneManagers()->clear();
@@ -638,6 +652,7 @@ static void setup_widget(QWidget *parent){
   vlFormat.setFullscreen(false);
   vlFormat.setMultisampleSamples(4); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
   //vlFormat.setMultisampleSamples(8); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
+  //vlFormat.setMultisampleSamples(32); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
   vlFormat.setMultisample(true);
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
@@ -646,7 +661,7 @@ static void setup_widget(QWidget *parent){
   widget->resize(1000,1000);
   widget->show();
 
-  widget->incReference();  // dont want auto-desctruction at program exit.
+  widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
 }
 
 QWidget *GL_create_widget(QWidget *parent){

@@ -30,9 +30,9 @@ extern LANGSPEC STime Place2STime(
 extern LANGSPEC bool isSTimeInBlock(const struct Blocks *block,STime time);
 extern LANGSPEC STime getBlockSTimeLength(const struct Blocks *block);
 
-extern void UpdateSTimes(struct Blocks *block);
+extern LANGSPEC void UpdateSTimes(struct Blocks *block);
 
-extern void UpdateAllSTimes(void);
+extern LANGSPEC void UpdateAllSTimes(void);
 
 #endif
 

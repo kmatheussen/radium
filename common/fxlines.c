@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "instruments_proc.h"
 #include "wtracks_proc.h"
 #include "common_proc.h"
+#include "OS_Player_proc.h"
 
 #include "fxlines_proc.h"
 
@@ -455,10 +456,14 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
 
   R_ASSERT(ListFindNumElements3(&fxs->fxnodelines->l)>1);
-  
-  ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
-  
+
+  PLAYER_lock();{
+    ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
+  }PLAYER_unlock();
+
   if (ListFindNumElements3(&fxs->fxnodelines->l) <= 1 ){
+    PlayStop();
+
     struct FX *fx = fxs->fx;
     struct Tracks *track = wtrack->track;
     

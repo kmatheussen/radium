@@ -22,8 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "reallines_proc.h"
 #include "clipboard_localzooms_proc.h"
+#include "OS_Player_proc.h"
 
 #include "undo_reallines_proc.h"
+
 
 void *Undo_Do_Reallines(
 	struct Tracker_Windows *window,
@@ -43,14 +45,14 @@ void Undo_Reallines(
 	struct LocalZooms *tolocalzoom=NULL;
 	CB_CopyLocalZoomsRec(&tolocalzoom,wblock->localzooms);
 
-	Undo_Add(
-                 window->l.num,
-                 wblock->l.num,
-                 tracknum,
-                 realline,
-                 tolocalzoom,
-                 Undo_Do_Reallines
-                 );
+	Undo_Add_dont_stop_playing(
+                                   window->l.num,
+                                   wblock->l.num,
+                                   tracknum,
+                                   realline,
+                                   tolocalzoom,
+                                   Undo_Do_Reallines
+                                   );
 }
 
 void Undo_Reallines_CurrPos(
@@ -69,11 +71,13 @@ void *Undo_Do_Reallines(
 	struct LocalZooms *undo_localzooms=(struct LocalZooms *)pointer;
 	struct LocalZooms *temp=wblock->localzooms;
 
-	wblock->localzooms=undo_localzooms;
-
-	UpdateRealLines(window,wblock);
-
-	UpdateReallinesDependens(window,wblock);
+        PLAYER_lock();{
+          wblock->localzooms=undo_localzooms;
+          
+          UpdateRealLines(window,wblock);
+          
+          UpdateReallinesDependens(window,wblock);
+        }PLAYER_unlock();
 
 	return temp;
 }
