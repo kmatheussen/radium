@@ -125,61 +125,66 @@ protected:
     if(is_starting_up==true)// || return_false_now)
       return false;
 
+    if(event->type!=KeyPress && event->type!=KeyRelease)
+      return false;
+
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+
     bool must_return_false = false;
 
-    if(event->type==KeyPress || event->type==KeyRelease){
-      XKeyEvent *key_event = (XKeyEvent*)event;
 
-      int keynum = X11_get_keynum(QApplication::focusWidget(), key_event);
+    XKeyEvent *key_event = (XKeyEvent*)event;
+
+    int keynum = X11_get_keynum(QApplication::focusWidget(), key_event);
 
 
-      if (keynum==EVENT_ALT_L){
-        if (event->type==KeyPress){
-          last_key_was_lalt = true;
+    if (keynum==EVENT_ALT_L){
+      if (event->type==KeyPress){
+        last_key_was_lalt = true;
+        must_return_false = true;
+      }else if (event->type==KeyRelease) {
+        if(last_key_was_lalt==true){
           must_return_false = true;
-        }else if (event->type==KeyRelease) {
-          if(last_key_was_lalt==true){
-            must_return_false = true;
-            last_key_was_lalt = false;
-          }
+          last_key_was_lalt = false;
         }
-      }else
-        last_key_was_lalt = false;
-
-
-      switch(keynum){
-      case EVENT_ESC:
-      case EVENT_UPARROW:
-      case EVENT_DOWNARROW:
-      case EVENT_LEFTARROW:
-      case EVENT_RIGHTARROW:
-      case EVENT_RETURN:
-      case EVENT_KP_ENTER: {
-        if(GFX_MenuActive()==true)
-          return false;
-        break;
       }
-      }
+    }else
+      last_key_was_lalt = false;
+    
+
+    switch(keynum){
+    case EVENT_ESC:
+    case EVENT_UPARROW:
+    case EVENT_DOWNARROW:
+    case EVENT_LEFTARROW:
+    case EVENT_RIGHTARROW:
+    case EVENT_RETURN:
+    case EVENT_KP_ENTER: {
+      if(GFX_MenuActive()==true)
+        return false;
+      break;
+    }
     }
 
+    if (event->type==KeyPress)
+      window->must_redraw = true;
+    
     bool ret = X11_KeyboardFilter(QApplication::focusWidget(), event);
 
-    if(ret==true) {
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-      if(event->type==KeyPress){
-        //printf("a1\n");
-        //GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
-      }
-    }
-
+    if(ret==true)
+      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+      
     if(doquit==true)
       QApplication::quit();
-
+    
     if (must_return_false==true)
       return false;
     else
       return ret;
+    
   }
+
 #endif
 
 #ifdef FOR_WINDOWS

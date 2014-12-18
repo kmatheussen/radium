@@ -39,12 +39,16 @@ void cursorDown(int numlines,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
+        window->must_redraw = false;
+
 	ScrollEditorDown(window,numlines);
 }
 
 void cursorUp(int numlines,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
+
+        window->must_redraw = false;
 
 	ScrollEditorUp(window,numlines);
 }
@@ -53,12 +57,16 @@ void cursorNextNote(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
+        window->must_redraw = false;
+
 	ScrollEditorNextNote(window);
 }
 
 void cursorPrevNote(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
+
+        window->must_redraw = false;
 
 	ScrollEditorPrevNote(window);
 }
@@ -68,6 +76,8 @@ void cursorPercentLine(int percent,int windownum){
 	if(window==NULL) return;
 
 	if(percent<0 || percent>99) return;
+
+        window->must_redraw = false;
 
 	ScrollEditorToPercentLine_CurrPos(window,percent);
 }
