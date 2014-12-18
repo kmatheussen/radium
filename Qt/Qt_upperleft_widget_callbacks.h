@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_maintempos_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/player_proc.h"
+#include "../common/reallines_proc.h"
 
 extern EditorWidget *g_editor;
 
@@ -88,11 +89,38 @@ public slots:
 
   void on_lz_editingFinished(){
     printf("lz\n");
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+
+    LineZoomBlock(window,wblock,lz->value());
+
     set_editor_focus();
   }
 
   void on_grid_editingFinished(){
     printf("grid\n");
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    
+    QStringList splitted = grid->text().split("/", QString::SkipEmptyParts);
+
+    if (splitted.size() >= 2) {
+      
+      QString a = splitted[0];
+      QString b = splitted[1];
+
+      int numerator = a.toInt();
+      int denominator = b.toInt();
+      
+      if (numerator>0 && denominator>0) {
+
+        root->grid_numerator = numerator;
+        root->grid_denominator = denominator;
+      }
+    }
+
+    updateWidgets(wblock);
     set_editor_focus();
   }
 
