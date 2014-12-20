@@ -129,9 +129,9 @@
       place))
 
 (define (get-place-from-y Button Y)
-  (if (= Button *right-button*)
-      (ra:get-place-in-grid-from-y Y)
-      (ra:get-place-from-y Y)))
+  (if (ra:ctrl-pressed)
+      (ra:get-place-from-y Y)
+      (ra:get-place-in-grid-from-y Y)))
 
 
 ;; Mouse move handlers

@@ -172,7 +172,7 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>Grid value. To circumvent grid, hold LEFT CTRL key.</string>
+       <string>Grid value. To circumvent grid, hold the CTRL key.</string>
       </property>
       <property name="inputMask">
        <string/>
