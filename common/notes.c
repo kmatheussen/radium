@@ -470,26 +470,21 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 
 
 struct Notes *FindNoteOnSubTrack(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int subtrack,
-	int realline,
-	Place *placement
+                                 struct Tracks *track,
+                                 int subtrack,
+                                 Place *placement
 ){
-	struct Notes *note;
-	struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
-	struct TrackReallineElements *element=trackrealline->trackreallineelements;
+        struct Notes *note = track->notes;
+        
+        while (note != NULL) {
+          if(PlaceIsBetween(placement,&note->l.p,&note->end))
+            if (note->subtrack==subtrack)
+              return note;
+          
+          note = NextNote(note);
+        }
 
-	while(element!=NULL){
-		if(element->type==TRE_VELLINE && element->subtype==subtrack){
-			note=(struct Notes *)element->pointer;
-			if(PlaceIsBetween(placement,&note->l.p,&note->end)) return note;
-		}
-		element=element->next;
-	}
-
-	return NULL;
+        return NULL;
 }
 
 struct Notes *FindNote(
@@ -523,13 +518,13 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	realline=wblock->reallines[reallinerealline];
 	subtrack=window->curr_track_sub;
 
-	Undo_Notes_CurrPos(window);
-
-	note=FindNoteOnSubTrack(window,wblock,wtrack,subtrack,reallinerealline,&realline->l.p);
+	note=FindNoteOnSubTrack(wtrack->track,subtrack,&realline->l.p);
 	if(note==NULL){
 		PC_StopPause();
 		return;
 	}
+
+        Undo_Notes_CurrPos(window);
 
 	if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
 		RemoveNote(wblock->block,wtrack->track,note);

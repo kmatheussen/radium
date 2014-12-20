@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef TRACKER_PLACEMENT
-#define TRACKER_PLACEMENT
+#ifndef COMMON_PLACEMENT_PROC_H
+#define COMMON_PLACEMENT_PROC_H
 
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
@@ -237,5 +237,7 @@ static inline Place *PlaceGetLastPos(struct Blocks *block){
 }
 
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
-#endif
+
+
+#endif // COMMON_PLACEMENT_PROC_H
 

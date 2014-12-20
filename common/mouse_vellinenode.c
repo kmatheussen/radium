@@ -128,7 +128,8 @@ void SetMouseActionVelline(
 	int x,int y,
 	int click
 ){
-	struct Notes *note;
+#if !USE_OPENGL
+  struct Notes *note;
 
 	note=FindNoteOnSubTrack(window,window->wblock,wtrack,subtrack,realline,&velocity->l.p);
 	
@@ -145,6 +146,7 @@ void SetMouseActionVelline(
 	}
 
 	return;
+#endif
 }
 
 

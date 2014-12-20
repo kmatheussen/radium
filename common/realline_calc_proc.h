@@ -15,6 +15,30 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include "placement_proc.h"
+
+
+static inline void set_p1_and_p2(
+                                 struct WBlocks *wblock,
+                                 int start_realline,
+                                 int end_realline,
+                                 Place *p1,
+                                 Place *p2
+                                 )
+{
+  R_ASSERT_RETURN_IF_FALSE(start_realline>=0 && start_realline < wblock->num_reallines);
+  R_ASSERT_RETURN_IF_FALSE(start_realline>=0 && end_realline <= wblock->num_reallines);
+  
+  PlaceCopy(p1, &wblock->reallines[start_realline]->l.p);
+           
+  if (end_realline>=wblock->num_reallines-1)
+    PlaceSetLastPos(wblock->block, p2);
+  else
+    PlaceCopy(p2, &wblock->reallines[end_realline+1]->l.p);
+}
+
+
+
 extern LANGSPEC float FindReallineForF(
                                        const struct WBlocks *wblock,
                                        float reallineF, // start search from here. Use 0 to search all.

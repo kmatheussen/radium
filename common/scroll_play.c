@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "patch_proc.h"
 #include "placement_proc.h"
 #include "vector_proc.h"
+#include "realline_calc_proc.h"
 
 #include "scroll_play_proc.h"
 
@@ -43,25 +44,6 @@ extern struct Root *root;
 static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}};
 
 
-
-static void set_p1_and_p2(
-                             struct WBlocks *wblock,
-                             int start_realline,
-                             int end_realline,
-                             Place *p1,
-                             Place *p2
-                          )
-{
-  R_ASSERT_RETURN_IF_FALSE(start_realline>=0 && start_realline < wblock->num_reallines);
-  R_ASSERT_RETURN_IF_FALSE(start_realline>=0 && end_realline <= wblock->num_reallines);
-  
-  PlaceCopy(p1, &wblock->reallines[start_realline]->l.p);
-           
-  if (end_realline>=wblock->num_reallines-1)
-    PlaceSetLastPos(wblock->block, p2);
-  else
-    PlaceCopy(p2, &wblock->reallines[end_realline+1]->l.p);
-}
 
 static void Scroll_play_down3(
                       struct WBlocks *wblock,
