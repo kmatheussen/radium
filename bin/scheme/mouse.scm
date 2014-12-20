@@ -122,11 +122,16 @@
 ||#
 
 
-(define (get-place-from-y Button Y)
+(define (get-quantitized-place-from-y Button Y)
   (define place (ra:get-place-from-y Y))
   (if (= Button *right-button*)
       (quantitize place (ra:get-quantitize))
       place))
+
+(define (get-place-from-y Button Y)
+  (if (= Button *right-button*)
+      (ra:get-place-in-grid-from-y Y)
+      (ra:get-place-from-y Y)))
 
 
 ;; Mouse move handlers

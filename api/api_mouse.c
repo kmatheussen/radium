@@ -153,10 +153,45 @@ float getPlaceFromY(float y, int blocknum, int windownum) {
     return 0.0;
 
   Place place;
-  
+
   GetReallineAndPlaceFromY(window,
                            wblock,
                            y,
+                           &place,
+                           NULL,
+                           NULL
+                           );
+  
+  return GetFloatFromPlace(&place);
+}
+
+
+static double get_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
+  double grid = (double)root->grid_numerator / (double)root->grid_denominator;
+
+  float abs_realline = abs_y / window->fontheight;
+  
+  double rounded = round(abs_realline / grid);
+    
+  return rounded * grid * window->fontheight;
+}
+
+float getPlaceInGridFromY(float y, int blocknum, int windownum) {
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0.0;
+
+  // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
+  float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
+  float gridded_abs_y = get_gridded_abs_y(window, abs_y);
+  float gridded_y = gridded_abs_y - wblock->top_realline*window->fontheight + wblock->t.y1;
+  
+  Place place;
+  
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           gridded_y,
                            &place,
                            NULL,
                            NULL

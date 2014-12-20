@@ -32,6 +32,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+void Scroll_play_do_old(
+	struct WBlocks *wblock,
+	int realline
+){
+	struct WTracks *wtrack;
+	
+	for(wtrack=wblock->wtracks;wtrack!=NULL;wtrack=NextWTrack(wtrack)){
+		struct Patch *patch=wtrack->track->patch;
+		if(patch==NULL || wtrack->track->onoff==0) continue;
+
+                // First turn off
+                {
+                  struct TrackReallineElements *tre=wtrack->trackreallines[realline].trackreallineelements;
+
+                  while(tre!=NULL){
+                    if(tre->type==TRE_VELLINEEND){
+                      struct Notes *note=(struct Notes *)tre->pointer;
+                      PATCH_stop_note(patch,note->note,note->id);
+                    }
+                    tre=tre->next;
+                  }
+                }
+
+                // Then turn on
+                {
+                  struct TrackReallineElements *tre=wtrack->trackreallines[realline].trackreallineelements;
+                  
+                  while(tre!=NULL){
+                    if(tre->type==TRE_VELLINESTART){
+                      struct Notes *note=(struct Notes *)tre->pointer;
+                      PATCH_play_note(patch,note->note,note->id,VELOCITY_get(note->velocity),TRACK_get_pan(wtrack->track));
+                    }
+                    tre=tre->next;
+                  }
+                }
+	}
+}
+
 void Scroll_play_do(
 	struct WBlocks *wblock,
 	int realline

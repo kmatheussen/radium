@@ -162,6 +162,10 @@ float getQuantitize(void){
   return root->quantitize;
 }
 
+float getGrid(void){
+  return (double)root->grid_numerator / (double)root->grid_denominator;
+}
+
 void configQuantitize(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;

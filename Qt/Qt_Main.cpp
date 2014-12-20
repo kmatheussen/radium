@@ -167,7 +167,7 @@ protected:
     }
     }
 
-    if (event->type==KeyPress)
+    if (event->type==KeyPress && num_users_of_keyboard==0)
       window->must_redraw = true;
     
     bool ret = X11_KeyboardFilter(QApplication::focusWidget(), event);

@@ -40,7 +40,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     setStyle("cleanlooks");
   }
 
-  void paintEvent( QPaintEvent *e ){
+  virtual void paintEvent( QPaintEvent *e ){
     static int upcounter = 0;
     printf("upperleft paintEvent %d\n",upcounter++);
     QPainter paint(this);
@@ -48,7 +48,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     paint.eraseRect(0,0,width(),height());
   }
 
-  void updateWidgets(struct WBlocks *wblock){
+  void updateWidgets(struct WBlocks *wblock){    
     lz->setValue(wblock->num_expand_lines);
     grid->setText(QString::number(root->grid_numerator)+"/"+QString::number(root->grid_denominator));
 

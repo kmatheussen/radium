@@ -200,6 +200,7 @@ int GetReallineFromY(
 
 }
 
+
 /*************************************************************************
   FUNCTION
     Returns nearly the same as GetReallineFromY, but does allso sets
@@ -213,31 +214,31 @@ int GetReallineFromY(
 int GetReallineAndPlaceFromY(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	int y,
+	float y,
 	Place *place,
 	Place *minplace,
 	Place *maxplace
 ){
-	int dy;
 	Place temp;
-	int top_realline=wblock->top_realline;
-	int bot_realline=wblock->bot_realline;
-	int num_reallines=wblock->num_reallines;
-	int ret,realline,bot=0;
+	int top_realline     = wblock->top_realline;
+	int bot_realline     = wblock->bot_realline;
+	int num_reallines    = wblock->num_reallines;
+	bool at_bottom       = false;
 
-	realline=(y-wblock->t.y1)/window->fontheight;
-	realline+=top_realline;
-	ret=realline;
+        float abs_y = (y-(float)wblock->t.y1) + (float)(top_realline*window->fontheight);
+
+        int realline = abs_y / window->fontheight;
+	int ret       = realline;
 
 	if(realline<0 || y<wblock->t.y1){
-		realline=R_MAX(0,top_realline);
-		ret=y-Common_oldGetReallineY1Pos(window,wblock,realline);
+		realline = R_MAX(0,top_realline);
+		ret      = y-Common_oldGetReallineY1Pos(window,wblock,realline);
 	}
 
 	if(realline>bot_realline || realline>=num_reallines || y>wblock->t.y2){
-		realline=R_MIN(num_reallines-1,bot_realline);
-		ret=Common_oldGetReallineY2Pos(window,wblock,realline)-y;
-		bot=1;
+		realline  = R_MIN(num_reallines-1,bot_realline);
+		ret       = Common_oldGetReallineY2Pos(window,wblock,realline)-y;
+		at_bottom = true;
 	}
 
 
@@ -246,14 +247,37 @@ int GetReallineAndPlaceFromY(
 	temp.dividor = wblock->reallines[realline]->Tdividor;
 
 	if(ret>=0){
-		dy = y - Common_oldGetReallineY1Pos(window,wblock,realline);
-	
-		temp.counter = (temp.counter*window->fontheight)+(dy);
+                float dy = (y - Common_oldGetReallineY1Pos(window,wblock,realline) ) / (float)window->fontheight;
+                if (dy<0.0f)
+                  dy = 0.0f;
+                if (dy>=1.0f)
+                  dy = 0.9999999f;
+                //printf("dy: %f\n",dy);
+                
+                Place *x = PlaceCreate2(dy);
+                Place x1 = {0,0,1};
+                Place x2 = {1,0,1};
+                Place *y1 = &wblock->reallines[realline]->l.p;
+                Place *y2;
+
+                if (realline+1 < wblock->num_reallines)
+                  y2 = &wblock->reallines[realline+1]->l.p;
+                else
+                  y2 = PlaceCreate(wblock->block->num_lines, 0, MAX_UINT32);
+
+                Place *p = PlaceScale(x, &x1, &x2, y1, y2);
+
+                PlaceCopy(&temp, p);
+                /*
+                temp.counter = scale(dy, 
+                                     
+		temp.counter = (temp.counter*window->fontheight) + dy;
 		temp.dividor = window->fontheight*temp.dividor;
 	
 		PlaceHandleOverflow(&temp);
+                */
 	}else{
-		if(0!=bot){
+		if(at_bottom){
 			temp.counter=temp.counter*window->fontheight+(window->fontheight-1);
 			temp.dividor=temp.dividor*window->fontheight;
 			PlaceHandleOverflow(&temp);
