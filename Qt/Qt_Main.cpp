@@ -909,13 +909,13 @@ int main(int argc, char **argv){
   qapplication->setWindowIcon(QIcon(QString(OS_get_program_path()) + OS_get_directory_separator() + "radium_256x256x32.png"));
 
   {
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/LiberationMono-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/VeraMono.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/VeraMoBd.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/NimbusSansL.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/DejaVuSansCondensed-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/DejaVuSansMono-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts/Lato-Bla.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "LiberationMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "VeraMono.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "VeraMoBd.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "NimbusSansL.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "DejaVuSansCondensed-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "DejaVuSansMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Lato-Bla.ttf");
 
     //QApplication::setFont(QFont("Lohit-Tamil",8));
     //QApplication::setFont(QFont("Nimbus Sans L",8));

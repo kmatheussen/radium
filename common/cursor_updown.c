@@ -52,7 +52,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 	}
 
 	if(num_lines==1 || num_lines==-1)
-		Scroll_play(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
+		Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
 
 	if(wblock->curr_realline+num_lines < wblock->num_reallines){
 	  Scroll_scroll(window,num_lines);
@@ -136,7 +136,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 	}
 
         if(num_lines==1 || num_lines==-1)
-          Scroll_play(wblock,wblock->curr_realline-num_lines+1,wblock->curr_realline);
+          Scroll_play_up(wblock,wblock->curr_realline-num_lines+1,wblock->curr_realline);
 
 	if(wblock->curr_realline-num_lines>=0){
 
