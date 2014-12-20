@@ -795,10 +795,9 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
   {
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
-    struct WTracks *wtrack = wblock->wtrack;
     DO_GFX(
            g_currpatch->name = talloc_strdup((char*)new_name.ascii());
-           DrawWTrackHeader(window,wblock,wtrack);
+           DrawAllWTrackHeaders(window,wblock);
            );
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
     editor->updateEditor();

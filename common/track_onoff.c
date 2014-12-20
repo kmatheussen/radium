@@ -56,9 +56,7 @@ void SwitchTrackOnOff_CurrPos(
 
 	SwitchAllTracksOnOff(window->curr_track);
 
-//	DrawUpTrackerWindow(window);
-//	DrawAllWTrackHeaders(window,window->wblock);
-	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
+	DrawAllWTrackHeaders(window,window->wblock);
 }
 
 static void SoloTrack(
@@ -131,7 +129,7 @@ void TRACK_OF_switch_spesified_CurrPos(
 
 	wtrack=(struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
 	SwitchTrackOnOff(wtrack->track);
-	DrawWTrackHeader(window,window->wblock,wtrack);
+	DrawAllWTrackHeaders(window,window->wblock);
 }
 
 void TRACK_OF_solo_spesified_CurrPos(

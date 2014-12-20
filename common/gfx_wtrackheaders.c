@@ -27,209 +27,136 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheaders_proc.h"
 
 
-void DrawTempoHeader(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
-	
+void DrawWTrackNames(
+                     struct Tracker_Windows *window,
+                     struct WBlocks *wblock,
+                     int starttrack,
+                     int endtrack
+                     )
+{
+  printf("Updating from %d to %d\n",starttrack,endtrack);
+  //return;
+  
+  struct WTracks *wtrack1 = ListFindElement1(&wblock->wtracks->l, starttrack);
+  struct WTracks *wtrack2 = ListFindElement1(&wblock->wtracks->l, endtrack);
+
+  struct Patch *patch = wtrack1->track->patch;
+  
+  int x1 = wtrack1->x;
+  int x2 = wtrack2->x2;
+  int y1 = wtrack1->y;
+  int y2 = wtrack1->panonoff.y1;
+
+  // Background
+  int colornum = patch==NULL ? 15 : patch->colornum;
+  bool is_current_track = get_current_instruments_gui_patch()==patch;
+
+  if(is_current_track)
+    GFX_SetMixColor(window, 2, colornum, 150);
+  else
+    GFX_SetMixColor(window, 2, colornum, 0);
+  
+  GFX_T_FilledBox(window, 7,
+                  x1,y1,x2,y2,
+                  PAINT_BUFFER);
+
+  
+  // Text
+  GFX_SetClipRect(window,x1, 0, x2, wblock->t.y1, PAINT_BUFFER);
+  {
+    static char temp[500];
+    sprintf(temp,"%d->%d:", wtrack1->l.num, wtrack2->l.num);
+    GFX_T_Text(
+               window,1,temp,
+               wtrack1->x+window->fontwidth/2,
+               wtrack1->y+WTRACKS_SPACE,
+               wtrack1->x2-wtrack1->x-1,
+               TEXT_CLIPRECT|TEXT_BOLD,
+               PAINT_BUFFER
+               );
+    
+    int name_x = wtrack1->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
+    GFX_T_Text(
+                   window,8,patch==NULL ? wtrack1->track->trackname : patch->name,
+                   name_x,
+                   wtrack1->y+WTRACKS_SPACE,
+                   wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
+                   TEXT_SCALE, //|TEXT_CENTER,
+                   PAINT_BUFFER
+                   );
+  }
+  GFX_CancelClipRect(window,PAINT_BUFFER);
 }
 
+static void DrawAllWTrackNames(
+                               struct Tracker_Windows *window,
+                               struct WBlocks *wblock
+                               )
+{  
+  struct WTracks *wtrack1 = ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+  if (wtrack1==NULL)
+    return;
 
-void UpdateWTrackHeader(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-){
-	static char temp[500];
+  int tracknum1 = wtrack1->l.num;
+  
+  struct Patch   *patch1   = wtrack1->track->patch;
+  struct WTracks *wtrack2  = NextWTrack(wtrack1);
+  int tracknum2            = tracknum1;
+  
+  for(;;){
+    if (wtrack2==NULL || wtrack2->track->patch==NULL || patch1==NULL || wtrack2->track->patch != patch1){
+      
+      DrawWTrackNames(window, wblock, tracknum1, tracknum2);
+      tracknum1 = tracknum2 = tracknum2+1;
+      patch1 = wtrack2==NULL ? NULL : wtrack2->track->patch;
+      
+    } else {
+      tracknum2++;
+    }
 
-#if 0
-	int maxwidth=(wtrack->notelength*window->fontwidth) + wtrack->fxwidth;
-	maxwidth-=window->fontwidth*(wtrack->l.num>=10 ? wtrack->l.num>=100 ? 3 : 2 : 1);
-	maxwidth-=2*window->fontwidth;
-	maxwidth/=window->fontwidth;
-#endif
-	sprintf(temp,"%d: %s",wtrack->l.num,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name);
-
-#if 0
-        int maxwidth = GFX_get_num_characters(window, temp, wtrack->x2 - wtrack->x - 1);
-        //if(wtrack->l.num==0)
-        //  printf("maxwidth: %d. x/x2: %d/%d\n",maxwidth,wtrack->x,wtrack->x2);
-        temp[maxwidth] = 0;
-#endif
-
-        bool is_current_track = get_current_instruments_gui_patch()==wtrack->track->patch;
-
-        if(true){
-          struct WTracks *next_wtrack=NextWTrack(wtrack);
-
-          int colornum = 15;
-
-          if (wtrack->track->patch!=NULL)
-            colornum = wtrack->track->patch->colornum;
-
-          bool is_last_track = next_wtrack==NULL || wtrack->track->patch != next_wtrack->track->patch;
-
-          int x1 = wtrack->x;
-          int x2 = wtrack->x2; //is_last_track ? wtrack->x2+2 : next_wtrack->x;
-          int y1 = wtrack->y;
-          int y2 = wtrack->panonoff.y1;
-
-          if(is_current_track)
-            GFX_SetMixColor(window, 7, colornum, 800);
-          else
-            GFX_SetMixColor(window, 7, colornum, 0);
-          GFX_T_FilledBox(window, 7,
-                          x1,y1,x2,y2,
-                          PAINT_BUFFER);
-
-          // vertical left
-          GFX_SetMixColor(window, 1, colornum, 200);
-          GFX_T_Line(window, 1,
-                     x1,y1,x1,y2,
-                     PAINT_BUFFER);
-
-          // horizontal top
-          GFX_SetMixColor(window, 1, colornum, 200);
-          GFX_T_Line(window, 1,
-                     x1,y1,x2,y1,
-                     PAINT_BUFFER);
-
-          if(is_last_track){
-            // vertical right
-            GFX_SetMixColor(window, 1, colornum, 200);
-            GFX_Line(window, 1,
-                     x2,y1,x2,y2,
-                     PAINT_BUFFER);
-          }
-        }
-
-        GFX_SetClipRect(window,R_MAX(wtrack->x,wblock->temponodearea.x2),0,wtrack->x2,wblock->t.y1,PAINT_BUFFER);
-        {
-          sprintf(temp,"%d:",wtrack->l.num);
-          GFX_T_Text(
-                     window,1,temp,
-                     wtrack->x+window->fontwidth/2,
-                     wtrack->y+WTRACKS_SPACE,
-                     wtrack->x2-wtrack->x-1,
-                     TEXT_CLIPRECT|TEXT_BOLD,
-                     PAINT_BUFFER
-                     );
-          
-          int name_x = wtrack->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
-          QUEUE_GFX_Text(
-                         window,8,wtrack->track->patch==NULL ? wtrack->track->trackname : wtrack->track->patch->name,
-                         name_x,
-                         wtrack->y+WTRACKS_SPACE,
-                         (wtrack->x2-window->fontwidth/2) - name_x,
-                         TEXT_SCALE,
-                         PAINT_BUFFER
-                         );
-        }
-        GFX_CancelClipRect(window,PAINT_BUFFER);
-
-	UpdatePanSlider(window,wblock,wtrack);
-	UpdateVolumeSlider(window,wblock,wtrack);
-
-	if(wtrack->track->onoff==0){
-		GFX_T_Line(window,2,
-                           wtrack->x+2,wtrack->y+1,
-                           wtrack->x2-2,wtrack->y+(window->systemfontheight*2)-1,
-                           PAINT_BUFFER
-		);
-		GFX_T_Line(window,2,
-                           wtrack->x2-2,wtrack->y+1,
-                           wtrack->x+2,wtrack->y+(window->systemfontheight*2)-1,
-                           PAINT_BUFFER
-		);
-	}
-	GFX_T_Line(window,1,wtrack->x,wblock->t.y1-1,wtrack->x2,wblock->t.y1-1,PAINT_BUFFER);
-
-#if !USE_OPENGL
-	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
-#endif
+    if (wtrack2==NULL)
+      break;
+    else
+      wtrack2 = NextWTrack(wtrack2);
+  }
+  
 }
 
-
-
-
-void DrawWTrackHeader(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-){
-       int colornum = 0;
-
-       //printf("Drawing track header for track %d\n",wtrack->l.num);
-       //if (wtrack->track->patch!=NULL)
-       //  colornum = wtrack->track->patch->colornum;
-
-	GFX_T_FilledBox(
-                        window,colornum,
-                        wtrack->x-1,wtrack->y,
-                        wtrack->x2+1,wtrack->y-1+(window->systemfontheight*2),
-                        PAINT_BUFFER
-	);
-
-	UpdateWTrackHeader(window,wblock,wtrack);
+static void DrawAllWTrackSliders(
+                                 struct Tracker_Windows *window,
+                                 struct WBlocks *wblock
+                                 )
+{
+  struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+  
+  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+    if(wtrack->x>=wblock->a.x2){
+      break;
+    }
+    
+    UpdatePanSlider(window,wblock,wtrack);
+    UpdateVolumeSlider(window,wblock,wtrack);
+    
+    wtrack=NextWTrack(wtrack);
+  }
 }
-
-
-
-
-void UpdateAllWTrackHeaders(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
-	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-
-	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-	  if(wtrack->x>=wblock->a.x2){
-	    break;
-	  }
-	  UpdateWTrackHeader(window,wblock,wtrack);
-	  
-	  wtrack=NextWTrack(wtrack);
-	}
-}
-
+                                 
 void DrawAllWTrackHeaders(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
-	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-
-	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-	  if(wtrack->x>=wblock->a.x2){
-	    break;
-	  }
-	  DrawWTrackHeader(window,wblock,wtrack);
-	  
-	  wtrack=NextWTrack(wtrack);
-	}
-}
-
-
-void DrawUpAllWTrackHeaders(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
-	struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-
-/*
+                          struct Tracker_Windows *window,
+                          struct WBlocks *wblock
+                          )
+{  
+        
 	GFX_T_FilledBox(
-		window,0,
-		wblock->temponodearea.x2+3,wtrack->y,
-		wblock->a.x2,wtrack->y-1+(window->org_fontheight*2),
+		window, 0,
+		wblock->temponodearea.x2, 0,
+		window->width, wblock->t.y1,
                 PAINT_BUFFER
 	);
-*/
 
-	while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-	  if(wtrack->x>=wblock->a.x2){
-	    break;
-	  }
-	  UpdateWTrackHeader(window,wblock,wtrack);
-	  
-	  wtrack=NextWTrack(wtrack);
-	}
+        DrawAllWTrackNames(window,wblock);
+
+        DrawAllWTrackSliders(window, wblock);
 }
+
+

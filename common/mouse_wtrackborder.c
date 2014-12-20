@@ -74,7 +74,7 @@ int MoveWTrackBorder_Mouse(
 
 	UpdateWBlockCoordinates(window,wblock);
 
-	DrawWTrackHeader(window,wblock,wtrack);
+	DrawAllWTrackHeaders(window,wblock);
 
 #if !USE_OPENGL
 	DrawUpWTrack(window,wblock,wtrack);
@@ -124,7 +124,7 @@ int MoveWTrackBorder_Mouse(
         {
             struct WTracks *wtrack2=wtrack;
 	    while(wtrack2!=NULL && wtrack2->l.num<=wblock->right_track){
-	      DrawWTrackHeader(window,wblock,wtrack2);
+	      DrawAllWTrackHeaders(window,wblock);
 	      wtrack2=NextWTrack(wtrack2);
 	    }
 	  }

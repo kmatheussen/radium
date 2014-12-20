@@ -213,8 +213,8 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
 }
 
 int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  const QFontMetrics fn = QFontMetrics(editor->font);
+  //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  const QFontMetrics fn = QFontMetrics(QApplication::font()); //editor->font);
   return fn.width(text);
 }
 

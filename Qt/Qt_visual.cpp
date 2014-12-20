@@ -689,7 +689,8 @@ void OS_GFX_Text(
   {  
     if(flags & TEXT_SCALE){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
+      //QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
+      QRect rect(x,y,width,tvisual->systemfontheight);
 
       //const QFontMetrics fn = QFontMetrics(painter->font());
       const QFontMetrics fn = QFontMetrics(QApplication::font());
@@ -707,9 +708,14 @@ void OS_GFX_Text(
         painter->scale(s,1.0);
         painter->drawText(x/s, (y+tvisual->systemfontheight+y_skew), text);
         painter->restore();
-      }else{
+
+      }else if (flags & TEXT_CENTER) {
+        
+        painter->drawText(rect, Qt::AlignCenter, text);
+        
+      } else {
         //painter->drawText(x,y+tvisual->systemfontheight+y_skew,text);
-        painter->drawText(rect, Qt::AlignVCenter, text);
+        painter->drawText(rect, Qt::AlignVCenter | Qt::AlignLeft, text);
       }
 
     }else if(true || (flags & TEXT_CENTER)){
