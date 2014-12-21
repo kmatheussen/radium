@@ -566,7 +566,7 @@ static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches 
     
     struct Pitches *pitch2 = note2->pitches;
     while(pitch2!=NULL){
-      if (note==note && pitch==pitch2)
+      if (note2==note && pitch==pitch2)
         return num;
 
       num++;

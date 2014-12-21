@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define PD_NAME_LENGTH 64
 #define PD_FX_WHEN_NAME_LENGTH (PD_NAME_LENGTH+16)
 
-typedef struct SoundPlugin SoundPlugin;
+//typedef struct SoundPlugin SoundPlugin;
 
 typedef struct{
   int num;
