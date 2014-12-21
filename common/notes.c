@@ -45,25 +45,11 @@ extern PlayerClass *pc;
     Returns the current note (under the cursor).
 **************************************************************/
 struct Notes *GetCurrNote(struct Tracker_Windows *window){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
-	struct TrackRealline *trackrealline;
-	struct TrackReallineElements *element;
-	struct Notes *note;
+	struct WBlocks       *wblock        = window->wblock;
+	struct WTracks       *wtrack        = wblock->wtrack;
+	struct TrackRealline *trackrealline = &wtrack->trackreallines[wblock->curr_realline];
 
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-	trackrealline= &wtrack->trackreallines[wblock->curr_realline];
-
-	if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL)
-          return NULL;
-
-	element=trackrealline->trackreallineelements;
-
-	while(element->type!=TRE_THISNOTELINES) element=element->next;
-	note=(struct Notes *)element->pointer;
-
-	return note;
+        return trackrealline->dasnote;
 }
 
 
@@ -494,13 +480,20 @@ struct Notes *FindNote(
 {
   struct Notes *note = track->notes;
   while(note != NULL) {
-    if (PlaceBetween(&note->l.p, placement, &note->end))
+    if (PlaceIsBetween2(placement, &note->l.p, &note->end))
       break;
     note = NextNote(note);
   }
   return note;
 }
 
+struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
+  struct WBlocks    *wblock   = window->wblock;
+  struct Tracks     *track    = wblock->wtrack->track;
+  struct LocalZooms *realline = wblock->reallines[wblock->curr_realline];
+
+  return FindNote(track, &realline->l.p);
+}
 
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct WBlocks *wblock;

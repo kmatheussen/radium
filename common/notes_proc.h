@@ -73,6 +73,8 @@ struct Notes *FindNote(
                        Place *placement
                        );
 
+struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
+
 extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
 
 #endif

@@ -25,8 +25,8 @@ export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn
 
 export CCC="g++ -mfpmath=sse"
 export CC="gcc -mfpmath=sse"
-#export CCC=clang++
-#export CC="clang -Wno-gnu-designator "
+#export CCC="clang++ -stdlib=libc++"
+#export CC="clang -Wno-gnu-designator"
 export LINKER=g++
 
 export PKG=pkg-config
