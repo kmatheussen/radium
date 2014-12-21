@@ -389,6 +389,14 @@ void undoTrackVolume(int tracknum, int blocknum, int windownum){
 
 
 
+// block positions
+///////////////////////////////////////////////////
+
+float getBlockHeaderY2(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  return wblock==NULL ? 0 : wblock->t.y1;
+}
+
 
 // tracks positions
 ///////////////////////////////////////////////////

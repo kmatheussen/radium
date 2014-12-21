@@ -697,17 +697,31 @@
 
 
 
+;; status bar and mouse pointer for block and track sliders
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-mouse-move-handler
+ :move (lambda ($button X Y)
+         (cond ((and *current-track-num*
+                     (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y))
+                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
+                (show-track-pan-in-statusbar *current-track-num*))
+               ((and *current-track-num*
+                     (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y))
+                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
+                (show-track-volume-in-statusbar *current-track-num*))
+               ((inside-box (ra:get-box reltempo-slider) X Y)
+                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
+                (show-reltempo-in-statusbar))
+               (else
+                (ra:set-normal-mouse-pointer)))))
+
+
+
 ;; block tempo multiplier slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-reltempo-in-statusbar)
   (ra:set-statusbar-text (<-> "Block tempo multiplied by " (two-decimal-string (ra:get-reltempo)))))
-
-;; status bar
-(add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (if (inside-box (ra:get-box reltempo-slider) $x $y)
-             (show-reltempo-in-statusbar))))
 
 
 (define (get-reltemposlider-x)
@@ -745,18 +759,12 @@
 
 
 
+
 ;; track pan sliders
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-track-pan-in-statusbar Tracknum)
   (ra:set-statusbar-text (<-> "Track pan " (two-decimal-string (ra:get-track-pan Tracknum)))))
-
-;; status bar
-(add-mouse-move-handler
- :move (lambda ($button X Y)
-         (and *current-track-num*
-              (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y)
-              (show-track-pan-in-statusbar *current-track-num*))))
 
 (define (get-trackpan-x Tracknum)
   (scale (ra:get-track-pan Tracknum)
@@ -793,13 +801,6 @@
 
 (define (show-track-volume-in-statusbar Tracknum)
   (ra:set-statusbar-text (<-> "Track volume " (two-decimal-string (ra:get-track-volume Tracknum)))))
-
-;; status bar
-(add-mouse-move-handler
- :move (lambda ($button X Y)
-         (and *current-track-num*
-              (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y)
-              (show-track-volume-in-statusbar *current-track-num*))))
 
 (define (get-trackvolume-x Tracknum)
   (scale (ra:get-track-volume Tracknum)
@@ -1685,7 +1686,9 @@
                        #f)))))
          (if (or (not result)
                  (not resize-mouse-pointer-is-set))
-             (ra:set-normal-mouse-pointer))
+             (if (and (> Y (ra:get-block-header-y2))
+                      (< Y (ra:get-reltempo-slider-y1)))
+                 (ra:set-normal-mouse-pointer)))
          result))
 
 
