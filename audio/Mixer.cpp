@@ -196,10 +196,12 @@ static bool someone_has_player_lock = false;
 static bool player_thread_has_player_lock = false;
 
 static void lock_player(void){
+  if (PLAYER_current_thread_has_lock()){
 #if !defined(RELEASE)
-  if (PLAYER_current_thread_has_lock())
     RError("Calling lock_player while holding the player lock");
 #endif
+    return;
+  }
   
   LOCK_LOCK(player_lock);
   someone_has_player_lock = true;

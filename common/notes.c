@@ -215,113 +215,70 @@ int NOTE_get_velocity(struct Tracks *track){
 
 int g_downscroll = 1;
 
-void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int override){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
-	struct LocalZooms *realline;
-	struct TrackReallineElements *element;
-	struct Notes *note;
-	struct Stops *stop;
+void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int polyphonic){
 
 	if(notenum<1 || notenum>127) return;
 
-	//PC_Pause();
+        Undo_Notes_CurrPos(window);
 
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-	realline= wblock->reallines[wblock->curr_realline];
+	struct WBlocks *wblock=window->wblock;
+	struct WTracks *wtrack=wblock->wtrack;
+        int curr_realline = wblock->curr_realline;
+        struct TrackRealline *trackrealline = &wtrack->trackreallines[curr_realline];
 
-	Undo_Notes_CurrPos(window);
-
-
+        //printf("polyphonic: %d, trackrealline.dasnote: %p, trackrealline.daspitch: %p, trackrealline.note: %f\n",polyphonic,trackrealline->dasnote, trackrealline->daspitch, trackrealline->note);
+        
 	if(
-		0==override &&
-		wtrack->trackreallines[wblock->curr_realline].note>0 &&
-		wtrack->trackreallines[wblock->curr_realline].daspitch == NULL
+ 		0==polyphonic &&
+		trackrealline->dasnote != NULL
 	){
 
-		wtrack->trackreallines[wblock->curr_realline].note=notenum;
-		element=wtrack->trackreallines[wblock->curr_realline].trackreallineelements;
-		while(element->type!=TRE_THISNOTELINES) element=element->next;
-		note=(struct Notes *)element->pointer;
-		note->note=notenum;
+                struct Notes *note = trackrealline->dasnote;
 
-#if !USE_OPENGL
-
-		if(wtrack->noteshowtype==TEXTTYPE){
-		  ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
-		  UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
-		}else{
-		  UpdateAndClearSomeWTracks(
-					    window,
-					    wblock,
-					    wtrack->l.num,wtrack->l.num,
-					    wblock->curr_realline,
-					    wblock->num_reallines
-					    );
-					    
-		}
-#endif // !USE_OPENGL
-
+                PLAYER_lock();{
+                  note->note=notenum;
+                }PLAYER_unlock();
+ 
 		if(window->curr_track_sub==-1 && !pc->isplaying){
 			ScrollEditorDown(window,g_downscroll);
 		}
 
-        } else if (wtrack->trackreallines[wblock->curr_realline].daspitch != NULL) {
+        } else if (
+		0==polyphonic &&
+		trackrealline->daspitch != NULL
+	){
 
-          struct Pitches *pitch = wtrack->trackreallines[wblock->curr_realline].daspitch;
-
-          pitch->note = notenum;
-
-#if !USE_OPENGL
-          ClearTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
-          UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
-#endif
-
+          struct Pitches *pitch = trackrealline->daspitch;
+          PLAYER_lock();{
+            pitch->note = notenum;
+          }PLAYER_unlock();
+            
 	}else{
-
-		/* The following if-sentence is unecessarry, but it speeds up the responce
-         time on slower machines a lot (extremly much actually).
-		*/
-	  /*
-	    Removed. Too much flicker.
-
-		if(!wblock->isranged && wtrack->trackreallines[wblock->curr_realline].note==0){
-			wtrack->trackreallines[wblock->curr_realline].note=notenum;
-			UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
-			Blt_blt(window);
-		}
-	  */
-		stop=ListFindElement3(&wtrack->track->stops->l,&realline->l.p);
+          
+        	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
+		struct Stops *stop=ListFindElement3(&wtrack->track->stops->l,&realline->l.p);
 		if(stop!=NULL)
-			if(PlaceEqual(&stop->l.p,&realline->l.p)){
-				ListRemoveElement3(&wtrack->track->stops,&stop->l);
-			}
-
+                  if(PlaceEqual(&stop->l.p,&realline->l.p)){
+                    PLAYER_lock();{
+                      ListRemoveElement3(&wtrack->track->stops,&stop->l);
+                    }PLAYER_unlock();
+                  }
+                
 		InsertNote(
                            wblock,wtrack,&realline->l.p,NULL,notenum,
                            NOTE_get_velocity(wtrack->track),
-                           override
+                           polyphonic
 		);
 
-		if(wtrack->l.num==wblock->right_track && override!=0)
+		if(wtrack->l.num==wblock->right_track && polyphonic!=0)
 			UpdateAllWTracksCoordinates(window,wblock);
 
-		if(window->curr_track_sub==-1 && override==0 && !pc->isplaying){
+		if(window->curr_track_sub==-1 && polyphonic==0 && !pc->isplaying){
 			ScrollEditorDown(window,g_downscroll);
 		}
-
-		UpdateTrackReallines(window,wblock,wtrack);
-#if !USE_OPENGL
-		ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-		UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
-
 	}
 
-	//PC_StopPause();
-
-        window->must_redraw=true;
+        UpdateTrackReallines(window,wblock,wtrack);
 }
 
 void InsertStop(
