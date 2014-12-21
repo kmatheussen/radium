@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/player_proc.h"
 #include "../common/undo_trackheader_proc.h"
+#include "../common/patch_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -255,6 +256,20 @@ float getMinReltempo(void){
 
 float getMaxReltempo(void){
   return MAXBLOCKRELTIME;
+}
+
+
+
+// Set track patch
+///////////////////////////////////////////////////
+void setTrackPatch(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  PATCH_select_patch_for_track(window,wtrack,true);
 }
 
 

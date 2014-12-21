@@ -342,7 +342,7 @@
 (define (radium-mouse-press $button $x $y)
   (handling-nodes
    (lambda()
-     (c-display "mouse press" $button $x $y)
+     (c-display "%%%%%%%%%%%%%%%%% mouse press" $button $x $y *current-mouse-cycle*)
      ;;(cancel-current-stuff)
      (if (not *current-mouse-cycle*)
          (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
@@ -705,19 +705,26 @@
                      (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-track-pan-in-statusbar *current-track-num*))
+               
                ((and *current-track-num*
                      (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-track-volume-in-statusbar *current-track-num*))
+               
                ((inside-box (ra:get-box reltempo-slider) X Y)
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-reltempo-in-statusbar))
-               ((inside-box (ra:get-box track-pan-on-off *current-track-num*) X Y)
+               
+               ((and *current-track-num*
+                     (inside-box (ra:get-box track-pan-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (ra:set-statusbar-text (<-> "Track panning slider " (if (ra:get-track-pan-on-off *current-track-num*) "on" "off"))))
-               ((inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y)
+               
+               ((and *current-track-num*
+                     (inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (ra:set-statusbar-text (<-> "Track volume slider " (if (ra:get-track-volume-on-off *current-track-num*) "on" "off"))))
+               
                (else
                 (ra:set-normal-mouse-pointer)))))
 
@@ -765,6 +772,24 @@
 
 
 
+;; select patch for track
+;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)
+                                (c-display "____________ AIII")
+                                (cond ((and *current-track-num*
+                                            (< Y (ra:get-track-pan-on-off-y1)))
+                                       (c-display "************* CALLING **************")
+                                       (ra:set-track-patch *current-track-num*)
+                                       #f)
+                                      (else
+                                       #f)))
+                  :drag-func  (lambda (Button X Y)
+                                #f)
+                  :release-func (lambda ($button $x $y)
+                                  #f)))
+
+
 ;; track pan on/off
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-cycle (make-mouse-cycle
@@ -774,7 +799,7 @@
                                        (ra:undo-track-pan *current-track-num*)
                                        (ra:set-track-pan-on-off (not (ra:get-track-pan-on-off *current-track-num*))
                                                                 *current-track-num*)
-                                       #t)
+                                       #f)
                                       (else
                                        #f)))
                   :drag-func  (lambda (Button X Y)
@@ -793,13 +818,14 @@
                                        (ra:undo-track-volume *current-track-num*)
                                        (ra:set-track-volume-on-off (not (ra:get-track-volume-on-off *current-track-num*))
                                                                    *current-track-num*)
-                                       #t)
+                                       #f)
                                       (else
                                        #f)))
                   :drag-func  (lambda (Button X Y)
                                 #f)
                   :release-func (lambda ($button $x $y)
                                   #f)))
+
 
 
 
