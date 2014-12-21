@@ -259,6 +259,79 @@ float getMaxReltempo(void){
 
 
 
+// track panning on/off
+///////////////////////////////////////////////////
+
+float getTrackPanOnOffX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.x1;
+}
+float getTrackPanOnOffY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.y1;
+}
+float getTrackPanOnOffX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.x2;
+}
+float getTrackPanOnOffY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.y2;
+}
+
+bool getTrackPanOnOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->track->panonoff;
+}
+
+void undoTrackPanOnOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  wtrack->track->panonoff = onoff;
+  
+  window->must_redraw = true;
+}
+
+
 // track panning slider
 ///////////////////////////////////////////////////
 

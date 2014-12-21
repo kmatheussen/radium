@@ -86,7 +86,7 @@ class Argument:
         elif self.type_string=="const_char*":
             return "(const_char*)s7_string("
         elif self.type_string=="bool":
-            return "s7_bool("
+            return "s7_boolean(radiums7_sc, "
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -101,7 +101,7 @@ class Argument:
         elif self.type_string=="const_char*":
             return "s7_is_string"
         elif self.type_string=="bool":
-            return "s7_is_bool"
+            return "s7_is_boolean"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
