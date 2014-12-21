@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/player_proc.h"
+#include "../common/undo_trackheader_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -206,17 +207,17 @@ float getPlaceInGridFromY(float y, int blocknum, int windownum) {
 // reltempo
 ///////////////////////////////////////////////////
 
-int getReltempoSliderX1(void){
+float getReltempoSliderX1(void){
   return root->song->tracker_windows->wblock->reltempo.x1;
 }
-int getReltempoSliderY1(void){
+float getReltempoSliderY1(void){
   return root->song->tracker_windows->wblock->reltempo.y1;
 }
-int getReltempoSliderX2(void){
+float getReltempoSliderX2(void){
   return root->song->tracker_windows->wblock->reltempo.x2;
 }
-int getReltempoSliderY2(void){
-return root->song->tracker_windows->wblock->reltempo.y2;
+float getReltempoSliderY2(void){
+  return root->song->tracker_windows->wblock->reltempo.y2;
 }
 
 float getReltempo(int blocknum, int windownum){
@@ -255,6 +256,72 @@ float getMinReltempo(void){
 float getMaxReltempo(void){
   return MAXBLOCKRELTIME;
 }
+
+
+
+// track panning slider
+///////////////////////////////////////////////////
+
+float getTrackPanSliderX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.x1;
+}
+float getTrackPanSliderY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.y1;
+}
+float getTrackPanSliderX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.x2;
+}
+float getTrackPanSliderY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.y2;
+}
+
+float getTrackPan(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return scale(wtrack->track->pan, -MAXTRACKPAN, MAXTRACKPAN, -1.0, 1.0);
+}
+
+void undoTrackPan(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+// void setTrackPan(float pan, int tracknum, int blocknum, int windownum)
+// was already (more correctly) implemented in api_various.c
+
 
 
 

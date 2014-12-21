@@ -46,6 +46,7 @@ void Undo_TrackHeader(
 
 }
 
+
 void *Undo_Do_TrackHeader(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,

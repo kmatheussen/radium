@@ -569,7 +569,7 @@
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
-                                   (Make-undo)
+                                   (Make-undo Node-info)
                                    (Publicize Node-info)
                                    (set-mouse-pointer ra:set-blank-mouse-pointer)
                                    (make-node :node-info Node-info
@@ -678,7 +678,8 @@
                                    (Get-x (Info :handler-data)))
                           :Get-y (lambda (Info)
                                    (Info :y))
-                          :Make-undo Make-undo
+                          :Make-undo (lambda (Info)
+                                       (Make-undo (Info :handler-data)))
                           :Create-new-node (lambda (Value Place callback)
                                              #f)
                           :Move-node (lambda (Info Value Place)
@@ -734,37 +735,57 @@
                                  (get-reltemposlider-x))
                         :Get-value (lambda (Value)
                                      Value)
-                        :Make-undo ra:undo-reltempo
+                        :Make-undo (lambda (_)
+                                     (ra:undo-reltempo))
                         :Move (lambda (_ Value)
                                 (ra:set-reltempo Value))
                         :Publicize (lambda (_)
                                      (show-reltempo-in-statusbar))
                         )
 
-#||
-(add-delta-mouse-handler
- :press (lambda ($button $x $y)
-          ;;(c-display "inside? " (inside-box (ra:get-box reltempo-slider) $x $y) $x $y "box:" (box-to-string (ra:get-box reltempo-slider)))
-          (and (= $button *left-button*)
-               (inside-box (ra:get-box reltempo-slider) $x $y)
-               (begin
-                 (ra:undo-reltempo)
-                 (ra:get-reltempo))))
 
- :move-and-release (lambda ($button $dx $dy $org-reltempo)
-                     (define box          (ra:get-box reltempo-slider))
-                     (define max-reltempo (ra:get-max-reltempo))
-                     (define min-reltempo (ra:get-min-reltempo))
-                     (define new-value    (+ $org-reltempo
-                                             (scale $dx
-                                                    0 (box :width)
-                                                    min-reltempo max-reltempo)))
-                     (ra:set-reltempo new-value)
-                     (show-reltempo-in-statusbar)                     
-                     new-value)
- )
-||#
 
+;; track pan sliders
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (show-track-pan-in-statusbar Tracknum)
+  (ra:set-statusbar-text (<-> "Track pan " (two-decimal-string (ra:get-track-pan Tracknum)))))
+
+;; status bar
+(add-mouse-move-handler
+ :move (lambda ($button X Y)
+         (and *current-track-num*
+              (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y)
+              (show-track-pan-in-statusbar *current-track-num*))))
+
+(define (get-trackpan-x Tracknum)
+  (scale (ra:get-track-pan Tracknum)
+         -1
+         1
+         (ra:get-track-pan-slider-x1 Tracknum)
+         (ra:get-track-pan-slider-x2 Tracknum)))
+
+;; slider
+(add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (and *current-track-num*
+                                                 (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y)
+                                                 *current-track-num*))
+                        :Get-x1 ra:get-track-pan-slider-x1
+                        :Get-x2 ra:get-track-pan-slider-x2
+                        :Get-min-value (lambda (_)
+                                         -1.0)
+                        :Get-max-value (lambda (_)
+                                         1.0)
+                        :Get-x (lambda (Tracknum)
+                                 (get-trackpan-x Tracknum))
+                        :Get-value ra:get-track-pan
+                        :Make-undo ra:undo-track-pan
+                        :Move (lambda (Tracknum Value)
+                                (c-display Tracknum Value)
+                                (ra:set-track-pan Value Tracknum))
+                        :Publicize (lambda (Tracknum)
+                                     (show-track-pan-in-statusbar Tracknum))
+                        )
 
 
 ;; temponodes
@@ -812,7 +833,7 @@
                         :Get-max-value (lambda (_) 1);(1- (ra:get-temponode-max)))
                         :Get-x (lambda (Num) (ra:get-temponode-x Num))
                         :Get-y (lambda (Num) (ra:get-temponode-y Num))
-                        :Make-undo ra:undo-temponodes
+                        :Make-undo (lambda (_) ra:undo-temponodes)
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (scale X (ra:get-temponode-area-x1) (ra:get-temponode-area-x2) 0 1))
                                            (define Num (ra:create-temponode (01->temponodeval Value) Place))
@@ -943,7 +964,7 @@
                                  (ra:get-pitch-x Num *current-track-num*))
                         :Get-y (lambda (Num)
                                  (ra:get-pitch-y Num *current-track-num*))
-                        :Make-undo (lambda () (ra:undo-notes *current-track-num*))
+                        :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (scale X
                                                                 (ra:get-track-notes-x1 *current-track-num*) (ra:get-track-notes-x2 *current-track-num*) 
@@ -1161,7 +1182,7 @@
                         :Get-y (lambda (info) (ra:get-velocity-y (info :velocitynum)
                                                                  (info :notenum)
                                                                  (info :tracknum)))
-                        :Make-undo (lambda () (ra:undo-notes *current-track-num*))
+                        :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (and *current-note-num*
                                                 (not (get-current-fxnum))
@@ -1308,7 +1329,7 @@
                                      (ra:get-track-notes-x1 (1+ tracknum))))
                         :Get-value (lambda (Trackwidth-info)
                                      (Trackwidth-info :width))
-                        :Make-undo (lambda () #f)
+                        :Make-undo (lambda (_) #f)
                         :Move (lambda (Trackwidth-info Value)
                                 (define tracknum (Trackwidth-info :tracknum))
                                 (ra:set-track-width Value tracknum))
@@ -1497,7 +1518,7 @@
                         :Get-y (lambda (info) (ra:get-fxnode-y (info :fxnodenum)
                                                                (info :fxnum)
                                                                (info :tracknum)))
-                        :Make-undo (lambda () (ra:undo-fxs *current-track-num*))
+                        :Make-undo (lambda (_) (ra:undo-fxs *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (define Fxnum (get-current-fxnum))
                                            (and Fxnum

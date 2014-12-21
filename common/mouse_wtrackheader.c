@@ -193,7 +193,9 @@ void SetMouseActionWTrackHeader(
 	int x,int y,
 	int click
 ){
-	if(insideTBox(&wtrack->pan,x,y)){
+  return;
+  
+  if(insideTBox(&wtrack->pan,x,y)){
 		SetMouseActionPanSlider(window,action,wtrack,x,click);
 		return;
 	}
