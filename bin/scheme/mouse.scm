@@ -760,13 +760,29 @@
 
 
 ;; track pan on/off
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (and *current-track-num*
                                      (inside-box (ra:get-box track-pan-on-off *current-track-num*) X Y)
                                      (ra:set-track-pan-on-off (not (ra:get-track-pan-on-off *current-track-num*))
                                                               *current-track-num*)
+                                     #t))
+                  :drag-func  (lambda (Button X Y)
+                                #f)
+                  :release-func (lambda ($button $x $y)
+                                  #f)))
+
+
+
+;; track volume on/off
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)
+                                (and *current-track-num*
+                                     (inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y)
+                                     (ra:set-track-volume-on-off (not (ra:get-track-volume-on-off *current-track-num*))
+                                                                 *current-track-num*)
                                      #t))
                   :drag-func  (lambda (Button X Y)
                                 #f)
