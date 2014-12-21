@@ -165,9 +165,6 @@ static struct Notes *get_note_at_realline(struct Tracker_Windows *window,struct 
 void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
-	struct TrackRealline *trackrealline;
-	struct TrackReallineElements *element;
-	struct Notes *note;
 	int maxvelocity;
 
         inc = inc * MAX_VELOCITY / 100;
@@ -175,7 +172,6 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
 	wblock=window->wblock;
 	wtrack=wblock->wtrack;
-	trackrealline= &wtrack->trackreallines[wblock->curr_realline];
 	maxvelocity=MAX_VELOCITY;
         
         if(is_track_ranged(wblock,wblock->wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
@@ -201,33 +197,19 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
         } else {
 
-          element=trackrealline->trackreallineelements;
-
-          if(element==NULL)
-            return;
-
           PC_Pause();
 
           Undo_Notes_CurrPos(window);
 
-          if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL){
-            element=trackrealline->trackreallineelements;
-            note=(struct Notes *)element->pointer;
-          }else{
-          
-            while(element->type!=TRE_THISNOTELINES) element=element->next;
-            note=(struct Notes *)element->pointer;
+          struct Notes *note = FindNoteCurrPos(window);
+
+          if (note != NULL) {
+            note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
+            if(note->velocities==NULL)
+              note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
+            
+            UpdateTrackReallines(window,wblock,wtrack);
           }
-
-          note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
-          if(note->velocities==NULL)
-            note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
-
-          UpdateTrackReallines(window,wblock,wtrack);
-#if !USE_OPENGL
-          ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-          UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
         }
 
 	PC_StopPause();
