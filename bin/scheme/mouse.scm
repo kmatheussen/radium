@@ -788,6 +788,49 @@
                         )
 
 
+;; track volume sliders
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (show-track-volume-in-statusbar Tracknum)
+  (ra:set-statusbar-text (<-> "Track volume " (two-decimal-string (ra:get-track-volume Tracknum)))))
+
+;; status bar
+(add-mouse-move-handler
+ :move (lambda ($button X Y)
+         (and *current-track-num*
+              (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y)
+              (show-track-volume-in-statusbar *current-track-num*))))
+
+(define (get-trackvolume-x Tracknum)
+  (scale (ra:get-track-volume Tracknum)
+         0
+         1
+         (ra:get-track-volume-slider-x1 Tracknum)
+         (ra:get-track-volume-slider-x2 Tracknum)))
+
+;; slider
+(add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (and *current-track-num*
+                                                 (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y)
+                                                 *current-track-num*))
+                        :Get-x1 ra:get-track-volume-slider-x1
+                        :Get-x2 ra:get-track-volume-slider-x2
+                        :Get-min-value (lambda (_)
+                                         0.0)
+                        :Get-max-value (lambda (_)
+                                         1.0)
+                        :Get-x (lambda (Tracknum)
+                                 (get-trackvolume-x Tracknum))
+                        :Get-value ra:get-track-volume
+                        :Make-undo ra:undo-track-volume
+                        :Move (lambda (Tracknum Value)
+                                (c-display Tracknum Value)
+                                (ra:set-track-volume Value Tracknum))
+                        :Publicize (lambda (Tracknum)
+                                     (show-track-volume-in-statusbar Tracknum))
+                        )
+
+
 ;; temponodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

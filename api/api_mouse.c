@@ -324,6 +324,71 @@ void undoTrackPan(int tracknum, int blocknum, int windownum){
 
 
 
+// track volumening slider
+///////////////////////////////////////////////////
+
+float getTrackVolumeSliderX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.x1;
+}
+float getTrackVolumeSliderY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.y1;
+}
+float getTrackVolumeSliderX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.x2;
+}
+float getTrackVolumeSliderY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.y2;
+}
+
+float getTrackVolume(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return scale(wtrack->track->volume, 0, MAXTRACKVOL, 0.0, 1.0);
+}
+
+void undoTrackVolume(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+// void setTrackVolume(float volume, int tracknum, int blocknum, int windownum)
+// was already (more correctly) implemented in api_various.c
+
+
+
 
 // tracks positions
 ///////////////////////////////////////////////////
