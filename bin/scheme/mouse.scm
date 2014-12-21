@@ -724,7 +724,12 @@
                      (inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
                 (ra:set-statusbar-text (<-> "Track volume slider " (if (ra:get-track-volume-on-off *current-track-num*) "on" "off"))))
-               
+
+               ((and *current-track-num*
+                     (< Y (ra:get-track-pan-on-off-y1)))
+                (set-mouse-pointer ra:set-pointing-mouse-pointer)
+                (ra:set-statusbar-text "Set new patch for track"))
+
                (else
                 (ra:set-normal-mouse-pointer)))))
 
@@ -776,10 +781,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
-                                (c-display "____________ AIII")
                                 (cond ((and *current-track-num*
                                             (< Y (ra:get-track-pan-on-off-y1)))
-                                       (c-display "************* CALLING **************")
                                        (ra:set-track-patch *current-track-num*)
                                        #f)
                                       (else
