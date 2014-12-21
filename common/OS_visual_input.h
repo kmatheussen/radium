@@ -29,6 +29,7 @@ extern LANGSPEC void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title);
 
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void SetPointingPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetBlankPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetDiagResizePointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetHorizResizePointer(struct Tracker_Windows *tvisual);

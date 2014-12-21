@@ -429,6 +429,10 @@ void SetNormalPointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::ArrowCursor);
 }
+void SetPointingPointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::PointingHandCursor);
+}
 void SetBlankPointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::BlankCursor);

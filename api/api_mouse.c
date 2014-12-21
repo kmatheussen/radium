@@ -2093,6 +2093,11 @@ void setNormalMousePointer(int windownum){
   if (window!=NULL)
     SetNormalPointer(window);
 }
+void setPointingMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetPointingPointer(window);
+}
 void setBlankMousePointer(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window!=NULL)

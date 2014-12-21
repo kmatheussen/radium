@@ -697,8 +697,8 @@
 
 
 
-;; status bar and mouse pointer for block and track sliders
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; status bar and mouse pointer for block and track sliders and track on/off buttons
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-move-handler
  :move (lambda ($button X Y)
          (cond ((and *current-track-num*
@@ -712,6 +712,12 @@
                ((inside-box (ra:get-box reltempo-slider) X Y)
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
                 (show-reltempo-in-statusbar))
+               ((inside-box (ra:get-box track-pan-on-off *current-track-num*) X Y)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer)
+                (ra:set-statusbar-text (<-> "Track panning slider " (if (ra:get-track-pan-on-off *current-track-num*) "on" "off"))))
+               ((inside-box (ra:get-box track-volume-on-off *current-track-num*) X Y)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer)
+                (ra:set-statusbar-text (<-> "Track volume slider " (if (ra:get-track-volume-on-off *current-track-num*) "on" "off"))))
                (else
                 (ra:set-normal-mouse-pointer)))))
 
