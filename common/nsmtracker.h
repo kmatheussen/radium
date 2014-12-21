@@ -1067,7 +1067,6 @@ typedef struct{
 /*********************************************************************
 	windows.h
 *********************************************************************/
-#include "mouse.h"
 
 struct Tracker_Windows{
 	struct ListHeader1 l;
@@ -1102,8 +1101,8 @@ struct Tracker_Windows{
 	uint32_t event_treat;		/* Chooses which event type(s) to treat. (0=all)*/
 	int dontbuffer;
 
-	struct MouseAction curraction;
-	struct MouseAction prevaction;
+  //	struct MouseAction curraction;
+  //	struct MouseAction prevaction;
 
 	int org_fontheight;
 #ifdef _AMIGA

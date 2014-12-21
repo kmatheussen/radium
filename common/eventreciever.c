@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "windows_proc.h"
 #include "wblocks_proc.h"
-#include "mouse_proc.h"
 #include "gfx_op_queue_proc.h"
 #include "undo.h"
 
@@ -288,20 +287,6 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 			}
 
 			break;
-		case TR_MOUSEMOVE:
-                        MouseMove(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-			break;
-		case TR_LEFTMOUSEDOWN:
-			LeftMouseDown(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-			break;
-		case TR_LEFTMOUSEUP:
-			return LeftMouseUp(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-		case TR_RIGHTMOUSEDOWN:
-		        RightMouseDown(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-                        //			AddFXNodeLineCurrPos(window);
-			break;
-		case TR_RIGHTMOUSEUP:
-		        return RightMouseUp(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
 	}
 
 	if(doquit==true){return 1;}

@@ -186,7 +186,9 @@ OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wbloc
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
-OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o tbox.o area.o range.o
+#OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o mouse_temponodes.o
+
+OBJ4 = tbox.o area.o range.o 
 
 OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o subtrack.o velocities.o pixmap.o scroll.o blts.o
 
@@ -195,7 +197,7 @@ OBJ6= realline_calc.o gfx_subtrack.o LPB.o gfx_wtrackheaders.o gfx_wtrackheader_
 OBJ7= nodelines.o nodeboxes.o instruments.o patch.o fxlines.o fxlines_legalize.o pitchnodes.o blocklist.o  scroll_play.o gfx_tempocolor.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o
 
 #Tempos and time
-OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o mouse_temponodes.o temponodes_legalize.o
+OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o temponodes_legalize.o
 
 #Playing
 OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o
