@@ -1098,9 +1098,9 @@ void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Pa
   }
 }
 
+#if !USE_OPENGL
 static bool g_peaks_are_dirty;
 
-// TODO: Check if this one can be disabled completely if using OpenGL
 void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){
   if(g_peaks_are_dirty==false)
     return;
@@ -1126,6 +1126,7 @@ void RT_TRACKREALLINES_schedule_update_peak_tracks(struct Patch *patch){
   patch->peaks_are_dirty = true;
   g_peaks_are_dirty = true;
 }
+#endif
 
 void UpdateSomeTrackReallines(
 	struct Tracker_Windows *window,

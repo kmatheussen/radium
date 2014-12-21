@@ -386,7 +386,9 @@ protected:
         struct Tracker_Windows *window=root->song->tracker_windows;
         DO_GFX({
             MIDI_HandleInputMessage();
+#if !USE_OPENGL
             TRACKREALLINES_call_very_often(window);
+#endif
           });
         static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
         
