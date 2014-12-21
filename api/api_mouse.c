@@ -427,8 +427,7 @@ float getTrackNotesX1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackNotesY1(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->y;
+  return getBlockHeaderY2(blocknum, windownum);
 }
 
 float getTrackNotesX2(int tracknum, int blocknum, int windownum){
@@ -447,8 +446,7 @@ float getTrackFxX1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackFxY1(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->y;
+  return getBlockHeaderY2(blocknum, windownum);
 }
 
 float getTrackFxX2(int tracknum, int blocknum, int windownum){
