@@ -569,10 +569,11 @@ int MIDIgetPatch(
 
 /******************* instrument ***********************/
 
+#if 0
 static int MIDIgetMaxVelocity(const struct Patch *patch){
 	return 127;
 }
-
+#endif
 
 
 void MIDICloseInstrument(struct Instruments *instrument){

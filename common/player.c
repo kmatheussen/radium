@@ -92,8 +92,10 @@ void PlayerTask(STime reltime){
         pc->start_time  = pc->end_time;
         pc->end_time   += tempoadjusted_reltime;
 
+#ifdef WITH_PD
         RT_PD_set_absolute_time(pc->start_time);
-
+#endif
+        
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
 

@@ -132,8 +132,8 @@ static void Scroll_play_down2(
                              int start_realline,
                              int end_realline
 ){
-  Place p1;
-  Place p2;
+  Place p1 = {0};
+  Place p2 = {0};
 
   set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
   
@@ -145,8 +145,8 @@ static void Scroll_play_up2(
                            int start_realline,
                            int end_realline
 ){
-  Place p1;
-  Place p2;
+  Place p1 = {0};
+  Place p2 = {0};
 
   set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
   

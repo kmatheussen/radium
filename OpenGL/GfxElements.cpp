@@ -78,6 +78,7 @@ static vl::GLSLFragmentShader *get_gradient_fragment_shader(void){
   return gradient_shader.get();
 }
 
+#if 0
 static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
   static vl::ref<vl::GLSLVertexShader> gradient_shader = NULL;
 
@@ -94,6 +95,7 @@ static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
   
   return gradient_shader.get();
 }
+#endif
 
 struct GradientTriangles : public vl::Effect {
   GradientTriangles *next;
