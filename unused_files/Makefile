@@ -1,5 +1,10 @@
 #OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o mouse_temponodes.o
 
+gfx_tempotrackheader.o
+
+gfx_tempotrackheader.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_tempotrackheader.c
+	$(CC) $(CD)gfx_tempotrackheader.c $(OPT)
+
 
 mouse.o:  $(BUILD_DEPENDENCIES) $(CD)mouse.c
 	$(CC) $(CD)mouse.c $(OPT)

@@ -182,11 +182,9 @@ VL_LDFLAGS=$(VL_LIBS)
 
 OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
 
-OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_tempotrackheader.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
+OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
-
-#OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o mouse_temponodes.o
 
 OBJ4 = tbox.o area.o range.o 
 
@@ -479,9 +477,6 @@ eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c $(API)radium_proc.h
 
 reallines.o:  $(BUILD_DEPENDENCIES) $(CD)reallines.c
 	$(CC) $(CD)reallines.c $(OPT)
-
-mouse.o:  $(BUILD_DEPENDENCIES) $(CD)mouse.c
-	$(CC) $(CD)mouse.c $(OPT)
 
 notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
 	$(CC) $(CD)notestext.c $(OPT)
@@ -813,9 +808,6 @@ quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
 
 gfx_wtrackheader_volpan.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheader_volpan.c
 	$(CC) $(CD)gfx_wtrackheader_volpan.c $(OPT)
-
-gfx_tempotrackheader.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_tempotrackheader.c
-	$(CC) $(CD)gfx_tempotrackheader.c $(OPT)
 
 undo_trackheader.o:  $(BUILD_DEPENDENCIES) $(CD)undo_trackheader.c
 	$(CC) $(CD)undo_trackheader.c $(OPT)
