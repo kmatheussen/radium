@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_updown_proc.h"
 #include "blts_proc.h"
 #include "playerclass.h"
+#include "pitches_proc.h"
 
 #include "OS_Player_proc.h"
 
@@ -347,65 +348,58 @@ void RemoveNote(
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
-	struct LocalZooms *realline;
-	struct TrackReallineElements *element;
-	struct TrackReallineElements *element2;
-	struct Notes *note;
-//	struct Notes *nextnote;
 
 	PC_Pause();
 
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-	realline=wblock->reallines[wblock->curr_realline];
-
+	struct WBlocks       *wblock        = window->wblock;
+	struct WTracks       *wtrack        = wblock->wtrack;
+        struct Tracks        *track         = wtrack->track;
+	struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
+        struct TrackRealline *trackrealline = &wtrack->trackreallines[wblock->curr_realline];
+        
 	Undo_Notes_CurrPos(window);
 
+        
 	if(
-		wtrack->trackreallines[wblock->curr_realline].note!=0
+		trackrealline->note != 0
 	){
+          
+          if (trackrealline->daspitch != NULL)
+            DeletePitch(track, trackrealline->daspitch);
 
-		element=wtrack->trackreallines[wblock->curr_realline].trackreallineelements;
+          else if (trackrealline->dasnote != NULL) {
+            ListRemoveElement3(&track->notes,&trackrealline->dasnote->l);
 
-		if(wtrack->trackreallines[wblock->curr_realline].note>=NOTE_MUL){
-			element2=element;
-			while(element2!=NULL){
-				if(element2->type==TRE_STOPLINE)
-					ListRemoveElement3(&wtrack->track->stops,(struct ListHeader3 *)element2->pointer);
-				element2=element2->next;
-			}
-		}
+            LengthenNotesTo(wblock->block,wtrack->track,&realline->l.p);
 
-		while(element!=NULL){
-			if(element->type==TRE_THISNOTELINES){
-				note=(struct Notes *)element->pointer;
-				ListRemoveElement3(&wtrack->track->notes,&note->l);
-			}
-			if(element->type==TRE_THISPITCHLINES){
-                          note=element->note;
-                          struct Pitches *pitch = element->pointer;
-                          ListRemoveElement3(&note->pitches,&pitch->l);
-			}
-			element=element->next;
-//			nextnote=NextNote(note);
-		}
+          } else if (trackrealline->note == NOTE_STP){
+            struct Stops *stop=ListFindElement3(&wtrack->track->stops->l,&realline->l.p);
+            if(stop!=NULL)
+              if(PlaceEqual(&stop->l.p,&realline->l.p))
+                ListRemoveElement3(&track->stops, &stop->l);
+                     
+          } else if (trackrealline->note == NOTE_MUL || trackrealline->note == NOTE_MUR){
+            struct Notes *note=ListFindElement3(&wtrack->track->notes->l,&realline->l.p); // not quite perfect, but it's possible (and more accurate) to press delete in the subtrack.
+            if(note!=NULL)
+              if(PlaceEqual(&note->l.p,&realline->l.p))
+                ListRemoveElement3(&track->notes, &note->l);
+                     
+          } else
+            RError ("Both daspitch and dasnote is NULL while trackrealline->note==%f",trackrealline->note);
 
-		LengthenNotesTo(wblock->block,wtrack->track,&realline->l.p);
-
+          
 	}else{
-		InsertStop(window,wblock,wtrack,&realline->l.p);
+          
+            InsertStop(window,wblock,wtrack,&realline->l.p);
+
 	}
 
 	if(window->curr_track_sub==-1  && !pc->isplaying){
 		ScrollEditorDown(window,g_downscroll);
 	}
+        
 	UpdateTrackReallines(window,wblock,wtrack);
-#if !USE_OPENGL
-	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
+
 	PC_StopPause();
 
         window->must_redraw=true;

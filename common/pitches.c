@@ -151,6 +151,23 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   return pitch;
 }
 
+void DeletePitch(struct Tracks *track, struct Pitches *pitchtodelete){
+  struct Notes *note = track->notes;
+  while (note != NULL) {
+    struct Pitches *pitch = note->pitches;
+    while (pitch != NULL) {
+      if (pitch==pitchtodelete){
+        ListRemoveElement3(&note->pitches->l, &pitch->l);
+        return;
+      }
+      pitch = NextPitch(pitch);
+    }
+    note = NextNote(note);
+  }
+
+  RError("Pitch not found in track %d",track->l.num);
+}
+
 void SetPitchCurrPos(struct Tracker_Windows *window){
   struct WBlocks       *wblock        = window->wblock;
   struct WTracks       *wtrack        = wblock->wtrack;    
