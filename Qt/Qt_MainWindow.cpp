@@ -345,25 +345,11 @@ public:
   }
 
   // Want the wheel to work from everywhere.
-  void wheelEvent(QWheelEvent *qwheelevent){
+  void wheelEvent(QWheelEvent *qwheelevent) {
     if(is_starting_up==true)
       return;
 
-    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-
-    int num_lines = R_ABS(qwheelevent->delta()/120);    
-
-    DO_GFX(
-           {
-             if(qwheelevent->delta()<0)
-               ScrollEditorDown(window,num_lines);
-             else
-               ScrollEditorUp(window,num_lines);
-           });
-
-#if USE_QT_VISUAL
-    g_editor->updateEditor();
-#endif
+    g_editor->wheelEvent(qwheelevent);
   }
 };
 

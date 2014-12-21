@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QApplication>
 #include <QAbstractButton>
+#include <QMainWindow>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -344,6 +345,13 @@ public:
     //GL_create(get_window(), get_window()->wblock);
   }
 
+  virtual void wheelEvent(QWheelEvent *qwheelevent){
+    //QMouseEvent event = translate_qmouseevent(qmouseevent);
+    get_editorwidget()->wheelEvent(qwheelevent);
+    //GL_create(get_window(), get_window()->wblock);
+  }
+    
+      
   /** Event generated right before the bound OpenGLContext is destroyed. */
   virtual void destroyEvent() {
     fprintf(stderr,"destroyEvent\n");
@@ -572,6 +580,7 @@ public:
   
   /** Event generated when the mouse wheel rotated. */
   virtual void mouseWheelEvent(int n) {
+    printf("mouseWheel %d\n",n);
   }
   
   /** Event generated when a key is pressed. */

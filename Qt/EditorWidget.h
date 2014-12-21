@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <Q3PointArray>
 #include <QPainter>
+#include <QWheelEvent>
 #ifdef FOR_WINDOWS
 #  include <QKeyEvent>
 #endif
@@ -74,6 +75,7 @@ typedef QImage PaintBuffer;
 #else
 typedef QPixmap PaintBuffer;
 #endif
+
 
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
@@ -138,6 +140,8 @@ public:
     void callCustomEvent(){
       customEvent(NULL);
     }
+
+    void wheelEvent(QWheelEvent *qwheelevent);
 
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
     void init_buffers(){

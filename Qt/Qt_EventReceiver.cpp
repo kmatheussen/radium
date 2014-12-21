@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
+#include "../common/cursor_updown_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 
@@ -155,6 +156,28 @@ void EditorWidget::updateEditor(){
   if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
     update();
   }
+}
+
+
+void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
+    if(is_starting_up==true)
+      return;
+
+    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+
+    int num_lines = R_ABS(qwheelevent->delta()/120);    
+
+    DO_GFX(
+           {
+             if(qwheelevent->delta()<0)
+               ScrollEditorDown(window,num_lines);
+             else
+               ScrollEditorUp(window,num_lines);
+           });
+
+#if USE_QT_VISUAL
+    updateEditor();
+#endif
 }
 
 struct TEvent tevent={0};
