@@ -803,36 +803,37 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          -1,
                                          wtrack->track,
                                          0,0,
-                                         NULL,NULL);
+                                         NULL,NULL
+                                         );
     
 
   GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 700, 0.7, Z_ZERO);
 
-  GE_trianglestrip_start();
-
 #define NUM_LINES_PER_PEAK 2
 
-  for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+  for(int ch=0;ch<num_channels;ch++){
 
-    float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
-    float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+    GE_trianglestrip_start();
 
-    float velocity1 = scale(ns->x1, subtrack_x1, subtrack_x2, 0, 1);
-    float velocity2 = scale(ns->x2, subtrack_x1, subtrack_x2, 0, 1);
+    for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
 
-    int num_peaks = (ns->y2-ns->y1) / NUM_LINES_PER_PEAK;
-
-    if(num_peaks<0){
-
-      RError("num_peaks<0: %d",num_peaks);
-      continue;
-
-    }
-
+      float time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
+      float time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+      
+      float velocity1 = scale(ns->x1, subtrack_x1, subtrack_x2, 0, 1);
+      float velocity2 = scale(ns->x2, subtrack_x1, subtrack_x2, 0, 1);
+      
+      int num_peaks = (ns->y2-ns->y1) / NUM_LINES_PER_PEAK;
+      
+      if(num_peaks<0){
         
-    for(int n=0;n<num_peaks;n++){
+        RError("num_peaks<0: %d",num_peaks);
+        continue;
         
-      for(int ch=0;ch<num_channels;ch++){
+      }
+
+
+      for(int n=0;n<num_peaks;n++){
         
         float min,max;
         
@@ -886,11 +887,14 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
           GE_trianglestrip_add(c, x1, y);
           GE_trianglestrip_add(c, x2, y);
         }
-      }
-    }
-  }
 
-  GE_trianglestrip_end(c);
+      } // end num peaks iteration
+
+    } // end node iteration
+
+    GE_trianglestrip_end(c);
+
+  } // end ch iteration
 }
 
 static void create_velocity_gradient_background(

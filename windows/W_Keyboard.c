@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "W_Keyboard_proc.h"
 
+extern struct TEvent tevent;
 extern struct Root *root;
 extern PlayerClass *pc;
 
@@ -322,7 +323,6 @@ bool W_KeyboardFilter(MSG *msg){
   if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
     return false;
 
-  struct TEvent tevent;
   struct Tracker_Windows *window=root->song->tracker_windows;
 #if 0
   static int num=0;

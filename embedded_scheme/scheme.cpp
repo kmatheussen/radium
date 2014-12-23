@@ -148,6 +148,6 @@ void SCHEME_start(){
 
   s7_load(s7,"init.scm");
 
-  s7webserver = s7webserver_create(s7, 5080, false);
+  s7webserver = s7webserver_create(s7, 5080, true);
   s7webserver_set_verbose(s7webserver, true);
 }

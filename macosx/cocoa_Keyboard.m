@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "cocoa_Keyboard_proc.h"
 
+extern struct TEvent tevent;
 extern struct Root *root;
 
 static bool isModifierKey(NSEvent *event){
@@ -309,7 +310,6 @@ bool cocoa_KeyboardFilter(void *void_event){
     return false;
 
   {
-    struct TEvent tevent;
     struct Tracker_Windows *window=root->song->tracker_windows;
 
     int keycode = [event keyCode];
