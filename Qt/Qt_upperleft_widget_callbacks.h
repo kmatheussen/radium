@@ -14,14 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-
 #include "Qt_upperleft_widget.h"
 #include "../common/undo_reltempomax_proc.h"
 #include "../common/undo_maintempos_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/player_proc.h"
 #include "../common/reallines_proc.h"
+#include "../common/temponodes_proc.h"
 
 extern EditorWidget *g_editor;
 
@@ -162,7 +161,32 @@ public slots:
   }
 
   void on_reltempomax_editingFinished(){
-    printf("reltempomax\n");
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+
+    float new_value = reltempomax->value();
+    if (new_value < 1.1){
+      new_value = 1.1;
+      reltempomax->setValue(new_value); // Setting the min value in the widget causes the widget to ignore trying to set a value less than the min value, not setting it to the min value.
+    }
+    
+    if (fabs(new_value-wblock->reltempomax)<0.01) {
+      set_editor_focus();
+      return;
+    }
+    
+    float highest = FindHighestTempoNodeVal(wblock->block) + 1.0f;
+
+    if(highest > new_value)
+      reltempomax->setValue(highest);
+    
+    Undo_RelTempoMax(window,wblock);
+
+    wblock->reltempomax=new_value;
+
+    window->must_redraw = true;
+    
     set_editor_focus();
   }
 };
