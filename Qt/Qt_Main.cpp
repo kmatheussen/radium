@@ -330,9 +330,11 @@ class CalledPeriodically : public QTimer {
   QAbstractButton *msgBox_dontshowagain;
   QSet<QString> dontshow;
 
+  const int interval = 20;
+  
 public:
   CalledPeriodically(){
-    setInterval(20);
+    setInterval(interval);
     start();
     msgBox.setModal(false);
     msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
@@ -373,13 +375,11 @@ protected:
 
     if(num_users_of_keyboard==0){
       {
-#if !USE_OPENGL
         static int num_calls = 0;
-        if(num_calls<1000/20){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+        if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
           root->song->tracker_windows->must_redraw = true;
           num_calls++;
         }
-#endif
       }
       
       {
