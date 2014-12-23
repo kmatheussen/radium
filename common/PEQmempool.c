@@ -60,8 +60,8 @@ struct PEventQueue *GetPEQelement(void){
 	struct PEventQueue *temp=peqroot;
 
 	if(temp==NULL){
-		RError("Warning. Peqmempool empty. (Set it higher, it must be very low now!)\n");
-		pc->isplaying=false;
+          //RError("Warning. Peqmempool empty. (probably playing extremely fast)\n");
+		//pc->isplaying=false;
 		temp=calloc(1,sizeof(struct PEventQueue));
 		if(temp==NULL){
 			RError("Error. Out of memory on a very bad place. Now probably crashing.\n");
