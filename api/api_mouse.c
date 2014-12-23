@@ -1511,7 +1511,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }PLAYER_unlock();
 
   if (ret==-1){
-    RError("createVelocity: Can not create new velocity with the same position as another velocity");
+    //RError("createVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
@@ -1865,7 +1865,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
   }PLAYER_unlock();
 
   if (ret==-1){
-    RError("createFx: Can not create new fx with the same position as another fx");
+    //RError("createFx: Can not create new fx with the same position as another fx");
     return -1;
   }
 
