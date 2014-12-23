@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_wtracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 
 #ifdef _AMIGA
@@ -572,4 +573,8 @@ void setStatusbarText(char* text, int windownum){
     
   }
   
+}
+
+int getWebserverPort(void){
+  return SCHEME_get_webserver_port();
 }

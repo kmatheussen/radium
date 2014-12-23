@@ -131,8 +131,11 @@ bool SCHEME_mouserelease(int button, float x, float y){
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
+int SCHEME_get_webserver_port(void){
+  return s7webserver_get_portnumber(s7webserver);
+}
 
-void SCHEME_start(){
+void SCHEME_start(void){
 
   s7 = s7_init();
   if (s7==NULL)
