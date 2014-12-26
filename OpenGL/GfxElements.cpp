@@ -622,7 +622,7 @@ GE_Context *GE_color_alpha_z(int colornum, float alpha, int z){
 
 GE_Context *GE_textcolor_z(int colornum, int z){
   GE_Rgb rgb = GE_get_rgb(colornum);
-  rgb.a=200;
+  rgb.a=230;
   return GE_z(rgb, z);
 }
 
