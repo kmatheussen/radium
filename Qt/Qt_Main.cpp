@@ -330,10 +330,12 @@ class CalledPeriodically : public QTimer {
   QAbstractButton *msgBox_dontshowagain;
   QSet<QString> dontshow;
 
-  const int interval = 20;
+  const int interval;
   
 public:
-  CalledPeriodically(){
+  CalledPeriodically()
+    : interval(20)
+  {
     setInterval(interval);
     start();
     msgBox.setModal(false);
