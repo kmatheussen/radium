@@ -16,7 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
-#include "gfx_wtracks_proc.h"
 #include "windows_proc.h"
 #include "list_proc.h"
 #include "gfx_wtrackheaders_proc.h"

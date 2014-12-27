@@ -184,7 +184,7 @@ VL_LDFLAGS=$(VL_LIBS)
 
 OBJ1= windows.o window_config.o list.o vector.o hashmap.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
 
-OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_upperleft.o common.o gfx_wtracks.o gfx_wtrackborder.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
+OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o gfx_statusbar.o gfx_upperleft.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
 OBJ3= eventreciever.o reallines.o notestext.o trackreallines.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
@@ -446,12 +446,6 @@ gfx_wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wblocks.c
 
 common.o:  $(BUILD_DEPENDENCIES) $(CD)common.c 
 	$(CC) $(CD)common.c $(OPT)
-
-gfx_wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtracks.c 
-	$(CC) $(CD)gfx_wtracks.c $(OPT)
-
-gfx_wtrackborder.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackborder.c
-	$(CC) $(CD)gfx_wtrackborder.c $(OPT)
 
 gfx_wtext.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtext.c 
 	$(CC) $(CD)gfx_wtext.c $(OPT)

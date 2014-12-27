@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_legalize_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "gfx_wblocks_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "temponodes_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"

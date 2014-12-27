@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
 #include "../common/trackreallines_proc.h"
-#include "../common/gfx_wtracks_proc.h"
 
 #include "Qt_patch_widget.h"
 

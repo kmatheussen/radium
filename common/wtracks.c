@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "trackreallines_proc.h"
 #include "gfx_subtrack_proc.h"
 #include "fxlines_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "windows_proc.h"
 #include "undo_blocks_proc.h"
 #include "clipboard_track_paste_proc.h"

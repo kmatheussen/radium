@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "realline_calc_proc.h"
 #include "velocities_proc.h"
 #include "gfx_subtrack_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "nodelines_proc.h"
 #include "nodeboxes_proc.h"
 #include "nodelines.h"

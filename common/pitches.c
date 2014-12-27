@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "placement_proc.h"
 #include "trackreallines_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "notes_proc.h"
 #include "player_pause_proc.h"
 #include "player_proc.h"
