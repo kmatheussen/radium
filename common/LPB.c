@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "time_proc.h"
 #include "undo_lpbs_proc.h"
-#include "gfx_tempocolor_proc.h"
 #include "player_proc.h"
 
 #include "LPB_proc.h"

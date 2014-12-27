@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_proc.h"
 #include "gfx_subtrack_proc.h"
 #include "gfx_point_proc.h"
-#include "gfx_tempocolor_proc.h"
 
 #include "windows_proc.h"
 

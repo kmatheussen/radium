@@ -5,6 +5,11 @@ gfx_tempotrackheader.o
 gfx_wtrackborder.o 
 gfx_statusbar.o 
 gfx_upperleft.o 
+gfx_tempocolor.o 
+
+gfx_tempocolor.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_tempocolor.c
+	$(CC)  $(CD)gfx_tempocolor.c $(OPT)
+
 
 gfx_upperleft.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_upperleft.c
 	$(CC) $(CD)gfx_upperleft.c $(OPT)
