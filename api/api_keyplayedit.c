@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/notes_proc.h"
-#include "../common/gfx_upperleft_proc.h"
 #include "../common/visual_proc.h"
 
 #include "api_common_proc.h"
@@ -87,16 +86,12 @@ void setKeyAdd(int addnum){
   else
 #endif
     root->keyoct=addnum;
-
-  GFX_UpdateKeyOctave(root->song->tracker_windows,root->song->tracker_windows->wblock);
 }
 
 void incKeyAdd(int incaddnum){
 	root->keyoct+=incaddnum;
 	if(root->keyoct>127 || root->keyoct<0){
 		root->keyoct-=incaddnum;
-	}else{
-		GFX_UpdateKeyOctave(root->song->tracker_windows,root->song->tracker_windows->wblock);
 	}
 }
 

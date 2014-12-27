@@ -27,8 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "reltempo_proc.h"
 #include "undo_temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
-//#include "blackbox_proc.h"
-#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "undo.h"
 
@@ -162,8 +160,6 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 #endif
-
-	GFX_DrawStatusBar(window,wblock);
 }
 
 
@@ -192,8 +188,6 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 #endif
-
-	GFX_DrawStatusBar(window,wblock);
 }
 
 

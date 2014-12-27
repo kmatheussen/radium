@@ -3,6 +3,16 @@
 gfx_wtracks.o 
 gfx_tempotrackheader.o
 gfx_wtrackborder.o 
+gfx_statusbar.o 
+gfx_upperleft.o 
+
+gfx_upperleft.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_upperleft.c
+	$(CC) $(CD)gfx_upperleft.c $(OPT)
+
+
+gfx_statusbar.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_statusbar.c
+	$(CC) $(CD)gfx_statusbar.c $(OPT)
+
 
 gfx_wtrackborder.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackborder.c
 	$(CC) $(CD)gfx_wtrackborder.c $(OPT)

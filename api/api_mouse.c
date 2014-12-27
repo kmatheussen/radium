@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
-#include "../common/gfx_statusbar_proc.h"
 #include "../common/trackreallines_proc.h"
 #include "../common/time_proc.h"
 #include "../common/common_proc.h"

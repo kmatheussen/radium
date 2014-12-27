@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "common_proc.h"
 #include "wtracks_proc.h"
-#include "gfx_upperleft_proc.h"
 #include "wblocks_proc.h"
 #include "pixmap_proc.h"
 #include "scroll_proc.h"
@@ -113,8 +112,6 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		}
 	}
 
-	GFX_UpdateCurrLine(window,wblock);
-
 #if !USE_OPENGL
 	Blt_scrollMark(window);
 
@@ -184,8 +181,6 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 #endif
 		}
 	}
-
-	GFX_UpdateCurrLine(window,wblock);
 
 #if !USE_OPENGL
 	Blt_scrollMark(window);

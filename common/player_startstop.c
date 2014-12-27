@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Ptask2Mtask_proc.h"
 #include "time_proc.h"
 #include "PEQ_clock_proc.h"
-#include "gfx_upperleft_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_calc_proc.h"
@@ -77,10 +76,10 @@ static void PlayStopReally(bool doit){
 
 	pc->end_time=0;
 
+
+#if !USE_OPENGL
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
-	GFX_UpdateQuantitize(window,wblock);
-#if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
 #endif
