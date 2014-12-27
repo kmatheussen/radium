@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <signal.h>
 
 #include <qapplication.h>
+#include <qsplashscreen.h>
 #include <qmainwindow.h>
 #include <qsplitter.h>
 #include <qpalette.h>
@@ -233,7 +234,7 @@ MyApplication::MyApplication(int &argc,char **argv)
   //QApplication *qapplication;
 MyApplication *qapplication;
 QApplication *g_qapplication;
-
+static QSplashScreen *g_splashscreen;
 
 #if 1 //USE_QT_VISUAL
 
@@ -769,7 +770,8 @@ int radium_main(char *arg){
   #endif
 
   //  RWarning("warning!");
-    
+  g_splashscreen->finish(main_window);
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
@@ -861,6 +863,13 @@ int main(int argc, char **argv){
 
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
 
+  QPixmap pixmap(QCoreApplication::applicationDirPath() + QDir::separator() + "radium_256x256x32.png");
+  g_splashscreen = new QSplashScreen(pixmap);
+  g_splashscreen->show();
+  g_splashscreen->raise();
+  g_splashscreen->showMessage("Starting up");
+  QApplication::processEvents();
+  
   printf("1: argv[0]: \"%s\"\n",argv[0]);
 
 #if 0
