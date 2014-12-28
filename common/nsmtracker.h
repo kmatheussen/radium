@@ -712,6 +712,7 @@ struct MinMax{
 	wfxnodes.h
 *********************************************************************/
 
+#if !USE_OPENGL
 typedef struct TrackReallineElements WFXNodes;
 
 /*
@@ -728,6 +729,8 @@ struct WFXNodes{
 /************* Types: */
 #define TRE_FXNODE 0x50
 #define TRE_FXLINE 0x60
+
+#endif
 
 
 /*********************************************************************

@@ -17,8 +17,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 
 #include "vector_proc.h"
+
 
 void VECTOR_reverse(vector_t *v){
   int size=v->num_elements;
@@ -85,7 +87,7 @@ void VECTOR_remove(vector_t *v, const void *element){
   VECTOR_delete(v,pos);
 }
 
-vector_t *VECTOR_list1_to_vector(struct ListHeader1 *list){
+vector_t *VECTOR_list1_to_vector(const struct ListHeader1 *list){
   vector_t *v = talloc(sizeof(vector_t));
   while(list!=NULL){
     VECTOR_push_back(v,list);
@@ -94,6 +96,117 @@ vector_t *VECTOR_list1_to_vector(struct ListHeader1 *list){
   return v;
 }
 
-vector_t *VECTOR_list3_to_vector(struct ListHeader3 *list){
-  return VECTOR_list1_to_vector((struct ListHeader1*)list);
+vector_t *VECTOR_list3_to_vector(const struct ListHeader3 *list){
+  return VECTOR_list1_to_vector((const struct ListHeader1*)list);
 }
+
+void VECTOR_insert_list3(vector_t *v, const struct ListHeader3 *element){
+  const Place *p = &element->p;
+  int i;
+
+  for(i=0 ; i<v->num_elements ; i++){
+    struct ListHeader3 *l3 = (struct ListHeader3*)v->elements[i];
+    if (PlaceLessThan(p, &l3->p)) {
+      VECTOR_insert(v, element, i);
+      return;
+    }
+  }
+
+  VECTOR_push_back(v, element);
+}
+
+
+#ifdef TEST_VECTOR
+
+#include <stdarg.h>
+#include <assert.h>
+
+void EndProgram(void){
+  printf("ENDPROGRAM called\n");
+}
+
+void RError(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  fprintf(stderr,"error: %s\n",message);
+}
+
+#define TESTCODE(MAKE,GET) {                    \
+  vector_t v = {0};                             \
+                                                \
+  VECTOR_insert(&v, MAKE(0), 0);                \
+  printf("s1: %d %d\n",v.num_elements,GET(0));  \
+                                                \
+  VECTOR_insert(&v, MAKE(1), 1);                \
+  printf("s2: %d %d\n",v.num_elements,GET(1));  \
+                                                \
+  VECTOR_insert(&v, MAKE(3), 2);                \
+  printf("s3: %d %d\n",v.num_elements,GET(2));  \
+                                                \
+  VECTOR_insert(&v, MAKE(2), 2);                        \
+  printf("s4: %d %p\n",v.num_elements,v.elements[3]);           \
+  printf("s4: %d %d,%d\n",v.num_elements, GET(2), GET(3));      \
+                                                                \
+  VECTOR_insert(&v, MAKE(-1), 0);                               \
+  printf("s5: %d %d\n",v.num_elements, GET(0));                 \
+                                                                \
+  assert(v.num_elements==5);                                    \
+                                                                \
+  assert(GET(0)==-1);                                           \
+  assert(GET(1)==0);                                            \
+  printf("2: %d\n",GET(2));                                     \
+  printf("3p: %p\n",v.elements[3]);                             \
+  printf("3: %d\n",GET(3));                                     \
+  assert(GET(2)==1);                                            \
+  assert(GET(3)==2);                                            \
+  assert(GET(4)==3);                                            \
+  }                                                             
+
+
+
+typedef struct {
+  int i;
+} I;
+
+static I *i(int i){
+  I *ret = talloc(sizeof(I));
+  ret->i=i;
+  return ret;
+}
+
+
+#define MAKE_I(n) i(n)
+#define GET_I(n) ((I*)v.elements[n])->i
+
+static void test_insert(void) TESTCODE(MAKE_I, GET_I)
+
+
+struct ListHeader3 *l3(int i){
+  struct ListHeader3 *ret = talloc(sizeof(struct ListHeader3));
+  ret->p.line = i;
+  return ret;
+}
+
+#define MAKE_L3(n) l3(n)
+#define GET_L3(n) ((struct ListHeader3*)v.elements[n])->p.line
+
+static void test_insert_list3(void) TESTCODE(MAKE_L3, GET_L3)
+
+
+int main(void){
+
+  test_insert();
+  test_insert_list3();
+
+  printf("Success, no errors\n");
+
+  return 0;
+}
+
+#endif // TEST_VECTOR
