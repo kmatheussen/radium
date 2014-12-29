@@ -936,6 +936,21 @@ int main(int argc, char **argv){
     QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "DejaVuSansMono-Bold.ttf");
     QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Lato-Bla.ttf");
 
+    /*
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Black.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Light.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Medium.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Regular.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Thin.ttf");
+
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "UbuntuMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "UbuntuMono-Regular.ttf");
+    */
+    
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Cousine-Bold.ttf");
+    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Cousine-Regular.ttf");
+
     //QApplication::setFont(QFont("Lohit-Tamil",8));
     //QApplication::setFont(QFont("Nimbus Sans L",8));
     //QApplication::setFont(QFont("Liberation Sans L",8));

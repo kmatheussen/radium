@@ -1,6 +1,6 @@
 settings_version = 0.72 # dont change this one
 
-font = DejaVu Sans Mono,12,-1,5,75,0,0,0,0,0
+font = Cousine,12,-1,5,75,0,0,0,0,0
 font_style = Bold
 
 system_font_size = 10
