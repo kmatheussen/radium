@@ -87,7 +87,9 @@ static inline void *VECTOR_get(const vector_t *v, int num, const char *type){
 }
                          
 extern LANGSPEC void VECTOR_reverse(vector_t *v);
+extern LANGSPEC vector_t *VECTOR_move(vector_t *from);
 extern LANGSPEC vector_t *VECTOR_copy(vector_t *from);
+extern LANGSPEC void VECTOR_copy_elements(vector_t *from, int from_pos, int num_elements_to_copy, vector_t *to);
 extern LANGSPEC void VECTOR_clean(vector_t *v);
 extern LANGSPEC vector_t *VECTOR_append(vector_t *v1, vector_t *v2);
 extern LANGSPEC void VECTOR_delete(vector_t *v, int pos);
@@ -97,6 +99,7 @@ extern LANGSPEC void VECTOR_remove(vector_t *v, const void *element);
 extern LANGSPEC vector_t *VECTOR_list1_to_vector(const struct ListHeader1 *list);
 extern LANGSPEC vector_t *VECTOR_list3_to_vector(const struct ListHeader3 *list);
 extern LANGSPEC void VECTOR_insert_list3(vector_t *v, const struct ListHeader3 *element);
+extern LANGSPEC void VECTOR_insert_place(vector_t *v, const Place *p);
 
 #ifdef __cplusplus
 #define VECTOR_FOR_EACH(type,varname,vector) {                          \

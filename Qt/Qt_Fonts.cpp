@@ -45,10 +45,10 @@ void setFontValues(struct Tracker_Windows *tvisual){
 
   QFontMetrics fm(font);
 
-  double width3 = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
-  tvisual->fontwidth=(int)(width3/3.0) + 1;
-  tvisual->org_fontheight=fm.height();
-  tvisual->fontheight=fm.height();
+  double width3           = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
+  tvisual->fontwidth      = (int)(width3/3.0) + 1;
+  tvisual->org_fontheight = fm.height() - 1;
+  tvisual->fontheight     = tvisual->org_fontheight;
 }
 
 void updateAllFonts(QWidget *widget){

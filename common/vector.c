@@ -32,6 +32,18 @@ void VECTOR_reverse(vector_t *v){
   }
 }
 
+vector_t *VECTOR_move(vector_t *from){
+  vector_t *to = talloc(sizeof(vector_t));
+
+  to->elements               = from->elements;
+  to->num_elements_allocated = from->num_elements_allocated;
+  to->num_elements           = from->num_elements;
+
+  VECTOR_clean(from);
+
+  return to;
+}
+
 vector_t *VECTOR_copy(vector_t *from){
   vector_t *to=talloc(sizeof(vector_t));
 
@@ -44,9 +56,24 @@ vector_t *VECTOR_copy(vector_t *from){
   return to;
 }
 
+void VECTOR_copy_elements(vector_t *from, int from_pos, int num_elements_to_copy, vector_t *to){
+  R_ASSERT(to->num_elements==0); // A more advanced VECTOR_copy_elements function is not needed yet.
+  
+  R_ASSERT(from_pos + num_elements_to_copy <= from->num_elements);
+
+  if (to->num_elements_allocated < num_elements_to_copy) {
+    to->elements = talloc(num_elements_to_copy * sizeof(void*));
+    to->num_elements_allocated = num_elements_to_copy;
+  }
+
+  to->num_elements = num_elements_to_copy;
+
+  memcpy(to->elements, &from->elements[from_pos], sizeof(void*)*num_elements_to_copy);
+}
+
 void VECTOR_clean(vector_t *v){
   v->num_elements = 0;
-  memset(v->elements,0,v->num_elements*sizeof(void*));
+  memset(v->elements,0,v->num_elements*sizeof(void*)); // cleaned since we use a GC
 }
 
 vector_t *VECTOR_append(vector_t *v1, vector_t *v2){
@@ -104,7 +131,7 @@ void VECTOR_insert_list3(vector_t *v, const struct ListHeader3 *element){
   const Place *p = &element->p;
   int i;
 
-  for(i=0 ; i<v->num_elements ; i++){
+  for(i=0 ; i<v->num_elements ; i++){ // could be optimized by using binary search, but binary search is hard to get correct. That speedup is not needed for now anyway.
     struct ListHeader3 *l3 = (struct ListHeader3*)v->elements[i];
     if (PlaceLessThan(p, &l3->p)) {
       VECTOR_insert(v, element, i);
@@ -113,6 +140,20 @@ void VECTOR_insert_list3(vector_t *v, const struct ListHeader3 *element){
   }
 
   VECTOR_push_back(v, element);
+}
+
+void VECTOR_insert_place(vector_t *v, const Place *p){
+  int i;
+
+  for(i=0 ; i<v->num_elements ; i++){ // could be optimized by using binary search, but binary search is hard to get correct. That speedup is not needed for now anyway.
+    Place *element = v->elements[i];
+    if (PlaceLessThan(p, element)) {
+      VECTOR_insert(v, p, i);
+      return;
+    }
+  }
+
+  VECTOR_push_back(v, p);
 }
 
 

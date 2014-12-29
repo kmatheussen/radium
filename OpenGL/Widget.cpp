@@ -498,7 +498,8 @@ public:
       if (draw()==false) {
         if (sleep_when_not_painting) {
           usleep(1000000 / 60);
-        }
+        } else
+          swap();
       } else {
         swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
       }

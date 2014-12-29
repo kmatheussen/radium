@@ -255,6 +255,7 @@ struct _GE_Context : public vl::Object{
 #endif
 
   TextBitmaps textbitmaps;
+  TextBitmaps textbitmaps_halfsize;
 
   union Color{
     struct{
@@ -282,7 +283,9 @@ public:
   }
   
   _GE_Context(const Color _color, int z)
-    : color(_color)
+    : textbitmaps(false)
+    , textbitmaps_halfsize(true)
+    , color(_color)
     , _z(z)
     , gradient(NULL)
     , is_gradient(false)
@@ -499,10 +502,17 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
         vl::ref<GE_Context> c = iterator->second;
-        
-        if(c->textbitmaps.points.size()>0){
+
+        if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
+           
           setColorBegin(vg, c);
-          c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+        
+          if(c->textbitmaps.points.size() > 0)
+            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+        
+          if(c->textbitmaps_halfsize.points.size() > 0)
+            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+
           setColorEnd(vg, c);
         }
       }
@@ -705,8 +715,12 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
   c->lines[key].push_back(vl::dvec2(x2,c->y(y2)));
 }
 
-void GE_text(GE_Context *c, const char *text, float x, float y){
-  c->textbitmaps.addCharBoxes(text, x, c->y(y));
+void GE_text(GE_Context *c, const char *text, int x, int y){
+  c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+}
+
+void GE_text_halfsize(GE_Context *c, const char *text, int x, int y){
+  c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
 }
 
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){

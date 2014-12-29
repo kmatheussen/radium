@@ -148,7 +148,8 @@ void GE_set_font(const QFont &font);
 #endif
 
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
-void GE_text(GE_Context *c, const char *text, float x, float y);
+void GE_text(GE_Context *c, const char *text, int x, int y);
+void GE_text_halfsize(GE_Context *c, const char *text, int x, int y);
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2);
 void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width);

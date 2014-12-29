@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QGLWidget>
 #include <QMutex>
+#include <QSet>
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_error_proc.h"
@@ -47,16 +48,21 @@ struct ImageHolder {
   int width;
 };
 
-
 static QFont g_qfont;
 static QHash<char,ImageHolder> *g_imageholders; // It's a pointer to avoid auto-desctruction at program exit.
 
+static QFont g_qfont_halfsize;
+static QHash<char,ImageHolder> *g_imageholders_halfsize; // It's a pointer to avoid auto-desctruction at program exit.
+
 static QHash<QString, QHash<char,ImageHolder>* > g_imageholderss;
+
+static QSet<QString> g_imageholder_fonts;
+   
 
 static MyMutex image_mutex;
 
-static inline void GE_add_imageholder(const char *chars){
-  QFontMetrics metrics(g_qfont);
+static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imageholders, const char *chars){
+  QFontMetrics metrics(qfont);
 
   int real_width = metrics.width("#");
   int height = metrics.height();
@@ -67,7 +73,7 @@ static inline void GE_add_imageholder(const char *chars){
   QPainter p(&qt_image);
   p.setPen(QColor(255, 255, 255, 255));
 
-  p.setFont(g_qfont);
+  p.setFont(qfont);
 
   for(int i=0;i<(int)strlen(chars);i++){
     char c = chars[i];
@@ -97,41 +103,81 @@ static inline void GE_add_imageholder(const char *chars){
     holder.image = vl_image;
     holder.width = real_width;
     
-    g_imageholders->insert(c, holder);
+    imageholders->insert(c, holder);
     //printf("Added '%c' (%d) to g_imageholders. image: %p\n",c,c,vl_image);
   }
 }
   
-static const QString qfont_key(const QFont &font){ // From the qt documentation, it could seem like using a qfont as key should work, but I wasn't able to make it compile.
+static const QString qfont_key(const QFont &font){ // From the qt documentation, it seems like it should work using a qfont as key, but I wasn't able to make it compile then.
   return font.toString()+"#"+font.styleName().ascii();
 }
 
-static inline void GE_set_new_font(const QFont &font){
-  g_qfont = font;
-  
+static inline QHash<char,ImageHolder> *add_new_font(const QFont &font){
   const char *chars="CDEFGABcdefgabhlo0123456789.,-MULR# m";
   //const char *chars="";
 
   const QString key = qfont_key(font);
-
-  if (g_imageholderss.contains(key))
-    g_imageholders = g_imageholderss[key];
-  else {
-    g_imageholders = new QHash<char,ImageHolder>;
-    g_imageholderss[key] = g_imageholders;
+  if (!g_imageholderss.contains(key)) {
+    QHash<char,ImageHolder> *imageholders = new QHash<char,ImageHolder>;
+    g_imageholderss[key] = imageholders;
+    GE_add_imageholder(font, imageholders, chars);
   }
 
-  GE_add_imageholder(chars);
+  return g_imageholderss[key];
+}
+
+static void cache_font_family(const QFont &font){
+  if (g_imageholder_fonts.contains(font.family()))
+    return;
+  
+  for(int size=3 ; size < 20 ; size++) {
+    QFont font2(font);
+    font2.setPointSize(size);
+    add_new_font(font2);
+  }
+
+  g_imageholder_fonts.insert(font.family());
+}
+
+static inline void set_halfsize_font(void){
+  int full_size = g_qfont.pointSize();
+  int half_size = full_size / 2;
+
+  for(int size = half_size ; size>1 ; size++){
+    QFont font2(g_qfont);
+    font2.setPointSize(size);
+    if (font2.pointSize() != full_size) {
+      g_qfont_halfsize = font2;
+      g_imageholders_halfsize = add_new_font(font2);
+      return;
+    }
+  }
+  
+  g_qfont_halfsize = g_qfont;
+  g_imageholders_halfsize = g_imageholders;
+}
+ 
+static inline void GE_set_new_font(const QFont &font){
+  g_qfont = font;
+
+  g_imageholders = add_new_font(font);
+  R_ASSERT(g_imageholders != NULL);
+
+  cache_font_family(font);
+
+  set_halfsize_font();
 }
 
 
 struct TextBitmaps{
   QHash<char, std::vector<vl::dvec2> > points;
 
+  QFont qfont;
   QHash<char,ImageHolder> *imageholders;
 
-  TextBitmaps()                 
-    : imageholders(g_imageholders)
+  TextBitmaps(bool halfsize)
+    : qfont(halfsize ? g_qfont_halfsize : g_qfont)
+    , imageholders(halfsize ? g_imageholders_halfsize : g_imageholders)
   {}
 
   // called from Main thread (not used)
@@ -153,7 +199,7 @@ struct TextBitmaps{
       char chars[2];
       chars[0] = c;
       chars[1] = 0;
-      GE_add_imageholder(chars);
+      GE_add_imageholder(qfont, imageholders, chars);
     }
 
     ImageHolder holder = imageholders->value(c);

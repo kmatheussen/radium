@@ -121,7 +121,7 @@ enum{
 
 #ifdef RELEASE
   #define R_ASSERT(a)
-  #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) return // is this right? Shouldn't it just do nothing?
+  #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) return
 #else
   #define R_ASSERT(a) if(!(a))RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__)
   #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return; }while(0)
@@ -680,6 +680,20 @@ enum{
   NOTE_STP,
   NOTE_MUR
 };
+
+
+
+/*********************************************************************
+	trackreallines2.h
+*********************************************************************/
+
+typedef struct{
+  Place p;
+  const struct Notes *note;
+  const struct Pitches *pitch;
+  const struct Stops *stop;
+} TrackRealline2;
+
 
 
 /*********************************************************************

@@ -48,7 +48,7 @@ int GetCursorY1Pos(const struct Tracker_Windows *window,const struct WBlocks *wb
     Returns the bot Y coordinate for the cursor.
 *************************************************************************/
 int GetCursorY2Pos(const struct Tracker_Windows *window,const struct WBlocks *wblock){
-  return GetCursorY1Pos(window,wblock)+window->fontheight-1;
+  return GetCursorY1Pos(window,wblock)+window->fontheight+2;
 }
 
 
