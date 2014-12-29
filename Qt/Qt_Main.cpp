@@ -936,36 +936,21 @@ int main(int argc, char **argv){
   qapplication->setWindowIcon(QIcon(QString(OS_get_program_path()) + OS_get_directory_separator() + "radium_256x256x32.png"));
 
   {
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "LiberationMono-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "VeraMono.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "VeraMoBd.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "NimbusSansL.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "DejaVuSansCondensed-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "DejaVuSansMono-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Lato-Bla.ttf");
-
-    /*
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Black.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Light.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Medium.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Regular.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Roboto-Thin.ttf");
-
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "UbuntuMono-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "UbuntuMono-Regular.ttf");
-    */
+    // Add fonts in the "fonts" directory
+    {
+      QDir dir(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts");
+      QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+      for (int i=0;i<list.count();i++){
+        QFileInfo file_info = list[i];
+        
+        QString file_path = file_info.filePath();
+        if(file_info.suffix()=="ttf"){
+          //printf("file_path: %s\n",file_path.ascii());
+          QFontDatabase::addApplicationFont(file_path);
+        }
+      }
+    }
     
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Cousine-Bold.ttf");
-    QFontDatabase::addApplicationFont(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts" + OS_get_directory_separator() + "Cousine-Regular.ttf");
-
-    //QApplication::setFont(QFont("Lohit-Tamil",8));
-    //QApplication::setFont(QFont("Nimbus Sans L",8));
-    //QApplication::setFont(QFont("Liberation Sans L",8));
-
-    //printf("System font name: \"%s\". Size: %d\n",QApplication::font().family().ascii(),QApplication::font().pointSize());
-
-
     const char *fontstring = SETTINGS_read_string("system_font",NULL);
     if(fontstring!=NULL){
       QFont font;
