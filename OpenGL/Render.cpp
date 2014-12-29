@@ -744,12 +744,6 @@ static void paint_tr2(TrackRealline2 *tr2, char **NotesTexts, bool isranged, int
 static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **NotesTexts, bool isranged, int y1, int y2){
   int num_elements = tr->num_elements;
 
-  if (num_elements>4) {
-    GE_Context *foreground = GE_textcolor(get_colnum(NULL, isranged));
-    GE_text(foreground, NotesTexts[NOTE_MUL], wtrack->notearea.x, y1);
-    return;
-  }
-
   int x1 = wtrack->notearea.x;
   int y_middle = (y1+y2)/2;
 
