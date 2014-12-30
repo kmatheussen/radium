@@ -3,7 +3,6 @@
 #include "nsmtracker.h"
 #include "undo.h"
 #include "OS_Player_proc.h"
-#include "trackreallines_proc.h"
 
 #include "undo_trackheader_proc.h"
 
@@ -75,9 +74,6 @@ void *Undo_Do_TrackHeader(
 	u_th->pan=pan;
 	u_th->panonoff=panonoff;
 	u_th->volumeonoff=volumeonoff;
-
-        if(wtrack->track->patch!=NULL)
-          TRACKREALLINES_update_peak_tracks(window,wtrack->track->patch);
 
 	return u_th;
 }

@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "fxlines_proc.h"
-#include "trackreallines_proc.h"
 #include "cursor_proc.h"
 #include "undo_block_insertdelete_proc.h"
 #include "playerclass.h"
@@ -292,7 +291,6 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 		UpdateWTempoNodes(window,wblock);
 		UpdateAllFXNodeLines(window,wblock);
 #endif              
-		UpdateAllTrackReallines(window,wblock);
 		wblock->isgfxdatahere=true;
 	}
 

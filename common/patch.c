@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_Player_proc.h"
 #include "scheduler_proc.h"
-#include "trackreallines_proc.h"
 
 #include "undo.h"
 #include "undo_tracks_proc.h"
@@ -176,7 +175,6 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
       wtrack->track->patch = patch;
     }
 
-    UpdateTrackReallines(window,wblock,wtrack);
 #if !USE_OPENGL
     UpdateFXNodeLines(window,wblock,wtrack);
 #endif
@@ -201,7 +199,6 @@ static void remove_patch_from_song(struct Patch *patch){
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
         handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
         track->patch = NULL;
-        UpdateTrackReallines(window,wblock,wtrack);
 #if !USE_OPENGL
         UpdateFXNodeLines(window,wblock,wtrack);
 #endif
@@ -316,7 +313,6 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
             track->patch=patch;
           }PLAYER_unlock();
 
-          UpdateTrackReallines(window,window->wblock,wtrack);
 #if !USE_OPENGL
           UpdateFXNodeLines(window,window->wblock,wtrack);
 #endif

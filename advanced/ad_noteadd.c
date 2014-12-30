@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/notes_legalize_proc.h"
 #include "../common/windows_proc.h"
-#include "../common/trackreallines_proc.h"
 
 
 #include "ad_noteadd_proc.h"
@@ -203,6 +202,7 @@ void AD_installNoteAdds_track_do(
 		nats_do->startplace
 	);
 
+        #if 0
 	if(dochangeblockproperties==true){
 		UpdateSomeTrackReallines(window,wblock,wtrack->l.num,wtrack->l.num);
 		DrawUpTrackerWindow(window);
@@ -214,6 +214,7 @@ void AD_installNoteAdds_track_do(
 			wtrack->l.num
 		);
 	}
+        #endif
 }
 
 
@@ -302,7 +303,7 @@ void AD_insertNoteAdds_block_do(
 			nab->nats_do[lokke]->startplace
 		);
 	}
-
+#if 0
 	if(dochangeblockproperties==true){
 		UpdateSomeTrackReallines(window,wblock,0,maxtrack);
 		DrawUpTrackerWindow(window);
@@ -314,7 +315,7 @@ void AD_insertNoteAdds_block_do(
 			maxtrack
 		);
 	}
-
+#endif
 }
 
 

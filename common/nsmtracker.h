@@ -259,6 +259,13 @@ enum{
 	notes.h
 *********************************************************************/
 
+#define NOTE_END_NORMAL 128
+enum{
+  NOTE_MUL=NOTE_END_NORMAL,
+  NOTE_STP,
+  NOTE_MUR
+};
+
 
 struct Notes{
 	struct ListHeader3 l;
@@ -625,65 +632,16 @@ typedef struct{
 }WPoint;
 
 
+
+
 /*********************************************************************
-	trackreallines.h
+	peaks.h
 *********************************************************************/
 
 #define NUM_PEAKS_PER_LINE 8
 typedef struct{
   float x,y;
 } APoint;
-
-#define TRE_Max INT16_MAX
-struct TrackReallineElements{
-  struct TrackReallineElements *next;
-
-  struct Notes *note;
-
-  int type;
-  int subtype;
-  //  float y1,y2;
-  //  float x1,x2;
-  void *pointer;
-
-#if !USE_OPENGL
-  APoint *velocity_polygon;
-
-  int num_peaks;
-  APoint *peaks[2];
-#endif
-};
-
-/************* Types: */
-enum{
-  TRE_THISNOTELINES,
-  TRE_THISPITCHLINES,
-  TRE_VELLINECENTS,
-  TRE_VELLINENODE,
-  TRE_VELLINE,
-  TRE_VELLINESTART,
-  TRE_VELLINEEND,
-  TRE_STOPLINE,
-  TRE_REALSTARTSTOP
-};
-
-/* Subtype for 0-0x40 is
-   the same as subtrack for the note.
-*/
-
-
-struct TrackRealline{
-  struct Notes *dasnote;
-  struct Pitches *daspitch;
-  float note;										/* Is 0 if no note. */
-  struct TrackReallineElements *trackreallineelements;
-};
-#define NOTE_END_NORMAL 128
-enum{
-  NOTE_MUL=NOTE_END_NORMAL,
-  NOTE_STP,
-  NOTE_MUR
-};
 
 
 
@@ -726,29 +684,6 @@ struct MinMax{
   float max;
 };
 
-/*********************************************************************
-	wfxnodes.h
-*********************************************************************/
-
-#if !USE_OPENGL
-typedef struct TrackReallineElements WFXNodes;
-
-/*
-struct WFXNodes{
-	struct WFXNodes *next;
-   SDB
-	unsigned char type;
-	unsigned char subtype;						// not used.
-	unsigned char y1,y2;
-	unsigned short x1,x2;
-	void *pointer;									// Only referenced.
-};
-*/
-/************* Types: */
-#define TRE_FXNODE 0x50
-#define TRE_FXLINE 0x60
-
-#endif
 
 
 /*********************************************************************
@@ -788,7 +723,6 @@ struct WTracks{
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 
-	struct TrackRealline *trackreallines;
 #if !USE_OPENGL
 	WFXNodes **wfxnodes;
         WPitches **wpitches; // Can be removed, plus all usage of it. Not used in OpenGL.
@@ -870,21 +804,6 @@ struct TempoNodes{
 };
 #define NextTempoNode(a) ((struct TempoNodes *)((a)->l.next))
 
-typedef struct TrackReallineElements WTempoNodes;
-/*
-struct WTempoNodes{
-	struct WTempoNodes *next;
-	unsigned char type;
-	unsigned char subtype;			// Currently not used.
-	unsigned char y1,y2;
-	unsigned short x1,x2;
-	
-	void *temponode;	// Only referenced.
-};
-*/
-/* Types */
-#define TEMPONODE_NODE 0
-#define TEMPONODE_LINE 1
 
 
 /*********************************************************************
@@ -1033,7 +952,6 @@ struct WBlocks{
 	int right_subtrack;
 
 	struct WTempos *wtempos;
-	WTempoNodes **wtemponodes;        
 	struct WLPBs *wlpbs;
 	float reltempomax;
 

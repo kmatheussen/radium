@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
-#include "trackreallines_proc.h"
 #include "reallines_insert_proc.h"
 #include "time_proc.h"
 #include "undo_tempos_proc.h"
@@ -204,7 +203,6 @@ void InsertRealLines_CurrPos(
 			}
 			InsertPlace_notes(block,wblock->wtrack->track,place,toplace);
 			InsertPlace_stops(block,wblock->wtrack->track,place,toplace);
-			UpdateTrackReallines(window,wblock,wblock->wtrack);
 #if !USE_OPENGL
 			ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 			UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);

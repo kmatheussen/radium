@@ -183,11 +183,6 @@ void StopAllNotesAtPlace(
 	struct Tracks *track=wtrack->track;
 	struct Notes *temp;
 
-/*
-	if(wtrack->trackreallines[wblock->curr_realline].trackreallineelements==NULL)
-		return;
-*/
-
 	temp=track->notes;
 
 	while(temp!=NULL && PlaceLessThan(&temp->l.p,placement)){

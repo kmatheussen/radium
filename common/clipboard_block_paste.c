@@ -98,7 +98,6 @@ void CB_PasteBlock(
 	UpdateRealLines(window,towblock);
 
 	towblock->wtempos=NULL;
-	towblock->wtemponodes=NULL;
 	towblock->wlpbs=NULL;
 
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
@@ -120,7 +119,6 @@ void CB_PasteBlock(
 		}
 
 		CB_PasteTrack(towblock,wtrack,towtrack);
-		towtrack->trackreallines=NULL;
 		towtrack=NextWTrack(towtrack);
 		wtrack=NextWTrack(wtrack);
 	}

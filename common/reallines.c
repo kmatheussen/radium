@@ -38,7 +38,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "localzooms_proc.h"
-#include "trackreallines_proc.h"
 #include "windows_proc.h"
 #include "tempos_proc.h"
 #include "LPB_proc.h"
@@ -70,7 +69,6 @@ void UpdateReallinesDependens(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){  
-	UpdateAllTrackReallines(window,wblock);
 	UpdateWTempos(window,wblock);
 	UpdateWLPBs(window,wblock);
 #if !USE_OPENGL

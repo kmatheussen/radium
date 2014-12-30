@@ -163,8 +163,12 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 }
 
 
+// TODO/FIX: Implement
 void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
-	struct WBlocks *wblock=window->wblock;
+
+#if !USE_OPENGL
+
+  struct WBlocks *wblock=window->wblock;
 	WTempoNodes *wtemponode;
 	int realline=wblock->curr_realline;
 
@@ -182,7 +186,6 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 
 	LegalizeTempoNodes(wblock->block);
 
-#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 
 	DrawUpWTempoNodes(window,wblock);

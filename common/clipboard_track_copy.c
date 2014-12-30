@@ -56,7 +56,6 @@ struct WTracks *CB_CopyTrack(
 	memcpy(totrack,track,sizeof(struct Tracks));
 
         // Null out some data we don't need so it can be GC-ed.
-        towtrack->trackreallines = NULL;
 #if !USE_OPENGL
         towtrack->wfxnodes = NULL;
         towtrack->wpitches = NULL;

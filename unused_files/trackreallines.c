@@ -16,6 +16,59 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+/*********************************************************************
+	trackreallines.h
+*********************************************************************/
+
+#define TRE_Max INT16_MAX
+struct TrackReallineElements{
+  struct TrackReallineElements *next;
+
+  struct Notes *note;
+
+  int type;
+  int subtype;
+  //  float y1,y2;
+  //  float x1,x2;
+  void *pointer;
+
+#if !USE_OPENGL
+  APoint *velocity_polygon;
+
+  int num_peaks;
+  APoint *peaks[2];
+#endif
+};
+
+/************* Types: */
+enum{
+  TRE_THISNOTELINES,
+  TRE_THISPITCHLINES,
+  TRE_VELLINECENTS,
+  TRE_VELLINENODE,
+  TRE_VELLINE,
+  TRE_VELLINESTART,
+  TRE_VELLINEEND,
+  TRE_STOPLINE,
+  TRE_REALSTARTSTOP
+};
+
+/* Subtype for 0-0x40 is
+   the same as subtrack for the note.
+*/
+
+
+struct TrackRealline{
+  struct Notes *dasnote;
+  struct Pitches *daspitch;
+  float note;										/* Is 0 if no note. */
+  struct TrackReallineElements *trackreallineelements;
+};
+
+
+
+
+
 
 /*******************************************************************
 
@@ -1073,6 +1126,8 @@ void UpdateAllTrackReallines(
 	}
 }
 
+#if !USE_OPENGL
+
 void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Patch *patch){
   struct WBlocks *wblock=window->wblocks;
 
@@ -1098,7 +1153,6 @@ void TRACKREALLINES_update_peak_tracks(struct Tracker_Windows *window, struct Pa
   }
 }
 
-#if !USE_OPENGL
 static bool g_peaks_are_dirty;
 
 void TRACKREALLINES_call_very_often(struct Tracker_Windows *window){

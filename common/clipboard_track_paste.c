@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "placement_proc.h"
 #include "fxlines_proc.h"
-#include "trackreallines_proc.h"
 #include "windows_proc.h"
 #include "clipboard_tempos_copy_proc.h"
 #include "list_proc.h"
@@ -200,7 +199,6 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 #if !USE_OPENGL
 					UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-					UpdateTrackReallines(window,wblock,wtrack);
 					window->must_redraw = true;
 				}else{
 #if !USE_OPENGL
@@ -217,7 +215,6 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 #if !USE_OPENGL
                                   UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-					UpdateTrackReallines(window,wblock,wtrack);
 					window->must_redraw = true;
 				}else{
 #if !USE_OPENGL

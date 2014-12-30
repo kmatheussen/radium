@@ -7,6 +7,11 @@ gfx_wtrackborder.o
 gfx_statusbar.o 
 gfx_upperleft.o 
 gfx_tempocolor.o 
+trackreallines.o
+
+trackreallines.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines.c
+	$(CC) $(CD)trackreallines.c $(OPT)
+
 
 subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)subtrack.c
 	$(CC) $(CD)subtrack.c $(OPT)

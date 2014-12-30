@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "blocks_proc.h"
 #include "instruments_proc.h"
-#include "trackreallines_proc.h"
 #include "blocklist_proc.h"
 
 #include "song_proc.h"

@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "visual_proc.h"
 #include "sliders_proc.h"
-#include "trackreallines_proc.h"
 #include "pixmap_proc.h"
 #include "blts_proc.h"
 #include "gfx_op_queue_proc.h"

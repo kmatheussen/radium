@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "placement_proc.h"
-#include "trackreallines_proc.h"
 #include "notes_proc.h"
 #include "player_pause_proc.h"
 #include "player_proc.h"
@@ -142,7 +141,6 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   if(pos==-1)
     return NULL;
   
-  UpdateTrackReallines(window,wblock,wtrack);
 #if !USE_OPENGL
   ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
   UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);

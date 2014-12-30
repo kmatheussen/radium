@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "undo.h"
 #include "clipboard_range.h"
-#include "trackreallines_proc.h"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_copy_proc.h"
@@ -100,7 +99,6 @@ void *Undo_Do_Range(
 		track->stops=undo_range->stops[lokke];
 		undo_range->notes[lokke]=notetemp;
 		undo_range->stops[lokke]=stoptemp;
-		UpdateTrackReallines(window,wblock,mywtrack);
 	}
 
 	return undo_range;

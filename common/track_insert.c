@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_cut_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "clipboard_track_paste_proc.h"
-#include "trackreallines_proc.h"
 #include "fxlines_proc.h"
 #include "list_proc.h"
 #include "windows_proc.h"
@@ -154,7 +153,6 @@ void InsertTracks_CurrPos(
 
 	SetCursorPosConcrete(window,wblock,0,-1);
 
-	UpdateAllTrackReallines(window,wblock);
 #if !USE_OPENGL
 	UpdateAllFXNodeLines(window,wblock);
 #endif

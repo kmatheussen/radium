@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
-#include "../common/trackreallines_proc.h"
 #include "../common/time_proc.h"
 #include "../common/common_proc.h"
 #include "../common/temponodes_proc.h"
@@ -756,8 +755,6 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
 
   UpdateSTimes(wblock->block);    
 
-  UpdateAllTrackReallines(window,wblock); // sure?
-
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
 
   window->must_redraw = true;
@@ -839,8 +836,6 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   //GFX_DrawStatusBar(window,wblock);
 
   UpdateSTimes(block);
-
-  UpdateAllTrackReallines(window,wblock); // sure?
 
   window->must_redraw = true;
 
@@ -954,7 +949,6 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   return;
   
  gotit:
-  UpdateTrackReallines(window,wblock,wtrack);
   window->must_redraw = true;
 }
 
@@ -1254,7 +1248,6 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
       MoveNote(block, track, note, PlaceCreate2(floatplace));
   }
 
-  UpdateTrackReallines(window,wblock,wtrack);
   window->must_redraw = true;
 }
 
@@ -1275,7 +1268,6 @@ static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), false);
 
-  UpdateTrackReallines(window,wblock,wtrack);
   window->must_redraw = true;
   
   return getPitchNum(wtrack->track, note, NULL);
@@ -1540,7 +1532,6 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0) {
       MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
-      UpdateTrackReallines(window,wblock,wtrack);
     }
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
@@ -1598,7 +1589,6 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
     PLAYER_lock();{
       RemoveNote(block, track, note);
     }PLAYER_unlock();
-    UpdateTrackReallines(window,wblock,wtrack);
 
   } else if (velocitynum==nodes->num_elements-1) {
     struct Velocities *last = (struct Velocities*)ListLast3(&note->velocities->l);
