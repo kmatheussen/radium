@@ -15,13 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifdef TRACKER_INCLUDE
-extern LANGSPEC void DrawUpTrackerWindow(struct Tracker_Windows *window);
-extern LANGSPEC void UpdateTrackerWindow(struct Tracker_Windows *window);
-#endif
-
-#ifndef TRACKER_INCLUDE
-
 extern LANGSPEC void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window);
 
 extern LANGSPEC void UpdateTrackerWindow(struct Tracker_Windows *window);
@@ -36,4 +29,4 @@ extern LANGSPEC void CloseAllTrackerWindows(void);
 
 extern LANGSPEC void checkIfWBlocksAreDirty(void);
 
-#endif
+extern LANGSPEC void ValidateCursorPos(struct Tracker_Windows *window);

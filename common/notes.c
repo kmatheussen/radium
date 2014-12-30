@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "pitches_proc.h"
 #include "trackreallines2_proc.h"
 #include "OS_Player_proc.h"
+#include "windows_proc.h"
 
 #include "notes_proc.h"
 
@@ -76,21 +77,6 @@ void SetNoteSubtrackAttributes(struct Tracks *track){
     
     end_places[subtrack] = &note->end;
     note = NextNote(note);
-  }
-
-  // move cursor in case it is placed on a non-existing subtrack.
-  if (root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    struct WBlocks *wblock = window->wblock;
-    if (wblock!=NULL){
-      struct WTracks *wtrack = wblock->wtrack;
-      if (wtrack!=NULL && wtrack->track!=NULL){
-        if (wtrack->track==track){
-          if (window->curr_track_sub >= track->num_subtracks)
-            window->curr_track_sub = track->num_subtracks - 1;
-        }
-      }
-    }
   }
 }
 
@@ -436,6 +422,8 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
       ListRemoveElement3(&track->notes,&tr2->note->l);
       LengthenNotesTo(wblock->block,track,&realline->l.p);
     }PLAYER_unlock();
+    SetNoteSubtrackAttributes(wtrack->track);
+    ValidateCursorPos(window);
     if (tr->num_elements==1)
       MaybeScrollEditorDown(window);
     return;
@@ -520,6 +508,8 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 
 	if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
 		RemoveNote(wblock->block,wtrack->track,note);
+                SetNoteSubtrackAttributes(wtrack->track);
+                ValidateCursorPos(window);                        
 	}else{
 		CutListAt(&note->velocities,&realline->l.p);
 		PlaceCopy(&note->end,&realline->l.p);
