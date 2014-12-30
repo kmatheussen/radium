@@ -218,21 +218,24 @@ void ScrollEditorNextNote(struct Tracker_Windows *window){
 void ScrollEditorPrevNote(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
-	struct TrackRealline *trackreallines=wtrack->trackreallines;
+        vector_t *trs = TRS_get(wblock, wtrack);
+
 	int curr_realline=wblock->curr_realline;
-	int realline=curr_realline-1;
 
-	if(realline<=0){
-		ScrollEditorUp(window,1);
-		return;
+        if (curr_realline==0){
+          ScrollEditorUp(window,1);
+          return;
 	}
 
-	while(trackreallines[realline].note==0){
-		if(realline==0) break;
-		realline--;
-	}
+        int new_realline;
 
-	ScrollEditorUp(window,curr_realline-realline);	
+        for(new_realline=curr_realline-1 ; new_realline > 0 ; new_realline--){
+          vector_t *tr = &trs[new_realline];                  
+          if (tr->num_elements>0)
+            break;
+        }
+
+	ScrollEditorUp(window,curr_realline-new_realline);
 }
 
 void ScrollEditorToRealLine(
