@@ -7,13 +7,13 @@
 #include "../common/placement_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/gfx_subtrack_proc.h"
-#include "../common/nodelines_proc.h"
 #include "../common/time_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/common_proc.h"
 #include "../common/trackreallines2_proc.h"
 #include "../common/notes_proc.h"
+#include "../common/nodelines_proc.h"
 
 #include "GfxElements.h"
 

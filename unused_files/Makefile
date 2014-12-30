@@ -8,6 +8,16 @@ gfx_statusbar.o
 gfx_upperleft.o 
 gfx_tempocolor.o 
 trackreallines.o
+nodeboxes.o
+pitchnodes.o
+
+pitchnodes.o:  $(BUILD_DEPENDENCIES) $(CD)pitchnodes.c
+	$(CC) $(CD)pitchnodes.c $(OPT)
+
+
+nodeboxes.o:  $(BUILD_DEPENDENCIES) $(CD)nodeboxes.c
+	$(CC) $(CD)nodeboxes.c $(OPT)
+
 
 trackreallines.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines.c
 	$(CC) $(CD)trackreallines.c $(OPT)

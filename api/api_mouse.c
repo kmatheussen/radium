@@ -36,13 +36,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/undo_fxs_proc.h"
 #include "../common/fxlines_proc.h"
-#include "../common/nodelines_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/player_proc.h"
 #include "../common/undo_trackheader_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/nodelines_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
