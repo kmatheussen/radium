@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scroll_play_proc.h"
 #include "blts_proc.h"
 #include "list_proc.h"
+#include "trackreallines2_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "cursor_updown_proc.h"
@@ -193,21 +194,24 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 void ScrollEditorNextNote(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
-	struct TrackRealline *trackreallines=wtrack->trackreallines;
+        vector_t *trs = TRS_get(wblock, wtrack);
+
 	int curr_realline=wblock->curr_realline;
-	int realline=curr_realline+1;
 
-	if(realline>=wblock->num_reallines-1){
-		ScrollEditorDown(window,1);
-		return;
-	}
+        if(curr_realline==wblock->num_reallines-1){ // last line
+          ScrollEditorDown(window,1);
+          return;
+        }
 
-	while(trackreallines[realline].note==0){
-		if(realline==wblock->num_reallines-1) break;
-		realline++;
-	}
+	int new_realline;
 
-	ScrollEditorDown(window,realline-curr_realline);	
+        for(new_realline=curr_realline+1 ; new_realline < wblock->num_reallines-1 ; new_realline++){
+          vector_t *tr = &trs[new_realline];                  
+          if (tr->num_elements>0)
+            break;
+        }
+
+	ScrollEditorDown(window,new_realline-curr_realline);
 }
 
 
