@@ -89,9 +89,11 @@ void ListAddElement3(
 	}
 
 	if(prev==NULL){
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=listroot->root;
 		listroot->root=element;
 	}else{
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=prev->next;
 		prev->next=element;
 	}
@@ -116,9 +118,11 @@ void ListAddElement3_a(
 	}
 
 	if(prev==NULL){
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=listroot->root;
 		listroot->root=element;
 	}else{
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=prev->next;
 		prev->next=element;
 	}
@@ -163,9 +167,11 @@ void ListAddElement1(
 	}
 
 	if(prev==NULL){
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=listroot->root;
 		listroot->root=element;
 	}else{
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=prev->next;
 		prev->next=element;
 	}
@@ -188,9 +194,11 @@ void ListAddElementP(
 	}
 
 	if(prev==NULL){
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=listroot->root;
 		listroot->root=element;
 	}else{
+                R_ASSERT_RETURN_IF_FALSE(prev!=NULL);
 		element->next=prev->next;
 		prev->next=element;
 	}
@@ -218,14 +226,16 @@ void ListAddElement1_a(
 
 	while(temp!=NULL){
 		if(temp->num > element->num) break;
-		prev=temp;
+		prev=temp;                
 		temp=temp->next;
 	}
 
 	if(prev==NULL){
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=listroot->root;
 		listroot->root=element;
 	}else{
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		element->next=prev->next;
 		prev->next=element;
 	}
@@ -271,9 +281,12 @@ void ListRemoveElement3_fromNum(
 	}else{
           while(n!=num){
             prev=temp;
+            R_ASSERT_RETURN_IF_FALSE(temp!=NULL);
             temp=temp->next;
             n++;
           }
+          R_ASSERT_RETURN_IF_FALSE(prev!=NULL);
+          R_ASSERT_RETURN_IF_FALSE(temp!=NULL);
           prev->next=temp->next;
 	}
 }
@@ -294,12 +307,17 @@ void ListRemoveElement3(
 	struct ListHeader3 *prev=NULL;
 
 	if(temp==element){
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		listroot->root=element->next;
 	}else{
 		while(temp!=element){
+                        R_ASSERT_RETURN_IF_FALSE(temp!=NULL);
 			prev=temp;
 			temp=temp->next;
+
 		}
+                R_ASSERT_RETURN_IF_FALSE(prev!=NULL);
+                R_ASSERT_RETURN_IF_FALSE(element!=NULL);
 		prev->next=element->next;
 	}
 }
@@ -361,6 +379,7 @@ void ListMoveElement3_ns(
 
   while(l!=element){    
     prev = l;
+    R_ASSERT_RETURN_IF_FALSE(l!=NULL);
     l=l->next;
   }
 
@@ -622,7 +641,11 @@ void *ListPrevElement1(
 	struct ListHeader1 *element
 ){
 	struct ListHeader1 *prev=NULL;
-	while(list!=element){prev=list;list=list->next;}
+	while(list!=element){
+          R_ASSERT_RETURN_VALUE_IF_FALSE(list!=NULL, element);
+          prev=list;
+          list=list->next;
+        }
 
 	return prev;
 
@@ -721,6 +744,7 @@ int ListPosition3(struct ListHeader3 *list,
   int ret = 0;
   while(list!=element) {
     ret++;
+    R_ASSERT_RETURN_VALUE_IF_FALSE(list!=NULL, 0);
     list = list->next;
   }
   return ret;
@@ -813,6 +837,7 @@ NInt ListFindElementPos1(
 ){
 	NInt pos=0;
 	while(list!=element){
+                R_ASSERT_RETURN_VALUE_IF_FALSE(list!=NULL, 0);
 		list=list->next;
 		pos++;
                 if (list==NULL) {
@@ -890,6 +915,7 @@ void List_InsertLines3(
 		}
 		if(l->p.line>=line){
 			if(l->p.line<line-toinsert){
+                                R_ASSERT_RETURN_IF_FALSE(l!=NULL);
 				temp=l->next;
 				ListRemoveElement3(to,l);
 				l=temp;
