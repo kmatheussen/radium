@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "list_proc.h"
-#include "trackreallines_proc.h"
 #include "placement_proc.h"
 #include "wtracks_proc.h"
 #include "player_pause_proc.h"
@@ -309,19 +308,21 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     TrackRealline2 *tr2 = tr->elements[0];
 
     if (tr2->pitch != NULL) {
-      tr2->pitch->note = notenum;
+      tr2->pitch->note = notenum; // lock not necessary
       MaybeScrollEditorDown(window);
       return;
     }
 
     if (tr2->note != NULL) {
-      tr2->note->note = notenum;
+      tr2->note->note = notenum; // lock not necessary
       MaybeScrollEditorDown(window);
       return;
     }
 
     const struct Stops *stop = tr2->stop;
-    ListRemoveElement3(&track->stops, &stop->l);
+    PLAYER_lock();{
+      ListRemoveElement3(&track->stops, &stop->l);
+    }PLAYER_unlock();
   }
 
   struct LocalZooms *realline = wblock->reallines[curr_realline];
@@ -416,7 +417,9 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   Undo_Notes_CurrPos(window);
 
   if (tr->num_elements==0) {
-    InsertStop(window,wblock,wtrack,&realline->l.p);
+    PLAYER_lock();{
+      InsertStop(window,wblock,wtrack,&realline->l.p);
+    }PLAYER_unlock();
     MaybeScrollEditorDown(window);
     return;
   }
@@ -425,24 +428,30 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   TrackRealline2 *tr2 = tr->elements[0];
 
   if (tr2->pitch != NULL) {
-    DeletePitch(track, tr2->pitch);
+    PLAYER_lock();{
+      DeletePitch(track, tr2->pitch);
+    }PLAYER_unlock();
     if (tr->num_elements==1)
       MaybeScrollEditorDown(window);
     return;
   }
 
   if (tr2->note != NULL) {
-    ListRemoveElement3(&track->notes,&tr2->note->l);
-    LengthenNotesTo(wblock->block,track,&realline->l.p);
+    PLAYER_lock();{
+      ListRemoveElement3(&track->notes,&tr2->note->l);
+      LengthenNotesTo(wblock->block,track,&realline->l.p);
+    }PLAYER_unlock();
     if (tr->num_elements==1)
       MaybeScrollEditorDown(window);
     return;
   }
 
   const struct Stops *stop = tr2->stop;
-  ListRemoveElement3(&track->stops, &stop->l);
-  LengthenNotesTo(wblock->block,track,&realline->l.p);
-    
+  PLAYER_lock();{
+    ListRemoveElement3(&track->stops, &stop->l);
+    LengthenNotesTo(wblock->block,track,&realline->l.p);
+  }PLAYER_unlock();
+  
   if (tr->num_elements==1)
     MaybeScrollEditorDown(window);
 }
@@ -522,7 +531,6 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 		note->noend=noend;
 	}
 
-	UpdateTrackReallines(window,wblock,wtrack);
 #if !USE_OPENGL
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
