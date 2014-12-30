@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_legalize_proc.h"
 #include "notes_legalize_proc.h"
 #include "../midi/midi_fx_proc.h"
+#include "notes_proc.h"
+#include "windows_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -229,6 +231,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			}
 			break;
 	}
+
+        SetNoteSubtrackAttributes(wtrack->track);
+        ValidateCursorPos(window);
 }
 
 

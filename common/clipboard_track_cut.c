@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "player_proc.h"
+#include "windows_proc.h"
+#include "notes_proc.h"
 
 #include "clipboard_track_cut_proc.h"
 
@@ -71,10 +73,10 @@ void CB_CutTrack(
 
 	cb_wtrack=CB_CopyTrack(wblock,wtrack);
 
-	if(window->curr_track_sub<0){
+        //	if(window->curr_track_sub<0){
 		wtrack->track->notes=NULL;
 		wtrack->track->stops=NULL;
-	}
+                //	}
 
 	while(fxs!=NULL){
 		(*fxs->fx->closeFX)(fxs->fx,wtrack->track);
@@ -100,18 +102,11 @@ void CB_CutTrack_CurrPos(
 			block->lpbs=NULL;
 			UpdateSTimes(block);
 			UpdateWLPBs(window,wblock);
-#if !USE_OPENGL
-			DrawUpLPBs(window,wblock);
-#endif
 			break;
 		case TEMPOTRACK:
 			Undo_Tempos_CurrPos(window);
 			cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
-#if !USE_OPENGL
-			UpdateWTempos(window,wblock);
-			DrawUpTempos(window,wblock);
-#endif
 			UpdateSTimes(block);
 			break;
 		case TEMPONODETRACK:
@@ -119,10 +114,6 @@ void CB_CutTrack_CurrPos(
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
-#if !USE_OPENGL
-			UpdateWTempoNodes(window,wblock);
-			DrawUpWTempoNodes(window,wblock);
-#endif
 			UpdateSTimes(block);
 			break;
 		default:
@@ -135,10 +126,13 @@ void CB_CutTrack_CurrPos(
 				window->curr_track,
 				window->curr_track
 			);
+                        SetNoteSubtrackAttributes(wtrack->track);
+                        ValidateCursorPos(window);
                         //#endif
 			break;
 	}
 
+        
         window->must_redraw=true;
 }
 
