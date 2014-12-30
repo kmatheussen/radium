@@ -60,7 +60,7 @@ extern void ListRemoveElement1_fromNum(
 
 extern void ListRemoveElement3(
 	void *listroot,
-	struct ListHeader3 *element
+	const struct ListHeader3 *element
 );
 
 extern void ListRemoveElement1(

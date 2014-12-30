@@ -1,3 +1,5 @@
+#if 0
+
 /* Copyright 2000 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -70,3 +72,4 @@ int FindFirstFreeSubTrack(
 
 
 
+#endif

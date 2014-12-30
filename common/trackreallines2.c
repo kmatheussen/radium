@@ -30,7 +30,7 @@ static void add_tr(const struct WBlocks *wblock, vector_t *trs, const TrackReall
   VECTOR_insert_place(v, &tr->p);
 }
                    
-static void add_pitch(const struct WBlocks *wblock, vector_t *trs, const struct Notes *note, const struct Pitches *pitch){
+static void add_pitch(const struct WBlocks *wblock, vector_t *trs, struct Notes *note, struct Pitches *pitch){
   TrackRealline2 *tr = talloc(sizeof(TrackRealline2));
   tr->p = pitch->l.p;
   tr->note = note;
@@ -38,20 +38,20 @@ static void add_pitch(const struct WBlocks *wblock, vector_t *trs, const struct 
   add_tr(wblock, trs, tr);
 }
 
-static void add_note(const struct WBlocks *wblock, vector_t *trs, const struct Notes *note){
+static void add_note(const struct WBlocks *wblock, vector_t *trs, struct Notes *note){
   TrackRealline2 *tr = talloc(sizeof(TrackRealline2));
   tr->p = note->l.p;
   tr->note = note;
   add_tr(wblock, trs, tr);
 
-  const struct Pitches *pitch = note->pitches;
+  struct Pitches *pitch = note->pitches;
   while(pitch != NULL){
     add_pitch(wblock, trs, note, pitch);
     pitch = NextPitch(pitch);
   }
 }
 
-static void add_stop(const struct WBlocks *wblock, vector_t *trs, const struct Stops *stop){
+static void add_stop(const struct WBlocks *wblock, vector_t *trs, struct Stops *stop){
   TrackRealline2 *tr = talloc(sizeof(TrackRealline2));
   tr->p = stop->l.p;
   tr->stop = stop;
@@ -161,4 +161,9 @@ vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
   //   TRS_print(wblock,trs);
   
   return trs;
+}
+
+vector_t *TR_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
+  vector_t *trs = TRS_get(wblock, wtrack);
+  return &trs[realline];
 }

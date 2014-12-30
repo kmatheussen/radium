@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "localzooms_proc.h"
 #include "windows_proc.h"
 #include "wtracks_proc.h"
-#include "subtrack_proc.h"
 #include "placement_proc.h"
 #include "realline_calc_proc.h"
 #include "velocities_proc.h"
@@ -439,7 +438,7 @@ static void AddTrackReallineNote(
 	struct Notes *note
 ){
 	int realline=FindRealLineForNote(wblock,note->Tline,note);
-	int subtrack=FindFirstFreeSubTrack(wtrack,realline,&note->l.p);
+	int subtrack=0;//FindFirstFreeSubTrack(wtrack,realline,&note->l.p);
         note->subtrack = subtrack;
 
         R_ASSERT(note!=NULL);
@@ -1016,8 +1015,9 @@ void UpdateTrackReallines(
 	struct WTracks *wtrack
 ){
 
+  #if 0
 	SetNum_Vel(wtrack);
-
+#endif
 	/*
 	if(wtrack->num_vel>(wtrack->fxwidth/(window->fontwidth*2))){
 		wtrack->fxwidth=window->fontwidth*wtrack->num_vel*2;
@@ -1049,10 +1049,11 @@ void UpdateTrackReallines(
 #if !USE_OPENGL
         create_peaks(window,wblock,wtrack);
 #endif        
+#if  0
 	if(window->curr_track==wtrack->l.num)
 		if(window->curr_track_sub >= wtrack->num_vel)
 			window->curr_track_sub=wtrack->num_vel-1;
-
+#endif
 }
 
 

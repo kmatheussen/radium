@@ -15,10 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
-
+extern LANGSPEC void SetNoteSubtrackAttributes(struct Tracks *track);
+extern LANGSPEC int GetNoteSubtrack(struct Tracks *track, struct Notes *note);
+extern LANGSPEC int GetNumSubtracks(struct Tracks *track);
+  
 struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
@@ -36,12 +36,12 @@ extern struct Notes *InsertNote(
         Place *end_placement,
 	float notenum,
 	int velocity,
-	int override
+	bool polyphonic
 );
 
 int NOTE_get_velocity(struct Tracks *track);
 
-extern void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum,int override);
+extern void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic);
 
 void LengthenNotesTo(
                      struct Blocks *block,
@@ -76,5 +76,3 @@ struct Notes *FindNote(
 struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
 
 extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
-
-#endif

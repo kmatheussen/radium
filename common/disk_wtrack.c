@@ -40,7 +40,7 @@ DC_start("WTRACK");
 	DC_SSI("notesonoff",wtrack->notesonoff);
 	DC_SSI("notelength",wtrack->notelength);
 	DC_SSI("fxwidth",wtrack->fxwidth);
-	DC_SSI("num_vel",wtrack->num_vel);
+	//DC_SSI("num_vel",wtrack->num_vel);
         DC_SSB("is_wide",wtrack->is_wide);
 
 
@@ -75,7 +75,8 @@ var2:
 	wtrack->fxwidth=DC_LoadI();
 	goto start;
 var3:
-	wtrack->num_vel=DC_LoadI();
+	//wtrack->num_vel=DC_LoadI();
+        DC_LoadI();
 	goto start;
 var4:
 	wtrack->is_wide=DC_LoadB();

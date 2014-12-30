@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blts_proc.h"
 #include "playerclass.h"
 #include "pitches_proc.h"
-
+#include "trackreallines2_proc.h"
 #include "OS_Player_proc.h"
 
 #include "notes_proc.h"
@@ -39,6 +39,71 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 extern PlayerClass *pc;
 
+static const int end_places_size = 1024*32;
+static Place **end_places = NULL;
+
+static int last_free_subtrack;
+
+static int FindFirstFreeSubTrack(Place *p){
+  int i;
+  for(i=0 ; i < end_places_size ; i++){
+    if (i==last_free_subtrack) {
+      last_free_subtrack++;
+      return i;
+    }
+    if (PlaceGreaterOrEqual(p, end_places[i]))
+      return i;
+  }
+
+  return 0; // A polyphony of 32*1024 voices. Impressive.
+}
+
+// Also sets the track->num_subtracks attribute.
+void SetNoteSubtrackAttributes(struct Tracks *track){
+  last_free_subtrack = 0; // reset
+  
+  if (end_places==NULL)
+    end_places = calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
+
+  track->num_subtracks = 1;
+  
+  struct Notes *note = track->notes;
+  while(note != NULL){
+    int subtrack = FindFirstFreeSubTrack(&note->l.p);
+    note->subtrack = subtrack;
+    
+    if (subtrack+1 > track->num_subtracks)
+      track->num_subtracks = subtrack+1;
+    
+    end_places[subtrack] = &note->end;
+    note = NextNote(note);
+  }
+
+  // move cursor in case it is placed on a non-existing subtrack.
+  if (root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    if (wblock!=NULL){
+      struct WTracks *wtrack = wblock->wtrack;
+      if (wtrack!=NULL && wtrack->track!=NULL){
+        if (wtrack->track==track){
+          if (window->curr_track_sub >= track->num_subtracks)
+            window->curr_track_sub = track->num_subtracks - 1;
+        }
+      }
+    }
+  }
+}
+
+int GetNoteSubtrack(struct Tracks *track, struct Notes *note){
+  SetNoteSubtrackAttributes(track);
+  return note->subtrack;
+}
+
+int GetNumSubtracks(struct Tracks *track){
+  SetNoteSubtrackAttributes(track);
+  return track->num_subtracks;
+}
 
 /**************************************************************
   FUNCTION
@@ -47,10 +112,17 @@ extern PlayerClass *pc;
 struct Notes *GetCurrNote(struct Tracker_Windows *window){
 	struct WBlocks       *wblock        = window->wblock;
 	struct WTracks       *wtrack        = wblock->wtrack;
-	struct TrackRealline *trackrealline = &wtrack->trackreallines[wblock->curr_realline];
 
-        return trackrealline->dasnote;
+        vector_t *tr = TR_get(wblock, wtrack, wblock->curr_realline);
+        
+        if (tr->num_elements==0)
+          return NULL;
+
+        TrackRealline2 *tr2 = tr->elements[0];
+
+        return (struct Notes*)tr2->note;
 }
+
 
 
 /**************************************************************
@@ -150,7 +222,7 @@ struct Notes *InsertNote(
         Place *end_placement,
 	float notenum,
 	int velocity,
-	int override
+	bool polyphonic
 ){
 	struct Blocks *block=wblock->block;
 	struct Tracks *track=wtrack->track;
@@ -175,10 +247,9 @@ struct Notes *InsertNote(
 
         PLAYER_lock();
         {
-
           ListAddElement3(&track->notes,&note->l);
 
-          if(override==0)
+          if(polyphonic==false)
             StopAllNotesAtPlace(wblock,wtrack,placement);
 
           if (end_placement==NULL)
@@ -213,9 +284,62 @@ int NOTE_get_velocity(struct Tracks *track){
   return new_velocity;
 }
 
+
 int g_downscroll = 1;
 
-void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int polyphonic){
+static void MaybeScrollEditorDown(struct Tracker_Windows *window){
+  if(window->curr_track_sub==-1 && !pc->isplaying){
+    ScrollEditorDown(window,g_downscroll);
+  }
+}
+
+void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic){
+  if(notenum<0.001 || notenum>127.9) return;
+
+  Undo_Notes_CurrPos(window);
+
+  struct WBlocks *wblock        = window->wblock;
+  struct WTracks *wtrack        = wblock->wtrack;
+  struct Tracks  *track         = wtrack->track;
+  int             curr_realline = wblock->curr_realline;
+
+  vector_t *tr = TR_get(wblock, wtrack, curr_realline);
+
+  if (polyphonic==false && tr->num_elements > 0) {
+    TrackRealline2 *tr2 = tr->elements[0];
+
+    if (tr2->pitch != NULL) {
+      tr2->pitch->note = notenum;
+      MaybeScrollEditorDown(window);
+      return;
+    }
+
+    if (tr2->note != NULL) {
+      tr2->note->note = notenum;
+      MaybeScrollEditorDown(window);
+      return;
+    }
+
+    const struct Stops *stop = tr2->stop;
+    ListRemoveElement3(&track->stops->l, &stop->l);
+  }
+
+  struct LocalZooms *realline = wblock->reallines[curr_realline];
+  
+  InsertNote(
+             wblock,wtrack,&realline->l.p,NULL,notenum,
+             NOTE_get_velocity(wtrack->track),
+             polyphonic
+             );
+
+  if(wtrack->l.num==wblock->right_track && polyphonic)
+    UpdateAllWTracksCoordinates(window,wblock);
+
+  if (!polyphonic)
+    MaybeScrollEditorDown(window);
+}
+
+void InsertNoteCurrPos_old(struct Tracker_Windows *window,int notenum, int polyphonic){
 
 	if(notenum<1 || notenum>127) return;
 
@@ -249,9 +373,9 @@ void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum, int polyphoni
 	){
 
           struct Pitches *pitch = trackrealline->daspitch;
-          PLAYER_lock();{
+          //PLAYER_lock();{
             pitch->note = notenum;
-          }PLAYER_unlock();
+            //}PLAYER_unlock();
             
 	}else{
           
@@ -410,6 +534,8 @@ struct Notes *FindNoteOnSubTrack(
                                  int subtrack,
                                  Place *placement
 ){
+        SetNoteSubtrackAttributes(track);
+  
         struct Notes *note = track->notes;
         
         while (note != NULL) {

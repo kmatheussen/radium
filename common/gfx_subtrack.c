@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "list_proc.h"
+#include "notes_proc.h"
 
 #include "gfx_subtrack_proc.h"
 
@@ -33,7 +34,8 @@ int GetRelXSubTrack1(
 	const struct WTracks *wtrack,
 	int subtrack
 ){
-	return (wtrack->fxwidth*subtrack/wtrack->num_vel) + (subtrack>0 ? 1 : 0 ) ;
+  int num_subtracks = GetNumSubtracks(wtrack->track);
+  return (wtrack->fxwidth*subtrack/num_subtracks) + (subtrack>0 ? 1 : 0 ) ;
 }
 
 /************************************************************************
@@ -58,10 +60,11 @@ int GetRelXSubTrack2(
 	const struct WTracks *wtrack,
 	int subtrack
 ){
+        int num_subtracks = GetNumSubtracks(wtrack->track);
 	return
-		(wtrack->fxwidth*(subtrack+1)/wtrack->num_vel) - 
-		(subtrack == wtrack->num_vel-1 ? 0 : 1)
-	;
+          (wtrack->fxwidth*(subtrack+1)/num_subtracks) -
+          (subtrack == num_subtracks-1 ? 0 : 1)
+          ;
 }
 
 /************************************************************************
@@ -174,9 +177,9 @@ int GetSubTrack(
 	int x
 ){
 	int lokke;
-	int num_vel=wtrack->num_vel;
+        int num_subtracks = GetNumSubtracks(wtrack->track);
 
-	for(lokke= -1;lokke<num_vel;lokke++){
+	for(lokke= -1;lokke<num_subtracks;lokke++){
 		if(x==SubtrackBoundaries(wtrack,lokke,x)) return lokke;
 	}
 

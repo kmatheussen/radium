@@ -561,6 +561,8 @@ struct Tracks{
 	struct Stops *stops;
 	int onoff;
 
+        int num_subtracks;
+  
 	const char *trackname;
 	struct Patch *patch;
 	struct FXs *fxs;
@@ -689,9 +691,9 @@ enum{
 
 typedef struct{
   Place p;
-  const struct Notes *note;
-  const struct Pitches *pitch;
-  const struct Stops *stop;
+  struct Notes *note;
+  struct Pitches *pitch;
+  struct Stops *stop;
 } TrackRealline2;
 
 
@@ -780,7 +782,7 @@ struct WTracks{
         bool is_wide;
 
 
-	int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
+  //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 
@@ -999,6 +1001,9 @@ struct WBlocks{
 	int curr_realline;
 	int till_curr_realline;				/* The player-routine sets this on. */
 
+  //int curr_subrealline;
+  
+  
 	int bot_realline;
 
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.

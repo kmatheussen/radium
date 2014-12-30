@@ -1273,7 +1273,7 @@ static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
 
 static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *place, float value){
 
-  struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
+  struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), false);
 
   UpdateTrackReallines(window,wblock,wtrack);
   window->must_redraw = true;
@@ -1326,7 +1326,7 @@ int getNumSubtracks(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return 1;
 
-  return wtrack->num_vel;
+  return GetNumSubtracks(wtrack->track);
 }
 
 static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int blocknum, int windownum){
@@ -1336,8 +1336,8 @@ static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int bloc
   if (wtrack==NULL)
     return NULL;
 
-  if (subtracknum>=wtrack->num_vel) {
-    RError("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, wtrack->num_vel);
+  if (subtracknum>=GetNumSubtracks(wtrack->track)){
+    RError("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack->track));
     return 0;
   }
 
@@ -1391,12 +1391,14 @@ float getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
 }
 
 int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
-
-  if(note==NULL)
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
     return 0;
 
-  return note->subtrack;
+  return GetNoteSubtrack(wtrack->track, note);
 }
 
 void setNoMouseNote(int blocknum, int windownum){

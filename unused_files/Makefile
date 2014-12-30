@@ -1,11 +1,16 @@
 #OBJ4= mouse.o mouse_wtrack.o mouse_wtrackheader.o mouse_tempoheader.o mouse_wtrackborder.o mouse_temponodeborder.o mouse_fxarea.o mouse_pitches.o mouse_vellinenode.o mouse_vellineend.o mouse_vellinestart.o mouse_fxnode.o mouse_quantitize.o mouse_reltemposlider.o mouse_temponodes.o
 
+subtrack.o 
 gfx_wtracks.o 
 gfx_tempotrackheader.o
 gfx_wtrackborder.o 
 gfx_statusbar.o 
 gfx_upperleft.o 
 gfx_tempocolor.o 
+
+subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)subtrack.c
+	$(CC) $(CD)subtrack.c $(OPT)
+
 
 gfx_tempocolor.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_tempocolor.c
 	$(CC)  $(CD)gfx_tempocolor.c $(OPT)

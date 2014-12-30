@@ -287,7 +287,7 @@ void ListRemoveElement1_fromNum(
 
 void ListRemoveElement3(
 	void *voidlistroot,
-	struct ListHeader3 *element
+	const struct ListHeader3 *element
 ){
 	struct ListHeaderPointer3 *listroot=voidlistroot;
 	struct ListHeader3 *temp=listroot->root;

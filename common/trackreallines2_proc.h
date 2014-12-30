@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // Returns a pointer to an array of vectors (one vector for each realline), not a pointer to a vector.
 extern LANGSPEC vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
+extern LANGSPEC vector_t *TR_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
 
 #endif
 

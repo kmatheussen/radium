@@ -13,6 +13,7 @@
 #include "../common/patch_proc.h"
 #include "../common/common_proc.h"
 #include "../common/trackreallines2_proc.h"
+#include "../common/notes_proc.h"
 
 #include "GfxElements.h"
 
@@ -660,7 +661,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                          y1,
                          y2);
 
-  for(int lokke=R_MAX(1, left_subtrack) ; lokke<wtrack->num_vel;lokke++){
+  for(int lokke=R_MAX(1, left_subtrack) ; lokke < wtrack->track->num_subtracks ; lokke++){
     create_single_border(
                          GetXSubTrack1(wtrack,lokke)-1,
                          y1,
@@ -735,10 +736,21 @@ static int get_colnum(TrackRealline2 *tr2, bool isranged){
     return 1;
 }
 
-static void paint_tr2(TrackRealline2 *tr2, char **NotesTexts, bool isranged, int x, int y){
-  GE_Context *foreground = GE_textcolor(get_colnum(tr2, isranged));
-  float notenum1 = get_notenum(tr2);
-  GE_text_halfsize(foreground, NotesTexts[(int)notenum1], x, y);
+static void paint_halfsize_note(GE_Context *c, int num, const char *notetext, int x, int y){
+#if 0 // no room
+  char temp[16];
+  sprintf(temp,"%d. %s",num, notetext);
+  GE_text_halfsize(c, temp, x, y);
+#else
+  GE_text_halfsize(c, notetext, x, y);
+#endif
+}
+
+static void paint_tr2(TrackRealline2 *tr2, char **NotesTexts, int num, bool isranged, int x, int y){
+  GE_Context *c = GE_textcolor(get_colnum(tr2, isranged));
+  float notenum = get_notenum(tr2);
+  paint_halfsize_note(c, num, NotesTexts[(int)notenum], x, y);
+  //GE_text_halfsize(foreground, NotesTexts[(int)notenum1], x, y);
 }
 
 static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **NotesTexts, bool isranged, int y1, int y2){
@@ -747,25 +759,25 @@ static void paint_multinotes(const struct WTracks *wtrack, vector_t *tr, char **
   int x1 = wtrack->notearea.x;
   int y_middle = (y1+y2)/2;
 
-  paint_tr2((TrackRealline2*)tr->elements[0], NotesTexts, isranged, x1, y1);
+  paint_tr2((TrackRealline2*)tr->elements[0], NotesTexts, 1, isranged, x1, y1);
   
-  paint_tr2((TrackRealline2*)tr->elements[1], NotesTexts, isranged, x1, y_middle);
+  paint_tr2((TrackRealline2*)tr->elements[1], NotesTexts, 2, isranged, x1, y_middle);
 
   if (num_elements == 2)
     return;
 
   int x_middle = (wtrack->notearea.x2 + wtrack->notearea.x ) / 2;
 
-  paint_tr2((TrackRealline2*)tr->elements[2], NotesTexts, isranged, x_middle, y1);
+  paint_tr2((TrackRealline2*)tr->elements[2], NotesTexts, 3, isranged, x_middle, y1);
   
   if (num_elements == 3)
     return;
 
   if (num_elements>4){
-    GE_Context *foreground = GE_textcolor(get_colnum(NULL, isranged));
-    GE_text_halfsize(foreground, NotesTexts[NOTE_MUL], x_middle, y_middle);
+    GE_Context *c = GE_textcolor(get_colnum(NULL, isranged));
+    paint_halfsize_note(c, 4, NotesTexts[NOTE_MUL], x_middle, y_middle);
   } else {
-    paint_tr2((TrackRealline2*)tr->elements[3], NotesTexts, isranged, x_middle, y_middle);
+    paint_tr2((TrackRealline2*)tr->elements[3], NotesTexts, 4, isranged, x_middle, y_middle);
   }
 }
 
@@ -1211,6 +1223,9 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
 
 void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
+
+  SetNoteSubtrackAttributes(wtrack->track);
+      
   if(left_subtrack==-1) {
 
     vector_t *trs = TRS_get(wblock, wtrack);

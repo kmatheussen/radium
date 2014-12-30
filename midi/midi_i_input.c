@@ -101,6 +101,6 @@ void MIDI_HandleInputMessage(void){
   if( ! root->editonoff)
     return;
 
-  InsertNoteCurrPos(root->song->tracker_windows,data1,0);
+  InsertNoteCurrPos(root->song->tracker_windows,data1,false);
 }
 

@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_input_proc.h"
+#include "notes_proc.h"
 
 #include "cursor_proc.h"
 
@@ -48,12 +49,13 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	struct WTracks *rightwtrack;
 	int update=0;
 	int x2;
-
+        
 	if(window->curr_track>=0){
 
 		window->curr_track_sub++;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
 
-		if(window->curr_track_sub>=wtrack->num_vel){
+		if(window->curr_track_sub>=num_subtracks){
 			window->curr_track++;
 			if(NextWTrack(wtrack)==NULL){
 				window->curr_track--;
@@ -74,15 +76,16 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			 )
 		){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+                        int num_subtracks = GetNumSubtracks(leftwtrack->track);
 			wblock->left_subtrack++;
-			if(wblock->left_subtrack>=leftwtrack->num_vel){
+			if(wblock->left_subtrack>=num_subtracks){
 				wblock->left_subtrack= -1;
 				wblock->left_track++;
 			}
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			if(
 				wblock->left_track==wblock->block->num_tracks-1 &&
-				wblock->left_subtrack==leftwtrack->num_vel-1
+				wblock->left_subtrack==num_subtracks-1
 			){
 				return 2;
 			}
@@ -91,11 +94,12 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 		}
 		for(;;){
 		  rightwtrack=ListFindElement1(&wblock->wtracks->l,window->curr_track);
+                  int num_subtracks = GetNumSubtracks(rightwtrack->track);
 		  x2=GetXSubTrack2(rightwtrack,window->curr_track_sub);
 		  if(x2>wblock->a.x2){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			wblock->left_subtrack++;
-			if(wblock->left_subtrack>=leftwtrack->num_vel){
+			if(wblock->left_subtrack>=num_subtracks){
 				wblock->left_subtrack= -1;
 				wblock->left_track++;
 			}
@@ -128,7 +132,8 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 		if(window->curr_track_sub==-2){
 			wblock->wtrack=ListFindElement1(&wblock->wtracks->l,wtrack->l.num-1);
-			window->curr_track_sub=wblock->wtrack->num_vel-1;
+                        int num_subtracks = GetNumSubtracks(wblock->wtrack->track);
+			window->curr_track_sub=num_subtracks-1;
 			window->curr_track--;
 		}
 
@@ -237,8 +242,9 @@ int SetCursorPosConcrete(
 		}
 	}else{
 		wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
+                int num_subtracks = GetNumSubtracks(wtrack->track);
 
-		subtrack=R_MIN(wtrack->num_vel-1,subtrack);
+		subtrack=R_MIN(num_subtracks-1,subtrack);
 
 		if(tracknum==window->curr_track && subtrack==window->curr_track_sub) return 0;
 

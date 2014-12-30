@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "playerclass.h"
 #include "tracks_proc.h"
+#include "notes_proc.h"
 
 #include "wtracks_proc.h"
 
@@ -62,7 +63,7 @@ void NewWTrack(
 	wtrack->fxwidth=window->fontwidth*10;
 	wtrack->notesonoff=1;
 	wtrack->fxonoff=1;
-	wtrack->num_vel=1;
+	//wtrack->num_vel=1;
         
 	NewTrackRealLines(wblock,wtrack);
 #if !USE_OPENGL
@@ -202,10 +203,10 @@ void UpdateAllWTracksCoordinates(
 	if(wtrack==NULL) return;
 
 	while(wtrack!=NULL){
-	  if(wtrack->num_vel==0) wtrack->num_vel=1;
+          SetNoteSubtrackAttributes(wtrack->track); // need track->num_subtracks variable
 	  wtrack=NextWTrack(wtrack);
 	}
-
+        
 	leftX=wblock->temponodearea.x2+3;
 
 	wtrack=wblock->wtracks;
@@ -221,7 +222,7 @@ void UpdateAllWTracksCoordinates(
         }
 
 	if(wblock->left_subtrack>-1){
-	  leftX-=(wtrack->fxwidth*wblock->left_subtrack/wtrack->num_vel)
+	  leftX-=(wtrack->fxwidth*wblock->left_subtrack/wtrack->track->num_subtracks)
 	    + (wblock->left_subtrack>0 ? 1 : 0);
 	}
 
@@ -251,8 +252,8 @@ void UpdateAllWTracksCoordinates(
 	while(wtrack!=NULL){
 		wblock->right_track=wtrack->l.num;
 		if(NextWTrack(wtrack)==NULL){
-			wblock->right_subtrack=wtrack->num_vel-1;
-			goto exit;
+                  wblock->right_subtrack=wtrack->track->num_subtracks-1;
+                  goto exit;
 		}
 		if(NextWTrack(wtrack)->notearea.x>=wblock->a.x2-2) break;
 		wtrack=NextWTrack(wtrack);
@@ -369,8 +370,10 @@ void MinimizeTrack_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
 
+        int num_subtracks = GetNumSubtracks(wtrack->track);
+        
 	SetNoteLength(window,wtrack,2);
-	wtrack->fxwidth=window->fontwidth*wtrack->num_vel*2;
+	wtrack->fxwidth=window->fontwidth*num_subtracks*2;
 
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
@@ -432,7 +435,8 @@ void MinimizeBlock_CurrPos(
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,2);
-		wtrack->fxwidth=window->fontwidth*wtrack->num_vel;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
+		wtrack->fxwidth=window->fontwidth*num_subtracks;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -448,7 +452,8 @@ void MinimizeBlock_CurrPos(
 	wblock->temponodearea.width=window->fontwidth*3;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,3);
-		wtrack->fxwidth=window->fontwidth*wtrack->num_vel;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
+		wtrack->fxwidth=window->fontwidth*num_subtracks;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -481,7 +486,8 @@ void MinimizeBlock_CurrPos(
 		wtrack=wblock->wtracks;
 		while(wtrack!=NULL){
 			SetNoteLength(window,wtrack,notelength);
-			wtrack->fxwidth=(window->fontwidth*wtrack->num_vel*nummul)+inc;
+                        int num_subtracks = GetNumSubtracks(wtrack->track);
+			wtrack->fxwidth=(window->fontwidth*num_subtracks*nummul)+inc;
 			wtrack=NextWTrack(wtrack);
 		}
 		UpdateWBlockCoordinates(window,window->wblock);
@@ -491,7 +497,8 @@ void MinimizeBlock_CurrPos(
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,notelength);
-		wtrack->fxwidth=(window->fontwidth*wtrack->num_vel*nummul)+inc-1;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
+		wtrack->fxwidth=(window->fontwidth*num_subtracks*nummul)+inc-1;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);

@@ -15,9 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-extern void SetNum_Vel(struct WTracks *wtrack);
+//extern void SetNum_Vel(struct WTracks *wtrack);
 
 extern int AddVelocity(
                        int velocityvelocity,
@@ -28,7 +26,4 @@ extern int AddVelocity(
 extern void AddVelocityCurrPos(struct Tracker_Windows *window);
 
 extern void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc);
-
-#endif
-
 

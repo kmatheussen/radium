@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 
+#if 0
+
 struct FindNum_Velstruct{
 	struct ListHeader3 l;
 	int startstop;		/* 1=start, -1=stop */
@@ -96,6 +98,7 @@ void SetNum_Vel(
 
 	SetNum_Vel_rec(wtrack,&velroot,wtrack->track->notes);
 }
+#endif
 
 
 int AddVelocity(
