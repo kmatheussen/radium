@@ -321,7 +321,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     }
 
     const struct Stops *stop = tr2->stop;
-    ListRemoveElement3(&track->stops->l, &stop->l);
+    ListRemoveElement3(&track->stops, &stop->l);
   }
 
   struct LocalZooms *realline = wblock->reallines[curr_realline];
@@ -337,72 +337,6 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
   if (!polyphonic)
     MaybeScrollEditorDown(window);
-}
-
-void InsertNoteCurrPos_old(struct Tracker_Windows *window,int notenum, int polyphonic){
-
-	if(notenum<1 || notenum>127) return;
-
-        Undo_Notes_CurrPos(window);
-
-	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack=wblock->wtrack;
-        int curr_realline = wblock->curr_realline;
-        struct TrackRealline *trackrealline = &wtrack->trackreallines[curr_realline];
-
-        //printf("polyphonic: %d, trackrealline.dasnote: %p, trackrealline.daspitch: %p, trackrealline.note: %f\n",polyphonic,trackrealline->dasnote, trackrealline->daspitch, trackrealline->note);
-        
-	if(
- 		0==polyphonic &&
-		trackrealline->dasnote != NULL
-	){
-
-                struct Notes *note = trackrealline->dasnote;
-
-                PLAYER_lock();{
-                  note->note=notenum;
-                }PLAYER_unlock();
- 
-		if(window->curr_track_sub==-1 && !pc->isplaying){
-			ScrollEditorDown(window,g_downscroll);
-		}
-
-        } else if (
-		0==polyphonic &&
-		trackrealline->daspitch != NULL
-	){
-
-          struct Pitches *pitch = trackrealline->daspitch;
-          //PLAYER_lock();{
-            pitch->note = notenum;
-            //}PLAYER_unlock();
-            
-	}else{
-          
-        	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
-		struct Stops *stop=ListFindElement3(&wtrack->track->stops->l,&realline->l.p);
-		if(stop!=NULL)
-                  if(PlaceEqual(&stop->l.p,&realline->l.p)){
-                    PLAYER_lock();{
-                      ListRemoveElement3(&wtrack->track->stops,&stop->l);
-                    }PLAYER_unlock();
-                  }
-                
-		InsertNote(
-                           wblock,wtrack,&realline->l.p,NULL,notenum,
-                           NOTE_get_velocity(wtrack->track),
-                           polyphonic
-		);
-
-		if(wtrack->l.num==wblock->right_track && polyphonic!=0)
-			UpdateAllWTracksCoordinates(window,wblock);
-
-		if(window->curr_track_sub==-1 && polyphonic==0 && !pc->isplaying){
-			ScrollEditorDown(window,g_downscroll);
-		}
-	}
-
-        UpdateTrackReallines(window,wblock,wtrack);
 }
 
 void InsertStop(
@@ -471,61 +405,46 @@ void RemoveNote(
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
+  struct WBlocks       *wblock        = window->wblock;
+  struct WTracks       *wtrack        = wblock->wtrack;
+  struct Tracks        *track         = wtrack->track;
+  struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
+  int                   curr_realline = wblock->curr_realline;
+  
+  vector_t *tr = TR_get(wblock, wtrack, curr_realline);
 
-	PC_Pause();
+  Undo_Notes_CurrPos(window);
 
-	struct WBlocks       *wblock        = window->wblock;
-	struct WTracks       *wtrack        = wblock->wtrack;
-        struct Tracks        *track         = wtrack->track;
-	struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
-        struct TrackRealline *trackrealline = &wtrack->trackreallines[wblock->curr_realline];
-        
-	Undo_Notes_CurrPos(window);
+  if (tr->num_elements==0) {
+    InsertStop(window,wblock,wtrack,&realline->l.p);
+    MaybeScrollEditorDown(window);
+    return;
+  }
 
-        
-	if(
-		trackrealline->note != 0
-	){
-          
-          if (trackrealline->daspitch != NULL)
-            DeletePitch(track, trackrealline->daspitch);
+  
+  TrackRealline2 *tr2 = tr->elements[0];
 
-          else if (trackrealline->dasnote != NULL) {
-            ListRemoveElement3(&track->notes,&trackrealline->dasnote->l);
+  if (tr2->pitch != NULL) {
+    DeletePitch(track, tr2->pitch);
+    if (tr->num_elements==1)
+      MaybeScrollEditorDown(window);
+    return;
+  }
 
-            LengthenNotesTo(wblock->block,wtrack->track,&realline->l.p);
+  if (tr2->note != NULL) {
+    ListRemoveElement3(&track->notes,&tr2->note->l);
+    LengthenNotesTo(wblock->block,track,&realline->l.p);
+    if (tr->num_elements==1)
+      MaybeScrollEditorDown(window);
+    return;
+  }
 
-          } else if (trackrealline->note == NOTE_STP){
-            struct Stops *stop=ListFindElement3(&wtrack->track->stops->l,&realline->l.p);
-            if(stop!=NULL)
-              if(PlaceEqual(&stop->l.p,&realline->l.p))
-                ListRemoveElement3(&track->stops, &stop->l);
-                     
-          } else if (trackrealline->note == NOTE_MUL || trackrealline->note == NOTE_MUR){
-            struct Notes *note=ListFindElement3(&wtrack->track->notes->l,&realline->l.p); // not quite perfect, but it's possible (and more accurate) to press delete in the subtrack.
-            if(note!=NULL)
-              if(PlaceEqual(&note->l.p,&realline->l.p))
-                ListRemoveElement3(&track->notes, &note->l);
-                     
-          } else
-            RError ("Both daspitch and dasnote is NULL while trackrealline->note==%f",trackrealline->note);
-
-          
-	}else{
-          
-            InsertStop(window,wblock,wtrack,&realline->l.p);
-
-	}
-
-	if(window->curr_track_sub==-1  && !pc->isplaying){
-		ScrollEditorDown(window,g_downscroll);
-	}
-        
-	UpdateTrackReallines(window,wblock,wtrack);
-
-	PC_StopPause();
-
-        window->must_redraw=true;
+  const struct Stops *stop = tr2->stop;
+  ListRemoveElement3(&track->stops, &stop->l);
+  LengthenNotesTo(wblock->block,track,&realline->l.p);
+    
+  if (tr->num_elements==1)
+    MaybeScrollEditorDown(window);
 }
 
 

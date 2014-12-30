@@ -156,7 +156,7 @@ void DeletePitch(struct Tracks *track, struct Pitches *pitchtodelete){
     struct Pitches *pitch = note->pitches;
     while (pitch != NULL) {
       if (pitch==pitchtodelete){
-        ListRemoveElement3(&note->pitches->l, &pitch->l);
+        ListRemoveElement3(&note->pitches, &pitch->l);
         return;
       }
       pitch = NextPitch(pitch);

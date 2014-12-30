@@ -127,6 +127,8 @@ enum{
   #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return; }while(0)
 #endif
 
+#define R_ASSERT_RETURN_VALUE_IF_FALSE(a,value) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return value; }while(0)
+
 
 
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){
