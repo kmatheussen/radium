@@ -2903,7 +2903,7 @@
        </widget>
       </item>
       <item>
-       <widget class="Line" name="line_12">
+       <widget class="Line" name="sps_line">
         <property name="palette">
          <palette>
           <active>
@@ -3388,7 +3388,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="scrolllines_label">
+       <widget class="QLabel" name="sps_label">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
