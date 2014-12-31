@@ -16,9 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_upperleft_widget.h"
 #include "../common/undo_reltempomax_proc.h"
-#include "../common/undo_maintempos_proc.h"
-#include "../common/LPB_proc.h"
-#include "../common/player_proc.h"
 #include "../common/reallines_proc.h"
 #include "../common/temponodes_proc.h"
 
@@ -51,9 +48,14 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   void updateWidgets(struct WBlocks *wblock){    
     lz->setValue(wblock->num_expand_lines);
     grid->setText(QString::number(root->grid_numerator)+"/"+QString::number(root->grid_denominator));
-
+    
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
+
+    // The bottom bar mirrors the lpb and bpm widgets.
+    g_bottom_bar->lpb->setValue(root->lpb);
+    g_bottom_bar->bpm->setValue(root->tempo);
+
     reltempomax->setValue(wblock->reltempomax);
   }
 
@@ -69,6 +71,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     int width = x5;
     int height = wblock->t.y1;
 
+    // upperleft lpb/bpm/reltempo show/hide
     if (window->show_lpb_track)
       LPBWidget->show();
     else
@@ -83,7 +86,19 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       ReltempoWidget->show();
     else
       ReltempoWidget->hide();
+
+    // bottombar lpb/bpm show/hide
+    if (window->show_lpb_track)
+      g_bottom_bar->LPBWidget->hide();
+    else
+      g_bottom_bar->LPBWidget->show();
     
+    if (window->show_bpm_track)
+      g_bottom_bar->BPMWidget->hide();
+    else
+      g_bottom_bar->BPMWidget->show();
+
+
     printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
 
     resize(width,height);
@@ -142,39 +157,14 @@ public slots:
   }
 
   void on_lpb_editingFinished(){
-    printf("lpb\n");
-
-    PlayStop();
-
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    struct WBlocks *wblock = window->wblock;
-
-    Undo_MainTempo(window,wblock);
-
-    root->lpb=lpb->value();
-    UpdateAllSTimes();
-
-    UpdateAllWLPBs(window);
-    window->must_redraw = true;
-
+    printf("lpb upperleft\n");
+    setLPB(lpb->value());
     set_editor_focus();
   }
 
   void on_bpm_editingFinished(){
-    printf("bpm\n");
-
-    PlayStop();
-
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    struct WBlocks *wblock = window->wblock;
-
-    Undo_MainTempo(window,wblock);
-
-    root->tempo=bpm->value();
-    UpdateAllSTimes();
-
-    wblock->block->is_dirty = true;
-
+    printf("bpm upperleft\n");
+    setBPM(bpm->value());
     set_editor_focus();
   }
 

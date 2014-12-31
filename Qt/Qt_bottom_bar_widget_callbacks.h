@@ -95,10 +95,11 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     sps->setValue(scrolls_per_second);
 
     // For now, I haven't tried any machine where smooth scrolling doesn't work better than non-smooth scrolling. Anyay, just hide the sps options for now.
+#if 0
     sps->hide();
     sps_label->hide();
     sps_line->hide();
-    
+    #endif
     // Adjust cpu label width
     {
       QFontMetrics fm(QApplication::font());
@@ -151,8 +152,21 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       velocity_slider->setMinimum(0);
   }
 
+
 public slots:
 
+  void on_lpb_editingFinished(){
+    printf("lpb bottombar\n");
+    setLPB(lpb->value());
+    set_editor_focus();
+  }
+
+  void on_bpm_editingFinished(){
+    printf("bpm bottombar\n");
+    setBPM(bpm->value());
+    set_editor_focus();
+  }
+  
   void on_system_volume_slider_valueChanged(int val){
     g_system_audio_instrument_widget->input_volume_slider->setValue(val);
     

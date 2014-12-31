@@ -81,6 +81,10 @@ static HWND gtk_hwnd = NULL;
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
+
+class Bottom_bar_widget;
+static Bottom_bar_widget *g_bottom_bar = NULL; // need to be defined here since it's used by the upperleft widget.
+
 #include "mQt_bottom_bar_widget_callbacks.h"
 #include "mQt_upperleft_widget_callbacks.h"
 #include "../OpenGL/Widget_proc.h"
@@ -261,9 +265,6 @@ extern bool doquit;
 extern struct Root *root;
 
 EditorWidget *g_editor = NULL;
-
-static Bottom_bar_widget *g_bottom_bar = NULL;
-
 
 #if 1
 // dangerous stuff

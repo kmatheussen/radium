@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/LPB_proc.h"
 #include "../common/time_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
+#include "../common/player_proc.h"
+#include "../common/undo_maintempos_proc.h"
+#include "../common/LPB_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -117,18 +120,35 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 }
 
 void setLPB(int lpb_value){
-  root->lpb = lpb_value;
-  struct WBlocks *wblock=getWBlockFromNum(-1,-1);
-  wblock->block->is_dirty = true;
+  if (lpb_value <=1)
+    return;
+  
+  PlayStop();
 
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  Undo_MainTempo(window,wblock);
+  
+  root->lpb=lpb_value;
   UpdateAllSTimes();
+  
+  UpdateAllWLPBs(window);
+  window->must_redraw = true;
 }
 
 void setBPM(int bpm_value){
-  root->tempo = bpm_value;
-  struct WBlocks *wblock=getWBlockFromNum(-1,-1);
-  wblock->block->is_dirty = true;
+  if (bpm_value <=1)
+    return;
 
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  
+  Undo_MainTempo(window,wblock);
+  
+  root->tempo=bpm_value;
   UpdateAllSTimes();
 }
 
