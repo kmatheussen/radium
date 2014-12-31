@@ -4,6 +4,9 @@
 (define *middle-button* 3)
 (define *right-button* 5)
 
+(define (select-button Button)
+  (= *left-button* Button))
+
 (define (left-or-right-button Button)
   (or (= *left-button* Button)
       (= *right-button* Button)))
@@ -124,9 +127,7 @@
 
 (define (get-quantitized-place-from-y Button Y)
   (define place (ra:get-place-from-y Y))
-  (if (= Button *right-button*)
-      (quantitize place (ra:get-quantitize))
-      place))
+  (quantitize place (ra:get-quantitize)))
 
 (define (get-place-from-y Button Y)
   (if (ra:ctrl-pressed)
@@ -566,7 +567,7 @@
     :y)
 
   (define (press-existing-node Button X Y)
-    (and (left-or-right-button Button)
+    (and (select-button Button)
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
@@ -580,7 +581,7 @@
 
   (define (can-create Button X Y)
     (and (or (and Create-button (= Button Create-button))
-             (and (not Create-button) (left-or-right-button Button)))
+             (and (not Create-button) (select-button Button)))
          (let ((area-box (Get-area-box)))
            (and area-box
                 (inside-box area-box X Y)))))
@@ -974,7 +975,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
-                (and (= $button *middle-button*)
+                (and (= $button *right-button*)
                      (ra:reltempo-track-visible)
                      (inside-box (ra:get-box temponode-area) $x $y)                                     
                      (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
@@ -1107,7 +1108,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
-                (and (= $button *middle-button*)
+                (and (= $button *right-button*)
                      *current-track-num*
                      (inside-box (ra:get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitch-box (ra:get-num-pitches *current-track-num*)))
@@ -1336,7 +1337,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                (and (= Button *middle-button*)
+                (and (= Button *right-button*)
                      *current-track-num*
                      (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
                      (begin
@@ -1670,7 +1671,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                (and (= Button *middle-button*)
+                (and (= Button *right-button*)
                      *current-track-num*
                      (inside-box-forgiving (ra:get-box track *current-track-num*) X Y)
                      (begin
