@@ -729,7 +729,7 @@
                ((and *current-track-num*
                      (< Y (ra:get-track-pan-on-off-y1)))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer)
-                (ra:set-statusbar-text "Set new patch for track"))
+                (ra:set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
                (else
                 (ra:set-normal-mouse-pointer)))))
