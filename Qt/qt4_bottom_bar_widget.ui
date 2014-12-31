@@ -1240,7 +1240,7 @@
          <string>Input octave for lowest octave (Z-M on the keyboard).</string>
         </property>
         <property name="text">
-         <string>Octave: 4</string>
+         <string>Oct.: 3</string>
         </property>
        </widget>
       </item>
@@ -1257,6 +1257,9 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>Decrease keyboard octave</string>
         </property>
         <property name="text">
          <string>-</string>
@@ -1276,6 +1279,9 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>Increase keyboard octave</string>
         </property>
         <property name="text">
          <string>+</string>

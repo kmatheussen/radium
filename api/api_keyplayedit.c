@@ -86,13 +86,16 @@ void setKeyAdd(int addnum){
   else
 #endif
     root->keyoct=addnum;
+    GFX_OS_UpdateKeyOctave();
 }
 
 void incKeyAdd(int incaddnum){
-	root->keyoct+=incaddnum;
-	if(root->keyoct>127 || root->keyoct<0){
-		root->keyoct-=incaddnum;
-	}
+  int keyoct = root->keyoct + incaddnum;
+	
+  if(keyoct>127 || keyoct<0)
+    return;
+
+  setKeyAdd(keyoct);
 }
 
 void decKeyAdd(int decaddnum){

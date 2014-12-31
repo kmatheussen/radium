@@ -223,7 +223,7 @@ extern "C"{
   }
 
   void GFX_OS_UpdateKeyOctave(void){
-    g_bottom_bar_widget->octave_label->setText(QString("Octave: ")+QString::number(root->keyoct/12,16));
+    g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
@@ -260,5 +260,7 @@ void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument
     g_bottom_bar_widget->system_volume_slider->_effect_num = EFFNUM_INPUT_VOLUME;
     SLIDERPAINTER_set_num_channels(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs);
   }
+
+  GFX_OS_UpdateKeyOctave();
 }
     
