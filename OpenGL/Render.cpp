@@ -624,21 +624,24 @@ void create_block_borders(
                        wblock->tempocolorarea.x2+1,
                        y1,y2
                        );
-  
-  create_double_border(
-                       wblock->lpbarea.x2+1,
-                       y1,y2
-                       );
-  
-  create_single_border(
-                       wblock->tempoarea.x2+1,
-                       y1,y2
-                       );
-  
-  create_double_border(
-                       wblock->temponodearea.x2+1,
-                       y1,y2
-                       );
+
+  if (window->show_lpb_track)
+    create_double_border(
+                         wblock->lpbarea.x2+1,
+                         y1,y2
+                         );
+
+  if (window->show_bpm_track)
+    create_single_border(
+                         wblock->tempoarea.x2+1,
+                         y1,y2
+                         );
+
+  if (window->show_reltempo_track)
+    create_double_border(
+                         wblock->temponodearea.x2+1,
+                         y1,y2
+                         );
 }
 
 
@@ -1336,9 +1339,12 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     create_block_borders(window, wblock);
     create_linenumbers(window, wblock);
     create_tempograph(window, wblock);
-    create_lpbtrack(window, wblock);
-    create_bpmtrack(window, wblock);
-    create_reltempotrack(window, wblock);
+    if(window->show_lpb_track)
+      create_lpbtrack(window, wblock);
+    if(window->show_bpm_track)
+      create_bpmtrack(window, wblock);
+    if(window->show_reltempo_track)
+      create_reltempotrack(window, wblock);
     create_tracks(window, wblock);
     create_cursor(window, wblock);
   } GE_end_writing(GE_get_rgb(0));

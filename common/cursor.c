@@ -113,7 +113,17 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	
 	}else{
 		window->curr_track++;
-		if(0==window->curr_track) window->curr_track_sub= -1;
+
+                if (window->curr_track==TEMPOTRACK && window->show_bpm_track==false)
+                  window->curr_track++;
+
+                if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
+                  window->curr_track++;
+
+		if (0==window->curr_track)
+                  window->curr_track_sub= -1;
+                
+                
 	}
 	if(update==1){
 		return 2;
@@ -122,6 +132,21 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	}
 }
 
+static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *window){
+  if (window->show_lpb_track==true)
+    window->curr_track=LPBTRACK;
+  
+  else if (window->show_bpm_track==true)
+    window->curr_track=TEMPOTRACK;
+  
+  else if (window->show_reltempo_track==true)
+    window->curr_track=TEMPONODETRACK;
+  
+  else {
+    window->curr_track = window->wblock->left_track;
+    window->curr_track_sub = -1;
+  }
+}
 
 int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 	struct WTracks *wtrack=wblock->wtrack;
@@ -149,8 +174,20 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 			return 1;
 		}
 	}else{
-		if(LPBTRACK==window->curr_track) return 0;
+		if(LPBTRACK==window->curr_track)
+                  return 0;
+                
 		window->curr_track--;
+
+                if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
+                  window->curr_track--;
+
+                if (window->curr_track==TEMPOTRACK && window->show_bpm_track==false)
+                  window->curr_track--;
+
+                if (window->curr_track==LPBTRACK && window->show_lpb_track==false)
+                  set_curr_track_to_leftmost_legal_track(window);
+
 		return 1;
 	}
 }

@@ -130,7 +130,7 @@ public:
 
 void GFX_PositionUpperLeftArea(struct Tracker_Windows *tvisual, struct WBlocks *wblock){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  editor->upperleft_widget->position(wblock);
+  editor->upperleft_widget->position(tvisual, wblock);
 }
 
 void GFX_UpdateUpperLeft(struct Tracker_Windows *tvisual, struct WBlocks *wblock){

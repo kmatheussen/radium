@@ -80,7 +80,8 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+  
 obj0:
 obj1:
 obj2:
@@ -146,7 +147,8 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+  
 obj1:
 obj2:
 obj3:
@@ -262,7 +264,8 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+        
 obj2:
 obj3:
 obj4:

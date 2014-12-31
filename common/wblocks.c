@@ -116,18 +116,29 @@ void UpdateWBlockCoordinates(
 
 
 	wblock->tempocolorarea.x = wblock->zoomlinearea.x2   + 3;
-	wblock->tempocolorarea.x2= wblock->tempocolorarea.x + wblock->tempocolorarea.width;
-	wblock->lpbTypearea.x    = wblock->tempocolorarea.x2+ 3;
-	wblock->lpbTypearea.x2   = wblock->lpbTypearea.x    + wblock->lpbTypearea.width;
-	wblock->lpbarea.x        = wblock->lpbTypearea.x2   + 3;
-	wblock->lpbarea.x2       = wblock->lpbarea.x        + wblock->lpbarea.width;
-	wblock->tempoTypearea.x  = wblock->lpbarea.x2       + 3;
-	wblock->tempoTypearea.x2 = wblock->tempoTypearea.x  + wblock->tempoTypearea.width;
-	wblock->tempoarea.x      = wblock->tempoTypearea.x2 + 3;
-	wblock->tempoarea.x2     = wblock->tempoarea.x      + wblock->tempoarea.width;
-	wblock->temponodearea.x  = wblock->tempoarea.x2     + 2;
-	wblock->temponodearea.x2 = wblock->temponodearea.x  + wblock->temponodearea.width;
+	wblock->tempocolorarea.x2= wblock->tempocolorarea.x  + wblock->tempocolorarea.width;
+	wblock->lpbTypearea.x    = wblock->tempocolorarea.x2 + 3;
+	wblock->lpbTypearea.x2   = wblock->lpbTypearea.x     + wblock->lpbTypearea.width;
+	wblock->lpbarea.x        = wblock->lpbTypearea.x2    + 3;
+	wblock->lpbarea.x2       = wblock->lpbarea.x         + wblock->lpbarea.width;
 
+        if (!window->show_lpb_track)
+          wblock->tempoTypearea.x = wblock->lpbTypearea.x;
+        else
+          wblock->tempoTypearea.x  = wblock->lpbarea.x2      + 3;
+
+	wblock->tempoTypearea.x2 = wblock->tempoTypearea.x   + wblock->tempoTypearea.width;
+	wblock->tempoarea.x      = wblock->tempoTypearea.x2  + 3;
+	wblock->tempoarea.x2     = wblock->tempoarea.x       + wblock->tempoarea.width;
+
+        if (!window->show_bpm_track)
+          wblock->temponodearea.x  = wblock->tempoTypearea.x;
+        else
+          wblock->temponodearea.x  = wblock->tempoarea.x2      + 2;
+        
+	wblock->temponodearea.x2 = wblock->temponodearea.x   + wblock->temponodearea.width;
+
+        
         wblock->bottombar.x1 = wblock->a.x1;
         wblock->bottombar.y1 = wblock->a.y2;
         wblock->bottombar.x2 = wblock->a.y2;
@@ -138,7 +149,11 @@ void UpdateWBlockCoordinates(
 	wblock->reltempo.x2=wblock->temponodearea.x2-3;
 	wblock->reltempo.y2=wblock->bottombar.y2-1;
 
-	wblock->t.x1 = wblock->temponodearea.x2+2;
+        if (!window->show_reltempo_track)
+          wblock->t.x1 = wblock->temponodearea.x;
+        else
+          wblock->t.x1 = wblock->temponodearea.x2+2;
+                
 	wblock->t.x2 = wblock->a.x2;
 	wblock->t.y1 = wblock->linearea.y + 2;
 	wblock->t.y2 = wblock->a.y2;

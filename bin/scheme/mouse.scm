@@ -421,7 +421,8 @@
          (set! *current-track-num* (get-track-num X Y))
          (cond (*current-track-num*
                 (set-mouse-track *current-track-num*))
-               ((inside-box (ra:get-box temponode-area) X Y)
+               ((and (ra:reltempo-track-visible)
+                     (inside-box (ra:get-box temponode-area) X Y))
                 (set-mouse-track-to-reltempo)))))
 
 (define *current-subtrack-num* #f)
@@ -939,9 +940,10 @@
          (- (1- (ra:get-temponode-max)))
          (1- (ra:get-temponode-max))))
          
-(add-node-mouse-handler :Get-area-box (lambda () (ra:get-box temponode-area))
+(add-node-mouse-handler :Get-area-box (lambda () (and (ra:reltempo-track-visible) (ra:get-box temponode-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and (inside-box-forgiving (ra:get-box temponode-area) X Y)
+                                                  (and (ra:reltempo-track-visible)
+                                                       (inside-box-forgiving (ra:get-box temponode-area) X Y)
                                                        (match (list (find-node X Y get-temponode-box (ra:get-num-temponodes)))
                                                               (existing-box Num Box) :> (callback Num (temponodeval->01 (ra:get-temponode-value Num)) (Box :y))
                                                               _                      :> #f)))
@@ -973,6 +975,7 @@
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
                 (and (= $button *middle-button*)
+                     (ra:reltempo-track-visible)
                      (inside-box (ra:get-box temponode-area) $x $y)                                     
                      (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                             (existing-box Num Box) :> (begin
@@ -984,7 +987,8 @@
 ;; highlight current temponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (and (inside-box-forgiving (ra:get-box temponode-area) $x $y)
+         (and (ra:reltempo-track-visible)
+              (inside-box-forgiving (ra:get-box temponode-area) $x $y)
               (match (list (find-node $x $y get-temponode-box (ra:get-num-temponodes)))
                      (existing-box Num Box) :> (begin
                                                  (set-mouse-track-to-reltempo)

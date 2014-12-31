@@ -11,6 +11,7 @@ ENUM_GFX_CancelClipRect,
 ENUM_GFX_Line, 
 ENUM_GFX_Polygon, 
 ENUM_GFX_Polyline, 
+ENUM_GFX_CancelMixColor, 
 ENUM_GFX_SetMixColor, 
 ENUM_GFX_Text, 
 ENUM_GFX_BitBlt, 
@@ -27,6 +28,7 @@ case ENUM_GFX_CancelClipRect: OS_GFX_CancelClipRect(window, el->i1); break;
 case ENUM_GFX_Line: PREOS_GFX_Line(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
 case ENUM_GFX_Polygon: OS_GFX_Polygon(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6, el->p7, el->i8); break; 
 case ENUM_GFX_Polyline: OS_GFX_Polyline(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6, el->p7, el->i8); break; 
+case ENUM_GFX_CancelMixColor: OS_GFX_CancelMixColor(window); break; 
 case ENUM_GFX_SetMixColor: OS_GFX_SetMixColor(window, el->i1, el->i2, el->i3); break; 
 case ENUM_GFX_Text: PREOS_GFX_Text(window, el->i1, el->s2, el->i3, el->i4, el->i5, el->i6, el->i7); break; 
 case ENUM_GFX_BitBlt: OS_GFX_BitBlt(window, el->i1, el->i2, el->i3, el->i4, el->i5, el->i6); break; 
@@ -146,6 +148,12 @@ void QUEUE_GFX_Polyline(struct Tracker_Windows* tvisual, int color, int x1, int 
   el->i6 = num_points ; 
   el->p7 = peaks ; 
   el->i8 = where ; 
+} 
+
+void QUEUE_GFX_CancelMixColor(struct Tracker_Windows* tvisual){ 
+  if(tvisual->must_redraw==true) return; 
+  queue_element_t *el = get_next_element(tvisual->op_queue); 
+  el->type = ENUM_GFX_CancelMixColor ; 
 } 
 
 void QUEUE_GFX_SetMixColor(struct Tracker_Windows* tvisual, int color1, int color2, int mix_factor){ 

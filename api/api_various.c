@@ -482,7 +482,6 @@ void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
 #endif
 }
 
-
 void setBlockNoteShowType(int type,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
@@ -530,6 +529,55 @@ void switchBlockNoteShowType(int blocknum,int windownum){
 
   setBlockNoteShowType(type, blocknum, windownum);
 }
+
+void showHideLPBTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_lpb_track = !window->show_lpb_track;
+
+  if (!window->show_lpb_track && window->curr_track==LPBTRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideBPMTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_bpm_track = !window->show_bpm_track;
+
+  if (!window->show_bpm_track && window->curr_track==TEMPOTRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideReltempoTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_reltempo_track = !window->show_reltempo_track;
+
+  if (!window->show_reltempo_track && window->curr_track==TEMPONODETRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+bool lpbTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_lpb_track;
+}
+
+bool bpmTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_bpm_track;
+}
+
+bool reltempoTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_reltempo_track;
+}
+
 
 void addMenuMenu(char* name, char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;

@@ -47,6 +47,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     paint.eraseRect(0,0,width(),height());
   }
 
+  // called from the outside as well
   void updateWidgets(struct WBlocks *wblock){    
     lz->setValue(wblock->num_expand_lines);
     grid->setText(QString::number(root->grid_numerator)+"/"+QString::number(root->grid_denominator));
@@ -56,7 +57,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     reltempomax->setValue(wblock->reltempomax);
   }
 
-  void position(struct WBlocks *wblock){
+  // called from the outside
+  void position(struct Tracker_Windows *window, struct WBlocks *wblock){
 
     int x1 = 0;
     int x2 = wblock->lpbTypearea.x;
@@ -64,23 +66,39 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     int x4 = wblock->temponodearea.x;
     int x5 = wblock->t.x1;
 
-    int y2 = wblock->t.y1;
+    int width = x5;
+    int height = wblock->t.y1;
 
+    if (window->show_lpb_track)
+      LPBWidget->show();
+    else
+      LPBWidget->hide();
+    
+    if (window->show_bpm_track)
+      BPMWidget->show();
+    else
+      BPMWidget->hide();
+
+    if (window->show_reltempo_track)
+      ReltempoWidget->show();
+    else
+      ReltempoWidget->hide();
+    
     printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
 
-    resize(x5,y2);
+    resize(width,height);
 
     lineZoomWidget->move(x1,0);
-    lineZoomWidget->resize(x2-x1,y2);
+    lineZoomWidget->resize(x2-x1,height);
 
     LPBWidget->move(x2,0);
-    LPBWidget->resize(x3-x2,y2);
+    LPBWidget->resize(x3-x2,height);
 
     BPMWidget->move(x3,0);
-    BPMWidget->resize(x4-x3,y2);
+    BPMWidget->resize(x4-x3,height);
 
     ReltempoWidget->move(x4,0);
-    ReltempoWidget->resize(x5-x4,y2);
+    ReltempoWidget->resize(x5-x4,height);
 
   }
 

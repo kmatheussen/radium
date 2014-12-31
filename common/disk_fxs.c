@@ -94,7 +94,7 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
 
 error:
 	printf("\tLoadFXs_error\n");

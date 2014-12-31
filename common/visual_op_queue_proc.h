@@ -13,6 +13,7 @@ extern LANGSPEC void OS_GFX_CancelClipRect(struct Tracker_Windows* tvisual,int w
 extern LANGSPEC void OS_GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where); 
 extern LANGSPEC void OS_GFX_Polygon(struct Tracker_Windows* tvisual,int color,int x1,int y1,int x2,int y2,int num_points,APoint* peaks,int where); 
 extern LANGSPEC void OS_GFX_Polyline(struct Tracker_Windows* tvisual,int color,int x1,int y1,int x2,int y2,int num_points,APoint* peaks,int where); 
+extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual); 
 extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows* tvisual,int color1,int color2,int mix_factor); 
 extern LANGSPEC void OS_GFX_Text(struct Tracker_Windows* tvisual,int color,const char* text,int x,int y,int width,int flags,int where); 
 extern LANGSPEC void OS_GFX_BitBlt(struct Tracker_Windows* tvisual,int dx,int dy,int x,int y,int x2,int y2); 

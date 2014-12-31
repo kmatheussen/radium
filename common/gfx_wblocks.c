@@ -565,6 +565,11 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	);
 #endif
 
+        GFX_UpdateUpperLeft(window, wblock);
+
+	DrawAllWTrackHeaders(window,wblock);
+
+
         // fill the gap between wblock->bottombar.y1 and wblock->reltempo.y1
 	GFX_FilledBox(
 		window,11,
@@ -575,11 +580,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
                 PAINT_DIRECTLY
 	);
 
-	DrawAllWTrackHeaders(window,wblock);
-
 	DrawBlockRelTempo(window,wblock);
-
-        GFX_UpdateUpperLeft(window, wblock);
 }
 
 

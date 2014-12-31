@@ -139,13 +139,12 @@ void UpdateWTrackCoordinates(
 	wtrack->y2 = wblock->a.y2;
 	wtrack->x2 = wtrack->fxarea.x2;
 
-	wtrack->pan.x1 = wtrack->fxarea.x;
-	wtrack->pan.x2 = wtrack->x2;
-	//wtrack->pan.y1 = wblock->a.y1+(window->systemfontheight) + WTRACKS_SPACE*2;
-
         int y1_ = (wblock->a.y1+wblock->linearea.y)/2;
         int y2_ = (y1_+wblock->linearea.y)/2;
 
+	wtrack->pan.x1 = wtrack->fxarea.x;
+	wtrack->pan.x2 = wtrack->x2;
+	//wtrack->pan.y1 = wblock->a.y1+(window->systemfontheight) + WTRACKS_SPACE*2;
 	wtrack->pan.y1 = y1_;
 	wtrack->pan.y2 = y2_-1;
 
@@ -205,7 +204,7 @@ void UpdateAllWTracksCoordinates(
 	  wtrack=NextWTrack(wtrack);
 	}
         
-	leftX=wblock->temponodearea.x2+3;
+	leftX = wblock->t.x1;
 
 	wtrack=wblock->wtracks;
 	while(wtrack->l.num < wblock->left_track){
@@ -220,8 +219,8 @@ void UpdateAllWTracksCoordinates(
         }
 
 	if(wblock->left_subtrack>-1){
-	  leftX-=(wtrack->fxwidth*wblock->left_subtrack/wtrack->track->num_subtracks)
-	    + (wblock->left_subtrack>0 ? 1 : 0);
+	  leftX -= (wtrack->fxwidth*wblock->left_subtrack/wtrack->track->num_subtracks)
+       	           + (wblock->left_subtrack>0 ? 1 : 0);
 	}
 
 	UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);

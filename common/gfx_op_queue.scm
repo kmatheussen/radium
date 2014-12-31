@@ -91,6 +91,7 @@ void GFX_Polyline(
                                      int where
                                      );
 
+void GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 void GFX_SetMixColor(struct Tracker_Windows* tvisual,int color1,int color2,int mix_factor);
 
 void GFX_Text(

@@ -168,6 +168,8 @@ start:															\
 						goto var17;								\
 					case 18:										\
 						goto var18;								\
+					case 19:										\
+						goto var19;								\
 					default:										\
 						goto error;								\
 				}													\

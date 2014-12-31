@@ -295,6 +295,10 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	twindow->curr_track_sub= -1;
 
+        twindow->show_lpb_track=true;
+        twindow->show_bpm_track=true;
+        twindow->show_reltempo_track=true;
+        
 	//twindow->minnodesize=SETTINGS_read_int("minimum_node_size",20);
 
 	UpdateWBlocks(twindow);

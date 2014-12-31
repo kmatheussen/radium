@@ -628,6 +628,10 @@ void OS_GFX_Polyline(
 }
                     
 
+void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual){
+  g_use_custom_color = false;
+}
+
 void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, int mix_factor){
   //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("mix_factor: %d\n",mix_factor);

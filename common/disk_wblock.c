@@ -182,6 +182,8 @@ obj1:
 	DC_ListAdd1(&wblock->wtracks,LoadWTrack());
 	goto start;
 
+        
+var19:
 obj2:
 obj3:
 obj4:

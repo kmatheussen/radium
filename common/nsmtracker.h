@@ -1054,6 +1054,10 @@ struct Tracker_Windows{
 	int h_fontwidth;
 #endif
 
+  bool show_lpb_track;
+  bool show_bpm_track;
+  bool show_reltempo_track;
+
   int num_pixmapdefs;
   int *pixmapdefs;
   int *pixmapdefs_calc;
@@ -1063,6 +1067,7 @@ struct Tracker_Windows{
 #ifdef USE_GFX_OP_QUEUE
   void *op_queue;
 #endif
+
   bool must_redraw;
 };
 #define NextWindow(a) (struct Tracker_Windows *)((a)->l.next)

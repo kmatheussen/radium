@@ -144,6 +144,8 @@ extern LANGSPEC void OS_GFX_Points(
                                    int where
                                    );
 
+extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
+extern LANGSPEC void QUEUE_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2,int mix_factor);
 extern LANGSPEC void QUEUE_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2,int mix_factor);
 
@@ -392,6 +394,7 @@ void GFXST_BorderType2(
 #define GFX_T_DrawTrackBorderDouble(a,b,c,d,e) GFXST_BorderType2(GFX_DrawTrackBorderDouble,a,b,c,d,e)
 
 #define GFX_SetMixColor QUEUE_GFX_SetMixColor
+#define GFX_CancelMixColor QUEUE_GFX_CancelMixColor
 
 #define GFX_Polygon QUEUE_GFX_Polygon
 #define GFX_Polyline QUEUE_GFX_Polyline
