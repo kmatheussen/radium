@@ -381,6 +381,28 @@ static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tr
 }
 
 
+void X11_XEventPreHandler(void *focused_widget, XEvent *event){
+  init_keynums(focused_widget, event);
+  switch(event->type){
+  case EnterNotify:
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        X11_ResetKeysUpDowns();
+    }
+    break;
+  case LeaveNotify:
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        X11_ResetKeysUpDowns();
+    }
+    break;
+  }
+}
+
 extern int num_users_of_keyboard;
 
 bool X11_KeyboardFilter(void *focused_widget, XEvent *event){
@@ -410,36 +432,10 @@ bool X11_KeyboardFilter(void *focused_widget, XEvent *event){
 
     X11_MyKeyRelease(focused_widget, (XKeyEvent *)event,root->song->tracker_windows);
     return true;
-  case EnterNotify:
-    {
-      XCrossingEvent *e = (XCrossingEvent*) event;
-      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
-      if(e->focus==False)
-        X11_ResetKeysUpDowns();
-    }
-    break;
-  case LeaveNotify:
-    {
-      XCrossingEvent *e = (XCrossingEvent*) event;
-      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
-      if(e->focus==False)
-        X11_ResetKeysUpDowns();
-    }
-    break;
-  case ClientMessage:
-#if 0
-    if(X11Event_ClientMessage((XClientMessageEvent *)&event,root->song->tracker_windows)==false){
-      this->quit();
-    }
-#endif
-    break;
-  default:
-    //printf("Got unknwon event %d. %d %d\n",num++,instrumentWidgetUsesKeyboard(),event->type);
-
-    //fprintf(stderr, "got Unknown x11 event\n");
-    break;
   }
 
+  RError("Not supposed to happen\n");
+  
   return false;
 }
 

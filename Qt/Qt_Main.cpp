@@ -125,19 +125,17 @@ protected:
     if(is_starting_up==true)// || return_false_now)
       return false;
 
-    if(event->type!=KeyPress && event->type!=KeyRelease)
+    X11_XEventPreHandler(QApplication::focusWidget(), event);
+    
+    if (event->type!=KeyPress && event->type!=KeyRelease)
       return false;
-
-
-    struct Tracker_Windows *window = root->song->tracker_windows;
-
-    bool must_return_false = false;
-
 
     XKeyEvent *key_event = (XKeyEvent*)event;
 
     int keynum = X11_get_keynum(QApplication::focusWidget(), key_event);
 
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    bool must_return_false = false;
 
     if (keynum==EVENT_ALT_L){
       if (event->type==KeyPress){
