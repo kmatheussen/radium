@@ -1,6 +1,6 @@
 settings_version = 0.72 # dont change this one
 
-color0 = #827e73
+color0 = #817d74
 color1 = #00001d
 color2 = #f1ece6
 color3 = #98006d
@@ -9,15 +9,15 @@ color5 = #4e6160
 color6 = #91734e
 color7 = #23405d
 color8 = #310062
-color9 = #827d72
+color9 = #827e76
 color10 = #7a7a7a
 color11 = #65645c
 color12 = #104b8f
 color13 = #13511f
 color14 = #550000
-color15 = #777367
+color15 = #767369
 
-system_color = #827d72
+system_color = #827e76
 button_color = #65645c
 
 override_default_qt_colors = true
