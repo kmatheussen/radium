@@ -98,7 +98,10 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     else
       g_bottom_bar->BPMWidget->show();
 
-
+    if (window->show_lpb_track && window->show_bpm_track)
+      g_bottom_bar->tempo_line->hide();
+    
+    
     printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
 
     resize(width,height);
