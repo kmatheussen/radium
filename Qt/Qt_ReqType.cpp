@@ -207,7 +207,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     GL_lock();{
       QCoreApplication::processEvents();
     }GL_unlock();
-
+    
     //GTK_HandleEvents();
     if(text!=edit->text()){
       text = edit->text();

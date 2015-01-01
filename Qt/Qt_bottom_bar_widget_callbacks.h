@@ -95,11 +95,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     sps->setValue(scrolls_per_second);
 
     // For now, I haven't tried any machine where smooth scrolling doesn't work better than non-smooth scrolling. Anyay, just hide the sps options for now.
-#if 0
     sps->hide();
     sps_label->hide();
     sps_line->hide();
-    #endif
+
     // Adjust cpu label width
     {
       QFontMetrics fm(QApplication::font());

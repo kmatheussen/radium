@@ -251,7 +251,7 @@ public:
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
     , last_pos(-1.0f)
-    , sleep_when_not_painting(SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
+    , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
@@ -493,21 +493,22 @@ public:
 
     }
 
-    if(is_training_vblank_estimator==false && canDraw()) {
+    // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
+  
+    if (is_training_vblank_estimator==true)
+      swap();
 
-      if (draw()==false) {
-        if (sleep_when_not_painting) {
-          usleep(1000000 / 60);
-        } else
-          swap();
-      } else {
-        swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
-      }
+    else if (!canDraw())
+      swap(); // initializing.
 
-    } else {
-      //usleep(1000000 / 60.0);
-      swap(); // This is the only place the opengl thread waits. When swap() returns, updateEvent is called again immediately.
-    }
+    else if (draw()==true)
+      swap();
+
+    else if (!sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
+      swap();
+    
+    else
+      usleep(1000 * time_estimator.get_vblank());
   }
 
   // Main thread
