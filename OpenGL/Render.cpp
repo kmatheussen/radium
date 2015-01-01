@@ -834,7 +834,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     else if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
       GE_Context *foreground = GE_textcolor(colnum);
 
-      int cents = R_BOUNDARIES(0,(notenum - (int)notenum)*100,99);
+      int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
       
       if (cents==0)
         GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 

@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <math.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -31,10 +33,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "trackreallines2_proc.h"
 #include "OS_Player_proc.h"
 #include "windows_proc.h"
+#include "visual_proc.h"
+#include "OS_settings_proc.h"
 
 #include "notes_proc.h"
 
 
+#ifndef TEST_NOTES
 
 extern struct Root *root;
 extern PlayerClass *pc;
@@ -409,9 +414,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   TrackRealline2 *tr2 = tr->elements[0];
 
   if (tr2->pitch != NULL) {
-    PLAYER_lock();{
-      DeletePitch(track, tr2->pitch);
-    }PLAYER_unlock();
+    DeletePitch(track, tr2->note, tr2->pitch);
     if (tr->num_elements==1)
       MaybeScrollEditorDown(window);
     return;
@@ -482,6 +485,364 @@ struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
   return FindNote(track, &realline->l.p);
 }
 
+#endif // TEST_NOTES
+
+
+/******************/
+/* General RETURN */
+/******************/
+
+static int get_chroma(char chromachar){
+  chromachar = tolower(chromachar);
+
+  switch(chromachar){
+  case 'c':
+    return 0;
+  case 'd':
+    return 2;
+  case 'e':
+    return 4;
+  case 'f':
+    return 5;
+  case 'g':
+    return 7;
+  case 'a':
+    return 9;
+  case 'h':
+    return 11;
+  case 'b':
+    return 11;
+  default:
+    return -1;
+  }
+}
+
+static char *chroma_to_string(int chroma){
+  switch(chroma){
+  case 0:
+    return "c";
+  case 1:
+    return "c#";
+  case 2:
+    return "d";
+  case 3:
+    return "d#";
+  case 4:
+    return "e";
+  case 5:
+    return "f";
+  case 6:
+    return "f#";
+  case 7:
+    return "g";
+  case 8:
+    return "g#";
+  case 9:
+    return "a";
+  case 10:
+    return "a#";
+  case 11:
+    return "b";
+  default:
+    return talloc_format("<error: \"%d\" is outside note range>", chroma);
+  }
+}
+
+
+static int get_octave(char octavechar){
+  octavechar = tolower(octavechar);
+
+  switch(octavechar){
+  case '0':
+    return 0;
+  case '1':
+    return 1;
+  case '2':
+    return 2;
+  case '3':
+    return 3;
+  case '4':
+    return 4;
+  case '5':
+    return 5;
+  case '6':
+    return 6;
+  case '7':
+    return 7;
+  case '8':
+    return 8;
+  case '9':
+    return 9;
+  case 'a':
+    return 10;
+  case 'b':
+    return 11;
+  case 'c':
+    return 12;
+  default:
+    return -1;
+  }
+}
+
+static char *octave_to_string(int octave){
+  switch(octave){
+  case 0:
+    return "0";
+  case 1:
+    return "1";
+  case 2:
+    return "2";
+  case 3:
+    return "3";
+  case 4:
+    return "4";
+  case 5:
+    return "5";
+  case 6:
+    return "6";
+  case 7:
+    return "7";
+  case 8:
+    return "8";
+  case 9:
+    return "9";
+  case 10:
+    return "a";
+  case 11:
+    return "b";
+  case 12:
+    return "c";
+  default:
+    return talloc_format("<error: \"%d\" is outside octave range>", octave);   
+  }
+}
+
+
+static int get_sharp(char sharptext){
+  if(sharptext=='#')
+    return 1;
+  else if(sharptext=='b')
+    return -1;
+  else if(sharptext=='B')
+    return -1;
+  else if(sharptext=='-')
+    return 0;
+  else
+    return -2;
+}
+
+static char *substring(char *s,int start,int end){
+  char *ret       = talloc(end-start+1);
+  int   read_pos  = start;
+  int   write_pos = 0;
+
+  while(read_pos<end)
+    ret[write_pos++] = s[read_pos++];
+
+  return ret;
+}
+
+static int string_charpos(char *s, char c){
+  int pos=0;
+  while(s[pos]!=0){
+    if(s[pos]==c)
+      return pos;
+    pos++;
+  }
+  return -1;
+}
+
+static char *strip_whitespace(char *s){
+  char *ret=s;
+
+  // strip before
+  while(isspace(ret[0]))
+    ret++;
+
+
+  // strip after
+  int pos=strlen(ret)-1;
+  while(isspace(ret[pos])){
+    ret[pos]=0;
+    pos--;
+  }
+
+
+  return ret;
+}
+
+static float notenum_from_notetext(char *notetext){
+  int chroma, octave, sharp;
+
+  char *stripped = strip_whitespace(notetext);
+
+  char *notename;
+    
+  int comma_pos = string_charpos(stripped, ',');
+  if (comma_pos != -1)
+    notename = substring(stripped,0,comma_pos);
+  else
+    notename = stripped;
+
+  printf("stripped: -%s-, notename: -%s-\n",stripped,notename);
+  
+  if(strlen(notename)==2){
+
+    chroma = get_chroma(notename[0]);
+    sharp = 0;
+    octave = get_octave(notename[1]);
+
+  } else if(strlen(notename)==3){
+
+    chroma = get_chroma(notename[0]);
+    sharp = get_sharp(notename[1]);
+    octave = get_octave(notename[2]);
+
+  } else
+    return -1;
+
+  if(chroma==-1 || sharp==-2 || octave==-1)
+    return -1;
+
+  float decimals = 0.0f;
+
+  if (comma_pos != -1) {
+    char *decimaltext = stripped + comma_pos + 1;
+#ifdef TEST_NOTES
+    decimals = atof(decimaltext) / 100.0f;
+#else
+    decimals = OS_get_double_from_string(decimaltext) / 100.0f;
+#endif
+    printf("decimaltext: -%s-, dec: %f\n",decimaltext,decimals);
+  }
+  
+  float notenum = octave*12 + chroma + sharp + decimals;
+
+  if(notenum<=0 || notenum>127.99)
+    return -1;
+  else
+    return notenum;
+}
+
+static char *notetext_from_notenum(float notenumf){
+  int notenum = notenumf;
+  int cents = 0;
+  
+  if (notenumf!=floorf(notenum)){
+    float decimals = notenumf - floorf(notenum);
+    printf("___ decimals: %f\n",decimals);
+    cents = roundf(decimals*100.0f);
+  }
+  
+  int octave = notenum / 12;
+  int chroma = notenum - (octave*12);
+
+  printf("************************************************************************** octave: %d, chroma: %d, cents: %d\n",octave,chroma,cents);
+  char *wholenotestring = talloc_format("%s%s",chroma_to_string(chroma), octave_to_string(octave));
+
+  if (cents != 0)
+    return talloc_format("%s,%d", wholenotestring, cents);
+  else
+    return wholenotestring;
+}
+
+
+#ifndef TEST_NOTES
+
+static float request_notenum(struct Tracker_Windows *window, char *title, float old_notenum){
+  float notenum = -1;
+  
+  ReqType reqtype=GFX_OpenReq(window,30,12,"Set Pitch");
+
+  if (old_notenum>0.0f)
+    GFX_SetString(reqtype, notetext_from_notenum(old_notenum));
+
+  char temp[1024];
+  sprintf(temp, "%s (for example: c4 or c#5) >", title);
+  
+  while(notenum <= 0.0f){
+    char *notetext = GFX_GetString(
+                                   window,
+                                   reqtype,
+                                   temp
+                                   );
+    if(notetext==NULL)
+      break;
+    
+    notenum = notenum_from_notetext(notetext);
+  }
+  
+  GFX_CloseReq(window,reqtype);
+
+  printf("notenum: %f\n",notenum);
+  
+  return notenum;
+}
+
+static void r_add_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *p){
+  float notenum = request_notenum(window, "Add pitch", -1);
+  if(notenum > 0.0f)
+    AddPitch(window, wblock, wtrack, note, p, notenum);
+}
+
+static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *p){
+  float notenum = request_notenum(window, "Add note", -1);
+  
+  if(notenum > 0.0f)
+    InsertNote(wblock, wtrack, p, NULL, notenum, NOTE_get_velocity(wtrack->track), false);
+}
+
+static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Pitches *pitch){
+  float notenum = request_notenum(window, "Edit pitch", pitch->note);
+  
+  if(notenum > 0.0f)
+    pitch->note = notenum; // lock not necessary
+}
+
+static void r_edit_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
+  float notenum = request_notenum(window, "Edit note", note->note);
+  
+  if(notenum > 0.0f)
+    note->note = notenum; // lock not necessary
+}
+
+
+void EditNoteCurrPos(struct Tracker_Windows *window){
+  struct WBlocks       *wblock        = window->wblock;
+  struct WTracks       *wtrack        = wblock->wtrack;    
+  int                   curr_realline = wblock->curr_realline;  
+  vector_t             *tr            = TR_get(wblock, wtrack,curr_realline);
+
+  if (tr->num_elements==0) {
+
+    struct LocalZooms *realline = wblock->reallines[curr_realline];
+    Place             *p        = &realline->l.p;
+    struct Notes      *note     = FindNote(wtrack->track, p);
+      
+    if (note != NULL)
+      r_add_pitch(window, wblock, wtrack, note, p);
+    else
+      r_add_note(window, wblock, wtrack, p);
+      
+  } else {
+
+    TrackRealline2 *tr2 = tr->elements[0];
+
+    if (tr2->pitch != NULL)
+      r_edit_pitch(window, wblock, wtrack, tr2->pitch);
+
+    else if (tr2->note != NULL)
+      r_edit_note(window, wblock, wtrack, tr2->note);
+    
+  }
+  
+}
+
+
+  /******************************/
+ /* Not General RETURN anymore */
+/******************************/
+
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
@@ -524,4 +885,83 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 
         window->must_redraw=true;
 }
+#endif // TEST_NOTES
 
+
+
+#ifdef TEST_NOTES
+
+#include <stdarg.h>
+#include <assert.h>
+
+void EndProgram(void){
+  printf("ENDPROGRAM called\n");
+}
+
+void RError(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  fprintf(stderr,"error: %s\n",message);
+}
+
+static void cmp(char *text, float value){
+  fprintf(stderr,"\n\nComparing \"%s\" against %f\n",text,value);
+  
+  float from_text = notenum_from_notetext(text);
+
+  char *from_value = notetext_from_notenum(value);
+  float from_text_from_value = notenum_from_notetext(from_value);
+
+  fprintf(stderr,"from_text: %f, from_value: \"%s\", from_text_from_value: %f (value: %f)\n",
+          from_text,
+          from_value,
+          from_text_from_value,
+          value
+          );
+  
+  assert(abs(from_text-value) < 0.001);
+  assert(abs(from_text_from_value-value) < 0.001);
+}
+
+int main(void){
+
+  assert(notenum_from_notetext("") < 0);
+  assert(notenum_from_notetext("y5") < 0);
+  assert(notenum_from_notetext("cd") < 0);
+
+  assert(notenum_from_notetext("cb0") < 0);
+
+  cmp("c0,1",0.01);
+  cmp("c0,10",0.1);
+  cmp("c#0",1);
+  cmp("c#0,99",1.99);
+  cmp("ga",127);
+  cmp("ga,99",127.99);
+  cmp("g-a",127);
+  cmp("g-a,99",127.99);
+
+  cmp("C0,1",0.01);
+  cmp("C0,10",0.1);
+  cmp("C#0",1);
+  cmp("C#0,99",1.99);
+  cmp("G-A",127);
+  cmp("G-A,99",127.99);
+
+  int cents;
+  for(cents=0;cents<100;cents++){
+    char *a = talloc_format("c9,%d",cents);
+    cmp(a,108.0 + (float)cents/100.0f);
+  }
+
+  printf("Success, no errors\n");
+
+  return 0;
+}
+
+#endif

@@ -66,6 +66,7 @@ static const int y_margin = 5;
 struct MyReqType{
   QFrame *frame;
   QString label_text;
+  QString default_value;
   int y;
   bool widgets_disabled;
 };
@@ -122,6 +123,12 @@ void GFX_WriteString(ReqType das_reqtype,const char *text){
   reqtype->label_text += text;
 }
 
+void GFX_SetString(ReqType das_reqtype,const char *text){
+  MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
+
+  reqtype->default_value = text;
+}
+
 namespace{
   class MyQLineEdit : public QLineEdit {
   public:
@@ -174,9 +181,10 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   }
 
   MyQLineEdit *edit = new MyQLineEdit(reqtype->frame);
+  edit->insert(reqtype->default_value);
   edit->move(x + 5, reqtype->y);
   edit->show();
-
+  
   reqtype->frame->adjustSize();
   reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
 

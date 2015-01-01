@@ -41,6 +41,7 @@ extern LANGSPEC ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,in
 extern LANGSPEC void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtype);
 
 extern LANGSPEC void GFX_WriteString(ReqType reqtype,const char *text);
+extern LANGSPEC void GFX_SetString(ReqType das_reqtype,const char *text);
 extern LANGSPEC void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength);
 extern LANGSPEC int GFX_ReqTypeMenu(
 	struct Tracker_Windows *tvisual,

@@ -723,11 +723,6 @@ struct WTracks{
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 
-#if !USE_OPENGL
-	WFXNodes **wfxnodes;
-        WPitches **wpitches; // Can be removed, plus all usage of it. Not used in OpenGL.
-#endif
-
 	TBox pan;
 	TBox volume;
 

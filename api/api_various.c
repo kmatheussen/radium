@@ -196,7 +196,7 @@ void generalReturn(int windownum){
       if (window->curr_track_sub>=0)
         AddVelocityCurrPos(window);
       else if (window->curr_track_sub==-1)
-        SetPitchCurrPos(window);
+        EditNoteCurrPos(window);
     }
     break;
   }  
