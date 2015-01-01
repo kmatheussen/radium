@@ -114,7 +114,7 @@ public:
 #endif
 
 #if USE_OPENGL
-    QWidget *gl_widget;
+    QWidget *gl_widget; // Note: might be NULL
 #endif
 
     //QFrame *status_frame;

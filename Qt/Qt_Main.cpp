@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextEdit>
 #include <QLayout>
 
-
 #ifdef USE_QT4
 #include <QMainWindow>
 
@@ -580,7 +579,7 @@ int radium_main(char *arg){
 
   g_qt_is_running = true;
 
-  #if 0
+#if 0
     vector_t v = {0};
   VECTOR_push_back(&v,"hepp1");
   VECTOR_push_back(&v,"hepp2");
@@ -784,8 +783,9 @@ int radium_main(char *arg){
 #endif
 
   g_qt_is_running = false;
-  
-  GL_stop_widget(editor->gl_widget);
+
+  if (editor->gl_widget != NULL)
+    GL_stop_widget(editor->gl_widget);
 
 #if 0
   while(doquit==false){

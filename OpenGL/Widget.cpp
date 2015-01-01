@@ -14,6 +14,7 @@
 #include <QApplication>
 #include <QAbstractButton>
 #include <QMainWindow>
+#include <QGLFormat>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -295,6 +296,9 @@ public:
     glContext->initGLContext();
     glContext->addEventListener(this);
 
+    //printf("FLAGS: %d\n",QGLFormat::openGLVersionFlags());
+    //gets(NULL);
+  
 #if FOR_LINUX
     if(0)set_realtime(SCHED_FIFO,1);
 #endif
@@ -677,6 +681,11 @@ static void setup_widget(QWidget *parent){
 
 QWidget *GL_create_widget(QWidget *parent){
 
+  if (QGLFormat::hasOpenGL()==false) {
+    GFX_Message(NULL,"OpenGL not found");
+    return NULL;
+  }
+  
   if (do_estimate_questionmark() == false) {
 
     setup_widget(parent);
