@@ -446,6 +446,11 @@ void SetupMainWindow(void){
     }
     main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
     status_bar->setSizeGripEnabled(false);
+
+    {
+      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      status_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name() + "; }");
+    }
   }
 #else
   {
