@@ -5972,7 +5972,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-/home/kjetil/radium/bin/sounds/016.WAV
+sounds/016.WAV
 instrument_number
 0
 INT_TYPE
