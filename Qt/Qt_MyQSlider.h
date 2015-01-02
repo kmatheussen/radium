@@ -54,6 +54,8 @@ extern struct Root *root;
 QVector<MyQSlider*> g_all_myqsliders;
 #endif
 
+extern struct TEvent tevent;
+
 static int g_minimum_height = 0;
 
 struct MyQSlider : public QSlider {
@@ -120,14 +122,36 @@ struct MyQSlider : public QSlider {
   }
 #endif
 
+  float last_value;
+  float last_pos;
   bool _has_mouse;
 
   void handle_mouse_event ( QMouseEvent * event ){
     //printf("Got mouse press event %d / %d\n",(int)event->x(),(int)event->y());
-    if (orientation() == Qt::Vertical)
-      setValue(scale_int(event->y(),height(),0,minimum(),maximum()));
-    else
-      setValue(scale_int(event->x(),0,width(),minimum(),maximum()));
+
+    float slider_length;
+    float new_pos;
+
+    if (orientation() == Qt::Vertical) {
+      new_pos = event->y();
+      slider_length = height();
+    } else {
+      new_pos = event->x();
+      slider_length = width();
+    }
+
+    float dx = new_pos - last_pos;
+    float per_pixel = (float)(maximum() - minimum()) / (float)slider_length;
+
+    if (AnyCtrl(tevent.keyswitch))
+      per_pixel /= 10.0f;
+
+    last_pos = new_pos;
+    last_value += dx*per_pixel;
+
+    setValue(last_value);
+
+    //printf("dx: %f, per_pixel: %f, min/max: %f / %f, value: %f\n",dx,per_pixel,(float)minimum(),(float)maximum(),(float)value());
 
     event->accept();
   }
@@ -148,6 +172,8 @@ struct MyQSlider : public QSlider {
       }
 #endif
 
+      last_value = value();
+      last_pos = event->x();
       handle_mouse_event(event);
       _has_mouse = true;
 
