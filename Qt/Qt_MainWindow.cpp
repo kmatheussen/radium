@@ -345,13 +345,15 @@ public:
     }
   }
 
-  // Want the wheel to work from everywhere.
+#if 0
+  // Want the wheel to work from everywhere. (actually we don't want that)
   void wheelEvent(QWheelEvent *qwheelevent) {
     if(is_starting_up==true)
       return;
-
+    printf("Got wheel event\n");
     g_editor->wheelEvent(qwheelevent);
   }
+#endif
 };
 
 void SetupMainWindow(void){
