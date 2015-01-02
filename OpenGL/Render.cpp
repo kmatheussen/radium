@@ -40,7 +40,7 @@ static float get_nodeline_width(void){
   static float width = -1;
 
   if (width<0)
-    width = 1.0; //SETTINGS_read_double("gfx_nodeline_width", 1.0); // If changing this value, also change bin/config
+    width = 1.3; //SETTINGS_read_double("gfx_nodeline_width", 1.0); // If changing this value, also change bin/config
 
   return width;
 }
