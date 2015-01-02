@@ -34,19 +34,19 @@ bool GFXS_EnsureBoundaries(
 				int x,int y,int x2,int y2
 ){
 	if(x<0){
-		RError("Error. x<0: %d in function %s.\n",x,type);
+          //RError("Error. x<0: %d in function %s.\n",x,type);
 		return false;
 	}
 	if(x2<0){
-		RError("Error. x2<0: %d in function %s.\n",x2,type);
+          //	RError("Error. x2<0: %d in function %s.\n",x2,type);
 		return false;
 	}
 	if(y<0){
-		RError("Error. y<0: %d in function %s.\n",y,type);
+          //	RError("Error. y<0: %d in function %s.\n",y,type);
 		return false;
 	}
 	if(y2<0){
-		RError("Error. x<0: %d in function %s.\n",y2,type);
+          //	RError("Error. x<0: %d in function %s.\n",y2,type);
 		return false;
 	}
 	if(y2>=window->height){
@@ -55,7 +55,7 @@ bool GFXS_EnsureBoundaries(
 		return false;
 	}
 	if(y>=window->height){
-		RError("Error. y>=window->height: %d>=%d in function %s.\n",y,window->height,type);
+          //	RError("Error. y>=window->height: %d>=%d in function %s.\n",y,window->height,type);
 		return false;
 	}
 	return true;

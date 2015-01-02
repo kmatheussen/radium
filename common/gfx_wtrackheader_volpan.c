@@ -53,16 +53,12 @@ static void DrawOnOffBox(
   int y1=box.y1+1;
   int y2=box.y2-1;
 
-  if (onoff) {
-    // GFX_SetMixColor(window,5,0,500);
-
-    GFX_T_FilledBox(
-                    window,5,
-                    x1,y1,
-                    x2,y2,
-                    PAINT_BUFFER
-                    );
-  }
+  GFX_T_FilledBox(
+                  window,onoff?5:15,
+                  x1,y1,
+                  x2,y2,
+                  PAINT_BUFFER
+                  );
 }
 
 void UpdateVolumeSlider(

@@ -149,7 +149,7 @@ void DrawAllWTrackHeaders(
 {  
 
 	GFX_T_FilledBox(
-		window, 0,
+		window, 11,
 		wblock->t.x1, 0,
 		window->width, wblock->t.y1,
                 PAINT_BUFFER

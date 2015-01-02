@@ -255,9 +255,9 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 
 	window->wblock->isgfxdatahere=true;
 
+#if !USE_OPENGL
         ClearUnusedWindowsAreas(window);
 
-#if !USE_OPENGL
         Blt_unMarkVisible(window); // Need a better name for this function.
 #endif
 }

@@ -389,7 +389,9 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
     g_use_custom_color = false;
   }
 
-
+#if USE_OPENGL
+  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+#else
   if(where==PAINT_BUFFER && (colornum==15 || colornum==12)){
     if(y>=tvisual->wblock->t.y1){
       //colornum = 15;
@@ -413,6 +415,7 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
     painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
 
   }
+#endif
 }
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){

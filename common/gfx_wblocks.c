@@ -552,33 +552,19 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	SetCursorPos(window);
 #endif
 
-	DrawBottomSlider(window);
-
-#if 0
-	GFX_Line(
-		window,4,
-		wblock->a.x1,
-		wblock->t.y2+1,
-		window->bottomslider.x-1,
-		wblock->t.y2+1,
+        // fill background
+	GFX_FilledBox(
+		window,11,
+		0,            wblock->bottombar.y1,
+		wblock->t.x2, window->height-1,
                 PAINT_DIRECTLY
 	);
-#endif
+
+	DrawBottomSlider(window);
 
         GFX_UpdateUpperLeft(window, wblock);
 
 	DrawAllWTrackHeaders(window,wblock);
-
-
-        // fill the gap between wblock->bottombar.y1 and wblock->reltempo.y1
-	GFX_FilledBox(
-		window,11,
-		0,
-		wblock->bottombar.y1,
-		wblock->t.x2,
-		wblock->reltempo.y1,
-                PAINT_DIRECTLY
-	);
 
 	DrawBlockRelTempo(window,wblock);
 }
