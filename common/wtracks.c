@@ -510,6 +510,14 @@ update:
 	}
 	*/
 
+#if 1
+        // small adjustment.
+        {
+          struct WTracks *rightwtrack = (struct WTracks *)ListFindElement1(&wblock->wtracks->l, wblock->right_track);
+          rightwtrack->x2 = wblock->a.x2;
+        }
+#endif
+
 	window->must_redraw = true;
 
 	if( ! pc->isplaying){

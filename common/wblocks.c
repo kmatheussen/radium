@@ -102,7 +102,7 @@ void UpdateWBlockCoordinates(
 ){
 	wblock->a.x1  = R_MAX(window->fontwidth+3,window->leftslider.width+1);
 	wblock->a.y1  = 0;
-	wblock->a.x2 = window->width;
+	wblock->a.x2 = window->width + 3; // Not quite sure why we have to add 2 here.
 	wblock->a.y2 = window->height - window->bottomslider.width - 2;
 
 	wblock->linearea.y  = wblock->a.y1+(window->systemfontheight*2) + WTRACKS_SPACE*3;

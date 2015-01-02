@@ -42,10 +42,10 @@ void DrawWTrackNames(
 
   struct Patch *patch = wtrack1->track->patch;
   
-  int x1 = wtrack1->x;
-  int x2 = wtrack2->x2;
+  int x1 = wtrack1->x + 2;
+  int x2 = wtrack2->x2 - 1;
   int y1 = wtrack1->y;
-  int y2 = wtrack1->panonoff.y1;
+  int y2 = wtrack1->panonoff.y1 - 1;
 
   // Background
   int colornum = patch==NULL ? 15 : patch->colornum;
