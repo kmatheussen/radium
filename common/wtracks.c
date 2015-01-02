@@ -408,7 +408,7 @@ void MinimizeBlock_CurrPos(
 	int nummul=1;
 	//	int orgnotelenght=wblock->wtrack->notelength;
 
-	Undo_Block_CurrPos(window);
+        Undo_Block_CurrPos(window);
 
 	SetCursorPosConcrete(window,wblock,0,-1);
 

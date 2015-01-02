@@ -58,7 +58,7 @@ void Undo_Block(
       || wtrack!=last_wtrack
       || realline!=last_realline
       || Undo_get_last_function()!=Undo_Do_Block)
-    Undo_Add(
+    Undo_Add_dont_stop_playing(
              window->l.num,
              wblock->l.num,
              wtrack->l.num,
