@@ -265,7 +265,9 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
          window->leftslider.width, get_scrollbar_y2(window, wblock),
          1.0f);
 
-  GE_Context *scrollbar = GE_color_z(2, Z_SCROLLBAR);
+
+  GE_Context *scrollbar = GE_mix_color_z(GE_get_rgb(1), GE_get_rgb(0), 700, Z_SCROLLBAR);
+
   GE_filledBox(scrollbar,
                2,                            0,
                window->leftslider.width - 2, get_scrollbar_scroller_height(window,wblock)
