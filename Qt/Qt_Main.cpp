@@ -729,7 +729,7 @@ int radium_main(char *arg){
     SETTINGS_write_string("last_system_font_version","1.9.21");
   }
 
-  if(strcmp(SETTINGS_read_string("last_editor_font_version","0.0"),"0")){
+  if(strcmp(SETTINGS_read_string("last_editor_font_version","3.0.b2.2"),"3.0.b2.2")){
     GFX_Message(NULL,
                 "Note!\n\n"
                 "The default editor font has changed. In case you have run Radium before, you might want to go to the Edit menu and select \"Set Default Editor Font\".\n\n"
