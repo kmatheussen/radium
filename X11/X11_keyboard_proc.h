@@ -32,7 +32,7 @@ extern LANGSPEC int X11_KeyRelease(XKeyEvent *event,struct Tracker_Windows *wind
 
 extern LANGSPEC void X11_ResetKeysUpDowns(void);
 
-extern LANGSPEC void X11_XEventPreHandler(void *focused_widget, XEvent *event);
+extern LANGSPEC void X11_XEventPreHandler(XEvent *event);
 extern LANGSPEC bool X11_KeyboardFilter(void *focus_widget, XEvent *event);
 
 #endif

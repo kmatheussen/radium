@@ -124,7 +124,7 @@ protected:
     if(is_starting_up==true)// || return_false_now)
       return false;
 
-    X11_XEventPreHandler(QApplication::focusWidget(), event);
+    X11_XEventPreHandler(event);
     
     if (event->type!=KeyPress && event->type!=KeyRelease)
       return false;

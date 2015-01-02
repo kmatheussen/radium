@@ -41,7 +41,7 @@ extern PlayerClass *pc;
 
 static hash_t *keyupdowns = NULL;
 
-static int keycode_to_keynum[256];
+static int keycode_to_keynum[256]; // "A KeyCode represents a physical (or logical) key. KeyCodes lie in the inclusive range [8,255]" (keyboard-encoding.html)
 
 
 void X11_ResetKeysUpDowns(void){
@@ -79,6 +79,10 @@ void X11_init_keyboard(void) {
   X11_ResetKeysUpDowns();
 }
 
+
+static bool keynum_is_qualifier(int keynum){
+  return keynum<EVENT_FIRST_NON_QUALIFIER;
+}
 
 static int keysym_to_keynum(KeySym keysym) {
 
@@ -227,8 +231,8 @@ static void init_keynums(void *focused_widget, XEvent *event){
   static bool inited_keynums = false;
 
 
-  if(event->type==KeyPress || event->type==KeyRelease) {
-
+  if(event->type==KeyPress || event->type==KeyRelease){
+    
     XAnyEvent *any_event = (XAnyEvent *)event;
 
     if(inited_keynums==false){
@@ -246,19 +250,23 @@ static void init_keynums(void *focused_widget, XEvent *event){
       
       inited_keynums = true;
     }
+
+    int keynum = keycode_to_keynum[((XKeyEvent *)any_event)->keycode]; 
+
+    if (!keynum_is_qualifier(keynum)){ // Setting back keyboard is only necessary if writing some text. This test was added to avoid minor pauses when pressing the ctrl key on the top of a new widget, for instance a slider.
+      struct displays_t *display = displays;
     
-    struct displays_t *display = displays;
-    
-    while(display!=NULL && display->focused_widget!=focused_widget)
-      display=display->next;
-    
-    if(display==NULL){
-      printf("\n\nSetting back keyboards for display %p\n\n",any_event->display);
-      PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-      display = calloc(1,sizeof(struct displays_t));
-      display->focused_widget = focused_widget;
-      display->next = displays;
-      displays = display;
+      while(display!=NULL && display->focused_widget!=focused_widget)
+        display=display->next;
+      
+      if(display==NULL){
+        printf("\n\nSetting back keyboards for display %p\n\n",any_event->display);
+        PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+        display = calloc(1,sizeof(struct displays_t));
+        display->focused_widget = focused_widget;
+        display->next = displays;
+        displays = display;
+      }
     }
   }
 }
@@ -327,7 +335,7 @@ static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *win
   g_last_pressed_key = keynum;
   g_last_pressed_key_time = MIXER_get_time();
 
-  if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
+  if(keynum_is_qualifier(keynum))
     tevent.SubID=EVENT_NO;
 
   return EventReciever(&tevent,window);
@@ -381,8 +389,7 @@ static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tr
 }
 
 
-void X11_XEventPreHandler(void *focused_widget, XEvent *event){
-  init_keynums(focused_widget, event);
+void X11_XEventPreHandler(XEvent *event){
   switch(event->type){
   case EnterNotify:
     {
