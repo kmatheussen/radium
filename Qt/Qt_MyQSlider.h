@@ -149,6 +149,11 @@ struct MyQSlider : public QSlider {
     last_pos = new_pos;
     last_value += dx*per_pixel;
 
+    if (last_value < minimum())
+      last_value = minimum();
+    if (last_value > maximum())
+      last_value = maximum();
+
     setValue(last_value);
 
     //printf("dx: %f, per_pixel: %f, min/max: %f / %f, value: %f\n",dx,per_pixel,(float)minimum(),(float)maximum(),(float)value());
