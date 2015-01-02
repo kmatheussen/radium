@@ -947,9 +947,20 @@ int main(int argc, char **argv){
         }
       }
     }
-    
+
+    // set system font
+
+    bool custom_config_set = false;
     const char *fontstring = SETTINGS_read_string("system_font",NULL);
-    if(fontstring!=NULL){
+
+    if(fontstring==NULL) {
+      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+      fontstring = SETTINGS_read_string("system_font",NULL);
+      R_ASSERT(fontstring != NULL);
+      custom_config_set = true;
+    }
+
+    {
       QFont font;
       font.fromString(fontstring);
       if(SETTINGS_read_string("system_font_style",NULL)!=NULL)
@@ -958,22 +969,10 @@ int main(int argc, char **argv){
       QApplication::setFont(font);
     }
 
-
-#if 0
-
-    int system_font_size = SETTINGS_read_int((char*)"system_font_size",-1);
-    if(system_font_size>=0){
-#if 0 //defined(FOR_MACOSX)
-      QFont font=QFont(QApplication::font().family(),system_font_size);
-#else
-      QFont font=QFont("Nimbus Sans L",system_font_size);
-#endif
-      //QFont font=QFont("Nimbus Sans L",10);
-      //font.setPointSize(system_font_size);
-      //QFont font=QFont("Bitstream Vera Sans Mono",system_font_size);
-      QApplication::setFont(font);
+    if (custom_config_set==true){
+      SETTINGS_unset_custom_configfile();
     }
-#endif
+
   }
 
 

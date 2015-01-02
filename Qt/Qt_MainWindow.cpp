@@ -78,6 +78,7 @@ static HWND gtk_hwnd = NULL;
 
 #include "../common/settings_proc.h"
 #include "../common/eventreciever_proc.h"
+#include "../common/OS_settings_proc.h"
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
@@ -480,17 +481,27 @@ void SetupMainWindow(void){
 #if USE_QT_VISUAL
 
   {
+    bool custom_config_set = false;
     QFont font = QFont("Monospace");
 
     const char *fontstring = SETTINGS_read_string("font",NULL);
-    if(fontstring!=NULL)
-      font.fromString(fontstring);
+    if(fontstring==NULL) {
+      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+      fontstring = SETTINGS_read_string("font",NULL);
+      R_ASSERT(fontstring != NULL);
+      custom_config_set = true;
+    }
 
-    //const char *fontstyle = SETTINGS_read_string("font_style",NULL);  //(arrgh, there's a billion bugs in qt when it comes to font styles)
-    //if(fontstyle!=NULL)
-    //  font.setStyleName(fontstyle);
+    font.fromString(fontstring);
+
+    if(SETTINGS_read_string("font_style",NULL)!=NULL)
+      font.setStyleName(SETTINGS_read_string("font_style",NULL));
 
     editor->font = font;
+
+    if (custom_config_set==true){
+      SETTINGS_unset_custom_configfile();
+    }
 
     //editor->font->setStyleHint(QFont::TypeWriter);
     //editor->font->setFixedPitch(false);
