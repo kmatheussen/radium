@@ -423,7 +423,7 @@ static long RT_src_callback(void *cb_data, float **data){
 }
 #endif
 
-static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
+static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
   if(pitch<=0.0)
     pitch=0.0f;
   if(pitch>126)
@@ -435,14 +435,19 @@ static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
   return data->samplerate / scale(finetune, 0, 1, sample->frequency_table[notenum], sample->frequency_table[notenum+1]);
 }
 
+static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
+  double adjusted_pitch = pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
+  return RT_get_src_ratio3(data, sample, adjusted_pitch);
+}
+
 static double RT_get_src_ratio(Data *data, Voice *voice){
   const Sample *sample = voice->sample;
 
   //int notenum = voice->note_num + (int)data->octave_adjust*12 + (int)data->note_adjust;
   //int notenum = voice->note_num + (int)data->note_adjust;
-  float pitch = voice->end_pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
+  //float pitch = voice->end_pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
 
-  return RT_get_src_ratio2(data,sample,pitch);
+  return RT_get_src_ratio2(data,sample,voice->end_pitch);
 }
 
 static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_frames){
@@ -699,7 +704,7 @@ static int time_to_frame(Data *data, double time, float note_num){
   
   const Sample *sample=data->notes[(int)note_num].samples[0];
 
-  double src_ratio = RT_get_src_ratio2(data, sample, note_num+data->note_adjust);
+  double src_ratio = RT_get_src_ratio2(data, sample, note_num);
 
   return
     data->startpos*sample->num_frames 
