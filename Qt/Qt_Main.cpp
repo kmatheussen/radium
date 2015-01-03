@@ -663,8 +663,11 @@ int radium_main(char *arg){
 
         main_window->setCentralWidget(ysplitter);
 
-        ysplitter->setStretchFactor(0,1);
+        ysplitter->setStretchFactor(0,100000);
         ysplitter->setStretchFactor(1,0);
+        ysplitter->handle(1)->setEnabled(false);
+
+        qApp->setStyleSheet("QSplitter::handle{background-color: " + editor->colors[11].dark(110).name() + ";}"); 
       }
 
       //MixerWidget *mixer_widget = 
