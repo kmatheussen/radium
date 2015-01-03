@@ -1466,7 +1466,8 @@
                 (and (= Button *right-button*)
                      *current-track-num*
                      (inside-box (ra:get-box track-notes *current-track-num*) X Y)
-                     (ra:change-track-note-area-width)
+                     (ra:change-track-note-area-width *current-track-num*)
+                     (ra:select-track *current-track-num*)
                      #f))))
 
 
@@ -1702,8 +1703,11 @@
                 (and (= Button *right-button*)
                      *current-track-num*
                      (inside-box (ra:get-box track-fx *current-track-num*) X Y)
+                     (ra:select-track *current-track-num*)
                      (ra:add-FX-mouse-pos)
                      #f))))
+
+
 
 ;; Show and set:
 ;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
@@ -1788,6 +1792,16 @@
          result))
 
 
+
+;; move tracker cursor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and ;(= Button *middle-button*)
+                     *current-track-num*
+                     (ra:select-track *current-track-num*)
+                     #f))))
 
 
 #||

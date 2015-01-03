@@ -1651,7 +1651,7 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
 // fxes
 //////////////////////////////////////////////////
 
-void addFX(int windownum, int blocknum, int tracknum){
+void addFX(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;

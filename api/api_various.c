@@ -263,9 +263,20 @@ void changeBlockNoteLength(int windownum){
   ChangeNoteLength_Block_CurrPos(window);
 }
 
-void changeTrackNoteAreaWidth(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  ChangeNoteAreaWidth_CurrPos(window);
+void changeTrackNoteAreaWidth(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return;
+
+  wtrack->is_wide = !wtrack->is_wide;
+  window->must_redraw = true;
 }
 
 void changeBlockNoteAreaWidth(int windownum){
