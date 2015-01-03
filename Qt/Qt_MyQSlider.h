@@ -143,6 +143,8 @@ struct MyQSlider : public QSlider {
     float dx = new_pos - last_pos;
     float per_pixel = (float)(maximum() - minimum()) / (float)slider_length;
 
+    //printf("***** last_pos: %d, new_pos: %d, dx: %d\n",(int)last_pos,(int)new_pos,(int)dx);
+    
     if (AnyCtrl(tevent.keyswitch))
       per_pixel /= 10.0f;
 
@@ -178,8 +180,11 @@ struct MyQSlider : public QSlider {
 #endif
 
       last_value = value();
-      last_pos = event->x();
-      handle_mouse_event(event);
+      if (orientation() == Qt::Vertical)
+        last_pos = event->y();
+      else
+        last_pos = event->x();
+      //handle_mouse_event(event);
       _has_mouse = true;
 
     }else{
