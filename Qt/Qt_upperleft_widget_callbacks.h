@@ -37,13 +37,13 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   }
 
   virtual void paintEvent( QPaintEvent *e ){
-    static int upcounter = 0;
-    printf("upperleft paintEvent %d\n",upcounter++);
+    //static int upcounter = 0;
+    //printf("upperleft paintEvent %d\n",upcounter++);
     QPainter paint(this);
     //paint.fillRect(0,0,width(),height(),g_editor->colors[0]);
     paint.eraseRect(0,0,width(),height());
   }
-
+  
   // called from the outside as well
   void updateWidgets(struct WBlocks *wblock){    
     lz->setValue(wblock->num_expand_lines);
@@ -102,7 +102,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       g_bottom_bar->tempo_line->hide();
     
     
-    printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
+    //printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
 
     resize(width,height);
 

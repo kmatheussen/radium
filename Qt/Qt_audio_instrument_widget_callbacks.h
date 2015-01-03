@@ -177,7 +177,7 @@ public:
       //effects_layout->
 
     } else
-      browserLayoutWidget->hide();
+      browserWidget->hide();
 
     // Add compressor
     {
@@ -394,14 +394,14 @@ public:
   }
 
   void updateWidgets(){
-    set_arrow_style(controlsArrow);
-    set_arrow_style(arrow2);
+    set_arrow_style(controlsArrow, false);
+    set_arrow_style(arrow2, false);
     set_arrow_style(arrow3);
     set_arrow_style(arrow4);
     set_arrow_style(arrow5);
     set_arrow_style(arrow6);
-    set_arrow_style(arrow7);
-    set_arrow_style(browserArrow);
+    set_arrow_style(arrow7, false);
+    set_arrow_style(browserArrow, false);
     if(pipe_label!=NULL)
       set_arrow_style(pipe_label,false);
 

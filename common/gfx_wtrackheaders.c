@@ -34,9 +34,6 @@ void DrawWTrackNames(
                      int endtrack
                      )
 {
-  printf("Updating from %d to %d\n",starttrack,endtrack);
-  //return;
-  
   struct WTracks *wtrack1 = ListFindElement1(&wblock->wtracks->l, starttrack);
   struct WTracks *wtrack2 = ListFindElement1(&wblock->wtracks->l, endtrack);
 
