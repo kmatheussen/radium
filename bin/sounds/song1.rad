@@ -1,5 +1,5 @@
 RADIUM SONG
-0.7
+0.72
 
 \
 OSSTUFF
@@ -45,7 +45,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-6
+8
 author
 0
 STRING_TYPE
@@ -60,6 +60,14 @@ STRING_TYPE
 
 comment
 2
+STRING_TYPE
+
+comment
+3
+STRING_TYPE
+
+comment
+4
 STRING_TYPE
 
 show_after_loading
@@ -84,10 +92,10 @@ TRACKER_WINDOW
 0
 
 ?width
-919
+1801
 
 ?height
-669
+994
 
 ?fontID
 0
@@ -115,7 +123,7 @@ TRACKER_WINDOW
 
 ?leftslider
 1
-14
+8
 
 ?bottomslider
 1
@@ -147,13 +155,13 @@ WBLOCK
 33
 
 ?temponodearea
-91
+187
 
 ?maxwtracksize
 0
 
 ?curr_realline
-23
+24
 
 ?num_reallines
 79
@@ -390,10 +398,13 @@ WTRACK
 3
 
 ?fxwidth
-99
+165
 
 ?num_vel
 1
+
+?is_wide
+0
 /
 
 \
@@ -407,10 +418,13 @@ WTRACK
 3
 
 ?fxwidth
-69
+165
 
 ?num_vel
 1
+
+?is_wide
+0
 /
 
 \
@@ -424,10 +438,13 @@ WTRACK
 3
 
 ?fxwidth
-69
+165
 
 ?num_vel
 1
+
+?is_wide
+0
 /
 
 \
@@ -441,10 +458,13 @@ WTRACK
 3
 
 ?fxwidth
-69
+165
 
 ?num_vel
 1
+
+?is_wide
+0
 /
 
 \
@@ -458,10 +478,13 @@ WTRACK
 3
 
 ?fxwidth
-69
+165
 
 ?num_vel
 1
+
+?is_wide
+0
 /
 
 \
@@ -475,10 +498,13 @@ WTRACK
 3
 
 ?fxwidth
-69
+165
 
 ?num_vel
 1
+
+?is_wide
+0
 /
 
 \
@@ -492,61 +518,13 @@ WTRACK
 3
 
 ?fxwidth
-69
+165
 
 ?num_vel
 1
-/
 
-\
-WTRACK
-7
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-69
-
-?num_vel
-1
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-69
-
-?num_vel
-1
-/
-
-\
-WTRACK
-9
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-69
-
-?num_vel
-1
+?is_wide
+0
 /
 /
 /
@@ -559,7 +537,7 @@ BLOCK
 First Block
 
 ?num_tracks
-10
+7
 
 ?num_lines
 64
@@ -615,14 +593,14 @@ VELOCITIES
 
 \
 PITCHES
-5
+4
 0
 1
-53
+51
 11
 0
 1
-48
+49
 /
 /
 
@@ -699,7 +677,7 @@ NOTE
 65534
 50
 0
-51197
+65536
 63
 65533
 65534
@@ -736,6 +714,10 @@ VELOCITIES
 
 \
 PITCHES
+63
+3
+4
+36
 /
 /
 
@@ -745,7 +727,7 @@ FXS
 
 \
 FX
-23
+24
 
 ?name
 System Lp F.
@@ -760,13 +742,13 @@ System Lp F.
 65536
 
 ?effect_num
-23
+24
 
 \
 FXDATA
 
 ?num
-23
+24
 
 ?name
 System Lp F.
@@ -1725,7 +1707,7 @@ FXS
 
 \
 FX
-19
+20
 
 ?name
 System Pan
@@ -1740,13 +1722,13 @@ System Pan
 65536
 
 ?effect_num
-19
+20
 
 \
 FXDATA
 
 ?num
-19
+20
 
 ?name
 System Pan
@@ -3556,7 +3538,7 @@ FXS
 
 \
 FX
-19
+20
 
 ?name
 System Pan
@@ -3571,13 +3553,13 @@ System Pan
 65536
 
 ?effect_num
-19
+20
 
 \
 FXDATA
 
 ?num
-19
+20
 
 ?name
 System Pan
@@ -3740,93 +3722,6 @@ FXNODELINES
 65536
 /
 /
-/
-
-\
-TRACK
-7
-
-?onoff
-1
-
-?trackname
-<click me>
-
-?volume
-800
-
-?pan
-0
-
-?volumeonoff
-1
-
-?panonoff
-0
-
-?patchnum
--1
-
-?instrument_type
-0
-/
-
-\
-TRACK
-8
-
-?onoff
-1
-
-?trackname
-<click me>
-
-?volume
-800
-
-?pan
-0
-
-?volumeonoff
-1
-
-?panonoff
-0
-
-?patchnum
--1
-
-?instrument_type
-0
-/
-
-\
-TRACK
-9
-
-?onoff
-1
-
-?trackname
-<click me>
-
-?volume
-800
-
-?pan
-0
-
-?volumeonoff
-1
-
-?panonoff
-0
-
-?patchnum
--1
-
-?instrument_type
-0
 /
 
 \
@@ -5488,47 +5383,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-48
-Cross Mode
-0
-FLOAT_TYPE
-1
-Dry Level [dB]
-0
-FLOAT_TYPE
-0
-Haas Effect
-0
-FLOAT_TYPE
-0
-L Delay [ms]
-0
-FLOAT_TYPE
-32.20000076293945
-L Echo Level [dB]
-0
-FLOAT_TYPE
-0
-L Feedback [%]
-0
-FLOAT_TYPE
-28.22999954223633
-R Echo Level [dB]
-0
-FLOAT_TYPE
-0
-R/Haas Delay [ms]
-0
-FLOAT_TYPE
-58.79999923706055
-R/Haas Feedback [%]
-0
-FLOAT_TYPE
-31.61000061035156
-Swap Outputs
-0
-FLOAT_TYPE
-0
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -5561,6 +5416,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -5657,6 +5516,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -5685,11 +5548,11 @@ FLOAT_TYPE
 name
 0
 STRING_TYPE
-TAP Stereo Echo
+Pipe
 type_name
 0
 STRING_TYPE
-Ladspa
+Pipe
 << HASH MAP V2 END
 x
 0
@@ -5718,7 +5581,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-71
+73
 Band 1:  Solo
 0
 FLOAT_TYPE
@@ -5883,6 +5746,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -5958,7 +5825,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-1.267652034759521
+3.021691799163818
 System Out On/Off
 0
 FLOAT_TYPE
@@ -5976,6 +5843,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -6040,7 +5911,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-43
+45
 HF Damping
 0
 FLOAT_TYPE
@@ -6093,6 +5964,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -6189,6 +6064,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -6250,7 +6129,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -6283,6 +6162,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -6379,6 +6262,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -6435,12 +6322,12 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -6473,6 +6360,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -6520,7 +6411,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.0795014426112175
+0.2517676949501038
 System In On/Off
 0
 FLOAT_TYPE
@@ -6569,6 +6460,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -6598,6 +6493,20 @@ name
 0
 STRING_TYPE
 System Out
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+2
+output_portname
+0
+STRING_TYPE
+out_3
+output_portname
+1
+STRING_TYPE
+out_4
+<< HASH MAP V2 END
 type_name
 0
 STRING_TYPE
@@ -6630,7 +6539,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -6663,6 +6572,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -6759,6 +6672,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -6820,8 +6737,12 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-47
+50
 Attack
+0
+FLOAT_TYPE
+0
+Crossfade
 0
 FLOAT_TYPE
 0
@@ -6889,6 +6810,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -6964,7 +6889,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-0.9997119307518005
+1.248102188110352
 System Out On/Off
 0
 FLOAT_TYPE
@@ -6985,6 +6910,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -7022,7 +6951,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-/home/kjetil/radium-qt4/bin/sounds/bbs2.wav
+/home/kjetil/radium/bin/sounds/bbs2.wav
 instrument_number
 0
 INT_TYPE
@@ -7064,11 +6993,15 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-47
+50
 Attack
 0
 FLOAT_TYPE
 7.699999809265137
+Crossfade
+0
+FLOAT_TYPE
+0
 Decay
 0
 FLOAT_TYPE
@@ -7133,6 +7066,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -7229,6 +7166,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -7266,7 +7207,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-/home/kjetil/radium-qt4/bin/sounds/016.WAV
+/home/kjetil/radium/bin/sounds/016.WAV
 instrument_number
 0
 INT_TYPE
@@ -7308,11 +7249,15 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-47
+50
 Attack
 0
 FLOAT_TYPE
 3.799999952316284
+Crossfade
+0
+FLOAT_TYPE
+0
 Decay
 0
 FLOAT_TYPE
@@ -7377,6 +7322,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -7473,6 +7422,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -7510,7 +7463,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-/home/kjetil/radium-qt4/bin/sounds/Guitar_Nylon.wav
+/home/kjetil/radium/bin/sounds/Guitar_Nylon.wav
 instrument_number
 0
 INT_TYPE
@@ -7552,7 +7505,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -7585,6 +7538,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -7678,6 +7635,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
