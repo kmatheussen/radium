@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
 
+#ifndef TEST_PATH_RESOLVER
+
 #include "EditorWidget.h"
 
 extern int num_users_of_keyboard;
@@ -57,8 +59,58 @@ void OS_unset_loading_path(void){
   _loading_path = NULL;
 }
 
+#endif // !TEST_PATH_RESOLVER
 
-const char *OS_get_resolved_file_path(const char *path){
+static QString saving_path;
+
+void OS_set_saving_path(const char *filename){
+  QFileInfo info(filename);
+  saving_path = info.absolutePath();
+  printf("saving_path: -%s-\n",saving_path.ascii());
+}
+
+
+
+/*
+  Returns a path which is relative to the loading/saving path, if possible.
+
+  It works like this:
+
+  filepath      saving_path   result
+  ========================================
+  /a/b/c.wav    /a/b          c.wav          (returns a relative path)
+  /d/e/f.wav    /a/b          /d/e/f.wav     (returns a full path
+  /a/b/c.wav    /a            b/c.wav        (returns a relative path)
+
+*/
+const char *OS_saving_get_relative_path_if_possible(const char *filepath){
+  if (saving_path.isEmpty())
+    return filepath;
+
+  QFileInfo info(filepath);
+
+  if (info.isRelative())
+    return filepath;
+  
+  printf("canonical: -%s-\n",info.absolutePath().ascii());
+
+  QString filepath2 = info.absolutePath()+QDir::separator();
+  QString savepath2 = saving_path+QDir::separator();
+  printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.ascii(),savepath2.ascii());
+
+  if (filepath2.startsWith(savepath2))
+    return filepath + savepath2.length();
+  else
+    return filepath;
+}
+
+
+
+
+
+#ifndef TEST_PATH_RESOLVER
+
+const char *OS_loading_get_resolved_file_path(const char *path){
   QFileInfo info(path);
 
   // Try the original path
@@ -121,3 +173,57 @@ const char *OS_get_resolved_file_path(const char *path){
     return talloc_strdup(info3.filePath());
   }
 }
+
+#endif // !TEST_PATH_RESOLVER
+
+
+
+#ifdef TEST_PATH_RESOLVER
+
+#include <stdarg.h>
+#include <assert.h>
+
+#include "../common/control_proc.h"
+
+char *talloc_strdup(char *s){
+  return strdup(s);
+}
+                   
+void EndProgram(void){
+  printf("ENDPROGRAM called\n");
+}
+
+void RError(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  fprintf(stderr,"error: %s\n",message);
+}
+
+int main(void){
+
+  OS_set_saving_path("/asdf/tmp/filename.rad");
+
+  printf("-%s- -%s-\n",OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai"),saving_path.ascii());
+
+  assert(!strcmp(OS_saving_get_relative_path_if_possible("/badffa"), "/badffa"));
+  assert(!strcmp(OS_saving_get_relative_path_if_possible("/badffa/aba"), "/badffa/aba"));
+  assert(!strcmp(OS_saving_get_relative_path_if_possible("badffa/aba"), "badffa/aba"));
+
+  assert(!strcmp(OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai"), "aiai"));
+  assert(!strcmp(OS_saving_get_relative_path_if_possible("/asdf/tmp2/aiai"), "/asdf/tmp2/aiai"));
+
+  assert(!strcmp(OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai/aiai234"), "aiai/aiai234"));
+
+
+  printf("Success, no errors\n");
+
+  return 0;
+}
+
+#endif

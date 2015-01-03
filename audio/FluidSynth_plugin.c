@@ -9,7 +9,6 @@
 #include "../common/nsmtracker.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/instruments_proc.h"
-#include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
 
 #include "audio_instrument_proc.h"
@@ -484,7 +483,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const char *sf2_file, int ba
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  const char *filename   = OS_get_resolved_file_path(HASH_get_string(state, "filename"));
+  const char *filename   = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
   int         bank_num   = HASH_get_int(state, "bank_num");
   int         preset_num = HASH_get_int(state, "preset_num");
 
@@ -498,7 +497,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  HASH_put_string(state, "filename", data->filename);
+  HASH_put_string(state, "filename", OS_saving_get_relative_path_if_possible(data->filename));
   HASH_put_int(state, "bank_num", data->bank_num);
   HASH_put_int(state, "preset_num", data->preset_num);
 }

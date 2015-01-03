@@ -45,6 +45,8 @@ void Save_Clean(const char *filename,struct Root *theroot){
 		return;
 	}
 
+        OS_set_saving_path(filename);
+        
 	length1=fprintf(dc.file,"RADIUM SONG\n");
 	length2=fprintf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
 

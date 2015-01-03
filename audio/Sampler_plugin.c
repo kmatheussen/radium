@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <sndfile.h>
 
 #include "../common/nsmtracker.h"
-#include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/read_binary.h"
@@ -1582,7 +1581,7 @@ static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  const char *filename          = OS_get_resolved_file_path(HASH_get_string(state, "filename"));
+  const char *filename          = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
   int         instrument_number = HASH_get_int(state, "instrument_number");
   int         resampler_type    = HASH_get_int(state, "resampler_type");
 
@@ -1596,7 +1595,9 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  HASH_put_string(state, "filename",data->filename);
+  const char *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
+  //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
+  HASH_put_string(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "instrument_number",data->instrument_number);
   HASH_put_int(state, "resampler_type",data->resampler_type);
 }
