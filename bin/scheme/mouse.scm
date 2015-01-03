@@ -1459,6 +1459,15 @@
                         
                         
 
+;; switch track note area width
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     *current-track-num*
+                     (inside-box (ra:get-box track-notes *current-track-num*) X Y)
+                     (ra:change-track-note-area-width)
+                     #f))))
 
 
 ;; fxnodes
@@ -1685,6 +1694,16 @@
                                                (fxnode-info :tracknum))
                              #t)
                            #f))))))
+
+;; add fx
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     *current-track-num*
+                     (inside-box (ra:get-box track-fx *current-track-num*) X Y)
+                     (ra:add-FX-mouse-pos)
+                     #f))))
 
 ;; Show and set:
 ;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
