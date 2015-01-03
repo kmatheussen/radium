@@ -117,7 +117,7 @@ static void DrawAllWTrackNames(
     else
       wtrack2 = NextWTrack(wtrack2);
   }
-  
+
 }
 
 static void DrawAllWTrackSliders(
@@ -138,7 +138,34 @@ static void DrawAllWTrackSliders(
     wtrack=NextWTrack(wtrack);
   }
 }
-                                 
+
+static void DrawAllWTrackOnOffs(
+                                struct Tracker_Windows *window,
+                                struct WBlocks *wblock
+                                )
+{
+
+  struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+  
+  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+
+	if(wtrack->track->onoff==0){
+		GFX_T_Line(window,2,
+                           wtrack->x+2,wtrack->y+1,
+                           wtrack->x2-2,wtrack->y+(window->org_fontheight*2)-1,
+                           PAINT_BUFFER
+		);
+		GFX_T_Line(window,2,
+                           wtrack->x2-2,wtrack->y+1,
+                           wtrack->x+2,wtrack->y+(window->org_fontheight*2)-1,
+                           PAINT_BUFFER
+		);
+	}
+
+        wtrack=NextWTrack(wtrack);
+  }
+}
+
 void DrawAllWTrackHeaders(
                           struct Tracker_Windows *window,
                           struct WBlocks *wblock
@@ -155,6 +182,8 @@ void DrawAllWTrackHeaders(
         DrawAllWTrackNames(window,wblock);
 
         DrawAllWTrackSliders(window, wblock);
+
+        DrawAllWTrackOnOffs(window, wblock);
 }
 
 
