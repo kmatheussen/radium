@@ -116,7 +116,7 @@ const char *OS_loading_get_resolved_file_path(const char *path){
   printf("path: -%s-, loading-path: -%s-\n",path,_loading_path);
 
   // Try the original path
-  if(info.exists()==true){
+  if(!info.isRelative() && info.exists()==true){
     return talloc_strdup(path);
   }
   
