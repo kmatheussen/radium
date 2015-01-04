@@ -54,30 +54,19 @@ static float get_nodeline_width(bool is_selected){
     return width;
 }
 
-static void draw_nonbordered_text(
-                                  const struct Tracker_Windows *window,
-                                  int colornum, int z,
-                                  char *text,
-                                  int x,
-                                  int y
-                                  )
-{
-  GE_Context *c = GE_textcolor_z(colornum, z);
-
-  GE_text(c, text, x, y);
-}
-
 static void draw_bordered_text(
                                const struct Tracker_Windows *window,
-                               int colornum, int z,
+                               GE_Context *c,
                                char *text,
                                int x,
                                int y
                                )
 {
-  draw_nonbordered_text(window, colornum, z, text, x, y);
+  GE_text(c, text, x, y);
   
 #if 1
+  int z = GE_get_z(c);
+    
   int x2=x+(strlen(text)*window->fontwidth);
   int y2=y+window->fontheight-1;
 
@@ -101,7 +90,7 @@ static void draw_bordered_text(
 
 static void draw_text_num(
                           const struct Tracker_Windows *window,
-                          int colornum, int z,
+                          GE_Context *c,
                           int num,
                           int length,
                           int x,
@@ -127,8 +116,8 @@ static void draw_text_num(
   
   sprintf(temp3,"%s%s",temp2,temp);
   temp3[length+1]=0;
-  
-  draw_nonbordered_text(window, colornum, z, temp3, x, y);
+
+  GE_text(c, temp3, x, y);
 }
 
 
@@ -337,9 +326,38 @@ static void create_background(const struct Tracker_Windows *window, const struct
    Linenumbers
  ************************************/
 
-static void create_background_linenumber(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline){
+static void draw_linenumber(const struct Tracker_Windows *window, const struct WBlocks *wblock, int colornum, int linenumber, int realline, bool is_zoomline){
   int y = get_realline_y1(window, realline);
+  const int z = Z_LINENUMBERS | Z_STATIC_X;
 
+  GE_Context *c;
+
+  if (colornum<0)
+    c = GE_color_alpha_z(-colornum, 0.3, z);
+  else
+    c = GE_textcolor_z(colornum, z);
+  
+  int x,width;
+
+  if (is_zoomline) {
+    width = wblock->zoomlinearea.width/window->fontwidth;
+    x = wblock->zoomlinearea.x;
+  } else {
+    width = wblock->linenumarea.width/window->fontwidth;
+    x = wblock->linenumarea.x;
+  }
+
+  draw_text_num(
+                window,
+                c,
+                linenumber,
+                width,
+                x,
+                y
+                );
+}
+
+static void draw_realline_linenumber(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline){
   struct LocalZooms *localzoom = wblock->reallines[realline];
 
   int colornum;
@@ -360,34 +378,40 @@ static void create_background_linenumber(const struct Tracker_Windows *window, c
     colornum=1;
   }
 
-  int z = Z_LINENUMBERS | Z_STATIC_X;
-  
   if(localzoom->level>0 && localzoom->zoomline>0){
     if (localzoom->zoomline>1
         || (realline+1 < wblock->num_reallines && wblock->reallines[realline+1]->zoomline==localzoom->zoomline+1)  // only show subline number if there are more than one subline
         )
-      draw_text_num(
-                    window,
-                    colornum, z,
-                    localzoom->zoomline,
-                    wblock->zoomlinearea.width/window->fontwidth,
-                    wblock->zoomlinearea.x,
-                    y);
+      draw_linenumber(window,
+                      wblock,
+                      colornum,
+                      localzoom->zoomline,
+                      realline,
+                      true
+                      );
   }else{
-    draw_text_num(
-                  window,
-                  colornum, z,
-                  localzoom->Tline,
-                  (wblock->linenumarea.width)/window->fontwidth,
-                  wblock->linenumarea.x,
-                  y);
+    draw_linenumber(window,
+                    wblock,
+                    colornum,
+                    localzoom->Tline,
+                    realline,
+                    false
+                    );
   }  
 }
 
 static void create_linenumbers(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_background_linenumber(window, wblock, realline);
+    draw_realline_linenumber(window, wblock, realline);
+  
+  draw_linenumber(window,
+                  wblock,
+                  -1,
+                  wblock->block->num_lines,
+                  wblock->num_reallines,
+                  false
+                  );
 }
 
 
@@ -491,7 +515,7 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
   if(lpb!=0){
     draw_text_num(
                   window,
-                  1, Z_ZERO,
+                  GE_textcolor_z(1, Z_ZERO),
                   lpb,
                   wblock->lpbarea.width/window->fontwidth,
                   wblock->lpbarea.x,
@@ -511,8 +535,7 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
       abort();
     };
     
-    GE_Context *c = GE_textcolor_z(1, Z_ZERO);
-    GE_text(c, typetext, wblock->lpbTypearea.x, y);
+    GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->lpbTypearea.x, y);
   }
 }
 
@@ -535,11 +558,11 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
   int y     = get_realline_y1(window, realline);
   int tempo = wblock->wtempos[realline].tempo;
   int type  = wblock->wtempos[realline].type;
-  
+
   if(tempo!=0){
     draw_text_num(
                   window,
-                  1, Z_ZERO,
+                  GE_textcolor_z(1, Z_ZERO),
                   tempo,
                   wblock->tempoarea.width/window->fontwidth,
                   wblock->tempoarea.x,
@@ -559,8 +582,7 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
       abort();
     };
 
-    GE_Context *c = GE_color(1);
-    GE_text(c, typetext, wblock->tempoTypearea.x, y);
+    GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->tempoTypearea.x, y);
   }
 }
 
@@ -847,7 +869,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       }
       
     }else
-      draw_bordered_text(window, colnum, Z_ZERO, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+      draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
 
   }
 }

@@ -322,6 +322,9 @@ void GE_set_z(GE_Context *c, int new_z) {
   c->_z = new_z;
 }
 
+int GE_get_z(GE_Context *c){
+  return c->_z;
+}
 
 /* Drawing */
 
