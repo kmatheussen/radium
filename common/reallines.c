@@ -394,12 +394,24 @@ static void ExpandLineInternal(
 	wblock->num_reallines+=num_newreallines-1;
 }
 
+static bool ensure_positive_expand_lines(struct WBlocks *wblock){
+  if (wblock->num_expand_lines < 0) {
+    GFX_Message(NULL, "Currently not possible to zoom in on single line when LZ (Line zoom) is less than 1/1");
+    return false;
+  }
+    
+  return true;
+}
+
 void ExpandLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int realline,
 	int num_newreallines
 ){
+
+  if (!ensure_positive_expand_lines(wblock))
+    return;
 
   ExpandLineInternal(window,wblock,realline,num_newreallines,false);
 
@@ -414,7 +426,12 @@ void ExpandLineCurrPos(
 	struct Tracker_Windows *window,
 	int num_newreallines
 ){
+
+
 	struct WBlocks *wblock=window->wblock;
+
+        if (!ensure_positive_expand_lines(wblock))
+          return;
 
 	Undo_Reallines_CurrPos(window);
 
@@ -445,6 +462,10 @@ int FindNumReallinesFor(struct LocalZooms *localzoom){
 
 void Unexpand(struct Tracker_Windows *window,struct WBlocks *wblock,int realline){
 
+  if (!ensure_positive_expand_lines(wblock))
+    return;
+
+  
 	struct LocalZooms *localzoom=FindLocalZoomRoot(wblock,&realline);
 	if(localzoom==NULL) return;
 
@@ -458,8 +479,12 @@ void Unexpand(struct Tracker_Windows *window,struct WBlocks *wblock,int realline
 }
 
 void UnexpandCurrPos(struct Tracker_Windows *window){
+
 	struct WBlocks *wblock=window->wblock;
 	int realline=wblock->curr_realline;
+
+        if (!ensure_positive_expand_lines(wblock))
+          return;
 
 	PlayStop();
 
@@ -477,6 +502,10 @@ void UnexpandCurrPos(struct Tracker_Windows *window){
 
 
 void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
+
+    if (!ensure_positive_expand_lines(wblock))
+    return;
+
 	int curr_realline_org=wblock->curr_realline;
 	int curr_realline=curr_realline_org;
 	int num_reallines=wblock->num_reallines;

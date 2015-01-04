@@ -92,7 +92,6 @@ void expandLine(int numlines,int windownum){
   if(window==NULL) return;
 
   Zoom(window,window->wblock,numlines);
-
 }
 
 
@@ -101,7 +100,6 @@ void splitLine(int numlines,int windownum){
   if(window==NULL) return;
 
   ExpandLineCurrPos(window,numlines);
-
 }
 
 void unsplitLine(int windownum){
