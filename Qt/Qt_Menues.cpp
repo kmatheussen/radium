@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMenuBar>
 #include <QApplication>
+#include <QMainWindow>
 
 #ifdef USE_QT4
 #  include <Q3PopupMenu>
@@ -159,6 +160,22 @@ void gakk(){
 
 bool GFX_MenuActive(){
   return current_menu->base->activeAction() != NULL;
+}
+
+
+bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  return editor->main_window->menuBar()->isVisible();
+}
+
+void GFX_ShowMenu(struct Tracker_Windows *tvisual){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->main_window->menuBar()->show();  
+}
+
+void GFX_HideMenu(struct Tracker_Windows *tvisual){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->main_window->menuBar()->hide();  
 }
 
 void initMenues(QMenuBar *base_menu){

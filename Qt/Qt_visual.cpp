@@ -597,7 +597,7 @@ void OS_GFX_Polygon(
                     
 
 void OS_GFX_Polyline(
-                    struct Tracker_Windows *tvisual,
+                     struct Tracker_Windows *tvisual,
                     int colornum,
                     int x1, int y1, int x2, int y2,
                     int num_points,

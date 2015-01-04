@@ -436,6 +436,7 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
 }
 
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
+
   double adjusted_pitch = pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
   return RT_get_src_ratio3(data, sample, adjusted_pitch);
 }

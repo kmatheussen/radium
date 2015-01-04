@@ -38,6 +38,9 @@ extern LANGSPEC void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command);
 extern LANGSPEC void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual);
 
+extern LANGSPEC bool GFX_MenuVisible(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_ShowMenu(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_HideMenu(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void QUEUE_GFX_C2V_bitBlt(
 				    struct Tracker_Windows *window,

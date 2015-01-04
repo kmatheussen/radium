@@ -121,6 +121,25 @@ void showHidePlaylist(int windownum){
   GFX_showHidePlaylist(window);
 }
 
+void showHideMenuBar(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  if (GFX_MenuVisible(window))
+    GFX_HideMenu(window);
+  else
+    GFX_ShowMenu(window);
+}
+
+void hideMenuBar(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_HideMenu(window);
+}
+
+void showMenuBar(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_ShowMenu(window);
+}
+
+
 // Switch between:
 // 1. Editor alone
 // 2. Editor + instrument
