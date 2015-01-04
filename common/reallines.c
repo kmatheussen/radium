@@ -218,8 +218,44 @@ static int UpdateRealLinesRec(
 	return realline;
 }
 
+static bool U3(struct Tracker_Windows *window, struct WBlocks *wblock, int factor){
+  R_ASSERT(PLAYER_current_thread_has_lock() || !pc->isplaying);
+  R_ASSERT(factor>1);
+  
+  int realline = 0;
+  int line = 0;
+  
+  struct LocalZooms **reallines = talloc(wblock->block->num_lines * sizeof(struct LocalZooms *));
+  
+  while(line < wblock->block->num_lines){
 
+    struct LocalZooms *lz = talloc(sizeof(struct LocalZooms));
+    lz->l.p.line    = line;
+    //lz->l.p.counter = 0;
+    lz->l.p.dividor = 1;
+    lz->realline    = realline;
+    //lz->zoomline    = 0;
+    lz->level       = 1;
+
+    reallines[realline]=lz;
+
+    line     += factor;
+    realline += 1;
+  }
+
+  if (realline<2) // can not have less than 2 reallines in a block.
+    return false;
+  
+  wblock->num_reallines = realline;
+  wblock->reallines = reallines;
+
+  return true;
+}
+
+#if 0
 static void U2(struct Tracker_Windows *window, struct WBlocks *wblock, int factor){
+  R_ASSERT(PLAYER_current_thread_has_lock() || !pc->isplaying);
+  
   printf("U2 called with factor %d\n",factor);
   
   int num_reallines_old = wblock->num_reallines;
@@ -235,6 +271,7 @@ static void U2(struct Tracker_Windows *window, struct WBlocks *wblock, int facto
 
   wblock->num_reallines = num_reallines_new;
 }
+#endif
 
 void set_curr_realline(struct Tracker_Windows *window,struct WBlocks *wblock, Place *curr_place){
   if (curr_place==NULL) {
@@ -262,25 +299,31 @@ void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock){
   if (wblock->reallines!=NULL && wblock->curr_realline<wblock->num_reallines)
     curr_place = &wblock->reallines[wblock->curr_realline]->l.p;
   
-  struct LocalZooms *localzoom=wblock->localzooms;
-  
-  wblock->num_reallines=FindNumberOfRealLines(localzoom,0);
-  
-  if(wblock->num_reallines > wblock->num_reallines_last || wblock->reallines==NULL){
-    wblock->reallines=talloc(wblock->num_reallines * sizeof(struct LocalZooms *));
-                wblock->num_reallines_last=wblock->num_reallines;
-  }
-  
-  UpdateRealLinesRec(wblock->reallines,localzoom,0);
-  //wblock->num_reallines=UpdateRealLinesRec(wblock->reallines,localzoom,0);
-  
-  if(wblock->num_reallines==wblock->block->num_lines){
-    wblock->zoomlinearea.width=0;
-  }
-  
-  if (wblock->num_expand_lines < -1)
-    U2(window, wblock, -wblock->num_expand_lines);
 
+  if (wblock->num_expand_lines > 0 || U3(window, wblock, -wblock->num_expand_lines)==false) {
+
+    struct LocalZooms *localzoom=wblock->localzooms;
+    
+    wblock->num_reallines=FindNumberOfRealLines(localzoom,0);
+    
+    if(wblock->num_reallines > wblock->num_reallines_last || wblock->reallines==NULL){
+      wblock->reallines=talloc(wblock->num_reallines * sizeof(struct LocalZooms *));
+      wblock->num_reallines_last=wblock->num_reallines;
+    }
+    
+    UpdateRealLinesRec(wblock->reallines,localzoom,0);
+    //wblock->num_reallines=UpdateRealLinesRec(wblock->reallines,localzoom,0);
+    
+    if(wblock->num_reallines==wblock->block->num_lines){
+      wblock->zoomlinearea.width=0;
+    }
+
+#if 0
+    if (wblock->num_expand_lines < -1)
+      U2(window, wblock, -wblock->num_expand_lines);
+#endif
+  }
+  
   set_curr_realline(window, wblock, curr_place);  
 }
 
