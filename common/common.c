@@ -302,7 +302,7 @@ int GetReallineAndPlaceFromY(
 
 	PlaceCopy(place,&temp);
 
-	if(place->line<0 || place->line>=wblock->num_reallines){
+	if(place->line<0 || (false && place->line>=wblock->num_reallines)){
 	  RError("Error in function GetReallineAndPlaceFromY. place->line=%d\n",place->line);
 	  place->line=R_BOUNDARIES(0,place->line,wblock->num_reallines-1);
 	}

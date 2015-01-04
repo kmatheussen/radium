@@ -28,6 +28,9 @@ float FindReallineForF(
                        const Place *place
                        )
 {
+  if (true)
+    reallineF=0;
+  
         int realline = reallineF;
 	struct LocalZooms **reallines=wblock->reallines;
 
@@ -37,8 +40,9 @@ float FindReallineForF(
 		return wblock->num_reallines-0.001f;
 	}
 
-        if(place->line > realline)
-          realline = place->line;
+        if (false)
+          if(place->line > realline)
+            realline = place->line;
 
         // find next realline higher than place.
         {
@@ -76,6 +80,9 @@ int FindRealLineFor(
                     int realline,
                     const Place *place
 ){
+    if (true)
+      realline=0;
+
 	struct LocalZooms **reallines=wblock->reallines;
 
 	if(realline>=wblock->num_reallines){
@@ -84,7 +91,11 @@ int FindRealLineFor(
 		return wblock->num_reallines-1;
 	}
 
-	for(realline=R_MAX(realline,place->line);;realline++){
+        if (false)
+          if(place->line > realline)
+            realline = place->line;
+
+	for(;;realline++){
 		if(realline>=wblock->num_reallines) break;
 		if(
 			PlaceLessThan(place,&reallines[realline]->l.p) &&

@@ -218,24 +218,70 @@ static int UpdateRealLinesRec(
 	return realline;
 }
 
+
+static void U2(struct Tracker_Windows *window, struct WBlocks *wblock, int factor){
+  printf("U2 called with factor %d\n",factor);
+  
+  int num_reallines_old = wblock->num_reallines;
+  int num_reallines_new = num_reallines_old / factor ;
+  
+  if (num_reallines_new < 2)
+    return;
+
+  int realline;
+  for(realline=1;realline<num_reallines_new;realline++){
+    wblock->reallines[realline] = wblock->reallines[realline*factor];
+  }
+
+  wblock->num_reallines = num_reallines_new;
+}
+
+void set_curr_realline(struct Tracker_Windows *window,struct WBlocks *wblock, Place *curr_place){
+  if (curr_place==NULL) {
+    if (wblock->curr_realline >= wblock->num_reallines)
+      wblock->curr_realline = wblock->num_reallines - 1;    
+    return;
+  }
+
+  Place *curr_place2 = NULL;
+
+  if (wblock->curr_realline<wblock->num_reallines)
+    curr_place2 = &wblock->reallines[wblock->curr_realline]->l.p;
+
+  if (curr_place2!=NULL && PlaceEqual(curr_place, curr_place2))
+    return;
+
+  wblock->curr_realline = FindRealLineFor(wblock, 0, curr_place);  
+}
+
 void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock){
   R_ASSERT(PLAYER_current_thread_has_lock() || !pc->isplaying);
 
-        struct LocalZooms *localzoom=wblock->localzooms;
+  Place *curr_place = NULL;
 
-	wblock->num_reallines=FindNumberOfRealLines(localzoom,0);
-
-	if(wblock->num_reallines > wblock->num_reallines_last || wblock->reallines==NULL){
-		wblock->reallines=talloc(wblock->num_reallines * sizeof(struct LocalZooms *));
+  if (wblock->reallines!=NULL && wblock->curr_realline<wblock->num_reallines)
+    curr_place = &wblock->reallines[wblock->curr_realline]->l.p;
+  
+  struct LocalZooms *localzoom=wblock->localzooms;
+  
+  wblock->num_reallines=FindNumberOfRealLines(localzoom,0);
+  
+  if(wblock->num_reallines > wblock->num_reallines_last || wblock->reallines==NULL){
+    wblock->reallines=talloc(wblock->num_reallines * sizeof(struct LocalZooms *));
                 wblock->num_reallines_last=wblock->num_reallines;
-	}
+  }
+  
+  UpdateRealLinesRec(wblock->reallines,localzoom,0);
+  //wblock->num_reallines=UpdateRealLinesRec(wblock->reallines,localzoom,0);
+  
+  if(wblock->num_reallines==wblock->block->num_lines){
+    wblock->zoomlinearea.width=0;
+  }
+  
+  if (wblock->num_expand_lines < -1)
+    U2(window, wblock, -wblock->num_expand_lines);
 
-        UpdateRealLinesRec(wblock->reallines,localzoom,0);
-	//wblock->num_reallines=UpdateRealLinesRec(wblock->reallines,localzoom,0);
-
-	if(wblock->num_reallines==wblock->block->num_lines){
-		wblock->zoomlinearea.width=0;
-	}
+  set_curr_realline(window, wblock, curr_place);  
 }
 
 
@@ -473,11 +519,25 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
 void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines){
   int realline;
 
-  if (num_lines<1)
-    return;
+  if (num_lines==-1 || num_lines==0){
+    if(num_lines==0)
+      RError("num_expand_lines can not be 0 (divide by zero)");
+    num_lines = 1;
+  }
 
   Undo_Reallines_CurrPos(window);
 
+  if (num_lines<1) {
+    PLAYER_lock();{
+      wblock->num_expand_lines = num_lines;
+      UpdateRealLines(window,wblock);
+    }PLAYER_unlock();
+    return;
+  }
+
+  if (num_lines==1)
+    wblock->num_expand_lines = num_lines;
+  
   Place curr_place = wblock->reallines[wblock->curr_realline]->l.p;
 
   PLAYER_lock();{
@@ -522,5 +582,16 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
 }
 
 void LineZoomBlockInc(struct Tracker_Windows *window, struct WBlocks *wblock, int inc_num_lines){
-  LineZoomBlock(window,wblock,wblock->num_expand_lines + inc_num_lines);
+  int num_expand_lines = wblock->num_expand_lines + inc_num_lines;
+
+  if (num_expand_lines==0 || num_expand_lines==-1){ // 0 is a very illegal value (divide by zero), and -1 is the same as 1 (1/1 vs. 1).
+    if (inc_num_lines > 0)
+      num_expand_lines = 1;
+    else
+      num_expand_lines = -2;
+  }
+
+  printf("num_expand_lines: %d\n",num_expand_lines);
+  
+  LineZoomBlock(window,wblock,num_expand_lines);
 }

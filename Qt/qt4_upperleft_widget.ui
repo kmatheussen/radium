@@ -135,36 +135,30 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QSpinBox" name="lz">
+    <item row="1" column="2">
+     <widget class="QLineEdit" name="grid">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-        <horstretch>1</horstretch>
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>3</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="maximumSize">
-       <size>
-        <width>20</width>
-        <height>16777215</height>
-       </size>
-      </property>
       <property name="toolTip">
-       <string>Line zoom (Keyboard shortcut: Right Shift + Up/Down)</string>
+       <string>Grid value. To circumvent grid, hold the CTRL key.</string>
+      </property>
+      <property name="inputMask">
+       <string/>
+      </property>
+      <property name="text">
+       <string>1/1</string>
       </property>
       <property name="frame">
        <bool>false</bool>
       </property>
-      <property name="buttonSymbols">
-       <enum>QAbstractSpinBox::NoButtons</enum>
-      </property>
-      <property name="minimum">
-       <number>1</number>
-      </property>
      </widget>
     </item>
-    <item row="1" column="2">
-     <widget class="QLineEdit" name="grid">
+    <item row="1" column="0">
+     <widget class="QLineEdit" name="lz">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>3</horstretch>

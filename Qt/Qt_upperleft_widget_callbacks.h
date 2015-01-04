@@ -46,7 +46,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   
   // called from the outside as well
   void updateWidgets(struct WBlocks *wblock){    
-    lz->setValue(wblock->num_expand_lines);
+    lz->setText(QString::number(wblock->num_expand_lines));
     grid->setText(QString::number(root->grid_numerator)+"/"+QString::number(root->grid_denominator));
     
     lpb->setValue(root->lpb);
@@ -127,8 +127,17 @@ public slots:
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 
-    LineZoomBlock(window,wblock,lz->value());
-
+    int value = atoi(lz->text());
+    if (value==0) {
+      
+      lz->setText(QString::number(wblock->num_expand_lines));
+      
+    } else {
+    
+      LineZoomBlock(window,wblock,value);
+    }
+    
+    window->must_redraw = true;
     set_editor_focus();
   }
 
