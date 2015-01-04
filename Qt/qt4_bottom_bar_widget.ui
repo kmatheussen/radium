@@ -3551,7 +3551,7 @@
        </widget>
       </item>
       <item>
-       <widget class="Line" name="sps_line">
+       <widget class="Line" name="el_line">
         <property name="palette">
          <palette>
           <active>
@@ -4076,7 +4076,7 @@ Scrolling too often can be tiresome for the eyes.</string>
        </widget>
       </item>
       <item>
-       <widget class="Line" name="line_12">
+       <widget class="Line" name="sps_line">
         <property name="palette">
          <palette>
           <active>
