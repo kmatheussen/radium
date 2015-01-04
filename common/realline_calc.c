@@ -28,7 +28,7 @@ float FindReallineForF(
                        const Place *place
                        )
 {
-  if (true)
+  if (wblock->num_expand_lines<0)
     reallineF=0;
   
         int realline = reallineF;
@@ -40,7 +40,7 @@ float FindReallineForF(
 		return wblock->num_reallines-0.001f;
 	}
 
-        if (false)
+        if (wblock->num_expand_lines>0)
           if(place->line > realline)
             realline = place->line;
 
@@ -80,8 +80,8 @@ int FindRealLineFor(
                     int realline,
                     const Place *place
 ){
-    if (true)
-      realline=0;
+  if (wblock->num_expand_lines<0)
+    realline=0;
 
 	struct LocalZooms **reallines=wblock->reallines;
 
@@ -91,7 +91,7 @@ int FindRealLineFor(
 		return wblock->num_reallines-1;
 	}
 
-        if (false)
+        if (wblock->num_expand_lines>0)
           if(place->line > realline)
             realline = place->line;
 

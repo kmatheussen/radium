@@ -224,8 +224,9 @@ static bool U3(struct Tracker_Windows *window, struct WBlocks *wblock, int facto
   
   int realline = 0;
   int line = 0;
-  
-  struct LocalZooms **reallines = talloc(wblock->block->num_lines * sizeof(struct LocalZooms *));
+
+  int array_length = wblock->block->num_lines;
+  struct LocalZooms **reallines = talloc(array_length * sizeof(struct LocalZooms *));
   
   while(line < wblock->block->num_lines){
 
@@ -248,6 +249,7 @@ static bool U3(struct Tracker_Windows *window, struct WBlocks *wblock, int facto
   
   wblock->num_reallines = realline;
   wblock->reallines = reallines;
+  wblock->num_reallines_last=array_length;
 
   return true;
 }
