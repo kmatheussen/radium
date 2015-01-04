@@ -136,7 +136,7 @@
      </widget>
     </item>
     <item row="1" column="2">
-     <widget class="QLineEdit" name="grid">
+     <widget class="GridQLineEdit" name="grid">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>3</horstretch>
@@ -144,7 +144,7 @@
        </sizepolicy>
       </property>
       <property name="toolTip">
-       <string>Grid value. To circumvent grid, hold the CTRL key.</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Grid value&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;To circumvent grid, hold the CTRL key.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The mouse wheel can be used to quicly change the value.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="inputMask">
        <string/>
@@ -158,7 +158,7 @@
      </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QLineEdit" name="lz">
+     <widget class="LZQLineEdit" name="lz">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>3</horstretch>
@@ -294,6 +294,18 @@
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LZQLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>lzqlineedit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>GridQLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>lzqlineedit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

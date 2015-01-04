@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/reallines_proc.h"
 #include "../common/temponodes_proc.h"
 
+#include "Rational.h"
+
 extern EditorWidget *g_editor;
 
 extern struct Root *root;
@@ -47,8 +49,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   // called from the outside as well
   void updateWidgets(struct WBlocks *wblock){    
     lz->setText(QString::number(wblock->num_expand_lines));
-    grid->setText(QString::number(root->grid_numerator)+"/"+QString::number(root->grid_denominator));
-    
+    grid->setText(Rational(root->grid_numerator, root->grid_denominator).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
 
@@ -123,6 +124,9 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 public slots:
 
   void on_lz_editingFinished(){
+
+    // Also see lzqlineedit.h, where the 'wheelEvent' handler is implemented.
+
     printf("lz\n");
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
@@ -146,23 +150,9 @@ public slots:
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
-    
-    QStringList splitted = grid->text().split("/", QString::SkipEmptyParts);
 
-    if (splitted.size() >= 2) {
-      
-      QString a = splitted[0];
-      QString b = splitted[1];
-
-      int numerator = a.toInt();
-      int denominator = b.toInt();
-      
-      if (numerator>0 && denominator>0) {
-
-        root->grid_numerator = numerator;
-        root->grid_denominator = denominator;
-      }
-    }
+    Rational rational = create_rational_from_string(grid->text());
+    grid->pushValuesToRoot(rational);    
 
     updateWidgets(wblock);
     set_editor_focus();
