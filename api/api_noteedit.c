@@ -74,6 +74,7 @@ void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenu
 
 extern int g_downscroll;
 void setNoteScrollLength(int l){
+  R_ASSERT_RETURN_IF_FALSE(l>=0);
   g_downscroll = l;
 }
 

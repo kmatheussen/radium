@@ -92,8 +92,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     if(scrolls_per_second==-1)
       scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
 
+    editlines->setValue(1);
+    
     sps->setValue(scrolls_per_second);
-
+    
     // For now, I haven't tried any machine where smooth scrolling doesn't work better than non-smooth scrolling. Anyay, just hide the sps options for now.
     sps->hide();
     sps_label->hide();
@@ -186,6 +188,14 @@ public slots:
 
   void on_octave_down_button_pressed(){
     incKeyAdd(-12);
+  }
+
+  void on_editlines_valueChanged(int val){
+    setNoteScrollLength(val);
+  }
+
+  void on_editlines_editingFinished(){
+    set_editor_focus();
   }
 
   void on_sps_valueChanged(int val){
