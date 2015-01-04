@@ -48,6 +48,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_visual_input.h"
 
+extern "C" {
+#include "../api/radium_proc.h"
+}
+
 #include "../mixergui/QM_MixerWidget.h"
 
 #include "EditorWidget.h"
@@ -109,6 +113,9 @@ bool is_starting_up = true;
 bool g_qt_is_running = false;
 //void gakk();
 
+extern void set_editor_focus(void);
+
+
 class MyApplication : public QApplication{
 public:
 
@@ -141,7 +148,15 @@ protected:
         last_key_was_lalt = true;
         must_return_false = true;
       }else if (event->type==KeyRelease) {
+
         if(last_key_was_lalt==true){
+
+          if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
+            GFX_HideMenu(window);
+            set_editor_focus();
+          } else
+            GFX_ShowMenu(window);
+          
           must_return_false = true;
           last_key_was_lalt = false;
         }
