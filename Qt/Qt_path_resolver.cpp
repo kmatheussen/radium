@@ -113,26 +113,37 @@ const char *OS_saving_get_relative_path_if_possible(const char *filepath){
 const char *OS_loading_get_resolved_file_path(const char *path){
   QFileInfo info(path);
 
-  // Try the original path
-  if(info.exists()==true)
-    return talloc_strdup(path);
+  printf("path: -%s-, loading-path: -%s-\n",path,_loading_path);
 
+  // Try the original path
+  if(info.exists()==true){
+    return talloc_strdup(path);
+  }
+  
   QDir dir = info.dir();
+
+  // Try song path if relative
+  if(_loading_path!=NULL && info.isRelative()){
+    QFileInfo info3(_loading_path);
+    QFileInfo info2(info3.dir().path(), info.filePath());
+    
+    //printf("gotit2 -%s- -%s-\n",info3.filePath(),info2.filePath());
+    //char temp[50];
+    //gets(temp);
+
+    if(info2.exists()){
+      return talloc_strdup(info2.filePath());
+    }
+  }
 
   // Try resolved paths
   if(resolved_paths.contains(dir.path())){
     QFileInfo info2(resolved_paths[dir.path()], info.fileName());
 
-    if(info2.exists())
-      return talloc_strdup(info2.filePath());
-  }
+    if(info2.exists()) {
 
-  // Try song path
-  if(_loading_path!=NULL){
-    QFileInfo info3(_loading_path);
-    QFileInfo info2(info3.dir().path(), info.fileName());
-    if(info2.exists())
       return talloc_strdup(info2.filePath());
+    }
   }
 
   // Ask user for path. Last resort.
