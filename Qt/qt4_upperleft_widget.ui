@@ -106,7 +106,7 @@
     <item row="0" column="0">
      <widget class="QLabel" name="ExpandLabe">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>1</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -123,7 +123,7 @@
      <widget class="QLabel" name="LPBlabel_3">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>3</horstretch>
+        <horstretch>1</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
@@ -138,8 +138,8 @@
     <item row="1" column="2">
      <widget class="GridQLineEdit" name="grid">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>3</horstretch>
+       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+        <horstretch>1</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
@@ -160,8 +160,8 @@
     <item row="1" column="0">
      <widget class="LZQLineEdit" name="lz">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>3</horstretch>
+       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+        <horstretch>1</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>

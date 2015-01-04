@@ -47,8 +47,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   }
   
   // called from the outside as well
-  void updateWidgets(struct WBlocks *wblock){    
-    lz->setText(QString::number(wblock->num_expand_lines));
+  void updateWidgets(struct WBlocks *wblock){
+    lz->setText(lz->getRational(wblock).toString());
     grid->setText(Rational(root->grid_numerator, root->grid_denominator).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
@@ -131,18 +131,22 @@ public slots:
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 
-    int value = atoi(lz->text());
+    Rational rational = create_rational_from_string(lz->text());
+
+    int value = lz->getNumExpandLinesFromRational(rational);
+
     if (value==0) {
       
-      lz->setText(QString::number(wblock->num_expand_lines));
+      updateWidgets(wblock);
+
+    } else if (value != wblock->num_expand_lines) {
       
-    } else {
-    
       LineZoomBlock(window,wblock,value);
+      window->must_redraw = true;
+      
     }
     
-    window->must_redraw = true;
-    set_editor_focus();
+    set_editor_focus();      
   }
 
   void on_grid_editingFinished(){
