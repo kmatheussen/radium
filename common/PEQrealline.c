@@ -103,6 +103,25 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
         ReturnPEQelement(peq);
 }
 
+/*
+"peq->realline" can have illegal value:
+
+$1 = (Place *) 0x8
+(gdb) bt
+#0  0x0000000000717b91 in RT_PD_set_subline (time=9591811, time_nextsubline=10057999, p=0x8) at audio/Pd_plugin.cpp:469
+#1  0x00000000005a1e66 in PlayerNewRealline (peq=0x367ffb0, doit=1) at common/PEQrealline.c:151
+#2  0x00000000005a1413 in PlayerTask (reltime=64) at common/player.c:116
+#3  0x00000000007204ea in Mixer::RT_thread (this=this@entry=0x2d7c240) at audio/Mixer.cpp:459
+#4  0x00000000007206bf in Mixer::RT_rjack_thread (arg=0x2d7c240) at audio/Mixer.cpp:502
+#5  0x0000003b564163fd in Jack::JackClient::Execute (this=0x2d8f150) at ../common/JackClient.cpp:565
+#6  0x0000003b56435910 in Jack::JackPosixThread::ThreadHandler (arg=0x2d8f2c0) at ../posix/JackPosixThread.cpp:59
+#7  0x0000003b49c07d14 in start_thread () from /lib64/libpthread.so.0
+#8  0x0000003b494f168d in clone () from /lib64/libc.so.6
+(gdb) thread apply all bt
+
+(should be fixed)
+*/
+
 
 void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
@@ -112,7 +131,10 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 #ifdef WITH_PD
         bool inserted_pd_subline = false;
         int64_t org_time = peq->l.time;
-        Place *org_pos = &peq->wblock->reallines[realline]->l.p;
+        Place *org_pos = NULL;
+
+        if (realline < peq->wblock->num_reallines) // number of reallines can change while playing.
+          org_pos = &peq->wblock->reallines[realline]->l.p;
 #endif
 
 	peq->wblock->till_curr_realline=realline;
@@ -148,7 +170,8 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
                                                                  );
 #ifdef WITH_PD
                           //printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
-                          RT_PD_set_subline(org_time, peq2->l.time, org_pos);
+                          if (org_pos != NULL)
+                            RT_PD_set_subline(org_time, peq2->l.time, org_pos);
                           inserted_pd_subline=true;
 #endif
 
@@ -167,8 +190,9 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
                                              );
 
 #ifdef WITH_PD
-        if(inserted_pd_subline==false)
-          RT_PD_set_subline(org_time, peq->l.time, org_pos);
+        if (org_pos != NULL)
+          if(inserted_pd_subline==false)
+            RT_PD_set_subline(org_time, peq->l.time, org_pos);
 #endif
 
 
