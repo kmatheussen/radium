@@ -99,7 +99,7 @@ void PlayerNewBlock(struct PEventQueue *peq,int doit){
 	Place firstplace;
 	PlaceSetFirstPos(&firstplace);
 
-	Pdebug("New block, peq->time: %d, time: %d, blocklength: %d, pc->seqtime: %d. visit: %d\n",peq->l.time,pc->start_time,getBlockSTimeLength(pc->block),pc->seqtime,visit++);
+	//fprintf(stderr,"New block, peq->time: %" PRId64 ", time: %d, blocklength: %d, pc->seqtime: %d. visit: %d\n",peq->l.time,pc->start_time,getBlockSTimeLength(pc->block),pc->seqtime,visit++);
 
 	// Is this the last block to be played?
 
