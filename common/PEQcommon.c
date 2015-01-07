@@ -76,7 +76,7 @@ bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct 
 }
 
 static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
-	int time=pc->seqtime;
+	STime time=pc->seqtime;
 	int playpos;
 
 	if(addplaypos>0){

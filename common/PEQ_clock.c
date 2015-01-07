@@ -127,8 +127,8 @@ void UpdateClock(
 ){
 	int clock_minutes,clock_seconds;
 	char temp[52];
-	int time=clock_time;
-        static int last_time = -1;
+	int64_t time=clock_time;
+        static int64_t last_time = -1;
 
 	if( ! pc->isplaying){
           if(last_time==-2)
