@@ -99,6 +99,8 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
 	//peq->l.time=addtime + time + (add_latency ? LATENCY : 0); // This didn't work properly I don't quite understand the code.
 	peq->l.time=addtime + time;
 
+        R_ASSERT_RETURN_IF_FALSE(peq->l.time >= 0);
+
 	peq->playpos=pc->playpos+addplaypos;
 
 	if(before){

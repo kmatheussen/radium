@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "nsmtracker.h"
+
 #include "PEQ_calc_64bit_proc.h"
 
 
@@ -61,13 +63,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef _AMIGA
 
-int Mul32Div64_000(const int a,const int b,const int c){
-  int64_t a2=a;
-  int64_t b2=b;
-  int64_t c2=c;
+STime Mul32Div64_000(const int64_t a, const int64_t b, const int64_t c){
 
-  a2=a2*b2;
-  return (int)(a2/c2);
+  return (a * b) / c;
 }
 
 #else
@@ -173,4 +171,3 @@ int main(){
 }
 
 */
-

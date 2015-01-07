@@ -35,11 +35,46 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
   NOTE
     Inputs must be: time1<=time<time2.
-  NOTE2
-    Total mess? Yes, but it works. (hopefully)
 ********************************************************/
 
 STime PEQ_CalcNextEvent(
+	STime time1,
+	STime time,
+	STime time2,
+	int x1,
+	int *x,
+	int x2
+){
+  if (time==time2){
+    *x=x2;
+    return time2+1;
+  }
+  
+  if(x1==x2){
+    *x=x2;
+    return time2;
+  }
+
+  int new_x = scale_int64(time,time1,time2,x1,x2);
+  *x = new_x;
+
+  STime ret_time;
+
+  if (x2<x1)
+    ret_time = scale_int64(new_x-1, x1, x2, time1, time2);
+  else
+    ret_time = scale_int64(new_x+1, x1, x2, time1, time2);
+
+  if(ret_time <= time){
+    //RError("Error in file PEQ_calc.c. ret: %d, time: %d\n",(int)ret_time,(int)time); // this doesn't look like an error. It's just telling us that the x resolution is bigger than the time resolution.
+    ret_time = time+1;
+  }
+
+  return ret_time;
+}
+
+
+STime PEQ_CalcNextEvent_old(
 	STime time1,
 	STime time,
 	STime time2,
@@ -73,8 +108,8 @@ STime PEQ_CalcNextEvent(
 
 	*x=x1+Mul32Div64(
 			 x2,
-			 (int)(timesubtime1+1),
-			 (int)(time2)
+			 timesubtime1 + 1,
+			 time2
 			 );
 
 /*
@@ -85,7 +120,7 @@ STime PEQ_CalcNextEvent(
 
 	//printf(" *x: %d, x1: %d\n",*x,x1);
 	ret=time1 + Mul32Div64(
-			       (int)time2,
+			       time2,
 			       *x + (x2<0 ? -1 : 1) - x1,
 			       x2
 			       );

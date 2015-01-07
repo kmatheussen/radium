@@ -131,6 +131,13 @@ enum{
 
 
 
+static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){
   return y1 + ( ((x-x1)*(y2-y1))
                 /
