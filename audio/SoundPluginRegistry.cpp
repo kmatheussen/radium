@@ -182,6 +182,7 @@ void PR_add_plugin_type(SoundPluginType *type){
 extern void create_bus_plugins(void);
 extern "C" void create_patchbay_plugin(void);
 extern void create_vst_plugins(void);
+extern void create_juce_plugins(void);
 extern void create_ladspa_plugins(void);
 extern "C" void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
@@ -218,6 +219,7 @@ extern void create_stk_tuned_bar_plugin(void);
 extern void create_stk_uni_bar_plugin(void);
 extern void create_stk_voice_form_plugin(void);
 
+
 void PR_init_plugin_types(void){
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
@@ -225,11 +227,14 @@ void PR_init_plugin_types(void){
   create_ladspa_plugins();
   PR_add_menu_entry(PluginMenuEntry::separator());
 
-  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));
-  {
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
     create_vst_plugins();
-  }
-  PR_add_menu_entry(PluginMenuEntry::level_down());
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("Juce"));{    
+    create_juce_plugins();
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+  
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));

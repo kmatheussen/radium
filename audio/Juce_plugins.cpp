@@ -9,7 +9,7 @@
 */
 
 #include <math.h>
-
+#include <string.h>
 
 
 #include "../common/nsmtracker.h"
@@ -36,8 +36,7 @@ namespace{
         // Create an instance of our main content component, and add it to our window..
 
         // Centre the window on the screen
-      //centreWithSize (getWidth(), getHeight());      
-      //setUsingNativeTitleBar(true);
+      centreWithSize (getWidth(), getHeight());      
 
       // And show it!
       //setVisible (true);
@@ -64,6 +63,13 @@ namespace{
 
     AudioPluginInstance *audio_instance;
     DocumentWindow *window;
+    AudioProcessorEditor *editor;
+
+    MidiBuffer midi_buffer;
+    AudioSampleBuffer buffer;
+
+    int num_input_channels;
+    int num_output_channels;
   };
 
   struct TypeData{
@@ -73,6 +79,19 @@ namespace{
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+  AudioSampleBuffer &buffer = data->buffer;
+
+  for(int ch=0; ch<data->num_input_channels ; ch++)
+    memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
+  
+  instance->processBlock(buffer, data->midi_buffer);
+
+  for(int ch=0; ch<data->num_output_channels ; ch++)
+    memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
+
+  /*
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
   int i;
@@ -86,6 +105,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 
   data->phase = phase;
+  */
 }
 
 static double hz_to_radians(double hz, double sample_rate){
@@ -105,21 +125,26 @@ static double midi_to_radians(int midi, double sample_rate){
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
   Data *data = (Data*)plugin->data;
-  data->phase_add = midi_to_radians(note_num,data->sample_rate);
-  data->volume = volume;
-  printf("####################################################### Setting volume to %f (play note)\n",volume);
+  MidiBuffer &buffer = data->midi_buffer;
+
+  MidiMessage message(0x90, (int)note_num, (int)(volume*127), 0.0);
+  buffer.addEvent(message, time);
 }
 
 static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
-  data->volume = volume;
-  printf("####################################################### Setting volume to %f\n",volume);
+  MidiBuffer &buffer = data->midi_buffer;
+
+  MidiMessage message(0xa0, (int)note_num, (int)(volume*127), 0.0);
+  buffer.addEvent(message, time);
 }
 
 static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
-  data->volume = 0.0f;
-  printf("####################################################### Setting sine volume to %f (stop note)\n",0.0f);
+  MidiBuffer &buffer = data->midi_buffer;
+
+  MidiMessage message(0x90, (int)note_num, 0, 0.0);
+  buffer.addEvent(message, time);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -140,12 +165,70 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 
 static void show_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
+
+  if (data->window==NULL) {
+    data->window = new PluginWindow;
+
+    data->editor = data->audio_instance->createEditor();
+
+    data->window->setContentOwned(data->editor, true);
+    data->window->setUsingNativeTitleBar(true);
+
+    data->editor->setVisible(true);
+  }
+
   data->window->setVisible(true);
 }
 
 static void hide_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   data->window->setVisible(false);
+}
+
+static AudioPluginInstance *get_audio_instance(void){
+  KnownPluginList knownPluginList;
+  AudioPluginFormatManager formatManager;
+  ApplicationProperties appProperties;
+
+  AudioPluginInstance *audio_instance;
+  AudioProcessorEditor *editor;
+
+  formatManager.addDefaultFormats();
+  
+  PropertiesFile::Options options;
+  options.applicationName     = "radium";
+  options.filenameSuffix      = "settings";
+  options.osxLibrarySubFolder = "Preferences";
+  
+  appProperties.setStorageParameters (options);
+  
+  const File deadMansPedalFile (appProperties.getUserSettings()->getFile().getSiblingFile ("RecentlyCrashedPluginsList"));
+  
+  PropertiesFile propertiesFile(options);
+  
+  for(int i=0 ; i < formatManager.getNumFormats() ;  i++) {
+    PluginDirectoryScanner scanner(knownPluginList, *formatManager.getFormat(i), FileSearchPath("~/vst"), true, deadMansPedalFile);
+    String name;
+    while(scanner.scanNextFile(false, name)==true)
+      printf("scanned -name-\n",name.toRawUTF8());
+  }
+
+  PluginListComponent pluginList(formatManager,
+                                 knownPluginList,
+                                 deadMansPedalFile,
+                                 appProperties.getUserSettings()
+                                 //&propertiesFile
+                                 );
+  
+  KnownPluginList::PluginTree *tree = knownPluginList.createTree(KnownPluginList::defaultOrder);
+  
+  Array<const PluginDescription*> plugins = tree->plugins;
+  
+  printf ("known types: %d. num plugins: %d\n",knownPluginList.getNumTypes(),plugins.size());
+  
+  String errorMessage;
+  
+  return formatManager.createPluginInstance(*plugins[0],(float)44100,1024,errorMessage);
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
@@ -159,12 +242,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
   data->sample_rate = sample_rate;
 
-  data->window = new DocumentWindow ("JUCE Plugin window",
-                        Colours::lightgrey,
-                        DocumentWindow::allButtons,
-                                     true);//PluginWindow;
-
-  //data->window.setVisible(true);
+  data->audio_instance = get_audio_instance();
+  data->num_input_channels = data->audio_instance->getNumInputChannels();
+  data->num_output_channels = data->audio_instance->getNumOutputChannels();
+  data->buffer = AudioSampleBuffer(R_MAX(data->num_input_channels, data->num_output_channels), RADIUM_BLOCKSIZE);
   return data;
 }
 
@@ -186,7 +267,7 @@ void create_juce_plugins(void){
   plugin_type->type_name                = "Sine Synth2";
   plugin_type->name                     = "Sine Synth2";
   plugin_type->num_inputs               = 0;
-  plugin_type->num_outputs              = 1;
+  plugin_type->num_outputs              = 2;
   plugin_type->is_instrument            = true;
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = 1;
@@ -208,4 +289,29 @@ void create_juce_plugins(void){
   plugin_type->hide_gui = hide_gui;
 
   PR_add_plugin_type(plugin_type);
+}
+
+
+void PLUGINHOST_treatEvents(void){
+
+  static bool has_inited = false;
+
+  if (!has_inited){
+    initialiseJuce_GUI();
+    has_inited = true;
+  }
+
+    MessageManager *messageManager = MessageManager::getInstance();
+    //messageManager->runDispatchLoop();
+
+#if 0
+    static bool has_set = false;
+    if (has_set==false){
+      messageManager->setCurrentThreadAsMessageThread ();
+      has_set = true;
+    }
+#endif
+
+    R_ASSERT(messageManager->isThisTheMessageThread());
+    messageManager->runDispatchLoopUntil(1);
 }

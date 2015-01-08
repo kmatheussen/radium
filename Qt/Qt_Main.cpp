@@ -64,6 +64,9 @@ extern "C" {
 
 #include "../crashreporter/crashreporter_proc.h"
 
+#include "../audio/Juce_plugins_proc.h"
+
+
 #ifdef __linux__
 #include <X11/Xlib.h>
 //#include "../X11/X11_Bs_edit_proc.h"
@@ -364,6 +367,8 @@ protected:
     GC_gcollect();
 #endif
 
+    //printf("Calling dispatch loop\n");
+    PLUGINHOST_treatEvents();
 
     if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
 
@@ -842,13 +847,11 @@ extern "C" {
 }
 
 
-
 int main(int argc, char **argv){
 
   THREADING_init_main_thread_type();
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
-
 
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
