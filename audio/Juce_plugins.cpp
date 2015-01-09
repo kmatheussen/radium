@@ -78,6 +78,9 @@ namespace{
   
 }
 
+static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
+}
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   AudioPluginInstance *instance = data->audio_instance;
@@ -185,54 +188,79 @@ static void hide_gui(struct SoundPlugin *plugin){
   data->window->setVisible(false);
 }
 
-static AudioPluginInstance *get_audio_instance(void){
-  KnownPluginList knownPluginList;
-  AudioPluginFormatManager formatManager;
-  ApplicationProperties appProperties;
 
-  AudioPluginInstance *audio_instance;
-  AudioProcessorEditor *editor;
+static AudioPluginInstance *get_audio_instance(const PluginDescription *description, float sample_rate, int block_size){
+  static bool inited=false;
 
-  formatManager.addDefaultFormats();
-  
-  PropertiesFile::Options options;
-  options.applicationName     = "radium";
-  options.filenameSuffix      = "settings";
-  options.osxLibrarySubFolder = "Preferences";
-  
-  appProperties.setStorageParameters (options);
-  
-  const File deadMansPedalFile (appProperties.getUserSettings()->getFile().getSiblingFile ("RecentlyCrashedPluginsList"));
-  
-  PropertiesFile propertiesFile(options);
-  
-  for(int i=0 ; i < formatManager.getNumFormats() ;  i++) {
-    PluginDirectoryScanner scanner(knownPluginList, *formatManager.getFormat(i), FileSearchPath("~/vst"), true, deadMansPedalFile);
-    String name;
-    while(scanner.scanNextFile(false, name)==true)
-      printf("scanned -name-\n",name.toRawUTF8());
+  static AudioPluginFormatManager formatManager;
+
+  if (inited==false){
+    formatManager.addDefaultFormats();
+    inited=true;
   }
 
-  PluginListComponent pluginList(formatManager,
-                                 knownPluginList,
-                                 deadMansPedalFile,
-                                 appProperties.getUserSettings()
-                                 //&propertiesFile
-                                 );
-  
-  KnownPluginList::PluginTree *tree = knownPluginList.createTree(KnownPluginList::defaultOrder);
-  
-  Array<const PluginDescription*> plugins = tree->plugins;
-  
-  printf ("known types: %d. num plugins: %d\n",knownPluginList.getNumTypes(),plugins.size());
-  
   String errorMessage;
-  
-  return formatManager.createPluginInstance(*plugins[0],(float)44100,1024,errorMessage);
+
+  AudioPluginInstance *instance = formatManager.createPluginInstance(*description,sample_rate,block_size,errorMessage);
+
+  if (instance==NULL)
+    RError("Unable to open VST plugin %s: %s\n",description->fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+
+  return instance;
+}
+
+static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
+  TypeData *type_data = (struct TypeData*)plugin_type->data;
+
+  plugin_type->num_inputs = audio_instance->getNumInputChannels();
+  plugin_type->num_outputs = audio_instance->getNumOutputChannels();
+    
+  plugin_type->plugin_takes_care_of_savable_values = true;
+    
+
+#if 0
+  {
+    char vendor[1024] = {0};
+    aeffect->dispatcher(aeffect, effGetVendorString, 0, 0, vendor, 0.0f);
+    char product[1024] = {0};
+    aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
+    
+    if(strlen(vendor)>0 || strlen(product)>0)
+      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).ascii());
+  }
+
+  plugin_type->num_effects = aeffect->numParams;
+
+  int category = aeffect->dispatcher(aeffect, effGetPlugCategory, 0, 0, NULL, 0.0f);
+  plugin_type->is_instrument = category==kPlugCategSynth;
+
+  TypeDataParam *params = (TypeDataParam*)calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
+  type_data->params = params;
+
+  for(int i=0;i<aeffect->numParams;i++){
+
+    if(params[i].label[0]==0)
+      aeffect->dispatcher(aeffect,effGetParamLabel,i, 0, (void *) params[i].label, 0.0f);
+
+    aeffect->dispatcher(aeffect,effGetParamName,i, 0, (void *) params[i].name, 0.0f);
+
+    if(params[i].name[0]==0)
+      sprintf(params[i].name,"%s",params[i].label);
+
+    if(params[i].name[0]==0)
+      sprintf(params[i].name,"<no name>");
+
+    params[i].default_value = aeffect->getParameter(aeffect,i);
+    
+    printf("type_data: %p, i: %d. Effect name: \"%s\". label: \"%s\". default value: %f\n",type_data,i,params[i].name,params[i].label,params[i].default_value);
+  }
+#endif
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   R_ASSERT(MessageManager::getInstance()->isThisTheMessageThread());
+
+  TypeData *type_data = (struct TypeData*)plugin_type->data;
     
   Data *data = (Data*)calloc(1, sizeof(Data));
   
@@ -242,10 +270,14 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
   data->sample_rate = sample_rate;
 
-  data->audio_instance = get_audio_instance();
+  data->audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
   data->num_input_channels = data->audio_instance->getNumInputChannels();
   data->num_output_channels = data->audio_instance->getNumOutputChannels();
   data->buffer = AudioSampleBuffer(R_MAX(data->num_input_channels, data->num_output_channels), RADIUM_BLOCKSIZE);
+
+  //  if(type_data->params==NULL)
+  set_plugin_type_data(data->audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
+
   return data;
 }
 
@@ -258,6 +290,49 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   return "Volume";
 }
 
+static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
+  return "jadda";
+}
+
+void add_juce_plugin_type(const char *name, const char *filepath){
+  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
+
+  TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
+
+  PluginDescription *description = new PluginDescription();
+  description->fileOrIdentifier = strdup(filepath);
+  typeData->pluginDescription = description;
+
+  plugin_type->data = typeData;
+
+
+  plugin_type->type_name = "[Juce]VST";
+  plugin_type->name      = strdup(name);
+
+  plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
+  
+  plugin_type->buffer_size_is_changed = buffer_size_is_changed;
+
+  plugin_type->RT_process = RT_process;
+  plugin_type->create_plugin_data = create_plugin_data;
+  plugin_type->cleanup_plugin_data = cleanup_plugin_data;
+  
+  plugin_type->show_gui = show_gui;
+  plugin_type->hide_gui = hide_gui;
+  
+  plugin_type->play_note       = play_note;
+  plugin_type->set_note_volume = set_note_volume;
+  plugin_type->stop_note       = stop_note;
+  
+  plugin_type->get_effect_value = get_effect_value;
+  plugin_type->set_effect_value = set_effect_value;
+  
+  plugin_type->get_display_value_string=get_display_value_string;
+  plugin_type->get_effect_name=get_effect_name;
+  plugin_type->get_effect_description=get_effect_description;
+  
+  PR_add_plugin_type(plugin_type);
+}
 
 void create_juce_plugins(void){
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));

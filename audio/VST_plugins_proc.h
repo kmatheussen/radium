@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define VST_SUFFIX "dll"
 #endif
 
+void create_vst_plugins(bool is_juce_plugin);
 
 std::vector<QString> VST_get_vst_paths(void);
 void VST_write_vst_paths(const std::vector<QString> &paths);

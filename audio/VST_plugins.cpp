@@ -99,7 +99,9 @@ const int kVstMaxParamStrLen = 8;
 
 #include "SoundPluginRegistry_proc.h"
 
-#include "../audio/VST_plugins_proc.h"
+#include "Juce_plugins_proc.h"
+
+#include "VST_plugins_proc.h"
 
 
 #if defined(Q_WS_X11)
@@ -673,19 +675,19 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
 #endif
 }
 
-
-  void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
-    Data *data = (Data*)plugin->data;
-    AEffect *aeffect = data->aeffect;
-
-    //fprintf(stderr,"Setting new buffer size for vst plugin: %d\n",new_buffer_size);
-
-    aeffect->dispatcher(aeffect, effMainsChanged, 0, 0, NULL, 0.0f);
-    aeffect->dispatcher(aeffect,
-                        effSetBlockSize,
-                        0, new_buffer_size, NULL, 0);
-    aeffect->dispatcher(aeffect, effMainsChanged, 0, 1, NULL, 0.0f);
-  }
+  
+static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
+  Data *data = (Data*)plugin->data;
+  AEffect *aeffect = data->aeffect;
+  
+  //fprintf(stderr,"Setting new buffer size for vst plugin: %d\n",new_buffer_size);
+  
+  aeffect->dispatcher(aeffect, effMainsChanged, 0, 0, NULL, 0.0f);
+  aeffect->dispatcher(aeffect,
+                      effSetBlockSize,
+                      0, new_buffer_size, NULL, 0);
+  aeffect->dispatcher(aeffect, effMainsChanged, 0, 1, NULL, 0.0f);
+}
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   const SoundPluginType *type = plugin->type;
@@ -988,7 +990,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
 } // extern "C"
 
-void add_vst_plugin_type(QFileInfo file_info){
+void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
 
   //fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
@@ -1020,6 +1022,18 @@ void add_vst_plugin_type(QFileInfo file_info){
     return;
   }
 
+  QString basename = file_info.fileName();
+#if !defined(FOR_MACOSX)
+  basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
+#endif
+
+
+  if (is_juce_plugin) {
+    add_juce_plugin_type(basename.ascii(), file_info.absoluteFilePath().ascii());
+    return;
+  }
+
+
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().ascii());
 
   {
@@ -1028,11 +1042,6 @@ void add_vst_plugin_type(QFileInfo file_info){
     TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
     plugin_type->data = type_data;
     type_data->get_plugin_instance = get_plugin_instance;
-
-    QString basename = file_info.fileName();
-#if !defined(FOR_MACOSX)
-    basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
-#endif
 
     plugin_type->type_name = "VST";
     plugin_type->name      = strdup(basename.ascii());
@@ -1063,7 +1072,7 @@ void add_vst_plugin_type(QFileInfo file_info){
   }
 }
 
-static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
+static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, bool is_juce_plugin)
 {
   QDir dir(sDir);
   dir.setSorting(QDir::Name);
@@ -1089,10 +1098,10 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     }
 
     if (file_info.isDir()) {
-      if (create_vst_plugins_recursively(file_path, time)==false)
+      if (create_vst_plugins_recursively(file_path, time, is_juce_plugin)==false)
         return false;
     }else if(file_info.suffix()==VST_SUFFIX){
-      add_vst_plugin_type(file_info);
+      add_vst_plugin_type(file_info, is_juce_plugin);
     }
   }
 
@@ -1100,7 +1109,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
 }
 
 
-void create_vst_plugins(void){
+void create_vst_plugins(bool is_juce_plugin){
 
 #if defined(FOR_MACOSX)
   QDir dir("/Library/Audio/Plug-Ins/VST/");
@@ -1134,7 +1143,7 @@ void create_vst_plugins(void){
     if(vst_path==NULL)
       continue;
     printf("vst_path: %s\n",vst_path);
-    create_vst_plugins_recursively(vst_path, &time);
+    create_vst_plugins_recursively(vst_path, &time, is_juce_plugin);
     PR_add_menu_entry(PluginMenuEntry::separator());
   }    
 

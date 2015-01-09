@@ -181,7 +181,7 @@ void PR_add_plugin_type(SoundPluginType *type){
 //extern "C" void create_sine_plugin(void);
 extern void create_bus_plugins(void);
 extern "C" void create_patchbay_plugin(void);
-extern void create_vst_plugins(void);
+#include "VST_plugins_proc.h"
 extern void create_juce_plugins(void);
 extern void create_ladspa_plugins(void);
 extern "C" void create_sample_plugin(void);
@@ -228,11 +228,11 @@ void PR_init_plugin_types(void){
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
-    create_vst_plugins();
+    create_vst_plugins(false);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("Juce"));{    
-    create_juce_plugins();
+    create_vst_plugins(true);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
   
   PR_add_menu_entry(PluginMenuEntry::separator());
