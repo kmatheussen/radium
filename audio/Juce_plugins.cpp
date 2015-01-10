@@ -107,7 +107,23 @@ namespace{
     {
       setVisible(false);
     }
-  };  
+  };
+
+  struct JuceThread : public Thread {
+    Atomic<int> isInited;
+
+    JuceThread()
+      : Thread("Juce dispatcher thread")
+    {
+      isInited.set(0);
+    }
+
+    virtual void run(){
+      initialiseJuce_GUI();
+      isInited.set(1);
+      MessageManager::getInstance()->runDispatchLoop(); 
+    }
+  };
 }
 
 static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
@@ -135,23 +151,25 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // 2. Send out midi (untested, need plugin to test with)
 
-  struct Patch *patch = plugin->patch;
-  if (patch!=NULL) {
-
-    MidiBuffer::Iterator iterator(data->midi_buffer);
-
-    MidiMessage message;
-    int samplePosition;
-    
-    while(iterator.getNextEvent(message, samplePosition)){
-      if (message.isNoteOn())
-        RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, pc->start_time+samplePosition);
-
-      else if (message.isNoteOff())
-        RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, pc->start_time+samplePosition);
-
-      else if (message.isAftertouch())
-        RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, pc->start_time+samplePosition);
+  if (instance->producesMidi()) {
+    struct Patch *patch = plugin->patch;
+    if (patch!=NULL) {
+      
+      MidiBuffer::Iterator iterator(data->midi_buffer);
+      
+      MidiMessage message;
+      int samplePosition;
+      
+      while(iterator.getNextEvent(message, samplePosition)){
+        if (message.isNoteOn())
+          RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, pc->start_time+samplePosition);
+        
+        else if (message.isNoteOff())
+          RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, pc->start_time+samplePosition);
+        
+        else if (message.isAftertouch())
+          RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, pc->start_time+samplePosition);
+      }
     }
   }
 
@@ -192,11 +210,15 @@ float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFor
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  const MessageManagerLock mmLock;
+  
   Data *data = (Data*)plugin->data;
   snprintf(buffer,buffersize-1,"%s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
 }
 
 static void show_gui(struct SoundPlugin *plugin){
+  const MessageManagerLock mmLock;
+  
   Data *data = (Data*)plugin->data;
 
   if (data->window==NULL) {
@@ -214,6 +236,8 @@ static void show_gui(struct SoundPlugin *plugin){
 }
 
 static void hide_gui(struct SoundPlugin *plugin){
+  const MessageManagerLock mmLock;
+  
   Data *data = (Data*)plugin->data;
   data->window->setVisible(false);
 }
@@ -249,6 +273,8 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     
   plugin_type->plugin_takes_care_of_savable_values = true;
 
+  const char *wrapper_info = "";
+  
   if (type_data->wrapper_type == AudioProcessor::wrapperType_VST) {
     AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
     {
@@ -256,12 +282,14 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
       aeffect->dispatcher(aeffect, effGetVendorString, 0, 0, vendor, 0.0f);
       char product[1024] = {0};
       aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
-      
+
       if(strlen(vendor)>0 || strlen(product)>0)
-        plugin_type->info = talloc_format("Vendor: %s.\nProduct: %s",vendor,product);
+        wrapper_info = talloc_format("Vendor: %s\nProduct: %s\n",vendor,product);
     }
   }
-  
+
+  plugin_type->info = talloc_format("%sAccepts MIDI: %s\nProduces midi: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No");
+        
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
   plugin_type->num_effects = audio_instance->getNumParameters();
@@ -269,51 +297,11 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
   type_data->effect_names = (const char**)calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
     type_data->effect_names[i] = talloc_strdup(audio_instance->getParameterName(i).toRawUTF8());
-
-
-
-#if 0
-  {
-    char vendor[1024] = {0};
-    aeffect->dispatcher(aeffect, effGetVendorString, 0, 0, vendor, 0.0f);
-    char product[1024] = {0};
-    aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
-    
-    if(strlen(vendor)>0 || strlen(product)>0)
-      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).ascii());
-  }
-
-  plugin_type->num_effects = aeffect->numParams;
-
-  int category = aeffect->dispatcher(aeffect, effGetPlugCategory, 0, 0, NULL, 0.0f);
-  plugin_type->is_instrument = category==kPlugCategSynth;
-
-  TypeDataParam *params = (TypeDataParam*)calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
-  type_data->params = params;
-
-  for(int i=0;i<aeffect->numParams;i++){
-
-    if(params[i].label[0]==0)
-      aeffect->dispatcher(aeffect,effGetParamLabel,i, 0, (void *) params[i].label, 0.0f);
-
-    aeffect->dispatcher(aeffect,effGetParamName,i, 0, (void *) params[i].name, 0.0f);
-
-    if(params[i].name[0]==0)
-      sprintf(params[i].name,"%s",params[i].label);
-
-    if(params[i].name[0]==0)
-      sprintf(params[i].name,"<no name>");
-
-    params[i].default_value = aeffect->getParameter(aeffect,i);
-    
-    printf("type_data: %p, i: %d. Effect name: \"%s\". label: \"%s\". default value: %f\n",type_data,i,params[i].name,params[i].label,params[i].default_value);
-  }
-#endif
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
-  R_ASSERT(MessageManager::getInstance()->isThisTheMessageThread());
-
+  const MessageManagerLock mmLock;
+  
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
   AudioPluginInstance *audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
@@ -329,6 +317,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
+  const MessageManagerLock mmLock;
+ 
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   Data *data = (Data*)plugin->data;
 
@@ -350,6 +340,8 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
 }
 
 void add_juce_plugin_type(const char *name, const char *filepath){
+  const MessageManagerLock mmLock;
+  
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
@@ -392,36 +384,10 @@ void add_juce_plugin_type(const char *name, const char *filepath){
 
 
 void PLUGINHOST_init(void){
-  initialiseJuce_GUI();
-}
+  
+  JuceThread *juce_thread = new JuceThread;
+  juce_thread->startThread();
 
-
-static Time timer;
-
-void PLUGINHOST_treatEvents(void){
-
-    MessageManager *messageManager = MessageManager::getInstance();
-    //messageManager->runDispatchLoop();
-
-#if 0
-    static bool has_set = false;
-    if (has_set==false){
-      messageManager->setCurrentThreadAsMessageThread ();
-      has_set = true;
-    }
-#endif
-
-    R_ASSERT(messageManager->isThisTheMessageThread());
-
- start:
-    int64 start_time = timer.toMilliseconds();
-    
-    messageManager->runDispatchLoopUntil(1);
-    
-    int64 duration = timer.toMilliseconds() - start_time;
-
-    if (duration > 5){
-      printf("trying again. Duration: %d\n",(int)duration);
-      goto start;
-    }
+  while(juce_thread->isInited.get()==0)
+    Thread::sleep(20);
 }

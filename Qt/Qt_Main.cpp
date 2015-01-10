@@ -367,9 +367,6 @@ protected:
     GC_gcollect();
 #endif
 
-    //printf("Calling dispatch loop\n");
-    PLUGINHOST_treatEvents();
-
     if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
 
       QString message(rt_message);

@@ -6,7 +6,4 @@ void add_juce_plugin_type(const char *name, const char *filepath);
 
 void PLUGINHOST_init(void);
 
-void PLUGINHOST_treatEvents(void);
-
-
 #endif  // JUCE_PLUGIN_H_INCLUDED
