@@ -267,7 +267,7 @@ static void scheduled_stop_note(int64_t time, union SuperType *args){
 
 void PE_StopNote(struct PEventQueue *peq,int doit){
 
-	if(doit && peq->track->patch!=NULL){
+	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
 //		Pdebug("Stop note: %d, vel: %d\n",peq->note->note,peq->note->velocity_end);
           union SuperType args[3];
           args[0].const_pointer = peq->track;

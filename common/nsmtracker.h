@@ -416,8 +416,10 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
       return;
     }
   }
-  if (pc->isplaying)
+  if (pc->isplaying){
     printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
+    //abort();
+  }
 #if 0
   for(i=0;i<patch->num_currently_playing_voices;i++)
     printf("id: %d\n",(int)patch->playing_voices[i].note_id);
