@@ -853,6 +853,8 @@ int main(int argc, char **argv){
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
+  PLUGINHOST_init();
+  
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
 

@@ -390,14 +390,15 @@ void add_juce_plugin_type(const char *name, const char *filepath){
   PR_add_plugin_type(plugin_type);
 }
 
+
+void PLUGINHOST_init(void){
+  initialiseJuce_GUI();
+}
+
+
+static Time timer;
+
 void PLUGINHOST_treatEvents(void){
-
-  static bool has_inited = false;
-
-  if (!has_inited){
-    initialiseJuce_GUI();
-    has_inited = true;
-  }
 
     MessageManager *messageManager = MessageManager::getInstance();
     //messageManager->runDispatchLoop();
@@ -411,5 +412,16 @@ void PLUGINHOST_treatEvents(void){
 #endif
 
     R_ASSERT(messageManager->isThisTheMessageThread());
-    messageManager->runDispatchLoopUntil(10);
+
+ start:
+    int64 start_time = timer.toMilliseconds();
+    
+    messageManager->runDispatchLoopUntil(1);
+    
+    int64 duration = timer.toMilliseconds() - start_time;
+
+    if (duration > 5){
+      printf("trying again. Duration: %d\n",(int)duration);
+      goto start;
+    }
 }
