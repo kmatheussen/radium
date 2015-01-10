@@ -137,10 +137,12 @@ public:
 
     void updateEditor();
 
+#if 0
     void callCustomEvent(){
       customEvent(NULL);
     }
-
+#endif
+    
     void wheelEvent(QWheelEvent *qwheelevent);
 
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
@@ -238,7 +240,9 @@ protected:
 #endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
+#if 0
     void        customEvent(QEvent *);
+#endif
 };
 
 #endif

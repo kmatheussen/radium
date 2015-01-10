@@ -413,11 +413,13 @@ protected:
       }
     } // num_users_of_keyboard==0
 
+#if 0
     // Update graphics when playing
     {
       struct Tracker_Windows *window=root->song->tracker_windows;
       static_cast<EditorWidget*>(window->os_visual.widget)->callCustomEvent();
     }
+#endif
   }
 };
 

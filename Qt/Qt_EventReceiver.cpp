@@ -73,6 +73,7 @@ extern PlayerClass *pc;
 
 extern bool is_starting_up;
 
+#if 0
 // Dont need customEvent anymore. This code should be moved to CalledPeriodically.
 void EditorWidget::customEvent(QEvent *e){
   if(is_starting_up==true)
@@ -94,6 +95,7 @@ void EditorWidget::customEvent(QEvent *e){
   updateEditor(); // dont think this is necessary. updateEdiutor is already called in the main timer event (which triggers this event)
 #endif
 }
+#endif
 
 
 #if USE_QT_VISUAL && USE_QT4
