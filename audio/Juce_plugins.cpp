@@ -11,8 +11,8 @@
 #include <math.h>
 #include <string.h>
 
-
 #include "../common/nsmtracker.h"
+#include "../common/patch_proc.h"
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
@@ -20,69 +20,107 @@
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
+#include "../pluginhost/JuceLibraryCode/AppConfig.h"
+
+
+#  include "vestige/aeffectx.h"  // It should not be a problem to use VESTIGE in this case. It's just used for getting vendor string and product string.
+
+
 
 #include "Juce_plugins_proc.h"
 
+extern struct Root *root;
+
 namespace{
-  
-  struct PluginWindow  : public DocumentWindow {
-    //==============================================================================
-    PluginWindow()
-      : DocumentWindow ("JUCE Plugin window",
-                        Colours::lightgrey,
-                        DocumentWindow::allButtons,
-                        true)
-    {
-        // Create an instance of our main content component, and add it to our window..
 
-        // Centre the window on the screen
-      centreWithSize (getWidth(), getHeight());      
-
-      // And show it!
-      //setVisible (true);
-    }
-
-    ~PluginWindow()
-    {
-        // (the content component will be deleted automatically, so no need to do it here)
-    }
-
-    //==============================================================================
-    void closeButtonPressed() override
-    {
-        // When the user presses the close button, we'll tell the app to quit. This
-        // HelloWorldWindow object will be deleted by the JUCEHelloWorldApplication class.      
-    }
-  };
+  struct PluginWindow;
+  struct MyAudioPlayHead;
 
   struct Data{
-    double phase;
-    double phase_add;
-    double volume;
-    double sample_rate;
-
     AudioPluginInstance *audio_instance;
-    DocumentWindow *window;
+    PluginWindow *window;
     AudioProcessorEditor *editor;
+
+    MyAudioPlayHead *playHead;
 
     MidiBuffer midi_buffer;
     AudioSampleBuffer buffer;
 
     int num_input_channels;
     int num_output_channels;
+
+    Data(AudioPluginInstance *audio_instance, int num_input_channels, int num_output_channels)
+      : audio_instance(audio_instance)
+      , window(NULL)
+      , editor(NULL)
+      , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
+      , num_input_channels(num_input_channels)
+      , num_output_channels(num_output_channels)
+    {}
   };
+
+  struct MyAudioPlayHead : public AudioPlayHead{
+    virtual bool getCurrentPosition (CurrentPositionInfo &result) {
+      result.bpm = (float)root->tempo * (pc->isplaying ? pc->block->reltempo : 1.0f);
+      //printf("result.bpm: %f\n",result.bpm);
+
+      result.timeSigNumerator = 4;
+      result.timeSigDenominator = 4;
+
+      result.timeInSamples = pc->start_time;
+      result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
+      result.editOriginTime = result.timeInSeconds;
+
+      result.ppqPosition = pc->start_time * result.bpm / (double)pc->pfreq; // fixme
+      result.ppqPositionOfLastBarStart = 0; // fixme
+
+      result.isPlaying = pc->isplaying;
+      result.isRecording = false;
+      
+      result.ppqLoopStart = 0; // fixme
+      result.ppqLoopEnd = 0; // fixme
+
+      result.isLooping = pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
+    }
+  };
+
+  static MyAudioPlayHead myAudioPlayHead;
 
   struct TypeData{
     const PluginDescription* pluginDescription;
+    AudioProcessor::WrapperType wrapper_type;
+    const char **effect_names;
   };
-  
+
+  struct PluginWindow  : public DocumentWindow {
+    PluginWindow(const char *title)
+      : DocumentWindow (title,
+                        Colours::lightgrey,
+                        DocumentWindow::allButtons,
+                        true)
+    {
+      // Centre the window on the screen
+      centreWithSize (getWidth(), getHeight());      
+    }
+
+    void closeButtonPressed() override
+    {
+      setVisible(false);
+    }
+  };  
 }
 
 static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
+  Data *data = (Data*)plugin->data;
+  data->buffer.setSize(data->buffer.getNumChannels(), new_buffer_size);
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
+
+
+  // 1. Process audio
+
   AudioPluginInstance *instance = data->audio_instance;
   AudioSampleBuffer &buffer = data->buffer;
 
@@ -94,36 +132,29 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0; ch<data->num_output_channels ; ch++)
     memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
 
-  /*
-  //SoundPluginType *type = plugin->type;
-  Data *data = (Data*)plugin->data;
-  int i;
-  float *out = outputs[0];
-  double phase = data->phase;
-  double phase_add = data->phase_add;
 
-  for(i=0;i<num_frames;i++){
-    out[i] = sin(phase) * data->volume;
-    phase += phase_add;
+  // 2. Send out midi (untested, need plugin to test with)
+
+  struct Patch *patch = plugin->patch;
+  if (patch!=NULL) {
+
+    MidiBuffer::Iterator iterator(data->midi_buffer);
+
+    MidiMessage message;
+    int samplePosition;
+    
+    while(iterator.getNextEvent(message, samplePosition)){
+      if (message.isNoteOn())
+        RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, pc->start_time+samplePosition);
+
+      else if (message.isNoteOff())
+        RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, pc->start_time+samplePosition);
+
+      else if (message.isAftertouch())
+        RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, pc->start_time+samplePosition);
+    }
   }
 
-  data->phase = phase;
-  */
-}
-
-static double hz_to_radians(double hz, double sample_rate){
-  return hz*((2*3.14159)/sample_rate);
-}
-
-static double midi_to_hz(int midi){
-  if(midi<=0)
-    return 0;
-  else
-    return 8.17579891564*(expf(.0577622650*midi));
-}
-
-static double midi_to_radians(int midi, double sample_rate){
-  return hz_to_radians(midi_to_hz(midi),sample_rate);
 }
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
@@ -152,25 +183,24 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
-  printf("####################################################### Setting sine volume to %f\n",value);
-  data->volume = value;
+  data->audio_instance->setParameter(effect_num, value);
 }
 
 float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
-  return data->volume;
+  return data->audio_instance->getParameter(effect_num);
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
-  snprintf(buffer,buffersize-1,"%f",data->volume);
+  snprintf(buffer,buffersize-1,"%s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
 }
 
 static void show_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
   if (data->window==NULL) {
-    data->window = new PluginWindow;
+    data->window = new PluginWindow(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
 
     data->editor = data->audio_instance->createEditor();
 
@@ -206,6 +236,8 @@ static AudioPluginInstance *get_audio_instance(const PluginDescription *descript
   if (instance==NULL)
     RError("Unable to open VST plugin %s: %s\n",description->fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
 
+  instance->setPlayHead(&myAudioPlayHead);
+
   return instance;
 }
 
@@ -216,7 +248,29 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
   plugin_type->num_outputs = audio_instance->getNumOutputChannels();
     
   plugin_type->plugin_takes_care_of_savable_values = true;
-    
+
+  if (type_data->wrapper_type == AudioProcessor::wrapperType_VST) {
+    AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
+    {
+      char vendor[1024] = {0};
+      aeffect->dispatcher(aeffect, effGetVendorString, 0, 0, vendor, 0.0f);
+      char product[1024] = {0};
+      aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
+      
+      if(strlen(vendor)>0 || strlen(product)>0)
+        plugin_type->info = talloc_format("Vendor: %s.\nProduct: %s",vendor,product);
+    }
+  }
+  
+  plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
+
+  plugin_type->num_effects = audio_instance->getNumParameters();
+
+  type_data->effect_names = (const char**)calloc(sizeof(char*),plugin_type->num_effects);
+  for(int i = 0 ; i < plugin_type->num_effects ; i++)
+    type_data->effect_names[i] = talloc_strdup(audio_instance->getParameterName(i).toRawUTF8());
+
+
 
 #if 0
   {
@@ -261,37 +315,38 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   R_ASSERT(MessageManager::getInstance()->isThisTheMessageThread());
 
   TypeData *type_data = (struct TypeData*)plugin_type->data;
+
+  AudioPluginInstance *audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
+  if (audio_instance==NULL)
+    return NULL;
     
-  Data *data = (Data*)calloc(1, sizeof(Data));
-  
-  data->phase = 0.0f;
-  data->phase_add = 0.062;
-  data->volume = 0.5f;
-  printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
-  data->sample_rate = sample_rate;
+  Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
 
-  data->audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
-  data->num_input_channels = data->audio_instance->getNumInputChannels();
-  data->num_output_channels = data->audio_instance->getNumOutputChannels();
-  data->buffer = AudioSampleBuffer(R_MAX(data->num_input_channels, data->num_output_channels), RADIUM_BLOCKSIZE);
-
-  //  if(type_data->params==NULL)
-  set_plugin_type_data(data->audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
+  if(type_data->effect_names==NULL)
+    set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
 
   return data;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
-  free(plugin->data);
+  Data *data = (Data*)plugin->data;
+
+  if (data->window != NULL)
+    delete data->window;
+
+  delete data->audio_instance;
+  delete data;
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  return "Volume";
+  TypeData *type_data = (struct TypeData*)plugin->type->data;
+  return type_data->effect_names[effect_num];
 }
 
 static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
-  return "jadda";
+  TypeData *type_data = (struct TypeData*)plugin_type->data;
+  return type_data->effect_names[effect_num];
 }
 
 void add_juce_plugin_type(const char *name, const char *filepath){
@@ -303,8 +358,9 @@ void add_juce_plugin_type(const char *name, const char *filepath){
   description->fileOrIdentifier = strdup(filepath);
   typeData->pluginDescription = description;
 
-  plugin_type->data = typeData;
+  typeData->wrapper_type = AudioProcessor::wrapperType_VST;
 
+  plugin_type->data = typeData;
 
   plugin_type->type_name = "[Juce]VST";
   plugin_type->name      = strdup(name);
@@ -334,39 +390,6 @@ void add_juce_plugin_type(const char *name, const char *filepath){
   PR_add_plugin_type(plugin_type);
 }
 
-void create_juce_plugins(void){
-  SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
-
-  plugin_type->data = calloc(1, sizeof(TypeData));
-
-  plugin_type->type_name                = "Sine Synth2";
-  plugin_type->name                     = "Sine Synth2";
-  plugin_type->num_inputs               = 0;
-  plugin_type->num_outputs              = 2;
-  plugin_type->is_instrument            = true;
-  plugin_type->note_handling_is_RT      = false;
-  plugin_type->num_effects              = 1;
-  plugin_type->get_effect_format        = NULL;
-  plugin_type->get_effect_name          = get_effect_name;
-  plugin_type->effect_is_RT             = NULL;
-  plugin_type->create_plugin_data       = create_plugin_data;
-  plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
-  
-  plugin_type->RT_process       = RT_process;
-  plugin_type->play_note        = play_note;
-  plugin_type->set_note_volume  = set_note_volume;
-  plugin_type->stop_note        = stop_note;
-  plugin_type->set_effect_value = set_effect_value;
-  plugin_type->get_effect_value = get_effect_value;
-  plugin_type->get_display_value_string = get_display_value_string;
-
-  plugin_type->show_gui = show_gui;
-  plugin_type->hide_gui = hide_gui;
-
-  PR_add_plugin_type(plugin_type);
-}
-
-
 void PLUGINHOST_treatEvents(void){
 
   static bool has_inited = false;
@@ -388,5 +411,5 @@ void PLUGINHOST_treatEvents(void){
 #endif
 
     R_ASSERT(messageManager->isThisTheMessageThread());
-    messageManager->runDispatchLoopUntil(1);
+    messageManager->runDispatchLoopUntil(10);
 }

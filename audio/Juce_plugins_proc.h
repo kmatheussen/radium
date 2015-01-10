@@ -4,8 +4,6 @@
 
 void add_juce_plugin_type(const char *name, const char *filepath);
 
-void create_juce_plugins(void);
-
 void PLUGINHOST_treatEvents(void);
 
 
