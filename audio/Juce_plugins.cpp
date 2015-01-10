@@ -354,7 +354,7 @@ void add_juce_plugin_type(const char *name, const char *filepath){
 
   plugin_type->data = typeData;
 
-  plugin_type->type_name = "[Juce]VST";
+  plugin_type->type_name = "VST";
   plugin_type->name      = strdup(name);
 
   plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
