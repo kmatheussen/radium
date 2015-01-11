@@ -227,7 +227,6 @@ struct displays_t{
 };
 
 static void init_keynums(void *focused_widget, XEvent *event){
-  static struct displays_t *displays = NULL;
   static bool inited_keynums = false;
 
 
@@ -236,8 +235,11 @@ static void init_keynums(void *focused_widget, XEvent *event){
     XAnyEvent *any_event = (XAnyEvent *)event;
 
     if(inited_keynums==false){
-      
+
+      // 1. Save original state of keyboard
       PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+
+      // 2. Temporarily set keyboard to "us"
       {
         PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
         
@@ -245,11 +247,16 @@ static void init_keynums(void *focused_widget, XEvent *event){
         for(i=0;i<256;i++)
           keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(any_event->display, i, 0, 0));
       }
-      //sleep(1);
-      //PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+
+      // 3. Set back keyboard to the original state
+      sleep(1);
+      PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
       
       inited_keynums = true;
     }
+
+#if 0 // This code should not be necessary...
+    static struct displays_t *displays = NULL;
 
     int keynum = keycode_to_keynum[((XKeyEvent *)any_event)->keycode]; 
 
@@ -268,6 +275,7 @@ static void init_keynums(void *focused_widget, XEvent *event){
         displays = display;
       }
     }
+#endif
   }
 }
 
