@@ -170,7 +170,8 @@ void InsertLines(
 			ListAddElement3(&wblock->localzooms,&localzoom->l);
 		}
                 UpdateWBlockWidths(window,wblock);
-		UpdateRealLines(window,wblock);
+                wblock->reallines = NULL; // We changed the localzooms, which is used to set new curr_realline. We don't need to set new curr_realline, so just set reallines to NULL.
+                UpdateRealLines(window,wblock);
 		UpdateReallinesDependens(window,wblock);
 		if(wblock->curr_realline>=wblock->num_reallines){
 			wblock->curr_realline=wblock->num_reallines-1;
@@ -199,7 +200,7 @@ void InsertLines_CurrPos(
 	if(toinsert==-(num_lines-curr_line)-1) return;
 
 	Undo_Block_CurrPos(window);
-
+        
 	InsertLines(window->wblock->block,curr_line,toinsert);
 
 	window=root->song->tracker_windows;
