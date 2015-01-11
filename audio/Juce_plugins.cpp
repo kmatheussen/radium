@@ -257,10 +257,14 @@ static AudioPluginInstance *get_audio_instance(const PluginDescription *descript
 
   AudioPluginInstance *instance = formatManager.createPluginInstance(*description,sample_rate,block_size,errorMessage);
 
-  if (instance==NULL)
+  if (instance==NULL){
     RError("Unable to open VST plugin %s: %s\n",description->fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+    return NULL;
+  }
 
   instance->setPlayHead(&myAudioPlayHead);
+
+  instance->prepareToPlay(sample_rate, block_size);
 
   return instance;
 }
