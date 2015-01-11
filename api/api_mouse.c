@@ -1156,10 +1156,23 @@ static Place *getNextLegalNotePlace(struct Notes *note){
   return end;
 }
 
+static struct Notes *next_note_on_same_subtrack(struct Notes *note){
+  int subtrack = note->subtrack;
+
+  note = NextNote(note);
+  while(note!=NULL){
+    if (note->subtrack==subtrack)
+      return note;
+    else
+      note = NextNote(note);
+  }
+  return NULL;
+}
+
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
   Place firstLegal, lastLegal;
 
-  struct Notes *next = NextNote(note);
+  struct Notes *next = next_note_on_same_subtrack(note);
   
   if (next!=NULL)
     PlaceCopy(&lastLegal, &next->l.p);
