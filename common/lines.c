@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "wblocks_proc.h"
+#include "block_properties_proc.h"
 
 #include "lines_proc.h"
 
@@ -118,7 +119,12 @@ void InsertLines(
 		toinsert=line-num_lines;
 	}
 
-	if( line<0 || line>=num_lines-1 ) return;
+        if (line==num_lines-1) { // special case
+          Block_Properties(block, block->num_tracks, block->num_lines + toinsert);
+          return;
+        }
+        
+	if( line<0 || line>=num_lines) return;
 
 	if(toinsert==0 || num_lines+toinsert<2 || num_lines+toinsert>=MAX_UINT32) return;
 
