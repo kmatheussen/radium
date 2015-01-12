@@ -321,6 +321,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   // load program state
   if (state!=NULL) {
+
+    if (HASH_has_key(state, "audio_instance_current_program")) {
+      int current_program = HASH_get_int(state, "audio_instance_current_program");
+      audio_instance->setCurrentProgram(current_program);
+    }
+
     const char *stateAsString = HASH_get_string(state, "audio_instance_program_state");
     if (stateAsString != NULL) {
       MemoryBlock sourceData;
@@ -363,6 +369,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
     }
   }
 
+  HASH_put_int(state, "audio_instance_current_program", audio_instance->getCurrentProgram());
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
