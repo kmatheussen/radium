@@ -69,10 +69,10 @@ namespace{
 
       result.timeInSamples = pc->start_time;
       result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
-      result.editOriginTime = result.timeInSeconds;
+      result.editOriginTime = 0; //result.timeInSeconds;
 
-      result.ppqPosition = pc->start_time * result.bpm / (double)pc->pfreq; // fixme
-      result.ppqPositionOfLastBarStart = 0; // fixme
+      result.ppqPosition = pc->start_time * 80.0 / (double)pc->pfreq; // fixme
+      result.ppqPositionOfLastBarStart = result.ppqPosition - 80; // fixme
 
       result.isPlaying = pc->isplaying;
       result.isRecording = false;
@@ -239,7 +239,9 @@ static void hide_gui(struct SoundPlugin *plugin){
   const MessageManagerLock mmLock;
   
   Data *data = (Data*)plugin->data;
-  data->window->setVisible(false);
+
+  if (data->window!=NULL && data->editor!=NULL)
+    data->window->setVisible(false);
 }
 
 
@@ -317,7 +319,66 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   if(type_data->effect_names==NULL)
     set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
 
+  // load program state
+  if (state!=NULL) {
+    const char *stateAsString = HASH_get_string(state, "audio_instance_program_state");
+    if (stateAsString != NULL) {
+      MemoryBlock sourceData;
+      sourceData.fromBase64Encoding(stateAsString);
+      
+      audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
+    }
+  }
+
   return data;
+}
+
+
+static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  const MessageManagerLock mmLock;
+
+  Data *data = (Data*)plugin->data;
+  
+  AudioPluginInstance *audio_instance = data->audio_instance;
+
+  // save state
+  {
+    MemoryBlock destData;
+    audio_instance->getStateInformation(destData);
+
+    if (destData.getSize() > 0){
+      String stateAsString = destData.toBase64Encoding();    
+      HASH_put_string(state, "audio_instance_state", stateAsString.toRawUTF8());
+    }
+  }
+
+  // save program state
+  {
+    MemoryBlock destData;
+    audio_instance->getCurrentProgramStateInformation(destData);
+
+    if (destData.getSize() > 0){
+      String stateAsString = destData.toBase64Encoding();    
+      HASH_put_string(state, "audio_instance_program_state", stateAsString.toRawUTF8());
+    }
+  }
+
+}
+
+static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+  const MessageManagerLock mmLock;
+
+  Data *data = (Data*)plugin->data;
+  
+  AudioPluginInstance *audio_instance = data->audio_instance;
+
+  const char *stateAsString = HASH_get_string(state, "audio_instance_state");
+  if (stateAsString != NULL) {
+    MemoryBlock sourceData;
+    sourceData.fromBase64Encoding(stateAsString);
+
+    audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
+  }
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
@@ -382,7 +443,10 @@ void add_juce_plugin_type(const char *name, const char *filepath){
   plugin_type->get_display_value_string=get_display_value_string;
   plugin_type->get_effect_name=get_effect_name;
   plugin_type->get_effect_description=get_effect_description;
-  
+
+  plugin_type->create_state = create_state;
+  plugin_type->recreate_from_state = recreate_from_state;
+
   PR_add_plugin_type(plugin_type);
 }
 
