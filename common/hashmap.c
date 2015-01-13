@@ -418,29 +418,33 @@ void HASH_save(hash_t *hash, FILE *file){
 
 extern int curr_disk_line;
 
-static bool read_line(char *line,int len,FILE *file){
+static char *read_line(FILE *file){
+  static char *line = NULL;
+  static size_t line_size;
+
   curr_disk_line++;
 
-  if(fgets(line, len, file)==NULL){
+  int num_read = getline(&line, &line_size, file);
+
+  if(num_read==-1){
     RError("End of file before finished reading hash map");
-    return false;
+    return NULL;
   }
 
-  if (strlen(line)>=2){ // Remove line shift if reading file with DOS char set
+  if (num_read>=2){ // Remove line shift if reading file with DOS char set
     size_t dos_pos = strcspn(line, "\r\n"); 
     line[dos_pos] = 0; 
   }
   if(line[strlen(line)-1]=='\n')
     line[strlen(line)-1] = 0;
 
-  return true;
+  return line;
 }
 
 hash_t *HASH_load(FILE *file){
   bool new_format = false;
-  char line[8194];
 
-  read_line(line,8193,file);
+  char *line = read_line(file);
   if(strcmp(line,">> HASH MAP BEGIN")){
     if(strcmp(line,">> HASH MAP V2 BEGIN")){
       RError("Trying to load something which is not a hash map. First line: \"%s\"",line);
@@ -450,19 +454,19 @@ hash_t *HASH_load(FILE *file){
     }
   }
 
-  read_line(line, 8193, file);
+  line = read_line(file);
   int elements_size = atoi(line);
 
   hash_t *hash=HASH_create(elements_size);
 
-  read_line(line, 8193, file);
+  line = read_line(file);
 
   while(strcmp(line,"<< HASH MAP END") && strcmp(line,"<< HASH MAP V2 END")){
     const char *key = talloc_strdup(line);
     int i = 0;
 
     if(new_format==true){
-      read_line(line, 8193, file);
+      line = read_line(file);
       i = atoi(line);
       int new_size = i+1;
       if(new_size>hash->num_array_elements)
@@ -473,21 +477,21 @@ hash_t *HASH_load(FILE *file){
       hash->num_array_elements++;
     }
 
-    read_line(line, 8193, file);
+    line = read_line(file);
     int type = typename_to_type(line);
 
     switch(type){
 
     case STRING_TYPE:
-      read_line(line, 8193, file);
+      line = read_line(file);
       put_string(hash, key, i, line);
       break;
     case INT_TYPE:
-      read_line(line, 8193, file);
+      line = read_line(file);
       put_int(hash, key, i, atoll(line));
       break;
     case FLOAT_TYPE:
-      read_line(line, 8193, file);
+      line = read_line(file);
       put_float(hash, key, i, OS_get_double_from_string(line));
       break;
     case HASH_TYPE:
@@ -495,7 +499,8 @@ hash_t *HASH_load(FILE *file){
       break;
     }
 
-    if(read_line(line, 8193, file)==false)
+    line = read_line(file);
+    if(line==NULL)
       return NULL;
   }
 
