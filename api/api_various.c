@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
-
+#include "../OpenGL/Widget_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -654,4 +654,8 @@ void setStatusbarText(char* text, int windownum){
 
 int getWebserverPort(void){
   return SCHEME_get_webserver_port();
+}
+
+void eraseEstimatedVblank(void){
+  GL_erase_estimated_vblank();
 }

@@ -497,6 +497,10 @@ public:
 
     }
 
+
+    //printf("        vblank: %f\n",(float)time_estimator.get_vblank());
+
+
     // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
   
     if (is_training_vblank_estimator==true)
@@ -616,10 +620,10 @@ public:
 static vl::ref<MyQt4ThreadedWidget> widget;
 
 static bool do_estimate_questionmark(){
-  return SETTINGS_read_bool("use_estimated_vblank", true);
+  return SETTINGS_read_bool("use_estimated_vblank", false);
 }
 
-static void store_do_estimate(bool value){
+static void store_use_estimated_vblank(bool value){
   return SETTINGS_write_bool("use_estimated_vblank", value);
 }
 
@@ -635,6 +639,13 @@ static void store_estimated_value(double period){
   printf("***************** Storing %f\n",1000.0 / period);
   SETTINGS_write_double("vblank", 1000.0 / period);
 }
+
+void GL_erase_estimated_vblank(void){
+  SETTINGS_write_double("vblank", -1.0);
+  store_use_estimated_vblank(false);
+  GFX_Message(NULL, "Stored vblank value erased. Restart Radium to estimate a new vblank value.");
+}
+
 
 static void show_message_box(QMessageBox *box){
   box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
@@ -686,7 +697,7 @@ QWidget *GL_create_widget(QWidget *parent){
     return NULL;
   }
   
-  if (do_estimate_questionmark() == false) {
+  if (do_estimate_questionmark() == true) {
 
     setup_widget(parent);
     widget->set_vblank(get_earlier_estimated());
@@ -701,7 +712,7 @@ QWidget *GL_create_widget(QWidget *parent){
     while(widget->is_training_vblank_estimator==true) {
       if(box.clickedButton()!=NULL){
         widget->set_vblank(get_earlier_estimated());
-        store_do_estimate(false);
+        store_use_estimated_vblank(true);
         break;
       }
       qApp->processEvents();

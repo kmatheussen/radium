@@ -12,6 +12,8 @@ void GL_stop_widget(QWidget *widget);
 extern "C" {
 #endif
 
+extern void GL_erase_estimated_vblank(void);
+
 extern void GL_lock(void);
 extern void GL_unlock(void);
 
