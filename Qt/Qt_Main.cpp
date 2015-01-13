@@ -668,7 +668,7 @@ int radium_main(char *arg){
 
       block_selector->resize(100,block_selector->height());
 
-      {
+      if(1){
         QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
         editor->ysplitter = ysplitter;
         ysplitter->setOpaqueResize(true);
@@ -677,7 +677,7 @@ int radium_main(char *arg){
         QWidget *instruments = createInstrumentsWidget();
 
         xsplitter->reparent(ysplitter, QPoint(0,0), true);
-        instruments->reparent(ysplitter, QPoint(0, main_window->height()-100), true);
+        instruments->reparent(ysplitter, QPoint(0, main_window->height()-220), true);
 
         main_window->setCentralWidget(ysplitter);
 
@@ -686,6 +686,38 @@ int radium_main(char *arg){
         ysplitter->handle(1)->setEnabled(false);
 
         qApp->setStyleSheet("QSplitter::handle{background-color: " + editor->colors[11].dark(110).name() + ";}"); 
+
+      } else {
+        QWidget *w = new QWidget(main_window);
+
+        QVBoxLayout *layout = new QVBoxLayout(0);
+        w->setLayout(layout);
+
+        QWidget *instruments = createInstrumentsWidget();
+        instruments->layout()->setSpacing(0);
+        //xsplitter->layout()->setSpacing(0);
+
+        instruments->setMinimumHeight(instruments->height() + 10);
+
+        layout->addWidget(xsplitter);
+        layout->addWidget(instruments);
+        
+
+        layout->setStretch(0,10000);
+        layout->setStretch(1,0);
+
+
+        QLabel *label = new QLabel("hello",main_window);
+        layout->addWidget(label);
+        layout->setStretch(0,10000);
+        layout->setStretch(1,0);
+        layout->setStretch(2,0);
+
+        //xsplitter->reparent(w, QPoint(0,0), true);
+        //instruments->reparent(w, QPoint(0, main_window->height()-100), true);
+
+        main_window->setCentralWidget(w);
+
       }
 
       //MixerWidget *mixer_widget = 

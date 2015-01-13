@@ -40,6 +40,54 @@ class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widg
 
 public:
 
+  struct Timer : public QTimer{
+
+    Audio_instrument_widget *w;
+
+    // horror
+    void timerEvent(QTimerEvent * e){
+      static bool shrinking = false;
+      static int num_times_horizontal_is_not_visible;
+      static bool can_shrink = true;
+      static bool last_time_shrank = false;
+
+      bool is_visible = w->scrollArea->verticalScrollBar()->isVisible();
+
+      if (w->scrollArea->horizontalScrollBar()->isVisible())
+        num_times_horizontal_is_not_visible=0;
+      else
+        num_times_horizontal_is_not_visible++;
+
+      if (is_visible){
+        if (last_time_shrank)
+          can_shrink = false;
+        else
+          can_shrink = true;
+        w->setMinimumHeight(w->height()+1);
+        shrinking = false;
+      } else if (is_visible==false && num_times_horizontal_is_not_visible>50 && can_shrink==true){
+        shrinking = true;
+      }
+
+      if (shrinking){
+        int old_size = w->minimumHeight();
+        int new_size = old_size-1;
+        if(new_size > 50){
+          w->setMinimumHeight(new_size);
+        }
+        last_time_shrank = true;
+      }else
+        last_time_shrank = false;
+    }
+
+    Timer(Audio_instrument_widget *w){
+      this->w = w;
+      setInterval(60);
+    }
+  };
+  
+  Timer timer;
+
   bool _i_am_system_out;
   struct Patch *_patch;
 
@@ -85,6 +133,7 @@ public:
 
  Audio_instrument_widget(QWidget *parent,struct Patch *patch)
     : QWidget(parent)
+    , timer(this)
     , _i_am_system_out(false)
     , _patch(patch)
     , _plugin_widget(NULL)
@@ -198,7 +247,6 @@ public:
     filters_widget->setVisible(plugin->show_equalizer_gui);
 
 
-
     // Adjust output widget widths
     {
       QFontMetrics fm(QApplication::font());
@@ -216,11 +264,14 @@ public:
 #endif
 
 
+    // set the scroll bar itself to size 10.
     scrollArea->horizontalScrollBar()->setFixedHeight(10);
 
     updateWidgets();
-  }
 
+
+    timer.start();
+  }
 
   MyQSlider *get_system_slider(int system_effect){
     switch(system_effect){
