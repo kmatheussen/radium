@@ -61,7 +61,12 @@ namespace{
 
   struct MyAudioPlayHead : public AudioPlayHead{
     virtual bool getCurrentPosition (CurrentPositionInfo &result) {
-      result.bpm = (float)root->tempo * (pc->isplaying ? pc->block->reltempo : 1.0f);
+      if (pc->isplaying==false && (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL))
+        return false;
+
+      struct Blocks *block = pc->isplaying ? pc->block : root->song->tracker_windows->wblock->block;
+
+      result.bpm = (float)root->tempo * (pc->isplaying ? block->reltempo : 1.0f);
       //printf("result.bpm: %f\n",result.bpm);
 
       result.timeSigNumerator = 4;
@@ -71,8 +76,13 @@ namespace{
       result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
       result.editOriginTime = 0; //result.timeInSeconds;
 
-      result.ppqPosition = pc->start_time * 80.0 / (double)pc->pfreq; // fixme
-      result.ppqPositionOfLastBarStart = result.ppqPosition - 80; // fixme
+      
+      double lpbInSeconds = (double)block->times[4].time / (double)pc->pfreq;
+      double numBeats = result.timeInSeconds / lpbInSeconds;
+      //printf("numBeats: %f\n",numBeats);
+
+      result.ppqPosition = numBeats; //*960.0;
+      result.ppqPositionOfLastBarStart = 0;//result.ppqPosition - 80; // fixme
 
       result.isPlaying = pc->isplaying;
       result.isRecording = false;
@@ -81,6 +91,9 @@ namespace{
       result.ppqLoopEnd = 0; // fixme
 
       result.isLooping = pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
+
+      return true;
+
     }
   };
 
