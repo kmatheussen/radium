@@ -388,7 +388,6 @@ protected:
       rt_message_status = RT_MESSAGE_READY;
     }
 
-
     if(num_users_of_keyboard==0){
       {
         static int num_calls = 0;
@@ -787,16 +786,20 @@ int radium_main(char *arg){
   }
 #endif
 
-  #if 0
+#if 0
   vector_t v = {0};
   VECTOR_push_back(&v,"hepp1");
   VECTOR_push_back(&v,"hepp2");
   VECTOR_push_back(&v,"hepp3");
   GFX_Message(&v, "hepp hepp");
-  #endif
+#endif
 
   //  RWarning("warning!");
-  g_splashscreen->finish(main_window);
+  //g_splashscreen->finish(main_window);
+  delete g_splashscreen;
+
+  //abort();
+
 
 #if USE_QT_VISUAL
   qapplication->exec();
