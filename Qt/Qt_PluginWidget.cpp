@@ -47,12 +47,17 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
 
   //PluginType *pType = m_pPlugin->type();
 
-  const int MaxYsPerPage     = 8;
+  int MaxYsPerPage     = 8;
   const int MaxXsPerPage     = 4;
-  const int MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
+  int MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
 
   //const Plugin::Params& params = m_pPlugin->params();
   int iParams = PLUGIN_get_num_visible_effects(plugin);
+
+  if (iParams > MaxParamsPerPage){
+    MaxYsPerPage     = 6;
+    MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
+  }
 
   int iParamsPerPage = iParams;
   int iParamsOnLastPage = 0;
