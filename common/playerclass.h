@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 /*********************************************************************
  This is an oop struct. 'TreatMe' is a virtual procedure. Because
  of simplicity (GC_malloc can not be used from the player-thread, see
- PEQmempool.c), subclasses is not used.
+ PEQmempool.c), subclasses are not used.
 **********************************************************************/
 struct PEventQueue{
 	struct ListHeaderP l;
@@ -46,6 +46,9 @@ struct PEventQueue{
 
 // Used by PEQrealline
 	int realline;
+
+// Used by PEQline
+	int line;
 
 
 // Used by PEQvelocities

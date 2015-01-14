@@ -129,6 +129,13 @@ void PC_InsertElement_a(
 }
 
 
+void PC_InsertElement_a_latencycompencated(
+	struct PEventQueue *peq, int addplaypos, STime addtime
+){
+  PC_InsertElement_private(peq,addplaypos,addtime,false,true);
+}
+
+
 static void PC_InsertElement2_private(struct PEventQueue *peq, int addplaypos, const Place *p, bool before, bool add_latency){
 
 	PC_InsertElement_private(
