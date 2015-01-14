@@ -659,3 +659,7 @@ int getWebserverPort(void){
 void eraseEstimatedVblank(void){
   GL_erase_estimated_vblank();
 }
+
+void evalScheme(char *code){
+  SCHEME_eval(code);
+}
