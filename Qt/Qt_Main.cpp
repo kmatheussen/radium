@@ -130,7 +130,6 @@ protected:
 
 #ifdef __linux__
   bool x11EventFilter(XEvent *event){
-
     if(is_starting_up==true)// || return_false_now)
       return false;
 
