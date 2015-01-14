@@ -54,7 +54,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch){
   //const Plugin::Params& params = m_pPlugin->params();
   int iParams = PLUGIN_get_num_visible_effects(plugin);
 
-  if (iParams > MaxParamsPerPage){
+  if (iParams > MaxParamsPerPage && strcmp("Patchbay",plugin->type->type_name)){
     MaxYsPerPage     = 6;
     MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
   }
