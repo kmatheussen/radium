@@ -29,6 +29,7 @@ extern LANGSPEC void PD_recreate_controllers_from_state(struct SoundPlugin *plug
 extern LANGSPEC void PD_create_controllers_from_state(struct SoundPlugin *plugin, hash_t *state);
 
 extern LANGSPEC void RT_PD_set_absolute_time(int64_t time);
-extern LANGSPEC void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p);
+extern LANGSPEC void RT_PD_set_line(int64_t time, int64_t time_line, int line);
+extern LANGSPEC void RT_PD_set_realline(int64_t time, int64_t time_nextrealline, Place *p);
 
 #endif // AUDIO_PD_PLUGIN_PROC_H

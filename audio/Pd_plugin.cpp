@@ -456,11 +456,10 @@ void RT_PD_set_absolute_time(int64_t time){
   } 
 }
 
-void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
+void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, Place *p){
 
   if(g_instances != NULL) {
     t_atom v[8];
-    t_atom v_line[6];
     int sample_rate = MIXER_get_sample_rate();
 
     SETFLOAT(v + 0, int(time / sample_rate));
@@ -473,25 +472,33 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
     SETFLOAT(v + 6, int(duration / sample_rate));
     SETFLOAT(v + 7, duration % sample_rate);
 
-    if(p->counter==0){
-      const struct Blocks *block = PC_GetPlayBlock(0);
-      int64_t duration = block->times[p->line+1].time - block->times[p->line].time;
-      
-      SETFLOAT(v_line + 0, int(time / sample_rate));
-      SETFLOAT(v_line + 1, time % sample_rate);
-      SETFLOAT(v_line + 2, sample_rate);
-      SETFLOAT(v_line + 3, p->line);
-      SETFLOAT(v_line + 4, int(duration/sample_rate));
-      SETFLOAT(v_line + 5, duration % sample_rate);            
+    Data *instance = g_instances;
+    while(instance != NULL){
+      libpds_list(instance->pd, "radium_visibleline", 8, v);
+      instance = instance->next;
     }
+  }
+}
+
+void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
+
+  if(g_instances != NULL) {
+    t_atom v_line[6];
+    int sample_rate = MIXER_get_sample_rate();
+
+    const struct Blocks *block = PC_GetPlayBlock(0);
+    int64_t duration = block->times[line+1].time - block->times[line].time;
+      
+    SETFLOAT(v_line + 0, int(time / sample_rate));
+    SETFLOAT(v_line + 1, time % sample_rate);
+    SETFLOAT(v_line + 2, sample_rate);
+    SETFLOAT(v_line + 3, line);
+    SETFLOAT(v_line + 4, int(duration/sample_rate));
+    SETFLOAT(v_line + 5, duration % sample_rate);            
 
     Data *instance = g_instances;
     while(instance != NULL){
-      libpds_list(instance->pd, "radium_subline", 8, v);
-
-      if (p->counter==0)
-        libpds_list(instance->pd, "radium_line", 6, v_line);
-
+      libpds_list(instance->pd, "radium_line", 6, v_line);
       instance = instance->next;
     }
   }

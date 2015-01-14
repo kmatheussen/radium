@@ -97,7 +97,7 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
                                                       &peq->wblock->reallines[1]->l.p
                                                       );
 
-        RT_PD_set_subline(peq->l.time, next_time, &firstplace);
+        RT_PD_set_realline(peq->l.time, next_time, &firstplace);
 #endif
 
         ReturnPEQelement(peq);
@@ -108,7 +108,7 @@ static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
 
 $1 = (Place *) 0x8
 (gdb) bt
-#0  0x0000000000717b91 in RT_PD_set_subline (time=9591811, time_nextsubline=10057999, p=0x8) at audio/Pd_plugin.cpp:469
+#0  0x0000000000717b91 in RT_PD_set_realline (time=9591811, time_nextrealline=10057999, p=0x8) at audio/Pd_plugin.cpp:469
 #1  0x00000000005a1e66 in PlayerNewRealline (peq=0x367ffb0, doit=1) at common/PEQrealline.c:151
 #2  0x00000000005a1413 in PlayerTask (reltime=64) at common/player.c:116
 #3  0x00000000007204ea in Mixer::RT_thread (this=this@entry=0x2d7c240) at audio/Mixer.cpp:459
@@ -129,7 +129,7 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	//int orgrealline=realline;
 
 #ifdef WITH_PD
-        bool inserted_pd_subline = false;
+        bool inserted_pd_realline = false;
         int64_t org_time = peq->l.time;
         Place *org_pos = NULL;
 
@@ -179,8 +179,8 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 #ifdef WITH_PD
                           //printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
                           if (org_pos != NULL)
-                            RT_PD_set_subline(org_time, peq2->l.time, org_pos);
-                          inserted_pd_subline=true;
+                            RT_PD_set_realline(org_time, peq2->l.time, org_pos);
+                          inserted_pd_realline=true;
 #endif
 
                           realline=1;
@@ -199,8 +199,8 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 
 #ifdef WITH_PD
         if (org_pos != NULL)
-          if(inserted_pd_subline==false)
-            RT_PD_set_subline(org_time, peq->l.time, org_pos);
+          if(inserted_pd_realline==false)
+            RT_PD_set_realline(org_time, peq->l.time, org_pos);
 #endif
 
 

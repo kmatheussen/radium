@@ -79,25 +79,17 @@ void InitPEQline(struct Blocks *block,Place *place){
 
 
 static void PlayerFirstLine(struct PEventQueue *peq,int doit){
-  STime next_time = peq->block->times[1].time;
 
-#if 0
 #ifdef WITH_PD
-	Place firstplace;
-	PlaceSetFirstPos(&firstplace);
+  int64_t next_time = pc->seqtime + peq->block->times[1].time;
 
-        int64_t next_time = pc->seqtime + Place2STime(
-                                                      pc->block,
-                                                      &peq->wblock->reallines[1]->l.p
-                                                      );
+  RT_PD_set_line(peq->l.time, next_time, 0);
 
-        RT_PD_set_subline(peq->l.time, next_time, &firstplace);
+  //printf("FirstLine: %d, time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",(int)0,(int)peq->l.time,(int)peq->realline,(int)next_time,(int)0,(int)pc->seqtime);
+  //fflush(stdout);
 #endif
-#endif
-	printf("FirstLine: %d, time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",(int)0,(int)peq->l.time,(int)peq->realline,(int)next_time,(int)0,(int)pc->seqtime);
-        fflush(stdout);
 
-        ReturnPEQelement(peq);
+  ReturnPEQelement(peq);
 }
 
 
@@ -108,21 +100,15 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 	int line=peq->line;
         int time = peq->l.time;
 
-#if 0
 #ifdef WITH_PD
-        bool inserted_pd_subline = false;
+        bool inserted_pd_line = false;
         int64_t org_time = peq->l.time;
-        Place *org_pos = NULL;
-
-        if (realline < peq->wblock->num_reallines) // number of reallines can change while playing.
-          org_pos = &peq->wblock->reallines[realline]->l.p;
-#endif
 #endif
 
 	line++;
 
 	if(pc->playtype==PLAYRANGE){
-          RError("When did this happen?"); // PLAYRANGE is not implemented
+          RError("When did this happen?"); // PLAYRANGE has never been implemented
 #if 0
 		if(realline>=peq->wblock->rangey2){
 			realline=peq->wblock->rangey1;
@@ -143,9 +129,6 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 				return;
 			}else{
 
-                          Place firstplace;
-                          PlaceSetFirstPos(&firstplace);
-
                           struct PEventQueue *peq2=GetPEQelement();
                           peq2->TreatMe=PlayerFirstLine;
                           peq2->block=nextblock;
@@ -154,13 +137,10 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
                                                                 1,
                                                                 nextblock->times[0].time
                                                                 );
-#if 0
 #ifdef WITH_PD
                           //printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
-                          if (org_pos != NULL)
-                            RT_PD_set_subline(org_time, peq2->l.time, org_pos);
-                          inserted_pd_subline=true;
-#endif
+                          RT_PD_set_line(org_time, peq2->l.time, org_line);
+                          inserted_pd_line=true;
 #endif
 
                           line=1;
@@ -178,16 +158,13 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
                                             peq->block->times[line].time
                                             );
 
-#if 0
 #ifdef WITH_PD
-        if (org_pos != NULL)
-          if(inserted_pd_subline==false)
-            RT_PD_set_subline(org_time, peq->l.time, org_pos);
-#endif
+        if(inserted_pd_line==false)
+          RT_PD_set_line(org_time, peq->l.time, org_line);
 #endif
 
-	printf("NewLine: %d (n: %d), time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",org_line, (int)line,(int)time,(int)peq->realline,(int)peq->l.time,(int)addplaypos,(int)pc->seqtime);
-        fflush(stdout);
+	//printf("NewLine: %d (n: %d), time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",org_line, (int)line,(int)time,(int)peq->realline,(int)peq->l.time,(int)addplaypos,(int)pc->seqtime);
+        //fflush(stdout);
 
 	return;
 }
