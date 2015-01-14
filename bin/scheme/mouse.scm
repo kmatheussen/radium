@@ -1309,7 +1309,8 @@
                                                 (not (get-current-fxnum))
                                                 (begin
                                                   (define Value (scale X
-                                                                       (ra:get-track-fx-x1 *current-track-num*) (ra:get-track-fx-x2 *current-track-num*) 
+                                                                       (ra:get-subtrack-x1 *current-subtrack-num* *current-track-num*)
+                                                                       (ra:get-subtrack-x2 *current-subtrack-num* *current-track-num*)
                                                                        0 1))
                                                   (define Num (ra:create-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
