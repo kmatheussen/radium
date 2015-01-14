@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "PEQnotes_proc.h"
 #include "PEQrealline_proc.h"
+#include "PEQline_proc.h"
 #include "PEQblock_proc.h"
 #include "PEQfxs_proc.h"
 #include "PEQ_clock_proc.h"
@@ -87,6 +88,7 @@ void PC_StopPause(void){
 
 	InitPEQclock();
 	InitPEQrealline(pc->block,&place);
+	InitPEQline(pc->block,&place);
 	InitPEQblock(pc->block,&place);
 	InitAllPEQnotes(pc->block,&place);
 

@@ -25,6 +25,7 @@ extern LANGSPEC bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlis
 
 extern LANGSPEC void PC_InsertElement(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern LANGSPEC void PC_InsertElement_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
+extern LANGSPEC void PC_InsertElement_a_latencycompencated(struct PEventQueue *peq, int addplaypos, STime addtime);
 extern LANGSPEC void PC_InsertElement2(struct PEventQueue *peq, int addplaypos, const Place *p);
 extern LANGSPEC void PC_InsertElement2_latencycompencated(struct PEventQueue *peq, int addplaypos, const Place *p);
 extern LANGSPEC void PC_InsertElement_a(struct PEventQueue *peq, int addplaypos, STime addtime);

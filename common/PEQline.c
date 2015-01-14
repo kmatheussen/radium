@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/Pd_plugin_proc.h"
 
-#include "PEQrealline_proc.h"
+#include "PEQline_proc.h"
 
 extern PlayerClass *pc;
 
@@ -37,11 +37,13 @@ extern struct Root *root;
 void PlayerNewLine(struct PEventQueue *peq,int doit);
 static void PlayerFirstLine(struct PEventQueue *peq,int doit);
 
-void InitPEQLine(struct Blocks *block,Place *place){
+void InitPEQline(struct Blocks *block,Place *place){
 	int addplaypos=0;
 	struct PEventQueue *peq=NULL;
 
         int line = place->line;
+        if (place->counter>0)
+          line++;
 
         if(line>=block->num_lines){
           line=0;
@@ -63,13 +65,13 @@ void InitPEQLine(struct Blocks *block,Place *place){
         
         peq=GetPEQelement();
         peq->TreatMe=PlayerNewLine;
-        peq->window=window;
+        peq->block=block;
         peq->line=line;
         
         PC_InsertElement_latencycompencated(
                                             peq,
                                             addplaypos,
-                                            block->teims[line].time
+                                            block->times[line].time
                                             );
         //printf("time: %d, addplaypos: %d, realline: %d, wblocknum: %d\n",(int)peq->l.time,(int)addplaypos,realline,wblock->l.num);
         //fflush(stdout);
@@ -77,6 +79,8 @@ void InitPEQLine(struct Blocks *block,Place *place){
 
 
 static void PlayerFirstLine(struct PEventQueue *peq,int doit){
+  STime next_time = peq->block->times[1].time;
+
 #if 0
 #ifdef WITH_PD
 	Place firstplace;
@@ -90,7 +94,9 @@ static void PlayerFirstLine(struct PEventQueue *peq,int doit){
         RT_PD_set_subline(peq->l.time, next_time, &firstplace);
 #endif
 #endif
-        printf("PlayerFirstLine called\n");
+	printf("FirstLine: %d, time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",(int)0,(int)peq->l.time,(int)peq->realline,(int)next_time,(int)0,(int)pc->seqtime);
+        fflush(stdout);
+
         ReturnPEQelement(peq);
 }
 
@@ -98,7 +104,9 @@ static void PlayerFirstLine(struct PEventQueue *peq,int doit){
 
 void PlayerNewLine(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
+        int org_line = peq->line;
 	int line=peq->line;
+        int time = peq->l.time;
 
 #if 0
 #ifdef WITH_PD
@@ -114,6 +122,8 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 	line++;
 
 	if(pc->playtype==PLAYRANGE){
+          RError("When did this happen?"); // PLAYRANGE is not implemented
+#if 0
 		if(realline>=peq->wblock->rangey2){
 			realline=peq->wblock->rangey1;
 		}
@@ -124,9 +134,9 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 
                 if (realline>=peq->wblock->num_reallines) // that didnt work, set realline to 0
                   realline = 0;
-
+#endif
 	}else{
-		if(realline>=peq->wblock->num_reallines){
+		if(line>=peq->block->num_lines){
 		        const struct Blocks *nextblock=PC_GetPlayBlock(1);
 			if(nextblock==NULL){
 				ReturnPEQelement(peq);
@@ -139,12 +149,11 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
                           struct PEventQueue *peq2=GetPEQelement();
                           peq2->TreatMe=PlayerFirstLine;
                           peq2->block=nextblock;
-                          peq2->wblock=(struct WBlocks *)ListFindElement1(
-                                                                          &peq->window->wblocks->l,nextblock->l.num
-                                                                          );
-                          PC_InsertElement2_a_latencycompencated(
-                                                                 peq2, 1,&firstplace
-                                                                 );
+                          PC_InsertElement_a_latencycompencated(
+                                                                peq2,
+                                                                1,
+                                                                nextblock->times[0].time
+                                                                );
 #if 0
 #ifdef WITH_PD
                           //printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
@@ -154,19 +163,20 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 #endif
 #endif
 
-                          realline=1;
-                          peq->wblock= peq2->wblock;
+                          line=1;
                           peq->block=nextblock;
                           addplaypos=1;
 			}
 		}
 	}
 
-	peq->realline=realline;
+	peq->line=line;
 
-        PC_InsertElement2_latencycompencated(
-                                             peq, addplaypos ,&peq->wblock->reallines[realline]->l.p // Race condition? Can the reallines change between the above check and here?
-                                             );
+        PC_InsertElement_latencycompencated(
+                                            peq,
+                                            addplaypos,
+                                            peq->block->times[line].time
+                                            );
 
 #if 0
 #ifdef WITH_PD
@@ -176,8 +186,8 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 #endif
 #endif
 
-	//printf("NewLine: %d, time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",(int)orgrealline,(int)time,(int)peq->realline,(int)peq->l.time,(int)addplaypos,(int)pc->seqtime);
-        //fflush(stdout);
+	printf("NewLine: %d (n: %d), time: %d, nextrealline: %d, nexttime: %d, addplaypos: %d, pc->seqtime: %d\n",org_line, (int)line,(int)time,(int)peq->realline,(int)peq->l.time,(int)addplaypos,(int)pc->seqtime);
+        fflush(stdout);
 
 	return;
 }

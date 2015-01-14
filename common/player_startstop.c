@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "OS_Player_proc.h"
 #include "PEQrealline_proc.h"
+#include "PEQline_proc.h"
 #include "PEQblock_proc.h"
 #include "PEQnotes_proc.h"
 #include "instruments_proc.h"
@@ -136,6 +137,7 @@ static void PlayBlock(
                 PATCH_reset_time();
 		InitPEQclock();
 		InitPEQrealline(block,place);
+		InitPEQline(block,place);
 		InitPEQblock(block,place);
 		InitAllPEQnotes(block,place);
 
@@ -232,6 +234,7 @@ static void PlaySong(
                 PATCH_reset_time();
 		InitPEQclock();
 		InitPEQrealline(block,place);
+		InitPEQline(block,place);
 		InitPEQblock(block,place);
 		InitAllPEQnotes(block,place);
 
