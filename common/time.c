@@ -609,13 +609,6 @@ void PrintSTimes(struct Blocks *block){
 }
 #endif
 
-/********************************************************
-  FUNCTION
-    Update the STimes for the block 'block'. The STimes struct is
-    used by other routines to easier and faster convert
-    Placements to STimes for a block.
-********************************************************/
-
 static void update_is_beat(struct Blocks *block, struct STimes *times){
   struct LPBs *lpb = block->lpbs;
 
@@ -644,6 +637,14 @@ static void update_is_beat(struct Blocks *block, struct STimes *times){
     counter++;
   }
 }
+
+
+/********************************************************
+  FUNCTION
+    Update the STimes for the block 'block'. The STimes struct is
+    used by other routines to easier and faster convert
+    Placements to STimes for a block.
+********************************************************/
 
 void UpdateSTimes(struct Blocks *block){
 	STimePlace stp;

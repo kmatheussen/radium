@@ -45,7 +45,7 @@ struct WLPBs *WLPBs_get(
                         const struct WBlocks *wblock
                         )
 {
-	struct WLPBs *wlpbs=talloc(sizeof(struct WLPBs)*wblock->num_reallines);
+	struct WLPBs *wlpbs=talloc_atomic_clean(sizeof(struct WLPBs)*wblock->num_reallines);
 
 	int realline=0;
 
@@ -63,7 +63,7 @@ struct WLPBs *WLPBs_get(
 		}
 
 		wlpbs[realline].lpb=lpb->lpb;
-		wlpbs[realline].LPB=lpb;
+		//wlpbs[realline].LPB=lpb;
 
 		lpb=NextLPB(lpb);
 	}

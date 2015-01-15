@@ -175,7 +175,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			Undo_Tempos_CurrPos(window);
 			block->tempos=CB_CopyTempos(cb_tempo);
 			CutListAt_a(&block->tempos,&lastplace);
-			UpdateWTempos(window,wblock);
+			//UpdateWTempos(window,wblock);
 #if !USE_OPENGL
 			DrawUpTempos(window,wblock);
 #endif
@@ -188,7 +188,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			CutListAt_a(&block->temponodes,&lastplace);
 			LegalizeTempoNodes(block);
 #if !USE_OPENGL
-			UpdateWTempoNodes(window,wblock);
+			///UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
 			UpdateSTimes(block);

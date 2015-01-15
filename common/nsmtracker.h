@@ -761,8 +761,6 @@ struct LPBs{
 struct WLPBs{
 	int lpb;
 	int type;					/* 0=normal, 1=below positioned, 2=mul. */
-
-	struct LPBs *LPB;			/* Only referenced. */
 };
 #define LPB_NORMAL 0
 #define LPB_BELOW 1
@@ -780,18 +778,20 @@ struct Tempos{
 	int tempo;
 };
 #define NextTempo(a) (struct Tempos *)((a)->l.next)
+#define NextBPM(a) NextTempo(a)
 
 struct WTempos{
 	int tempo;
 	int type;							/* 0=normal, 1=below positioned, 2=mul. */
-   SDB
-	struct Tempos *Tempo;			/* Only referenced. */
 };
 /* Types */
 #define TEMPO_NORMAL 0
 #define TEMPO_BELOW 1
 #define TEMPO_MUL 2
 
+// Todo: Rename all Tempos to BPMs. First step:
+#define BPMs Tempos
+#define WBPMs WTempos
 
 
 /*********************************************************************
@@ -954,7 +954,7 @@ struct WBlocks{
 	NInt right_track;					/* The rightmost visible track. */
 	int right_subtrack;
 
-	struct WTempos *wtempos;
+        //struct WTempos *wtempos;
 	float reltempomax;
 
 	bool isranged;

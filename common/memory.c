@@ -222,6 +222,12 @@ void *talloc_atomic_uncollectable(size_t size){
 	return NULL;
 }
 
+void *talloc_atomic_clean(size_t size){
+  void *ret = talloc_atomic(size);
+  memset(ret, 0, size);
+  return ret;
+}
+
 void *talloc_realloc(void *v, size_t new_size){
 #ifdef MEMORY_DEBUG
   return realloc(v,new_size);

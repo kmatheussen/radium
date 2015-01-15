@@ -167,7 +167,7 @@ void InsertRealLines_CurrPos(
 		case TEMPOTRACK:
 			Undo_Tempos_CurrPos(window);
 			InsertPlace_tempos(block,place,toplace);
-			UpdateWTempos(window,wblock);
+			//UpdateWTempos(window,wblock);
 #if !USE_OPENGL
 			DrawUpTempos(window,wblock);
 #endif

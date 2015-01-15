@@ -15,6 +15,7 @@
 #include "../common/notes_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/LPB_proc.h"
+#include "../common/tempos_proc.h"
 
 #include "GfxElements.h"
 
@@ -565,10 +566,10 @@ static void create_lpbtrack(const struct Tracker_Windows *window, const struct W
    bpm track
  ************************************/
 
-static void create_bpm(const struct Tracker_Windows *window, const struct WBlocks *wblock,int realline){
+static void create_bpm(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WBPMs *wbpms, int realline){
   int y     = get_realline_y1(window, realline);
-  int tempo = wblock->wtempos[realline].tempo;
-  int type  = wblock->wtempos[realline].type;
+  int tempo = wbpms[realline].tempo;
+  int type  = wbpms[realline].type;
 
   if(tempo!=0){
     draw_text_num(
@@ -599,9 +600,12 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
 
 
 static void create_bpmtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+
+  struct WBPMs *wbpms = WBPMs_get(window, wblock);
+
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_bpm(window, wblock, realline);
+    create_bpm(window, wblock, wbpms, realline);
 }
 
 

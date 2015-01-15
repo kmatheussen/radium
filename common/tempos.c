@@ -31,28 +31,32 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void UpdateWTempos(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
+struct WBPMs *WBPMs_get(
+                        const struct Tracker_Windows *window,
+                        const struct WBlocks *wblock
+                        )
+{
 	int realline=0;
-	struct Tempos *tempo=wblock->block->tempos;
-	wblock->wtempos=talloc(sizeof(struct WTempos)*wblock->num_reallines);
+	struct BPMs *bpm=wblock->block->tempos;
 
-	while(tempo!=NULL){
-		realline=FindRealLineFor(wblock,realline,&tempo->l.p);
+	struct WBPMs *wbpms=talloc_atomic_clean(sizeof(struct WBPMs)*wblock->num_reallines);
 
-		if(wblock->wtempos[realline].tempo!=0){
-			wblock->wtempos[realline].type=TEMPO_MUL;
+	while(bpm!=NULL){
+		realline=FindRealLineFor(wblock,realline,&bpm->l.p);
+
+		if(wbpms[realline].tempo!=0){
+			wbpms[realline].type=TEMPO_MUL;
 		}else{
-			if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&tempo->l.p))
-				wblock->wtempos[realline].type=TEMPO_BELOW;
+			if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&bpm->l.p))
+				wbpms[realline].type=TEMPO_BELOW;
 		}
 
-		wblock->wtempos[realline].tempo=tempo->tempo;
-		wblock->wtempos[realline].Tempo=tempo;
-		tempo=NextTempo(tempo);
+		wbpms[realline].tempo=bpm->tempo;
+		//wbpms[realline].Tempo=tempo;
+		bpm=NextBPM(bpm);
 	}
+
+        return wbpms;
 }
 
 struct Tempos *SetTempo(
@@ -78,6 +82,7 @@ struct Tempos *SetTempo(
 }
 
 
+
 void SetTempoCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
@@ -91,7 +96,7 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 
 	SetTempo(wblock->block,place,newtempo);
 
-	UpdateWTempos(window,wblock);
+	//UpdateWTempos(window,wblock);
 
 #if !USE_OPENGL
 	DrawTempos(window,wblock,curr_realline,curr_realline);
@@ -118,7 +123,7 @@ void RemoveTemposCurrPos(struct Tracker_Windows *window){
 
 	RemoveTempos(wblock->block,&p1,&p2);
 
-	UpdateWTempos(window,wblock);
+	//UpdateWTempos(window,wblock);
 
 #if !USE_OPENGL
 	DrawUpTempos(window,wblock);
