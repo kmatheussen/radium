@@ -98,7 +98,7 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
         int org_line = peq->line;
 	int line=peq->line;
-        int time = peq->l.time;
+        //int time = peq->l.time;
 
 #ifdef WITH_PD
         bool inserted_pd_line = false;

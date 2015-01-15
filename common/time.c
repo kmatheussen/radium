@@ -616,6 +616,35 @@ void PrintSTimes(struct Blocks *block){
     Placements to STimes for a block.
 ********************************************************/
 
+static void update_is_beat(struct Blocks *block, struct STimes *times){
+  struct LPBs *lpb = block->lpbs;
+
+  int curr_lpb = root->lpb;
+  int counter = 0;
+
+  int line;
+
+  for (line=0 ; line<block->num_lines ; line++){
+    if(counter==curr_lpb){
+      counter = 0;
+    }
+
+    while (lpb != NULL && lpb->l.p.line==line) {
+      curr_lpb = lpb->lpb;
+      counter = 0;
+      
+      lpb = NextLPB(lpb);
+    }
+
+    if(counter==0) {
+      times[line].is_beat = true;
+      printf("%d\n",line);
+    }
+
+    counter++;
+  }
+}
+
 void UpdateSTimes(struct Blocks *block){
 	STimePlace stp;
 
@@ -628,6 +657,8 @@ void UpdateSTimes(struct Blocks *block){
         block->times = (const struct STimes*)stp.times;
 
 	STP_fillinLastSTimeTempos(&stp);
+
+        update_is_beat(block, stp.times);
 
 #ifdef TRACKER_DEBUG
 	//PrintSTimes(block);

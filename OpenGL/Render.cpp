@@ -272,6 +272,11 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
 extern int lpb_opacity;
 extern int line_opacity;
 
+static bool realline_is_beat(const struct WBlocks *wblock, int realline){
+  int line = wblock->reallines[realline]->l.p.line;
+  return wblock->block->times[line].is_beat;
+}
+
 static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline){
 
   const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
@@ -288,7 +293,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     
     GE_Context *c;
  
-    if( (wblock->wlpbs[realline].is_beat))
+    if (realline_is_beat(wblock, realline))
       c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), lpb_opacity, Z_BACKGROUND | Z_STATIC_X);
     else
       c = GE_color_z(15, Z_BACKGROUND | Z_STATIC_X);

@@ -61,32 +61,6 @@ void UpdateWLPBs(
 		wblock->wlpbs[realline].LPB=lpb;
 		lpb=NextLPB(lpb);
 	}
-
-        // fill in is_beat
-        int curr_lpb = root->lpb;
-        int counter = 0;
-        int last_line = 0;
-        for(realline=0;realline<wblock->num_reallines;realline++){
-          struct WLPBs *wlpb = &wblock->wlpbs[realline];
-
-          int line = wblock->reallines[realline]->Tline;
-          if(line>last_line){
-            last_line = line;
-            counter++;
-            if(counter==curr_lpb){
-              counter = 0;
-            }
-          }
-
-          if(wlpb->lpb != 0) {
-            curr_lpb = wlpb->lpb;
-            counter = 0;
-            wlpb->is_beat = true;
-          }
-
-          if(counter==0)
-            wlpb->is_beat = true;
-        }
 }
 
 void UpdateAllWLPBs(

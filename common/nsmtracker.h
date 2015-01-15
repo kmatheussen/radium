@@ -762,8 +762,6 @@ struct WLPBs{
 	int lpb;
 	int type;					/* 0=normal, 1=below positioned, 2=mul. */
 
-	bool is_beat;
-
 	struct LPBs *LPB;			/* Only referenced. */
 };
 #define LPB_NORMAL 0
@@ -829,6 +827,7 @@ struct STimes{									/* One element for each line. */
 	STime time;							/* Start-time for the line. */
    SDB
 	const struct STimeChanges *timechanges;
+        bool is_beat; // true if this line starts a new beat
 };
 
 
