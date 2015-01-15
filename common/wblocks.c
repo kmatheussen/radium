@@ -237,7 +237,7 @@ void NewWBlock(
 	UpdateRealLines(window,wblock);
         
 	UpdateWTempos(window,wblock);
-	UpdateWLPBs(window,wblock);
+	//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 #endif

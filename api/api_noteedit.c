@@ -134,7 +134,7 @@ void setLPB(int lpb_value){
   root->lpb=lpb_value;
   UpdateAllSTimes();
   
-  UpdateAllWLPBs(window);
+  //UpdateAllWLPBs(window);
   window->must_redraw = true;
 }
 

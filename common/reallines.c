@@ -70,7 +70,7 @@ void UpdateReallinesDependens(
 	struct WBlocks *wblock
 ){  
 	UpdateWTempos(window,wblock);
-	UpdateWLPBs(window,wblock);
+	//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 	UpdateAllFXNodeLines(window,wblock);

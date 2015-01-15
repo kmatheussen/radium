@@ -101,7 +101,7 @@ void CB_CutTrack_CurrPos(
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
 			UpdateSTimes(block);
-			UpdateWLPBs(window,wblock);
+			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:
 			Undo_Tempos_CurrPos(window);

@@ -14,6 +14,7 @@
 #include "../common/trackreallines2_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/nodelines_proc.h"
+#include "../common/LPB_proc.h"
 
 #include "GfxElements.h"
 
@@ -512,10 +513,10 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
    lpb track
  ************************************/
 
-static void create_lpb(const struct Tracker_Windows *window, const struct WBlocks *wblock,int realline){
-  int y = get_realline_y1(window, realline);
-  int lpb=wblock->wlpbs[realline].lpb;
-  int type=wblock->wlpbs[realline].type;
+static void create_lpb(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WLPBs *wlpbs, int realline){
+  int y    = get_realline_y1(window, realline);
+  int lpb  = wlpbs[realline].lpb;
+  int type = wlpbs[realline].type;
   
   if(lpb!=0){
     draw_text_num(
@@ -524,7 +525,8 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
                   lpb,
                   wblock->lpbarea.width/window->fontwidth,
                   wblock->lpbarea.x,
-                  y);
+                  y
+                  );
   }
   
   if(type!=LPB_NORMAL){
@@ -537,7 +539,8 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
       typetext="m";
       break;
     default:
-      abort();
+      typetext="";
+      RError("something is wrong");
     };
     
     GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->lpbTypearea.x, y);
@@ -547,9 +550,12 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
 
 
 static void create_lpbtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+
+  struct WLPBs *wlpbs = WLPBs_get(window, wblock);
+
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_lpb(window, wblock, realline);
+    create_lpb(window, wblock, wlpbs, realline);
 }
 
 

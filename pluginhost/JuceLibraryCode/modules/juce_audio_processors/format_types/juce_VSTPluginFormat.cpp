@@ -1213,10 +1213,14 @@ public:
 
     void changeProgramName (int index, const String& newName) override
     {
+      printf("__changeProgramName %d -%s-\n",index,newName.toRawUTF8());
         if (index >= 0 && index == getCurrentProgram())
         {
-            if (getNumPrograms() > 0 && newName != getCurrentProgramName())
+          printf("__inside change 1\n");
+          if (getNumPrograms() > 0 && newName != getCurrentProgramName()){
+            printf("__inside change 2\n");
                 dispatch (effSetProgramName, 0, 0, (void*) newName.substring (0, 24).toRawUTF8(), 0.0f);
+          }
         }
         else
         {
@@ -1438,23 +1442,27 @@ public:
             return false;
 
         const fxSet* const set = (const fxSet*) data;
-
+        printf("__1\n");
         if ((! compareMagic (set->chunkMagic, "CcnK")) || fxbSwap (set->version) > fxbVersionNum)
             return false;
-
+        printf("__2\n");
         if (compareMagic (set->fxMagic, "FxBk"))
         {
+          printf("__3\n");
             // bank of programs
             if (fxbSwap (set->numPrograms) >= 0)
             {
+              printf("__4\n");
                 const int oldProg = getCurrentProgram();
                 const int numParams = fxbSwap (((const fxProgram*) (set->programs))->numParams);
                 const int progLen = sizeof (fxProgram) + (numParams - 1) * sizeof (float);
 
                 for (int i = 0; i < fxbSwap (set->numPrograms); ++i)
                 {
+                  printf("__5 %d\n",i);
                     if (i != oldProg)
                     {
+                      printf("__6 %d\n",i);
                         const fxProgram* const prog = (const fxProgram*) (((const char*) (set->programs)) + i * progLen);
                         if (((const char*) prog) - ((const char*) set) >= (ssize_t) dataSize)
                             return false;
@@ -1467,57 +1475,63 @@ public:
                     }
                 }
 
-                if (fxbSwap (set->numPrograms) > 0)
+                if (fxbSwap (set->numPrograms) > 0){
+                  printf("__7 %d\n",oldProg);
                     setCurrentProgram (oldProg);
-
+                }
+                printf("__8\n");
                 const fxProgram* const prog = (const fxProgram*) (((const char*) (set->programs)) + oldProg * progLen);
                 if (((const char*) prog) - ((const char*) set) >= (ssize_t) dataSize)
                     return false;
-
+                printf("__9\n");
                 if (! restoreProgramSettings (prog))
                     return false;
+                printf("__10\n");
             }
         }
         else if (compareMagic (set->fxMagic, "FxCk"))
         {
             // single program
             const fxProgram* const prog = (const fxProgram*) data;
-
+            printf("__11\n");
             if (! compareMagic (prog->chunkMagic, "CcnK"))
                 return false;
-
+            printf("__12\n");
             changeProgramName (getCurrentProgram(), prog->prgName);
-
-            for (int i = 0; i < fxbSwap (prog->numParams); ++i)
-                setParameter (i, fxbSwapFloat (prog->params[i]));
+            printf("__13\n");
+            for (int i = 0; i < fxbSwap (prog->numParams); ++i){        
+              printf("__14 %d\n",i);
+              setParameter (i, fxbSwapFloat (prog->params[i]));
+            }
         }
         else if (compareMagic (set->fxMagic, "FBCh"))
         {
             // non-preset chunk
             const fxChunkSet* const cset = (const fxChunkSet*) data;
-
+            printf("__15\n");
             if (fxbSwap (cset->chunkSize) + sizeof (fxChunkSet) - 8 > (unsigned int) dataSize)
                 return false;
-
+            printf("__16\n");
             setChunkData (cset->chunk, fxbSwap (cset->chunkSize), false);
         }
         else if (compareMagic (set->fxMagic, "FPCh"))
         {
             // preset chunk
             const fxProgramSet* const cset = (const fxProgramSet*) data;
-
+            printf("__17\n");
             if (fxbSwap (cset->chunkSize) + sizeof (fxProgramSet) - 8 > (unsigned int) dataSize)
                 return false;
-
+            printf("__18 -%s-\n",cset->name);
             setChunkData (cset->chunk, fxbSwap (cset->chunkSize), true);
 
             changeProgramName (getCurrentProgram(), cset->name);
         }
         else
         {
+          printf("__19\n");
             return false;
         }
-
+        printf("__20\n");
         return true;
     }
 
@@ -1637,8 +1651,10 @@ public:
 
     bool setChunkData (const void* data, const int size, bool isPreset)
     {
+      printf("__setChunkData. size: %d, isPreset: %s\n",size,isPreset?"true":"false");
         if (size > 0 && usesChunks())
         {
+          printf("__inside\n");
             dispatch (effSetChunk, isPreset ? 1 : 0, size, (void*) data, 0.0f);
 
             if (! isPreset)

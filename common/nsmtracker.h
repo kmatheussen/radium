@@ -955,7 +955,6 @@ struct WBlocks{
 	int right_subtrack;
 
 	struct WTempos *wtempos;
-	struct WLPBs *wlpbs;
 	float reltempomax;
 
 	bool isranged;

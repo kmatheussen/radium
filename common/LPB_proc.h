@@ -15,16 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-extern LANGSPEC void UpdateWLPBs(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-);
-
-extern LANGSPEC void UpdateAllWLPBs(
-                           struct Tracker_Windows *window
-                           );
+extern LANGSPEC struct WLPBs *WLPBs_get(
+                                        const struct Tracker_Windows *window,
+                                        const struct WBlocks *wblock
+                                        );
 
 extern LANGSPEC struct LPBs *SetLPB(
                            struct Blocks *block,
@@ -34,6 +28,4 @@ extern LANGSPEC struct LPBs *SetLPB(
 extern LANGSPEC void SetLPBCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void RemoveLPBsCurrPos(struct Tracker_Windows *window);
-
-#endif
 

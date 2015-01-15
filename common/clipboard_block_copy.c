@@ -60,7 +60,7 @@ struct WBlocks *CB_CopyBlock(
 
         // Null out some data we don't need so it can be GC-ed.
 	towblock->wtempos=NULL;
-	towblock->wlpbs=NULL;
+	//towblock->wlpbs=NULL;
 
 	toblock->l.next=NULL;
 

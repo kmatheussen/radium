@@ -98,7 +98,7 @@ void CB_PasteBlock(
 	UpdateRealLines(window,towblock);
 
 	towblock->wtempos=NULL;
-	towblock->wlpbs=NULL;
+	//towblock->wlpbs=NULL;
 
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 

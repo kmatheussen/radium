@@ -176,7 +176,7 @@ void InsertRealLines_CurrPos(
 		case LPBTRACK:
 			Undo_LPBs_CurrPos(window);
 			InsertPlace_lpbs(block,place,toplace);
-			UpdateWLPBs(window,wblock);
+			//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
 #endif

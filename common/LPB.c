@@ -39,38 +39,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-void UpdateWLPBs(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-){
+
+struct WLPBs *WLPBs_get(
+                        const struct Tracker_Windows *window,
+                        const struct WBlocks *wblock
+                        )
+{
+	struct WLPBs *wlpbs=talloc(sizeof(struct WLPBs)*wblock->num_reallines);
+
 	int realline=0;
+
 	struct LPBs *lpb=wblock->block->lpbs;
-	wblock->wlpbs=talloc(sizeof(struct WLPBs)*wblock->num_reallines);
 
 	while(lpb!=NULL){
+
 		realline=FindRealLineFor(wblock,realline,&lpb->l.p);
 
-		if(wblock->wlpbs[realline].lpb!=0){
-			wblock->wlpbs[realline].type=LPB_MUL;
+		if(wlpbs[realline].lpb!=0){
+			wlpbs[realline].type=LPB_MUL;
 		}else{
 			if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&lpb->l.p))
-				wblock->wlpbs[realline].type=LPB_BELOW;
+				wlpbs[realline].type=LPB_BELOW;
 		}
 
-		wblock->wlpbs[realline].lpb=lpb->lpb;
-		wblock->wlpbs[realline].LPB=lpb;
+		wlpbs[realline].lpb=lpb->lpb;
+		wlpbs[realline].LPB=lpb;
+
 		lpb=NextLPB(lpb);
 	}
-}
 
-void UpdateAllWLPBs(
-	struct Tracker_Windows *window
-){
-  struct WBlocks *wblock=window->wblocks;
-  while(wblock!=NULL){
-    UpdateWLPBs(window, wblock);
-    wblock = NextWBlock(wblock);
-  }
+        return wlpbs;
 }
 
 struct LPBs *SetLPB(
@@ -108,7 +106,7 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 
 	SetLPB(wblock->block,place,newlpb);
 
-	UpdateWLPBs(window,wblock);
+	//UpdateWLPBs(window,wblock);
 	//DrawLPBs(window,wblock,curr_realline,curr_realline);
 
         wblock->block->is_dirty = true;
@@ -135,7 +133,7 @@ void RemoveLPBsCurrPos(struct Tracker_Windows *window){
 
 	RemoveLPBs(wblock->block,&p1,&p2);
 
-	UpdateWLPBs(window,wblock);
+	//UpdateWLPBs(window,wblock);
 	UpdateSTimes(wblock->block);
 
         wblock->block->is_dirty = true;

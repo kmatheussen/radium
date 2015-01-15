@@ -73,7 +73,7 @@ void *Undo_Do_LPBs(
 
 	wblock->block->lpbs=undo_lpbs;
 
-	UpdateWLPBs(window,wblock);
+	//UpdateWLPBs(window,wblock);
 
 	UpdateSTimes(wblock->block);
 
