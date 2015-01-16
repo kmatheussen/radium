@@ -76,10 +76,10 @@ int SYSTEM_show_message(const char *message){
   QProcess myProcess;
   myProcess.start(program, arguments);
 
-  if (myProcess.waitForFinished()==false) {
+  if (myProcess.waitForFinished(-1)==false) {
     fprintf(stderr,"Something went wrong when trying to start radium_error_message executable \"%s\"\n",(program+" "+message).ascii());
-    system((program+" "+message).ascii());
-    abort();
+    //system((program+" "+message).ascii());
+    //abort();
     return 0;
   }
 

@@ -109,18 +109,6 @@ void PlayerNewLine(struct PEventQueue *peq,int doit){
 
 	if(pc->playtype==PLAYRANGE){
           RError("When did this happen?"); // PLAYRANGE has never been implemented
-#if 0
-		if(realline>=peq->wblock->rangey2){
-			realline=peq->wblock->rangey1;
-		}
-
-                // sanity checks to avoid crash. May happen if editing reallines while playing.
-                if (realline>=peq->wblock->num_reallines) // If outside range, first try to set realline to rangey1
-                  realline = peq->wblock->rangey1;
-
-                if (realline>=peq->wblock->num_reallines) // that didnt work, set realline to 0
-                  realline = 0;
-#endif
 	}else{
 		if(line>=peq->block->num_lines){
 		        const struct Blocks *nextblock=PC_GetPlayBlock(1);

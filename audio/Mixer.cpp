@@ -387,7 +387,7 @@ struct Mixer{
     g_jack_client_priority = jack_client_real_time_priority(_rjack_client);
 
     if(_sample_rate<100.0)
-      RError("Sample rate value is strange");
+      RWarning("Sample rate value is strange: %f",(float)_sample_rate);
 
     pc->pfreq = _sample_rate; // bang!
 

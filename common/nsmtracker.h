@@ -1113,9 +1113,9 @@ struct Root{
 	struct Song *song;
 	
 	int curr_playlist;
-	NInt curr_block;
+	volatile NInt curr_block;
 
-	bool setfirstpos;
+	volatile bool setfirstpos;
 
 	int tempo;			/* Standard tempo. */
 	int lpb;				/* Standard lpb. */
