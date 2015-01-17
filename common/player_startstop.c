@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_calc_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "patch_proc.h"
+#include "cursor_updown_proc.h"
 
 #include "player_proc.h"
 
@@ -59,7 +60,8 @@ extern void (*Ptask2MtaskCallBack)(void);
 static void PlayStopReally(bool doit){ 
 	pc->isplaying=false;
 	pc->initplaying=false;
-
+        pc->playertask_has_been_called = false;
+        
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
 
         if (PLAYER_current_thread_has_lock()){
@@ -77,10 +79,12 @@ static void PlayStopReally(bool doit){
 
 	pc->end_time=0;
 
-
-#if !USE_OPENGL
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
+
+        ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+
+#if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
 #endif

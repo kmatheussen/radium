@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "realline_calc_proc.h"
 #include "list_proc.h"
 #include "placement_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/Pd_plugin_proc.h"
@@ -137,7 +138,9 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           org_pos = &peq->wblock->reallines[realline]->l.p;
 #endif
 
-	peq->wblock->till_curr_realline=realline;
+        GE_set_curr_realline(realline);
+	//peq->wblock->till_curr_realline=realline;
+        peq->wblock->curr_realline=realline;
 
 	if(doit){
 		Ptask2Mtask();

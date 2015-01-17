@@ -66,6 +66,9 @@ namespace{
 
       struct Blocks *block = pc->isplaying ? pc->block : root->song->tracker_windows->wblock->block;
 
+      if (block->times==NULL)
+        return false;
+      
       result.bpm = (float)root->tempo * (pc->isplaying ? block->reltempo : 1.0f);
       //printf("result.bpm: %f\n",result.bpm);
 

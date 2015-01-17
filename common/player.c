@@ -120,6 +120,8 @@ void PlayerTask(STime reltime){
         }
 
         SCHEDULER_called_per_block(tempoadjusted_reltime); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
+
+        pc->playertask_has_been_called = true;
 }
 
 STime PLAYER_get_block_delta_time(STime time){

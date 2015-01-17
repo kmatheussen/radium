@@ -66,7 +66,7 @@ void GL_unlock(void){
 }
 
 
-static int g_curr_realline;
+static volatile int g_curr_realline;
 
 // TS (called from both main thread and opengl thread)
 void GE_set_curr_realline(int curr_realline){
@@ -370,7 +370,7 @@ private:
 
   // OpenGL thread
   double find_till_realline(SharedVariables *sv){
-    if(pc->isplaying)
+    if(pc->isplaying && pc->playertask_has_been_called) // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
       return find_current_realline_while_playing(sv);
     else
       return g_curr_realline;

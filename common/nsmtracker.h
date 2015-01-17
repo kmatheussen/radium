@@ -922,8 +922,8 @@ struct WBlocks{
 
 	int top_realline;
 
-	int curr_realline;
-	int till_curr_realline;				/* The player-routine sets this on. */
+        volatile int curr_realline;
+  //	int till_curr_realline;				/* The player-routine sets this on. */
 
   //int curr_subrealline;
   
@@ -1120,6 +1120,9 @@ struct Root{
 	int tempo;			/* Standard tempo. */
 	int lpb;				/* Standard lpb. */
 
+        //int time_signature_numerator;
+        //int time_signature_denominator;
+  
 	float quantitize;
         int grid_numerator;
         int grid_denominator;

@@ -327,6 +327,8 @@ void Ptask2Mtask(void){
 #  include "gc.h"
 #endif
 
+extern LANGSPEC void P2MUpdateSongPosCallBack(void);
+
 enum RT_MESSAGE_STATUS {
   RT_MESSAGE_READY,
   RT_MESSAGE_READY_FOR_SHOWING,
@@ -410,6 +412,9 @@ protected:
           QApplication::quit();
       }
     } // num_users_of_keyboard==0
+
+    if(pc->isplaying)
+      P2MUpdateSongPosCallBack();
 
 #if 0
     // Update graphics when playing

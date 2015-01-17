@@ -104,9 +104,11 @@ typedef struct{
 
 	STime seqtime;		/* Time being played at the top of the block that now is playing. */
 
-	bool isplaying;
-	bool initplaying;
+	volatile bool isplaying;
+	volatile bool initplaying;
 
+        volatile bool playertask_has_been_called; // if true, we can be sure that the timing values are valid.
+        
 	int playtype;
 
 	struct Blocks *block;		// The block now playing.
