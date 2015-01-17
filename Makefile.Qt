@@ -279,10 +279,10 @@ radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 
 very_clean: clean
 	cd bin/packages && ./buildclean.sh
-	cd pluginhost/Builds/Linux && $(MAKE) clean
 
 clean:
 	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium_error_message bin/radium.bin.exe
+	cd pluginhost/Builds/Linux && $(MAKE) clean
 
 dependencies_ok: check_dependencies.sh #Makefile
 	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
@@ -391,7 +391,8 @@ bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluids
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp flagopts.opt pluginhost/MyPluginHost.jucer
-	cd pluginhost/Builds/Linux && $(MAKE)
+	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CONFIG=Release $(MAKE) ; fi
+
 
 flagopts.opt: Makefile
 	echo "$(FLAGOPTS)" >flagopts.opt
