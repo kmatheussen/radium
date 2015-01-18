@@ -66,6 +66,8 @@ void GL_unlock(void){
 }
 
 
+static volatile char *driver_version_string=NULL;
+      
 static volatile int g_curr_realline;
 
 // TS (called from both main thread and opengl thread)
@@ -484,6 +486,10 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
+    if (driver_version_string==NULL)
+      driver_version_string = strdup((const char*)glGetString(GL_VERSION));
+    //printf("%s\n",(const char*)driver_version_string);
+    
     if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
 
       time_estimator.set_vblank(override_vblank_value);
@@ -696,7 +702,7 @@ QWidget *GL_create_widget(QWidget *parent){
     GFX_Message(NULL,"OpenGL not found");
     return NULL;
   }
-  
+
   if (do_estimate_questionmark() == true) {
 
     setup_widget(parent);
@@ -706,16 +712,25 @@ QWidget *GL_create_widget(QWidget *parent){
 
     QMessageBox box;
 
+    bool have_earlier = have_earlier_estimated_value();
+
     setup_widget(parent);
     show_message_box(&box);
-
+    
     while(widget->is_training_vblank_estimator==true) {
       if(box.clickedButton()!=NULL){
         widget->set_vblank(get_earlier_estimated());
         store_use_estimated_vblank(true);
         break;
       }
-      qApp->processEvents();
+      if (have_earlier)
+        qApp->processEvents();
+      else
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+      
+      qApp->flush();
+      
+      usleep(5*1000);
     }
 
     if (box.clickedButton()==NULL)
@@ -724,6 +739,22 @@ QWidget *GL_create_widget(QWidget *parent){
     box.close();
   }
 
+  while(driver_version_string==NULL)
+    usleep(5*1000);
+  
+  {
+    QString s((const char*)driver_version_string);
+    if (s.contains("mesa", Qt::CaseInsensitive))
+      GFX_Message(NULL,
+                  "Warning!\n"
+                  "MESA OpenGL driver detected.\n"
+                  "\n"
+                  "MESA OpenGL driver renders graphics in software, which is likely to be significantly slower than to render in hardware.\n"
+                  "\n"
+                  "In addition, the graphics tends to not look good. " // lacking anti-aliasing
+                  );
+  }
+  
   return widget.get();
 }
 

@@ -951,12 +951,13 @@ int main(int argc, char **argv){
     load_new_song=false;
 
 #ifdef IS_LINUX_BINARY
-#if 0
+#if 0  
   setenv("PYTHONHOME","temp/dist",1);
   setenv("PYTHONPATH","temp/dist",1);
 #else
-  setenv("PYTHONHOME","python2.7/lib",1);
-  setenv("PYTHONPATH","python2.7/lib",1);
+  QString pythonlibpath = QCoreApplication::applicationDirPath() + "/python2.7/lib";
+  setenv("PYTHONHOME",pythonlibpath.ascii(),1);
+  setenv("PYTHONPATH",pythonlibpath.ascii(),1);
 #endif
 #endif
 

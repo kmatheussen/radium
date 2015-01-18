@@ -33,6 +33,8 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 #include "../audio/Bus_plugins_proc.h"
 
 
+extern bool is_starting_up;
+
 extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
 
 class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
@@ -46,6 +48,10 @@ public:
 
     // horror
     void timerEvent(QTimerEvent * e){
+
+      if (is_starting_up)
+        return;
+      
       static bool shrinking = false;
       static int num_times_horizontal_is_not_visible;
       static bool can_shrink = true;
