@@ -73,16 +73,17 @@ BUILD DEPENDENCIES FEDORA:
         libxkbfile-devel
         xorg-x11-util-macros
         cmake
+        clang
 
         * Or in one line:
 
-        qt4-devel libXaw-devel python2-devel alsa-lib-devel jack-audio-connection-kit-devel libsamplerate-devel liblrdf-devel libsndfile-devel ladspa-devel glib2-devel ladspa-calf-plugins binutils-devel libtool-ltdl libtool tk libogg-devel libvorbis-devel speex-devel fftw-devel guile libxkbfile-devel xorg-x11-util-macros cmake
+        qt4-devel libXaw-devel python2-devel alsa-lib-devel jack-audio-connection-kit-devel libsamplerate-devel liblrdf-devel libsndfile-devel ladspa-devel glib2-devel ladspa-calf-plugins binutils-devel libtool-ltdl libtool tk libogg-devel libvorbis-devel speex-devel fftw-devel guile libxkbfile-devel xorg-x11-util-macros cmake clang
 
         (tested on Fedora 17/19/20 64 bit)
 
 
 
-BUILD DEPENDENCIES UBUNTU (plus Debian):
+BUILD DEPENDENCIES UBUNTU 12 (plus Debian):
       * Main packages, Ubuntu 12:
 
       In addition to OpenGL, you also need:
@@ -111,16 +112,22 @@ BUILD DEPENDENCIES UBUNTU (plus Debian):
       libxkbfile-dev
       xorg-x11-util-macros
       cmake
+      clang
+      libfreetype6-dev
+      libxinerama-dev
+      libxcursor-dev
 
       * Or in one line:
 
-      sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros cmake
+      sudo apt-get install libqt4-dev      qt4-dev-tools      libxaw7-dev       python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros cmake clang libfreetype6-dev libxinerama-dev libxcursor-dev
 
 
       * Ubuntu LTS: I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.
       I also needed to install python2.7-dev instead of python2-dev.
 
       * On debian stable, it has been reported that you also need libfftw3-dev.
+
+      * Ubuntu 14: Replace glib-2.0-dev with libglib2.0-dev. Add libiberty-dev
 
 
 TO ENABLE ALL KEYBOARD SHORTCUTS ON MAC OS X

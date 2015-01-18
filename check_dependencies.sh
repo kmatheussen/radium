@@ -95,7 +95,7 @@ if [ `uname` == "Linux" ] ; then
 #    echo "#include <libiberty.h>" >>temp$$.c
     echo "main(){return 0;}" >>temp$$.c
     echo >>temp$$.c
-    if ! gcc temp$$.c -lbfd -ldl -liberty ; then
+    if ! gcc temp$$.c -lbfd -liberty -ldl; then
 	echo "Couldn't find -lbfd, -ldl, -liberty, or header files for bfd or dlfcn."
 	echo "On Fedora, binutils-devel, libtool-ltdl or libtool might be missing."
 	echo "On Debian, libc6-dev or binutils-dev might be missing."
@@ -103,6 +103,7 @@ if [ `uname` == "Linux" ] ; then
     fi
     rm temp$$.c
 fi
+
 
 
 if ! pkg-config --cflags sndfile >/dev/null 2>/dev/null ; then

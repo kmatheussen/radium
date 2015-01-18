@@ -391,7 +391,8 @@ bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluids
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp flagopts.opt pluginhost/MyPluginHost.jucer
-	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CONFIG=Release $(MAKE) ; fi
+	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CXX="g++" CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CXX=g++ CONFIG=Release $(MAKE) ; fi
+#	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CXX="clang++ -v" CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CXX=clang++ CONFIG=Release $(MAKE) ; fi
 
 
 flagopts.opt: Makefile
