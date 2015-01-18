@@ -750,7 +750,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "\n"
                   "MESA OpenGL driver renders graphics in software, which is likely to be significantly slower than to render in hardware.\n"
                   "\n"
-                  "In addition, the graphics tends to not look good. " // lacking anti-aliasing
+                  "In addition, the graphics tends to not look as good. " // lacking anti-aliasing
                   );
   }
   
