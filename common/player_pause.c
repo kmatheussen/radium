@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQblock_proc.h"
 #include "PEQfxs_proc.h"
 #include "PEQ_clock_proc.h"
+#include "PEQ_LPB_proc.h"
 
 #include "player_pause_proc.h"
 
@@ -87,6 +88,7 @@ void PC_StopPause(void){
 	PlaceSetFirstPos(&place);
 
 	InitPEQclock();
+        InitPEQ_LPB(pc->block,place);
 	InitPEQrealline(pc->block,&place);
 	InitPEQline(pc->block,&place);
 	InitPEQblock(pc->block,&place);

@@ -196,6 +196,22 @@ extern void PlaceFromLimit(Place *p,  const Place *tp);
 #define PlaceIsBetween3(a,b,c) (PlaceGreaterThan((a),(b)) && PlaceLessThan((a),(c)))
 
 
+// I don't trust the implementation of PlaceSub (warning: this one hasn't been tested or used and shouldn't be trusted)
+static inline void TrustedPlaceSub(const Place *p1,  const Place *p2, Place *result){
+  R_ASSERT(PlaceGreaterOrEqual(p1, p2));
+           
+  result->line = p1->line - p2->line;
+  
+  result->dividor = p1->dividor * p2->dividor;
+  
+  int64_t counter1 = p1->counter * p2->dividor;
+  int64_t counter2 = p2->counter * p1->dividor;
+
+  result->counter = counter1-counter2;
+
+  // todo: 
+}
+
 
 #ifndef RADIUM_PLACEMENTISCALLINGNOW
 extern Place PlaceFirstPos;
@@ -204,6 +220,8 @@ extern Place PlaceFirstPos;
 #define PlaceGetFirstPos() &PlaceFirstPos
 
 #define PlaceSetFirstPos(a) do { (a)->line=0;(a)->counter=0;(a)->dividor=1; }while(0)
+
+#define PlaceIsFirstPos(a) ((a)->line==0 && (a)->counter==0)
 
 #define PlaceCopy(a,b) do {                              \
     Place *das_a = (Place *)a;                           \

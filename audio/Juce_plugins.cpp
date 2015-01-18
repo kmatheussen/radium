@@ -13,6 +13,8 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/patch_proc.h"
+#include "../common/PEQ_LPB_proc.h"
+
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
@@ -69,7 +71,7 @@ namespace{
       if (block->times==NULL)
         return false;
       
-      result.bpm = (float)root->tempo * (pc->isplaying ? block->reltempo : 1.0f);
+      result.bpm = (float)root->tempo * (pc->isplaying ? block->reltempo : 1.0f); // fixme
       //printf("result.bpm: %f\n",result.bpm);
 
       result.timeSigNumerator = 4;
@@ -79,13 +81,8 @@ namespace{
       result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
       result.editOriginTime = 0; //result.timeInSeconds;
 
-      
-      double lpbInSeconds = (double)block->times[4].time / (double)pc->pfreq;
-      double numBeats = result.timeInSeconds / lpbInSeconds;
-      //printf("numBeats: %f\n",numBeats);
-
-      result.ppqPosition = numBeats; //*960.0;
-      result.ppqPositionOfLastBarStart = 0;//result.ppqPosition - 80; // fixme
+      result.ppqPosition = RT_LPB_get_beat_position();
+      result.ppqPositionOfLastBarStart = 0; // fixme
 
       result.isPlaying = pc->isplaying;
       result.isRecording = false;
