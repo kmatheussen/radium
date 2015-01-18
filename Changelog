@@ -1,4 +1,11 @@
 
+Most important changes 3.0.beta2 -> 3.0.rc1
+* Mouse handling rewritten
+* Various graphics enhancements
+* Lots of bugs removed
+* Lots of features added
+
+
 Most important changes 3.0.beta1 -> 3.0.beta2
 * Set CMAKE_BUILD_TYPE for Visualisation library to RelWithDebInfo
 

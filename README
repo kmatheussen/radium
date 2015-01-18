@@ -1,7 +1,7 @@
 
 
-Radium V3.0.beta2
-Released 2014-04-19
+Radium V3.0.rc1
+Released 2015-01-18
 
 
 
@@ -128,6 +128,7 @@ BUILD DEPENDENCIES UBUNTU 12 (plus Debian):
       * On debian stable, it has been reported that you also need libfftw3-dev.
 
       * Ubuntu 14: Replace glib-2.0-dev with libglib2.0-dev. Add libiberty-dev
+
 
 
 TO ENABLE ALL KEYBOARD SHORTCUTS ON MAC OS X
