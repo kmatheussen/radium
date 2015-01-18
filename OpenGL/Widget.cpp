@@ -210,8 +210,6 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      );
 }
 
-void freeit(void);
-
 
 class MyQt4ThreadedWidget : public vlQt4::Qt4ThreadedWidget, public vl::UIEventListener {
 
@@ -421,7 +419,8 @@ private:
 
     double till_realline = find_till_realline(sv);
     float pos = GE_scroll_pos(sv, till_realline);
-
+    //printf("pos: %f\n",pos);
+    
     if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
 

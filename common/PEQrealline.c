@@ -138,9 +138,16 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           org_pos = &peq->wblock->reallines[realline]->l.p;
 #endif
 
+        int old_curr_realline = peq->wblock->curr_realline;
+
+        // This is not quite good. These three variables should have been updated atomically. However, it seems to work okay.
+        peq->wblock->curr_realline = realline;
+        peq->wblock->top_realline += realline - old_curr_realline;
+        peq->wblock->bot_realline += realline - old_curr_realline;
+        
         GE_set_curr_realline(realline);
 	//peq->wblock->till_curr_realline=realline;
-        peq->wblock->curr_realline=realline;
+        
 
 	if(doit){
 		Ptask2Mtask();

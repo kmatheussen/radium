@@ -920,7 +920,7 @@ struct WBlocks{
 
 	int num_visiblelines;
 
-	int top_realline;
+        volatile int top_realline;
 
         volatile int curr_realline;
   //	int till_curr_realline;				/* The player-routine sets this on. */
@@ -928,7 +928,7 @@ struct WBlocks{
   //int curr_subrealline;
   
   
-	int bot_realline;
+	volatile int bot_realline;
 
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.
         struct Notes *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note.

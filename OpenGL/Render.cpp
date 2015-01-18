@@ -1332,7 +1332,7 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
   int dy = wblock->t.y1;
   int y1 = GetCursorY1Pos(window, wblock) - dy;
   int y2 = GetCursorY2Pos(window, wblock) - dy;
-  
+
   GE_filledBox(c, 
                x1, y1,
                x2, y2
