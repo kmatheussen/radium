@@ -611,8 +611,9 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
 
   if (num_lines==1)
     wblock->num_expand_lines = num_lines;
-  
-  Place curr_place = wblock->reallines[wblock->curr_realline]->l.p;
+
+  int curr_realline = R_BOUNDARIES(0, wblock->curr_realline, wblock->num_reallines); // wblock->curr_realline can be set in the player thread. (bad idea BTW, it needs a proper solution)
+  Place curr_place = wblock->reallines[curr_realline]->l.p;
 
   PLAYER_lock();{
     struct LocalZooms *localzoom = wblock->localzooms;

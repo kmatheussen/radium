@@ -876,7 +876,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
     aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
     
     if(strlen(vendor)>0 || strlen(product)>0)
-      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).ascii());
+      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).toUtf8().constData());
   }
 
   plugin_type->num_effects = aeffect->numParams;
@@ -993,8 +993,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
 
-  //fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
-  fprintf(stderr,"\"%s\"... ",filename.ascii());
+  //fprintf(stderr,"Trying to open \"%s\"\n",filename.toUtf8().constData());
+  fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
   
   QLibrary myLib(filename);
@@ -1011,7 +1011,7 @@ void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
 #endif
 
 
-  //fprintf(stderr,"Trying to resolve \"%s\"\n",filename.ascii());
+  //fprintf(stderr,"Trying to resolve \"%s\"\n",filename.toUtf8().constData());
 
   VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
   if (get_plugin_instance == NULL)
@@ -1029,12 +1029,12 @@ void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
 
 
   if (is_juce_plugin) {
-    add_juce_plugin_type(basename.ascii(), file_info.absoluteFilePath().ascii());
+    add_juce_plugin_type(basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
     return;
   }
 
 
-  //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().ascii());
+  //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
   {
     SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
@@ -1044,7 +1044,7 @@ void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
     type_data->get_plugin_instance = get_plugin_instance;
 
     plugin_type->type_name = "VST";
-    plugin_type->name      = strdup(basename.ascii());
+    plugin_type->name      = strdup(basename.toUtf8().constData());
 
     plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
 
@@ -1083,7 +1083,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
-    //printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
+    //printf("hepp: %s. Suffix: %s\n",file_path.toUtf8().constData(),file_info.suffix().toUtf8().constData());
 
     if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;
@@ -1177,7 +1177,7 @@ void VST_write_vst_paths(const std::vector<QString> &paths){
   for(unsigned int i=0;i<paths.size();i++){
     QString key_name = "vst_path" + QString::number(i);
     QString value_name = paths.at(i);
-    SETTINGS_write_string(key_name.ascii(), value_name.ascii());
+    SETTINGS_write_string(key_name.toUtf8().constData(), value_name.toUtf8().constData());
   }
 }
 

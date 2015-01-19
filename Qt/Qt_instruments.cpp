@@ -796,7 +796,7 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
     DO_GFX(
-           g_currpatch->name = talloc_strdup((char*)new_name.ascii());
+           g_currpatch->name = talloc_strdup((char*)new_name.toUtf8().constData());
            DrawAllWTrackHeaders(window,wblock);
            );
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
@@ -806,7 +806,7 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
 
 #if 0
 static void tab_selected(){
-  //printf("tab selected -%s-\n",tabname.ascii());
+  //printf("tab selected -%s-\n",tabname.toUtf8().constData());
 
   if(called_from_pp_update==true)
     return;
@@ -897,7 +897,7 @@ hash_t *create_instrument_widget_order_state(void){
   hash_t *state = HASH_create(tabs->count());
 
   for(int i=0;i<tabs->count();i++)
-    HASH_put_string_at(state, i, tabs->tabText(i).ascii());
+    HASH_put_string_at(state, i, tabs->tabText(i).toUtf8().constData());
 
   printf("___________Saving state: =-----\n");
   HASH_save(state,stdout);

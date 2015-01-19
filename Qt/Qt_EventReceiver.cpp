@@ -231,7 +231,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
   if(is_starting_up==true)
     return;
 
-  printf("ascii    : %d\n",qkeyevent->ascii());
+  printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
   printf("key      : %d\n",qkeyevent->key());
   printf("key press: %d,%d\n",qkeyevent->state(),Qt2SubId[max(0,qkeyevent->key()-0x41)]);
   printf("text     : -%s-\n",(const char *)qkeyevent->text());
@@ -302,7 +302,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
 void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
   RWarning("keyReleaseEvent should not be called.\n");
 
-  //  printf("key release: %d\n",qkeyevent->ascii());
+  //  printf("key release: %d\n",qkeyevent->toUtf8().constData());
   //  printf("key release: %d\n",qkeyevent->key());
   // printf("Released\n");
   //  this->keyPressEvent(qkeyevent);

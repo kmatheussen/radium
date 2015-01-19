@@ -44,7 +44,7 @@ void OS_set_argv0(char *argv0){
 
   QString path =  QCoreApplication::applicationDirPath(); //info.canonicalPath();
   g_program_path = (const char*)malloc(path.size() + 10);
-  sprintf((char*)g_program_path,"%s",path.ascii());
+  sprintf((char*)g_program_path,"%s",path.toUtf8().constData());
   
   printf("current path: -%s-\n",g_program_path);
 }
@@ -95,7 +95,8 @@ char *OS_get_conf_filename(const char *filename){
   if(info.exists()==false)
     info = QFileInfo(QDir(OS_get_program_path()), filename);
 
-  return talloc_strdup(info.absoluteFilePath().ascii());
+  printf("************* conf filename: -%s\n",info.absoluteFilePath().toUtf8().constData());
+  return talloc_strdup(info.absoluteFilePath().toUtf8().constData());
 }
 
 char *OS_get_keybindings_conf_filename(void){
@@ -116,9 +117,9 @@ char *OS_get_config_filename(const char *key){
 
   QFileInfo config_info(dir, is_color_config ? "colors" : "config");
 
-  printf("dir: \"%s\"\n",config_info.absoluteFilePath().ascii());
+  printf("dir: \"%s\"\n",config_info.absoluteFilePath().toUtf8().constData());
 
-  return talloc_strdup(config_info.absoluteFilePath().ascii());
+  return talloc_strdup(config_info.absoluteFilePath().toUtf8().constData());
 }
 
 double OS_get_double_from_string(const char *s){
@@ -129,5 +130,5 @@ double OS_get_double_from_string(const char *s){
 
 char *OS_get_string_from_double(double d){
   QString string = QString::number(d,'g',16);
-  return talloc_strdup(string.ascii());
+  return talloc_strdup(string.toUtf8().constData());
 }

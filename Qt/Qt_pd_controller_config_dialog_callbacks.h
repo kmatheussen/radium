@@ -98,7 +98,7 @@ public:
       update_gui();
     }
 
-    if (strcmp(controller->name, _name.ascii())) {
+    if (strcmp(controller->name, _name.toUtf8().constData())) {
       _name = controller->name;
       update_gui();
     }
@@ -245,11 +245,11 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if(_is_updating_gui==false) {
-      printf("name: -%s-\n",name_widget->text().ascii());
+      printf("name: -%s-\n",name_widget->text().toUtf8().constData());
       QString name = name_widget->text();
       if(name != controller->name) {
         Undo_PdControllers_CurrPos(_patch);
-        PD_set_controller_name(plugin, controller->num, name.ascii());
+        PD_set_controller_name(plugin, controller->num, name.toUtf8().constData());
       }
       //set_editor_focus();
       //_pd_controller_widget->update();

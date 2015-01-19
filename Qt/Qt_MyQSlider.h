@@ -82,7 +82,7 @@ struct MyQSlider : public QSlider {
       QFontMetrics fm(QApplication::font());
       QRect r =fm.boundingRect("In Out 234234 dB");
       g_minimum_height = r.height()+4;
-      printf("Minimum height: %d, family: %s, font pixelsize: %d, font pointsize: %d\n",g_minimum_height,QApplication::font().family().ascii(),QApplication::font().pixelSize(),QApplication::font().pointSize());
+      printf("Minimum height: %d, family: %s, font pixelsize: %d, font pointsize: %d\n",g_minimum_height,QApplication::font().family().toUtf8().constData(),QApplication::font().pixelSize(),QApplication::font().pointSize());
     }
 
     _minimum_size_set = false; // minimumSize must be set later. I think ui generated code overwrites it when set here.

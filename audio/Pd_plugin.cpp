@@ -862,8 +862,8 @@ static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *stat
   int i=0;
   QString line = in.readLine();
   while (!line.isNull()) {
-    //printf("line: -%s-\n",line.ascii());
-    HASH_put_string_at(state, "line", i, line.ascii());
+    //printf("line: -%s-\n",line.toUtf8().constData());
+    HASH_put_string_at(state, "line", i, line.toUtf8().constData());
     i++;
     line = in.readLine();
   }
@@ -906,7 +906,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   data->pd = pd;
 
   QString search_path = get_search_path();
-  libpds_add_to_search_path(pd, search_path.ascii());
+  libpds_add_to_search_path(pd, search_path.toUtf8().constData());
 
   libpds_set_floathook(pd, RT_pdfloathook);
   libpds_set_messagehook(pd, RT_pdmessagehook);
@@ -942,9 +942,9 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   data->pdfile = pdfile;
 
   QFileInfo qfileinfo(pdfile->fileName());
-  printf("name: %s, dir: %s\n",qfileinfo.fileName().ascii(), qfileinfo.absolutePath().ascii());
+  printf("name: %s, dir: %s\n",qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
 
-  data->file = libpds_openfile(pd, qfileinfo.fileName().ascii(), qfileinfo.absolutePath().ascii());
+  data->file = libpds_openfile(pd, qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
 
   return data;
 }
@@ -958,7 +958,7 @@ static QTemporaryFile *create_new_tempfile(const char *fileName){
   printf("open: %d\n",pdfile->open());
   source.open(QIODevice::ReadOnly);
 
-  printf("filename: -%s-\n",pdfile->fileName().ascii());
+  printf("filename: -%s-\n",pdfile->fileName().toUtf8().constData());
 
   // copy
   pdfile->write(source.readAll());
@@ -1213,7 +1213,7 @@ static void add_plugin(const char *name, const char *filename) {
 }
 
 static void build_plugins(QDir dir){
-  printf(">> dir: -%s-\n",dir.absolutePath().ascii());
+  printf(">> dir: -%s-\n",dir.absolutePath().toUtf8().constData());
   PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName()));
 
   dir.setSorting(QDir::Name);
@@ -1238,16 +1238,16 @@ static void build_plugins(QDir dir){
     
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
-      printf("   file: -%s-\n",fileInfo.absoluteFilePath().ascii());
+      printf("   file: -%s-\n",fileInfo.absoluteFilePath().toUtf8().constData());
       if(fileInfo.suffix()=="pd") {
         if(fileInfo.baseName()==QString("New_Audio_Effect"))
-          add_plugin("", fileInfo.absoluteFilePath().ascii());
-        add_plugin(fileInfo.baseName().replace("_"," ").ascii(), fileInfo.absoluteFilePath().ascii());
+          add_plugin("", fileInfo.absoluteFilePath().toUtf8().constData());
+        add_plugin(fileInfo.baseName().replace("_"," ").toUtf8().constData(), fileInfo.absoluteFilePath().toUtf8().constData());
       }
     }
   }
 
-  printf("<< dir: -%s-\n",dir.absolutePath().ascii());
+  printf("<< dir: -%s-\n",dir.absolutePath().toUtf8().constData());
   PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 

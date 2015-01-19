@@ -172,7 +172,7 @@ void Instrument_widget::name_widget_returnPressed()
       struct WBlocks *wblock = window->wblock;
       struct WTracks *wtrack = wblock->wtrack;
       DO_GFX(
-             patch->name = talloc_strdup((char*)name_widget->text().ascii());
+             patch->name = talloc_strdup((char*)name_widget->text().toUtf8().constData());
              DrawWTrackHeader(window,wblock,wtrack);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
@@ -205,9 +205,9 @@ void Instrument_widget::port_activated( const QString &portname )
 
     GFX_CloseReq(window,reqtype);
   }else
-    MIDISetPatchData(patch, (char*)"port", (char*)portname.ascii());
+    MIDISetPatchData(patch, (char*)"port", (char*)portname.toUtf8().constData());
 
-  fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.ascii());
+  fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.toUtf8().constData());
 
   updatePortsWidget(this);
 }
