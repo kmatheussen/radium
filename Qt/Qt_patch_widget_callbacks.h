@@ -255,7 +255,7 @@ public slots:
       new_name = "pip";
     }
 
-    printf("Calling Undo patchname. Old name: %s. New name: %s\n",_patch->name,new_name.ascii());
+    printf("Calling Undo patchname. Old name: %s. New name: %s\n",_patch->name,new_name.toUtf8().constData());
 
     Undo_PatchName_CurrPos(_patch);
 
@@ -272,7 +272,7 @@ public slots:
       struct Tracker_Windows *window = root->song->tracker_windows;
       struct WBlocks *wblock = window->wblock;
       DO_GFX(
-             _patch->name = talloc_strdup((char*)new_name.ascii());
+             _patch->name = talloc_strdup((char*)new_name.toUtf8().constData());
              DrawAllWTrackHeaders(window,wblock);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);

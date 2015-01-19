@@ -48,7 +48,7 @@ static vector_t *create_instruments_widget_state(void){
   QStackedWidget* tabs = instruments_widget->tabs;
 
   for(int i=0;i<tabs->count();i++){
-    //VECTOR_push_back(names, talloc_strdup(tabs->tabText(i).ascii()));
+    //VECTOR_push_back(names, talloc_strdup(tabs->tabText(i).toUtf8().constData()));
     VECTOR_push_back(pages, tabs->widget(i));
   }
 

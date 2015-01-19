@@ -413,7 +413,7 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
 static void add_ladspa_plugin_type(QFileInfo file_info){
   QString filename = file_info.absoluteFilePath();
 
-  fprintf(stderr,"\"%s\"... ",filename.ascii());
+  fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
 
   QLibrary myLib(filename);
@@ -426,7 +426,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
     return;
   }
 
-  //printf("Resolved \"%s\"\n",myLib.fileName().ascii());
+  //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
   const LADSPA_Descriptor *descriptor;
 
@@ -439,7 +439,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
 
     QString basename = file_info.fileName();
     basename.resize(basename.size()-strlen(LIB_SUFFIX)-1);
-    type_data->filename = strdup(basename.ascii());
+    type_data->filename = strdup(basename.toUtf8().constData());
 
     plugin_type->type_name = "Ladspa";
     plugin_type->name      = descriptor->Name;
@@ -868,13 +868,13 @@ void create_ladspa_plugins(void){
     //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
     QString home_ladspa_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.ladspa";
-    sprintf(ladspa_path, "%s:%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",home_ladspa_path.ascii());
+    sprintf(ladspa_path, "%s:%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",home_ladspa_path.toUtf8().constData());
   } else 
     sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
 #endif
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").ascii());
+  sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData());
 #endif
 
   char *dirname = strtok (ladspa_path, ":");

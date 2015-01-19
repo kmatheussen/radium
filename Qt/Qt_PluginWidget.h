@@ -189,8 +189,8 @@ class ParamWidget : public QWidget{
         char buf[64]={0};
         plugin->type->get_display_value_string(plugin,_effect_num, buf, 64);
         SLIDERPAINTER_set_string(_slider->_painter, _name + ": " + QString::fromLatin1(buf));
-        //_slider->display_string.sprintf("%s: %s",_name.ascii(),
-        //printf("Has set value to %s\n",_slider->_painter->display_string.ascii());
+        //_slider->display_string.sprintf("%s: %s",_name.toUtf8().constData(),
+        //printf("Has set value to %s\n",_slider->_painter->display_string.toUtf8().constData());
       }
     }
 

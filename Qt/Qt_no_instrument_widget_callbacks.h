@@ -126,7 +126,7 @@ public slots:
 
     SETTINGS_write_bool("override_default_qt_style",override);
 
-    printf("default: %s\n",default_style_name.ascii());
+    printf("default: %s\n",default_style_name.toUtf8().constData());
 
     if(override==true){
       QApplication::setStyle("plastique");

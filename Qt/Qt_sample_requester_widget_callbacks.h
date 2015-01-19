@@ -75,8 +75,8 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
-    //printf("Trying to open %s\n",file_info.absoluteFilePath().ascii());
-    SNDFILE *sndfile = sf_open(full_filename.ascii(), SFM_READ, &sf_info);
+    //printf("Trying to open %s\n",file_info.absoluteFilePath().toUtf8().constData());
+    SNDFILE *sndfile = sf_open(full_filename.toUtf8().constData(), SFM_READ, &sf_info);
     if(sndfile==NULL)
       return QString();
 
@@ -167,7 +167,7 @@ class Sample_requester_widget : public QWidget
     setupUi(this);
     //_dir = QDir("/home/kjetil/brenn/downloaded/temp/CATEGORY"); //QDir::currentPath();
     //_dir = QDir::currentPath();
-    _dir = QDir(SETTINGS_read_string("samples_dir",QDir::currentPath().ascii()));
+    _dir = QDir(SETTINGS_read_string("samples_dir",QDir::currentPath().toUtf8().constData()));
 
     if(_dir.exists()==false)
       _dir = QDir(QDir::currentPath());
@@ -197,7 +197,7 @@ class Sample_requester_widget : public QWidget
     file_list->clear();
     file_list->setSortingEnabled(false);
 
-    printf("directory_path: \"%s\"\n",_dir.absolutePath().ascii());
+    printf("directory_path: \"%s\"\n",_dir.absolutePath().toUtf8().constData());
     path_edit->setText(_dir.absolutePath());
 
     _dir.setSorting(QDir::Name);
@@ -269,7 +269,7 @@ class Sample_requester_widget : public QWidget
         name = name + "/";
 
       file_list->addItem(name);
-      printf("Adding \"%s\"\n",name.ascii());
+      printf("Adding \"%s\"\n",name.toUtf8().constData());
     }
 
     file_list->setCurrentRow(0);
@@ -294,7 +294,7 @@ class Sample_requester_widget : public QWidget
   }
 
   void handle_sf2_preset_pressed(QString item_text){
-    printf("preset: Pressed \"%s\"\n",item_text.ascii());
+    printf("preset: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
     if(item_text == "../"){
       _file_chooser_state = IN_SF2;
@@ -320,7 +320,7 @@ class Sample_requester_widget : public QWidget
       successfully_selected = FLUIDSYNTH_set_new_preset(plugin, _sf2_file, bank_num, preset_num);
 
     if(successfully_selected){
-      _sample_name_label->setText(get_display_name(_sf2_file.ascii(),bank_num,preset_num));
+      _sample_name_label->setText(get_display_name(_sf2_file.toUtf8().constData(),bank_num,preset_num));
     }
 
     if(successfully_selected==true && pc->isplaying==false) {
@@ -330,7 +330,7 @@ class Sample_requester_widget : public QWidget
   }
 
   void handle_sf2_bank_pressed(QString item_text){
-    printf("bank: Pressed \"%s\"\n",item_text.ascii());
+    printf("bank: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
     if(item_text == "../"){
       _file_chooser_state = IN_DIRECTORY;
@@ -347,7 +347,7 @@ class Sample_requester_widget : public QWidget
   }
 
   void handle_sf2_file_pressed(QString item_text){
-    printf("sf2_file: Pressed \"%s\"\n",item_text.ascii());
+    printf("sf2_file: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
     _file_chooser_state = IN_SF2;
 
@@ -356,26 +356,26 @@ class Sample_requester_widget : public QWidget
   }
 
   void handle_directory_pressed(QString item_text){
-    printf("directory: Pressed \"%s\"\n",item_text.ascii());
+    printf("directory: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
     QString org_directory_name = _dir.dirName();
 
     _dir.cd(item_text);
     update_file_list();
 
-    SETTINGS_write_string("samples_dir",_dir.absolutePath().ascii());
+    SETTINGS_write_string("samples_dir",_dir.absolutePath().toUtf8().constData());
     //g_last_dir = _dir;
 
     if(item_text=="../") {
       QList<QListWidgetItem *> items = file_list->findItems(org_directory_name+"/",Qt::MatchExactly);
-      printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.ascii(),items.count());
+      printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.toUtf8().constData(),items.count());
       if(items.count()>0)
         file_list->setCurrentItem(items.first());
     }
   }
 
   void handle_file_pressed(QString item_text){
-    printf("file: Pressed \"%s\"\n",item_text.ascii());
+    printf("file: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
     if(g_filenames_hash.contains(item_text)==false)
       return;
@@ -452,7 +452,7 @@ class Sample_requester_widget : public QWidget
       else if(is_sf2_file_pressed(item_text)==true)
         handle_sf2_file_pressed(item_text);
       else
-        printf("Couldn't handle that one: \"%s\"",item_text.ascii());
+        printf("Couldn't handle that one: \"%s\"",item_text.toUtf8().constData());
       break;
     default:
       RError("weird");
@@ -521,12 +521,12 @@ public slots:
   void on_path_edit_editingFinished()
   {
     QString new_path = path_edit->text();
-    printf("new name: %s\n",new_path.ascii());
+    printf("new name: %s\n",new_path.toUtf8().constData());
 
     if(_dir.exists(new_path)){
       _dir.setPath(new_path);
       update_file_list();
-      SETTINGS_write_string("samples_dir",_dir.absolutePath().ascii());
+      SETTINGS_write_string("samples_dir",_dir.absolutePath().toUtf8().constData());
     }else{
       path_edit->setText(_dir.absolutePath());
     }

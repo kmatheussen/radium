@@ -143,7 +143,7 @@ static void check_jackd_arguments(void){
 
     line = line.trimmed();
 
-    printf("Got line: \"%s\" %s\n",line.ascii(),command_line);
+    printf("Got line: \"%s\" %s\n",line.toUtf8().constData(),command_line);
 
     if(line.startsWith("jackd") || line.startsWith("jackd.exe")){
 

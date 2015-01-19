@@ -956,8 +956,8 @@ int main(int argc, char **argv){
   setenv("PYTHONPATH","temp/dist",1);
 #else
   QString pythonlibpath = QCoreApplication::applicationDirPath() + "/python2.7/lib";
-  setenv("PYTHONHOME",pythonlibpath.ascii(),1);
-  setenv("PYTHONPATH",pythonlibpath.ascii(),1);
+  setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
+  setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
 #endif
 
@@ -1004,7 +1004,7 @@ int main(int argc, char **argv){
         
         QString file_path = file_info.filePath();
         if(file_info.suffix()=="ttf"){
-          //printf("file_path: %s\n",file_path.ascii());
+          //printf("file_path: %s\n",file_path.toUtf8().constData());
           QFontDatabase::addApplicationFont(file_path);
         }
       }
@@ -1016,7 +1016,7 @@ int main(int argc, char **argv){
     const char *fontstring = SETTINGS_read_string("system_font",NULL);
 
     if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").toUtf8().constData());
       fontstring = SETTINGS_read_string("system_font",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;

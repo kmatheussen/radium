@@ -486,7 +486,7 @@ void SetupMainWindow(void){
 
     const char *fontstring = SETTINGS_read_string("font",NULL);
     if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").toUtf8().constData());
       fontstring = SETTINGS_read_string("font",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;
@@ -566,7 +566,7 @@ const char *GFX_GetLoadFileName(
     goto exit;
   }
 
-  ret = talloc_strdup(filename.ascii());
+  ret = talloc_strdup(filename.toUtf8().constData());
 
  exit:
   num_users_of_keyboard--;
@@ -587,7 +587,7 @@ const char *GFX_GetSaveFileName(
                                                                       seltext,
                                                                       "",
                                                                       get_postfixes_filter(postfixes)
-                                                                      ).ascii());
+                                                                      ).toUtf8().constData());
   num_users_of_keyboard--;
   return ret==NULL || strlen(ret)==0 
     ? NULL 

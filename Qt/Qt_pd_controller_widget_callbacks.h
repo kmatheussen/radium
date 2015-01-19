@@ -66,7 +66,7 @@ public:
         _pd_controller_widget->update();
       }
 
-      if (strcmp(_controller->name, _name.ascii())) {
+      if (strcmp(_controller->name, _name.toUtf8().constData())) {
         _name = _controller->name;
         _pd_controller_widget->paint_slider_text();
         _pd_controller_widget->paint_onoff_text();

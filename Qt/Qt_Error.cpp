@@ -77,8 +77,8 @@ int SYSTEM_show_message(const char *message){
   myProcess.start(program, arguments);
 
   if (myProcess.waitForFinished(-1)==false) {
-    fprintf(stderr,"Something went wrong when trying to start radium_error_message executable \"%s\"\n",(program+" "+message).ascii());
-    //system((program+" "+message).ascii());
+    fprintf(stderr,"Something went wrong when trying to start radium_error_message executable \"%s\"\n",(program+" "+message).toUtf8().constData());
+    //system((program+" "+message).toUtf8().constData());
     //abort();
     return 0;
   }

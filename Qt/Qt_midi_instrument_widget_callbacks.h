@@ -219,9 +219,9 @@ public slots:
 
       GFX_CloseReq(window,reqtype);
     }else
-      MIDISetPatchData(patch, (char*)"port", (char*)portname.ascii());
+      MIDISetPatchData(patch, (char*)"port", (char*)portname.toUtf8().constData());
 
-    fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.ascii());
+    fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.toUtf8().constData());
 
     updateMidiPortsWidget(this);
   }

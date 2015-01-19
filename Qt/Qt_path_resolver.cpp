@@ -66,7 +66,7 @@ static QString saving_path;
 void OS_set_saving_path(const char *filename){
   QFileInfo info(filename);
   saving_path = info.absolutePath();
-  printf("saving_path: -%s-\n",saving_path.ascii());
+  printf("saving_path: -%s-\n",saving_path.toUtf8().constData());
 }
 
 
@@ -92,11 +92,11 @@ const char *OS_saving_get_relative_path_if_possible(const char *filepath){
   if (info.isRelative())
     return filepath;
   
-  printf("canonical: -%s-\n",info.absolutePath().ascii());
+  printf("canonical: -%s-\n",info.absolutePath().toUtf8().constData());
 
   QString filepath2 = info.absolutePath()+QDir::separator();
   QString savepath2 = saving_path+QDir::separator();
-  printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.ascii(),savepath2.ascii());
+  printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.toUtf8().constData(),savepath2.toUtf8().constData());
 
   if (filepath2.startsWith(savepath2))
     return filepath + savepath2.length();
@@ -220,7 +220,7 @@ int main(void){
 
   OS_set_saving_path("/asdf/tmp/filename.rad");
 
-  printf("-%s- -%s-\n",OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai"),saving_path.ascii());
+  printf("-%s- -%s-\n",OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai"),saving_path.toUtf8().constData());
 
   assert(!strcmp(OS_saving_get_relative_path_if_possible("/badffa"), "/badffa"));
   assert(!strcmp(OS_saving_get_relative_path_if_possible("/badffa/aba"), "/badffa/aba"));
