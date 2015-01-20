@@ -270,6 +270,7 @@ $1 = (SoundPlugin *) 0x0
 #include <QTextStream>
 #include <QMessageBox>
 #include <QVector>
+#include <QCoreApplication>
 
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
@@ -874,7 +875,7 @@ static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *stat
 }
 
 static QString get_search_path() {
-  return QString(OS_get_program_path()) + QDir::separator() + "pd";
+  return QCoreApplication::applicationDirPath() + QDir::separator() + "pd";
 }
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){

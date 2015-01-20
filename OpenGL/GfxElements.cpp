@@ -65,14 +65,15 @@ static vl::GLSLFragmentShader *get_gradient_fragment_shader(void){
   static vl::ref<vl::GLSLFragmentShader> gradient_shader = NULL;
 
   if(gradient_shader.get()==NULL) {
-    std::string path = std::string(
-        OS_get_program_path())
-      + std::string(OS_get_directory_separator())
-      + std::string("glsl")
-      + std::string(OS_get_directory_separator())
-      + std::string("gradient.fs"
-    );
-    gradient_shader = new vl::GLSLFragmentShader(path.c_str());
+    vl::String path =
+      vl::String(OS_get_program_path2())
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("glsl"))
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("gradient.fs"))
+      ;
+
+    gradient_shader = new vl::GLSLFragmentShader(path);
   }
   
   return gradient_shader.get();
@@ -83,14 +84,15 @@ static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
   static vl::ref<vl::GLSLVertexShader> gradient_shader = NULL;
 
   if(gradient_shader.get()==NULL) {
-    std::string path = std::string(
-        OS_get_program_path())
-      + std::string(OS_get_directory_separator())
-      + std::string("glsl")
-      + std::string(OS_get_directory_separator())
-      + std::string("gradient.vs"
-    );
-    gradient_shader = new vl::GLSLVertexShader(path.c_str());
+    vl::String path =
+      vl::String(OS_get_program_path2())
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("glsl"))
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("gradient.vs"))
+      ;
+
+    gradient_shader = new vl::GLSLVertexShader(path);
   }
   
   return gradient_shader.get();

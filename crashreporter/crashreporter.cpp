@@ -312,13 +312,13 @@ void CRASHREPORTER_init(void){
   }
 
 #if defined(FOR_WINDOWS)
-  //system(QString(QString("start ") + OS_get_program_path() + "\\crashreporter " + key + " /B").toAscii());
+  //system(QString(QString("start ") + QCoreApplication::applicationDirPath() + "\\crashreporter " + key + " /B").toAscii());
 
 #if 0
-  QString command=QString("start /B ") + OS_get_program_path() + "\\crashreporter.exe " + key;
+  QString command=QString("start /B ") + QCoreApplication::applicationDirPath() + "\\crashreporter.exe " + key;
   //system(command.toAscii());
 #endif
-  QString command=QString(OS_get_program_path()) + "\\crashreporter.exe";
+  QString command=QCoreApplication::applicationDirPath() + "\\crashreporter.exe";
 
   char *c = strdup(command.toAscii());
   char *k = strdup(key.toAscii());
@@ -336,7 +336,7 @@ void CRASHREPORTER_init(void){
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX)
-  if(system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) {
+  if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
     fprintf(stderr,"Couldn't start crashreporter\n");
 #ifndef RELEASE
     abort();

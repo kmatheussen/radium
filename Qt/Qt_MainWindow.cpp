@@ -486,7 +486,7 @@ void SetupMainWindow(void){
 
     const char *fontstring = SETTINGS_read_string("font",NULL);
     if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").toUtf8().constData());
+      SETTINGS_set_custom_configfile(QString(QCoreApplication::applicationDirPath()+OS_get_directory_separator()+"config").toUtf8().constData());
       fontstring = SETTINGS_read_string("font",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;

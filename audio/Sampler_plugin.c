@@ -1185,7 +1185,7 @@ static void set_legal_loop_points(Sample *sample, int start, int end){
 #include "Sampler_plugin_sf2_load.c"
 
 static float *load_interleaved_samples(const char *filename, SF_INFO *sf_info){
-  SNDFILE *sndfile          = sf_open(filename,SFM_READ,sf_info);
+  SNDFILE *sndfile          = sf_open(filename,SFM_READ,sf_info); // utf fix: Use sf_open_fd()
   if(sndfile==NULL)
     return NULL;
 

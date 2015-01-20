@@ -992,12 +992,12 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  qapplication->setWindowIcon(QIcon(QString(OS_get_program_path()) + OS_get_directory_separator() + "radium_256x256x32.png"));
+  qapplication->setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + OS_get_directory_separator() + "radium_256x256x32.png"));
 
   {
     // Add fonts in the "fonts" directory
     {
-      QDir dir(QString(OS_get_program_path()) + OS_get_directory_separator() + "fonts");
+      QDir dir(QCoreApplication::applicationDirPath() + OS_get_directory_separator() + "fonts");
       QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
       for (int i=0;i<list.count();i++){
         QFileInfo file_info = list[i];
@@ -1016,7 +1016,7 @@ int main(int argc, char **argv){
     const char *fontstring = SETTINGS_read_string("system_font",NULL);
 
     if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").toUtf8().constData());
+      SETTINGS_set_custom_configfile(QString(QCoreApplication::applicationDirPath()+OS_get_directory_separator()+"config").toUtf8().constData());
       fontstring = SETTINGS_read_string("system_font",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;

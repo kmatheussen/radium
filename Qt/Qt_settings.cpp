@@ -37,20 +37,33 @@ const char *OS_get_directory_separator(void){
   return ret;
 }
 
-static const char *g_program_path = NULL;
-
 void OS_set_argv0(char *argv0){
+  /*
   //QFileInfo info(QDir::currentPath() + QString(OS_get_directory_separator()) + QString(argv0));
 
-  QString path =  QCoreApplication::applicationDirPath(); //info.canonicalPath();
+  QString path =  ; //info.canonicalPath();
   g_program_path = (const char*)malloc(path.size() + 10);
   sprintf((char*)g_program_path,"%s",path.toUtf8().constData());
   
   printf("current path: -%s-\n",g_program_path);
+  */
 }
 
+// TODO: Remove.
 const char *OS_get_program_path(void){
-  return g_program_path;
+  return talloc_strdup(QCoreApplication::applicationDirPath().toUtf8().constData());
+}
+
+// TODO: Rename to OS_get_program_path
+const wchar_t *OS_get_program_path2(void){
+  static wchar_t *array=NULL;
+  if (array==NULL){
+    QString s = QCoreApplication::applicationDirPath();
+    array = (wchar_t*)calloc(1, sizeof(wchar_t)*s.length());
+    s.toWCharArray(array);
+  }
+
+  return array;
 }
 
 bool OS_config_key_is_color(const char *key){
@@ -93,7 +106,7 @@ char *OS_get_conf_filename(const char *filename){
   QFileInfo info(dir, filename);
 
   if(info.exists()==false)
-    info = QFileInfo(QDir(OS_get_program_path()), filename);
+    info = QFileInfo(QDir(QCoreApplication::applicationDirPath()), filename);
 
   printf("************* conf filename: -%s\n",info.absoluteFilePath().toUtf8().constData());
   return talloc_strdup(info.absoluteFilePath().toUtf8().constData());

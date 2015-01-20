@@ -15,6 +15,7 @@
 #include <QAbstractButton>
 #include <QMainWindow>
 #include <QGLFormat>
+#include <QDebug>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -486,7 +487,9 @@ public:
     //printf("updateEvent\n");
 
     if (driver_version_string==NULL)
-      driver_version_string = strdup((const char*)glGetString(GL_VERSION));
+      driver_version_string = strdup((const char*)glGetString(GL_VENDOR));
+    //driver_version_string = strdup((const char*)glGetString(GL_RENDERER));
+    //      driver_version_string = strdup((const char*)glGetString(GL_VERSION));
     //printf("%s\n",(const char*)driver_version_string);
     
     if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
@@ -743,6 +746,7 @@ QWidget *GL_create_widget(QWidget *parent){
   
   {
     QString s((const char*)driver_version_string);
+    qDebug() << "___ driver_version_string: " << s;
     if (s.contains("mesa", Qt::CaseInsensitive))
       GFX_Message(NULL,
                   "Warning!\n"

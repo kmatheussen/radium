@@ -493,7 +493,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
 void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
   EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
 
-  const char* curr_dir = OS_get_program_path();
+  QString curr_dir = QCoreApplication::applicationDirPath();
   const char* separator = OS_get_directory_separator();
 
   QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
