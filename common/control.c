@@ -167,5 +167,4 @@ void EndProgram(void){
 
 	fflush(stdout);
 	fflush(stdin);
-
 }

@@ -151,6 +151,7 @@ static float *xi_get_sample(FILE *file, int sample_num){
       value     += s16[i];
       sample[i]  = value / 32768.0f;
     }
+    free(s16);
   }else{
     int8_t *s8=calloc(sizeof(int8_t),num_frames);
     if(s8==NULL){
@@ -166,6 +167,7 @@ static float *xi_get_sample(FILE *file, int sample_num){
       value     += s8[i];
       sample[i]  = value / 128.0f;
     }
+    free(s8);
   }
 
 #if 0
