@@ -27,6 +27,7 @@ export CCC="g++ -mfpmath=sse"
 #export CC="gcc -mfpmath=sse"
 #export CCC="clang++ -stdlib=libc++"
 export CC="clang -Wno-gnu-designator"
+export GCC="gcc -mfpmath=sse"
 export LINKER=g++
 
 export PKG=pkg-config
