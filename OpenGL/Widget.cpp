@@ -67,6 +67,8 @@ void GL_unlock(void){
 }
 
 
+static volatile char *driver_vendor_string=NULL;
+static volatile char *driver_renderer_string=NULL;
 static volatile char *driver_version_string=NULL;
       
 static volatile int g_curr_realline;
@@ -486,11 +488,13 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
-    if (driver_version_string==NULL)
-      driver_version_string = strdup((const char*)glGetString(GL_VENDOR));
-    //driver_version_string = strdup((const char*)glGetString(GL_RENDERER));
-    //      driver_version_string = strdup((const char*)glGetString(GL_VERSION));
-    //printf("%s\n",(const char*)driver_version_string);
+    if (driver_version_string==NULL) {
+      driver_vendor_string = strdup((const char*)glGetString(GL_VENDOR));
+      driver_renderer_string = strdup((const char*)glGetString(GL_RENDERER));
+      driver_version_string = strdup((const char*)glGetString(GL_VERSION));
+      printf("vendor: %s, renderer: %s, version: %s \n",(const char*)driver_vendor_string,(const char*)driver_renderer_string,(const char*)driver_version_string);
+      //abort();
+    }
     
     if (has_overridden_vblank_value==false && override_vblank_value > 0.0) {
 
@@ -741,13 +745,27 @@ QWidget *GL_create_widget(QWidget *parent){
     box.close();
   }
 
-  while(driver_version_string==NULL)
+  while(driver_vendor_string==NULL || driver_renderer_string==NULL || driver_version_string==NULL)
     usleep(5*1000);
   
   {
-    QString s((const char*)driver_version_string);
-    qDebug() << "___ driver_version_string: " << s;
-    if (s.contains("mesa", Qt::CaseInsensitive))
+    QString s_vendor((const char*)driver_vendor_string);
+    QString s_version((const char*)driver_version_string);
+    qDebug() << "___ driver_version_string: " << s_version;
+    printf("vendor: %s, renderer: %s, version: %s \n",(const char*)driver_vendor_string,(const char*)driver_renderer_string,(const char*)driver_version_string);
+    
+    if (s_vendor.contains("nouveau", Qt::CaseInsensitive))
+      GFX_Message(NULL,
+                  "Warning!\n"
+                  "\n"
+                  "Nouveau OpenGL driver detected.\n"
+                  "\n"
+                  "The nouveau driver currently performes worse than the nvidia driver. In addition, the graphics does not look as good.\n"
+                  "\n"
+                  "The nvidia driver can be installed to get faster, smoother and prettier graphics\n"
+                  );
+
+    else if (s_version.contains("mesa", Qt::CaseInsensitive))
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"
