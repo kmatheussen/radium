@@ -50,7 +50,7 @@ OPTIMIZE ?= -O3
 # Packagers: Don't change anything below here unless things don't work.
 
 
-GCDIR=bin/packages/gc-7.4.2
+GCDIR=bin/packages/gc-7.2
 
 MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
@@ -348,17 +348,17 @@ dotesting: test_vector test_placement test_notes test_path_resolver
 	@echo " == All tests succeeded, apparently =="
 
 test_vector:
-	$(CC) -g -Wall -Werror -DTEST_VECTOR -DDEBUG -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_VECTOR -DDEBUG -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_placement:
-	$(CC) -g -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CC) -g -Wall -Werror -DTEST_NOTES -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.c common/memory.c -lm -$(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_NOTES -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.c common/memory.c -lm -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_path_resolver:
-	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && ./a.out
-	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
+	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER -DDEBUG -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) bin/packages/gc-7.2/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 packages: bin/packages/deletemetorebuild
 
@@ -510,7 +510,7 @@ debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 	$(CC) $(CD)debug.c $(OPT) 
 
 memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
-	$(GCC) $(CD)memory.c $(OPT)
+	$(CC) $(CD)memory.c $(OPT)
 
 placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
 	$(CC) $(CD)placement.c $(OPT)
@@ -593,7 +593,7 @@ PEQline.o:  $(BUILD_DEPENDENCIES) $(CD)PEQline.c $(CD)playerclass.h
 	$(CC) $(CD)PEQline.c $(OPT) 
 
 PEQmempool.o:  $(BUILD_DEPENDENCIES) $(CD)PEQmempool.c $(CD)playerclass.h
-	$(GCC) $(CD)PEQmempool.c $(OPT) 
+	$(CC) $(CD)PEQmempool.c $(OPT) 
 
 PEQblock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQblock.c $(CD)playerclass.h
 	$(CC) $(CD)PEQblock.c $(OPT)
@@ -608,7 +608,7 @@ playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
 	$(CC) $(CD)playerclass.c $(OPT)
 
 player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playerclass.h
-	$(GCC) $(CD)player_startstop.c $(OPT)
+	$(CC) $(CD)player_startstop.c $(OPT)
 
 PEQvelocities.o:  $(BUILD_DEPENDENCIES) $(CD)PEQvelocities.c
 	$(CC) $(CD)PEQvelocities.c $(OPT)
@@ -721,7 +721,7 @@ disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h
 	$(CC) $(CD)disk_save.c $(OPT)
 
 disk_load.o:  $(BUILD_DEPENDENCIES) $(CD)disk_load.c config/config.h
-	$(GCC) $(CD)disk_load.c $(OPT)
+	$(CC) $(CD)disk_load.c $(OPT)
 
 control.o:  $(BUILD_DEPENDENCIES) $(CD)control.c
 	$(CC) $(CD)control.c $(OPT)
@@ -1346,7 +1346,7 @@ Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT)
 
 Sampler_plugin.o: audio/Sampler_plugin.c audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h
-	$(GCC) $(OPT)  $(CPUOPT) audio/Sampler_plugin.c $(SNDFILEOPT) $(SAMPLERATEOPT) $(GLIBOPT)
+	$(CC) $(OPT)  $(CPUOPT) audio/Sampler_plugin.c $(SNDFILEOPT) $(SAMPLERATEOPT) $(GLIBOPT)
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 	$(CC) -Ibin/packages/fluidsynth-1.1.6/include $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
@@ -1608,7 +1608,7 @@ Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/T
 # embedded scheme
 
 bin/packages/s7/s7.o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7.o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS)
+	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7.o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS)
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
 	$(CCC) -c bin/s7webserver/s7webserver.cpp `$(PKG) --cflags QtNetwork` $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
