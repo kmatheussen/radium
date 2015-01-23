@@ -666,8 +666,12 @@ static void show_message_box(QMessageBox *box){
   if(have_earlier_estimated_value()){
 
     QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/get_earlier_estimated())+" Hz).";
-    //QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
-    //if(0)printf((char*)msgBox_useStoredValue);
+#if 1
+    box->addButton(message,QMessageBox::ApplyRole);
+#else
+    QAbstractButton *msgBox_useStoredValue = (QAbstractButton*)box->addButton(message,QMessageBox::ApplyRole);
+    printf((char*)msgBox_useStoredValue);
+#endif
     box->show();
 
   } else {
