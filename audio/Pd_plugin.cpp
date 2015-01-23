@@ -901,6 +901,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
     msgBox.setText(QString(libpds_strerror()));
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
+    free data;
     return NULL;
   }
 

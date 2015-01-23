@@ -632,7 +632,6 @@ int radium_main(char *arg){
 
   SCHEME_start();
 
-
   //ProfilerStop();
 
   posix_InitPlayer();
