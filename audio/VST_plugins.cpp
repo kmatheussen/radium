@@ -1139,10 +1139,10 @@ void create_vst_plugins(bool is_juce_plugin){
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
-    const char *vst_path = SETTINGS_read_string(QString("vst_path")+QString::number(i), NULL);
-    if(vst_path==NULL)
+    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), "");
+    if(vst_path=="")
       continue;
-    printf("vst_path: %s\n",vst_path);
+    printf("vst_path: %s\n",vst_path.toUtf8().constData());
     create_vst_plugins_recursively(vst_path, &time, is_juce_plugin);
     PR_add_menu_entry(PluginMenuEntry::separator());
   }    
@@ -1157,16 +1157,9 @@ std::vector<QString> VST_get_vst_paths(void){
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
-    const char *vst_path = SETTINGS_read_string(QString("vst_path")+QString::number(i), NULL);
-    if(vst_path==NULL)
-      continue;
-
-    QString s(vst_path);
-    s = s.trimmed();
-    if(s.length()==0)
-      continue;
-
-    paths.push_back(s);
+    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), "");
+    if(vst_path!="")
+      paths.push_back(vst_path);
   }
 
   return paths;
@@ -1177,7 +1170,7 @@ void VST_write_vst_paths(const std::vector<QString> &paths){
   for(unsigned int i=0;i<paths.size();i++){
     QString key_name = "vst_path" + QString::number(i);
     QString value_name = paths.at(i);
-    SETTINGS_write_string(key_name.toUtf8().constData(), value_name.toUtf8().constData());
+    SETTINGS_write_string(key_name.toUtf8().constData(), value_name);
   }
 }
 

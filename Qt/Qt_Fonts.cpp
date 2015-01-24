@@ -71,8 +71,8 @@ static void set_system_font(QFont font){
 
   printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().toUtf8().constData(),font.family().toUtf8().constData(),font.styleName().toUtf8().constData());
 
-  SETTINGS_write_string("system_font",font.toString().toUtf8().constData());
-  SETTINGS_write_string("system_font_style",font.styleName().toUtf8().constData()); // toString doesn't seem to cover this.
+  SETTINGS_write_string("system_font",font.toString());
+  SETTINGS_write_string("system_font_style",font.styleName()); // toString doesn't seem to cover this.
 
   {
     struct Tracker_Windows *tvisual = root->song->tracker_windows;
@@ -113,14 +113,14 @@ void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   DrawUpTrackerWindow(tvisual);
   SETTINGS_write_string("font",font);
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  SETTINGS_write_string("font_style",editor->font.styleName().toUtf8().constData()); // toString doesn't seem to cover this.
+  SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
 }
 
 void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
   QFont font;
 
   {
-    const char *fontstring = SETTINGS_read_string("font",NULL);
+    QString fontstring = SETTINGS_read_qstring("font","");
     font.fromString(fontstring);
   }
 
@@ -171,19 +171,19 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
 void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile( QString(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + QString("config") ).toUtf8().constData());
+  SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + QString("config"));
   {
-    const char *fontstring = SETTINGS_read_string("font",NULL);
+    QString fontstring = SETTINGS_read_qstring("font","");
 
     font.fromString(fontstring);
-    if(SETTINGS_read_string("font_style",NULL)!=NULL)
-      font.setStyleName(SETTINGS_read_string("font_style",NULL));
+    if(SETTINGS_read_qstring("font_style","")!="")
+      font.setStyleName(SETTINGS_read_qstring("font_style",""));
 
   }
   SETTINGS_unset_custom_configfile();
 
-  SETTINGS_write_string("font",font.toString().toUtf8().constData());
-  SETTINGS_write_string("font_style",font.styleName().toUtf8().constData()); // toString doesn't seem to cover this.
+  SETTINGS_write_string("font",font.toString());
+  SETTINGS_write_string("font_style",font.styleName()); // toString doesn't seem to cover this.
 
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
@@ -198,13 +198,13 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile( QString(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + "config").toUtf8().constData());
+  SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + "config");
   {
-    const char *fontstring = SETTINGS_read_string("system_font",NULL);
+    QString fontstring = SETTINGS_read_qstring("system_font","");
 
     font.fromString(fontstring);
-    if(SETTINGS_read_string("system_font_style",NULL)!=NULL)
-      font.setStyleName(SETTINGS_read_string("system_font_style",NULL));
+    if(SETTINGS_read_qstring("system_font_style","")!="")
+      font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
 
   }
   SETTINGS_unset_custom_configfile();

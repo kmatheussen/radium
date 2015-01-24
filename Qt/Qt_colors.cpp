@@ -164,11 +164,11 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
-    SETTINGS_write_string("system_color",system_color->name().toUtf8().constData());
+    SETTINGS_write_string("system_color",system_color->name());
   }
   if(button_color==NULL){
     button_color=new QColor(SETTINGS_read_string("button_color","#c1f1e3"));
-    SETTINGS_write_string("button_color",button_color->name().toUtf8().constData());
+    SETTINGS_write_string("button_color",button_color->name());
   }
 
   if(override_default_qt_colors==false){
@@ -462,24 +462,24 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     // "cancel"
     printf("Got CANCEL!\n");
     setEditorColors(editorwidget); // read back from file.
-    system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
-    button_color->setRgb(QColor(SETTINGS_read_string("button_color","#c1f1e3")).rgb());
+    system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
+    button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
     DrawUpTrackerWindow(root->song->tracker_windows);
   }else{
     // "ok"
     printf("Got OK!\n");
 
-    SETTINGS_write_string((char*)"system_color",(char*)system_color->name().toUtf8().constData());
+    SETTINGS_write_string("system_color",system_color->name());
     system_color->setRgb(QColorDialog3::customColor(9));
 
-    SETTINGS_write_string((char*)"button_color",(char*)button_color->name().toUtf8().constData());
+    SETTINGS_write_string("button_color",button_color->name());
     button_color->setRgb(QColorDialog3::customColor(11));
 
     for(int i=0;i<16;i++){
       setColor(editorwidget,i,QColorDialog3::customColor(i));
       char key[500];
       sprintf(key,"color%d",i);
-      SETTINGS_write_string(key,(char*)editorwidget->colors[i].name().toUtf8().constData());
+      SETTINGS_write_string(key,editorwidget->colors[i].name());
     }
   }
 
@@ -501,8 +501,8 @@ void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
   QFile::copy(QString(curr_dir)+separator+"colors", OS_get_config_filename("color0"));
 
   setEditorColors(editorwidget); // read back from file.
-  system_color->setRgb(QColor(SETTINGS_read_string("system_color","#d2d0d5")).rgb());
-  button_color->setRgb(QColor(SETTINGS_read_string("button_color","#c1f1e3")).rgb());
+  system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
+  button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
   DrawUpTrackerWindow(tvisual);
   updateAll(editorwidget);
 }

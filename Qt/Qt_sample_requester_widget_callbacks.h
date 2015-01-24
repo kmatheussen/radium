@@ -167,7 +167,7 @@ class Sample_requester_widget : public QWidget
     setupUi(this);
     //_dir = QDir("/home/kjetil/brenn/downloaded/temp/CATEGORY"); //QDir::currentPath();
     //_dir = QDir::currentPath();
-    _dir = QDir(SETTINGS_read_string("samples_dir",QDir::currentPath().toUtf8().constData()));
+    _dir = QDir(SETTINGS_read_qstring("samples_dir",QDir::currentPath()));
 
     if(_dir.exists()==false)
       _dir = QDir(QDir::currentPath());
@@ -363,7 +363,7 @@ class Sample_requester_widget : public QWidget
     _dir.cd(item_text);
     update_file_list();
 
-    SETTINGS_write_string("samples_dir",_dir.absolutePath().toUtf8().constData());
+    SETTINGS_write_string("samples_dir",_dir.absolutePath());
     //g_last_dir = _dir;
 
     if(item_text=="../") {
@@ -526,7 +526,7 @@ public slots:
     if(_dir.exists(new_path)){
       _dir.setPath(new_path);
       update_file_list();
-      SETTINGS_write_string("samples_dir",_dir.absolutePath().toUtf8().constData());
+      SETTINGS_write_string("samples_dir",_dir.absolutePath());
     }else{
       path_edit->setText(_dir.absolutePath());
     }

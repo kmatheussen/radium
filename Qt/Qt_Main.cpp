@@ -1013,20 +1013,20 @@ int main(int argc, char **argv){
     // set system font
 
     bool custom_config_set = false;
-    const char *fontstring = SETTINGS_read_string("system_font",NULL);
+    QString fontstring = SETTINGS_read_qstring("system_font","");
 
-    if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(QString(QCoreApplication::applicationDirPath()+OS_get_directory_separator()+"config").toUtf8().constData());
-      fontstring = SETTINGS_read_string("system_font",NULL);
-      R_ASSERT(fontstring != NULL);
+    if(fontstring=="") {
+      SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath()+OS_get_directory_separator()+"config");
+      fontstring = SETTINGS_read_qstring("system_font","");
+      R_ASSERT(fontstring != "");
       custom_config_set = true;
     }
 
     {
       QFont font;
       font.fromString(fontstring);
-      if(SETTINGS_read_string("system_font_style",NULL)!=NULL)
-        font.setStyleName(SETTINGS_read_string("system_font_style",NULL));
+      if(SETTINGS_read_qstring("system_font_style","")!="")
+        font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
       qapplication->setFont(font);
       QApplication::setFont(font);
     }
