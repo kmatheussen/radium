@@ -1123,8 +1123,8 @@ bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)
 
-settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.c
-	$(CC) $(CD)settings.c $(OPT)
+settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.cpp
+	$(CCC) $(CD)settings.cpp $(QTOPT)
 
 mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c
 	$(CC) mmd2loader/mmd2load.c $(OPT)

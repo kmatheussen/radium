@@ -145,11 +145,11 @@ void SCHEME_start(void){
   if (s7==NULL)
     RError("Can't start s7 scheme");
 
-  std::string os_path = OS_get_program_path();
+  std::string os_path = ""; //OS_get_program_path() + OS_get_directory_separator();
   //printf("%s\n",os_path);
 
-  s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7 . No solution to utf-8 here. s7_add_to_load_path takes char* only.
-  s7_add_to_load_path(s7,(os_path+OS_get_directory_separator()+"scheme").c_str()); // bin/scheme
+  s7_add_to_load_path(s7,(os_path+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7 . No solution to utf-8 here. s7_add_to_load_path takes char* only.
+  s7_add_to_load_path(s7,(os_path+"scheme").c_str()); // bin/scheme
 
   init_radium_s7(s7);
 

@@ -42,9 +42,11 @@ char *OS_get_config_filename(void){
 }
 #endif
 
+#if 0
 void OS_make_config_file_expired(const char *key){
   char *config_file = OS_get_config_filename(key);
   char temp[500];
   sprintf(temp,"%s_bu",config_file);
   rename(config_file,temp);
 }
+#endif

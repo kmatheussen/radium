@@ -968,7 +968,8 @@ int main(int argc, char **argv){
     // Set loading path to argv[0]
     PyRun_SimpleString("import sys,os");
 
-#if defined(FOR_WINDOWS)
+#if 1
+    //#if defined(FOR_WINDOWS)
     sprintf(temp,"sys.g_program_path = \"\"");
 #else
     // This doesn't work on mingw. Could be a wine problem only.
@@ -982,7 +983,7 @@ int main(int argc, char **argv){
     //PyRun_SimpleString("sys.path = [sys.g_program_path]");
     
     // Set sys.argv[0]
-    sprintf(temp,"sys.argv=[\"%s\",\"%s\"]", argv[0], OS_get_keybindings_conf_filename());
+    sprintf(temp,"sys.argv=[\"%s\",\"%s\"]", argv[0], OS_get_keybindings_conf_filename2());
     PyRun_SimpleString(temp);
     
     printf("argv[0]: %s\n",argv[0]);

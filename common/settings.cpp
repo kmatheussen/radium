@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -21,13 +22,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <unistd.h>
 
+#include <QString>
+#include <QFile>
+#include <QDir>
+#include <QTextStream>
+#include <QCoreApplication>
+
 #include "nsmtracker.h"
 #include "OS_settings_proc.h"
 #include "../config/config.h"
 
 #include "settings_proc.h"
 
-static const char *custom_configuration_filename=NULL;
+static QString custom_configuration_filename;
 
 static const char* get_value(const char* line){
   int pos=0;
@@ -82,25 +89,61 @@ static int find_linenum(const char* key, const char** lines){
 static const char** get_lines(const char* key){
   bool is_color_config = OS_config_key_is_color(key);
 
-  const char *filename = custom_configuration_filename==NULL ? OS_get_config_filename(key) : custom_configuration_filename;
+  //const char *filename = custom_configuration_filename==NULL ? OS_get_config_filename(key) : custom_configuration_filename;
+  QString filename = custom_configuration_filename=="" ? OS_get_config_filename(key) : custom_configuration_filename;
 
-  FILE *user_file = fopen(filename, "r");
-  FILE *file = user_file;
+  QFile file(filename);
 
-  if(file==NULL){
+  if(file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
+#if 0
     const char* curr_dir = OS_get_program_path();
     const char* separator = OS_get_directory_separator();
     const char* basefilename = is_color_config ? "colors" : "config";
     char filename[strlen(curr_dir)+strlen(separator)+strlen(basefilename)+10];
     sprintf(filename,"%s%s%s",curr_dir,separator,basefilename);
     file = fopen(filename,"r");
+#endif
+    QString bin_filename = QCoreApplication::applicationDirPath() + QDir::separator() + (is_color_config ? "colors" : "config");
+    
+    file.setFileName(bin_filename);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
+      RError("Unable to open %s",bin_filename.toUtf8().constData());
+      return NULL;
+    }
   }
                  
-  const char** ret = talloc(10000 * sizeof(char*));
+  const char** ret = (const char**)talloc(10000 * sizeof(char*));
 
-  if(file==NULL)
-    return ret;
+  int linenum = 0;
+  
+  QTextStream in(&file);
+  while ( !in.atEnd() ){
+    QString qtline = in.readLine();
+    
+    char *line = talloc_strdup(qtline.toUtf8().constData());
 
+    R_ASSERT(line != NULL);
+    
+#if 0
+    printf("line: -%s-\n",line);
+    char temp[1024];
+    gets(temp);
+#endif
+    
+    if (strlen(line)>=2){ // Remove line shift if reading file with DOS char set
+      size_t dos_pos = strcspn(line, "\r\n"); 
+      line[dos_pos] = 0; 
+    }
+    
+    if(line[strlen(line)-1]=='\n')
+      line[strlen(line)-1] = 0;
+    
+    ret[linenum] = line;
+    
+    linenum++;
+  }
+
+#if 0
   int linenum = 0;
   char line[500];  
   while(fgets(line,499,file)!=NULL){
@@ -113,9 +156,11 @@ static const char** get_lines(const char* key){
     ret[linenum] = talloc_strdup(line);
     linenum++;
   }
-
-  fclose(file);
-
+#endif
+  
+  //fclose(file);
+  file.close();
+  
   int version_linenum = find_linenum("settings_version",ret);
   if(version_linenum==-1)
     version_linenum=linenum;
@@ -137,11 +182,48 @@ static const char** get_lines(const char* key){
 
   ret[version_linenum] = talloc_format("settings_version = %s # dont change this one",OS_get_string_from_double(SETTINGSVERSION));
 
+  {
+    int i=0;
+    while(ret[i]!=NULL){
+      printf("ret[%d]: -%s-\n",i,ret[i]);
+      i++;
+    }
+    //getchar();
+    //    char temp[1024];
+    //fgets(temp,1000,stdin);
+  }
+
   return ret;
 }
 
 static void write_lines(const char* key, const char** lines){
-  const char* filename = OS_get_config_filename(key);
+  QString filename = OS_get_config_filename(key);
+
+  printf("config filename: -%s-\n",filename.toUtf8().constData());
+  
+  QFile file(filename);
+
+  if (file.open(QIODevice::WriteOnly | QIODevice::Text)==false) {
+    RError("Unable to write config data to \"%s\"",filename.toUtf8().constData());
+    return;
+  }
+
+  int i = 0;
+  while(lines[i]!=NULL){
+    printf("writing -%s-\n",lines[i]);
+    file.write(lines[i]);
+    file.write("\n");
+    i++;
+  }
+
+#if 0
+  char temp[1024];
+  gets(temp);
+#endif
+  
+  file.close();
+  
+#if 0
   FILE *file = fopen(filename, "w");
   if(file==NULL){
     RError("Unable to write config data to \"%s\"",filename);
@@ -153,6 +235,7 @@ static void write_lines(const char* key, const char** lines){
     fprintf(file,"%s\n",lines[i++]);
 
   fclose(file);
+#endif
 }
 
 static void append_line(const char** lines, const char* line){
@@ -164,9 +247,12 @@ static void append_line(const char** lines, const char* line){
 
 static void SETTINGS_put(const char* key, const char* val){
   const char** lines = get_lines(key);
+  if(lines==NULL)
+    return;
+  
   int linenum = find_linenum(key,lines);
 
-  char *temp = talloc_atomic(strlen(key)+strlen(val)+10);
+  char *temp = (char*)talloc_atomic(strlen(key)+strlen(val)+10);
   sprintf(temp,"%s = %s",key,val);
 
   if(linenum==-1)
@@ -174,11 +260,14 @@ static void SETTINGS_put(const char* key, const char* val){
   else
     lines[linenum] = temp;
   
-  write_lines(key,lines);
+  write_lines(key, lines);
 }
 
 static const char* SETTINGS_get(const char* key){
   const char** lines = get_lines(key);
+  if(lines==NULL)
+    return NULL;
+
   int linenum = find_linenum(key,lines);
 
   if(linenum==-1)
@@ -187,12 +276,12 @@ static const char* SETTINGS_get(const char* key){
   return get_value(lines[linenum]);
 }
 
-void SETTINGS_set_custom_configfile(const char *filename){
-  custom_configuration_filename=talloc_strdup(filename);
+void SETTINGS_set_custom_configfile(QString filename){
+  custom_configuration_filename=filename;
 }
 
 void SETTINGS_unset_custom_configfile(void){
-  custom_configuration_filename=NULL;
+  custom_configuration_filename="";
 }
 
 bool SETTINGS_read_bool(const char* key, bool def){
@@ -232,7 +321,7 @@ void SETTINGS_write_bool(const char* key, bool val){
 
 void SETTINGS_write_int(const char* key, int64_t val){
   char temp[500];
-  sprintf(temp,"%" PRId64,val);
+  sprintf(temp, "%" PRId64 "", val);
   SETTINGS_put(key,temp);
 }
 

@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <unistd.h>
 
 #include <QDesktopServices>
 #include <QDir>
@@ -47,6 +48,9 @@ void OS_set_argv0(char *argv0){
   
   printf("current path: -%s-\n",g_program_path);
   */
+
+  //chdir(QCoreApplication::applicationDirPath().toUtf8().constData());
+  QDir::setCurrent(QCoreApplication::applicationDirPath());
 }
 
 // TODO: Remove.
@@ -95,7 +99,7 @@ static QDir get_dot_radium_dir(int *error){
   return dir;
 }
 
-char *OS_get_conf_filename(const char *filename){
+QString OS_get_conf_filename(QString filename){
   QString path;
 
   int error;
@@ -109,18 +113,30 @@ char *OS_get_conf_filename(const char *filename){
     info = QFileInfo(QDir(QCoreApplication::applicationDirPath()), filename);
 
   printf("************* conf filename: -%s\n",info.absoluteFilePath().toUtf8().constData());
-  return talloc_strdup(info.absoluteFilePath().toUtf8().constData());
+  return info.absoluteFilePath();
 }
 
-char *OS_get_keybindings_conf_filename(void){
+char *OS_get_conf_filename2(const char *filename){
+  return talloc_strdup(OS_get_conf_filename(filename).toUtf8().constData());
+}
+
+QString OS_get_keybindings_conf_filename(void){
   return OS_get_conf_filename("keybindings.conf");
 }
 
-char *OS_get_menues_conf_filename(void){
+char *OS_get_keybindings_conf_filename2(void){
+  return talloc_strdup(OS_get_keybindings_conf_filename().toUtf8().constData());
+}
+
+QString OS_get_menues_conf_filename(void){
   return OS_get_conf_filename("menues.conf");
 }
 
-char *OS_get_config_filename(const char *key){
+char *OS_get_menues_conf_filename2(void){
+  return talloc_strdup(OS_get_menues_conf_filename().toUtf8().constData());
+}
+
+QString OS_get_config_filename(const char *key){
   bool is_color_config = OS_config_key_is_color(key);
 
   int error;
@@ -132,7 +148,7 @@ char *OS_get_config_filename(const char *key){
 
   printf("dir: \"%s\"\n",config_info.absoluteFilePath().toUtf8().constData());
 
-  return talloc_strdup(config_info.absoluteFilePath().toUtf8().constData());
+  return config_info.absoluteFilePath();
 }
 
 double OS_get_double_from_string(const char *s){

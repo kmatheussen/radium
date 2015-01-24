@@ -29,10 +29,11 @@ int SYSTEM_show_message(char *message){
 
   char command[1000];
   sprintf(command,
-          "%s/packages/"
+          //"%s/packages/"
+          "packages/"
           "xmessage-1.0.3/xmessage -buttons continue:0,quit:1,\"ignore warnings and errors for two seconds\":2,\"ignore warnings and errors for the rest of the program\":3"
           "-nearmouse -print -default yes '%s.'",
-          OS_get_program_path(),
+          //OS_get_program_path(),
           message);
   
   fprintf(stderr,"command: %s\n",command);

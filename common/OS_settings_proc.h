@@ -32,10 +32,22 @@ extern LANGSPEC const char *OS_get_program_path(void);
 extern LANGSPEC const wchar_t *OS_get_program_path2(void);
 
 extern LANGSPEC bool OS_config_key_is_color(const char *key);
-extern LANGSPEC char *OS_get_config_filename(const char *key);
-extern LANGSPEC char *OS_get_conf_filename(const char *filename);
-extern LANGSPEC char *OS_get_keybindings_conf_filename(void);
-extern LANGSPEC char *OS_get_menues_conf_filename(void);
+
+#ifdef USE_QT4
+#include <QString>
+QString OS_get_config_filename(const char *key);
+QString OS_get_conf_filename(QString filename);
+#endif
+
+extern LANGSPEC char *OS_get_conf_filename2(const char *filename);
+
+#ifdef USE_QT4
+#include <QString>
+QString OS_get_keybindings_conf_filename(void);
+QString OS_get_menues_conf_filename(void);
+#endif
+extern LANGSPEC char *OS_get_keybindings_conf_filename2(void);
+extern LANGSPEC char *OS_get_menues_conf_filename2(void);
 
 extern LANGSPEC void OS_make_config_file_expired(const char *key);
 

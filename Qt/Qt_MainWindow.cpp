@@ -19,15 +19,15 @@ extern "C"{
 #include "../api/radium_proc.h"
 }
 
-#include <qapplication.h>
-#include <qmainwindow.h>
-#include <qsplitter.h>
+#include <QApplication>
+#include <QMainWindow>
+#include <QSplitter>
 #include <QCloseEvent>
 #include <QStatusBar>
 #include <QMenuBar>
 #include <QMessageBox>
 
-#include <qfiledialog.h>
+#include <QFileDialog>
 
 extern bool is_starting_up;
 extern bool g_qt_is_running;

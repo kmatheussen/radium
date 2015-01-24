@@ -318,7 +318,8 @@ void CRASHREPORTER_init(void){
   QString command=QString("start /B ") + QCoreApplication::applicationDirPath() + "\\crashreporter.exe " + key;
   //system(command.toAscii());
 #endif
-  QString command=QCoreApplication::applicationDirPath() + "\\crashreporter.exe";
+  //QString command=QCoreApplication::applicationDirPath() + "\\crashreporter.exe";
+  QString command="crashreporter.exe";
 
   char *c = strdup(command.toAscii());
   char *k = strdup(key.toAscii());
@@ -336,7 +337,8 @@ void CRASHREPORTER_init(void){
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX)
-  if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
+  //if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
+  if(system(QString("./crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) {
     fprintf(stderr,"Couldn't start crashreporter\n");
 #ifndef RELEASE
     abort();

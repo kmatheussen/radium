@@ -336,15 +336,15 @@ char *getProgramPath(void){
 }
 
 char *getConfPath(char *filename){
-  return (char*)OS_get_conf_filename(filename);
+  return (char*)OS_get_conf_filename2(filename);
 }
 
 char *getKeybindingsConfPath(void){
-  return (char*)OS_get_keybindings_conf_filename();
+  return (char*)OS_get_keybindings_conf_filename2();
 }
 
 char *getMenuesConfPath(void){
-  return (char*)OS_get_menues_conf_filename();
+  return (char*)OS_get_menues_conf_filename2();
 }
 
 void saveAs(void){
