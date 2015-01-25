@@ -2,7 +2,7 @@
 Most important changes 3.0.rc1 -> 3.0.rc3
 * Fix pd plugin on fedora 21 (and other distributions having wish8.6)
 * Fix various crashes related to changing the number of visible lines while playing
-* Use Unicode anywhere. Don't crash if running Radium in a non-ascii path.
+* Use Unicode everywhere. Don't crash if running Radium in a non-ascii path.
 * Fix "use last estimated vblank value" button
 * Fix clang 3.5 compilation
 * Give specific warning if using the Nouveau driver
