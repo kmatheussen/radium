@@ -76,18 +76,21 @@ static bool currently_undoing = false;
 
 static bool showing_star_in_filename = false;
 
-static const char *get_filename(void){
+static const wchar_t *get_filename(void){
   if(dc.filename==NULL)
-    return "Radium - New song.";
+    return STRING_create("Radium - New song.");
   else
     return dc.filename;
 }
 
 static void show_star(void){
   if(showing_star_in_filename==false){
-    char temp[1024];
-    sprintf(temp, "** %s **", get_filename());
-    GFX_SetWindowTitle(root->song->tracker_windows,temp);
+    wchar_t *s = STRING_append(
+                               STRING_append(STRING_create("** "),
+                                             get_filename()),
+                               STRING_create(" **")
+                               );
+    GFX_SetWindowTitle(root->song->tracker_windows,s);
     showing_star_in_filename=true;
   }
 }

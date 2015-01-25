@@ -42,48 +42,48 @@ static const char *emptystringstring = "_________empty__________";
 
 void DC_SaveCleanString(const char *string){
   if(strlen(string)==0){
-    if(fprintf(dc.file,"%s",emptystringstring)<0) dc.success=false;
+    if(DISK_printf(dc.file,"%s",emptystringstring)<0) dc.success=false;
   }else{
-    if(fprintf(dc.file,"%s",string)<0) dc.success=false;
+    if(DISK_printf(dc.file,"%s",string)<0) dc.success=false;
   }
 }
 
 void DC_SaveST(const char *string){
-	if(fprintf(dc.file,"\n\\\n%s\n",string)<0) dc.success=false;
+	if(DISK_printf(dc.file,"\n\\\n%s\n",string)<0) dc.success=false;
 }
 
 void DC_SaveS(const char *string){
-	if(fprintf(dc.file,"\n?%s\n",string)<0) dc.success=false;
+	if(DISK_printf(dc.file,"\n?%s\n",string)<0) dc.success=false;
 }
 
 void DC_SaveI(int integer){
-	if(fprintf(dc.file,"%d\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%d\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveUI(unsigned int integer){
-	if(fprintf(dc.file,"%u\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%u\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveL(long integer){
-	if(fprintf(dc.file,"%ld\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%ld\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveN(long integer){
-	if(fprintf(dc.file,"%ld\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%ld\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveUL(unsigned long integer){
-	if(fprintf(dc.file,"%lu\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%lu\n",integer)<0) dc.success=false;
 }
 
 
 /******************** OS depended function. Must be removed later *************/
 void DC_SaveP(unsigned long integer){
-	if(fprintf(dc.file,"%lu\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%lu\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveF(float integer){
-  if(fprintf(dc.file,"%s\n",OS_get_string_from_double(integer))<0) dc.success=false;
+  if(DISK_printf(dc.file,"%s\n",OS_get_string_from_double(integer))<0) dc.success=false;
 }
 
 void DC_SaveB(bool integer){
@@ -130,7 +130,7 @@ void DC_SSUL(const char *string,unsigned long integer){
 void DC_SSS(const char *string,const char *string2){
 	if(string2==NULL) return;
 	DC_SaveS(string);
-	if(fprintf(dc.file,"%s\n",string2)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%s\n",string2)<0) dc.success=false;
 }
 
 
@@ -143,11 +143,10 @@ void DC_SSS(const char *string,const char *string2){
 int curr_disk_line;
 
 void DC_fgets(void){
-	int offset=0;
 
         curr_disk_line++;
 
-	char *ret=fgets(dc.ls,BUFFERLENGTH,dc.file);
+	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
           RError("Unable to load string. Line %d",curr_disk_line);
@@ -155,21 +154,10 @@ void DC_fgets(void){
 		return;
 	}
 
-	while(ret[strlen(ret)-1]==' ' || ret[strlen(ret)-1]=='\n' || ret[strlen(ret)-1]=='\r'){
-		ret[strlen(ret)-1]=0;													//ret is allways longer than one, because of a newline-character.
-		if(strlen(ret)==0){
-			DC_fgets();
-			return;
-		}
-	}
-
-	while(ret[offset]==' ' || ret[offset]==9){
-		offset++;
-		if(ret[offset]==0){
-			DC_fgets();
-			return;
-		}
-	}
+        if (!strcmp(ret,"")){
+          DC_fgets();
+          return;
+        }
 
 	//printf("loading -%s-\n",ret);
 

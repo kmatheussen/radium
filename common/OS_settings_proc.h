@@ -19,12 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <wchar.h>
 
-extern LANGSPEC void OS_set_loading_path(const char *filename);
+extern LANGSPEC void OS_set_loading_path(const wchar_t *filename);
 extern LANGSPEC void OS_unset_loading_path(void);
-extern LANGSPEC const char *OS_loading_get_resolved_file_path(const char *path);
+extern LANGSPEC const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *path);
 
-extern LANGSPEC const char *OS_saving_get_relative_path_if_possible(const char *filepath);  
-extern LANGSPEC void OS_set_saving_path(const char *filename);
+extern LANGSPEC const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *filepath);  
+extern LANGSPEC void OS_set_saving_path(const wchar_t *filename);
 
 extern LANGSPEC const char *OS_get_directory_separator(void);
 extern LANGSPEC void OS_set_argv0(char *argv0);

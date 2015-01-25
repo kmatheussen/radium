@@ -55,7 +55,7 @@ typedef struct _Data{
   double samplerate;
   double time_scale;
 
-  const char *filename;
+  const wchar_t *filename;
   int bank_num;
   int preset_num;
 
@@ -329,7 +329,7 @@ static void delete_data(Data *data){
     delete_fluid_settings(data->settings);
 
   if(data->filename!=NULL)
-    free((char*)data->filename);
+    free((wchar_t*)data->filename);
 
   if(data->signal_from_RT!=NULL)
     RSEMAPHORE_delete(data->signal_from_RT);
@@ -337,7 +337,7 @@ static void delete_data(Data *data){
   free(data);
 }
 
-static void *create_data(const char *filename, float samplerate){
+static void *create_data(const wchar_t *filename, float samplerate){
   Data *data = calloc(1,sizeof(Data));
 
   data->pitch = 16384/2;
@@ -410,11 +410,11 @@ static void *create_data(const char *filename, float samplerate){
     return NULL;
   }
 
-  data->filename = strdup(filename);
-  data->soundfont_id = fluid_synth_sfload(data->synth,data->filename,true);
+  data->filename = wcsdup(filename);
+  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename),true);
 
   if(data->soundfont_id==FLUID_FAILED){
-    printf("Soundfont loading failed for \"%s\"\n",data->filename);
+    printf("Soundfont loading failed for \"%s\"\n",STRING_get_chars(data->filename));
 
     delete_data(data);
 
@@ -427,9 +427,12 @@ static void *create_data(const char *filename, float samplerate){
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
-  char temp[1024];
-  sprintf(temp,"%s%ssounds%s%s",OS_get_program_path(),OS_get_directory_separator(),OS_get_directory_separator(),"Orgue.sf2");
-  Data *data = create_data(temp,samplerate);
+  wchar_t *default_sound_filename = STRING_append(STRING_create("sounds"),
+                                                  STRING_append(STRING_create(OS_get_directory_separator()),
+                                                                STRING_create("Orgue.sf2")
+                                                                )
+                                                  );
+  Data *data = create_data(default_sound_filename, samplerate);
   
   if(data!=NULL){
     fluid_synth_bank_select(data->synth,0,0);
@@ -443,10 +446,10 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete_data(data);
 }
 
-bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const char *sf2_file, int bank_num, int preset_num){
+bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int bank_num, int preset_num){
   Data *data = plugin->data;
 
-  if(strcmp(sf2_file, data->filename)){
+  if(!STRING_equals2(sf2_file, data->filename)){
 
     Data *new_data = create_data(sf2_file, data->samplerate);
     if(new_data==NULL)
@@ -483,9 +486,9 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const char *sf2_file, int ba
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  const char *filename   = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
-  int         bank_num   = HASH_get_int(state, "bank_num");
-  int         preset_num = HASH_get_int(state, "preset_num");
+  const wchar_t *filename = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
+  int         bank_num    = HASH_get_int(state, "bank_num");
+  int         preset_num  = HASH_get_int(state, "preset_num");
 
   if(filename==NULL)
     return;
@@ -502,12 +505,13 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "preset_num", data->preset_num);
 }
 
-const char *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
+wchar_t *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
-  char *ret = talloc_atomic(strlen(data->filename)+200);
 
-  sprintf(ret,"%s, b: %d, p: %d",data->filename,data->bank_num,data->preset_num);
-  return ret;
+  char *s2 = talloc_format(", b: %d, p: %d", data->bank_num, data->preset_num);
+
+  return STRING_append(data->filename,
+                       STRING_create(s2));
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin_type, int effect_num){

@@ -80,7 +80,7 @@ static float get_graph_value(struct Patch *patch, int num){
 #include "compressor_vertical_sliders.cpp"
 
 
-static double OS_get_double_from_string(const char *s){
+static double OS_get_double_from_string_here(const char *s){
   QLocale::setDefault(QLocale::C);
   QString string(s);
   return string.toDouble();
@@ -92,7 +92,7 @@ static float read_float(FILE *file){
   if(fgets(temp,500,file)==NULL)
     fprintf(stderr,"Unable to read float\n");
 
-  return OS_get_double_from_string(temp);
+  return OS_get_double_from_string_here(temp);
 }
 
 

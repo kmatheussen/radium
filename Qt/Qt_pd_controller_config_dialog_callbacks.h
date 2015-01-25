@@ -41,7 +41,8 @@ public:
   QByteArray _my_geometry;
   int _type;
   QString _name;
-
+  const wchar_t *_display_name;
+  
   struct Timer : QTimer{
     Pd_Controller_Config_dialog *my;
     void timerEvent(QTimerEvent * e){
@@ -57,6 +58,7 @@ public:
     , _controller_num(controller_num)
     , _is_updating_gui(true)
     , _type(0)
+    , _display_name(NULL)
  {
     setupUi(this);
     update_gui();
@@ -98,7 +100,11 @@ public:
       update_gui();
     }
 
-    if (strcmp(controller->name, _name.toUtf8().constData())) {
+    if (controller->display_name != NULL && controller->display_name!=_display_name){
+      _name = STRING_get_qstring(controller->display_name);
+      _display_name = controller->display_name;
+        
+    } else if (controller->display_name==NULL && strcmp(controller->name, _name.toUtf8().constData())) {
       _name = controller->name;
       update_gui();
     }
@@ -145,7 +151,10 @@ public:
     }
 
     type_selector->setCurrentIndex(controller->type);
-    name_widget->setText(controller->name);
+    if (controller->display_name != NULL)
+      name_widget->setText(STRING_get_qstring(controller->display_name));
+    else
+      name_widget->setText(controller->name);
 
     _is_updating_gui = false;
   }
@@ -249,7 +258,7 @@ public slots:
       QString name = name_widget->text();
       if(name != controller->name) {
         Undo_PdControllers_CurrPos(_patch);
-        PD_set_controller_name(plugin, controller->num, name.toUtf8().constData());
+        PD_set_controller_name(plugin, controller->num, STRING_create(name));
       }
       //set_editor_focus();
       //_pd_controller_widget->update();

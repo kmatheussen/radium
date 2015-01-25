@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_disk_proc.h"
 
 #ifndef TEST_PATH_RESOLVER
 
@@ -49,9 +50,9 @@ static void ask_to_add_resolved_path(QDir key, QDir value){
     resolved_paths[key.path()] = value;
 }
 
-static const char *_loading_path  = NULL;
+static const wchar_t *_loading_path  = NULL;
 
-void OS_set_loading_path(const char *filename){
+void OS_set_loading_path(const wchar_t *filename){
   _loading_path = filename;
 }
 
@@ -63,8 +64,8 @@ void OS_unset_loading_path(void){
 
 static QString saving_path;
 
-void OS_set_saving_path(const char *filename){
-  QFileInfo info(filename);
+void OS_set_saving_path(const wchar_t *filename){
+  QFileInfo info(STRING_get_qstring(filename));
   saving_path = info.absolutePath();
   printf("saving_path: -%s-\n",saving_path.toUtf8().constData());
 }
@@ -83,14 +84,16 @@ void OS_set_saving_path(const char *filename){
   /a/b/c.wav    /a            b/c.wav        (returns a relative path)
 
 */
-const char *OS_saving_get_relative_path_if_possible(const char *filepath){
+const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath){  
   if (saving_path.isEmpty())
-    return filepath;
+    return wfilepath;
 
+  QString filepath = STRING_get_qstring(wfilepath);
+  
   QFileInfo info(filepath);
 
   if (info.isRelative())
-    return filepath;
+    return wfilepath;
   
   printf("canonical: -%s-\n",info.absolutePath().toUtf8().constData());
 
@@ -99,9 +102,9 @@ const char *OS_saving_get_relative_path_if_possible(const char *filepath){
   printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.toUtf8().constData(),savepath2.toUtf8().constData());
 
   if (filepath2.startsWith(savepath2))
-    return filepath + savepath2.length();
+    return STRING_create(filepath.remove(0, savepath2.length()));
   else
-    return filepath;
+    return wfilepath;
 }
 
 
@@ -110,21 +113,22 @@ const char *OS_saving_get_relative_path_if_possible(const char *filepath){
 
 #ifndef TEST_PATH_RESOLVER
 
-const char *OS_loading_get_resolved_file_path(const char *path){
+const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
+  QString path = QString::fromWCharArray(wpath);
   QFileInfo info(path);
 
-  printf("path: -%s-, loading-path: -%s-\n",path,_loading_path);
+  printf("path: -%s-, loading-path: -%s-\n",path.toUtf8().constData(),STRING_get_chars(_loading_path));
 
-  // Try the original path
+  // If the path is absolute, first try the original path.
   if(!info.isRelative() && info.exists()==true){
-    return talloc_strdup(path);
+    return STRING_create(path);
   }
   
   QDir dir = info.dir();
 
   // Try song path if relative
   if(_loading_path!=NULL && info.isRelative()){
-    QFileInfo info3(_loading_path);
+    QFileInfo info3(QString::fromWCharArray(_loading_path));
     QFileInfo info2(info3.dir().path(), info.filePath());
     
     //printf("gotit2 -%s- -%s-\n",info3.filePath(),info2.filePath());
@@ -132,7 +136,7 @@ const char *OS_loading_get_resolved_file_path(const char *path){
     //gets(temp);
 
     if(info2.exists()){
-      return talloc_strdup(info2.filePath());
+      return STRING_create(info2.filePath());
     }
   }
 
@@ -142,7 +146,7 @@ const char *OS_loading_get_resolved_file_path(const char *path){
 
     if(info2.exists()) {
 
-      return talloc_strdup(info2.filePath());
+      return STRING_create(info2.filePath());
     }
   }
 
@@ -181,7 +185,7 @@ const char *OS_loading_get_resolved_file_path(const char *path){
     if(info3.fileName() == info.fileName())
       ask_to_add_resolved_path(dir, info3.dir());
 
-    return talloc_strdup(info3.filePath());
+    return STRING_create(info3.filePath());
   }
 }
 

@@ -648,6 +648,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   controller->min_value = min_value;
   controller->value = value;
   controller->max_value = max_value;  
+
   strncpy(controller->name, controller_name, PD_NAME_LENGTH-1);
   snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", controller_name);
   snprintf(controller->fx_when_middle_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_middle", controller_name);
@@ -839,7 +840,7 @@ static QTemporaryFile *get_pdfile_from_state(hash_t *state){
   int num_lines = HASH_get_int(state, "num_lines");
 
   for(int i=0; i<num_lines; i++)
-    out << HASH_get_string_at(state, "line", i);
+    out << STRING_get_qstring(HASH_get_string_at(state, "line", i));
 
   pdfile->close();
 
@@ -864,7 +865,7 @@ static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *stat
   QString line = in.readLine();
   while (!line.isNull()) {
     //printf("line: -%s-\n",line.toUtf8().constData());
-    HASH_put_string_at(state, "line", i, line.toUtf8().constData());
+    HASH_put_string_at(state, "line", i, STRING_create(line));
     i++;
     line = in.readLine();
   }
@@ -885,6 +886,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
+    data->controllers[i].display_name = NULL;
     data->controllers[i].plugin = plugin;
     data->controllers[i].num = i;
     data->controllers[i].max_value = 1.0f;
@@ -947,13 +949,17 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   printf("name: %s, dir: %s\n",qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
 
   data->file = libpds_openfile(pd, qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
-
+  
+  R_ASSERT(data->file != NULL);
+  if (data->file==NULL)
+    return NULL;
+  
   return data;
 }
 
-static QTemporaryFile *create_new_tempfile(const char *fileName){
+static QTemporaryFile *create_new_tempfile(QString *fileName){
   // create
-  QFile source(fileName);
+  QFile source(*fileName);
   QTemporaryFile *pdfile = create_temp_pdfile();
 
   // open
@@ -976,7 +982,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   QTemporaryFile *pdfile;
 
   if (state==NULL)
-    pdfile = create_new_tempfile((const char*)plugin_type->data);
+    pdfile = create_new_tempfile((QString *)plugin_type->data);
   else
     pdfile = get_pdfile_from_state(state);
 
@@ -1012,7 +1018,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
         prev->next = instance->next;
     }PLAYER_unlock();
   }
-
+  
   libpds_closefile(data->pd, data->file);  
   libpds_delete(data->pd);
 
@@ -1020,6 +1026,11 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
   delete data->pdfile;
 
+  for(int i=0;i<NUM_PD_CONTROLLERS;i++){
+    Pd_Controller *controller = &data->controllers[i];
+    free((void*)controller->display_name);
+  }
+  
   free(data);
 }
 
@@ -1059,13 +1070,16 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
   return &data->controllers[n];
 }
 
-void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
+void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
-
+  const char *name = STRING_get_chars(wname);
+  
   if(!strcmp(controller->name, name))
     return;
 
+  controller->display_name = wcsdup(wname);
+  
   // Should check if it is different before binding. (but also if it is already binded)
 
   PLAYER_lock();{
@@ -1093,7 +1107,9 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
       controller->pd_binding = NULL;
     }
 
-    const char *name = HASH_has_key_at(state, "name", i) ? HASH_get_string_at(state, "name", i) : NULL;
+    controller->display_name = HASH_has_key_at(state, "name", i) ? HASH_get_string_at(state, "name", i) : NULL;
+    
+    const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
     if(name==NULL || !strcmp(name,""))
       controller->name[0] = 0;
     else
@@ -1121,7 +1137,10 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
     Pd_Controller *controller = &data->controllers[i];
-    HASH_put_string_at(state, "name", i, controller->name);
+    if (controller->display_name != NULL)
+      HASH_put_string_at(state, "name", i, controller->display_name);
+    else
+      HASH_put_chars_at(state, "name", i, controller->name);
     HASH_put_int_at(state, "type", i, controller->type);
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);
@@ -1152,7 +1171,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   for(i=0;i<NUM_PD_CONTROLLERS-1;i++) {
     int s = i>=controller_num ? i+1 : i;
     Pd_Controller *controller = &data->controllers[s];
-    HASH_put_string_at(state, "name", i, controller->name);
+    HASH_put_string_at(state, "name", i, controller->display_name);
     HASH_put_int_at(state, "type", i, controller->type);
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);
@@ -1161,7 +1180,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
     HASH_put_int_at(state, "config_dialog_visible", i, controller->config_dialog_visible);
   }
 
-  HASH_put_string_at(state, "name", NUM_PD_CONTROLLERS-1, "");
+  HASH_put_chars_at(state, "name", NUM_PD_CONTROLLERS-1, "");
   HASH_put_int_at(state, "type", NUM_PD_CONTROLLERS-1, EFFECT_FORMAT_FLOAT);
   HASH_put_float_at(state, "min_value", NUM_PD_CONTROLLERS-1, 0.0);
   HASH_put_float_at(state, "value", NUM_PD_CONTROLLERS-1, 0.0);
@@ -1173,11 +1192,11 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
 }
 
 
-static void add_plugin(const char *name, const char *filename) {
+static void add_plugin(const wchar_t *name, QString filename) {
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "Pd";
-  plugin_type->name                     = strdup(name);
+  plugin_type->name                     = strdup(STRING_get_chars(name));
   plugin_type->info                     = "Pd is made by Miller Puckette. Radium uses a modified version of libpd to access it.\nlibpd is made by Peter Brinkmann.";
   plugin_type->num_inputs               = 2;
   plugin_type->num_outputs              = 2;
@@ -1205,10 +1224,10 @@ static void add_plugin(const char *name, const char *filename) {
   //plugin_type->recreate_from_state = recreate_from_state;
   plugin_type->create_state        = create_state;
 
-  plugin_type->data                = (void*)strdup(filename);
+  plugin_type->data                = (void*)new QString(filename);
 
   //PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
-  if(!strcmp(name,""))
+  if(STRING_equals(name,""))
     PR_add_plugin_type_no_menu(plugin_type);
   else
     PR_add_plugin_type(plugin_type);
@@ -1243,8 +1262,8 @@ static void build_plugins(QDir dir){
       printf("   file: -%s-\n",fileInfo.absoluteFilePath().toUtf8().constData());
       if(fileInfo.suffix()=="pd") {
         if(fileInfo.baseName()==QString("New_Audio_Effect"))
-          add_plugin("", fileInfo.absoluteFilePath().toUtf8().constData());
-        add_plugin(fileInfo.baseName().replace("_"," ").toUtf8().constData(), fileInfo.absoluteFilePath().toUtf8().constData());
+          add_plugin(STRING_create(""), fileInfo.absoluteFilePath());
+        add_plugin(STRING_create(fileInfo.baseName().replace("_"," ")), fileInfo.absoluteFilePath());
       }
     }
   }
@@ -1270,7 +1289,7 @@ void create_pd_plugin(void){
 void create_pd_plugin(void){
 }
 
-void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name) {}
+void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {}
 Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n) {return NULL;}
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui) {}
 void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}

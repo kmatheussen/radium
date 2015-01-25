@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../common/OS_string_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -365,7 +366,7 @@ void load(void){
 }
 
 void loadSong(char *filename){
-  if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
+  if( LoadSong_CurrPos(getWindowFromNum(-1),STRING_create(filename))){
     isloaded=true;
   }
 }

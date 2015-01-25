@@ -26,7 +26,7 @@ extern LANGSPEC void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual);
 extern LANGSPEC void RT_message(const char *fmt,...);
 
 extern LANGSPEC void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title);
-extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title);
+extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title);
 
 extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
 extern LANGSPEC void SetPointingPointer(struct Tracker_Windows *tvisual);
@@ -63,21 +63,21 @@ extern LANGSPEC int GFX_Menu(
         vector_t *v
 );
 
-extern LANGSPEC const char *GFX_GetLoadFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir,
-        char *postfixes
-);
+extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
+                                                   struct Tracker_Windows *tvisual,
+                                                   ReqType reqtype,
+                                                   char *seltext,
+                                                   wchar_t *dir,
+                                                   char *postfixes
+                                                   );
 
-extern LANGSPEC const char *GFX_GetSaveFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir,
-        char *postfixes
-);
+extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
+                                                   struct Tracker_Windows *tvisual,
+                                                   ReqType reqtype,
+                                                   char *seltext,
+                                                   wchar_t *dir,
+                                                   char *postfixes
+                                                   );
 
 extern LANGSPEC void GFX_OS_UpdateKeyOctave(void);
 extern LANGSPEC void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos);

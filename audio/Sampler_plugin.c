@@ -162,7 +162,7 @@ struct _Data{
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
   int resampler_type;
-  const char *filename;
+  const wchar_t *filename;
   int instrument_number;
 
   //int num_channels; // not used for anything, I think.
@@ -1184,8 +1184,8 @@ static void set_legal_loop_points(Sample *sample, int start, int end){
 #include "Sampler_plugin_xi_load.c"
 #include "Sampler_plugin_sf2_load.c"
 
-static float *load_interleaved_samples(const char *filename, SF_INFO *sf_info){
-  SNDFILE *sndfile          = sf_open(filename,SFM_READ,sf_info); // utf fix: Use sf_open_fd()
+static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info){
+  SNDFILE *sndfile          = sf_open(STRING_get_chars(filename),SFM_READ,sf_info);
   if(sndfile==NULL)
     return NULL;
 
@@ -1219,7 +1219,7 @@ static float *load_interleaved_samples(const char *filename, SF_INFO *sf_info){
   return ret;
 }
 
-static bool load_sample_with_libsndfile(Data *data, const char *filename){
+static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename){
   SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
   data->num_different_samples = 1;
@@ -1327,7 +1327,7 @@ static void generate_peaks(Data *data){
   }
 }
 
-static bool load_sample(Data *data, const char *filename, int instrument_number){
+static bool load_sample(Data *data, const wchar_t *filename, int instrument_number){
   if(load_xi_instrument(data,filename)==false)
     if(load_sample_with_libsndfile(data,filename)==false)
       if(load_sf2_instrument(data,filename,instrument_number)==false)
@@ -1350,7 +1350,7 @@ static bool load_sample(Data *data, const char *filename, int instrument_number)
   return true;
 }
 
-static Data *create_data(float samplerate, Data *old_data, const char *filename, int instrument_number, int resampler_type){
+static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type){
   Data *data = calloc(1,sizeof(Data));
 
   data->signal_from_RT = RSEMAPHORE_create(0);
@@ -1377,7 +1377,7 @@ static Data *create_data(float samplerate, Data *old_data, const char *filename,
   
   data->samplerate = samplerate;
   data->resampler_type = resampler_type;
-  data->filename = strdup(filename);
+  data->filename = wcsdup(filename);
   data->instrument_number = instrument_number;
 
   int i;
@@ -1402,12 +1402,15 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/BELL/CHURCH/CHRBEL01.XI";
   //const char *filename="/gammelhd/gammelhd/gammel_lyd/2_channel_short.wav";
   //const char *filename="/gammelhd/gammelhd/gammelhd/gammel_lyd/d_lydfiler/instrument/keyboard/mellotron.sf2";
-  char filename[1024];
-  sprintf(filename,"%s%ssounds%s%s",OS_get_program_path(),OS_get_directory_separator(),OS_get_directory_separator(),"016.WAV");
+  wchar_t *default_sound_filename = STRING_append(STRING_create("sounds"),
+                                                  STRING_append(STRING_create(OS_get_directory_separator()),
+                                                                STRING_create("016.WAV")
+                                                                )
+                                                  );
+    
+  Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
 
-  Data *data = create_data(samplerate,NULL,filename,0,RESAMPLER_CUBIC); // cubic is the default
-
-  if(load_sample(data,filename,0)==false){
+  if(load_sample(data,default_sound_filename,0)==false){
     free(data);
     return NULL;
   }
@@ -1441,7 +1444,7 @@ static void delete_data(Data *data){
   free(data);
 }
 
-static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int instrument_number, int resampler_type){
+static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type){
   bool success=false;
 
   Data *old_data = plugin->data;
@@ -1483,7 +1486,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const char *filename, int
   return success;
 }
 
-bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const char *filename, int instrument_number){
+bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
   Data *data=plugin->data;
   return set_new_sample(plugin,filename,instrument_number,data->resampler_type);
 }
@@ -1499,7 +1502,7 @@ int SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
 }
 
 // Has been used for debugging. Not sure if I planned to use it for anything else.
-void SAMPLER_save_sample(struct SoundPlugin *plugin, const char *filename, int sample_number){
+void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, int sample_number){
   Data *data = (Data*)plugin->data;
   const Sample *sample = &data->samples[sample_number];
 
@@ -1514,7 +1517,7 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, const char *filename, int s
     return;
   }
 
-  SNDFILE *sndfile = sf_open(filename,SFM_WRITE,&sf_info);
+  SNDFILE *sndfile = sf_open(STRING_get_chars(filename),SFM_WRITE,&sf_info);
 
   if(sndfile==NULL){
     fprintf(stderr,"could not open file\n");
@@ -1587,9 +1590,9 @@ static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  const char *filename          = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
-  int         instrument_number = HASH_get_int(state, "instrument_number");
-  int         resampler_type    = HASH_get_int(state, "resampler_type");
+  const wchar_t *filename          = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
+  int            instrument_number = HASH_get_int(state, "instrument_number");
+  int            resampler_type    = HASH_get_int(state, "resampler_type");
 
   if(filename==NULL)
     return;
@@ -1601,14 +1604,14 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  const char *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
+  const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
   //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
   HASH_put_string(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "instrument_number",data->instrument_number);
   HASH_put_int(state, "resampler_type",data->resampler_type);
 }
 
-const char *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
+const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
   return data->filename;
 }

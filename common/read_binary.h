@@ -15,10 +15,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#ifndef RADIUM_COMMON_READ_BINARY_H
+#define RADIUM_COMMON_READ_BINARY_H
 
 
 #include <stdio.h>
 #include <stdint.h>
+
+#include "OS_disk_proc.h"
 
 
 // based on code from soundtracker
@@ -31,9 +35,9 @@ static inline int32_t get_le_32 (char *src)
 #endif
 }
 
-static inline int read_le32int(FILE *file){
+static inline int read_le32int(disk_t *file){
   char size_chars[4] = {0}; // {0} is here to keep valgrind quiet.
-  if(fread(size_chars,4,1,file)!=1)
+  if(DISK_read_binary(file, size_chars, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
   return get_le_32(size_chars);
 }
@@ -47,9 +51,9 @@ static inline uint32_t get_be_u32 (unsigned char *src)
 #endif
 }
 
-static inline uint32_t read_be32uint(FILE *file){
+static inline uint32_t read_be32uint(disk_t *file){
   unsigned char size_chars[4] = {0};
-  if(fread(size_chars,4,1,file)!=1)
+  if(DISK_read_binary(file, size_chars, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
   return get_be_u32(size_chars);
 }
@@ -64,9 +68,9 @@ static inline uint16_t get_be_u16 (unsigned char *src)
 #endif
 }
 
-static inline uint16_t read_be16uint(FILE *file){
+static inline uint16_t read_be16uint(disk_t *file){
   unsigned char size_chars[2] = {0};
-  if(fread(size_chars,2,1,file)!=1)
+  if(DISK_read_binary(file, size_chars, 2) != 2)
     fprintf(stderr,"Reading file failed\n");
   return get_be_u16(size_chars);
 }
@@ -93,24 +97,26 @@ static inline void convert_16_bit_little_endian_to_native(int16_t *src, int num_
 #endif
 }
 
-static inline int read_le16int(FILE *file){
+static inline int read_le16int(disk_t *file){
   char size_chars[2];
-  if(fread(size_chars,2,1,file)!=1)
+  if(DISK_read_binary(file, size_chars, 2) != 2)
     fprintf(stderr,"Reading file failed\n");
   return get_le_16(size_chars);
 }
 
 
-static inline unsigned int read_8int(FILE *file){
+static inline unsigned int read_8int(disk_t *file){
   unsigned char size_chars[1];
-  if(fread(size_chars,1,1,file)!=1)
+  if(DISK_read_binary(file, size_chars, 1) != 1)
     fprintf(stderr,"Reading file failed\n");
   return size_chars[0];
 }
 
-static inline int read_8int_signed(FILE *file){
+static inline int read_8int_signed(disk_t *file){
   int8_t size_chars[1];
-  if(fread(size_chars,1,1,file)!=1)
+  if(DISK_read_binary(file, size_chars, 1) !=1 )
     fprintf(stderr,"Reading file failed\n");
   return size_chars[0];
 }
+
+#endif // RADIUM_COMMON_READ_BINARY_H

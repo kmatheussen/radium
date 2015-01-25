@@ -340,7 +340,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
       audio_instance->setCurrentProgram(current_program);
     }
 
-    const char *stateAsString = HASH_get_string(state, "audio_instance_program_state");
+    const char *stateAsString = HASH_get_chars(state, "audio_instance_program_state");
     if (stateAsString != NULL) {
       MemoryBlock sourceData;
       sourceData.fromBase64Encoding(stateAsString);
@@ -367,7 +367,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
     if (destData.getSize() > 0){
       String stateAsString = destData.toBase64Encoding();    
-      HASH_put_string(state, "audio_instance_state", stateAsString.toRawUTF8());
+      HASH_put_chars(state, "audio_instance_state", stateAsString.toRawUTF8());
     }
   }
 
@@ -378,7 +378,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
     if (destData.getSize() > 0){
       String stateAsString = destData.toBase64Encoding();    
-      HASH_put_string(state, "audio_instance_program_state", stateAsString.toRawUTF8());
+      HASH_put_chars(state, "audio_instance_program_state", stateAsString.toRawUTF8());
     }
   }
 
@@ -392,7 +392,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
   
   AudioPluginInstance *audio_instance = data->audio_instance;
 
-  const char *stateAsString = HASH_get_string(state, "audio_instance_state");
+  const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
   if (stateAsString != NULL) {
     MemoryBlock sourceData;
     sourceData.fromBase64Encoding(stateAsString);

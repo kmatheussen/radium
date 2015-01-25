@@ -30,6 +30,8 @@ typedef struct{
   int num;
   struct SoundPlugin *plugin;
 
+  const wchar_t *display_name; // Same as name[], but wchar_t is (or at least should be) stored in some kind of unicode format. Should not be accessed in the player thread. May be NULL!
+  
   char name[PD_NAME_LENGTH]; // Can not be set directly. Use PD_set_controller_name(SoundPlugin *plugin, int n, const char *name).
   char fx_when_start_name[PD_FX_WHEN_NAME_LENGTH];
   char fx_when_middle_name[PD_FX_WHEN_NAME_LENGTH];

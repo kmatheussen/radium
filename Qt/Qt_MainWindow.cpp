@@ -67,6 +67,7 @@ static HWND gtk_hwnd = NULL;
 
 #include "../common/gfx_proc.h"
 #include "../common/cursor_updown_proc.h"
+#include "../common/OS_string_proc.h"
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
@@ -523,9 +524,9 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 }
 
 
-void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title){
+void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCaption(title);
+  main_window->setCaption(STRING_get_qstring(title));
 }
 
 void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
@@ -542,56 +543,63 @@ static QString get_postfixes_filter(char *postfixes){
          : QString("Song files (") + QString(postfixes) + ") ;; All files (*)";
 }
 
-const char *GFX_GetLoadFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir,
-        char *postfixes
+const wchar_t *GFX_GetLoadFileName(
+                                   struct Tracker_Windows *tvisual,
+                                   ReqType reqtype,
+                                   char *seltext,
+                                   wchar_t *wdir,
+                                   char *postfixes
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  const char *ret;
 
   num_users_of_keyboard++;
 
   QString filename;
+  
+  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
 
-  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-  GL_lock();{
-    filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
+    QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+    filename = QFileDialog::getOpenFileName(editor, seltext, dir, get_postfixes_filter(postfixes));
+    
   }GL_unlock();
 
-  if(filename == ""){
-    ret=NULL;
-    goto exit;
-  }
-
-  ret = talloc_strdup(filename.toUtf8().constData());
-
- exit:
   num_users_of_keyboard--;
-  return ret;
+    
+  if(filename == "")
+    return NULL;
+  else
+    return STRING_create(filename);  
 }
 
-const char *GFX_GetSaveFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir,
-        char *postfixes
-){
+const wchar_t *GFX_GetSaveFileName(
+                                   struct Tracker_Windows *tvisual,
+                                   ReqType reqtype,
+                                   char *seltext,
+                                   wchar_t *wdir,
+                                   char *postfixes
+                                   ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   num_users_of_keyboard++;
-  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName(editor,
-                                                                      seltext,
-                                                                      "",
-                                                                      get_postfixes_filter(postfixes)
-                                                                      ).toUtf8().constData());
+
+  QString filename;
+  
+  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+
+    QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+    filename = QFileDialog::getSaveFileName(editor,
+                                            seltext,
+                                            "",
+                                            get_postfixes_filter(postfixes)
+                                            );
+  }GL_unlock();
+
   num_users_of_keyboard--;
-  return ret==NULL || strlen(ret)==0 
-    ? NULL 
-    : ret;
+
+  if (filename == "")
+    return NULL;
+
+  return STRING_create(filename);
 }
 
 

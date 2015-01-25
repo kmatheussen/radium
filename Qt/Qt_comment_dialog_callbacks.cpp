@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
+#include "../common/OS_string_proc.h"
 
 #include "Qt_comment_dialog.h"
 
@@ -84,12 +85,12 @@ extern "C"{
     ensure_widget_is_created();
 
     hash_t *state = HASH_create(3);
-    HASH_put_string(state, "author", widget->author->text());
-    HASH_put_string(state, "title", widget->title->text());
+    HASH_put_string(state, "author", STRING_create(widget->author->text()));
+    HASH_put_string(state, "title", STRING_create(widget->title->text()));
 
     QStringList lines = widget->comment->text().split("\n");
     for (int i = 0; i < lines.size(); i++)
-      HASH_put_string_at(state, "comment", i, lines.at(i));
+      HASH_put_string_at(state, "comment", i, STRING_create(lines.at(i)));
 
     HASH_put_int(state, "show_after_loading", COMMENT_show_after_loading()?1:0);
 
@@ -117,15 +118,15 @@ extern "C"{
     int num_elements = HASH_get_array_size(state);
     QString ret = "";
     for(int i=0;i<num_elements;i++)
-      ret += HASH_get_string_at(state, "comment", i) + QString("\n");
+      ret += STRING_get_qstring(HASH_get_string_at(state, "comment", i)) + QString("\n");
     return ret;
   }
 
   void COMMENT_set_state(hash_t *state){
     ensure_widget_is_created();
 
-    set(HASH_get_string(state, "author"),
-        HASH_get_string(state, "title"),
+    set(STRING_get_qstring(HASH_get_string(state, "author")),
+        STRING_get_qstring(HASH_get_string(state, "title")),
         get_comment_from_state(state),
         HASH_get_int(state, "show_after_loading")==1?true:false
         );

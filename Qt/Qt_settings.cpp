@@ -24,7 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCoreApplication>
 
 #include "../common/nsmtracker.h"
+
+#include "../common/OS_string_proc.h"
 #include "../common/OS_settings_proc.h"
+
 
 const char *OS_get_directory_separator(void){
   static char ret[2] = {0};
@@ -58,12 +61,53 @@ const char *OS_get_program_path(void){
   return talloc_strdup(QCoreApplication::applicationDirPath().toUtf8().constData());
 }
 
+wchar_t *STRING_create(const QString s){
+  size_t size = sizeof(wchar_t)*(s.length()+1);
+  wchar_t *array = (wchar_t*)talloc_atomic(size);
+  memset(array, 0, size);
+  s.toWCharArray(array);
+  return array;
+}
+
+wchar_t *STRING_create(const char *s){
+  QString string(s);
+  return STRING_create(string);
+}
+
+wchar_t *STRING_copy(const wchar_t *string){
+  return STRING_create(STRING_get_qstring(string));
+}
+
+char* STRING_get_chars(const wchar_t *string){
+  QString s = STRING_get_qstring(string);
+  return talloc_strdup(s.toUtf8().constData());
+}
+
+bool STRING_ends_with(const wchar_t *string, const char *endswith){
+  QString s = STRING_get_qstring(string);
+  return s.endsWith(endswith);
+}
+
+bool STRING_equals2(const wchar_t *s1, const wchar_t *s2){
+  return STRING_get_qstring(s1) == STRING_get_qstring(s2);
+}
+
+bool STRING_equals(const wchar_t *string, const char *s2){
+  QString s = STRING_get_qstring(string);
+  return s == QString(s2);
+}
+
+wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
+  return STRING_create(STRING_get_qstring(s1) + STRING_get_qstring(s2));
+}
+
+
 // TODO: Rename to OS_get_program_path
 const wchar_t *OS_get_program_path2(void){
   static wchar_t *array=NULL;
   if (array==NULL){
     QString s = QCoreApplication::applicationDirPath();
-    array = (wchar_t*)calloc(1, sizeof(wchar_t)*s.length());
+    array = (wchar_t*)calloc(1, sizeof(wchar_t)*(s.length()+1));
     s.toWCharArray(array);
   }
 

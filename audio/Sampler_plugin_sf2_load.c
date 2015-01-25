@@ -3,7 +3,7 @@
 
 #include "../common/hashmap_proc.h"
 
-static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag_number){
+static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_bag_number){
   hash_t *info = SF2_get_info(filename);
   if(info==NULL)
     return false;
@@ -32,7 +32,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
       hash_t *region = HASH_get_hash_at(regions,"",i);
 
       if(HASH_has_key(region,"instrument")==true){
-        instrument = HASH_get_hash(instruments,HASH_get_string(region,"instrument"));
+        instrument = HASH_get_hash(instruments,HASH_get_chars(region,"instrument"));
         break;
       }
     }
@@ -40,7 +40,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
 
   if(instrument==NULL){
     RError("load_sf2_instrument: Preset \"%s\" (bank %d / preset %d) in \"%s\" doesn't point to an instrument\n",
-           HASH_get_string(preset,"name"),bank_num,HASH_get_int(preset,"num"),filename
+           HASH_get_chars(preset,"name"),bank_num,HASH_get_int(preset,"num"),filename
            );
     return false;
   }
@@ -53,7 +53,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
   for(i=0;i<HASH_get_array_size(regions);i++){
     hash_t *region = HASH_get_hash_at(regions,"",i);
     
-    const char *sample_name = HASH_get_string(region, "sample_name");
+    const char *sample_name = HASH_get_chars(region, "sample_name");
     if(strcmp(sample_name,"<no sample!>")){
       hash_t *sample_info = HASH_get_hash(sample_infos, sample_name);
       int sample_num = HASH_get_int(sample_info,"num");
@@ -74,7 +74,7 @@ static bool load_sf2_instrument(Data *data, const char *filename, int preset_bag
       
       {
         sample->ch = -1;
-        const char *type = HASH_get_string(sample_info,"type");
+        const char *type = HASH_get_chars(sample_info,"type");
         if(!strcmp(type,"Left Sample") || !strcmp(type,"ROM Left Sample"))
           sample->ch = 0;
         if(!strcmp(type,"Right Sample") || !strcmp(type,"ROM Right Sample"))

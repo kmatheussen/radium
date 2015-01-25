@@ -211,7 +211,7 @@ public:
       if(filename=="")
         return;
 
-      FILE *file = fopen(filename,"w");
+      disk_t *file = DISK_open_for_writing(filename);
 
       if(file==NULL){
         QMessageBox msgBox;
@@ -226,7 +226,7 @@ public:
 
       HASH_save(state, file);
 
-      fclose(file);
+      DISK_close_and_delete(file);
     }
 
     void on_load_button_pressed(){
@@ -240,7 +240,7 @@ public:
       if(filename=="")
         return;
 
-      FILE *file = fopen(filename,"r");
+      disk_t *file = DISK_open_for_reading(filename);
       if(file==NULL){
         QMessageBox msgBox;
         msgBox.setText("Could not open file.");
@@ -251,7 +251,7 @@ public:
       }
 
       hash_t *state = HASH_load(file);
-      fclose(file);
+      DISK_close_and_delete(file);
 
       if(state==NULL){
         QMessageBox msgBox;

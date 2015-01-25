@@ -1042,8 +1042,8 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   hash_t *state=HASH_create(5);
 
-  HASH_put_string(state, "type_name", plugin->type->type_name);
-  HASH_put_string(state, "name", plugin->type->name);
+  HASH_put_chars(state, "type_name", plugin->type->type_name);
+  HASH_put_chars(state, "name", plugin->type->name);
 
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
@@ -1077,8 +1077,8 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 }
 
 SoundPlugin *PLUGIN_create_from_state(hash_t *state){
-  const char *type_name = HASH_get_string(state, "type_name");
-  const char *name = HASH_get_string(state, "name");
+  const char *type_name = HASH_get_chars(state, "type_name");
+  const char *name = HASH_get_chars(state, "name");
 
   const SoundPluginType *type = PR_get_plugin_type_by_name(type_name,name);
                           
