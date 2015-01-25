@@ -1107,7 +1107,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
       controller->pd_binding = NULL;
     }
 
-    controller->display_name = HASH_has_key_at(state, "name", i) ? HASH_get_string_at(state, "name", i) : NULL;
+    controller->display_name = HASH_has_key_at(state, "name", i) ? wcsdup(HASH_get_string_at(state, "name", i)) : NULL;
     
     const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
     if(name==NULL || !strcmp(name,""))
