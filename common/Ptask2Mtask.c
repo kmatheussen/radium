@@ -67,11 +67,25 @@ int default_scrolls_per_second = 20;
 
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
+  bool setfirstpos=root->setfirstpos;
+  
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,root->curr_block);
 
-  bool setfirstpos=root->setfirstpos;
+  int old_curr_realline = wblock->curr_realline;
+  int till_curr_realline=wblock->till_curr_realline;
 
+  // Some sanity checks. till_curr_realline can be set from any thread, at any time, to any value.
+  if (till_curr_realline < 0)
+    till_curr_realline = 0;
+  else if (till_curr_realline >= wblock->num_reallines)
+    till_curr_realline = wblock->num_reallines-1;
+  
+  wblock->curr_realline = till_curr_realline;
+  wblock->top_realline += till_curr_realline - old_curr_realline;
+  wblock->bot_realline += till_curr_realline - old_curr_realline;
+
+  
   if(pc->playtype==PLAYSONG)
     BS_SelectPlaylistPos(root->curr_playlist);
 
