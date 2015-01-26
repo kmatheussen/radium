@@ -23,7 +23,7 @@ fi
 export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 #export CPUOPT=
 
-export CCC="g++ -mfpmath=sse"
+export CCC="clang++ -mfpmath=sse"
 #export CC="gcc -mfpmath=sse"
 #export CCC="clang++ -stdlib=libc++"
 export CC="clang -Wno-gnu-designator"

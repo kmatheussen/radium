@@ -536,6 +536,11 @@ public:
     override_vblank_value = value;
   }
 
+  // Necessary to avoid error with clang++.
+  virtual void resizeEvent(QResizeEvent *qresizeevent) {
+    vlQt4::Qt4ThreadedWidget::resizeEvent(qresizeevent);
+  }
+
   /** Event generated when the bound OpenGLContext is resized. */
   // OpenGL thread
   virtual void resizeEvent(int w, int h) {
@@ -604,7 +609,12 @@ public:
   virtual void mouseWheelEvent(int n) {
     printf("mouseWheel %d\n",n);
   }
-  
+
+  // Necessary to avoid error with clang++.
+  virtual void keyPressEvent(QKeyEvent *event){
+    vlQt4::Qt4ThreadedWidget::keyPressEvent(event);
+  }
+
   /** Event generated when a key is pressed. */
   virtual void keyPressEvent(unsigned short unicode_ch, vl::EKey key) {
     printf("key pressed\n");
@@ -613,7 +623,13 @@ public:
     //create_block();
     //initEvent();
   }
-  
+
+  // Necessary to avoid error with clang++.
+  virtual void keyReleaseEvent(QKeyEvent *event){
+    vlQt4::Qt4ThreadedWidget::keyReleaseEvent(event);
+  }
+
+
   /** Event generated when a key is released. */
   virtual void keyReleaseEvent(unsigned short unicode_ch, vl::EKey key) {
   }
@@ -769,7 +785,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "The nvidia driver can be installed to get faster, smoother and prettier graphics\n"
                   );
 
-    else if (s_version.contains("mesa", Qt::CaseInsensitive))
+    else if (true || s_version.contains("mesa", Qt::CaseInsensitive))
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"

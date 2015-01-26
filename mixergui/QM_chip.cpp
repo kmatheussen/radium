@@ -100,14 +100,14 @@ int get_text_width(const QFont &font, const QString &text){
 static const int left_border   = 2;
 static const int right_border  = 2;
 static const int top_border    = 2;
-static const int bottom_border = 2;
+//static const int bottom_border = 2;
 
 //static const int chip_width = 120;
 //static const int slider_height = 15;
 
 static const int name_height = 14;
 static const int button_width = 13;//name_height/2;
-static const int button_height = 13;//name_height/2;
+//static const int button_height = 13;//name_height/2;
 
 
 

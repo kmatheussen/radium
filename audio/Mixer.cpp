@@ -456,6 +456,7 @@ struct Mixer{
 
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
+
         PlayerTask(RADIUM_BLOCKSIZE);
 
         if(_bus1!=NULL)

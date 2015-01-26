@@ -491,7 +491,7 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
 
   //printf("min/max: %d, %d\n",(int)min,(int)max);
 
-  if(abs(tg->min-tg->max)<20) {
+  if(fabs(tg->min - tg->max)<20) {
     float middle = (wblock->tempocolorarea.x+wblock->tempocolorarea.x2) / 2.0f;
     GE_line(c,
             middle, get_realline_y1(window, 0),

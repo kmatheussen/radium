@@ -368,6 +368,8 @@ protected:
     GC_gcollect();
 #endif
 
+    //static int hepp=0; printf("hepp %d\n",hepp++);
+    
     if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
 
       QString message(rt_message);

@@ -623,12 +623,12 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   for(controller_num=0;controller_num<NUM_PD_CONTROLLERS;controller_num++) {
     controller = &data->controllers[controller_num];
 
-    if(controller->name != NULL && !strcmp(controller->name, controller_name)) {
+    if(controller->name[0]!=0 && !strcmp(controller->name, controller_name)) {
       creating_new = false;
       break;
     }
 
-    if(controller->name == NULL || !strcmp(controller->name, ""))
+    if(controller->name[0] == 0 || !strcmp(controller->name, ""))
       break;
   }
 
@@ -1122,7 +1122,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     controller->has_gui   = HASH_get_int_at(state, "has_gui", i)==1 ? true : false;
     controller->config_dialog_visible = HASH_get_int_at(state, "config_dialog_visible", i)==1 ? true : false;
 
-    if(controller->name != NULL) {
+    if(controller->name[0] != 0) {
       RT_bind_receiver(controller);
     }
   }

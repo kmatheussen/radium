@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef QT_PLUGIN_WIDGET_CALLBACKS_PROC_H
+#ifndef QT_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
 #define QT_PLUGIN_WIDGET_CALLBACKS_PLUGIN_PROC_H
 
 void PLUGINWIDGET_gui_is_hidden(void *w);
