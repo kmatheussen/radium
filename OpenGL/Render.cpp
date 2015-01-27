@@ -890,7 +890,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 }
 
 static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
-  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
+  bool show_read_lines = wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
 
   GE_Context *line_color = GE_color_alpha(7, 0.5);
   
