@@ -777,6 +777,19 @@
                                      (show-reltempo-in-statusbar))
                         )
 
+;; reset slider value
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)                                
+                                (cond ((inside-box (ra:get-box reltempo-slider) X Y)
+                                       (ra:undo-reltempo)
+                                       (ra:set-reltempo 1.0)
+                                       #f)
+                                      (else
+                                       #f)))
+                  :drag-func  (lambda (Button X Y)
+                                #f)
+                  :release-func (lambda ($button $x $y)
+                                  #f)))
 
 
 ;; select patch for track
@@ -869,6 +882,22 @@
                                      (show-track-pan-in-statusbar Tracknum))
                         )
 
+;; reset slider value
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)
+                                (cond ((and *current-track-num*
+                                            (inside-box (ra:get-box track-pan-slider *current-track-num*) X Y))
+                                       (ra:undo-track-pan *current-track-num*)
+                                       (ra:set-track-pan 0.0 *current-track-num*)
+                                       #f)
+                                      (else
+                                       #f)))
+                  :drag-func  (lambda (Button X Y)
+                                #f)
+                  :release-func (lambda ($button $x $y)
+                                  #f)))
+
+     
 
 ;; track volume sliders
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -905,6 +934,23 @@
                                      (show-track-volume-in-statusbar Tracknum))
                         )
 
+
+;; reset slider value
+(add-mouse-cycle (make-mouse-cycle
+                  :press-func (lambda (Button X Y)
+                                (cond ((and *current-track-num*
+                                            (inside-box (ra:get-box track-volume-slider *current-track-num*) X Y))
+                                       (ra:undo-track-volume *current-track-num*)
+                                       (ra:set-track-volume 0.8 *current-track-num*)
+                                       #f)
+                                      (else
+                                       #f)))
+                  :drag-func  (lambda (Button X Y)
+                                #f)
+                  :release-func (lambda ($button $x $y)
+                                  #f)))
+
+     
 
 ;; temponodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;

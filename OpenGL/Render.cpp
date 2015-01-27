@@ -863,6 +863,8 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
     //printf("highlight: %d %p %p\n",highlight,trackrealline->daspitch,trackrealline->dasnote);
     //printf("current_node: %p\n\n",current_node);
+    
+    int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
 
     if(isranged==false && notenum>0 && notenum<128)
       GE_filledBox(get_note_background(notenum, highlight), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
@@ -870,16 +872,17 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     if (tr->num_elements > 1)
       paint_multinotes(wtrack, tr, NotesTexts, isranged, y1, y2);
     
-    else if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true) {
+    else if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true || cents!=0) {
       GE_Context *foreground = GE_textcolor(colnum);
-
-      int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
       
       if (cents==0)
         GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
       else{
         char temp[32];
-        sprintf(temp,"%s, %d",NotesTexts[(int)notenum],cents);
+        if (wtrack->is_wide)
+          sprintf(temp,"%s.%d",NotesTexts[(int)notenum],cents);
+        else
+          sprintf(temp,"%s %d",NotesTexts[(int)notenum],cents);
         GE_text(foreground, temp, wtrack->notearea.x, y1); 
       }
       
@@ -890,7 +893,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 }
 
 static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
-  bool show_read_lines = wblock->mouse_track==wtrack->l.num;
+  bool show_read_lines = wtrack->noteshowtype==GFXTYPE1 || wblock->mouse_track==wtrack->l.num;
 
   GE_Context *line_color = GE_color_alpha(7, 0.5);
   

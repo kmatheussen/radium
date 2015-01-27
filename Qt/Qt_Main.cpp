@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDir>
 #include <QTextEdit>
 #include <QLayout>
+#include <QDesktopServices>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -507,6 +508,29 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 }
 
 
+void assertRadiumInHomeDirectory(void){
+  QString program_path = QCoreApplication::applicationDirPath();
+
+#if 0
+  QString home_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
+
+  if (!program_path.startsWith(home_path)){
+    GFX_Message(NULL,
+                QString("Warning!\n\n") +
+                "Radium is not installed in your home directory. Unless you have write access to the directory \"" + program_path + "\", undefined behaviors are likely to happen"
+                );
+  }
+#else
+  QFileInfo info(program_path + QDir::separator() + "eventreceiverparser_generated.py");
+  if (!info.isWritable())
+    GFX_Message(NULL,
+                QString("Warning!\n\n") +
+                "Radium is installed i a directory without write access. (" + program_path + ")\n"
+                "Undefined behaviors are likely to happen"
+                );
+#endif
+}
+
 
 
 #include <qwindowsstyle.h>
@@ -557,7 +581,6 @@ void Qt_EventHandler(void){
     doquit=true;
 #endif
 }
-
 
 
 //extern void updateAllFonts(QWidget *widget);
@@ -837,6 +860,7 @@ int radium_main(char *arg){
 
   //abort();
 
+  assertRadiumInHomeDirectory();
 
 #if USE_QT_VISUAL
   qapplication->exec();

@@ -48,15 +48,15 @@ typedef struct {
 static LPB_iterator g_lpb_iterator = {0};
 
 
-// Returns number of beats played so far.
-//
-// Only called from the juce plugin host process method, which should be called from the scheduler. This means that PlayerNewLPB should always have been called before this function, if playing.
-double RT_LPB_get_beat_position(void){
-  LPB_iterator *iterator = &g_lpb_iterator;
+static double g_curr_num_beats = 0.0;
+static double g_curr_beats_per_minute = 0.0;
 
+// Called from Mixer.cpp after events are calculated, and before audio is created.
+void RT_LPB_set_beat_position(int blocksize){
+  LPB_iterator *iterator = &g_lpb_iterator;
   
   if (pc->isplaying==false)    
-    return 0.0f;
+    return;
 
   STime time = pc->start_time - pc->seqtime;
 
@@ -67,13 +67,40 @@ double RT_LPB_get_beat_position(void){
   //  time = iterator->time1;
 
   // Note: time (i.e. pc->start_time) may be lower than time1. Handle that situation correct is necessary to get correct timing.
-  
-  return  
+
+  double prev_num_beats = g_curr_num_beats;
+
+  double curr_num_beats =
     iterator->num_beats_played_so_far +
-    scale_double(time,
-                 iterator->time1, iterator->time2,
+    scale_double(time,                             // This calculation is not correct when there's tempo node lines. This value needs to be curr_place, not time. (hard)
+                 iterator->time1, iterator->time2, // ...and these values need to be place1 and place2. (simple)
                  0.0, iterator->num_beats_between_time1_and_time2
                  );
+
+  double beats_since_last_time = curr_num_beats - prev_num_beats;
+
+  double beats_per_minute = beats_since_last_time * 60.0 * (double)pc->pfreq / (double)blocksize;
+  //printf("beats_per_minute: %f, curr_num_beats: %f\n", beats_per_minute,curr_num_beats);
+
+  g_curr_num_beats = curr_num_beats;
+  g_curr_beats_per_minute = beats_per_minute;
+}
+
+// Returns number of beats played so far.
+//
+double RT_LPB_get_beat_position(void){
+  return g_curr_num_beats;
+}
+
+double RT_LPB_get_current_BPM(void){
+  if (pc->isplaying)
+    return g_curr_beats_per_minute;
+  else {
+    if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL)
+      return 0.0;
+    else
+      return (float)root->tempo * root->song->tracker_windows->wblock->block->reltempo;
+  }
 }
 
 static void print_lpb_iterator_status(const struct Blocks *block){
@@ -86,9 +113,6 @@ static void print_lpb_iterator_status(const struct Blocks *block){
 #endif
 }
 
-
-static void Spool_LPB_iterator_to_place(LPB_iterator *iterator, Place *place){
-}
 
 #define SetAbsoluteLastPlace(place, block) do{        \
     Place *p = place;                                 \
@@ -180,8 +204,6 @@ void InitPEQ_LPB(struct Blocks *block,Place *place){
   
   InitPEQ_LPB_new_block(block, iterator);
     
-  Spool_LPB_iterator_to_place(iterator, place);
-
   struct PEventQueue *peq = GetPEQelement();
   
   peq->TreatMe=PlayerNextLPB;

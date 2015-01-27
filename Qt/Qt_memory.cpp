@@ -19,11 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <new>
 #include <stdlib.h>
 #include <stdio.h>
-#include <gc.h>
 
 #include "../common/OS_memory_proc.h"
 
 #if 0
+
+#include <gc.h>
+
 // Segfault, probably some Qt root which is missing.
 
 void* operator new(size_t size){

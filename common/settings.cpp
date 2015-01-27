@@ -205,7 +205,7 @@ static const char* SETTINGS_get_chars(const char* key){
   if (ret==not_found)
     return NULL;
   else
-    return ret.toUtf8().constData();
+    return talloc_strdup(ret.toUtf8().constData());
 }
 
 void SETTINGS_set_custom_configfile(QString filename){
@@ -248,9 +248,9 @@ const char* SETTINGS_read_string(const char* key, const char* def){
 }
 
 QString SETTINGS_read_qstring(const char* key, QString def){
-  const char* val = SETTINGS_get(key);
+  QString val = SETTINGS_get(key);
 
-  if(val==NULL)
+  if(val==not_found)
     return def;
   else
     return val;
