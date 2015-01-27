@@ -17,6 +17,7 @@ PREFIX=`dirname $PWD/$0`
 #make install
 #cd ..
 
+
 if [ $# -ne 2 ] ; then
     echo "Usage: PYTHONBIN use_pygtk(yes/no) QTDIR"
     exit
@@ -105,7 +106,7 @@ cd ..
 tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6
 make clean
-CFLAGS="-O3" CPPFLAGS="-O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
+CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
 # --enable-debug
 make -j3
 cd ..
@@ -113,7 +114,7 @@ cd ..
 tar xvzf libgig.tar.gz
 cd libgig
 make clean
-CFLAGS="-O3" CPPFLAGS="-O3" ./configure
+CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure
 make -j3
 cd ..
 

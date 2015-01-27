@@ -280,6 +280,8 @@ radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 	@echo "Run 'make install' to install radium"
 
 very_clean: clean
+	rm -f bin/packages/s7/s7.o
+	cd pluginhost/Builds/Linux && $(MAKE) clean && cd ../../../
 	cd bin/packages && ./buildclean.sh
 
 clean:
