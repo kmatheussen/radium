@@ -71,7 +71,7 @@ namespace{
       if (block->times==NULL)
         return false;
       
-      result.bpm = (float)root->tempo * (pc->isplaying ? block->reltempo : 1.0f); // fixme
+      result.bpm = RT_LPB_get_current_BPM();
       //printf("result.bpm: %f\n",result.bpm);
 
       result.timeSigNumerator = 4;
@@ -93,7 +93,6 @@ namespace{
       result.isLooping = pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
 
       return true;
-
     }
   };
 
