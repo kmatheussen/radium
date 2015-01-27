@@ -244,6 +244,8 @@ public:
 
 #if defined(FOR_MACOSX)
 
+#if 0  // This block does not compile anymore. Doesn't matter since this code is not used anylonger anyway.
+                
 		Rect contentRect = {pRect->top+100, pRect->left+100, pRect->bottom+100, pRect->right+100};
 		//SetRect(&contentRect, 200, 200, 400, 400);
 		HIWindowRef windowRef;
@@ -254,6 +256,9 @@ public:
 		_effect->dispatcher(_effect,effEditOpen, 0, 0, (void*)windowRef, 0.0f);
 		
 		ShowWindow(windowRef);
+
+#endif
+                
 #endif // defined(FOR_MACOSX)
 
 
@@ -1128,7 +1133,7 @@ void create_vst_plugins(bool is_juce_plugin){
     QFileInfoList list = dir.entryInfoList();
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
-      add_vst_plugin_type(fileInfo);
+      add_vst_plugin_type(fileInfo, is_juce_plugin);
     }
   }
 

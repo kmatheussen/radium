@@ -1573,7 +1573,7 @@ undo_sample.o: audio/undo_sample.c
 	$(CC) audio/undo_sample.c $(OPT)
 
 SoundfileSaver.o: audio/SoundfileSaver.c
-	$(CC) audio/SoundfileSaver.c $(OPT)
+	$(CC) audio/SoundfileSaver.c $(OPT) $(SNDFILEOPT)
 
 system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_compressor.cpp
 	$(CCC) $(QTOPT) $(CPUOPT) audio/system_compressor_wrapper.cpp
