@@ -1,4 +1,15 @@
 
+Most important changes 3.0.rc3 -> 3.0.rc4
+* Make sure packages are not built with -march=native for the binaries
+* Fix nasty memory corruption bug (introduced in 3.0.rc3)
+* Calculate current BPM from beat position values (used by VST plugins)
+* Always show cents if cents!=0
+* Always show notes graphically when noteshowtype==GFXTYPE1
+* Right mouse button reset slider values in the editor
+* Show warning if there is no write access to the binary directory
+
+
+
 Most important changes 3.0.rc2 -> 3.0.rc3
 * Fix pd plugin on fedora 21 (and other distributions having wish8.6)
 * Fix various crashes related to changing the number of visible lines while playing
