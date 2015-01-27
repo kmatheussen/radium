@@ -87,9 +87,6 @@ static void print_lpb_iterator_status(const struct Blocks *block){
 }
 
 
-static void Spool_LPB_iterator_to_place(LPB_iterator *iterator, Place *place){
-}
-
 #define SetAbsoluteLastPlace(place, block) do{        \
     Place *p = place;                                 \
     p->line = block->num_lines;                       \
@@ -180,8 +177,6 @@ void InitPEQ_LPB(struct Blocks *block,Place *place){
   
   InitPEQ_LPB_new_block(block, iterator);
     
-  Spool_LPB_iterator_to_place(iterator, place);
-
   struct PEventQueue *peq = GetPEQelement();
   
   peq->TreatMe=PlayerNextLPB;
