@@ -785,7 +785,41 @@ QWidget *GL_create_widget(QWidget *parent){
                   "The nvidia driver can be installed to get faster, smoother and prettier graphics\n"
                   );
 
-    else if (true || s_version.contains("mesa", Qt::CaseInsensitive))
+    else if (s_vendor.contains("Intel")) {
+#ifdef FOR_LINUX
+      if (SETTINGS_read_bool("show_intel_gfx_message_during_startup", true)) {
+        vector_t v = {0};
+        VECTOR_push_back(&v,"Ok");
+        VECTOR_push_back(&v,"Don't show this message again");
+
+        int result = GFX_Message(&v,
+                                 QString(
+                                         "Intel OpenGL driver detected.\n"
+                                         "\n"
+                                         "For best performance, the driver should be configured like this:\n"
+                                         "\n"
+                                         "    Section \"Device\"\n"
+                                         "\n"
+                                         "       Identifier  \"Intel Graphics\"\n"
+                                         "       Driver      \"intel\"\n"
+                                         "\n"
+                                         "      Option \"AccelMethod\" \"sna\"\n"
+                                         "\n"
+                                         "      Option \"TearFree\" \"true\"\n"
+                                         "\n"
+                                         "    EndSection\n"
+                                         "\n"
+                                         "Your driver is likely to already be configured like this. But in\n"
+                                         "case you see tearing or choppy graphics, you might want to check\n"
+                                         "your X configuration. You might also want to download the latest version\n"
+                                         "of the driver, which can be found here: https://01.org/linuxgraphics/")
+                                 );
+
+        if (result==1)
+          SETTINGS_write_bool("show_intel_gfx_message_during_startup", false);
+      }
+#endif
+    } else if (s_version.contains("mesa", Qt::CaseInsensitive))
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"
