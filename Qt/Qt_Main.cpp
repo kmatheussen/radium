@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextEdit>
 #include <QLayout>
 #include <QDesktopServices>
+#include <QTextCodec>
 
 #ifdef USE_QT4
 #include <QMainWindow>
@@ -915,6 +916,8 @@ int main(int argc, char **argv){
   THREADING_init_main_thread_type();
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+
+  QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
 
   PLUGINHOST_init();
   

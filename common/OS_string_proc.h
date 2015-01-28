@@ -35,6 +35,7 @@ wchar_t *STRING_create(const QString s);
 static inline QString STRING_get_qstring(const wchar_t *string){
   return QString::fromWCharArray(string);
 }
+
 #endif
 
 

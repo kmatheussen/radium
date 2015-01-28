@@ -358,10 +358,10 @@ hash_t *SF2_get_info(const wchar_t *filename){
     return hash;
 
   }catch (RIFF::Exception e) {
-    GFX_Message(NULL,"Unable to parse soundfont file %s: %s",STRING_get_chars(filename),e.Message.c_str());
+    GFX_Message(NULL,"Unable to parse soundfont file " + STRING_get_qstring(filename) +": " + e.Message.c_str());
     e.PrintMessage();
   }catch (...) {
-    GFX_Message(NULL,"Unknown exception while trying to parse file: %s",STRING_get_chars(filename));
+    GFX_Message(NULL,"Unknown exception while trying to parse file: " + STRING_get_qstring(filename));
   }
 
   return NULL;

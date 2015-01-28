@@ -603,11 +603,9 @@ const wchar_t *GFX_GetSaveFileName(
 }
 
 
-static int show_message(vector_t *buttons, const char *message){
-        
-
+int GFX_Message(vector_t *buttons, QString message){
   QMessageBox msgBox;
-  msgBox.setText(QString(message));
+  msgBox.setText(message);
 
   if(buttons==NULL){
 
@@ -639,9 +637,7 @@ static int show_message(vector_t *buttons, const char *message){
   }
   
   return 0;
-
 }
-
 
 int GFX_Message(vector_t *buttons, const char *fmt,...){
   if (g_qt_is_running==false || !THREADING_is_main_thread())
@@ -655,7 +651,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
   
-  return show_message(buttons,message);
+  return GFX_Message(buttons,QString(message));
 }
 
 //#include "mgakk.cpp"

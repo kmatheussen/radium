@@ -30,6 +30,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TEXT_BOLD 32
 #define TEXT_SCALE 64 // Scales the text into the box.
 
+#ifdef USE_QT4
+#include <QString>
+int GFX_Message(vector_t *buttons, QString message);
+#endif
+
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
