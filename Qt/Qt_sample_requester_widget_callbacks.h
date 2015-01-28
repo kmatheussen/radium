@@ -414,7 +414,11 @@ class Sample_requester_widget : public QWidget
   bool is_directory_pressed(QString item_text){
     if(item_text.endsWith("/")==false)
       return false;
+
     if(item_text=="../")
+      return true;
+
+    if(item_text=="./")
       return true;
 
     QDir dir(_dir);
