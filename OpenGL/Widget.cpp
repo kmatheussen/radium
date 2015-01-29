@@ -776,13 +776,13 @@ QWidget *GL_create_widget(QWidget *parent){
     
     if (s_vendor.contains("nouveau", Qt::CaseInsensitive))
       GFX_Message(NULL,
-                  "Warning!\n"
-                  "\n"
-                  "Nouveau OpenGL driver detected.\n"
-                  "\n"
-                  "The nouveau driver currently performes worse than the nvidia driver. In addition, the graphics does not look as good.\n"
-                  "\n"
-                  "The nvidia driver can be installed to get faster, smoother and prettier graphics\n"
+                  "Warning!"
+                  "<p>"
+                  "Nouveau OpenGL driver detected."
+                  "<p>"
+                  "The nouveau driver currently performes worse than the nvidia driver. In addition, the graphics did not (at the time of writing) look pretty using the nouveau driver."
+                  "<p>"
+                  "The nvidia driver can be installed to get faster, smoother and prettier graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                   );
 
     else if (s_vendor.contains("Intel")) {
@@ -793,26 +793,26 @@ QWidget *GL_create_widget(QWidget *parent){
         VECTOR_push_back(&v,"Don't show this message again");
 
         int result = GFX_Message(&v,
-                                 QString(
-                                         "Intel OpenGL driver detected.\n"
-                                         "\n"
-                                         "For best performance, the driver should be configured like this:\n"
-                                         "\n"
-                                         "    Section \"Device\"\n"
-                                         "\n"
-                                         "       Identifier  \"Intel Graphics\"\n"
-                                         "       Driver      \"intel\"\n"
-                                         "\n"
-                                         "      Option \"AccelMethod\" \"sna\"\n"
-                                         "\n"
-                                         "      Option \"TearFree\" \"true\"\n"
-                                         "\n"
-                                         "    EndSection\n"
-                                         "\n"
-                                         "Your driver is likely to already be configured like this. But in\n"
-                                         "case you see tearing or choppy graphics, you might want to check\n"
-                                         "your X configuration. You might also want to download the latest version\n"
-                                         "of the driver, which can be found here: https://01.org/linuxgraphics/")
+                                 "<strong>Intel OpenGL driver detected.</strong>"
+                                 "<p>"
+                                 "For best performance, the driver should be configured like this:"
+                                 "<p>"
+                                 "<pre>"
+                                 "Section \"Device\"\n"
+                                 "\n"
+                                 "   Identifier  \"Intel Graphics\"\n"
+                                 "   Driver      \"intel\"\n"
+                                 "\n"
+                                 "   Option \"AccelMethod\" \"sna\"\n"
+                                 "   Option \"TearFree\" \"true\"\n"
+                                 "\n"
+                                 "EndSection\n"
+                                 "</pre>"
+                                 "<p>"
+                                 "Your driver is likely to already be configured like this. But in "
+                                 "case you see tearing or the scrolling is not silky smooth, you might want to check "
+                                 "your X configuration. You might also want to download the latest version "
+                                 "of the driver, which can be downloaded here: <a href=\"https://01.org/linuxgraphics/\">https://01.org/linuxgraphics/</a>"
                                  );
 
         if (result==1)
