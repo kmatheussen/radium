@@ -383,7 +383,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(VL_LIBS) pluginhost/Builds/Linux/build/libMyPluginHost.a
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS) pluginhost/Builds/Linux/build/libMyPluginHost.a -lXext
+	$(LINKER) $(OBJ) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
 # -lX11 -ldl -lpthread -lfreetype -lXext
 
 # `$(PKG) --libs fluidsynth`

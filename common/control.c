@@ -49,8 +49,10 @@ bool InitProgram(void){
 //	GC_INIT();
   bool ret;
 
+#if !defined(FOR_MACOSX)
   RADIUM_ensure_bin_packages_gc_is_used();
-
+#endif
+  
   printf("Initializing...\n");
 
 	printf("...Error handler\n");

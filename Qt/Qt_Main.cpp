@@ -978,17 +978,23 @@ int main(int argc, char **argv){
   if(argc>1 && !strcmp(argv[1],"--dont-load-new-song"))
     load_new_song=false;
 
-#ifdef IS_LINUX_BINARY
+#if defined(IS_LINUX_BINARY)
 #if 0  
   setenv("PYTHONHOME","temp/dist",1);
   setenv("PYTHONPATH","temp/dist",1);
 #else
-  QString pythonlibpath = QCoreApplication::applicationDirPath() + "/python2.7/lib";
+  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib";
   setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
 #endif
 
+#if defined(FOR_MACOSX)
+  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib" + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+  setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
+  setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
+#endif
+  
   Py_Initialize();
 
   {
