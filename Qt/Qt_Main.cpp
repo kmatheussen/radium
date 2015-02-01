@@ -855,7 +855,7 @@ int radium_main(char *arg){
   GFX_Message(&v, "hepp hepp");
 #endif
 
-  //  RWarning("warning!");
+  //RWarning("warning!");
   //g_splashscreen->finish(main_window);
   delete g_splashscreen;
 
@@ -1060,6 +1060,12 @@ int main(int argc, char **argv){
     {
       QFont font;
       font.fromString(fontstring);
+
+#if 0 //FOR_MACOSX
+      if(custom_config_set)
+        font.setPointSizeF(font.pointSizeF()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+      
       if(SETTINGS_read_qstring("system_font_style","")!="")
         font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
       qapplication->setFont(font);

@@ -495,6 +495,11 @@ void SetupMainWindow(void){
 
     font.fromString(fontstring);
 
+#if 0 //FOR_MACOSX
+    if (custom_config_set==true)
+      font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+
     if(SETTINGS_read_string("font_style",NULL)!=NULL)
       font.setStyleName(SETTINGS_read_string("font_style",NULL));
 

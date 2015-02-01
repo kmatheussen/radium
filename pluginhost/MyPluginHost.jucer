@@ -32,9 +32,10 @@
     <XCODE_MAC targetFolder="Builds/MacOSX" vstFolder="" extraCompilerFlags="-I../../../Qt &#96;cat ../../../flagopts.opt&#96;">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" osxSDK="10.7 SDK" osxCompatibility="10.7 SDK" osxArchitecture="64BitIntel"
-                       isDebug="1" optimisation="1" targetName="MyPluginHost"/>
+                       isDebug="1" optimisation="1" targetName="MyPluginHost" defines=" JUCE_CHECK_MEMORY_LEAKS=0"/>
         <CONFIGURATION name="Release" osxSDK="10.7 SDK" osxCompatibility="10.7 SDK"
-                       osxArchitecture="64BitIntel" isDebug="1" optimisation="3" targetName="MyPluginHost"/>
+                       osxArchitecture="64BitIntel" isDebug="1" optimisation="3" targetName="MyPluginHost"
+                       defines=" JUCE_CHECK_MEMORY_LEAKS=0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_gui_extra" path="../../juce"/>

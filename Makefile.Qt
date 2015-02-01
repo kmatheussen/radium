@@ -1613,7 +1613,7 @@ Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/T
 # embedded scheme
 
 bin/packages/s7/s7.o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7.o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS)
+	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7.o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS) -Wno-absolute-value
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
 	$(CCC) -c bin/s7webserver/s7webserver.cpp `$(PKG) --cflags QtNetwork` $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function

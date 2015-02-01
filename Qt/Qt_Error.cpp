@@ -24,10 +24,17 @@
 
 #ifdef COMPILE_EXECUTABLE
 
+namespace{
+  struct MyQMessageBox : public QMessageBox {
+  };
+}
+  
 static int show_message(const char *message){
 
-  QMessageBox msgBox;
-        
+  MyQMessageBox msgBox;
+
+  msgBox.setWindowFlags(Qt::Popup);
+
   msgBox.setText(QString(message));
 
   QPushButton *continue_button = msgBox.addButton("continue", QMessageBox::AcceptRole);
@@ -35,6 +42,10 @@ static int show_message(const char *message){
   QPushButton *ignore1_button  = msgBox.addButton("ignore warnings and errors for two seconds", QMessageBox::AcceptRole);
   QPushButton *ignore2_button  = msgBox.addButton("ignore warnings and errors for the rest of the program", QMessageBox::AcceptRole);
 
+  msgBox.show();
+  msgBox.raise();
+  msgBox.activateWindow();
+  
   printf("hepp: %d\n",msgBox.exec());
 
   QAbstractButton *clicked_button = msgBox.clickedButton();

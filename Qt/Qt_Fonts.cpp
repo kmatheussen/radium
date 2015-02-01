@@ -71,7 +71,14 @@ static void set_system_font(QFont font){
 
   printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().toUtf8().constData(),font.family().toUtf8().constData(),font.styleName().toUtf8().constData());
 
-  SETTINGS_write_string("system_font",font.toString());
+  {
+    QFont write_font = font;
+#if 0 //FOR_MACOSX
+    font.setPointSize(font.pointSize()*72.0/96.0); // macs have dpi of 72, while linux and mac have 96.
+#endif    
+    SETTINGS_write_string("system_font",write_font.toString());
+  }
+  
   SETTINGS_write_string("system_font_style",font.styleName()); // toString doesn't seem to cover this.
 
   {
@@ -176,6 +183,10 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
     QString fontstring = SETTINGS_read_qstring("font","");
 
     font.fromString(fontstring);
+#if 0 //FOR_MACOSX
+    font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+
     if(SETTINGS_read_qstring("font_style","")!="")
       font.setStyleName(SETTINGS_read_qstring("font_style",""));
 
@@ -203,6 +214,11 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
     QString fontstring = SETTINGS_read_qstring("system_font","");
 
     font.fromString(fontstring);
+
+#if 0 //FOR_MACOSX
+    font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+
     if(SETTINGS_read_qstring("system_font_style","")!="")
       font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
 
