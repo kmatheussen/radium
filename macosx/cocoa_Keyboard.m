@@ -26,26 +26,54 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
 
-#include "cocoa_Keyboard_proc.h"
+#include "../common/OS_system_proc.h"
+
 
 extern struct TEvent tevent;
 extern struct Root *root;
 
+  
+int OS_SYSTEM_get_event_type(void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
+  NSEventType type = [event type];
+  if(type==NSKeyDown)
+    return TR_KEYBOARD;
+  else if (type==NSKeyUp)
+    return TR_KEYBOARDUP;
+  else
+    return -1;
+}
+                             
+static enum SubIds cocoa_get_modifier_event(void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
+  
+  switch ([event keyCode]) {
+  case 54: // Right Command
+    return EVENT_EXTRA_R;
+  case 55: // Left Command
+    return EVENT_EXTRA_L;
+  //case 57: // Capslock
+  case 56: // Left Shift
+    return EVENT_SHIFT_L;
+  case 60: // Right Shift
+    return EVENT_SHIFT_R;
+  case 58: // Left Alt
+    return EVENT_ALT_L;
+  case 61: // Right Alt
+    return EVENT_ALT_R;
+  case 59: // Left Ctrl
+    return EVENT_CTRL_L;
+  case 62: // Right Ctrl
+    return EVENT_CTRL_R;
+    //case 63: // Function
+  default:
+    return EVENT_NO;
+  }
+}
+
+
 static bool isModifierKey(NSEvent *event){
-    switch ([event keyCode]) {
-        case 54: // Right Command
-        case 55: // Left Command
-        //case 57: // Capslock
-        case 56: // Left Shift
-        case 60: // Right Shift
-        case 58: // Left Alt
-        case 61: // Right Alt
-        case 59: // Left Ctrl
-        case 62: // Right Ctrl
-        //case 63: // Function
-          return true;
-    }
-    return false;
+  return cocoa_get_modifier_event(event) != EVENT_NO;
 }
 
 // Copied from http://opensource.apple.com/source/WebCore/WebCore-955.66/platform/mac/KeyEventMac.mm?txt
@@ -102,6 +130,10 @@ static void clear_modifiers(void){
   int i;
   for(i=0;i<64;i++)
     modifiers[i]=false;
+}
+
+void OS_SYSTEM_ResetKeysUpDowns(void){
+  clear_modifiers();
 }
 
 static uint32_t get_keyswitch(void){
@@ -258,20 +290,51 @@ static int get_keyboard_subID(int keycode){
     return keymap[keycode];
 }
 
+int OS_SYSTEM_get_keynum(void *focused_widget, void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
 
-extern int num_users_of_keyboard;
+  int keycode = [event keyCode];
+  int keynum = get_keyboard_subID(keycode);
 
-bool cocoa_KeyboardFilter(void *void_event){
+  if (keynum==-1)
+    return cocoa_get_modifier_event(event);
+  else
+    return keynum;
+}
+
+void OS_SYSTEM_init_keyboard(void){
+  init_keymap();
+  clear_modifiers();
+}
+
+
+void OS_SYSTEM_EventPreHandler(void *void_event){
   NSEvent *event = (NSEvent *)void_event;
   NSEventType type = [event type];
 
-  static bool initialized=false;
+  OS_SYSTEM_init_keyboard();
 
-  if(initialized==false){
-    init_keymap();
+  static void *oldHotKeyMode = NULL;
+  if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     clear_modifiers();
-    initialized=true;
+    if(oldHotKeyMode!=NULL){
+      PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);
+      oldHotKeyMode = NULL;
+    }
+    return;
+  }else{
+    if(oldHotKeyMode==NULL)
+      oldHotKeyMode = PushSymbolicHotKeyMode(kHIHotKeyModeAllDisabled); 
   }
+
+  set_modifier(event);
+}
+
+extern int num_users_of_keyboard;
+
+bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
+  NSEventType type = [event type];
 
 #if 0
   {
@@ -283,23 +346,7 @@ bool cocoa_KeyboardFilter(void *void_event){
   }
 #endif
 
-  static void *oldHotKeyMode = NULL;
-  if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
-    clear_modifiers();
-    if(oldHotKeyMode!=NULL){
-      PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);
-      oldHotKeyMode = NULL;
-    }
-    return false;
-  }else{
-    if(oldHotKeyMode==NULL)
-      oldHotKeyMode = PushSymbolicHotKeyMode(kHIHotKeyModeAllDisabled); 
-  }
 
-
-
-  if(set_modifier(event)) // returns true if it handled a modifier
-    return false;
 
   if(type!=NSKeyUp && type!=NSKeyDown)
     return false;

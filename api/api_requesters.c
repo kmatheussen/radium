@@ -66,6 +66,7 @@ void setDefaultEditorFont(void){
 
 void setDefaultSystemFont(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  //RWarning("Warning! (?)"); // warning window test
   GFX_SetDefaultSystemFont(window);
 }
 

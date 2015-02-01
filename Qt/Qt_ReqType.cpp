@@ -36,9 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 #include "../GTK/GTK_visual_proc.h"
 
-#ifdef __linux__
-#  include "../X11/X11_keyboard_proc.h"
-#endif
+#include "../common/OS_system_proc.h"
 
 #include "../common/OS_visual_input.h"
 #include "../OpenGL/Widget_proc.h"
@@ -101,9 +99,7 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
 
   num_users_of_keyboard--;
 
-#ifdef __linux__
-  X11_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
-#endif
+  OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 
   if(reqtype->widgets_disabled==true){
     Qt_EnableAllWidgets();

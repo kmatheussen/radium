@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "X11.h"
+#include <X11/Xlib.h>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -31,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../audio/Mixer_proc.h"
 
-#include "X11_keyboard_proc.h"
+#include "../common/OS_system_proc.h"
 
 
 extern bool doquit;
@@ -44,7 +45,7 @@ static hash_t *keyupdowns = NULL;
 static int keycode_to_keynum[256]; // "A KeyCode represents a physical (or logical) key. KeyCodes lie in the inclusive range [8,255]" (keyboard-encoding.html)
 
 
-void X11_ResetKeysUpDowns(void){
+void OS_SYSTEM_ResetKeysUpDowns(void){
   keyupdowns = HASH_create(EVENT_DASMAX);
 }
 
@@ -75,8 +76,8 @@ static bool get_keyupdown(int keynum){
   return HASH_has_key(keyupdowns,key) && HASH_get_int(keyupdowns,key)==1;
 }
 
-void X11_init_keyboard(void) {
-  X11_ResetKeysUpDowns();
+void OS_SYSTEM_init_keyboard(void) {
+  OS_SYSTEM_ResetKeysUpDowns();
 }
 
 
@@ -278,7 +279,8 @@ static void init_keynums(void *focused_widget, XEvent *event){
 }
 
 
-int X11_get_keynum(void *focused_widget, XKeyEvent *key_event){
+int OS_SYSTEM_get_keynum(void *focused_widget, void *event){
+  XKeyEvent *key_event = event;
   init_keynums(focused_widget, (XEvent*)key_event);
   return keycode_to_keynum[key_event->keycode];
 }
@@ -317,7 +319,7 @@ static void setKeySwitch(unsigned int state){
 
 
 static void setKeyUpDowns(void *focused_widget, XKeyEvent *key_event){
-  int keynum = X11_get_keynum(focused_widget, key_event);
+  int keynum = OS_SYSTEM_get_keynum(focused_widget, key_event);
   if(keynum==-1)
     return;
 
@@ -350,7 +352,7 @@ static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *win
 static int X11_MyKeyPress(void *focused_widget, XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = X11_get_keynum(focused_widget, key_event);
+  int keynum = OS_SYSTEM_get_keynum(focused_widget, key_event);
 
   if (keynum==-1)
     return 0;
@@ -385,7 +387,7 @@ static int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *w
 }
 
 static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tracker_Windows *window){
-  int keynum = X11_get_keynum(focused_widget, key_event);
+  int keynum = OS_SYSTEM_get_keynum(focused_widget, key_event);
 
   if (keynum==-1)
     return 0;
@@ -395,7 +397,9 @@ static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tr
 }
 
 
-void X11_XEventPreHandler(XEvent *event){
+void OS_SYSTEM_EventPreHandler(void *void_event){
+  XEvent *event = void_event;
+  
   //init_keynums(NULL, event);
 
   switch(event->type){
@@ -404,7 +408,7 @@ void X11_XEventPreHandler(XEvent *event){
       XCrossingEvent *e = (XCrossingEvent*) event;
       printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
       if(e->focus==False)
-        X11_ResetKeysUpDowns();
+        OS_SYSTEM_ResetKeysUpDowns();
     }
     break;
   case LeaveNotify:
@@ -412,15 +416,27 @@ void X11_XEventPreHandler(XEvent *event){
       XCrossingEvent *e = (XCrossingEvent*) event;
       printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
       if(e->focus==False)
-        X11_ResetKeysUpDowns();
+        OS_SYSTEM_ResetKeysUpDowns();
     }
     break;
   }
 }
 
+int OS_SYSTEM_get_event_type(void *void_event){
+  XEvent *event = void_event;
+  
+  if(event->type==KeyPress)
+    return TR_KEYBOARD;
+  else if (event->type==KeyRelease)
+    return TR_KEYBOARDUP;
+  else
+    return -1;
+}
+
 extern int num_users_of_keyboard;
 
-bool X11_KeyboardFilter(void *focused_widget, XEvent *event){
+bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_event){
+  XEvent *event = void_event;
 
   init_keynums(focused_widget, event);
 

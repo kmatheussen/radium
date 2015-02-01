@@ -64,6 +64,8 @@ extern "C" {
 #include "../common/settings_proc.h"
 #include "../common/OS_settings_proc.h"
 
+#include "../common/OS_system_proc.h"
+
 #include "../crashreporter/crashreporter_proc.h"
 
 #include "../audio/Juce_plugins_proc.h"
@@ -73,8 +75,7 @@ extern "C" {
 #include <X11/Xlib.h>
 //#include "../X11/X11_Bs_edit_proc.h"
 //#include "../X11/X11_MidiProperties_proc.h"
-#include "../X11/X11_keyboard_proc.h"
-#include "../X11/X11_ClientMessages_proc.h"
+//#include "../X11/X11_ClientMessages_proc.h"
 #include "../X11/X11_Qtstuff_proc.h"
 #endif
 
@@ -90,13 +91,11 @@ extern "C" {
 
 #include "../GTK/GTK_visual_proc.h"
 
+#if 0
 #ifdef FOR_WINDOWS
 #  include <windows.h>
 #  include "../windows/W_Keyboard_proc.h"
 #endif
-
-#ifdef FOR_MACOSX
-#  include "../macosx/cocoa_Keyboard_proc.h"
 #endif
 
 #include "../OpenGL/Render_proc.h"
@@ -130,28 +129,32 @@ protected:
 
   bool last_key_was_lalt;
 
-#ifdef __linux__
-  bool x11EventFilter(XEvent *event){
+  bool EventFilter(void *event){
     if(is_starting_up==true)// || return_false_now)
       return false;
 
-    X11_XEventPreHandler(event);
+    OS_SYSTEM_EventPreHandler(event);
+
+    int type = OS_SYSTEM_get_event_type(event);
+
+    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
+      return false;
     
-    if (event->type!=KeyPress && event->type!=KeyRelease)
+    bool is_key_press = type==TR_KEYBOARD;
+    
+    if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
       return false;
 
-    XKeyEvent *key_event = (XKeyEvent*)event;
-
-    int keynum = X11_get_keynum(QApplication::focusWidget(), key_event);
+    int keynum = OS_SYSTEM_get_keynum(QApplication::focusWidget(), event);
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     bool must_return_false = false;
 
     if (keynum==EVENT_ALT_L){
-      if (event->type==KeyPress){
+      if (is_key_press){
         last_key_was_lalt = true;
         must_return_false = true;
-      }else if (event->type==KeyRelease) {
+      }else { // i.e. key release
 
         if(last_key_was_lalt==true){
 
@@ -183,10 +186,10 @@ protected:
     }
     }
 
-    if (event->type==KeyPress && num_users_of_keyboard==0)
+    if (is_key_press && num_users_of_keyboard==0)
       window->must_redraw = true;
     
-    bool ret = X11_KeyboardFilter(QApplication::focusWidget(), event);
+    bool ret = OS_SYSTEM_KeyboardFilter(QApplication::focusWidget(), event);
 
     if(ret==true)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
@@ -198,41 +201,24 @@ protected:
       return false;
     else
       return ret;
-    
+  }
+  
+#ifdef __linux__
+  bool x11EventFilter(XEvent *event){
+    return EventFilter(event);
   }
 
 #endif
 
 #ifdef FOR_WINDOWS
   bool 	winEventFilter ( MSG * msg, long * result ){
-    if(is_starting_up==true)
-      return false;
-
-    bool ret = W_KeyboardFilter(msg);
-
-    if(ret==true) {
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-      //if(event->type==KeyPress) TODO!
-      //GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
-    }
-    return ret;
+    return EventFilter(msg);
   }
 #endif
 
 #ifdef FOR_MACOSX
   bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
-    if(is_starting_up==true)
-      return false;
-
-    bool ret = cocoa_KeyboardFilter(event);
-
-    if(ret==true) {
-      static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->updateEditor();
-      //if(event->type==KeyPress)
-      //  GL_create(window, window->wblock);
-    }
-
-    return ret;
+    return EventFilter(event);
   }
 #endif
 };
@@ -504,8 +490,9 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 
 #ifdef __linux__
   XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
-  X11_ResetKeysUpDowns();
 #endif
+
+  OS_SYSTEM_ResetKeysUpDowns();
 }
 
 
@@ -636,9 +623,7 @@ int radium_main(char *arg){
 #endif
 
 
-#ifdef __linux__
-  X11_init_keyboard();
-#endif
+  OS_SYSTEM_init_keyboard();
 
   SetupMainWindow();
 
