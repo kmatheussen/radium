@@ -273,6 +273,7 @@ bool cocoa_KeyboardFilter(void *void_event){
     initialized=true;
   }
 
+#if 0
   {
     if(type==10||type==11||type==12){
       int keycode = [event keyCode];
@@ -280,7 +281,7 @@ bool cocoa_KeyboardFilter(void *void_event){
       //printf("keycode: %x, switch: %x\n",keycode,(int)keyswitch);
     }
   }
-
+#endif
 
   static void *oldHotKeyMode = NULL;
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.

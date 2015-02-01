@@ -231,9 +231,10 @@ int JUCEApplicationBase::main()
     const ScopedPointer<JUCEApplicationBase> app (createInstance());
     jassert (app != nullptr);
 
-    if (! app->initialiseApp())
+    if (! app->initialiseApp()){
         return app->getApplicationReturnValue();
-
+    }
+    
     JUCE_TRY
     {
         // loop until a quit message is received..

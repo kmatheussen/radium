@@ -137,7 +137,7 @@ CPUOPT ?=
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT)
+CPPOPT = $(COMMONOPT) -Wno-unused-function
 
 
 # Common QT opts (both 3 and 4)
@@ -1284,7 +1284,7 @@ midi_menues.o:  $(BUILD_DEPENDENCIES)  midi/midi_menues.c
 	$(CC)  midi/midi_menues.c $(OPT) 
 
 RtMidi.o:  $(BUILD_DEPENDENCIES) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
-	$(CCC) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_CFLAGS) $(CPPOPT)
+	$(CCC) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_CFLAGS) $(CPPOPT) -Wno-null-conversion
 
 
 

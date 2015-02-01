@@ -121,6 +121,7 @@ namespace{
     }
   };
 
+#if JUCE_LINUX
   struct JuceThread : public Thread {
     Atomic<int> isInited;
 
@@ -132,10 +133,12 @@ namespace{
 
     virtual void run(){
       initialiseJuce_GUI();
+      MessageManager::getInstance(); // make sure there is an instance here to avoid theoretical race condition
       isInited.set(1);
       MessageManager::getInstance()->runDispatchLoop(); 
     }
   };
+#endif
 }
 
 static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
@@ -222,20 +225,24 @@ float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFor
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
+#endif
   
   Data *data = (Data*)plugin->data;
   snprintf(buffer,buffersize-1,"%s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
 }
 
 static void show_gui(struct SoundPlugin *plugin){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
+#endif
   
   Data *data = (Data*)plugin->data;
 
   if (data->window==NULL) {
-    data->window = new PluginWindow(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-
+    data->window = new PluginWindow(strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name));
+    
     data->editor = data->audio_instance->createEditor();
 
     data->window->setContentOwned(data->editor, true);
@@ -248,7 +255,9 @@ static void show_gui(struct SoundPlugin *plugin){
 }
 
 static void hide_gui(struct SoundPlugin *plugin){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
+#endif
   
   Data *data = (Data*)plugin->data;
 
@@ -261,7 +270,7 @@ static AudioPluginInstance *get_audio_instance(const PluginDescription *descript
   static bool inited=false;
 
   static AudioPluginFormatManager formatManager;
-
+  
   if (inited==false){
     formatManager.addDefaultFormats();
     inited=true;
@@ -306,7 +315,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     }
   }
 
-  plugin_type->info = talloc_format("%sAccepts MIDI: %s\nProduces midi: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No");
+  plugin_type->info = strdup(talloc_format("%sAccepts MIDI: %s\nProduces midi: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
@@ -314,20 +323,34 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 
   type_data->effect_names = (const char**)calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
-    type_data->effect_names[i] = talloc_strdup(audio_instance->getParameterName(i).toRawUTF8());
+    type_data->effect_names[i] = strdup(audio_instance->getParameterName(i).toRawUTF8());
 }
 
+static int num_running_plugins = 0;
+
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
-  
+#endif
+
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
-  AudioPluginInstance *audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
-  if (audio_instance==NULL)
+#if FULL_VERSION==0
+  if(num_running_plugins >= 2){
+    GFX_Message(NULL,
+                "Using more than 2 VST plugins is only available to subscribers.<p>"
+                "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
     return NULL;
-    
-  Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
+  }
+#endif // FULL_VERSION==0
 
+  AudioPluginInstance *audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
+  if (audio_instance==NULL){
+    return NULL;
+  }
+
+  Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
+  
   if(type_data->effect_names==NULL)
     set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
 
@@ -348,13 +371,17 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     }
   }
 
+  num_running_plugins++;
+    
   return data;
 }
 
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
-
+#endif
+  
   Data *data = (Data*)plugin->data;
   
   AudioPluginInstance *audio_instance = data->audio_instance;
@@ -385,8 +412,10 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
-
+#endif
+  
   Data *data = (Data*)plugin->data;
   
   AudioPluginInstance *audio_instance = data->audio_instance;
@@ -401,8 +430,12 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
- 
+#endif
+
+  num_running_plugins--;
+
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   Data *data = (Data*)plugin->data;
 
@@ -423,17 +456,24 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return type_data->effect_names[effect_num];
 }
 
-void add_juce_plugin_type(const char *name, const char *filepath){
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier){
+  printf("b02 %s\n",STRING_get_chars(file_or_identifier));
+  fflush(stdout);
+  //  return;
+
+#if JUCE_LINUX
   const MessageManagerLock mmLock;
-  
+#endif
+
+  PluginDescription *description = new PluginDescription();
+  description->fileOrIdentifier = String(file_or_identifier); // On mac, this can be "/Library/Audio/Plug-Ins/VST/Radium Compressor Stereo.vst", while on windows and linux, it's the path of the library file.
+
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
 
-  PluginDescription *description = new PluginDescription();
-  description->fileOrIdentifier = strdup(filepath);
   typeData->pluginDescription = description;
-
+  
   typeData->wrapper_type = AudioProcessor::wrapperType_VST;
 
   plugin_type->data = typeData;
@@ -471,10 +511,17 @@ void add_juce_plugin_type(const char *name, const char *filepath){
 
 
 void PLUGINHOST_init(void){
-  
+#if JUCE_LINUX // Seems like a separate thread is only necessary on linux.
+
   JuceThread *juce_thread = new JuceThread;
   juce_thread->startThread();
 
   while(juce_thread->isInited.get()==0)
     Thread::sleep(20);
+  
+#else
+  
+  initialiseJuce_GUI();
+
+#endif
 }

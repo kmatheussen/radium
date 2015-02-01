@@ -163,12 +163,14 @@ static void write_lines(const char* key, QVector<QString> lines){
   //getchar();  
 }
 
+#if 0
 static void append_line(const char** lines, const char* line){
   int i=0;
   while(lines[i]!=NULL)
     i++;
   lines[i] = line;
 }
+#endif
 
 static void SETTINGS_put(const char* key, QString val){
   QVector<QString> lines = get_lines(key);

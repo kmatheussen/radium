@@ -990,7 +990,7 @@ int main(int argc, char **argv){
 #endif
 
 #if defined(FOR_MACOSX)
-  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib" + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
   setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif

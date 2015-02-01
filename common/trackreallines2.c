@@ -110,6 +110,7 @@ static void spread_trackreallines(const struct WBlocks *wblock, vector_t *trs){
   }
 }
 
+#if 0
 static int get_notenum(vector_t *tr){
   if (tr->num_elements==0)
     return 0;
@@ -137,6 +138,7 @@ static void TRS_print(const struct WBlocks *wblock, vector_t *trs){
     printf("%d: %d\n",realline,notenum);
   }
 }
+#endif
 
 // Returns a pointer to an array of vectors (one vector for each realline), not a pointer to a vector.
 vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){

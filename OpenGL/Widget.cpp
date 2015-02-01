@@ -301,7 +301,7 @@ public:
 
     //printf("FLAGS: %d\n",QGLFormat::openGLVersionFlags());
     //gets(NULL);
-  
+
 #if FOR_LINUX
     if(0)set_realtime(SCHED_FIFO,1);
 #endif
@@ -409,9 +409,10 @@ private:
         current_height = new_height;
         current_width = new_width;
 
-      } else
+      } else {
         vg->clear();
-
+      }
+      
       GE_set_curr_realline(sv->curr_realline);
 
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);

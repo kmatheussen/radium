@@ -90,6 +90,7 @@ const int kVstMaxParamStrLen = 8;
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/OS_string_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/playerclass.h"
 
@@ -933,14 +934,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   AEffect *aeffect = type_data->get_plugin_instance(VSTS_audioMaster);
   if (aeffect == NULL){
     GFX_Message(NULL,"Loading VST plugin %s failed",plugin_type->name);
-    fprintf(stderr,"nope2\n");
-    //abort();
     return NULL;
   }
   if (aeffect->magic != kEffectMagic){
     GFX_Message(NULL,"Loading VST plugin %s failed. It doesn't seem to be a VST plugin...",plugin_type->name);
-    fprintf(stderr,"nope3\n");
-    //abort();
     return NULL;
   }
 
@@ -995,13 +992,13 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
 } // extern "C"
 
-void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
+bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
 
   //fprintf(stderr,"Trying to open \"%s\"\n",filename.toUtf8().constData());
   fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
-  
+
   QLibrary myLib(filename);
 
 
@@ -1017,14 +1014,14 @@ void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
 
 
   //fprintf(stderr,"Trying to resolve \"%s\"\n",filename.toUtf8().constData());
-
+  
   VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
   if (get_plugin_instance == NULL){
     fprintf(stderr,"(failed) ");
     fflush(stderr);
-    return;
+    return false;
   }
 
   QString basename = file_info.fileName();
@@ -1032,12 +1029,16 @@ void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
   basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
 #endif
 
-
   if (is_juce_plugin) {
-    add_juce_plugin_type(basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
-    return;
-  }
+    fprintf(stderr,"a5.6: %s %s",basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
 
+#if defined(FOR_MACOSX)
+    add_juce_plugin_type(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData(), STRING_create(file_or_identifier));
+#else
+    add_juce_plugin_type(basename.toUtf8().constData(), STRING_create(file_or_identifier));
+#endif
+    return true;
+  }
 
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
@@ -1075,8 +1076,11 @@ void add_vst_plugin_type(QFileInfo file_info, bool is_juce_plugin){
 
     PR_add_plugin_type(plugin_type);
   }
+
+  return true;
 }
 
+#if !defined(FOR_MACOSX)
 static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, bool is_juce_plugin)
 {
   QDir dir(sDir);
@@ -1106,12 +1110,13 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
       if (create_vst_plugins_recursively(file_path, time, is_juce_plugin)==false)
         return false;
     }else if(file_info.suffix()==VST_SUFFIX){
-      add_vst_plugin_type(file_info, is_juce_plugin);
+      add_vst_plugin_type(file_info, file_path, is_juce_plugin);
     }
   }
 
   return true;
 }
+#endif
 
 
 void create_vst_plugins(bool is_juce_plugin){
@@ -1126,14 +1131,17 @@ void create_vst_plugins(bool is_juce_plugin){
   QFileInfoList list = dir.entryInfoList();
   for (int i = 0; i < list.size(); ++i) {
     QFileInfo fileInfo = list.at(i);
+    QString file_or_identifier = fileInfo.absoluteFilePath();
+    
     QDir dir(fileInfo.absoluteFilePath() + "/Contents/MacOS/");
     dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     dir.setSorting(QDir::Name);
-    
+        
     QFileInfoList list = dir.entryInfoList();
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
-      add_vst_plugin_type(fileInfo, is_juce_plugin);
+      if (add_vst_plugin_type(fileInfo, file_or_identifier, is_juce_plugin)==true)
+        break; // i.e. there was a file in that directory that probably was a vst library file we could run.
     }
   }
 

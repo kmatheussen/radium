@@ -2,7 +2,7 @@
 #ifndef JUCE_PLUGIN_H_INCLUDED
 #define JUCE_PLUGIN_H_INCLUDED
 
-void add_juce_plugin_type(const char *name, const char *filepath);
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier);
 
 void PLUGINHOST_init(void);
 

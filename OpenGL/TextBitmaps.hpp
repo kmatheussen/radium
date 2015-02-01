@@ -86,7 +86,6 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
     QImage qtgl_image = qt_image;
     //QImage qtgl_image = QGLWidget::convertToGLFormat(qt_image);
     
-    //vl::ImagePBO *vl_image = new vl::ImagePBO;
     vl::ImagePBO *vl_image = new vl::ImagePBO;
     vl_image->setRefCountMutex(&image_mutex);
     vl_image->setAutomaticDelete(false);
@@ -109,7 +108,7 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
 }
   
 static const QString qfont_key(const QFont &font){ // From the qt documentation, it seems like it should work using a qfont as key, but I wasn't able to make it compile then.
-  return font.toString()+"#"+font.styleName().ascii();
+  return font.toString()+"#"+font.styleName().toUtf8().constData();
 }
 
 static inline QHash<char,ImageHolder> *add_new_font(const QFont &font){
@@ -221,6 +220,34 @@ struct TextBitmaps{
       x = addCharBox(text[i], x, y);
   }
 
+
+#if defined(RADIUM_DRAW_FONTS_DIRECTLY)
+
+  // Called from OpenGL thread.
+  // This one looks slightly better than the "ImageHolder" version below, and the code is a billion times simpler too (approx.), but it uses too much CPU. (needs more work though, can't just be enabled. By far, the biggest problem is to get a font file name from a QFont.)
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform){
+    QHash<char, std::vector<vl::dvec2> >::iterator i;
+    for (i = points.begin(); i != points.end(); ++i) {
+      char c = i.key();
+      std::vector<vl::dvec2> pointspoints = i.value();
+      //ImageHolder holder = (*imageholders)[c];
+
+      for (std::vector< vl::dvec2 >::iterator it = pointspoints.begin(); it != pointspoints.end(); ++it) {
+        vl::dvec2 points = *it;
+        //printf("drawing %c at %f,%f\n",c,points.x(),points.y());
+        //vl::ref<vl::Text> text = new vl::Text();
+        //text->setClampY(false);
+        
+        if(transform)
+          vg->drawText(points.x()-5, points.y()-5, vl::String(c))->setTransform(transform);
+        else
+          vg->drawText(points.x()-5, points.y()-5, vl::String(c));
+      }
+    }
+  }
+  
+#else
+  
   // Called from OpenGL thread
   void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform){
     QHash<char, std::vector<vl::dvec2> >::iterator i;
@@ -244,6 +271,7 @@ struct TextBitmaps{
 
     vg->setImage(NULL);
   }
+#endif
 
   //ImageHolder get_image_holder(char c){
   //  return image_holders[c];

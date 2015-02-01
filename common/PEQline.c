@@ -96,11 +96,11 @@ static void PlayerFirstLine(struct PEventQueue *peq,int doit){
 
 void PlayerNewLine(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
-        int org_line = peq->line;
 	int line=peq->line;
         //int time = peq->l.time;
 
 #ifdef WITH_PD
+        int org_line = peq->line;
         bool inserted_pd_line = false;
         int64_t org_time = peq->l.time;
 #endif

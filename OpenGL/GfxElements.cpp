@@ -483,6 +483,10 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 
   vg->startDrawing(); {
 
+#if defined(RADIUM_DRAW_FONTS_DIRECTLY)
+    vg->setFont("font/Cousine-Bold.ttf", 10, false);
+#endif
+    
     for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
 
       //int z = it.key();
