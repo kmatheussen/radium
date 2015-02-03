@@ -421,6 +421,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
   LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) myLib.resolve("ladspa_descriptor");
 
   if(get_descriptor_func==NULL){
+    myLib.unload();
     fprintf(stderr,"(failed) ");
     fflush(stderr);
     return;

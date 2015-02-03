@@ -1019,6 +1019,7 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
   if (get_plugin_instance == NULL){
+    myLib.unload();
     fprintf(stderr,"(failed) ");
     fflush(stderr);
     return false;
