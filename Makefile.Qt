@@ -93,6 +93,8 @@ QT_LDFLAGS ?= `$(PKG) --libs Qt3Support --libs QtOpenGL --libs QtNetwork`
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
 
+FREETYPE_CFLAGS ?= `$(PKG) pkg-config --cflags freetype2`
+
 VST_OPTS ?= -DUSE_VESTIGE=0
 
 CRASHREPORTER_OPTS ?= 
@@ -1600,8 +1602,8 @@ crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtra
 crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
-GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
+GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL` $(FREETYPE_CFLAGS)
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
