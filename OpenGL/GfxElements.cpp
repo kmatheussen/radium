@@ -466,11 +466,6 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
 
 
 void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
-  vg->setLineSmoothing(true);
-  vg->setPolygonSmoothing(true);
-  //vg->setPointSmoothing(true); /* default value */
-  vg->setPointSmoothing(false); // images are drawn using drawPoint.
-  //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
 
   GE_Rgb new_background_color;
 
@@ -486,7 +481,14 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 #if defined(RADIUM_DRAW_FONTS_DIRECTLY)
     vg->setFont("font/Cousine-Bold.ttf", 10, false);
 #endif
-    
+
+    vg->setLineSmoothing(true);
+    vg->setPolygonSmoothing(true);
+    //vg->setPointSmoothing(true); /* default value */
+    //vg->setPointSmoothing(root->editonoff); /* default value */
+    vg->setPointSmoothing(false); // images are drawn using drawPoint.
+    //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
+
     for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
 
       //int z = it.key();
@@ -515,7 +517,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
         if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
            
           setColorBegin(vg, c);
-        
+
           if(c->textbitmaps.points.size() > 0)
             c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
         

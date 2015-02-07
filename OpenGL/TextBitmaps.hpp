@@ -10,9 +10,18 @@
 #include <QGLWidget>
 #include <QMutex>
 #include <QSet>
+#include <QCoreApplication>
+#include <QDir>
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_error_proc.h"
+
+
+#define USE_FREETYPE 0
+
+#if USE_FREETYPE
+#include "FreeType.hpp"
+#endif
 
 
 namespace{
@@ -73,17 +82,31 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
   QPainter p(&qt_image);
   p.setPen(QColor(255, 255, 255, 255));
 
+  qfont.setHintingPreference(QFont::PreferFullHinting); // full hinting should look better
+
+  //QFontInfo info(qfont);
+  //qfont.setPixelSize(info.pixelSize()); // probably a no-op. Try to avoid non-integer pixel size. Don't know if it's any point though.
+                     
   p.setFont(qfont);
 
+#if USE_FREETYPE
+  FreeType freeType((QCoreApplication::applicationDirPath() + QDir::separator() + "fonts/Cousine-Bold.ttf").toUtf8().constData(), qfont.pointSize());
+#endif
+  
   for(int i=0;i<(int)strlen(chars);i++){
     char c = chars[i];
-    
+
+#if USE_FREETYPE
+    QImage qtgl_image = freeType.draw(c,width,height);
+#else
     qt_image.fill(QColor(0.0, 0.0, 0.0, 0));
     
     QRect rect(0,0,width,height);
     p.drawText(rect, Qt::AlignVCenter, QString(QChar(c)));
-    
+
     QImage qtgl_image = qt_image;
+#endif
+
     //QImage qtgl_image = QGLWidget::convertToGLFormat(qt_image);
     
     vl::ImagePBO *vl_image = new vl::ImagePBO;
