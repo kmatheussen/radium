@@ -456,7 +456,7 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return type_data->effect_names[effect_num];
 }
 
-void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier){
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, int uid){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
   //  return;
@@ -467,6 +467,8 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier){
 
   PluginDescription *description = new PluginDescription();
   description->fileOrIdentifier = String(file_or_identifier); // On mac, this can be "/Library/Audio/Plug-Ins/VST/Radium Compressor Stereo.vst", while on windows and linux, it's the path of the library file.
+  description->uid = uid;
+  description->hasSharedContainer = true;
 
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 

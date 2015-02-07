@@ -1013,16 +1013,24 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 #endif
 
 
-  //fprintf(stderr,"Trying to resolve \"%s\"\n",filename.toUtf8().constData());
-  
+  fprintf(stderr,"Trying to resolve \"%s\"\n",myLib.fileName().toUtf8().constData());
+
   VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
+
   if (get_plugin_instance == NULL){
-    fprintf(stderr,"(failed) ");
-    fflush(stderr);
+
+    //fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
+    //fflush(stderr);
+    //getchar();
+    myLib.unload();
     return false;
   }
+  //printf("okah\n");
+  //getchar();
+
+  int uid = 0;
 
   QString basename = file_info.fileName();
 #if !defined(FOR_MACOSX)
@@ -1033,10 +1041,11 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
     fprintf(stderr,"a5.6: %s %s",basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
 
 #if defined(FOR_MACOSX)
-    add_juce_plugin_type(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData(), STRING_create(file_or_identifier));
+    add_juce_plugin_type(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData(), STRING_create(file_or_identifier), uid);
 #else
-    add_juce_plugin_type(basename.toUtf8().constData(), STRING_create(file_or_identifier));
+    add_juce_plugin_type(basename.toUtf8().constData(), STRING_create(file_or_identifier), uid);
 #endif
+    myLib.unload();
     return true;
   }
 
