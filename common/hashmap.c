@@ -297,12 +297,14 @@ bool HASH_has_key(hash_t *hash, const char *key){
 static hash_element_t *HASH_get(hash_t *hash, const char *key, int i, int type){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
-  if(element==NULL)
+  if(element==NULL){
     RWarning("HASH_get. Element not found. key: \"%s\"/%d. hash: %p",key,i,hash);
-
+    return NULL;
+  }
+  
   if(element->type!=type){
     RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %d, found %d.",key,i,type,element->type);
-    element = NULL;
+    return NULL;
   }
 
   return element;
