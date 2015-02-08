@@ -64,6 +64,9 @@ const std::vector<PluginMenuEntry> &PR_get_menu_entries(void);
 void PR_add_menu_entry(PluginMenuEntry entry);
 #endif
 
+extern LANGSPEC void PR_set_init_vst_first(void);
+extern LANGSPEC void PR_set_init_ladspa_first(void);
+
 extern LANGSPEC void PR_add_plugin_type_no_menu(SoundPluginType *plugin_type);
 extern LANGSPEC void PR_add_plugin_type(SoundPluginType *plugin_type);
 extern LANGSPEC int PR_get_num_plugin_types(void);

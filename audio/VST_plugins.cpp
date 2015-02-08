@@ -96,6 +96,7 @@ const int kVstMaxParamStrLen = 8;
 #include "../common/OS_string_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/playerclass.h"
+#include "../common/vector_proc.h"
 
 
 #include "SoundPlugin.h"
@@ -1047,7 +1048,27 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   if (get_plugin_instance == NULL){
     fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
     fflush(stderr);
-    //getchar();
+    if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
+      vector_t v = {0};
+      
+      VECTOR_push_back(&v,"Init VST plugins first");
+      VECTOR_push_back(&v,"Continue starting radium without loading this plugin library.");
+      int result = GFX_Message(&v,
+                               "Error: Empty thread local storage.\n"
+                               "\n"
+                               "Unable to load \"%s\" VST library file.\n"
+                               "\n"
+                               "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by the TLS settings of an earlier loaded plugin (not this one!).\n"
+                               "\n"
+                               "You may be able to work around this problem by initing VST plugins before LADSPA plugins."
+                               "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.",
+                               myLib.fileName().toUtf8().constData());
+      if (result==0) {
+        PR_set_init_vst_first();
+        exit(0);
+      }
+
+    }
     myLib.unload();
     return false;
   }

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileDialog>
 
 #include "../common/nsmtracker.h"
+#include "../common/settings_proc.h"
 
 #include "SoundPlugin.h"
 #include "Jack_plugin_proc.h"
@@ -220,22 +221,50 @@ extern void create_stk_uni_bar_plugin(void);
 extern void create_stk_voice_form_plugin(void);
 
 
+void PR_set_init_vst_first(void){
+  SETTINGS_write_bool("init_vst_first", true);
+}
+
+void PR_set_init_ladspa_first(void){
+  SETTINGS_write_bool("init_vst_first", false);
+}
+
+bool PR_is_initing_vst_first(void){
+  return SETTINGS_read_bool("init_vst_first", false);
+}
+
+
+
 void PR_init_plugin_types(void){
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
 
-  create_ladspa_plugins();
-  PR_add_menu_entry(PluginMenuEntry::separator());
+  if (PR_is_initing_vst_first()){
+
+    PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
+      create_vst_plugins(true);
+    }PR_add_menu_entry(PluginMenuEntry::level_down());
+
+    PR_add_menu_entry(PluginMenuEntry::separator());
+    
+    create_ladspa_plugins();
+
+  } else {
+
+    create_ladspa_plugins();
+    PR_add_menu_entry(PluginMenuEntry::separator());
+
+    PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
+      create_vst_plugins(true);
+    }PR_add_menu_entry(PluginMenuEntry::level_down());
+  
+  }
 
   /*
   PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
     create_vst_plugins(false);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
   */
-  
-  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
-    create_vst_plugins(true);
-  }PR_add_menu_entry(PluginMenuEntry::level_down());
   
   PR_add_menu_entry(PluginMenuEntry::separator());
 
