@@ -1059,20 +1059,12 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   QString basename = file_info.fileName();
 
 #if defined(FOR_MACOSX)
-<<<<<<< HEAD
-    add_juce_plugin_type(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData(), STRING_create(file_or_identifier), uid);
-#else
-    add_juce_plugin_type(basename.toUtf8().constData(), STRING_create(file_or_identifier), uid);
-#endif
-    myLib.unload();
-=======
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
 #else
   basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
   const char *plugin_name = talloc_strdup(basename.toUtf8().constData());
 #endif
-    
-  
+
   if (is_juce_plugin) {
 
     if (!plugin_is_known_nonshell_plugin(file_info.baseName())) {
@@ -1111,7 +1103,6 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
     // It's a non-shell VST plugin.
     
     add_juce_plugin_type(plugin_name, STRING_create(file_or_identifier), 0, false);
->>>>>>> b7ea603f12312b9fddb9aa0f74c8704b962039bf
     return true;
   
   }
