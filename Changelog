@@ -1,4 +1,20 @@
 
+Most important changes 3.0.rc4 -> 3.0.rc5
+* Workaround for empty TLS when loading VST plugins
+  (Fix for u-he plugins)
+* Support VST shell plugins
+* Fix VST GUI close and re-open (not just show/hide window)
+* VST sub menues
+* Only keep LADSPA plugin libraries in memory when they are used
+* Cleaned up native keyboard handling a little bit
+* Force message window in front
+* Various OSX fixes
+* Improved gfx driver warnings
+* Give specific information about Intel GFX, instead of warning about using MESA
+* fix "./" in the sample file requester
+* More unicode fixes
+
+
 Most important changes 3.0.rc3 -> 3.0.rc4
 * Make sure packages are not built with -march=native for the binaries
 * Fix nasty memory corruption bug (introduced in 3.0.rc3)
