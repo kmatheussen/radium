@@ -63,6 +63,9 @@ const int effGetChunk = 23;
 const int effSetChunk = 24;
 const int effFlagsProgramChunks = 32;
 
+const int kPlugCategShell = 10;
+const int effShellGetNextPlugin = 70;
+
 const int kVstMaxParamStrLen = 8;
 
 #else //  USE_VESTIGE
@@ -120,6 +123,13 @@ extern "C"{
   typedef AEffect* (*VST_GetPluginInstance) (audioMasterCallback);
 }
 
+// Not necessary to load non-shell plugins during startup. In addition, some of these are, or can be, buggy.
+static const char *known_nonshell_plugins[] = {"3BandEQ", "drumsynth", "JuceDemoPlugin", "mdaDelay", "mdaLimiter", "mdaSplitter", "nekobeevst", "TheFunction", "3BandSplitter", "eqinox", "kmeter_stereo_x64", "mdaDetune", "mdaLooplex", "mdaStereo", "NewProject", "StringVST", "ThePilgrim", "AspectVST", "eqinoxvst", "kmeter_surround_x64", "mdaDither", "mdaLoudness", "mdaSubSynth", "peggy2000vst", "TAL-Dub-3", "tonespace", "bitmanglervst", "freeverb", "mdaDubDelay", "mdaMultiBand", "mdaTalkBox", "PingPongPan", "TAL-Filter-2", "wolpertingervst", "capsaicin", "mdaDX10", "mdaOverdrive", "mdaTestTone", "radium_compressor", "TAL-Filter", "glitch2", "mdaAmbience", "mdaDynamics", "mdaPiano", "mdaThruZero", "tal-filtervst", "drowaudio-distortionshaper", "gr-eq2", "mdaBandisto", "mdaEnvelope", "mdaRePsycho!", "mdaTracker", "soundcrabvst", "TAL-NoiseMaker", "zita_vst", "drowaudio-distortion", "highlifevst_juced", "mdaBeatBox", "mdaEPiano", "mdaRezFilter", "mdaTransient", "TAL-Reverb-2", "drowaudio-flanger", "highlifevst", "mdaCombo", "mdaImage", "mdaRingMod", "mdaVocInput", "TAL-Reverb-3", "drowaudio-reverb", "HybridReverb2", "mdaDe-ess", "mdaJX10", "mdaRoundPan", "mdaVocoder", "tal-reverbvst", "drowaudio-tremolo", "jostvst", "mdaDegrade", "mdaLeslie", "mdaShepard", "midiSimpleLFO", "String_FXVST", "TAL-Vocoder-2", "wolpertingervst", "soundcrabvst", "mdaVocoder", "mdaTalkBox", "mdaRingMod", "mdaLoudness", "mdaEPiano", "mdaDetune", "mdaBandisto", "freeverb", "tonespace", "Compressor", "mdaVocInput", "mdaSubSynth", "mdaRezFilter", "mdaLooplex", "mdaEnvelope", "mdaDelay", "mdaAmbience", "eqinoxvst", "tal-reverbvst", "radium_compressor", "mdaTransient", "mdaStereo", "mdaRePsycho!", "mdaLimiter", "mdaDynamics", "mdaDegrade", "jostvst", "bitmanglervst", "tal-filtervst", "peggy2000vst", "mdaTracker", "mdaSplitter", "mdaPiano", "mdaLeslie", "mdaDX10", "mdaDe-ess", "highlifevst", "AspectVST", "StringVST", "nekobeevst", "mdaThruZero", "mdaShepard", "mdaOverdrive", "mdaJX10", "mdaDubDelay", "mdaCombo", "highlifevst_juced", "String_FXVST", "midiSimpleLFO", "mdaTestTone", "mdaRoundPan", "mdaMultiBand", "mdaImage", "mdaDither", "mdaBeatBox", "gr-eq2", "AspectVST", "kmeter_surround_x64", "kmeter_stereo_x64", "Radium Compressor Mono", "Radium Compressor Stereo", NULL};
+
+// These are not banned (could be me having too old version for instance). But they are, like all known non-shell plugins, not loaded during program startup.
+static const char *known_nonshell_notworking_plugins[] = {"analyzervst", "argotlunar", "capsaicinvst", "drumsynthvst", "vexvst", "TAL-Reverb", NULL};
+
+
 #define MAX_EVENTS 512
 
 namespace{ // Use namespace since we already have a widget called EditorWidget. (stupid c++, doesn't even give a warning)
@@ -142,8 +152,7 @@ namespace{ // Use namespace since we already have a widget called EditorWidget. 
     VST_GetPluginInstance get_plugin_instance;
     TypeDataParam *params;
   };
-
-
+  
 #ifdef __linux__
 
 // The rest of the code inside this namespace is first copied from the file src/qtracktorVstPlugin.c in QTractor (http://qtractor.sourceforge.net/)
@@ -431,6 +440,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
                       void* ptr,
                       float opt)
 {
+  printf("Audiomaster called. opcode: %d\n",opcode);
 #if 1 // If vst_tilde audioMaster (else plugin_tilde audioMaster)
 	// Support opcodes
   switch(opcode){
@@ -441,7 +451,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     return 9;		// vst version, currently 7 (0 for older)
     
   case audioMasterCurrentId:			
-    return 0x951432;	// returns the unique id of a plug that's currently loading
+    return 0; //0x951432;	// returns the unique id of a plug that's currently loading
     
   case audioMasterIdle:
     effect->dispatcher(effect, effEditIdle, 0, 0, NULL, 0.0f);
@@ -992,6 +1002,21 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
 } // extern "C"
 
+
+static bool name_is_in_list(QString name, const char *names[]){
+  int i=0;
+  while(names[i]!=NULL){
+    if (name==names[i])
+      return true;
+    i++;
+  }
+  return false;
+}
+
+static bool plugin_is_known_nonshell_plugin(QString basename){
+  return name_is_in_list(basename, known_nonshell_plugins) || name_is_in_list(basename, known_nonshell_notworking_plugins);
+}
+    
 bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
 
@@ -1026,19 +1051,55 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   }
 
   QString basename = file_info.fileName();
-#if !defined(FOR_MACOSX)
-  basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
-#endif
-
-  if (is_juce_plugin) {
-    fprintf(stderr,"a5.6: %s %s",basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
 
 #if defined(FOR_MACOSX)
-    add_juce_plugin_type(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData(), STRING_create(file_or_identifier));
+  const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
 #else
-    add_juce_plugin_type(basename.toUtf8().constData(), STRING_create(file_or_identifier));
+  basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
+  const char *plugin_name = talloc_strdup(basename.toUtf8().constData());
 #endif
+    
+  
+  if (is_juce_plugin) {
+
+    if (!plugin_is_known_nonshell_plugin(file_info.baseName())) {
+      
+      AEffect *effect = get_plugin_instance(VSTS_audioMaster);
+      if (effect == NULL)
+        return false;
+      if (effect->magic != kEffectMagic)
+        return false;
+      
+      const int category = effect->dispatcher(effect, effGetPlugCategory, 0, 0, NULL, 0.0f);
+      //printf("category: %d (%s)\n",category,basename.toUtf8().constData());
+      //getchar();
+      
+      if (category == kPlugCategShell) {
+        int id = 0;
+        char buf[40];
+        fprintf(stderr,"found shell vst plugin %s %s\n",basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
+        
+        while(true){
+          buf[0] = (char) 0; // these lines are copied from qtractor
+          id = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, (void *) buf, 0.0f);
+          if (id == 0 || buf[0]==0)
+            break;
+          //add_juce_plugin_type(talloc_format("%s: %s",plugin_name,buf), STRING_create(file_or_identifier), id);
+          add_juce_plugin_type(buf, STRING_create(file_or_identifier), id, true);
+        }
+
+        effect->dispatcher(effect, effClose, 0, 0, NULL, 0.0f);
+        return true;
+      }
+
+      effect->dispatcher(effect, effClose, 0, 0, NULL, 0.0f);
+    }
+
+    // It's a non-shell VST plugin.
+    
+    add_juce_plugin_type(plugin_name, STRING_create(file_or_identifier), 0, false);
     return true;
+  
   }
 
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
@@ -1097,7 +1158,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
 
     if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;
-      msgBox.setText("Have used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
+      msgBox.setText("We have currently used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
       msgBox.addButton(QMessageBox::Yes);
       msgBox.addButton(QMessageBox::No);
       int ret = msgBox.exec();
@@ -1108,8 +1169,13 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
     }
 
     if (file_info.isDir()) {
-      if (create_vst_plugins_recursively(file_path, time, is_juce_plugin)==false)
+      PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
+      bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin);
+      PR_add_menu_entry(PluginMenuEntry::level_down());
+
+      if (!continuing)
         return false;
+        
     }else if(file_info.suffix()==VST_SUFFIX){
       add_vst_plugin_type(file_info, file_path, is_juce_plugin);
     }

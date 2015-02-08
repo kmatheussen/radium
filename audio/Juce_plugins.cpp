@@ -41,7 +41,6 @@ namespace{
   struct Data{
     AudioPluginInstance *audio_instance;
     PluginWindow *window;
-    AudioProcessorEditor *editor;
 
     MyAudioPlayHead *playHead;
 
@@ -51,13 +50,17 @@ namespace{
     int num_input_channels;
     int num_output_channels;
 
+    int x;
+    int y;
+    
     Data(AudioPluginInstance *audio_instance, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
       , window(NULL)
-      , editor(NULL)
       , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
       , num_input_channels(num_input_channels)
       , num_output_channels(num_output_channels)
+      , x(-1)
+      , y(-1)
     {}
   };
 
@@ -105,20 +108,32 @@ namespace{
   };
 
   struct PluginWindow  : public DocumentWindow {
-    PluginWindow(const char *title)
+    Data *data;
+    
+    PluginWindow(const char *title, Data *data)
       : DocumentWindow (title,
                         Colours::lightgrey,
                         DocumentWindow::allButtons,
                         true)
+      , data(data)
     {
       // Centre the window on the screen
-      centreWithSize (getWidth(), getHeight());      
     }
 
+    ~PluginWindow(){
+      data->window = NULL;
+    }
+    
     void closeButtonPressed() override
     {
-      setVisible(false);
+      delete this;      
     }
+
+    void moved() override {
+      data->x = getX();
+      data->y = getY();
+    }
+
   };
 
 #if JUCE_LINUX
@@ -237,22 +252,30 @@ static void show_gui(struct SoundPlugin *plugin){
 #if JUCE_LINUX
   const MessageManagerLock mmLock;
 #endif
-  
+
   Data *data = (Data*)plugin->data;
 
   if (data->window==NULL) {
-    data->window = new PluginWindow(strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name));
+
+    const char *title = strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
+    data->window = new PluginWindow(title, data);
+
+    if (data->x < 0 || data->y < 0)
+      data->window->centreWithSize (data->window->getWidth(), data->window->getHeight());
+    else {
+      data->window->setTopLeftPosition(data->x, data->y);
+    }
     
-    data->editor = data->audio_instance->createEditor();
+    AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
+    editor->setName (data->audio_instance->getName());
 
-    data->window->setContentOwned(data->editor, true);
+    data->window->setContentOwned(editor, true);
     data->window->setUsingNativeTitleBar(true);
-
-    data->editor->setVisible(true);
   }
 
   data->window->setVisible(true);
 }
+
 
 static void hide_gui(struct SoundPlugin *plugin){
 #if JUCE_LINUX
@@ -261,8 +284,7 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  if (data->window!=NULL && data->editor!=NULL)
-    data->window->setVisible(false);
+  delete data->window; // might be NULL. (data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.)
 }
 
 
@@ -326,6 +348,45 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     type_data->effect_names[i] = strdup(audio_instance->getParameterName(i).toRawUTF8());
 }
 
+
+static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+  
+  Data *data = (Data*)plugin->data;
+  
+  AudioPluginInstance *audio_instance = data->audio_instance;
+
+  if (HASH_has_key(state, "audio_instance_state")) {
+    const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
+    MemoryBlock sourceData;
+    sourceData.fromBase64Encoding(stateAsString);
+    audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
+  }
+
+  
+  if (HASH_has_key(state, "audio_instance_current_program")) {
+    int current_program = HASH_get_int(state, "audio_instance_current_program");
+    audio_instance->setCurrentProgram(current_program);
+  }
+
+  if (HASH_has_key(state, "audio_instance_program_state")){
+    const char *programStateAsString = HASH_get_chars(state, "audio_instance_program_state");
+    MemoryBlock sourceData;
+    sourceData.fromBase64Encoding(programStateAsString);
+    
+    audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
+  }
+  
+  if (HASH_has_key(state, "x_pos"))
+    data->x = HASH_get_int(state, "x_pos");
+  
+  if (HASH_has_key(state, "y_pos"))
+    data->y = HASH_get_int(state, "y_pos");
+}
+
+
 static int num_running_plugins = 0;
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
@@ -350,29 +411,16 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   }
 
   Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
+  plugin->data = data;
   
   if(type_data->effect_names==NULL)
     set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
-
-  // load program state
-  if (state!=NULL) {
-
-    if (HASH_has_key(state, "audio_instance_current_program")) {
-      int current_program = HASH_get_int(state, "audio_instance_current_program");
-      audio_instance->setCurrentProgram(current_program);
-    }
-
-    const char *stateAsString = HASH_get_chars(state, "audio_instance_program_state");
-    if (stateAsString != NULL) {
-      MemoryBlock sourceData;
-      sourceData.fromBase64Encoding(stateAsString);
-      
-      audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
-    }
-  }
+  
+  if (state!=NULL)
+    recreate_from_state(plugin, state);
 
   num_running_plugins++;
-    
+
   return data;
 }
 
@@ -409,24 +457,9 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   }
 
   HASH_put_int(state, "audio_instance_current_program", audio_instance->getCurrentProgram());
-}
 
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-#if JUCE_LINUX
-  const MessageManagerLock mmLock;
-#endif
-  
-  Data *data = (Data*)plugin->data;
-  
-  AudioPluginInstance *audio_instance = data->audio_instance;
-
-  const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
-  if (stateAsString != NULL) {
-    MemoryBlock sourceData;
-    sourceData.fromBase64Encoding(stateAsString);
-
-    audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
-  }
+  HASH_put_int(state, "x_pos", data->x);
+  HASH_put_int(state, "y_pos", data->y);
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
@@ -456,7 +489,7 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return type_data->effect_names[effect_num];
 }
 
-void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier){
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, int id, bool is_shell_plugin){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
   //  return;
@@ -467,7 +500,9 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier){
 
   PluginDescription *description = new PluginDescription();
   description->fileOrIdentifier = String(file_or_identifier); // On mac, this can be "/Library/Audio/Plug-Ins/VST/Radium Compressor Stereo.vst", while on windows and linux, it's the path of the library file.
-
+  description->uid = id;
+  description->hasSharedContainer = is_shell_plugin;
+    
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
