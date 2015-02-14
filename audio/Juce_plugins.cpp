@@ -14,6 +14,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/patch_proc.h"
 #include "../common/PEQ_LPB_proc.h"
+#include "../common/visual_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"

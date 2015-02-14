@@ -404,10 +404,13 @@
                                                Num-tracks))
 
 (define-match get-track-num
-  X Y :> (get-track-num-0 X Y 0
-                          (ra:get-track-x1 0)
-                          (ra:get-track-x1 1)
-                          (ra:get-num-tracks)))
+  X Y :> (let ((Num-tracks (ra:get-num-tracks)))
+           (if (= 1 Num-tracks)
+               0
+               (get-track-num-0 X Y 0
+                                (ra:get-track-x1 0)
+                                (ra:get-track-x1 1)
+                                Num-tracks))))
                                                    
   
 #||

@@ -701,6 +701,10 @@ static void show_message_box(QMessageBox *box){
   qApp->processEvents();
 }
 
+
+
+extern "C" void cocoa_set_best_resolution(void *view);
+  
 static void setup_widget(QWidget *parent){
   vl::VisualizationLibrary::init();
 
@@ -721,10 +725,18 @@ static void setup_widget(QWidget *parent){
   widget->show();
 
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
+
+
+
 }
 
 QWidget *GL_create_widget(QWidget *parent){
 
+#if defined(FOR_MACOSX)
+  // doesn't work.
+  //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
+#endif
+  
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
     return NULL;
