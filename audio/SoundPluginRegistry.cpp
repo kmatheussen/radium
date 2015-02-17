@@ -36,16 +36,41 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPluginRegistry_proc.h"
 
 static std::vector<SoundPluginType*> g_plugin_types;
+static std::vector<SoundPluginTypeContainer*> g_plugin_type_containers;
 
 int PR_get_num_plugin_types(void){
   return g_plugin_types.size();
 }
 
-SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
+static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
+  return PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
+}
+
+SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name){
   for(unsigned int i=0;i<g_plugin_types.size();i++)
     if(!strcmp(g_plugin_types.at(i)->type_name,type_name))
       if(!strcmp(g_plugin_types.at(i)->name,plugin_name))
         return g_plugin_types.at(i);
+
+  // check if the container needs to be populated.
+  if (container_name != NULL){
+    for(unsigned int i=0;i<g_plugin_type_containers.size();i++) {
+      SoundPluginTypeContainer *container = g_plugin_type_containers.at(i);
+      if (!container->is_populated){
+        if(!strcmp(container->type_name,type_name)){
+          if(!strcmp(container->name,container_name)){
+            container->populate(container);
+            return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+          }
+        }
+      }
+    }
+  }
+
+  // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
+  if(!strcmp(type_name,"VST") && container_name==NULL){
+    return PR_get_plugin_type_by_name(plugin_name,type_name,plugin_name);
+  }
 
   if(!strcmp(type_name,"VST")){
     while(true){
@@ -69,7 +94,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *p
         if(basename==QString(plugin_name) && info.exists()){
           VST_add_path(info.dir().path());
           PR_init_plugin_types();
-          return PR_get_plugin_type_by_name(type_name, plugin_name);
+          return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
         }
       }
     }
@@ -177,6 +202,11 @@ void PR_add_plugin_type(SoundPluginType *type){
     return;
 
   PR_add_menu_entry(PluginMenuEntry::normal(type));
+}
+
+void PR_add_plugin_container(SoundPluginTypeContainer *container){
+  g_plugin_type_containers.push_back(container);
+  PR_add_menu_entry(PluginMenuEntry::container(container));
 }
 
 //extern "C" void create_sine_plugin(void);

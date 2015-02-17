@@ -591,6 +591,8 @@ SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x
       char patchname[200];
       if(name!=NULL)
         snprintf(patchname,198,"%s",name);
+      //else if(plugin->name != NULL)
+      //  snprintf(patchname,198,"%s %d",plugin->name,++plugin_type->instance_num);
       else
         snprintf(patchname,198,"%s %d",plugin_type->name,++plugin_type->instance_num);
       struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, patchname);

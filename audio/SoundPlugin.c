@@ -220,7 +220,7 @@ static void init_system_filter(SystemFilter *filter, int num_channels, const cha
   filter->plugins=calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
     filter->plugins[ch] = calloc(1, sizeof(SoundPlugin));
-    filter->plugins[ch]->type = PR_get_plugin_type_by_name("Faust",name);
+    filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, "Faust",name);
     filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
     filter->was_off = true;
     filter->was_on = false;
@@ -1042,8 +1042,11 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   hash_t *state=HASH_create(5);
 
-  HASH_put_chars(state, "type_name", plugin->type->type_name);
-  HASH_put_chars(state, "name", plugin->type->name);
+  HASH_put_chars(state, "type_name", type->type_name);
+  HASH_put_chars(state, "name", type->name);
+
+  if (type->container!=NULL)
+    HASH_put_chars(state, "container_name", type->container->name);
 
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
@@ -1077,10 +1080,11 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 }
 
 SoundPlugin *PLUGIN_create_from_state(hash_t *state){
+  const char *container_name = HASH_has_key(state, "container_name") ? HASH_get_chars(state, "container_name") : NULL;
   const char *type_name = HASH_get_chars(state, "type_name");
   const char *name = HASH_get_chars(state, "name");
 
-  const SoundPluginType *type = PR_get_plugin_type_by_name(type_name,name);
+  const SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, name);
                           
   if(type==NULL){
     RError("The \"%s\" plugin called \"%s\" was not found",type_name,name);

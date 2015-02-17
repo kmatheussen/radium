@@ -28,9 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct PluginMenuEntry{
   SoundPluginType *plugin_type;
+  SoundPluginTypeContainer *plugin_type_container;
   const char *level_up_name;
   enum{
     IS_NORMAL = 0,
+    IS_CONTAINER,
     IS_SEPARATOR,
     IS_LEVEL_UP,
     IS_LEVEL_DOWN
@@ -57,6 +59,12 @@ struct PluginMenuEntry{
     entry.type=IS_NORMAL;
     return entry;
   }
+  static PluginMenuEntry container(SoundPluginTypeContainer *plugin_type_container){
+    PluginMenuEntry entry;
+    entry.plugin_type_container = plugin_type_container;
+    entry.type=IS_CONTAINER;
+    return entry;
+  }
 };
 
 const std::vector<PluginMenuEntry> &PR_get_menu_entries(void);
@@ -69,7 +77,8 @@ extern LANGSPEC void PR_set_init_ladspa_first(void);
 
 extern LANGSPEC void PR_add_plugin_type_no_menu(SoundPluginType *plugin_type);
 extern LANGSPEC void PR_add_plugin_type(SoundPluginType *plugin_type);
+extern LANGSPEC void PR_add_plugin_container(SoundPluginTypeContainer *container);
 extern LANGSPEC int PR_get_num_plugin_types(void);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type(int num);
-extern LANGSPEC SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name);
+extern LANGSPEC SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name);
 extern LANGSPEC void PR_init_plugin_types(void);

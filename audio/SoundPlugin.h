@@ -134,13 +134,17 @@ struct SoundPluginEffect{
 #endif
 
 
+struct SoundPluginTypeContainer;
+
 // Note that only the fields 'name' and 'is_instrument' will be accessed before the call to 'create_plugin_data'.
 // The 'is_instrument' field will also be re-read after a call to 'create_plugin_data', in case it had the wrong value before.
 typedef struct SoundPluginType{
   const char *type_name; // I.e. Ladspa / Vst / FluidSynth / etc. Must be unique.
   const char *name;      // i.e. zita-reverb / low-pass filter / etc. Must be unique within plugins with the same type_name.
 
-  const char *info;     // Contains text inside the info box which appear when pressing the button with the name of the plugin. Can be NULL.
+  struct SoundPluginTypeContainer *container; // In case it is loaded from a container. (for instance a vst shell plugin)
+
+  const char *info;     // Contains text inside the info box which appear when pressing the button with the name of the plugin. Can be NULL.                               
 
   int num_inputs;
   int num_outputs;
@@ -211,6 +215,20 @@ typedef struct SoundPluginType{
 
 } SoundPluginType;
 
+typedef struct SoundPluginTypeContainer{
+  const char *type_name;
+
+  const char *name;
+  void *data;
+
+  int num_types;
+  SoundPluginType **plugin_types;
+
+  bool is_populated;
+  void (*populate)(struct SoundPluginTypeContainer *container); // Note: populate might be called even if 'is_populated' is true. (If that happens, just do nothing.)
+
+} SoundPluginTypeContainer;
+
 typedef struct SystemFilter{
   struct SoundPlugin **plugins;
   bool is_on;
@@ -233,6 +251,8 @@ typedef struct SoundPlugin{
 
   // Data below handled by Radium.
 
+  //const char *name; // Used to autocreate instance name. Sometime the type_name is not specific enough. (plugin containers). Can be NULL.
+  
   struct Patch *patch; // The patch points to the plugin and the plugin points to the patch. However, the patch outlives the plugin. Plugin comes and goes, while the patch stays.
                        // Beware that this value might be NULL.
 

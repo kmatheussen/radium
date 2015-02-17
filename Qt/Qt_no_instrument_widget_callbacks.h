@@ -81,7 +81,7 @@ public slots:
     if(initing==true)
       return;
 
-    add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
+    add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL);
   }
 
   void on_create_fluidsynth_clicked()
@@ -90,7 +90,7 @@ public slots:
     if(initing==true)
       return;
 
-    add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
+    add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
   }
 
   void on_use_system_colors_stateChanged(int state){

@@ -81,7 +81,7 @@ struct TypeData{
   const LADSPA_Descriptor *descriptor;
   int index; // index in this file
 
-  int UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
+  unsigned int UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
   const char *Name; // same here
   
   float output_control_port_value;

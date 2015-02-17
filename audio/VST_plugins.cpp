@@ -1017,7 +1017,115 @@ static bool name_is_in_list(QString name, const char *names[]){
 static bool plugin_is_known_nonshell_plugin(QString basename){
   return name_is_in_list(basename, known_nonshell_plugins) || name_is_in_list(basename, known_nonshell_notworking_plugins);
 }
+
+namespace{
+struct MyQLibrary : public QLibrary {
+  
+  MyQLibrary(QString filename)
+    : QLibrary(filename)
+  {}
+      
+  ~MyQLibrary() {
+    unload();
+  }
+};
+}
+
+vector_t *VST_get_uids(const wchar_t *w_filename){
+  vector_t *uids = (vector_t*)talloc(sizeof(vector_t));
+  bool effect_opened = false;
+
+  QString filename = STRING_get_qstring(w_filename);
+  const char *plugin_name = STRING_get_chars(w_filename);
+  
+  MyQLibrary myLib(filename);
+  
+  VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
+
+  if (get_plugin_instance == NULL){
+    fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
+    fflush(stderr);
+    if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
+      vector_t v = {0};
+      
+      VECTOR_push_back(&v,"Init VST plugins first");
+      VECTOR_push_back(&v,"Continue starting radium without loading this plugin library.");
+      int result = GFX_Message(&v,
+                               "Error: Empty thread local storage.\n"
+                               "\n"
+                               "Unable to load \"%s\" VST library file.\n"
+                               "\n"
+                               "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by the TLS settings of an earlier loaded plugin (not this one!).\n"
+                               "\n"
+                               "You may be able to work around this problem by initing VST plugins before LADSPA plugins."
+                               "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.",
+                               myLib.fileName().toUtf8().constData());
+      if (result==0)
+        PR_set_init_vst_first();
+
+    }
+
+    return uids;
+  }
+  
+  AEffect *effect = get_plugin_instance(VSTS_audioMaster);
+  if (effect == NULL)
+    return uids;
+
+  if (effect->magic != kEffectMagic)
+    return uids;
+
+  effect->dispatcher(effect, effOpen, 0, 0, NULL, 0.0f);
+  effect_opened = true;
+
+  const int category = effect->dispatcher(effect, effGetPlugCategory, 0, 0, NULL, 0.0f);
+  //printf("category: %d (%s)\n",category,basename.toUtf8().constData());
+  //getchar();
+  
+  if (category == kPlugCategShell) {
+    char buf[40];
+    fprintf(stderr,"found shell vst plugin %s\n",filename.toUtf8().constData());
+
+    while(true){
+      buf[0] = (char) 0; // these lines are copied from qtractor
+      int uid = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, (void *) buf, 0.0f);
+
+      printf("UID: %d\n",uid);
+      
+      if (uid == 0 || buf[0]==0)
+        break;
+
+      radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+      ruid->name = talloc_strdup(buf);
+      ruid->uid = uid;
+
+      VECTOR_push_back(uids, ruid);
+    }
+
+    if (uids->num_elements==0) {
+      GFX_Message(NULL, "Shell plugin %s does not seem to contain any plugins\n", plugin_name);
+      goto exit;
+    }
+
+  } else {
+
+    radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+    ruid->name = NULL; //talloc_strdup(plugin_name);
+    ruid->uid = 0;
     
+    VECTOR_push_back(uids, ruid);
+
+  }
+
+ exit:
+
+  if (effect_opened)
+    effect->dispatcher(effect, effClose, 0, 0, NULL, 0.0f);
+
+  return uids;
+}
+
+
 bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin){
   QString filename = file_info.absoluteFilePath();
 
@@ -1075,8 +1183,6 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   //printf("okah\n");
   //getchar();
 
-  int uid = 0;
-
   QString basename = file_info.fileName();
 
 #if defined(FOR_MACOSX)
@@ -1087,45 +1193,8 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 #endif
 
   if (is_juce_plugin) {
-
-    if (!plugin_is_known_nonshell_plugin(file_info.baseName())) {
-      
-      AEffect *effect = get_plugin_instance(VSTS_audioMaster);
-      if (effect == NULL)
-        return false;
-      if (effect->magic != kEffectMagic)
-        return false;
-      
-      const int category = effect->dispatcher(effect, effGetPlugCategory, 0, 0, NULL, 0.0f);
-      //printf("category: %d (%s)\n",category,basename.toUtf8().constData());
-      //getchar();
-      
-      if (category == kPlugCategShell) {
-        int id = 0;
-        char buf[40];
-        fprintf(stderr,"found shell vst plugin %s %s\n",basename.toUtf8().constData(), file_info.absoluteFilePath().toUtf8().constData());
-        
-        while(true){
-          buf[0] = (char) 0; // these lines are copied from qtractor
-          id = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, (void *) buf, 0.0f);
-          if (id == 0 || buf[0]==0)
-            break;
-          //add_juce_plugin_type(talloc_format("%s: %s",plugin_name,buf), STRING_create(file_or_identifier), id);
-          add_juce_plugin_type(buf, STRING_create(file_or_identifier), id, true);
-        }
-
-        effect->dispatcher(effect, effClose, 0, 0, NULL, 0.0f);
-        return true;
-      }
-
-      effect->dispatcher(effect, effClose, 0, 0, NULL, 0.0f);
-    }
-
-    // It's a non-shell VST plugin.
-    
-    add_juce_plugin_type(plugin_name, STRING_create(file_or_identifier), 0, false);
-    return true;
-  
+    add_juce_plugin_type(plugin_name, STRING_create(file_or_identifier), STRING_create(filename));
+    return true;  
   }
 
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());

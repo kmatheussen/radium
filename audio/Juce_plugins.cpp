@@ -21,6 +21,9 @@
 
 #include "SoundPluginRegistry_proc.h"
 
+#include "VST_plugins_proc.h"
+
+
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
 #include "../pluginhost/JuceLibraryCode/AppConfig.h"
@@ -103,9 +106,17 @@ namespace{
   static MyAudioPlayHead myAudioPlayHead;
 
   struct TypeData{
-    const PluginDescription* pluginDescription;
+    const wchar_t *file_or_identifier; // used by QLibrary
+    int uid;
+    const wchar_t *library_file_full_path; // used by Juce
     AudioProcessor::WrapperType wrapper_type;
-    const char **effect_names;
+    const char **effect_names; // set the first time the plugin is loaded
+  };
+
+  struct ContainerData{
+    const wchar_t *file_or_identifier; // used by QLibrary
+    const wchar_t *library_file_full_path; // used by Juce
+    AudioProcessor::WrapperType wrapper_type;
   };
 
   struct PluginWindow  : public DocumentWindow {
@@ -289,22 +300,36 @@ static void hide_gui(struct SoundPlugin *plugin){
 }
 
 
-static AudioPluginInstance *get_audio_instance(const PluginDescription *description, float sample_rate, int block_size){
+static AudioPluginInstance *get_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
   static bool inited=false;
 
   static AudioPluginFormatManager formatManager;
-  
+    
   if (inited==false){
     formatManager.addDefaultFormats();
     inited=true;
   }
 
+  
+  //int uid = VST_get_uid(type_data->library_file_full_path);
+  //printf("uid: %d\n",uid);
+  //getchar();
+  //((PluginDescription*)description)->uid = uid;
+
+  //if (uid==-1)
+  //  return NULL;
+  
   String errorMessage;
 
-  AudioPluginInstance *instance = formatManager.createPluginInstance(*description,sample_rate,block_size,errorMessage);
+  PluginDescription description;
+  
+  description.fileOrIdentifier = String(type_data->file_or_identifier);
+  description.uid = type_data->uid;
+      
+  AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
 
   if (instance==NULL){
-    RError("Unable to open VST plugin %s: %s\n",description->fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+    RError("Unable to open VST plugin %s: %s\n",description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
     return NULL;
   }
 
@@ -338,7 +363,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     }
   }
 
-  plugin_type->info = strdup(talloc_format("%sAccepts MIDI: %s\nProduces midi: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
+  plugin_type->info = strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
@@ -406,10 +431,15 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   }
 #endif // FULL_VERSION==0
 
-  AudioPluginInstance *audio_instance = get_audio_instance(type_data->pluginDescription, sample_rate, block_size);
+  AudioPluginInstance *audio_instance = get_audio_instance(type_data, sample_rate, block_size);
   if (audio_instance==NULL){
     return NULL;
   }
+
+  PluginDescription description = audio_instance->getPluginDescription();
+
+  //plugin->name = talloc_strdup(description.name.toUTF8());
+
 
   Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
   plugin->data = data;
@@ -490,25 +520,19 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return type_data->effect_names[effect_num];
 }
 
-void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, int uid, bool is_shell_plugin){
+static SoundPluginType *create_plugin_type(const char *name, int uid, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
   //  return;
 
-#if JUCE_LINUX
-  const MessageManagerLock mmLock;
-#endif
-
-  PluginDescription *description = new PluginDescription();
-  description->fileOrIdentifier = String(file_or_identifier); // On mac, this can be "/Library/Audio/Plug-Ins/VST/Radium Compressor Stereo.vst", while on windows and linux, it's the path of the library file.
-  description->uid = uid;
-  description->hasSharedContainer = is_shell_plugin;
-    
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   TypeData *typeData = (TypeData*)calloc(1, sizeof(TypeData));
 
-  typeData->pluginDescription = description;
+  typeData->file_or_identifier = wcsdup(file_or_identifier);
+  typeData->uid = uid;
+
+  //typeData->library_file_full_path = wcsdup(library_file_full_path);  
   
   typeData->wrapper_type = AudioProcessor::wrapperType_VST;
 
@@ -516,6 +540,8 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, i
 
   plugin_type->type_name = "VST";
   plugin_type->name      = strdup(name);
+
+  plugin_type->container = container;
 
   plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
   
@@ -542,7 +568,56 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, i
   plugin_type->create_state = create_state;
   plugin_type->recreate_from_state = recreate_from_state;
 
-  PR_add_plugin_type(plugin_type);
+  printf("\n\n\nPopulated %s/%s\n",plugin_type->type_name,plugin_type->name);
+  PR_add_plugin_type_no_menu(plugin_type);
+
+  return plugin_type;
+}
+
+static void populate(SoundPluginTypeContainer *container){
+  if (container->is_populated)
+    return;
+
+  container->is_populated = true;
+
+  ContainerData *data = (ContainerData*)container->data;
+
+  vector_t *uids = VST_get_uids(data->library_file_full_path);
+
+  int size = uids->num_elements;
+
+  if (size==0)
+    return;
+
+  container->num_types = size;
+  container->plugin_types = (SoundPluginType**)calloc(size, sizeof(SoundPluginType));
+
+  for(int i = 0 ; i < size ; i++){
+    radium_vst_uids_t *element = (radium_vst_uids_t*)uids->elements[i];
+    const char *name = element->name;
+    if (name==NULL)
+      name = container->name;
+    container->plugin_types[i] = create_plugin_type(name, element->uid, data->file_or_identifier, container);
+  }
+  
+}
+
+
+void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path){
+  SoundPluginTypeContainer *container = (SoundPluginTypeContainer*)calloc(1,sizeof(SoundPluginTypeContainer));
+
+  container->type_name = "VST";
+  container->name = strdup(name);
+  container->populate = populate;
+
+  ContainerData *data = (ContainerData*)calloc(1, sizeof(ContainerData));
+  data->file_or_identifier = wcsdup(file_or_identifier);
+  data->library_file_full_path = wcsdup(library_file_full_path);  
+  data->wrapper_type = AudioProcessor::wrapperType_VST;
+
+  container->data = data;
+  
+  PR_add_plugin_container(container);
 }
 
 

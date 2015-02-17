@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef RADIUM_AUDIO_VST_PLUGINS_PROC_H
+#define RADIUM_AUDIO_VST_PLUGINS_PROC_H
 
 #if defined(__linux__)
 #  define VST_SUFFIX "so"
@@ -29,6 +31,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 void create_vst_plugins(bool is_juce_plugin);
 
+struct radium_vst_uids_t{
+  const char *name;
+  int uid;
+};
+
+extern vector_t *VST_get_uids(const wchar_t *w_filename);
+extern int VST_get_uid(const wchar_t *w_filename);
+class QString;
+
 std::vector<QString> VST_get_vst_paths(void);
 void VST_write_vst_paths(const std::vector<QString> &paths);
 void VST_add_path(QString path);
+
+
+#endif // RADIUM_AUDIO_VST_PLUGINS_PROC_H

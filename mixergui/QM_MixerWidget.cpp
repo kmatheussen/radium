@@ -1040,17 +1040,17 @@ void MixerWidget::populateScene()
 #endif
 
   // NB! main_pipe must be created first. The patch id of main_pipe must be 0.
-  SoundPluginType *pipe_type = PR_get_plugin_type_by_name("Pipe","Pipe");
+  SoundPluginType *pipe_type = PR_get_plugin_type_by_name(NULL, "Pipe","Pipe");
   SoundPlugin *main_pipe = add_new_audio_instrument_widget(pipe_type, grid_width, 0,false,"Main Pipe");
   g_main_pipe_patch_id = main_pipe->patch->id;
 
-  SoundPluginType *system_out = PR_get_plugin_type_by_name("Jack","System Out");
+  SoundPluginType *system_out = PR_get_plugin_type_by_name(NULL, "Jack","System Out");
   SoundPlugin *system_out_plugin = add_new_audio_instrument_widget(system_out, grid_width*2, 0,false,"Main Out");
 
-  SoundPluginType *bus1 = PR_get_plugin_type_by_name("Bus","Bus 1");
+  SoundPluginType *bus1 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 1");
   SoundPlugin *bus1_plugin = add_new_audio_instrument_widget(bus1, 0, 0,false,"Bus 1");
 
-  SoundPluginType *bus2 = PR_get_plugin_type_by_name("Bus","Bus 2");
+  SoundPluginType *bus2 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 2");
   SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2");
 
 
@@ -1120,11 +1120,11 @@ void MW_delete_plugin(SoundPlugin *plugin){
 
 namespace{
   struct MyQAction : public QAction{
-    MyQAction(const char* name, QMenu *menu, SoundPluginType *plugin_type)
+    MyQAction(const char* name, QMenu *menu, PluginMenuEntry entry)
       : QAction(name,menu)
-      , plugin_type(plugin_type)
+      , entry(entry)
     {}
-    SoundPluginType *plugin_type;
+    PluginMenuEntry entry;
   };
 }
 
@@ -1146,9 +1146,22 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_DOWN){
       return;
 
+    }else if(entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
+      SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+
+      for(int i=0 ; i < plugin_type_container->num_types ;  i++){
+        SoundPluginType *type = plugin_type_container->plugin_types[i];
+        const char *name = type->name;
+        menu->addAction(new MyQAction(name,menu,PluginMenuEntry::normal(type)));
+      }
+    
+    }else if(entry.type==PluginMenuEntry::IS_CONTAINER){
+      SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+      const char *name = plugin_type_container->name;
+      menu->addAction(new MyQAction(name,menu,entry));
     }else{
       const char *name = entry.plugin_type->name;
-      menu->addAction(new MyQAction(name,menu,entry.plugin_type));
+      menu->addAction(new MyQAction(name,menu,entry));
     }
   }
 }
@@ -1160,11 +1173,43 @@ SoundPluginType *MW_popup_plugin_selector(void){
   menu_up(&menu, PR_get_menu_entries());
 
   MyQAction *action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
-
-  if(action!=NULL)
-    return action->plugin_type;
-  else
+  if (action==NULL)
     return NULL;
+
+  struct PluginMenuEntry entry = action->entry;
+
+  if (entry.type==PluginMenuEntry::IS_CONTAINER) {
+
+    vector_t names={0};
+
+    SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+    plugin_type_container->populate(plugin_type_container);
+
+    if (plugin_type_container->num_types==0) {
+      GFX_Message(NULL, talloc_format("%s does not contain any plugin",plugin_type_container->name));
+      return NULL;
+    }
+     
+    if (plugin_type_container->num_types==1)
+      return plugin_type_container->plugin_types[0];
+
+    for(int i=0 ; i < plugin_type_container->num_types ;  i++)
+      VECTOR_push_back(&names,plugin_type_container->plugin_types[i]->name);
+
+    char temp[1024];
+    sprintf(temp,"Select plugin contained in %s", plugin_type_container->name);
+    int selection=GFX_Menu(NULL,NULL,temp,&names);
+    
+    if (selection==-1)
+      return NULL;
+    else
+      return plugin_type_container->plugin_types[selection];
+
+  } else {
+
+    return entry.plugin_type;
+
+  }
 }
 
 #if 0
