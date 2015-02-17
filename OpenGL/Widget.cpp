@@ -705,7 +705,14 @@ static void show_message_box(QMessageBox *box){
 
 
 extern "C" void cocoa_set_best_resolution(void *view);
-  
+
+static bool is_opengl_version_recent_enough_questionmark(void){
+  if ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_1_4) == QGLFormat::OpenGL_Version_1_4)
+    return true;
+  else
+    return false;
+}
+
 static void setup_widget(QWidget *parent){
   vl::VisualizationLibrary::init();
 
@@ -720,15 +727,12 @@ static void setup_widget(QWidget *parent){
   vlFormat.setMultisample(true);
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
-  
+
   widget = new MyQt4ThreadedWidget(vlFormat, parent);
   widget->resize(1000,1000);
   widget->show();
 
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
-
-
-
 }
 
 QWidget *GL_create_widget(QWidget *parent){
@@ -743,6 +747,25 @@ QWidget *GL_create_widget(QWidget *parent){
     return NULL;
   }
 
+  if (!is_opengl_version_recent_enough_questionmark()){
+    vector_t v = {0};
+    VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
+    VECTOR_push_back(&v,"Quit");
+
+    int ret = GFX_Message(&v,
+                          "Your version of OpenGL is too old.\n"
+                          "\n"
+                          "This is usually caused by lacking a specific graphics card driver, causing the fallback software OpenGL driver to be used instead.\n"
+                          "\n"
+                          "To solve this problem, you might want to try updating your graphics card driver."
+                          );
+    if (ret==1)
+      return NULL;
+
+    QThread::currentThread()->wait(1000*10);
+  }
+
+
   if (do_estimate_questionmark() == true) {
 
     setup_widget(parent);
@@ -754,7 +777,7 @@ QWidget *GL_create_widget(QWidget *parent){
 
     bool have_earlier = have_earlier_estimated_value();
 
-    setup_widget(parent);
+    setup_widget(parent);    
     show_message_box(&box);
     
     while(widget->is_training_vblank_estimator==true) {
