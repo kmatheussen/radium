@@ -24,7 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../audio/Mixer_proc.h"
 
+#include "../common/OS_system_proc.h"
 #include "W_Keyboard_proc.h"
+
 
 extern struct TEvent tevent;
 extern struct Root *root;
@@ -299,29 +301,50 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
     return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam );
 }
 
+void OS_SYSTEM_init_keyboard(void) {
+  init_keymap();  
+  g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
+}
+
 void W_KeyboardHandlerShutDown(void){
   if(g_hKeyboardHook!=NULL)
     UnhookWindowsHookEx(g_hKeyboardHook);
 }
 
+// don't need it, seems like
+void OS_SYSTEM_ResetKeysUpDowns(void){
+}
+
+int OS_SYSTEM_get_keynum(void *focused_widget, void *void_event){
+  MSG *msg = void_event;
+  return get_keyboard_subID(msg);
+}
+
+void OS_SYSTEM_EventPreHandler(void *void_event){
+}
+
+int OS_SYSTEM_get_event_type(void *void_event){
+  MSG *msg = void_event;
+  switch(msg->message){
+  case WM_KEYDOWN:
+  case WM_SYSKEYDOWN:
+    return TR_KEYBOARD;
+  case WM_KEYUP: 
+  case WM_SYSKEYUP:
+    return TR_KEYBOARDUP;
+  default:
+    return -1;
+  }
+}
+
 extern int num_users_of_keyboard;
 
-bool W_KeyboardFilter(MSG *msg){
-  static bool initialized=false;
+bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
+  MSG *msg = void_msg;
+
   static int last_pressed_key = -1;
   static int64_t last_pressed_key_time = -1;
   static int last_pressed_keyswitch = -1;
-
-  if(initialized==false){
-    init_keymap();
-    
-    g_hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL,  LowLevelKeyboardProc, GetModuleHandle(NULL), 0 );
-
-    initialized=true;
-  }
-
-  if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
-    return false;
 
   struct Tracker_Windows *window=root->song->tracker_windows;
 #if 0
