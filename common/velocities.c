@@ -154,18 +154,14 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 
 
 void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
-	int maxvelocity;
 
         inc = inc * MAX_VELOCITY / 100;
 
-
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-	maxvelocity=MAX_VELOCITY;
+	struct WBlocks *wblock=window->wblock;
+	struct WTracks *wtrack=wblock->wtrack;
+	int maxvelocity=MAX_VELOCITY;
         
-        if(is_track_ranged(wblock,wblock->wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
+        if(is_track_ranged(wblock,wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
 
           vector_t *notes = get_all_ranged_notes(wblock);
           //printf("num_elements: %d\n",notes->num_elements);

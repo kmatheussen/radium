@@ -30,6 +30,8 @@ export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2"
 export GCC="gcc -mfpmath=sse -msse2"
 export LINKER=g++
 
+export TARGET_OS=linux
+
 export PKG=pkg-config
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
@@ -62,4 +64,19 @@ export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a 
 export OBJ_WIN=""
 export OBJ_MACOSX=""
 
+if ! file mmd2load.o |grep Linux ; then
+    rm -f *.o
+    cp -p linux_objs/*.o . 2>/dev/null | true
+fi
+
+if ! file bin/radium |grep Linux ; then
+    rm -f bin/radium
+    rm -f bin/crashreporter
+    rm -f bin/radium_error_message
+fi
+
 make radium $@
+
+cp -p *.o linux_objs/ 2>/dev/null | true
+
+

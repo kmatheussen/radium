@@ -263,9 +263,13 @@ void SETTINGS_write_bool(const char* key, bool val){
 }
 
 void SETTINGS_write_int(const char* key, int64_t val){
-  char temp[500];
-  sprintf(temp, "%" PRId64 "", val);
-  SETTINGS_put(key,temp);
+  qlonglong val2 = val;
+  SETTINGS_put(key, QString::number(val2));
+  /*
+    char temp[500];
+    sprintf(temp, "%" PRId64 "", val);
+    SETTINGS_put(key,temp);
+  */
 }
 
 void SETTINGS_write_double(const char* key, double val){

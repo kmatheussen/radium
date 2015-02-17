@@ -41,10 +41,6 @@ OPTIMIZE ?= -O3
 
 
 
-
-
-
-
 #----------------DEFININTIONS----------------------
 
 # Packagers: Don't change anything below here unless things don't work.
@@ -71,8 +67,10 @@ PKG ?= pkg-config
 CCC ?= g++
 CC ?= gcc
 GCC ?= gcc
-GPLUSPLUS ?= g++
+GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
+
+TARGET_OS ?= any
 
 S7OPTS ?=
 
@@ -121,6 +119,8 @@ RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -DNDEBUG -Wall -g $(OPTIMIZE)
 OS_OPTS ?= 
 #OS_OPTS = -fPIC -I/usr/X11R6/include
 OS_LDFLAGS ?=
+
+OS_OBJS ?=
 
 REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
 MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
@@ -230,7 +230,7 @@ OBJ_POSIX=posix_settings.o posix_Player.o
 # Two of the following three must be set empty by the build script.
 OBJ_X11 ?= X11_keyboard.o X11_disk.o X11_Qtstuff.o
 OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
-OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o
+OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_support.o ad_noteadd.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o
@@ -253,7 +253,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o Render.o Widget.o
 
 #Embedded scheme
-OBJ_ES=scheme.o bin/packages/s7/s7.o s7webserver.o radium_s7_wrap.o
+OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS).o s7webserver.o radium_s7_wrap.o
 
 
 OBJ = $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
@@ -282,12 +282,12 @@ radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 	@echo "Run 'make install' to install radium"
 
 very_clean: clean
-	rm -f bin/packages/s7/s7.o
+	rm -f bin/packages/s7/*.o
 	cd pluginhost/Builds/Linux && $(MAKE) clean && cd ../../../
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium_error_message bin/radium.bin.exe
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium_error_message bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/*
 	cd pluginhost/Builds/Linux && $(MAKE) clean
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -385,7 +385,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(VL_LIBS) pluginhost/Builds/Linux/build/libMyPluginHost.a
-	$(LINKER) $(OBJ) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(RTMIDI_LDFLAGS) $(LDFLAGS) $(OS_LDFLAGS)
+	$(LINKER) $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(LDFLAGS) $(OS_LDFLAGS) $(RTMIDI_LDFLAGS)
 # -lX11 -ldl -lpthread -lfreetype -lXext
 
 # `$(PKG) --libs fluidsynth`
@@ -1611,11 +1611,15 @@ Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/S
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
 
+do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
+	$(CC) OpenGL/do.m $(OPT)
+
+
 
 # embedded scheme
 
-bin/packages/s7/s7.o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7.o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS) -Wno-absolute-value
+bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
+	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS) -Wno-absolute-value
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
 	$(CCC) -c bin/s7webserver/s7webserver.cpp `$(PKG) --cflags QtNetwork` $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function

@@ -299,6 +299,7 @@ public:
     glContext->initGLContext();
     glContext->addEventListener(this);
 
+
     //printf("FLAGS: %d\n",QGLFormat::openGLVersionFlags());
     //gets(NULL);
 
