@@ -1049,7 +1049,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
       vector_t v = {0};
       
       VECTOR_push_back(&v,"Init VST plugins first");
-      VECTOR_push_back(&v,"Continue starting radium without loading this plugin library.");
+      VECTOR_push_back(&v,"Continue without loading this plugin library.");
       int result = GFX_Message(&v,
                                "Error: Empty thread local storage.\n"
                                "\n"
@@ -1196,6 +1196,8 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
     add_juce_plugin_type(plugin_name, STRING_create(file_or_identifier), STRING_create(filename));
     return true;  
   }
+
+  R_ASSERT(false);
 
   //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 

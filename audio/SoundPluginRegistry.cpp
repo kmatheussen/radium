@@ -91,11 +91,11 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         QString basename = info.fileName();
         basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
 
-        if(basename==QString(plugin_name) && info.exists()){
+        //        if(basename==QString(plugin_name) && info.exists()){
           VST_add_path(info.dir().path());
           PR_init_plugin_types();
           return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
-        }
+          //}
       }
     }
 
