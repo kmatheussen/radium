@@ -1,4 +1,18 @@
 
+Most important changes 3.0.rc5 -> 3.0.rc6
+* Replaced "<click me>" with "(click me)"
+* Give option to init LADSPA first if initing VST first and TLS is empty
+* Fix write access check
+* Don't resolve VST plugins during startup if initializing LADSPA plugins first.
+  Just assume it is a VST plugin if the suffix is right.
+* Dont show GUI button for gui-less vst plugins. (and don't crash if double clicking it in the mixer)
+* Upgrade to latest visualization library at github
+* Fix keyboard handling in windows
+* Give warning and option to exit if OpenGL is older than 1.4.
+* Mouse: Fix one-track blocks
+* Clap plugin skeleton
+
+
 Most important changes 3.0.rc4 -> 3.0.rc5
 * Workaround for empty TLS when loading VST plugins
   (Fix for u-he plugins)
