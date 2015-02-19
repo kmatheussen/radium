@@ -755,7 +755,7 @@ QWidget *GL_create_widget(QWidget *parent){
     int ret = GFX_Message(&v,
                           "Your version of OpenGL is too old.\n"
                           "\n"
-                          "This is usually caused by lacking a specific graphics card driver, causing the fallback software OpenGL driver to be used instead.\n"
+                          "This is usually caused by lacking a specific graphics card driver, so that the fallback software OpenGL driver is used instead.\n"
                           "\n"
                           "To solve this problem, you might want to try updating your graphics card driver."
                           );

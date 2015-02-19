@@ -309,7 +309,7 @@ void Ptask2Mtask(void){
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/player_proc.h"
 
-//#define TEST_GC
+// #define TEST_GC
 
 #ifdef TEST_GC
 #  include "gc.h"
@@ -509,12 +509,27 @@ void assertRadiumInHomeDirectory(void){
                 );
   }
 #else
-  QFileInfo info(program_path + QDir::separator() + "eventreceiverparser_generated.py");
-  if (!info.isWritable())
+  QFile file(program_path + QDir::separator() + "checking_write_permission.txt");
+
+  bool success = file.open(QIODevice::WriteOnly);
+
+  if (success)
+    success=file.isOpen();
+
+  if (success)
+    success = file.write("hello",2)>0;
+
+  if (file.isOpen())
+    file.close();
+  
+  //  QFileInfo info(program_path + QDir::separator() + "eventreceiverparser_generated.py");
+  //if (!info.isWritable())
+
+  if (!success)
     GFX_Message(NULL,
                 QString("Warning!\n\n") +
                 "Radium is installed i a directory without write access. (" + program_path + ")\n"
-                "Undefined behaviors are likely to happen"
+                "Undefined behaviors may happen"
                 );
 #endif
 }

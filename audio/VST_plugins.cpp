@@ -1054,13 +1054,14 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
       int result = GFX_Message(&v,
                                "Error: Empty thread local storage.\n"
                                "\n"
-                               "Unable to load \"%s\" VST library file.\n"
+                               "Unable to load VST library file \"%s\".\n"
                                "\n"
-                               "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by the TLS settings of an earlier loaded plugin (not this one!).\n"
+                               "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                               "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n"
                                "\n"
                                "You may be able to work around this problem by initing VST plugins before LADSPA plugins.\n"
                                "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.\n"
-                               "(Beware that this option can cause undefined behaviours if you have unstable VST plugins!)\n"
+                               "(Beware that this option can cause undefined behaviour at any moment if you have unstable VST plugins in your path!)\n"
                                ,
                                myLib.fileName().toUtf8().constData());
       if (result==0)
@@ -1172,11 +1173,12 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
       fflush(stderr);
       if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
         GFX_Message(NULL,
-                    "Error: Empty thread local storage.\n"
-                    "\n"
-                    "Unable to load \"%s\" VST library file.\n"
+                    talloc_format("Error: Empty thread local storage.\n"
+                                  "\n"
+                                  "Unable to load \"%s\" VST library file.\n",
+                                  filename.toUtf8().constData()
+                                  )
                     );
-        
       }
       return false;
     }
