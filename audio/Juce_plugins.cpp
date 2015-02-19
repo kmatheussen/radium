@@ -343,6 +343,11 @@ static AudioPluginInstance *get_audio_instance(const TypeData *type_data, float 
 static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
+  if (audio_instance->hasEditor()==false) {
+    plugin_type->show_gui = NULL;
+    plugin_type->hide_gui = NULL;
+  }
+  
   plugin_type->num_inputs = audio_instance->getNumInputChannels();
   plugin_type->num_outputs = audio_instance->getNumOutputChannels();
     
@@ -439,7 +444,6 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   PluginDescription description = audio_instance->getPluginDescription();
 
   //plugin->name = talloc_strdup(description.name.toUTF8());
-
 
   Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
   plugin->data = data;

@@ -201,7 +201,7 @@ typedef struct SoundPluginType{
 
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 
-  void (*show_gui)(struct SoundPlugin *plugin);
+  void (*show_gui)(struct SoundPlugin *plugin); // If NULL, the "GUI" button will not show.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
   void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set.
