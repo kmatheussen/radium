@@ -528,7 +528,7 @@ void assertRadiumInHomeDirectory(void){
   if (!success)
     GFX_Message(NULL,
                 QString("Warning!\n\n") +
-                "Radium is installed i a directory without write access. (" + program_path + ")\n"
+                "Radium is installed in a directory without write access. (" + program_path + ")\n"
                 "Undefined behaviors may happen"
                 );
 #endif

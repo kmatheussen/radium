@@ -317,6 +317,9 @@ void OS_SYSTEM_ResetKeysUpDowns(void){
 
 int OS_SYSTEM_get_keynum(void *focused_widget, void *void_event){
   MSG *msg = void_event;
+  if (msg->wParam==18)
+    return EVENT_ALT_L;
+  //printf("key: %d %x\n",msg->wParam,msg->wParam);
   return get_keyboard_subID(msg);
 }
 
