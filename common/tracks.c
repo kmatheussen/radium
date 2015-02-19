@@ -104,7 +104,7 @@ bool TRACK_has_peaks(struct Tracks *track){
 // l.num must not be set here!
 void InitTrack(struct Tracks *track){
 	track->onoff=1;
-	track->trackname="<click me>";
+	track->trackname="(click me)";
 	track->volume=800;
 	track->panonoff=false;
 	track->volumeonoff=true;

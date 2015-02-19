@@ -489,7 +489,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 800
@@ -518,7 +518,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 1000
@@ -547,7 +547,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 1000
@@ -576,7 +576,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 800
@@ -605,7 +605,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 800
@@ -634,7 +634,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 800
@@ -663,7 +663,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 800
@@ -692,7 +692,7 @@ TRACK
 1
 
 ?trackname
-<click me>
+(click me)
 
 ?volume
 800
