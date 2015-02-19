@@ -408,15 +408,18 @@ struct SoundProducer : DoublyLinkedList{
     while(link!=NULL){
       //fprintf(stderr,"link: %p. link channel: %d\n",link,link->sound_producer_ch);
       if(link->sound_producer==sound_producer && link->sound_producer_ch==sound_producer_ch){
-
-        while(link->state == SoundProducerLink::FADING_IN)
+        
+        while(link->state == SoundProducerLink::FADING_IN) {
+          PLAYER_memory_debug_wake_up();
           usleep(3000);
+        }
 
         PLAYER_lock();{
           link->fade_pos = 0;
           link->state    = SoundProducerLink::FADING_OUT;
         }PLAYER_unlock();
 
+        PLAYER_memory_debug_wake_up();
         RSEMAPHORE_wait(signal_from_RT,1);
 
         delete link; // deleted  here
@@ -741,10 +744,13 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
   }
 
   // Wait until all links are finished fading in.
-  for(unsigned int i=0;i<links_to_delete.size();i++)
-    while(links_to_delete.at(i)->state == SoundProducerLink::FADING_IN)
+  for(unsigned int i=0;i<links_to_delete.size();i++) {
+    while(links_to_delete.at(i)->state == SoundProducerLink::FADING_IN) {
+      PLAYER_memory_debug_wake_up();
       usleep(3000);
-
+    }
+  }
+  
   // Change state
   PLAYER_lock();{
     for(unsigned int i=0;i<links_to_delete.size();i++){
@@ -754,6 +760,7 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
   }PLAYER_unlock();
 
   // Wait
+  PLAYER_memory_debug_wake_up();
   RSEMAPHORE_wait(signal_from_RT,links_to_delete.size());
  
   // Delete

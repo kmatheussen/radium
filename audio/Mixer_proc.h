@@ -1,3 +1,9 @@
+#ifdef MEMORY_DEBUG
+extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
+#else
+#define PLAYER_memory_debug_wake_up()
+#endif
+
 extern LANGSPEC bool MIXER_start(void);
 
 extern LANGSPEC bool MIXER_is_saving(void);

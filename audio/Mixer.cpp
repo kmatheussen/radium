@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QString>
 #include <QStringList>
 
+
 // I'm not entirely sure where memory barriers should be placed, so I've tried to be more safe than sorry.
 //#include "pa_memorybarrier.h"
 
@@ -110,6 +111,19 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 #   error "AVOIDDENORMALS is not defined"
     #define AVOIDDENORMALS 
 #endif
+
+#ifdef MEMORY_DEBUG
+#include <QMutex>
+#include <QWaitCondition>
+
+static QMutex debug_mutex;
+static QWaitCondition debug_wait;
+
+void PLAYER_debug_wake_up(void){
+  debug_wait.wakeOne();
+}
+#endif
+
 
 
 jack_client_t *g_jack_client;
@@ -443,6 +457,10 @@ struct Mixer{
 
       RT_unlock_player();
 
+#ifdef MEMORY_DEBUG
+      debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
+#endif
+      
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
       if((int)num_frames!=_buffer_size)

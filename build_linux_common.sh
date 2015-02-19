@@ -64,6 +64,8 @@ export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a 
 export OBJ_WIN=""
 export OBJ_MACOSX=""
 
+mkdir -p linux_objs
+
 if ! file mmd2load.o |grep Linux ; then
     rm -f *.o
     cp -p linux_objs/*.o . 2>/dev/null | true
