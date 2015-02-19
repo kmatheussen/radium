@@ -1076,12 +1076,12 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
   
   AEffect *effect = get_plugin_instance(VSTS_audioMaster);
   if (effect == NULL) {
-    GFX_Message(NULL, talloc_format("Unable to load plugin instance in the file \"%s\"",plugin_name));
+    GFX_Message(NULL, "Unable to load plugin instance in the file \"%s\"",plugin_name);
     return uids;
   }
 
   if (effect->magic != kEffectMagic) {
-    GFX_Message(NULL, talloc_format("Wrong effect magic value in the file \"%s\"",plugin_name));
+    GFX_Message(NULL, "Wrong effect magic value in the file \"%s\"",plugin_name);
     return uids;
   }
 
@@ -1173,11 +1173,10 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
       fflush(stderr);
       if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
         GFX_Message(NULL,
-                    talloc_format("Error: Empty thread local storage.\n"
-                                  "\n"
-                                  "Unable to load \"%s\" VST library file.\n",
-                                  filename.toUtf8().constData()
-                                  )
+                    "Error: Empty thread local storage.\n"
+                    "\n"
+                    "Unable to load \"%s\" VST library file.\n",
+                    filename.toUtf8().constData()
                     );
       }
       return false;

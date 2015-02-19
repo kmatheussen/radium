@@ -54,6 +54,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/vector_proc.h"
+#include "../common/visual_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -483,6 +485,43 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
   LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
 
   if(get_descriptor_func==NULL){
+    if (qlibrary->errorString().contains("dlopen: cannot load any more object with static TLS")){
+      
+      if (PR_is_initing_vst_first()) {
+        
+        vector_t v = {0};
+        
+        VECTOR_push_back(&v,"Init LADSPA plugins first");
+        VECTOR_push_back(&v,"Continue without loading this plugin library.");
+        
+        int result = GFX_Message(&v,
+                                 "Error: Empty thread local storage.\n"
+                                 "\n"
+                                 "Unable to load LADSPA library file \"%s\".\n"
+                                 "\n"
+                                 "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                                 "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n"
+                                 "\n"
+                                 "You may be able to work around this problem by initing LADSPA plugins before VST plugins.\n"
+                                 "In case you want to try this, press the \"Init LADSPA plugins first\" button below and start radium again.\n",
+                                 qlibrary->fileName().toUtf8().constData()
+                                 );
+        if (result==0)
+          PR_set_init_ladspa_first();
+
+      } else {
+        GFX_Message(NULL,
+                    "Error: Empty thread local storage.\n"
+                    "\n"
+                    "Unable to load LADSPA library file \"%s\".\n"
+                    "\n"
+                    "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                    "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n",
+                    qlibrary->fileName().toUtf8().constData()
+                    );
+      }
+    }
+      
     delete qlibrary;
     fprintf(stderr,"(failed) ");
     fflush(stderr);
