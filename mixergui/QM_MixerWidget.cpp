@@ -1149,7 +1149,7 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
     }else if(entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
       SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
 
-      for(int i=0 ; i < plugin_type_container->num_types ;  i++){
+      for(int i=0 ; i < plugin_type_container->num_types ; i++){
         SoundPluginType *type = plugin_type_container->plugin_types[i];
         const char *name = type->name;
         menu->addAction(new MyQAction(name,menu,PluginMenuEntry::normal(type)));
@@ -1186,8 +1186,8 @@ SoundPluginType *MW_popup_plugin_selector(void){
     plugin_type_container->populate(plugin_type_container);
 
     if (plugin_type_container->num_types==0) {
-      GFX_Message(NULL, talloc_format("%s does not contain any plugin",plugin_type_container->name));
-      return NULL;
+      //GFX_Message(NULL, talloc_format("%s does not contain any plugin",plugin_type_container->name));
+      return NULL; // no error message here. populate() must do that.
     }
      
     if (plugin_type_container->num_types==1)

@@ -1045,6 +1045,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
   if (get_plugin_instance == NULL){
     fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
     fflush(stderr);
+    
     if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
       vector_t v = {0};
       
@@ -1057,23 +1058,31 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
                                "\n"
                                "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by the TLS settings of an earlier loaded plugin (not this one!).\n"
                                "\n"
-                               "You may be able to work around this problem by initing VST plugins before LADSPA plugins."
-                               "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.",
+                               "You may be able to work around this problem by initing VST plugins before LADSPA plugins.\n"
+                               "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.\n"
+                               "(Beware that this option can cause undefined behaviours if you have unstable VST plugins!)\n"
+                               ,
                                myLib.fileName().toUtf8().constData());
       if (result==0)
         PR_set_init_vst_first();
 
+    } else {
+      GFX_Message(NULL, myLib.errorString().toUtf8().constData());
     }
 
     return uids;
   }
   
   AEffect *effect = get_plugin_instance(VSTS_audioMaster);
-  if (effect == NULL)
+  if (effect == NULL) {
+    GFX_Message(NULL, talloc_format("Unable to load plugin instance in the file \"%s\"",plugin_name));
     return uids;
+  }
 
-  if (effect->magic != kEffectMagic)
+  if (effect->magic != kEffectMagic) {
+    GFX_Message(NULL, talloc_format("Wrong effect magic value in the file \"%s\"",plugin_name));
     return uids;
+  }
 
   effect->dispatcher(effect, effOpen, 0, 0, NULL, 0.0f);
   effect_opened = true;
@@ -1133,56 +1142,48 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
 
-  QLibrary myLib(filename);
+  
+  bool do_resolve_it = PR_is_initing_vst_first(); // needs to resolve now if we want to init the libraries before the ladspa libraries.
 
+
+  if (do_resolve_it) {
+
+    MyQLibrary myLib(filename);
 
 #if 0
-  // qtractor does this. Check later what this is. And what about WIN64?
+    // qtractor does this. Check later what this is. And what about WIN64?
 #if defined(FOR_WINDOWS) //defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
-  qtractorPluginFile_Function pfnInit
-    = (qtractorPluginFile_Function) QLibrary::resolve("_init");
-  if (pfnInit)
-    (*pfnInit)();
+    qtractorPluginFile_Function pfnInit
+      = (qtractorPluginFile_Function) QLibrary::resolve("_init");
+    if (pfnInit)
+      (*pfnInit)();
 #endif
 #endif
 
-
-  fprintf(stderr,"Trying to resolve \"%s\"\n",myLib.fileName().toUtf8().constData());
-
-  VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
-  if (get_plugin_instance == NULL)
-    get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
-
-  if (get_plugin_instance == NULL){
-    fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
-    fflush(stderr);
-    if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
-      vector_t v = {0};
-      
-      VECTOR_push_back(&v,"Init VST plugins first");
-      VECTOR_push_back(&v,"Continue starting radium without loading this plugin library.");
-      int result = GFX_Message(&v,
-                               "Error: Empty thread local storage.\n"
-                               "\n"
-                               "Unable to load \"%s\" VST library file.\n"
-                               "\n"
-                               "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by the TLS settings of an earlier loaded plugin (not this one!).\n"
-                               "\n"
-                               "You may be able to work around this problem by initing VST plugins before LADSPA plugins."
-                               "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.",
-                               myLib.fileName().toUtf8().constData());
-      if (result==0) {
-        PR_set_init_vst_first();
-        exit(0);
+    
+    fprintf(stderr,"Trying to resolve \"%s\"\n",myLib.fileName().toUtf8().constData());
+    
+    VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
+    if (get_plugin_instance == NULL)
+      get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
+    
+    if (get_plugin_instance == NULL){
+      fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
+      fflush(stderr);
+      if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
+        GFX_Message(NULL,
+                    "Error: Empty thread local storage.\n"
+                    "\n"
+                    "Unable to load \"%s\" VST library file.\n"
+                    );
+        
       }
-
+      return false;
     }
-    myLib.unload();
-    return false;
   }
   //printf("okah\n");
   //getchar();
-
+  
   QString basename = file_info.fileName();
 
 #if defined(FOR_MACOSX)
@@ -1206,8 +1207,9 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
 
     TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
     plugin_type->data = type_data;
-    type_data->get_plugin_instance = get_plugin_instance;
-
+    //#if DO_RESOLVE_IT
+    //    type_data->get_plugin_instance = get_plugin_instance;
+    //#endif
     plugin_type->type_name = "VST";
     plugin_type->name      = strdup(basename.toUtf8().constData());
 

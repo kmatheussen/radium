@@ -296,7 +296,7 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  delete data->window; // might be NULL. (data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.)
+  delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
 }
 
 
