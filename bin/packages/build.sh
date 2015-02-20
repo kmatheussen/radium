@@ -1,6 +1,19 @@
 #!/bin/bash
 
 set -e
+set -x
+
+unset CFLAGS
+unset CFLAGS
+unset CPPFLAGS
+unset LDFLAGS
+unset CXXFLAGS
+
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+
+
 
 #rm -f /tmp/radium
 #ln -s `pwd` /tmp/radium

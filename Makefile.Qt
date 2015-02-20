@@ -114,7 +114,12 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
-RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -DNDEBUG -Wall -g $(OPTIMIZE)
+RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
+
+# Need to disable NDEBUG since it chashes on windows (!). Normally this flag would be define in the RELEASE_BUILD_OPTS
+# The crashreporter says the crash happens in QTextEngine::itemize, but there is no backtrace, which is a sign of memory corruption, so this information might not be accurate.
+# -DNDEBUG
+
 
 OS_OPTS ?= 
 #OS_OPTS = -fPIC -I/usr/X11R6/include
@@ -385,7 +390,7 @@ start_bin.sh:
 	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
 	chmod a+rx start_bin.sh
 
-bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(VL_LIBS) pluginhost/Builds/Linux/build/libMyPluginHost.a
+bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a
 	$(LINKER) $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(LDFLAGS) $(OS_LDFLAGS) $(RTMIDI_LDFLAGS)
 # -lX11 -ldl -lpthread -lfreetype -lXext
 
