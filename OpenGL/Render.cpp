@@ -85,7 +85,7 @@ static void draw_bordered_text(
   GE_Context *c3 = GE_mix_color_z(GE_get_rgb(11), GE_get_rgb(1), 800, z);
 
   GE_line(c3, x2,y, x2,y2, 0.5f);
-  GE_line(c3,x,y2,x2,y2,0.5f);
+  GE_line(c3, x,y2, x2,y2, 0.5f);
 #endif
 }
 
@@ -1324,8 +1324,8 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
   NInt track    = window->curr_track;
   int  subtrack = window->curr_track_sub;
   
-  int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-3;
-  int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+3;
+  int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-1;
+  int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+1;
 
   int x1 = window->leftslider.width;
   int x2 = xb1;
@@ -1349,20 +1349,26 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
 
   c = GE_z(GE_alpha(GE_get_rgb(1), 0.75), Z_STATIC);
 
-  float width = 1.5f;
+  float width = 0.8f;
   GE_box(c,
          x1+2,y1,
          x4-3,y2-1,
          width
          );
 
-  GE_box(c,
-         x2+2,y1+1,
-         x3-3,y2-2,
-         width
-         );
+  c = GE_z(GE_alpha(GE_get_rgb(2), 0.05), Z_STATIC);
+  GE_filledBox(c, 
+               x2, y1,
+               x3, y2-1
+               );
 
-  
+  /*
+  GE_box(c,
+         x2-0.5f,y1,
+         x3,y2-1,
+         width/2
+         );
+  */
 }
 
 
