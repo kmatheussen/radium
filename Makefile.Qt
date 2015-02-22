@@ -99,7 +99,7 @@ CRASHREPORTER_OPTS ?=
 CRASHREPORTER_POSIX_OPTS ?= 
 
 DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM
-# -DMEMORY_DEBUG
+#-DMEMORY_DEBUG
 # define SYSBASEDEBUG
 # define TRACKER_DEBUG
 # define MEMORY_DEBUG
@@ -114,9 +114,10 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 FULL_VERSION ?= 1
 
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
+#-DNDEBUG
 RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
 
-# Need to disable NDEBUG since it chashes on windows (!). Normally this flag would be define in the RELEASE_BUILD_OPTS
+# Need to disable NDEBUG since it chashes on windows (!). Normally this flag would be defined in RELEASE_BUILD_OPTS
 # The crashreporter says the crash happens in QTextEngine::itemize, but there is no backtrace, which is a sign of memory corruption, so this information might not be accurate.
 # -DNDEBUG
 

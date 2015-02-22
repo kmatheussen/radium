@@ -648,12 +648,12 @@ GE_Context *GE_textcolor_z(int colornum, int z){
 }
 
 GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z){
-#if 0
+#if 1
   // Reduce number of contexts. May also reduce cpu usage significantly.
-  r |= 7;
-  g |= 7;
-  b |= 7;
-  a |= 7;
+  r |= 15;
+  g |= 15;
+  b |= 15;
+  a |= 15;
 #endif
 
   GE_Rgb rgb = {r,g,b,a};
