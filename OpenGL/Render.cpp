@@ -303,10 +303,10 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     GE_filledBox(c,x1,y1,x2,y2);
   }
 
-  float line_width = 0.5f;
+  float line_width = 0.6f;
 
   // realline separator line
-  {
+  if(1){
     if(line_opacity == -1)
       line_opacity = SETTINGS_read_int("line_opacity", 800);
     

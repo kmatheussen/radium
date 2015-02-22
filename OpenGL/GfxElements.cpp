@@ -718,13 +718,77 @@ void GE_set_font(const QFont &font){
   GE_set_new_font(font);
 }
 
-// TODO/FIXME: pen_width/2.0f is a hack that's not correct for everything.
-void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-  int key = get_key_from_pen_width(pen_width);
 
-  c->lines[key].push_back(vl::dvec2(x1,c->y(y1)));
-  c->lines[key].push_back(vl::dvec2(x2,c->y(y2)));
+#if 0
+
+void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+
+  if (c->is_gradient || y1!=y2){
+    int key = get_key_from_pen_width(pen_width);
+    c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
+    c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
+  }else{
+    float half = pen_width/2.0f;
+    c->boxes.push_back(vl::dvec2(x1,c->y(y1-half)));
+    c->boxes.push_back(vl::dvec2(x1,c->y(y2+half)));
+    c->boxes.push_back(vl::dvec2(x2,c->y(y2+half)));
+    c->boxes.push_back(vl::dvec2(x2,c->y(y1-half)));
+  }
 }
+
+#else
+
+// mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
+void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+
+  if (c->is_gradient) {
+    int key = get_key_from_pen_width(pen_width);
+    c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
+    c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
+    return;
+  }
+    
+  float dx = x2-x1;
+  float dy = y2-y1;
+ 
+  float length = sqrt( dx*dx + dy*dy );   
+ 
+  // perp
+  float perp_x = -dy;
+  float perp_y = dx;
+  if ( length ){
+    // Normalize the perp
+    perp_x /= length;
+    perp_y /= length;
+  }
+ 
+  float h = pen_width;//.125*length;
+  
+  // since perp defines how wide our quad is, scale it
+  perp_x *= h;
+  perp_y *= h;
+ 
+  float v1x = x1 + perp_x*.5;
+  float v1y = y1 + perp_y*.5;
+  
+  float v2x = x2 + perp_x*.5;
+  float v2y = y2 + perp_y*.5;
+ 
+  float v3x = x2 - perp_x*.5;
+  float v3y = y2 - perp_y*.5;
+ 
+  float v4x = x1 - perp_x*.5;
+  float v4y = y1 - perp_y*.5;
+
+  c->triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
+  c->triangles.push_back(vl::dvec2(v2x, c->y(v2y)));
+  c->triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
+
+  c->triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
+  c->triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
+  c->triangles.push_back(vl::dvec2(v4x, c->y(v4y)));
+}
+#endif
 
 void GE_text(GE_Context *c, const char *text, int x, int y){
   c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
@@ -734,6 +798,7 @@ void GE_text_halfsize(GE_Context *c, const char *text, int x, int y){
   c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
 }
 
+#if 0
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
   int key = get_key_from_pen_width(pen_width);
   y1=c->y(y1);
@@ -751,6 +816,14 @@ void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wid
   c->lines[key].push_back(vl::dvec2(x1, y2));
   c->lines[key].push_back(vl::dvec2(x1, y1));
 }
+#else
+void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+  GE_line(c, x1, y1, x2, y1, pen_width);
+  GE_line(c, x2, y1, x2, y2, pen_width);
+  GE_line(c, x2, y2, x1, y2, pen_width);
+  GE_line(c, x1, y2, x1, y1, pen_width);
+}
+#endif
 
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2){
   c->boxes.push_back(vl::dvec2(x1,c->y(y1)));
