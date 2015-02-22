@@ -13,70 +13,40 @@
 #include "SoundPluginRegistry_proc.h"
 
 
-
-typedef struct{
-  double phase;
-  double phase_add;
-  double volume;
-  double sample_rate;
-} Data;
-
+namespace{
+struct Data {
+  clap_host host;
+  clap_plugin *plugin;
+  uint64_t steady_time;
+};
+}
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
-  int i;
-  float *out = outputs[0];
-  double phase = data->phase;
-  double phase_add = data->phase_add;
 
-  for(i=0;i<num_frames;i++){
-    out[i] = sin(phase) * data->volume;
-    phase += phase_add;
-  }
-
-  data->phase = phase;
-}
-
-static double hz_to_radians(double hz, double sample_rate){
-  return hz*((2*3.14159)/sample_rate);
-}
-
-static double midi_to_hz(int midi){
-  if(midi<=0)
-    return 0;
-  else
-    return 8.17579891564*(expf(.0577622650*midi));
-}
-
-static double midi_to_radians(int midi, double sample_rate){
-  return hz_to_radians(midi_to_hz(midi),sample_rate);
+  data->steady_time += num_frames;
 }
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
   Data *data = (Data*)plugin->data;
-  data->phase_add = midi_to_radians(note_num,data->sample_rate);
-  data->volume = volume;
   printf("####################################################### Setting volume to %f (play note)\n",volume);
 }
 
 static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
-  data->volume = volume;
   printf("####################################################### Setting volume to %f\n",volume);
 }
 
 static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
-  data->volume = 0.0f;
   printf("####################################################### Setting sine volume to %f (stop note)\n",0.0f);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
   printf("####################################################### Setting sine volume to %f\n",value);
-  data->volume = value;
 }
 
 float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
@@ -86,16 +56,46 @@ float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFor
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
-  snprintf(buffer,buffersize-1,"%f",data->volume);
+  snprintf(buffer,buffersize-1,"hepp %d",effect_num);
+}
+
+static void host_events(struct clap_host   *host,
+                        struct clap_plugin *plugin,
+                        struct clap_event  *events)
+{
+}
+
+static void *host_extension(struct clap_host *host, const char *extension_id)
+{
+  return NULL;
+}
+
+static void host_log(struct clap_host       *host,
+                     struct clap_plugin     *plugin,
+                     enum clap_log_severity  severity,
+                     const char             *msg)
+{
+  const char *severities[] = {
+    "debug",
+    "info",
+    "warning",
+    "error",
+    "fatal",
+  };
+
+  fprintf(stdout, "[%s] %s\n", severities[severity], msg);
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   Data *data = (Data*)calloc(1,sizeof(Data));
-  data->phase = 0.0f;
-  data->phase_add = 0.062;
-  data->volume = 0.5f;
-  printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
-  data->sample_rate = sample_rate;
+  
+  data->host.clap_version  = CLAP_VERSION;
+  data->host.events        = host_events;
+  data->host.steady_time   = &data->steady_time;
+  data->host.extension     = host_extension;
+  data->host.get_attribute = host_attribute;
+  data->host.log           = host_log;
+
   return data;
 }
 
@@ -112,7 +112,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 void create_sine_plugin(void){
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
-  plugin_type->type_name                = "Sine Synth";
+  plugin_type->type_name                = "CLAP";
   plugin_type->name                     = "Sine Synth";
   plugin_type->num_inputs               = 0;
   plugin_type->num_outputs              = 1;
