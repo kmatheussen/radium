@@ -119,7 +119,7 @@ static RSemaphore *g_freewheeling_has_started = NULL;
 static QMutex debug_mutex;
 static QWaitCondition debug_wait;
 
-void PLAYER_debug_wake_up(void){
+void PLAYER_memory_debug_wake_up(void){
   debug_wait.wakeOne();
 }
 #endif

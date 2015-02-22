@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "memory_proc.h"
 
+#ifdef MEMORY_DEBUG
+#undef MEMORY_DEBUG
+#endif
 
 
 extern struct Root *root;

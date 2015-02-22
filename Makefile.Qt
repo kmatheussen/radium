@@ -337,13 +337,13 @@ run-gdb:
 run-valgrind:
 	echo "Execute first: jackd -s -r -ddummy -r 11000 -p 2048 -w 5000000"
 	$(CC) -DMEMORY_DEBUG $(CD)memory.c $(OPT)
-	rm Mixer.o SoundProducer.o
+	rm -f Mixer.o SoundProducer.o linux_objs/Mixer.o linux_objs/SoundProducer.o
 #	make -j3 && cd bin && valgrind --tool=helgrind $(PYTHONEXE) start.py keybindings.conf
-	BUILDTYPE=DEBUG ./build_linux.sh -j7 && rm memory.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --suppressions=../libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium
+	BUILDTYPE=DEBUG CFLAGS="-DMEMORY_DEBUG" ./build_linux.sh -j7 && rm -f memory.o Mixer.o SoundProducer.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --suppressions=../libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium
 # --dont-load-new-song
 #	make -j3 && cd bin && valgrind gdb --args $(PYTHONEXE) start.py keybindings.conf
 #	killall -9 X11_Qtstuff.py radium
-	rm Mixer.o SoundProducer.o memory.o
+	rm -f Mixer.o SoundProducer.o memory.o
 
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 
