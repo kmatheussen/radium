@@ -160,7 +160,15 @@ void GE_trianglestrip_start();
 void GE_trianglestrip_add(GE_Context *c, float x, float y);
 void GE_trianglestrip_end(GE_Context *c);
 
-void GE_gradient_triangle_start(void);
+struct GradientType {
+  enum Type {
+    NOTYPE,
+    HORIZONTAL,
+    VELOCITY
+  };
+};
+  
+void GE_gradient_triangle_start(GradientType::Type type);
 void GE_gradient_triangle_add(GE_Context *c, float x, float y);
 void GE_gradient_triangle_end(GE_Context *c, float x1, float x2);
 

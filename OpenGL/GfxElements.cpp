@@ -61,22 +61,35 @@ static vl::vec4 get_vec4(GE_Rgb rgb){
 }
 
 
-static vl::GLSLFragmentShader *get_gradient_fragment_shader(void){
-  static vl::ref<vl::GLSLFragmentShader> gradient_shader = NULL;
+static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type type){
+  static vl::ref<vl::GLSLFragmentShader> gradient_velocity_shader = NULL;
+  static vl::ref<vl::GLSLFragmentShader> gradient_horizontal_shader = NULL;
 
-  if(gradient_shader.get()==NULL) {
-    vl::String path =
+  if(gradient_velocity_shader.get()==NULL) {
+    vl::String path1 =
       vl::String(OS_get_program_path2())
       .append(vl::String(OS_get_directory_separator()))
       .append(vl::String("glsl"))
       .append(vl::String(OS_get_directory_separator()))
-      .append(vl::String("gradient.fs"))
       ;
 
-    gradient_shader = new vl::GLSLFragmentShader(path);
+    vl::String path2 = path1;
+    
+    gradient_velocity_shader = new vl::GLSLFragmentShader(path1.append("gradient.fs"));
+    gradient_horizontal_shader = new vl::GLSLFragmentShader(path2.append("horizontal_gradient.fs"));
+
+    R_ASSERT(gradient_velocity_shader.get()!=NULL);
+    R_ASSERT(gradient_horizontal_shader.get()!=NULL);
   }
-  
-  return gradient_shader.get();
+
+  if (type==GradientType::VELOCITY)
+    return gradient_velocity_shader.get();
+  else if (type==GradientType::HORIZONTAL)
+    return gradient_horizontal_shader.get();
+  else
+    RError("Unknown gradient type %d", type);
+   
+  return NULL;
 }
 
 #if 0
@@ -103,7 +116,9 @@ struct GradientTriangles : public vl::Effect {
   GradientTriangles *next;
   
   std::vector<vl::dvec2> triangles;
-    
+
+  GradientType::Type type;
+  
   float y, height;
   float x, width;
   
@@ -113,8 +128,9 @@ struct GradientTriangles : public vl::Effect {
   vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
   vl::Uniform *uniform_y;
 
-  GradientTriangles()
+  GradientTriangles(GradientType::Type type)
     : next(NULL)
+    , type(type)
   {
     setAutomaticDelete(false);
   }
@@ -136,19 +152,22 @@ struct GradientTriangles : public vl::Effect {
         
       glsl = shader->gocGLSLProgram();    
       //glsl->attachShader(get_gradient_vertex_shader()); 
-      glsl->attachShader(get_gradient_fragment_shader()); 
-      
-      uniform_y = glsl->gocUniform("y");
+      glsl->attachShader(get_gradient_fragment_shader(type)); 
+
+      if (type==GradientType::VELOCITY)
+        uniform_y = glsl->gocUniform("y");
     }
 
 
     glsl->gocUniform("color1")->setUniform(color1);
     glsl->gocUniform("color2")->setUniform(color2);
-    glsl->gocUniform("height")->setUniformF(height);
+    if (type==GradientType::VELOCITY)
+      glsl->gocUniform("height")->setUniformF(height);
     glsl->gocUniform("x")->setUniformF(x);
     glsl->gocUniform("width")->setUniformF(width);
 
-    set_y_offset(0.0f);
+    if (type==GradientType::VELOCITY)
+      set_y_offset(0.0f);
     
     return actor;
   }
@@ -159,92 +178,116 @@ struct GradientTriangles : public vl::Effect {
   }
   
   void set_y_offset(float y_offset){
-    uniform_y->setUniformF(y + y_offset);
+    if (type==GradientType::VELOCITY)
+      uniform_y->setUniformF(y + y_offset);
   }
 };
 
 
-// These two are only accessed by the main thread
-static GradientTriangles *used_gradient_triangles = NULL;
-static GradientTriangles *free_gradient_triangles = NULL;
+struct GradientTrianglesCollection {
 
-// main thread
-static void collect_gradient_triangles_garbage(void){
-  GradientTriangles *new_used = NULL;
-  GradientTriangles *new_free = NULL;
+  GradientType::Type type;
 
-  R_ASSERT(free_gradient_triangles == NULL);
+  // These two are only accessed by the main thread
+  GradientTriangles *used_gradient_triangles;
+  GradientTriangles *free_gradient_triangles;
 
-  GradientTriangles *gradient = used_gradient_triangles;
+  GradientTrianglesCollection(GradientType::Type type)
+    : type(type)
+    , used_gradient_triangles(NULL)
+    , free_gradient_triangles(NULL)
+  {}
   
-  while(gradient!=NULL){
-    GradientTriangles *next = gradient->next;
-
-    if(gradient->referenceCount()==0) {
-      gradient->clean();
-      gradient->next = new_free;
-      new_free = gradient;
-    } else {
-      gradient->next = new_used;
-      new_used = gradient;
-    }
-
-    gradient = next;
-  }
-
-  used_gradient_triangles = new_used;
-  free_gradient_triangles = new_free;
-}
-
-
-// main thread
-static void add_gradient_triangles(void){
-  for(int i=0;i<15;i++){
-    GradientTriangles *gradient = new GradientTriangles();
-    gradient->next = free_gradient_triangles;
-    free_gradient_triangles = gradient;
-  }
-}
-
-
-// main thread
-static GradientTriangles *get_gradient_triangles(void){  
-  if (free_gradient_triangles==NULL)
-    collect_gradient_triangles_garbage();
-
-  if (free_gradient_triangles==NULL) {
-    printf("1111. Allocating new gradient triangles\n");
-    add_gradient_triangles();
-  } else {
-    //printf("2222. Using recycled gradient triangles\n");
-  }
-
-  // pop free
-  GradientTriangles *gradient = free_gradient_triangles;
-  free_gradient_triangles = gradient->next;
-
-  // push used
-  gradient->next = used_gradient_triangles;
-  used_gradient_triangles = gradient;
-
-#if 0
-  if(free_gradient_triangles!=NULL)
-    assert(free_gradient_triangles != used_gradient_triangles);
+  // main thread
+  void collect_gradient_triangles_garbage(void){
+    GradientTriangles *new_used = NULL;
+    GradientTriangles *new_free = NULL;
+    
+    R_ASSERT(free_gradient_triangles == NULL);
+    
+    GradientTriangles *gradient = used_gradient_triangles;
+    
+    while(gradient!=NULL){
+      GradientTriangles *next = gradient->next;
       
-  if (free_gradient_triangles!=NULL)
-    assert(free_gradient_triangles->next != free_gradient_triangles);
-  
-  assert(used_gradient_triangles->next != used_gradient_triangles);
+      if(gradient->referenceCount()==0) {
+        gradient->clean();
+        gradient->next = new_free;
+        new_free = gradient;
+      } else {
+        gradient->next = new_used;
+        new_used = gradient;
+      }
+      
+      gradient = next;
+    }
+    
+    used_gradient_triangles = new_used;
+    free_gradient_triangles = new_free;
+  }
 
-  if(free_gradient_triangles!=NULL)
-    assert(free_gradient_triangles != used_gradient_triangles);
+
+  // main thread
+  void add_gradient_triangles(void){
+    for(int i=0;i<15;i++){
+      GradientTriangles *gradient = new GradientTriangles(type);
+      gradient->next = free_gradient_triangles;
+      free_gradient_triangles = gradient;
+    }
+  }
+
+
+  // main thread
+  GradientTriangles *get_gradient_triangles(void){  
+    if (free_gradient_triangles==NULL)
+      collect_gradient_triangles_garbage();
+    
+    if (free_gradient_triangles==NULL) {
+      printf("1111. Allocating new gradient triangles\n");
+      add_gradient_triangles();
+    } else {
+      //printf("2222. Using recycled gradient triangles\n");
+    }
+    
+    // pop free
+    GradientTriangles *gradient = free_gradient_triangles;
+    free_gradient_triangles = gradient->next;
+    
+    // push used
+    gradient->next = used_gradient_triangles;
+    used_gradient_triangles = gradient;
+    
+#if 0
+    if(free_gradient_triangles!=NULL)
+      assert(free_gradient_triangles != used_gradient_triangles);
+    
+    if (free_gradient_triangles!=NULL)
+      assert(free_gradient_triangles->next != free_gradient_triangles);
+    
+    assert(used_gradient_triangles->next != used_gradient_triangles);
+    
+    if(free_gradient_triangles!=NULL)
+      assert(free_gradient_triangles != used_gradient_triangles);
 #endif
   
-  return gradient;
-}
+    return gradient;
+  }
+
+};
    
+static GradientTrianglesCollection horizontalGradientTriangles(GradientType::HORIZONTAL);
+static GradientTrianglesCollection velocityGradientTriangles(GradientType::VELOCITY);
 
+static GradientTriangles *get_gradient_triangles(GradientType::Type type){
+  if (type==GradientType::HORIZONTAL)
+    return horizontalGradientTriangles.get_gradient_triangles();
+  else if (type==GradientType::VELOCITY)
+    return velocityGradientTriangles.get_gradient_triangles();
 
+  RError("Unknown gradient type %d",type);
+  return NULL;
+}
+    
 
 struct _GE_Context : public vl::Object{
   std::map< int, std::vector<vl::dvec2> > lines; // lines, boxes and polylines
@@ -909,8 +952,8 @@ static vl::ref<GradientTriangles> current_gradient_rectangle;
 static float triangles_min_y;
 static float triangles_max_y;
 
-void GE_gradient_triangle_start(void){
-  current_gradient_rectangle = get_gradient_triangles();
+void GE_gradient_triangle_start(GradientType::Type type){
+  current_gradient_rectangle = get_gradient_triangles(type);
   num_gradient_triangles = 0;
 }
 
@@ -947,9 +990,14 @@ void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
 
   current_gradient_rectangle->x = x1;
   current_gradient_rectangle->width = x2-x1;
-  
-  current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
-  current_gradient_rectangle->color2 = get_vec4(c->color.c);
+
+  if (current_gradient_rectangle->type==GradientType::VELOCITY) {
+    current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
+    current_gradient_rectangle->color2 = get_vec4(c->color.c);
+  } else {
+    current_gradient_rectangle->color1 = get_vec4(c->color.c);
+    current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);  
+  }
 
   c->gradient_triangles.push_back(current_gradient_rectangle);
 

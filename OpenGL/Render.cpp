@@ -70,22 +70,38 @@ static void draw_bordered_text(
   int z = GE_get_z(c);
     
   int x2=x+(strlen(text)*window->fontwidth);
-  int y2=y+window->fontheight-1;
 
+#if 0
+  int y2=y+window->fontheight-1;
+  // 1. Line
   GE_line(GE_color_z(9, z),
           x,y,x,y2,0.5f);
-
-  QColor qc1 = GE_qcolor(9).darker(90);
-  QColor qc2 = GE_qcolor(9).darker(110);
+#endif
+  
+  // 2. Line (the gradient one)
+  QColor qc1 = GE_qcolor(9).darker(96);
+  QColor qc2 = GE_qcolor(9).darker(113);
   GE_Context *c2 = GE_gradient_z(qc1, qc2, z); //GE_get_rgb(9), GE_get_rgb(11), z);
 
+#if 0  
   GE_line(c2,
           x,y+1,x2,y+1,0.5f);
-
+#else
+  GE_gradient_triangle_start(GradientType::HORIZONTAL);
+  GE_gradient_triangle_add(c2, x,  y+0.75 - 0.5);
+  GE_gradient_triangle_add(c2, x2, y+0.75 - 0.5);
+  GE_gradient_triangle_add(c2, x,  y+1.25);
+  GE_gradient_triangle_add(c2, x2, y+1.25);
+  GE_gradient_triangle_end(c2, x,  x2);
+#endif
+  
+  // 3. More lines
+  #if 0
   GE_Context *c3 = GE_mix_color_z(GE_get_rgb(11), GE_get_rgb(1), 800, z);
 
   GE_line(c3, x2,y, x2,y2, 0.5f);
   GE_line(c3, x,y2, x2,y2, 0.5f);
+  #endif
 #endif
 }
 
@@ -1044,7 +1060,7 @@ static void create_velocity_gradient_background(
 
   GE_Context *c = GE_gradient_z(rgb1, rgb2, Z_BELOW(Z_ZERO));
 
-  GE_gradient_triangle_start();
+  GE_gradient_triangle_start(GradientType::VELOCITY);
 
   const struct NodeLine *nodeline = velocity_nodelines;
   while (nodeline != NULL){
