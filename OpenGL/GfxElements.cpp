@@ -314,10 +314,11 @@ struct _GE_Context : public vl::Object{
 
   std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   
-private:
-  vl::ref<vl::Image> gradient;
+  //private:
+  // vl::ref<vl::Image> gradient;
 public:
-  bool is_gradient;
+  //bool is_gradient;
+  /*
   vl::ref<vl::Image> get_gradient(){
     if(gradient.get()==NULL)
       gradient = vl::makeColorSpectrum(128,
@@ -326,14 +327,15 @@ public:
                                        );
     return gradient;
   }
-  
+  */
+
   _GE_Context(const Color _color, int z)
     : textbitmaps(false)
     , textbitmaps_halfsize(true)
     , color(_color)
     , _z(z)
-    , gradient(NULL)
-    , is_gradient(false)
+      //, gradient(NULL)
+      //, is_gradient(false)
   {
     R_ASSERT(sizeof(Color)==sizeof(uint64_t));
   }
@@ -477,16 +479,20 @@ void GE_end_writing(GE_Rgb new_background_color){
 
 
 static void setColorBegin(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
-  if(c->is_gradient){
+#if 0
+  if(false && c->is_gradient){
     vg->setImage(c->get_gradient().get());
     vg->setColor(vl::white);
   } else
+#endif
     vg->setColor(get_vec4(c->color.c));
 }
 
 static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
+#if 0
   if(c->is_gradient)
     vg->setImage(NULL);
+#endif
 }
 
 
@@ -742,7 +748,7 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 
   GE_Context *c = get_context(color, z);
 
-  c->is_gradient = true;
+  //c->is_gradient = true;
 
   return c;
 }
@@ -784,13 +790,15 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 // mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
 
+#if 0
   if (c->is_gradient) {
     int key = get_key_from_pen_width(pen_width);
     c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
     c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
     return;
   }
-    
+#endif
+
   float dx = x2-x1;
   float dy = y2-y1;
  
