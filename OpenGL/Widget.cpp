@@ -718,6 +718,7 @@ static void setup_widget(QWidget *parent){
 
   vl::OpenGLContextFormat vlFormat;
   vlFormat.setDoubleBuffer(true);
+  //vlFormat.setDoubleBuffer(false);
   vlFormat.setRGBABits( 8,8,8,8 );
   vlFormat.setDepthBufferBits(24);
   vlFormat.setFullscreen(false);
@@ -727,6 +728,7 @@ static void setup_widget(QWidget *parent){
   vlFormat.setMultisample(true);
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
+  //vlFormat.setVSync(false);
 
   widget = new MyQt4ThreadedWidget(vlFormat, parent);
   widget->resize(1000,1000);
