@@ -35,4 +35,6 @@ extern void SETTINGS_write_string(const char *key, QString val);
 extern QString SETTINGS_read_qstring(const char *key, QString val);
 #endif
 
+extern LANGSPEC void PREFERENCES_open(void); // open gui
+
 #endif
