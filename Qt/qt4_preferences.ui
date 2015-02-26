@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>567</width>
+    <width>579</width>
     <height>375</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Preferences</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -19,28 +19,136 @@
      <property name="title">
       <string>OpenGL</string>
      </property>
-     <widget class="QCheckBox" name="vsyncOnoff">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>30</y>
-        <width>82</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>VSync</string>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; color:#00007f;&quot;&gt;Changing any of the these options requires a restart for the changes to take effect.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="horizontalGroupBox">
+        <property name="title">
+         <string>Vertical Blank</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QCheckBox" name="vsyncOnoff">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to synchronize on Vertibal Blank&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Normally, it doesn't make sense to turn off this option.&lt;/p&gt;&lt;p&gt;However, if using Linux with an Intel or AMD GFX chip, the &lt;/p&gt;&lt;p&gt;performance can be increased significantly by unchecking&lt;/p&gt;&lt;p&gt;this option.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;NOTE! If using the AMD catalyst driver on Linux, you could&lt;/p&gt;&lt;p&gt;experience unstability if checking this option!&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="statusTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>VSync</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="eraseEstimatedVBlankInterval">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If you change the refresh rate of your monitor (for instance from 60 hz from 120 hz), you need to erase the estimated value to avoid somewhat jumpy scrolling.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This value does not have to be 100% accurate. If your monitor has a refresh rate of 60 hz, and the estimated refresh rate is 59.9 hz, that's perfectly fine. The usage of the value is interpolated, so it's not possible to notice minor inaccuracies. In addition, the estimated value is timed using the audio clock and not the graphics clock, and therefore the estimated value could theoretically be 100% correct, even though it doesn't say 60 hz)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Erase Estimated Vertical Blank</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="mmagroup">
+        <property name="title">
+         <string>Multisample Anti-Aliasing (MSAA)</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QRadioButton" name="mma1">
+           <property name="text">
+            <string>Off</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mma2">
+           <property name="text">
+            <string>2X</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mma4">
+           <property name="text">
+            <string>4X</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mma8">
+           <property name="text">
+            <string>8X</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mma16">
+           <property name="text">
+            <string>16X</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="mma32">
+           <property name="text">
+            <string>32X</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Apply|QDialogButtonBox::Close|QDialogButtonBox::Reset</set>
+      <set>QDialogButtonBox::Close</set>
      </property>
     </widget>
    </item>

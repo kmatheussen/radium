@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_string_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/settings_proc.h"
-
+#include "../OpenGL/Widget_proc.h"
 
 #include "Qt_preferences.h"
 
@@ -44,21 +44,99 @@ class Preferences : public QDialog, public Ui::Preferences {
   bool _initing;
 
  Preferences(QWidget *parent=NULL)
-    : QDialog(parent)
+   : QDialog(parent, "Preferences")
   {
     _initing = true;
 
     setupUi(this);
 
+    updateWidgets();
+
     _initing = false;
+  }
+
+  void updateWidgets(){
+    vsyncOnoff->setChecked(GL_get_vsync());
+
+    switch(GL_get_multisample()){
+    case 1:
+      mma1->setChecked(true);
+      break;
+
+    case 2:
+      mma2->setChecked(true);
+      break;
+      
+    case 4:
+      mma4->setChecked(true);
+      break;
+      
+    case 8:
+      mma8->setChecked(true);
+      break;
+      
+    case 16:
+      mma16->setChecked(true);
+      break;
+      
+    case 32:
+      mma32->setChecked(true);
+      break;
+    }
+
+    
+    QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
+    eraseEstimatedVBlankInterval->setText(vblankbuttontext);
   }
 
 public slots:
 
   void on_buttonBox_clicked(QAbstractButton * button){
-    this->hide();
+    if (button->text() == QString("Close")){
+      printf("close\n");
+      this->hide();
+    } else
+      RError("Unknown button \"%s\"\n",button->text().toUtf8().constData());
   }
 
+  void on_eraseEstimatedVBlankInterval_clicked(){
+    printf("erasing\n");
+    GL_erase_estimated_vblank();
+  }
+
+  void on_vsyncOnoff_toggled(bool val){
+    GL_set_vsync(val);
+  }
+
+  void on_mma1_toggled(bool val){
+    if (val)
+      GL_set_multisample(1);
+  }
+
+  void on_mma2_toggled(bool val){
+    if (val)
+      GL_set_multisample(2);
+  }
+
+  void on_mma4_toggled(bool val){
+    if (val)
+      GL_set_multisample(4);
+  }
+
+  void on_mma8_toggled(bool val){
+    if (val)
+      GL_set_multisample(8);
+  }
+
+  void on_mma16_toggled(bool val){
+    if (val)
+      GL_set_multisample(16);
+  }
+
+  void on_mma32_toggled(bool val){
+    if (val)
+      GL_set_multisample(32);
+  }
 };
 }
 
@@ -74,10 +152,12 @@ static void ensure_widget_is_created(void){
 
 void PREFERENCES_open(void){
   ensure_widget_is_created();
-  
+  widget->show();
+  /*  
   num_users_of_keyboard++;
   widget->exec();
   num_users_of_keyboard--;
+  */
 }
 
 

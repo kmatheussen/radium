@@ -661,7 +661,7 @@ static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 
-static double get_earlier_estimated(){
+double GL_get_estimated_vblank(){
   return 1000.0 / SETTINGS_read_double("vblank", 60.0);
 }
 
@@ -676,6 +676,21 @@ void GL_erase_estimated_vblank(void){
   GFX_Message(NULL, "Stored vblank value erased. Restart Radium to estimate a new vblank value.");
 }
 
+void GL_set_vsync(bool onoff){
+  SETTINGS_write_bool("vsync", onoff);
+}
+
+bool GL_get_vsync(void){
+  return SETTINGS_read_bool("vsync", true);
+}
+
+void GL_set_multisample(int size){
+  SETTINGS_write_int("multisample", size);
+}
+
+int GL_get_multisample(void){
+  return R_BOUNDARIES(1, SETTINGS_read_int("multisample", 4), 32);
+}
 
 static void show_message_box(QMessageBox *box){
   box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
@@ -683,7 +698,7 @@ static void show_message_box(QMessageBox *box){
 
   if(have_earlier_estimated_value()){
 
-    QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/get_earlier_estimated())+" Hz).";
+    QString message = QString("Don't estimate again. Use last estimated value instead (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz).";
 #if 1
     box->addButton(message,QMessageBox::ApplyRole);
 #else
@@ -722,10 +737,10 @@ static void setup_widget(QWidget *parent){
   vlFormat.setRGBABits( 8,8,8,8 );
   vlFormat.setDepthBufferBits(24);
   vlFormat.setFullscreen(false);
-  vlFormat.setMultisampleSamples(4); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
+  vlFormat.setMultisampleSamples(GL_get_multisample()); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
   //vlFormat.setMultisampleSamples(8); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
   //vlFormat.setMultisampleSamples(32); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
-  vlFormat.setMultisample(true);
+  vlFormat.setMultisample(GL_get_multisample()>1);
   //vlFormat.setMultisample(false);
   vlFormat.setVSync(true);
   //vlFormat.setVSync(false);
@@ -771,7 +786,7 @@ QWidget *GL_create_widget(QWidget *parent){
   if (do_estimate_questionmark() == true) {
 
     setup_widget(parent);
-    widget->set_vblank(get_earlier_estimated());
+    widget->set_vblank(GL_get_estimated_vblank());
 
   } else {
 
@@ -784,7 +799,7 @@ QWidget *GL_create_widget(QWidget *parent){
     
     while(widget->is_training_vblank_estimator==true) {
       if(box.clickedButton()!=NULL){
-        widget->set_vblank(get_earlier_estimated());
+        widget->set_vblank(GL_get_estimated_vblank());
         store_use_estimated_vblank(true);
         break;
       }
