@@ -143,15 +143,15 @@ public slots:
 
 extern int num_users_of_keyboard;
 
-static Preferences *widget=NULL;
 
 static void ensure_widget_is_created(void){
-  if(widget==NULL)
-    widget = new Preferences(NULL);
 }
 
 void PREFERENCES_open(void){
-  ensure_widget_is_created();
+  static Preferences *widget=NULL;
+  if(widget==NULL)
+    widget = new Preferences(NULL);
+
   widget->show();
   /*  
   num_users_of_keyboard++;
