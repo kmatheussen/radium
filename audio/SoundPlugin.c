@@ -499,7 +499,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
 
   case EFFNUM_PAN:
-    snprintf(buffer,buffersize-1,"%d %c",(int)scale(plugin->pan.target_value,0,1,-90,90),0xb0);
+    snprintf(buffer,buffersize-1,"%d %s",(int)scale(plugin->pan.target_value,0,1,-90,90),"\u00B0");
     break;
   case EFFNUM_PAN_ONOFF:
     snprintf(buffer,buffersize-1,"%s",plugin->pan_is_on==true?"ON":"OFF");
