@@ -149,10 +149,15 @@ static void ensure_widget_is_created(void){
 
 void PREFERENCES_open(void){
   static Preferences *widget=NULL;
-  if(widget==NULL)
+  if(widget==NULL){
     widget = new Preferences(NULL);
-
+    //widget->setWindowModality(Qt::ApplicationModal);
+  }
+  
   widget->show();
+  widget->raise();
+  widget->activateWindow();
+
   /*  
   num_users_of_keyboard++;
   widget->exec();
