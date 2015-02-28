@@ -86,7 +86,7 @@ GLIBOPT ?= `$(PKG) --cflags glib-2.0`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
 PYPATH ?= 
-QT_CFLAGS ?= `$(PKG) --cflags Qt3Support`
+QT_CFLAGS ?= `$(PKG) --cflags Qt3Support --cflags QtOpenGL --cflags QtNetwork`
 QT_LDFLAGS ?= `$(PKG) --libs Qt3Support --libs QtOpenGL --libs QtNetwork`
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
@@ -153,7 +153,8 @@ COMMON_QTOPTS =
 
 # QT4 opts
 QTOPT = $(CPPOPT) -DUSE_QT4 -DUSE_QIMAGE_BUFFER=1 $(QT_CFLAGS) $(COMMON_QTOPTS) # -DQT_NO_OPENGL 
-QTLINKFLAGS = $(QT_LDFLAGS) $(GTK_LDFLAGS)
+QTLINKFLAGS = $(QT_LDFLAGS)
+#$(GTK_LDFLAGS)
 
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
 
@@ -259,8 +260,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o Render.o Widget.o
 
 #Embedded scheme
-OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS).o s7webserver.o radium_s7_wrap.o
-
+OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
 
 OBJ = $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ12) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
 
@@ -393,6 +393,7 @@ start_bin.sh:
 
 bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a
 	$(LINKER) $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(LDFLAGS) $(OS_LDFLAGS) $(RTMIDI_LDFLAGS)
+#libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext
 
 # `$(PKG) --libs fluidsynth`
@@ -1617,13 +1618,13 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL` $(FREETYPE_CFLAGS)
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp
-	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
+	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
 
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp
-	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT) `$(PKG) --cflags QtOpenGL`
+	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
@@ -1636,13 +1637,36 @@ bin/packages/s7/s7_$(TARGET_OS).o: bin/packages/s7/s7.c
 	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS).o `cat buildtype.opt` -Iembedded_scheme -O2 $(S7OPTS) -Wno-absolute-value
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
-	$(CCC) -c bin/s7webserver/s7webserver.cpp `$(PKG) --cflags QtNetwork` $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
+	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
 
 scheme.o: embedded_scheme/scheme.cpp
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
+
+QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT -DQHTTPSERVER_EXPORT
+
+qhttpconnection.o:
+	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS)
+qhttprequest.o:
+	$(CCC) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
+qhttpresponse.o:
+	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpresponse.cpp $(QHTTPSERVERFLAGS)
+qhttpserver.o:
+	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpserver.cpp $(QHTTPSERVERFLAGS)
+moc_qhttpconnection.o:
+	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp $(QHTTPSERVERFLAGS)
+moc_qhttprequest.o:
+	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp $(QHTTPSERVERFLAGS)
+moc_qhttpresponse.o:
+	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp $(QHTTPSERVERFLAGS)
+moc_qhttpserver.o:
+	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp $(QHTTPSERVERFLAGS)
+#ar cqs libqhttpserver.a qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o
+
+http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
+	$(CC) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT)
 
 radium_s7_wrap.o: api/radium_s7_wrap.c $(API)radium_proc.h
 	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
