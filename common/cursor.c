@@ -335,18 +335,35 @@ void CursorNextTrack_CurrPos(struct Tracker_Windows *window){
 	TrackSelectUpdate(window,wblock,ret);
 }
 
+static int find_track_left(struct Tracker_Windows *window){
+
+  if (window->curr_track==LPBTRACK)
+    return  window->wblock->block->num_tracks-1;
+  
+  int tracknum = window->curr_track-1;
+
+  if (tracknum==TEMPONODETRACK && window->show_reltempo_track==false)
+    tracknum--;
+
+  if (tracknum==TEMPOTRACK && window->show_bpm_track==false)
+    tracknum--;
+
+  if (tracknum==LPBTRACK && window->show_lpb_track==false)
+    tracknum = window->wblock->block->num_tracks-1;
+
+  return tracknum;
+}
 
 void CursorPrevTrack_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	NInt curr_track=window->curr_track;
-	int ret;
 
-	if(curr_track==LPBTRACK){
-		ret=SetCursorPosConcrete(window,wblock,wblock->block->num_tracks-1,-1);
-	}else{
-		ret=SetCursorPosConcrete(window,wblock,curr_track-1,-1);
-	}
-
+        int new_track = find_track_left(window);
+        if (new_track==curr_track) // can happen.
+          return;
+        
+        int ret = SetCursorPosConcrete(window,wblock,new_track,-1);
+        
 	TrackSelectUpdate(window,wblock,ret);
 }
 
