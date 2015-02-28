@@ -827,6 +827,28 @@ QWidget *GL_create_widget(QWidget *parent){
     QString s_version((const char*)driver_version_string);
     qDebug() << "___ driver_version_string: " << s_version;
     printf("vendor: %s, renderer: %s, version: %s \n",(const char*)driver_vendor_string,(const char*)driver_renderer_string,(const char*)driver_version_string);
+
+    
+#ifdef FOR_LINUX
+    if (s_vendor.contains("ATI", Qt::CaseInsensitive))
+      if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
+        vector_t v = {0};
+        VECTOR_push_back(&v,"Ok");
+        VECTOR_push_back(&v,"Don't show this message again");
+        
+        int result = GFX_Message(&v,
+                                 "AMD Catalyst OpenGL driver detected."
+                                 "<p>"
+                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
+                                 "<p>"
+                                 "In addition, \"Tear Free Desktop\" should be turned on in the catalyst configuration program (run the \"amdcccle\" program)."
+                                 "<p>"
+                                 "If you notice choppy graphics, it might help to overclock the graphics card: <A href=\"http://www.overclock.net/t/517861/how-to-overclocking-ati-cards-in-linux\">Instructions for overclocking can be found here</A>."
+                                 );
+        if (result==1)
+          SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
+      }
+
     
     if (s_vendor.contains("nouveau", Qt::CaseInsensitive))
       GFX_Message(NULL,
@@ -839,8 +861,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "The nvidia driver can be installed to get faster, smoother and prettier graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                   );
 
-    else if (s_vendor.contains("Intel")) {
-#ifdef FOR_LINUX
+    if (s_vendor.contains("Intel")) {
       if (SETTINGS_read_bool("show_intel_gfx_message_during_startup", true)) {
         vector_t v = {0};
         VECTOR_push_back(&v,"Ok");
@@ -872,8 +893,11 @@ QWidget *GL_create_widget(QWidget *parent){
         if (result==1)
           SETTINGS_write_bool("show_intel_gfx_message_during_startup", false);
       }
+    }
 #endif
-    } else if (s_version.contains("mesa", Qt::CaseInsensitive))
+
+    
+    if (s_version.contains("mesa", Qt::CaseInsensitive) && !s_vendor.contains("Intel"))
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"
@@ -882,8 +906,10 @@ QWidget *GL_create_widget(QWidget *parent){
                   "\n"
                   "In addition, the graphics tends to not look as good. " // lacking anti-aliasing
                   );
-  }
-  
+    
+  }  
+
+
   return widget.get();
 }
 
