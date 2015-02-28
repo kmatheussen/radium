@@ -155,7 +155,7 @@ void Instrument_widget::name_widget_textChanged( const QString &string )
   //QTabBar *tab_bar = instruments_widget->tabs->tabBar();
   //tab_bar->tab(tab_bar->currentTab())->setText(string);
 }
-
+asdf
 
 
 void Instrument_widget::name_widget_returnPressed()

@@ -61,18 +61,26 @@ extern int num_users_of_keyboard;
 static comment_dialog *widget=NULL;
 
 static void ensure_widget_is_created(void){
-  if(widget==NULL)
+  if(widget==NULL){
     widget = new comment_dialog(NULL);
+    widget->setWindowFlags(Qt::WindowStaysOnTopHint);
+    widget->setWindowModality(Qt::ApplicationModal);
+  }
 }
 
 extern "C"{
   void COMMENTDIALOG_open(void){
-
     ensure_widget_is_created();
-
+    
+    widget->show();
+    widget->raise();
+    widget->activateWindow();
+    
+    /*
     num_users_of_keyboard++;
     widget->exec();
     num_users_of_keyboard--;
+    */
   }
 
   bool COMMENT_show_after_loading(void){
