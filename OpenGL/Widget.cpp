@@ -862,7 +862,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   );
 
     if (s_vendor.contains("Intel")) {
-      if (SETTINGS_read_bool("show_intel_gfx_message_during_startup", true)) {
+      if (SETTINGS_read_bool("show_intel_gfx_message2_during_startup", true)) {
         vector_t v = {0};
         VECTOR_push_back(&v,"Ok");
         VECTOR_push_back(&v,"Don't show this message again");
@@ -870,7 +870,8 @@ QWidget *GL_create_widget(QWidget *parent){
         int result = GFX_Message(&v,
                                  "<strong>Intel OpenGL driver detected.</strong>"
                                  "<p>"
-                                 "For best performance, the driver should be configured like this:"
+                                 "<ol>"
+                                 "<li>For best performance, the Intel Xorg driver should be configured like this:"
                                  "<p>"
                                  "<pre>"
                                  "Section \"Device\"\n"
@@ -887,11 +888,15 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "Your driver is likely to already be configured like this. But in "
                                  "case you see tearing or the scrolling is not silky smooth, you might want to check "
                                  "your X configuration. You might also want to download the latest version "
-                                 "of the driver, which can be downloaded here: <a href=\"https://01.org/linuxgraphics/\">https://01.org/linuxgraphics/</a>"
+                                 "of the driver, which can be found here: <a href=\"https://01.org/linuxgraphics/\">https://01.org/linuxgraphics/</a>"
+                                 "<p>"
+                                 "<p>"
+                                 "<li>In addition, vsync in Radium should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
+                                 "</ol>"
                                  );
 
         if (result==1)
-          SETTINGS_write_bool("show_intel_gfx_message_during_startup", false);
+          SETTINGS_write_bool("show_intel_gfx_message2_during_startup", false);
       }
     }
 #endif
