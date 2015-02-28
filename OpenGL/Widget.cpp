@@ -742,7 +742,7 @@ static void setup_widget(QWidget *parent){
   //vlFormat.setMultisampleSamples(32); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
   vlFormat.setMultisample(GL_get_multisample()>1);
   //vlFormat.setMultisample(false);
-  vlFormat.setVSync(true);
+  vlFormat.setVSync(GL_get_vsync());
   //vlFormat.setVSync(false);
 
   widget = new MyQt4ThreadedWidget(vlFormat, parent);
