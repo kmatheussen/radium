@@ -1,5 +1,23 @@
 
+Most important changes 3.0.rc6 -> 3.0.rc7
+* opengl: Update instructions for intel driver
+* opengl: Show instructions for AMD users during startup
+* Just show() the comment window, dont run exec() on it
+* Fix degree symbol in the pan slider (ascii->utf8 fix)
+* Don't freeze program if moving the cursor beyond the leftmost track
+  when either the lpb, bpm, or the reltempo track is not visible.
+* OpenGL preferences dialog
+* Upgrade to latest visualization library from github (fixes for AMD, etc.)
+* Fix crash when undoing block while playing
+* opengl: Use TRIANGLES+shader to draw that gradient line above the note name instead of GL_LINE+textile
+* OpenGL: Dont use GL_LINES. Create lines from triangles instead. Seems like only nvidia draws GL_LINES decently.
+* opengl: Reduce number of contexts by OR-ing 15 into the color values. Doesnt seem noticable, and cpu usage is reduced significantly
+* Tweaked how the tracker cursor looks
+
+
+
 Most important changes 3.0.rc5 -> 3.0.rc6
+* build: Remove NDEBUG flag from RELEASE_BUILD_OPTS since it makes radium crash on windows. Strange stuff.
 * Replaced "<click me>" with "(click me)"
 * Give option to init LADSPA first if initing VST first and TLS is empty
 * Fix write access check
