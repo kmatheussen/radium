@@ -43,8 +43,13 @@ static QString not_found("___________NOT-FOUND");
 
 static QString get_value(QString line){
 
-  int pos = line.indexOf("=");
+  {
+    int pos = line.indexOf(QString("#"));
+    if (pos!=-1 && !line.contains("color"))
+      line.truncate(pos);
+  }
 
+  int pos = line.indexOf("=");
   if (pos==-1)
     return not_found;
 
@@ -52,23 +57,16 @@ static QString get_value(QString line){
 
 }
 
-static bool line_has_key(const char* key, const char* string){
-  if(isblank(string[0])) // strip whitespace
-    return line_has_key(key,string+1);
+static bool line_has_key(const char* c_key, const char* c_string){
+  QString key(c_key);
+  QString string = QString(c_string).trimmed();
 
-  if(string[0]=='=' && key[0]==0)
-    return true;
-
-  if(key[0]==0)
+  if (!string.startsWith(key))
     return false;
 
-  if(string[0]==0)
-    return false;
+  string = string.remove(0, key.length()).trimmed();
 
-  if(key[0]==string[0])
-    return line_has_key(key+1,string+1);
-
-  return false;
+  return string.startsWith("=");
 }
 
 static int find_linenum(const char* key, QVector<QString> lines){
@@ -110,14 +108,29 @@ static QVector<QString> get_lines(const char* key){
 
 
   QTextStream in(&file);
+  in.setCodec("UTF-8");
+  
   while ( !in.atEnd() ){
-    QString line = in.readLine();    
+    QString line = in.readLine();
+
+    if (!line.contains("#") && !line.contains("=")) // Make malformed lines empty
+      line = "";
+
+    else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b"
+      line.remove(0, line.indexOf("#"));
+
+    if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
+      RWarning("A very long line (%d characters) in the config file was ignored",line.length());
+      line = "";
+    }
+    
+    //printf("line: -%s-\n",line.toUtf8().constData());
     ret.push_back(line);
   }
 
   file.close();
   
-  QString version_line(talloc_format("settings_version = %s # dont change this one",OS_get_string_from_double(SETTINGSVERSION)));
+  QString version_line = QString("settings_version = ") + QString(OS_get_string_from_double(SETTINGSVERSION)) + " # dont change this one";
 
   int version_linenum = find_linenum("settings_version",ret);
   if(version_linenum==-1)

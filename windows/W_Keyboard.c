@@ -456,7 +456,6 @@ bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
           (last_pressed_keyswitch & EVENT_RIGHTALT) ||
           last_pressed_keyswitch==EVENT_RIGHTSHIFT;
         
-        */
         /*
         printf("****************** last_pressed_keyswitch: %x (%x) (%x) (%d)\n",last_pressed_keyswitch, EVENT_RIGHTALT, EVENT_LEFTALT|EVENT_LEFTCTRL, EVENT_RIGHTALT|EVENT_LEFTCTRL);
         printf("isplaykeyswitch: %d, keynum==last_pressed_key: %d, keynum==0: %d, (tevent.keyswitch==0: %d || (similar: %x/%x/%x))\n",
