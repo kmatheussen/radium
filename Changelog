@@ -1,3 +1,9 @@
+Most important changes 3.0.rc7 -> 3.0.rc8
+* Both read and write config files as unicode. Earler it only used unicode for writing, and not reading, and that led to growing and growing files on windows
+* windows: Fix AltGr key
+* mouse: Fix left win key on windows
+
+
 
 Most important changes 3.0.rc6 -> 3.0.rc7
 * opengl: Update instructions for intel driver
