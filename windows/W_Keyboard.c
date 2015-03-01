@@ -37,9 +37,13 @@ static bool right_windows_down = false;
 
 static uint32_t get_keyswitch(void){
   uint32_t keyswitch=0;
-  if(GetKeyState(VK_RCONTROL)&0x8000)
+
+  bool is_left_ctrl = GetKeyState(VK_LCONTROL) & 0x8000;
+  bool is_right_ctrl = GetKeyState(VK_RCONTROL) & 0x8000;
+    
+  if(is_right_ctrl)
     keyswitch |= EVENT_RIGHTCTRL;
-  if(GetKeyState(VK_LCONTROL)&0x8000)
+  if(is_left_ctrl)
     keyswitch |= EVENT_LEFTCTRL;
 
   if(GetKeyState(VK_LSHIFT)&0x8000)
@@ -47,8 +51,8 @@ static uint32_t get_keyswitch(void){
   if(GetKeyState(VK_RSHIFT)&0x8000)
     keyswitch |= EVENT_RIGHTSHIFT;
 
-  if(GetKeyState(VK_LMENU)&0x8000)
-    keyswitch |= EVENT_LEFTALT;
+  bool is_left_alt = GetKeyState(VK_LMENU) & 0x8000;
+
   if(GetKeyState(VK_RMENU)&0x8000)
     keyswitch |= EVENT_RIGHTALT;
 
@@ -56,6 +60,21 @@ static uint32_t get_keyswitch(void){
     keyswitch |= EVENT_LEFTEXTRA1;
   if(right_windows_down)
     keyswitch |= EVENT_RIGHTEXTRA1;
+
+  bool is_right_alt =    
+    (GetKeyState(VK_RMENU) & 0x8000) ||
+    (is_left_alt && is_left_ctrl) || // alt+ctrl is the same as altgr on windows
+    (is_left_alt && is_right_ctrl) ||  // alt+ctrl is the same as altgr on windows
+    keyswitch == 0xc2 // Don't quite know why. It's just the number that pops up on my windows 8.1 machine.
+    ;
+
+  // Some quick hacking. Windows detects right alt as ctrl+left alt. This should probably be programmed properly in the future though.
+  if(is_right_alt) {
+    keyswitch &= ~EVENT_LEFTALT;
+    keyswitch &= ~EVENT_RIGHTCTRL;
+    keyswitch &= ~EVENT_LEFTCTRL;
+    keyswitch |= EVENT_RIGHTALT;
+  }
 
   return keyswitch;
 }
@@ -286,6 +305,8 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
     KBDLLHOOKSTRUCT* p = (KBDLLHOOKSTRUCT*)lParam;
 
     if(wParam==WM_KEYDOWN || wParam==WM_KEYUP){
+      //printf("^^^^^^^^^^^^^^^^^^^^^ vkCode: %x\n",(int)p->vkCode);
+      
       if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){
 
         if(p->vkCode==VK_LWIN)
@@ -390,6 +411,16 @@ bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
       tevent.keyswitch=get_keyswitch();
       last_pressed_keyswitch = tevent.keyswitch;
 
+      /*
+      printf("____________ key down: %x. Switch down: %x, left ctrl: %x, left alt: %x, right ctrl: %x, right alt: %x\n",
+             last_pressed_key,last_pressed_keyswitch,
+             EVENT_LEFTCTRL,
+             EVENT_LEFTALT,
+             EVENT_RIGHTCTRL,
+             EVENT_RIGHTALT
+             );
+      */
+      
       EventReciever(&tevent,window);
 
       return true;
@@ -416,18 +447,27 @@ bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
 
       int64_t time_now = MIXER_get_time();
 
+      //printf("____________ key: %x. Switch down: %x, Switch up: %x\n",keynum,last_pressed_keyswitch,tevent.keyswitch);
       //printf("keynum: %d, last_pressed: %d, ALT_R: %d, time_now: %d, last_time: %d, diff: %d\n",keynum,last_pressed_key,EVENT_ALT_R,(int)time_now,(int)last_pressed_key_time,(int)(time_now-last_pressed_key_time));
       //fflush(stdout);
 
       if( (time_now-last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
-        if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTALT)
-          PlayBlockFromStart(window,true); // true == do_loop
+        bool isplaykeyswitch =
+          (last_pressed_keyswitch & EVENT_RIGHTALT) ||
+          last_pressed_keyswitch==EVENT_RIGHTSHIFT;
         
-        if(keynum==last_pressed_key && keynum==0 && tevent.keyswitch==0 && last_pressed_keyswitch==EVENT_RIGHTSHIFT)
-          PlayBlockFromStart(window,true); // true == do_loop
+        */
+        /*
+        printf("****************** last_pressed_keyswitch: %x (%x) (%x) (%d)\n",last_pressed_keyswitch, EVENT_RIGHTALT, EVENT_LEFTALT|EVENT_LEFTCTRL, EVENT_RIGHTALT|EVENT_LEFTCTRL);
+        printf("isplaykeyswitch: %d, keynum==last_pressed_key: %d, keynum==0: %d, (tevent.keyswitch==0: %d || (similar: %x/%x/%x))\n",
+               isplaykeyswitch, keynum==last_pressed_key, keynum==0, tevent.keyswitch==0, tevent.keyswitch,EVENT_RIGHTALT,last_pressed_keyswitch);
+        */
+        if (isplaykeyswitch)
+          if(keynum==last_pressed_key && keynum==0 && (tevent.keyswitch==0 || (tevent.keyswitch==EVENT_RIGHTALT && EVENT_RIGHTALT==last_pressed_keyswitch)))
+            PlayBlockFromStart(window,true); // true == do_loop
       }
 
-      last_pressed_key_time=-1;
+      last_pressed_key_time = -1;
 
       EventReciever(&tevent,window);
       return true;
