@@ -293,6 +293,12 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
         else
           right_windows_down = wParam==WM_KEYDOWN?true:false;
 
+        if (left_windows_down)
+          tevent.keyswitch |= EVENT_LEFTEXTRA1;
+        else
+          tevent.keyswitch &= (~EVENT_LEFTEXTRA1);
+        
+        //printf("left: %s, right: %s\n",left_windows_down?"down":"up", right_windows_down?"down":"up");
         if(g_bWindowActive)
           return 1;
       }
@@ -311,7 +317,7 @@ void W_KeyboardHandlerShutDown(void){
     UnhookWindowsHookEx(g_hKeyboardHook);
 }
 
-// don't need it, seems like
+// Seems like it's not necessary to do anything on windows
 void OS_SYSTEM_ResetKeysUpDowns(void){
 }
 
