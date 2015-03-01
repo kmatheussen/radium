@@ -15,6 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <string.h>
+
+
 #include "nsmtracker.h"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
@@ -27,8 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_playfromstart_proc.h"
 #include "midi_fx_proc.h"
 #include "disk_midi_fx_proc.h"
-
-#include <string.h>
 
 //#include "../instrprop/Amiga_instrprop_edit_proc.h"
 #include "OS_midi_proc.h"

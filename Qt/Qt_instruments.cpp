@@ -606,7 +606,6 @@ SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x
 
       if(autoconnect==true)
         MW_autoconnect_plugin(plugin);
-
     }
 
     return plugin;

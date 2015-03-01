@@ -49,6 +49,7 @@ static void Undo_Chip_AddRemove(
         struct Patch *patch,
         bool going_to_add
 ){
+
   struct Undo_Chip_AddRemove *u_rt=talloc(sizeof(struct Undo_Chip_AddRemove));
 
   u_rt->patch = patch;
@@ -69,7 +70,6 @@ static void Undo_Chip_AddRemove(
            u_rt,
            Undo_Do_Chip_AddRemove
            );
-
 }
 
 void Undo_Chip_Add_CurrPos(struct Patch *patch){

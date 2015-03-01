@@ -30,10 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "memory_proc.h"
 
-#ifdef MEMORY_DEBUG
-#undef MEMORY_DEBUG
-#endif
-
 
 extern struct Root *root;
 
@@ -44,7 +40,7 @@ void *tmemory;
 
 
 void init_memory(void){
-#ifndef MEMORY_DEBUG
+#ifndef DISABLE_BDWGC
 	tmemory=GC_malloc_atomic(tmemorysize);
 	tmemoryisused=0;
 #endif
@@ -54,7 +50,7 @@ void init_memory(void){
 
 
 void tfree(void *element){
-#ifdef MEMORY_DEBUG
+#ifdef DISABLE_BDWGC
 
 	if(element==NULL){
 		RError("Warning, attempting to free NULL\n");
@@ -85,7 +81,7 @@ size_t allocated=0;
 
 void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2)){
 
-#ifndef MEMORY_DEBUG
+#ifndef DISABLE_BDWGC
 #	ifdef _AMIGA
 		return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
 #	else
@@ -101,7 +97,7 @@ void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2)){
 void *tracker_alloc(size_t size,void *(*AllocFunction)(size_t size2)){
 	allocated+=size;
 
-#ifndef MEMORY_DEBUG
+#ifndef DISABLE_BDWGC
 #	ifdef _AMIGA
 		return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
 #	else
@@ -158,7 +154,7 @@ void *talloc(size_t size){
 	if(ret!=NULL) return ret;
 #endif
 
-#ifndef MEMORY_DEBUG
+#ifndef DISABLE_BDWGC
 	ret=GC_malloc(size);
 #else
 	ret=OS_getmem(size);		// For debugging. (wrong use of GC_malloced memory could be very difficult to trace)
@@ -184,7 +180,7 @@ void *talloc_atomic(size_t size){
 		tmemory=NULL;
 	}
 
-#ifndef MEMORY_DEBUG
+#ifndef DISABLE_BDWGC
 	ret=GC_malloc_atomic(size);
 #else
 	ret=OS_getmem(size);		// For debugging. (wrong use of GC_malloced memory could be very difficult to trace)
@@ -212,7 +208,7 @@ void *talloc_atomic_uncollectable(size_t size){
 		tmemory=NULL;
 	}
 
-#ifndef MEMORY_DEBUG
+#ifndef DISABLE_BDWGC
  	ret=GC_malloc_atomic_uncollectable(size);
 #else
 	ret=OS_getmem(size);		// For debugging. (wrong use of GC_malloced memory could be very difficult to trace)
@@ -232,7 +228,7 @@ void *talloc_atomic_clean(size_t size){
 }
 
 void *talloc_realloc(void *v, size_t new_size){
-#ifdef MEMORY_DEBUG
+#ifdef DISABLE_BDWGC
   return realloc(v,new_size);
 #else
   return GC_realloc(v,new_size);

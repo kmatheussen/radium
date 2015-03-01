@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 extern void GL_erase_estimated_vblank(void);
-extern double GL_get_estimated_vblank();
+extern double GL_get_estimated_vblank(void);
 
 extern void GL_set_vsync(bool onoff);
 extern bool GL_get_vsync(void);

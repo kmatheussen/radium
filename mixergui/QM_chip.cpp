@@ -718,7 +718,6 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _slider_being_edited(0)
  {
    printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
-
    {
      int x1,x2,y1,y2;
      get_slider1_coordinates(x1,x2,y1,y2);

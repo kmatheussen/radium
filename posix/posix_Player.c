@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <stdint.h>
 #include <pthread.h>
+
+#include <time.h>
 #include <unistd.h>
 
 #ifdef FOR_WINDOWS
@@ -50,6 +52,8 @@ extern PlayerClass *pc;
 static bool isplaying=false;
 
 //#include "google/profiler.h"
+
+#if USE_POSIX_PLAYER
 
 static void *posix_PlayerThread(void *arg){
   // TODO: Fix windows
@@ -95,6 +99,8 @@ static void *posix_PlayerThread(void *arg){
 
   return NULL;
 }
+#endif // USE_POSIX_PLAYER
+
 
 void posix_EndPlayer(void){
   doexit=true;
@@ -106,9 +112,11 @@ void posix_EndPlayer(void){
 bool posix_InitPlayer(void){
 
 #if !USE_POSIX_PLAYER
-  return true; // Using jack now.
-#endif
 
+  return true; // Using jack now.
+
+#else
+  
   if(pthread_create(&playerthread,NULL,posix_PlayerThread,NULL)!=0){
     fprintf(stderr,"Could not create player\n");
     return false;
@@ -129,6 +137,9 @@ bool posix_InitPlayer(void){
 #endif
 
   return true;
+
+#endif // USE_POSIX_PLAYER
+
 }
 
 void StartPlayer(void){

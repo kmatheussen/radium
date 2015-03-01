@@ -86,7 +86,7 @@ GLIBOPT ?= `$(PKG) --cflags glib-2.0`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
 PYPATH ?= 
-QT_CFLAGS ?= `$(PKG) --cflags Qt3Support --cflags QtOpenGL --cflags QtNetwork`
+QT_CFLAGS ?= `$(PKG) --cflags Qt3Support --cflags QtOpenGL` -Ibin/packages/qhttpserver-master/src -DQHTTPSERVER_EXPORT
 QT_LDFLAGS ?= `$(PKG) --libs Qt3Support --libs QtOpenGL --libs QtNetwork`
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
@@ -99,6 +99,7 @@ CRASHREPORTER_OPTS ?=
 CRASHREPORTER_POSIX_OPTS ?= 
 
 DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM
+#-DDISABLE_BDWGC
 #-DMEMORY_DEBUG
 # define SYSBASEDEBUG
 # define TRACKER_DEBUG
@@ -133,7 +134,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(CFLAGS) $(OS_OPTS) $(VST_OPTS) 
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(CFLAGS) $(OS_OPTS) $(VST_OPTS)
 
 # OPT is C flags
 OPT=$(COMMONOPT) -Wstrict-prototypes
@@ -1560,7 +1561,7 @@ SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
-	$(CC) audio/SoundPlugin.c $(OPT) $(CPUOPT)  $(CPUOPT)
+	$(CC) audio/SoundPlugin.c $(OPT) $(CPUOPT)  $(CPUOPT) -std=c99
 
 Mixer.o: audio/Mixer.cpp
 	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT)
@@ -1645,7 +1646,7 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 scheme.o: embedded_scheme/scheme.cpp
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT -DQHTTPSERVER_EXPORT
+QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT
 
 qhttpconnection.o:
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS)

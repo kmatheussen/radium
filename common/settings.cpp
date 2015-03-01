@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "OS_settings_proc.h"
+#include "threading.h"
 #include "../config/config.h"
 
 #include "settings_proc.h"
@@ -78,6 +79,8 @@ static int find_linenum(const char* key, QVector<QString> lines){
 }
   
 static QVector<QString> get_lines(const char* key){
+  R_ASSERT(THREADING_is_main_thread());
+  
   bool is_color_config = OS_config_key_is_color(key);
 
   QVector<QString> ret;
@@ -139,6 +142,8 @@ static QVector<QString> get_lines(const char* key){
 }
 
 static void write_lines(const char* key, QVector<QString> lines){
+  R_ASSERT(THREADING_is_main_thread());
+  
   QString filename = OS_get_config_filename(key);
 
   printf("config filename: -%s-\n",filename.toUtf8().constData());

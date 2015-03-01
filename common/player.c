@@ -47,12 +47,10 @@ void PlayerTask(STime reltime){
         const struct Blocks *block = pc->isplaying ? pc->block : NULL;
 
         if(block==NULL){
-          if(root->song->tracker_windows != NULL && 
-             root->song->tracker_windows->wblock != NULL && 
-             root->song->tracker_windows->wblock->block != NULL) // check that we have started.
-            block=root->song->tracker_windows->wblock->block;
-          else
+          if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL) // fix.
             return;
+          else
+            block=root->song->tracker_windows->wblock->block;
         }
 
 	addreltime+=reltime;

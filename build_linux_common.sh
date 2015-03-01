@@ -35,10 +35,6 @@ export TARGET_OS=linux
 export PKG=pkg-config
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
-# dynamic Qt4:
-export QT_CFLAGS="`$PKG --cflags Qt3Support --cflags QtOpenGL` -Ibin/packages/qhttpserver-master/src"
-export QT_LDFLAGS="`$PKG --libs Qt3Support --libs QtOpenGL --libs QtNetwork`"
-
 # static Qt4:
 #RQTDIR=/home/kjetil/qt-everywhere-opensource-src-4.8.6
 #export QT_CFLAGS="-DQT_STATIC -DQT3_SUPPORT -I$RQTDIR/include/Qt3Support -I$RQTDIR/include/QtCore -I$RQTDIR/include/QtGui -I$RQTDIR/include/QtNetwork -I$RQTDIR/include/QtSql -I$RQTDIR/include/QtOpenGL -Ibin/packages/qhttpserver-master/src"
