@@ -16,6 +16,10 @@
 
   #define GET_CURRENT_THREAD() GetCurrentThread()
 
+typedef struct{
+  int priority;
+} priority_t;
+
 
 
 #elif defined(__linux__) || defined(FOR_MACOSX)
@@ -24,6 +28,7 @@
 
   #include <pthread.h>
   #include <unistd.h>
+  #include <errno.h>
 
   // pthread API
   #define LockType pthread_mutex_t
@@ -34,7 +39,10 @@
 
   #define GET_CURRENT_THREAD() pthread_self()
 
-
+typedef struct{
+  int policy;  
+  struct sched_param param;
+} priority_t;
 
 #else
 
@@ -52,4 +60,7 @@ extern LANGSPEC void THREADING_init_main_thread_type(void);
 extern LANGSPEC void THREADING_init_player_thread_type(void);
 extern LANGSPEC bool THREADING_is_main_thread(void);
 extern LANGSPEC bool THREADING_is_player_thread(void);
+
+extern LANGSPEC priority_t THREADING_get_priority(void);
+extern LANGSPEC void THREADING_set_priority(priority_t priority);
 

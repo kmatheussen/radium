@@ -102,5 +102,6 @@ void MIDI_HandleInputMessage(void){
     return;
 
   InsertNoteCurrPos(root->song->tracker_windows,data1,false);
+  root->song->tracker_windows->must_redraw = true;
 }
 

@@ -396,7 +396,7 @@ protected:
             TRACKREALLINES_call_very_often(window);
 #endif
           });
-        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+        static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
         
         if(doquit==true)
           QApplication::quit();

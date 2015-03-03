@@ -240,20 +240,31 @@ static void RT_unlock_player(){
   unlock_player();
 }
 
+
+static priority_t g_priority_used_inside_PLAYER_lock;
+
 void PLAYER_lock(void){
   R_ASSERT_RETURN_IF_FALSE(!THREADING_is_player_thread());
-  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+  //R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread()); // also called from midi input thread
 
+  priority_t priority = THREADING_get_priority();
+  
   PLAYER_acquire_same_priority();
   lock_player();
+
+  g_priority_used_inside_PLAYER_lock = priority;
 }
 
 void PLAYER_unlock(void){
   R_ASSERT_RETURN_IF_FALSE(!THREADING_is_player_thread());
-  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+  //R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread()); // also called from midi input thread
 
+  priority_t priority = g_priority_used_inside_PLAYER_lock;
+  
   unlock_player();
-  PLAYER_drop_same_priority();
+
+  //PLAYER_drop_same_priority();
+  THREADING_set_priority(priority);
 }
 
 bool PLAYER_current_thread_has_lock(void){
