@@ -827,7 +827,7 @@ QWidget *GL_create_widget(QWidget *parent){
     QString s_version((const char*)driver_version_string);
     qDebug() << "___ driver_version_string: " << s_version;
     printf("vendor: %s, renderer: %s, version: %s \n",(const char*)driver_vendor_string,(const char*)driver_renderer_string,(const char*)driver_version_string);
-
+    //getchar();
     
 #ifdef FOR_LINUX
     if (s_vendor.contains("ATI", Qt::CaseInsensitive))
@@ -856,9 +856,9 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "Nouveau OpenGL driver detected."
                   "<p>"
-                  "The nouveau driver currently performes worse than the nvidia driver. In addition, the graphics did not (at the time of writing) look pretty using the nouveau driver."
+                  "The nouveau driver currently performes worse than the nvidia driver."
                   "<p>"
-                  "The nvidia driver can be installed to get faster, smoother and prettier graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
+                  "The nvidia driver can be installed to get faster / smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                   );
 
     if (s_vendor.contains("Intel")) {
@@ -902,7 +902,7 @@ QWidget *GL_create_widget(QWidget *parent){
 #endif
 
     
-    if (s_version.contains("mesa", Qt::CaseInsensitive) && !s_vendor.contains("Intel"))
+    if (s_version.contains("mesa", Qt::CaseInsensitive) && !s_vendor.contains("Intel") && !s_vendor.contains("nouveau"))
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"
