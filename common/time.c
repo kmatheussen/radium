@@ -16,6 +16,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+// It may be that these old timing structures may cover everything perfectly.
+// Unfortunatly, I don't understand it anymore. I was a lot more trained
+// in math when I wrote this code (year 2000), so it's likely to work.
 
 
 
@@ -57,13 +60,13 @@ extern PlayerClass *pc;
     much time now, so its allso probably no use at all optimizing.
 ********************************************************/
 
-STime Place2STime_from_times(
-                             const struct STimes *times,
-                             const Place *p
-                             )
+static STime Place2STime_from_times2(
+                                     const struct STimes *times,
+                                     float fp
+                                     )
 {
 
-	int line1 = p->line;
+        int line1 = (int)fp;
         int line2 = line1+1;
 	const struct STimes *stime= &times[line1];
 
@@ -71,13 +74,13 @@ STime Place2STime_from_times(
 
 	STime time1=stime->time;
 
-	if(0==p->counter) return time1;
-
 	STime time2=times[line2].time;
 
-	float fp = GetfloatFromPlacement(p);
 	float fp1 = line1;
         float fp2 = fp1+1.0;
+
+        if (fabsf(fp1 - fp) < 0.0001)
+          return time1;
 
 	const struct STimeChanges *stc = stime->timechanges;
 	if(stc!=NULL){
@@ -86,8 +89,9 @@ STime Place2STime_from_times(
 
 		struct STimeChanges *next=NextSTimeChange(stc);
 		while(next!=NULL){
-			if(PlaceGreaterOrEqual(&next->l.p,p)){
-				fp2=GetfloatFromPlacement(&next->l.p);
+                        float maybe_new_fp2 = GetfloatFromPlacement(&next->l.p);
+                        if (maybe_new_fp2 >= fp) {
+                                fp2=maybe_new_fp2;
 				time2=next->time;
 				break;
 			}
@@ -100,8 +104,8 @@ STime Place2STime_from_times(
 
 		if(stc->tempo1!=0.0f){
 			float tempo=stc->tempo1 * (
-                                                   RelTempo2RealRelTempo( (float) (
-                                                                                   stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1)))
+                                                   RelTempo2RealRelTempo( (float) (                                                                                   
+                                                                                   stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1))) // i.e. stc->rel + scale(fp, fp1, fp2, 0, stc->deltarel / 2.0f),
                                                                                    ))
                                                    );
 
@@ -123,11 +127,140 @@ STime Place2STime_from_times(
         return scale(fp, fp1, fp2, time1, time2);
 }
 
+STime Place2STime_from_times(
+                             const struct STimes *times,
+                             const Place *p
+                             )
+{
+
+	if(0==p->counter){
+          int line1 = p->line;
+          const struct STimes *stime= &times[line1];
+          STime time1=stime->time;
+          return time1;
+        }
+
+        return Place2STime_from_times2(times, GetfloatFromPlacement(p));
+}
+
 STime Place2STime(
 	const struct Blocks *block,
 	const Place *p
 ){
   return Place2STime_from_times(block->times, p);
+}
+
+
+static float STime2Place2(
+                          const struct STimes *times,
+                          STime correct_time,
+                          int num_tries_left,
+                          
+                          float low_result,
+                          float high_result,
+                          
+                          STime low_time,
+                          STime high_time
+                          )
+{
+  float maybe_result = (high_result+low_result) / 2.0f;
+
+  if (num_tries_left==0)
+    return maybe_result;
+
+  STime maybe_time = Place2STime_from_times2(times, maybe_result);
+
+  if (maybe_time==correct_time)
+    return maybe_result;
+
+  else if (maybe_time > correct_time)
+    return STime2Place2(times,
+                        correct_time,
+                        num_tries_left-1,
+                        
+                        low_result,
+                        maybe_result,
+                        
+                        low_time,
+                        maybe_time
+                        );
+
+  else
+    return STime2Place2(times,
+                        correct_time,
+                        num_tries_left-1,
+                        
+                        maybe_result,
+                        high_result,
+                        
+                        maybe_time,
+                        high_time
+                        );
+}
+
+float STime2Place_f(
+                  const struct Blocks *block,
+                  STime time
+                  )
+{
+  int line1,line2;
+
+  if (time < 0)
+    return 0.0f;
+
+  if (time >= getBlockSTimeLength(block))
+    return block->num_lines - 0.0001f;
+
+  int line=1;
+  while(block->times[line].time < time)
+    line++;
+
+  line2 = line;
+  line1 = line-1;
+
+  return STime2Place2(block->times,
+                      time,
+                      40,
+                      line1,
+                      line2,
+                      block->times[line1].time,
+                      block->times[line2].time
+                      );
+}
+
+Place STime2Place(
+                  const struct Blocks *block,
+                  STime time
+                  )
+{
+  Place place;
+  Place *firstplace = PlaceGetFirstPos();
+  Place lastplace;
+  PlaceSetLastPos(block, &lastplace);
+
+  if (time < 0) {
+    return *firstplace;
+  }
+
+  if (time >= getBlockSTimeLength(block)){
+    PlaceTilLimit(&place,&lastplace);
+    return place;
+  }
+
+  float place_f = STime2Place_f(block,time);
+
+  Float2Placement(place_f, &place);
+    
+  if (PlaceGreaterOrEqual(&place, &lastplace))
+    PlaceTilLimit(&place,&lastplace);
+
+  else if (PlaceLessThan(&place,firstplace))
+    place = *firstplace;
+  
+  if (place.line==64)
+    abort();
+
+  return place;
 }
 
 bool isSTimeInBlock(const struct Blocks *block,STime time){
@@ -565,13 +698,14 @@ static void STP_fillinSTimeTempos(STimePlace *stp){
 
 /**************** StimePlace end *************************/
 
-#ifdef TRACKER_DEBUG
+#if 0
+#include <inttypes.h>
 /* A debugging function. */
 void PrintSTimes(struct Blocks *block){
 	struct WBlocks *wblock;
 	struct LocalZooms **reallines;
-	struct STimes *stime;
-	struct STimeChanges *timechanges;
+	const struct STimes *stime;
+	const struct STimeChanges *timechanges;
 	int lasttime=0;
 	int nowtime;
 	int line,realline;
@@ -583,9 +717,12 @@ void PrintSTimes(struct Blocks *block){
 
 		printf("%d. %d. Delta: %d, Ch: %p\n",line,nowtime,nowtime-lasttime,timechanges);
 		while(timechanges!=NULL){
-                  printf("   place: %f, time: %lld, tempo1: %f, rel: %f, deltarel: %f\n",
-				GetfloatFromPlacement(&timechanges->l.p),
-				timechanges->time,timechanges->tempo1,timechanges->rel,timechanges->deltarel
+                  printf("   place: %f, time: %" PRId64 ", tempo1: %f, rel: %f, deltarel: %f\n",
+                         GetfloatFromPlacement(&timechanges->l.p),
+                         timechanges->time,
+                         timechanges->tempo1,
+                         timechanges->rel,
+                         timechanges->deltarel
 			);
 			timechanges=NextSTimeChange(timechanges);
 		}
@@ -595,14 +732,16 @@ void PrintSTimes(struct Blocks *block){
 
 	if(root->song->tracker_windows!=NULL){
 		wblock=root->song->tracker_windows->wblock;
-		reallines=wblock->reallines;
 		if(wblock!=NULL){
+                  reallines=wblock->reallines;
+                  if (reallines!=NULL){
 			lasttime=0;
 			for(realline=0;realline<wblock->num_reallines;realline++){
 				nowtime=Place2STime(block,&reallines[realline]->l.p);
 				printf("realline: %d, Place: %f, time: %d, delta: %d,\n",realline,GetfloatFromPlacement(&reallines[realline]->l.p),nowtime,nowtime-lasttime);
 				lasttime=nowtime;
 			}
+                  }
 		}
 	}
 
@@ -661,8 +800,8 @@ void UpdateSTimes(struct Blocks *block){
 
         update_is_beat(block, stp.times);
 
-#ifdef TRACKER_DEBUG
-	//PrintSTimes(block);
+#if 0
+	PrintSTimes(block);
 #endif
 
 }

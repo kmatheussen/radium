@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/placement_proc.h"
+#include "../common/time_proc.h"
 
 #include "midi_i_input_proc.h"
 
@@ -98,41 +99,6 @@ static void record_midi_event(int cc, int data1, int data2){
   g_last_recorded_midi_event = midi_event;
 }
 
-static Place time_to_place(const struct Blocks *block, STime time){
-  int line1,line2;
-
-  int line=1;
-  while(block->times[line].time < time)
-    line++;
-
-  line2 = line;
-  line1 = line-1;
-
-  R_ASSERT(line2>0);
-  R_ASSERT(line2<=block->num_lines);
-  
-  STime time1 = block->times[line1].time;
-  STime time2 = block->times[line2].time;
-  
-  Place place;
-
-  float place_f = scale(time,time1,time2,line1,line2); // todo: may be inaccurate
-
-  Float2Placement(place_f, &place);
-
-  Place lastplace;
-  PlaceSetLastPos(block, &lastplace);
-  
-  if (PlaceGreaterOrEqual(&place, &lastplace))
-    PlaceTilLimit(&place,&lastplace);
-
-  Place *firstplace = PlaceGetFirstPos();
-    
-  if (PlaceLessThan(&place,firstplace))
-    place = *firstplace;
-  
-  return place;
-}
 
 static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int notenum_to_find){
   while(midi_event!=NULL){
@@ -177,19 +143,18 @@ void MIDI_insert_recorded_midi_events(void){
       // add note
       if (cc==0x90 && volume>0) {
         
-        Place place = time_to_place(block,time);
+        Place place = STime2Place(block,time);
         Place endplace;
         Place *endplace_p;
         
         midi_event_t *midi_event_endnote = find_midievent_end_note(next,notenum);
         if (midi_event_endnote!=NULL){
           midi_event_endnote->wblock = NULL; // only use it once
-          endplace = time_to_place(block,midi_event_endnote->blocktime);
+          endplace = STime2Place(block,midi_event_endnote->blocktime);
           endplace_p = &endplace;
         }else
           endplace_p = NULL;
         
-        endplace.line++;
         InsertNote(midi_event->wblock,
                    midi_event->wtrack,
                    &place,

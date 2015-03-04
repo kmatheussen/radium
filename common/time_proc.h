@@ -27,6 +27,16 @@ extern LANGSPEC STime Place2STime(
                                   const Place *p
                                   );
 
+extern LANGSPEC float STime2Place_f(
+                                    const struct Blocks *block,
+                                    STime time
+                                    );
+
+extern LANGSPEC Place STime2Place(
+                                  const struct Blocks *block,
+                                  STime time
+                                  );
+
 extern LANGSPEC bool isSTimeInBlock(const struct Blocks *block,STime time);
 extern LANGSPEC STime getBlockSTimeLength(const struct Blocks *block);
 
