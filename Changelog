@@ -1,3 +1,15 @@
+Most important changes 3.0.rc8 -> 3.0.rc9
+* Don't use clang in Linux. SIGSEGV signal is not catched,
+  and crashreporter is not working (tested both 3.4 and 3.5)
+* Update nouveau warning
+* Don't give additional warning about mesa if using intel or nouveau
+  driver on Linux.
+* Use custom THREADING_get_priority/THREADING_set_priority functions
+  for manual priority inheritance (crash fix when using MIDI input).
+* Update graphics when adding notes using MIDI input
+
+
+
 Most important changes 3.0.rc7 -> 3.0.rc8
 * Both read and write config files as unicode. Earler it only used unicode for writing, and not reading, and that led to growing and growing files on windows
 * windows: Fix AltGr key

@@ -89,7 +89,7 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
 void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
   int64_t time = seq_to_scheduler_time(seq_time);
 
-  //  args=NULL;
+  //args=NULL; // test crashreporter
   
 #if 0
   printf("|||||||||| Adding event at seq_time %d, scheduler_time %d. g_current_time: %d, pc->start_time: %d\n",
