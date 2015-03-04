@@ -351,10 +351,16 @@ int AddFXNodeLine(
 ){
 	struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum);
 	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+
+        int ret;
         
-	fxnodeline->val=R_BOUNDARIES(fxs->fx->min, val, fxs->fx->max);
-	PlaceCopy(&fxnodeline->l.p,p1);
-	return ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
+        PLAYER_lock();{
+          fxnodeline->val=R_BOUNDARIES(fxs->fx->min, val, fxs->fx->max);
+          PlaceCopy(&fxnodeline->l.p,p1);
+          ret = ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
+        }PLAYER_unlock();
+
+        return ret;
 }
 
 static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){

@@ -1511,10 +1511,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
 
   Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
 
-  int ret;
-  PLAYER_lock();{
-    ret = AddVelocity(value*MAX_VELOCITY, &place, note);
-  }PLAYER_unlock();
+  int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){
     //RError("createVelocity: Can not create new velocity with the same position as another velocity");
@@ -1856,17 +1853,14 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
   int max = fx->fx->max;
   int min = fx->fx->min;
 
-  int ret;
-  PLAYER_lock();{
-    ret = AddFXNodeLine(
-                        window,
-                        wblock,
-                        wtrack,
-                        fx->l.num,
-                        scale(value, 0,1, min, max),
-                        &place
-                        );
-  }PLAYER_unlock();
+  int ret = AddFXNodeLine(
+                          window,
+                          wblock,
+                          wtrack,
+                          fx->l.num,
+                          scale(value, 0,1, min, max),
+                          &place
+                          );
 
   if (ret==-1){
     //RError("createFx: Can not create new fx with the same position as another fx");
@@ -1898,9 +1892,11 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   if (floatplace >= 0.0f){
     Place place;
     Float2Placement(floatplace, &place);
-  
+
+    Place *last_pos = PlaceGetLastPos(wblock->block);
+    
     PLAYER_lock();{
-      ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), PlaceGetLastPos(wblock->block));
+      ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), last_pos);
     }PLAYER_unlock();
   }
   

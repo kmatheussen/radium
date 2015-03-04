@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "range_proc.h"
 #include "windows_proc.h"
+#include "OS_Player_proc.h"
 
 #include "velocities_proc.h"
 
@@ -113,7 +114,13 @@ int AddVelocity(
   
   /* ListAddElement3_ns returns -1 (and doesnt do anything else)
      if there allready is an element with the same placement. */
-  return ListAddElement3_ns(&note->velocities,&velocity->l);
+  int ret;
+
+  PLAYER_lock();{
+    ret = ListAddElement3_ns(&note->velocities,&velocity->l);
+  }PLAYER_unlock();
+  
+  return ret;
 }
 
 void AddVelocityCurrPos(struct Tracker_Windows *window){

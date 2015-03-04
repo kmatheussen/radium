@@ -127,7 +127,7 @@ STime PLAYER_get_block_delta_time(STime time){
     return 0;
 
   if(pc->isplaying){
-    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time));
+    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
     if(ret<0){
       RWarning("ret<0: %d",ret);
       return 0;

@@ -221,6 +221,9 @@ static int UpdateRealLinesRec(
 static bool U3(struct Tracker_Windows *window, struct WBlocks *wblock, int factor){
   R_ASSERT(PLAYER_current_thread_has_lock() || !pc->isplaying);
   R_ASSERT(factor>1);
+
+  if (factor<=1)
+    return false;
   
   int realline = 0;
   int line = 0;

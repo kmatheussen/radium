@@ -406,7 +406,7 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   case EnterNotify:
     {
       XCrossingEvent *e = (XCrossingEvent*) event;
-      printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
       if(e->focus==False)
         OS_SYSTEM_ResetKeysUpDowns();
     }
@@ -414,7 +414,7 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   case LeaveNotify:
     {
       XCrossingEvent *e = (XCrossingEvent*) event;
-      printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
       if(e->focus==False)
         OS_SYSTEM_ResetKeysUpDowns();
     }
