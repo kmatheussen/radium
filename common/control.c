@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_clock_proc.h"
 #include "blts_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../midi/midi_i_input_proc.h"
 #include "scheduler_proc.h"
 
 #include "control_proc.h"
@@ -104,6 +105,8 @@ bool InitProgram(void){
           return false;
         }
 
+        MIDI_input_init();
+        
 	printf("...Player 1/2\n");
 
 	if( ( ! InitPEQmempool(1000) )   ){	// 1000 and 4000 are hardcoded values. Not good.

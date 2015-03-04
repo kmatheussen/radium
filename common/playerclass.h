@@ -102,7 +102,7 @@ typedef struct{
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 
-	STime seqtime;		/* Time being played at the top of the block that now is playing. */
+	volatile STime seqtime;		/* Time being played at the top of the block that now is playing. */
 
 	volatile bool isplaying;
 	volatile bool initplaying;

@@ -1127,7 +1127,7 @@ struct Root{
         int min_standardvel;
         int standardvel;
 
-	bool editonoff;
+	volatile bool editonoff;
 	bool scrollplayonoff;
 };
 
