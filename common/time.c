@@ -150,6 +150,7 @@ STime Place2STime(
   return Place2STime_from_times(block->times, p);
 }
 
+#define NUM_STIME2PLACE2_TRIES 40
 
 static float STime2Place2(
                           const struct STimes *times,
@@ -163,7 +164,25 @@ static float STime2Place2(
                           STime high_time
                           )
 {
-  float maybe_result = (high_result+low_result) / 2.0f;
+  float maybe_result;
+
+  if (num_tries_left==NUM_STIME2PLACE2_TRIES)
+    maybe_result = scale(correct_time, low_time, high_time, low_result, high_result); // usually correct
+  else
+    maybe_result = (high_result+low_result) / 2.0f;
+
+  /*
+  printf("%d: %d %d (delta: %d) (%f, %f, %f)\n",
+         num_tries_left, 
+         (int)low_time,
+         (int)high_time,
+         (int)(high_time-low_time),
+         low_result,
+         maybe_result,
+         high_result
+         );
+  */     
+         
 
   if (num_tries_left==0)
     return maybe_result;
@@ -220,7 +239,7 @@ float STime2Place_f(
 
   return STime2Place2(block->times,
                       time,
-                      40,
+                      NUM_STIME2PLACE2_TRIES,
                       line1,
                       line2,
                       block->times[line1].time,
