@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "PEQcommon_proc.h"
-#include "time2place_proc.h"
 #include "PEQ_type_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Pd_plugin_proc.h"

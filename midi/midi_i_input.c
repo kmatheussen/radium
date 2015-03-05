@@ -30,8 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/time_proc.h"
+#include "../common/hashmap_proc.h"
+#include "../common/undo.h"
+#include "../common/undo_notes_proc.h"
 
 #include "midi_i_input_proc.h"
+
 
 extern struct Root *root;
 
@@ -81,7 +85,7 @@ static midi_event_t *get_midi_event(void){
 }
 
 static void record_midi_event(int cc, int data1, int data2){
-  
+
   midi_event_t *midi_event = get_midi_event();
 
   midi_event->next = NULL;
@@ -90,6 +94,8 @@ static void record_midi_event(int cc, int data1, int data2){
   midi_event->wtrack    = midi_event->wblock->wtrack;
   midi_event->blocktime = pc->start_time - pc->seqtime;
   midi_event->msg       = PACK_MIDI_MSG(cc,data1,data2);
+
+  //printf("Rec %d: %x, %x, %x\n",(int)midi_event->blocktime,cc,data1,data2);
 
   if (g_recorded_midi_events==NULL)
     g_recorded_midi_events = midi_event;
@@ -124,59 +130,81 @@ static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int noten
 void MIDI_insert_recorded_midi_events(void){
   midi_event_t *midi_event = g_recorded_midi_events;
 
-  while(midi_event != NULL){
-    midi_event_t *next = midi_event->next;
+  if (midi_event==NULL)
+    return;
 
-    if (midi_event->wblock!=NULL) {
-      
-      const struct Blocks *block = midi_event->wblock->block;
+  hash_t *track_set = HASH_create(8);
+  
+  Undo_Open();{
+    
+    while(midi_event != NULL){
+      midi_event_t *next = midi_event->next;
 
-      STime time = midi_event->blocktime;
-      uint32_t msg = midi_event->msg;
-      
-      printf("%d: %x\n",(int)time,msg);
-      
-      int cc = msg>>16;
-      int notenum = (msg>>8)&0xff;
-      int volume = msg&0xff;
-      
-      // add note
-      if (cc==0x90 && volume>0) {
+      if (midi_event->wblock!=NULL) {
+
+        struct Blocks *block = midi_event->wblock->block;
+        struct Tracks *track = midi_event->wtrack->track;
         
-        Place place = STime2Place(block,time);
-        Place endplace;
-        Place *endplace_p;
+        char *key = talloc_format("%x",midi_event->wtrack);
+        if (HASH_has_key(track_set, key)==false){
+
+          Undo_Notes(root->song->tracker_windows,
+                     block,
+                     track,
+                     midi_event->wblock->curr_realline
+                     );
+          HASH_put_int(track_set, key, 1);
+        }
         
-        midi_event_t *midi_event_endnote = find_midievent_end_note(next,notenum);
-        if (midi_event_endnote!=NULL){
-          midi_event_endnote->wblock = NULL; // only use it once
-          endplace = STime2Place(block,midi_event_endnote->blocktime);
-          endplace_p = &endplace;
-        }else
-          endplace_p = NULL;
+
+        STime time = midi_event->blocktime;
+        uint32_t msg = midi_event->msg;
+      
+        printf("%d: %x\n",(int)time,msg);
+      
+        int cc = msg>>16;
+        int notenum = (msg>>8)&0xff;
+        int volume = msg&0xff;
+      
+        // add note
+        if (cc==0x90 && volume>0) {
         
-        InsertNote(midi_event->wblock,
-                   midi_event->wtrack,
-                   &place,
-                   endplace_p,
-                   notenum,
-                   (float)volume * MAX_VELOCITY / 127.0f,
-                   true
-                 );
+          Place place = STime2Place(block,time);
+          Place endplace;
+          Place *endplace_p;
+        
+          midi_event_t *midi_event_endnote = find_midievent_end_note(next,notenum);
+          if (midi_event_endnote!=NULL){
+            midi_event_endnote->wblock = NULL; // only use it once
+            endplace = STime2Place(block,midi_event_endnote->blocktime);
+            endplace_p = &endplace;
+          }else
+            endplace_p = NULL;
+        
+          InsertNote(midi_event->wblock,
+                     midi_event->wtrack,
+                     &place,
+                     endplace_p,
+                     notenum,
+                     (float)volume * MAX_VELOCITY / 127.0f,
+                     true
+                     );
+        }
+      
       }
       
+      // remove event
+      midi_event->next = g_midi_events;
+      g_midi_events = midi_event;
+      
+      
+      // iterate next
+      midi_event = next;
     }
-
     
-    // remove event
-    midi_event->next = g_midi_events;
-    g_midi_events = midi_event;
+  }Undo_Close();
 
-    
-    // iterate next
-    midi_event = next;
-  }
-
+  
   g_recorded_midi_events = NULL;
   g_last_recorded_midi_event = NULL;
 }
