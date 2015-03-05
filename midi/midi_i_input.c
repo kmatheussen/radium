@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/undo_notes_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "midi_i_input_proc.h"
 
@@ -92,7 +93,7 @@ static void record_midi_event(int cc, int data1, int data2){
   
   midi_event->wblock    = root->song->tracker_windows->wblock;
   midi_event->wtrack    = midi_event->wblock->wtrack;
-  midi_event->blocktime = pc->start_time - pc->seqtime;
+  midi_event->blocktime = MIXER_get_accurate_radium_time() - pc->seqtime;
   midi_event->msg       = PACK_MIDI_MSG(cc,data1,data2);
 
   //printf("Rec %d: %x, %x, %x\n",(int)midi_event->blocktime,cc,data1,data2);

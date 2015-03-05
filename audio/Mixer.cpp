@@ -324,6 +324,7 @@ static void init_player_lock(void){
 
 int jackblock_size = 0;
 jack_time_t jackblock_delta_time = 0;
+static STime jackblock_cycle_start_stime = 0;
 
 struct Mixer{
   SoundProducer *_bus1;
@@ -511,9 +512,12 @@ struct Mixer{
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
+      jackblock_size = num_frames;
+      jackblock_cycle_start_stime = pc->end_time;
+
       RT_lock_player();
 
-      jackblock_size = num_frames;
+      //jackblock_size = num_frames;
 
       // Process sound.
 
@@ -654,6 +658,22 @@ STime MIXER_get_block_delta_time(STime time){
 
 int64_t MIXER_get_time(void){
   return g_mixer->_time;
+}
+
+// Like pc->start_time, but sub-block accurately
+STime MIXER_get_accurate_radium_time(void){
+  struct Blocks *block = pc->block;
+
+  if (block==NULL)
+    return pc->start_time;
+
+  int deltatime = jack_frames_since_cycle_start(g_mixer->_rjack_client);
+  return
+    jackblock_cycle_start_stime +
+    scale(deltatime,
+          0, jackblock_size,
+          0, jackblock_size * block->reltempo
+          );
 }
 
 void MIXER_RT_set_bus_descendand_type_for_all_plugins(void){
