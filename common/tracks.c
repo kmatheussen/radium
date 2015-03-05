@@ -130,3 +130,36 @@ void AppendTrack(struct Blocks *block){
 }
 
 
+void TRACK_make_monophonic_destructively(struct Tracks *track){
+  struct Notes *note = track->notes;
+
+  bool have_made_undo = false;
+
+  while(true){
+    struct Notes *next = NextNote(note);
+    if (next==NULL)
+      break;
+
+    if (PlaceGreaterThan(&note->end, &next->l.p)){
+      PlaceCopy(&note->end, &next->l.p);
+      if (have_made_undo==false){
+        struct Tracker_Windows *window = root->song->tracker_windows;
+        struct WBlocks *wblock = window->wblock;
+        
+        Undo_Notes(window,
+                   wblock->block,
+                   track,
+                   wblock->curr_realline
+                   );
+
+        have_made_undo = true;
+      }
+    }
+
+    note = next;
+  }
+}
+
+void TRACK_make_monophonic_destructively_CurrPos(struct Tracker_Windows *window){
+  TRACK_make_monophonic_destructively(window->wblock->wtrack->track);
+}
