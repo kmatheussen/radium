@@ -205,7 +205,7 @@ static void check_jackd_arguments(void){
 #endif
 }
 
-#ifdef FOR_LINUX
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
 static pthread_mutexattr_t player_lock_mutexattr;
 #endif
 static LockType player_lock;
@@ -234,7 +234,7 @@ static void print_backtrace(void){
 #endif
 
 static void lock_player(void){
-  R_ASSERT_RETURN_IF_FALSE(!PLAYER_current_thread_has_lock());
+  R_ASSERT(!PLAYER_current_thread_has_lock()); // the player lock is reentrant, just in case, but reentrancy is not supposed to be used.
   
   LOCK_LOCK(player_lock);
   g_current_thread_has_player_lock = true;
@@ -307,18 +307,31 @@ bool PLAYER_current_thread_has_lock(void){
 
 
 static void init_player_lock(void){
-#ifdef FOR_LINUX
 
-  int s1 = pthread_mutexattr_setprotocol(&player_lock_mutexattr, PTHREAD_PRIO_INHERIT);  
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+  int s1 = pthread_mutexattr_init(&player_lock_mutexattr);
   if (s1!=0)
-    RError("pthread_mutexattr_setprotocol failed: %d\n",s1);
-  
-  int s2 = pthread_mutex_init(&player_lock, &player_lock_mutexattr);
-  if (s2!=0)
-    RError("pthread_mutex_init failed: %d\n",s2);
+    RError("pthread_mutexattr_init failed: %d\n",s1);
 
+  int s2 = pthread_mutexattr_settype(&player_lock_mutexattr, PTHREAD_MUTEX_RECURSIVE);
+  if (s2!=0)
+    RError("pthread_mutexattr_settype failed: %d\n",s2);
+
+#ifdef FOR_LINUX
+  int s3 = pthread_mutexattr_setprotocol(&player_lock_mutexattr, PTHREAD_PRIO_INHERIT);  
+  if (s3!=0)
+    RError("pthread_mutexattr_setprotocol failed: %d\n",s3);
+#endif
+  
+  int s4 = pthread_mutex_init(&player_lock, &player_lock_mutexattr);
+  if (s4!=0)
+    RError("pthread_mutex_init failed: %d\n",s4);
+
+#elif defined(FOR_WINDOWS)
+   LOCK_INITIALIZE(player_lock);
 #else
-  LOCK_INITIALIZE(player_lock);
+
+#error "unkwndonw arcthinerture"
 #endif
 }
 
