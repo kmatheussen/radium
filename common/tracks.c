@@ -135,7 +135,7 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
 
   bool have_made_undo = false;
 
-  while(true){
+  while(note!=NULL){
     struct Notes *next = NextNote(note);
     if (next==NULL)
       break;

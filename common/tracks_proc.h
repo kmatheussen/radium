@@ -25,5 +25,6 @@ extern void CloseTrack(struct Blocks *block, NInt tracknum);
 extern void CloseAllTracks(struct Blocks *block);
 extern void InitTrack(struct Tracks *track);
 extern void AppendTrack(struct Blocks *block);
+extern void TRACK_make_monophonic_destructively(struct Tracks *track);
 
 #endif

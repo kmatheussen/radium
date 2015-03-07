@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/reallines_insert_proc.h"
 #include "../common/block_properties_proc.h"
 #include "../common/track_insert_proc.h"
+#include "../common/tracks_proc.h"
 #include "../common/wtracks_proc.h"
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
@@ -239,6 +240,14 @@ void swapTracks(int windownum){
   SwapTrack_CurrPos(window);
 }
 
+void makeTrackMonophonic(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum,tracknum);
+  if(wtrack==NULL)
+    return;
+  
+  TRACK_make_monophonic_destructively(wtrack->track);
+}
+  
 void splitBlock(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   BLOCK_Split_CurrPos(window);
