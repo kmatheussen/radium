@@ -19,17 +19,19 @@ extern LANGSPEC void UpdateReallinesDependens(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
-extern LANGSPEC void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock);
+extern LANGSPEC void UpdateRealLines(const struct Tracker_Windows *window,struct WBlocks *wblock);
 //extern int FindHighestLocalzoomLevel(struct WBlocks *wblock);
 extern LANGSPEC void SetZoomLevelAreaWidth(struct Tracker_Windows *window,
                                   struct WBlocks *wblock);
-
+/*
 extern LANGSPEC void ExpandLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int realline,
 	int num_newreallines
 );
+*/
+
 extern LANGSPEC void ExpandLineCurrPos(
 	struct Tracker_Windows *window,
 	int num_newreallines
