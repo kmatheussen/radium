@@ -253,25 +253,19 @@ static struct LocalZooms **get_shrinked_reallines(const struct Tracker_Windows *
 
 
 static void set_curr_realline(struct WBlocks *wblock, int new_curr_realline){
+  //printf("new_curr_realline: %d, num_reallines: %d\n",new_curr_realline,wblock->num_reallines);
   wblock->curr_realline = R_BOUNDARIES(0, new_curr_realline, wblock->num_reallines - 1);
 }
 
 static void set_curr_realline_from_place(const struct Tracker_Windows *window, struct WBlocks *wblock, Place *curr_place){
-  if (curr_place==NULL) {
-    if (wblock->curr_realline >= wblock->num_reallines)
-      wblock->curr_realline = wblock->num_reallines - 1;    
-    return;
+  if (curr_place!=NULL) {
+
+    Place *curr_place2 = &wblock->reallines[wblock->curr_realline]->l.p;
+    if (PlaceEqual(curr_place, curr_place2))
+      return;
+    
+    set_curr_realline(wblock, FindRealLineFor(wblock, 0, curr_place));
   }
-
-  Place *curr_place2 = NULL;
-
-  if (wblock->curr_realline<wblock->num_reallines)
-    curr_place2 = &wblock->reallines[wblock->curr_realline]->l.p;
-
-  if (curr_place2!=NULL && PlaceEqual(curr_place, curr_place2))
-    return;
-
-  set_curr_realline(wblock, FindRealLineFor(wblock, 0, curr_place));
 }
 
 static struct LocalZooms **GenerateExpandedReallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *num_new_reallines){
@@ -312,10 +306,13 @@ void UpdateRealLines(const struct Tracker_Windows *window,struct WBlocks *wblock
     if(num_reallines==wblock->block->num_lines)
       wblock->zoomlinearea.width=0;
 
-    {
+    PLAYER_lock();{
       wblock->reallines = reallines;
       wblock->num_reallines = num_reallines;
-    }
+    }PLAYER_unlock();
+
+    if(wblock->curr_realline >= wblock->num_reallines)
+      wblock->curr_realline = wblock->num_reallines-1;
   }
   
   set_curr_realline_from_place(window, wblock, curr_place);  
@@ -596,7 +593,7 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
   R_ASSERT(wblock->curr_realline>=0);
   R_ASSERT(wblock->curr_realline<wblock->num_reallines);
   
-  int curr_realline = wblock->num_reallines-1;
+  int curr_realline = wblock->curr_realline;
   Place curr_place = wblock->reallines[curr_realline]->l.p;
 
   {
