@@ -166,11 +166,13 @@ void SetEndAttributes(
     Stops all notes before line+(counter/dividor) at
     line+(counter/dividor, if they last that long.
 **************************************************************/
-void StopAllNotesAtPlace(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	Place *placement
+static void StopAllNotesAtPlace(
+                                struct WBlocks *wblock,
+                                struct WTracks *wtrack,
+                                Place *placement
 ){
+        R_ASSERT(PLAYER_current_thread_has_lock());
+          
 	struct Tracks *track=wtrack->track;
 	struct Notes *temp;
 
@@ -326,21 +328,21 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     MaybeScrollEditorDown(window);
 }
 
-void InsertStop(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	Place *placement
+static void InsertStop(
+                       struct Tracker_Windows *window,
+                       struct WBlocks *wblock,
+                       struct WTracks *wtrack,
+                       Place *placement
 ){
 	struct Stops *stop;
 
-	StopAllNotesAtPlace(wblock,wtrack,placement);
-
-	stop=talloc(sizeof(struct Stops));
+        stop=talloc(sizeof(struct Stops));
 	PlaceCopy(&stop->l.p,placement);
 
-	ListAddElement3(&wtrack->track->stops,&stop->l);
-
+        PLAYER_lock();{
+          StopAllNotesAtPlace(wblock,wtrack,placement);
+  	  ListAddElement3(&wtrack->track->stops,&stop->l);
+        }PLAYER_unlock();
 }
 
 /**********************************************************************
@@ -403,9 +405,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   Undo_Notes_CurrPos(window);
 
   if (tr->num_elements==0) {
-    PLAYER_lock();{
-      InsertStop(window,wblock,wtrack,&realline->l.p);
-    }PLAYER_unlock();
+    InsertStop(window,wblock,wtrack,&realline->l.p);
     MaybeScrollEditorDown(window);
     return;
   }
