@@ -26,5 +26,6 @@ extern void CloseAllTracks(struct Blocks *block);
 extern void InitTrack(struct Tracks *track);
 extern void AppendTrack(struct Blocks *block);
 extern void TRACK_make_monophonic_destructively(struct Tracks *track);
+extern void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
 #endif

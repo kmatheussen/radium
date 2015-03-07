@@ -247,6 +247,24 @@ void makeTrackMonophonic(int tracknum, int blocknum, int windownum){
   
   TRACK_make_monophonic_destructively(wtrack->track);
 }
+
+void splitTrackIntoMonophonicTracks(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  TRACK_split_into_monophonic_tracks(window, wblock, wtrack);
+}
   
 void splitBlock(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

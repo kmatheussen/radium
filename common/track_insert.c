@@ -82,11 +82,11 @@ static void DeleteTracks(
 
 /* Not private function. toinsert may be negative. */
 
-static void InsertTracks(
-                         struct Tracker_Windows *window,
-                         struct WBlocks *wblock,
-                         NInt tracknum,
-                         NInt toinsert
+void InsertTracks(
+                  struct Tracker_Windows *window,
+                  struct WBlocks *wblock,
+                  NInt tracknum,
+                  NInt toinsert
 ){
 	NInt lokke;
 	NInt num_tracks;
@@ -94,7 +94,7 @@ static void InsertTracks(
 	struct WTracks *wtrack;
 	struct Tracks *track;
 
-	if(tracknum>=block->num_tracks || tracknum<0) return;
+	if(tracknum>=block->num_tracks+1 || tracknum<0) return;
 
 	if(toinsert<=0){
           if(toinsert<0) DeleteTracks(window,wblock,tracknum,-toinsert);
