@@ -23,9 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "notes_proc.h"
 #include "undo_notes_proc.h"
+#include "undo.h"
 #include "instruments_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../audio/SoundPlugin.h"
+#include "visual_proc.h"
 
 #include "tracks_proc.h"
 
@@ -134,7 +136,7 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
   struct Notes *note = track->notes;
 
   bool have_made_undo = false;
-
+  
   while(note!=NULL){
     struct Notes *next = NextNote(note);
     if (next==NULL)
@@ -158,6 +160,9 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
 
     note = next;
   }
+
+  if (have_made_undo==false)
+    GFX_Message(NULL, "Track is already monophonic");
 }
 
 void TRACK_make_monophonic_destructively_CurrPos(struct Tracker_Windows *window){

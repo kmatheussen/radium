@@ -200,7 +200,7 @@ void Undo_Open(void){
   undo_is_open = true;
 }
 
-void Undo_Close(void){
+bool Undo_Close(void){
   if(currently_undoing){
     RError("Can not call Undo_Close from Undo()\n");
   }
@@ -217,7 +217,11 @@ void Undo_Close(void){
     num_undos++;
 
     update_gfx();
-  }
+    
+    return true;
+
+  } else
+    return false;
 }
 
 void Undo_CancelLastUndo(void){
