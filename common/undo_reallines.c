@@ -71,13 +71,13 @@ void *Undo_Do_Reallines(
 	struct LocalZooms *undo_localzooms=(struct LocalZooms *)pointer;
 	struct LocalZooms *temp=wblock->localzooms;
 
-        PLAYER_lock();{
+        {
           wblock->localzooms=undo_localzooms;
           
           UpdateRealLines(window,wblock);
           
           UpdateReallinesDependens(window,wblock);
-        }PLAYER_unlock();
+        }
 
 	return temp;
 }

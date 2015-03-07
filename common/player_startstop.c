@@ -304,7 +304,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 	if(
 		! changeblock &&
 		playpos==root->song->length-1 &&
-		wblock->curr_realline==wblock->num_reallines
+		wblock->curr_realline==wblock->num_reallines  // ??. Never supposed to happen.
 	){
 		return;
 	}

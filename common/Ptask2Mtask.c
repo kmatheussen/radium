@@ -73,14 +73,8 @@ void P2MUpdateSongPosCallBack(void){
   struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,root->curr_block);
 
   int old_curr_realline = wblock->curr_realline;
-  int till_curr_realline=wblock->till_curr_realline;
+  int till_curr_realline = R_BOUNDARIES(0, wblock->till_curr_realline, wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
 
-  // Some sanity checks. till_curr_realline can be set from any thread, at any time, to any value.
-  if (till_curr_realline < 0)
-    till_curr_realline = 0;
-  else if (till_curr_realline >= wblock->num_reallines)
-    till_curr_realline = wblock->num_reallines-1;
-  
   wblock->curr_realline = till_curr_realline;
   wblock->top_realline += till_curr_realline - old_curr_realline;
   wblock->bot_realline += till_curr_realline - old_curr_realline;

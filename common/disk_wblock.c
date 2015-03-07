@@ -151,7 +151,7 @@ var10:
 	wblock->curr_realline=DC_LoadI();
 	goto start;
 var11:
-	wblock->num_reallines_last=wblock->num_reallines=DC_LoadI();
+	wblock->num_reallines=DC_LoadI();
 	goto start;
 var12:
 	wblock->num_expand_lines = DC_LoadI();

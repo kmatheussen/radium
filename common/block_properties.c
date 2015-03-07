@@ -209,7 +209,7 @@ void Block_Properties(
 	while(window!=NULL){
 		struct WBlocks *wblock=ListFindElement1(&window->wblocks->l,block->l.num);
 		if(wblock->curr_realline>=wblock->num_reallines){
-			wblock->curr_realline=wblock->num_reallines-1;
+			wblock->curr_realline = wblock->num_reallines-1;
 		}
 
 		UpdateReallinesDependens(window,wblock);

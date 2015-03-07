@@ -215,7 +215,7 @@ void NewWBlock(
 
 	wblock->title=talloc_atomic(128);
 
-	wblock->num_reallines_last=wblock->num_reallines=wblock->block->num_lines;
+	wblock->num_reallines=wblock->block->num_lines;
         wblock->num_expand_lines = 1;
 
 	wblock->tempotrackonoff=1;

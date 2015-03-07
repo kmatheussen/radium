@@ -935,8 +935,7 @@ struct WBlocks{
 
 	struct LocalZooms *localzooms;    /* These two variables (localzooms and reallines) contain the same elements, but 'localzooms' is organized as a tree, while 'reallines' is organized as an array. (roughly)*/
 	struct LocalZooms **reallines;   // Used by the player. Must be protected by PLAYER_lock
-	int num_reallines;
-	int num_reallines_last;
+	int num_reallines;               // Same here. Must be protected by PLAYER_lock.
 
         int num_expand_lines;
 

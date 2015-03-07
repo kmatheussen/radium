@@ -338,7 +338,7 @@ currently_undoing = true;
               if(wtrack!=NULL){
                 wblock->wtrack=wtrack;
               }
-              wblock->curr_realline=entry->realline;
+              wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
               window->curr_track=entry->tracknum;
             }
 
@@ -359,7 +359,7 @@ currently_undoing = true;
               wtrack=ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
             }
             wblock->wtrack=wtrack;
-            wblock->curr_realline=entry->realline;
+            wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
             window->curr_track=entry->tracknum;
           }
        }
@@ -388,7 +388,7 @@ currently_undoing = true;
            wtrack=wblock->wtracks;
            
          wblock->wtrack=wtrack;
-         wblock->curr_realline=undo->realline;
+         wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);
          window->curr_track=undo->tracknum;
 
          SelectWBlock(
