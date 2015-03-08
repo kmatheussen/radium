@@ -154,11 +154,22 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
       break;
 
     if (PlaceGreaterThan(&note->end, &next->l.p)){
-      
+
       PLAYER_lock();{
-        PlaceCopy(&note->end, &next->l.p);
+
+        if (PlaceEqual(&note->l.p, &next->l.p)) {
+
+          ListRemoveElement3(&track->notes, &next->l);                           
+
+        } else {
+
+          PlaceCopy(&note->end, &next->l.p);
+          note = next;
+
+        }
+
       }PLAYER_unlock();
-      
+
       if (have_made_undo==false){      
         Undo_Notes(window,
                    wblock->block,
@@ -168,9 +179,13 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
 
         have_made_undo = true;
       }
+
+    } else {
+
+      note = next;
+
     }
 
-    note = next;
   }
 
   if (have_made_undo==false)
