@@ -2,6 +2,8 @@
 #ifndef QT_RATIONAL_H
 #define QT_RATIONAL_H
 
+#ifdef __cplusplus
+
 struct Rational {
   int numerator;
   int denominator;
@@ -65,11 +67,25 @@ static inline Rational create_rational_from_string(QString string){
 
     return Rational(numerator, denominator);
     
-  } else
+  } else {
+    
+    bool ok;
+    int value = string.toInt(&ok);
 
-    return Rational(0,0);
-
+    if (ok)
+      return Rational(value,1);
+    else
+      return Rational(0,0);
+    
+  }
   
 }
+#endif // __cplusplus
+
+// line is always 0
+// dividor is 0 if error, or the input denominator was actually 0
+// counter is undefined if error
+extern LANGSPEC Place get_rational_from_string(const char *string);
+
 
 #endif // QT_RATIONAL_H

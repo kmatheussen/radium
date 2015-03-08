@@ -49,6 +49,10 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   // called from the outside as well
   void updateWidgets(struct WBlocks *wblock){
     lz->setText(lz->getRational(wblock).toString());
+    
+    //printf("%d/%d (%s)\n",root->grid_numerator, root->grid_denominator, Rational(root->grid_numerator, root->grid_denominator).toString().toUtf8().constData());
+    //getchar();
+    
     grid->setText(Rational(root->grid_numerator, root->grid_denominator).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
