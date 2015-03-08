@@ -938,10 +938,10 @@ void List_InsertPlaceLen3(
 	float toplace,
 	void (*Insert_PlaceLen_extra)(struct Blocks *block,void *to,struct ListHeader3 *l,float place,float toplace)
 ){
-	struct ListHeader3 *temp;
 
 	while(l!=NULL){
-		temp=l->next;
+                struct ListHeader3 *next = l->next;
+
 		if(Insert_PlaceLen_extra!=NULL){
 			(*Insert_PlaceLen_extra)(block,to,l,place,toplace);
 		}
@@ -955,21 +955,9 @@ void List_InsertPlaceLen3(
 				}
 			}
 		}
-		l=temp;
+                
+		l = next;
 	}
 
 }
-
-//void *ListCopy3(
-
-
-
-
-
-
-
-
-
-
-
 
