@@ -87,6 +87,9 @@ static midi_event_t *get_midi_event(void){
 
 static void record_midi_event(int cc, int data1, int data2){
 
+  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL)
+    return;
+
   midi_event_t *midi_event = get_midi_event();
 
   midi_event->next = NULL;
@@ -95,6 +98,8 @@ static void record_midi_event(int cc, int data1, int data2){
   midi_event->wtrack    = midi_event->wblock->wtrack;
   midi_event->blocktime = MIXER_get_accurate_radium_time() - pc->seqtime;
   midi_event->msg       = PACK_MIDI_MSG(cc,data1,data2);
+
+  midi_event->wtrack->track->is_recording = true;
 
   //printf("Rec %d: %x, %x, %x\n",(int)midi_event->blocktime,cc,data1,data2);
 
@@ -145,6 +150,7 @@ void MIDI_insert_recorded_midi_events(void){
 
         struct Blocks *block = midi_event->wblock->block;
         struct Tracks *track = midi_event->wtrack->track;
+        track->is_recording = false;
         
         char *key = talloc_format("%x",midi_event->wtrack);
         if (HASH_has_key(track_set, key)==false){

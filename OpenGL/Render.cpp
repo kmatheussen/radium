@@ -1282,6 +1282,12 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
   }
 }
 
+static void create_track_is_recording(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(3), 0.7), Z_STATIC);
+
+  GE_text(c, "Rec", wtrack->x, 0);
+}
+
 void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
@@ -1320,6 +1326,9 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
 
     create_track_stops(window, wblock, wtrack);
   }
+
+  if (wtrack->track->is_recording)
+    create_track_is_recording(window, wblock, wtrack);
 }
 
 

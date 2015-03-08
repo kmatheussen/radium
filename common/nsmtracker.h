@@ -592,6 +592,8 @@ struct Tracks{
 
 	bool panonoff;
         bool volumeonoff;                      /* The volume-button on/off, not track on/off. (i.e. if off, volume=1.0, not 0.0) */
+
+        volatile bool is_recording;
 };
 #define NextTrack(a) ((struct Tracks *)((a)->l.next))
 
