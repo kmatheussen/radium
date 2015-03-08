@@ -62,7 +62,7 @@ void THREADING_set_priority(priority_t priority){
 
   int success = SetThreadPriority(GetCurrentThread(), priority.priority);
 
-  if (success!=0) {
+  if (success==0) {
     RError("SetThreadPriority failed: %d", success);
   }
   
