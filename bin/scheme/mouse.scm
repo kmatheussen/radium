@@ -23,6 +23,8 @@
                 Q))
 
 #||
+(quantitize 18341/2134 1/3)
+
 (begin
   (test (quantitize 0 0.5)
         0.5)

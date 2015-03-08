@@ -36,7 +36,8 @@ DC_start("ROOT");
 	DC_SSN("curr_block",theroot->curr_block);
 	DC_SSI("tempo",theroot->tempo);
 	DC_SSI("lpb",theroot->lpb);
-	DC_SSF("quantitize",theroot->quantitize);
+	DC_SSF("quantitize_numerator",theroot->quantitize_numerator);
+        DC_SSF("quantitize_denominator",theroot->quantitize_denominator);
 	DC_SSI("grid_numerator",theroot->grid_numerator);
 	DC_SSI("grid_denominator",theroot->grid_denominator);
 	DC_SSI("keyoct",theroot->keyoct);
@@ -56,12 +57,14 @@ struct Root *LoadRoot(void){
 	static char *objs[1]={
 		"SONG"
 	};
-	static char *vars[10]={
+	static char *vars[12]={
 		"def_instrument",
 		"curr_block",
 		"tempo",
 		"lpb",
 		"quantitize",
+                "quantitize_numerator",
+                "quantitize_denominator",
                 "grid_numerator",
                 "grid_denominator",
 		"keyoct",
@@ -75,7 +78,7 @@ struct Root *LoadRoot(void){
         ret->grid_numerator=1;
         ret->grid_denominator=1;
 
-	GENERAL_LOAD(1,10);
+	GENERAL_LOAD(1,12);
 
 
 
@@ -95,31 +98,39 @@ var3:
 	goto start;
 
 var4:
-	ret->quantitize=DC_LoadF();
+        DC_LoadF();
+	ret->quantitize_numerator = 1;
+        ret->quantitize_denominator = 1;
 	goto start;
 
 var5:
+	ret->quantitize_numerator = DC_LoadI();
+	goto start;
+
+var6:
+        ret->quantitize_denominator = DC_LoadI();
+	goto start;
+
+var7:
         ret->grid_numerator=DC_LoadI();
         goto start;
 
-var6:
+var8:
         ret->grid_denominator=DC_LoadI();
         goto start;
 
-var7:
+var9:
 	ret->keyoct=DC_LoadI();
 	goto start;
 
-var8:
+var10:
 	ret->min_standardvel=DC_LoadI();
 	goto start;
 
-var9:
+var11:
 	ret->standardvel=DC_LoadI();
 	goto start;
 
-var10:
-var11:
 var12:
 var13:
 var14:

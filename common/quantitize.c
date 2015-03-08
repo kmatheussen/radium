@@ -30,11 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "undo_tracks_proc.h"
 #include "undo_range_proc.h"
+#include "undo_maintempos_proc.h"
 #include "wtracks_proc.h"
 #include "notes_legalize_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "player_proc.h"
 #include "visual_proc.h"
+#include "../Qt/Rational.h"
 
 #include "quantitize_proc.h"
 
@@ -55,37 +57,11 @@ extern struct Root *root;
 ******************************************************************/
 
 void Quantitize(
-	struct Blocks *block,
-	Place *toquant,
-	float quant
+                Place *toquant,
+                Place quant
 ){
-	float toquantfloat;
-
-	int upto;
-
-	float diff;
-	float out;
-
-	if(quant==0.0 || quant/2<0.00002) return;
-
-	toquantfloat=GetfloatFromPlace(toquant);
-
-	upto=(int)(toquantfloat/quant);
-	upto*=quant;
-
-	diff=toquantfloat-upto;
-	out=upto;
-
-	while(diff>=quant/2){
-		out+=quant;
-		diff-=quant;
-	}
-
-	Float2Placement(out,toquant);
-
-	if( ! PlaceLegal(block,toquant)){
-		PlaceSetLastPos(block,toquant);
-	}
+  Place *quantitized_place = PlaceQuantitize(toquant, &quant);
+  PlaceCopy(toquant, quantitized_place);
 }
 
 
@@ -97,7 +73,7 @@ void Quantitize_Note(
 	struct Blocks *block,
 	struct Notes **notes,
 	struct Notes *note,
-	float quant
+	Place quant
 ){
 	Place tempstart,tempend;
 	Place end;
@@ -109,7 +85,7 @@ void Quantitize_Note(
 		return;
 	}
 
-	Quantitize(block,&note->l.p,quant);
+	Quantitize(&note->l.p,quant);
 
 	if(PlaceEqual(&end,&note->l.p)){
 		PlaceCopy(&note->l.p,&tempstart);
@@ -117,7 +93,7 @@ void Quantitize_Note(
 
 	PlaceCopy(&tempend,&note->end);
 
-	Quantitize(block,&note->end,quant);
+	Quantitize(&note->end,quant);
 
 	if(PlaceLessOrEqual(&note->end,&note->l.p)){
 		PlaceCopy(&note->end,&tempend);
@@ -144,7 +120,7 @@ void Quantitize_Note(
 
 void Quantitize_range(
 	struct WBlocks *wblock,
-	float quant
+	Place quant
 ){
 	struct Tracks *track;
 	struct Notes *notes=NULL;
@@ -188,7 +164,7 @@ void Quantitize_range(
 void Quantitize_track(
 	struct Blocks *block,
 	struct Tracks *track,
-	float quant
+	Place quant
 ){
 	struct Notes *note=NULL;
 	struct Notes *notes=NULL;
@@ -213,7 +189,7 @@ void Quantitize_track(
 
 void Quantitize_block(
 	struct Blocks *block,
-	float quant
+	Place quant
 ){
 	struct Tracks *track=block->tracks;
 
@@ -223,7 +199,12 @@ void Quantitize_block(
 	}
 }
 
-	
+
+static Place get_quant(void){
+  Place ret = {0, root->quantitize_numerator, root->quantitize_denominator};
+  return ret;
+}
+
 void Quantitize_track_CurrPos(
 	struct Tracker_Windows *window
 ){
@@ -232,7 +213,7 @@ void Quantitize_track_CurrPos(
 	PlayStop();
 
 	Undo_Track_CurrPos(window);
-	Quantitize_track(wblock->block,wblock->wtrack->track,root->quantitize);
+	Quantitize_track(wblock->block,wblock->wtrack->track,get_quant());
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -263,7 +244,7 @@ void Quantitize_block_CurrPos(
 		window->wblock->curr_realline
 	);
 
-	Quantitize_block(window->wblock->block,root->quantitize);
+	Quantitize_block(window->wblock->block,get_quant());
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -282,7 +263,7 @@ void Quantitize_range_CurrPos(
 
 	Undo_Range(window,window->wblock->block,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
 
-	Quantitize_range(window->wblock,root->quantitize);
+	Quantitize_range(window->wblock,get_quant());
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -295,13 +276,35 @@ void Quantitize_range_CurrPos(
 void SetQuantitize_CurrPos(
                            struct Tracker_Windows *window
 ){
-	float ret;
+    
+        Place before = {0, root->quantitize_numerator, root->quantitize_denominator};
+        Place after;
+                  
+        ReqType reqtype = GFX_OpenReq(window, 100, 100, "Quantitize");
 
-	PlayStop();
+        do{
+          GFX_WriteString(reqtype, "Quantitize Value : ");
+          GFX_SetString(reqtype, get_string_from_rational(&before));
+          
+          char temp[1024];
+          GFX_ReadString(reqtype, temp, 1010);
 
-	ret=GFX_GetFloat(window,NULL,"Quantitize Value: ",0.1f,99.9f);
+          if (temp[0]==0){
+            printf("no new value\n");
+            GFX_CloseReq(window, reqtype);
+            return;
+          }
+          
+          after = get_rational_from_string(temp);
+        } while (after.dividor==0);
+        
+        GFX_CloseReq(window, reqtype);
 
-	if(ret<0.1f) return;
+        if (root->quantitize_numerator == after.counter && root->quantitize_denominator == after.dividor)
+          return;
 
-	root->quantitize=ret;
+        Undo_MainTempo(window, window->wblock);
+                       
+        root->quantitize_numerator = after.counter;
+        root->quantitize_denominator = after.dividor;
 }

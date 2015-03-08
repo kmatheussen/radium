@@ -30,9 +30,9 @@ static inline Place *PlaceCreate(int line, int counter, int dividor) {
   FUNCTION
     Convert a float into a placement.
 **********************************************************/
-static inline void Float2Placement(float f,Place *p){
-  if (f<0.0f){
-    RError("Float2Placement: Position can not start before block starts: %f",f);
+static inline void Double2Placement(double f,Place *p){
+  if (f<0.0){
+    RError("Double2Placement: Position can not start before block starts: %f",f);
     p->line=0;
     p->counter=0;
     p->dividor=1;
@@ -43,6 +43,10 @@ static inline void Float2Placement(float f,Place *p){
 
   p->counter = f * MAX_UINT32;
   p->dividor = MAX_UINT32;
+}
+
+static inline void Float2Placement(float f,Place *p){
+  Double2Placement(f,p);
 }
 
 static inline Place *PlaceCreate2(float f){
@@ -126,9 +130,9 @@ extern void PlaceSub(Place *p1,  const Place *p2);
 extern void PlaceMul(Place *p1,  const Place *p2);
 extern void PlaceDiv(Place *p1,  const Place *p2);
 
-// Implmentented in embedded_scheme/scheme.cpp
+// These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
 extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
-
+extern LANGSPEC Place *PlaceQuantitize(const Place *p, const Place *q);
 
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
 extern float GetfloatFromLineCounterDividor(const Place *placement);
@@ -235,6 +239,13 @@ extern Place PlaceFirstPos;
 		(float)((a)->line) + ( \
 			(float)((a)->counter)/ \
 			(float)((a)->dividor) \
+		) \
+	))
+
+#define GetDoubleFromPlace(a) ((double) ( \
+		(double)((a)->line) + ( \
+			(double)((a)->counter)/ \
+			(double)((a)->dividor) \
 		) \
 	))
 

@@ -4,6 +4,11 @@
 
 #ifdef __cplusplus
 
+#include <QString>
+#include <QStringList>
+
+namespace{
+  
 struct Rational {
   int numerator;
   int denominator;
@@ -53,6 +58,7 @@ struct Rational {
       return Rational(numerator+1, 1);
   }
 };
+}
 
 static inline Rational create_rational_from_string(QString string){
   QStringList splitted = string.split("/", QString::SkipEmptyParts);
@@ -86,6 +92,7 @@ static inline Rational create_rational_from_string(QString string){
 // dividor is 0 if error, or the input denominator was actually 0
 // counter is undefined if error
 extern LANGSPEC Place get_rational_from_string(const char *string);
+extern LANGSPEC char *get_string_from_rational(const Place *r);
 
 
 #endif // QT_RATIONAL_H

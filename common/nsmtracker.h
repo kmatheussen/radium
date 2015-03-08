@@ -1118,7 +1118,9 @@ struct Root{
         //int time_signature_numerator;
         //int time_signature_denominator;
   
-	float quantitize;
+        int quantitize_numerator;
+        int quantitize_denominator;
+  
         int grid_numerator;
         int grid_denominator;
 

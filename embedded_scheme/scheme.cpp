@@ -84,6 +84,26 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
   }
 }
   
+Place *PlaceQuantitize(const Place *p, const Place *q){
+  s7_pointer result = s7_call(s7,
+                              s7_name_to_value(s7, "quantitize"),
+                              s7_list(s7,
+                                      2,
+                                      place_to_ratio(p),
+                                      place_to_ratio(q)
+                                      )
+                              );
+  
+  if (s7_is_ratio(result))
+    return ratio_to_place(result);
+  else if (s7_is_integer(result))
+    return PlaceCreate(s7_integer(result), 0, 1);
+  else {
+    RError("result was not ratio or integer. Returning 0");
+    return PlaceCreate(0,0,1);
+  }
+  
+}
 
 bool SCHEME_mousepress(int button, float x, float y){
 

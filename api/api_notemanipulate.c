@@ -159,7 +159,7 @@ void quantitizeRange(int windownum){
 }
 
 float getQuantitize(void){
-  return root->quantitize;
+  return (double)root->quantitize_numerator / (double)root->quantitize_denominator;
 }
 
 float getGrid(void){

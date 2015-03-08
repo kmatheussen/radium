@@ -70,7 +70,8 @@ bool InitProgram(void){
 	}
 
 	root->keyoct=48;
-	root->quantitize=1.0f;
+	root->quantitize_numerator = 1;
+        root->quantitize_denominator = 1;
         root->grid_numerator=1;
         root->grid_denominator=1;
         root->min_standardvel=MAX_VELOCITY*40/100;
