@@ -1,3 +1,22 @@
+Most important changes 3.0.rc9 -> 3.0.rc10
+* Render: Write "rec" in the track being recorded (MIDI that is)
+* Windows: Fix crash if get_windows_command_lines fails
+* MIDI post-recording tools dialog (make monophonic and quantitize functions)
+* Proper implementation of PlaceAdd/Sub/Mul/Div (actually just use s7 rational)
+* Protect g_times_storage with mutex (crash fix)
+* Use rational number for quantization (no rounding errors anymore)
+* Allow strings with just one number when reading rational string (grid/lz/quantization)
+* Add a "split track into monophonic tracks" function
+* Dont stop playing if adding a stop "note".
+* Function to make track monophonic destructively
+* Refactor UpdateReallines to avoid holding the player lock all the time
+* Dont let error window be a popup window. (Couldn't switch virtual desktop then)
+* Record MIDI note on/note off accurately while playing, as a MIDI sequencer
+* Use posix priority inheritance in Linux instead of boosting/unboosting manually + various threading/mutex fixes
+
+
+
+
 Most important changes 3.0.rc8 -> 3.0.rc9
 * Don't use clang in Linux. SIGSEGV signal is not catched,
   and crashreporter is not working (tested both 3.4 and 3.5)
