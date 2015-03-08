@@ -188,6 +188,9 @@ int main(int argc, char **argv){
                                    //"The reporting is anonymous, and the report will not be available to the public.\n"
                                    "\n"
                                    "Only the information in \"Show details...\" is sent.\n"
+                                   "\n"
+                                   "Please don't send more than one message for the same crash.\n"
+
                                    );
             box.setDetailedText(tosend);
 
