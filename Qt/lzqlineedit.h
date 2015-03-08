@@ -7,6 +7,7 @@
 #include "../common/reallines_proc.h"
 
 
+
 class LZFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
 
 public:
@@ -96,4 +97,39 @@ public:
 };
 
 
+class QuantizationFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
+
+public:
+  
+ QuantizationFocusSnifferQLineEdit(QWidget *parent)
+   : FocusSnifferQLineEdit(parent)
+  {
+  }
+
+  void pushValuesToRoot(Rational rational){
+    if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
+      root->quantitize_numerator = rational.numerator;
+      root->quantitize_denominator = rational.denominator;
+    }
+  }
+  
+  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+    printf("Got quantization wheel event\n");
+    
+    Rational ratio(root->quantitize_numerator, root->quantitize_denominator);
+  
+    if (qwheelevent->delta()<0)
+      ratio = ratio.down();
+    else
+      ratio = ratio.up();
+
+    pushValuesToRoot(ratio);
+    setText(ratio.toString());
+  }
+  
+};
+
+
+
 #endif // QT_LZQLINEEDIT_H
+

@@ -142,6 +142,7 @@ void quantitizeTrack(int windownum){
   if(window==NULL) return;
 
   Quantitize_track_CurrPos(window);
+  window->must_redraw = true;
 }
 
 void quantitizeBlock(int windownum){
@@ -149,6 +150,7 @@ void quantitizeBlock(int windownum){
   if(window==NULL) return;
 
   Quantitize_block_CurrPos(window);
+  window->must_redraw = true;
 }
 
 void quantitizeRange(int windownum){
@@ -156,6 +158,7 @@ void quantitizeRange(int windownum){
   if(window==NULL) return;
 
   Quantitize_range_CurrPos(window);
+  window->must_redraw = true;
 }
 
 float getQuantitize(void){

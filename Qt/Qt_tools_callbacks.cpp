@@ -1,4 +1,4 @@
-/* Copyright 2012 Kjetil S. Matheussen
+/* Copyright 2013 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -14,26 +14,32 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef QT_MYQBUTTON_H
-#define QT_MYQBUTTON_H
+struct Root;
+extern struct Root *root;
 
-#include <QToolButton>
-
-#include "../audio/SoundPlugin.h"
-
-#include "Qt_MyQCheckBox.h"
-
-struct MyQButton : public QToolButton{
-
-  MyQButton ( QWidget * parent = 0 ) : QToolButton(parent) {}
-  //MyQButton ( const QString & text, QWidget * parent = 0) : QToolButton(text,parent) {}
+#include "mQt_tools_callbacks.h"
 
 
-  void paintEvent ( QPaintEvent * ev ){
-    QPainter p(this);
-    CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text());
+extern int num_users_of_keyboard;
+
+
+void TOOLS_open(void){
+  static Tools *widget=NULL;
+  if(widget==NULL){
+    widget = new Tools(NULL);
+    //widget->setWindowModality(Qt::ApplicationModal);
   }
-};
+  
+  widget->show();
+  widget->raise();
+  widget->activateWindow();
+
+  /*  
+  num_users_of_keyboard++;
+  widget->exec();
+  num_users_of_keyboard--;
+  */
+}
 
 
-#endif // QT_MYQBUTTON_H
+
