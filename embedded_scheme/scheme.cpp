@@ -62,8 +62,10 @@ static Place *ratio_to_place(s7_pointer ratio){
 }
 
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
+  static s7_pointer scheme_func = s7_name_to_value(s7, "scale");
+  
   s7_pointer result = s7_call(s7,
-                              s7_name_to_value(s7, "scale"),
+                              scheme_func,
                               s7_list(s7,
                                       5,
                                       place_to_ratio(x),
@@ -83,10 +85,12 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
     return PlaceCreate(0,0,1);
   }
 }
-  
+
 Place *PlaceQuantitize(const Place *p, const Place *q){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "quantitize");
+  
   s7_pointer result = s7_call(s7,
-                              s7_name_to_value(s7, "quantitize"),
+                              scheme_func,
                               s7_list(s7,
                                       2,
                                       place_to_ratio(p),
@@ -104,6 +108,48 @@ Place *PlaceQuantitize(const Place *p, const Place *q){
   }
   
 }
+
+static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const Place *p2){
+  s7_pointer result = s7_call(s7,
+                              scheme_func,
+                              s7_list(s7,
+                                      2,
+                                      place_to_ratio(p1),
+                                      place_to_ratio(p2)
+                                      )
+                              );
+  
+  if (s7_is_ratio(result))
+    PlaceCopy(p1, ratio_to_place(result));
+  else if (s7_is_integer(result))
+    PlaceCopy(p1, PlaceCreate(s7_integer(result), 0, 1));
+  else {
+    RError("result was not ratio or integer. Returning 0");
+    PlaceCopy(p1, PlaceCreate(0,0,1));
+  }
+}
+                            
+void PlaceAdd(Place *p1,  const Place *p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "+");
+  place_operation_void_p1_p2(scheme_func, p1,p2);
+}
+
+void PlaceSub(Place *p1,  const Place *p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "-");
+  place_operation_void_p1_p2(scheme_func, p1,p2);
+}
+
+void PlaceMul(Place *p1,  const Place *p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "*");
+  place_operation_void_p1_p2(scheme_func, p1,p2);
+}
+
+void PlaceDiv(Place *p1,  const Place *p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "/");
+  place_operation_void_p1_p2(scheme_func, p1,p2);
+}
+
+
 
 bool SCHEME_mousepress(int button, float x, float y){
 

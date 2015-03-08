@@ -124,15 +124,14 @@ static inline Place *PlaceMin(  Place *p1,  Place *p2){
 
 extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
-// These functions should probably not be trusted. The implementation looks awful.
-extern void PlaceAdd(Place *p1,  const Place *p2);
-extern void PlaceSub(Place *p1,  const Place *p2);
-extern void PlaceMul(Place *p1,  const Place *p2);
-extern void PlaceDiv(Place *p1,  const Place *p2);
-
 // These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
 extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
 extern LANGSPEC Place *PlaceQuantitize(const Place *p, const Place *q);
+extern LANGSPEC void PlaceAdd(Place *p1,  const Place *p2);
+extern LANGSPEC void PlaceSub(Place *p1,  const Place *p2);
+extern LANGSPEC void PlaceMul(Place *p1,  const Place *p2);
+extern LANGSPEC void PlaceDiv(Place *p1,  const Place *p2);
+
 
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
 extern float GetfloatFromLineCounterDividor(const Place *placement);
