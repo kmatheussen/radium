@@ -33,7 +33,9 @@ static int show_message(const char *message){
 
   MyQMessageBox msgBox;
 
-  //  msgBox.setWindowFlags(Qt::Popup);
+#ifdef RELEASE
+  msgBox.setWindowFlags(Qt::Popup);
+#endif
 
   msgBox.setText(QString(message));
 
