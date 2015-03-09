@@ -369,6 +369,10 @@ void openToolsDialog(void){
   TOOLS_open();
 }
 
+void openAboutWindow(void){
+  GFX_Message(NULL,"Radium "  VERSION);
+}
+
 char *getProgramPath(void){
   return (char*)OS_get_program_path();
 }
