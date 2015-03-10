@@ -23,6 +23,7 @@
 #include "../common/realline_calc_proc.h"
 #include "../common/time_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/OS_Semaphores.h"
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
@@ -65,6 +66,9 @@ void GL_lock(void){
 void GL_unlock(void){
   mutex.unlock();
 }
+
+static RSemaphore *g_order_make_current;
+static RSemaphore *g_ack_make_current;
 
 
 static volatile char *driver_vendor_string=NULL;
@@ -383,7 +387,7 @@ private:
   // OpenGL thread
   bool draw(){
     bool needs_repaint;
-
+    
     painting_data = GE_get_painting_data(painting_data, &needs_repaint);
     //printf("needs_repaint: %d, painting_data: %p\n",(int)needs_repaint,painting_data);
 
@@ -490,6 +494,11 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
+    if (RSEMAPHORE_trywait(g_order_make_current, 1)) {
+      QGLWidget::makeCurrent();
+      RSEMAPHORE_signal(g_ack_make_current, 1);
+    }
+    
     if (driver_version_string==NULL) {
       driver_vendor_string = strdup((const char*)glGetString(GL_VENDOR));
       driver_renderer_string = strdup((const char*)glGetString(GL_RENDERER));
@@ -661,6 +670,21 @@ static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 
+void GL_EnsureMakeCurrentIsCalled(void){
+  //printf("GL_EnsureMakeCurrentIsCalled\n");
+  static bool failed = false;
+
+  if (failed)
+    return;
+  
+  RSEMAPHORE_signal(g_order_make_current, 1);
+  
+  if (RSEMAPHORE_trywait_timeout(g_ack_make_current, 1, 2000)==false){ // Need to wait for it. The catalyst driver on linux sometimes crashes if calling makeCurrent while the main thread is doing Qt stuff.
+    RError("GL_EnsureMakeCurrentIsCalled: OpenGL thread didn't answer");
+    failed = true;
+  }
+}
+
 double GL_get_estimated_vblank(){
   return 1000.0 / SETTINGS_read_double("vblank", 60.0);
 }
@@ -758,7 +782,10 @@ QWidget *GL_create_widget(QWidget *parent){
   // doesn't work.
   //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
 #endif
-  
+
+  g_order_make_current = RSEMAPHORE_create(0);
+  g_ack_make_current = RSEMAPHORE_create(0);
+
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
     return NULL;

@@ -335,10 +335,12 @@ class CalledPeriodically : public QTimer {
   QSet<QString> dontshow;
 
   const int interval;
+  int64_t num_calls;
   
 public:
   CalledPeriodically()
     : interval(20)
+    , num_calls(0)
   {
     setInterval(interval);
     start();
@@ -379,13 +381,11 @@ protected:
       rt_message_status = RT_MESSAGE_READY;
     }
 
+    num_calls++;
+    
     if(num_users_of_keyboard==0){
-      {
-        static int num_calls = 0;
-        if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
-          root->song->tracker_windows->must_redraw = true;
-          num_calls++;
-        }
+      if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+        root->song->tracker_windows->must_redraw = true;
       }
       
       {
@@ -406,6 +406,11 @@ protected:
     if(pc->isplaying)
       P2MUpdateSongPosCallBack();
 
+
+    if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
+      GL_EnsureMakeCurrentIsCalled();
+    }
+    
 #if 0
     // Update graphics when playing
     {

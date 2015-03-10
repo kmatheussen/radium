@@ -59,6 +59,14 @@ void RSEMAPHORE_wait(RSemaphore *semaphore, int num_waiters){
   semaphore->acquire(num_waiters);
 }
 
+bool RSEMAPHORE_trywait(RSemaphore *semaphore, int num_waiters){
+  return semaphore->tryAcquire(num_waiters);
+}
+
+bool RSEMAPHORE_trywait_timeout(RSemaphore *semaphore, int num_waiters, int msecs){
+  return semaphore->tryAcquire(num_waiters, msecs);
+}
+
 void RSEMAPHORE_signal(RSemaphore *semaphore, int num_signallers){
   semaphore->release(num_signallers);
 }
