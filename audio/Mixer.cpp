@@ -551,7 +551,7 @@ struct Mixer{
         {
           DoublyLinkedList *sound_producer = _sound_producers.next;
           while(sound_producer!=NULL){
-            SP_RT_process((SoundProducer*)sound_producer,_time,RADIUM_BLOCKSIZE);
+            SP_RT_process((SoundProducer*)sound_producer, _time, RADIUM_BLOCKSIZE); // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
             sound_producer = sound_producer->next;
           }
         }

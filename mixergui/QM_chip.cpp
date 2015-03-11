@@ -475,8 +475,19 @@ static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *t
 }
 
 static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
-  return PATCH_add_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
-                                  SP_get_plugin(to->_sound_producer)->patch);
+  if (SP_add_elink(to->_sound_producer, from->_sound_producer) == false)
+    return false;
+  
+  if (PATCH_add_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
+                               SP_get_plugin(to->_sound_producer)->patch)
+      == false
+      )
+    {
+      RError("Impossible situation: PATCH_add_event_receiver()==true and SP_add_elink()==false");
+      return false;
+    }
+  
+  return true;
 }
 
 static bool chips_are_connected(Chip *from, Chip *to){
@@ -601,9 +612,11 @@ void CONNECTION_delete_connection(Connection *connection){
   Chip *to = connection->to;
 
   if (connection->_is_event_connection) {
-    
+
     PATCH_remove_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
                                 SP_get_plugin(to->_sound_producer)->patch);
+
+    SP_remove_elink(to->_sound_producer, from->_sound_producer);
 
   } else {
 

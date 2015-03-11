@@ -57,7 +57,9 @@ struct SoundProducer;
 
 SoundProducer *SP_create(SoundPlugin *plugin);
 void SP_delete(SoundProducer *producer);
+bool SP_add_elink(SoundProducer *target, SoundProducer *source);
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
+void SP_remove_elink(SoundProducer *target, SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_all_links(std::vector<SoundProducer*> soundproducers);
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames);

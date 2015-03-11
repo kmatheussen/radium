@@ -346,6 +346,7 @@ static bool has_recursive_event_connection(struct Patch *patch, struct Patch *st
 }
 
 // Returns false if connection couldn't be made.
+// MUST ONLY BE CALLED FROM mixergui/QM_chip.cpp:econnect (because PATCH_add_event_receiver must be called at the same time as SP_add_link)
 bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
   int num_event_receivers = source->num_event_receivers;
 
@@ -375,6 +376,7 @@ bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
   return true;
 }
 
+// MUST ONLY BE CALLED FROM mixergui/QM_chip.cpp:PATCH_remove_event_receiver (because PATCH_add_event_receiver must be called at the same time as SP_remove_link)
 void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination){
   int i;
   int num_event_receivers = source->num_event_receivers;
@@ -427,10 +429,7 @@ void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, float notenum, in
 
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
-    if(receiver==patch){ // unnecessary. We detect recursions when creating connections.
-      fprintf(stderr,"Error. receiver==patch in patch.c");
-      abort();
-    }
+    R_ASSERT_RETURN_IF_FALSE(receiver!=patch); // unnecessary. We detect recursions when creating connections. (Not just once (which should have been enough) but both here and in SoundProducer.cpp)
     RT_PATCH_play_note(receiver, notenum, note_id, velocity, pan, time);
   }
 }
