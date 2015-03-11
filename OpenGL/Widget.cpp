@@ -58,12 +58,15 @@ static void set_realtime(int type, int priority){
 
 
 static QMutex mutex(QMutex::Recursive);
+static bool has_gl_lock = false;
 
 void GL_lock(void){
   mutex.lock();
+  has_gl_lock = true;
 }
 
 void GL_unlock(void){
+  has_gl_lock = false;
   mutex.unlock();
 }
 
@@ -677,6 +680,9 @@ void GL_EnsureMakeCurrentIsCalled(void){
   if (failed)
     return;
   
+  if (has_gl_lock)
+    return; // to avoid deadlock
+    
   RSEMAPHORE_signal(g_order_make_current, 1);
   
   if (RSEMAPHORE_trywait_timeout(g_ack_make_current, 1, 2000)==false){ // Need to wait for it. The catalyst driver on linux sometimes crashes if calling makeCurrent while the main thread is doing Qt stuff.
