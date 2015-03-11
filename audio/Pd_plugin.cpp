@@ -375,7 +375,7 @@ static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, f
 
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
-  //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
+  //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*127),volume);
   libpds_noteon(pd, 0, note_num, volume*127);
   
   {
@@ -811,11 +811,11 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
     return;
 
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, -1, velocity*MAX_VELOCITY/127, 0.0f, -1);
+    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, -1, (float)velocity / 127.0f, 0.0f, -1);
   else
     RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, -1, -1);
 
-  //printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
+  //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
 }
 
 static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
@@ -823,7 +823,7 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
   if(plugin->patch==NULL)
     return;
 
-  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, -1, velocity*MAX_VELOCITY/127, -1);
+  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, -1, (float)velocity / 127.0f, -1);
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 
