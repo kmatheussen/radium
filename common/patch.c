@@ -362,6 +362,7 @@ bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
     }
 
   if(has_recursive_event_connection(destination, source)==true) {
+    GFX_Message(NULL, "Recursive event connections are not supported.\n(Send a feature request if you need it!)");
     printf("Recursive attempt\n");
     return false;
   }
