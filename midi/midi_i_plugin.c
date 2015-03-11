@@ -287,7 +287,10 @@ static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id
 }
 
 
-static void MIDIchangepitch(struct Patch *patch,float notenum, int64_t note_id, float pitch,STime time){
+static void MIDIchangepitch(struct Patch *patch,float notenum, int64_t note_id, float pitch,STime time){ // never called
+}
+
+static void MIDIsendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){ // never called
 }
 
 /******************** patch **************************/
@@ -535,6 +538,7 @@ void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
   patch->stopnote=MIDIstopnote;
   patch->changevelocity=MIDIchangevelocity;
   patch->changepitch=MIDIchangepitch;
+  patch->sendrawmidimessage=MIDIsendrawmidimessage;
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 

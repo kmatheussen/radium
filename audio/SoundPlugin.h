@@ -187,6 +187,7 @@ typedef struct SoundPluginType{
   void (*play_note)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan);
   void (*set_note_volume)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume);
   void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch);
+  void (*send_raw_midi_message)(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t mesg);
   void (*stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)

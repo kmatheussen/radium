@@ -72,11 +72,21 @@ static void AUDIO_changepitch(struct Patch *patch,float notenum,int64_t note_id,
   if(plugin==NULL)
     return;
 
-  //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
-
   if(plugin->type->set_note_pitch != NULL)
     plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, pitch);
  
+}
+
+static void AUDIO_sendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL)
+    return;
+
+  //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
+
+  if(plugin->type->send_raw_midi_message != NULL)
+    plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg); 
 }
 
 static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,STime time){
@@ -136,6 +146,7 @@ void AUDIO_InitPatch(struct Patch *patch, void *patchdata) {
   patch->stopnote       = AUDIO_stopnote;
   patch->changevelocity = AUDIO_changevelocity;
   patch->changepitch    = AUDIO_changepitch;
+  patch->sendrawmidimessage = AUDIO_sendrawmidimessage;
   patch->closePatch     = AUDIO_closePatch;
   patch->changeTrackPan = AUDIO_changeTrackPan;
 

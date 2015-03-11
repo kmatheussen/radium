@@ -312,6 +312,7 @@ union SuperType{
   void *pointer;
   const void *const_pointer;
   int64_t int_num;
+  uint32_t uint32_num;
   double float_num;
 };
 
@@ -364,6 +365,7 @@ struct Patch{
   void (*playnote)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time,float pan);
   void (*changevelocity)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time);
   void (*changepitch)(struct Patch *patch,float notenum,int64_t note_id,float pitch,STime time);
+  void (*sendrawmidimessage)(struct Patch *patch,uint32_t msg,STime time); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
   void (*stopnote)(struct Patch *patch,float notenum,int64_t note_id,STime time);
   void (*closePatch)(struct Patch *patch);
   

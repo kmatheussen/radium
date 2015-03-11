@@ -35,11 +35,13 @@ extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, f
 extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct Patch *patch, float notenum, int64_t note_id,STime time);
 extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct Patch *patch, float notenum, int64_t note_id,float velocity,STime time);
 extern LANGSPEC void RT_PATCH_send_change_pitch_to_receivers(struct Patch *patch, float notenum,int64_t note_id,float pitch,STime time);
+extern LANGSPEC void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time);
 
 extern LANGSPEC void RT_PATCH_play_note(struct Patch *patch,float notenum, int64_t note_id,float velocity,float pan,STime time);
 extern LANGSPEC void RT_PATCH_stop_note(struct Patch *patch,float notenum, int64_t note_id,STime time);
 extern LANGSPEC void RT_PATCH_change_velocity(struct Patch *patch,float notenum, int64_t note_id,float velocity,STime time);
 extern LANGSPEC void RT_PATCH_change_pitch(struct Patch *patch,float notenum, int64_t note_id,float pitch,STime time);
+extern LANGSPEC void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time);
 
 extern LANGSPEC void PATCH_play_note(struct Patch *patch,float notenum, int64_t note_id,float velocity,float pan);
 extern LANGSPEC void PATCH_stop_note(struct Patch *patch,float notenum, int64_t note_id);

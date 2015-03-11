@@ -810,6 +810,63 @@ void PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id, float
 
 
 ////////////////////////////////////
+// Raw midi messages
+
+void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time){
+  int i;
+
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_send_raw_midi_message(receiver, msg, time);
+  }
+}
+
+static void RT_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time){
+  patch->sendrawmidimessage(patch,msg,time);
+
+  if(patch->forward_events)
+    RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, time);
+}
+
+static void RT_scheduled_send_raw_midi_message(int64_t time, union SuperType *args){
+  struct Patch *patch = args[0].pointer;
+
+  uint32_t msg = args[1].uint32_num;
+
+  RT_send_raw_midi_message(patch, msg, time);
+}
+
+void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time){
+  if(time==-1)
+    time = patch->last_time;
+
+  float sample_rate = MIXER_get_sample_rate();
+    
+  int i;
+  for(i=0;i<NUM_PATCH_VOICES;i++){
+    struct PatchVoice *voice = &patch->voices[i];
+
+    if(voice->is_on==true){
+
+      union SuperType args[2];
+      
+      args[0].pointer = patch;
+      args[1].uint32_num = msg;
+      
+      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 2, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
+    }
+  }
+}
+
+void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
+  PLAYER_lock();{
+    RT_PATCH_send_raw_midi_message(patch,msg,-1);
+  }PLAYER_unlock();
+}
+
+
+
+////////////////////////////////////
 // FX
 
 // All FX goes through this function.
