@@ -15,6 +15,7 @@
 #include "../common/patch_proc.h"
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/player_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -201,16 +202,19 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       
       MidiMessage message;
       int samplePosition;
-      
+
       while(iterator.getNextEvent(message, samplePosition)){
+        int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
+        int64_t radium_time = pc->start_time + delta_time;
+          
         if (message.isNoteOn())
-          RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, pc->start_time+samplePosition);
+          RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, radium_time);
         
         else if (message.isNoteOff())
-          RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, pc->start_time+samplePosition);
+          RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, radium_time);
         
         else if (message.isAftertouch())
-          RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, pc->start_time+samplePosition);
+          RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, radium_time);
       }
     }
   }
