@@ -16,6 +16,7 @@
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
+#include "../midi/midi_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -174,6 +175,63 @@ static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_si
   data->buffer.setSize(data->buffer.getNumChannels(), new_buffer_size);
 }
 
+
+int MIDI_get_msg_len(uint32_t msg){
+  return MidiMessage::getMessageLengthFromFirstByte(MIDI_msg_byte1(msg));
+}
+
+
+static void MIDI_send_msg_to_patch(struct Patch *patch, MidiMessage message, int64_t seq_time){       
+  if (message.isNoteOn())
+    RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, seq_time);
+  
+  else if (message.isNoteOff())
+    RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, seq_time);
+  
+  else if (message.isAftertouch())
+    RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, seq_time);
+
+  else {
+    
+    const uint8_t *raw_data = message.getRawData();
+    int len = message.getRawDataSize();
+
+    R_ASSERT_RETURN_IF_FALSE(len>=1 && len<=3);
+
+    uint32_t msg;
+
+    if (len==3)
+      msg = MIDI_msg_pack3(raw_data[0],raw_data[1],raw_data[2]);
+    else if (len==2)
+      msg = MIDI_msg_pack2(raw_data[0],raw_data[1]);
+    else if (len==1)
+      msg = MIDI_msg_pack1(raw_data[0]);
+
+    RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, seq_time);
+  }
+}
+
+int MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, int64_t seq_time){
+  int num_bytes_used;
+
+  R_ASSERT(data_size>0);
+  
+  {
+    uint8_t *d=(uint8_t*)data;
+    if (d[0] < 0x80) {
+      RError("Illegal value in first byte of MIDI message: %d\n",d[0]);
+      return 0;
+    }
+  }
+  
+  MidiMessage message(data, data_size, num_bytes_used, 0);
+  
+  MIDI_send_msg_to_patch(patch, message, seq_time);
+
+  return num_bytes_used;
+}
+
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
 
@@ -213,15 +271,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         
         int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
         int64_t radium_time = pc->start_time + delta_time;
-          
-        if (message.isNoteOn())
-          RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, radium_time);
-        
-        else if (message.isNoteOff())
-          RT_PATCH_send_stop_note_to_receivers(patch, message.getNoteNumber(), -1, radium_time);
-        
-        else if (message.isAftertouch())
-          RT_PATCH_send_change_velocity_to_receivers(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, radium_time);
+
+        MIDI_send_msg_to_patch(patch, message, radium_time);
       }
     }
   }
@@ -250,6 +301,25 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
 
   MidiMessage message(0x90, (int)note_num, 0, 0.0);
   buffer.addEvent(message, time);
+}
+
+static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg){
+  uint8_t data[3];
+  data[0] = MIDI_msg_byte1(msg);
+  data[1] = MIDI_msg_byte2(msg);
+  data[2] = MIDI_msg_byte3(msg);
+
+  int num_bytes_used;
+  MidiMessage message(data, 3, num_bytes_used, 0);
+  
+  if (num_bytes_used>0) {
+    Data *data = (Data*)plugin->data;
+    MidiBuffer &buffer = data->midi_buffer;
+    buffer.addEvent(message, block_delta_time);
+  }
+  
+  //  else
+  //  RError("Illegal midi msg: %x",msg); // Well, the illegal message could have been created by a third party plugin.
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -572,6 +642,7 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   plugin_type->play_note       = play_note;
   plugin_type->set_note_volume = set_note_volume;
   plugin_type->stop_note       = stop_note;
+  plugin_type->send_raw_midi_message = send_raw_midi_message;
   
   plugin_type->get_effect_value = get_effect_value;
   plugin_type->set_effect_value = set_effect_value;
