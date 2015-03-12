@@ -204,6 +204,13 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       int samplePosition;
 
       while(iterator.getNextEvent(message, samplePosition)){
+
+        // Make sure samplePosition has a legal value
+        if (samplePosition >= num_frames)
+          samplePosition = num_frames-1;
+        if (samplePosition < 0)
+          samplePosition = 0;
+        
         int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
         int64_t radium_time = pc->start_time + delta_time;
           
