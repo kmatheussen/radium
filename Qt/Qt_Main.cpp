@@ -331,6 +331,7 @@ class CalledPeriodically : public QTimer {
 
   QMessageBox msgBox;
   QAbstractButton *msgBox_ok;
+  QAbstractButton *msgBox_stop_playing;
   QAbstractButton *msgBox_dontshowagain;
   QSet<QString> dontshow;
 
@@ -346,6 +347,7 @@ public:
     start();
     msgBox.setModal(false);
     msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
+    msgBox_stop_playing = (QAbstractButton*)msgBox.addButton("Stop playing!",QMessageBox::ApplyRole);
     msgBox_ok = (QAbstractButton*)msgBox.addButton("Ok",QMessageBox::AcceptRole);
     msgBox.open();
     msgBox.hide();
@@ -376,6 +378,8 @@ protected:
       if (msgBox.clickedButton() == msgBox_dontshowagain){
         //printf("Dontshowagain\n");
         dontshow.insert(rt_message);
+      } else if (msgBox.clickedButton() == msgBox_stop_playing){
+        PlayStop();
       }
           
       rt_message_status = RT_MESSAGE_READY;

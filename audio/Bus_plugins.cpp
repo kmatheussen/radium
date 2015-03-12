@@ -42,7 +42,7 @@ static SoundPluginType left_out_type = {0};
 static SoundPluginType right_out_type = {0};
 
 static void RT_bus_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  SP_RT_process_bus(outputs, time, num_frames, plugin->type==&bus_type1 ? 0 : 1);
+  SP_RT_process_bus(outputs, time, num_frames, plugin->type==&bus_type1 ? 0 : 1, true);
 }
 
 static void RT_pipe_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){

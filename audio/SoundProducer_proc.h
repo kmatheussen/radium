@@ -62,8 +62,8 @@ bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, in
 void SP_remove_elink(SoundProducer *target, SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_all_links(std::vector<SoundProducer*> soundproducers);
-void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames);
-void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num);
+void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);
+void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
 struct SoundPlugin *SP_get_plugin(SoundProducer *producer);
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin);

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMessageBox>
 #include <QString>
 #include <QStringList>
+#include <QTime>
 
 
 // I'm not entirely sure where memory barriers should be placed, so I've tried to be more safe than sorry.
@@ -35,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/threading.h"
 #include "../common/PEQ_LPB_proc.h"
-
+#include "../common/OS_visual_input.h"
 
 #include "Jack_plugin_proc.h"
 #include "SoundfileSaver_proc.h"
@@ -318,7 +319,7 @@ static void init_player_lock(void){
     RError("pthread_mutexattr_settype failed: %d\n",s2);
 
 #ifdef FOR_LINUX
-  int s3 = pthread_mutexattr_setprotocol(&player_lock_mutexattr, PTHREAD_PRIO_INHERIT);  
+  int s3 = pthread_mutexattr_setprotocol(&player_lock_mutexattr, PTHREAD_PRIO_INHERIT);  // Regarding macosx, I don't know whether it supports PTHREAD_PRIO_INHERIT, so we just boost priority manually instead on that platform.
   if (s3!=0)
     RError("pthread_mutexattr_setprotocol failed: %d\n",s3);
 #endif
@@ -509,6 +510,14 @@ struct Mixer{
 
     RT_lock_player();  // This is a RT-safe lock. Priority inversion can not happen.
 
+    QTime pause_time;
+    pause_time.start();
+    
+    QTime time;
+    time.start();
+    
+    bool process_plugins = true;
+
     while(true){
 
       // Schedule new notes, etc.
@@ -528,6 +537,20 @@ struct Mixer{
       jackblock_size = num_frames;
       jackblock_cycle_start_stime = pc->end_time;
 
+      if (process_plugins==false) {
+        if (pause_time.elapsed() > 5000)
+          process_plugins = true;
+      } else if (time.elapsed() > 2000) { // 2 seconds
+        RT_message("Error!\n"
+                   "\n"
+                   "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer. "
+                   );
+        printf("stop processing plugins\n");
+        process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
+        pause_time.restart();
+      }
+            
+
       RT_lock_player();
 
       //jackblock_size = num_frames;
@@ -544,14 +567,14 @@ struct Mixer{
         RT_LPB_set_beat_position(RADIUM_BLOCKSIZE);
         
         if(_bus1!=NULL)
-          SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE);
+          SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, process_plugins);
         if(_bus2!=NULL)
-          SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE);
-      
+          SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, process_plugins);
+
         {
           DoublyLinkedList *sound_producer = _sound_producers.next;
           while(sound_producer!=NULL){
-            SP_RT_process((SoundProducer*)sound_producer, _time, RADIUM_BLOCKSIZE); // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
+            SP_RT_process((SoundProducer*)sound_producer, _time, RADIUM_BLOCKSIZE, process_plugins ); // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
             sound_producer = sound_producer->next;
           }
         }
@@ -560,14 +583,15 @@ struct Mixer{
         jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
 
-      //_time += num_frames;
-      
-      jack_time_t end_time = jack_get_time();
-        g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
-        
       // Tell jack we are finished.
       jack_cycle_signal(_rjack_client, 0);
 
+      jack_time_t end_time = jack_get_time();
+      g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
+
+      if (g_cpu_usage < 98)
+        time.restart();
+          
     } // end while
 
     RT_unlock_player();

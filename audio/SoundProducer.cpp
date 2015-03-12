@@ -233,7 +233,14 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
 
 static RSemaphore *signal_from_RT = NULL;
 
-static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs, bool process_plugins){
+
+  if (process_plugins == false){
+    for(int ch=0;ch<plugin->type->num_outputs;ch++)
+      memset(outputs[ch], 0, sizeof(float)*num_frames);
+    return;
+  }
+  
   plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
 
   float sum=0.0f;
@@ -554,7 +561,7 @@ struct SoundProducer : DoublyLinkedList{
       output[i] += input[i];
   }
 
-  void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames){
+  void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames, bool process_plugins){
     if(filter->plugins==NULL)
       if(num_channels==0){
         return;
@@ -572,11 +579,11 @@ struct SoundProducer : DoublyLinkedList{
       }
     else
       for(int ch=0;ch<num_channels;ch++)
-        PLUGIN_RT_process(filter->plugins[ch], 0, num_frames, &input[ch], &output[ch]);
+        PLUGIN_RT_process(filter->plugins[ch], 0, num_frames, &input[ch], &output[ch], process_plugins);
   }
 
   // Quite chaotic with all the on/off is/was booleans.
-  void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames){
+  void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames, bool process_plugins){
     if(filter->is_on==false && filter->was_on==false)
       return;
 
@@ -590,7 +597,7 @@ struct SoundProducer : DoublyLinkedList{
       if(filter->is_on==true){
         
         if(filter->was_off==true){ // fade in
-          RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames);
+          RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames, process_plugins);
           
           for(int ch=0;ch<num_channels;ch++)
             RT_crossfade_in2(s[ch], sound[ch], filter->fade_pos, num_frames);
@@ -604,14 +611,14 @@ struct SoundProducer : DoublyLinkedList{
           
         }else{
           
-          RT_apply_system_filter_apply(filter,sound,sound,num_channels,num_frames);      
+          RT_apply_system_filter_apply(filter,sound,sound,num_channels,num_frames, process_plugins);      
           filter->was_on=true;   
         }
        
         
       }else if(filter->was_on==true){ // fade out.
         
-        RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames);
+        RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames, process_plugins);
         
         for(int ch=0;ch<num_channels;ch++)
           RT_crossfade_out2(s[ch], sound[ch], filter->fade_pos, num_frames);
@@ -627,7 +634,7 @@ struct SoundProducer : DoublyLinkedList{
     }
   }
 
-  void RT_process(int64_t time, int num_frames){
+  void RT_process(int64_t time, int num_frames, bool process_plugins){
     if(_last_time == time)
       return;
 
@@ -638,7 +645,7 @@ struct SoundProducer : DoublyLinkedList{
     {
       SoundProducerLink *elink = static_cast<SoundProducerLink*>(_input_eproducers.next);
       while(elink!=NULL){
-        elink->sound_producer->RT_process(time, num_frames);
+        elink->sound_producer->RT_process(time, num_frames, process_plugins);
         elink = static_cast<SoundProducerLink*>(elink->next);
       }
     }
@@ -662,7 +669,7 @@ struct SoundProducer : DoublyLinkedList{
         
         float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
         
-        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->sound_producer_ch);
+        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->sound_producer_ch, process_plugins);
         
         // fade in
         if(link->state==SoundProducerLink::FADING_IN){
@@ -702,7 +709,7 @@ struct SoundProducer : DoublyLinkedList{
 
 
     if(is_a_generator)
-      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound);
+      PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _dry_sound, process_plugins);
 
 
     // Input peaks
@@ -744,21 +751,19 @@ struct SoundProducer : DoublyLinkedList{
           SMOOTH_copy_sound(&_plugin->input_volume, _input_sound[ch], _dry_sound[ch], num_frames);
         
         // Fill output
-        {
-          PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound);
-        }
+        PLUGIN_RT_process(_plugin, time, num_frames, _input_sound, _output_sound, process_plugins);
 
       }
 
       // compressor
-      RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames);
+      RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames, process_plugins);
 
       // filters
-      RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames);
-      RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames);
-      RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames);
-      RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames);
-      RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames);
+      RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames, process_plugins);
+      RT_apply_system_filter(&_plugin->eq1,       _output_sound, _num_outputs, num_frames, process_plugins);
+      RT_apply_system_filter(&_plugin->eq2,       _output_sound, _num_outputs, num_frames, process_plugins);
+      RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames, process_plugins);
+      RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
   
       // dry/wet
       RT_apply_dry_wet(_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
@@ -771,7 +776,7 @@ struct SoundProducer : DoublyLinkedList{
 
     // Right channel delay ("width")
     if(_num_outputs>1)
-      RT_apply_system_filter(&_plugin->delay, &_output_sound[1], _num_outputs-1, num_frames);
+      RT_apply_system_filter(&_plugin->delay, &_output_sound[1], _num_outputs-1, num_frames, process_plugins);
 
 
     // Output peaks
@@ -797,8 +802,8 @@ struct SoundProducer : DoublyLinkedList{
     }
   }
 
-  float *RT_get_channel(int64_t time, int num_frames, int ret_ch){
-    RT_process(time, num_frames);
+  float *RT_get_channel(int64_t time, int num_frames, int ret_ch, bool process_plugins){
+    RT_process(time, num_frames, process_plugins);
     return _output_sound[ret_ch];
   }
 };
@@ -877,12 +882,12 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
     delete links_to_delete.at(i);
 }
 
-void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames){
-  producer->RT_process(time, num_frames);
+void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
+  producer->RT_process(time, num_frames, process_plugins);
 }
 
 // This function is called from bus_type->RT_process.
-void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num){
+void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins){
   DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
 
   memset(outputs[0],0,sizeof(float)*num_frames);
@@ -895,12 +900,12 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
 
     if(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT){
       if(type->num_outputs==1){
-        float *channel_data0 = sp->RT_get_channel(time, num_frames, 0);
+        float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
         SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[0], channel_data0, num_frames);
         SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[1], channel_data0, num_frames);
       }else if(type->num_outputs>1){
-        float *channel_data0 = sp->RT_get_channel(time, num_frames, 0);
-        float *channel_data1 = sp->RT_get_channel(time, num_frames, 1);
+        float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
+        float *channel_data1 = sp->RT_get_channel(time, num_frames, 1, process_plugins);
         SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[0], channel_data0, num_frames);
         SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[1], channel_data1, num_frames);
       }
