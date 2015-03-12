@@ -863,7 +863,7 @@ QWidget *GL_create_widget(QWidget *parent){
     //getchar();
     
 #ifdef FOR_LINUX
-    if (s_vendor.contains("ATI", Qt::CaseInsensitive))
+    if (s_vendor.contains("ATI"))
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
         vector_t v = {0};
         VECTOR_push_back(&v,"Ok");
