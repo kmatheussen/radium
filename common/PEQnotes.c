@@ -224,7 +224,7 @@ void PEQ_FindNextNote(struct PEventQueue *peq){
 	}
 }
 
-static void scheduled_play_note(int64_t time, union SuperType *args){
+static void scheduled_play_note(int64_t time, const union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note = args[1].pointer;
 
@@ -255,7 +255,7 @@ void PE_StartNote(struct PEventQueue *peq,int doit){
 }
 
 
-static void scheduled_stop_note(int64_t time, union SuperType *args){
+static void scheduled_stop_note(int64_t time, const union SuperType *args){
   struct Tracks *track = args[0].pointer;
   struct Notes *note = args[1].pointer;
   

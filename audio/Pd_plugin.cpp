@@ -364,6 +364,7 @@ static int RT_get_legal_note_id_pos(Data *data, float ids_pos){
     return data->note_ids[i_ids_pos];
 }
 
+// called from radium
 static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -371,6 +372,7 @@ static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_fr
   libpds_process_float_noninterleaved(pd, num_frames / libpds_blocksize(pd), (const float**) inputs, outputs);
 }
 
+// called from radium
 static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan){
 
   Data *data = (Data*)plugin->data;
@@ -407,6 +409,7 @@ static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, f
   }
 }
 
+// called from radium
 static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -424,6 +427,7 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_t
   }
 }
 
+// called from radium
 static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -440,6 +444,7 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_ti
   }
 }
 
+// called from radium
 void RT_PD_set_absolute_time(int64_t time){ 
   if(g_instances != NULL) {
     t_atom v[3];
@@ -457,6 +462,7 @@ void RT_PD_set_absolute_time(int64_t time){
   } 
 }
 
+// called from radium
 void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, Place *p){
 
   if(g_instances != NULL) {
@@ -481,6 +487,7 @@ void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, Place *p){
   }
 }
 
+// called from radium
 void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
 
   if(g_instances != NULL) {
@@ -505,6 +512,7 @@ void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
   }
 }
 
+// called from radium
 static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -548,6 +556,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_
   }
 }
 
+// called from radium
 static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   float raw = data->controllers[effect_num].value;
@@ -559,6 +568,7 @@ static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enu
     return raw;
 }
 
+// called from radium
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[effect_num];
@@ -571,6 +581,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)controller->value);
 }
 
+// called from radium
 static void show_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
@@ -579,11 +590,13 @@ static void show_gui(struct SoundPlugin *plugin){
   }PLAYER_unlock();
 }
 
-void save_file(SoundPlugin *plugin) {
+// called from radium
+static void save_file(SoundPlugin *plugin) {
   Data *data=(Data*)plugin->data;
   libpds_request_savefile(data->pd, data->file);
 }
 
+// called from radium
 static void hide_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
@@ -593,6 +606,7 @@ static void hide_gui(struct SoundPlugin *plugin){
   }PLAYER_unlock();
 }
 
+// called from Pd
 static void RT_pdfloathook(void *d, const char *sym, float val){
   Pd_Controller *controller = (Pd_Controller*)d;
 
@@ -609,12 +623,14 @@ static void RT_pdfloathook(void *d, const char *sym, float val){
   }
 }
 
+// called from Pd
 static void RT_bind_receiver(Pd_Controller *controller){
   char receive_symbol_name[PD_NAME_LENGTH+20];
   snprintf(receive_symbol_name, PD_NAME_LENGTH+19, "%s-receiver", controller->name);
   controller->pd_binding = libpds_bind(((Data*)controller->plugin->data)->pd, receive_symbol_name, controller);
 }
 
+// called from Pd
 static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value){
   Pd_Controller *controller;
   int controller_num;
@@ -663,7 +679,9 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   PDGUI_schedule_clearing(data->qtgui);
 }
 
+
 // Note that hooks are always called from the player thread.
+// called from Pd
 static void RT_pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
   SoundPlugin *plugin = (SoundPlugin*)d;
 
@@ -679,10 +697,12 @@ static void RT_pdmessagehook(void *d, const char *source, const char *controller
   }
 }
 
+// called from Pd
 static bool is_bang(t_atom atom){
   return libpd_is_symbol(atom); // && atom.a_w.w_symbol==&s_bang;
 }
 
+// called from Pd
 static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
@@ -805,6 +825,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   }
 }
 
+// called from Pd
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
   if(plugin->patch==NULL)
@@ -818,6 +839,7 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
 }
 
+// called from Pd
 static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
   if(plugin->patch==NULL)

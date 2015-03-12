@@ -87,6 +87,17 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
 }
 
 void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
+
+  // An event created by an RT_process function needs run right away.
+  // If not it won't be run until the next audio block since SCHEDULER_called_per_block
+  // has already been called for this audio block.
+  // (Q: why not do this for events genereated by the editor too?
+  //  A: Because then effects could be run after notes, "note on" events could be run before "note off" events, and so forth)
+  if (false==pc->is_treating_editor_events && seq_time < pc->end_time) {
+    callback(seq_time, args);
+    return;
+  }
+      
   int64_t time = seq_to_scheduler_time(seq_time);
 
   //args=NULL; // test crashreporter
@@ -173,7 +184,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
     if(event_time < end_time){
       remove_first_event();
       {
-        event->callback(scheduler_to_seq_time(event_time), &event->args[0]);
+        event->callback(scheduler_to_seq_time(event_time), &event->args[0]); // note that the callback can also schedule new events
       }
       release_event(event);
     }else

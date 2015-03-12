@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef COMMON_SCHEDULER_PROC_H
 #define COMMON_SCHEDULER_PROC_H
 
-typedef void (*SchedulerCallback)(int64_t time_into_the_future, union SuperType *args);
+typedef void (*SchedulerCallback)(int64_t time_into_the_future, const union SuperType *args);
 
 enum SchedulerPriority{
   SCHEDULER_FX_PRIORITY             = 0,

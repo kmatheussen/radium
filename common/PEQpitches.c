@@ -101,7 +101,7 @@ void InitPEQpitches(
 }
 
 
-static void scheduled_change_pitch(int64_t time, union SuperType *args){
+static void scheduled_change_pitch(int64_t time, const union SuperType *args){
   const struct Tracks *track = args[0].const_pointer;
   const struct Notes  *note  = args[1].const_pointer;
   float          x     = args[2].float_num;

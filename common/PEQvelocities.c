@@ -129,7 +129,7 @@ void InitPEQvelocities(
 }
 
 
-static void scheduled_change_velocity(int64_t time, union SuperType *args){
+static void scheduled_change_velocity(int64_t time, const union SuperType *args){
   const struct Tracks *track = args[0].const_pointer;
   const struct Notes  *note  = args[1].const_pointer;
   int            x     = args[2].int_num;

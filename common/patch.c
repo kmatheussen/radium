@@ -466,7 +466,7 @@ static void RT_play_voice(struct Patch *patch, float notenum, int64_t note_id, f
     RT_PATCH_send_play_note_to_receivers(patch, notenum, note_id, velocity, pan, time);
 }
 
-static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
+static void RT_scheduled_play_voice(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float   notenum  = args[1].float_num;
@@ -481,7 +481,7 @@ static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
 }
 
 
-static void RT_scheduled_stop_voice(int64_t time_into_the_future, union SuperType *args);
+static void RT_scheduled_stop_voice(int64_t time_into_the_future, const union SuperType *args);
 
 void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, float velocity, float pan, STime time){
   //printf("\n\n___Starting note %d, time: %d\n\n",notenum,(int)time);
@@ -574,7 +574,7 @@ static void RT_stop_voice(struct Patch *patch, float notenum, int64_t note_id, S
     RT_PATCH_send_stop_note_to_receivers(patch, notenum, note_id, time);
 }
 
-static void RT_scheduled_stop_voice(int64_t time, union SuperType *args){
+static void RT_scheduled_stop_voice(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float notenum = args[1].float_num;
@@ -668,7 +668,7 @@ static void RT_change_voice_velocity(struct Patch *patch, float notenum, int64_t
     RT_PATCH_send_change_velocity_to_receivers(patch, notenum, note_id, velocity, time);
 }
 
-static void RT_scheduled_change_voice_velocity(int64_t time, union SuperType *args){
+static void RT_scheduled_change_voice_velocity(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float   notenum  = args[1].float_num;
@@ -757,7 +757,7 @@ static void RT_change_voice_pitch(struct Patch *patch, float notenum, int64_t no
     RT_PATCH_send_change_pitch_to_receivers(patch, notenum, note_id, pitch, time);
 }
 
-static void RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args){
+static void RT_scheduled_change_voice_pitch(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float   notenum = args[1].float_num;
@@ -828,7 +828,7 @@ static void RT_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime ti
     RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, time);
 }
 
-static void RT_scheduled_send_raw_midi_message(int64_t time, union SuperType *args){
+static void RT_scheduled_send_raw_midi_message(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   uint32_t msg = args[1].uint32_num;

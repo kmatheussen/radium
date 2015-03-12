@@ -74,7 +74,7 @@ void InitPEQBlockfxs(
 	}
 }
 
-static void scheduled_fx_change(int64_t time, union SuperType *args){
+static void scheduled_fx_change(int64_t time, const union SuperType *args){
   const struct Tracks *track = args[0].const_pointer;
   struct FX     *fx    = args[1].pointer;
   int            x     = args[2].int_num;

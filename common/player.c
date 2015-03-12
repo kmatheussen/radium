@@ -96,14 +96,15 @@ void PlayerTask(STime reltime){
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
 
-        {
-          struct PEventQueue *peq = pc->peq;
+        pc->is_treating_editor_events = true; {
 
+          struct PEventQueue *peq = pc->peq;
+          
           while(
-		peq!=NULL
-		&& peq->l.time < pc->end_time
-		//&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
-		&& pc->isplaying
+                peq!=NULL
+                && peq->l.time < pc->end_time
+                //&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
+                && pc->isplaying
                 )
             {
               
@@ -114,10 +115,15 @@ void PlayerTask(STime reltime){
               pc->pausetime=peq->l.time;
               peq=pc->peq;
             }
-        }
 
-        SCHEDULER_called_per_block(tempoadjusted_reltime); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
+          // Currently, there are two scheduling systems. The old linked list (PEQ), and this one.
+          // This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER.
+          // Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
+          SCHEDULER_called_per_block(tempoadjusted_reltime);
 
+        } pc->is_treating_editor_events = false;
+
+        
         pc->playertask_has_been_called = true;
 }
 
