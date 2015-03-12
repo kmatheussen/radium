@@ -26,7 +26,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
 
-  data->steady_time += num_frames;
+  data->steady_time = time;
 }
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
