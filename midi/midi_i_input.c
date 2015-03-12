@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
+#include "midi_proc.h"
+
 #include "../common/notes_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/OS_Ptask2Mtask_proc.h"
@@ -34,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/undo_notes_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../common/OS_Player_proc.h"
 
 #include "midi_i_input_proc.h"
 
@@ -229,14 +232,21 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if(cc>=0x80 && cc<0xa0){
     if (is_playing && root->editonoff)
       record_midi_event(cc,data1,data2);
+  }
+
+  struct Patch *patch = g_through_patch;
+  if(patch!=NULL){
+
+    uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
+    int len = MIDI_msg_len(msg);
     
-    struct Patch *patch = g_through_patch;
-    if(patch!=NULL){
-      //printf("%d: got note %s (0x%x 0x%x)\n",num-1,NotesTexts3[data1],cc,data2);
-      if(data2>0 && cc>=0x90)
-        PATCH_play_note(patch,data1,-1,scale(data2,0,127,0,1),0.5);
-      else
-        PATCH_stop_note(patch,data1,-1);
+    if (len>=1 && len<=3) {
+
+      uint8_t data[3] = {cc, data1, data2};
+
+      PLAYER_lock(); {
+        RT_MIDI_send_msg_to_patch(patch, data, len, -1);
+      } PLAYER_unlock();
     }
   }
 

@@ -176,12 +176,23 @@ static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_si
 }
 
 
-int MIDI_get_msg_len(uint32_t msg){
-  return MidiMessage::getMessageLengthFromFirstByte(MIDI_msg_byte1(msg));
+int MIDI_msg_len(uint32_t msg){
+
+  int byte1 = MIDI_msg_byte1(msg);
+  
+  R_ASSERT(byte1!=0xf0);
+  R_ASSERT(byte1!=0xf7);
+  
+  if (byte1<0x80 || byte1>0xff){
+    RError("Illegal msg: %x",msg);
+    return 0;
+  }
+  
+  return MidiMessage::getMessageLengthFromFirstByte(byte1);
 }
 
 
-static void MIDI_send_msg_to_patch(struct Patch *patch, MidiMessage message, int64_t seq_time){       
+static void RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn())
     RT_PATCH_send_play_note_to_receivers(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, seq_time);
   
@@ -211,7 +222,7 @@ static void MIDI_send_msg_to_patch(struct Patch *patch, MidiMessage message, int
   }
 }
 
-int MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, int64_t seq_time){
+int RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, void *data, int data_size, int64_t seq_time){
   int num_bytes_used;
 
   R_ASSERT(data_size>0);
@@ -226,7 +237,57 @@ int MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, int64
   
   MidiMessage message(data, data_size, num_bytes_used, 0);
   
-  MIDI_send_msg_to_patch(patch, message, seq_time);
+  RT_MIDI_send_msg_to_patch_receivers(patch, message, seq_time);
+
+  return num_bytes_used;
+}
+
+static void RT_MIDI_send_msg_to_patch(struct Patch *patch, MidiMessage message, int64_t seq_time){       
+  if (message.isNoteOn())
+    RT_PATCH_play_note(patch, message.getNoteNumber(), -1, message.getVelocity() / 127.0f, 0.0f, seq_time);
+  
+  else if (message.isNoteOff())
+    RT_PATCH_stop_note(patch, message.getNoteNumber(), -1, seq_time);
+  
+  else if (message.isAftertouch())
+    RT_PATCH_change_velocity(patch, message.getNoteNumber(), -1, message.getChannelPressureValue() / 127.0f, seq_time);
+
+  else {
+    
+    const uint8_t *raw_data = message.getRawData();
+    int len = message.getRawDataSize();
+
+    R_ASSERT_RETURN_IF_FALSE(len>=1 && len<=3);
+
+    uint32_t msg;
+
+    if (len==3)
+      msg = MIDI_msg_pack3(raw_data[0],raw_data[1],raw_data[2]);
+    else if (len==2)
+      msg = MIDI_msg_pack2(raw_data[0],raw_data[1]);
+    else if (len==1)
+      msg = MIDI_msg_pack1(raw_data[0]);
+
+    RT_PATCH_send_raw_midi_message(patch, msg, seq_time);
+  }
+}
+
+int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, int64_t seq_time){
+  int num_bytes_used;
+
+  R_ASSERT(data_size>0);
+  
+  {
+    uint8_t *d=(uint8_t*)data;
+    if (d[0] < 0x80) {
+      RError("Illegal value in first byte of MIDI message: %d\n",d[0]);
+      return 0;
+    }
+  }
+  
+  MidiMessage message(data, data_size, num_bytes_used, 0);
+  
+  RT_MIDI_send_msg_to_patch(patch, message, seq_time);
 
   return num_bytes_used;
 }
@@ -272,7 +333,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
         int64_t radium_time = pc->start_time + delta_time;
 
-        MIDI_send_msg_to_patch(patch, message, radium_time);
+        RT_MIDI_send_msg_to_patch_receivers(patch, message, radium_time);
       }
     }
   }
