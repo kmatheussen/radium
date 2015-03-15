@@ -53,6 +53,9 @@ static uint32_t get_keyswitch(void){
 
   bool is_left_alt = GetKeyState(VK_LMENU) & 0x8000;
 
+  if (is_left_alt)
+    keyswitch |= EVENT_LEFTALT;
+
   if(GetKeyState(VK_RMENU)&0x8000)
     keyswitch |= EVENT_RIGHTALT;
 
