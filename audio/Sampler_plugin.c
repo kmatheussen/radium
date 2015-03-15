@@ -768,9 +768,12 @@ static void get_peaks_from_sample(const Sample *sample, int64_t start_frame, int
   float min=0.0f;
   float max=0.0f;
 
-  int framenum=start_frame;
-
-  for(framenum=start_frame;framenum<end_frame;framenum+=SAMPLES_PER_PEAK){
+  int interval = (end_frame-start_frame) / 5; //SAMPLES_PER_PEAK);
+  //  if (interval < SAMPLES_PER_PEAK / 2)
+  //  interval = SAMPLES_PER_PEAK / 2;
+  
+  int framenum;
+  for(framenum=start_frame ; framenum<end_frame ; framenum+=interval){ //SAMPLES_PER_PEAK){
     float min2;
     float max2;
     if(get_peak_sample(sample,framenum,&min2,&max2)==false)
@@ -1326,6 +1329,7 @@ static void generate_peaks(Data *data){
     }
   }
 }
+
 
 static bool load_sample(Data *data, const wchar_t *filename, int instrument_number){
   if(load_xi_instrument(data,filename)==false)
