@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -105,9 +106,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0;ch<type->num_inputs;ch++)
     memcpy(data->inputs[ch],inputs[ch],sizeof(float)*num_frames);
   {
-    descriptor->run(data->handles[0], num_frames);
-    if(type_data->uses_two_handles)
-      descriptor->run(data->handles[1], num_frames);
+    CRASHREPORTER_set_plugin_name(plugin->type->name); {
+      descriptor->run(data->handles[0], num_frames);
+      if(type_data->uses_two_handles)
+        descriptor->run(data->handles[1], num_frames);
+    } CRASHREPORTER_unset_plugin_name();
   }
   for(int ch=0;ch<type->num_outputs;ch++)
     memcpy(outputs[ch],data->outputs[ch],sizeof(float)*num_frames);

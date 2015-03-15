@@ -16,7 +16,7 @@
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
-#include "../midi/midi_proc.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -34,8 +34,9 @@
 #  include "vestige/aeffectx.h"  // It should not be a problem to use VESTIGE in this case. It's just used for getting vendor string and product string.
 
 
-
+#include "../midi/midi_proc.h"
 #include "Juce_plugins_proc.h"
+
 
 extern struct Root *root;
 
@@ -304,8 +305,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   for(int ch=0; ch<data->num_input_channels ; ch++)
     memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
-  
-  instance->processBlock(buffer, data->midi_buffer);
+
+  CRASHREPORTER_set_plugin_name(plugin->type->name); {
+    instance->processBlock(buffer, data->midi_buffer);
+  } CRASHREPORTER_unset_plugin_name();
 
   for(int ch=0; ch<data->num_output_channels ; ch++)
     memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);

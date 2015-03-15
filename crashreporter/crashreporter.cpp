@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #define MESSAGE_LEN (1024*32)
+#define PLUGIN_NAME_LEN 512
 
 struct Report{
   enum{
@@ -64,11 +65,15 @@ struct Report{
 
   char data[MESSAGE_LEN];
 
+  char plugin_name[PLUGIN_NAME_LEN];
+  
   Report() : status(NO_MESSAGE) {}
 };
 
 
 static QSharedMemory *g_sharedmemory;
+
+
 
 #if defined(CRASHREPORTER_BIN)
 
@@ -161,6 +166,10 @@ int main(int argc, char **argv){
           g_sharedmemory->lock();
 
           fprintf(stderr,"Got message:\n%s\n",report->data);
+
+          tosend += "Running plugin: ";
+          tosend += report->plugin_name;
+          tosend += "\n\n";
           
           tosend += report->data;
           tosend += "\n\n";
@@ -182,15 +191,18 @@ int main(int argc, char **argv){
             box.addButton("DON'T SEND", QMessageBox::RejectRole);
 
             box.setText("Radium Crashed. :((");
-            box.setInformativeText("This crash will be automatically reported when you press \"SEND\".\n"
-                                   "\n"
-                                   "The report is sent anonymously, and will only be seen by the author of Radium.\n"
-                                   //"The reporting is anonymous, and the report will not be available to the public.\n"
-                                   "\n"
-                                   "Only the information in \"Show details...\" is sent.\n"
-                                   "\n"
-                                   "Please don't send more than one message for the same crash.\n"
-
+            box.setInformativeText(QString("This crash will be automatically reported when you press \"SEND\".\n"
+                                           "\n"
+                                           "The report is sent anonymously, and will only be seen by the author of Radium.\n"
+                                           //"The reporting is anonymous, and the report will not be available to the public.\n"
+                                           "\n"
+                                           "Only the information in \"Show details...\" is sent.\n"
+                                           "\n"
+                                           "Please don't send more than one message for the same crash.\n"
+                                           )
+                                   + (report->plugin_name[0] != 0
+                                      ? QString("\nPlease note that a third party plugin called \"") + report->plugin_name + "\" was currently processing audio. It might be responsible for the crash."
+                                      : QString())
                                    );
             box.setDetailedText(tosend);
 
@@ -301,6 +313,8 @@ int main(int argc, char **argv){
 
 #if !defined(CRASHREPORTER_BIN)
 
+static char g_plugin_name[PLUGIN_NAME_LEN] = "";
+
 void CRASHREPORTER_init(void){
   QString key = "radium_crashreporter_" + QString::number(QDateTime::currentMSecsSinceEpoch());
 
@@ -360,6 +374,14 @@ void CRASHREPORTER_init(void){
   mysleep(1000);
 }
 
+void CRASHREPORTER_set_plugin_name(const char *plugin_name){
+  strncat(g_plugin_name, plugin_name, PLUGIN_NAME_LEN - 2);
+}
+
+void CRASHREPORTER_unset_plugin_name(void){
+  g_plugin_name[0] = 0;
+}
+
 void CRASHREPORTER_report_crash(const char **messages, int num_messages){
   g_sharedmemory->lock();{
 
@@ -385,6 +407,8 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
       bytes_left = MESSAGE_LEN - pos - 1;
     }
 
+    strncat(report->plugin_name, g_plugin_name, PLUGIN_NAME_LEN - 2);
+    
     report->status=Report::THERE_IS_A_MESSAGE;
     
   }g_sharedmemory->unlock();

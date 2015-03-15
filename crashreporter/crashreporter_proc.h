@@ -23,6 +23,8 @@ extern "C"{
 #endif
 
   void CRASHREPORTER_init(void);
+  void CRASHREPORTER_set_plugin_name(const char *plugin_name);
+  void CRASHREPORTER_unset_plugin_name(void);
   void CRASHREPORTER_report_crash(const char **messages, int num_messages);
   void CRASHREPORTER_close(void);
 
