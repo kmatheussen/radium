@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/threading.h"
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../midi/midi_i_input_proc.h"
 
 #include "Jack_plugin_proc.h"
 #include "SoundfileSaver_proc.h"
@@ -565,6 +566,8 @@ struct Mixer{
         PlayerTask(RADIUM_BLOCKSIZE);
 
         RT_LPB_set_beat_position(RADIUM_BLOCKSIZE);
+
+        RT_MIDI_handle_play_buffer();
         
         if(_bus1!=NULL)
           SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, process_plugins);

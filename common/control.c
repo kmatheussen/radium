@@ -96,6 +96,9 @@ bool InitProgram(void){
 	}
 */
 
+        printf("...Midi\n");
+        MIDI_input_init();
+
         SCHEDULER_init();
 
         PATCH_init();
@@ -106,8 +109,6 @@ bool InitProgram(void){
           return false;
         }
 
-        MIDI_input_init();
-        
 	printf("...Player 1/2\n");
 
 	if( ( ! InitPEQmempool(1000) )   ){	// 1000 and 4000 are hardcoded values. Not good.

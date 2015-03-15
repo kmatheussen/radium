@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#include <jack/ringbuffer.h>
 
 #include "nsmtracker.h"
 
@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-static volatile int g_cc=0,g_data1,g_data2;
+static volatile uint32_t g_msg = 0;
 
 static struct Patch *g_through_patch = NULL;
 
@@ -88,7 +88,7 @@ static midi_event_t *get_midi_event(void){
   }
 }
 
-static void record_midi_event(int cc, int data1, int data2){
+static void record_midi_event(uint32_t msg){
 
   if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL)
     return;
@@ -100,7 +100,7 @@ static void record_midi_event(int cc, int data1, int data2){
   midi_event->wblock    = root->song->tracker_windows->wblock;
   midi_event->wtrack    = midi_event->wblock->wtrack;
   midi_event->blocktime = MIXER_get_accurate_radium_time() - pc->seqtime;
-  midi_event->msg       = PACK_MIDI_MSG(cc,data1,data2);
+  midi_event->msg       = msg;
 
   midi_event->wtrack->track->is_recording = true;
 
@@ -145,7 +145,7 @@ void MIDI_insert_recorded_midi_events(void){
   hash_t *track_set = HASH_create(8);
   
   Undo_Open();{
-    
+
     while(midi_event != NULL){
       midi_event_t *next = midi_event->next;
 
@@ -169,13 +169,11 @@ void MIDI_insert_recorded_midi_events(void){
 
         STime time = midi_event->blocktime;
         uint32_t msg = midi_event->msg;
-      
-        printf("%d: %x\n",(int)time,msg);
-      
-        int cc = msg>>16;
+            
+        int cc = (msg>>16)&0xf0; // remove channel
         int notenum = (msg>>8)&0xff;
         int volume = msg&0xff;
-      
+
         // add note
         if (cc==0x90 && volume>0) {
         
@@ -219,6 +217,40 @@ void MIDI_insert_recorded_midi_events(void){
   g_last_recorded_midi_event = NULL;
 }
 
+typedef struct {
+  int32_t deltatime;
+  uint32_t msg;
+} play_buffer_event_t;
+
+static jack_ringbuffer_t *g_play_buffer;
+
+static void add_event_to_play_buffer(int cc,int data1,int data2){
+  play_buffer_event_t event;
+
+  event.deltatime = 0;
+  event.msg = PACK_MIDI_MSG(cc,data1,data2);
+
+  jack_ringbuffer_write(g_play_buffer, (char*)&event, sizeof(play_buffer_event_t));
+}
+
+void RT_MIDI_handle_play_buffer(void){
+  struct Patch *patch = g_through_patch;
+  
+  while (jack_ringbuffer_read_space(g_play_buffer) >= sizeof(play_buffer_event_t)) {
+    play_buffer_event_t event;
+    jack_ringbuffer_read(g_play_buffer, (char*)&event, sizeof(play_buffer_event_t));
+
+      if(patch!=NULL){
+
+        uint32_t msg = event.msg;
+        
+        uint8_t data[3] = {MIDI_msg_byte1(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg)};
+          
+        RT_MIDI_send_msg_to_patch(patch, data, 3, -1);
+      }
+  }
+}
+
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
@@ -228,42 +260,30 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
     return;
 
   bool is_playing = pc->isplaying;
+
+  uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
+  int len = MIDI_msg_len(msg);
+  if (len<1 || len>3)
+    return;
   
-  if(cc>=0x80 && cc<0xa0){
-    if (is_playing && root->editonoff)
-      record_midi_event(cc,data1,data2);
-  }
-
-  struct Patch *patch = g_through_patch;
-  if(patch!=NULL){
-
-    uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
-    int len = MIDI_msg_len(msg);
+  if(g_through_patch!=NULL)
+    add_event_to_play_buffer(cc, data1, data2);
+  
+  if (is_playing) {
     
-    if (len>=1 && len<=3) {
+    if(cc>=0x80 && cc<0xa0)
+      if (root->editonoff)
+        record_midi_event(msg);
 
-      uint8_t data[3] = {cc, data1, data2};
+  } else {
 
-      PLAYER_lock(); {
-        RT_MIDI_send_msg_to_patch(patch, data, len, -1); // This is scary. This is a third thread, and the code is not made with third threads in mind. (for instance, if RT_MIDI_send_msg_to_patch calls STime2Place at the same time as block->times is updated, we can get a crash. Besides, if it takes time to get the player lock, the midi input timing for the events can be screwed up.
-      } PLAYER_unlock();
+    if (g_msg == 0) { // if g_msg!=0, we are playing too quickly;
+
+      // should probably be a memory barrier here somewhere.
+      
+      if((cc&0xf0)==0x90 && data2!=0)
+        g_msg = msg;
     }
-  }
-
-  if (is_playing)
-    return;
-  
-  if(g_cc!=0) // Too quick.
-    return;
-
-  // should be a memory barrier here somewhere.
-
-  if((cc&0xf0)==0x90 && data2!=0) {
-    g_cc = cc;
-    g_data1 = data1;
-    g_data2 = data2;
-
-    Ptask2Mtask();
   }
 }
 
@@ -276,26 +296,24 @@ void MIDI_SetThroughPatch(struct Patch *patch){
 
 
 void MIDI_HandleInputMessage(void){
-  //int cc = g_cc;
-  int data1 = g_data1;
-  //int data2 = g_data2;
-
   // should be a memory barrier here somewhere.
 
-  if(g_cc==0)
-    return;
+  uint32_t msg = g_msg;
+  
+  if (msg!=0) {
 
-  g_cc = 0;
+    g_msg = 0;
 
-  if( ! root->editonoff)
-    return;
-
-  InsertNoteCurrPos(root->song->tracker_windows,data1,false);
-  root->song->tracker_windows->must_redraw = true;
+    if(root->editonoff) {
+      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg),false);
+      root->song->tracker_windows->must_redraw = true;
+    }
+  }
 }
 
 void MIDI_input_init(void){
   midi_event_t *midi_event = get_midi_event();
   midi_event->next = g_midi_events;
   g_midi_events = midi_event;
+  g_play_buffer = jack_ringbuffer_create(8000*sizeof(play_buffer_event_t));
 }

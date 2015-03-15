@@ -1289,7 +1289,7 @@ midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_plugin.c
 	$(CC)  midi/midi_i_plugin.c $(OPT) 
 midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.c
-	$(CC)  midi/midi_i_input.c $(OPT) 
+	$(CC)  midi/midi_i_input.c $(OPT) $(JACKOPT)
 midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
 	$(CC)  midi/midi_fx.c $(OPT) 
 
