@@ -10,6 +10,7 @@
 #include "../common/OS_Player_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../midi/midi_proc.h"
 
 #include "audio_instrument_proc.h"
 
@@ -199,6 +200,21 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
   Data *data = (Data*)plugin->data;
   //fluid_synth_noteoff(data->synth, 0, note_num);
   sendnoteoff(data, 0, note_num, 0, data->time + time);
+}
+
+static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg){
+  Data *data = (Data*)plugin->data;
+  
+  int cc = MIDI_msg_byte1(msg);
+  int data1 = MIDI_msg_byte2(msg);
+  int data2 = MIDI_msg_byte3(msg);
+
+  if (cc>=0xe0 && cc<0xf0) {
+    int pitch = (data2<<7) + data1;
+    sendpitchbend(plugin->data, 0, pitch, data->time + block_delta_time);
+
+  } else if (cc >= 0xb0 && cc <0xc0)
+    sendcontrolchange(data,0,data1,data2, data->time + block_delta_time);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -556,6 +572,8 @@ static SoundPluginType plugin_type = {
  play_note        : play_note,
  set_note_volume  : set_note_volume,
  stop_note        : stop_note,
+ send_raw_midi_message : send_raw_midi_message,
+ 
  set_effect_value : set_effect_value,
  get_effect_value : get_effect_value,
  get_display_value_string : get_display_value_string,
