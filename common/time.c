@@ -60,9 +60,9 @@ extern PlayerClass *pc;
     much time now, so its allso probably no use at all optimizing.
 ********************************************************/
 
-static STime Place2STime_from_times2(
+static double Place2STime_from_times2(
                                      const struct STimes *times,
-                                     float fp
+                                     double fp
                                      )
 {
 
@@ -72,24 +72,24 @@ static STime Place2STime_from_times2(
 
 //	printf("P2ST, block: %x, stime: %x, line: %d\n",block,stime,line);
 
-	STime time1=stime->time;
+	double time1=stime->time;
 
-	STime time2=times[line2].time;
+	double time2=times[line2].time;
 
-	float fp1 = line1;
-        float fp2 = fp1+1.0;
+	double fp1 = line1;
+        double fp2 = fp1+1.0;
 
-        if (fabsf(fp1 - fp) < 0.0001)
+        if (fabsf(fp1 - fp) < 0.0000001)
           return time1;
 
 	const struct STimeChanges *stc = stime->timechanges;
 	if(stc!=NULL){
 
-		float orgfp2 = fp2;
+		double orgfp2 = fp2;
 
 		struct STimeChanges *next=NextSTimeChange(stc);
 		while(next!=NULL){
-                        float maybe_new_fp2 = GetfloatFromPlacement(&next->l.p);
+                        double maybe_new_fp2 = GetDoubleFromPlace(&next->l.p);
                         if (maybe_new_fp2 >= fp) {
                                 fp2=maybe_new_fp2;
 				time2=next->time;
@@ -99,17 +99,17 @@ static STime Place2STime_from_times2(
 			next=NextSTimeChange(next);
 		}
 
-		fp1=GetfloatFromPlacement(&stc->l.p);
+		fp1=GetDoubleFromPlace(&stc->l.p);
 		time1=stc->time;
 
 		if(stc->tempo1!=0.0f){
-			float tempo=stc->tempo1 * (
-                                                   RelTempo2RealRelTempo( (float) (                                                                                   
+			double tempo=stc->tempo1 * (
+                                                   RelTempo2RealRelTempo( (double) (                                                                                   
                                                                                    stc->rel + (stc->deltarel*(fp-fp1)/(2*(fp2-fp1))) // i.e. stc->rel + scale(fp, fp1, fp2, 0, stc->deltarel / 2.0f),
                                                                                    ))
                                                    );
 
-			return (STime) (
+			return (double) (
 				time1 + (
 					pc->pfreq*60*(fp-fp1)/tempo
 				)
@@ -124,7 +124,7 @@ static STime Place2STime_from_times2(
 	}
 
 
-        return scale(fp, fp1, fp2, time1, time2);
+        return scale_double(fp, fp1, fp2, time1, time2);
 }
 
 STime Place2STime_from_times(
@@ -140,7 +140,7 @@ STime Place2STime_from_times(
           return time1;
         }
 
-        return Place2STime_from_times2(times, GetfloatFromPlacement(p));
+        return Place2STime_from_times2(times, GetDoubleFromPlace(p));
 }
 
 STime Place2STime(
@@ -152,22 +152,22 @@ STime Place2STime(
 
 #define NUM_STIME2PLACE2_TRIES 40
 
-static float STime2Place2(
+static double STime2Place2(
                           const struct STimes *times,
-                          STime correct_time,
+                          double correct_time,
                           int num_tries_left,
                           
-                          float low_result,
-                          float high_result,
+                          double low_result,
+                          double high_result,
                           
                           STime low_time,
                           STime high_time
                           )
 {
-  float maybe_result;
+  double maybe_result;
 
   if (num_tries_left==NUM_STIME2PLACE2_TRIES)
-    maybe_result = scale(correct_time, low_time, high_time, low_result, high_result); // usually correct
+    maybe_result = scale_double(correct_time, low_time, high_time, low_result, high_result); // usually correct
   else
     maybe_result = (high_result+low_result) / 2.0f;
 
@@ -187,9 +187,9 @@ static float STime2Place2(
   if (num_tries_left==0)
     return maybe_result;
 
-  STime maybe_time = Place2STime_from_times2(times, maybe_result);
+  double maybe_time = Place2STime_from_times2(times, maybe_result);
 
-  if (maybe_time==correct_time)
+  if ( fabs(maybe_time-correct_time) < 1.0)
     return maybe_result;
 
   else if (maybe_time > correct_time)
@@ -217,26 +217,41 @@ static float STime2Place2(
                         );
 }
 
-float STime2Place_f(
+
+double STime2Place_f(
                   const struct Blocks *block,
-                  STime time
+                  double time
                   )
 {
-  int line1,line2;
 
   if (time < 0)
-    return 0.0f;
+    return 0.0;
 
   if (time >= getBlockSTimeLength(block))
-    return block->num_lines - 0.0001f;
+    return block->num_lines;
 
+  
+#if 0
+  int line1=0;
+  int line2=1;
+  for(;;){
+    if (time >= block->times[line1].time && time < block->times[line2].time)
+      break;
+
+    line1++;
+    line2++;    
+  }
+#else
+  int line1,line2;
   int line=1;
-  while(block->times[line].time < time)
+  while(block->times[line].time < time) // could be optimized by binary search, but binary search is a horror to get right, and it's not that important here.
     line++;
 
   line2 = line;
   line1 = line-1;
+#endif
 
+  
   return STime2Place2(block->times,
                       time,
                       NUM_STIME2PLACE2_TRIES,
@@ -266,9 +281,9 @@ Place STime2Place(
     return place;
   }
 
-  float place_f = STime2Place_f(block,time);
+  double place_f = STime2Place_f(block,time);
 
-  Float2Placement(place_f, &place);
+  Double2Placement(place_f, &place);
     
   if (PlaceGreaterOrEqual(&place, &lastplace))
     PlaceTilLimit(&place,&lastplace);
@@ -276,8 +291,8 @@ Place STime2Place(
   else if (PlaceLessThan(&place,firstplace))
     place = *firstplace;
   
-  if (place.line==64)
-    abort();
+  //if (place.line==64)
+  //  abort();
 
   return place;
 }
@@ -327,11 +342,11 @@ typedef struct{
 
 // even more private
 
-	float relp1;		// Place represented as float
-	float reltempo1;
+	double relp1;		// Place represented as double
+	double reltempo1;
 
-	float relp2;		// Place represented as float
-	float reltempo2;
+	double relp2;		// Place represented as double
+	double reltempo2;
 
 // perhaps even a bit more private than even more private
 
@@ -402,9 +417,9 @@ static void STP_fillinSTimes2(
 	bool tchange=false;
 	bool rchange=false;
 
-	float tfp1,tfp2;
-	float reltempo1=stp->reltempo1;
-	float reltempo2=stp->reltempo2;
+	double tfp1,tfp2;
+	double reltempo1=stp->reltempo1;
+	double reltempo2=stp->reltempo2;
 
 	struct STimeChanges *timechange=NULL;
 
@@ -424,8 +439,8 @@ static void STP_fillinSTimes2(
           stp->times[p1->line].time = stp->nexttime;
 	}
 
-	tfp1=GetfloatFromPlacement(p1);
-	tfp2=GetfloatFromPlacement(p2);
+	tfp1=GetDoubleFromPlace(p1);
+	tfp2=GetDoubleFromPlace(p2);
 
 	if(rchange){
 
@@ -448,7 +463,7 @@ static void STP_fillinSTimes2(
 		stp->nexttime = (
 			stp->nexttime + (
 				pc->pfreq*60*(tfp2-tfp1)/(
-					(timechange->tempo1*FindAverageRealRelTempo(timechange->rel,(float)(timechange->rel+timechange->deltarel)))
+					(timechange->tempo1*FindAverageRealRelTempo(timechange->rel,(double)(timechange->rel+timechange->deltarel)))
 				)
 			)
 		);
@@ -468,7 +483,7 @@ static void STP_fillinSTimes2(
 }
 
 static void STP_fillinLastSTimeTempos(STimePlace *stp){
-		stp->times[stp->lastplace.line+1].time=stp->nexttime;	
+  stp->times[stp->lastplace.line + 1].time = stp->nexttime + 1; // Add 1 since it's not legal to have a place placed outside the block, so therefore the "lastplace" variable is only set to just almost the next line position after the last line.
 }
 
 
@@ -500,7 +515,7 @@ static bool STP_getNextTimePlace(STimePlace *stp){
 		stp->temponode=NextTempoNode(stp->temponode);
 
 		if(stp->temponode!=NULL){
-			stp->relp2=GetfloatFromPlacement(&stp->temponode->l.p);
+			stp->relp2=GetDoubleFromPlace(&stp->temponode->l.p);
 			stp->reltempo2=stp->temponode->reltempo;
 		}
 
@@ -654,11 +669,11 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block){
 
 	/* TempoNodes */
 	stp->temponode=block->temponodes;
-	stp->relp1=GetfloatFromPlacement(&stp->temponode->l.p);	// first temponode is allways at firstplace (just try dragging down the highest temponode).
+	stp->relp1=GetDoubleFromPlace(&stp->temponode->l.p);	// first temponode is allways at firstplace (just try dragging down the highest temponode).
 	stp->reltempo1=stp->temponode->reltempo;
 
 	stp->temponode=NextTempoNode(stp->temponode);
-	stp->relp2=GetfloatFromPlacement(&stp->temponode->l.p);	// There is allways at least two temponode objects for each block.
+	stp->relp2=GetDoubleFromPlace(&stp->temponode->l.p);	// There is allways at least two temponode objects for each block.
 	stp->reltempo2=stp->temponode->reltempo;
 
 
@@ -737,7 +752,7 @@ void PrintSTimes(struct Blocks *block){
 		printf("%d. %d. Delta: %d, Ch: %p\n",line,nowtime,nowtime-lasttime,timechanges);
 		while(timechanges!=NULL){
                   printf("   place: %f, time: %" PRId64 ", tempo1: %f, rel: %f, deltarel: %f\n",
-                         GetfloatFromPlacement(&timechanges->l.p),
+                         GetDoubleFromPlace(&timechanges->l.p),
                          timechanges->time,
                          timechanges->tempo1,
                          timechanges->rel,
@@ -757,7 +772,7 @@ void PrintSTimes(struct Blocks *block){
 			lasttime=0;
 			for(realline=0;realline<wblock->num_reallines;realline++){
 				nowtime=Place2STime(block,&reallines[realline]->l.p);
-				printf("realline: %d, Place: %f, time: %d, delta: %d,\n",realline,GetfloatFromPlacement(&reallines[realline]->l.p),nowtime,nowtime-lasttime);
+				printf("realline: %d, Place: %f, time: %d, delta: %d,\n",realline,GetDoubleFromPlace(&reallines[realline]->l.p),nowtime,nowtime-lasttime);
 				lasttime=nowtime;
 			}
                   }

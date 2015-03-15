@@ -80,6 +80,9 @@ static void PlayStopReally(bool doit){
 #endif
 
 	pc->end_time=0;
+        pc->end_time_f=0;
+
+        pc->play_id++;
 
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
@@ -123,7 +126,8 @@ static void PlayBlock(
 	pc->initplaying=true;
 
 		pc->playpos=0;
-
+                pc->play_id++;
+                
                 if(do_loop==true)
                   pc->playtype=PLAYBLOCK;
                 else
@@ -226,7 +230,8 @@ static void PlaySong(
 		printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
 
 		pc->playpos=playpos;
-
+                pc->play_id++;
+                
 		root->curr_playlist=playpos;
 
 		pc->playtype=PLAYSONG;
@@ -291,7 +296,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 	root->setfirstpos=false;
 
 	playpos=root->curr_playlist;
-
+                
 	block=BL_GetBlockFromPos(playpos);
 	if(block==NULL) return;
 

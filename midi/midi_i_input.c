@@ -245,7 +245,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
       uint8_t data[3] = {cc, data1, data2};
 
       PLAYER_lock(); {
-        RT_MIDI_send_msg_to_patch(patch, data, len, -1);
+        RT_MIDI_send_msg_to_patch(patch, data, len, -1); // This is scary. This is a third thread, and the code is not made with third threads in mind. (for instance, if RT_MIDI_send_msg_to_patch calls STime2Place at the same time as block->times is updated, we can get a crash. Besides, if it takes time to get the player lock, the midi input timing for the events can be screwed up.
       } PLAYER_unlock();
     }
   }

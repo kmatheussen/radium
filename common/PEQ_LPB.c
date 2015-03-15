@@ -34,14 +34,15 @@ typedef struct {
 
   double num_beats_played_so_far;
 
-  STime time1;
-  STime time2;
-
   Place place1;
   Place place2;
   
+  double place1_f;
+  double place2_f;
+  
   int lpb_value;
-  double num_beats_between_time1_and_time2;
+  double num_beats_between_place1_and_place2;
+
 } LPB_iterator;
 
 
@@ -49,40 +50,62 @@ static LPB_iterator g_lpb_iterator = {0};
 
 
 static double g_curr_num_beats = 0.0;
+static double g_next_num_beats = 0.0;
 static double g_curr_beats_per_minute = 0.0;
 
+static double get_num_beats(LPB_iterator *iterator, int audioframes_to_add){
+  struct Blocks *block = pc->block;
+
+  double time = pc->start_time_f - (double)pc->seqtime;
+  
+  double time_to_add = (double)audioframes_to_add * block->reltempo;
+
+  return
+    iterator->num_beats_played_so_far +
+    scale_double(STime2Place_f(block, time+time_to_add),
+                 iterator->place1_f, iterator->place2_f,
+                 0.0, iterator->num_beats_between_place1_and_place2
+                 );
+}
+
+static void set_new_g_num_beats_values(LPB_iterator *iterator, int audioblocksize){
+  static int prev_play_id = -1;
+
+  if (prev_play_id != pc->play_id) {
+
+    g_curr_num_beats = get_num_beats(iterator, 0);
+    g_next_num_beats = get_num_beats(iterator, audioblocksize);
+
+    prev_play_id = pc->play_id;
+
+  } else {
+
+    g_curr_num_beats = g_next_num_beats; // Since the prev value might have been calculated using previous LPB values, this value sometimtes might not be 100% correct, but it should be good enough.
+    g_next_num_beats = get_num_beats(iterator, audioblocksize);
+    
+  }
+}
+
+
+
 // Called from Mixer.cpp after events are calculated, and before audio is created.
-void RT_LPB_set_beat_position(int blocksize){
+void RT_LPB_set_beat_position(int audioblocksize){
+
   LPB_iterator *iterator = &g_lpb_iterator;
   
   if (pc->isplaying==false)    
     return;
 
-  STime time = pc->start_time - pc->seqtime;
-
-  R_ASSERT(pc->end_time-pc->seqtime >= iterator->time1);
-  R_ASSERT(time < iterator->time2);
+  //R_ASSERT( (pc->end_time-pc->seqtime) >= iterator->time1);
+  //R_ASSERT( (pc->start_time - pc->seqtime) < iterator->time2);
   
-  //if (time < iterator->time1)
-  //  time = iterator->time1;
+  set_new_g_num_beats_values(iterator, audioblocksize);
+    
+  double num_beats_till_next_time = g_next_num_beats - g_curr_num_beats;
 
-  // Note: time (i.e. pc->start_time) may be lower than time1. Handle that situation correct is necessary to get correct timing.
+  double beats_per_minute = num_beats_till_next_time * 60.0 * (double)pc->pfreq / (double)audioblocksize;
+  //printf("beats_per_minute: %f, curr_num_beats: %f - %f (d: %f)\n", beats_per_minute,g_curr_num_beats,g_next_num_beats,num_beats_till_next_time);
 
-  double prev_num_beats = g_curr_num_beats;
-
-  double curr_num_beats =
-    iterator->num_beats_played_so_far +
-    scale_double(time,                             // This calculation is not correct when there's tempo node lines. This value needs to be curr_place, not time. (hard)
-                 iterator->time1, iterator->time2, // ...and these values need to be place1 and place2. (simple)
-                 0.0, iterator->num_beats_between_time1_and_time2
-                 );
-
-  double beats_since_last_time = curr_num_beats - prev_num_beats;
-
-  double beats_per_minute = beats_since_last_time * 60.0 * (double)pc->pfreq / (double)blocksize;
-  //printf("beats_per_minute: %f, curr_num_beats: %f\n", beats_per_minute,curr_num_beats);
-
-  g_curr_num_beats = curr_num_beats;
   g_curr_beats_per_minute = beats_per_minute;
 }
 
@@ -99,7 +122,7 @@ double RT_LPB_get_current_BPM(void){
     if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL)
       return 0.0;
     else
-      return (float)root->tempo * root->song->tracker_windows->wblock->block->reltempo;
+      return (double)root->tempo * root->song->tracker_windows->wblock->block->reltempo;
   }
 }
 
@@ -124,14 +147,14 @@ static void print_lpb_iterator_status(const struct Blocks *block){
 static void InitPEQ_LPB_new_block(const struct Blocks *block, LPB_iterator *iterator){
   struct LPBs *lpb = block->lpbs;
 
-  iterator->time1 = 0;
   PlaceSetFirstPos(&iterator->place1);
-    
+  iterator->place1_f = 0.0;
+  
   if (lpb==NULL) {
 
     iterator->lpb_value = root->lpb;
-    iterator->time2 = getBlockSTimeLength(block);
     SetAbsoluteLastPlace(&iterator->place2, block);
+    iterator->place2_f = block->num_lines;
       
   } else if (PlaceIsFirstPos(&lpb->l.p)){
 
@@ -140,18 +163,19 @@ static void InitPEQ_LPB_new_block(const struct Blocks *block, LPB_iterator *iter
     lpb = NextLPB(lpb);
 
     if (lpb==NULL) {
-      iterator->time2 = getBlockSTimeLength(block);
       SetAbsoluteLastPlace(&iterator->place2, block);
+      iterator->place2_f = block->num_lines;
     } else {
-      iterator->time2 = Place2STime(block, &lpb->l.p);
       iterator->place2 = lpb->l.p;
+      iterator->place2_f = GetDoubleFromPlace(&lpb->l.p);
     }
-    
+
   } else {
 
     iterator->lpb_value = root->lpb;
-    iterator->time2 = Place2STime(block, &lpb->l.p);
     iterator->place2 = lpb->l.p;
+    iterator->place2_f = GetDoubleFromPlace(&lpb->l.p);
+    
   }
 
   iterator->lpb = lpb;
@@ -183,17 +207,17 @@ static void InsertNextLPB_PEQ(struct PEventQueue *peq, LPB_iterator *iterator){
 
     peq->TreatMe=PlayerNextLPB;
     
-    PC_InsertElement(
+    PC_InsertElement2(
                      peq,
                      0,
-                     iterator->time2
+                     &iterator->place2
                      );
 
   }
 
-  iterator->num_beats_played_so_far += iterator->num_beats_between_time1_and_time2;
+  iterator->num_beats_played_so_far += iterator->num_beats_between_place1_and_place2;
   
-  iterator->num_beats_between_time1_and_time2 = (GetfloatFromPlace(&iterator->place2) - GetfloatFromPlace(&iterator->place1)) / (double)iterator->lpb_value;
+  iterator->num_beats_between_place1_and_place2 = (iterator->place2_f - iterator->place1_f) / (double)iterator->lpb_value;
   
   print_lpb_iterator_status(peq->block);
 }
@@ -228,20 +252,21 @@ static void PlayerNextLPB(struct PEventQueue *peq,int doit){
 
   struct LPBs *lpb = iterator->lpb;
   R_ASSERT(lpb!=NULL);
-  
-  iterator->time1 = iterator->time2;
+  R_ASSERT(peq->l.time >= pc->start_time);
+           
   iterator->place1 = iterator->place2;
+  iterator->place1_f = iterator->place2_f;
   
   iterator->lpb_value = lpb->lpb;
 
   lpb = NextLPB(lpb);
 
   if (lpb==NULL) {
-    iterator->time2 = getBlockSTimeLength(peq->block);
     SetAbsoluteLastPlace(&iterator->place2, peq->block);
+    iterator->place2_f = peq->block->num_lines;
   } else {
-    iterator->time2 = Place2STime(peq->block, &lpb->l.p);
     iterator->place2 = lpb->l.p;
+    iterator->place2_f = GetDoubleFromPlace(&lpb->l.p);
   }
 
   iterator->lpb = lpb;

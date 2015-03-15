@@ -98,6 +98,9 @@ typedef struct{
         volatile STime start_time; // During current call to peq->treatMe
         volatile STime end_time;   // During current call to peq->treatMe
 
+        double start_time_f;       // double version of start_time.
+        double end_time_f;         // double version of end_time.
+
 	volatile STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
@@ -117,6 +120,8 @@ typedef struct{
 	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;
 	bool nowpausing;
+
+        int play_id; // A counter. Increased each time the program starts playing, and stops playing.
 
 }PlayerClass;
 

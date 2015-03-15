@@ -27,9 +27,9 @@ extern LANGSPEC STime Place2STime(
                                   const Place *p
                                   );
 
-extern LANGSPEC float STime2Place_f(
+extern LANGSPEC double STime2Place_f(
                                     const struct Blocks *block,
-                                    STime time
+                                    double time
                                     );
 
 extern LANGSPEC Place STime2Place(

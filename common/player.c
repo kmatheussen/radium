@@ -54,10 +54,13 @@ void PlayerTask(STime reltime){
 
 	addreltime+=reltime;
 
-        STime tempoadjusted_reltime=addreltime*block->reltempo;
-        if(tempoadjusted_reltime<1)
+        double tempoadjusted_reltime_f = (double)addreltime * block->reltempo;
+        STime tempoadjusted_reltime    = tempoadjusted_reltime_f;
+        
+        if(tempoadjusted_reltime<1) {
+          pc->start_time_f += (double)reltime * block->reltempo;
           return;
-        else
+        } else
           addreltime=0;
 
 	if( ! pc->isplaying){
@@ -89,6 +92,10 @@ void PlayerTask(STime reltime){
         pc->start_time  = pc->end_time;
         pc->end_time   += tempoadjusted_reltime;
 
+        //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
+        pc->start_time_f = pc->end_time_f;
+        pc->end_time_f  += tempoadjusted_reltime_f;
+        
 #ifdef WITH_PD
         RT_PD_set_absolute_time(pc->start_time);
 #endif
