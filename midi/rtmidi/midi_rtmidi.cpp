@@ -430,7 +430,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         }
       
       }catch ( RtError &error ) {
-        fprintf(stderr,".. Failed trying to open\n");
+        fprintf(stderr,".. Failed trying to open %d\n",portnum);
         RError(error.what());
         inport_alsa = NULL;
       }
