@@ -117,7 +117,7 @@ bool TRACK_has_peaks(struct Tracks *track){
 void InitTrack(struct Tracks *track){
 	track->onoff=1;
 	track->trackname="(click me)";
-	track->volume=800;
+	track->volume=1000;
 	track->panonoff=false;
 	track->volumeonoff=true;
         MIDI_init_track(track);
