@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>513</width>
-    <height>290</height>
+    <width>519</width>
+    <height>331</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,56 +57,138 @@
         <property name="title">
          <string>Quantization</string>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_4">
-           <property name="sizeConstraint">
-            <enum>QLayout::SetDefaultConstraint</enum>
-           </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
            <item>
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Quantization value</string>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
              </property>
-            </widget>
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Quantization value</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QuantizationQLineEdit" name="quantization_value">
+               <property name="text">
+                <string>1/1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>10</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
            <item>
-            <widget class="QuantizationQLineEdit" name="quantization_value">
-             <property name="text">
-              <string>1/1</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer">
+            <spacer name="horizontalSpacer">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>20</width>
-               <height>40</height>
+               <width>40</width>
+               <height>20</height>
               </size>
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="QFrame" name="">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_8">
+              <property name="sizeConstraint">
+               <enum>QLayout::SetDefaultConstraint</enum>
+              </property>
+              <item>
+               <widget class="QLabel" name="label_4">
+                <property name="text">
+                 <string>Behavior when a note is too short</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_4">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Move end position to next quantization point</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_5">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Don't quantitize end position</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton_6">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Delete note</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>10</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_5">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QToolButton" name="quantitize_range">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Quantitze Range</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QToolButton" name="quantitize_track">
              <property name="sizePolicy">
@@ -130,19 +212,6 @@
              </property>
              <property name="text">
               <string>Quantitize Block</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QToolButton" name="quantitize_range">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Quantitze Range</string>
              </property>
             </widget>
            </item>
