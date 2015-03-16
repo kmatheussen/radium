@@ -102,7 +102,33 @@ public slots:
 
 
 void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command){
-  new MenuItem(name, python_command);
+  QString string(name);
+  bool addit = true;
+  
+  if (string.startsWith("[Linux]"))
+#if defined(FOR_LINUX)
+    name += 7;
+#else
+    addit = false;
+#endif
+    
+  if (string.startsWith("[Win]"))
+#if defined(FOR_WINDOWS)
+    name += 5;
+#else
+    addit = false;
+#endif
+    
+  if (string.startsWith("[Darwin]"))
+#if defined(FOR_MACOSX)
+    name += 8;
+#else
+    addit = false;
+#endif
+    
+  if (addit)
+    new MenuItem(name, python_command);
+
 }
 
 void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval){
