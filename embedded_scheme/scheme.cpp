@@ -61,6 +61,18 @@ static Place *ratio_to_place(s7_pointer ratio){
   return ret;
 }
 
+static Place ratio_to_place2(s7_pointer ratio){
+  int num = s7_numerator(ratio);
+  int den = s7_denominator(ratio);
+
+  int lines = num/den;
+
+  Place ret = PlaceCreate3(lines, num - (lines*den), den);
+  PlaceHandleOverflow(&ret);
+
+  return ret;
+}
+
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
   static s7_pointer scheme_func = s7_name_to_value(s7, "scale");
   
@@ -86,25 +98,25 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
   }
 }
 
-Place *PlaceQuantitize(const Place *p, const Place *q){
+Place PlaceQuantitize(Place p, Place q){
   static s7_pointer scheme_func = s7_name_to_value(s7, "quantitize");
   
   s7_pointer result = s7_call(s7,
                               scheme_func,
                               s7_list(s7,
                                       2,
-                                      place_to_ratio(p),
-                                      place_to_ratio(q)
+                                      place_to_ratio(&p),
+                                      place_to_ratio(&q)
                                       )
                               );
   
   if (s7_is_ratio(result))
-    return ratio_to_place(result);
+    return ratio_to_place2(result);
   else if (s7_is_integer(result))
-    return PlaceCreate(s7_integer(result), 0, 1);
+    return PlaceCreate3(s7_integer(result), 0, 1);
   else {
     RError("result was not ratio or integer. Returning 0");
-    return PlaceCreate(0,0,1);
+    return PlaceCreate3(0,0,1);
   }
   
 }

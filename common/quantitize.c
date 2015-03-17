@@ -56,12 +56,11 @@ extern struct Root *root;
     toquant=5,0,1 quant=2.0 -> toquant=6,0,1
 ******************************************************************/
 
-void Quantitize(
-                Place *toquant,
-                Place quant
+static Place Quantitize(
+                        Place toquant,
+                        Place quant
 ){
-  Place *quantitized_place = PlaceQuantitize(toquant, &quant);
-  PlaceCopy(toquant, quantitized_place);
+  return PlaceQuantitize(toquant, quant);
 }
 
 
@@ -85,21 +84,21 @@ void Quantitize_Note(
 		return;
 	}
 
-	Quantitize(&note->l.p,quant);
+	note->l.p = Quantitize(note->l.p,quant);
 
 	if(PlaceEqual(&end,&note->l.p)){
 		PlaceCopy(&note->l.p,&tempstart);
 	}
 
 	PlaceCopy(&tempend,&note->end);
+        
+	note->end = Quantitize(note->end,quant);
 
-	Quantitize(&note->end,quant);
-
-	if(PlaceLessOrEqual(&note->end,&note->l.p)){
+	if(PlaceLessOrEqual(&note->end, &note->l.p)){
 		PlaceCopy(&note->end,&tempend);
 	}
 
-	if(PlaceLessOrEqual(&note->end,&note->l.p)){
+	if(PlaceLessOrEqual(&note->end, &note->l.p)){
 		PlaceCopy(&note->l.p,&tempstart);
 		PlaceCopy(&note->end,&tempend);
 	}

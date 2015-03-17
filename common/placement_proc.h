@@ -18,6 +18,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define COMMON_PLACEMENT_PROC_H
 
 
+static inline Place PlaceCreate3(int line, int counter, int dividor) {
+  Place place;
+  place.line = line;
+  place.counter = counter;
+  place.dividor = dividor;
+  return place;
+}
+
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
   Place *place=(Place*)talloc(sizeof(Place));
   place->line = line;
@@ -126,7 +134,7 @@ extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
 // These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
 extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
-extern LANGSPEC Place *PlaceQuantitize(const Place *p, const Place *q);
+extern LANGSPEC Place PlaceQuantitize(Place p, Place q);
 extern LANGSPEC void PlaceAdd(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceSub(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceMul(Place *p1,  const Place *p2);
