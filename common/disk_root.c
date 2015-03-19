@@ -36,6 +36,8 @@ DC_start("ROOT");
 	DC_SSN("curr_block",theroot->curr_block);
 	DC_SSI("tempo",theroot->tempo);
 	DC_SSI("lpb",theroot->lpb);
+        DC_SSI("signature_numerator",theroot->signature.numerator);
+        DC_SSI("signature_denominator",theroot->signature.denominator);
 	DC_SSI("quantitize_numerator",theroot->quantitize_numerator);
         DC_SSI("quantitize_denominator",theroot->quantitize_denominator);
         DC_SSF("quantitize",(double)theroot->quantitize_numerator/(double)theroot->quantitize_denominator);
@@ -58,11 +60,13 @@ struct Root *LoadRoot(void){
 	static char *objs[1]={
 		"SONG"
 	};
-	static char *vars[12]={
+	static char *vars[14]={
 		"def_instrument",
 		"curr_block",
 		"tempo",
 		"lpb",
+                "signature_numerator",
+                "signature_denominator",                
 		"quantitize",
                 "quantitize_numerator",
                 "quantitize_denominator",
@@ -78,8 +82,10 @@ struct Root *LoadRoot(void){
         ret->editonoff=true;
         ret->grid_numerator=1;
         ret->grid_denominator=1;
+        ret->signature.numerator=4;
+        ret->signature.denominator=4;
 
-	GENERAL_LOAD(1,12);
+	GENERAL_LOAD(1,14);
 
 
 
@@ -99,47 +105,54 @@ var3:
 	goto start;
 
 var4:
+	ret->signature.numerator=DC_LoadI();
+	goto start;
+
+var5:
+	ret->signature.denominator=DC_LoadI();
+	goto start;
+
+var6:
         DC_LoadF();
 	ret->quantitize_numerator = 1;
         ret->quantitize_denominator = 1;
 	goto start;
 
-var5:
+var7:
 	ret->quantitize_numerator = DC_LoadI();
 	goto start;
 
-var6:
+var8:
         ret->quantitize_denominator = DC_LoadI();
 	goto start;
 
-var7:
+var9:
         ret->grid_numerator=DC_LoadI();
         goto start;
 
-var8:
+var10:
         ret->grid_denominator=DC_LoadI();
         goto start;
 
-var9:
+var11:
 	ret->keyoct=DC_LoadI();
 	goto start;
 
-var10:
+var12:
 	ret->min_standardvel=DC_LoadI();
 	goto start;
 
-var11:
+var13:
 	ret->standardvel=DC_LoadI();
 	goto start;
 
-var12:
-var13:
 var14:
 var15:
 var16:
 var17:
 var18:
 var19:
+ var20:
         
 obj1:
 obj2:

@@ -84,8 +84,8 @@ namespace{
       result.bpm = RT_LPB_get_current_BPM();
       //printf("result.bpm: %f\n",result.bpm);
 
-      result.timeSigNumerator = 4;
-      result.timeSigDenominator = 4;
+      result.timeSigNumerator = root->signature.numerator;
+      result.timeSigDenominator = root->signature.denominator;
 
       result.timeInSamples = pc->start_time;
       result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;

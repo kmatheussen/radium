@@ -84,7 +84,7 @@ int GetXSubTrack2(
   FUNCTION
     These two functions works just like GetXSubTrack1 and 2, except
     that they also accept the tracks that contains to the block. Which
-    is the lpb-track, tempo-track, and the temponode-track.
+    is the signature-track, lpb-track, tempo-track, and the temponode-track.
 ************************************************************************/
 int GetXSubTrack_B1(
 	const struct WBlocks *wblock,
@@ -93,6 +93,9 @@ int GetXSubTrack_B1(
 ){
 	if(track>=0) return GetXSubTrack1(ListFindElement1(&wblock->wtracks->l,track),subtrack);
 	switch(track){
+		case SIGNATURETRACK:
+			return wblock->signaturearea.x;
+			break;
 		case LPBTRACK:
 			return wblock->lpbarea.x;
 			break;
@@ -114,6 +117,9 @@ int GetXSubTrack_B2(
 ){
 	if(track>=0) return GetXSubTrack2(ListFindElement1(&wblock->wtracks->l,track),subtrack);
 	switch(track){
+		case SIGNATURETRACK:
+			return wblock->signaturearea.x2;
+			break;
 		case LPBTRACK:
 			return wblock->lpbarea.x2;
 			break;

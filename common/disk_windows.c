@@ -69,6 +69,7 @@ DC_start("TRACKER_WINDOW");
 	DC_SaveS("leftslider");SaveSlider(&window->leftslider);
 	DC_SaveS("bottomslider");SaveSlider(&window->bottomslider);
 
+        DC_SSB("show_signature_track",window->show_signature_track);
         DC_SSB("show_lpb_track",window->show_lpb_track);
         DC_SSB("show_bpm_track",window->show_bpm_track);
         DC_SSB("show_reltempo_track",window->show_reltempo_track);
@@ -86,7 +87,7 @@ struct Tracker_Windows *LoadWindow(void){
 	static char *objs[1]={
 		"WBLOCK"
 	};
-	static char *vars[20]={
+	static char *vars[21]={
 		"x",
 		"y",
 		"width",
@@ -104,6 +105,7 @@ struct Tracker_Windows *LoadWindow(void){
 		"textborder",
 		"org_fontheight",
 		"minnodesize",
+                "show_signature_track",
                 "show_lpb_track",
                 "show_bpm_track",
                 "show_reltempo_track"
@@ -112,11 +114,12 @@ struct Tracker_Windows *LoadWindow(void){
 	struct Tracker_Windows *window=DC_alloc(sizeof(struct Tracker_Windows));
 	window->l.num=DC_LoadN();
 
+        window->show_signature_track=true;
         window->show_lpb_track=true;
         window->show_bpm_track=true;
         window->show_reltempo_track=true;
 
-	GENERAL_LOAD(1,20)
+	GENERAL_LOAD(1,21)
 
 var0:
 	//window->x=
@@ -186,14 +189,18 @@ var16:
 	goto start;
 
 var17:
-        window->show_lpb_track=DC_LoadB();
+        window->show_signature_track=DC_LoadB();
 	goto start;
 
 var18:
-        window->show_bpm_track=DC_LoadB();
+        window->show_lpb_track=DC_LoadB();
 	goto start;
 
 var19:
+        window->show_bpm_track=DC_LoadB();
+	goto start;
+
+var20:
         window->show_reltempo_track=DC_LoadB();
 	goto start;
 

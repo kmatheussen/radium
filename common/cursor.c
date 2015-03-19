@@ -133,7 +133,10 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 }
 
 static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *window){
-  if (window->show_lpb_track==true)
+  if (window->show_signature_track==true)
+    window->curr_track=SIGNATURETRACK;
+  
+  else if (window->show_lpb_track==true)
     window->curr_track=LPBTRACK;
   
   else if (window->show_bpm_track==true)
@@ -174,7 +177,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 			return 1;
 		}
 	}else{
-		if(LPBTRACK==window->curr_track)
+		if(SIGNATURETRACK==window->curr_track)
                   return 0;
                 
 		window->curr_track--;
@@ -186,6 +189,9 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                   window->curr_track--;
 
                 if (window->curr_track==LPBTRACK && window->show_lpb_track==false)
+                  window->curr_track--;
+
+                if (window->curr_track==SIGNATURETRACK && window->show_signature_track==false)
                   set_curr_track_to_leftmost_legal_track(window);
 
 		return 1;
@@ -261,7 +267,7 @@ int SetCursorPosConcrete(
 	struct WTracks *wtrack;
 	int ret=0,tempret;
 
-	if(tracknum>=wblock->block->num_tracks || tracknum<LPBTRACK) return 0;
+	if(tracknum>=wblock->block->num_tracks || tracknum<SIGNATURETRACK) return 0;
 
 	if(tracknum<0){
 		if(tracknum==window->curr_track) return 0;
@@ -337,7 +343,7 @@ void CursorNextTrack_CurrPos(struct Tracker_Windows *window){
 
 static int find_track_left(struct Tracker_Windows *window){
 
-  if (window->curr_track==LPBTRACK)
+  if (window->curr_track==SIGNATURETRACK)
     return  window->wblock->block->num_tracks-1;
   
   int tracknum = window->curr_track-1;
@@ -349,6 +355,9 @@ static int find_track_left(struct Tracker_Windows *window){
     tracknum--;
 
   if (tracknum==LPBTRACK && window->show_lpb_track==false)
+    tracknum--;
+
+  if (tracknum==SIGNATURETRACK && window->show_signature_track==false)
     tracknum = window->wblock->block->num_tracks-1;
 
   return tracknum;

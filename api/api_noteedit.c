@@ -25,11 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/notes_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/LPB_proc.h"
+#include "../common/Signature_proc.h"
 #include "../common/time_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
 #include "../common/player_proc.h"
 #include "../common/undo_maintempos_proc.h"
-#include "../common/LPB_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -120,8 +120,10 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 	return ListFindNumElements3(&wtrack->track->notes->l);
 }
 
-void setLPB(int lpb_value){
-  if (lpb_value <=1)
+void setSignature(int numerator, int denominator){
+  if (numerator<=0 || denominator<=0)
+    return;
+  if (numerator==root->signature.numerator && denominator==root->signature.denominator)
     return;
   
   PlayStop();
@@ -129,6 +131,26 @@ void setLPB(int lpb_value){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
 
+  Undo_MainTempo(window,wblock);
+  
+  root->signature = ratio(numerator, denominator);
+  //UpdateAllSTimes();
+  
+  window->must_redraw = true;
+}
+
+void setLPB(int lpb_value){
+  if (lpb_value <=1)
+    return;
+  if (lpb_value == root->lpb)
+    return;
+  
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  printf("Undo MainTempo lpb: %d\n",lpb_value);
   Undo_MainTempo(window,wblock);
   
   root->lpb=lpb_value;
@@ -140,6 +162,8 @@ void setLPB(int lpb_value){
 
 void setBPM(int bpm_value){
   if (bpm_value <=1)
+    return;
+  if (bpm_value == root->tempo)
     return;
 
   PlayStop();

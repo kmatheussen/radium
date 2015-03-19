@@ -129,6 +129,12 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     _timer2.start();
   }
 
+  void updateWidgets(void){
+    signature->setText(Rational(root->signature).toString());
+    lpb->setValue(root->lpb);
+    bpm->setValue(root->tempo);
+  }
+
   void update_velocity_sliders(){
     if(drunk_velocity==true){
 
@@ -155,6 +161,16 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
 
 public slots:
+
+  void on_signature_editingFinished(){
+    printf("signature bottombar\n");
+    
+    Rational rational = create_rational_from_string(signature->text());
+    signature->pushValuesToRoot(rational);
+
+    signature->setText(Rational(root->signature).toString());
+    set_editor_focus();
+  }
 
   void on_lpb_editingFinished(){
     printf("lpb bottombar\n");
@@ -254,6 +270,10 @@ extern "C"{
     g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
+  void GFX_OS_update_bottombar(void){
+    g_bottom_bar_widget->updateWidgets();
+  }
+  
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
     g_bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
     g_bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");

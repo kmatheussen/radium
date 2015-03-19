@@ -14,6 +14,7 @@
 #include "../common/trackreallines2_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/nodelines_proc.h"
+#include "../common/Signature_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/tempos_proc.h"
 
@@ -527,6 +528,60 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
 
 
 /************************************
+   Time signature track
+ ************************************/
+
+static void create_signature(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WSignatures *wsignatures, int realline){
+  int y    = get_realline_y1(window, realline);
+  Ratio signature  = wsignatures[realline].signature;
+  int type = wsignatures[realline].type;
+  
+  if(signature.numerator!=0){
+    int x    = wblock->signaturearea.x;
+    
+    char temp[50];
+    sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
+    
+    GE_text(GE_textcolor_z(1, Z_ZERO),
+            temp,
+            x,
+            y
+            );
+  }
+  
+  if(type!=SIGNATURE_NORMAL){
+    const char *typetext;
+    switch(type){
+    case SIGNATURE_BELOW:
+      typetext="d";
+      break;
+    case SIGNATURE_MUL:
+      typetext="m";
+      break;
+    default:
+      typetext="";
+      RError("something is wrong");
+    };
+    
+    GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->signatureTypearea.x, y);
+  }
+}
+
+
+
+static void create_signaturetrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+
+  struct WSignatures *wsignatures = WSignatures_get(window, wblock);
+
+  int realline;
+  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
+    create_signature(window, wblock, wsignatures, realline);
+}
+
+
+
+
+/************************************
    lpb track
  ************************************/
 
@@ -679,6 +734,12 @@ void create_block_borders(
                        wblock->tempocolorarea.x2+1,
                        y1,y2
                        );
+
+  if (window->show_signature_track)
+    create_double_border(
+                         wblock->signaturearea.x2+1,
+                         y1,y2
+                         );
 
   if (window->show_lpb_track)
     create_double_border(
@@ -1412,6 +1473,8 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
     create_block_borders(window, wblock);
     create_linenumbers(window, wblock);
     create_tempograph(window, wblock);
+    if(window->show_signature_track)
+      create_signaturetrack(window, wblock);
     if(window->show_lpb_track)
       create_lpbtrack(window, wblock);
     if(window->show_bpm_track)

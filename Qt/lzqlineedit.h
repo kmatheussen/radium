@@ -130,6 +130,43 @@ public:
 };
 
 
+class SignatureFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
+
+public:
+  
+ SignatureFocusSnifferQLineEdit(QWidget *parent)
+   : FocusSnifferQLineEdit(parent)
+  {
+  }
+
+  void pushValuesToRoot(Rational rational){
+    if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
+      setSignature(rational.numerator, rational.denominator);
+    }
+  }
+  
+  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+    printf("Got signature wheel event\n");
+    
+    Rational ratio(root->signature.numerator, root->signature.denominator);
+
+    //printf("      bef2: %s.",ratio.toString().toUtf8().constData());
+    
+    if (qwheelevent->delta()<0 && ratio.numerator>1)
+      ratio = Rational(ratio.numerator-1, ratio.denominator);
+
+    else if(qwheelevent->delta()>0)
+      ratio = Rational(ratio.numerator+1, ratio.denominator);
+
+    //printf(" aft: %s.",ratio.toString().toUtf8().constData());
+        
+    pushValuesToRoot(ratio);
+    setText(ratio.toString());
+  }
+  
+};
+
+
 
 #endif // QT_LZQLINEEDIT_H
 

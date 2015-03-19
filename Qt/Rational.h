@@ -18,6 +18,15 @@ struct Rational {
     , denominator(denominator)
   {}
 
+  Rational(Ratio ratio)
+    : numerator(ratio.numerator)
+    , denominator(ratio.denominator)
+  {}
+
+  Ratio get_ratio(void){
+    return ratio(numerator, denominator);
+  }
+
   bool is_valid(void){
     return denominator != 0;
   }
