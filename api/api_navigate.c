@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/cursor_proc.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/wblocks_proc.h"
-
+#include "../common/OS_visual_input.h"
 
 #include "api_common_proc.h"
 
@@ -80,6 +80,25 @@ void cursorPercentLine(int percent,int windownum){
         window->must_redraw = false;
 
 	ScrollEditorToPercentLine_CurrPos(window,percent);
+}
+
+static int get_realline_from_line(struct WBlocks *wblock, int line){
+  int realline=0;
+  while(wblock->reallines[realline]->Tline!=line)
+    realline++;
+  return realline;
+}
+
+void cursorUserInputLine(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  struct WBlocks *wblock = window->wblock;
+  struct Blocks *block = wblock->block;
+  
+  int line = GFX_GetInteger(window,NULL,"Jump to line: >",0,block->num_lines-1);
+  if (line==-1)
+    return;
+
+  ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, line));
 }
 
 void selectNextBlock(int windownum){
