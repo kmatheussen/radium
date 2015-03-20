@@ -758,7 +758,7 @@ static float request_notenum(struct Tracker_Windows *window, char *title, float 
     GFX_SetString(reqtype, notetext_from_notenum(old_notenum));
 
   char temp[1024];
-  sprintf(temp, "%s (for example: c4 or c#5) >", title);
+  sprintf(temp, "%s (for example: \"c4\" or \"c#5,50\") >", title);
   
   while(notenum <= 0.0f){
     char *notetext = GFX_GetString(
