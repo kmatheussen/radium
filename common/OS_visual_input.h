@@ -63,6 +63,8 @@ extern LANGSPEC int GFX_Menu(
         vector_t *v
 );
 
+extern LANGSPEC vector_t *GFX_MenuParser(const char *texts, const char *separator);
+
 extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
                                                    struct Tracker_Windows *tvisual,
                                                    ReqType reqtype,

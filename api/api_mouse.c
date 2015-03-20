@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_trackheader_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/nodelines_proc.h"
+#include "../common/wtracks_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -561,8 +562,12 @@ float getBlockHeaderY2(int blocknum, int windownum){
 ///////////////////////////////////////////////////
 
 float getTrackX1(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->x;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return WTRACK_getx1(window, wblock, tracknum);
 }
 
 float getTrackY1(int tracknum, int blocknum, int windownum){
@@ -571,8 +576,12 @@ float getTrackY1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackX2(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->x2;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return WTRACK_getx2(window, wblock, tracknum);
 }
 
 float getTrackY2(int tracknum, int blocknum, int windownum){
@@ -616,6 +625,29 @@ float getTrackFxX2(int tracknum, int blocknum, int windownum){
 float getTrackFxY2(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+int getLeftmostTrackNum(void){
+  return LEFTMOSTTRACK;
+}
+
+int getRelTempoTrackNum(void){
+  return TEMPONODETRACK;
+}
+int getTempoTrackNum(void){
+  return TEMPOTRACK;
+}
+int getLPBTrackNum(void){
+  return LPBTRACK;
+}
+int getSignatureTrackNum(void){
+  return SIGNATURETRACK;
+}
+int getTempoColorTrackNum(void){
+  return TEMPOCOLORTRACK;
+}
+int getLinenumTrackNum(void){
+  return LINENUMBTRACK;
 }
 
 

@@ -110,24 +110,35 @@ class Argument:
     # keyDownBPM -> r-key-down-BPM
     # KeyDownP   -> r-key-down-p
     def get_scheme_varname(self):
-        def loop(name, dontconvert):
+        def loop(current, name, previous_was_capitol):
             if name=="":
-                return ""
-            elif name[0].islower():
-                return name[0]+loop(name[1:], False)
-            elif name[0].isupper():
-                if dontconvert==True:
-                    return name[0]+loop(name[1:], False)
-                elif len(name)==1:
-                    return "-"+name[0].lower()
-                elif name[1].isupper():
-                    return "-"+name[0]+loop(name[1:], True)
-                else:
-                    return "-"+name[0].lower()+loop(name[1:], False)
-            else:
-                return name[0]+loop(name[1:], False)
+                return [current]
 
-        return "ra:"+loop(self.varname, False)
+            elif name[0].isupper() and not name[1].isupper() and not name[1]==' ':
+                return [current] + loop(name[0]+name[1], name[2:], False)
+
+            elif name[0].isupper() and not previous_was_capitol:
+                return [current] + loop(name[0], name[1:], True)
+            
+            elif name[0].isupper() and previous_was_capitol:
+                return loop(current+name[0], name[1:], True)
+            
+            else:
+                return loop(current+name[0], name[1:], False)
+
+            
+        #print(self.varname)
+        
+        result = ""
+        for element in loop(string.capitalize(self.varname[0]),self.varname[1:]+" ", True):
+            processed = string.strip(string.lower(element))
+            if processed != "":
+                if result=="":
+                    result = "ra:" + processed
+                else:
+                    result = result + "-" + processed
+                    
+        return result
 
     def write(self,oh,dodefault):
         for lokke in range(len(self.qualifiers)):

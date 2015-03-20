@@ -57,4 +57,19 @@ int GFX_Menu(
   }
 }
 
+// The returned vector can be used as argument for GFX_Menu.
+vector_t *GFX_MenuParser(const char *texts, const char *separator){
+  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+  
+  QStringList splitted = QString(texts).split(separator);
+  
+  for(int i=0 ; i<splitted.size() ; i++){
+    QString trimmed = splitted[i].trimmed();
+    if (trimmed != "")
+      VECTOR_push_back(ret, talloc_strdup(trimmed.toUtf8().constData()));
+  }
+
+  return ret;
+}
+                   
 #endif // USE_QT_MENU

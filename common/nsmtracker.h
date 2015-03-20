@@ -1112,8 +1112,9 @@ struct Tracker_Windows{
 #define TEMPOTRACK -2
 #define LPBTRACK -3
 #define SIGNATURETRACK -4
-#define LINENUMBTRACK -5
-#define TEMPOCOLORTRACK -6
+#define TEMPOCOLORTRACK -5
+#define LINENUMBTRACK -6
+#define LEFTMOSTTRACK LINENUMBTRACK
 #define NOTRACK -10000
 
 /*********************************************************************

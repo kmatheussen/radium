@@ -144,6 +144,12 @@ int requestMenu(char *text, PyObject* arguments){
   return 0;
 }
 
+int popupMenu(char *texts){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  vector_t *vec = GFX_MenuParser(texts, "%");
+  return GFX_Menu(window, NULL,"",vec);
+}
+
 char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
   char *ret = MIDIrequestPortName(window, requester, false);

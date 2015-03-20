@@ -1283,7 +1283,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="SignatureLabel_4">
+          <widget class="QLabel" name="signature_label">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -1342,7 +1342,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="LPBlabel_4">
+          <widget class="QLabel" name="lpb_label">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -1395,7 +1395,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="LPBlabel_5">
+          <widget class="QLabel" name="bpm_label">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
              <horstretch>0</horstretch>
