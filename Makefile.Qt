@@ -214,7 +214,7 @@ OBJ7= instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_pla
 OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o temponodes_legalize.o
 
 #Playing
-OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o
+OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o PEQ_Signature.o
 
 #Disk
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
@@ -878,6 +878,9 @@ PEQ_clock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_clock.c $(CD)playerclass.h
 
 PEQ_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_LPB.c $(CD)playerclass.h
 	$(CC) $(CD)PEQ_LPB.c $(OPT)
+
+PEQ_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_LPB.c $(CD)playerclass.h
+	$(CC) $(CD)PEQ_Signature.c $(OPT)
 
 block_insert.o:  $(BUILD_DEPENDENCIES) $(CD)block_insert.c
 	$(CC) $(CD)block_insert.c $(OPT)
