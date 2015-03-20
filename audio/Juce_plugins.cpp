@@ -100,10 +100,10 @@ namespace{
       result.isPlaying = pc->isplaying;
       result.isRecording = false;
       
-      result.ppqLoopStart = 0; // fixme
-      result.ppqLoopEnd = 0; // fixme
+      result.ppqLoopStart = 0; // fixme (probably nothing to fix. This value is probably only necessary if time jumps back)
+      result.ppqLoopEnd = 0; // fixme (same here)
 
-      result.isLooping = pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
+      result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
 
       return true;
     }
