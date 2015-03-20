@@ -4126,6 +4126,9 @@ Scrolling too often can be tiresome for the eyes.</string>
         <property name="statusTip">
          <string/>
         </property>
+        <property name="frame">
+         <bool>false</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
@@ -4652,6 +4655,9 @@ Scrolling too often can be tiresome for the eyes.</string>
         </property>
         <property name="statusTip">
          <string/>
+        </property>
+        <property name="frame">
+         <bool>false</bool>
         </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>

@@ -36,6 +36,33 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   {
     setupUi(this);
     setStyle("cleanlooks");
+
+    // Set up custom popup menues for the time widgets
+    {
+      bpm->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      bpm_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      lpb->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      lpb_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      signature->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+
+      signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+    }    
   }
 
   virtual void paintEvent( QPaintEvent *e ){
@@ -134,9 +161,31 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     ReltempoWidget->move(x5,0);
     ReltempoWidget->resize(x6-x5,height);
 
+    
   }
 
 public slots:
+
+  void ShowBPMPopup(const QPoint& pos)
+  {
+    printf("GOTIT bpm\n");
+    if (popupMenu((char*)"hide BPM track")==0)
+      showHideBPMTrack(-1);
+  }
+
+  void ShowLPBPopup(const QPoint& pos)
+  {
+    printf("GOTIT lpb\n");
+    if (popupMenu((char*)"hide LPB track")==0)
+      showHideLPBTrack(-1);
+  }
+
+  void ShowSignaturePopup(const QPoint& pos)
+  {
+    printf("GOTIT signature\n");
+    if (popupMenu((char*)"hide time signature track")==0)
+      showHideSignatureTrack(-1);
+  }
 
   void on_lz_editingFinished(){
 

@@ -77,7 +77,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   {
     _initing = true;
     setupUi(this);
-
+    setStyle("cleanlooks");
+ 
     if(g_bottom_bar_widget != NULL)
       RError("g_bottom_bar_widget!=NULL");
 
