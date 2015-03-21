@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define COMMON_PLACEMENT_PROC_H
 
 
-static inline Place PlaceCreate3(int line, int counter, int dividor) {
+static inline Place place(int line, int counter, int dividor) {
   Place place;
   place.line = line;
   place.counter = counter;
@@ -134,12 +134,28 @@ extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
 // These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
 extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
-extern LANGSPEC Place PlaceQuantitize(Place p, Place q);
 extern LANGSPEC void PlaceAdd(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceSub(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceMul(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceDiv(Place *p1,  const Place *p2);
 
+extern LANGSPEC Place p_Add(const Place p1, const Place p2);
+extern LANGSPEC Place p_Sub(const Place p1, const Place p2);
+extern LANGSPEC Place p_Mul(const Place p1, const Place p2);
+extern LANGSPEC Place p_Div(const Place p1, const Place p2);
+
+/******************************************************************
+  FUNCTION
+    Quantitize 'toquant' spesified by 'quant'. 'Block' is used
+    to know the last zposition in the block, so that 'toquant' isn't
+    placed after that.
+
+  EXAMPLES
+    toquant=1,2,3 quant=0.5 -> toquant=1,1,2
+    toquant=1,6,7 quant=0.5 -> toquant=2,0,1
+    toquant=5,0,1 quant=2.0 -> toquant=6,0,1
+******************************************************************/
+extern LANGSPEC Place p_Quantitize(const Place p, const Place q);
 
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
 extern float GetfloatFromLineCounterDividor(const Place *placement);
@@ -207,6 +223,33 @@ extern void PlaceFromLimit(Place *p,  const Place *tp);
 #define PlaceIsBetween3(a,b,c) (PlaceGreaterThan((a),(b)) && PlaceLessThan((a),(c)))
 
 
+#define p_Equal(a,b) (((a).line==(b).line) && ((a).counter*(b).dividor==(b).counter*(a).dividor))
+#define p_NOT_Equal(a,b) (((a).line!=(b).line) || ((a).counter*(b).dividor!=(b).counter*(a).dividor))
+
+#define p_Greather_Than(a,b) (							\
+((a).line>(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor > (b).counter*(a).dividor)) \
+)
+#define p_Less_Than(a,b) (							\
+((a).line<(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor < (b).counter*(a).dividor))	\
+)
+
+#define p_Greater_Or_Equal(a,b) (							\
+((a).line>(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor >= (b).counter*(a).dividor))	\
+)
+#define p_Less_Or_Equal(a,b) (							\
+((a).line<(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor <= (b).counter*(a).dividor))	\
+)
+
+
+
 // I don't trust the implementation of PlaceSub (warning: this one hasn't been tested or used and shouldn't be trusted)
 static inline void TrustedPlaceSub(const Place *p1,  const Place *p2, Place *result){
   R_ASSERT(PlaceGreaterOrEqual(p1, p2));
@@ -270,6 +313,10 @@ extern Place PlaceFirstPos;
 
 static inline Place *PlaceGetLastPos(struct Blocks *block){
   return PlaceCreate(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+}
+
+static inline Place p_Last_Pos(struct Blocks *block){
+  return place(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
 }
 
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);

@@ -67,7 +67,7 @@ static Place ratio_to_place2(s7_pointer ratio){
 
   int lines = num/den;
 
-  Place ret = PlaceCreate3(lines, num - (lines*den), den);
+  Place ret = place(lines, num - (lines*den), den);
   PlaceHandleOverflow(&ret);
 
   return ret;
@@ -161,6 +161,51 @@ void PlaceDiv(Place *p1,  const Place *p2){
   place_operation_void_p1_p2(scheme_func, p1,p2);
 }
 
+
+static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,  const Place p2){
+  s7_pointer result = s7_call(s7,
+                              scheme_func,
+                              s7_list(s7,
+                                      2,
+                                      place_to_ratio(&p1),
+                                      place_to_ratio(&p2)
+                                      )
+                              );
+  
+  if (s7_is_ratio(result))
+    return ratio_to_place2(result);
+  else if (s7_is_integer(result))
+    return place(s7_integer(result), 0, 1);
+  else {
+    RError("result was not ratio or integer. Returning 0");
+    return place(0,0,1);
+  }
+}
+
+Place p_Add(const Place p1, const Place p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "+");
+  return place_operation_place_p1_p2(scheme_func, p1,p2);
+}
+
+Place p_Sub(const Place p1, const Place p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "-");
+  return place_operation_place_p1_p2(scheme_func, p1,p2);
+}
+
+Place p_Mul(const Place p1, const Place p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "*");
+  return place_operation_place_p1_p2(scheme_func, p1,p2);
+}
+
+Place p_Div(const Place p1, const Place p2){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "/");
+  return place_operation_place_p1_p2(scheme_func, p1,p2);
+}
+
+Place p_Quantitize(const Place p, const Place q){
+  static s7_pointer scheme_func = s7_name_to_value(s7, "quantitize");
+  return place_operation_place_p1_p2(scheme_func, p, q);
+}
 
 
 bool SCHEME_mousepress(int button, float x, float y){
