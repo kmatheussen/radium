@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct WTracks *cb_wtrack=NULL;
 
+extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
@@ -86,6 +87,9 @@ void CB_CopyTrack_CurrPos(
 	struct WTracks *wtrack=wblock->wtrack;
 
 	switch(window->curr_track){
+		case SIGNATURETRACK:
+			cb_lpb=CB_CopyLPBs(block->lpbs);
+			break;
 		case LPBTRACK:
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			break;

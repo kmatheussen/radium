@@ -31,12 +31,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_tempos_copy_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
+#include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "tempos_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "undo_tracks_proc.h"
+#include "undo_signatures_proc.h"
 #include "undo_lpbs_proc.h"
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
@@ -46,12 +48,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_fx_proc.h"
 #include "notes_proc.h"
 #include "windows_proc.h"
+#include "wblocks_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
 
 extern struct WTracks *cb_wtrack;
 
+extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
@@ -159,6 +163,15 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	PlaceSetLastPos(wblock->block,&lastplace);
 
 	switch(window->curr_track){
+		case SIGNATURETRACK:
+			if(cb_signature==NULL) return;
+			Undo_Signatures_CurrPos(window);
+			block->signatures=CB_CopySignatures(cb_signature);
+			CutListAt_a(&block->signatures,&lastplace);
+                        UpdateWBlockWidths(window, wblock);
+			//UpdateSTimes(block);
+			//UpdateWLPBs(window,wblock);
+			break;
 		case LPBTRACK:
 			if(cb_lpb==NULL) return;
 			Undo_LPBs_CurrPos(window);
