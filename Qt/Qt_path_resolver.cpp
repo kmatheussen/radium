@@ -168,11 +168,16 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       
       msgBox.exec();
 
-      QString filename = QFileDialog::getOpenFileName(editor, 
-                                                      QString("Select file to replace ")+info.fileName()
-                                                      //,QString()
-                                                      //,info.fileName()
-                                                      );
+      QString filename;
+
+      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+        filename = QFileDialog::getOpenFileName(editor, 
+                                                QString("Select file to replace ")+info.fileName()
+                                                //,QString()
+                                                //,info.fileName()
+                                                );
+      }GL_unlock();
+
       num_users_of_keyboard--;
 
       if(filename == "")
