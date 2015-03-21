@@ -314,7 +314,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
       beat_opacity = SETTINGS_read_int("beat_opacity", 950);
 
     if(first_beat_opacity == -1)
-      first_beat_opacity = SETTINGS_read_int("first_beat_opacity", 900);
+      first_beat_opacity = SETTINGS_read_int("first_beat_opacity", 870);
     
     GE_Context *c;
  
