@@ -10,16 +10,28 @@ X11
 ROOT
 
 ?curr_block
-2
+10
 
 ?tempo
-128
+78
 
 ?lpb
+16
+
+?signature_numerator
 4
 
+?signature_denominator
+4
+
+?quantitize_numerator
+1
+
+?quantitize_denominator
+1
+
 ?quantitize
-0.5
+1
 
 ?grid_numerator
 1
@@ -51,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-11
+13
 author
 0
 STRING_TYPE
@@ -88,6 +100,14 @@ comment
 7
 STRING_TYPE
 
+comment
+8
+STRING_TYPE
+
+comment
+9
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -113,7 +133,7 @@ TRACKER_WINDOW
 1798
 
 ?height
-829
+1005
 
 ?fontID
 0
@@ -131,7 +151,7 @@ TRACKER_WINDOW
 15
 
 ?curr_block
-2
+10
 
 ?maxwtracksize
 0
@@ -146,6 +166,9 @@ TRACKER_WINDOW
 ?bottomslider
 1
 14
+
+?show_signature_track
+1
 
 ?show_lpb_track
 0
@@ -188,7 +211,7 @@ WBLOCK
 0
 
 ?curr_realline
-21
+66
 
 ?num_reallines
 128
@@ -371,7 +394,7 @@ WBLOCK
 0
 
 ?curr_realline
-0
+157
 
 ?num_reallines
 256
@@ -548,292 +571,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
-
-?maxwtracksize
-0
-
-?curr_realline
-2
-
-?num_reallines
-128
-
-?num_expand_lines
--2
-
-?reltempomax
-2
-
-?isranged
-0
-
-?rangex1
-3
-
-?rangex2
-3
-
-?rangey1
-0
-
-?rangey2
-256
-
-\
-LOCALZOOMS
-256
-/
-
-\
-WTRACK
-0
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-7
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-9
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-109
-
-?is_wide
-0
-/
-
-\
-WTRACK
-10
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-11
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-
-\
-WTRACK
-12
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-100
-
-?is_wide
-0
-/
-/
-
-\
-WBLOCK
-3
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-27
-
-?lpbTypearea
-9
-
-?lpbarea
-18
-
-?tempoTypearea
-9
-
-?tempoarea
-27
-
-?temponodearea
-118
+115
 
 ?maxwtracksize
 0
@@ -881,7 +619,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -898,7 +636,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -915,7 +653,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -932,7 +670,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -949,7 +687,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -966,7 +704,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -983,7 +721,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1000,7 +738,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1017,7 +755,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1034,7 +772,7 @@ WTRACK
 3
 
 ?fxwidth
-109
+106
 
 ?is_wide
 0
@@ -1051,7 +789,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1068,7 +806,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1085,7 +823,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1094,7 +832,7 @@ WTRACK
 
 \
 WBLOCK
-4
+3
 
 ?tempotrackonoff
 1
@@ -1118,7 +856,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
+115
 
 ?maxwtracksize
 0
@@ -1145,10 +883,10 @@ WBLOCK
 3
 
 ?rangey1
-168
+0
 
 ?rangey2
-173
+256
 
 \
 LOCALZOOMS
@@ -1166,7 +904,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1183,7 +921,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1200,7 +938,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1217,7 +955,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1234,7 +972,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1251,7 +989,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1268,7 +1006,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1285,7 +1023,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1302,7 +1040,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1319,7 +1057,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+106
 
 ?is_wide
 0
@@ -1336,7 +1074,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1353,7 +1091,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1370,7 +1108,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -1379,7 +1117,7 @@ WTRACK
 
 \
 WBLOCK
-5
+4
 
 ?tempotrackonoff
 1
@@ -1403,7 +1141,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
+116
 
 ?maxwtracksize
 0
@@ -1451,7 +1189,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1468,7 +1206,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1485,7 +1223,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1502,7 +1240,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1519,7 +1257,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1536,7 +1274,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1553,7 +1291,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1570,7 +1308,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1587,7 +1325,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1604,7 +1342,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1621,7 +1359,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1638,7 +1376,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1655,7 +1393,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1664,7 +1402,7 @@ WTRACK
 
 \
 WBLOCK
-6
+5
 
 ?tempotrackonoff
 1
@@ -1688,7 +1426,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
+116
 
 ?maxwtracksize
 0
@@ -1736,7 +1474,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1753,7 +1491,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1770,7 +1508,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1787,7 +1525,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1804,7 +1542,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1821,7 +1559,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1838,7 +1576,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1855,7 +1593,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1872,7 +1610,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1889,7 +1627,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1906,7 +1644,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1923,7 +1661,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1940,7 +1678,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -1949,7 +1687,7 @@ WTRACK
 
 \
 WBLOCK
-7
+6
 
 ?tempotrackonoff
 1
@@ -1973,7 +1711,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
+116
 
 ?maxwtracksize
 0
@@ -2021,7 +1759,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2038,7 +1776,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2055,7 +1793,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2072,7 +1810,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2089,7 +1827,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2106,7 +1844,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2123,7 +1861,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2140,7 +1878,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2157,7 +1895,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2174,7 +1912,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2191,7 +1929,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2208,7 +1946,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2225,7 +1963,292 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
+
+?is_wide
+0
+/
+/
+
+\
+WBLOCK
+7
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+27
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+116
+
+?maxwtracksize
+0
+
+?curr_realline
+127
+
+?num_reallines
+128
+
+?num_expand_lines
+-2
+
+?reltempomax
+2
+
+?isranged
+0
+
+?rangex1
+3
+
+?rangex2
+3
+
+?rangey1
+168
+
+?rangey2
+173
+
+\
+LOCALZOOMS
+256
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+10
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+11
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
+
+?is_wide
+0
+/
+
+\
+WTRACK
+12
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+98
 
 ?is_wide
 0
@@ -2258,7 +2281,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
+115
 
 ?maxwtracksize
 0
@@ -2306,7 +2329,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2323,7 +2346,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2340,7 +2363,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2357,7 +2380,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2374,7 +2397,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2391,7 +2414,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2408,7 +2431,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2425,7 +2448,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2442,7 +2465,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2459,7 +2482,7 @@ WTRACK
 3
 
 ?fxwidth
-109
+106
 
 ?is_wide
 0
@@ -2476,7 +2499,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2493,7 +2516,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2510,7 +2533,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2543,7 +2566,7 @@ WBLOCK
 27
 
 ?temponodearea
-118
+115
 
 ?maxwtracksize
 0
@@ -2591,7 +2614,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2608,7 +2631,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2625,7 +2648,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2642,7 +2665,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2659,7 +2682,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2676,7 +2699,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2693,7 +2716,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2710,7 +2733,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2727,7 +2750,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2744,7 +2767,7 @@ WTRACK
 3
 
 ?fxwidth
-109
+106
 
 ?is_wide
 0
@@ -2761,7 +2784,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2778,7 +2801,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2795,7 +2818,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+97
 
 ?is_wide
 0
@@ -2828,13 +2851,13 @@ WBLOCK
 27
 
 ?temponodearea
-118
+116
 
 ?maxwtracksize
 0
 
 ?curr_realline
-59
+40
 
 ?num_reallines
 128
@@ -2876,7 +2899,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2893,7 +2916,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2910,7 +2933,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2927,7 +2950,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2944,7 +2967,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2961,7 +2984,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2978,7 +3001,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -2995,7 +3018,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -3012,7 +3035,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -3029,7 +3052,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -3046,7 +3069,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -3063,7 +3086,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -3080,7 +3103,7 @@ WTRACK
 3
 
 ?fxwidth
-100
+98
 
 ?is_wide
 0
@@ -3102,7 +3125,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -6654,7 +6677,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -10260,7 +10283,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -10385,14 +10408,14 @@ PITCHES
 \
 NOTE
 68
-4
-18
+2
+9
 34
 0
 36467
 75
-2
-18
+1
+9
 36467
 1
 
@@ -10408,14 +10431,14 @@ PITCHES
 \
 NOTE
 76
-8
-14
+4
+7
 39
 0
 61687
 88
 0
-65534
+1
 61687
 0
 
@@ -10431,14 +10454,14 @@ PITCHES
 \
 NOTE
 88
-4
-18
+2
+9
 35
 0
 53380
 92
 0
-65534
+1
 53380
 0
 
@@ -10454,8 +10477,8 @@ PITCHES
 \
 NOTE
 92
-4
-18
+2
+9
 34
 0
 42281
@@ -10478,13 +10501,13 @@ PITCHES
 NOTE
 100
 0
-65534
+1
 35
 0
 37186
 104
 0
-65534
+1
 37186
 0
 
@@ -10501,13 +10524,13 @@ PITCHES
 NOTE
 104
 0
-65534
+1
 34
 0
 47037
 107
-12
-18
+2
+3
 47037
 0
 
@@ -10524,13 +10547,13 @@ PITCHES
 NOTE
 120
 0
-65534
+1
 34
 0
 51118
 128
 0
-65534
+1
 51118
 1
 
@@ -10547,13 +10570,13 @@ PITCHES
 NOTE
 128
 0
-65534
+1
 27
 0
 65536
 152
 0
-65534
+1
 65536
 0
 
@@ -10570,13 +10593,13 @@ PITCHES
 NOTE
 152
 0
-65534
+1
 41
 0
 49223
 156
 0
-65534
+1
 49223
 1
 
@@ -10593,13 +10616,13 @@ PITCHES
 NOTE
 156
 0
-65534
+1
 41
 0
 55711
 164
 0
-65534
+1
 55711
 0
 
@@ -10616,13 +10639,13 @@ PITCHES
 NOTE
 164
 0
-65534
+1
 34
 0
 61606
 168
 0
-65534
+1
 61606
 0
 
@@ -10639,13 +10662,13 @@ PITCHES
 NOTE
 168
 0
-65534
+1
 40
 0
 52428
 184
 0
-65534
+1
 52428
 1
 
@@ -10662,13 +10685,13 @@ PITCHES
 NOTE
 184
 0
-65534
+1
 37
 0
 52428
 192
 0
-65534
+1
 52428
 1
 
@@ -10685,13 +10708,13 @@ PITCHES
 NOTE
 192
 0
-65534
+1
 34
 0
 58978
 196
 0
-65534
+1
 58978
 1
 
@@ -10708,13 +10731,13 @@ PITCHES
 NOTE
 196
 0
-65534
+1
 34
 0
 50471
 204
 0
-65534
+1
 50471
 0
 
@@ -10730,14 +10753,14 @@ PITCHES
 \
 NOTE
 204
-3
-18
+1
+6
 39
 0
 45980
 220
 0
-65534
+1
 45980
 0
 
@@ -10754,13 +10777,13 @@ PITCHES
 NOTE
 220
 0
-65534
+1
 39
 0
 65536
 224
 0
-65534
+1
 65536
 0
 
@@ -10777,7 +10800,7 @@ PITCHES
 NOTE
 224
 0
-65534
+1
 34
 0
 52428
@@ -10907,14 +10930,14 @@ PITCHES
 \
 NOTE
 92
-32767
-65534
+1
+2
 43
 0
 37449
 94
-32767
-65534
+1
+2
 0
 1
 
@@ -10935,13 +10958,13 @@ PITCHES
 NOTE
 100
 0
-65534
+1
 43
 0
 32768
 112
 0
-65534
+1
 32768
 0
 
@@ -10953,7 +10976,7 @@ VELOCITIES
 17164
 105
 0
-9
+1
 0
 109
 1
@@ -10970,13 +10993,13 @@ PITCHES
 NOTE
 112
 0
-18
+1
 51
 0
 60250
 114
 0
-65534
+1
 60250
 0
 
@@ -11019,8 +11042,8 @@ PITCHES
 \
 NOTE
 143
-14
-18
+7
+9
 46
 0
 61538
@@ -11327,8 +11350,8 @@ FXNODELINES
 19
 38972
 213
-2
-14
+1
+7
 0
 218
 5
@@ -11443,7 +11466,7 @@ PITCHES
 NOTE
 16
 0
-13
+1
 41
 0
 46879
@@ -11457,7 +11480,7 @@ NOTE
 VELOCITIES
 17
 0
-13
+1
 61709
 /
 
@@ -11493,7 +11516,7 @@ PITCHES
 NOTE
 72
 0
-65534
+1
 42
 0
 47754
@@ -11516,7 +11539,7 @@ PITCHES
 NOTE
 76
 0
-65534
+1
 37
 0
 57915
@@ -11539,7 +11562,7 @@ PITCHES
 NOTE
 84
 0
-65534
+1
 42
 0
 57403
@@ -11562,7 +11585,7 @@ PITCHES
 NOTE
 88
 0
-65534
+1
 42
 0
 64579
@@ -11585,7 +11608,7 @@ PITCHES
 NOTE
 116
 0
-65534
+1
 42
 0
 49152
@@ -11608,7 +11631,7 @@ PITCHES
 NOTE
 120
 0
-65534
+1
 42
 0
 58136
@@ -11631,7 +11654,7 @@ PITCHES
 NOTE
 124
 0
-65534
+1
 42
 0
 59193
@@ -11654,13 +11677,13 @@ PITCHES
 NOTE
 184
 0
-65534
+1
 38
 0
 54613
 192
 0
-65534
+1
 54613
 0
 
@@ -11685,7 +11708,7 @@ PITCHES
 NOTE
 192
 0
-65534
+1
 42
 0
 53908
@@ -11708,7 +11731,7 @@ PITCHES
 NOTE
 196
 0
-65534
+1
 39
 0
 60779
@@ -11731,7 +11754,7 @@ PITCHES
 NOTE
 198
 0
-65534
+1
 37
 0
 18498
@@ -11754,7 +11777,7 @@ PITCHES
 NOTE
 200
 0
-65534
+1
 43
 0
 53380
@@ -11810,7 +11833,7 @@ NOTE
 33825
 207
 0
-65534
+1
 33825
 1
 
@@ -11833,7 +11856,7 @@ NOTE
 42809
 208
 0
-65534
+1
 42809
 1
 
@@ -11850,13 +11873,13 @@ PITCHES
 NOTE
 208
 0
-65534
+1
 40
 0
 52428
 209
 0
-65534
+1
 52428
 1
 
@@ -11879,7 +11902,7 @@ NOTE
 57608
 216
 0
-65534
+1
 57608
 0
 
@@ -11896,13 +11919,13 @@ PITCHES
 NOTE
 216
 0
-65534
+1
 45
 0
 52428
 217
 0
-65534
+1
 52428
 1
 
@@ -11919,13 +11942,13 @@ PITCHES
 NOTE
 218
 0
-65534
+1
 42
 0
 52428
 219
 0
-65534
+1
 52428
 1
 
@@ -11942,13 +11965,13 @@ PITCHES
 NOTE
 220
 0
-65534
+1
 44
 0
 52428
 221
 0
-65534
+1
 52428
 1
 
@@ -11965,13 +11988,13 @@ PITCHES
 NOTE
 224
 0
-65534
+1
 42
 0
 65536
 232
 0
-65534
+1
 65536
 1
 
@@ -11988,7 +12011,7 @@ PITCHES
 NOTE
 232
 0
-65534
+1
 42
 0
 64226
@@ -12185,7 +12208,7 @@ NOTE
 59120
 64
 0
-65534
+1
 59120
 0
 
@@ -12202,13 +12225,13 @@ PITCHES
 NOTE
 64
 0
-65534
+1
 46
 0
 65536
 80
 0
-65534
+1
 65536
 1
 
@@ -12225,13 +12248,13 @@ PITCHES
 NOTE
 92
 0
-65534
+1
 46
 0
 65138
 93
-32767
-65534
+1
+2
 65138
 0
 
@@ -12248,7 +12271,7 @@ PITCHES
 NOTE
 104
 0
-65534
+1
 46
 0
 57608
@@ -12271,7 +12294,7 @@ PITCHES
 NOTE
 120
 0
-65534
+1
 53
 0
 50737
@@ -12371,7 +12394,7 @@ PITCHES
 NOTE
 168
 0
-65534
+1
 52
 0
 50840
@@ -12394,7 +12417,7 @@ PITCHES
 NOTE
 176
 0
-65534
+1
 53
 0
 65536
@@ -12417,7 +12440,7 @@ PITCHES
 NOTE
 184
 0
-65534
+1
 49
 0
 60455
@@ -12440,13 +12463,13 @@ PITCHES
 NOTE
 192
 0
-65534
+1
 46
 0
 52428
 208
 0
-65534
+1
 52428
 1
 
@@ -12477,7 +12500,7 @@ NOTE
 VELOCITIES
 225
 0
-13
+1
 48258
 /
 
@@ -12618,7 +12641,7 @@ FXNODELINES
 0
 28
 0
-9
+1
 65536
 32
 6
@@ -12670,7 +12693,7 @@ FXNODELINES
 12787
 52
 0
-19
+1
 0
 56
 1
@@ -12690,7 +12713,7 @@ FXNODELINES
 65536
 64
 0
-30
+1
 49152
 67
 5
@@ -12705,8 +12728,8 @@ FXNODELINES
 19
 23901
 78
-20
-30
+2
+3
 0
 88
 12
@@ -12721,16 +12744,16 @@ FXNODELINES
 13
 45654
 93
-9
-15
+3
+5
 65536
 103
 11
 13
 6049
 105
-9
-15
+3
+5
 58609
 109
 2
@@ -12769,8 +12792,8 @@ FXNODELINES
 13
 0
 166
-10
-30
+1
+3
 30769
 167
 10
@@ -12833,8 +12856,8 @@ FXNODELINES
 19
 64000
 192
-5040
-65534
+360
+4681
 64512
 192
 1
@@ -12873,8 +12896,8 @@ FXNODELINES
 13
 25252
 227
-6
-30
+1
+5
 43157
 233
 16
@@ -13040,8 +13063,8 @@ FXNODELINES
 9
 15984
 40
+1
 3
-9
 5994
 45
 2
@@ -13076,12 +13099,12 @@ FXNODELINES
 30
 3210
 75
-9
-30
+3
+10
 13598
 80
+1
 3
-9
 0
 90
 4
@@ -13133,7 +13156,7 @@ FXNODELINES
 18697
 174
 0
-13
+1
 0
 180
 1
@@ -13160,12 +13183,12 @@ FXNODELINES
 19
 35328
 194
+1
 3
-9
 43438
 209
 0
-9
+1
 377
 223
 14
@@ -13337,7 +13360,7 @@ FXNODELINES
 0
 85
 0
-13
+1
 0
 90
 6
@@ -13512,8 +13535,8 @@ FXNODELINES
 1
 53814
 37
-10
-15
+2
+3
 34728
 38
 14
@@ -13521,19 +13544,19 @@ FXNODELINES
 47599
 48
 0
-15
+1
 53451
 51
-6
-15
+2
+5
 63466
 63
 11
 15
 57634
 81
-12
-15
+4
+5
 65536
 87
 11
@@ -13560,16 +13583,16 @@ FXNODELINES
 15
 6161
 157
-10
-15
+2
+3
 56797
 162
 0
-15
+1
 65536
 166
-3
-15
+1
+5
 65536
 168
 3
@@ -13600,8 +13623,8 @@ FXNODELINES
 15
 65536
 213
-5
-15
+1
+3
 40241
 221
 8
@@ -13616,12 +13639,12 @@ FXNODELINES
 13
 0
 236
-5
-15
+1
+3
 49439
 245
-3
-15
+1
+5
 61396
 255
 14
@@ -13749,7 +13772,7 @@ FXNODELINES
 47662
 136
 0
-13
+1
 65258
 140
 12
@@ -13789,7 +13812,7 @@ FXNODELINES
 6012
 184
 0
-13
+1
 65536
 189
 3
@@ -13800,8 +13823,8 @@ FXNODELINES
 13
 65536
 212
-5040
-65534
+360
+4681
 65536
 212
 1
@@ -13888,7 +13911,7 @@ NOTE
 0
 26
 0
-65534
+1
 59148
 0
 
@@ -13924,7 +13947,7 @@ VELOCITIES
 35151
 24
 0
-19
+1
 65536
 24
 18
@@ -13972,13 +13995,13 @@ PITCHES
 NOTE
 28
 0
-65534
+1
 45
 0
 51288
 30
 0
-65534
+1
 51288
 0
 
@@ -13995,13 +14018,13 @@ PITCHES
 NOTE
 30
 0
-65534
+1
 44
 0
 51288
 32
 0
-65534
+1
 51288
 0
 
@@ -14018,7 +14041,7 @@ PITCHES
 NOTE
 32
 0
-65534
+1
 41
 0
 61768
@@ -14072,13 +14095,13 @@ PITCHES
 NOTE
 72
 0
-65534
+1
 46
 0
 51288
 74
 0
-65534
+1
 51288
 1
 
@@ -14095,13 +14118,13 @@ PITCHES
 NOTE
 88
 0
-65534
+1
 41
 0
 51288
 90
 0
-65534
+1
 51288
 1
 
@@ -14187,13 +14210,13 @@ PITCHES
 NOTE
 136
 0
-65534
+1
 46
 0
 51943
 164
 0
-65534
+1
 51288
 0
 
@@ -14222,13 +14245,13 @@ PITCHES
 NOTE
 164
 0
-65534
+1
 46
 0
 27405
 168
 0
-65534
+1
 51288
 0
 
@@ -14253,13 +14276,13 @@ PITCHES
 NOTE
 168
 0
-19
+1
 50
 0
 65536
 172
 0
-65534
+1
 32172
 0
 
@@ -14284,13 +14307,13 @@ PITCHES
 NOTE
 172
 0
-65534
+1
 41
 0
 49323
 176
 0
-65534
+1
 49323
 0
 
@@ -14315,13 +14338,13 @@ PITCHES
 NOTE
 176
 0
-65534
+1
 43
 0
 51288
 200
 0
-65534
+1
 51288
 0
 
@@ -14350,13 +14373,13 @@ PITCHES
 NOTE
 200
 0
-65534
+1
 34
 0
 51288
 202
 0
-65534
+1
 51288
 1
 
@@ -14512,7 +14535,7 @@ NOTE
 35612
 72
 0
-65534
+1
 35612
 0
 
@@ -14524,7 +14547,7 @@ VELOCITIES
 40167
 35
 0
-19
+1
 41224
 36
 5
@@ -14589,7 +14612,7 @@ PITCHES
 NOTE
 72
 0
-65534
+1
 42
 0
 65536
@@ -14616,7 +14639,7 @@ PITCHES
 NOTE
 88
 0
-65534
+1
 41
 0
 65536
@@ -14643,13 +14666,13 @@ PITCHES
 NOTE
 104
 0
-65534
+1
 57
 0
 53253
 114
 0
-65534
+1
 51288
 1
 
@@ -14674,13 +14697,13 @@ PITCHES
 NOTE
 114
 0
-65534
+1
 58
 0
 51943
 116
 0
-65534
+1
 51943
 1
 
@@ -14744,13 +14767,13 @@ PITCHES
 NOTE
 164
 0
-65534
+1
 50
 0
 51288
 168
 0
-65534
+1
 51288
 1
 
@@ -14771,13 +14794,13 @@ PITCHES
 NOTE
 168
 0
-65534
+1
 47
 0
 51288
 172
 0
-65534
+1
 51288
 1
 
@@ -14794,13 +14817,13 @@ PITCHES
 NOTE
 172
 0
-65534
+1
 41
 0
 51288
 176
 0
-65534
+1
 51288
 1
 
@@ -14817,13 +14840,13 @@ PITCHES
 NOTE
 176
 0
-65534
+1
 55
 0
 51288
 200
 0
-65534
+1
 51288
 1
 
@@ -14835,7 +14858,7 @@ VELOCITIES
 16086
 188
 0
-14
+1
 27405
 198
 24
@@ -14852,13 +14875,13 @@ PITCHES
 NOTE
 200
 0
-65534
+1
 60
 0
 51288
 202
 0
-65534
+1
 51288
 1
 
@@ -14978,11 +15001,11 @@ VELOCITIES
 51663
 18
 0
-13
+1
 53576
 20
 0
-13
+1
 50228
 21
 6
@@ -15084,8 +15107,8 @@ VELOCITIES
 19
 56022
 65
-27594
-65534
+1971
+4681
 61307
 67
 8
@@ -15274,7 +15297,7 @@ VELOCITIES
 62364
 154
 0
-19
+1
 63421
 158
 18
@@ -15402,7 +15425,7 @@ VELOCITIES
 55705
 236
 0
-19
+1
 33296
 236
 13
@@ -15422,7 +15445,7 @@ VELOCITIES
 0
 254
 0
-19
+1
 20164
 /
 
@@ -15577,7 +15600,7 @@ VELOCITIES
 46509
 79
 0
-19
+1
 41752
 79
 17
@@ -15850,7 +15873,7 @@ VELOCITIES
 0
 254
 0
-19
+1
 18484
 /
 
@@ -15884,7 +15907,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -21461,7 +21484,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -26723,7 +26746,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -31389,7 +31412,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -36924,7 +36947,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -42127,7 +42150,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -47093,7 +47116,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -52668,7 +52691,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -59342,27 +59365,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-45
-Gain (dB)
-0
-FLOAT_TYPE
--10.32803344726562
-Mute
-0
-FLOAT_TYPE
-0
-Phase Reverse
-0
-FLOAT_TYPE
-0
-Soft Clip
-0
-FLOAT_TYPE
-0
-SoftClip Threshold
-0
-FLOAT_TYPE
--3
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -59527,11 +59530,11 @@ FLOAT_TYPE
 name
 0
 STRING_TYPE
-Ampliflipador
+Pipe
 type_name
 0
 STRING_TYPE
-Ladspa
+Pipe
 << HASH MAP V2 END
 x
 0
@@ -59568,11 +59571,11 @@ FLOAT_TYPE
 Detune
 0
 FLOAT_TYPE
-0.0367584228515625
+0.0377655029296875
 Dry/Wet
 0
 FLOAT_TYPE
-1
+0.9975738525390625
 Gain
 0
 FLOAT_TYPE
@@ -59704,7 +59707,7 @@ FLOAT_TYPE
 NOTUSED 7
 0
 FLOAT_TYPE
-0.7835235595703125
+1
 NOTUSED 8
 0
 FLOAT_TYPE
@@ -62050,7 +62053,7 @@ INT_TYPE
 value
 0
 FLOAT_TYPE
-1
+0.9975738525390625
 value
 1
 FLOAT_TYPE
@@ -62062,7 +62065,7 @@ FLOAT_TYPE
 value
 3
 FLOAT_TYPE
-0.0367584228515625
+0.0377655029296875
 value
 4
 FLOAT_TYPE
@@ -62078,7 +62081,7 @@ FLOAT_TYPE
 value
 7
 FLOAT_TYPE
-0.7835235595703125
+1
 value
 8
 FLOAT_TYPE
@@ -63084,7 +63087,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-016.WAV
+sounds/016.WAV
 instrument_number
 0
 INT_TYPE
@@ -63092,7 +63095,7 @@ INT_TYPE
 resampler_type
 0
 INT_TYPE
-3
+2
 << HASH MAP V2 END
 type_name
 0
@@ -63758,7 +63761,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-51
+52
 Amount
 0
 FLOAT_TYPE
@@ -63779,11 +63782,11 @@ Inter-voice phase
 0
 FLOAT_TYPE
 63.97200012207031
-Minimum delay
+Min delay
 0
 FLOAT_TYPE
 4.995742797851562
-Modulation depth
+Mod depth
 0
 FLOAT_TYPE
 5.997910499572754
@@ -63791,6 +63794,10 @@ Modulation rate
 0
 FLOAT_TYPE
 0.499700665473938
+Overlap
+0
+FLOAT_TYPE
+1
 Q
 0
 FLOAT_TYPE
@@ -65750,7 +65757,7 @@ HASH_TYPE
 Bright
 0
 FLOAT_TYPE
-1737.36572265625
+0
 NOTUSED 10
 0
 FLOAT_TYPE
@@ -65878,7 +65885,7 @@ FLOAT_TYPE
 NOTUSED 9
 0
 FLOAT_TYPE
-0.220977783203125
+0.41839599609375
 System Chorus
 0
 FLOAT_TYPE
@@ -67888,7 +67895,7 @@ FLOAT_TYPE
 value
 3
 FLOAT_TYPE
-1737.36572265625
+0
 value
 4
 FLOAT_TYPE
@@ -67912,7 +67919,7 @@ FLOAT_TYPE
 value
 9
 FLOAT_TYPE
-0.220977783203125
+0.41839599609375
 value
 10
 FLOAT_TYPE
