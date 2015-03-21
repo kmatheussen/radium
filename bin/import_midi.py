@@ -21,12 +21,55 @@ import sys,os
 
 #sys.setrecursionlimit(1500)
 
-sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
+if __name__ == "__main__":
+    sys.path.append("python-midi")
+else:
+    sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
 
 import src as midi
 
 import fractions
-import radium
+
+class RadiumMock:
+    def addNote(self,
+                notenum, velocity,
+                line, counter, dividor,
+                end_line, end_counter, end_dividor,
+                windownum, blocknum, tracknum):
+        return
+        print "addNote",tracknum,notenum,velocity
+    def setLPB(self,lpb):
+        pass
+    def setBPM(self,pbm):
+        pass
+    def dummy(self,*args):
+        pass
+
+    def getMaxVolume(self):
+        return 127
+
+if __name__ == "__main__":
+    radium = RadiumMock()
+    radium.addNote = radium.addNote
+    radium.setLPB = radium.setLPB
+    radium.setBPM = radium.setBPM
+    radium.setNumLines = radium.dummy
+    radium.setNumTracks = radium.dummy
+    radium.openRequester = radium.dummy
+    radium.closeRequester = radium.dummy
+    radium.addBPM = radium.dummy
+    radium.addSignature = radium.dummy
+    radium.createNewInstrument = radium.dummy
+    radium.setInstrumentData = radium.dummy
+    radium.setInstrumentForTrack = radium.dummy
+    radium.getNumBlocks = radium.dummy
+    radium.appendBlock=radium.dummy
+    radium.selectPrevBlock=radium.dummy
+    radium.deleteBlock=radium.dummy
+    radium.setTrackVolume = radium.dummy
+    
+else:
+    import radium
 
 
 class Note:
@@ -238,8 +281,26 @@ class Tempos:
         for tempo in sorted(self.tempos, key=lambda event: event.tick):
             place = tick_to_place(tempo.tick, resolution, lpb)
             radium.addBPM(int(tempo.bpm), place[0], place[1], place[2])
-        
 
+        
+class Signatures:
+    def __init__(self):
+        self.signatures = []
+
+    def add_event(self, event):
+        if type(event) is midi.TimeSignatureEvent:
+            self.signatures.append(event)
+            print "22222 GAOIJADFGAOIJOAFIJG"
+            print event
+            #sys.exit()
+
+    def send_signatures_to_radium(self, resolution, lpb):
+        for signature in sorted(self.signatures, key=lambda event: event.tick):
+            place = tick_to_place(signature.tick, resolution, lpb)
+            radium.addSignature(int(signature.get_numerator()), int(signature.get_denominator()),
+                                place[0], place[1], place[2])
+
+        
 class Events:
     def __init__(self):
         self.channel = -1
@@ -542,6 +603,13 @@ def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
             tempos.add_event(event)
     tempos.send_tempos_to_radium(resolution, lpb)
 
+    # Init signatures
+    signatures = Signatures()
+    for track in tracks:
+        for event in track:
+            signatures.add_event(event)
+    signatures.send_signatures_to_radium(resolution, lpb)
+    
     # Init notes and fx, plus generate radium tracks
     for track in tracks:
         events = Events()
@@ -615,36 +683,6 @@ def import_midi(filename="", lpb=0, midi_port="", polyphonic="not set"):
 
 
 if __name__ == "__main__":
-    def addNote(notenum, velocity,
-                line, counter, dividor,
-                end_line, end_counter, end_dividor,
-                windownum, blocknum, tracknum):
-        return
-        print "addNote",tracknum,notenum,velocity
-    def setLPB(lpb):
-        pass
-    def setBPM(pbm):
-        pass
-    def dummy(*args):
-        pass
-    
-    radium.addNote = addNote
-    radium.setLPB = setLPB
-    radium.setBPM = setBPM
-    radium.setNumLines = dummy
-    radium.setNumTracks = dummy
-    radium.openRequester = dummy
-    radium.closeRequester = dummy
-    radium.addBPM = dummy
-    radium.createNewInstrument = dummy
-    radium.setInstrumentData = dummy
-    radium.setInstrumentForTrack = dummy
-    radium.getNumBlocks = dummy
-    radium.appendBlock=dummy
-    radium.selectPrevBlock=dummy
-    radium.deleteBlock=dummy
-    radium.setTrackVolume = dummy
-
     filename = "sinclair.MID"
     #filename = "/gammelhd/gammelhd/gammelhd/home/kjetil/bmod54.mid"
     for channel in import_midi(filename, 4, "port", False):

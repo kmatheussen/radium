@@ -193,7 +193,7 @@ struct WSignatures *WSignatures_get(
 
 struct Signatures *SetSignature(
 	struct Blocks *block,
-	Place *place,
+	const Place *place,
         Ratio ratio
 ){
         struct Signatures *signature=(struct Signatures *)ListFindElement3(&block->signatures->l,place);
@@ -230,7 +230,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 
 	SetSignature(wblock->block,place,rational.get_ratio());
 
-        UpdateWBlockWidths(window, wblock);
+        //UpdateWBlockWidths(window, wblock);
         
 	//UpdateWSignatures(window,wblock);
 	//DrawSignatures(window,wblock,curr_realline,curr_realline);
@@ -259,7 +259,7 @@ void RemoveSignaturesCurrPos(struct Tracker_Windows *window){
 
 	RemoveSignatures(wblock->block,&p1,&p2);
 
-        UpdateWBlockWidths(window, wblock);
+        //UpdateWBlockWidths(window, wblock);
         
 	//UpdateWSignatures(window,wblock);
 	//UpdateSTimes(wblock->block);

@@ -111,6 +111,9 @@ void UpdateWBlockCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
+
+  	wblock->signaturearea.width = window->fontwidth*GetMaxSignatureWidth(wblock->block);
+    
 	wblock->a.x1  = R_MAX(window->fontwidth+3,window->leftslider.width+1);
 	wblock->a.y1  = 0;
 	wblock->a.x2 = window->width + 3; // Not quite sure why we have to add 2 here.

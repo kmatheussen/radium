@@ -522,11 +522,12 @@ void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num){
     after 'place' and 'counter/dividor', NULL is returned.
 **********************************************************************/
 void *ListFindElement3(
-	struct ListHeader3 *element,
-	Place *placement
+	const struct ListHeader3 *element,
+	const Place *placement
 ){
 	for(;element!=NULL;element=element->next)
-		if(PlaceGreaterOrEqual(&element->p,placement)) return element;
+          if(p_Greater_Or_Equal(element->p,*placement))
+            return (void*)element;
 
 	return NULL;
 }

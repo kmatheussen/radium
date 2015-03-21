@@ -177,6 +177,25 @@ void setBPM(int bpm_value){
   UpdateAllSTimes();
 }
 
+int addSignature(int numerator, int denominator,
+                 int line,int counter,int dividor,
+                 int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL) {
+    RError("unknown block(%p)",blocknum);
+    return -1;
+  }
+
+  Place dasplace = place(line,counter,dividor);
+
+  struct Signatures *signature = SetSignature(wblock->block,&dasplace,ratio(numerator, denominator));
+
+  wblock->block->is_dirty = true;
+
+  return ListFindElementPos3(&wblock->block->signatures->l,&signature->l);
+}
+
 int addLPB(int lpb_value,
            int line,int counter,int dividor,
            int blocknum)
@@ -214,6 +233,7 @@ int addBPM(int bpm,
 
   return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
 }
+
 
 void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);

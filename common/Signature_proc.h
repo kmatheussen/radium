@@ -21,10 +21,10 @@ extern LANGSPEC struct WSignatures *WSignatures_get(
                                         );
 
 extern LANGSPEC struct Signatures *SetSignature(
-                           struct Blocks *block,
-                           Place *place,
-                           Ratio ratio
-                           );
+                                                struct Blocks *block,
+                                                const Place *place,
+                                                Ratio ratio
+                                                );
 extern LANGSPEC void SetSignatureCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void RemoveSignaturesCurrPos(struct Tracker_Windows *window);

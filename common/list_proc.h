@@ -107,8 +107,8 @@ extern LANGSPEC void *ListFindElementP(struct ListHeaderP *list,NInt num);
 extern LANGSPEC void *ListFindElement1_r0(const struct ListHeader1 *list,NInt num);
 
 extern LANGSPEC void *ListFindElement3(
-	struct ListHeader3 *element,
-	Place *placement
+	const struct ListHeader3 *element,
+	const Place *placement
 );
 
 void *ListFindElement3_num(
