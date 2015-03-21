@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>519</width>
-    <height>331</height>
+    <width>641</width>
+    <height>357</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,6 +66,30 @@
               <enum>QLayout::SetDefaultConstraint</enum>
              </property>
              <item>
+              <widget class="QCheckBox" name="checkBox">
+               <property name="text">
+                <string>Quantitize Start position</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="checkBox_2">
+               <property name="text">
+                <string>Quantitize End position</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="checkBox_3">
+               <property name="text">
+                <string>Keep note length</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QLabel" name="label_2">
                <property name="text">
                 <string>Quantization value</string>
@@ -110,7 +134,7 @@
            <item>
             <widget class="QFrame" name="">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_8">
               <property name="sizeConstraint">
@@ -119,14 +143,21 @@
               <item>
                <widget class="QLabel" name="label_4">
                 <property name="text">
-                 <string>Behavior when a note is too short</string>
+                 <string>Behavior if a note becomes too short after quantization</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="radioButton">
+                <property name="text">
+                 <string>Move start position to previous quantization point</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QRadioButton" name="radioButton_4">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="text">
                  <string>Move end position to next quantization point</string>
@@ -134,12 +165,9 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_5">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
+               <widget class="QRadioButton" name="radioButton_2">
                 <property name="text">
-                 <string>Don't quantitize end position</string>
+                 <string>Keep original note length</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -147,9 +175,22 @@
                </widget>
               </item>
               <item>
+               <widget class="QRadioButton" name="radioButton_5">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>Don't quantitize end position, if possible. Move to next point if necessary</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QRadioButton" name="radioButton_6">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="text">
                  <string>Delete note</string>

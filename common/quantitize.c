@@ -44,75 +44,81 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 
-/******************************************************************
-  FUNCTION
-    Quantitize 'toquant' spesified by 'quant'. 'Block' is used
-    to know the last zposition in the block, so that 'toquant' isn't
-    placed after that.
 
-  EXAMPLES
-    toquant=1,2,3 quant=0.5 -> toquant=1,1,2
-    toquant=1,6,7 quant=0.5 -> toquant=2,0,1
-    toquant=5,0,1 quant=2.0 -> toquant=6,0,1
-******************************************************************/
 
-static Place Quantitize(
-                        Place toquant,
-                        Place quant
-){
-  return PlaceQuantitize(toquant, quant);
+enum QuantitizeNoteEndType{
+  QNE_MOVE_START_TO_PREV_POINT,
+  QNE_MOVE_END_TO_NEXT_POINT,
+  QNE_KEEP_LENGTH,
+  QNE_DONT_QUANTITIZE,
+  QNE_DELETE
+};
+
+enum QuantitizeNoteEndType get_quant_type(void){
+  return QNE_MOVE_END_TO_NEXT_POINT;
 }
 
-
-/****************************************************************
-  NOTE
-    Could work better.
-****************************************************************/
 void Quantitize_Note(
 	struct Blocks *block,
 	struct Notes **notes,
 	struct Notes *note,
-	Place quant
+	const Place quant,
+        enum QuantitizeNoteEndType quant_type
 ){
-	Place tempstart,tempend;
-	Place end;
+        Place lastpos = p_Last_Pos(block);
 
-	PlaceSetLastPos(block,&end);
-	PlaceCopy(&tempstart,&note->l.p);
+	if(p_Equal(lastpos,note->l.p))
+          return;
 
-	if(PlaceEqual(&end,&note->l.p)){
-		return;
-	}
+        Place start_org = note->l.p;
+	Place end_org = note->end;
 
-	note->l.p = Quantitize(note->l.p,quant);
-
-	if(PlaceEqual(&end,&note->l.p)){
-		PlaceCopy(&note->l.p,&tempstart);
-	}
-
-	PlaceCopy(&tempend,&note->end);
         
-	note->end = Quantitize(note->end,quant);
+	note->l.p = p_Quantitize(note->l.p,quant);
 
-	if(PlaceLessOrEqual(&note->end, &note->l.p)){
-		PlaceCopy(&note->end,&tempend);
-	}
+        if (p_Equal(lastpos, note->l.p))
+          note->l.p = start_org;
 
-	if(PlaceLessOrEqual(&note->end, &note->l.p)){
-		PlaceCopy(&note->l.p,&tempstart);
-		PlaceCopy(&note->end,&tempend);
-	}
 
-/*
-	while(PlaceLessOrEqual(&note->end,&note->l.p)){
-		note->end.counter+=quant*note->end.dividor;
-		PlaceHandleOverflow(&note->end);		//Haven't checked this too good. A small potensial for the program to hang.
-	}
-*/
+        note->end = p_Quantitize(note->end,quant);
 
-	if( ! PlaceLegal(block,&note->end)){
-		PlaceSetLastPos(block,&note->end);
-	}
+        if (p_Less_Or_Equal(note->end, note->l.p)) {
+
+          switch (quant_type) {
+
+            case QNE_MOVE_START_TO_PREV_POINT:
+              while (p_Less_Or_Equal(note->end, note->l.p))
+                note->l.p = p_Sub(note->l.p, quant);
+
+              if( ! p_Less_Than(note->l.p, place(0,0,1)))
+                note->l.p = place(0,0,1);
+
+              break;
+
+            case QNE_MOVE_END_TO_NEXT_POINT:
+              while (p_Less_Or_Equal(note->end, note->l.p))
+                note->end = p_Add(note->end, quant);
+              break;
+              
+            case QNE_KEEP_LENGTH:
+              note->end = p_Add(note->l.p, p_Sub(note->end, note->l.p));
+              break;
+
+            case QNE_DONT_QUANTITIZE:
+              note->end = end_org;
+              break;
+              
+            case QNE_DELETE:
+              return;
+          }
+
+        }
+
+	if (p_Less_Or_Equal(note->end, note->l.p))
+          return;
+
+	if( ! PlaceLegal(block,&note->end))
+          return;
 
 	ListAddElement3(notes,&note->l);
 }
@@ -147,7 +153,7 @@ void Quantitize_range(
 			if(PlaceGreaterThan(&note->l.p,&realline2->l.p)) break;
 			temp=NextNote(note);
 			if(PlaceGreaterOrEqual(&note->l.p,&realline1->l.p)){
-				Quantitize_Note(wblock->block,&notes,note,quant);
+                          Quantitize_Note(wblock->block,&notes,note,quant,get_quant_type());
 			}
 			note=temp;
 		}
@@ -177,7 +183,7 @@ void Quantitize_track(
 
 	while(note!=NULL){
 		temp=NextNote(note);
-		Quantitize_Note(block,&notes,note,quant);
+		Quantitize_Note(block,&notes,note,quant,get_quant_type());
 		note=temp;
 	}
 	track->notes=notes;

@@ -98,28 +98,6 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
   }
 }
 
-Place PlaceQuantitize(Place p, Place q){
-  static s7_pointer scheme_func = s7_name_to_value(s7, "quantitize");
-  
-  s7_pointer result = s7_call(s7,
-                              scheme_func,
-                              s7_list(s7,
-                                      2,
-                                      place_to_ratio(&p),
-                                      place_to_ratio(&q)
-                                      )
-                              );
-  
-  if (s7_is_ratio(result))
-    return ratio_to_place2(result);
-  else if (s7_is_integer(result))
-    return PlaceCreate3(s7_integer(result), 0, 1);
-  else {
-    RError("result was not ratio or integer. Returning 0");
-    return PlaceCreate3(0,0,1);
-  }
-  
-}
 
 static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const Place *p2){
   s7_pointer result = s7_call(s7,
