@@ -63,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-11
+13
 author
 0
 STRING_TYPE
@@ -100,6 +100,14 @@ comment
 7
 STRING_TYPE
 
+comment
+8
+STRING_TYPE
+
+comment
+9
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -122,10 +130,10 @@ TRACKER_WINDOW
 0
 
 ?width
-910
+550
 
 ?height
-592
+400
 
 ?fontID
 0

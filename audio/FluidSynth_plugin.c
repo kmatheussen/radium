@@ -426,13 +426,12 @@ static void *create_data(const wchar_t *filename, float samplerate){
     return NULL;
   }
 
-  data->filename = wcsdup(filename);
-  const wchar_t *resolved_filename = OS_loading_get_resolved_file_path(filename);
+  data->filename = wcsdup(OS_loading_get_resolved_file_path(filename));
 
-  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(resolved_filename),true);
+  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename),true);
 
   if(data->soundfont_id==FLUID_FAILED){
-    printf("Soundfont loading failed for \"%s\"\n",STRING_get_chars(resolved_filename));
+    printf("Soundfont loading failed for \"%s\"\n",STRING_get_chars(data->filename));
 
     delete_data(data);
 

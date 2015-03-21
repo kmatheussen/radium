@@ -55,8 +55,9 @@ static void ask_to_add_resolved_path(QDir key, QDir value){
 
 static const wchar_t *_loading_path  = NULL;
 
-void OS_set_loading_path(const wchar_t *filename){
-  _loading_path = filename;
+void OS_set_loading_path(const wchar_t *filename){  
+  QFileInfo info(STRING_get_qstring(filename));
+  _loading_path = STRING_create(info.absoluteFilePath());
 }
 
 void OS_unset_loading_path(void){

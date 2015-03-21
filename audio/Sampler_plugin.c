@@ -1451,15 +1451,16 @@ static void delete_data(Data *data){
 static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type){
   bool success=false;
 
+  Data *data = NULL;
   Data *old_data = plugin->data;
 
-  Data *data = create_data(old_data->samplerate, plugin->data, filename, instrument_number, resampler_type);
-
-  const wchar_t *resolved_filename = OS_loading_get_resolved_file_path(filename);
-  if (resolved_filename==NULL)
+  filename = OS_loading_get_resolved_file_path(filename);
+  if (filename==NULL)
     goto exit;
 
-  if(load_sample(data,resolved_filename,instrument_number)==false)
+  data = create_data(old_data->samplerate, plugin->data, filename, instrument_number, resampler_type);
+
+  if(load_sample(data,filename,instrument_number)==false)
     goto exit;
 
   // Put loop_onoff into storage.
@@ -1487,6 +1488,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
     GFX_update_instrument_widget(plugin->patch); // Update "loop" button.
 
   success = true;
+
  exit:
   if(success==false)
     free(data);
