@@ -39,6 +39,7 @@ bool NewSong(void){
 
 	root->tempo=128;
 	root->lpb=4;
+        root->signature = ratio(4,4);
 	pc->initplaying=false;
 	pc->isplaying=false;
 

@@ -40,6 +40,8 @@ DC_start("WBLOCK");
 	DC_SSI("tempotrackonoff",wblock->tempotrackonoff);
 	DC_SSI("temponodetrackonoff",wblock->temponodetrackonoff);
 
+        // the "area" values are proabably no point loading/saving...
+
 	//DC_SaveS("zoomlevelarea");SaveWArea(&wblock->zoomlevelarea);
 	DC_SaveS("linenumarea");SaveWArea(&wblock->linenumarea);
         //DC_SaveS("zoomlinearea");SaveWArea(&wblock->zoomlevelarea);

@@ -134,6 +134,7 @@ void InsertLines(
 
 	List_InsertLines3(&block->temponodes,block->temponodes->l.next,line,toinsert,NULL);
 	LegalizeTempoNodes(block);
+	List_InsertLines3(&block->signatures,&block->signatures->l,line,toinsert,NULL);
 	List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
 	List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
 

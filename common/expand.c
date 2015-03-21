@@ -81,6 +81,7 @@ static void expand_track(struct Tracks *track, int start, int end, int num_lines
 
 static void expand_block(struct Blocks *block, int start, int end, int num_lines){
 
+  expand_list3(&block->signatures->l, start, end, num_lines);
   expand_list3(&block->lpbs->l, start, end, num_lines);
   expand_list3(&block->tempos->l, start, end, num_lines);
   expand_list3(&block->temponodes->l, start, end, num_lines);

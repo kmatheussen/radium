@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_legalize_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "temponodes_proc.h"
+#include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
 #include "reallines_insert_proc.h"
@@ -32,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "undo_lpbs_proc.h"
+#include "undo_signatures_proc.h"
 #include "undo_notes_proc.h"
 #include "undo_notesandfxs_proc.h"
 #include "player_proc.h"
@@ -122,6 +124,14 @@ void InsertPlace_lpbs(
 	List_InsertPlaceLen3(block,&block->lpbs,&block->lpbs->l,place,toplace,NULL);
 }
 
+void InsertPlace_signatures(
+	struct Blocks *block,
+	float place,
+	float toplace
+){
+	List_InsertPlaceLen3(block,&block->signatures,&block->signatures->l,place,toplace,NULL);
+}
+
 void InsertPlace_stops(
 	struct Blocks *block,
 	struct Tracks *track,
@@ -164,14 +174,9 @@ void InsertRealLines_CurrPos(
 
 
 	switch(window->curr_track){
-		case TEMPOTRACK:
-			Undo_Tempos_CurrPos(window);
-			InsertPlace_tempos(block,place,toplace);
-			//UpdateWTempos(window,wblock);
-#if !USE_OPENGL
-			DrawUpTempos(window,wblock);
-#endif
-			UpdateSTimes(wblock->block);
+		case SIGNATURETRACK:
+			Undo_Signatures_CurrPos(window);
+			InsertPlace_signatures(block,place,toplace);
 			break;
 		case LPBTRACK:
 			Undo_LPBs_CurrPos(window);
@@ -179,6 +184,15 @@ void InsertRealLines_CurrPos(
 			//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
+#endif
+			UpdateSTimes(wblock->block);
+			break;
+		case TEMPOTRACK:
+			Undo_Tempos_CurrPos(window);
+			InsertPlace_tempos(block,place,toplace);
+			//UpdateWTempos(window,wblock);
+#if !USE_OPENGL
+			DrawUpTempos(window,wblock);
 #endif
 			UpdateSTimes(wblock->block);
 			break;
