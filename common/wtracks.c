@@ -582,8 +582,7 @@ void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 int WTRACK_getx1(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	NInt tracknum,
-	bool onlyfx
+	NInt tracknum
 ){
 
 	struct WTracks *wtrack;
@@ -594,6 +593,9 @@ int WTRACK_getx1(
 		break;
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x;
+		break;
+	case SIGNATURETRACK:
+		return wblock->signatureTypearea.x;
 		break;
 	case LPBTRACK:
 		return wblock->lpbTypearea.x;
@@ -606,18 +608,14 @@ int WTRACK_getx1(
 		break;
 	}
 
-	if(tracknum>wblock->right_track){
-		RError("illegal starttrack at function WTRACK_getx1 in file wtracks.c");
-		return wblock->temponodearea.x2+3;
+	if(tracknum>=wblock->block->num_tracks || tracknum<0){
+          RError("illegal track number %d supplied function WTRACK_getx1 in file wtracks.c",tracknum);
+          return wblock->temponodearea.x2+3;
 	}
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
-	if(onlyfx==false){
-		return R_BOUNDARIES(wtrack->notearea.x,wblock->t.x1,wblock->t.x2);
-	}
-
-	return R_BOUNDARIES(wtrack->fxarea.x,wblock->t.x1,wblock->t.x2);
+	return wtrack->x;
 }
 
 
@@ -636,32 +634,28 @@ int WTRACK_getx2(
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x2;
 		break;
+	case SIGNATURETRACK:
+		return wblock->signaturearea.x2;
+		break;
 	case LPBTRACK:
-		return wblock->lpbTypearea.x2;
+		return wblock->lpbarea.x2;
 		break;
 	case TEMPOTRACK:
-		return wblock->tempoTypearea.x2;
+		return wblock->tempoarea.x2;
 		break;
 	case TEMPONODETRACK:
 		return wblock->temponodearea.x2;
 		break;
 	}
 
-#if 0
-        // This can happen if we have deleted tracks.
-	if(tracknum > wblock->right_track){
-		RError("illegal starttrack at function WTRACK_getx2 in file wtracks.c (%d > %d)",tracknum,wblock->right_track);
-		return wblock->t.x2;
-	}
-#endif
-
-	if(tracknum>=wblock->right_track){
-		return wblock->t.x2;
+        if(tracknum>=wblock->block->num_tracks || tracknum<0){
+          RError("illegal track number %d supplied function WTRACK_getx2 in file wtracks.c",tracknum);
+          return wblock->temponodearea.x2+3;
 	}
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
-	return R_MAX(wtrack->fxarea.x2,wblock->t.x1);
+	return wtrack->x2;
 
 }
 

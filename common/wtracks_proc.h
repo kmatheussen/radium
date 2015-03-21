@@ -88,8 +88,7 @@ void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 int WTRACK_getx1(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	NInt track,
-	bool onlyfx
+	NInt track
 );
 
 int WTRACK_getx2(

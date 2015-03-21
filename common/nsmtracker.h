@@ -752,6 +752,36 @@ struct WTracks{
 
 
 /*********************************************************************
+	signature.h
+*********************************************************************/
+
+typedef struct {
+  int numerator;
+  int denominator;
+} Ratio;
+
+static inline Ratio ratio(int numerator, int denominator) {
+  Ratio ratio = {numerator, denominator};
+  return ratio;
+}
+
+struct Signatures{
+  struct ListHeader3 l;
+  Ratio signature;
+};
+#define NextSignature(a) (struct Signatures *)((a)->l.next)
+
+struct WSignatures{
+  Ratio signature;
+  int type;					/* 0=normal, 1=below positioned, 2=mul. */
+};
+#define SIGNATURE_NORMAL 0
+#define SIGNATURE_BELOW 1
+#define SIGNATURE_MUL 2
+
+
+
+/*********************************************************************
 	lpb.h
 *********************************************************************/
 
@@ -773,7 +803,7 @@ struct WLPBs{
 
 
 /*********************************************************************
-	tempos.h
+	tempos.h (i.e. BPM)
 *********************************************************************/
 
 
@@ -849,7 +879,8 @@ struct Blocks{
 	int num_lines;
 
 	struct Tracks *tracks;
-	struct LPBs   *lpbs;
+	struct Signatures   *signatures;
+  	struct LPBs   *lpbs;
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
@@ -912,6 +943,8 @@ struct WBlocks{
 	WArea linenumarea;
 	WArea zoomlinearea;
         WArea tempocolorarea;
+	WArea signatureTypearea;
+	WArea signaturearea;
 	WArea lpbTypearea;
 	WArea lpbarea;
 	WArea tempoTypearea; // When one character signals whether the tempo is down "d", or multi "m"
@@ -1055,6 +1088,7 @@ struct Tracker_Windows{
 	int h_fontwidth;
 #endif
 
+  bool show_signature_track;
   bool show_lpb_track;
   bool show_bpm_track;
   bool show_reltempo_track;
@@ -1077,8 +1111,10 @@ struct Tracker_Windows{
 #define TEMPONODETRACK -1
 #define TEMPOTRACK -2
 #define LPBTRACK -3
-#define LINENUMBTRACK -4
+#define SIGNATURETRACK -4
 #define TEMPOCOLORTRACK -5
+#define LINENUMBTRACK -6
+#define LEFTMOSTTRACK LINENUMBTRACK
 #define NOTRACK -10000
 
 /*********************************************************************
@@ -1117,11 +1153,9 @@ struct Root{
 	volatile bool setfirstpos;
 
 	int tempo;			/* Standard tempo. */
-	int lpb;				/* Standard lpb. */
+	int lpb;			/* Standard lpb. */
+	Ratio signature;		/* Standard signature. */
 
-        //int time_signature_numerator;
-        //int time_signature_denominator;
-  
         int quantitize_numerator;
         int quantitize_denominator;
   

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1242</width>
+    <width>1329</width>
     <height>27</height>
    </rect>
   </property>
@@ -39,7 +39,7 @@
     <number>0</number>
    </property>
    <property name="horizontalSpacing">
-    <number>-1</number>
+    <number>6</number>
    </property>
    <property name="verticalSpacing">
     <number>0</number>
@@ -1268,6 +1268,65 @@
        </widget>
       </item>
       <item>
+       <widget class="QWidget" name="SignatureWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <property name="margin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="signature_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Sign.</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="SignatureQLineEdit" name="signature">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="inputMask">
+            <string/>
+           </property>
+           <property name="text">
+            <string>1/1</string>
+           </property>
+           <property name="frame">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
        <widget class="QWidget" name="LPBWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
@@ -1283,7 +1342,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="LPBlabel_4">
+          <widget class="QLabel" name="lpb_label">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -1336,7 +1395,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="LPBlabel_5">
+          <widget class="QLabel" name="bpm_label">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -4067,6 +4126,9 @@ Scrolling too often can be tiresome for the eyes.</string>
         <property name="statusTip">
          <string/>
         </property>
+        <property name="frame">
+         <bool>false</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
@@ -4593,6 +4655,9 @@ Scrolling too often can be tiresome for the eyes.</string>
         </property>
         <property name="statusTip">
          <string/>
+        </property>
+        <property name="frame">
+         <bool>false</bool>
         </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
@@ -5132,6 +5197,13 @@ Scrolling too often can be tiresome for the eyes.</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SignatureQLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>lzqlineedit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

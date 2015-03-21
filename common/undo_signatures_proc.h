@@ -1,4 +1,4 @@
-/* Copyright 2000 Kjetil S. Matheussen
+/* Copyright 2000-2015 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -15,29 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-
-
-#ifndef TRACKER_INCLUDE
-
-extern struct Signatures *CB_CopySignatures(
-	struct Signatures *signature
+extern LANGSPEC void Undo_Signatures_CurrPos(
+	struct Tracker_Windows *window
 );
-
-extern struct LPBs *CB_CopyLPBs(
-	struct LPBs *lpb
-);
-
-extern struct Tempos *CB_CopyTempos(
-	struct Tempos *tempo
-);
-
-extern struct TempoNodes *CB_CopyTempoNodes(
-	struct TempoNodes *temponode
-);
-
-
-#endif
-
-
-

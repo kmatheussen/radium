@@ -542,7 +542,7 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   editor->status_label->setText(title);
 }
 
-static QString get_postfixes_filter(char *postfixes){
+static QString get_postfixes_filter(const char *postfixes){
   return postfixes==NULL 
          ? "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3) ;; All files (*)"
          : QString("Song files (") + QString(postfixes) + ") ;; All files (*)";
@@ -551,9 +551,9 @@ static QString get_postfixes_filter(char *postfixes){
 const wchar_t *GFX_GetLoadFileName(
                                    struct Tracker_Windows *tvisual,
                                    ReqType reqtype,
-                                   char *seltext,
+                                   const char *seltext,
                                    wchar_t *wdir,
-                                   char *postfixes
+                                   const char *postfixes
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
@@ -579,9 +579,9 @@ const wchar_t *GFX_GetLoadFileName(
 const wchar_t *GFX_GetSaveFileName(
                                    struct Tracker_Windows *tvisual,
                                    ReqType reqtype,
-                                   char *seltext,
+                                   const char *seltext,
                                    wchar_t *wdir,
-                                   char *postfixes
+                                   const char *postfixes
                                    ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 

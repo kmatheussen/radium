@@ -407,28 +407,32 @@
 
 (define-match get-track-num
   X Y :> (let ((Num-tracks (ra:get-num-tracks)))
-           (if (= 1 Num-tracks)
-               0
-               (get-track-num-0 X Y 0
-                                (ra:get-track-x1 0)
-                                (ra:get-track-x1 1)
-                                Num-tracks))))
+           (get-track-num-0 X Y (ra:get-leftmost-track-num)
+                            (ra:get-track-x1 (ra:get-leftmost-track-num))
+                            (ra:get-track-x2 (ra:get-leftmost-track-num))
+                            Num-tracks)))
                                                    
   
 #||
 (get-track-num 650 50)
 ||#
 
+(define *current-track-num-all-tracks* #f) ;; Includes the time tracks, linenumbers, and so forth. (see nsmtracker.h)
 (define *current-track-num* #f)
 
 ;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (set! *current-track-num* (get-track-num X Y))
+         (define track-num (get-track-num X Y))
+         ;;(c-display "track-num:" track-num)
+         (set! *current-track-num-all-tracks* track-num)
+         (if (and track-num
+                  (>= track-num 0))
+             (set! *current-track-num* track-num))
          (cond (*current-track-num*
                 (set-mouse-track *current-track-num*))
                ((and (ra:reltempo-track-visible)
-                     (inside-box (ra:get-box temponode-area) X Y))
+                     (= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num)))
                 (set-mouse-track-to-reltempo)))))
 
 (define *current-subtrack-num* #f)
@@ -1756,7 +1760,7 @@
                      *current-track-num*
                      (inside-box (ra:get-box track-fx *current-track-num*) X Y)
                      (ra:select-track *current-track-num*)
-                     (ra:add-FX-mouse-pos)
+                     (ra:add-fx-mouse-pos)
                      #f))))
 
 
@@ -1851,10 +1855,32 @@
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
                 (and ;(= Button *middle-button*)
-                     *current-track-num*
+                 *current-track-num*
+                 (c-display "hepp: " *current-track-num*)
                      (ra:select-track *current-track-num*)
                      #f))))
 
+
+;; show/hide time tracks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     *current-track-num-all-tracks*
+                     (cond ((= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num))
+                            (c-display "reltempo")
+                            (popup-menu "hide tempo multiplier track" ra:show-hide-reltempo-track))
+                           ((= *current-track-num-all-tracks* (ra:get-tempo-track-num))
+                            (c-display "tempo")
+                            (popup-menu "hide BPM track" ra:show-hide-bpm-track))
+                           ((= *current-track-num-all-tracks* (ra:get-lpb-track-num))
+                            (c-display "lpb")
+                            (popup-menu "hide LPB track" ra:show-hide-lpb-track))
+                           ((= *current-track-num-all-tracks* (ra:get-signature-track-num))
+                            (c-display "signature")
+                            (popup-menu "hide time signature track" ra:show-hide-signature-track)))
+                     #f))))
 
 #||
 (load "lint.scm")

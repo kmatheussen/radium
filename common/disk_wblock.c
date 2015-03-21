@@ -184,6 +184,7 @@ obj1:
 
         
 var19:
+ var20:
 obj2:
 obj3:
 obj4:

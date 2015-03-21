@@ -170,10 +170,10 @@ extern bool PlaceLegal(const struct Blocks *block,  const Place *p);
 extern void PlaceSetFirstPos(Place *p);
 extern Place *PlaceGetFirstPos(void);
 
-extern void PlaceSetReallinePlace(
-                                  const struct WBlocks *wblock,
-                                  int realline,
-                                  Place *p
+extern LANGSPEC void PlaceSetReallinePlace(
+                                           const struct WBlocks *wblock,
+                                           int realline,
+                                           Place *p
 );
 
 // Puts 'p' as near as possible 'tp' so that p<tp.

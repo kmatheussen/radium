@@ -119,14 +119,13 @@ DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
 RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
 
 # Need to disable NDEBUG since it chashes on windows (!). Normally this flag would be defined in RELEASE_BUILD_OPTS
-# The crashreporter says the crash happens in QTextEngine::itemize, but there is no backtrace, which is a sign of memory corruption, so this information might not be accurate.
+# The crashreporter says the crash happens in QTextEngine::itemize, but there is no further backtrace, which is a sign of memory corruption, so this information might not be accurate.
 # -DNDEBUG
 
 
 OS_OPTS ?= 
-#OS_OPTS = -fPIC -I/usr/X11R6/include
 OS_LDFLAGS ?=
-
+OS_DEPS ?=
 OS_OBJS ?=
 
 REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
@@ -206,7 +205,7 @@ OBJ4 = tbox.o area.o range.o nodelines.o
 
 OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o pixmap.o scroll.o blts.o
 
-OBJ6= realline_calc.o gfx_subtrack.o LPB.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
+OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
 
 OBJ7= instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o
 
@@ -214,13 +213,13 @@ OBJ7= instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_pla
 OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o temponodes_legalize.o
 
 #Playing
-OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o
+OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o PEQ_Signature.o
 
 #Disk
-OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
+OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o undo_patch.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_playlist.o undo_patch.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
 
 #X11 Spesific
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
@@ -294,7 +293,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium_error_message bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/*
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protoconfparser.py bin/protos.conf bin/common.py bin/radium python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt bin/crashreporter bin/radium_error_message bin/radium.bin.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o
 	cd pluginhost/Builds/Linux && $(MAKE) clean
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -392,7 +391,7 @@ start_bin.sh:
 	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
 	chmod a+rx start_bin.sh
 
-bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a
+bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
 	$(LINKER) $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(QTLINKFLAGS) $(LDFLAGS) $(OS_LDFLAGS) $(RTMIDI_LDFLAGS)
 #libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext
@@ -553,6 +552,9 @@ tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.c
 
 LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.c
 	$(CC) $(CD)LPB.c $(OPT)
+
+Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
+	$(CCC) $(CD)Signature.cpp $(QTOPT)
 
 gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.c
 	$(CC) $(CD)gfx_wtrackheaders.c $(OPT)
@@ -720,6 +722,9 @@ disk_notes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_notes.c $(CD)disk.h
 disk_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_lpbs.c $(CD)disk.h
 	$(CC) $(CD)disk_lpbs.c $(OPT)
 
+disk_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)disk_signatures.c $(CD)disk.h
+	$(CC) $(CD)disk_signatures.c $(OPT)
+
 disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
 	$(CC) $(CD)disk_windows.c $(OPT)
 
@@ -810,6 +815,9 @@ undo_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tempos.c $(CD)undo.h
 undo_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_lpbs.c $(CD)undo.h
 	$(CC) $(CD)undo_lpbs.c $(OPT)
 
+undo_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)undo_signatures.c $(CD)undo.h
+	$(CC) $(CD)undo_signatures.c $(OPT)
+
 undo_notesandfxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notesandfxs.c $(CD)undo.h
 	$(CC) $(CD)undo_notesandfxs.c $(OPT)
 
@@ -869,6 +877,9 @@ PEQ_clock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_clock.c $(CD)playerclass.h
 
 PEQ_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_LPB.c $(CD)playerclass.h
 	$(CC) $(CD)PEQ_LPB.c $(OPT)
+
+PEQ_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_LPB.c $(CD)playerclass.h
+	$(CC) $(CD)PEQ_Signature.c $(OPT)
 
 block_insert.o:  $(BUILD_DEPENDENCIES) $(CD)block_insert.c
 	$(CC) $(CD)block_insert.c $(OPT)
@@ -1005,7 +1016,7 @@ Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
 Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp
 	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT)
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_audio_instrument_widget.h $(P)Rational.h
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_audio_instrument_widget.h $(P)Rational.h $(P)lzqlineedit.h
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
