@@ -1455,7 +1455,11 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
   Data *data = create_data(old_data->samplerate, plugin->data, filename, instrument_number, resampler_type);
 
-  if(load_sample(data,filename,instrument_number)==false)
+  const wchar_t *resolved_filename = OS_loading_get_resolved_file_path(filename);
+  if (resolved_filename==NULL)
+    goto exit;
+
+  if(load_sample(data,resolved_filename,instrument_number)==false)
     goto exit;
 
   // Put loop_onoff into storage.
@@ -1594,15 +1598,17 @@ static int get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  const wchar_t *filename          = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
+  const wchar_t *filename          = HASH_get_string(state, "filename");
   int            instrument_number = HASH_get_int(state, "instrument_number");
   int            resampler_type    = HASH_get_int(state, "resampler_type");
 
-  if(filename==NULL)
+  if(filename==NULL){
+    RError("filename==NULL");
     return;
+  }
 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type)==false)
-    RWarning("Could not load soundfile \"%s\". (instrument number: %d)\n",filename,instrument_number);
+    RWarning("Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){

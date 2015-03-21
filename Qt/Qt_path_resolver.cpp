@@ -50,6 +50,9 @@ static void ask_to_add_resolved_path(QDir key, QDir value){
     resolved_paths[key.path()] = value;
 }
 
+
+#endif // !TEST_PATH_RESOLVER
+
 static const wchar_t *_loading_path  = NULL;
 
 void OS_set_loading_path(const wchar_t *filename){
@@ -59,8 +62,6 @@ void OS_set_loading_path(const wchar_t *filename){
 void OS_unset_loading_path(void){
   _loading_path = NULL;
 }
-
-#endif // !TEST_PATH_RESOLVER
 
 static QString saving_path;
 
@@ -109,6 +110,9 @@ const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath)
 
 
 
+#ifdef TEST_PATH_RESOLVER
+static QHash<QString, QDir> resolved_paths;
+#endif
 
 
 #ifndef TEST_PATH_RESOLVER
@@ -205,9 +209,11 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
 
 #include "../common/control_proc.h"
 
-char *talloc_strdup(char *s){
-  return strdup(s);
-}
+#define talloc_strdup(a) strdup(a)
+#define talloc_atomic(a) malloc(a)
+
+#include "Qt_settings.cpp"
+
                    
 void EndProgram(void){
   printf("ENDPROGRAM called\n");
@@ -225,20 +231,31 @@ void RError(const char *fmt,...){
   fprintf(stderr,"error: %s\n",message);
 }
 
+
+static wchar_t *s(const char *st){
+  QString string(st);
+  return STRING_create(string);
+}
+
 int main(void){
 
-  OS_set_saving_path("/asdf/tmp/filename.rad");
+  OS_set_saving_path(s("/asdf/tmp/filename.rad"));
 
-  printf("-%s- -%s-\n",OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai"),saving_path.toUtf8().constData());
+  printf("-%s- -%s-\n",STRING_get_chars(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai"))),saving_path.toUtf8().constData());
 
-  assert(!strcmp(OS_saving_get_relative_path_if_possible("/badffa"), "/badffa"));
-  assert(!strcmp(OS_saving_get_relative_path_if_possible("/badffa/aba"), "/badffa/aba"));
-  assert(!strcmp(OS_saving_get_relative_path_if_possible("badffa/aba"), "badffa/aba"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/badffa")), "/badffa"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/badffa/aba")), "/badffa/aba"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("badffa/aba")), "badffa/aba"));
+  
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai")), "aiai"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/asdf/tmp2/aiai")), "/asdf/tmp2/aiai"));
+  
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai/aiai234")), "aiai/aiai234"));
+  
 
-  assert(!strcmp(OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai"), "aiai"));
-  assert(!strcmp(OS_saving_get_relative_path_if_possible("/asdf/tmp2/aiai"), "/asdf/tmp2/aiai"));
-
-  assert(!strcmp(OS_saving_get_relative_path_if_possible("/asdf/tmp/aiai/aiai234"), "aiai/aiai234"));
+  OS_set_saving_path(s("sounds/filename.rad"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("aiai234.wav")), "aiai234.wav"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("aiai234.wav")), "aiai234.wav"));
 
 
   printf("Success, no errors\n");
