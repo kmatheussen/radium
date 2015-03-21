@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "wblocks_proc.h"
 #include "../Qt/Rational.h"
+#include "vector_proc.h"
 
 #include "Signature_proc.h"
 
@@ -175,8 +176,16 @@ struct WSignatures *WSignatures_get(
 		if(wsignatures[realline].signature.numerator!=0){
 			wsignatures[realline].type=SIGNATURE_MUL;
 		}else{
-			if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&beat->l.p))
-				wsignatures[realline].type=SIGNATURE_BELOW;
+                  //if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&beat->l.p)) {
+                    wsignatures[realline].type=SIGNATURE_BELOW;
+                    float *f = (float*)talloc_atomic(sizeof(float));
+                    float y1 = p_float(wblock->reallines[realline]->l.p);
+                    float y2 = realline==wblock->num_reallines-1 ? wblock->num_reallines : p_float(wblock->reallines[realline+1]->l.p);
+                    *f = scale( p_float(beat->l.p),
+                                y1, y2,
+                                0,1);
+                    VECTOR_push_back(&wsignatures[realline].how_much_below, f);
+                    //}
 		}
 
                 if (wsignatures[realline].type != SIGNATURE_MUL){ // Unlike the multi-behavior for other wxxx-types, we show the first element here, and not the last.

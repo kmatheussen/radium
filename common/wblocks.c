@@ -96,7 +96,7 @@ void SetWBlock_Top_And_Bot_Realline(
 }
 
 static int GetMaxSignatureWidth(struct Blocks *block){
-  int ret = 2;
+  int ret = 3;
   struct Signatures *signature = block->signatures;
   while(signature != NULL){
     char temp[128];
@@ -132,7 +132,7 @@ void UpdateWBlockCoordinates(
 	wblock->tempocolorarea.x = wblock->zoomlinearea.x2   + 3;
 	wblock->tempocolorarea.x2= wblock->tempocolorarea.x  + wblock->tempocolorarea.width;
         
-	wblock->signatureTypearea.x    = wblock->tempocolorarea.x2 + 3;
+	wblock->signatureTypearea.x    = wblock->tempocolorarea.x2 + 2; // + 3;
 	wblock->signatureTypearea.x2   = wblock->signatureTypearea.x     + wblock->signatureTypearea.width;
 	wblock->signaturearea.x        = wblock->signatureTypearea.x2    + 3;
 	wblock->signaturearea.x2       = wblock->signaturearea.x         + wblock->signaturearea.width;
@@ -209,7 +209,7 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
         SetZoomLevelAreaWidth(window,wblock);
 
 	wblock->tempocolorarea.width = window->fontwidth*3;
-	wblock->signatureTypearea.width    = window->fontwidth;
+	wblock->signatureTypearea.width    = 0; //window->fontwidth;
 	wblock->signaturearea.width        = window->fontwidth*GetMaxSignatureWidth(wblock->block);
 	wblock->lpbTypearea.width    = window->fontwidth;
 	wblock->lpbarea.width        = window->fontwidth*2;

@@ -539,13 +539,44 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
    Time signature track
  ************************************/
 
-static void create_signature(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignatures, int realline){
+static void create_signature(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignatures, int realline, int x2){
   int   y         = get_realline_y1(window, realline);
   
   Ratio signature = wsignatures[realline].signature;
   int   beat_num  = wsignatures[realline].beat_num;
   int   type      = wsignatures[realline].type;
-  
+    
+  if(type!=SIGNATURE_NORMAL){
+    int x = wblock->signatureTypearea.x;
+
+    VECTOR_FOR_EACH(float*, f_pointer, &wsignatures[realline].how_much_below){
+      float f = *f_pointer;
+      float y_ = scale(f, 0, 1, y, get_realline_y2(window, realline));
+      GE_line(GE_color_alpha_z(1, 0.4, Z_ZERO),
+              x, y_,
+              x2, y_,
+              0.8
+              );
+
+    }END_VECTOR_FOR_EACH;
+    /*
+    const char *typetext;
+    switch(type){
+    case SIGNATURE_BELOW:
+      typetext="d";
+      break;
+    case SIGNATURE_MUL:
+      typetext="m";
+      break;
+    default:
+      typetext="";
+      RError("something is wrong");
+    };
+    
+    GE_text(GE_color_alpha_z(1, 0.3, Z_ZERO), typetext, x, y);
+    */
+  }
+
   if(beat_num!=0){
     int x    = wblock->signaturearea.x;    
     char temp[50];
@@ -566,32 +597,19 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
               );      
     }
   }
-  
-  if(type!=SIGNATURE_NORMAL){
-    const char *typetext;
-    switch(type){
-    case SIGNATURE_BELOW:
-      typetext="d";
-      break;
-    case SIGNATURE_MUL:
-      typetext="m";
-      break;
-    default:
-      typetext="";
-      RError("something is wrong");
-    };
-    
-    GE_text(GE_color_alpha_z(1, 0.3, Z_ZERO), typetext, wblock->signatureTypearea.x, y);
-  }
+
 }
 
 
 
 static void create_signaturetrack(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignatures){
 
+  const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
+  int x2 = last_wtrack->x2;
+
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_signature(window, wblock, wsignatures, realline);
+    create_signature(window, wblock, wsignatures, realline, x2);
 }
 
 

@@ -157,6 +157,10 @@ extern LANGSPEC Place p_Div(const Place p1, const Place p2);
 ******************************************************************/
 extern LANGSPEC Place p_Quantitize(const Place p, const Place q);
 
+static inline float p_float(const Place p){
+  return (float)p.line + (float)p.counter/(float)p.dividor;
+}
+
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
 extern float GetfloatFromLineCounterDividor(const Place *placement);
 extern float GetfloatFromPlacement(const Place *placement);
