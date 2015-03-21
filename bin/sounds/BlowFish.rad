@@ -63087,7 +63087,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-sounds/016.WAV
+016.WAV
 instrument_number
 0
 INT_TYPE
