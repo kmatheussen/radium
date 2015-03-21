@@ -52,7 +52,7 @@ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 #export OS_OPTS="-DTEST_GC"
 export OS_OPTS="-Werror=array-bounds -msse2 -DFOR_LINUX -DWITH_PD  -Wno-unused-function"
 #export OS_OPTS="-Werror=array-bounds -march=native"
- 
+
 
 export VST_OPTS="-DUSE_VESTIGE=1"
 
@@ -61,6 +61,8 @@ PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 
 export OS_LDFLAGS="-llrdf -pthread -lrt -lX11 bin/packages/gc-7.2/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` -Wl,-Bstatic -lbfd -Wl,-Bdynamic -lz -liberty -lutil -ldl -ldl bin/packages/libpd-master/libs/libpds.a pluginhost/Builds/Linux/build/libMyPluginHost.a -lXext"
+
+export OS_DEPS="pluginhost/Builds/Linux/build/libMyPluginHost.a"
 
 #bin/packages/qhttpserver-master/lib/libqhttpserver.a
 

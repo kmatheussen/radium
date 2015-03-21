@@ -445,7 +445,6 @@ static void create_linenumbers(const struct Tracker_Windows *window, const struc
    Tempograph
  ************************************/
 
-#define TEMPOGRAPH_POINTS_PER_LINE 3
 struct TempoGraph{
   float line_period;
   int num_points;
@@ -456,9 +455,10 @@ struct TempoGraph{
 
 struct TempoGraph *create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   struct TempoGraph *tg = (struct TempoGraph*)talloc(sizeof(struct TempoGraph));
-  
-  tg->line_period = window->fontheight / (float)TEMPOGRAPH_POINTS_PER_LINE;
-  tg->num_points  = (wblock->num_reallines * TEMPOGRAPH_POINTS_PER_LINE) + 1;
+
+  int TEMPOGRAPH_POINTS_PER_REALLINE = window->fontheight / 2;
+  tg->line_period = window->fontheight / (float)TEMPOGRAPH_POINTS_PER_REALLINE;
+  tg->num_points  = (wblock->num_reallines * TEMPOGRAPH_POINTS_PER_REALLINE) + 1;
   tg->times       = (STime*)talloc_atomic(tg->num_points*sizeof(STime));
 
   STime last_time = -1;
@@ -472,13 +472,13 @@ struct TempoGraph *create_TempoGraph(const struct Tracker_Windows *window, const
       fp2=(float)wblock->block->num_lines;
     }
 
-    for(int n = 0 ; n<TEMPOGRAPH_POINTS_PER_LINE ; n++){
+    for(int n = 0 ; n<TEMPOGRAPH_POINTS_PER_REALLINE ; n++){
       Place p;
-      Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_LINE,fp1,fp2), &p);
+      Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2), &p);
       STime time = Place2STime(wblock->block,&p);
       if(realline>0 || n>0){
-        tg->times[realline*TEMPOGRAPH_POINTS_PER_LINE + n - 1] = time-last_time;
-        //printf("Setting %d (of %d)\n",realline*TEMPOGRAPH_POINTS_PER_LINE + n - 1, tg->num_points);
+        tg->times[realline*TEMPOGRAPH_POINTS_PER_REALLINE + n - 1] = time-last_time;
+        //printf("Setting %d (of %d)\n",realline*TEMPOGRAPH_POINTS_PER_REALLINE + n - 1, tg->num_points);
       }
       last_time = time;
     }
@@ -1468,6 +1468,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
   printf("GL_create called %d\n",level++);
 
   GE_start_writing(); {
+    
     create_left_slider(window, wblock);
     create_background(window, wblock);
     create_block_borders(window, wblock);
@@ -1483,5 +1484,6 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
       create_reltempotrack(window, wblock);
     create_tracks(window, wblock);
     create_cursor(window, wblock);
+
   } GE_end_writing(GE_get_rgb(0));
 }

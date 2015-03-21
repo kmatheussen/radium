@@ -804,7 +804,7 @@ static void update_is_beat(struct Blocks *block, struct STimes *times){
 
     if(counter==0) {
       times[line].is_beat = true;
-      printf("%d\n",line);
+      //printf("%d\n",line);
     }
 
     counter++;
