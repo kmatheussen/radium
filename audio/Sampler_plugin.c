@@ -1406,11 +1406,11 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/BELL/CHURCH/CHRBEL01.XI";
   //const char *filename="/gammelhd/gammelhd/gammel_lyd/2_channel_short.wav";
   //const char *filename="/gammelhd/gammelhd/gammelhd/gammel_lyd/d_lydfiler/instrument/keyboard/mellotron.sf2";
-  wchar_t *default_sound_filename = STRING_append(STRING_create("sounds"),
-                                                  STRING_append(STRING_create(OS_get_directory_separator()),
-                                                                STRING_create("016.WAV")
-                                                                )
-                                                  );
+  wchar_t *default_sound_filename = STRING_append(OS_get_program_path2(),
+                                    STRING_append(STRING_create(OS_get_directory_separator()),
+                                    STRING_append(STRING_create("sounds"),
+                                    STRING_append(STRING_create(OS_get_directory_separator()),
+                                                  STRING_create("016.WAV")))));
     
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
 

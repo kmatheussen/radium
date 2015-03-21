@@ -165,8 +165,8 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       num_users_of_keyboard++;
 
       QMessageBox msgBox;
-        
-      msgBox.setText(QString("Could not find "+info.fileName()+" in"+dir.path()+".\nPlease select new file."));
+
+      msgBox.setText(QString("Could not find "+info.fileName()+" in "+dir.path()+".\nPlease select new file."));
       //msgBox.setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
       msgBox.setStandardButtons(QMessageBox::Ok);
       

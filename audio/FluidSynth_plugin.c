@@ -427,10 +427,12 @@ static void *create_data(const wchar_t *filename, float samplerate){
   }
 
   data->filename = wcsdup(filename);
-  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename),true);
+  const wchar_t *resolved_filename = OS_loading_get_resolved_file_path(filename);
+
+  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(resolved_filename),true);
 
   if(data->soundfont_id==FLUID_FAILED){
-    printf("Soundfont loading failed for \"%s\"\n",STRING_get_chars(data->filename));
+    printf("Soundfont loading failed for \"%s\"\n",STRING_get_chars(resolved_filename));
 
     delete_data(data);
 
@@ -443,11 +445,12 @@ static void *create_data(const wchar_t *filename, float samplerate){
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
-  wchar_t *default_sound_filename = STRING_append(STRING_create("sounds"),
-                                                  STRING_append(STRING_create(OS_get_directory_separator()),
-                                                                STRING_create("Orgue.sf2")
-                                                                )
-                                                  );
+  wchar_t *default_sound_filename = STRING_append(OS_get_program_path2(),
+                                    STRING_append(STRING_create(OS_get_directory_separator()),
+                                    STRING_append(STRING_create("sounds"),
+                                    STRING_append(STRING_create(OS_get_directory_separator()),
+                                                  STRING_create("Orgue.sf2")))));
+
   Data *data = create_data(default_sound_filename, samplerate);
   
   if(data!=NULL){
@@ -502,7 +505,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
-  const wchar_t *filename = OS_loading_get_resolved_file_path(HASH_get_string(state, "filename"));
+  const wchar_t *filename = HASH_get_string(state, "filename");
   int         bank_num    = HASH_get_int(state, "bank_num");
   int         preset_num  = HASH_get_int(state, "preset_num");
 
