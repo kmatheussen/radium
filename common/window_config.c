@@ -115,16 +115,16 @@ void SelectBottomSliderHeight(
 }
 
 
-extern int lpb_opacity;
+extern int beat_opacity;
 
-void SetLPBOpacity(
+void SetBeatOpacity(
 	struct Tracker_Windows *window,
 	ReqType reqtype
 ){
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New LPB Opacity (0-1000) (now %d) >",lpb_opacity);
+	sprintf(temp,"New Beat Opacity (0-1000) (now %d) >",beat_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -136,11 +136,39 @@ void SetLPBOpacity(
 	if(new_opacity<0 || new_opacity>1000)
           return;
 
-        lpb_opacity = new_opacity;
+        beat_opacity = new_opacity;
 
         window->wblock->block->is_dirty = true;
 
-        SETTINGS_write_int("lpb_opacity", new_opacity);
+        SETTINGS_write_int("beat_opacity", new_opacity);
+}
+
+extern int first_beat_opacity;
+
+void SetFirstBeatOpacity(
+	struct Tracker_Windows *window,
+	ReqType reqtype
+){
+	char temp[1000];
+	int new_opacity;
+
+	sprintf(temp,"New First Beat Opacity (0-1000) (now %d) >",first_beat_opacity);
+
+        new_opacity = GFX_GetInteger(
+		window,
+		reqtype,
+		temp,
+		0,
+		1000
+	);
+	if(new_opacity<0 || new_opacity>1000)
+          return;
+
+        first_beat_opacity = new_opacity;
+
+        window->wblock->block->is_dirty = true;
+
+        SETTINGS_write_int("first_beat_opacity", new_opacity);
 }
 
 extern int line_opacity;
@@ -210,7 +238,8 @@ void Window_config(
         vector_t v={0};
         VECTOR_push_back(&v,"Left Slider width");
         VECTOR_push_back(&v,"Bottom Slider height");
-        VECTOR_push_back(&v, "LPB Line color opacity");
+        VECTOR_push_back(&v, "First Beat Line color opacity");
+        VECTOR_push_back(&v, "Beat Line color opacity");
         VECTOR_push_back(&v, "Line separate color opacity");
         //VECTOR_push_back(&v,"Minimum node-size");
 
@@ -230,13 +259,16 @@ void Window_config(
 			SelectBottomSliderHeight(window,reqtype);
 			break;
                 case 2:
-                        SetLPBOpacity(window, reqtype);
+                        SetFirstBeatOpacity(window, reqtype);
                         break;
                 case 3:
+                        SetBeatOpacity(window, reqtype);
+                        break;
+                case 4:
                         SetLineOpacity(window, reqtype);
                         break;
 #if 0
-		case 4:
+		case 5:
 			SelectMinNodeSize(window,reqtype);
 			break;
 #endif

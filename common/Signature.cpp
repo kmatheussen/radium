@@ -141,7 +141,7 @@ struct Beats *Beats_get(struct Blocks *block){
 
         int lpb = lpb_holder.get_lpb_at_place(beat_pos);
           
-        Place beat_length = get_beat_length_in_measurement(signature->signature, lpb); // This walue will be incorrect if there are lpb changes betwen beat_pos and beat_pos+beat_length.
+        Place beat_length = get_beat_length_in_measurement(signature->signature, lpb); // This walue will be incorrect if there are lpb changes betwen beat_pos and beat_pos+beat_length. TODO.
 
         beat_pos = p_Add(beat_pos, beat_length);
       }

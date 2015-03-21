@@ -782,6 +782,7 @@ void PrintSTimes(struct Blocks *block){
 }
 #endif
 
+/*
 static void update_is_beat(struct Blocks *block, struct STimes *times){
   struct LPBs *lpb = block->lpbs;
 
@@ -810,7 +811,7 @@ static void update_is_beat(struct Blocks *block, struct STimes *times){
     counter++;
   }
 }
-
+*/
 
 /********************************************************
   FUNCTION
@@ -832,7 +833,7 @@ void UpdateSTimes(struct Blocks *block){
 
 	STP_fillinLastSTimeTempos(&stp);
 
-        update_is_beat(block, stp.times);
+        //update_is_beat(block, stp.times);
 
 #if 0
 	PrintSTimes(block);

@@ -103,7 +103,7 @@ namespace{
       result.ppqLoopStart = 0; // fixme (probably nothing to fix. This value is probably only necessary if time jumps back)
       result.ppqLoopEnd = 0; // fixme (same here)
 
-      result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
+      result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE; (same here)
 
       return true;
     }

@@ -288,15 +288,18 @@ static void create_left_slider(const struct Tracker_Windows *window, const struc
  ************************************/
 
 
-extern int lpb_opacity;
+extern int beat_opacity;
+extern int first_beat_opacity;
 extern int line_opacity;
 
+/*
 static bool realline_is_beat(const struct WBlocks *wblock, int realline){
   int line = wblock->reallines[realline]->l.p.line;
   return wblock->block->times[line].is_beat;
 }
+*/
 
-static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline){
+static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignature, int realline){
 
   const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
 
@@ -307,13 +310,18 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
   // background
   {
-    if(lpb_opacity == -1)
-      lpb_opacity = SETTINGS_read_int("lpb_opacity", 950);
+    if(beat_opacity == -1)
+      beat_opacity = SETTINGS_read_int("beat_opacity", 950);
+
+    if(first_beat_opacity == -1)
+      first_beat_opacity = SETTINGS_read_int("first_beat_opacity", 900);
     
     GE_Context *c;
  
-    if (realline_is_beat(wblock, realline))
-      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), lpb_opacity, Z_BACKGROUND | Z_STATIC_X);
+    if (WSIGNATURE_is_first_beat(wsignature))
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), first_beat_opacity, Z_BACKGROUND | Z_STATIC_X);
+    else if (wsignature->beat_num>0)
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), beat_opacity, Z_BACKGROUND | Z_STATIC_X);
     else
       c = GE_color_z(15, Z_BACKGROUND | Z_STATIC_X);
     
@@ -336,10 +344,10 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 }
 
 
-static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignatures){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_background_realline(window, wblock, realline);
+    create_background_realline(window, wblock, &wsignatures[realline], realline);
 }
 
 
@@ -531,7 +539,7 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
    Time signature track
  ************************************/
 
-static void create_signature(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WSignatures *wsignatures, int realline){
+static void create_signature(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignatures, int realline){
   int   y         = get_realline_y1(window, realline);
   
   Ratio signature = wsignatures[realline].signature;
@@ -542,7 +550,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
     int x    = wblock->signaturearea.x;    
     char temp[50];
 
-    if (signature.numerator != 0 && beat_num==1) {
+    if (WSIGNATURE_is_measure_change(&wsignatures[realline])) {
       sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
       GE_text(GE_textcolor_z(1, Z_ZERO),
               temp,
@@ -579,9 +587,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
 
 
 
-static void create_signaturetrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-
-  struct WSignatures *wsignatures = WSignatures_get(window, wblock);
+static void create_signaturetrack(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WSignatures *wsignatures){
 
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
@@ -1479,13 +1485,15 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
   GE_start_writing(); {
     
+    struct WSignatures *wsignatures = WSignatures_get(window, wblock);
+
     create_left_slider(window, wblock);
-    create_background(window, wblock);
+    create_background(window, wblock, wsignatures);
     create_block_borders(window, wblock);
     create_linenumbers(window, wblock);
     create_tempograph(window, wblock);
     if(window->show_signature_track)
-      create_signaturetrack(window, wblock);
+      create_signaturetrack(window, wblock, wsignatures);
     if(window->show_lpb_track)
       create_lpbtrack(window, wblock);
     if(window->show_bpm_track)

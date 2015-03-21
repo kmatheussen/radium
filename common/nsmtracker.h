@@ -780,7 +780,13 @@ struct WSignatures{
 #define SIGNATURE_BELOW 1
 #define SIGNATURE_MUL 2
 
+static inline bool WSIGNATURE_is_measure_change(const struct WSignatures *signature){
+  return signature->signature.numerator != 0 && signature->beat_num==1;
+}
 
+static inline bool WSIGNATURE_is_first_beat(const struct WSignatures *signature){
+  return signature->beat_num==1;
+}
 
 /*********************************************************************
 	lpb.h
@@ -862,7 +868,7 @@ struct STimes{									/* One element for each line. */
 	STime time;							/* Start-time for the line. */
    SDB
 	const struct STimeChanges *timechanges;
-        bool is_beat; // true if this line starts a new beat
+        //bool is_beat; // true if this line starts a new beat
 };
 
 

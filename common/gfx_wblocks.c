@@ -34,7 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "gfx_wblocks_proc.h"
 
-int lpb_opacity = -1;
+int first_beat_opacity = -1;
+int beat_opacity = -1;
 int line_opacity = -1;
 
 #if !USE_OPENGL
