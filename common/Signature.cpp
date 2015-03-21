@@ -87,7 +87,7 @@ static Place get_measure_length_in_quarters(Ratio signature, int lpb){
 
 static Place get_beat_length_in_measurement(Ratio signature, int lpb){
   return p_Div(get_measure_length_in_quarters(signature, lpb),
-               place(signature.denominator,0,1)
+               place(signature.numerator,0,1)
                );
 }
 
@@ -136,7 +136,7 @@ struct Beats *Beats_get(struct Blocks *block){
         ListAddElement3(&beats, &beat->l);
 
         beat_num++;
-        if (beat_num==signature->signature.denominator+1)
+        if (beat_num==signature->signature.numerator+1)
           beat_num=1;
 
         int lpb = lpb_holder.get_lpb_at_place(beat_pos);
