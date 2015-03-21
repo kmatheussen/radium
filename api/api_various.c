@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/velocities_proc.h"
 #include "../common/tempos_proc.h"
+#include "../common/Signature_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/temponodes_proc.h"
 #include "../common/fxlines_proc.h"
@@ -180,11 +181,14 @@ void insertReallines(int toinsert,int windownum){
 void generalDelete(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   switch(window->curr_track){
-  case TEMPOTRACK:
-    RemoveTemposCurrPos(window);
+  case SIGNATURETRACK:
+    RemoveSignaturesCurrPos(window);
     break;
   case LPBTRACK:
     RemoveLPBsCurrPos(window);
+    break;
+  case TEMPOTRACK:
+    RemoveTemposCurrPos(window);
     break;
   case TEMPONODETRACK:
     RemoveAllTempoNodesOnReallineCurrPos(window);
@@ -204,11 +208,14 @@ void generalReturn(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
   switch(window->curr_track){
-  case TEMPOTRACK:
-    SetTempoCurrPos(window);
+  case SIGNATURETRACK:
+    SetSignatureCurrPos(window);
     break;
   case LPBTRACK:
     SetLPBCurrPos(window);
+    break;
+  case TEMPOTRACK:
+    SetTempoCurrPos(window);
     break;
   case TEMPONODETRACK:
     AddTempoNodeCurrPos(window,(float) -0.0f);
@@ -602,6 +609,17 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
+void showHideSignatureTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_signature_track = !window->show_signature_track;
+
+  if (!window->show_signature_track && window->curr_track==SIGNATURETRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
 void showHideLPBTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
@@ -633,6 +651,11 @@ void showHideReltempoTrack(int windownum){
     window->curr_track = 0;
 
   UpdateAllWBlockCoordinates(window);
+}
+
+bool signatureTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_signature_track;
 }
 
 bool lpbTrackVisible(int windownum){

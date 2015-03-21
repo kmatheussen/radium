@@ -18,10 +18,19 @@ ROOT
 ?lpb
 4
 
+?signature_numerator
+4
+
+?signature_denominator
+4
+
 ?quantitize_numerator
 1
 
 ?quantitize_denominator
+1
+
+?quantitize
 1
 
 ?grid_numerator
@@ -54,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-39
+41
 author
 0
 STRING_TYPE
@@ -203,6 +212,14 @@ comment
 35
 STRING_TYPE
 
+comment
+36
+STRING_TYPE
+
+comment
+37
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -225,10 +242,10 @@ TRACKER_WINDOW
 0
 
 ?width
-939
+550
 
 ?height
-624
+400
 
 ?fontID
 0
@@ -261,6 +278,9 @@ TRACKER_WINDOW
 ?bottomslider
 1
 14
+
+?show_signature_track
+1
 
 ?show_lpb_track
 1
@@ -303,7 +323,7 @@ WBLOCK
 0
 
 ?curr_realline
-16
+0
 
 ?num_reallines
 64
@@ -2411,7 +2431,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.03763787448406219
+0.9997119307518005
 System In On/Off
 0
 FLOAT_TYPE
@@ -2737,51 +2757,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-52
-Amount
-0
-FLOAT_TYPE
-2
-Center Frq 1
-0
-FLOAT_TYPE
-97.79330444335938
-Center Frq 2
-0
-FLOAT_TYPE
-4999.4501953125
-Dry Amount
-0
-FLOAT_TYPE
-0
-Inter-voice phase
-0
-FLOAT_TYPE
-63.97200012207031
-Min delay
-0
-FLOAT_TYPE
-4.998042583465576
-Mod depth
-0
-FLOAT_TYPE
-5.997910499572754
-Modulation rate
-0
-FLOAT_TYPE
-0.499700665473938
-Overlap
-0
-FLOAT_TYPE
-1
-Q
-0
-FLOAT_TYPE
-0.125
-Stereo phase
-0
-FLOAT_TYPE
-180
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -2942,19 +2918,15 @@ System Width On/Off
 0
 FLOAT_TYPE
 0
-Voices
-0
-FLOAT_TYPE
-3.999500036239624
 << HASH MAP V2 END
 name
 0
 STRING_TYPE
-Calf MultiChorus LADSPA
+Pipe
 type_name
 0
 STRING_TYPE
-Ladspa
+Pipe
 << HASH MAP V2 END
 x
 0

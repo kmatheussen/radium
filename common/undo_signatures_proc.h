@@ -1,4 +1,4 @@
-/* Copyright 2000 Kjetil S. Matheussen
+/* Copyright 2000-2015 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -15,28 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-#if 0
-extern void Quantitize(
-	Place *toquant,
-	Place quant
-);
-#endif
-
-extern void Quantitize_track_CurrPos(
+extern LANGSPEC void Undo_Signatures_CurrPos(
 	struct Tracker_Windows *window
 );
-
-extern void Quantitize_block_CurrPos(
-	struct Tracker_Windows *window
-);
-
-extern void Quantitize_range_CurrPos(
-	struct Tracker_Windows *window
-);
-
-void SetQuantitize_CurrPos(
-                           struct Tracker_Windows *window
-                           );
-
-

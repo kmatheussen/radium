@@ -77,7 +77,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   {
     _initing = true;
     setupUi(this);
-
+    setStyle("cleanlooks");
+ 
     if(g_bottom_bar_widget != NULL)
       RError("g_bottom_bar_widget!=NULL");
 
@@ -120,13 +121,49 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     _initing = false;
 
-    _timer.bottom_bar_widget = this;
-    _timer.setInterval(1000);
-    _timer.start();
+    // set up timers
+    {
+      _timer.bottom_bar_widget = this;
+      _timer.setInterval(1000);
+      _timer.start();
+      
+      _timer2.bottom_bar_widget = this;
+      _timer2.setInterval(70);
+      _timer2.start();
+    }
 
-    _timer2.bottom_bar_widget = this;
-    _timer2.setInterval(70);
-    _timer2.start();
+    // Set up custom popup menues for the time widgets
+    {
+      bpm->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      bpm_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      lpb->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      lpb_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      signature->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+
+      signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+    }
+  }
+
+  void updateWidgets(void){
+    signature->setText(Rational(root->signature).toString());
+    lpb->setValue(root->lpb);
+    bpm->setValue(root->tempo);
   }
 
   void update_velocity_sliders(){
@@ -155,6 +192,37 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
 
 public slots:
+  
+  void ShowBPMPopup(const QPoint& pos)
+  {
+    printf("GOTIT bpm\n");
+    if (popupMenu((char*)"show BPM track")==0)
+      showHideBPMTrack(-1);
+  }
+
+  void ShowLPBPopup(const QPoint& pos)
+  {
+    printf("GOTIT lpb\n");
+    if (popupMenu((char*)"show LPB track")==0)
+      showHideLPBTrack(-1);
+  }
+
+  void ShowSignaturePopup(const QPoint& pos)
+  {
+    printf("GOTIT signature\n");
+    if (popupMenu((char*)"show time signature track")==0)
+      showHideSignatureTrack(-1);
+  }
+
+  void on_signature_editingFinished(){
+    printf("signature bottombar\n");
+    
+    Rational rational = create_rational_from_string(signature->text());
+    signature->pushValuesToRoot(rational);
+
+    signature->setText(Rational(root->signature).toString());
+    set_editor_focus();
+  }
 
   void on_lpb_editingFinished(){
     printf("lpb bottombar\n");
@@ -254,6 +322,10 @@ extern "C"{
     g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
+  void GFX_OS_update_bottombar(void){
+    g_bottom_bar_widget->updateWidgets();
+  }
+  
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
     g_bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
     g_bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");

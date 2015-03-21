@@ -50,11 +50,11 @@ extern LANGSPEC int GFX_ReqTypeMenu(
         vector_t *v
 	);
 
-extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max);
+extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,int min,int max);
 
-extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,float min,float max);
+extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,float min,float max);
 
-extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text);
+extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text);
 
 extern LANGSPEC int GFX_Menu(
 	struct Tracker_Windows *tvisual,
@@ -63,22 +63,25 @@ extern LANGSPEC int GFX_Menu(
         vector_t *v
 );
 
+extern LANGSPEC vector_t *GFX_MenuParser(const char *texts, const char *separator);
+
 extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
                                                    struct Tracker_Windows *tvisual,
                                                    ReqType reqtype,
-                                                   char *seltext,
+                                                   const char *seltext,
                                                    wchar_t *dir,
-                                                   char *postfixes
+                                                   const char *postfixes
                                                    );
 
 extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
                                                    struct Tracker_Windows *tvisual,
                                                    ReqType reqtype,
-                                                   char *seltext,
+                                                   const char *seltext,
                                                    wchar_t *dir,
-                                                   char *postfixes
+                                                   const char *postfixes
                                                    );
 
+extern LANGSPEC void GFX_OS_update_bottombar(void);
 extern LANGSPEC void GFX_OS_UpdateKeyOctave(void);
 extern LANGSPEC void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos);
 extern LANGSPEC void OS_GFX_SetVolume(int value);

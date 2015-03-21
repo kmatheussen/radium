@@ -17,6 +17,7 @@
        _ :> 9)
 ||#
 
+
 (define (keep func list)
   (if (null? list)
       '()
@@ -451,4 +452,52 @@ for .emacs:
               (define-lazy a 50)
               (define-lazy b 60)
               (+ a b)))
+||#
+
+
+
+
+;;;;;;;;;; popup menu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; a 50 b 90 c 100 -> '((a 50)(b 90)(c 100))
+(define-match make-assoc-from-flat-list
+  ()           :> '()
+  (A B . Rest) :> (cons (list A B)
+                        (make-assoc-from-flat-list Rest)))
+
+#||
+(make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
+||#
+
+(define (popup-menu . options)
+  (define relations (make-assoc-from-flat-list options))
+  (define strings (list->vector (map car relations)))
+  
+  (define popup-arg (let loop ((strings (map car relations)))
+                      (c-display "strings" strings)
+                      (if (null? strings)
+                          ""
+                          (<-> (car strings) " % " (loop (cdr strings))))))
+    
+  (c-display "relations: " relations)
+  (c-display "strings: " strings)
+  (c-display "popup-arg: " popup-arg)
+  
+  (define result-num (ra:popup-menu popup-arg))
+
+  (if (not (= -1 result-num))
+      (begin
+        (define result-string (vector-ref strings result-num))
+        (c-display "result-string: " result-string)
+  
+        ((cadr (assoc result-string relations)))))
+  )
+
+
+#||
+(popup-menu "gakk" (lambda ()
+                     (c-display "gakk"))
+            "hepp" (lambda ()
+                     (c-display "hepp")))
 ||#

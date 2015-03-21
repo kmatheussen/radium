@@ -52,6 +52,9 @@ void Blt_blt(struct Tracker_Windows *window){
   int x1,x2;
 
   if(blt->blt_doheader==true){
+    
+    Note: WTRACK_getx1 and WTRACK_getx2 has changed.
+      
     x1=WTRACK_getx1(window,wblock,blt->starttrack,false);
     x2=WTRACK_getx2(window,wblock,blt->endtrack);
     QUEUE_GFX_P2V_bitBlt(

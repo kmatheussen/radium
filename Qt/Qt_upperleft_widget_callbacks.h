@@ -36,6 +36,33 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   {
     setupUi(this);
     setStyle("cleanlooks");
+
+    // Set up custom popup menues for the time widgets
+    {
+      bpm->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      bpm_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      lpb->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      lpb_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      signature->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+
+      signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+    }    
   }
 
   virtual void paintEvent( QPaintEvent *e ){
@@ -54,10 +81,12 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     //getchar();
     
     grid->setText(Rational(root->grid_numerator, root->grid_denominator).toString());
+    signature->setText(Rational(root->signature).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
 
     // The bottom bar mirrors the lpb and bpm widgets.
+    g_bottom_bar->signature->setText(signature->text());
     g_bottom_bar->lpb->setValue(root->lpb);
     g_bottom_bar->bpm->setValue(root->tempo);
 
@@ -68,12 +97,13 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   void position(struct Tracker_Windows *window, struct WBlocks *wblock){
 
     int x1 = 0;
-    int x2 = wblock->lpbTypearea.x;
-    int x3 = wblock->tempoTypearea.x;
-    int x4 = wblock->temponodearea.x;
-    int x5 = wblock->t.x1;
+    int x2 = wblock->signatureTypearea.x;
+    int x3 = wblock->lpbTypearea.x;
+    int x4 = wblock->tempoTypearea.x;
+    int x5 = wblock->temponodearea.x;
+    int x6 = wblock->t.x1;
 
-    int width = x5;
+    int width = x6;
     int height = wblock->t.y1;
 
     // upperleft lpb/bpm/reltempo show/hide
@@ -92,7 +122,12 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     else
       ReltempoWidget->hide();
 
-    // bottombar lpb/bpm show/hide
+    // bottombar signature/lpb/bpm show/hide
+    if (window->show_signature_track)
+      g_bottom_bar->SignatureWidget->hide();
+    else
+      g_bottom_bar->SignatureWidget->show();
+    
     if (window->show_lpb_track)
       g_bottom_bar->LPBWidget->hide();
     else
@@ -114,18 +149,43 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     lineZoomWidget->move(x1,0);
     lineZoomWidget->resize(x2-x1,height);
 
-    LPBWidget->move(x2,0);
-    LPBWidget->resize(x3-x2,height);
+    SignatureWidget->move(x2,0);
+    SignatureWidget->resize(x3-x2,height);
 
-    BPMWidget->move(x3,0);
-    BPMWidget->resize(x4-x3,height);
+    LPBWidget->move(x3,0);
+    LPBWidget->resize(x4-x3,height);
 
-    ReltempoWidget->move(x4,0);
-    ReltempoWidget->resize(x5-x4,height);
+    BPMWidget->move(x4,0);
+    BPMWidget->resize(x5-x4,height);
 
+    ReltempoWidget->move(x5,0);
+    ReltempoWidget->resize(x6-x5,height);
+
+    
   }
 
 public slots:
+
+  void ShowBPMPopup(const QPoint& pos)
+  {
+    printf("GOTIT bpm\n");
+    if (popupMenu((char*)"hide BPM track")==0)
+      showHideBPMTrack(-1);
+  }
+
+  void ShowLPBPopup(const QPoint& pos)
+  {
+    printf("GOTIT lpb\n");
+    if (popupMenu((char*)"hide LPB track")==0)
+      showHideLPBTrack(-1);
+  }
+
+  void ShowSignaturePopup(const QPoint& pos)
+  {
+    printf("GOTIT signature\n");
+    if (popupMenu((char*)"hide time signature track")==0)
+      showHideSignatureTrack(-1);
+  }
 
   void on_lz_editingFinished(){
 
@@ -162,6 +222,22 @@ public slots:
     Rational rational = create_rational_from_string(grid->text());
     grid->pushValuesToRoot(rational);    
 
+    updateWidgets(wblock);
+    set_editor_focus();
+  }
+
+  void on_signature_editingFinished(){
+    printf("signature\n");
+
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+
+    Rational rational = create_rational_from_string(signature->text());
+    signature->pushValuesToRoot(rational);
+    
+    //setSignature(rational.numerator, rational.denominator);
+    //printf("rational: %s. root: %d/%d",rational.toString().toUtf8().constData(),root->signature.numerator,root->signature.denominator);
+    
     updateWidgets(wblock);
     set_editor_focus();
   }

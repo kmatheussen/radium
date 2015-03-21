@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <string.h>
 #include <math.h>
 
 #include "nsmtracker.h"
@@ -23,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "common_proc.h"
 #include "tempos_proc.h"
-#include "LPB_proc.h"
 #include "temponodes_proc.h"
 #include "blocks_proc.h"
 #include "windows_proc.h"
@@ -95,6 +95,17 @@ void SetWBlock_Top_And_Bot_Realline(
 	wblock->top_realline=wblock->bot_realline-wblock->num_visiblelines + 1;
 }
 
+static int GetMaxSignatureWidth(struct Blocks *block){
+  int ret = 2;
+  struct Signatures *signature = block->signatures;
+  while(signature != NULL){
+    char temp[128];
+    sprintf(temp,"%d/%d",signature->signature.numerator,signature->signature.denominator);
+    ret = R_MAX(ret, strlen(temp));
+    signature = NextSignature(signature);
+  }
+  return ret;
+}
 
 void UpdateWBlockCoordinates(
 	struct Tracker_Windows *window,
@@ -117,7 +128,16 @@ void UpdateWBlockCoordinates(
 
 	wblock->tempocolorarea.x = wblock->zoomlinearea.x2   + 3;
 	wblock->tempocolorarea.x2= wblock->tempocolorarea.x  + wblock->tempocolorarea.width;
-	wblock->lpbTypearea.x    = wblock->tempocolorarea.x2 + 3;
+        
+	wblock->signatureTypearea.x    = wblock->tempocolorarea.x2 + 3;
+	wblock->signatureTypearea.x2   = wblock->signatureTypearea.x     + wblock->signatureTypearea.width;
+	wblock->signaturearea.x        = wblock->signatureTypearea.x2    + 3;
+	wblock->signaturearea.x2       = wblock->signaturearea.x         + wblock->signaturearea.width;
+
+        if (!window->show_signature_track)
+          wblock->lpbTypearea.x    = wblock->tempocolorarea.x2 + 3;
+        else
+          wblock->lpbTypearea.x    = wblock->signaturearea.x2 + 3;
 	wblock->lpbTypearea.x2   = wblock->lpbTypearea.x     + wblock->lpbTypearea.width;
 	wblock->lpbarea.x        = wblock->lpbTypearea.x2    + 3;
 	wblock->lpbarea.x2       = wblock->lpbarea.x         + wblock->lpbarea.width;
@@ -126,7 +146,6 @@ void UpdateWBlockCoordinates(
           wblock->tempoTypearea.x = wblock->lpbTypearea.x;
         else
           wblock->tempoTypearea.x  = wblock->lpbarea.x2      + 3;
-
 	wblock->tempoTypearea.x2 = wblock->tempoTypearea.x   + wblock->tempoTypearea.width;
 	wblock->tempoarea.x      = wblock->tempoTypearea.x2  + 3;
 	wblock->tempoarea.x2     = wblock->tempoarea.x       + wblock->tempoarea.width;
@@ -187,6 +206,8 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
         SetZoomLevelAreaWidth(window,wblock);
 
 	wblock->tempocolorarea.width = window->fontwidth*3;
+	wblock->signatureTypearea.width    = window->fontwidth;
+	wblock->signaturearea.width        = window->fontwidth*GetMaxSignatureWidth(wblock->block);
 	wblock->lpbTypearea.width    = window->fontwidth;
 	wblock->lpbarea.width        = window->fontwidth*2;
 	wblock->tempoTypearea.width  = window->fontwidth;

@@ -14,6 +14,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/patch_proc.h"
 #include "../common/PEQ_LPB_proc.h"
+#include "../common/PEQ_Signature_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
@@ -84,8 +85,10 @@ namespace{
       result.bpm = RT_LPB_get_current_BPM();
       //printf("result.bpm: %f\n",result.bpm);
 
-      result.timeSigNumerator = 4;
-      result.timeSigDenominator = 4;
+      Ratio signature = RT_Signature_get_current_Signature();
+      result.timeSigNumerator = signature.numerator;
+      result.timeSigDenominator = signature.denominator;
+      //printf("%d/%d\n",signature.numerator,signature.denominator);
 
       result.timeInSamples = pc->start_time;
       result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
@@ -97,10 +100,10 @@ namespace{
       result.isPlaying = pc->isplaying;
       result.isRecording = false;
       
-      result.ppqLoopStart = 0; // fixme
-      result.ppqLoopEnd = 0; // fixme
+      result.ppqLoopStart = 0; // fixme (probably nothing to fix. This value is probably only necessary if time jumps back)
+      result.ppqLoopEnd = 0; // fixme (same here)
 
-      result.isLooping = pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
+      result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE;
 
       return true;
     }

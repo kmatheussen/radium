@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_settings_proc.h"
 
 
-int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,int min,int max){
+int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,int min,int max){
 	ReqType file;
 	char rettext[50];
 	int ret=min-1;
@@ -56,7 +56,7 @@ int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,in
 	return ret;
 }
 
-float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,float min,float max){
+float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,float min,float max){
 	ReqType file;
 	char rettext[50];
 	float ret=min-1.0f;
@@ -98,7 +98,7 @@ float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,char *text,fl
 }
 
 
-char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,char *text){
+char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text){
 	ReqType file;
 	char temp[70];
 	char *rettext=NULL;
