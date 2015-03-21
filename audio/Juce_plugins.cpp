@@ -218,7 +218,9 @@ static void RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, MidiMessage
       msg = MIDI_msg_pack2(raw_data[0],raw_data[1]);
     else if (len==1)
       msg = MIDI_msg_pack1(raw_data[0]);
-
+    else
+      return;
+    
     RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, seq_time);
   }
 }
@@ -268,7 +270,9 @@ static void RT_MIDI_send_msg_to_patch(struct Patch *patch, MidiMessage message, 
       msg = MIDI_msg_pack2(raw_data[0],raw_data[1]);
     else if (len==1)
       msg = MIDI_msg_pack1(raw_data[0]);
-
+    else
+      return;
+    
     RT_PATCH_send_raw_midi_message(patch, msg, seq_time);
   }
 }
