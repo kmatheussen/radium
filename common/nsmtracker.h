@@ -773,7 +773,8 @@ struct Signatures{
 
 struct WSignatures{
   Ratio signature;
-  int type;					/* 0=normal, 1=below positioned, 2=mul. */
+  int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
+  int type;	  /* 0=normal, 1=below positioned, 2=mul. */
 };
 #define SIGNATURE_NORMAL 0
 #define SIGNATURE_BELOW 1

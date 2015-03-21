@@ -107,8 +107,9 @@ class Argument:
             raise "Unknown type '"+type_string+"'"
 
     # keyDownPlay -> r-key-down-play
-    # keyDownBPM -> r-key-down-BPM
+    # keyDownBPM -> r-key-down-bpm
     # KeyDownP   -> r-key-down-p
+    # playLPBAi  -> play-lpb-ai
     def get_scheme_varname(self):
         def loop(current, name, previous_was_capitol):
             if name=="":

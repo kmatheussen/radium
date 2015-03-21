@@ -532,21 +532,31 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
  ************************************/
 
 static void create_signature(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WSignatures *wsignatures, int realline){
-  int y    = get_realline_y1(window, realline);
-  Ratio signature  = wsignatures[realline].signature;
-  int type = wsignatures[realline].type;
+  int   y         = get_realline_y1(window, realline);
   
-  if(signature.numerator!=0){
-    int x    = wblock->signaturearea.x;
-    
+  Ratio signature = wsignatures[realline].signature;
+  int   beat_num  = wsignatures[realline].beat_num;
+  int   type      = wsignatures[realline].type;
+  
+  if(beat_num!=0){
+    int x    = wblock->signaturearea.x;    
     char temp[50];
-    sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
-    
-    GE_text(GE_textcolor_z(1, Z_ZERO),
-            temp,
-            x,
-            y
-            );
+
+    if (signature.numerator != 0 && beat_num==1) {
+      sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
+      GE_text(GE_textcolor_z(1, Z_ZERO),
+              temp,
+              x,
+              y
+              );
+    } else {
+      sprintf(temp, " %d", beat_num);
+      GE_text(GE_color_alpha_z(1, 0.3, Z_ZERO),
+              temp,
+              x,
+              y
+              );      
+    }
   }
   
   if(type!=SIGNATURE_NORMAL){
@@ -563,7 +573,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
       RError("something is wrong");
     };
     
-    GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->signatureTypearea.x, y);
+    GE_text(GE_color_alpha_z(1, 0.3, Z_ZERO), typetext, wblock->signatureTypearea.x, y);
   }
 }
 
@@ -615,7 +625,7 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
       RError("something is wrong");
     };
     
-    GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->lpbTypearea.x, y);
+    GE_text(GE_color_alpha_z(1, 0.3, Z_ZERO), typetext, wblock->lpbTypearea.x, y);
   }
 }
 
@@ -665,7 +675,7 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
       abort();
     };
 
-    GE_text(GE_textcolor_z(1, Z_ZERO), typetext, wblock->tempoTypearea.x, y);
+    GE_text(GE_color_alpha_z(1, 0.3, Z_ZERO), typetext, wblock->tempoTypearea.x, y);
   }
 }
 

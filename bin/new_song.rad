@@ -63,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-41
+43
 author
 0
 STRING_TYPE
@@ -220,6 +220,14 @@ comment
 37
 STRING_TYPE
 
+comment
+38
+STRING_TYPE
+
+comment
+39
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -242,10 +250,10 @@ TRACKER_WINDOW
 0
 
 ?width
-550
+1806
 
 ?height
-400
+1031
 
 ?fontID
 0
@@ -277,7 +285,7 @@ TRACKER_WINDOW
 
 ?bottomslider
 1
-14
+10
 
 ?show_signature_track
 1
@@ -2431,7 +2439,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+1.002304792404175
 System In On/Off
 0
 FLOAT_TYPE
