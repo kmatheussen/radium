@@ -209,7 +209,7 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
 
         SetZoomLevelAreaWidth(window,wblock);
 
-	wblock->tempocolorarea.width = window->fontwidth*3;
+	wblock->tempocolorarea.width = window->fontwidth*2;
 	wblock->signatureTypearea.width    = 0; //window->fontwidth;
 	wblock->signaturearea.width        = window->fontwidth*GetMaxSignatureWidth(wblock->block);
 	wblock->lpbTypearea.width    = window->fontwidth;
