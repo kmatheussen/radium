@@ -333,11 +333,19 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
   // realline separator line
   if(1){
-    if(line_opacity == -1)
-      line_opacity = SETTINGS_read_int("line_opacity", beat_opacity-50);
+    //if(line_opacity == -1)
+    //  line_opacity = SETTINGS_read_int("line_opacity", R_MAX(50, beat_opacity-500));
+    line_opacity = 960;
     
     if(line_opacity != 1000) {
-      GE_Context *c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
+      GE_Context *c;
+
+      if (WSIGNATURE_is_first_beat(wsignature))
+        c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), first_beat_opacity-250, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
+      else if (wsignature->beat_num>0)
+        c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), beat_opacity-250, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
+      else
+        c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
 
       GE_line(c,x1,y1,x2,y1,line_width);
     }
@@ -360,6 +368,9 @@ static void create_background(const struct Tracker_Windows *window, const struct
  ************************************/
 
 static void draw_linenumber(const struct Tracker_Windows *window, const struct WBlocks *wblock, int colornum, int linenumber, int realline, bool is_zoomline){
+  //  if (! (linenumber % (root->lpb*4))==0)
+  //  return;
+  
   int y = get_realline_y1(window, realline);
   const int z = Z_LINENUMBERS | Z_STATIC_X;
 
@@ -383,6 +394,7 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
   draw_text_num(
                 window,
                 c,
+                //1 + linenumber/(root->lpb*4),
                 linenumber,
                 width,
                 x,
@@ -547,14 +559,14 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
   int   beat_num  = wsignatures[realline].beat_num;
   int   type      = wsignatures[realline].type;
     
-  if(type!=SIGNATURE_NORMAL){
+  if(false && type!=SIGNATURE_NORMAL){
     int x = wblock->signatureTypearea.x;
 
     GE_Context *c;
     if (WSIGNATURE_is_first_beat(&wsignatures[realline]))
-      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), first_beat_opacity-250, Z_BACKGROUND+1);
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), first_beat_opacity-250, Z_ZERO);//BACKGROUND+1);
     else
-      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), beat_opacity-250, Z_BACKGROUND+1);
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), beat_opacity-250, Z_ZERO);//BACKGROUND+1);
     
     //GE_color_alpha_z(1, 0.4, Z_ZERO),
     
@@ -564,7 +576,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
       GE_line(c,
               x, y_,
               x2, y_,
-              0.8
+              0.6
               );
 
     }END_VECTOR_FOR_EACH;
