@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "scheme_proc.h"
 
+extern struct Root *root;
+
 
 extern "C" {
   void init_radium_s7(s7_scheme *s7);
@@ -61,16 +63,25 @@ static Place *ratio_to_place(s7_pointer ratio){
   return ret;
 }
 
-static Place ratio_to_place2(s7_pointer ratio){
-  int num = s7_numerator(ratio);
-  int den = s7_denominator(ratio);
+static Place number_to_place(s7_pointer number){
 
-  int lines = num/den;
+  if (s7_is_ratio(number)) {
+    int num = s7_numerator(number);
+    int den = s7_denominator(number);
 
-  Place ret = place(lines, num - (lines*den), den);
-  PlaceHandleOverflow(&ret);
+    int lines = num/den;
+    
+    Place ret = place(lines, num - (lines*den), den);
+    PlaceHandleOverflow(&ret);
+    
+    return ret;
+  }
 
-  return ret;
+  if (s7_is_integer(number))
+    return place(s7_integer(number), 0, 1);
+
+  RError("scheme.cpp/number_to_place: result was not ratio or integer. Returning 0");
+  return place(0,0,1);
 }
 
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
@@ -96,6 +107,44 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
     RError("result was not ratio or integer. Returning 0");
     return PlaceCreate(0,0,1);
   }
+}
+
+
+bool quantitize_note(const struct Blocks *block, struct Notes *note) {
+  s7_pointer scheme_func = s7_name_to_value(s7, "quantitize-note");
+  
+  Place last_place = p_Last_Pos(block);
+  
+  s7_pointer result = s7_call(s7,
+                              scheme_func,
+                              s7_list(s7,
+                                      8,
+                                      place_to_ratio(&note->l.p),
+                                      place_to_ratio(&note->end),
+                                      s7_make_ratio(s7, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator),
+                                      place_to_ratio(&last_place),
+                                      s7_make_boolean(s7, root->quantitize_options.quantitize_start),
+                                      s7_make_boolean(s7, root->quantitize_options.quantitize_end),
+                                      s7_make_boolean(s7, root->quantitize_options.keep_note_length),
+                                      s7_make_integer(s7, root->quantitize_options.type)
+                                      )
+                              );
+
+  if (s7_is_boolean(result))
+    return false;
+
+  if (!s7_is_pair(result)) {
+    RError("Unknown result after call to quantitize-note");
+    return false;
+  }
+
+  s7_pointer new_start = s7_car(result);
+  s7_pointer new_end = s7_cdr(result);
+
+  note->l.p = number_to_place(new_start);
+  note->end = number_to_place(new_end);
+
+  return true;
 }
 
 
@@ -149,15 +198,8 @@ static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,
                                       place_to_ratio(&p2)
                                       )
                               );
-  
-  if (s7_is_ratio(result))
-    return ratio_to_place2(result);
-  else if (s7_is_integer(result))
-    return place(s7_integer(result), 0, 1);
-  else {
-    RError("result was not ratio or integer. Returning 0");
-    return place(0,0,1);
-  }
+
+  return number_to_place(result);
 }
 
 Place p_Add(const Place p1, const Place p2){

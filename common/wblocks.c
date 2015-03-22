@@ -132,7 +132,7 @@ void UpdateWBlockCoordinates(
 	wblock->tempocolorarea.x = wblock->zoomlinearea.x2   + 3;
 	wblock->tempocolorarea.x2= wblock->tempocolorarea.x  + wblock->tempocolorarea.width;
         
-	wblock->signatureTypearea.x    = wblock->tempocolorarea.x2 + 2; // + 3;
+	wblock->signatureTypearea.x    = wblock->tempocolorarea.x2 + 1; // + 3;
 	wblock->signatureTypearea.x2   = wblock->signatureTypearea.x     + wblock->signatureTypearea.width;
 	wblock->signaturearea.x        = wblock->signatureTypearea.x2    + 3;
 	wblock->signaturearea.x2       = wblock->signaturearea.x         + wblock->signaturearea.width;

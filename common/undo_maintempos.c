@@ -12,8 +12,7 @@ struct Undo_MainTempo{
 	int tempo;
 	int lpb;
         Ratio signature;
-        int quantitize_numerator;
-        int quantitize_denominator;
+        quantitize_options_t quantitize_options;
 };
 
 void *Undo_Do_MainTempo(
@@ -32,8 +31,7 @@ void Undo_MainTempo(
 	u_rt->tempo=root->tempo;
 	u_rt->lpb=root->lpb;
         u_rt->signature=root->signature;
-        u_rt->quantitize_numerator = root->quantitize_numerator;
-        u_rt->quantitize_denominator = root->quantitize_denominator;
+        u_rt->quantitize_options = root->quantitize_options;
 
 	Undo_Add(
                  window->l.num,
@@ -57,14 +55,12 @@ void *Undo_Do_MainTempo(
 	Ratio signature = root->signature;
         int lpb=root->lpb;
 	int tempo=root->tempo;
-	int quantitize_numerator=root->quantitize_numerator;
-        int quantitize_denominator=root->quantitize_denominator;
+        quantitize_options_t quantitize_options = root->quantitize_options;
 
 	root->signature=u_rt->signature;
         root->lpb=u_rt->lpb;
 	root->tempo=u_rt->tempo;
-        root->quantitize_numerator = u_rt->quantitize_numerator;
-        root->quantitize_denominator = u_rt->quantitize_denominator;
+        root->quantitize_options = u_rt->quantitize_options;
 
         GFX_OS_update_bottombar();
         
@@ -73,8 +69,7 @@ void *Undo_Do_MainTempo(
 	u_rt->signature=signature;
         u_rt->lpb=lpb;
 	u_rt->tempo=tempo;
-        u_rt->quantitize_numerator = quantitize_numerator;
-        u_rt->quantitize_denominator = quantitize_denominator;
+        u_rt->quantitize_options = quantitize_options;
 
 	return u_rt;
 }

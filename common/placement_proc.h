@@ -315,11 +315,11 @@ extern Place PlaceFirstPos;
     (b)->dividor = MAX_UINT32;     \
   }while(0)
 
-static inline Place *PlaceGetLastPos(struct Blocks *block){
+static inline Place *PlaceGetLastPos(const struct Blocks *block){
   return PlaceCreate(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
 }
 
-static inline Place p_Last_Pos(struct Blocks *block){
+static inline Place p_Last_Pos(const struct Blocks *block){
   return place(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
 }
 

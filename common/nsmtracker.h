@@ -226,6 +226,36 @@ typedef struct{
 } vector_t;
 
 
+/*********************************************************************
+	ratio.h
+*********************************************************************/
+
+typedef struct {
+  int numerator;
+  int denominator;
+} Ratio;
+
+static inline Ratio ratio(int numerator, int denominator) {
+  Ratio ratio = {numerator, denominator};
+  return ratio;
+}
+
+
+
+/*********************************************************************
+	quantitize.h
+*********************************************************************/
+
+typedef struct{
+  Ratio quant;
+  bool quantitize_start;
+  bool quantitize_end;
+  bool keep_note_length;
+  int type;
+} quantitize_options_t;
+
+
+
 
 /*********************************************************************
 	velocities.h
@@ -755,16 +785,6 @@ struct WTracks{
 	signature.h
 *********************************************************************/
 
-typedef struct {
-  int numerator;
-  int denominator;
-} Ratio;
-
-static inline Ratio ratio(int numerator, int denominator) {
-  Ratio ratio = {numerator, denominator};
-  return ratio;
-}
-
 struct Signatures{
   struct ListHeader3 l;
   Ratio signature;
@@ -1164,8 +1184,7 @@ struct Root{
 	int lpb;			/* Standard lpb. */
 	Ratio signature;		/* Standard signature. */
 
-        int quantitize_numerator;
-        int quantitize_denominator;
+        quantitize_options_t quantitize_options;
   
         int grid_numerator;
         int grid_denominator;

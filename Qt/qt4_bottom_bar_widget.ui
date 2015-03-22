@@ -1310,7 +1310,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string/>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time signature.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Use mouse wheel to quicly change the value.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="inputMask">
             <string/>

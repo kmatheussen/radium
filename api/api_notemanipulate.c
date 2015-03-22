@@ -162,7 +162,7 @@ void quantitizeRange(int windownum){
 }
 
 float getQuantitize(void){
-  return (double)root->quantitize_numerator / (double)root->quantitize_denominator;
+  return (double)root->quantitize_options.quant.numerator / (double)root->quantitize_options.quant.denominator;
 }
 
 float getGrid(void){

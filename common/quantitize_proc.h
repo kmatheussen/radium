@@ -23,6 +23,8 @@ extern void Quantitize(
 );
 #endif
 
+extern LANGSPEC quantitize_options_t Quantitize_get_default_options(void);
+
 extern void Quantitize_track_CurrPos(
 	struct Tracker_Windows *window
 );

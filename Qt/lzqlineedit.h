@@ -108,15 +108,15 @@ public:
 
   void pushValuesToRoot(Rational rational){
     if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
-      root->quantitize_numerator = rational.numerator;
-      root->quantitize_denominator = rational.denominator;
+      root->quantitize_options.quant.numerator = rational.numerator;
+      root->quantitize_options.quant.denominator = rational.denominator;
     }
   }
   
   virtual void wheelEvent(QWheelEvent *qwheelevent) {
     printf("Got quantization wheel event\n");
     
-    Rational ratio(root->quantitize_numerator, root->quantitize_denominator);
+    Rational ratio(root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator);
   
     if (qwheelevent->delta()<0)
       ratio = ratio.down();

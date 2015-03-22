@@ -26,3 +26,6 @@
 (my-require 'common2.scm)
 
 (my-require 'mouse.scm)
+
+(my-require 'quantitize.scm)
+

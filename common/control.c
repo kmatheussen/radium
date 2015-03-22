@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "scheduler_proc.h"
+#include "quantitize_proc.h"
 
 #include "control_proc.h"
 
@@ -70,8 +71,7 @@ bool InitProgram(void){
 	}
 
 	root->keyoct=48;
-	root->quantitize_numerator = 1;
-        root->quantitize_denominator = 1;
+        root->quantitize_options = Quantitize_get_default_options();
         root->grid_numerator=1;
         root->grid_denominator=1;
         root->min_standardvel=MAX_VELOCITY*40/100;

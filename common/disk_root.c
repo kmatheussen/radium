@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "disk_root_proc.h"
 
+extern struct Root *root;
 
 
 void SaveRoot(struct Root *theroot){
@@ -38,9 +39,9 @@ DC_start("ROOT");
 	DC_SSI("lpb",theroot->lpb);
         DC_SSI("signature_numerator",theroot->signature.numerator);
         DC_SSI("signature_denominator",theroot->signature.denominator);
-	DC_SSI("quantitize_numerator",theroot->quantitize_numerator);
-        DC_SSI("quantitize_denominator",theroot->quantitize_denominator);
-        DC_SSF("quantitize",(double)theroot->quantitize_numerator/(double)theroot->quantitize_denominator);
+	DC_SSI("quantitize_numerator",theroot->quantitize_options.quant.numerator);
+        DC_SSI("quantitize_denominator",theroot->quantitize_options.quant.denominator);
+        DC_SSF("quantitize",(double)theroot->quantitize_options.quant.numerator / (double)theroot->quantitize_options.quant.denominator);
 	DC_SSI("grid_numerator",theroot->grid_numerator);
 	DC_SSI("grid_denominator",theroot->grid_denominator);
 	DC_SSI("keyoct",theroot->keyoct);
@@ -77,6 +78,7 @@ struct Root *LoadRoot(void){
 		"standardvel"
 	};
 	struct Root *ret=DC_alloc(sizeof(struct Root));
+        ret->quantitize_options = root->quantitize_options;
 	ret->scrollplayonoff=true;
         ret->min_standardvel=MAX_VELOCITY*40/100;
         ret->editonoff=true;
@@ -114,16 +116,14 @@ var5:
 
 var6:
         DC_LoadF();
-	ret->quantitize_numerator = 1;
-        ret->quantitize_denominator = 1;
 	goto start;
 
 var7:
-	ret->quantitize_numerator = DC_LoadI();
+        ret->quantitize_options.quant.numerator = DC_LoadI();
 	goto start;
 
 var8:
-        ret->quantitize_denominator = DC_LoadI();
+        ret->quantitize_options.quant.denominator = DC_LoadI();
 	goto start;
 
 var9:
