@@ -303,7 +303,8 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
   const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
 
-  int x1 = wblock->linenumarea.x;
+  //int x1 = wblock->linenumarea.x;
+  int x1 = wblock->tempocolorarea.x;
   int x2 = last_wtrack->x2;
   int y1 = get_realline_y1(window, realline);
   int y2 = get_realline_y2(window, realline);

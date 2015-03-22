@@ -119,20 +119,21 @@ void UpdateWBlockCoordinates(
 	wblock->a.x2 = window->width + 3; // Not quite sure why we have to add 2 here.
 	wblock->a.y2 = window->height - window->bottomslider.width - 2;
 
+        wblock->tempocolorarea.x  = wblock->a.x1 + 3;
+	wblock->tempocolorarea.x2 = wblock->tempocolorarea.x  + wblock->tempocolorarea.width;
+        
 	wblock->linearea.y  = wblock->a.y1+(window->systemfontheight*2) + WTRACKS_SPACE*3;
 	wblock->linearea.y2 = wblock->a.y2;
 
-	wblock->linenumarea.x    = wblock->a.x1 + 3;
+	wblock->linenumarea.x    = wblock->tempocolorarea.x2 + 3;
 	wblock->linenumarea.x2   = wblock->linenumarea.x    + wblock->linenumarea.width;
 
-	wblock->zoomlinearea.x    = wblock->linenumarea.x2 + 3;
+        wblock->zoomlinearea.x    = wblock->linenumarea.x2 + 3;
 	wblock->zoomlinearea.x2   = wblock->zoomlinearea.x    + wblock->zoomlinearea.width;
 
-
-	wblock->tempocolorarea.x = wblock->zoomlinearea.x2   + 3;
-	wblock->tempocolorarea.x2= wblock->tempocolorarea.x  + wblock->tempocolorarea.width;
+        //
         
-	wblock->signatureTypearea.x    = wblock->tempocolorarea.x2 + 1; // + 3;
+	wblock->signatureTypearea.x    = wblock->zoomlinearea.x2 + 1; // + 3;
 	wblock->signatureTypearea.x2   = wblock->signatureTypearea.x     + wblock->signatureTypearea.width;
 	wblock->signaturearea.x        = wblock->signatureTypearea.x2    + 3;
 	wblock->signaturearea.x2       = wblock->signaturearea.x         + wblock->signaturearea.width;
