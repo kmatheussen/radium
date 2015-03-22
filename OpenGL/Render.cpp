@@ -333,7 +333,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   // realline separator line
   if(1){
     if(line_opacity == -1)
-      line_opacity = SETTINGS_read_int("line_opacity", 800);
+      line_opacity = SETTINGS_read_int("line_opacity", beat_opacity-50);
     
     if(line_opacity != 1000) {
       GE_Context *c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
@@ -549,10 +549,18 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
   if(type!=SIGNATURE_NORMAL){
     int x = wblock->signatureTypearea.x;
 
+    GE_Context *c;
+    if (WSIGNATURE_is_first_beat(&wsignatures[realline]))
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), first_beat_opacity-250, Z_BACKGROUND+1);
+    else
+      c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), beat_opacity-250, Z_BACKGROUND+1);
+    
+    //GE_color_alpha_z(1, 0.4, Z_ZERO),
+    
     VECTOR_FOR_EACH(float*, f_pointer, &wsignatures[realline].how_much_below){
       float f = *f_pointer;
       float y_ = scale(f, 0, 1, y, get_realline_y2(window, realline));
-      GE_line(GE_color_alpha_z(1, 0.4, Z_ZERO),
+      GE_line(c,
               x, y_,
               x2, y_,
               0.8
