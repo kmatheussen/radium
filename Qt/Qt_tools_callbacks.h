@@ -20,8 +20,6 @@ extern "C" {
 
 #include "Qt_tools.h"
 
-
-
 namespace{
 
 class Tools : public QDialog, public Ui::Tools {
@@ -80,7 +78,6 @@ class Tools : public QDialog, public Ui::Tools {
 public slots:
 
   void on_closeButton_clicked(){
-    printf("close\n");
     this->hide();
   }
 
@@ -150,13 +147,14 @@ public slots:
   void on_quantization_value_editingFinished(){
     printf("qu\n");
 
-    //struct Tracker_Windows *window = root->song->tracker_windows;
-    //struct WBlocks *wblock = window->wblock;
-
     Rational rational = create_rational_from_string(quantization_value->text());
     quantization_value->pushValuesToRoot(rational);
 
     updateWidgets();
+
+    GL_lock();{
+      quantization_value->clearFocus();
+    }GL_unlock();
 
     set_editor_focus();
 
