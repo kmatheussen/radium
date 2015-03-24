@@ -198,7 +198,7 @@ int main(int argc, char **argv){
                                            "\n"
                                            "Only the information in \"Show details...\" is sent.\n"
                                            "\n"
-                                           "Please don't send more than one message for the same crash.\n"
+                                           "Please don't report the same crash more than once.\n"
                                            )
                                    + (report->plugin_name[0] != 0
                                       ? QString("\nPlease note that a third party plugin called \"") + report->plugin_name + "\" was currently processing audio. It might be responsible for the crash."
