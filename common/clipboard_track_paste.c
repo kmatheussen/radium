@@ -71,10 +71,7 @@ bool CB_PasteTrackFX(
 	struct Tracks *track;
 	Place *p1,p2;
 
-	if(towtrack==NULL){
-		RError("Error in function CB_PasteTrack in file clipboard_track_paste.c; towtrack=NULL\n");
-		return false;
-	}
+        R_ASSERT_RETURN_IF_FALSE2(towtrack!=NULL, false);
 
 	totrack=towtrack->track;
 	track=wtrack->track;
