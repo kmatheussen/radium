@@ -73,10 +73,9 @@ void GL_unlock(void){
 static RSemaphore *g_order_make_current;
 static RSemaphore *g_ack_make_current;
 
-
-static volatile char *driver_vendor_string=NULL;
-static volatile char *driver_renderer_string=NULL;
-static volatile char *driver_version_string=NULL;
+volatile char *GE_vendor_string=NULL;
+volatile char *GE_renderer_string=NULL;
+volatile char *GE_version_string=NULL;
       
 static volatile int g_curr_realline;
 
@@ -502,11 +501,11 @@ public:
       RSEMAPHORE_signal(g_ack_make_current, 1);
     }
     
-    if (driver_version_string==NULL) {
-      driver_vendor_string = strdup((const char*)glGetString(GL_VENDOR));
-      driver_renderer_string = strdup((const char*)glGetString(GL_RENDERER));
-      driver_version_string = strdup((const char*)glGetString(GL_VERSION));
-      printf("vendor: %s, renderer: %s, version: %s \n",(const char*)driver_vendor_string,(const char*)driver_renderer_string,(const char*)driver_version_string);
+    if (GE_version_string==NULL) {
+      GE_vendor_string = strdup((const char*)glGetString(GL_VENDOR));
+      GE_renderer_string = strdup((const char*)glGetString(GL_RENDERER));
+      GE_version_string = strdup((const char*)glGetString(GL_VERSION));
+      printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
       //abort();
     }
     
@@ -852,14 +851,14 @@ QWidget *GL_create_widget(QWidget *parent){
     box.close();
   }
 
-  while(driver_vendor_string==NULL || driver_renderer_string==NULL || driver_version_string==NULL)
+  while(GE_vendor_string==NULL || GE_renderer_string==NULL || GE_version_string==NULL)
     usleep(5*1000);
   
   {
-    QString s_vendor((const char*)driver_vendor_string);
-    QString s_version((const char*)driver_version_string);
-    qDebug() << "___ driver_version_string: " << s_version;
-    printf("vendor: %s, renderer: %s, version: %s \n",(const char*)driver_vendor_string,(const char*)driver_renderer_string,(const char*)driver_version_string);
+    QString s_vendor((const char*)GE_vendor_string);
+    QString s_version((const char*)GE_version_string);
+    qDebug() << "___ GE_version_string: " << s_version;
+    printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
     //getchar();
     
 #ifdef FOR_LINUX

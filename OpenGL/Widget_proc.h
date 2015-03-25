@@ -26,6 +26,10 @@ extern int GL_get_multisample(void);
 extern void GL_lock(void);
 extern void GL_unlock(void);
 
+volatile extern char *GE_vendor_string;
+volatile extern char *GE_renderer_string;
+volatile extern char *GE_version_string;
+
 extern void GE_set_curr_realline(int curr_realline);
 
 #ifdef __cplusplus

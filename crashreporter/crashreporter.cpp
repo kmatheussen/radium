@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "crashreporter_proc.h"
 
@@ -390,6 +391,17 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
 
     Report *report = (Report*)g_sharedmemory->data();
 
+    {
+      snprintf(report->data+pos, bytes_left, "vendor: \"%s\"\nrenderer: \"%s\"\nversion: \"%s\"\n\n",
+               GE_vendor_string==NULL ? "(null)" : GE_vendor_string,
+               GE_renderer_string==NULL ? "(null)" : GE_renderer_string,
+               GE_version_string==NULL ? "(null)" : GE_version_string
+               );
+      
+      pos=strlen(report->data);
+      bytes_left = MESSAGE_LEN - pos - 1;
+    }
+    
     for(int i=0;i<num_messages;i++){
 
       if(num_messages>1)
@@ -406,7 +418,7 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
       pos=strlen(report->data);
       bytes_left = MESSAGE_LEN - pos - 1;
     }
-
+    
     strncat(report->plugin_name, g_plugin_name, PLUGIN_NAME_LEN - 2);
     
     report->status=Report::THERE_IS_A_MESSAGE;
