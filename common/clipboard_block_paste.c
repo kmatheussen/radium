@@ -101,6 +101,7 @@ void CB_PasteBlock(
 	//towblock->wtempos=NULL;
 	//towblock->wlpbs=NULL;
 
+        toblock->signatures=CB_CopySignatures(block->signatures);
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 
 	toblock->tempos=CB_CopyTempos(block->tempos);
