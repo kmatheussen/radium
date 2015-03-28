@@ -41,8 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_input_proc.h"
 
 
-extern struct Root *root;
-
 static volatile uint32_t g_msg = 0;
 
 static struct Patch *g_through_patch = NULL;

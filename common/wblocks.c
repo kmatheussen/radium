@@ -128,20 +128,24 @@ void UpdateWBlockCoordinates(
 	wblock->linenumarea.x    = wblock->tempocolorarea.x2 + 3;
 	wblock->linenumarea.x2   = wblock->linenumarea.x    + wblock->linenumarea.width;
 
-        wblock->zoomlinearea.x    = wblock->linenumarea.x2 + 3;
-	wblock->zoomlinearea.x2   = wblock->zoomlinearea.x    + wblock->zoomlinearea.width;
-
         //
         
-	wblock->signatureTypearea.x    = wblock->zoomlinearea.x2 + 1; // + 3;
+	wblock->signatureTypearea.x    = wblock->linenumarea.x2 + 1; // + 3;
 	wblock->signatureTypearea.x2   = wblock->signatureTypearea.x     + wblock->signatureTypearea.width;
 	wblock->signaturearea.x        = wblock->signatureTypearea.x2    + 3;
 	wblock->signaturearea.x2       = wblock->signaturearea.x         + wblock->signaturearea.width;
 
+        //
+
         if (!window->show_signature_track)
-          wblock->lpbTypearea.x    = wblock->tempocolorarea.x2 + 3;
+          wblock->zoomlinearea.x    = wblock->linenumarea.x2 + 1;
         else
-          wblock->lpbTypearea.x    = wblock->signaturearea.x2 + 3;
+          wblock->zoomlinearea.x    = wblock->signaturearea.x2 + 3;
+	wblock->zoomlinearea.x2   = wblock->zoomlinearea.x    + wblock->zoomlinearea.width;
+
+        //
+        
+        wblock->lpbTypearea.x    = wblock->zoomlinearea.x2 + 3;
 	wblock->lpbTypearea.x2   = wblock->lpbTypearea.x     + wblock->lpbTypearea.width;
 	wblock->lpbarea.x        = wblock->lpbTypearea.x2    + 3;
 	wblock->lpbarea.x2       = wblock->lpbarea.x         + wblock->lpbarea.width;

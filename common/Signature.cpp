@@ -46,14 +46,11 @@ namespace{
   struct Beats{
     struct ListHeader3 l;
     Ratio signature;
-    int beat_num;
+    int bar_num;
+    int beat_num;  // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
   };
 #define NextBeat(a) (struct Beats *)((a)->l.next)
   
-  struct WBeats{
-    int beat_num;  // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
-  };
-
   struct LPBHolder{
     LPBs root_lpb;
     LPBs *lpb;
@@ -96,6 +93,8 @@ static Place get_beat_length_in_measurement(Ratio signature, int lpb){
 struct Beats *Beats_get(struct Blocks *block){
   Beats *beats = NULL;
 
+  int bar_num = 1;
+  
   Signatures first;
   first.l.p = place(0,0,1);
   first.signature = root->signature;
@@ -132,13 +131,16 @@ struct Beats *Beats_get(struct Blocks *block){
           beat->signature = signature->signature;
           last_drawn_signature = signature;
         }
+        beat->bar_num = bar_num;
         beat->beat_num = beat_num;
         
         ListAddElement3(&beats, &beat->l);
 
         beat_num++;
-        if (beat_num==signature->signature.numerator+1)
+        if (beat_num==signature->signature.numerator+1) {
           beat_num=1;
+          bar_num++;
+        }
 
         int lpb = lpb_holder.get_lpb_at_place(beat_pos);
           

@@ -796,6 +796,7 @@ struct Signatures{
 
 struct WSignatures{
   Ratio signature;
+  int bar_num;
   int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
   int type;	  /* 0=normal, 1=below positioned, 2=mul. */
   vector_t how_much_below;  /* If type is 1 or 2, these values contains how much below (between 0 and 1) */
@@ -1199,6 +1200,8 @@ struct Root{
 	volatile bool editonoff;
 	bool scrollplayonoff;
 };
+
+extern struct Root *root;
 
 
 
