@@ -76,12 +76,11 @@ bool CB_PasteTrackFX(
 	totrack=towtrack->track;
 	track=wtrack->track;
 
-	if(totrack->patch==NULL){
-		totrack->patch=track->patch;
-	}
-
-	totrack->patch=track->patch;
-
+        if (track->patch != NULL && track->patch->is_usable)
+          totrack->patch = track->patch;
+        else
+          totrack->patch = NULL;
+        
 	if(track->midi_instrumentdata!=NULL){
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -119,7 +118,11 @@ bool CB_PasteTrack(
 	towtrack->notelength=wtrack->notelength;
 	towtrack->fxwidth=wtrack->fxwidth;
 
-	totrack->patch=track->patch;
+        if (track->patch != NULL && track->patch->is_usable)
+          totrack->patch = track->patch;
+        else
+          totrack->patch = NULL;
+
 	totrack->onoff=track->onoff;
 	totrack->pan=track->pan;
 	totrack->volume=track->volume;

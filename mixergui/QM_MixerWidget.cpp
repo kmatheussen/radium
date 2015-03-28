@@ -1112,6 +1112,7 @@ void MW_delete_plugin(SoundPlugin *plugin){
         struct Patch *patch = plugin->patch;
         PLUGIN_delete_plugin(plugin);
         patch->patchdata = NULL; // Correct thing to do. A subtle bug in GFX_update_all_instrument_widgets prompted me to do add it (QT tabs are note updated right away). Somewhat messy this too.
+        patch->is_usable = false; // Make sure we don't use this patch if pasting it.
         return;
       }
     }

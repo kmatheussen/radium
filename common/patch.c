@@ -125,6 +125,7 @@ void PATCH_init_voices(struct Patch *patch){
 static struct Patch *PATCH_create(int instrumenttype, void *patchdata, const char *name){
   struct Patch *patch = talloc(sizeof(struct Patch));
   patch->id = PATCH_get_new_id();
+  patch->is_usable = true;
   patch->forward_events = true;
 
   patch->name = talloc_strdup(name);
