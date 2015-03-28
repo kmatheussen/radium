@@ -794,6 +794,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
 
+  GFX_ScheduleRedraw();
+  
   if(event_can_delete(event))
     if(mousepress_delete_chip(this,event,item,mouse_x,mouse_y)==true)
       return;
@@ -820,6 +822,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   printf("mouse release: %p\n",_current_connection);
 
+  GFX_ScheduleRedraw();
+    
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();
   float mouse_y = pos.y();
