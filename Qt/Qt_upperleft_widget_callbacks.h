@@ -62,8 +62,17 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
       connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
-    }    
+
+      reltempomax->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(reltempomax, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowReltempoPopup(const QPoint&)));
+
+      reltempomax_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(reltempomax_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowReltempoPopup(const QPoint&)));
+    }
   }
+
 
   virtual void paintEvent( QPaintEvent *e ){
     //static int upcounter = 0;
@@ -195,6 +204,13 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   }
 
 public slots:
+
+  void ShowReltempoPopup(const QPoint& pos)
+  {
+    printf("GOTIT reltempo\n");
+    if (popupMenu((char*)"hide tempo multiplier track")==0)
+      showHideReltempoTrack(-1);
+  }
 
   void ShowBPMPopup(const QPoint& pos)
   {

@@ -806,6 +806,7 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
+                                            (>= X (ra:get-track-x1 0))
                                             (< Y (ra:get-track-pan-on-off-y1)))
                                        (ra:set-track-patch *current-track-num*)
                                        #f)
@@ -1868,6 +1869,7 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num-all-tracks*
+                     (>= Y (ra:get-block-header-y2))
                      (cond ((= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num))
                             (c-display "reltempo")
                             (popup-menu "hide tempo multiplier track" ra:show-hide-reltempo-track))
