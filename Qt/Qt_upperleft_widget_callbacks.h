@@ -93,18 +93,19 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     reltempomax->setValue(wblock->reltempomax);
   }
 
+  void updateLayout(QWidget *w, int x1, int x2, int height){
+    w->move(x1, 0);
+    w->resize(x2-x1, height);
+
+    QLayout *l = w->layout();
+
+    l->setSpacing(2);
+    l->setContentsMargins(0, 2, 2, 3);
+  }
+  
   // called from the outside
   void position(struct Tracker_Windows *window, struct WBlocks *wblock){
 
-    int x1 = 0;
-    int x2 = wblock->signatureTypearea.x;
-    int x3 = wblock->lpbTypearea.x;
-    int x4 = wblock->tempoTypearea.x;
-    int x5 = wblock->temponodearea.x;
-    int x6 = wblock->t.x1;
-
-    int width = x6;
-    int height = wblock->t.y1;
 
     // upperleft lpb/bpm/reltempo show/hide
     if (window->show_lpb_track)
@@ -140,27 +141,56 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 
     if (window->show_lpb_track && window->show_bpm_track)
       g_bottom_bar->tempo_line->hide();
+
     
+    int width = wblock->t.x1;
+    int height = wblock->t.y1;
     
     //printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
 
     resize(width,height);
 
-    lineZoomWidget->move(x1,0);
-    lineZoomWidget->resize(x2-x1,height);
+    // Grid / tempocolor
+    /////////////////////
+    int x1 = 0; //wblock->tempocolorarea.x;
+    int x2 = wblock->tempoTypearea.x;
+    updateLayout(GridWidget, x1, x2, height);
+    QMargins margins = GridWidget->layout()->contentsMargins();
+    margins.setLeft(2);
+    GridWidget->layout()->setContentsMargins(margins);
+    
+    // BPM
+    //////////////////////////
+    x1 = x2;
+    x2 = wblock->lpbTypearea.x;
+    updateLayout(BPMWidget, x1, x2, height);
+    
+    // LPB
+    //////////////////////////
+    x1 = x2;
+    x2 = wblock->signaturearea.x;
+    updateLayout(LPBWidget, x1, x2, height);
+    
+    // Signature
+    ///////////////////////////
+    x1 = x2;
+    x2 = wblock->linenumarea.x;
+    updateLayout(SignatureWidget, x1, x2, height);
+    
+    // LZ / linenumber(bars/beats)
+    ///////////////////////////////
+    x1 = x2;
+    x2 = wblock->temponodearea.x;
+    updateLayout(lineZoomWidget, x1, x2, height);
 
-    SignatureWidget->move(x2,0);
-    SignatureWidget->resize(x3-x2,height);
-
-    LPBWidget->move(x3,0);
-    LPBWidget->resize(x4-x3,height);
-
-    BPMWidget->move(x4,0);
-    BPMWidget->resize(x5-x4,height);
-
-    ReltempoWidget->move(x5,0);
-    ReltempoWidget->resize(x6-x5,height);
-
+    // Reltempo (temponode)
+    ///////////////////////////////
+    x1 = x2;
+    x2 = wblock->t.x1;
+    updateLayout(ReltempoWidget, x1, x2, height);
+    QMargins margins2 = ReltempoWidget->layout()->contentsMargins();
+    margins2.setRight(1);
+    ReltempoWidget->layout()->setContentsMargins(margins2);
     
   }
 

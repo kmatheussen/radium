@@ -69,7 +69,7 @@ void UpdateReallinesDependens(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){  
-  //UpdateWTempos(window,wblock);
+        //UpdateWTempos(window,wblock);
 	//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 	//UpdateWTempoNodes(window,wblock);
@@ -131,14 +131,22 @@ static struct LocalZooms *FindLocalZoomRoot(
 		}
 		localzoom=reallines[*realline];
 	}
-	
+
+        if (localzoom==NULL)
+          return NULL;
+        
 	localzoom=NextLocalZoom(localzoom);
 
 firstline:
-
-	while(localzoom->level<level-1)
-		localzoom=localzoom->uplevel;
-
+        
+        if (localzoom==NULL)
+          return NULL;
+        
+	while(localzoom->level<level-1) {          
+          localzoom=localzoom->uplevel;
+          if (localzoom==NULL)
+            return NULL;
+        }
 
 	if(localzoom==NULL || localzoom->uplevel!=org){
 		localzoom=FindLocalZoomRootTheHardWay(wblock,wblock->localzooms,org);

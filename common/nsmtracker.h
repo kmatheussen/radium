@@ -972,10 +972,15 @@ struct WBlocks{
         TBox bottombar;                                /* reltempo slider and track slider */
 
 	//WArea zoomlevelarea;
-	WArea linenumarea;
-	WArea zoomlinearea;
+        WArea linenumarea;
+        int bars_max_num_characters;
+        int beats_x; int beats_max_num_characters;
+        int zoomlines_x; int zoomlines_max_num_characters;
+
+  //        WArea 
+  //WArea zoomlinearea;
         WArea tempocolorarea;
-	WArea signatureTypearea;
+  //WArea signatureTypearea;
 	WArea signaturearea;
 	WArea lpbTypearea;
 	WArea lpbarea;

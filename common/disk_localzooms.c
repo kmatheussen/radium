@@ -165,7 +165,7 @@ void DLoadLocalZooms(
 	UpdateRealLines(window,wblock);
 	UpdateReallinesDependens(window,wblock);
 
-        SetZoomLevelAreaWidth(window,wblock);
+        //SetZoomLevelAreaWidth(window,wblock);
 }
 
 

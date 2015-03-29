@@ -595,7 +595,7 @@ int WTRACK_getx1(
 		return wblock->tempocolorarea.x;
 		break;
 	case SIGNATURETRACK:
-		return wblock->signatureTypearea.x;
+		return wblock->signaturearea.x;
 		break;
 	case LPBTRACK:
 		return wblock->lpbTypearea.x;
@@ -629,7 +629,7 @@ int WTRACK_getx2(
 
 	switch(tracknum){
 	case LINENUMBTRACK:
-		return wblock->zoomlinearea.x2;
+		return wblock->linenumarea.x2;
 		break;
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x2;

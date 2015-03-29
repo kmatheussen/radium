@@ -141,7 +141,7 @@ struct Beats *Beats_get(struct Blocks *block){
           beat_num=1;
           bar_num++;
         }
-
+        //printf("********* %d/%d         **********\n",bar_num,beat_num);
         int lpb = lpb_holder.get_lpb_at_place(beat_pos);
           
         Place beat_length = get_beat_length_in_measurement(signature->signature, lpb); // This walue will be incorrect if there are lpb changes betwen beat_pos and beat_pos+beat_length. TODO.
@@ -192,6 +192,7 @@ struct WSignatures *WSignatures_get(
 
                 if (wsignatures[realline].type != SIGNATURE_MUL){ // Unlike the multi-behavior for other wxxx-types, we show the first element here, and not the last.
                   wsignatures[realline].signature = beat->signature;
+                  wsignatures[realline].bar_num  = beat->bar_num;
                   wsignatures[realline].beat_num  = beat->beat_num;
                 }
 
@@ -241,6 +242,8 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 
 	SetSignature(wblock->block,place,rational.get_ratio());
 
+        UpdateWBlockCoordinates(window, wblock);
+          
         //UpdateWBlockWidths(window, wblock);
         
 	//UpdateWSignatures(window,wblock);
@@ -270,6 +273,8 @@ void RemoveSignaturesCurrPos(struct Tracker_Windows *window){
 
 	RemoveSignatures(wblock->block,&p1,&p2);
 
+        UpdateWBlockCoordinates(window, wblock);
+        
         //UpdateWBlockWidths(window, wblock);
         
 	//UpdateWSignatures(window,wblock);

@@ -659,13 +659,12 @@ int radium_main(char *arg){
 
   // ProfilerStart("hepps");
 
+  SCHEME_start();
+
   printf("starting\n");
   if(InitProgram()==false)
     return 0;
   printf("ending\n");
-
-
-  SCHEME_start();
 
   //ProfilerStop();
 
