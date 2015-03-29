@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "common_proc.h"
 #include "OS_Player_proc.h"
+#include "patch_proc.h"
 
 #include "fxlines_proc.h"
 
@@ -304,8 +305,9 @@ static struct FX *selectFX(
 ){
 
   if(wtrack->track->patch==NULL) {
-    GFX_Message(NULL, "No instrument set for track %d\n",wtrack->l.num);
-    return NULL; // TODO: Ask for new patch.
+    PATCH_select_patch_for_track(window,wtrack,true);
+    //GFX_Message(NULL, "No instrument set for track %d\n",wtrack->l.num);
+    return NULL;
   }
   
 	struct FX *fx;
