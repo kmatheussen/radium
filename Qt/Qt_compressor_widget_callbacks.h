@@ -227,7 +227,11 @@ void on_enable_checkbox_toggled(bool val){
   void on_load_button_pressed(void){
     printf("load pressed\n");
 
-    QString filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    QString filename;
+
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    }GL_unlock();
 
     if(filename=="")
       return;
@@ -238,7 +242,11 @@ void on_enable_checkbox_toggled(bool val){
   void on_save_button_pressed(void){
     printf("save pressed\n");
 
-    QString filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    QString filename;
+
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    }GL_unlock();
 
     if(filename=="")
       return;
