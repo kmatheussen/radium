@@ -68,7 +68,7 @@ void CloseAllTrackerWindows(void){
     Call after window has been made, or fontsize is changed.
 *********************************************************************/
 void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
-  window->bottomslider.x2=window->width-1;
+  window->bottomslider.x2 = window->width-1;
 }
 
 

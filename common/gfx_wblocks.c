@@ -552,8 +552,8 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	SetCursorPos(window);
 #endif
-
-        // fill background
+        
+        // fill background in the bottom bar
 	GFX_FilledBox(
 		window,11,
 		0,            wblock->bottombar.y1,

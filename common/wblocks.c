@@ -241,6 +241,17 @@ void UpdateWBlockCoordinates(
 	wblock->t.y1 = wblock->linearea.y + 2;
 	wblock->t.y2 = wblock->a.y2;
 
+
+        wblock->bottombar.x1 = wblock->a.x1;
+        wblock->bottombar.y1 = wblock->a.y2;
+        wblock->bottombar.x2 = wblock->a.y2;
+        wblock->bottombar.y2 = window->height;
+
+	wblock->reltempo.x1=0;
+	wblock->reltempo.y1=wblock->bottombar.y1+3;
+	wblock->reltempo.x2=wblock->temponodearea.x2-3;
+	wblock->reltempo.y2=wblock->bottombar.y2-1;
+
 	wblock->num_visiblelines=(wblock->t.y2-wblock->t.y1)/window->fontheight;
 	if((wblock->num_visiblelines-2)*window->fontheight+wblock->t.y1>=wblock->t.y2){
 		wblock->num_visiblelines--;
