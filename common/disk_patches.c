@@ -211,6 +211,7 @@ struct Patch *LoadPatch(void){
 
 	struct Patch *patch=DC_alloc(sizeof(struct Patch));
 	patch->id=DC_LoadN();
+        patch->is_usable = true;
         patch->forward_events = true; // default value
 
         PATCH_init_voices(patch);

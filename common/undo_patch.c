@@ -81,6 +81,13 @@ void *Undo_Do_Patch(
 
     VECTOR_append(&get_MIDI_instrument()->patches,all_patches->elements[0]);
     VECTOR_append(&get_audio_instrument()->patches,all_patches->elements[1]);
+
+    VECTOR_FOR_EACH(struct Patch *patch,all_patches->elements[0]){
+      patch->is_usable = true;
+    }END_VECTOR_FOR_EACH;
+    VECTOR_FOR_EACH(struct Patch *patch,all_patches->elements[1]){
+      patch->is_usable = true;
+    }END_VECTOR_FOR_EACH;
   }
 
   return ret;

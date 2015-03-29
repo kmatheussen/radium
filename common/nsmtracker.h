@@ -387,7 +387,8 @@ static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
   int id;
-
+  bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.
+  
   const char *name;
 
   int colornum;
@@ -795,6 +796,7 @@ struct Signatures{
 
 struct WSignatures{
   Ratio signature;
+  int bar_num;
   int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
   int type;	  /* 0=normal, 1=below positioned, 2=mul. */
   vector_t how_much_below;  /* If type is 1 or 2, these values contains how much below (between 0 and 1) */
@@ -1198,6 +1200,8 @@ struct Root{
 	volatile bool editonoff;
 	bool scrollplayonoff;
 };
+
+extern struct Root *root;
 
 
 
