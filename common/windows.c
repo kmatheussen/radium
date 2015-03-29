@@ -201,6 +201,7 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 }
 #endif
 
+#define UPDATECOORDINATES_WHEN_DRAWING 0
 
 /**************************************************************************
   FUNCTION
@@ -212,8 +213,10 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
   if(window->must_redraw==true)
     return;
 
+#if UPDATECOORDINATES_WHEN_DRAWING
   struct WBlocks *wblock = window->wblock;
-
+#endif
+  
 #if 0
         while(GetXSubTrack_B2(wblock,window->curr_track,window->curr_track_sub) >= wblock->a.x2){
 
@@ -232,8 +235,10 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 #endif
 
 	UpdateTrackerWindowCoordinates(window);
+#if UPDATECOORDINATES_WHEN_DRAWING
 	UpdateWBlockCoordinates(window,wblock);
-
+#endif
+        
 #if !USE_OPENGL
 	PixMap_reset(window);
 #endif
