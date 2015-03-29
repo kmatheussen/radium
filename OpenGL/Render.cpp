@@ -761,7 +761,7 @@ void create_block_borders(
                          );
 
   if (window->show_bpm_track)
-    create_single_border(
+    create_double_border(
                          wblock->tempoarea.x2+1,
                          y1,y2
                          );

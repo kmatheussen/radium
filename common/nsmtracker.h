@@ -1146,12 +1146,12 @@ struct Tracker_Windows{
 
 /* curr_track types */
 #define TEMPONODETRACK -1
-#define TEMPOTRACK -2
-#define LPBTRACK -3
-#define SIGNATURETRACK -4
-#define TEMPOCOLORTRACK -5
-#define LINENUMBTRACK -6
-#define LEFTMOSTTRACK LINENUMBTRACK
+#define LINENUMBTRACK -2
+#define SIGNATURETRACK -3
+#define LPBTRACK -4
+#define TEMPOTRACK -5
+#define TEMPOCOLORTRACK -6
+#define LEFTMOSTTRACK TEMPOCOLORTRACK
 #define NOTRACK -10000
 
 /*********************************************************************
