@@ -1,3 +1,32 @@
+Most important changes 3.0.rc11 -> 3.0.rc12
+* Show bars and beats instead of line numbers
+* Rearranged timing tracks order.
+* Don't show signature and lpb track in the demo song
+* Update lz tooltip
+* Protect all calls QFileDialog with GL_lock() (Linux Intel/AMD gfx card crash fix)
+* Show popup for selecting instrument when right-clicking in the fx area of a track
+* Update editor graphics when pressing or releasing mouse in the mixer
+* Don't crash if pasting track containing deleted instrument
+* crashreporter: Send OpenGL information
+* crashreporter: Try to make the text clearer about only sending one report per crash
+* Fix focus issues in the MIDI tools post recording dialog
+* Adjusted grid track width
+* More quantization options
+* Readd chorus effect to newsong.rad
+* Fixed bug in path resolver
+* Darker color for measure start beat
+* Import time signatures from MIDI files
+* More accurate tempo graph rendering
+* VST plugins: Never set isLooping to true since we never jump back in time
+* Improve the examples when adding/editing note/pitch
+* Add popup menues to show/hide the time tracks
+* Ctrl+J jumps to line
+* Time signature track
+* Hide some menu entries in win/mac that only works in linux
+
+
+
+
 Most important changes 3.0.rc10 -> 3.0.rc11
 * Make the default track volume 100%. (MIDI recordings
   should not sound differently when played back)
