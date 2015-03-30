@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "undo_lpbs_proc.h"
 #include "player_proc.h"
+#include "Beats_proc.h"
 
 #include "LPB_proc.h"
 
@@ -87,7 +88,9 @@ struct LPBs *SetLPB(
 		lpb->lpb=newlpb;
 		ListAddElement3(&block->lpbs,&lpb->l);
 	}
+
 	UpdateSTimes(block);
+        UpdateBeats(block);
 
         return lpb;
 }
@@ -135,6 +138,7 @@ void RemoveLPBsCurrPos(struct Tracker_Windows *window){
 
 	//UpdateWLPBs(window,wblock);
 	UpdateSTimes(wblock->block);
+        UpdateBeats(wblock->block);
 
         wblock->block->is_dirty = true;
 }

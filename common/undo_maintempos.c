@@ -2,6 +2,7 @@
 #include "nsmtracker.h"
 #include "undo.h"
 #include "time_proc.h"
+#include "Beats_proc.h"
 #include "OS_visual_input.h"
 
 #include "undo_maintempos_proc.h"
@@ -65,6 +66,7 @@ void *Undo_Do_MainTempo(
         GFX_OS_update_bottombar();
         
 	UpdateAllSTimes();
+        UpdateBeats(wblock->block);
 
 	u_rt->signature=signature;
         u_rt->lpb=lpb;

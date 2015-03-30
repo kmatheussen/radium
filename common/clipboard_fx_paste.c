@@ -163,6 +163,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			block->lpbs=CB_CopyLPBs(cb_lpb);
 			CutListAt_a(&block->lpbs,&lastplace);
 			UpdateSTimes(block);
+                        UpdateBeats(block);
 			UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);

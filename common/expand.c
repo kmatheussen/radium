@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_blocks_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "visual_proc.h"
+#include "Beats_proc.h"
 
 #include "expand_proc.h"
 
@@ -96,6 +97,7 @@ static void expand_block(struct Blocks *block, int start, int end, int num_lines
 
   LegalizeTempoNodes(block);
   UpdateSTimes(block);
+  UpdateBeats(block);
 }
 
 static void incLocalZoomLine(struct LocalZooms *localzoom, int num_lines){

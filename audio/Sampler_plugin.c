@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/read_binary.h"
+#include "../common/PEQ_LPB_proc.h"
+#include "../common/PEQ_Signature_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -63,6 +65,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_D 1000
 #define MAX_S 1.0
 #define MAX_R 2000
+
+static const char *click_name = "Click";
 
 // Effect order
 enum{
@@ -184,7 +188,6 @@ struct _Data{
 };
 
 
-extern struct Root *root;
 
 // input is between 0 and 1.
 // output is between 0 and 1.
@@ -589,6 +592,23 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     RSEMAPHORE_signal(data->signal_from_RT,1);
   }
+}
+
+static void RT_click_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  static int last_beat = -1;
+  static double last_num_quarters = 0.0;
+
+  Ratio signature = RT_Signature_get_current_Signature();
+
+  double abs_num_quarters = RT_LPB_get_beat_position(); // RT_LPB_get_beat_position() actually returns quarters, not beats. Should probably rename the function.
+  double num_quarters = abs_num_quarters - last_num_quarters;
+
+  if (num_quarters * (double)signature.denominator / 4.0 >= 1.0) {
+    printf("Got it %d\n",last_beat++);
+    last_num_quarters = abs_num_quarters;
+  }
+
+  RT_process(plugin, time, num_frames, inputs, outputs);
 }
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
@@ -1660,6 +1680,15 @@ static SoundPluginType plugin_type = {
  data                     : NULL
 };
 
+static SoundPluginType click_type;
+
 void create_sample_plugin(void){
   PR_add_plugin_type(&plugin_type);
+
+  memcpy((void*)&click_type, (void*)&plugin_type, sizeof(SoundPluginType));
+
+  click_type.name = click_name;
+  click_type.RT_process = RT_click_process;
+
+  //PR_add_plugin_type(&click_type);
 }

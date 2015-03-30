@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tracks_proc.h"
 #include "tempos_proc.h"
 #include "time_proc.h"
+#include "Beats_proc.h"
 
 #include "blocks_proc.h"
 
@@ -69,6 +70,7 @@ void NewBlock(
 	}
 
 	UpdateSTimes(block);
+        UpdateBeats(block);
 
 	ListAddElement1(&root->song->blocks,&block->l);
 }

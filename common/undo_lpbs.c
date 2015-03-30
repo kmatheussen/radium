@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "LPB_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
+#include "Beats_proc.h"
 
 #include "undo_lpbs_proc.h"
 
@@ -76,6 +77,7 @@ void *Undo_Do_LPBs(
 	//UpdateWLPBs(window,wblock);
 
 	UpdateSTimes(wblock->block);
+        UpdateBeats(wblock->block);
 
 	return temp;
 }

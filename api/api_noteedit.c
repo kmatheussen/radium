@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../advanced/ad_noteadd_proc.h"
 #include "../common/player_proc.h"
 #include "../common/undo_maintempos_proc.h"
+#include "../common/Beats_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -134,7 +135,7 @@ void setSignature(int numerator, int denominator){
   Undo_MainTempo(window,wblock);
   
   root->signature = ratio(numerator, denominator);
-  //UpdateAllSTimes();
+  UpdateAllBeats();
   
   window->must_redraw = true;
 }

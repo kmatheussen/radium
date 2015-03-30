@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "Beats_proc.h"
 
 #include "clipboard_block_paste_proc.h"
 
@@ -131,6 +132,7 @@ void CB_PasteBlock(
 
 	UpdateSTimes(towblock->block);
 	UpdateReallinesDependens(window,towblock);
+        UpdateBeats(block);
 
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();

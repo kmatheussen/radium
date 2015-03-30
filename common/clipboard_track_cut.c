@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "notes_proc.h"
 #include "wblocks_proc.h"
-
+#include "Beats_proc.h"
 #include "clipboard_track_cut_proc.h"
 
 
@@ -105,6 +105,7 @@ void CB_CutTrack_CurrPos(
 			Undo_Signatures_CurrPos(window);
 			cb_signature=CB_CopySignatures(block->signatures);
 			block->signatures=NULL;
+                        UpdateBeats(block);
                         UpdateWBlockWidths(window, wblock);
 			//UpdateSTimes(block);
 			//UpdateWLPBs(window,wblock);
@@ -114,6 +115,7 @@ void CB_CutTrack_CurrPos(
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
 			UpdateSTimes(block);
+                        UpdateBeats(block);
 			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:

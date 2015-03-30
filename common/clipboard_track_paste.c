@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notes_proc.h"
 #include "windows_proc.h"
 #include "wblocks_proc.h"
+#include "Beats_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
@@ -169,6 +170,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			block->signatures=CB_CopySignatures(cb_signature);
 			CutListAt_a(&block->signatures,&lastplace);
                         UpdateWBlockWidths(window, wblock);
+                        UpdateBeats(block);
 			//UpdateSTimes(block);
 			//UpdateWLPBs(window,wblock);
 			break;
@@ -179,6 +181,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			CutListAt_a(&block->lpbs,&lastplace);
 			UpdateSTimes(block);
 			//UpdateWLPBs(window,wblock);
+                        UpdateBeats(block);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
 #endif
