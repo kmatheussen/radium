@@ -201,7 +201,7 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 }
 #endif
 
-#define UPDATECOORDINATES_WHEN_DRAWING 0
+#define UPDATECOORDINATES_WHEN_DRAWING 1
 
 /**************************************************************************
   FUNCTION
