@@ -159,7 +159,7 @@ void PREFERENCES_open(void){
 
   /*  
   num_users_of_keyboard++;
-  widget->exec();
+  safeExec(msgBox);
   num_users_of_keyboard--;
   */
 }

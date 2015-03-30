@@ -130,7 +130,7 @@ static void SetLineNumAreaCoordinates(
   int highest_beat_num = 0;
   int highest_zoomline_num = -1;
 
-  if (wblock->reallines == NULL) { // If it's a new block or a newly loaded block, we just estimates the values. (These values probably don't matter anyway in those situations)
+  if (wblock->reallines == NULL) { // If it's a new block or a newly loaded block, we just set some values. (These values probably don't matter anyway in those situations)
     
     highest_bar_num = 4;
     highest_beat_num = 4;

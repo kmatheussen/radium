@@ -609,7 +609,7 @@ const wchar_t *GFX_GetSaveFileName(
 
 
 int GFX_Message(vector_t *buttons, QString message){
-  QMessageBox msgBox;
+  QMessageBox msgBox(g_editor);
   msgBox.setText(message);
 
   if(buttons==NULL){
@@ -627,7 +627,7 @@ int GFX_Message(vector_t *buttons, QString message){
 
   num_users_of_keyboard++;
   {
-    msgBox.exec();
+    safeExec(msgBox);
   }
   num_users_of_keyboard--;
 

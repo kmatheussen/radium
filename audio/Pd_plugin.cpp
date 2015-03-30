@@ -286,6 +286,9 @@ $1 = (SoundPlugin *) 0x0
 extern PlayerClass *pc;
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
+
+#include "../Qt/helpers.h"
+
 #include "SoundPluginRegistry_proc.h"
 #include "Mixer_proc.h"
 
@@ -924,7 +927,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
     QMessageBox msgBox;
     msgBox.setText(QString(libpds_strerror()));
     msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.exec();
+    safeExec(msgBox);
     free(data);
     return NULL;
   }

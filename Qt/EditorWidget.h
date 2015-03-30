@@ -76,6 +76,7 @@ typedef QImage PaintBuffer;
 typedef QPixmap PaintBuffer;
 #endif
 
+#include "helpers.h"
 
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame

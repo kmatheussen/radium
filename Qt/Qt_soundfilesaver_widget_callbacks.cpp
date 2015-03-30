@@ -32,9 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
 
+#include "helpers.h"
+
 #include "Qt_soundfilesaver_widget.h"
 
-extern struct Root *root;
 
 class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
   Q_OBJECT
@@ -62,7 +63,7 @@ class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
         //msgBox.setInformativeText(message);
         msgBox.setStandardButtons(QMessageBox::Ok);
 
-        msgBox.exec();
+        safeExec(msgBox);
 
         free((void*)message);
 
@@ -137,7 +138,7 @@ public slots:
         msgBox.setInformativeText(error_string);
         msgBox.setStandardButtons(QMessageBox::Ok);
 
-        msgBox.exec();
+        safeExec(msgBox);
         return;
 
       } else {
@@ -179,7 +180,7 @@ extern "C"{
     widget->show();
 #else
     num_users_of_keyboard++;
-    widget->exec();
+    safeExec(widget);
     num_users_of_keyboard--;
 #endif
   }

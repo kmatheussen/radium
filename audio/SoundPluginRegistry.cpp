@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
 
+#include "../Qt/helpers.h"
+
 #include "SoundPlugin.h"
 #include "Jack_plugin_proc.h"
 #include "VST_plugins_proc.h"
@@ -79,8 +81,8 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       msgBox.setInformativeText("Press OK to select the plugin path, or Cancel to replace the plugin with a Pipe.");
       msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
       msgBox.setDefaultButton(QMessageBox::Ok);
-      int ret = msgBox.exec();
-      
+      int ret = safeExec(msgBox);
+
       if(ret==QMessageBox::Cancel)
         break;
 
@@ -110,7 +112,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       msgBox.setInformativeText("(LADSPA_PATH is not set)");
 
     msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.exec();
+    safeExec(msgBox);
   }
 
   return PR_get_plugin_type_by_name("Pipe","Pipe");
