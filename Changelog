@@ -1,3 +1,16 @@
+Most important changes 3.0.rc12 -> 3.0.rc13
+* Metronome
+* Sample player: Enable looping for all sounds, not just wav
+* Protect reset effect value with player lock
+* Protect all remaing calls to Q<class>::exec() with GL_lock()
+ (Linux Intel/AMD gfx card crash fix)
+* Fix graphical coordinates not updated when changing font size
+  and possible other situations (bug introduced in 3.0.rc12)
+* Adjust tempo color graph and line number width a little bit
+
+
+
+
 Most important changes 3.0.rc11 -> 3.0.rc12
 * Show bars and beats instead of line numbers
 * Rearranged timing tracks order.
