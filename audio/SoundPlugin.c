@@ -1124,7 +1124,9 @@ void PLUGIN_reset(SoundPlugin *plugin){
 
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
-  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  PLAYER_lock();{
+    PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
 }
 
 static float get_rand(void){
