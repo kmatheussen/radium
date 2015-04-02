@@ -233,8 +233,8 @@ MyApplication::MyApplication(int &argc,char **argv)
 
 
   //QApplication *qapplication;
-MyApplication *qapplication;
-QApplication *g_qapplication;
+MyApplication *qapplication = NULL;
+QApplication *g_qapplication = NULL;
 static QSplashScreen *g_splashscreen;
 
 #if 1 //USE_QT_VISUAL

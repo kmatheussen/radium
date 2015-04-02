@@ -358,11 +358,14 @@ public:
 #endif
 };
 
+QMainWindow *g_main_window = NULL;
+
 void SetupMainWindow(void){
 
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
   QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
-
+  g_main_window = main_window;
+  
 #ifdef USE_QT4
   //main_window->setAttribute(Qt::WA_PaintOnScreen);
   //main_window->setAttribute(Qt::WA_OpaquePaintEvent);
