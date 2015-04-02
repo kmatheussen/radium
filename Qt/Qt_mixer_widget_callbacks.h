@@ -162,8 +162,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
                               "* Zoom in and out by pressing CTRL and using the scroll wheel.\n"
                               );
     msgBox.setStandardButtons(QMessageBox::Ok);
-    
-    msgBox.exec();
+
+    safeExec(msgBox);
   }
 
 };

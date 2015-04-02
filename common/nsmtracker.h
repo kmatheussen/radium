@@ -785,7 +785,7 @@ struct WTracks{
 
 
 /*********************************************************************
-	signature.h
+	Signature.h
 *********************************************************************/
 
 struct Signatures{
@@ -812,6 +812,21 @@ static inline bool WSIGNATURE_is_measure_change(const struct WSignatures *signat
 static inline bool WSIGNATURE_is_first_beat(const struct WSignatures *signature){
   return signature->beat_num==1;
 }
+
+
+
+/*********************************************************************
+	Beats.h
+*********************************************************************/
+
+struct Beats{
+  struct ListHeader3 l;
+  Ratio signature; // Current signature for this beat.
+  int bar_num;
+  int beat_num;  // For instance, in a 4/4 measure, this value is either 1, 2 or 3, or 4.
+};
+#define NextBeat(a) (struct Beats *)((a)->l.next)
+  
 
 /*********************************************************************
 	lpb.h
@@ -911,6 +926,7 @@ struct Blocks{
 	int num_lines;
 
 	struct Tracks *tracks;
+	struct Beats        *beats;
 	struct Signatures   *signatures;
   	struct LPBs   *lpbs;
 	struct Tempos *tempos;

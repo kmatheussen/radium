@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "wblocks_proc.h"
 #include "block_properties_proc.h"
+#include "Beats_proc.h"
 
 #include "lines_proc.h"
 
@@ -139,6 +140,7 @@ void InsertLines(
 	List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
 
 	UpdateSTimes(block);
+        UpdateBeats(block);
 
 	while(track!=NULL){
 		List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);

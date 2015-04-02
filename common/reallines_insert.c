@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_notes_proc.h"
 #include "undo_notesandfxs_proc.h"
 #include "player_proc.h"
+#include "Beats_proc.h"
 
 #include "reallines_insert_proc.h"
 
@@ -177,6 +178,7 @@ void InsertRealLines_CurrPos(
 		case SIGNATURETRACK:
 			Undo_Signatures_CurrPos(window);
 			InsertPlace_signatures(block,place,toplace);
+                        UpdateBeats(block);
 			break;
 		case LPBTRACK:
 			Undo_LPBs_CurrPos(window);
@@ -186,6 +188,7 @@ void InsertRealLines_CurrPos(
 			DrawUpLPBs(window,wblock);
 #endif
 			UpdateSTimes(wblock->block);
+                        UpdateBeats(block);
 			break;
 		case TEMPOTRACK:
 			Undo_Tempos_CurrPos(window);

@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "wblocks_proc.h"
+#include "Beats_proc.h"
 
 #include "block_properties_proc.h"
 
@@ -141,6 +142,7 @@ void Block_Set_num_lines(
 	}
 
 	UpdateSTimes(block);
+        UpdateBeats(block);
 }
 
 

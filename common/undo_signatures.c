@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Signature_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
+#include "Beats_proc.h"
 
 #include "undo_signatures_proc.h"
 
@@ -75,7 +76,9 @@ void *Undo_Do_Signatures(
 
 	//UpdateWSignatures(window,wblock);
 
-	UpdateSTimes(wblock->block);
+	UpdateSTimes(wblock->block); // is this necessary?
+        UpdateBeats(wblock->block);
+
 
 	return temp;
 }

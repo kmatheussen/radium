@@ -44,7 +44,7 @@ static void ask_to_add_resolved_path(QDir key, QDir value){
   msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
   msgBox.setDefaultButton(QMessageBox::Yes);
 
-  int ret = msgBox.exec();
+  int ret = safeExec(msgBox);
 
   if(ret==QMessageBox::Yes)
     resolved_paths[key.path()] = value;
@@ -171,7 +171,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
       //msgBox.setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
       msgBox.setStandardButtons(QMessageBox::Ok);
       
-      msgBox.exec();
+      safeExec(msgBox);
 
       QString filename;
 

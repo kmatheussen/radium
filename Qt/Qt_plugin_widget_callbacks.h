@@ -223,7 +223,7 @@ public:
         msgBox.setText("Could not save file.");
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
+        safeExec(msgBox);
         return;
       }
 
@@ -256,7 +256,7 @@ public:
         msgBox.setText("Could not open file.");
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
+        safeExec(msgBox);
         return;
       }
 
@@ -268,7 +268,7 @@ public:
         msgBox.setText("File does not appear to be a valid effects settings file");
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
+        safeExec(msgBox);
         return;
       }
 
@@ -302,7 +302,7 @@ public:
         msgBox.setText(type->info);
       else
         msgBox.setText("No information about this plugin."); // This message box should never show.
-      msgBox.exec();
+      safeExec(msgBox);
     }
 };
 

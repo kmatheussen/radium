@@ -130,7 +130,7 @@ static void SetLineNumAreaCoordinates(
   int highest_beat_num = 0;
   int highest_zoomline_num = -1;
 
-  if (wblock->reallines == NULL) { // If it's a new block or a newly loaded block, we just estimates the values. (These values probably don't matter anyway in those situations)
+  if (wblock->reallines == NULL) { // If it's a new block or a newly loaded block, we just set some values. (These values probably don't matter anyway in those situations)
     
     highest_bar_num = 4;
     highest_beat_num = 4;
@@ -161,8 +161,8 @@ static void SetLineNumAreaCoordinates(
   wblock->beats_max_num_characters = num_characters_in_num(highest_beat_num);
   wblock->zoomlines_max_num_characters = highest_zoomline_num==-1 ? 0 : num_characters_in_num(highest_zoomline_num+1);
   
-  wblock->beats_x        = wblock->linenumarea.x + wblock->bars_max_num_characters      * window->fontwidth + 2;
-  wblock->zoomlines_x    = wblock->beats_x       + wblock->beats_max_num_characters     * window->fontwidth + 2;
+  wblock->beats_x        = wblock->linenumarea.x + wblock->bars_max_num_characters      * window->fontwidth + 4;
+  wblock->zoomlines_x    = wblock->beats_x       + wblock->beats_max_num_characters     * window->fontwidth + 4;
   wblock->linenumarea.x2 = wblock->zoomlines_x   + wblock->zoomlines_max_num_characters * window->fontwidth;
 
   wblock->linenumarea.width = wblock->linenumarea.x2 - wblock->linenumarea.x;
@@ -280,7 +280,7 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
 
   //SetZoomLevelAreaWidth(window,wblock);
 
-	wblock->tempocolorarea.width = window->fontwidth*2;
+	wblock->tempocolorarea.width = window->fontwidth*5/2;
 	//wblock->signatureTypearea.width    = 0; //window->fontwidth;
 	wblock->signaturearea.width        = window->fontwidth*GetMaxSignatureWidth(wblock->block);
 	wblock->lpbTypearea.width    = window->fontwidth;

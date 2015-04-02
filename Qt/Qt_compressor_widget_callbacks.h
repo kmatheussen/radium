@@ -172,7 +172,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
       msgBox.setText("Could not open file \""+filename+"\".");
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setDefaultButton(QMessageBox::Ok);
-      msgBox.exec();
+      safeExec(msgBox);
       return;
     }
     
@@ -258,7 +258,7 @@ void on_enable_checkbox_toggled(bool val){
       msgBox.setText("Could not save file.");
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setDefaultButton(QMessageBox::Ok);
-      msgBox.exec();
+      safeExec(msgBox);
       return;
     }
 
