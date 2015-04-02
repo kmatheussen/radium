@@ -93,6 +93,9 @@
       </item>
       <item>
        <widget class="QGroupBox" name="mmagroup">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Warning: Selecting a value of 16X or 32X is likely to run MSAA off.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>Multisample Anti-Aliasing (MSAA)</string>
         </property>
