@@ -80,6 +80,7 @@ typedef uint8_t UBYTE;
 #include "../common/blocklist_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/time_proc.h"
+#include "../common/Beats_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/read_binary.h"
@@ -678,6 +679,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 	DISK_close_and_delete(file);
 
 	UpdateAllSTimes();
+        UpdateAllBeats();
 
 //	DrawUpTrackerWindow(window);
 	SelectWBlock(window,window->wblocks);

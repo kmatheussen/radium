@@ -156,6 +156,7 @@ void setLPB(int lpb_value){
   
   root->lpb=lpb_value;
   UpdateAllSTimes();
+  UpdateAllBeats();
   
   //UpdateAllWLPBs(window);
   window->must_redraw = true;

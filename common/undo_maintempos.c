@@ -66,7 +66,7 @@ void *Undo_Do_MainTempo(
         GFX_OS_update_bottombar();
         
 	UpdateAllSTimes();
-        UpdateBeats(wblock->block);
+        UpdateAllBeats();
 
 	u_rt->signature=signature;
         u_rt->lpb=lpb;
