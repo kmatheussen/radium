@@ -399,7 +399,7 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
     
     draw_text_num(
                   window,
-                  GE_textcolor_z(1, z),
+                  GE_textcolor_z(8, z),
                   wsignature->bar_num,
                   wblock->bars_max_num_characters,
                   wblock->linenumarea.x,
