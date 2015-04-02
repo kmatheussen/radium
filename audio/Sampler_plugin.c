@@ -1284,9 +1284,10 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename){
     for(ch=0;ch<num_channels;ch++){     
       Sample *sample=(Sample*)&data->samples[ch];
 
+      set_legal_loop_points(sample,-1,-1); // By default, don't loop, but if set, loop all.
+              
       if((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
         printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
-        set_legal_loop_points(sample,-1,-1); // By default, don't loop, but if set, loop all.
         set_wav_loop_points(sample,filename);
       }
 
