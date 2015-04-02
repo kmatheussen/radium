@@ -91,6 +91,14 @@ extern int num_users_of_keyboard;
 static int g_last_set_producer_buffersize;
 static RSemaphore *g_freewheeling_has_started = NULL;
 
+extern const char *g_click_name;
+
+// these four variables can only be written to in the audio thread.
+static volatile int g_num_allocated_click_plugins = 0;
+static volatile int g_num_click_plugins = 0;
+static SoundPlugin **g_click_plugins = NULL;
+static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_click_patches.
+
 #ifndef DOESNT_HAVE_SSE
 #  include <xmmintrin.h>
 #endif
@@ -398,6 +406,25 @@ struct Mixer{
         bus_num = 1;
     }
 
+    bool is_click_patch = false;
+    SoundPlugin **new_g_click_plugins = NULL;
+    Patch **new_g_click_patches = NULL;
+    int new_num_allocated_click_plugins = g_num_allocated_click_plugins;
+    
+    if (!strcmp(plugin->type->type_name,"Sample Player")) {
+      if(!strcmp(plugin->type->name,g_click_name)) {
+        if (g_num_allocated_click_plugins >= g_num_click_plugins) {
+          if (g_num_allocated_click_plugins<=0)
+            new_num_allocated_click_plugins = 16;
+          else
+            new_num_allocated_click_plugins = g_num_allocated_click_plugins * 2;
+          new_g_click_plugins = (SoundPlugin **)calloc(sizeof(SoundPlugin*), new_num_allocated_click_plugins);
+          new_g_click_patches = (Patch **)malloc(sizeof(Patch*)*new_num_allocated_click_plugins);
+        }
+        is_click_patch = true;
+      }
+    }
+    
     PLAYER_lock();{
 
       if(bus_num==0)
@@ -405,14 +432,58 @@ struct Mixer{
       if(bus_num==1)
         _bus2 = sound_producer;
 
+      if (is_click_patch) {
+        if (new_g_click_plugins != NULL) {
+          memcpy(new_g_click_plugins, g_click_plugins, sizeof(SoundPlugin*)*g_num_allocated_click_plugins);
+          g_click_plugins = new_g_click_plugins;
+          
+          g_click_patches = new_g_click_patches;
+          g_num_allocated_click_plugins = new_num_allocated_click_plugins;
+        }
+        
+        int i;
+        
+        for(i=0; i<g_num_allocated_click_plugins ; i++){
+          if (g_click_plugins[i]==NULL) {
+            g_click_plugins[i] = plugin;
+            g_num_click_plugins++;
+            break;
+          }
+        }
+        
+        R_ASSERT(i<g_num_allocated_click_plugins);
+      }
+      
       _sound_producers.add((DoublyLinkedList*)sound_producer);
-
+      
     }PLAYER_unlock();
   }
-
+    
   void remove_SoundProducer(SoundProducer *sound_producer){
+    SoundPlugin *plugin = SP_get_plugin(sound_producer);
+    
+    bool is_click_patch = false;
+
+    if (!strcmp(plugin->type->type_name,"Sample Player"))
+      if(!strcmp(plugin->type->name,g_click_name))
+        is_click_patch = true;
+    
     PLAYER_lock();{
       _sound_producers.remove((DoublyLinkedList*)sound_producer);
+
+      if (is_click_patch) {
+        int i;
+        for(i=0; i<g_num_allocated_click_plugins ; i++){
+          if (g_click_plugins[i] == plugin) {
+            g_click_plugins[i] = NULL;
+            g_num_click_plugins--;
+            break;
+          }
+        }
+        
+        R_ASSERT(i<g_num_allocated_click_plugins);
+      }
+      
     }PLAYER_unlock();
   }
 
@@ -730,6 +801,25 @@ void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
 
 DoublyLinkedList *MIXER_get_all_SoundProducers(void){
   return g_mixer->_sound_producers.next;
+}
+
+struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){
+  int num = 0;
+  
+  for (int i=0 ; i<g_num_allocated_click_plugins ; i++){
+    SoundPlugin *plugin = g_click_plugins[i];
+    if (plugin != NULL && plugin->patch != NULL) {      
+      g_click_patches[num] = plugin->patch;
+      num++;
+    }
+  }
+
+  //  if (g_num_click_plugins != num)
+  //   printf("Error: g_num_click_plugins != num: %d != %d\n",g_num_click_plugins, num);
+  
+  *num_click_patches = num;
+
+  return g_click_patches;
 }
 
 float MIXER_get_sample_rate(void){

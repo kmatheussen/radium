@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_clock_proc.h"
 #include "PEQ_LPB_proc.h"
 #include "PEQ_Signature_proc.h"
+#include "PEQ_Beats_proc.h"
 
 #include "player_pause_proc.h"
 
@@ -91,6 +92,7 @@ void PC_StopPause(void){
 	InitPEQclock();
         InitPEQ_LPB(pc->block,place);
         InitPEQ_Signature(pc->block,place);
+        InitPEQ_Beat(pc->block,place);
 	InitPEQrealline(pc->block,&place);
 	InitPEQline(pc->block,&place);
 	InitPEQblock(pc->block,&place);

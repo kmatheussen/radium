@@ -426,7 +426,9 @@ extern SoundPlugin *g_system_bus;
 
 bool AUDIO_is_permanent_patch(struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-  if(plugin==get_main_pipe() || !strcmp(plugin->type->type_name,"Bus"))
+  if(plugin==get_main_pipe() ||
+     //(!strcmp(plugin->type->type_name,"Sample Player") && !strcmp(plugin->type->name, "Click")) ||
+     !strcmp(plugin->type->type_name,"Bus"))
     return true;
   else
     return false;

@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_updown_proc.h"
 #include "PEQ_LPB_proc.h"
 #include "PEQ_Signature_proc.h"
+#include "PEQ_Beats_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "player_proc.h"
@@ -151,6 +152,7 @@ static void PlayBlock(
 		InitPEQclock();
                 InitPEQ_LPB(pc->block,place);
                 InitPEQ_Signature(pc->block,place);
+                InitPEQ_Beat(pc->block,place);
 		InitPEQrealline(block,place);
 		InitPEQline(block,place);
 		InitPEQblock(block,place);
@@ -251,6 +253,7 @@ static void PlaySong(
 		InitPEQclock();
                 InitPEQ_LPB(pc->block,place);
                 InitPEQ_Signature(pc->block,place);
+                InitPEQ_Beat(pc->block,place);
 		InitPEQrealline(block,place);
 		InitPEQline(block,place);
 		InitPEQblock(block,place);

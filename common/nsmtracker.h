@@ -1219,7 +1219,8 @@ struct Root{
         int standardvel;
 
 	volatile bool editonoff;
-	bool scrollplayonoff;
+        volatile bool clickonoff;
+        volatile bool scrollplayonoff;
 };
 
 extern struct Root *root;

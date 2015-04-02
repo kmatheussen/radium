@@ -29,6 +29,8 @@ extern DoublyLinkedList *MIXER_get_all_SoundProducers(void);
 
 #endif // __cplusplus
 
+extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches);
+
 extern LANGSPEC float MIXER_get_sample_rate(void);
 
 extern LANGSPEC int MIXER_get_buffer_size(void);

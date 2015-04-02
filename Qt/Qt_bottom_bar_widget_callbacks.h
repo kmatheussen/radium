@@ -64,6 +64,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     void timerEvent(QTimerEvent * e){
       if (bottom_bar_widget->edit_onoff->isChecked() != root->editonoff)
         bottom_bar_widget->edit_onoff->setChecked(root->editonoff);
+      if (bottom_bar_widget->click_onoff->isChecked() != root->clickonoff)
+        bottom_bar_widget->click_onoff->setChecked(root->clickonoff);
     }
   };
 
@@ -308,8 +310,12 @@ public slots:
       switchEditOnOff();
   }
 
+  void on_click_onoff_toggled(bool val){
+    enableMetronome(val);
+  }
+
   void on_scrollplay_onoff_toggled(bool val){
-    root->scrollplayonoff = val;
+    enableScrollplay(val);
   }
 };
 

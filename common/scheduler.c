@@ -88,7 +88,7 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
 
 void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
 
-  // An event created by an RT_process function needs run right away.
+  // An event created by an RT_process function needs to run right away.
   // If not it won't be run until the next audio block since SCHEDULER_called_per_block
   // has already been called for this audio block.
   // (Q: why not do this for events genereated by the editor too?

@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_S 1.0
 #define MAX_R 2000
 
-static const char *click_name = "Click";
+const char *g_click_name = "Click";
 
 // Effect order
 enum{
@@ -594,22 +594,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
-static void RT_click_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  static int last_beat = -1;
-  static double last_num_quarters = 0.0;
-
-  Ratio signature = RT_Signature_get_current_Signature();
-
-  double abs_num_quarters = RT_LPB_get_beat_position(); // RT_LPB_get_beat_position() actually returns quarters, not beats. Should probably rename the function.
-  double num_quarters = abs_num_quarters - last_num_quarters;
-
-  if (num_quarters * (double)signature.denominator / 4.0 >= 1.0) {
-    printf("Got it %d\n",last_beat++);
-    last_num_quarters = abs_num_quarters;
-  }
-
-  RT_process(plugin, time, num_frames, inputs, outputs);
-}
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume, float pan){
   Data *data = (Data*)plugin->data;
@@ -1431,7 +1415,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
                                     STRING_append(STRING_create(OS_get_directory_separator()),
                                     STRING_append(STRING_create("sounds"),
                                     STRING_append(STRING_create(OS_get_directory_separator()),
-                                                  STRING_create("016.WAV")))));
+                                                  !strcmp(plugin_type->name, "Click")
+                                                  ? STRING_create("243749__unfa__metronome-1khz-weak-pulse.flac")
+                                                  : STRING_create("016.WAV")))));
     
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
 
@@ -1688,8 +1674,7 @@ void create_sample_plugin(void){
 
   memcpy((void*)&click_type, (void*)&plugin_type, sizeof(SoundPluginType));
 
-  click_type.name = click_name;
-  click_type.RT_process = RT_click_process;
+  click_type.name = g_click_name;
 
-  //PR_add_plugin_type(&click_type);
+  PR_add_plugin_type(&click_type);
 }

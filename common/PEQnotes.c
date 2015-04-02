@@ -34,10 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern PlayerClass *pc;
-extern struct Root *root;
 
-void PE_StartNote(struct PEventQueue *peq,int doit);
-void PE_StopNote(struct PEventQueue *peq,int doit);
+
+static void PE_StartNote(struct PEventQueue *peq,int doit);
+static void PE_StopNote(struct PEventQueue *peq,int doit);
 
 
 void InitPEQendnote(
@@ -236,7 +236,7 @@ static void scheduled_play_note(int64_t time, const union SuperType *args){
                      time);
 }
 
-void PE_StartNote(struct PEventQueue *peq,int doit){
+static void PE_StartNote(struct PEventQueue *peq,int doit){
 
 	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
           union SuperType args[2];
@@ -265,7 +265,7 @@ static void scheduled_stop_note(int64_t time, const union SuperType *args){
                      time);
 }
 
-void PE_StopNote(struct PEventQueue *peq,int doit){
+static void PE_StopNote(struct PEventQueue *peq,int doit){
 
 	if(doit && peq->track->onoff==1 && peq->track->patch!=NULL){
 //		Pdebug("Stop note: %d, vel: %d\n",peq->note->note,peq->note->velocity_end);

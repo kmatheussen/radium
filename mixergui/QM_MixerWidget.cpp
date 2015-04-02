@@ -1025,6 +1025,7 @@ SoundPlugin *get_main_pipe(void){
   return NULL;
 }
 
+
 void MixerWidget::populateScene()
 {
 #if 0
@@ -1056,7 +1057,6 @@ void MixerWidget::populateScene()
 
   SoundPluginType *bus2 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 2");
   SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2");
-
 
   CHIP_connect_chips(&scene, main_pipe, system_out_plugin);
   CHIP_connect_chips(&scene, bus1_plugin, main_pipe);
