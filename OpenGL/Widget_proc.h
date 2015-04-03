@@ -1,6 +1,8 @@
 #ifndef OPENGL_WIDGET_PROC_H
 #define OPENGL_WIDGET_PROC_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 #include <QWidget>
 
