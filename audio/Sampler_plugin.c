@@ -565,7 +565,6 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
-  //outputs[0] =NULL; // crashreporter test.
   Voice *voice = data->voices_playing;
 
   memset(outputs[0],0,num_frames*sizeof(float));

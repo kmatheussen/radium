@@ -120,6 +120,9 @@ int main(int argc, char **argv){
     return 0;
   }
 
+  QTime time;
+  time.start();
+  
   bool do_exit = false;
 
   Report *report = (Report*)g_sharedmemory->data();
@@ -170,6 +173,8 @@ int main(int argc, char **argv){
           tosend += "Running plugin: ";
           tosend += report->plugin_name;
           tosend += "\n\n";
+
+          tosend += QString("Running time: ") + QString::number(time.elapsed()) + "\n\n";
           
           tosend += report->data;
           tosend += "\n\n";
@@ -198,7 +203,7 @@ int main(int argc, char **argv){
                                            "\n"
                                            "Only the information in \"Show details...\" is sent.\n"
                                            "\n"
-                                           "Please don't report the same crash more than once.\n"
+                                           "Please don't report the same crash more than two or three times.\n"
                                            )
                                    + (report->plugin_name[0] != 0
                                       ? QString("\nPlease note that a third party plugin called \"") + report->plugin_name + "\" was currently processing audio. It might be responsible for the crash."

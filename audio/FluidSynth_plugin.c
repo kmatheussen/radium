@@ -92,7 +92,8 @@ static int64_t get_fluidsynth_time(Data *data, int64_t time){
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
-
+  //data =NULL; // crashreporter test.
+  
   //printf("telling sequencer that it is time %d\n",(int)data->time);
   fluid_sequencer_process(data->sequencer, get_fluidsynth_time(data,data->time));
   data->time += num_frames;
