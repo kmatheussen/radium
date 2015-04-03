@@ -136,7 +136,7 @@ int main(int argc, char **argv){
 
     //printf("killing: %d / %d\n",(int)kill(parent_pid,0),(int)ESRCH);
 
-    if(kill(parent_pid,0)==-1){
+    if(kill(parent_pid,0)==-1){ // This is just for checking that the parent is alive. When sig==0 in a call to kill(pid,sig), no kill signal is actually sent. ("man 3 kill")
       counter--;
       if(counter>0){
         if(0)
@@ -161,11 +161,10 @@ int main(int argc, char **argv){
       case Report::THERE_IS_A_MESSAGE:
         {
           fprintf(stderr,"Got message. Waiting 2 seconds.\n");
-
           g_sharedmemory->unlock();
           mysleep(2000);
           g_sharedmemory->lock();
-
+          
           fprintf(stderr,"Got message:\n%s\n",report->data);
 
           tosend += "Running plugin: ";
@@ -386,12 +385,12 @@ void CRASHREPORTER_unset_plugin_name(void){
 void CRASHREPORTER_report_crash(const char **messages, int num_messages){
   g_sharedmemory->lock();{
 
+    Report *report = (Report*)g_sharedmemory->data();
+
     static int pos=0;
     static int bytes_left=MESSAGE_LEN - 1;
 
-    Report *report = (Report*)g_sharedmemory->data();
-
-    {
+    if (pos==0){
       snprintf(report->data+pos, bytes_left, "vendor: \"%s\"\nrenderer: \"%s\"\nversion: \"%s\"\n\n",
                GE_vendor_string==NULL ? "(null)" : GE_vendor_string,
                GE_renderer_string==NULL ? "(null)" : GE_renderer_string,
@@ -400,6 +399,8 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
       
       pos=strlen(report->data);
       bytes_left = MESSAGE_LEN - pos - 1;
+
+      strncat(report->plugin_name, g_plugin_name, PLUGIN_NAME_LEN - 2);
     }
     
     for(int i=0;i<num_messages;i++){
@@ -418,13 +419,12 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
       pos=strlen(report->data);
       bytes_left = MESSAGE_LEN - pos - 1;
     }
-    
-    strncat(report->plugin_name, g_plugin_name, PLUGIN_NAME_LEN - 2);
-    
+
     report->status=Report::THERE_IS_A_MESSAGE;
-    
+
   }g_sharedmemory->unlock();
 }
+
 
 void CRASHREPORTER_close(void){
 #if defined(FOR_WINDOWS)
