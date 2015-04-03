@@ -1,3 +1,18 @@
+Most important changes 3.0.rc13 -> 3.0.rc14
+* Windows: Don't abort program if glGetError() returns an error.
+  (i.e. compile the visualization library with the -DNDEBUG option)
+* Show opengl info, qt version and credits in the "about window".
+* crashreporter: Include QGLFormat::OpenGLVersionFlags in report
+* crashreporter: Add running time to report. Useful to see if the crash happened during startup.
+* crashreporter: Only insert opengl info and plugin name in the first call to CRASHREPORTER_report_crash
+* tooltip for the MSAA opengl option
+* Some post MIDI recording tool ui tweaks
+* Use color #8 for bar num
+* Tooltips for LPB and BPM widgets
+
+
+
+
 Most important changes 3.0.rc12 -> 3.0.rc13
 * Metronome
 * Sample player: Enable looping for all sounds, not just wav
