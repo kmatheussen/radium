@@ -396,10 +396,11 @@ void CRASHREPORTER_report_crash(const char **messages, int num_messages){
     static int bytes_left=MESSAGE_LEN - 1;
 
     if (pos==0){
-      snprintf(report->data+pos, bytes_left, "vendor: \"%s\"\nrenderer: \"%s\"\nversion: \"%s\"\n\n",
+      snprintf(report->data+pos, bytes_left, "vendor: \"%s\"\nrenderer: \"%s\"\nversion: \"%s\"\nflags: %x\n",
                GE_vendor_string==NULL ? "(null)" : GE_vendor_string,
                GE_renderer_string==NULL ? "(null)" : GE_renderer_string,
-               GE_version_string==NULL ? "(null)" : GE_version_string
+               GE_version_string==NULL ? "(null)" : GE_version_string,
+               GE_opengl_version_flags
                );
       
       pos=strlen(report->data);

@@ -76,7 +76,8 @@ static RSemaphore *g_ack_make_current;
 volatile char *GE_vendor_string=NULL;
 volatile char *GE_renderer_string=NULL;
 volatile char *GE_version_string=NULL;
-      
+volatile uint32_t GE_opengl_version_flags = 0;
+
 static volatile int g_curr_realline;
 
 // TS (called from both main thread and opengl thread)
@@ -506,6 +507,8 @@ public:
       GE_renderer_string = strdup((const char*)glGetString(GL_RENDERER));
       GE_version_string = strdup((const char*)glGetString(GL_VERSION));
       printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
+
+      GE_opengl_version_flags = QGLFormat::openGLVersionFlags();
       //abort();
     }
     
@@ -747,8 +750,9 @@ static void show_message_box(QMessageBox *box){
 }
 
 
-
+#if defined(FOR_MACOSX)
 extern "C" void cocoa_set_best_resolution(void *view);
+#endif
 
 static bool is_opengl_version_recent_enough_questionmark(void){
   if ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_1_4) == QGLFormat::OpenGL_Version_1_4)

@@ -29,7 +29,8 @@ extern void GL_unlock(void);
 volatile extern char *GE_vendor_string;
 volatile extern char *GE_renderer_string;
 volatile extern char *GE_version_string;
-
+volatile extern uint32_t GE_opengl_version_flags;
+  
 extern void GE_set_curr_realline(int curr_realline);
 
 #ifdef __cplusplus
