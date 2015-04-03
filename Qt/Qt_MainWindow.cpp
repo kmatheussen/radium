@@ -662,5 +662,9 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   return GFX_Message(buttons,QString(message));
 }
 
+const char *GFX_qVersion(void){
+  return qVersion();
+}
+
 //#include "mgakk.cpp"
 

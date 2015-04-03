@@ -385,7 +385,18 @@ void openToolsDialog(void){
 }
 
 void openAboutWindow(void){
-  GFX_Message(NULL,"Radium "  VERSION);
+  GFX_Message(NULL,"Radium "  VERSION "\n\n"
+              "OpenGL vendor: \"%s\"\n"
+              "OpenGL renderer: \"%s\"\n"
+              "OpenGL version: \"%s\"\n"
+              "OpenGL flags: %x\n"
+              "Qt version: \"%s\"",
+              GE_vendor_string==NULL ? "(null)" : GE_vendor_string,
+              GE_renderer_string==NULL ? "(null)" : GE_renderer_string,
+              GE_version_string==NULL ? "(null)" : GE_version_string,
+              GE_opengl_version_flags,
+              GFX_qVersion()
+              );
 }
 
 char *getProgramPath(void){

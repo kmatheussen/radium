@@ -36,6 +36,7 @@ int GFX_Message(vector_t *buttons, QString message);
 #endif
 
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
+extern LANGSPEC const char *GFX_qVersion(void);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
 extern LANGSPEC void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval);
