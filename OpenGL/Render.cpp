@@ -963,7 +963,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       paint_multinotes(wtrack, tr, NotesTexts, isranged, y1, y2);
     
     else if (wblock->mouse_track == wtrack->l.num || wtrack->is_wide==true || cents!=0) {
-      GE_Context *foreground = GE_textcolor(colnum);
+      GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO));
       
       if (cents==0)
         GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
@@ -1366,17 +1366,9 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
   SetNoteSubtrackAttributes(wtrack->track);
-      
-  if(left_subtrack==-1) {
-
-    vector_t *trs = TRS_get(wblock, wtrack);
-      
-    for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
-      create_track_text(window, wblock, wtrack, &trs[realline], realline);
-  }
-
-  {
-  
+   
+  // velocities and pitches
+  {  
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
       if(note->subtrack >= left_subtrack) {
@@ -1389,7 +1381,17 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
   }
 
 
-  
+  // note/pitch names / cents
+  if(left_subtrack==-1) {
+
+    vector_t *trs = TRS_get(wblock, wtrack);
+      
+    for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+      create_track_text(window, wblock, wtrack, &trs[realline], realline);
+  }
+
+
+  // fxs
   if(left_subtrack<=0){
     
     const struct FXs *fxs=wtrack->track->fxs;
@@ -1401,6 +1403,7 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
     create_track_stops(window, wblock, wtrack);
   }
 
+  // rec.
   if (wtrack->track->is_recording)
     create_track_is_recording(window, wblock, wtrack);
 }
