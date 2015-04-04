@@ -1,15 +1,15 @@
 #ifndef OPENGL_WIDGET_PROC_H
 #define OPENGL_WIDGET_PROC_H
 
-#ifdef __cplusplus
-#include <QWidget>
-
-QWidget *GL_create_widget(QWidget *parent);
-void GL_stop_widget(QWidget *widget);
-#endif
+#include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
+  #include <QWidget>
+
+  extern QWidget *GL_create_widget(QWidget *parent);
+  extern void GL_stop_widget(QWidget *widget);
+
+  extern "C" {
 #endif
 
 extern void GL_EnsureMakeCurrentIsCalled(void);
@@ -34,7 +34,7 @@ volatile extern uint32_t GE_opengl_version_flags;
 extern void GE_set_curr_realline(int curr_realline);
 
 #ifdef __cplusplus
-}
+  }
 #endif
 
-#endif
+#endif // OPENGL_WIDGET_PROC_H
