@@ -1870,6 +1870,7 @@
                 (and (= Button *right-button*)
                      *current-track-num-all-tracks*
                      (>= Y (ra:get-block-header-y2))
+                     (< Y (ra:get-reltempo-slider-y1))
                      (cond ((= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num))
                             (c-display "reltempo")
                             (popup-menu "hide tempo multiplier track" ra:show-hide-reltempo-track))
