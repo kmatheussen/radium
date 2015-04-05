@@ -340,6 +340,15 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     int samplePosition;
     
     while(iterator.getNextEvent(message, samplePosition)){
+#ifndef RELEASE
+      if (samplePosition >= num_frames || samplePosition < 0)
+        RT_message("The instrument named \"%s\" of type %s/%s\n"
+                   "returned illegal sample position: %d",
+                   patch==NULL?"<no name>":patch->name,
+                   plugin->type->type_name, plugin->type->name,
+                   samplePosition
+                   );
+#endif
       // Make sure samplePosition has a legal value
       if (samplePosition >= num_frames)
         samplePosition = num_frames-1;
