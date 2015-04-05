@@ -97,7 +97,8 @@ public slots:
 
       GFX_Message(NULL,
                   "Soundfile export is only available to subscribers.<p>"
-                "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
+                  "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>."
+                  );
 
 #else // FULL_VERSION==0
 
