@@ -15,6 +15,7 @@
 #include "../common/patch_proc.h"
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/PEQ_Signature_proc.h"
+#include "../common/PEQ_Beats_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
@@ -40,6 +41,7 @@
 
 
 extern struct Root *root;
+
 
 namespace{
 
@@ -95,7 +97,7 @@ namespace{
       result.editOriginTime = 0; //result.timeInSeconds;
 
       result.ppqPosition = RT_LPB_get_beat_position();
-      result.ppqPositionOfLastBarStart = 0; // fixme
+      result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start = 0.0;
 
       result.isPlaying = pc->isplaying;
       result.isRecording = false;

@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scheduler_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "patch_proc.h"
+#include "PEQ_LPB_proc.h"
 
 #include "PEQ_Beats_proc.h"
 
@@ -86,12 +87,17 @@ static void scheduled_play_beat_note(int64_t time, const union SuperType *args){
     play_note(time, beat_note_num);
 }
 
+double g_beat_position_of_last_bar_start = 0.0;
+
 static void handle_new_beat(struct PEventQueue *peq, int doit, struct Beats *beat){
   if (doit==0) // Is doit used anymore?
     return;
 
   //printf("%d %d\n", beat->bar_num, beat->beat_num);
 
+  if (beat->beat_num==1)
+    g_beat_position_of_last_bar_start = RT_LPB_get_beat_position();
+  
   if (beat->beat_num==1)
     SCHEDULER_add_event(peq->l.time, scheduled_play_bar_note, NULL, 0, SCHEDULER_NOTE_ON_PRIORITY);
   else

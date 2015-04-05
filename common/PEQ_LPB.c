@@ -109,7 +109,7 @@ void RT_LPB_set_beat_position(int audioblocksize){
   g_curr_beats_per_minute = beats_per_minute;
 }
 
-// Returns number of beats played so far.
+// Returns number of beats played so far. (actually returns the number of quarter notes)
 //
 double RT_LPB_get_beat_position(void){
   return g_curr_num_beats;
