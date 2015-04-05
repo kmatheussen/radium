@@ -304,8 +304,14 @@ int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, in
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  
   Data *data = (Data*)plugin->data;
 
+#if 0
+  for(int ch=0; ch<data->num_output_channels ; ch++)
+    memset(outputs[ch], 0, sizeof(float)*num_frames);
+  return;
+#endif
 
   // 1. Process audio
 
@@ -325,28 +331,25 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // 2. Send out midi (untested, need plugin to test with)
 
-  if (instance->producesMidi()) {
-    struct Patch *patch = plugin->patch;
-    if (patch!=NULL) {
+  struct Patch *patch = plugin->patch;
+  if (patch!=NULL) {
       
-      MidiBuffer::Iterator iterator(data->midi_buffer);
+    MidiBuffer::Iterator iterator(data->midi_buffer);
       
-      MidiMessage message;
-      int samplePosition;
-
-      while(iterator.getNextEvent(message, samplePosition)){
-
-        // Make sure samplePosition has a legal value
-        if (samplePosition >= num_frames)
-          samplePosition = num_frames-1;
-        if (samplePosition < 0)
-          samplePosition = 0;
-        
-        int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
-        int64_t radium_time = pc->start_time + delta_time;
-
-        RT_MIDI_send_msg_to_patch_receivers(patch, message, radium_time);
-      }
+    MidiMessage message;
+    int samplePosition;
+    
+    while(iterator.getNextEvent(message, samplePosition)){
+      // Make sure samplePosition has a legal value
+      if (samplePosition >= num_frames)
+        samplePosition = num_frames-1;
+      if (samplePosition < 0)
+        samplePosition = 0;
+      
+      int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
+      int64_t radium_time = pc->start_time + delta_time;
+      
+      RT_MIDI_send_msg_to_patch_receivers(patch, message, radium_time);
     }
   }
 
