@@ -65,7 +65,11 @@ static void show_message(int type, char *message){
       
   switch(ret){
   case 0: break;
-  case 1: abort();
+  case 1: {
+    char *hello = NULL;
+    hello[0] = 50;
+    abort();
+  }
   case 2: last_ignore=TIME_get_ms(); break;
   case 3: ignore_rest_of_the_program=true; break;
   }
