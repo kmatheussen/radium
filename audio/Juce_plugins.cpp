@@ -76,6 +76,8 @@ namespace{
 
   struct MyAudioPlayHead : public AudioPlayHead{
     virtual bool getCurrentPosition (CurrentPositionInfo &result) {
+      memset(&result, 0, sizeof(CurrentPositionInfo));
+      
       if (pc->isplaying==false && (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL))
         return false;
 
@@ -94,19 +96,22 @@ namespace{
 
       result.timeInSamples = pc->start_time;
       result.timeInSeconds = (double)pc->start_time / (double)pc->pfreq;
+#if 0
       result.editOriginTime = 0; //result.timeInSeconds;
-
+#endif
+      
       result.ppqPosition = RT_LPB_get_beat_position();
       result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start = 0.0;
 
       result.isPlaying = pc->isplaying;
+#if 0
       result.isRecording = false;
       
       result.ppqLoopStart = 0; // fixme (probably nothing to fix. This value is probably only necessary if time jumps back)
       result.ppqLoopEnd = 0; // fixme (same here)
 
       result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE; (same here)
-
+#endif
       return true;
     }
   };
