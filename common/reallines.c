@@ -645,7 +645,7 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
 
   set_curr_realline(wblock, (int)floorf(FindReallineForF(wblock, 0, &curr_place)));
 
-  if (wblock->curr_realline <= wblock->curr_realline-2)
+  if (wblock->curr_realline <= wblock->num_reallines-2)
     if (wblock->reallines[wblock->curr_realline]->l.p.counter < curr_place.counter)
       if (wblock->reallines[wblock->curr_realline]->l.p.line == wblock->reallines[wblock->curr_realline+1]->l.p.line)
         set_curr_realline(wblock, wblock->curr_realline+1);

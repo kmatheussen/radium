@@ -463,7 +463,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         }
       }catch ( RtError &error ) {
         RError("Couldn't open %s. (%s)", portname, error.what());
-        inport_winmm == NULL;
+        inport_winmm = NULL;
       }
     }
 
