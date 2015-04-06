@@ -278,13 +278,13 @@ struct SliderPainter{
     _automation_color = 13;
     _peak_color = 13;
     _alternative_color = false;
+    _auto_updater_has_started = false;
+    _automation_value = 0.0f;
   }
 
   SliderPainter(QAbstractSlider *widget)
     : _qslider(widget)
     , _graphics_item(NULL)
-    , _automation_value(0.0f)
-    , _auto_updater_has_started(false)
   {
     init();
   }
