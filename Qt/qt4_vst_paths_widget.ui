@@ -29,16 +29,16 @@
          <widget class="QLineEdit" name="path_edit"/>
         </item>
         <item>
-         <widget class="QToolButton" name="add_button">
+         <widget class="QToolButton" name="open_file_dialog_button">
           <property name="text">
-           <string>Add</string>
+           <string>...</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="open_file_dialog_button">
+         <widget class="QToolButton" name="add_button">
           <property name="text">
-           <string>...</string>
+           <string>Add</string>
           </property>
          </widget>
         </item>
