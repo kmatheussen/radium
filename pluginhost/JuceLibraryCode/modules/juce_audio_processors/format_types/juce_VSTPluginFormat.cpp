@@ -2282,8 +2282,15 @@ private:
         }
 
        #elif JUCE_LINUX
-        pluginWindow = getChildWindow ((Window) getWindowHandle());
+        pluginWindow = 0;
 
+        for(int i=0 ; i < 40 ; i++){
+          pluginWindow = getChildWindow ((Window) getWindowHandle());
+          if (pluginWindow != 0)
+            break;
+          Thread::sleep (50);
+        }
+        
         if (pluginWindow != 0)
             pluginProc = (EventProcPtr) getPropertyFromXWindow (pluginWindow,
                                                                 XInternAtom (display, "_XEventProc", False));
