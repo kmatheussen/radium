@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTimerEvent>
 
 #include "EditorWidget.h"
+#include "../common/threading.h"
 
 #include "Qt_SliderPainter_proc.h"
 
@@ -109,6 +110,7 @@ struct AutomationOrPeakData{
 }
 
 static int DATA_get_y1(AutomationOrPeakData *data, int height){
+  R_ASSERT(data->num_ch>0);
   return scale_int(data->ch,0,data->num_ch,1,height-1);
 }
 
@@ -122,12 +124,14 @@ struct SliderPainter{
     SliderPainter *_painter;
 
     void timerEvent(QTimerEvent * e){
+      R_ASSERT(THREADING_is_main_thread());
+      
       if(_painter->isVisible()==false)
         return;
 
-      for(unsigned int i=0;i<_painter->_data.size();i++){
+      for(int i=0;i<(int)_painter->_data.size();i++){
         AutomationOrPeakData *data = _painter->_data.at(i);
-
+    
         float gain;
 
         if(data->is_automation)
@@ -172,6 +176,7 @@ struct SliderPainter{
   }; // struct Timer
 
   std::vector<AutomationOrPeakData*>_data;
+  //QVector<AutomationOrPeakData*>_data;
   
   QAbstractSlider *_qslider;
   QGraphicsItem *_graphics_item;  // Either widget or _graphics_item must be set.
@@ -300,11 +305,12 @@ struct SliderPainter{
     if(_local_peak_values==true)
       free(_peak_values);
 
-    for(unsigned int i=0;i<_data.size();i++) // Don't like iterators. Rather free memory manually than using them.
+    for(int i=0;i<(int)_data.size();i++) // Don't like iterators. Rather free memory manually than using them.
       delete _data.at(i);
   }
 
   void start_auto_updater() {
+    R_ASSERT(THREADING_is_main_thread());
     if (_auto_updater_has_started==false){
       _timer._painter = this;
       _timer.setInterval(k_timer_interval);
@@ -314,6 +320,8 @@ struct SliderPainter{
   }
 
   AutomationOrPeakData *create_automation_data(){
+    R_ASSERT(THREADING_is_main_thread());
+    
     AutomationOrPeakData *data = new AutomationOrPeakData;
 
     data->value          = &_automation_value;
@@ -344,9 +352,10 @@ struct SliderPainter{
   }
 
   float *obtain_peak_value_pointers(int num_channels, float *peak_values){
-
+    R_ASSERT(THREADING_is_main_thread());
+    
     if(peak_values==NULL) {
-      _peak_values = (float*)calloc(sizeof(float*),num_channels);
+      _peak_values = (float*)calloc(sizeof(float),num_channels);
 
       _local_peak_values = true;
 
@@ -355,6 +364,7 @@ struct SliderPainter{
       _peak_values = peak_values;
     } 
 
+    
     _data.clear();
 
     for(int ch=0;ch<num_channels;ch++){
@@ -374,6 +384,8 @@ struct SliderPainter{
   }
 
   void paint(QPainter *p){
+    R_ASSERT(THREADING_is_main_thread());
+        
 #ifdef COMPILING_RADIUM
     QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
 #else
@@ -388,8 +400,11 @@ struct SliderPainter{
                                _display_string.toStdString(),
                                _alternative_color);
 
-    for(unsigned int i=0;i<_data.size();i++){
+    for(int i=0;i<(int)_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
+
+      //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
+      
       int y1 = DATA_get_y1(data,height());
       int y2 = DATA_get_y2(data,height());
       int height = y2-y1;
@@ -425,19 +440,27 @@ SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1
 
 
 void SLIDERPAINTER_delete(SliderPainter *painter){
+  R_ASSERT(THREADING_is_main_thread());
+#if 1
   delete painter;
+#else
+  SLIDERPAINTER_became_invisible(painter);
+#endif
 }
 
 void SLIDERPAINTER_start_auto_updater(SliderPainter *painter){
+  R_ASSERT(THREADING_is_main_thread());
   painter->start_auto_updater();
 }
 
 void SLIDERPAINTER_became_visible(SliderPainter *painter){
+  R_ASSERT(THREADING_is_main_thread());
   if(painter->_auto_updater_has_started==true)
     painter->_timer.start();
 }
 
 void SLIDERPAINTER_became_invisible(SliderPainter *painter){
+  R_ASSERT(THREADING_is_main_thread());
   if(painter->_auto_updater_has_started==true)
     painter->_timer.stop();
 }
@@ -460,6 +483,7 @@ float *SLIDERPAINTER_obtain_peak_value_pointers(SliderPainter *painter, int num_
 
 void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers){
   painter->set_peak_value_pointers(num_channels, pointers);
+  //painter->set_peak_value_pointers(num_channels, NULL);
 }
 
 float *SLIDERPAINTER_obtain_automation_value_pointer(SliderPainter *painter){

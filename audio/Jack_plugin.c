@@ -168,7 +168,7 @@ void PLAYER_mute(void){
 
 void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   if(!strcmp(plugin_type->name,"System Out")) {
-    GFX_OS_set_system_volume_peak_pointers(&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
+    GFX_OS_set_system_volume_peak_pointers((float*)&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
     system_out = plugin;
   }
 

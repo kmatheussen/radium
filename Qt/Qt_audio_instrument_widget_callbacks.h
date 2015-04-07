@@ -500,12 +500,15 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
-    if(plugin->type->num_outputs>0){
+    int num_inputs = type->num_inputs;
+    int num_outputs = type->num_outputs;
+
+    if(num_outputs>0){
       if(plugin->volume_peak_values==NULL)
-        plugin->volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, plugin->type->num_outputs);
+        plugin->volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, num_outputs);
 
       if(plugin->output_volume_peak_values==NULL)
-        plugin->output_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, plugin->type->num_outputs);
+        plugin->output_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, num_outputs);
 
       if(plugin->bus_volume_peak_values[0]==NULL)
         plugin->bus_volume_peak_values[0] = SLIDERPAINTER_obtain_peak_value_pointers(bus1_slider->_painter,2);
@@ -515,11 +518,11 @@ public:
     }
 
     if(plugin->input_volume_peak_values==NULL)
-      if(plugin->type->num_inputs>0 || plugin->type->num_outputs>0){//plugin->input_volume_peak_values==NULL){
-        if(plugin->type->num_inputs>0)
-          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, plugin->type->num_inputs);
+      if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
+        if(num_inputs>0)
+          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_inputs);
         else
-          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, plugin->type->num_outputs);
+          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_outputs);
       }
 
     for(int system_effect=EFFNUM_INPUT_VOLUME;system_effect<NUM_SYSTEM_EFFECTS;system_effect++){
@@ -544,7 +547,7 @@ public:
     bus1_widget->setEnabled(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
     bus2_widget->setEnabled(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
 
-    if(plugin->type->num_outputs>0){
+    if(num_outputs>0){
       input_volume_layout->setEnabled(plugin->effects_are_on);
       if(plugin->type->num_inputs>0)
         _plugin_widget->setEnabled(plugin->effects_are_on);

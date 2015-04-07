@@ -97,8 +97,12 @@ struct MyQSlider : public QSlider {
   MyQSlider ( Qt::Orientation orientation, QWidget * parent = 0 ) : QSlider(orientation,parent) { init();}
 
   ~MyQSlider(){
+    //R_ASSERT(false);
     g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
     SLIDERPAINTER_delete(_painter);
+    
+    _painter = NULL; // quicker to discover memory corruption
+    _patch = NULL;
   }
 
   void hideEvent ( QHideEvent * event ) {

@@ -794,10 +794,11 @@ struct SoundProducer : DoublyLinkedList{
         
         if(_plugin->output_volume_peak_values!=NULL)
           _plugin->output_volume_peak_values[ch] = output_peak * _plugin->output_volume.target_value;
-        
-        for(int bus=0;bus<2;bus++)
-          if(_plugin->bus_volume_peak_values[bus]!=NULL)
-            _plugin->bus_volume_peak_values[bus][ch] = output_peak * _plugin->bus_volume[bus].target_value;
+
+        if (ch < 2) // buses only have two channels
+          for(int bus=0;bus<2;bus++)
+            if(_plugin->bus_volume_peak_values[bus]!=NULL)
+              _plugin->bus_volume_peak_values[bus][ch] = output_peak * _plugin->bus_volume[bus].target_value;
       }
     }
   }
