@@ -1,3 +1,23 @@
+Most important changes 3.0.rc14 -> 3.0.rc15
+* vst/linux: Wait for child window to be created (fix for no content in vst window)
+* Fix memory corruption for plugins with more than 2 output channels when running in 32 bit mode,
+  and more than 4 output channels when running in 64 bit mode.
+* Fix crash when the cursor is placed on the last line and changing the LZ value.
+* windows: Provoke crashreporter to kick in when selecting "quit" in the error/warning window
+* Minor improvement to the vst preferences dialog
+* VST: Make sure all timing info are defined
+* Remove support for CFLAGS and LDFLAGS. Seemed like the rtmidi (or possible) juce cflags somehow smitted over to radium somehow.
+* Fix non-realtime behavior in VST plugins. For instance, audio shouldn't stall for a short while anymore when opening the GUI.
+* Provide ppq value of the last bar start to VST plugins.
+* Hack juce into not compiling -march=native. Might fix issues with VST plugins on computers
+  with AMD CPU or older intel CPU.
+* Don't show a show/hide track popup when right-clicking on the reltempo slider
+* Hide LPB track in new_song.rad
+* Draw cents on top of the peaks, not below.
+
+
+
+
 Most important changes 3.0.rc13 -> 3.0.rc14
 * Windows: Don't abort program if glGetError() returns an error.
   (i.e. compile the visualization library with the -DNDEBUG option)
