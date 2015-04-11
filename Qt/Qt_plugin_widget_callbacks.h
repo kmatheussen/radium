@@ -204,12 +204,14 @@ public:
     void on_save_button_pressed(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
+      num_users_of_keyboard++;
       QString filename;
 
-      {
-        GL_ScopedLock lock;  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
         filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Effect Configuration (*.rec)");
-      }
+      }GL_unlock();
+
+      num_users_of_keyboard--;
 
       if(filename=="")
         return;
@@ -236,12 +238,12 @@ public:
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type = plugin->type;
 
+      num_users_of_keyboard++;
       QString filename;
-      
-      {
-        GL_ScopedLock lock;  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+
+      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
         filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Effect Configuration (*.rec)");
-      }
+      }GL_unlock();
 
       num_users_of_keyboard--;
 
