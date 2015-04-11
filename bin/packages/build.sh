@@ -100,14 +100,14 @@ cd ..
 
 tar xvzf s7.tar.gz
 
-# gc.tar.gz is currently gc-7.2d, with ABORT made into a dummy operation.
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-tar xvzf gc.tar.gz
+tar xvzf gc-7.2f.tar.gz
 cd gc-7.2
+patch -p1 <../gc.patch
 echo "void RADIUM_ensure_bin_packages_gc_is_used(void){}" >>malloc.c
-CFLAGS=-fPIC ./configure --prefix=$PREFIX
-CFLAGS=-fPIC make -j3
+CFLAGS="-fPIC -g -O2" ./configure --prefix=$PREFIX
+CFLAGS="-fPIC -g -O2" make -j3
 cd ..
 
 tar xvjf xmessage-1.0.3.tar.bz2
