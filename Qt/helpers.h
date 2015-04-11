@@ -7,28 +7,20 @@
 
 
 static inline int safeExec(QMessageBox *widget){
-  int ret;
-  GL_lock();{
-    ret = widget->exec();
-  }GL_unlock();
-  return ret;
+  GL_ScopedLock lock;
+  return widget->exec();
 }
 
 static inline int safeExec(QMessageBox &widget){
-  int ret;
-  GL_lock();{
-    ret = widget.exec();
-  }GL_unlock();
-  return ret;
+  GL_ScopedLock lock;
+  return widget.exec();
 }
 
 static inline int safeExec(QDialog *widget){
-  int ret;
-  GL_lock();{
-    ret = widget->exec();
-  }GL_unlock();
-  return ret;
+  GL_ScopedLock lock;
+  return widget->exec();
 }
+
 
 
 #endif // RADIUM_QT_HELPERS

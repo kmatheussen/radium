@@ -276,9 +276,10 @@ void grabKeyboard(void){
   //g_editor->main_window->grabKeyboard();
   //abort(); // This function should not be used.
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-  GL_lock();{
+  {
+    GL_ScopedLock lock;
     g_editor->setFocus();
-  }GL_unlock();
+  }
 }
 
 static bool widgets_are_disabled = false;

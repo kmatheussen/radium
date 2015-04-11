@@ -6,6 +6,8 @@
 #ifdef __cplusplus
   #include <QWidget>
 
+  extern int num_users_of_keyboard;
+
   extern QWidget *GL_create_widget(QWidget *parent);
   extern void GL_stop_widget(QWidget *widget);
 
@@ -35,6 +37,28 @@ extern void GE_set_curr_realline(int curr_realline);
 
 #ifdef __cplusplus
   }
+
+namespace{
+  class GL_ScopedLock{
+
+  public:
+    GL_ScopedLock()
+    {
+      num_users_of_keyboard++;
+      lock();
+    }
+    ~GL_ScopedLock() {
+      unlock();
+      num_users_of_keyboard--;
+    }
+    void lock() {
+      GL_lock();
+    }
+    void unlock() {
+      GL_unlock();
+    }
+  };
+}
 #endif
 
 #endif // OPENGL_WIDGET_PROC_H
