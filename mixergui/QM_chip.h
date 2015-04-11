@@ -61,6 +61,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef CHIP_H
 #define CHIP_H
 
+struct SoundPlugin;
+
 #ifdef __cplusplus
 
 #include <stdio.h>
@@ -298,7 +300,7 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state);
 
 extern LANGSPEC void CHIP_create_from_state(hash_t *state);
 
-extern LANGSPEC void CHIP_update(SoundPlugin *plugin);
+extern LANGSPEC void CHIP_update(struct SoundPlugin *plugin);
 
 extern LANGSPEC float CHIP_get_pos_x(struct Patch *patch);
 extern LANGSPEC float CHIP_get_pos_y(struct Patch *patch);

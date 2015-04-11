@@ -937,6 +937,22 @@ SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
   return NULL;
 }
 
+bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin){
+  if (!PLAYER_current_thread_has_lock()) {
+    RError("Current thread is not holding player lock");
+    return false;
+  }
+
+  SoundProducer *sp = SP_get_SoundProducer(old_plugin);
+  if (sp==NULL) {
+    RError("Could not find soundproducer for plugin");
+    return false;
+  }
+
+  sp->_plugin = new_plugin;
+  return true;  
+}
+
 bool SP_is_plugin_running(SoundPlugin *plugin){
   return SP_get_SoundProducer(plugin)!=NULL;
 }

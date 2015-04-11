@@ -23,10 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/visual_proc.h"
+
+#include "../mixergui/QM_chip.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
+#include "SoundProducer_proc.h"
 #include "undo_audio_effect_proc.h"
 #include "system_compressor_wrapper_proc.h"
 
@@ -1056,6 +1060,8 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     type->create_state(plugin, plugin_state);
   }
 
+  HASH_put_int(state, "___radium_plugin_state_v3", 1);
+      
   return state;
 }
 
@@ -1105,6 +1111,43 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
     type->recreate_from_state(plugin, plugin_state);
   
   return plugin;
+}
+
+void PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
+  if (HASH_has_key(state, "___radium_plugin_state_v3")) {
+
+    struct Patch *patch = old_plugin->patch;
+    if (patch==NULL) {
+      RError("patch not found for old plugin");
+      return;
+    }
+
+    SoundPlugin *new_plugin = PLUGIN_create_from_state(state);
+    if (new_plugin==NULL) {
+      GFX_Message(NULL, "Unable to load instrument settings");
+      return;
+    }
+
+    bool success;
+    
+    PLAYER_lock(); {
+
+      patch->patchdata = new_plugin;
+      
+      success = SP_replace_plugin(old_plugin, new_plugin);
+      if (!success)
+        patch->patchdata = old_plugin;
+      
+    } PLAYER_unlock();
+
+    if (success)
+      CHIP_update(new_plugin);
+    
+  } else {
+    
+    PLUGIN_set_effects_from_state(old_plugin, state); // Before 3.0.rc15, loading/saving states in the instrument widgets only loaded/saved the effect values, not the complete plugin state.
+    
+  }  
 }
 
 void PLUGIN_reset(SoundPlugin *plugin){

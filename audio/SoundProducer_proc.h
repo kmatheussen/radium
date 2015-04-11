@@ -73,6 +73,7 @@ void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
 
 #endif // __cplusplus
 
+extern LANGSPEC bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin);
 extern LANGSPEC bool SP_is_plugin_running(SoundPlugin *plugin);
 
 #endif // SOUNDPRODUCER_PROC_H

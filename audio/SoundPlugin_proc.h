@@ -59,6 +59,7 @@ extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state);
+extern LANGSPEC void PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state);
 
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num);

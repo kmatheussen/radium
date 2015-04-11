@@ -225,7 +225,7 @@ public:
         return;
       }
 
-      hash_t *state = PLUGIN_get_effects_state(plugin);
+      hash_t *state = PLUGIN_get_state(plugin);
 
       HASH_save(state, file);
 
@@ -275,7 +275,7 @@ public:
           Undo_AudioEffect_CurrPos(plugin->patch, i);
       }Undo_Close();
 
-      PLUGIN_set_effects_from_state(plugin, state);
+      PLUGIN_set_from_state(plugin, state);
       GFX_update_instrument_widget(plugin->patch);
     }
 
