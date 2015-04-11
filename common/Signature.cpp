@@ -50,34 +50,60 @@ struct WSignatures *WSignatures_get(
         struct WSignatures *wsignatures = (struct WSignatures *)talloc_atomic_clean(sizeof(struct WSignatures)*wblock->num_reallines);
 
 	int realline=0;
-
+        int last_written_realline = -1;
+        int last_written_new_bar_realline = -1;
+        
         struct Beats *beat = wblock->block->beats;
 
 	while(beat!=NULL){
 
 		realline=FindRealLineFor(wblock,realline,&beat->l.p);
+                bool is_new_bar = beat->beat_num==1;
+                
+                if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&beat->l.p)) {
+                  wsignatures[realline].type=SIGNATURE_BELOW;
+                  float *f = (float*)talloc_atomic(sizeof(float));
+                  float y1 = p_float(wblock->reallines[realline]->l.p);
+                  float y2 = realline==wblock->num_reallines-1 ? wblock->num_reallines : p_float(wblock->reallines[realline+1]->l.p);
+                  *f = scale( p_float(beat->l.p),
+                              y1, y2,
+                              0,1);
+                  VECTOR_push_back(&wsignatures[realline].how_much_below, f);
+                }
 
-		if(wsignatures[realline].signature.numerator!=0){
-			wsignatures[realline].type=SIGNATURE_MUL;
-		}else{
-                  //if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&beat->l.p)) {
-                    wsignatures[realline].type=SIGNATURE_BELOW;
-                    float *f = (float*)talloc_atomic(sizeof(float));
-                    float y1 = p_float(wblock->reallines[realline]->l.p);
-                    float y2 = realline==wblock->num_reallines-1 ? wblock->num_reallines : p_float(wblock->reallines[realline+1]->l.p);
-                    *f = scale( p_float(beat->l.p),
-                                y1, y2,
-                                0,1);
-                    VECTOR_push_back(&wsignatures[realline].how_much_below, f);
-                    //}
-		}
-
-                if (wsignatures[realline].type != SIGNATURE_MUL){ // Unlike the multi-behavior for other wxxx-types, we show the first element here, and not the last.
+                /*
+                if (realline==1) {
+                  printf("1: %s %d %d %s\n",
+                         ratio_to_string(beat->signature),
+                         beat->bar_num,
+                         beat->beat_num,
+                         wsignatures[realline].type != SIGNATURE_MUL ? "true" : "false"
+                         );
+                }
+                */
+                
+                if (is_new_bar && realline != last_written_new_bar_realline) {  // Unlike the multi-behavior for other wxxx-types, we show the first element, and not the last.
+                  
                   wsignatures[realline].signature = beat->signature;
                   wsignatures[realline].bar_num  = beat->bar_num;
                   wsignatures[realline].beat_num  = beat->beat_num;
-                }
-
+                  
+                } else if (realline != last_written_realline) {
+                  
+                  wsignatures[realline].signature = beat->signature;
+                  wsignatures[realline].bar_num  = beat->bar_num;
+                  wsignatures[realline].beat_num  = beat->beat_num;
+                  
+                } else {
+                  
+                  wsignatures[realline].type=SIGNATURE_MUL;
+                  
+		}
+        
+        
+                last_written_realline = realline;
+                if (is_new_bar)
+                  last_written_new_bar_realline = realline;
 		beat = NextBeat(beat);
 	}
 

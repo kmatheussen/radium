@@ -242,6 +242,9 @@ static inline Ratio ratio(int numerator, int denominator) {
   return ratio;
 }
 
+static inline char *ratio_to_string(Ratio ratio){
+  return talloc_format("%d/%d", ratio.numerator, ratio.denominator);
+}
 
 
 /*********************************************************************

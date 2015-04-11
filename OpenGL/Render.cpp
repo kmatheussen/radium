@@ -347,7 +347,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   if(1){
     //if(line_opacity == -1)
     //  line_opacity = SETTINGS_read_int("line_opacity", R_MAX(50, beat_opacity-500));
-    line_opacity = 960;
+    line_opacity = 900;
     
     if(line_opacity != 1000) {
       GE_Context *c;
@@ -359,12 +359,26 @@ static void create_background_realline(const struct Tracker_Windows *window, con
       else
         c = GE_mix_color_z(GE_get_rgb(15), GE_get_rgb(1), line_opacity, Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X);
 
-      VECTOR_FOR_EACH(float*, f_pointer, &wsignature->how_much_below){
-        float f = *f_pointer;
-        float y_ = scale(f, 0, 1, y1, y2);
-        GE_line(c,x1,y_,x2,y_,line_width);
-      }END_VECTOR_FOR_EACH;
-      
+      if (true) {
+        GE_line(c,x1,y1,x2,y1,line_width);
+
+        VECTOR_FOR_EACH(float*, f_pointer, &wsignature->how_much_below){
+          float f = *f_pointer;
+          if (fabs(f) > 0.1) {
+            float y_ = scale(f, 0, 1, y1, y2);
+            float x1_ = wblock->linenumarea.x;
+            float x2_ = wblock->linenumarea.x2;
+            GE_line(c,x1_,y_,x2_,y_,line_width);
+          }
+        }END_VECTOR_FOR_EACH;
+
+      } else {
+        VECTOR_FOR_EACH(float*, f_pointer, &wsignature->how_much_below){
+          float f = *f_pointer;
+          float y_ = scale(f, 0, 1, y1, y2);
+          GE_line(c,x1,y_,x2,y_,line_width);
+        }END_VECTOR_FOR_EACH;
+      }
       //GE_line(c,x1,y1,x2,y1,line_width);
     }
   }
