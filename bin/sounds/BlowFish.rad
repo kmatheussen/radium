@@ -13,10 +13,10 @@ ROOT
 2
 
 ?tempo
-78
+156
 
 ?lpb
-16
+8
 
 ?signature_numerator
 4
@@ -63,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-17
+19
 author
 0
 STRING_TYPE
@@ -124,6 +124,14 @@ comment
 13
 STRING_TYPE
 
+comment
+14
+STRING_TYPE
+
+comment
+15
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -146,10 +154,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1059
+1798
 
 ?height
-829
+1005
 
 ?fontID
 0
@@ -181,7 +189,7 @@ TRACKER_WINDOW
 
 ?bottomslider
 1
-10
+14
 
 ?show_signature_track
 0
@@ -221,7 +229,7 @@ WBLOCK
 27
 
 ?temponodearea
-233
+232
 
 ?maxwtracksize
 0
@@ -269,7 +277,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -286,7 +294,7 @@ WTRACK
 3
 
 ?fxwidth
-224
+223
 
 ?is_wide
 0
@@ -303,7 +311,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -320,7 +328,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -337,7 +345,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -354,7 +362,7 @@ WTRACK
 3
 
 ?fxwidth
-224
+223
 
 ?is_wide
 0
@@ -371,7 +379,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -404,7 +412,7 @@ WBLOCK
 27
 
 ?temponodearea
-233
+232
 
 ?maxwtracksize
 0
@@ -452,7 +460,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -469,7 +477,7 @@ WTRACK
 3
 
 ?fxwidth
-224
+223
 
 ?is_wide
 0
@@ -486,7 +494,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -503,7 +511,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -520,7 +528,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -537,7 +545,7 @@ WTRACK
 3
 
 ?fxwidth
-224
+223
 
 ?is_wide
 0
@@ -554,7 +562,7 @@ WTRACK
 3
 
 ?fxwidth
-215
+214
 
 ?is_wide
 0
@@ -587,292 +595,7 @@ WBLOCK
 27
 
 ?temponodearea
-120
-
-?maxwtracksize
-0
-
-?curr_realline
-100
-
-?num_reallines
-128
-
-?num_expand_lines
--2
-
-?reltempomax
-2
-
-?isranged
-0
-
-?rangex1
-3
-
-?rangex2
-3
-
-?rangey1
-0
-
-?rangey2
-256
-
-\
-LOCALZOOMS
-256
-/
-
-\
-WTRACK
-0
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-7
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-9
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-111
-
-?is_wide
-0
-/
-
-\
-WTRACK
-10
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-11
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-
-\
-WTRACK
-12
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-102
-
-?is_wide
-0
-/
-/
-
-\
-WBLOCK
-3
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-26
-
-?lpbTypearea
-9
-
-?lpbarea
-18
-
-?tempoTypearea
-9
-
-?tempoarea
-27
-
-?temponodearea
-120
+119
 
 ?maxwtracksize
 0
@@ -920,7 +643,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -937,7 +660,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -954,7 +677,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -971,7 +694,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -988,7 +711,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1005,7 +728,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1022,7 +745,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1039,7 +762,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1056,7 +779,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1073,7 +796,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+110
 
 ?is_wide
 0
@@ -1090,7 +813,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1107,7 +830,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1124,7 +847,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1133,7 +856,7 @@ WTRACK
 
 \
 WBLOCK
-4
+3
 
 ?tempotrackonoff
 1
@@ -1157,13 +880,13 @@ WBLOCK
 27
 
 ?temponodearea
-120
+119
 
 ?maxwtracksize
 0
 
 ?curr_realline
-41
+127
 
 ?num_reallines
 128
@@ -1184,10 +907,10 @@ WBLOCK
 3
 
 ?rangey1
-168
+0
 
 ?rangey2
-173
+256
 
 \
 LOCALZOOMS
@@ -1205,7 +928,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1222,7 +945,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1239,7 +962,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1256,7 +979,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1273,7 +996,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1290,7 +1013,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1307,7 +1030,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1324,7 +1047,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1341,7 +1064,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1358,7 +1081,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+110
 
 ?is_wide
 0
@@ -1375,7 +1098,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1392,7 +1115,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1409,7 +1132,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -1418,7 +1141,7 @@ WTRACK
 
 \
 WBLOCK
-5
+4
 
 ?tempotrackonoff
 1
@@ -1448,7 +1171,7 @@ WBLOCK
 0
 
 ?curr_realline
-0
+127
 
 ?num_reallines
 128
@@ -1703,6 +1426,291 @@ WTRACK
 
 \
 WBLOCK
+5
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+26
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+120
+
+?maxwtracksize
+0
+
+?curr_realline
+127
+
+?num_reallines
+128
+
+?num_expand_lines
+-2
+
+?reltempomax
+2
+
+?isranged
+0
+
+?rangex1
+3
+
+?rangex2
+3
+
+?rangey1
+168
+
+?rangey2
+173
+
+\
+LOCALZOOMS
+256
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+10
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+11
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+
+\
+WTRACK
+12
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+/
+/
+
+\
+WBLOCK
 6
 
 ?tempotrackonoff
@@ -1733,7 +1741,7 @@ WBLOCK
 0
 
 ?curr_realline
-0
+127
 
 ?num_reallines
 128
@@ -2018,7 +2026,7 @@ WBLOCK
 0
 
 ?curr_realline
-32
+127
 
 ?num_reallines
 128
@@ -2297,13 +2305,13 @@ WBLOCK
 27
 
 ?temponodearea
-120
+119
 
 ?maxwtracksize
 0
 
 ?curr_realline
-0
+127
 
 ?num_reallines
 128
@@ -2345,7 +2353,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2362,7 +2370,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2379,7 +2387,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2396,7 +2404,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2413,7 +2421,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2430,7 +2438,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2447,7 +2455,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2464,7 +2472,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2481,7 +2489,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2498,7 +2506,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+110
 
 ?is_wide
 0
@@ -2515,7 +2523,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2532,7 +2540,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2549,7 +2557,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2582,13 +2590,13 @@ WBLOCK
 27
 
 ?temponodearea
-120
+119
 
 ?maxwtracksize
 0
 
 ?curr_realline
-0
+127
 
 ?num_reallines
 128
@@ -2630,7 +2638,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2647,7 +2655,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2664,7 +2672,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2681,7 +2689,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2698,7 +2706,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2715,7 +2723,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2732,7 +2740,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2749,7 +2757,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2766,7 +2774,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2783,7 +2791,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+110
 
 ?is_wide
 0
@@ -2800,7 +2808,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2817,7 +2825,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2834,7 +2842,7 @@ WTRACK
 3
 
 ?fxwidth
-102
+101
 
 ?is_wide
 0
@@ -2873,7 +2881,7 @@ WBLOCK
 0
 
 ?curr_realline
-35
+53
 
 ?num_reallines
 128
@@ -59999,11 +60007,11 @@ FLOAT_TYPE
 Detune
 0
 FLOAT_TYPE
-1
+0.03515625
 Dry/Wet
 0
 FLOAT_TYPE
-0.7750244140625
+1
 Gain
 0
 FLOAT_TYPE
@@ -60135,7 +60143,7 @@ FLOAT_TYPE
 NOTUSED 7
 0
 FLOAT_TYPE
-0.8068084716796875
+0.670562744140625
 NOTUSED 8
 0
 FLOAT_TYPE
@@ -62481,7 +62489,7 @@ INT_TYPE
 value
 0
 FLOAT_TYPE
-0.7750244140625
+1
 value
 1
 FLOAT_TYPE
@@ -62493,7 +62501,7 @@ FLOAT_TYPE
 value
 3
 FLOAT_TYPE
-1
+0.03515625
 value
 4
 FLOAT_TYPE
@@ -62509,7 +62517,7 @@ FLOAT_TYPE
 value
 7
 FLOAT_TYPE
-0.8068084716796875
+0.670562744140625
 value
 8
 FLOAT_TYPE
@@ -64189,7 +64197,7 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-51
+52
 Amount
 0
 FLOAT_TYPE
@@ -64210,11 +64218,11 @@ Inter-voice phase
 0
 FLOAT_TYPE
 63.97200012207031
-Minimum delay
+Min delay
 0
 FLOAT_TYPE
 4.995742797851562
-Modulation depth
+Mod depth
 0
 FLOAT_TYPE
 5.997910499572754
@@ -64222,6 +64230,10 @@ Modulation rate
 0
 FLOAT_TYPE
 0.499700665473938
+Overlap
+0
+FLOAT_TYPE
+1
 Q
 0
 FLOAT_TYPE
@@ -65851,7 +65863,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+0.2749476432800293
 System In On/Off
 0
 FLOAT_TYPE
@@ -66181,7 +66193,7 @@ HASH_TYPE
 Bright
 0
 FLOAT_TYPE
-5247.802734375
+6956.48193359375
 NOTUSED 10
 0
 FLOAT_TYPE
@@ -66309,7 +66321,7 @@ FLOAT_TYPE
 NOTUSED 9
 0
 FLOAT_TYPE
-0.3606109619140625
+0.099151611328125
 System Chorus
 0
 FLOAT_TYPE
@@ -67415,7 +67427,7 @@ STRING_TYPE
 line
 146
 STRING_TYPE
--1 -1 2914 1;
+-1 -1 2750 1;
 line
 147
 STRING_TYPE
@@ -68319,7 +68331,7 @@ FLOAT_TYPE
 value
 3
 FLOAT_TYPE
-5247.802734375
+6956.48193359375
 value
 4
 FLOAT_TYPE
@@ -68343,7 +68355,7 @@ FLOAT_TYPE
 value
 9
 FLOAT_TYPE
-0.3606109619140625
+0.099151611328125
 value
 10
 FLOAT_TYPE
