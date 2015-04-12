@@ -370,17 +370,22 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
   draw_slot(myscene,mouse_x,mouse_y);
 }
 
-static void move_chip_to_slot(Chip *chip, float x, float y){
+static bool move_chip_to_slot(Chip *chip, float x, float y){
   float x1,x2,y1,y2;
 
   get_slot_coordinates(get_slot_x(x), get_slot_y(y), x1,y1,x2,y2);
+
+  if (chip->pos().x()==x1 && chip->pos().y()==y1)
+    return false;
+
   chip->setPos(x1,y1);
+  return true;
 }
 
 static Connection *find_clean_connection_at(MyScene *scene, float x, float y);
 
 // Also kicks.
-static void autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
+static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
   bool do_autoconnect = chip->_connections.size()==0; // don't autoconnect if the chip already has connections.
 
   Chip *chip_under = MW_get_chip_at(x,y,chip);
@@ -403,6 +408,8 @@ static void autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
       }
     }
 
+    return true;
+    
   }else if(do_autoconnect){
 
     Connection *connection = find_clean_connection_at(myscene, x, y);
@@ -414,9 +421,13 @@ static void autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
       CONNECTION_delete_connection(connection);
       CHIP_connect_chips(myscene, from, chip);
       CHIP_connect_chips(myscene, chip, to);
+
+      return true;
     }
 
   }
+
+  return false;
 }
 
 static bool cleanup_a_chip_position(MyScene *myscene){
@@ -450,21 +461,29 @@ static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
   float main_chip_x = main_chip->pos().x();
   float main_chip_y = main_chip->pos().y();
 
-  for(unsigned int i=0;i<myscene->_moving_chips.size();i++){
+  int size = myscene->_moving_chips.size();
+  bool has_updated = false;
+  
+  for(int i=0;i<size;i++){
     Chip *chip = myscene->_moving_chips.at(i);
     //float x = chip->_moving_x_offset+mouse_x;
     //float y = chip->_moving_y_offset+mouse_y;
     float x = mouse_x + (chip->pos().x() - main_chip_x);
     float y = mouse_y + (chip->pos().y() - main_chip_y);
     //printf("x: %d, mouse_x: %d, chip_x: %d, main_chip_x: %d, diff: %d\n",(int)x,(int)mouse_x,(int)chip->pos().x(),(int)main_chip_x,(int)
-    move_chip_to_slot(chip, x, y);
-    if(myscene->_moving_chips.size()==1)
-      autoconnect_chip(myscene, chip, mouse_x, mouse_y);
+    if (move_chip_to_slot(chip, x, y)==true)
+      has_updated=true;
+    if(size==1)
+      if (autoconnect_chip(myscene, chip, mouse_x, mouse_y)==true)
+        has_updated=true;
   }
 
   cleanup_chip_positions(myscene);
 
   Undo_Close();
+
+  if (has_updated==false)
+    Undo_CancelLastUndo();
 
   myscene->_moving_chips.clear();
 }

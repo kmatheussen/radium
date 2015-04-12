@@ -225,9 +225,8 @@ bool Undo_Close(void){
 }
 
 void Undo_CancelLastUndo(void){
-  if(currently_undoing){
-    RError("Can not call Undo_CancelLastUndo from Undo()\n");
-  }
+  R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
+  R_ASSERT_RETURN_IF_FALSE(undo_is_open==false);
 
   CurrUndo=CurrUndo->prev;
   CurrUndo->next=NULL;
