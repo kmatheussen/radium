@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/read_binary.h"
 #include "../common/PEQ_LPB_proc.h"
 #include "../common/PEQ_Signature_proc.h"
+#include "../common/visual_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -868,9 +869,8 @@ static void update_peaks(SoundPlugin *plugin){
 #endif
 
 #if USE_OPENGL
-  struct Tracker_Windows *window=root->song->tracker_windows;
-  struct WBlocks *wblock=window->wblock;
-  wblock->block->is_dirty = true;
+  GFX_ScheduleRedraw();
+
 #else
   if(plugin->patch!=NULL)
     RT_TRACKREALLINES_schedule_update_peak_tracks(plugin->patch);
