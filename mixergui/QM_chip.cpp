@@ -771,7 +771,7 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
  {
 
    setPos(QPointF(x,y));
-   MW_move_chip_to_slot(this, x, y);
+   //MW_move_chip_to_slot(this, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
 
    scene->addItem(this);
    
@@ -1305,6 +1305,8 @@ struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *na
   Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer, x, y);
   printf("Made chip %p\n",chip);
 
+  MW_move_chip_to_slot(chip, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
+  
   return patch;
 }
 

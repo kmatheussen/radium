@@ -1247,6 +1247,7 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
     InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
     
+    
     return NULL;
     
   } else {
