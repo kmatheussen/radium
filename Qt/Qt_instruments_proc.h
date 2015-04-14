@@ -20,11 +20,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC hash_t *create_instrument_widget_order_state(void);
 extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 
+extern LANGSPEC struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect); // A file requester will pop up if state is NULL.
+extern LANGSPEC void InstrumentWidget_load_preset(struct Patch *patch);
+extern LANGSPEC void InstrumentWidget_save_preset(struct Patch *patch);
+
+//extern LANGSPEC void InstrumentWidget_remove_patch(struct Patch *patch);
+//extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch);
+extern LANGSPEC void InstrumentWidget_update(struct Patch *patch);
+  
 extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
 
 struct SoundPlugin;
 struct SoundPluginType;
-extern LANGSPEC SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x, int y, bool autoconnect, const char *name);
+extern LANGSPEC struct SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name);
 extern LANGSPEC void close_all_instrument_widgets(void);
 
 extern LANGSPEC struct Patch *get_current_instruments_gui_patch(void);

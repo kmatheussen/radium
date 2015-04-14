@@ -133,6 +133,10 @@ public:
 
 extern MixerWidget *g_mixer_widget;
 
+void MW_set_autopos(double *x, double *y);
+  
+bool MW_move_chip_to_slot(Chip *chip, float x, float y);
+  
 Chip *MW_get_chip_at(float x, float y, Chip *except);
 
 void MW_set_selected_chip(Chip *chip);
@@ -141,11 +145,11 @@ void MW_update_all_chips(void);
 // MW_add_plugin/MW_delete_plugin are the entry points for audio plugins.
 // Creating/deleting a plugin goes through here, not through audio/
 
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, float x, float y);
+SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y);
 
 void MW_autoconnect_plugin(SoundPlugin *plugin);
 
-SoundPluginType *MW_popup_plugin_selector(void);
+SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect);
 
 #endif // __cplusplus
 
@@ -154,6 +158,7 @@ extern LANGSPEC void MW_cleanup(void);
 extern LANGSPEC hash_t *MW_get_connections_state(void);
 extern LANGSPEC hash_t *MW_get_state(void);
 extern LANGSPEC void MW_create_connections_from_state(hash_t *connections);
+extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new);
 extern LANGSPEC void MW_create_from_state(hash_t *state);
 extern LANGSPEC void MW_delete_plugin(SoundPlugin *plugin); // Deletes chip, plugin soundproducer and connections.
 

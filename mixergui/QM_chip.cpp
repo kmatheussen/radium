@@ -381,6 +381,11 @@ void CHIP_update(SoundPlugin *plugin){
   chip->update();
 }
 
+void CHIP_has_new_plugin(SoundPlugin *plugin){
+  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, plugin);
+  chip->init_new_plugin();
+}
+  
 float CHIP_get_pos_x(struct Patch *patch){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
   return chip->x();
@@ -721,34 +726,55 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
   CHIP_connect_chips(scene,left_chip,right_chip);
 }
 
+void Chip::init_new_plugin(void){
+
+  struct SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+
+  _num_inputs = plugin->type->num_inputs;
+  _num_outputs = plugin->type->num_outputs;
+
+  if (_input_slider!=NULL)
+    SLIDERPAINTER_delete(_input_slider);
+  if (_output_slider!=NULL)
+    SLIDERPAINTER_delete(_output_slider);
+    
+  {
+    int x1,x2,y1,y2;
+    get_slider1_coordinates(x1,x2,y1,y2);
+    _input_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
+    SLIDERPAINTER_set_alternative_color(_input_slider);
+    SLIDERPAINTER_set_num_channels(_input_slider, _num_inputs);
+  }
+  
+  {
+    int x1,x2,y1,y2;
+    get_slider2_coordinates(x1,x2,y1,y2);
+    _output_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
+    SLIDERPAINTER_set_num_channels(_output_slider, _num_outputs);
+  }
+  
+  if(_num_outputs>0)
+    plugin->volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs);
+  else if(_num_inputs>0)
+    plugin->input_volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs);
+  
+  CHIP_update(plugin);
+}
 
 Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y)
   : _scene(scene)
   , _sound_producer(sound_producer)
-  , _num_inputs(SP_get_plugin(sound_producer)->type->num_inputs)
-  , _num_outputs(SP_get_plugin(sound_producer)->type->num_outputs)
   , _color("white")
+  , _input_slider(NULL)
+  , _output_slider(NULL)
   , _slider_being_edited(0)
  {
-   printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
-   {
-     int x1,x2,y1,y2;
-     get_slider1_coordinates(x1,x2,y1,y2);
-     _input_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
-     SLIDERPAINTER_set_alternative_color(_input_slider);
-     SLIDERPAINTER_set_num_channels(_input_slider, _num_inputs);
-   }
-
-   {
-     int x1,x2,y1,y2;
-     get_slider2_coordinates(x1,x2,y1,y2);
-     _output_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
-     SLIDERPAINTER_set_num_channels(_output_slider, _num_outputs);
-   }
 
    setPos(QPointF(x,y));
-   scene->addItem(this);
+   MW_move_chip_to_slot(this, x, y);
 
+   scene->addItem(this);
+   
  #if 0
    _line_item = new QGraphicsLineItem(0,0,50,50);
    _line_item->setPen(QPen(Qt::black, 2));
@@ -759,12 +785,9 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    setFlags(ItemIsSelectable | ItemIsMovable | ItemSendsGeometryChanges);
    setAcceptsHoverEvents(true);
 
-   if(_num_outputs>0)
-     SP_get_plugin(sound_producer)->volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs);
-   else if(_num_inputs>0)
-     SP_get_plugin(sound_producer)->input_volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs);
-
-   CHIP_update(SP_get_plugin(sound_producer));
+   init_new_plugin();
+   
+   printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
  }
 
 Chip::~Chip(){
@@ -1245,6 +1268,7 @@ hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
   return CHIP_get_state(chip);
 }
 
+
 void CHIP_create_from_state(hash_t *state){
   struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
   double x = HASH_get_float(state, "x");
@@ -1262,6 +1286,28 @@ void CHIP_create_from_state(hash_t *state){
   }
 }
 
+struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y){
+  struct SoundPlugin *plugin = PLUGIN_create_from_state(plugin_state);
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
+
+  if (name==NULL)
+    name = PLUGIN_generate_new_patchname((SoundPluginType*)plugin->type);
+
+  struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name);
+  patch->patchdata = plugin;
+  plugin->patch = patch;
+
+  SoundProducer   *sound_producer = SP_create(plugin);
+
+  if(x<=-100000)
+    MW_set_autopos(&x, &y);    
+
+  Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer, x, y);
+  printf("Made chip %p\n",chip);
+
+  return patch;
+}
+
 hash_t *CONNECTION_get_state(Connection *connection){
   hash_t *state=HASH_create(4);
 
@@ -1274,9 +1320,18 @@ hash_t *CONNECTION_get_state(Connection *connection){
   return state;
 }
 
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state){
-  Chip *from_chip = get_chip_from_patch_id(scene, HASH_get_int(state, "from_patch"));
-  Chip *to_chip   = get_chip_from_patch_id(scene, HASH_get_int(state, "to_patch"));
+void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new){
+  int id_from = HASH_get_int(state, "from_patch");
+  int id_to = HASH_get_int(state, "to_patch");
+
+  if (id_from==patch_id_old)
+    id_from = patch_id_new;
+  
+  if (id_to==patch_id_old)
+    id_to = patch_id_new;
+  
+  Chip *from_chip = get_chip_from_patch_id(scene, id_from);
+  Chip *to_chip   = get_chip_from_patch_id(scene, id_to);
 
   if(from_chip==NULL || to_chip==NULL) {
     RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);

@@ -276,3 +276,52 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
 
   window->must_redraw = true;
 }
+
+/*
+hash_t *TRACKS_get_patch_state(bool create_undo){
+  hash_t *state=HASH_create(16);
+  
+  struct Blocks *block = root->song->blocks;
+  while (block != NULL){
+
+    hash_t *block_state=HASH_create(16);
+    HASH_put_hash_at(state, "blocks", block->l.num, block_state);
+                     
+    struct Tracks *track = block->tracks;
+    while (track != NULL) {
+      
+      int patch_id = track->patch==NULL ? -1 : track->patch->id;
+      HASH_put_int_at(block_state, "track_patch_id", track->l.num, patch_id);
+      
+      track = NextTrack(track);
+    }
+    block = NextBlock(block);
+  }
+
+  return state;
+}
+
+void TRACKS_set_patch_state(hash_t *state){
+
+  struct Blocks *block = root->song->blocks;
+  while (block != NULL){
+
+    hash_t *block_state=HASH_get_hash_at(state, "blocks", block->l.num);
+    
+    struct Tracks *track = block->tracks;
+    while (track != NULL) {
+      
+      int patch_id = HASH_get_int_at(block_state, "track_patch_id", track->l.num);
+
+      struct Patches *patch = PATCH_get_from_id(patch_id);
+      if (patch != track->patch) {
+        PATCH_handle_fx_when_theres_a_new_patch_for_track(track, track->patch, patch);      
+        track->patch = patch;
+      }
+      
+      track = NextTrack(track);
+    }
+    block = NextBlock(block);
+  }
+}
+*/

@@ -35,11 +35,17 @@ struct PluginMenuEntry{
     IS_CONTAINER,
     IS_SEPARATOR,
     IS_LEVEL_UP,
-    IS_LEVEL_DOWN
+    IS_LEVEL_DOWN,
+    IS_LOAD_PRESET
   } type;
   static PluginMenuEntry separator(){
     PluginMenuEntry entry;
     entry.type=IS_SEPARATOR;
+    return entry;
+  }
+  static PluginMenuEntry load_preset(){
+    PluginMenuEntry entry;
+    entry.type=IS_LOAD_PRESET;
     return entry;
   }
   static PluginMenuEntry level_up(const char *name){

@@ -186,31 +186,58 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
 
 }
 
-static void remove_patch_from_song(struct Patch *patch){
+void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
+  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open());
+
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
+    
   while(wblock!=NULL){
+    
     struct WTracks *wtrack = wblock->wtracks;
     while(wtrack!=NULL){
       struct Tracks *track = wtrack->track;
-      if(track->patch==patch){
+      if(track->patch==old_patch){
 
         PlayStop();
 
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
-        handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
-        track->patch = NULL;
-#if !USE_OPENGL
-        UpdateFXNodeLines(window,wblock,wtrack);
-#endif
+        handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
+        track->patch = new_patch;
+        
       }
       wtrack = NextWTrack(wtrack);
     }
     wblock = NextWBlock(wblock);
-  }  
+  }    
 }
 
+static void remove_patch_from_song(struct Patch *patch){
+  PATCH_replace_patch_in_song(patch, NULL);
+}
+
+
 void PATCH_delete(struct Patch *patch){
+
+  R_ASSERT(Undo_Is_Open());
+
+  remove_patch_from_song(patch);
+
+  if(patch->instrument==get_audio_instrument()){
+    Undo_MixerConnections_CurrPos();
+    Undo_Chip_Remove_CurrPos(patch);
+  }
+
+  GFX_remove_patch_gui(patch);
+
+  patch->instrument->remove_patch(patch);
+
+  Undo_Patch_CurrPos();
+  VECTOR_remove(&patch->instrument->patches,patch);
+
+}
+
+void PATCH_delete_CurrPos(struct Patch *patch){
   if(patch->instrument==get_audio_instrument())
     if(AUDIO_is_permanent_patch(patch)==true){
       GFX_Message(NULL,"Can not be deleted");
@@ -218,25 +245,15 @@ void PATCH_delete(struct Patch *patch){
     }
 
   Undo_Open();{
-
-    remove_patch_from_song(patch);
-
-    if(patch->instrument==get_audio_instrument()){
-      Undo_MixerConnections_CurrPos();
-      Undo_Chip_Remove_CurrPos(patch);
-    }
-
-    GFX_remove_patch_gui(patch);
-
-    patch->instrument->remove_patch(patch);
-
-    Undo_Patch_CurrPos();
-    VECTOR_remove(&patch->instrument->patches,patch);
+    
+    PATCH_delete(patch);
 
   }Undo_Close();
 
   DrawUpTrackerWindow(root->song->tracker_windows);
 }
+
+                   
 
 void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup){
   ReqType reqtype;
@@ -259,6 +276,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
   VECTOR_push_back(&v,"<New FluidSynth>");
   VECTOR_push_back(&v,"<New Pd Instrument>");
   VECTOR_push_back(&v,"<New Audio Instrument>");
+  VECTOR_push_back(&v,"<Load New Preset>");
 
   VECTOR_FOR_EACH(struct Patch *patch,patches){
     VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
@@ -275,8 +293,8 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
         Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
 
-        if(selection>=5){
-          patch=patches->elements[selection-5];
+        if(selection>=6){
+          patch=patches->elements[selection-6];
 
         }else if(selection==0){
           patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
@@ -302,6 +320,9 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
           if(plugin!=NULL)
             patch = plugin->patch;
 
+        }else if(selection==5){
+          patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);;
+
         }else
           printf("Unknown option\n");
 
@@ -323,6 +344,10 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
         }
 
       }Undo_Close();
+
+      if (patch==NULL)
+        Undo_CancelLastUndo();
+      
     } // if(selection>=0)
 
   }

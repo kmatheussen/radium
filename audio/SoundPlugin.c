@@ -24,8 +24,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/undo_patch_proc.h"
+#include "../common/player_proc.h"
+#include "../common/patch_proc.h"
 
 #include "../mixergui/QM_chip.h"
+#include "../mixergui/QM_MixerWidget.h"
+#include "../mixergui/undo_chip_addremove_proc.h"
+#include "../mixergui/undo_mixer_proc.h"
+#include "../Qt/Qt_instruments_proc.h"
+#include "../Qt/undo_instruments_widget_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -33,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundProducer_proc.h"
 #include "undo_audio_effect_proc.h"
 #include "system_compressor_wrapper_proc.h"
+#include "audio_instrument_proc.h"
 
 #include "SoundPlugin_proc.h"
 
@@ -1113,42 +1122,69 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   return plugin;
 }
 
-void PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
-  if (HASH_has_key(state, "___radium_plugin_state_v3")) {
 
-    struct Patch *patch = old_plugin->patch;
-    if (patch==NULL) {
-      RError("patch not found for old plugin");
-      return;
-    }
+char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
+  return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
+}
 
-    SoundPlugin *new_plugin = PLUGIN_create_from_state(state);
-    if (new_plugin==NULL) {
-      GFX_Message(NULL, "Unable to load instrument settings");
-      return;
-    }
 
-    bool success;
+SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
+
+  R_ASSERT(Undo_Is_Open());
     
-    PLAYER_lock(); {
+  struct Patch *patch = old_plugin->patch;
+  if (patch==NULL) {
+    RError("patch not found for old plugin");
+    return NULL;
+  }
 
-      patch->patchdata = new_plugin;
-      
-      success = SP_replace_plugin(old_plugin, new_plugin);
-      if (!success)
-        patch->patchdata = old_plugin;
-      
-    } PLAYER_unlock();
+  bool can_replace_patch = true;
+  
+  if (HASH_has_key(state, "___radium_plugin_state_v3")==false)  // Before 3.0.rc15, loading/saving states in the instrument widgets only loaded/saved the effect values, not the complete plugin state.
+    can_replace_patch = false;
+  
+  else if(AUDIO_is_permanent_patch(patch)) {
+    state = HASH_get_hash(state, "effects");
+    R_ASSERT(state!=NULL);
+    can_replace_patch = false;
+  }
+        
 
-    if (success)
-      CHIP_update(new_plugin);
+  
+  if (can_replace_patch==false) { 
+    for(int i=0;i<old_plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+      Undo_AudioEffect_CurrPos(patch, i);
+    
+    PLUGIN_set_effects_from_state(old_plugin, state);
+
+    return old_plugin;
+  }
+
+  
+  struct Patch *old_patch = old_plugin->patch;
+  R_ASSERT(old_patch!=NULL);
+  
+  struct Patch *new_patch = InstrumentWidget_new_from_preset(state, old_patch->name, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch));
+  CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
+  
+  if (new_patch!=NULL) {
+    
+    hash_t *connections_state = MW_get_connections_state();
+    
+    PATCH_replace_patch_in_song(old_patch, new_patch);
+    PATCH_delete(old_patch);
+    
+    MW_create_connections_from_state_and_replace_patch(connections_state, old_patch->id, new_patch->id);
+    
+    return (SoundPlugin*)new_patch->patchdata;
     
   } else {
-    
-    PLUGIN_set_effects_from_state(old_plugin, state); // Before 3.0.rc15, loading/saving states in the instrument widgets only loaded/saved the effect values, not the complete plugin state.
-    
-  }  
+      
+    return NULL;
+      
+  }
 }
+
 
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;

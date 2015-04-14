@@ -35,6 +35,7 @@ extern LANGSPEC int Undo_num_undos(void);
 
 extern LANGSPEC void Undo_Open(void);
 extern LANGSPEC bool Undo_Close(void);
+extern LANGSPEC bool Undo_Is_Open(void);
 extern LANGSPEC void Undo_CancelLastUndo(void);
 extern LANGSPEC UndoFunction Undo_get_last_function(void);
 

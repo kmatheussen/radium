@@ -66,6 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QGraphicsSceneMouseEvent>
 #include <QAction>
 #include <QMenu>
+#include <QFileDialog>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -382,6 +383,10 @@ static bool move_chip_to_slot(Chip *chip, float x, float y){
   return true;
 }
 
+bool MW_move_chip_to_slot(Chip *chip, float x, float y){
+  return move_chip_to_slot(chip, x, y);
+}
+  
 static Connection *find_clean_connection_at(MyScene *scene, float x, float y);
 
 // Also kicks.
@@ -640,13 +645,13 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
       if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
         printf("Found patch\n");
-        PATCH_delete(patch);
+        PATCH_delete_CurrPos(patch);
         break;
       }
     }END_VECTOR_FOR_EACH;
 
     if(before!=NULL)
-      CHIP_connect_chips(scene, before, after);
+      CHIP_connect_chips(scene, before, after); // undo for the connections are made in PATCH_delete_CurrPos
 
     // Shouldn't there be a "delete chip" call here? (Guess it's deleted through PATCH_delete). TODO: Check that this is correct, and add a comment here why there is no "delete chip" call here.
 
@@ -1098,27 +1103,31 @@ static float find_next_autopos_y(Chip *system_chip){
   return y;
 }
 
+void MW_set_autopos(double *x, double *y){
+  SoundPlugin *main_pipe    = get_main_pipe();
+  Chip        *system_chip  = find_chip_for_plugin(&g_mixer_widget->scene, main_pipe);
+  *x                         = system_chip->x()-grid_width;
+  *y                         = find_next_autopos_y(system_chip);
+  printf("Adding at pos %f %f\n",*x,*y);
+}
+
 // MW_add_plugin/MW_delete_plugin are one of two entry points for audio plugins.
 // Creating/deleting a plugin goes through here, not through audio/.
 //
 // The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
 //
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, float x, float y){
+SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y){
   SoundPlugin     *plugin         = PLUGIN_create_plugin(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;
 
+  if(x<=-100000)
+    MW_set_autopos(&x, &y);
+    
   SoundProducer   *sound_producer = SP_create(plugin);
-  if(x<=-100000){
-    SoundPlugin *main_pipe    = get_main_pipe();
-    Chip        *system_chip  = find_chip_for_plugin(&g_mixer_widget->scene, main_pipe);
-    x                         = system_chip->x()-grid_width;
-    y                         = find_next_autopos_y(system_chip);
-    printf("Adding at pos %f %f\n",x,y);
-  }
-  Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer,x,y);
-
-  move_chip_to_slot(chip, x,y);
+  // Chip *chip =
+  new Chip(&g_mixer_widget->scene,sound_producer,x,y);
+  
   return plugin;
 }
 
@@ -1183,6 +1192,11 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
       SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
       const char *name = plugin_type_container->name;
       menu->addAction(new MyQAction(name,menu,entry));
+
+    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+      menu->addAction(new MyQAction("Load Preset", menu, entry));
+      menu->insertSeparator();
+
     }else{
       const char *name = entry.plugin_type->name;
       menu->addAction(new MyQAction(name,menu,entry));
@@ -1190,7 +1204,8 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
   }
 }
 
-SoundPluginType *MW_popup_plugin_selector(void){
+
+SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect){
   QMenu menu(0);
   entries_i = 0;
 
@@ -1229,6 +1244,11 @@ SoundPluginType *MW_popup_plugin_selector(void){
     else
       return plugin_type_container->plugin_types[selection];
 
+   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+    InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
+    
+    return NULL;
+    
   } else {
 
     return entry.plugin_type;
@@ -1350,14 +1370,18 @@ static void MW_create_chips_from_state(hash_t *chips){
     CHIP_create_from_state(HASH_get_hash_at(chips, "", i));
 }
 
-static void MW_create_connections_from_state_internal(hash_t *connections){
+static void MW_create_connections_from_state_internal(hash_t *connections, int patch_id_old, int patch_id_new){
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++)
-    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i));
+    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i), patch_id_old, patch_id_new);
+}
+
+void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new){
+  MW_cleanup_connections();
+  MW_create_connections_from_state_internal(connections, patch_id_old, patch_id_new);
 }
 
 void MW_create_connections_from_state(hash_t *connections){
-  MW_cleanup_connections();
-  MW_create_connections_from_state_internal(connections);
+  MW_create_connections_from_state_and_replace_patch(connections, -1, -1);
 }
 
 // Patches must be created before calling this one.
@@ -1367,7 +1391,7 @@ void MW_create_from_state(hash_t *state){
   MW_cleanup();
 
   MW_create_chips_from_state(HASH_get_hash(state, "chips"));
-  MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"));
+  MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
 
   GFX_update_all_instrument_widgets();
 }

@@ -1592,7 +1592,8 @@ SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
-	$(CC) audio/SoundPlugin.c $(OPT) $(CPUOPT)  $(CPUOPT) -std=c99
+	$(CC) audio/SoundPlugin.c $(OPT) -std=c99
+### $(CPUOPT)
 
 Mixer.o: audio/Mixer.cpp
 	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT)

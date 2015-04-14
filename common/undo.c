@@ -166,6 +166,9 @@ bool Undo_are_you_shure_questionmark(void){
   return true;
 }
 
+bool Undo_Is_Open(void){
+  return undo_is_open;
+}
 
 void Undo_Open(void){
   if(currently_undoing){

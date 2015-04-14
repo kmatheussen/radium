@@ -222,6 +222,9 @@ public:
 class Chip : public QGraphicsItem
 {
 public:
+
+  void init_new_plugin(void);
+  
   Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y);
   ~Chip();
 
@@ -294,11 +297,15 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 hash_t *CHIP_get_state(Chip *chip);
 
 hash_t *CONNECTION_get_state(Connection *connection);
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state);
+void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new);
 
 #endif // __cplusplus
 
+
+extern LANGSPEC void CHIP_has_new_plugin(struct SoundPlugin *plugin);
+
 extern LANGSPEC void CHIP_create_from_state(hash_t *state);
+extern LANGSPEC struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y);
 
 extern LANGSPEC void CHIP_update(struct SoundPlugin *plugin);
 

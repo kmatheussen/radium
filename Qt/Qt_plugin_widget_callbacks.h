@@ -202,83 +202,11 @@ public:
     }
 
     void on_save_button_pressed(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
-      num_users_of_keyboard++;
-      QString filename;
-
-      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-        filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Effect Configuration (*.rec)");
-      }GL_unlock();
-
-      num_users_of_keyboard--;
-
-      if(filename=="")
-        return;
-
-      disk_t *file = DISK_open_for_writing(filename);
-
-      if(file==NULL){
-        QMessageBox msgBox;
-        msgBox.setText("Could not save file.");
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        safeExec(msgBox);
-        return;
-      }
-
-      hash_t *state = PLUGIN_get_state(plugin);
-
-      HASH_save(state, file);
-
-      DISK_close_and_delete(file);
+      InstrumentWidget_save_preset(_patch);      
     }
 
     void on_load_button_pressed(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      const SoundPluginType *type = plugin->type;
-
-      num_users_of_keyboard++;
-      QString filename;
-
-      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-        filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Effect Configuration (*.rec)");
-      }GL_unlock();
-
-      num_users_of_keyboard--;
-
-      if(filename=="")
-        return;
-
-      disk_t *file = DISK_open_for_reading(filename);
-      if(file==NULL){
-        QMessageBox msgBox;
-        msgBox.setText("Could not open file.");
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        safeExec(msgBox);
-        return;
-      }
-
-      hash_t *state = HASH_load(file);
-      DISK_close_and_delete(file);
-
-      if(state==NULL){
-        QMessageBox msgBox;
-        msgBox.setText("File does not appear to be a valid effects settings file");
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        safeExec(msgBox);
-        return;
-      }
-
-      Undo_Open();{
-        for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-          Undo_AudioEffect_CurrPos(plugin->patch, i);
-      }Undo_Close();
-
-      PLUGIN_set_from_state(plugin, state);
-      GFX_update_instrument_widget(plugin->patch);
+      InstrumentWidget_load_preset(_patch);      
     }
 
     void on_reset_button_pressed(){
