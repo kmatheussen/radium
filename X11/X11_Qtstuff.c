@@ -1,5 +1,5 @@
 
-#include "Python.h"
+#include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"

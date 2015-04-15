@@ -1,4 +1,4 @@
-#include <Python.h>
+#include "../common/includepython.h"
 
 #include <stdio.h>
 #include <sndfile.h>
