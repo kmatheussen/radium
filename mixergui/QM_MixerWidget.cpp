@@ -1117,7 +1117,7 @@ void MW_set_autopos(double *x, double *y){
 // The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
 //
 SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y){
-  SoundPlugin     *plugin         = PLUGIN_create_plugin(plugin_type, NULL);
+  SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;
 
@@ -1125,9 +1125,10 @@ SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y){
     MW_set_autopos(&x, &y);
     
   SoundProducer   *sound_producer = SP_create(plugin);
-  // Chip *chip =
-  new Chip(&g_mixer_widget->scene,sound_producer,x,y);
-  
+  Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer,x,y);
+
+  MW_move_chip_to_slot(chip, x, y);
+    
   return plugin;
 }
 
@@ -1246,7 +1247,6 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
 
    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
     InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
-    
     
     return NULL;
     
