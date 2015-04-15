@@ -739,7 +739,10 @@ void GFX_PP_Update(struct Patch *patch){
   }exit: called_from_pp_update = false;
 }
 
+
 static QString last_filename;
+static QString last_preset_path = "";
+
 
 static hash_t *load_preset_state(void){
   num_users_of_keyboard++;
@@ -749,7 +752,7 @@ static hash_t *load_preset_state(void){
     filename = QFileDialog::getOpenFileName(
                                             g_mixer_widget,
                                             "Load Effect configuration",
-                                            "",
+                                            last_preset_path,
                                             "Radium Effect Configuration (*.rec)",
                                             0,
                                             QFileDialog::DontUseNativeDialog
@@ -760,6 +763,8 @@ static hash_t *load_preset_state(void){
 
   if(filename=="")
     return NULL;
+
+  last_preset_path = QFileInfo(filename).absoluteDir().path();
   
   disk_t *file = DISK_open_for_reading(filename);
   if(file==NULL){
@@ -818,7 +823,6 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   return patch;
 }
 
-
 void InstrumentWidget_load_preset(struct Patch *patch){
   hash_t *state = load_preset_state();
   if (state==NULL)
@@ -847,7 +851,7 @@ void InstrumentWidget_save_preset(struct Patch *patch){
     filename = QFileDialog::getSaveFileName(
                                             g_mixer_widget,
                                             "Save Effect configuration",
-                                            "",
+                                            last_preset_path,
                                             "Radium Effect Configuration (*.rec)",
                                             0,
                                             QFileDialog::DontUseNativeDialog                                            
@@ -858,7 +862,9 @@ void InstrumentWidget_save_preset(struct Patch *patch){
   
   if(filename=="")
     return;
-  
+
+  last_preset_path = QFileInfo(filename).absoluteDir().path();
+    
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
