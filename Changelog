@@ -1,3 +1,18 @@
+Most important changes 3.0.rc15 -> 3.0.rc16
+* Remember the path of the last loaded / saved preset.
+* Use the Qt file dialog instead of the native one, since filters don't work in the native file dialog in windows 7
+* Fix saving in Windows
+* Loading and saving presets now saves the whole instrument, not just the slider/button values.
+* Added "Load Preset" to the plugin menu.
+* Fix realtime peak updates when changing the slider values for the sampler instrument (again)
+* Don't create undo if just changing current instrument
+* Changed lpb from 8 to 4 and bpm from 78 to 156 in the Blowfish song
+* Clean up bars/beats rendering, and draw a single-pixeled line between all tracker lines again
+* Upgrade bdw-gc to 7.2f, and add "-g -O2" flags for the build
+
+
+
+
 Most important changes 3.0.rc14 -> 3.0.rc15
 * vst/linux: Wait for child window to be created (fix for no content in vst window)
 * Fix memory corruption for plugins with more than 2 output channels when running in 32 bit mode,
