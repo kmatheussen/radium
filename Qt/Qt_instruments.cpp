@@ -746,7 +746,14 @@ static hash_t *load_preset_state(void){
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-    filename = QFileDialog::getOpenFileName(g_mixer_widget, "Load Effect configuration", "", "Radium Effect Configuration (*.rec)");
+    filename = QFileDialog::getOpenFileName(
+                                            g_mixer_widget,
+                                            "Load Effect configuration",
+                                            "",
+                                            "Radium Effect Configuration (*.rec)",
+                                            0,
+                                            QFileDialog::DontUseNativeDialog
+                                            );
   }GL_unlock();
   
   num_users_of_keyboard--;
@@ -837,7 +844,14 @@ void InstrumentWidget_save_preset(struct Patch *patch){
   QString filename;
   
   GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-    filename = QFileDialog::getSaveFileName(g_mixer_widget, "Save Effect configuration", "", "Radium Effect Configuration (*.rec)");
+    filename = QFileDialog::getSaveFileName(
+                                            g_mixer_widget,
+                                            "Save Effect configuration",
+                                            "",
+                                            "Radium Effect Configuration (*.rec)",
+                                            0,
+                                            QFileDialog::DontUseNativeDialog                                            
+                                            );
   }GL_unlock();
   
   num_users_of_keyboard--;
