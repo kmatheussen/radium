@@ -26,12 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct _radium_os_disk {
   QFile file;
-  QTextStream *in;
+  QTextStream *stream;  
   bool is_binary;
   
   _radium_os_disk(QString filename, bool is_binary=false)
     : file(filename)
-    , in(NULL)
+    , stream(NULL)
     , is_binary(is_binary)
   {}
 };
@@ -43,6 +43,11 @@ disk_t *DISK_open_for_writing(QString filename){
   if (disk->file.open(QIODevice::WriteOnly | QIODevice::Text)==false)
     return NULL;
 
+  disk->stream = new QTextStream(&disk->file);
+  disk->stream->setCodec("UTF-8");
+
+  //disk->file.write(QString(QChar::ByteOrderMark));
+  
   return disk;
 }
 
@@ -58,7 +63,8 @@ disk_t *DISK_open_for_reading(QString filename){
   if (disk->file.open(QIODevice::ReadOnly | QIODevice::Text)==false)
     return NULL;
 
-  disk->in = new QTextStream(&disk->file);
+  disk->stream = new QTextStream(&disk->file);
+  disk->stream->setCodec("UTF-8");
   
   return disk;
 }
@@ -80,12 +86,27 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
 
 int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
   QString data = STRING_get_qstring(wdata);
-  return disk->file.write(data.toUtf8());
+
+  int pos = disk->stream->pos();
+  *disk->stream << data;
+  disk->stream->flush();
+  return disk->stream->pos() - pos;
+  
+  //return disk->file.write(data);
 }
 
 int DISK_write(disk_t *disk, const char *cdata){
-  QString data(cdata);
-  return disk->file.write(data.toUtf8());
+  QString data = QString::fromUtf8(cdata);
+
+  //printf("Writing chars: -%s- (%s)",data.toUtf8().constData(),cdata);
+  //fflush(stdout);
+
+  int pos = disk->stream->pos();
+  *disk->stream << data;
+  disk->stream->flush();
+  return disk->stream->pos() - pos;
+
+  //return disk->file.write(data);
 }
 
 
@@ -94,10 +115,10 @@ QString g_file_at_end("_________FILE_AT_END");
 QString DISK_read_qstring_line(disk_t *disk){
   R_ASSERT(disk->is_binary==false);
   
-  if (disk->in->atEnd())
+  if (disk->stream->atEnd())
     return g_file_at_end;
 
-  return disk->in->readLine();
+  return disk->stream->readLine();
 }
 
 wchar_t *DISK_read_wchar_line(disk_t *disk){
@@ -152,8 +173,8 @@ int DISK_read_binary(disk_t *disk, void *destination, int num_bytes){
 void DISK_close_and_delete(disk_t *disk){
   disk->file.close();
   
-  if (disk->in != NULL)
-    delete disk->in;
+  if (disk->stream != NULL)
+    delete disk->stream;
 
   delete disk;
 }

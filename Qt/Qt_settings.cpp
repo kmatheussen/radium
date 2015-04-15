@@ -70,7 +70,7 @@ wchar_t *STRING_create(const QString s){
 }
 
 wchar_t *STRING_create(const char *s){
-  QString string(s);
+  QString string = QString::fromUtf8(s);
   return STRING_create(string);
 }
 

@@ -436,6 +436,7 @@ void HASH_save(hash_t *hash, disk_t *file){
   int i;
   for(i=0;i<elements->num_elements;i++){
     hash_element_t *element=elements->elements[i];
+    //DISK_write(file,element->key);DISK_write(file,"\n");
     DISK_printf(file,"%s\n",element->key);
     DISK_printf(file,"%d\n",element->i);
     DISK_printf(file,"%s\n",type_to_typename(element->type));
@@ -465,6 +466,8 @@ static wchar_t *read_line(disk_t *file){
   curr_disk_line++;
 
   wchar_t *line = DISK_read_wchar_line(file);
+
+  //printf("%d: -%s-\n", curr_disk_line, STRING_get_chars(line));
   
   if(line==NULL){
     RError("End of file before finished reading hash map");
