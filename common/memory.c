@@ -263,6 +263,7 @@ char *talloc_floatstring(float number){
   return talloc_strdup(s);
 }
 
+
 char *talloc_format(const char *fmt,...){
   int size = 16;
   char *ret = talloc_atomic(size);
@@ -274,8 +275,11 @@ char *talloc_format(const char *fmt,...){
     int len = vsnprintf(ret,size,fmt,argp);
     va_end(argp);
 
-    if (len >= size) {
-      size = len + 2;
+    if (len <= 0) {
+      size = size * 2;
+      ret = talloc_realloc(ret, size);
+    } else if (len >= size) {
+      size = len + 4;
       ret = talloc_realloc(ret, size);
     } else
       break;
