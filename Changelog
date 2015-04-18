@@ -1,3 +1,10 @@
+Most important changes 3.0.rc16 -> 3.0.rc17
+* Set octave 4 as keyboard octave in new_song.rad (not 10)
+* Fix scheduler memory handling. Crash fix.
+* Turn up main volume on the demo song
+
+
+
 Most important changes 3.0.rc15 -> 3.0.rc16
 * Remember the path of the last loaded / saved preset.
 * Use the Qt file dialog instead of the native one, since filters don't work in the native file dialog in windows 7
