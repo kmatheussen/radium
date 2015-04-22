@@ -46,6 +46,17 @@ INTRODUCTION
 
 
 
+BUILD DEPENDENCIES, all platforms:
+
+        * VST headers from steinberg. The necessary files should be incuded in
+          "VST Audio Plug-Ins SDK", which you can download here:
+
+             http://www.steinberg.net/en/company/developers.html
+
+         After downloading the VST SDK, unpack it and copy the 2.x headers into your ~/SDKs folder.
+
+
+
 BUILD DEPENDENCIES FEDORA:
 
         In addition to OpenGL, you also need:
