@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/instruments_proc.h"
+#include "../common/OS_Player_proc.h"
 
 #include "undo_mixer_proc.h"
 
@@ -799,9 +800,12 @@ Chip::~Chip(){
     fprintf(stderr,"Deleting econnection. EConnections left: %d\n",(int)_econnections.size());
     CONNECTION_delete_connection(_econnections.at(0));
   }
-  SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
-  SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
-  
+
+  PLAYER_lock();{ // The player checks if these values are not null, before reading them. I got two valgrind hits because the player read these variables after they were freed, so that's why there is a lock here. The situation should never happen on a normal computer.
+    SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
+    SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
+  }PLAYER_unlock();
+
   SLIDERPAINTER_delete(_input_slider);
   SLIDERPAINTER_delete(_output_slider);
 }
