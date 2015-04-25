@@ -57,6 +57,7 @@ struct FX *LoadFX(struct Tracks *track){
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
 	DC_LoadN(); 
+        fx->patch = track->patch;
 	GENERAL_LOAD(0,5)
 
 

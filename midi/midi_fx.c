@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/instruments_proc.h"
 #include <string.h>
 #include "disk_midi_fx_proc.h"
 
@@ -133,15 +134,21 @@ static char *midi_fxs_fullnames[MIDI_NUM_FX]={
 /***************** FX **********************************/
 
 
-static void MIDI_treatFX_CC7(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_CC7(struct FX *fx,int val,STime time,int skip, FX_when when){
+    struct Patch *patch = fx->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+    
   //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
+                                 
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
@@ -149,15 +156,21 @@ static void MIDI_treatFX_CC7(struct FX *fx,int val,const struct Tracks *track,ST
 }
 
 
-static void MIDI_treatFX_CC14(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-  //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
+static void MIDI_treatFX_CC14(struct FX *fx,int val,STime time,int skip, FX_when when){
+    struct Patch *patch = fx->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+    //struct MIDI_FX *midi_fx=(struct MIDI_FX *)fx->fxdata;
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
+        
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL) // There is actually no way to delete a midi instrument, but it feels right to have this test anyway.
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
@@ -165,14 +178,20 @@ static void MIDI_treatFX_CC14(struct FX *fx,int val,const struct Tracks *track,S
 	PutMidi3_FX(midi_port,0xb0|channel,fx->effect_num-128+32,val&127,time,10,skip);
 }
 
-static void MIDI_treatFX_Pan7(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pan7(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
+                
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
@@ -180,14 +199,20 @@ static void MIDI_treatFX_Pan7(struct FX *fx,int val,const struct Tracks *track,S
 }
 
 
-static void MIDI_treatFX_Pan14(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pan14(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
+                
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
@@ -197,58 +222,80 @@ static void MIDI_treatFX_Pan14(struct FX *fx,int val,const struct Tracks *track,
 	PutMidi3_FX(midi_port,0xb0|channel,42,val&127,time,10,skip);
 }
 
-static void MIDI_treatFX_ProgramChange(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_ProgramChange(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
+        
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
 	PutMidi2(midi_port,0xc0|channel,val,time,50);
 }
 
-static void MIDI_treatFX_ChannelPreassure(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_ChannelPreassure(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
+        
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
 	PutMidi2_FX(midi_port,0xd0|channel,val,time,10,skip);
 }
 
-static void MIDI_treatFX_Pitch7(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pitch7(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
 
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 
 	PutMidi3_FX(midi_port,0xe0|channel,0,val+0x40,time,10,skip);
 }
 
-static void MIDI_treatFX_Pitch14(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
+static void MIDI_treatFX_Pitch14(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
 	struct PatchData *patchdata;
 	struct MidiPort *midi_port;
 	int channel;
 
-	if(track->patch==NULL) return;
+        R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_MIDI_instrument());
 
-
-	patchdata=(struct PatchData *)track->patch->patchdata;
+	patchdata=(struct PatchData *)patch->patchdata;
+        if (patchdata==NULL)
+          return;
+        
 	midi_port=patchdata->midi_port;
 	channel=patchdata->channel;
 

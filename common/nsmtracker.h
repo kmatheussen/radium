@@ -507,6 +507,8 @@ struct FX{
 	int min;
 	int max;
 
+        struct Patch *patch;
+  
   	int effect_num; // Set by the instrument plugin.
 
 	// Having pointers to variables in sliders is a bit strange, but letting sliders reference FX instead would cause bookkeeping of live and not alive FX objects.
@@ -517,7 +519,7 @@ struct FX{
 	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
 	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-	void (*treatFX)(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
+        void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.

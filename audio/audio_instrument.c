@@ -180,10 +180,16 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
-static void AUDIO_treat_FX(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-  SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
+static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  
+  R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+          
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
-
+  if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
+    return;
+  
   float effect_val = val / (float)MAX_FX_VAL;
 
   PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);

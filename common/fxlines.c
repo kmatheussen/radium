@@ -304,41 +304,46 @@ static struct FX *selectFX(
 	struct WTracks *wtrack
 ){
 
-  if(wtrack->track->patch==NULL) {
+  struct Tracks *track = wtrack->track;
+  struct Patch *patch = track->patch;
+  
+  if(patch==NULL) {
     PATCH_select_patch_for_track(window,wtrack,true);
     //GFX_Message(NULL, "No instrument set for track %d\n",wtrack->l.num);
     return NULL;
   }
   
 	struct FX *fx;
-	int num_usedFX=getNumUsedFX(wtrack->track);
+	int num_usedFX=getNumUsedFX(track);
 
 	if(num_usedFX>0){
           int lokke;
           vector_t v={0};
           for(lokke=0;lokke<num_usedFX;lokke++)
-            VECTOR_push_back(&v,getTrackFX(wtrack->track,lokke)->name);
+            VECTOR_push_back(&v,getTrackFX(track,lokke)->name);
 
           VECTOR_push_back(&v,"New FX");
           int selection=GFX_Menu(window,NULL,"Select FX",&v);
           if(selection==-1) return NULL;
-          if(selection<num_usedFX) return getTrackFX(wtrack->track,selection);
+          if(selection<num_usedFX) return getTrackFX(track,selection);
 	}
 
 	fx=talloc(sizeof(struct FX));
 
         fx->color = newFXColor();
 
+        fx->patch = patch;
+        
 	if(
-		(*wtrack->track->patch->instrument->getFX)(window,wtrack->track,fx)
+		patch->instrument->getFX(window,track,fx)
 		==
 		FX_FAILED
 	){
 		return NULL;
 	}
 
-        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(wtrack->track->patch,fx->effect_num);
-        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(wtrack->track->patch,fx->effect_num);
+        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(patch,fx->effect_num);
+        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(patch,fx->effect_num);
 
 	return fx;
 }

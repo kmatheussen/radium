@@ -97,12 +97,27 @@ void PATCH_reset_time(void){
 }
 
 static void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
+
+  // 1. Do instrument specific changes
   if(old_patch==NULL || new_patch==NULL)
     track->fxs = NULL;
   else if(old_patch->instrument == new_patch->instrument)
     old_patch->instrument->handle_fx_when_theres_a_new_patch_for_track(track,old_patch,new_patch);
   else
     track->fxs = NULL;
+
+  // 2. Update fx->patch value
+  struct FXs *fxs = track->fxs;
+  if (fxs != NULL) {
+    PLAYER_lock();{
+      while(fxs!=NULL){
+        struct FX *fx = fxs->fx;
+        fx->patch = new_patch;
+        fxs = NextFX(fxs);
+      }
+    }PLAYER_unlock();
+  }
+
 }
 
 void PATCH_init_voices(struct Patch *patch){
@@ -897,26 +912,21 @@ void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
 
 // All FX goes through this function.
 
-void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-  if(track->patch!=NULL){ // This function should take patch as first argument. The track argument is [probably not / should not be] needed.
-    if(time==-1)
-      time = track->patch->last_time;
-    else
-      track->patch->last_time = time;
-  }
+void RT_FX_treat_fx(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-  fx->treatFX(fx,val,track,time,skip,when);
+  if(time==-1)
+    time = patch->last_time;
+  else
+    patch->last_time = time;
+
+  fx->treatFX(fx,val,time,skip,when);
 }
 
-void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip){
-  if(track->patch==NULL){
-    RError("FX_treat_fx: track->patch==NULL");
-    return;
-  }
-
+void FX_treat_fx(struct FX *fx,int val,int skip){
   PLAYER_lock();{
-    if(track->patch!=NULL)
-      RT_FX_treat_fx(fx,val,track,-1,skip, FX_single);
+    RT_FX_treat_fx(fx,val,-1,skip, FX_single);
   }PLAYER_unlock();
 }
 
