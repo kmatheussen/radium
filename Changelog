@@ -1,3 +1,8 @@
+Most important changes 3.0.rc17 -> 3.0.rc18
+* Fix crash in certain situations if changing instrument for a track with automation data, while playing
+
+
+
 Most important changes 3.0.rc16 -> 3.0.rc17
 * Set octave 4 as keyboard octave in new_song.rad (not 10)
 * Fix scheduler memory handling. Crash fix.
