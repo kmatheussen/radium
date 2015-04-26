@@ -169,7 +169,7 @@ static void check_jackd_arguments(void){
 
     line = line.trimmed();
 
-    printf("Got line: \"%s\" %s\n",line.toUtf8().constData(),command_line);
+    //printf("Got line: \"%s\" %s\n",line.toUtf8().constData(),command_line);
 
     if(line.startsWith("jackd") || line.startsWith("jackd.exe")){
 
@@ -735,6 +735,8 @@ bool MIXER_start(void){
     return false;
   
   PR_init_plugin_types();
+
+  //Sleep(3000);
 
   check_jackd_arguments();
   

@@ -941,7 +941,7 @@ static void init_uncategorized_menues(){
   {
     char last=0;
     for(unsigned int i=0;i<diff.size() && diff.at(i)!=*end;i++){  // valgrind complains about "Invalid read of size 8" here. Maybe use QVector instead. This code is not easy to understand.
-      fprintf(stderr,"i: %d\n",(int)i);
+      //fprintf(stderr,"i: %d\n",(int)i);
       SoundPluginType *plugin_type = diff.at(i);
       const char *name = plugin_type->name;
       if(name[0]==last){

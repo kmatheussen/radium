@@ -1586,7 +1586,11 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
 SoundProducer.o: audio/SoundProducer.cpp audio/fade_envelopes.h
-	$(CCC) audio/SoundProducer.cpp $(CPPOPT) $(CPUOPT)  $(CPUOPT)
+	$(CCC) audio/SoundProducer.cpp $(CPPOPT) $(CPUOPT) -fno-tree-vectorize # tree-vectorize makes radium crash on windows 8.
+
+#-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
+#-ftree-vectorize
+
 
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
