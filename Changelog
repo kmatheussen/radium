@@ -1,5 +1,6 @@
-Most important changes 3.0.rc18 -> 3.0.rc19
-* Compile audio/SoundProducer.cpp with -fno-tree-vectorize to avoid crash in windows 8 (started in 3.0.rc15)
+Most important changes 3.0.rc18 -> 3.0.rc20
+* Compile the windows version with -fno-tree-vectorize since audio/SoundProducer.cpp crashed in windows 8
+  when using mingw gcc 4.7.2. (that behavior started in 3.0.rc15)
 
 
 

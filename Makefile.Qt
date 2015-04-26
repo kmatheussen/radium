@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.0.rc19
+VERSION = 3.0.rc20
 
 #----------------USER SETTINGS-------------------------------
 
@@ -1586,7 +1586,8 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
 SoundProducer.o: audio/SoundProducer.cpp audio/fade_envelopes.h
-	$(CCC) audio/SoundProducer.cpp $(CPPOPT) $(CPUOPT) -fno-tree-vectorize # tree-vectorize makes radium crash on windows 8.
+	$(CCC) audio/SoundProducer.cpp $(CPPOPT) $(CPUOPT)
+#-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
 #-ftree-vectorize
