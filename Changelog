@@ -1,3 +1,8 @@
+Most important changes 3.0.rc18 -> 3.0.rc19
+* Compile audio/SoundProducer.cpp with -fno-tree-vectorize to avoid crash in windows 8 (started in 3.0.rc15)
+
+
+
 Most important changes 3.0.rc17 -> 3.0.rc18
 * Fix crash in certain situations if changing instrument for a track with automation data, while playing
 
