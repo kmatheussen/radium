@@ -1531,7 +1531,8 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   Float2Placement(floatplace, &place);
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
-    RError("createVelocity: placement before note start for note #%d", notenum);
+    if (notenum>0)
+      RError("createVelocity: placement before note start for note #%d", notenum);
     return -1;
   }
 
