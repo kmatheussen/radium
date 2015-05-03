@@ -1,3 +1,7 @@
+Most important changes 3.0.rc21 -> 3.0.rc22
+* Readded calf chorus effect to new_song and demo song.
+
+
 Most important changes 3.0.rc20 -> 3.0.rc21
 * Don't show error window if trying to create velocity before start of the first note
 * build: Check for the steinberg vst headers in check_dependencies.sh
