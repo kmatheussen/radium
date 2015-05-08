@@ -489,7 +489,6 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     
   case EFFNUM_OUTPUT_VOLUME:
     val = gain_2_db(plugin->output_volume.target_value/plugin->volume,MIN_DB,MAX_DB);
-    printf("*(((( EFFNUM_OUTPUT_VOLUME. val: %f. MIN_DB: %d. Target: %f. plugin->volume: %f\n",val,MIN_DB,plugin->output_volume.target_value,plugin->volume);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
@@ -934,7 +933,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     {
       float val = gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
                                 MIN_DB, MAX_DB);
-      printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
+      //printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
     }
     return gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
                          MIN_DB, MAX_DB);
