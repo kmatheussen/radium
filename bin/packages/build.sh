@@ -91,11 +91,11 @@ cd ..
 
 
 tar xvzf qhttpserver-master.tar.gz
-cd qhttpserver-master/
-echo "CONFIG += staticlib" >> src/src.pro
-`../../../find_moc_and_uic_paths.sh qmake`
-make
-cd ..
+#cd qhttpserver-master/
+#echo "CONFIG += staticlib" >> src/src.pro
+#`../../../find_moc_and_uic_paths.sh qmake`
+#make
+#cd ..
 
 
 tar xvzf s7.tar.gz

@@ -210,6 +210,7 @@ struct MyQSlider : public QSlider {
         //VECTOR_push_back(&options, "Set Value");
       }
 
+      //VECTOR_push_back(&options, "Set Value");
 
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
 
@@ -227,17 +228,29 @@ struct MyQSlider : public QSlider {
       }
 
 #if 0
+      else if(command==1){
+        char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
+        if(s!=NULL){
+          float value = OS_get_double_from_string(s);
+          printf("value: %f\n",value);
+          setValue(value);
+        }
+      }
+
+#else
+#if 0
       else if(command==1 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
         if(s!=NULL){
           float value = OS_get_double_from_string(s);
           Undo_AudioEffect_CurrPos(_patch, _effect_num);
-          PLUGIN_set_effect_value(plugin,-1,_effect_num,value,PLUGIN_STORED_TYPE,PLUGIN_STORE_VALUE);
+          PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
           GFX_update_instrument_widget(_patch);
         }
       }
-#endif // 0
+#endif
+#endif
 #endif // COMPILING_RADIUM
 
       event->accept();
