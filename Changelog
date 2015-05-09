@@ -1,3 +1,11 @@
+Most important changes 3.0.0 -> 3.0.1
+* Added a note that the qjackctl "Delay time" value might need to be increased
+  on windows for the system to start up.
+* Windows: Enable left win key again when radium is not active
+* Remove the "createVelocity: placement before note start for note #%d" error entirely
+
+
+
 Most important changes 3.0.rc22 -> 3.0.0
 * Bumped version number to 3.0.0
 

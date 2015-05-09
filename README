@@ -1,7 +1,7 @@
 
 
-Radium V3.0.0
-Released 2015-05-04
+Radium V3.0.1
+Released 2015-05-09
 
 
 
@@ -137,6 +137,7 @@ BUILD DEPENDENCIES UBUNTU 12 (plus Debian):
       I also needed to install python2.7-dev instead of python2-dev.
 
       * On debian stable, it has been reported that you also need libfftw3-dev.
+        I've also got report that you need a package called libqt4-opengl-dev on debian.
 
       * Ubuntu 14: Replace glib-2.0-dev with libglib2.0-dev. Add libiberty-dev
 

@@ -930,11 +930,13 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return plugin->volume_is_on==true ? 1.0 : 0.0f;
 
   case EFFNUM_OUTPUT_VOLUME:
+#if 0
     {
       float val = gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
                                 MIN_DB, MAX_DB);
       //printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
     }
+#endif
     return gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
                          MIN_DB, MAX_DB);
   case EFFNUM_OUTPUT_VOLUME_ONOFF:
