@@ -302,27 +302,29 @@ static HHOOK g_hKeyboardHook = NULL;
 // http://msdn.microsoft.com/en-us/library/windows/desktop/ee416808(v=vs.85).aspx
 LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
+          
     if (nCode < 0 || nCode != HC_ACTION )  // do not process message 
         return CallNextHookEx( g_hKeyboardHook, nCode, wParam, lParam); 
  
     KBDLLHOOKSTRUCT* p = (KBDLLHOOKSTRUCT*)lParam;
 
     if(wParam==WM_KEYDOWN || wParam==WM_KEYUP){
+      //printf("^^^^^^^^^^^^^^^^^^ p: %p\n",p);
       //printf("^^^^^^^^^^^^^^^^^^^^^ vkCode: %x\n",(int)p->vkCode);
       
       if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){
 
         if(p->vkCode==VK_LWIN)
-          left_windows_down = wParam==WM_KEYDOWN?true:false;
+          left_windows_down  = wParam==WM_KEYDOWN;
         else
-          right_windows_down = wParam==WM_KEYDOWN?true:false;
+          right_windows_down = wParam==WM_KEYDOWN;
 
         if (left_windows_down)
           tevent.keyswitch |= EVENT_LEFTEXTRA1;
         else
           tevent.keyswitch &= (~EVENT_LEFTEXTRA1);
         
-        //printf("left: %s, right: %s\n",left_windows_down?"down":"up", right_windows_down?"down":"up");
+        //printf("active: %d, left: %s, right: %s\n",g_bWindowActive, left_windows_down?"down":"up", right_windows_down?"down":"up");
         if(g_bWindowActive)
           return 1;
       }
@@ -354,6 +356,28 @@ int OS_SYSTEM_get_keynum(void *focused_widget, void *void_event){
 }
 
 void OS_SYSTEM_EventPreHandler(void *void_event){
+  MSG *msg = void_event;
+
+  switch(msg->message){
+    
+  case WM_NCACTIVATE:
+    g_bWindowActive = msg->wParam ? true : false;
+    //printf("1. Got NC Activate. wParam: %d\n",(int)msg->wParam);
+    //fflush(stdout);
+    break;
+    
+  case WM_ACTIVATE:
+    g_bWindowActive = msg->wParam ? true : false;
+    //printf("2. Got Activate. wParam: %d\n",(int)msg->wParam);
+    //fflush(stdout);
+    break;
+    
+  case WM_ACTIVATEAPP:
+    g_bWindowActive = msg->wParam ? true : false;
+    //printf("3. Got Activate app. wParam: %d\n",(int)msg->wParam);
+    //fflush(stdout);
+    break;
+  }
 }
 
 int OS_SYSTEM_get_event_type(void *void_event){
@@ -393,11 +417,6 @@ bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
       //printf("Got HotKey\n");
       //fflush(stdout);
       return true;
-    case WM_ACTIVATEAPP:
-      g_bWindowActive = msg->wParam ? true : false;
-      //printf("Got Activate app. wParam: %d\n",(int)msg->wParam);
-      //fflush(stdout);
-      break;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
       if(num_users_of_keyboard>0)
