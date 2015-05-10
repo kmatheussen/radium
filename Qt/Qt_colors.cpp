@@ -315,7 +315,8 @@ static void updateAll(EditorWidget *my_widget){
 }
 
 void setWidgetColors(QWidget *widget){
-  EditorWidget *my_widget = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *my_widget = static_cast<EditorWidget*>(window->os_visual.widget);
   updateAll(my_widget,widget);
 }
 
@@ -408,10 +409,12 @@ void testColorInRealtime(int num, QColor color){
     DO_GFX({
         DrawUpTrackerWindow(window);
       });
+    //GL_create(window, window->wblock);
     my_widget->updateEditor();
   }
 
-  window->wblock->block->is_dirty = true;
+  window->must_redraw = true;
+  //window->wblock->block->is_dirty = true;
 }
 
 #include "Qt_Main_proc.h"
