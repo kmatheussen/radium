@@ -35,11 +35,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/undo_notes_proc.h"
+#include "../common/settings_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../common/OS_Player_proc.h"
 
 #include "midi_i_input_proc.h"
-
 
 static volatile uint32_t g_msg = 0;
 
@@ -249,6 +249,14 @@ void RT_MIDI_handle_play_buffer(void){
   }
 }
 
+
+static bool g_record_accurately_while_playing = true;
+
+void MIDI_set_record_accurately(bool accurately){
+  SETTINGS_write_bool("record_midi_accurately", accurately);
+  g_record_accurately_while_playing = accurately;
+}
+
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
@@ -267,7 +275,7 @@ void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   if(g_through_patch!=NULL)
     add_event_to_play_buffer(cc, data1, data2);
   
-  if (is_playing) {
+  if (g_record_accurately_while_playing && is_playing) {
     
     if(cc>=0x80 && cc<0xa0)
       if (root->editonoff)
@@ -310,6 +318,8 @@ void MIDI_HandleInputMessage(void){
 }
 
 void MIDI_input_init(void){
+  MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
+
   midi_event_t *midi_event = get_midi_event();
   midi_event->next = g_midi_events;
   g_midi_events = midi_event;
