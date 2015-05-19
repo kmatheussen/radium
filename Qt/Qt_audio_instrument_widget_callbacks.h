@@ -91,6 +91,8 @@ public:
       setInterval(60);
     }
   };
+
+  bool is_starting;
   
   Timer timer;
 
@@ -139,6 +141,7 @@ public:
 
  Audio_instrument_widget(QWidget *parent,struct Patch *patch)
     : QWidget(parent)
+    , is_starting(true)
     , timer(this)
     , _i_am_system_out(false)
     , _patch(patch)
@@ -277,6 +280,8 @@ public:
 
 
     timer.start();
+
+    is_starting = false;
   }
 
   MyQSlider *get_system_slider(int system_effect){
@@ -573,7 +578,9 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
-    PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think.
+
+    if (is_starting==false)
+      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think.
 
     updateSliderString(system_effect);
   }
