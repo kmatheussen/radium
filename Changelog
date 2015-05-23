@@ -1,3 +1,14 @@
+Most important changes 3.0.1 -> 3.0.2
+* Ctrl+J jumps to bar/beat instead of line. (line numbers are not visible anymore)
+* Don't update effect values for plugin while loading a plugin. Might
+  stop buggy plugins from crashing.
+* Option to record MIDI line by line and monophonic in the MIDI menu. (as before)
+* Fix realtime color update in the editor when using the color config dialog
+* Append "-qt4" to the last resort value in find_moc_and_uic_paths.c. (Arch linux fix)
+
+
+
+
 Most important changes 3.0.0 -> 3.0.1
 * Added a note that the qjackctl "Delay time" value might need to be increased
   on windows for the system to start up.
