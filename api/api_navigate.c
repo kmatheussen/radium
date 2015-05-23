@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/cursor_updown_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/realline_calc_proc.h"
+#include "../Qt/Rational.h"
 
 #include "api_common_proc.h"
 
@@ -99,6 +101,40 @@ void cursorUserInputLine(void){
     return;
 
   ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, line));
+}
+
+static int get_realline_from_beat(struct WBlocks *wblock, int barnum, int beatnum){
+  struct Beats *beat = wblock->block->beats;
+
+  while (beat != NULL) {
+    if (beat->bar_num == barnum && beat->beat_num==beatnum)
+      break;
+    beat = NextBeat(beat);
+  }
+
+  if (beat == NULL)
+    return -1;
+
+  return FindRealLineFor(wblock, 0, &beat->l.p);
+}
+
+void cursorUserInputBeat(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  struct WBlocks *wblock = window->wblock;
+  
+  char *line = GFX_GetString(window,NULL,"Jump to Bar/Beat (e.g. \"2/1\" or just \"2\"): >");
+  if (line==NULL)
+    return;
+
+  Place p = get_rational_from_string(line);
+  if (p.dividor==0)
+    return;
+
+  int realline = get_realline_from_beat(wblock, p.counter, p.dividor);
+  if (realline==-1)
+    return;
+
+  ScrollEditorToRealLine(window, wblock, realline);
 }
 
 void selectNextBlock(int windownum){
