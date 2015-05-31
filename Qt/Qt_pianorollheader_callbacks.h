@@ -75,7 +75,7 @@ public slots:
     do{
       if (minkey>0)
         minkey--;
-      if (maxkey<128)
+      if (maxkey<127)
         maxkey++;
     }while((maxkey - minkey) < 5);
 
