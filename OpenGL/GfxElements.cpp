@@ -332,6 +332,7 @@ public:
   _GE_Context(const Color _color, int z)
     : textbitmaps(false)
     , textbitmaps_halfsize(true)
+      //, has_scissor(false)
     , color(_color)
     , _z(z)
       //, gradient(NULL)
@@ -364,7 +365,7 @@ public:
 
 };
 
-
+    
 void GE_set_z(GE_Context *c, int new_z) {
   c->_z = new_z;
 }
@@ -787,9 +788,31 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 
 #else
 
+static float scissor_x,scissor_y,scissor_x2,scissor_y2;
+static bool has_scissor=false;
+  
+void GE_set_scissor(float x, float y, float x2, float y2) {
+  scissor_x = x;
+  scissor_y = y;
+  scissor_x2 = x2;
+  scissor_y2 = y2;
+  has_scissor=true;
+}
+
+void GE_unset_scissor(void){
+  has_scissor=false;
+}
+
 // mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
 
+  if (has_scissor){
+    if (x1 < scissor_x || x2 < scissor_x)
+      return;
+    if (x1 >= scissor_x2 || x2 >= scissor_x2)
+      return;
+  }
+  
 #if 0
   if (c->is_gradient) {
     int key = get_key_from_pen_width(pen_width);

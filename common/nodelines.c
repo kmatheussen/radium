@@ -270,6 +270,64 @@ const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct
 
 
 
+// pianoroll notes
+///////////////////////////////////////////////////////////
+
+static const struct WTracks *pianoroll_wtrack;
+
+static float get_pianoroll_x(const struct WBlocks *wblock, const struct ListHeader3 *element){
+  struct Pitches *pitch = (struct Pitches*)element;
+
+  //int octave = pitch->note / 12;
+  //float chroma = pitch->note - (float)(octave*12);
+
+  float gfx_width = pianoroll_wtrack->pianoroll_area.x2 - pianoroll_wtrack->pianoroll_area.x;
+  float notespan = pianoroll_wtrack->pianoroll_highkey - pianoroll_wtrack->pianoroll_lowkey;
+  float skew = (gfx_width / notespan) / 2.0;
+  
+  return
+    skew +
+    scale(pitch->note,
+          pianoroll_wtrack->pianoroll_lowkey, pianoroll_wtrack->pianoroll_highkey,
+          pianoroll_wtrack->pianoroll_area.x, pianoroll_wtrack->pianoroll_area.x2
+          );
+}
+
+
+const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
+
+  pianoroll_wtrack = wtrack;
+
+  struct Pitches *first_pitch = talloc(sizeof(struct Pitches));
+  first_pitch->l.p = note->l.p;
+  first_pitch->l.next = &note->pitches->l;
+  first_pitch->note = note->note;
+  
+  struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
+  last_pitch->l.p = note->end;
+  last_pitch->l.next = NULL;
+  
+  if (note->pitches==NULL)
+    last_pitch->note = note->note;
+  else if (NextNote(note)==NULL)
+    last_pitch->note = wtrack->track->notes->note;
+  else
+    last_pitch->note = NextNote(note)->note;
+
+  return create_nodelines(window,
+                          wblock,
+                          &first_pitch->l,
+                          get_pianoroll_x,
+                          &last_pitch->l
+                          );
+}
+
+const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
+  return get_nodeline_nodes(GetPitchNodeLines(window, wblock, wtrack, note),
+                            wblock->t.y1);
+}
+
+
 
 
 
@@ -312,7 +370,7 @@ const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const str
 }
 
 
-// velocities
+// fxs
 ///////////////////////////////////////////////////////////
 
 static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;

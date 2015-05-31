@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/velocities_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/tracks_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/LPB_proc.h"
@@ -31,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/undo_maintempos_proc.h"
 #include "../common/Beats_proc.h"
+#include "../common/wblocks_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -39,6 +41,102 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern struct Root *root;
+
+extern char *NotesTexts2[];
+extern char *NotesTexts3[];
+
+
+char *getNoteName2(int notenum){
+  if (notenum<0 || notenum>127)
+    return "";
+  else
+    return NotesTexts2[notenum];
+}
+
+char *getNoteName3(int notenum){
+  if (notenum<0 || notenum>127)
+    return "";
+  else
+    return NotesTexts3[notenum];
+}
+
+float getNoteNameValue(char *notename){
+  return notenum_from_notetext(notename);
+}
+
+int getPianorollLowKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0;
+  return wtrack->pianoroll_lowkey;
+}
+
+int getPianorollHighKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 127;
+  return wtrack->pianoroll_highkey;
+}
+
+void setPianorollLowKey(int key, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  int newkey = R_BOUNDARIES(0, key, 127);
+
+  if (wtrack->pianoroll_highkey - newkey < 5)
+    return;
+  
+  wtrack->pianoroll_lowkey = newkey;
+  
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+
+void setPianorollHighKey(int key, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  int newkey = R_BOUNDARIES(0, key, 127);
+
+  if (newkey - wtrack->pianoroll_lowkey < 5)
+    return;
+  
+  wtrack->pianoroll_highkey = newkey;
+
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+
+float getLowestKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  return TRACK_get_min_pitch(wtrack->track);
+}
+
+float getHighestKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  return TRACK_get_max_pitch(wtrack->track);
+}
 
 
 void incNoteVolume(int incvolume,int windownum){

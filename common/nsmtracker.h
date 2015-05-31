@@ -753,6 +753,7 @@ typedef struct TBoxstruct TBox;
 
 #define WTRACKS_SPACE 2
 
+
 struct WTracks{
 	struct ListHeader1 l;
 //	l.num=wtracknum;
@@ -769,7 +770,13 @@ struct WTracks{
 
         bool is_wide;
 
+        bool pianoroll_on;
+        int pianoroll_lowkey;
+        int pianoroll_highkey;
 
+        int pianoroll_width; // not necessary
+        Area pianoroll_area;
+  
   //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */

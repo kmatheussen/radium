@@ -37,7 +37,10 @@ extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *w
 extern LANGSPEC const struct NodeLine *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 extern LANGSPEC const vector_t *GetFxNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 
-
+extern LANGSPEC const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
+  
+  
 #if !USE_OPENGL
 extern LANGSPEC void MakeNodeLines(
 	struct Tracker_Windows *window,

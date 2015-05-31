@@ -46,6 +46,12 @@ void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 
 struct WTracks *WTRACK_new(void){
   struct WTracks *wtrack=talloc(sizeof(struct WTracks));
+
+  wtrack->pianoroll_on = true;
+  wtrack->pianoroll_lowkey = 32;
+  wtrack->pianoroll_highkey = 60;
+  wtrack->pianoroll_width = 240;
+  
   return wtrack;
 }
 
@@ -63,7 +69,7 @@ void NewWTrack(
 	wtrack->notesonoff=1;
 	wtrack->fxonoff=1;
 	//wtrack->num_vel=1;
-        
+
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
 #endif
@@ -123,10 +129,19 @@ void UpdateWTrackCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	int wtrack_notearea_x
+	int wtrack_x
 ){
 
-	wtrack->notearea.x  = wtrack_notearea_x;
+        int x = wtrack_x;
+
+        if (wtrack->pianoroll_on) {
+          wtrack->pianoroll_width = (wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey) * window->fontheight/2;
+          wtrack->pianoroll_area.x = x;
+          x = x + wtrack->pianoroll_width;
+          wtrack->pianoroll_area.x2 = x;
+        }
+  
+	wtrack->notearea.x  = x;
 	wtrack->notearea.x2 = wtrack->notearea.x  + wtrack->notesonoff*(wtrack->notewidth+(window->fontwidth*(0+wtrack->notelength)));
         if(wtrack->is_wide)
           wtrack->notearea.x2 += 100;
@@ -134,7 +149,7 @@ void UpdateWTrackCoordinates(
 	wtrack->fxarea.x    = wtrack->notearea.x2 + 2;
 	wtrack->fxarea.x2   = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
 
-	wtrack->x  = wtrack->notearea.x;
+	wtrack->x  = wtrack_x;
 	wtrack->y  = wblock->a.y1;
 	wtrack->y2 = wblock->a.y2;
 	wtrack->x2 = wtrack->fxarea.x2;

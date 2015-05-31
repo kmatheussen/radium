@@ -19,13 +19,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtext_proc.h"
 #include "visual_proc.h"
 #include "list_proc.h"
+#include "vector_proc.h"
 #include "gfx_wtrackheader_volpan_proc.h"
 #include "blts_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../Qt/Qt_instruments_proc.h"
+#include "OS_visual_input.h"
 
 #include "gfx_wtrackheaders_proc.h"
 
+
+extern char *NotesTexts3[];
 
 void DrawWTrackNames(
                      struct Tracker_Windows *window,
@@ -34,6 +38,7 @@ void DrawWTrackNames(
                      int endtrack
                      )
 {
+
   struct WTracks *wtrack1 = ListFindElement1(&wblock->wtracks->l, starttrack);
   struct WTracks *wtrack2 = ListFindElement1(&wblock->wtracks->l, endtrack);
 
@@ -166,24 +171,122 @@ static void DrawAllWTrackOnOffs(
   }
 }
 
+static void DrawAllPianoRollHeaders_old(
+                                    struct Tracker_Windows *window,
+                                    struct WBlocks *wblock
+                                    )
+{  
+  struct WTracks *wtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+  
+  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+
+    //struct Tracks *track = wtrack->track;
+    
+    int x1 = wtrack->x + 2;
+    int x2 = wtrack->panonoff.x1;
+    int y1 = wtrack->panonoff.y1;
+    //int y2 = wtrack->panonoff.y2;
+
+    // Text
+    //    GFX_SetClipRect(window,x1, 0, x2, wblock->t.y1, PAINT_BUFFER);
+    {
+      //static char temp[500];
+      //sprintf(temp,"%d->%d:", wtrack1->l.num, wtrack2->l.num);
+      int midpos1 = scale(1,0,3,x1,x2);
+      int midpos2 = scale(2,0,3,x1,x2);
+
+      //printf("_________ T_TEXT %d: %s %d %d %d. midpos: %d, x1: %d, x2: %d\n",wtrack->l.num,NotesTexts3[wtrack->pianoroll_lowkey],x1,y1,midpos-x1,midpos,x1,x2);
+      GFX_T_Text(
+                 window, 8, NotesTexts3[wtrack->pianoroll_lowkey],
+                 x1,
+                 y1+3,
+                 midpos1 - x1,
+                 TEXT_CLIPRECT|TEXT_SCALE|TEXT_CENTER|TEXT_BOLD,
+                 PAINT_BUFFER
+                 );
+
+      printf("%d:, x1: %d, midpos1: %d, midpos2: %d, x2: %d\n",wtrack->l.num,x1, midpos1, midpos2, x2);
+      
+      GFX_T_Text(
+                 window, 8, NotesTexts3[wtrack->pianoroll_highkey],
+                 midpos2,
+                 y1+3,
+                 x2 - midpos2,
+                 TEXT_CLIPRECT|TEXT_SCALE|TEXT_CENTER|TEXT_BOLD,
+                 PAINT_BUFFER
+                 );
+    }
+    //GFX_CancelClipRect(window,PAINT_BUFFER);
+
+    wtrack=NextWTrack(wtrack);
+  }
+}
+
+
+static vector_t g_pianorollheaders = {0};
+
+static void *get_pianorollheader(int tracknum){
+  while (tracknum >= g_pianorollheaders.num_elements)
+    VECTOR_push_back(&g_pianorollheaders, PIANOROLLHEADER_create());
+
+  return g_pianorollheaders.elements[tracknum];    
+}
+
+static void UpdateAllPianoRollHeaders(
+                                      struct Tracker_Windows *window,
+                                      struct WBlocks *wblock
+                                      )
+{
+
+  struct WTracks *wtrack=wblock->wtracks;
+  
+  while(wtrack!=NULL) {
+
+    void *pianorollheader = get_pianorollheader(wtrack->l.num);
+    
+    if (wtrack->l.num < wblock->left_track || wtrack->l.num > wblock->right_track+1) {
+
+      if (pianorollheader != NULL)
+        PIANOROLLHEADER_hide(pianorollheader);
+      
+    } else {
+
+      //struct Tracks *track = wtrack->track;
+      
+      int x1 = wtrack->x + 2;
+      int x2 = wtrack->panonoff.x1;
+      int y1 = wtrack->panonoff.y1 + 2;
+      int y2 = wtrack->volumeonoff.y2;
+      
+      PIANOROLLHEADER_assignTrack(pianorollheader, wblock->l.num, wtrack->l.num);
+      PIANOROLLHEADER_show(pianorollheader, x1, y1, x2, y2);
+    }
+    
+    wtrack=NextWTrack(wtrack);
+  }
+}
+
+
 void DrawAllWTrackHeaders(
                           struct Tracker_Windows *window,
                           struct WBlocks *wblock
                           )
 {  
-
+#if 1
 	GFX_T_FilledBox(
 		window, 11,
 		wblock->t.x1, 0,
 		window->width, wblock->t.y1,
                 PAINT_BUFFER
 	);
-
+#endif
         DrawAllWTrackNames(window,wblock);
 
         DrawAllWTrackSliders(window, wblock);
 
         DrawAllWTrackOnOffs(window, wblock);
+
+        UpdateAllPianoRollHeaders(window, wblock);
 }
 
 

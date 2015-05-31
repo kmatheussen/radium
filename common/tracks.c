@@ -44,8 +44,60 @@ extern char *NotesTexts3[];
 
 extern struct Root *root;
 
+float TRACK_get_min_pitch(const struct Tracks *track){
+  float min_pitch = 10000.0f;
 
-bool TRACK_get_min_and_max_pitches(struct Tracks *track, float *ret_min_pitch, float *ret_max_pitch){
+  int num_pitches = 0;
+  
+  {
+    struct Notes *note = track->notes;
+    while(note!=NULL){
+      min_pitch = R_MIN(note->note, min_pitch);
+      num_pitches ++;
+      struct Pitches *pitch = note->pitches;
+      while(pitch != NULL){
+        min_pitch = R_MIN(pitch->note, min_pitch);
+        num_pitches ++;
+        pitch = NextPitch(pitch);
+      }
+      note = NextNote(note);
+    }
+  }
+
+  if (num_pitches==0)
+    return -1;
+  else
+    return min_pitch;
+}
+
+float TRACK_get_max_pitch(const struct Tracks *track){
+  float max_pitch = -1;
+
+  int num_pitches = 0;
+  
+  {
+    struct Notes *note = track->notes;
+    while(note!=NULL){
+      max_pitch = R_MAX(note->note, max_pitch);
+      num_pitches ++;
+      struct Pitches *pitch = note->pitches;
+      while(pitch != NULL){
+        max_pitch = R_MAX(pitch->note, max_pitch);
+        num_pitches ++;
+        pitch = NextPitch(pitch);
+      }
+      note = NextNote(note);
+    }
+  }
+
+  if (num_pitches==0)
+    return -1;
+  else
+    return max_pitch;
+}
+
+
+bool TRACK_get_min_and_max_pitches(const struct Tracks *track, float *ret_min_pitch, float *ret_max_pitch){
   float min_pitch = 10000.0f;
   float max_pitch = -10000.0f;
 

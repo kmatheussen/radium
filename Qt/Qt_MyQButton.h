@@ -30,9 +30,13 @@ struct MyQButton : public QToolButton{
 
 
   void paintEvent ( QPaintEvent * ev ){
+    //QToolButton::paintEvent(ev);
     QPainter p(this);
+    //p.eraseRect(rect());
+    //printf("isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
     CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text());
   }
+  
 };
 
 

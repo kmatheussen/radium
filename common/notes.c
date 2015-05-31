@@ -671,7 +671,7 @@ static char *strip_whitespace(char *s){
   return ret;
 }
 
-static float notenum_from_notetext(char *notetext){
+float notenum_from_notetext(char *notetext){
   int chroma, octave, sharp;
 
   char *stripped = strip_whitespace(notetext);
@@ -724,7 +724,7 @@ static float notenum_from_notetext(char *notetext){
     return notenum;
 }
 
-static char *notetext_from_notenum(float notenumf){
+char *notetext_from_notenum(float notenumf){
   int notenum = notenumf;
   int cents = 0;
   

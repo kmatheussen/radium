@@ -1027,6 +1027,114 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
   }
 }
 
+
+static void create_pianoroll_grid(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+  int y1=get_realline_y1(window, 0);
+  int y2=get_realline_y2(window, wblock->num_reallines-1);
+
+  GE_Context *octave_color = GE_color_alpha(8, 0.25);
+  //GE_Context *note_color = GE_color_alpha(8, 0.5);
+
+  GE_Context *white_key_color = GE_color_alpha(2, 0.1);
+  GE_Context *black_key_color = GE_color_alpha(1, 0.1);
+
+  float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  float note_width = gfx_width / notespan;
+
+  float x = wtrack->pianoroll_area.x;
+
+  for(int key=wtrack->pianoroll_lowkey ; key<wtrack->pianoroll_highkey ; key++){
+    int chroma = key % 12;
+
+    if (chroma==0)
+      GE_line(octave_color,x,y1,x,y2,1.0);
+
+    float key_x1 = x;
+    float key_x2 = x + note_width;
+
+    GE_Context *key_color;
+    
+    if (chroma==0 || chroma==2 || chroma==4 || chroma==5 || chroma==7 || chroma==9 || chroma==11)
+      key_color = white_key_color;
+    else
+      key_color = black_key_color;
+
+    if (key_color==white_key_color)
+    GE_filledBox(key_color,
+                 key_x1, y1,
+                 key_x2, y2
+                 );
+
+    x = key_x2;
+  }
+}
+
+static void create_pianoroll(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+  //int x1 = 100;
+  //int x2 = 200;
+
+  //float note_width = (x2-x1) / 12.0;
+  //float half_note_width = 2; //note_width / 2;
+
+  if (wtrack->pianoroll_on==false)
+    return;
+
+  float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  float note_width = gfx_width / notespan;
+
+  create_pianoroll_grid(window, wblock, wtrack);
+
+  GE_Context *note_color;
+  
+  if (wtrack->track->patch==NULL)
+    note_color = GE_color_alpha(7, 0.4);
+  else
+    note_color = GE_mix_color(GE_get_rgb(wtrack->track->patch->colornum), GE_get_rgb(7), 400);
+
+  GE_Context *border_color = GE_color_alpha_z(1, 0.7, Z_ABOVE(Z_ZERO));
+
+  GE_set_scissor(wtrack->pianoroll_area.x, 0,
+                 wtrack->pianoroll_area.x2, 0);
+  
+  const struct Notes *note=wtrack->track->notes;
+  while(note != NULL){
+    const struct NodeLine *nodelines = GetPianorollNodeLines(window,
+                                                             wblock,
+                                                             wtrack,
+                                                             note
+                                                             );
+
+    //GE_Context *c = get_note_background(note->note, false);
+    GE_Context *c = note_color;
+    
+    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
+      GE_line(c,
+              nodeline->x1, nodeline->y1,
+              nodeline->x2, nodeline->y2,
+              note_width
+              );
+
+      float x_min = R_MIN(nodeline->x1, nodeline->x2);
+      float x_max = R_MAX(nodeline->x1, nodeline->x2);
+      
+      GE_box(border_color,
+             x_min-note_width/2.0, nodeline->y1,
+             x_max+note_width/2.0, nodeline->y2,
+             1.0
+             );
+    }
+
+    
+    note = NextNote(note);
+  }
+
+  GE_unset_scissor();
+}
+
+
+
 static float subtrack_x1, subtrack_x2;
 
 static void create_track_peaks(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine *nodelines){
@@ -1394,7 +1502,6 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
     }
   }
 
-
   // note/pitch names / cents
   if(left_subtrack==-1) {
 
@@ -1416,6 +1523,9 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
 
     create_track_stops(window, wblock, wtrack);
   }
+
+  // piano roll
+  create_pianoroll(window, wblock, wtrack);
 
   // rec.
   if (wtrack->track->is_recording)

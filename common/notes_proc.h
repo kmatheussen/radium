@@ -75,6 +75,9 @@ struct Notes *FindNote(
 
 struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
 
+char *notetext_from_notenum(float notenumf);
+float notenum_from_notetext(char *notetext);
+
 void EditNoteCurrPos(struct Tracker_Windows *window);
 
 extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);

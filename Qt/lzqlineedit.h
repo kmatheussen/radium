@@ -97,6 +97,33 @@ public:
 };
 
 
+class NoteNameFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
+
+public:
+  
+ NoteNameFocusSnifferQLineEdit(QWidget *parent)
+   : FocusSnifferQLineEdit(parent)
+  {
+  }
+
+  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+    printf("Got note name wheel event\n");
+
+    int keynum = getNoteNameValue((char*)text().toUtf8().constData());
+    if (keynum!=-1) {
+      if (qwheelevent->delta()<0)
+        keynum--;
+      else
+        keynum++;
+    }
+
+    setText(getNoteName3(keynum));
+    editingFinished();
+  }
+  
+};
+
+
 class QuantizationFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
 
 public:

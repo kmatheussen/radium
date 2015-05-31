@@ -2061,7 +2061,7 @@ float getTrackWidth(int tracknum, int blocknum, int windownum){
   }
 }
 
-void setTrackWidth(float new_width, int tracknum, int blocknum, int windownum){
+void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
   if (new_width < 2) {
 #if 0
     RError("Can not set width smaller than 2");
