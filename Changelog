@@ -1,3 +1,7 @@
+Most important changes 3.0.3 -> 3.0.4
+* MIDI: Option to always record velocity
+
+
 Most important changes 3.0.2 -> 3.0.3
 * Add options to multiply the number of lines to scroll by the "Edit lines" value
 * VST: Fix crystal and other plugins using "main" instead of "VSTPluginMain".
