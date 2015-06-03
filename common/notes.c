@@ -280,7 +280,7 @@ static void MaybeScrollEditorDown(struct Tracker_Windows *window){
   }
 }
 
-void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic){
+void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float velocity){
   if(notenum<0.001 || notenum>127.9) return;
 
   Undo_Notes_CurrPos(window);
@@ -317,7 +317,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   
   InsertNote(
              wblock,wtrack,&realline->l.p,NULL,notenum,
-             NOTE_get_velocity(wtrack->track),
+             velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : velocity*MAX_VELOCITY,
              polyphonic
              );
 

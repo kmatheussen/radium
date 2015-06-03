@@ -186,6 +186,10 @@ void midi_recordAccurately(bool accurately){
   MIDI_set_record_accurately(accurately);
 }
 
+void midi_alwaysRecordVelocity(bool doit){
+  MIDI_set_record_velocity(doit);
+}
+
 void midi_setInputPort(void){
   MIDISetInputPort();
 }

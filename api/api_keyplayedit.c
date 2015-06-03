@@ -46,7 +46,7 @@ void keyDownPlay(int notenum,int windownum){
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
         if(root->editonoff)
-          InsertNoteCurrPos(window,notenum,false);
+          InsertNoteCurrPos(window,notenum,false,-1);
 }
 
 void polyKeyDownPlay(int notenum,int windownum){
@@ -59,7 +59,7 @@ void polyKeyDownPlay(int notenum,int windownum){
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
         if(root->editonoff)
-          InsertNoteCurrPos(window,notenum,true);
+          InsertNoteCurrPos(window,notenum,true,-1);
 }
 
 void keyUpPlay(int notenum,int windownum){

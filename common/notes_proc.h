@@ -41,7 +41,7 @@ extern struct Notes *InsertNote(
 
 int NOTE_get_velocity(struct Tracks *track);
 
-extern void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic);
+extern void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
 
 void LengthenNotesTo(
                      struct Blocks *block,

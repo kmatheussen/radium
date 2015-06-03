@@ -257,6 +257,14 @@ void MIDI_set_record_accurately(bool accurately){
   g_record_accurately_while_playing = accurately;
 }
 
+static bool g_record_velocity = true;
+
+void MIDI_set_record_velocity(bool doit){
+  printf("doit: %d\n",doit);
+  SETTINGS_write_bool("always_record_midi_velocity", doit);
+  g_record_velocity = doit;
+}
+
 void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
@@ -311,7 +319,11 @@ void MIDI_HandleInputMessage(void){
     g_msg = 0;
 
     if(root->editonoff) {
-      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg),false);
+      float velocity = -1.0f;
+      if (g_record_velocity)
+        velocity = (float)MIDI_msg_byte3(msg) / 127.0;
+      //printf("velocity: %f, byte3: %d\n",velocity,MIDI_msg_byte3(msg));
+      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), false, velocity);
       root->song->tracker_windows->must_redraw = true;
     }
   }
@@ -319,6 +331,7 @@ void MIDI_HandleInputMessage(void){
 
 void MIDI_input_init(void){
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
+  MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
 
   midi_event_t *midi_event = get_midi_event();
   midi_event->next = g_midi_events;
