@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_maintempos_proc.h"
 #include "../common/Beats_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/settings_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -171,6 +172,25 @@ void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenu
 						);
 }
 
+
+static bool g_do_scroll_edit_lines = false;
+
+bool doScrollEditLines(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_scroll_edit_lines = SETTINGS_read_bool("arrow_keys_scroll_edit_lines", false);
+    has_inited = true;
+  }
+
+  return g_do_scroll_edit_lines;
+}
+
+void setScrollEditLines(bool doit){
+  g_do_scroll_edit_lines = doit;
+  SETTINGS_write_bool("arrow_keys_scroll_edit_lines", doit);
+}
+                          
 extern int g_downscroll;
 void setNoteScrollLength(int l){
   R_ASSERT_RETURN_IF_FALSE(l>=0);
