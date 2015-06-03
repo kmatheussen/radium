@@ -1,3 +1,10 @@
+Most important changes 3.0.2 -> 3.0.3
+* Add options to multiply the number of lines to scroll by the "Edit lines" value
+* VST: Fix crystal and other plugins using "main" instead of "VSTPluginMain".
+  (forgot this when switching to juce for hosting vst plugins)
+
+
+
 Most important changes 3.0.1 -> 3.0.2
 * Ctrl+J jumps to bar/beat instead of line. (line numbers are not visible anymore)
 * Don't update effect values for plugin while loading a plugin. Might
