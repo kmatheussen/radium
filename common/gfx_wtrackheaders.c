@@ -171,6 +171,7 @@ static void DrawAllWTrackOnOffs(
   }
 }
 
+#if 0
 static void DrawAllPianoRollHeaders_old(
                                     struct Tracker_Windows *window,
                                     struct WBlocks *wblock
@@ -221,6 +222,7 @@ static void DrawAllPianoRollHeaders_old(
     wtrack=NextWTrack(wtrack);
   }
 }
+#endif
 
 
 static vector_t g_pianorollheaders = {0};
