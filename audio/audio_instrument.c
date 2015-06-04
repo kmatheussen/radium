@@ -295,7 +295,7 @@ var0:
 	goto start;
 
 var1:
-        fx->name = DC_LoadS();
+        fx->name = DC_LoadSNoMatterWhat();
 	goto start;
 
 var2:

@@ -62,7 +62,7 @@ struct FX *LoadFX(struct Tracks *track){
 
 
 var0:
-	fx->name=DC_LoadS();
+	fx->name=DC_LoadSNoMatterWhat();
 	goto start;
 var1:
 	fx->color=DC_LoadI();

@@ -130,7 +130,7 @@ void DC_SSUL(const char *string,unsigned long integer){
 void DC_SSS(const char *string,const char *string2){
 	if(string2==NULL) return;
 	DC_SaveS(string);
-	if(DISK_printf(dc.file,"%s\n",string2)<0) dc.success=false;
+        DC_SaveCleanString(string2);DC_SaveCleanString("\n");
 }
 
 
@@ -142,8 +142,7 @@ void DC_SSS(const char *string,const char *string2){
 *************************************************************/
 int curr_disk_line;
 
-void DC_fgets(void){
-
+static void DC_fgetsNoMatterWhat(void){
         curr_disk_line++;
 
 	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
@@ -154,15 +153,19 @@ void DC_fgets(void){
 		return;
 	}
 
-        if (!strcmp(ret,"")){
-          DC_fgets();
-          return;
-        }
-
 	//printf("loading -%s-\n",ret);
 
 	dc.ret=ret;
+}
 
+void DC_fgets(void){
+
+  DC_fgetsNoMatterWhat();
+
+  if (!strcmp(dc.ret,"")){
+    DC_fgets();
+    return;
+  }
 }
 
 
@@ -223,6 +226,20 @@ NInt DC_LoadN(void){
 char *DC_LoadS(void){
 	char *ret;
 	DC_fgets();
+        if(!strcmp(dc.ret, emptystringstring)){
+          ret=DC_alloc_atomic(1);
+          ret[0]='\0';
+        }else{
+          ret=DC_alloc_atomic(strlen(dc.ret)+1);
+          strcpy(ret,dc.ret);
+        }
+error:
+	return ret;
+}
+
+char *DC_LoadSNoMatterWhat(void){
+	char *ret;
+	DC_fgetsNoMatterWhat();
         if(!strcmp(dc.ret, emptystringstring)){
           ret=DC_alloc_atomic(1);
           ret[0]='\0';

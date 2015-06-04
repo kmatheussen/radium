@@ -91,6 +91,7 @@ extern float DC_LoadF(void);
 extern uint_32 DC_LoadU32(void);
 extern NInt DC_LoadN(void);
 extern char *DC_LoadS(void);
+extern char *DC_LoadSNoMatterWhat(void);
 extern bool DC_LoadB(void);
 
 extern void *DC_doalloc(size_t size);
