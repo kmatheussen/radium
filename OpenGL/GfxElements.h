@@ -147,8 +147,8 @@ static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
 void GE_set_font(const QFont &font);
 #endif
 
-void GE_set_scissor(float x, float y, float x2, float y2);
-void GE_unset_scissor(void);
+void GE_set_x_scissor(float x, float x2);
+void GE_unset_x_scissor(void);
   
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_text(GE_Context *c, const char *text, int x, int y);

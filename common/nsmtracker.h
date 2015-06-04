@@ -725,6 +725,14 @@ struct NodeLine{
   bool is_node;
 };
 
+static inline const struct NodeLine *Nodeline_n(const struct NodeLine *nodeline, int n){
+  while(n>0 && nodeline!=NULL) {
+    nodeline = nodeline->next;
+    n--;
+  }
+  return nodeline;
+}
+
 struct Node{
   float x, y;
   const struct ListHeader3 *element;
@@ -734,6 +742,12 @@ struct MinMax{
   float min;
   float max;
 };
+
+typedef struct {
+  float x1,y1;
+  float x2,y2;
+} NodelineBox;
+
 
 
 
@@ -794,6 +808,28 @@ struct WTracks{
 #define TEXTTYPE 0
 #define GFXTYPE1 1
 #define MAXTYPE 1
+
+
+static inline const NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
+  const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  const float note_width = gfx_width / notespan;
+
+  const float x_min = R_MIN(nodeline->x1, nodeline->x2);
+  const float x_max = R_MAX(nodeline->x1, nodeline->x2);
+
+  const float y_min = R_MIN(nodeline->y1, nodeline->y2);
+  const float y_max = R_MAX(nodeline->y1, nodeline->y2);
+
+  NodelineBox nodelineBox;
+
+  nodelineBox.x1 = x_min-note_width/2.0;
+  nodelineBox.y1 = y_min;
+  nodelineBox.x2 = x_max+note_width/2.0;
+  nodelineBox.y2 = y_max;
+
+  return nodelineBox;
+}
 
 
 /*********************************************************************

@@ -1095,8 +1095,8 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
   GE_Context *border_color = GE_color_alpha_z(1, 0.7, Z_ABOVE(Z_ZERO));
 
-  GE_set_scissor(wtrack->pianoroll_area.x, 0,
-                 wtrack->pianoroll_area.x2, 0);
+  GE_set_x_scissor(wtrack->pianoroll_area.x,
+                   wtrack->pianoroll_area.x2+1);
   
   const struct Notes *note=wtrack->track->notes;
   while(note != NULL){
@@ -1116,21 +1116,33 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
               note_width
               );
 
-      float x_min = R_MIN(nodeline->x1, nodeline->x2);
-      float x_max = R_MAX(nodeline->x1, nodeline->x2);
+      //float x_min = R_MIN(nodeline->x1, nodeline->x2);
+      //float x_max = R_MAX(nodeline->x1, nodeline->x2);
       
-      GE_box(border_color,
-             x_min-note_width/2.0, nodeline->y1,
-             x_max+note_width/2.0, nodeline->y2,
-             1.0
-             );
+      //float box_x = x_min-note_width/2.0;
+
+#if 0
+      if (box_x < wtrack->pianoroll_area.x2)
+        GE_box(border_color,
+               box_x, nodeline->y1,
+               x_max+note_width/2.0, nodeline->y2,
+               1.0
+               );
+#endif
+      const NodelineBox nodelineBox = GetPianoNoteBox(wtrack, nodeline);
+      if (nodelineBox.x1 < wtrack->pianoroll_area.x2)
+        GE_box(border_color,
+               nodelineBox.x1, nodelineBox.y1,
+               nodelineBox.x2, nodelineBox.y2,
+               1.0
+               );
     }
 
     
     note = NextNote(note);
   }
 
-  GE_unset_scissor();
+  GE_unset_x_scissor();
 }
 
 

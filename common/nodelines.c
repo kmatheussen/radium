@@ -327,10 +327,6 @@ const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const st
                             wblock->t.y1);
 }
 
-
-
-
-
 // velocities
 ///////////////////////////////////////////////////////////
 

@@ -788,9 +788,13 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 
 #else
 
-static float scissor_x,scissor_y,scissor_x2,scissor_y2;
-static bool has_scissor=false;
-  
+static float scissor_x,scissor_x2;
+static bool has_x_scissor=false;
+
+//static float scissor_y,scissor_y2;
+//static bool has_y_scissor=false;
+
+/*  
 void GE_set_scissor(float x, float y, float x2, float y2) {
   scissor_x = x;
   scissor_y = y;
@@ -798,18 +802,59 @@ void GE_set_scissor(float x, float y, float x2, float y2) {
   scissor_y2 = y2;
   has_scissor=true;
 }
+*/
 
-void GE_unset_scissor(void){
-  has_scissor=false;
+void GE_set_x_scissor(float x, float x2) {
+  scissor_x = x;
+  scissor_x2 = x2;
+  has_x_scissor=true;
 }
 
-// mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
+void GE_unset_x_scissor(void){
+  has_x_scissor=false;
+}
+
+#define SWAPFLOAT(a,b) \
+  do{                      \
+    float c = a;           \
+    a = b;                 \
+    b = c;                 \
+  } while(0)
+
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
 
-  if (has_scissor){
-    if (x1 < scissor_x || x2 < scissor_x)
+  if (has_x_scissor){
+
+    if (x1 <= scissor_x && x2 <= scissor_x)
       return;
-    if (x1 >= scissor_x2 || x2 >= scissor_x2)
+
+    if (x1 >= scissor_x2 && x2 >= scissor_x2)
+      return;
+
+    if (x2 < x1) {
+      SWAPFLOAT(y1,y2);
+      SWAPFLOAT(x1,x2);
+    }
+
+    if (x1 < scissor_x) {
+
+      if (y1 != y2)
+        y1 = scale(scissor_x, x1, x2, y1, y2);
+      
+      x1 = scissor_x;
+
+    } 
+
+    if (x2 > scissor_x2) {
+
+      if (y1 != y2)
+        y2 = scale(scissor_x2, x1, x2, y1, y2);
+
+      x2 = scissor_x2;
+
+    }
+
+    if (x1==x2 && y1==y2)
       return;
   }
   
@@ -821,6 +866,9 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
     return;
   }
 #endif
+
+
+  // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
 
   float dx = x2-x1;
   float dy = y2-y1;

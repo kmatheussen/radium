@@ -1191,6 +1191,46 @@
 
 
 
+;; pianoroll
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define *pianonote-move-start* 'move-start)
+(define *pianonote-move-all* 'move-all)
+(define *pianonote-move-end* 'move-end)
+
+(define-struct pianonote-info
+  :tracknum
+  :notenum
+  :pianonotenum
+  :move-type     ;; A "*pianonote-move-<...>*" value
+  )
+
+
+(define (get-pianonote-box $num)
+  ;;(c-display "get-pitch-box" $num)
+  (make-box2 (ra:get-pianonote-x1 $num *current-track-num*)
+             (ra:get-pianonote-y1 $num *current-track-num*)
+             (ra:get-pianonote-x2 $num *current-track-num*)
+             (ra:get-pianonote-y2 $num *current-track-num*)))
+
+#||
+;; highlight current note
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (and *current-track-num*
+              (ra:pianoroll-visible *current-track-num*)
+              (inside-box (ra:get-box track-pianoroll *current-track-num*) $x $y)
+              (match (list (find-node $x $y get-pianonote-box (ra:get-num-pianonotes 0 *current-track-num*)))
+                     (existing-box Num Box) :> (begin
+                                                 (set-indicator-pitch Num *current-track-num*)
+                                                 (set-current-pitch Num  *current-track-num*)
+                                                 #t)
+                     _                      :> #f))))
+
+||#
+
+
+
 ;; velocities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

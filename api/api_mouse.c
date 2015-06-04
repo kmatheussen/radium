@@ -588,6 +588,25 @@ float getTrackY2(int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0 : wtrack->y2;
 }
 
+float getTrackPianorollX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->pianoroll_area.x;
+}
+
+float getTrackPianorollY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getTrackPianorollX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->pianoroll_area.x2;
+}
+
+float getTrackPianorollY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
 float getTrackNotesX1(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->notearea.x;
@@ -872,6 +891,66 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
+
+
+// pianoroll
+//////////////////////////////////////////////////
+
+bool pianorollVisible(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->pianoroll_on;
+}
+
+static const struct NodeLine *get_pianonote_nodeline(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return NULL;
+
+  const struct NodeLine *nodelines = GetPianorollNodeLines(window, wblock, wtrack, wtrack->track->notes);
+
+  const struct NodeLine *nodeline = Nodeline_n(nodelines, pianonotenum);
+  if(nodeline==NULL)
+    RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+
+  return nodeline;
+}
+
+
+float getPianonoteX1(int num, int notenum, int tracknum, int blocknum, int windownum){
+  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->x1;
+}
+
+float getPianonoteY1(int num, int notenum, int tracknum, int blocknum, int windownum){
+  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->y1;
+}
+
+float getPianonoteX2(int num, int notenum, int tracknum, int blocknum, int windownum){
+  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->x2;
+}
+
+float getPianonoteY2(int num, int notenum, int tracknum, int blocknum, int windownum){
+  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->y2;
+}
+
+int getNumPianonotes(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+  if (note==NULL)
+    return 0;
+
+  return 1 + ListFindNumElements3(&note->pitches->l);
+}
+
 
 
 // pitches
