@@ -33,8 +33,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "trackreallines2_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
+typedef struct PyObject_ PyObject;
+#include "../api/radium_proc.h"
+
 #include "cursor_updown_proc.h"
 
+extern int g_downscroll;
+static int getScrollMultiplication2(void){
+  if (doScrollEditLines())
+      return g_downscroll;
+  else
+    return 1;
+}
 
 void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 	struct WBlocks *wblock;
@@ -50,7 +60,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->num_reallines-1 - wblock->curr_realline;
 	}
 
-	if(num_lines==1 || num_lines==-1)
+	if(num_lines/getScrollMultiplication2()==1 || num_lines/getScrollMultiplication2()==-1)
 		Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
 
 	if(wblock->curr_realline+num_lines < wblock->num_reallines){
@@ -132,7 +142,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->curr_realline;
 	}
 
-        if(num_lines==1 || num_lines==-1)
+	if(num_lines/getScrollMultiplication2()==1 || num_lines/getScrollMultiplication2()==-1)
           Scroll_play_up(wblock,wblock->curr_realline-num_lines+1,wblock->curr_realline);
 
 	if(wblock->curr_realline-num_lines>=0){
