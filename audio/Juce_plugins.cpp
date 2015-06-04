@@ -20,6 +20,11 @@
 #include "../common/player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 
+struct PyObject;
+extern "C" {
+#include "../api/radium_proc.h"
+}
+
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
@@ -599,14 +604,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
-#if FULL_VERSION==0
-  if(num_running_plugins >= 2){
+  if(isFullVersion()==false && num_running_plugins >= 2){
     GFX_Message(NULL,
                 "Using more than 2 VST plugins is only available to subscribers.<p>"
                 "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
     return NULL;
   }
-#endif // FULL_VERSION==0
 
   AudioPluginInstance *audio_instance = get_audio_instance(type_data, sample_rate, block_size);
   if (audio_instance==NULL){

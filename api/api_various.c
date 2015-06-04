@@ -750,3 +750,7 @@ void eraseEstimatedVblank(void){
 void evalScheme(char *code){
   SCHEME_eval(code);
 }
+
+bool isFullVersion(void){
+  return FULL_VERSION==1;
+}
