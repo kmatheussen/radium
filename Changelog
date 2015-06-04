@@ -1,5 +1,14 @@
+Most important changes 3.0.4 -> 3.0.5
+* Always scroll-play when pressing up or down arrow, even "edit lines" is bigger than 1
+* Fix more than two vst plugins in the full version
+* load/save: Fix bug where empty string was saved as "" instead of "_________empty__________",
+  plus hack so that some old songs where this happened can be loaded again.
+
+
+
 Most important changes 3.0.3 -> 3.0.4
 * MIDI: Option to always record velocity
+
 
 
 Most important changes 3.0.2 -> 3.0.3
