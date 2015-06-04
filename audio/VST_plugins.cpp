@@ -1043,6 +1043,9 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
   
   VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
 
+  if (get_plugin_instance == NULL)
+    get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
+  
   if (get_plugin_instance == NULL){
     fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
     fflush(stderr);
