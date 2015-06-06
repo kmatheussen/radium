@@ -443,6 +443,8 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
                       float opt)
 {
   printf("Audiomaster called. opcode: %d\n",opcode);
+  //return 0;
+  
 #if 1 // If vst_tilde audioMaster (else plugin_tilde audioMaster)
 	// Support opcodes
   switch(opcode){
@@ -473,7 +475,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     return 0; 	// Support of vst events to host is not available
     
   case audioMasterGetTime:
-#if 0
+#if 1
     fprintf(stderr,"VST master dispatcher: audioMasterGetTime\n");
     break;
 #else
@@ -514,8 +516,8 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     effect->dispatcher(effect, effIdle, 0, 0, NULL, 0.0f);
     return 1;
     
-  case audioMasterGetSampleRate:		
-    if(effect!=NULL){
+  case audioMasterGetSampleRate:    
+    if(false && effect!=NULL){
       SoundPlugin *plugin = (SoundPlugin*)effect->user;
       Data *data = (Data*)plugin->data;
       return data->sample_rate;	
@@ -530,7 +532,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     return 5000;	// HOST version 5000
     
   case audioMasterGetProductString:	// Just fooling product string
-    strcpy((char*)ptr,"A mighty crack from the past.");
+    strcpy((char*)ptr,"ss");//A mighty crack from the past.");
     return 0;
     
   case audioMasterVendorSpecific:		
@@ -1034,6 +1036,16 @@ struct MyQLibrary : public QLibrary {
 
 vector_t *VST_get_uids(const wchar_t *w_filename){
   vector_t *uids = (vector_t*)talloc(sizeof(vector_t));
+  
+  if (false) {
+    radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+    ruid->name = NULL; //talloc_strdup(plugin_name);
+    ruid->uid = 0;
+    
+    VECTOR_push_back(uids, ruid);
+    return uids;
+  }
+  
   bool effect_opened = false;
 
   QString filename = STRING_get_qstring(w_filename);

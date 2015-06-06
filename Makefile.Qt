@@ -408,7 +408,7 @@ bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluids
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
 PLUGINHOSTOPTS = CXX=g++ TARGET_ARCH=-g
 
-pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp flagopts.opt pluginhost/MyPluginHost.jucer
+pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
 	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS) $(MAKE) -n ; else cd pluginhost/Builds/Linux && CONFIG=Release $(PLUGINHOSTOPTS) $(MAKE) -n ; fi
 	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS) $(MAKE) ; else cd pluginhost/Builds/Linux && CONFIG=Release $(PLUGINHOSTOPTS) $(MAKE) ; fi
 #	if [ $(BUILDTYPE) = DEBUG ] ; then cd pluginhost/Builds/Linux && CXX="clang++ -v" CONFIG=Debug $(MAKE) ; else cd pluginhost/Builds/Linux && CXX=clang++ CONFIG=Release $(MAKE) ; fi
