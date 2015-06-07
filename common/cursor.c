@@ -84,6 +84,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
                             wblock->left_track++;
                             //return 0;
                           } else {
+                            UpdateAllWTracksCoordinates(window,wblock);
                             wblock->left_subtrack--;
                             return 1;
                           }
@@ -93,6 +94,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 				wblock->left_track==wblock->block->num_tracks-1 &&
 				wblock->left_subtrack==num_subtracks-1
 			){
+                                UpdateAllWTracksCoordinates(window,wblock);
 				return 2;
 			}
 			UpdateAllWTracksCoordinates(window,wblock);
@@ -111,6 +113,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 				wblock->left_track++;
                           } else {
                             wblock->left_subtrack--;
+                            UpdateAllWTracksCoordinates(window,wblock);
                             return 1;
                           }
 			}

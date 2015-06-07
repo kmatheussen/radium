@@ -108,6 +108,16 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 	}
 }
 
+static int WTRACK_get_pianoroll_width(
+                                      struct Tracker_Windows *window,
+                                      struct WTracks *wtrack
+                                      )
+{
+  if (wtrack->pianoroll_on==false)
+    return 0;
+  
+  return (wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey) * window->fontheight/2;
+}
 
 // Function to use when the coordinates are not calculated.
 int WTRACK_getWidth(
@@ -118,6 +128,7 @@ int WTRACK_getWidth(
   return 
     wtrack->notesonoff*((window->fontwidth*wtrack->notelength)) +
     2 + (wtrack->fxwidth*wtrack->fxonoff)
+    + WTRACK_get_pianoroll_width(window, wtrack)
     + 3
     ;
 }
@@ -136,7 +147,7 @@ void UpdateWTrackCoordinates(
         int x = wtrack_x;
 
         if (wtrack->pianoroll_on) {
-          wtrack->pianoroll_width = (wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey) * window->fontheight/2;
+          wtrack->pianoroll_width = WTRACK_get_pianoroll_width(window, wtrack);
           wtrack->pianoroll_area.x = x;
           x = x + wtrack->pianoroll_width;
           wtrack->pianoroll_area.x2 = x;
