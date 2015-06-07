@@ -1,11 +1,13 @@
 (provide 'init.scm)
 
-'(set! (*s7* 'stacktrace-defaults)
+(set! (*s7* 'stacktrace-defaults)
       '(1000 ;; max-frames
         2450 ;; code-cols
         4550 ;; total-cols
-        #t  ;; "where to place comments"
+        2450  ;; "where to place comments"
+        #t ;; whether the entire output should be displayed as a comment
         ))
+
 
 ;;(set! (*stacktrace* 'max-frames) 1000)
 ;(set! (*stacktrace* 'code-cols) 2000)
