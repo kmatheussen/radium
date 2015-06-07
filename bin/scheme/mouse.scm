@@ -1711,16 +1711,16 @@
   :y)
 
 (define (may-be-a-resize-point-in-track X Y Tracknum)
-  (and (>= X (- (ra:get-track-notes-x1 Tracknum)
+  (and (>= X (- (ra:get-track-x1 Tracknum)
                 2))
-       (<= X (+ (ra:get-track-notes-x1 Tracknum)
+       (<= X (+ (ra:get-track-x1 Tracknum)
                 (ra:get-half-of-node-width)))))
 
 (define-match get-resize-point-track
   X _ Tracknum :> (and (>= X (- (ra:get-track-fx-x2 (1- Tracknum))
                                 2))
                        Tracknum) :where (= Tracknum (ra:get-num-tracks)) ;; i.e. to the right of the rightmost track
-  X _ Tracknum :> #f       :where (> (ra:get-track-notes-x1 Tracknum) X)
+  X _ Tracknum :> #f       :where (> (ra:get-track-x1 Tracknum) X)
   X Y Tracknum :> Tracknum :where (may-be-a-resize-point-in-track X Y Tracknum)
   X Y Tracknum :> (get-resize-point-track X Y (1+ Tracknum)))
 
@@ -1763,7 +1763,7 @@
                                  (define tracknum (Trackwidth-info :tracknum))
                                  (if (= tracknum (1- (ra:get-num-tracks)))
                                      (ra:get-track-fx-x2 tracknum)
-                                     (ra:get-track-notes-x1 (1+ tracknum))))
+                                     (ra:get-track-x1 (1+ tracknum))))
                         :Get-value (lambda (Trackwidth-info)
                                      (Trackwidth-info :width))
                         :Make-undo (lambda (_) #f)
