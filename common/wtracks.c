@@ -49,7 +49,7 @@ struct WTracks *WTRACK_new(void){
 
   //wtrack->pianoroll_on = true;
   wtrack->pianoroll_on = false;
-  wtrack->pianoroll_lowkey = 32;
+  wtrack->pianoroll_lowkey = 48;
   wtrack->pianoroll_highkey = 60;
   wtrack->pianoroll_width = 240;
   
