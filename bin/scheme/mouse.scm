@@ -294,6 +294,12 @@
   (ra:set-current-pitch pitchnum tracknum)
   (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value pitchnum tracknum)))))
 
+(define current-pianonote-has-been-set #f)
+(define (set-current-pianonote pianonotenum notenum tracknum)
+  (set! current-pianonote-has-been-set #t)
+  (ra:set-current-pianonote pianonotenum notenum tracknum))
+;;  (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value pianonotenum tracknum)))))
+
 (define mouse-pointer-has-been-set #f)
 (define (set-mouse-pointer func)
   (set! mouse-pointer-has-been-set #t)
@@ -305,6 +311,7 @@
   (ra:set-no-mouse-note)
   (ra:set-no-mouse-track)
   (ra:cancel-current-node)
+  (ra:cancel-current-pianonote)
   (ra:cancel-indicator-node)
   )
 
@@ -315,6 +322,7 @@
   (set! mouse-note-has-been-set #f)
   (set! indicator-node-has-been-set #f)
   (set! current-node-has-been-set #f)
+  (set! current-pianonote-has-been-set #f)
   (set! mouse-pointer-has-been-set #f)
 
   (ra:set-statusbar-text "")
@@ -335,6 +343,9 @@
 
   (if (not current-node-has-been-set)
       (ra:cancel-current-node))
+
+  (if (not current-pianonote-has-been-set)
+      (ra:cancel-current-pianonote))
 
   ;;(if (not mouse-pointer-has-been-set)
   ;;    (ra:set-normal-mouse-pointer))
@@ -629,11 +640,11 @@
                                   try-it
                                   (+ 2 (ra:get-bot-visible-y))))))
                                    
-    (Move-node node-info new-value (and new-y (get-place-from-y Button new-y)))
-    (Publicize node-info)
-    (make-node :node-info node-info
-               :value new-value
-               :y (or new-y (Node :y))))
+    (let ((node-info (Move-node node-info new-value (and new-y (get-place-from-y Button new-y)))))
+      (Publicize node-info)
+      (make-node :node-info node-info
+                 :value new-value
+                 :y (or new-y (Node :y)))))
 
   (define (release Button Dx Dy Node)
     (define node-info (Node :node-info))
@@ -695,7 +706,8 @@
                                              #f)
                           :Move-node (lambda (Info Value Place)
                                        (Move (Info :handler-data)
-                                             Value))
+                                             Value)
+                                       Info)
                           :Publicize (lambda (Info)
                                        (Publicize (Info :handler-data)))
                           :Get-pixels-per-value-unit (lambda (Info)
@@ -1020,6 +1032,7 @@
                                      (define new-value (ra:get-temponode-value Num)) ;; might differ from Value
                                      ;;(c-display "Place/New:" Place (ra:get-temponode-value Num))
                                      (temponodeval->01 new-value)
+                                     Num
                                      )
                         :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
                                      (set-indicator-temponode Num)
@@ -1151,7 +1164,8 @@
                                                #f
                                                (callback Num (ra:get-pitch-value Num *current-track-num*))))
                         :Move-node (lambda (Num Value Place)                                     
-                                     (ra:set-pitch Num Value (or Place -1) *current-track-num*))
+                                     (ra:set-pitch Num Value (or Place -1) *current-track-num*)
+                                     Num)
                         :Publicize (lambda (Num)
                                      (set-indicator-pitch Num *current-track-num*)
                                      (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value Num *current-track-num*)))))
@@ -1206,28 +1220,212 @@
   )
 
 
-(define (get-pianonote-box $num)
+(define (get-pianonote-box $tracknum $notenum $num)
   ;;(c-display "get-pitch-box" $num)
-  (make-box2 (ra:get-pianonote-x1 $num *current-track-num*)
-             (ra:get-pianonote-y1 $num *current-track-num*)
-             (ra:get-pianonote-x2 $num *current-track-num*)
-             (ra:get-pianonote-y2 $num *current-track-num*)))
+  (make-box2 (ra:get-pianonote-x1 $num $notenum $tracknum)
+             (ra:get-pianonote-y1 $num $notenum $tracknum)
+             (+ 2 (ra:get-pianonote-x2 $num $notenum $tracknum))
+             (+ 2 (ra:get-pianonote-y2 $num $notenum $tracknum))))
 
-#||
-;; highlight current note
+(define (get-pianonote-move-type $y $y1 $y2)
+  (define height (- $y2 $y1))
+  (define h (if (< height
+                   (* 3 (ra:get-half-of-node-width)))
+                (/ height
+                   3)
+                (ra:get-half-of-node-width)))                   
+  (cond ((< $y (+ $y1 h))
+         *pianonote-move-start*)
+        ((> $y (- $y2 h))
+         *pianonote-move-end*)
+        (else
+         *pianonote-move-all*)))
+
+(define (get-pianonote-info4 $x $y $tracknum $notenum $pianonotenum)
+  (define box (get-pianonote-box $tracknum $notenum $pianonotenum))
+  (and (inside-box box $x $y)
+       (make-pianonote-info :tracknum $tracknum
+                            :notenum $notenum
+                            :pianonotenum $pianonotenum
+                            :move-type (get-pianonote-move-type $y (box :y1) (box :y2)))))
+  
+(define-match get-pianonote-info3
+  _ _ ________ _______ Num-pianonotes Num-pianonotes :> #f
+  X Y Tracknum Notenum Pianonotenum   Num-pianonotes :> (or (get-pianonote-info4 X Y
+                                                                                 Tracknum
+                                                                                 Notenum
+                                                                                 Pianonotenum)
+                                                            (get-pianonote-info3 X Y
+                                                                                 Tracknum
+                                                                                 Notenum
+                                                                                 (1+ Pianonotenum)
+                                                                                 Num-pianonotes)))
+
+(define-match get-pianonote-info2
+  _ _ ________ Num-notes Num-notes :> #f
+  X Y Tracknum Notenum   Num-notes :> (or (get-pianonote-info3 X Y
+                                                               Tracknum
+                                                               Notenum
+                                                               0
+                                                               (ra:get-num-pianonotes Notenum Tracknum))
+                                          (get-pianonote-info2 X Y
+                                                               Tracknum
+                                                               (1+ Notenum)
+                                                               Num-notes)))
+  
+(define (get-pianonote-info $x $y $tracknum)
+  (get-pianonote-info2 $x $y $tracknum 0 (ra:get-num-notes $tracknum)))
+
+
+(define (get-pianonote-y info)
+  (define y1 (ra:get-pianonote-y1 (info :pianonotenum)
+                                  (info :notenum)
+                                  (info :tracknum)))
+  (define y2 (ra:get-pianonote-y2 (info :pianonotenum)
+                                  (info :notenum)
+                                  (info :tracknum)))
+
+  (cond ((eq? (info :move-type)
+              *pianonote-move-start*)
+         y1)
+        ((eq? (info :move-type)
+              *pianonote-move-end*)
+         y2)
+        (else
+         (/ (+ y1 y2) 2))))
+
+         
+(define (call-get-existing-node-info-callbacks callback info)
+
+  (define num-pianonotes (ra:get-num-pianonotes (info :notenum) (info :tracknum)))
+  (define pianonotenum (info :pianonotenum))
+    
+  (if (eq? (info :move-type)
+           *pianonote-move-end*)
+      (begin
+        (define num-pianonotes (ra:get-num-pianonotes (info :notenum) (info :tracknum)))
+        (define pianonotenum (info :pianonotenum))
+        (if (and (> num-pianonotes 1)
+                 (< pianonotenum (1- num-pianonotes)))
+            (begin
+              (set! pianonotenum (1+ pianonotenum))
+              (set! info (make-pianonote-info :tracknum (info :tracknum)
+                                              :notenum (info :notenum)
+                                              :pianonotenum pianonotenum
+                                              :move-type *pianonote-move-start*))))))
+
+  (callback info
+            (ra:get-pianonote-value (info :pianonotenum)
+                                    (info :notenum)
+                                    (info :tracknum))
+            (if (eq? *pianonote-move-end* (info :move-type))
+                (ra:get-pianonote-y2 (info :pianonotenum)
+                                     (info :notenum)
+                                     (info :tracknum))
+                (ra:get-pianonote-y1 (info :pianonotenum)
+                                     (info :notenum)
+                                     (info :tracknum)))))
+;            (get-pianonote-y info)))
+  
+   
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (and *current-track-num*
+                                             (ra:pianoroll-visible *current-track-num*)
+                                             (ra:get-box track-pianoroll *current-track-num*)))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (and *current-track-num*
+                                                       (let ((info (get-pianonote-info X Y *current-track-num*)))
+                                                         (and info
+                                                              (call-get-existing-node-info-callbacks callback info)))))
+                        :Get-min-value (lambda (_) 1)
+                        :Get-max-value (lambda (_) 127)
+                        :Get-x (lambda (info) (ra:get-pianonote-x1 (info :pianonotenum)
+                                                                   (info :notenum)
+                                                                   (info :tracknum)))
+                        :Get-y get-pianonote-y
+                        :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
+                        :Create-new-node (lambda (X Place callback)
+                                           (c-display "Create" X Place)
+                                           (define Value (scale X
+                                                                (ra:get-track-pianoroll-x1 *current-track-num*)
+                                                                (ra:get-track-pianoroll-x2 *current-track-num*)
+                                                                (ra:get-pianoroll-low-key *current-track-num*)
+                                                                (ra:get-pianoroll-high-key *current-track-num*)))
+                                           (define Num (ra:create-pianonote Value Place (+ 2 Place) *current-track-num*))
+                                           (if (= -1 Num)
+                                               #f
+                                               (callback (make-pianonote-info :tracknum *current-track-num*
+                                                                              :notenum Num
+                                                                              :pianonotenum 0
+                                                                              :move-type *pianonote-move-end*)
+                                                         Value)))
+                        :Publicize (lambda (pianonote-info)
+                                     (set-current-pianonote (pianonote-info :pianonotenum)
+                                                            (pianonote-info :notenum)
+                                                            (pianonote-info :tracknum)))
+                        :Move-node (lambda (pianonote-info Value Place)
+                                     ;;(c-display "moving to. Value: " Value ", Place: " Place)
+                                     (define func
+                                       (cond ((eq? (pianonote-info :move-type)
+                                                   *pianonote-move-start*)
+                                              ra:move-pianonote-start)
+                                             ((eq? (pianonote-info :move-type)
+                                                   *pianonote-move-end*)
+                                              ra:move-pianonote-end)
+                                             ((eq? (pianonote-info :move-type)
+                                                   *pianonote-move-all*)
+                                              ra:move-pianonote)
+                                             (else
+                                              (c-display "UNKNOWN pianonote-info type: " (pianonote-info :move-type))
+                                              #f)))
+                                     (define new-notenum
+                                       (func (pianonote-info :pianonotenum)
+                                             (if (ra:ctrl-pressed)
+                                                 Value
+                                                 (round Value))
+                                             (or Place -1)
+                                             (pianonote-info :notenum)
+                                             (pianonote-info :tracknum)))
+                                     (make-pianonote-info :tracknum (pianonote-info :tracknum)
+                                                          :notenum new-notenum
+                                                          :pianonotenum (pianonote-info :pianonotenum)
+                                                          :move-type (pianonote-info :move-type)))
+                        :Get-pixels-per-value-unit (lambda (_)
+                                                     (ra:get-pianoroll-low-key *current-track-num*)
+                                                     (ra:get-pianoroll-high-key *current-track-num*)
+                                                     (ra:get-half-of-node-width))
+
+                        ;;(ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+                        )
+
+
+;; highlight current pianonote
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-track-num*
               (ra:pianoroll-visible *current-track-num*)
               (inside-box (ra:get-box track-pianoroll *current-track-num*) $x $y)
-              (match (list (find-node $x $y get-pianonote-box (ra:get-num-pianonotes 0 *current-track-num*)))
-                     (existing-box Num Box) :> (begin
-                                                 (set-indicator-pitch Num *current-track-num*)
-                                                 (set-current-pitch Num  *current-track-num*)
-                                                 #t)
-                     _                      :> #f))))
-
-||#
+              ;;(c-display "current-tracknum:" *current-track-num*)
+              (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
+                '(c-display $x $y pianonote-info
+                            (box-to-string (get-pianonote-box 0 1 0)))
+                (and pianonote-info
+                     (begin
+                       (c-display "type: " (pianonote-info :move-type))
+                       (set-current-pianonote (pianonote-info :pianonotenum)
+                                              (pianonote-info :notenum)
+                                              (pianonote-info :tracknum))
+                       ;;(c-display "hello:" (pianonote-info :dir))
+                       (cond ((eq? (pianonote-info :move-type)
+                                   *pianonote-move-start*)                            
+                              (set-mouse-pointer ra:set-vertical-resize-mouse-pointer))
+                             ((eq? (pianonote-info :move-type)
+                                   *pianonote-move-end*)
+                              (set-mouse-pointer ra:set-vertical-resize-mouse-pointer))
+                             ((eq? (pianonote-info :move-type)
+                                   *pianonote-move-all*)
+                              (set-mouse-pointer ra:set-pointing-mouse-pointer))))
+                     )))))
 
 
 
@@ -1390,7 +1588,9 @@
                                                   (and *current-track-num*
                                                        (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
                                                          (and velocity-info
-                                                              (callback velocity-info (velocity-info :value) (velocity-info :y))))))
+                                                              (callback velocity-info
+                                                                        (velocity-info :value)
+                                                                        (velocity-info :y))))))
                         :Get-min-value (lambda (_) 0.0)
                         :Get-max-value (lambda (_) 1.0)
                         :Get-x (lambda (info) (ra:get-velocity-x (info :velocitynum)
@@ -1427,7 +1627,8 @@
                                                                                    (velocity-info :tracknum)))
                                               (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum))
+                                     velocity-info)
                         )
 
 ;; delete velocity
@@ -1771,7 +1972,8 @@
                                      (ra:set-statusbar-text (ra:get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
 
                         :Move-node (lambda (fxnode-info Value Place)                                     
-                                     (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum)))
+                                     (ra:set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum))
+                                     fxnode-info)
                         )
 
 ;; delete fx
@@ -1884,7 +2086,9 @@
          (if (or (not result)
                  (not resize-mouse-pointer-is-set))
              (if (and (> Y (ra:get-block-header-y2))
-                      (< Y (ra:get-reltempo-slider-y1)))
+                      (< Y (ra:get-reltempo-slider-y1))
+                      (or (not (ra:pianoroll-visible *current-track-num*))
+                          (not (inside-box (ra:get-box track-pianoroll *current-track-num*) X Y))))
                  (ra:set-normal-mouse-pointer)))
          result))
 

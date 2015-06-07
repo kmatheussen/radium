@@ -206,13 +206,16 @@
   :b 59
   :c)
 
-(make-test :b 32)
+(make-test :b 33)
 
 (define t (make-test :c 2))
 (t :b)
 (t :c)
 (t :dir)
 (t :bc)
+(t :b 90)
+
+(t :dir)
 
 ||#
 
@@ -295,7 +298,7 @@
            " :x1 "     (box :x1)
            " :y1 "     (box :y1)
            " :x2 "     (box :x2)
-           " :y1 "     (box :y2)
+           " :y2 "     (box :y2)
            " :width "  (box :width)
            " :height " (box :height)
            ")")))

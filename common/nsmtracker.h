@@ -809,6 +809,11 @@ struct WTracks{
 #define GFXTYPE1 1
 #define MAXTYPE 1
 
+struct CurrentPianoNote{
+  int tracknum;
+  int notenum;
+  int pianonotenum;
+};
 
 static inline const NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
   const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;

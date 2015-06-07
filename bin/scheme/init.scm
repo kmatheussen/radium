@@ -1,8 +1,15 @@
 (provide 'init.scm)
 
-(set! (*stacktrace* 'max-frames) 1000)
-(set! (*stacktrace* 'code-cols) 2000)
-(set! (*stacktrace* 'total-cols) 2450)
+'(set! (*s7* 'stacktrace-defaults)
+      '(1000 ;; max-frames
+        2450 ;; code-cols
+        4550 ;; total-cols
+        #t  ;; "where to place comments"
+        ))
+
+;;(set! (*stacktrace* 'max-frames) 1000)
+;(set! (*stacktrace* 'code-cols) 2000)
+;(set! (*stacktrace* 'total-cols) 2450)
 
 (require stuff.scm)
 (require write.scm)

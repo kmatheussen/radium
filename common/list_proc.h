@@ -152,8 +152,8 @@ extern LANGSPEC void CutListAt_a(void *listroot,Place *place);
 extern LANGSPEC void CutListAt1(void *listroot,NInt num);
 
 extern LANGSPEC int ListPosition3(struct ListHeader3 *list,
-                         struct ListHeader3 *element
-                         );
+                                  struct ListHeader3 *element
+                                  );
 
 extern LANGSPEC int ForAllListElements1(
 	void *voidlistroot,

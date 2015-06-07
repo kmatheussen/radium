@@ -905,42 +905,96 @@ bool pianorollVisible(int tracknum, int blocknum, int windownum){
   return wtrack->pianoroll_on;
 }
 
-static const struct NodeLine *get_pianonote_nodeline(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+int getPioanorollLowKey(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return 0;
+
+  return wtrack->pianoroll_lowkey;
+}
+
+int getPioanorollHighKey(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return 127;
+
+  return wtrack->pianoroll_highkey;
+}
+
+
+enum PianoNoteWhatToGet {
+  PIANONOTE_INFO_X1,
+  PIANONOTE_INFO_Y1,
+  PIANONOTE_INFO_X2,
+  PIANONOTE_INFO_Y2,
+  PIANONOTE_INFO_VALUE
+};
+
+static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
-    return NULL;
+    return 0;
 
-  const struct NodeLine *nodelines = GetPianorollNodeLines(window, wblock, wtrack, wtrack->track->notes);
+  if (what_to_get==PIANONOTE_INFO_VALUE){
+    if (pianonotenum==0)
+      return note->note;
+    struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+    if (pitch==NULL){
+      RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+      return 0;
+    }
+    return pitch->note;
+  }
+  
+  const struct NodeLine *nodelines = GetPianorollNodeLines(window, wblock, wtrack, note);
 
   const struct NodeLine *nodeline = Nodeline_n(nodelines, pianonotenum);
-  if(nodeline==NULL)
+  if(nodeline==NULL) {
     RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+    return 0;
+  }
 
-  return nodeline;
+  NodelineBox box = GetPianoNoteBox(wtrack, nodeline);
+  
+  switch (what_to_get){
+  case PIANONOTE_INFO_X1:
+    return box.x1;
+  case PIANONOTE_INFO_Y1:
+    return wblock->t.y1 + box.y1 - scroll_pos;
+  case PIANONOTE_INFO_X2:
+    return box.x2;
+  case PIANONOTE_INFO_Y2:
+    return wblock->t.y1 + box.y2 - scroll_pos;
+  default:
+    RError("Internal error");
+    return 0;
+  }
 }
 
 
 float getPianonoteX1(int num, int notenum, int tracknum, int blocknum, int windownum){
-  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->x1;
+  return get_pianonote_info(PIANONOTE_INFO_X1, num, notenum, tracknum, blocknum, windownum);
 }
 
 float getPianonoteY1(int num, int notenum, int tracknum, int blocknum, int windownum){
-  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->y1;
+  return get_pianonote_info(PIANONOTE_INFO_Y1, num, notenum, tracknum, blocknum, windownum);
 }
 
 float getPianonoteX2(int num, int notenum, int tracknum, int blocknum, int windownum){
-  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->x2;
+  return get_pianonote_info(PIANONOTE_INFO_X2, num, notenum, tracknum, blocknum, windownum);
 }
 
 float getPianonoteY2(int num, int notenum, int tracknum, int blocknum, int windownum){
-  const struct NodeLine *nodeline = get_pianonote_nodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->y2;
+  return get_pianonote_info(PIANONOTE_INFO_Y2, num, notenum, tracknum, blocknum, windownum);
+}
+
+float getPianonoteValue(int num, int notenum, int tracknum, int blocknum, int windownum){
+  return get_pianonote_info(PIANONOTE_INFO_VALUE, num, notenum, tracknum, blocknum, windownum);
 }
 
 int getNumPianonotes(int notenum, int tracknum, int blocknum, int windownum){
@@ -951,7 +1005,320 @@ int getNumPianonotes(int notenum, int tracknum, int blocknum, int windownum){
   return 1 + ListFindNumElements3(&note->pitches->l);
 }
 
+static void MOVE_PLACE(Place *place, float diff){
+  float oldplace = GetfloatFromPlace(place);
+  Float2Placement(oldplace+diff, place);
+}
 
+static void setPianoNoteValue(float value, int pianonotenum, struct Notes *note){
+
+  if (pianonotenum==0) {
+    note->note = R_BOUNDARIES(1, value, 127);
+    return;
+  }
+  
+  struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+  if (pitch==NULL){
+    RError("There is no pianonote %d",pianonotenum);
+    return;
+  }
+
+  pitch->note = R_BOUNDARIES(1, value, 127);
+}
+
+static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
+  if (pianonotenum==0)
+    return note->l.p;
+  
+  struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+  if (pitch==NULL){
+    RError("There is no pianonote %d",pianonotenum);
+    return note->l.p;
+  }
+
+  return pitch->l.p;
+}
+
+
+static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0;
+
+  struct Tracks *track = wtrack->track;
+
+  int ret = 0;
+  int notenum_so_far = 0;
+  
+  struct Notes *note = track->notes;
+
+  while(note!=NULL){
+
+    if (notenum_so_far==notenum) {
+      struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+      if (pitch==NULL){
+        RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+        return 0;
+      }
+      return ret + pianonotenum;
+    }
+      
+    ret++;
+
+    ret += ListFindNumElements3(&note->pitches->l);
+
+    notenum_so_far++;
+    
+    note = NextNote(note);
+  }
+
+  RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+  return 0;
+}
+
+int movePianonote(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  setPianoNoteValue(value, pianonotenum, note);
+
+  window->must_redraw=true;
+    
+  if (floatplace < 0)
+    return notenum;
+
+  struct Tracks *track = wtrack->track;
+
+  Place lastplace;
+  PlaceSetLastPos(wblock->block, &lastplace);
+  
+#if 0
+  // something is wrong somewhere. This should have worked.
+  // For instance: p_Add(62 + 65533/65534, -1 + 0/1) returns a complex value! (must be investigated more)
+  
+  Place old_place = getPianoNotePlace(pianonotenum, note);
+  Place new_place; Float2Placement(floatplace, &new_place);
+  Place diff = p_Sub(new_place, old_place);
+  
+  if (PlaceGreaterOrEqual(&new_place, &lastplace))
+    return notenum;
+
+  note->l.p = new_place;
+  note->end = p_Add(note->end, diff);
+
+#else
+
+  // Work-around here. Work on floats instead of rationals.
+  
+  float lastplacefloat = GetfloatFromPlace(&lastplace);
+
+  Place old_place = getPianoNotePlace(pianonotenum, note);
+  float old_floatplace = GetfloatFromPlace(&old_place);
+  float diff      = floatplace - old_floatplace;
+
+  float old_start = GetfloatFromPlace(&note->l.p);
+  float new_start = old_start + diff;
+
+  float old_end   = GetfloatFromPlace(&note->end);
+  float new_end   = old_end + diff;
+
+  if (new_start < 0)
+    new_start = 0;
+
+  if (new_end >= lastplacefloat)
+    new_end = lastplacefloat - 0.001;
+
+  if (new_start >= new_end)
+    return notenum;
+
+  PLAYER_lock();{
+    ListRemoveElement3(&track->notes, &note->l);
+    
+    Float2Placement(new_start, &note->l.p);
+    Float2Placement(new_end, &note->end);
+
+    struct Velocities *velocity = note->velocities;
+    while(velocity != NULL){
+      MOVE_PLACE(&velocity->l.p, diff);
+      velocity = NextVelocity(velocity);
+    }
+
+    struct Pitches *pitch = note->pitches;
+    while(pitch != NULL){
+      MOVE_PLACE(&pitch->l.p, diff);
+      pitch = NextPitch(pitch);
+    }
+    
+    ListAddElement3(&track->notes, &note->l);
+  }PLAYER_unlock();
+
+#endif
+
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
+int movePianonoteStart(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  if (note->pitches!=NULL) {
+    setPitch(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
+             value, floatplace,
+             tracknum, blocknum, windownum
+             );
+    return notenum;
+  }
+
+  note->note = R_BOUNDARIES(1, value, 127);
+    
+  window->must_redraw=true;
+    
+  if (floatplace < 0)
+    return notenum;
+
+  struct Tracks *track = wtrack->track;
+
+  float lastplacefloat = GetfloatFromPlace(&note->end);
+  if (floatplace >= lastplacefloat)
+    floatplace = lastplacefloat - 0.001;
+
+  if (note->velocities != NULL) {
+    float firstvelplace = GetfloatFromPlace(&note->velocities->l.p);
+    if (floatplace >= firstvelplace)
+      floatplace = firstvelplace - 0.001;
+  }
+
+  // (there are no pitches here)
+    
+  PLAYER_lock();{
+    ListRemoveElement3(&track->notes, &note->l);
+    
+    Float2Placement(floatplace, &note->l.p);
+    
+    ListAddElement3(&track->notes, &note->l);
+  }PLAYER_unlock();
+
+
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
+static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place);
+
+int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  if (note->pitches!=NULL) {
+    if (floatplace>=0) {
+      MoveEndNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
+      window->must_redraw=true;
+    }
+    return notenum;
+  }
+
+  note->note = R_BOUNDARIES(1, value, 127);
+    
+  window->must_redraw=true;
+    
+  if (floatplace < 0)
+    return notenum;
+
+  //struct Tracks *track = wtrack->track;
+
+  float firstplacefloat = GetfloatFromPlace(&note->l.p);
+  if (floatplace <= firstplacefloat)
+    floatplace = firstplacefloat + 0.001;
+
+  if (note->velocities != NULL) {
+    float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
+    if (floatplace <= lastvelplace)
+      floatplace = lastvelplace + 0.001;
+  }
+
+  // (there are no pitches here)
+    
+  PLAYER_lock();{
+    Float2Placement(floatplace, &note->end);
+  }PLAYER_unlock();
+
+
+  return notenum;
+}
+
+int createPianonote(float value, float floatplace, float endfloatplace, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  struct Tracks *track = wtrack->track;
+
+  value = R_BOUNDARIES(1,value,127);
+
+  Place lastplace;
+  PlaceSetLastPos(wblock->block, &lastplace);
+  float lastfloatplace = GetFloatFromPlace(&lastplace);
+  
+  if (floatplace < 0)
+    floatplace = 0;
+
+  if (endfloatplace > lastfloatplace)
+    endfloatplace = lastfloatplace;
+
+  if (floatplace >= endfloatplace) {
+    RError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
+    return -1;
+  }
+
+  Place startplace;
+  Float2Placement(floatplace, &startplace);
+
+  Place endplace;
+  Float2Placement(floatplace, &endplace);
+
+  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
+
+  struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(wtrack->track), true);
+  
+  window->must_redraw = true;
+
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
+extern struct CurrentPianoNote current_piano_note;
+  
+void setCurrentPianonote(int num, int notenum, int tracknum){
+  if (
+      current_piano_note.tracknum != tracknum ||
+      current_piano_note.notenum != notenum || 
+      current_piano_note.pianonotenum != num
+      )
+    {  
+      current_piano_note.tracknum = tracknum;
+      current_piano_note.notenum = notenum;
+      current_piano_note.pianonotenum = num;
+      root->song->tracker_windows->must_redraw = true;
+    }
+}
+
+void cancelCurrentPianonote(void){
+  setCurrentPianonote(-1, -1, -1);
+}
 
 // pitches
 //////////////////////////////////////////////////
@@ -1304,7 +1671,7 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   PLAYER_lock();{
     note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
   }PLAYER_unlock();
-
+    
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
@@ -2239,6 +2606,12 @@ void setHorizontalResizeMousePointer(int windownum){
   if (window!=NULL)
     SetHorizResizePointer(window);
 }
+void setVerticalResizeMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetVerticalResizePointer(window);
+}
+
 void moveMousePointer(float x, float y, int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window!=NULL)

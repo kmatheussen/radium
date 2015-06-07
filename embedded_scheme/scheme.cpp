@@ -48,7 +48,14 @@ static s7_scheme *s7;
 static s7webserver_t *s7webserver;
 
 static s7_pointer place_to_ratio(const Place *p){
-  return s7_make_ratio(s7, p->line*p->dividor + p->counter, p->dividor);
+  R_ASSERT(p->dividor != 0);
+
+  s7_Int a = p->line*p->dividor + p->counter;
+  s7_Int b = p->dividor;
+  s7_pointer ratio = s7_make_ratio(s7, a, b);
+  
+  //fprintf(stderr,"\n\n          a: %d, b: %d. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d\n\n\n", (int)a, (int)b, s7_is_number(ratio),s7_is_integer(ratio),s7_is_ratio(ratio),s7_is_real(ratio));  
+  return ratio;
 }
 
 static Place *ratio_to_place(s7_pointer ratio){
@@ -80,7 +87,7 @@ static Place number_to_place(s7_pointer number){
   if (s7_is_integer(number))
     return place(s7_integer(number), 0, 1);
 
-  RError("scheme.cpp/number_to_place: result was not ratio or integer. Returning 0");
+  RError("scheme.cpp/number_to_place: result was not ratio or integer. Returning 0. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(s7,number),s7_is_complex(number),s7_is_ulong(number));  
   return place(0,0,1);
 }
 
@@ -203,6 +210,8 @@ static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,
 }
 
 Place p_Add(const Place p1, const Place p2){
+  //PrintPlace("p1: ",&p1);
+  //PrintPlace("p2: ",&p2);
   static s7_pointer scheme_func = s7_name_to_value(s7, "+");
   return place_operation_place_p1_p2(scheme_func, p1,p2);
 }

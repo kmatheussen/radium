@@ -465,6 +465,10 @@ void SetHorizResizePointer(struct Tracker_Windows *tvisual){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::SizeHorCursor);
 }
+void SetVerticalResizePointer(struct Tracker_Windows *tvisual){
+  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  main_window->setCursor(Qt::SizeVerCursor);
+}
 void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QCursor::setPos(editor->mapToGlobal(QPoint(x,y)));

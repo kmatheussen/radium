@@ -1070,6 +1070,8 @@ static void create_pianoroll_grid(const struct Tracker_Windows *window, const st
   }
 }
 
+struct CurrentPianoNote current_piano_note = {-1,-1,-1};
+
 static void create_pianoroll(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   //int x1 = 100;
   //int x2 = 200;
@@ -1087,17 +1089,22 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   create_pianoroll_grid(window, wblock, wtrack);
 
   GE_Context *note_color;
+
+  int colornum = 7;
   
   if (wtrack->track->patch==NULL)
-    note_color = GE_color_alpha(7, 0.4);
+    note_color = GE_color_alpha(colornum, 0.4);
   else
     note_color = GE_mix_color(GE_get_rgb(wtrack->track->patch->colornum), GE_get_rgb(7), 400);
 
+  GE_Context *current_note_color = GE_mix_color(GE_get_rgb(colornum), GE_get_rgb(2), 500);
+  
   GE_Context *border_color = GE_color_alpha_z(1, 0.7, Z_ABOVE(Z_ZERO));
 
   GE_set_x_scissor(wtrack->pianoroll_area.x,
                    wtrack->pianoroll_area.x2+1);
-  
+
+  int notenum = 0;
   const struct Notes *note=wtrack->track->notes;
   while(note != NULL){
     const struct NodeLine *nodelines = GetPianorollNodeLines(window,
@@ -1106,10 +1113,14 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                                                              note
                                                              );
 
-    //GE_Context *c = get_note_background(note->note, false);
-    GE_Context *c = note_color;
+    int pianonotenum = 0;
     
-    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
+    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next,pianonotenum++) {
+      GE_Context *c = note_color;
+
+      if (wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum)
+        c = current_note_color;
+      
       GE_line(c,
               nodeline->x1, nodeline->y1,
               nodeline->x2, nodeline->y2,
@@ -1138,7 +1149,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                );
     }
 
-    
+      notenum++;
     note = NextNote(note);
   }
 
