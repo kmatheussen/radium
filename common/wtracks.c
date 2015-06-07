@@ -47,8 +47,8 @@ void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 struct WTracks *WTRACK_new(void){
   struct WTracks *wtrack=talloc(sizeof(struct WTracks));
 
-  wtrack->pianoroll_on = true;
-  //wtrack->pianoroll_on = false;
+  //wtrack->pianoroll_on = true;
+  wtrack->pianoroll_on = false;
   wtrack->pianoroll_lowkey = 32;
   wtrack->pianoroll_highkey = 60;
   wtrack->pianoroll_width = 240;

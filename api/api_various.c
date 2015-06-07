@@ -631,6 +631,52 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
+void showHidePianoroll(int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  wtrack->pianoroll_on = !wtrack->pianoroll_on;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHidePianorollBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->pianoroll_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->pianoroll_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+}
+
 void showHideSignatureTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
