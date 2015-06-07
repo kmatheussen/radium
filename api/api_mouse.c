@@ -1300,6 +1300,23 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
   return ListPosition3(&track->notes->l, &note->l);
 }
 
+void deletePianonote(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  window->must_redraw=true;
+    
+  PLAYER_lock();{
+    ListRemoveElement3(&wtrack->track->notes, &note->l);
+  }PLAYER_unlock();
+
+}
+
+
 extern struct CurrentPianoNote current_piano_note;
   
 void setCurrentPianonote(int num, int notenum, int tracknum){

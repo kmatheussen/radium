@@ -1428,6 +1428,24 @@
                      )))))
 
 
+;; delete pianonote
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda ($button $x $y)
+                (and (= $button *right-button*)
+                     *current-track-num*
+                     (ra:pianoroll-visible *current-track-num*)
+                     (inside-box (ra:get-box track-pianoroll *current-track-num*) $x $y)
+                     (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
+                       (if pianonote-info
+                           (begin
+                             (ra:undo-notes (pianonote-info :tracknum))
+                             (ra:delete-pianonote (pianonote-info :pianonotenum)
+                                                  (pianonote-info :notenum)
+                                                  (pianonote-info :tracknum))
+                             #t)
+                           #f))))))
+
 
 ;; velocities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
