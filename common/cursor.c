@@ -79,8 +79,14 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
                         int num_subtracks = GetNumSubtracks(leftwtrack->track);
 			wblock->left_subtrack++;
 			if(wblock->left_subtrack>=num_subtracks){
-				wblock->left_subtrack= -1;
-				wblock->left_track++;
+                          if (wblock->left_track < wblock->block->num_tracks-1) {
+                            wblock->left_subtrack= -1;
+                            wblock->left_track++;
+                            return 0;
+                          } else {
+                            wblock->left_subtrack--;
+                            return 1;
+                          }
 			}
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			if(
