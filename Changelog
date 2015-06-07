@@ -1,3 +1,8 @@
+Most important changes 3.0.6 -> 3.0.7
+* Fix track-width mouse handling when pianoroll is visible
+
+
+
 Most important changes 3.0.5 -> 3.0.6
 * Simple pianoroll (Left Alt + P or Let Ctrl + P to enable/disable)
 * Fix crash that sometimes could happen if scrolling to rightmost track
