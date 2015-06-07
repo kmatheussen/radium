@@ -82,7 +82,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
                           if (wblock->left_track < wblock->block->num_tracks-1) {
                             wblock->left_subtrack= -1;
                             wblock->left_track++;
-                            return 0;
+                            //return 0;
                           } else {
                             wblock->left_subtrack--;
                             return 1;
@@ -106,8 +106,13 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			wblock->left_subtrack++;
 			if(wblock->left_subtrack>=num_subtracks){
+                          if (wblock->left_track < wblock->block->num_tracks-1) {
 				wblock->left_subtrack= -1;
 				wblock->left_track++;
+                          } else {
+                            wblock->left_subtrack--;
+                            return 1;
+                          }
 			}
 			leftwtrack=ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 			UpdateAllWTracksCoordinates(window,wblock);
