@@ -39,6 +39,7 @@ static int getScrollMultiplication(void){
     return 1;
 }
 
+
 /*******************************************
   Navigating 
 *******************************************/

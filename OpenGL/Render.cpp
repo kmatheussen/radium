@@ -20,6 +20,10 @@
 
 #include "GfxElements.h"
 
+extern "C" {
+typedef struct PyObject_ PyObject;
+#include "../api/radium_proc.h"
+}
 
 #include "Render_proc.h"
 
@@ -408,8 +412,19 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
 
   const int z = Z_LINENUMBERS | Z_STATIC_X;
 
+  if (linenumbersVisible() && localzoom->l.p.counter==0) {
 
-  if (is_barnum) {
+    draw_text_num(
+                  window,
+                  GE_textcolor_z(1, z),
+                  localzoom->l.p.line,
+                  wblock->linenumbers_max_num_characters,
+                  wblock->linenumarea.x,
+                  get_realline_y1(window, realline)
+                  );
+    
+
+  } else if (is_barnum) {
     
     draw_text_num(
                   window,
@@ -735,16 +750,18 @@ void create_block_borders(
   int y1=get_realline_y1(window, 0);
   int y2=get_realline_y2(window, wblock->num_reallines-1);
 
-  create_single_linenum_border(
-                               wblock->beats_x - 1,
-                               y1,y2
-                               );
+  if (!linenumbersVisible())
+    create_single_linenum_border(
+                                 wblock->beats_x - 1,
+                                 y1,y2
+                                 );
 
-  
+  /*  
   create_single_linenum_border(
                                wblock->beats_x - 1,
                                y1,y2
                                );
+  */
 
   if (wblock->zoomlines_max_num_characters > 0)
     create_single_linenum_border(
