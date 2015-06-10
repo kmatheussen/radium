@@ -84,8 +84,8 @@ public slots:
   void on_cctype_activated( int val)
   {
     patchdata->cc[this->ccnum] = val;
-    patchdata->ccnames[this->ccnum] = talloc_strdup((char*)ccnames[val]);
-
+    patchdata->ccnames[this->ccnum] = talloc_strdup(get_ccnames()[val]);
+    
     value_slider->_effect_num = patchdata->cc[ccnum];
     printf("on_cctype_activated: Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
   }

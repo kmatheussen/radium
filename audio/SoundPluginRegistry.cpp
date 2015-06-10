@@ -221,6 +221,8 @@ extern "C" void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
 extern void create_pd_plugin(void);
 
+extern "C" void create_midisend_plugin(void);
+  
 extern void create_zita_rev_plugin(void);
 extern void create_faust_tapiir_plugin(void);
 extern void create_faust_multibandcomp_plugin(void);
@@ -337,6 +339,7 @@ void PR_init_plugin_types(void){
 
   create_bus_plugins();
   create_patchbay_plugin();
+  create_midisend_plugin();
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   //create_sine_plugin();

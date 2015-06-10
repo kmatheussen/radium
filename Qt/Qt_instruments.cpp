@@ -108,7 +108,46 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch);
 
-static const char *ccnames[128];
+
+const char **get_ccnames(void){
+  static bool is_inited = false;
+  static const char *ccnames[128];
+
+  if (is_inited == false) {
+    for(int i=0;i<128;i++)
+      ccnames[i] = "";
+
+    {
+      ccnames[01] = "Modulation Wheel";
+      ccnames[02] = "Breath Controller";
+      ccnames[04] = "Foot Controller";
+      ccnames[05] = "Portamento Time";
+      ccnames[06] = "Data Entry MSB";
+      ccnames[07] = "Volume";
+      ccnames[10] = "Pan";
+      ccnames[11] = "Expression";
+      ccnames[16] = "Foot Controller";
+      ccnames[28] = "Data Entry LSB";
+      ccnames[64] = "Sustain Switch";
+      ccnames[65] = "Portamento Switch";
+      ccnames[66] = "Sostenuto";
+      ccnames[67] = "Soft Pedal";
+      ccnames[84] = "Portamento";
+      ccnames[94] = "Variation Depth";
+      ccnames[120] = "All Sounds Off";
+      ccnames[121] = "Reset All Controllers";
+      ccnames[123] = "All Notes Off";
+      ccnames[124] = "Omni Mode Off";
+      ccnames[125] = "Omni Mode On";
+      ccnames[126] = "Mono Mode";
+      ccnames[127] = "Poly Mode";
+    }
+
+    is_inited = true;
+  }
+
+    return ccnames;
+}
 
 //#define protected public
 #if USE_QT3
@@ -291,38 +330,7 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
     struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
     instrument->patchdata = patchdata;
 
-    for(int i=0;i<128;i++)
-      ccnames[i] = "";
-
-    {
-      ccnames[01] = "Modulation Wheel";
-      ccnames[02] = "Breath Controller";
-      ccnames[04] = "Foot Controller";
-      ccnames[05] = "Portamento Time";
-      ccnames[06] = "Data Entry MSB";
-      ccnames[07] = "Volume";
-      ccnames[10] = "Pan";
-      ccnames[11] = "Expression";
-      ccnames[16] = "Foot Controller";
-      ccnames[28] = "Data Entry LSB";
-      ccnames[64] = "Sustain Switch";
-      ccnames[65] = "Portamento Switch";
-      ccnames[66] = "Sostenuto";
-      ccnames[67] = "Soft Pedal";
-      ccnames[84] = "Portamento";
-      ccnames[94] = "Variation Depth";
-      ccnames[120] = "All Sounds Off";
-      ccnames[121] = "Reset All Controllers";
-      ccnames[123] = "All Notes Off";
-      ccnames[124] = "Omni Mode Off";
-      ccnames[125] = "Omni Mode On";
-      ccnames[126] = "Mono Mode";
-      ccnames[127] = "Poly Mode";
-      if(patchdata!=NULL)
-        for(int i=0;i<8;i++){
-          ccnames[(int)patchdata->cc[i]] = patchdata->ccnames[i];
-        }
-    }
+    const char **ccnames = get_ccnames();
 
     {
       int ccnum = 0;
@@ -334,7 +342,19 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
 
           for(int i=0;i<128;i++){
             char temp[500];
-            sprintf(temp, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
+            bool is_set = false;
+            
+            if(patchdata!=NULL)
+              for(int ip=0;ip<8;ip++)
+                if (patchdata->cc[ip] == i) {
+                  sprintf(temp, "%3d: %s", i, patchdata->ccnames[ip]);
+                  is_set = true;
+                  break;
+                }
+
+            if (is_set==false)
+              sprintf(temp, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
+            
             cc->cctype->insertItem(temp);
           }
 
