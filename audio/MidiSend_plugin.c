@@ -207,7 +207,7 @@ void create_midisend_plugin(void){
 
   plugin_type->type_name                = "MIDI Messages";
   plugin_type->name                     = "MIDI Messages";
-  plugin_type->info                     = "MIDI Messages makes it possible to send MIDI messages to other sound objects";
+  plugin_type->info                     = "The MIDI Messages object makes it possible to send MIDI messages to other sound objects.\nThis can for instance be used to send pitch bend changes to VST plugins.";
   plugin_type->num_inputs               = 0;
   plugin_type->num_outputs              = 0;
   plugin_type->is_instrument            = false;
