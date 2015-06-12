@@ -251,7 +251,7 @@ OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfro
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_lowpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_system_delay.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o Patchbay_plugin.o MidiSend_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_pd_controllers.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
+OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_pd_controllers.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
 
 #Mixer
 QM=mixergui/
@@ -1398,8 +1398,8 @@ Bus_plugins.o: audio/Bus_plugins.cpp
 Patchbay_plugin.o: audio/Patchbay_plugin.c
 	$(CC) audio/Patchbay_plugin.c $(OPT)
 
-MidiSend_plugin.o: audio/MidiSend_plugin.c
-	$(CC) audio/MidiSend_plugin.c $(OPT)
+MidiMessages_plugin.o: audio/MidiMessages_plugin.c
+	$(CC) audio/MidiMessages_plugin.c $(OPT)
 
 VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 	$(CCC) audio/VST_plugins.cpp $(QTOPT) -Wno-error # uses some Qt stuff to open GUI window

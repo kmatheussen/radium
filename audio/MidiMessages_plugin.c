@@ -366,7 +366,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 }
 
 
-void create_midisend_plugin(void){
+void create_midimessages_plugin(void){
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "MIDI Messages";
