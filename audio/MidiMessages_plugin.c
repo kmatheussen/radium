@@ -103,7 +103,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 
-static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, uint byte1, uint byte2, int byte3){
+static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsigned int byte1, unsigned int byte2, int byte3){
   Data *data = (Data*)plugin->data;
   struct Patch *patch = plugin->patch;
 
