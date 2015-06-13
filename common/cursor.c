@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_proc.h"
 
 
-void SetCursorPos(struct Tracker_Windows *window){
+void R_SetCursorPos(struct Tracker_Windows *window){
 #if !USE_OPENGL
 	struct WBlocks *wblock=window->wblock;
 	Blt_markAll(window,LINENUMBTRACK,wblock->right_track,wblock->curr_realline,wblock->curr_realline);
@@ -231,7 +231,7 @@ void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock,int
 		case 0:
 			return;
 		case 1:
-			SetCursorPos(window);
+			R_SetCursorPos(window);
 			break;
 		case 2:
                   window->must_redraw = true;

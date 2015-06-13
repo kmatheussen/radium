@@ -550,7 +550,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	
 	UpdateAllWTracks(window,wblock,wblock->top_realline,wblock->bot_realline);
 
-	SetCursorPos(window);
+	R_SetCursorPos(window);
 #endif
         
         // fill background in the bottom bar
