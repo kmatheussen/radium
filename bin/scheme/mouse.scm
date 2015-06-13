@@ -1164,8 +1164,7 @@
                                                #f
                                                (callback Num (ra:get-pitch-value Num *current-track-num*))))
                         :Move-node (lambda (Num Value Place)                                     
-                                     (ra:set-pitch Num Value (or Place -1) *current-track-num*)
-                                     Num)
+                                     (ra:set-pitch Num Value (or Place -1) *current-track-num*))
                         :Publicize (lambda (Num)
                                      (set-indicator-pitch Num *current-track-num*)
                                      (ra:set-statusbar-text (<-> "Pitch: " (two-decimal-string (ra:get-pitch-value Num *current-track-num*)))))
@@ -1394,8 +1393,6 @@
                                                      (ra:get-pianoroll-low-key *current-track-num*)
                                                      (ra:get-pianoroll-high-key *current-track-num*)
                                                      (ra:get-half-of-node-width))
-
-                        ;;(ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
                         )
 
 
@@ -1645,8 +1642,12 @@
                                                                                    (velocity-info :tracknum)))
                                               (ra:set-statusbar-text (<-> "Velocity: " (two-decimal-string value))))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum))
-                                     velocity-info)
+                                     (define note-num (ra:set-velocity (velocity-info :velocitynum) Value (or Place -1) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (make-velocity-info :tracknum (velocity-info :tracknum)
+                                                         :notenum note-num
+                                                         :velocitynum (velocity-info :velocitynum)
+                                                         :value (velocity-info :value)
+                                                         :y (velocity-info :y)))
                         )
 
 ;; delete velocity

@@ -442,6 +442,32 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     MaybeScrollEditorDown(window);
 }
 
+struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note){
+  struct Notes *notes = track->notes;
+  struct Notes *prev = NULL;
+  
+  while(notes != note){
+    if (notes->subtrack == note->subtrack)
+      prev = notes;
+    notes = NextNote(notes);
+  }
+
+  return prev;
+}
+
+struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note){
+  int subtrack = note->subtrack;
+
+  note = NextNote(note);
+  while(note!=NULL){
+    if (note->subtrack==subtrack)
+      return note;
+    else
+      note = NextNote(note);
+  }
+  return NULL;
+}
+
 
 struct Notes *FindNoteOnSubTrack(
                                  struct Tracks *track,

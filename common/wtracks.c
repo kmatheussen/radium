@@ -38,6 +38,7 @@ extern PlayerClass *pc;
 
 
 
+
 void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 	struct WTracks *temp=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,wtracknum);
 

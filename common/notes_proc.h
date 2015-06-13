@@ -62,11 +62,15 @@ void RemoveNote(struct Blocks *block,
 
 extern void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
+extern struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note);
+
 extern struct Notes *FindNoteOnSubTrack(
                                         struct Tracks *track,
                                         int subtrack,
                                         Place *placement
 );
+
+struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
 
 struct Notes *FindNote(
                        struct Tracks *track,

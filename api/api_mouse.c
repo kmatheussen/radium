@@ -1625,8 +1625,9 @@ void setIndicatorPitch(int num, int tracknum, int blocknum){
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
   Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
 
-  struct Notes *prev = ListPrevElement3(&track->notes->l, &note->l);
-
+  struct Notes *prev = FindPrevNoteOnSameSubTrack(track, note);
+  printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
+  
   if (prev != NULL) {
     end = &prev->l.p;
     if (prev->velocities!=NULL)
@@ -1650,23 +1651,10 @@ static Place *getNextLegalNotePlace(struct Notes *note){
   return end;
 }
 
-static struct Notes *next_note_on_same_subtrack(struct Notes *note){
-  int subtrack = note->subtrack;
-
-  note = NextNote(note);
-  while(note!=NULL){
-    if (note->subtrack==subtrack)
-      return note;
-    else
-      note = NextNote(note);
-  }
-  return NULL;
-}
-
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
   Place firstLegal, lastLegal;
 
-  struct Notes *next = next_note_on_same_subtrack(note);
+  struct Notes *next = FindNextNoteOnSameSubtrack(note);
   
   if (next!=NULL)
     PlaceCopy(&lastLegal, &next->l.p);
@@ -1692,32 +1680,43 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
-static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
+static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
   Place old_place = note->l.p;
 
-  if (PlaceLessThan(place, &old_place)) {
-    Place *prev_legal = getPrevLegalNotePlace(track, note);
-    if (PlaceLessOrEqual(place, prev_legal))
-      PlaceFromLimit(place, prev_legal);
-  } else {
-    Place *next_legal = getNextLegalNotePlace(note);
-    if (PlaceGreaterOrEqual(place, next_legal))
-      PlaceTilLimit(place, next_legal);
-  }
+  if (!PlaceEqual(&old_place, place)) {
 
-  PLAYER_lock();{
-    note->l.p = *place;
-    ReplaceNoteEnds(block, track, &old_place, place);
-  }PLAYER_unlock();
+    printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
+         
+    if (PlaceLessThan(place, &old_place)) {
+      Place *prev_legal = getPrevLegalNotePlace(track, note);
+      printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
+      if (PlaceLessOrEqual(place, prev_legal))
+        PlaceFromLimit(place, prev_legal);
+    } else {
+      Place *next_legal = getNextLegalNotePlace(note);
+      if (PlaceGreaterOrEqual(place, next_legal))
+        PlaceTilLimit(place, next_legal);
+    }
+    
+    PLAYER_lock();{
+      ListRemoveElement3(&track->notes, &note->l);
+      note->l.p = *place;
+      ListAddElement3(&track->notes, &note->l);
+      ReplaceNoteEnds(block, track, &old_place, place);
+    }PLAYER_unlock();
+
+  }
+  
+  return ListPosition3(&track->notes->l, &note->l);
 }
 
-void setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
+int setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
 
   if (wtrack==NULL)
-    return;
+    return num;
   
   struct Tracks *track = wtrack->track;
   struct Blocks *block = wblock->block;
@@ -1728,7 +1727,9 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   struct Pitches *pitch;
 
   if (getPitch(num, &pitch, &note, track)==false)
-    return;
+    return num;
+
+  window->must_redraw = true;
 
   if (pitch != NULL) {
     
@@ -1751,11 +1752,13 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
     
     note->note = value;
 
-    if (floatplace >= 0)
+    if (floatplace >= 0) {
       MoveNote(block, track, note, PlaceCreate2(floatplace));
+      return getPitchNum(track, note, NULL);
+    }
   }
 
-  window->must_redraw = true;
+  return num;
 }
 
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -2019,24 +2022,28 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   return ret+1;
 }
   
-void setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
-    return;
+    return notenum;
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
-    return;
+    return notenum;
   }
+
+  window->must_redraw = true;
+
+  printf("velocitynum==%d. floatplace: %f\n",velocitynum,floatplace);
 
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0) {
-      MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
+      return MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
     }
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
@@ -2065,7 +2072,7 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
 
-  window->must_redraw = true;
+  return notenum;
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){

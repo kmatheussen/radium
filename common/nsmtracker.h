@@ -1042,6 +1042,7 @@ struct WBlocks{
 
 	//WArea zoomlevelarea;
         WArea linenumarea;
+        int linenumbers_max_num_characters;
         int bars_max_num_characters;
         int beats_x; int beats_max_num_characters;
         int zoomlines_x; int zoomlines_max_num_characters;

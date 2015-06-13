@@ -742,6 +742,25 @@ bool reltempoTrackVisible(int windownum){
 }
 
 
+static bool g_show_linenumbers = false;
+
+bool linenumbersVisible(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_show_linenumbers = SETTINGS_read_bool("show_linenumbers", false);
+    has_inited = true;
+  }
+
+  return g_show_linenumbers;
+}
+
+void setLinenumbersVisible(bool doit){
+  g_show_linenumbers = doit;
+  SETTINGS_write_bool("show_linenumbers", doit);
+  root->song->tracker_windows->must_redraw = true;
+}
+
 void addMenuMenu(char* name, char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuMenu(window, name, command);

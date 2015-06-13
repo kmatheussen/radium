@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_INSTRUMENTS_PROC_H
 #define QT_INSTRUMENTS_PROC_H
 
+extern LANGSPEC const char **get_ccnames(void);
+  
 extern LANGSPEC hash_t *create_instrument_widget_order_state(void);
 extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 
