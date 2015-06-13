@@ -14,15 +14,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include <errno.h>
+#ifndef FOR_WINDOWS
 #include <sys/time.h>
+#endif
 #include <string.h>
 #include <stdint.h>
 #include <pthread.h>
 
+#ifndef FOR_WINDOWS
 #include <time.h>
 #include <unistd.h>
+#endif
+
 
 #ifdef FOR_WINDOWS
 #  include <windows.h>
@@ -158,6 +162,11 @@ void StopPausePlayer(void){
 
 
 void OS_WaitForAShortTime(int milliseconds){
+#ifdef FOR_WINDOWS
+  Sleep(milliseconds);
+#else
   usleep(milliseconds*1000);
+#endif
 }
+
 

@@ -578,17 +578,21 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		IMAGEHLP_SYMBOL *symbol = (IMAGEHLP_SYMBOL *)symbol_buffer;
 		symbol->SizeOfStruct = (sizeof *symbol) + 255;
 		symbol->MaxNameLength = 254;
-
+#ifdef _WIN64
+		DWORD64 module_base = SymGetModuleBase64(process, offset);
+#else
 		DWORD module_base = SymGetModuleBase(process, offset);
+#endif                
                 struct bfd_ctx *bc = NULL;
 
 		const char * module_name = "[unknown module]";
 		if (module_base && 
-			GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)) 
+                    GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)
+                    ) 
                   {
-  module_name = module_name_raw;
-  bc = get_bc(ob, set, module_name);
-		}
+                    module_name = module_name_raw;
+                    bc = get_bc(ob, set, module_name);
+                  }
 
 		const char * file = NULL;
 		const char * func = NULL;
@@ -599,8 +603,19 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		}
 
 		if (file == NULL) {
-			DWORD dummy = 0;
-			if (SymGetSymFromAddr(process, offset, &dummy, symbol)) {
+#ifdef _WIN64
+                  DWORD64 dummy = 0;
+#else
+                  DWORD dummy = 0;
+#endif
+			if (
+#ifdef _WIN64
+                            SymGetSymFromAddr64(process, offset, &dummy, symbol)
+#else
+                            SymGetSymFromAddr(process, offset, &dummy, symbol)
+#endif                       
+                            ) {
+                          
 				file = symbol->Name;
 			}
 			else {
