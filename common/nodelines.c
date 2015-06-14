@@ -323,7 +323,7 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
 }
 
 const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
-  return get_nodeline_nodes(GetPitchNodeLines(window, wblock, wtrack, note),
+  return get_nodeline_nodes(GetPianorollNodeLines(window, wblock, wtrack, note),
                             wblock->t.y1);
 }
 

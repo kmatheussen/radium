@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <math.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
@@ -117,7 +118,7 @@ static int WTRACK_get_pianoroll_width(
   if (wtrack->pianoroll_on==false)
     return 0;
   
-  return (wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey) * window->fontheight/2;
+  return (wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey) * 3 * ceilf(((float)window->fontheight/4.0f));
 }
 
 // Function to use when the coordinates are not calculated.

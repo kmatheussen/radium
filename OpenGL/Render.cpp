@@ -1135,8 +1135,12 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
     for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next,pianonotenum++) {
       GE_Context *c = note_color;
 
-      if (wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum)
+      bool is_current = wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum;
+      
+      if (is_current) {
         c = current_note_color;
+        GE_unset_x_scissor();
+      }
       
       GE_line(c,
               nodeline->x1, nodeline->y1,
@@ -1158,15 +1162,47 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                );
 #endif
       const NodelineBox nodelineBox = GetPianoNoteBox(wtrack, nodeline);
-      if (nodelineBox.x1 < wtrack->pianoroll_area.x2)
+
+      bool is_inside = false;
+
+      if (nodelineBox.x1 >= wtrack->pianoroll_area.x && nodelineBox.x1 < wtrack->pianoroll_area.x2)
+        is_inside = true;
+      else if (nodelineBox.x2 >= wtrack->pianoroll_area.x && nodelineBox.x2 < wtrack->pianoroll_area.x2)
+        is_inside = true;
+      
+      if (is_inside || is_current) {
         GE_box(border_color,
                nodelineBox.x1, nodelineBox.y1,
                nodelineBox.x2, nodelineBox.y2,
                1.0
                );
+
+        struct Pitches *pitch = (struct Pitches*)nodeline->element1;
+        float  notenum = pitch->note;
+        
+        char *text = NotesTexts3[(int)notenum];
+        
+        float midpos = (nodeline->x1 + nodeline->x2) / 2;
+        float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
+        float x = midpos - (textgfxlength / 2.0);
+        
+        GE_Context *c = GE_color_alpha_z(8, 0.7, Z_ABOVE(Z_ZERO));
+        
+        float y = nodeline->y1 - (is_current ? window->fontheight : window->fontheight/2) - 2;
+        
+        if (is_current)
+          GE_text(c,text,x,y);
+        else
+          paint_halfsize_note(c,0,text,x,y);
+      }
+          
+      if (is_current)
+        GE_set_x_scissor(wtrack->pianoroll_area.x,
+                         wtrack->pianoroll_area.x2+1);
+      
     }
 
-      notenum++;
+    notenum++;
     note = NextNote(note);
   }
 
