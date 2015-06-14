@@ -1,3 +1,21 @@
+Most important changes 3.0.7 -> 3.1.0
+* Weak-link to the Jack library to avoid having to use the included version of Jack.
+* Dont crash if EL=0 and mousewheeling, plus behave like EL=1 if just scrolling and EL=0 ("edit lines").
+* Don't crash if pressing redo after loading a song.
+* Write notename above notes in the pianobar, and other graphical improvements.
+* Fix mouse issues when first pitch or first velocity in a note.
+* A new sound object called "Midi Messages" which can be used to send MIDI messages
+  to other sound objects. Can for instance be used to send pitch bend changes to VST plugins.
+* Option to show linenumbers instead of bars/beats
+* Updated ladspa rdf info for the kokkinizita plugins.
+* Customly compiled LADSPA plugins for OSX, Win32, and Win64. The included
+  plugin sets are now: calf, caps, cmt, swh, tap, and all kokkinizita plugins.
+* 64 binaries for windows
+* Include instructions on how to get audio from other simultaneously running ASIO programs
+  in and out of the Radium mixer.
+
+
+
 Most important changes 3.0.6 -> 3.0.7
 * Fix track-width mouse handling when pianoroll is visible
 
