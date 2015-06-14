@@ -51,6 +51,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
+extern "C" {
+  struct PyObject;
+#include "../api/radium_proc.h"
+}
+
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -161,6 +166,7 @@ void EditorWidget::updateEditor(){
 }
 
 
+
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
     if(is_starting_up==true)
       return;
@@ -172,9 +178,9 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
     DO_GFX(
            {
              if(qwheelevent->delta()<0)
-               ScrollEditorDown(window,num_lines);
+               ScrollEditorDown(window,num_lines * getScrollMultiplication());
              else
-               ScrollEditorUp(window,num_lines);
+               ScrollEditorUp(window,num_lines * getScrollMultiplication());
            });
 
 #if USE_QT_VISUAL

@@ -39,9 +39,9 @@ typedef struct PyObject_ PyObject;
 #include "cursor_updown_proc.h"
 
 extern int g_downscroll;
-static int getScrollMultiplication2(void){
+int getScrollMultiplication(void){
   if (doScrollEditLines())
-      return g_downscroll;
+    return R_MAX(1, g_downscroll);
   else
     return 1;
 }
@@ -60,7 +60,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->num_reallines-1 - wblock->curr_realline;
 	}
 
-	if(num_lines/getScrollMultiplication2()==1 || num_lines/getScrollMultiplication2()==-1)
+	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
 		Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
 
 	if(wblock->curr_realline+num_lines < wblock->num_reallines){
@@ -142,7 +142,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->curr_realline;
 	}
 
-	if(num_lines/getScrollMultiplication2()==1 || num_lines/getScrollMultiplication2()==-1)
+	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
           Scroll_play_up(wblock,wblock->curr_realline-num_lines+1,wblock->curr_realline);
 
 	if(wblock->curr_realline-num_lines>=0){

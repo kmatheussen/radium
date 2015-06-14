@@ -31,14 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-extern int g_downscroll;
-static int getScrollMultiplication(void){
-  if (doScrollEditLines())
-      return g_downscroll;
-  else
-    return 1;
-}
-
 
 /*******************************************
   Navigating 
