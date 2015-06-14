@@ -127,7 +127,10 @@ void ResetUndo(void){
     RError("Can not call ResetUndo from Undo()\n");
   }
 
+  memset(&UndoRoot,0,sizeof(struct Undo));
+
   CurrUndo=&UndoRoot;
+         
   num_undos=0;
   undo_pos_at_last_saving=0;
   update_gfx();

@@ -152,6 +152,8 @@ static bool Load(const wchar_t *filename){
 	currpatch=-1;
 #endif
 
+        ResetUndo();
+                
 	return true;
 
 }
@@ -227,6 +229,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           mmp2filename=NULL;
         }
 
+        ResetUndo();
+        
         return ret;
 }
 

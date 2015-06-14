@@ -1035,6 +1035,8 @@ void close_all_instrument_widgets(void){
   }
 
   MW_update_all_chips();
+
+  //ResetUndo();
 }
 
 struct Patch *get_current_instruments_gui_patch(void){
