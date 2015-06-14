@@ -332,9 +332,12 @@ void MIDI_HandleInputMessage(void){
 void MIDI_input_init(void){
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
   MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
-
+  
   midi_event_t *midi_event = get_midi_event();
+  
   midi_event->next = g_midi_events;
+  
   g_midi_events = midi_event;
+  
   g_play_buffer = jack_ringbuffer_create(8000*sizeof(play_buffer_event_t));
 }

@@ -1007,14 +1007,28 @@ int main(int argc, char **argv){
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
   
-  Py_Initialize();
+#if defined(FOR_WINDOWS)
+#if __WIN64
+  //QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+  //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toUtf8().constData()));
+  //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toUtf8().constData()));
+  printf("pythonlibpath: -%s-\n",pythonlibpath.toUtf8().constData());
+  Py_SetPythonHome(strdup(pythonlibpath.toUtf8().constData()));
+#endif
+#endif
+  //Py_SetProgramName(QString(python
 
+  Py_Initialize();
+  
   {
     char temp[500];
 
     // Set loading path to argv[0]
-    PyRun_SimpleString("import sys,os");
+    PyRun_SimpleString("import sys");
 
+    PyRun_SimpleString("import os");
+        
 #if 1
     //#if defined(FOR_WINDOWS)
     sprintf(temp,"sys.g_program_path = \"\"");
@@ -1023,7 +1037,7 @@ int main(int argc, char **argv){
     sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
 #endif
     PyRun_SimpleString(temp);
-    
+
     PyRun_SimpleString("print \"hepp:\",sys.g_program_path,23");
     
     PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");

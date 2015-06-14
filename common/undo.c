@@ -416,7 +416,7 @@ currently_undoing = false;
 
 
 void Redo(void){
-  //printf("CurrUndo->next: %p\n",CurrUndo->next);
+  //printf("CurrUndo: %p, CurrUndo->next: %p, UndoRoot: %p, UndoRoot->next: %p\n",CurrUndo,CurrUndo->next,&UndoRoot,UndoRoot.next);
 
 	if(CurrUndo->next==NULL) return;
 
