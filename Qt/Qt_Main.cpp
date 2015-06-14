@@ -923,8 +923,16 @@ extern "C" {
 }
 
 
+#if defined(FOR_WINDOWS)
+#  include "../windows/JackWeakAPI.c"
+#endif
+
 int main(int argc, char **argv){
 
+#if defined(FOR_WINDOWS)
+  tryload_libjack();
+#endif
+  
   THREADING_init_main_thread_type();
 
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);

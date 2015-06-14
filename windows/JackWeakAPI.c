@@ -23,6 +23,7 @@
 #include <jack/session.h>
 #include <jack/thread.h>
 #include <jack/midiport.h>
+#include <jack/ringbuffer.h>
 #include <math.h>
 #ifndef WIN32
 #include <dlfcn.h>
@@ -309,3 +310,14 @@ DECL_FUNCTION_NULL(jack_midi_data_t*, jack_midi_event_reserve, (void* port_buffe
 DECL_FUNCTION(int, jack_midi_event_write, (void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size), (port_buffer, time, data, data_size));
 DECL_FUNCTION(jack_nframes_t, jack_midi_get_lost_event_count, (void* port_buffer), (port_buffer));
 
+
+DECL_FUNCTION( jack_ringbuffer_t*, jack_ringbuffer_create, (size_t s), (s))
+DECL_VOID_FUNCTION(    jack_ringbuffer_free, (jack_ringbuffer_t *rb), (rb))
+DECL_VOID_FUNCTION(                 jack_ringbuffer_reset, (jack_ringbuffer_t *rb), (rb))
+DECL_VOID_FUNCTION(                 jack_ringbuffer_read_advance, (jack_ringbuffer_t *rb, size_t c), (rb,c))
+DECL_VOID_FUNCTION(                 jack_ringbuffer_write_advance, (jack_ringbuffer_t *rb, size_t c), (rb,c))
+DECL_FUNCTION( size_t,         jack_ringbuffer_read_space, (const jack_ringbuffer_t *rb), (rb))
+DECL_FUNCTION( size_t,         jack_ringbuffer_write_space, (const jack_ringbuffer_t *rb), (rb))
+DECL_FUNCTION( size_t,         jack_ringbuffer_read, (jack_ringbuffer_t *rb, char *d, size_t c), (rb,d,c))
+DECL_FUNCTION( size_t,         jack_ringbuffer_write, (jack_ringbuffer_t *rb, const char *s, size_t c), (rb,s,c))
+DECL_FUNCTION(int,            jack_ringbuffer_mlock, (jack_ringbuffer_t *rb), (rb))
