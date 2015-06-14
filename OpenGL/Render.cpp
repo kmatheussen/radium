@@ -1180,7 +1180,15 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
         struct Pitches *pitch = (struct Pitches*)nodeline->element1;
         float  notenum = pitch->note;
         
+        int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
+            
         char *text = NotesTexts3[(int)notenum];
+        char temp[32];
+        
+        if (cents!=0){
+          sprintf(temp,"%s.%d",NotesTexts3[(int)notenum],cents);
+          text = &temp[0];
+        }
         
         float midpos = (nodeline->x1 + nodeline->x2) / 2;
         float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
@@ -1189,7 +1197,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
         GE_Context *c = GE_color_alpha_z(8, 0.7, Z_ABOVE(Z_ZERO));
         
         float y = nodeline->y1 - (is_current ? window->fontheight : window->fontheight/2) - 2;
-        
+
         if (is_current)
           GE_text(c,text,x,y);
         else
