@@ -11,6 +11,9 @@ export UIC="`./find_moc_and_uic_paths.sh uic`"
 # Uncomment next line for debug build.
 #export BUILDTYPE=RELEASE
 
+export JACKOPT="-DNO_JACK_METADATA"
+
+
 if ! env |grep BUILDTYPE ; then
     echo "Must define BUILDTYPE to DEBUG or RELEASE. For instance: \"BUILDTYPE=RELEASE ./build_linux.sh -j7\""
     exit -1
