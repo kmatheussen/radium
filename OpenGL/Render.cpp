@@ -818,7 +818,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                        y1,
                        y2);
 
-  if(left_subtrack==-1)
+  if(left_subtrack==-1 && wtrack->notesonoff==1)
     create_single_border(
                          wtrack->notearea.x2+1,
                          y1,
@@ -1534,7 +1534,7 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
       if(note->subtrack >= left_subtrack) {
-        if (left_subtrack==-1)
+        if (left_subtrack==-1 && wtrack->notesonoff==1)
           create_pitches(window, wblock, wtrack, note);
         create_track_velocities(window, wblock, wtrack, note);
       }
@@ -1543,7 +1543,7 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
   }
 
   // note/pitch names / cents
-  if(left_subtrack==-1) {
+  if(left_subtrack==-1 && wtrack->notesonoff==1) {
 
     vector_t *trs = TRS_get(wblock, wtrack);
       

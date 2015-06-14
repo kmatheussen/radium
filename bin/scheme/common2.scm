@@ -170,14 +170,14 @@
   (define table (gensym "table"))
   (define key (gensym "key"))
   (define ret (gensym "ret"))
-  (define keys_ (gensym "keys"))
+  (define keysvar (gensym "keys"))
   `(define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
      ,@(map (lambda (must-be-defined)
               `(if (eq? ,(car must-be-defined) 'must-be-defined)
                    (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
             must-be-defined)
      (let* ((,table (make-hash-table 32 eq?))
-            (,keys_ (quote ,keys)))
+            (,keysvar (quote ,keys)))
        ,@(map (lambda (key)
                 `(hash-table-set! ,table ,(symbol->keyword key) ,key))
               keys)
@@ -186,8 +186,8 @@
              ,table
              (let ((,ret (,table ,key)))
                (if (and (not ,ret)
-                        (not (memq ,key ,keys_)))
-                   (throw (<-> "key '" ,key ,(<-> "' not found in struct '" name "'")))
+                        (not (memq (keyword->symbol ,key) ,keysvar)))
+                   (throw (<-displayable-> "key '" ,key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword ,keysvar)))
                    ,ret)))))))
 
 #||

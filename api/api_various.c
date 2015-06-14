@@ -651,7 +651,7 @@ void showHidePianoroll(int tracknum,int blocknum,int windownum){
   UpdateAllWBlockCoordinates(window);
 }
 
-void showHidePianorollBlock(int blocknum,int windownum){
+void showHidePianorollInBlock(int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -671,6 +671,59 @@ void showHidePianorollBlock(int blocknum,int windownum){
   wtrack = wblock->wtracks;
   while(wtrack!=NULL){
     wtrack->pianoroll_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideNoteTrack(int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  if (wtrack->notesonoff==0)
+    wtrack->notesonoff = 1;
+  else
+    wtrack->notesonoff = 0;
+      
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideNoteTracksInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  int on;
+  if (wtrack->notesonoff==0)
+    on = 1;
+  else
+    on = 0;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->notesonoff = on;
     wtrack = NextWTrack(wtrack);
   }
   

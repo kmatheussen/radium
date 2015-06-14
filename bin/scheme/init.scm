@@ -2,9 +2,9 @@
 
 (set! (*s7* 'stacktrace-defaults)
       '(1000 ;; max-frames
-        2450 ;; code-cols
-        4550 ;; total-cols
-        2450  ;; "where to place comments"
+        245 ;; code-cols
+        455 ;; total-cols
+        245  ;; "where to place comments"
         #t ;; whether the entire output should be displayed as a comment
         ))
 

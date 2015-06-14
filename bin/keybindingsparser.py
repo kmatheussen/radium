@@ -470,13 +470,13 @@ def start(keyhandles,filehandle,outfilehandle):
                 if not success:
                     print "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())
                     print "-------------> "+command
-                    print "------> "+intercommands2[0]
+                    print "------> "+str(intercommands2[0])
                     return false
                 else:
                     retstring=radium.ER_keyAdd(firstkey,dascommand[3:],keys,intercommands2);
                     if retstring!="OK":
                         print "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())
-                        print "------> "+intercommands2[0]
+                        print "------> "+str(intercommands2[0])
                         return false
 
 
