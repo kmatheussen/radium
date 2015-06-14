@@ -1386,7 +1386,7 @@ undo_mixer_connections.o: $(QM)undo_mixer_connections.c
 undo_chip_addremove.o: $(QM)undo_chip_addremove.c
 	$(CC) $(OPT) $(QM)undo_chip_addremove.c
 
-Jack_plugin.o: audio/Jack_plugin.c
+Jack_plugin.o: audio/Jack_plugin.c weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
 	$(CC) $(OPT) audio/Jack_plugin.c $(JACKOPT)
 
 Sine_plugin.o: audio/Sine_plugin.c

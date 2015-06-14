@@ -3,7 +3,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <jack/jack.h>
+
+// NOTE! The weakjack C file is included here.
+//////////////////////////////////////////////
+#include "../weakjack/weak_libjack.c"
+//////////////////////////////////////////////
+
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"

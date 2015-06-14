@@ -16,8 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-#include <jack/ringbuffer.h>
+#include "../weakjack/weak_libjack.h"
 
 #include "nsmtracker.h"
 

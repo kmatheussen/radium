@@ -18,8 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 #include <stdio.h>
 
-#include <jack/jack.h>
-#include <jack/thread.h>
+#include "../weakjack/weak_libjack.h"
 
 #include <QMessageBox>
 #include <QString>
