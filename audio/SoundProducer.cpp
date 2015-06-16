@@ -304,8 +304,8 @@ struct SoundProducer : DoublyLinkedList{
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
   {
-    printf("New SoundProducer. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
-
+    printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
+    
     if(_num_inputs>0)
       _num_dry_sounds = _num_inputs;
     else
@@ -322,6 +322,9 @@ struct SoundProducer : DoublyLinkedList{
     MIXER_add_SoundProducer(this);
 
     //memset(&_input_eproducers,0,sizeof(SoundProducerLink));
+
+    printf("*** Finished... New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
+    //getchar();
   }
 
   ~SoundProducer(){

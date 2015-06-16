@@ -98,7 +98,7 @@ static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
   if (patch != fx->patch) // This can happen if changing patch for a track while playing.
     return;
   
-  if (peq->track->onoff==1)
+  if (peq->track->onoff==0)
     return;
   
   union SuperType args[4];
