@@ -1,3 +1,9 @@
+Most important changes 3.1.0 -> 3.1.2
+* Fix automation after loading song
+* Fix a memory corruption for plugins with more than 2 channels
+* Send automation messages when track is ON, not OFF
+
+
 Most important changes 3.0.7 -> 3.1.0
 * Weak-link to the Jack library to avoid having to use the included version of Jack.
 * Dont crash if EL=0 and mousewheeling, plus behave like EL=1 if just scrolling and EL=0 ("edit lines").
