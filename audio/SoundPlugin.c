@@ -359,25 +359,37 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
     return;
 
   plugin_type->cleanup_plugin_data(plugin);
+
   free(plugin->initial_effect_values);
   free(plugin->savable_effect_values);
 
+  
   SMOOTH_release(&plugin->input_volume);
+    
   SMOOTH_release(&plugin->output_volume);
+  
   SMOOTH_release(&plugin->bus_volume[0]);
+  
   SMOOTH_release(&plugin->bus_volume[1]);
+  
   SMOOTH_release(&plugin->pan);
+  
   SMOOTH_release(&plugin->drywet);
-
+  
   COMPRESSOR_delete(plugin->compressor);
-
+  
   release_system_filter(&plugin->lowpass, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->eq1, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->eq2, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->lowshelf, plugin_type->num_outputs);
+    
   release_system_filter(&plugin->highshelf, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->delay, plugin_type->num_outputs);
-
+  
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   free(plugin);
 }

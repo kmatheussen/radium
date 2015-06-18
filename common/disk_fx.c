@@ -121,4 +121,7 @@ end:
 }
 
 
+void DLoadFX(struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
+  fx->patch = track->patch;
+}
 

@@ -170,7 +170,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_
 
   data->values[effect_num] = value;
 
-  printf("minval: %d, maxval: %d, floatvalue: %f, value: %d (%d)\n",minval,maxval,floatvalue,value,(int)scale(floatvalue, 0, 1, minval, maxval));
+  //printf("minval: %d, maxval: %d, floatvalue: %f, value: %d (%d)\n",minval,maxval,floatvalue,value,(int)scale(floatvalue, 0, 1, minval, maxval));
   
   switch(effect_num){
   case CHANNEL:

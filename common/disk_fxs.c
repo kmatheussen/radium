@@ -106,4 +106,13 @@ end:
 }
 
 
+void DLoadFXs(struct Root *newroot,struct Tracks *track, struct FXs *fxs){
+if(fxs==NULL) return;
+
+   DLoadFX(newroot, track, fxs, fxs->fx);
+        
+DLoadFXs(newroot,track, NextFX(fxs));
+}
+
+
 
