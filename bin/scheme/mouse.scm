@@ -2106,6 +2106,7 @@
                  (not resize-mouse-pointer-is-set))
              (if (and (> Y (ra:get-block-header-y2))
                       (< Y (ra:get-reltempo-slider-y1))
+                      *current-track-num*
                       (or (not (ra:pianoroll-visible *current-track-num*))
                           (not (inside-box (ra:get-box track-pianoroll *current-track-num*) X Y))))
                  (ra:set-normal-mouse-pointer)))
