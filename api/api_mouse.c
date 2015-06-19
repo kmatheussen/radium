@@ -1171,12 +1171,15 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
   if (note==NULL)
     return notenum;
 
+  struct Tracks *track = wtrack->track;
+
+
   if (note->pitches!=NULL) {
     setPitch(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
              value, floatplace,
              tracknum, blocknum, windownum
              );
-    return notenum;
+    return ListPosition3(&track->notes->l, &note->l);
   }
 
   note->note = R_BOUNDARIES(1, value, 127);
@@ -1185,8 +1188,6 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
     
   if (floatplace < 0)
     return notenum;
-
-  struct Tracks *track = wtrack->track;
 
   float lastplacefloat = GetfloatFromPlace(&note->end);
   if (floatplace >= lastplacefloat)
