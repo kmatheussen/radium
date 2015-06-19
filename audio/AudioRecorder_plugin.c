@@ -11,6 +11,8 @@
 
 
 static int recording_data_size = 0;
+static int recording_data_pos = 0;
+static int64_t recording_data_start_time = 0;
 static float *recording_data[2];
 
 
@@ -25,8 +27,12 @@ typedef struct _Voice{
   int64_t num_frames;
   float *audio;
 
+  int64_t note_id;
+  float velocity;
+  Panvals pan;
   double rate;
 
+  bool resampler_has_pulled_audio; // there's no looping here
   void *resampler;
 
   int delta_pos_at_start; // Within the current block. Set when starting a note.
@@ -40,11 +46,9 @@ typedef struct _Voice{
 struct _Data {
   
   bool is_recording; // "is_recording" contains the value of the "recording" button. The plugin will only record when both "is_recording" and "is_playing" is true.
-  bool is_playing;   // "is_playing" is true if a note is currently playing. If so, it will either play back or record sound, depending on the value of "is_recording".
 
   int curr_ch;
 
-  Panvals pan;
   float velocity;
   
   int64_t num_frames;
@@ -59,15 +63,21 @@ struct _Data {
 
 
 static long RT_src_callback(void *cb_data, float **out_data){
-  Data  *data = cb_data;
+  Voice *voice = cb_data;
 
-  *out_data = audio[data->curr_ch];
-  return data->num_frames;
+  if (voice->resampler_has_pulled_audio==true)
+    return 0;
+  
+  *out_data = voice->audio[data->curr_ch];
+
+  voice->resampler_has_pulled_audio = true;
+  
+  return voice>num_frames;
 }
 
 
-static int RT_get_resampled_data(Data *data, float *out, int num_frames){
-  return 
+static int RT_get_resampled_data(Voice *voice, float *out, int num_frames){
+  return RESAMPLER_read(voice->resampler, data->rate, num_frames, outputs[0]);
 }
 
 static void RT_add_voice(Voice **root, Voice *voice){
@@ -93,27 +103,74 @@ enum VoiceOp{
   VOICE_REMOVE
 };
 
-static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **inputs, float **outputs, int *start_process){
+static VoiceOp RT_play_voice(const Data *data, const Voice *voice, const int num_frames, float *destination){
 
-  int delta_pos_at_start = voice->delta_pos_at_start;
-  int delta_pos_at_end = voice->delta_pos_at_end;
+  int start_writing_pos = 0;
+  int end_writing_pos = num_frames;
+  
+  const int delta_pos_at_start = voice->delta_pos_at_start;
+  const int delta_pos_at_end = voice->delta_pos_at_end;
 
-  if(delta_pos_at_start==0 && delta_pos_at_end==-1){
+  VoiceOp ret = VOICE_KEEP;
 
-    // continue playing;
+  
+  if (delta_pos_at_start==0 && delta_pos_at_end==-1){
 
+    // 1. continue playing;
+    
+    int num_consumed_frames = RT_get_resampled_data(voice, destination, num_frames);
+    
+    if (num_consumed_frames < num_frames) {
+      end_writing_pos = num_consumed_frames;
+      ret = VOICE_REMOVE;
+    }
+    
+  }else if (delta_pos_at_start>0 && delta_pos_at_end==-1){
 
-  }else if(delta_pos_at_start>0 && delta_pos_at_end==-1){
+    // 2. start playing (without end playing)
 
-    // start playing
+    start_writing_pos = delta_pos_at_start;
+    int new_num_frames = num_frames - delta_pos_at_start;
+    
+    int num_consumed_frames = RT_get_resampled_data(voice, destination, new_num_frames);
 
+    if (num_consumed_frames < new_num_frames){
+      end_writing_pos = start_writing_pos + num_consumed_frames;
+      ret = VOICE_REMOVE;
+    }
+    
   }else{
 
-    // end playing
+    // 3. end playing
+ 
+    R_ASSERT_RETURN_IF_FALSE2(delta_pos_at_end==-1, VOICE_REMOVE);
+    R_ASSERT_RETURN_IF_FALSE2(delta_pos_at_end>=delta_pos_at_start, VOICE_REMOVE);
+        
+    int new_num_frames = delta_pos_at_end - delta_pos_at_start;
+    
+    int num_consumed_frames = RT_get_resampled_data(voice, destination+delta_pos_at_start, new_num_frames);
+
+    start_writing_pos = delta_pos_at_start;
+    end_writing_pos = delta_pos_at_start+num_consumed_frames;
+    
+    return VOICE_REMOVE;
   }
 
-  return VOICE_KEEP;
+  
+  if (start_writing_pos > 0)
+    memset(destination, 0, start_writing_pos*sizeof(float));
+
+  if (end_writing_pos < num_frames)
+    memset(destination+end_writing_pos, 0, (num_frames-end_writing_pos)*sizeof(float));
+  
+  return ret;
 }
+
+
+static void RT_record(float **inputs, int num_frames){
+  
+}
+
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
@@ -122,17 +179,14 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int i=0;i<num_outputs;i++)
     memset(outputs[i],0,num_frames*sizeof(float));
 
-  float *tempsounds[num_outputs];
-  float tempdata[num_outputs][num_frames];
-  for(int i=0;i<num_outputs;i++)
-    tempsounds[i] = &tempdata[i][0];
+  float tempsound[num_frames];
 
   Voice *voice = data->voices_playing;
 
   while(voice!=NULL){
     Voice *next = voice->next;
 
-    if(RT_play_voice(data, voice, num_frames, outputs)==VOICE_REMOVE){
+    if(RT_play_voice(data, voice, num_frames, tempsound)==VOICE_REMOVE){
       RT_remove_voice(&data->voices_playing, voice);
       RT_add_voice(&data->voices_not_playing, voice);
     }
@@ -140,10 +194,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     for(int ch=0;ch<num_outputs;ch++){
       float *source = tempsounds[ch];
       float *target = outputs[ch];
-      for(int i=start_process;i<num_frames;i++)
-        target[i] += source[i];
+      for(int i=0 ; i<num_frames ; i++)
+        target[i] += tempsound[i];  // TODO: Apply panning
     }
-
 
     voice = next;
   }
@@ -151,14 +204,45 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
   Data *data = (Data*)plugin->data;
-  data->is_playing = true;
-  data->velocity = volume;
-  data->pan = get_pan_vals_vector(pan,2);
+
+  if(data->voices_not_playing==NULL){
+    printf("No more free voices\n");
+    return;
+  }
+
+  Voice *voice = data->voices_not_playing;
+  
+  RT_remove_voice(&data->voices_not_playing, voice);
+  RT_add_voice(&data->voices_playing, voice);
+
+  voicd->note_id = note_id;
+  voice->velocity = volume;
+  voice->pan = get_pan_vals_vector(pan,2);
+
+  voice->delta_pos_at_start=time;
+  voice->delta_pos_at_end=-1;
+
+  voice->audio = data->audio[0]
+}
+
+static void Voice *get_voice(Data *data){
+  Voice *voice = data->voices_playing;
+
+  while(voice!=NULL){
+    //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
+    
+    if(voice->note_id==note_id)
+      return voice;
+    
+    voice = voice->next;
+  }
+
 }
 
 static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
-  data->velocity = volume;
+  Voice *voice = get_voice(data);
+  voice->velocity = volume;
 }
 
 static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float pitch){
@@ -168,7 +252,9 @@ static void set_note_pitch(struct SoundPlugin *plugin, int64_t time, float note_
 
 static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
   Data *data = (Data*)plugin->data;
-  data->is_playing = false;
+  Voice *voice = get_voice(data);
+  if(voice->delta_pos_at_end == -1)
+    voice->delta_pos_at_end = time;
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
