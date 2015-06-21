@@ -69,6 +69,7 @@ extern "C" {
 #include "../crashreporter/crashreporter_proc.h"
 
 #include "../audio/Juce_plugins_proc.h"
+#include "../audio/Mixer_proc.h"
 
 
 #ifdef __linux__
@@ -407,6 +408,10 @@ protected:
       }
     } // num_users_of_keyboard==0
 
+    // Check if player has shut down
+    if (PLAYER_is_running()==false)
+      PlayStop();
+        
     if(pc->isplaying)
       P2MUpdateSongPosCallBack();
 

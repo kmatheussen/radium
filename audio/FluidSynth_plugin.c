@@ -17,6 +17,7 @@
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "SoundProducer_proc.h"
+#include "Mixer_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
 
@@ -479,8 +480,9 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
       PLAYER_lock();{  // Hmm. lock for setting a variable type that is atomic on all target platforms?
         data->new_data = new_data;
       }PLAYER_unlock();
-      
-      RSEMAPHORE_wait(data->signal_from_RT,1);
+
+      if (PLAYER_is_running())
+        RSEMAPHORE_wait(data->signal_from_RT,1);
 
     } else{
 

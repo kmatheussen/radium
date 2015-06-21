@@ -139,6 +139,12 @@ jack_client_t *g_jack_client;
 static int g_jack_client_priority;
 float g_cpu_usage = 0.0f;
 
+static bool g_jack_is_running = true;
+
+bool PLAYER_is_running(void){
+  return g_jack_is_running;
+}
+
 static void PLAYER_acquire_same_priority(void){
   //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
   jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority);
@@ -540,6 +546,7 @@ struct Mixer{
 
     jack_set_buffer_size_callback(_rjack_client,RT_rjack_buffer_size_changed,this);
     jack_set_freewheel_callback(_rjack_client, RT_rjack_freewheel_changed, this);
+    jack_on_info_shutdown(_rjack_client, RT_rjack_shutdown, this);
     jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
 
     if (jack_activate (_rjack_client)){
@@ -602,6 +609,7 @@ struct Mixer{
       
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
+      
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
@@ -699,6 +707,18 @@ struct Mixer{
     }
   }
 
+  static void RT_rjack_shutdown(jack_status_t code, const char *reason, void *arg){
+    g_jack_is_running = false; // must be set before rt_message to avoid deadlock
+    RT_message("The jack server shut down\n"
+               "(Reason from the server: \"%s\").\n"
+               "\n"
+               "To continue working:\n"
+               "1. Exit Radium.\n"
+               "2. Start Jack again.\n"
+               "3. Start Radium again."
+               );
+  }
+  
   static int RT_rjack_buffer_size_changed(jack_nframes_t num_frames, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
 

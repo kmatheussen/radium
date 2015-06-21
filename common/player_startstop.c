@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_Signature_proc.h"
 #include "PEQ_Beats_proc.h"
 #include "../midi/midi_i_input_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "player_proc.h"
 
@@ -72,8 +73,9 @@ static void PlayStopReally(bool doit){
           RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
           return;
         }
-          
-	while(pc->peq!=NULL) OS_WaitForAShortTime(20);
+
+        if (PLAYER_is_running())
+          while(pc->peq!=NULL) OS_WaitForAShortTime(20);
 
 	StopAllInstruments();
 

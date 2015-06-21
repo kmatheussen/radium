@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "SoundProducer_proc.h"
+#include "Mixer_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -1478,7 +1479,8 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
       old_data->new_data = data;
     }PLAYER_unlock();
 
-    RSEMAPHORE_wait(old_data->signal_from_RT,1);
+    if (PLAYER_is_running())
+      RSEMAPHORE_wait(old_data->signal_from_RT,1);
 
   } else {
 
