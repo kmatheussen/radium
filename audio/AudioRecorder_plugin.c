@@ -143,7 +143,7 @@ static VoiceOp RT_play_voice(const Data *data, const Voice *voice, const int num
 
     // 3. end playing
  
-    R_ASSERT_RETURN_IF_FALSE2(delta_pos_at_end==-1, VOICE_REMOVE);
+    R_ASSERT_RETURN_IF_FALSE2(delta_pos_at_end>=0, VOICE_REMOVE);
     R_ASSERT_RETURN_IF_FALSE2(delta_pos_at_end>=delta_pos_at_start, VOICE_REMOVE);
         
     int new_num_frames = delta_pos_at_end - delta_pos_at_start;
@@ -153,7 +153,7 @@ static VoiceOp RT_play_voice(const Data *data, const Voice *voice, const int num
     start_writing_pos = delta_pos_at_start;
     end_writing_pos = delta_pos_at_start+num_consumed_frames;
     
-    return VOICE_REMOVE;
+    ret = VOICE_REMOVE;
   }
 
   
