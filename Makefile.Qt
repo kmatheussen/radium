@@ -285,8 +285,7 @@ radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES)
 	@echo
 	@echo "Compilation OK."
 	@echo
-	@echo "Run './start.sh' to start radium"
-	@echo "Run 'make install' to install radium"
+	@echo "Run 'bin/radium' to start radium"
 
 very_clean: clean
 	rm -f bin/packages/s7/*.o
