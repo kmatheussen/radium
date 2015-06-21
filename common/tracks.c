@@ -251,6 +251,8 @@ void TRACK_make_monophonic_destructively_CurrPos(struct Tracker_Windows *window)
 }
 
 
+
+
 void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
 
   PlayStop();
@@ -264,6 +266,12 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
 
   bool have_made_undo = false;
 
+  if (NOTES_sorted_by_pitch_questionmark(track->notes)==false) {
+    Undo_Block_CurrPos(window);    
+    have_made_undo = true;
+    notes = NOTES_sort_by_pitch(notes);
+  }
+  
   while(notes != NULL){
 
     struct Notes *notes_root = notes;
@@ -277,12 +285,11 @@ void TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
       if (PlaceGreaterThan(&notes->end, &next->l.p)){
 
         if (have_made_undo==false) {
-            Undo_Block_CurrPos(window);
             have_made_undo=true;
         }
         
         ListRemoveElement3(&notes, &next->l);                           
-        ListAddElement3(&notes_nexttrack, &next->l);
+        ListAddElement3_a(&notes_nexttrack, &next->l);
 
       } else
         notes = next;

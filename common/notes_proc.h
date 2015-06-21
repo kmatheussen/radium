@@ -29,6 +29,9 @@ static inline int64_t NotenumId(float notenum){
 
 struct Notes *NewNote(void);
 
+bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
+struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
+  
 extern struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

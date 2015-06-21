@@ -202,6 +202,55 @@ struct Notes *NewNote(void){
   return note;
 }
 
+static struct Notes *sort_notes_by_pitch_a_little_bit(struct Notes *notes){
+  struct Notes *ret = notes;
+  struct Notes *note_to_place_after = NULL;
+  
+  while(notes != NULL){
+    struct Notes *next = NextNote(notes);
+
+    R_ASSERT_RETURN_IF_FALSE2(next!=NULL, NULL);
+    
+    if (PlaceEqual(&notes->l.p, &next->l.p))
+      if (notes->note > next->note) {
+        note_to_place_after = notes;
+        break;
+      }
+    
+    notes = next;
+  }
+
+  ListRemoveElement3(&ret, &note_to_place_after->l);
+  ListAddElement3_a(&ret, &note_to_place_after->l);
+  
+  return ret;
+}
+
+bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes){
+  while(notes != NULL){
+    struct Notes *next = NextNote(notes);    
+    if (next==NULL)
+      return true;
+    if (PlaceEqual(&notes->l.p, &next->l.p))
+      if (notes->note > next->note)
+        return false;
+    notes = next;
+  }
+  return true;
+}
+
+struct Notes *NOTES_sort_by_pitch(struct Notes *notes){
+  while(NOTES_sorted_by_pitch_questionmark(notes)==false) {
+    struct Notes *better = sort_notes_by_pitch_a_little_bit(notes);
+    if (better==NULL) // should not be possible, but in case the impossible happens, we don't want to lose all notes
+      return notes;
+    
+    notes = better;
+  }
+
+  return notes;
+}
+
 struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -244,6 +293,7 @@ struct Notes *InsertNote(
           else
             PlaceCopy(&note->end, end_placement);
 
+          track->notes = NOTES_sort_by_pitch(track->notes);
         }
         PLAYER_unlock();
 
