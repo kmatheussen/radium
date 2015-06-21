@@ -303,7 +303,7 @@ dependencies_ok: check_dependencies.sh #Makefile
 
 install:
 	@echo
-	@echo "make install is not supported anymore. Instead you need to cd into the bin directory and launch ./radium, or write a script that does so."
+	@echo "make install is not supported anymore. Instead you need to launch bin/radium, or write a script that does so."
 	@echo
 	exit -1
 	bash check_install_dependencies.sh
