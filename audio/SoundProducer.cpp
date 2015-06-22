@@ -501,6 +501,9 @@ struct SoundProducer : DoublyLinkedList{
   void remove_SoundProducerInput(SoundProducer *sound_producer, int sound_producer_ch, int ch){
     //printf("**** Asking to remove connection\n");
 
+    if (PLAYER_is_running()==false)
+      return;
+
     //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
     SoundProducerLink *link = (SoundProducerLink*)_input_producers[ch].next;
     while(link!=NULL){
@@ -518,10 +521,8 @@ struct SoundProducer : DoublyLinkedList{
           link->state    = SoundProducerLink::FADING_OUT;
         }PLAYER_unlock();
 
-        if (PLAYER_is_running()) {
-          PLAYER_memory_debug_wake_up();
-          RSEMAPHORE_wait(signal_from_RT,1);
-        }
+        PLAYER_memory_debug_wake_up();
+        RSEMAPHORE_wait(signal_from_RT,1);
         
         delete link; // deleted  here
 
@@ -856,6 +857,7 @@ void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source,
 #define STD_VECTOR_APPEND(a,b) a.insert(a.end(),b.begin(),b.end());
 
 void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
+
   std::vector<SoundProducerLink *> links_to_delete;
   
   // Find links
