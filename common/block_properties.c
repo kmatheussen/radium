@@ -132,6 +132,9 @@ void Block_Set_num_lines(
 	}
 
 
+        UpdateSTimes(block);
+        UpdateBeats(block);
+
 	window=root->song->tracker_windows;
 
 	while(window!=NULL){
@@ -141,8 +144,6 @@ void Block_Set_num_lines(
 		window=NextWindow(window);
 	}
 
-	UpdateSTimes(block);
-        UpdateBeats(block);
 }
 
 
