@@ -87,6 +87,8 @@ if ! file bin/radium |grep Linux ; then
     rm -f bin/radium_error_message
 fi
 
+make buildtype.opt
+make flagopts.opt
 make radium $@
 
 cp -p *.o linux_objs/ 2>/dev/null | true
