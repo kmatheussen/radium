@@ -860,10 +860,13 @@ QWidget *GL_create_widget(QWidget *parent){
   
   {
     QString s_vendor((const char*)GE_vendor_string);
+    QString s_renderer((const char*)GE_renderer_string);
     QString s_version((const char*)GE_version_string);
     qDebug() << "___ GE_version_string: " << s_version;
     printf("vendor: %s, renderer: %s, version: %s \n",(const char*)GE_vendor_string,(const char*)GE_renderer_string,(const char*)GE_version_string);
     //getchar();
+
+    bool show_mesa_warning = true;
     
 #ifdef FOR_LINUX
     if (s_vendor.contains("ATI"))
@@ -879,14 +882,35 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "<p>"
                                  "In addition, \"Tear Free Desktop\" should be turned on in the catalyst configuration program (run the \"amdcccle\" program)."
                                  "<p>"
-                                 "If you notice choppy graphics, it might help to overclock the graphics card: <A href=\"http://www.overclock.net/t/517861/how-to-overclocking-ati-cards-in-linux\">Instructions for overclocking can be found here</A>."
+                                 "If you notice choppy graphics, it might help to overclock the graphics card: <A href=\"http://www.overclock.net/t/517861/how-to-overclocking-ati-cards-in-linux\">Instructions for overclocking can be found here</A>. If Radium crashes when you show or hide windows, it might help to upgrade driver to the latest version, or (better) use the Gallium AMD OpenGL driver instead."
                                  );
         if (result==1)
           SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
       }
 
     
-    if (s_vendor.contains("nouveau", Qt::CaseInsensitive))
+    if (s_renderer.contains("Gallium") && s_renderer.contains("AMD")) {
+      if (SETTINGS_read_bool("show_gallium_gfx_message_during_startup", true)) {
+        vector_t v = {0};
+        VECTOR_push_back(&v,"Ok");
+        VECTOR_push_back(&v,"Don't show this message again");
+        
+        int result = GFX_Message(&v,
+                                 "Gallium AMD OpenGL driver detected."
+                                 "<p>"
+                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
+                                 "<p>"
+                                 "If you notice choppy graphics, it might help to install the binary driver instead. However for newer versions of MESA, the performance of this driver seems just as good. It might be worth trying though, but beware that the binary driver might be less stable.</A>."
+                                 );
+        if (result==1)
+          SETTINGS_write_bool("show_gallium_gfx_message_during_startup", false);
+
+      }
+      
+      show_mesa_warning = false;
+    }
+    
+    if (s_vendor.contains("nouveau", Qt::CaseInsensitive)) {
       GFX_Message(NULL,
                   "Warning!"
                   "<p>"
@@ -896,6 +920,8 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "The nvidia driver can be installed to get faster / smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                   );
+      show_mesa_warning = false;
+    }
 
     if (s_vendor.contains("Intel")) {
       if (SETTINGS_read_bool("show_intel_gfx_message2_during_startup", true)) {
@@ -934,11 +960,13 @@ QWidget *GL_create_widget(QWidget *parent){
         if (result==1)
           SETTINGS_write_bool("show_intel_gfx_message2_during_startup", false);
       }
+
+      show_mesa_warning = false;
     }
 #endif
 
     
-    if (s_version.contains("mesa", Qt::CaseInsensitive) && !s_vendor.contains("Intel") && !s_vendor.contains("nouveau"))
+    if (s_version.contains("mesa", Qt::CaseInsensitive) && show_mesa_warning==true)
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"
