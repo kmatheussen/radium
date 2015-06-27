@@ -152,6 +152,14 @@ struct TimeEstimator{
     return _vblank_estimator.base_interval;
   }
 
+  void set_time(double correct){
+    _last_value = correct;
+    _adjustment = 0.0;
+    _is_adjusting = false;
+    _adjusting_up = false;
+    _smoother.reset();
+  }
+  
   double get(double approx_correct, double period_multiplier){
     VBlankEstimator::Result vblank=_vblank_estimator.get();
 
@@ -164,14 +172,10 @@ struct TimeEstimator{
     double a_num_periods_wrong = fabs(num_periods_wrong);
 
     if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct)) {
-      double new_value = approx_correct;
-      _last_value = new_value;
-      _adjustment = 0.0;
-      _is_adjusting = false;
-      _smoother.reset();
-      printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)new_value);
+      //printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)approx_correct);
 
-      return new_value;
+      set_time(approx_correct);
+      return approx_correct;
 
     } else if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_adjust)) {      
       // try to adjust.

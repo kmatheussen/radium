@@ -121,21 +121,37 @@ static double find_current_realline_while_playing(SharedVariables *sv){
   double prev_line_stime = 0.0;
 
   static int i_realline = 0; // Note that this one is static. The reason is that we are usually placed on the same realline as last time, so we remember last position and start searching from there/
+  static const struct Blocks *block = NULL;
+  
+  bool reset_timing = false;
 
-  // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
-  {
+  if (block != sv->block) {
+    
+    reset_timing = true;
+  
+  } else {
+
+    // Since i_realline is static, we need to first ensure that the current value has a valid valid value we can start searching from.
+
     if(i_realline>sv->num_reallines) // First check that i_realline is within the range of the block.
-      i_realline = 0;
+      reset_timing = true;
     
     else {
       if(i_realline>0) // Common situation. We are usually on the same line as the last visit, but we need to go one step back to reload prev_line_stime. (we cant store prev_line_stime, because it could have been calculated from a different block)
         i_realline--;
 
       if(stime < get_realline_stime(sv, i_realline)) // Behind the time of the last visit. Start searching from 0 again.
-        i_realline = 0;
+        reset_timing = true;
     }
   }
 
+  if (reset_timing==true) {
+    i_realline = 0;
+    block = sv->block;
+    time_estimator.set_time(time_in_ms);
+    stime = time_in_ms * (double)pc->pfreq / 1000.0;
+  }
+  
   for(; i_realline<=sv->num_reallines; i_realline++){
     double curr_line_stime = get_realline_stime(sv, i_realline);
     if (stime <= curr_line_stime)
