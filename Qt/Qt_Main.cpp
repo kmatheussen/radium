@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
 #include "../common/disk_load_proc.h"
+#include "../common/patch_proc.h"
 #include "../common/undo.h"
 #include "../common/nag.h"
 #include "../common/OS_settings_proc.h"
@@ -415,6 +416,7 @@ protected:
     if(pc->isplaying)
       P2MUpdateSongPosCallBack();
 
+    PATCH_call_very_often();
 
     if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
       GL_EnsureMakeCurrentIsCalled();

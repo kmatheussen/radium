@@ -930,7 +930,7 @@ namespace{
             struct Patch *patch = plugin->patch;
             if(patch!=NULL){
               if(patch->visual_note_intencity > 0) {
-                patch->visual_note_intencity--; // Writing to the same variable from two threads simultaneously, but it shouldn't be a problem here.
+                patch->visual_note_intencity--; // We're writing to the same variable from two threads simultaneously here, but it shouldn't be a problem.
                 //printf("intencity: %d\n",intencity);
                 int x1,y1,x2,y2;
                 CHIP_get_name_coordinates(x1,y1,x2,y2);

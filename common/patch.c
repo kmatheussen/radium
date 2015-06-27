@@ -447,6 +447,25 @@ void PATCH_remove_all_event_receivers(struct Patch *patch){
 }
 
 
+
+void PATCH_call_very_often(void){
+  struct Instruments *instrument = get_all_instruments();
+
+  while(instrument!=NULL){
+
+    VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+      if (patch->widget_needs_to_be_updated) {
+        patch->widget_needs_to_be_updated = false;
+        GFX_update_instrument_widget(patch);
+      }
+    }END_VECTOR_FOR_EACH;
+
+    instrument = NextInstrument(instrument);
+  }
+
+}
+
+
 void PATCH_init(void){
   //MUTEX_INITIALIZE();
 }
