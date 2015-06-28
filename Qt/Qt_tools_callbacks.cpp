@@ -29,10 +29,8 @@ void TOOLS_open(void){
     widget = new Tools(NULL);
     //widget->setWindowModality(Qt::ApplicationModal);
   }
-  
-  widget->show();
-  widget->raise();
-  widget->activateWindow();
+
+  safeShow(widget);
 
   /*  
   num_users_of_keyboard++;

@@ -27,7 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
 
+#include "helpers.h"
+
 #include "Qt_comment_dialog.h"
+
 
 extern struct Root *root;
 
@@ -71,10 +74,8 @@ static void ensure_widget_is_created(void){
 extern "C"{
   void COMMENTDIALOG_open(void){
     ensure_widget_is_created();
-    
-    widget->show();
-    widget->raise();
-    widget->activateWindow();
+
+    safeShow(widget);
     
     /*
     num_users_of_keyboard++;

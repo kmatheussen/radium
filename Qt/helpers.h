@@ -30,5 +30,12 @@ static inline int safeExec(QDialog *widget){
   return ret;
 }
 
+static inline void safeShow(QWidget *widget){
+  GL_lock(); {
+    widget->show();
+    widget->raise();
+    widget->activateWindow();
+  }GL_unlock();
+}
 
 #endif // RADIUM_QT_HELPERS

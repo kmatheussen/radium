@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileDialog>
 
 #include "Qt_PluginWidget.h"
+#include "helpers.h"
 
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/undo_pd_controllers_proc.h"
@@ -39,6 +40,8 @@ public:
   Pd_Plugin_widget *_pd_plugin_widget;
   Jack_Plugin_widget *_jack_plugin_widget;
   bool _ignore_show_gui_checkbox_stateChanged;
+
+  QMessageBox infoBox;
 
 private:
   PluginWidget *_plugin_widget;
@@ -233,12 +236,12 @@ public:
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type = plugin->type;
 
-      QMessageBox msgBox;
       if(type->info!=NULL)
-        msgBox.setText(type->info);
+        infoBox.setText(type->info);
       else
-        msgBox.setText("No information about this plugin."); // This message box should never show.
-      safeExec(msgBox);
+        infoBox.setText("No information about this plugin."); // This message box should never show.
+
+      safeShow(&infoBox);
     }
 };
 

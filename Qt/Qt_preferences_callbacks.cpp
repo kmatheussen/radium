@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMessageBox>
 #include <FocusSniffers.h>
+#include "helpers.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -152,10 +153,8 @@ void PREFERENCES_open(void){
     widget = new Preferences(NULL);
     //widget->setWindowModality(Qt::ApplicationModal);
   }
-  
-  widget->show();
-  widget->raise();
-  widget->activateWindow();
+
+  safeShow(widget);
 
   /*  
   num_users_of_keyboard++;
