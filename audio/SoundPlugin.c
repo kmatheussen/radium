@@ -1119,8 +1119,17 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
     return NULL;
   }
 
-  hash_t *plugin_state = HASH_has_key(state, "plugin_state") ? HASH_get_hash(state, "plugin_state") : NULL;
+  hash_t *plugin_state;
 
+  if (strcmp(type->type_name, type_name) || strcmp(type->name, name))
+    plugin_state=NULL; //i.e. selected a different plugin.
+  
+  else if (HASH_has_key(state, "plugin_state"))
+    plugin_state=HASH_get_hash(state, "plugin_state");
+  
+  else
+    plugin_state=NULL;
+  
   SoundPlugin *plugin = PLUGIN_create_plugin(type, plugin_state);
 
   if(plugin==NULL)

@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
+#include "../common/vector_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../Qt/helpers.h"
 
@@ -35,7 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Jack_plugin_proc.h"
 #include "VST_plugins_proc.h"
 
+#include "../mixergui/QM_MixerWidget.h"
+
 #include "SoundPluginRegistry_proc.h"
+
 
 static std::vector<SoundPluginType*> g_plugin_types;
 static std::vector<SoundPluginTypeContainer*> g_plugin_type_containers;
@@ -76,17 +81,15 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
   if(!strcmp(type_name,"VST")){
     while(true){
-      QMessageBox msgBox;
-      msgBox.setText("VST Plugin " + QString(plugin_name) + " not found.");
-      msgBox.setInformativeText("Press OK to select the plugin path, or Cancel to replace the plugin with a Pipe.");
-      msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-      msgBox.setDefaultButton(QMessageBox::Ok);
-      int ret = safeExec(msgBox);
+      vector_t v = {0};
 
-      if(ret==QMessageBox::Cancel)
-        break;
+      VECTOR_push_back(&v, "Select plugin file");
+      VECTOR_push_back(&v, "Use different plugin");
+      VECTOR_push_back(&v, "Replace with pipe");
 
-      if(ret==QMessageBox::Ok){
+      int ret = GFX_Message(&v, "VST Plugin " + QString(plugin_name) + " not found.");
+
+      if (ret==0) {
         QString filename = QFileDialog::getOpenFileName(NULL, plugin_name);
         QFileInfo info(filename);
 
@@ -94,11 +97,18 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
 
         //        if(basename==QString(plugin_name) && info.exists()){
-          VST_add_path(info.dir().path());
-          PR_init_plugin_types();
-          return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
-          //}
-      }
+        VST_add_path(info.dir().path());
+        PR_init_plugin_types();
+        return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+        //}
+      } else if (ret==1) {
+        SoundPluginType *plugintype = MW_popup_plugin_selector(NULL, 0, 0, false);
+        if (plugintype==NULL)
+          break;
+        else
+          return plugintype;
+      } else
+        break;
     }
 
   }else if(!strcmp(type_name,"Pd") && strcmp(plugin_name, "")){ // type_name doesn't mean anything for already saved files. Without this excpetion, plugins would be replaced by pipes if a pd patch file was renamed.
