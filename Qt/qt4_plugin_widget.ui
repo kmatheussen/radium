@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>728</width>
-    <height>45</height>
+    <width>780</width>
+    <height>159</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -144,6 +144,19 @@
         </property>
         <property name="text">
          <string>Add Pd Controller</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="replace_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Replace</string>
         </property>
        </widget>
       </item>

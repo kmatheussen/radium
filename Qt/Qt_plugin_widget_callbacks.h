@@ -212,6 +212,10 @@ public:
       InstrumentWidget_load_preset(_patch);      
     }
 
+    void on_replace_button_pressed(){
+      InstrumentWidget_replace(_patch);
+    }
+    
     void on_reset_button_pressed(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_reset(plugin);

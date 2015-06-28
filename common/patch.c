@@ -336,7 +336,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
             patch = (struct Patch*)plugin->patch;
 
         }else if(selection==5){
-          patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);;
+          patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);
 
         }else
           printf("Unknown option\n");

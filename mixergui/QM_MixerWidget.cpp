@@ -1302,7 +1302,8 @@ static void MW_cleanup_connections(void){
     SoundProducer *producer = producers.at(i);
     SoundPlugin *plugin = SP_get_plugin(producer);
     volatile struct Patch *patch = plugin->patch;
-    PATCH_remove_all_event_receivers((struct Patch*)patch);
+    if (patch!=NULL)
+      PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
   for(unsigned int i=0;i<connections.size();i++)

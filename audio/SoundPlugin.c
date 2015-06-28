@@ -1141,6 +1141,20 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
 }
 
 
+void PLUGIN_set_from_patch(SoundPlugin *old_plugin, struct Patch *new_patch){
+  struct Patch *old_patch = (struct Patch*)old_plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE2(old_patch!=NULL, NULL);
+
+  CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
+  
+  hash_t *connections_state = MW_get_connections_state();
+    
+  PATCH_replace_patch_in_song(old_patch, new_patch);
+  PATCH_delete(old_patch);
+    
+  MW_create_connections_from_state_and_replace_patch(connections_state, old_patch->id, new_patch->id);
+}
+
 SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
 
   R_ASSERT(Undo_Is_Open());
@@ -1173,29 +1187,16 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
     return old_plugin;
   }
 
-  
   struct Patch *old_patch = (struct Patch*)old_plugin->patch;
   R_ASSERT_RETURN_IF_FALSE2(old_patch!=NULL, NULL);
-  
+
   struct Patch *new_patch = InstrumentWidget_new_from_preset(state, old_patch->name, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch), false);
-  CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
-  
+
   if (new_patch!=NULL) {
-    
-    hash_t *connections_state = MW_get_connections_state();
-    
-    PATCH_replace_patch_in_song(old_patch, new_patch);
-    PATCH_delete(old_patch);
-    
-    MW_create_connections_from_state_and_replace_patch(connections_state, old_patch->id, new_patch->id);
-    
+    PLUGIN_set_from_patch(old_plugin, new_patch);        
     return (SoundPlugin*)new_patch->patchdata;
-    
-  } else {
-      
+  } else
     return NULL;
-      
-  }
 }
 
 

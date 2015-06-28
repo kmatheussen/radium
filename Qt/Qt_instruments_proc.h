@@ -23,6 +23,7 @@ extern LANGSPEC hash_t *create_instrument_widget_order_state(void);
 extern LANGSPEC void recreate_instrument_widget_order_from_state(hash_t *state);
 
 extern LANGSPEC struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect); // A file requester will pop up if state is NULL.
+extern LANGSPEC void InstrumentWidget_replace(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_load_preset(struct Patch *patch);
 extern LANGSPEC void InstrumentWidget_save_preset(struct Patch *patch);
 

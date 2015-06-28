@@ -58,7 +58,6 @@ extern "C"{
 #include "../audio/SoundPluginRegistry_proc.h"
 
 
-
 #include "Qt_instruments_proc.h"
 
 
@@ -843,25 +842,76 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   return patch;
 }
 
-void InstrumentWidget_load_preset(struct Patch *patch){
+void InstrumentWidget_replace_old(struct Patch *old_patch){
+  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
+  if (plugin_type==NULL)
+    return;
+
+  struct Patch *new_patch = NULL;
+  SoundPlugin *new_plugin = NULL;
+  
+  Undo_Open();{
+
+    //SoundPlugin *new_plugin = PLUGIN_create_plugin(plugin_type, NULL);
+    //SoundPlugin *new_plugin = MW_add_plugin(plugin_type, 0,0);
+    new_plugin = add_new_audio_instrument_widget(plugin_type, 0, 0, false, NULL);
+    if (new_plugin != NULL) {
+  
+      new_patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, new_plugin, PLUGIN_generate_new_patchname(plugin_type));
+      if (new_patch==NULL){
+        RError("new_patch!=NULL");
+      } else {
+        SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+        PLUGIN_set_from_patch(old_plugin, new_patch);
+      }
+    }
+    
+  }Undo_Close();
+        
+
+  if (new_plugin==NULL)
+    Undo_CancelLastUndo();
+  else 
+    GFX_update_instrument_widget(new_patch);
+}
+
+static void replace(struct Patch *old_patch, hash_t *state){
+  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+  SoundPlugin *new_plugin = NULL;
+  
+  Undo_Open();{
+    new_plugin = PLUGIN_set_from_state(old_plugin, state);
+  }Undo_Close();
+
+  if (new_plugin==NULL)
+    Undo_CancelLastUndo();
+  else {
+    volatile struct Patch *new_patch = new_plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(new_patch!=NULL);
+
+    GFX_update_instrument_widget((struct Patch*)new_patch);
+  }
+}
+
+void InstrumentWidget_replace(struct Patch *old_patch){
+  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
+  if (plugin_type==NULL)
+    return;
+
+  SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
+  hash_t *state = PLUGIN_get_state(plugin);
+
+  PLUGIN_delete_plugin(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately.
+    
+  replace(old_patch, state);
+}
+
+void InstrumentWidget_load_preset(struct Patch *old_patch){
   hash_t *state = load_preset_state();
   if (state==NULL)
     return;
-  
-  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-  
-  Undo_Open();{
-    plugin = PLUGIN_set_from_state(plugin, state);
-  }Undo_Close();
 
-  if (plugin==NULL)
-    Undo_CancelLastUndo();
-  else {
-    volatile struct Patch *patch = plugin->patch;
-    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-
-    GFX_update_instrument_widget((struct Patch*)patch);
-  }
+  replace(old_patch, state);
 }
 
 void InstrumentWidget_save_preset(struct Patch *patch){
