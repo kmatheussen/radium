@@ -318,22 +318,22 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
         }else if(selection==1){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL);
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
             
         }else if(selection==2){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
             
         }else if(selection==3){
           SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Pd","Simple Midi Synth"),-100000,-100000,true,NULL);
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
 
         }else if(selection==4){
           SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
 
         }else if(selection==5){
           patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);;

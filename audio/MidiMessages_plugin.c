@@ -105,7 +105,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsigned int byte1, unsigned int byte2, int byte3){
   Data *data = (Data*)plugin->data;
-  struct Patch *patch = plugin->patch;
+  volatile struct Patch *patch = plugin->patch;
 
   if (patch==NULL) // happens during initialization
     return;
@@ -122,7 +122,7 @@ static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsig
   int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+block_delta_time);
   int64_t radium_time = pc->start_time + delta_time;
 
-  RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, radium_time);
+  RT_PATCH_send_raw_midi_message_to_receivers((struct Patch*)patch, msg, radium_time);
 }
 
 static void get_minval_and_maxval(int effect_num, int *minval, int *maxval){

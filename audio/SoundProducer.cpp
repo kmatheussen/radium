@@ -254,7 +254,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
       for(int i=0;i<num_frames;i++)
         outputs[ch][i] = 0.0f;
 
-    struct Patch *patch=plugin->patch;
+    volatile struct Patch *patch = plugin->patch;
     const char *sigtype = isnan(sum)?"nan":isinf(sum)?"inf":fpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
     RT_message("Error!\n"
                "\n"

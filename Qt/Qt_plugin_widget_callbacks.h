@@ -212,13 +212,21 @@ public:
     void on_reset_button_pressed(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_reset(plugin);
-      GFX_update_instrument_widget(plugin->patch);
+      
+      volatile struct Patch *patch = plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+      
+      GFX_update_instrument_widget((struct Patch*)patch);
     }
 
     void on_random_button_pressed(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_random(plugin);
-      GFX_update_instrument_widget(plugin->patch);
+
+      volatile struct Patch *patch = plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+      GFX_update_instrument_widget((struct Patch*)patch);
     }
 
     void on_info_button_pressed(){

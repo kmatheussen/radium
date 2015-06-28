@@ -166,6 +166,7 @@ namespace{
 
   };
 
+  
 #if JUCE_LINUX
   struct JuceThread : public Thread {
     Atomic<int> isInited;
@@ -341,7 +342,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // 2. Send out midi (untested, need plugin to test with)
 
-  struct Patch *patch = plugin->patch;
+  volatile struct Patch *patch = plugin->patch;
   if (patch!=NULL) {
       
     MidiBuffer::Iterator iterator(data->midi_buffer);
@@ -368,7 +369,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       int64_t delta_time = PLAYER_get_block_delta_time(pc->start_time+samplePosition);
       int64_t radium_time = pc->start_time + delta_time;
       
-      RT_MIDI_send_msg_to_patch_receivers(patch, message, radium_time);
+      RT_MIDI_send_msg_to_patch_receivers((struct Patch*)patch, message, radium_time);
     }
   }
 
@@ -620,9 +621,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   //plugin->name = talloc_strdup(description.name.toUTF8());
 
-  Data *data = new Data(audio_instance, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
+  Data *data = new Data(audio_instance, plugin, audio_instance->getNumInputChannels(), audio_instance->getNumOutputChannels());
   plugin->data = data;
-  
+    
   if(type_data->effect_names==NULL)
     set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
   

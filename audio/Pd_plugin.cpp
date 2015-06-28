@@ -710,6 +710,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
   int sample_rate = MIXER_get_sample_rate();
+  struct Patch *patch = (struct Patch*)plugin->patch;
   
   //printf("argc: %d\n",argc);
   //printf("recv: %s\n",recv);
@@ -751,7 +752,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds  = libpd_get_float(argv[4]);
         int     frames   = libpd_get_float(argv[5]);
         int64_t time     = seconds*sample_rate + frames;
-        RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, note_id, velocity, pan, time);
+        if (patch!=NULL)
+          RT_PATCH_send_play_note_to_receivers(patch, pitch, note_id, velocity, pan, time);
       }
     else
       printf("Wrong args for radium_send_note_on\n");
@@ -768,7 +770,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds = libpd_get_float(argv[2]);
         int     frames  = libpd_get_float(argv[3]);
         int64_t time    = seconds*sample_rate + frames;
-        RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, note_id, time);
+        if (patch!=NULL)
+          RT_PATCH_send_stop_note_to_receivers(patch, pitch, note_id, time);
       }
     else
       printf("Wrong args for radium_send_note_off\n");
@@ -788,7 +791,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int     frames   = libpd_get_float(argv[4]);
         int64_t time     = seconds*sample_rate + frames;
         //printf("send_velocity. id: %d, argv[0]: %f, notenum: %f, velocity: %f, seconds: %f, frames: %d\n",(int)note_id,libpd_get_float(argv[0]),notenum,velocity,seconds,frames);
-        RT_PATCH_send_change_velocity_to_receivers(plugin->patch, notenum, note_id, velocity, time);
+        if (patch!=NULL)
+          RT_PATCH_send_change_velocity_to_receivers(patch, notenum, note_id, velocity, time);
       }
     else
       printf("Wrong args for radium_send_velocity\n");
@@ -807,7 +811,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds = libpd_get_float(argv[3]);
         int     frames  = libpd_get_float(argv[4]);
         int64_t time    = seconds*sample_rate + frames;
-        RT_PATCH_send_change_pitch_to_receivers(plugin->patch, notenum, note_id, pitch, time);
+        if (patch!=NULL)
+          RT_PATCH_send_change_pitch_to_receivers(patch, notenum, note_id, pitch, time);
       }
     else
       printf("Wrong args for radium_send_pitch\n");
@@ -831,13 +836,15 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
 // called from Pd
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
-  if(plugin->patch==NULL)
+  volatile struct Patch *patch = plugin->patch;
+  
+  if(patch==NULL)
     return;
 
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, -1, (float)velocity / 127.0f, 0.0f, -1);
+    RT_PATCH_send_play_note_to_receivers((struct Patch*)patch, pitch, -1, (float)velocity / 127.0f, 0.0f, -1);
   else
-    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, -1, -1);
+    RT_PATCH_send_stop_note_to_receivers((struct Patch*)patch, pitch, -1, -1);
 
   //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
 }
@@ -845,10 +852,12 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
 // called from Pd
 static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
-  if(plugin->patch==NULL)
+  volatile struct Patch *patch = plugin->patch;
+  
+  if(patch==NULL)
     return;
 
-  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, -1, (float)velocity / 127.0f, -1);
+  RT_PATCH_send_change_velocity_to_receivers((struct Patch*)patch, pitch, -1, (float)velocity / 127.0f, -1);
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 
@@ -1152,8 +1161,9 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     }
   }
 
-  if(plugin->patch != NULL)
-    GFX_update_instrument_widget(plugin->patch);
+  volatile struct Patch *patch = plugin->patch;
+  if(patch != NULL)
+    GFX_update_instrument_widget((struct Patch*)patch);
 }
 
 void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
@@ -1188,7 +1198,9 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   Data *data=(Data*)plugin->data;
 
-  Undo_PdControllers_CurrPos(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(plugin->patch!=NULL);
+  
+  Undo_PdControllers_CurrPos((struct Patch*)plugin->patch);
 
   int i;
   hash_t *state = HASH_create(NUM_PD_CONTROLLERS);

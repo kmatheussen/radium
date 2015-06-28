@@ -1492,8 +1492,9 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
   update_peaks(plugin);
 
-  if(plugin->patch!=NULL)
-    GFX_update_instrument_widget(plugin->patch); // Update "loop" button.
+  volatile struct Patch *patch = plugin->patch;
+  if(patch!=NULL)
+    GFX_update_instrument_widget((struct Patch*)patch); // Update "loop" button.
 
   success = true;
 

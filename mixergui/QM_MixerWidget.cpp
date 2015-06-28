@@ -357,7 +357,11 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL && chip->isSelected()==true){
 
-      Undo_ChipPos_CurrPos(SP_get_plugin(chip->_sound_producer)->patch);
+      SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+      volatile struct Patch *patch = plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+      Undo_ChipPos_CurrPos((struct Patch*)patch);
 
       chip->_moving_x_offset = chip->scenePos().x() - mouse_x;
       chip->_moving_y_offset = chip->scenePos().y() - mouse_y;
@@ -742,10 +746,13 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   Chip *chip = dynamic_cast<Chip*>(item);
 
   if(chip!=NULL){
-    struct Patch *patch = SP_get_plugin(chip->_sound_producer)->patch;
+    SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+    
     struct Instruments *instrument = get_audio_instrument();
     printf("Calling pp_update\n");
-    instrument->PP_Update(instrument,patch);
+    instrument->PP_Update(instrument,(struct Patch*)patch);
     
     start_moving_chips(scene,event,chip,mouse_x,mouse_y);
     event->accept();
@@ -927,7 +934,7 @@ namespace{
         if(chip!=NULL){
           SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
           if(plugin != NULL){
-            struct Patch *patch = plugin->patch;
+            volatile struct Patch *patch = plugin->patch;
             if(patch!=NULL){
               if(patch->visual_note_intencity > 0) {
                 patch->visual_note_intencity--; // We're writing to the same variable from two threads simultaneously here, but it shouldn't be a problem.
@@ -1142,7 +1149,7 @@ void MW_delete_plugin(SoundPlugin *plugin){
       if(SP_get_plugin(producer)==plugin){
         delete chip; // audio connections are deleted via ~Chip(). (Yes, it's somewhat messy)
         SP_delete(producer);
-        struct Patch *patch = plugin->patch;
+        volatile struct Patch *patch = plugin->patch;
         PLUGIN_delete_plugin(plugin);
         patch->patchdata = NULL; // Correct thing to do. A subtle bug in GFX_update_all_instrument_widgets prompted me to do add it (QT tabs are note updated right away). Somewhat messy this too.
         patch->is_usable = false; // Make sure we don't use this patch if pasting it.
@@ -1294,8 +1301,8 @@ static void MW_cleanup_connections(void){
   for(unsigned int i=0;i<producers.size();i++){
     SoundProducer *producer = producers.at(i);
     SoundPlugin *plugin = SP_get_plugin(producer);
-    struct Patch *patch = plugin->patch;
-    PATCH_remove_all_event_receivers(patch);
+    volatile struct Patch *patch = plugin->patch;
+    PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
   for(unsigned int i=0;i<connections.size();i++)

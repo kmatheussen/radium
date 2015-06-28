@@ -1145,7 +1145,7 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
 
   R_ASSERT(Undo_Is_Open());
     
-  struct Patch *patch = old_plugin->patch;
+  volatile struct Patch *patch = old_plugin->patch;
   if (patch==NULL) {
     RError("patch not found for old plugin");
     return NULL;
@@ -1156,7 +1156,7 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
   if (HASH_has_key(state, "___radium_plugin_state_v3")==false)  // Before 3.0.rc15, loading/saving states in the instrument widgets only loaded/saved the effect values, not the complete plugin state.
     can_replace_patch = false;
   
-  else if(AUDIO_is_permanent_patch(patch)) {
+  else if(AUDIO_is_permanent_patch((struct Patch*)patch)) {
     state = HASH_get_hash(state, "effects");
     R_ASSERT(state!=NULL);
     can_replace_patch = false;
@@ -1166,7 +1166,7 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
   
   if (can_replace_patch==false) { 
     for(int i=0;i<old_plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-      Undo_AudioEffect_CurrPos(patch, i);
+      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
     
     PLUGIN_set_effects_from_state(old_plugin, state);
 
@@ -1174,8 +1174,8 @@ SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
   }
 
   
-  struct Patch *old_patch = old_plugin->patch;
-  R_ASSERT(old_patch!=NULL);
+  struct Patch *old_patch = (struct Patch*)old_plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE2(old_patch!=NULL, NULL);
   
   struct Patch *new_patch = InstrumentWidget_new_from_preset(state, old_patch->name, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch), false);
   CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
@@ -1203,9 +1203,12 @@ void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
   int i;
 
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  
   Undo_Open();{
     for(i=0;i<type->num_effects;i++)
-      Undo_AudioEffect_CurrPos(plugin->patch, i);
+      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
   }Undo_Close();
 
   PLAYER_lock();{
@@ -1215,7 +1218,10 @@ void PLUGIN_reset(SoundPlugin *plugin){
 }
 
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
-  Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  
+  Undo_AudioEffect_CurrPos((struct Patch*)patch, effect_num);
   PLAYER_lock();{
     PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
@@ -1234,9 +1240,12 @@ void PLUGIN_random(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
   int i;
 
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
   Undo_Open();{
     for(i=0;i<type->num_effects;i++)
-      Undo_AudioEffect_CurrPos(plugin->patch, i);
+      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
   }Undo_Close();
 
   float values[type->num_effects];

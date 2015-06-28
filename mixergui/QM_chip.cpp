@@ -433,7 +433,12 @@ void CHIP_kick_left(Chip *chip){
 
   for(std::set<Chip*>::iterator chip = kicks.begin() ; chip!=kicks.end() ; chip++){
     QPointF pos=(*chip)->pos();
-    Undo_ChipPos_CurrPos(SP_get_plugin((*chip)->_sound_producer)->patch);
+    
+    SoundPlugin *plugin = SP_get_plugin((*chip)->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+    
+    Undo_ChipPos_CurrPos((struct Patch*)patch);
     (*chip)->setPos(pos.x()-grid_width, pos.y());
   }
 }
@@ -470,7 +475,12 @@ void CHIP_kick_right(Chip *chip){
 
   for(std::set<Chip*>::iterator chip = kicks.begin() ; chip!=kicks.end() ; chip++){
     QPointF pos=(*chip)->pos();
-    Undo_ChipPos_CurrPos(SP_get_plugin((*chip)->_sound_producer)->patch);
+
+    SoundPlugin *plugin = SP_get_plugin((*chip)->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+    Undo_ChipPos_CurrPos((struct Patch*)patch);
     (*chip)->setPos(pos.x()+grid_width, pos.y());
   }
 }
@@ -483,9 +493,17 @@ static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *t
 static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
   if (SP_add_elink(to->_sound_producer, from->_sound_producer) == false)
     return false;
-  
-  if (PATCH_add_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
-                               SP_get_plugin(to->_sound_producer)->patch)
+
+  SoundPlugin *plugin1 = SP_get_plugin(from->_sound_producer);
+  volatile struct Patch *patch1 = plugin1->patch;
+  R_ASSERT_RETURN_IF_FALSE2(patch1!=NULL, false);
+
+  SoundPlugin *plugin2 = SP_get_plugin(to->_sound_producer);
+  volatile struct Patch *patch2 = plugin2->patch;
+  R_ASSERT_RETURN_IF_FALSE2(patch2!=NULL, false);
+
+  if (PATCH_add_event_receiver((struct Patch*)patch1,
+                               (struct Patch*)patch2)
       == false
       )
     {
@@ -619,8 +637,17 @@ void CONNECTION_delete_connection(Connection *connection){
 
   if (connection->_is_event_connection) {
 
-    PATCH_remove_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
-                                SP_get_plugin(to->_sound_producer)->patch);
+    SoundPlugin *plugin1 = SP_get_plugin(from->_sound_producer);
+    volatile struct Patch *patch1 = plugin1->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch1!=NULL, );
+    
+    SoundPlugin *plugin2 = SP_get_plugin(to->_sound_producer);
+    volatile struct Patch *patch2 = plugin2->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch2!=NULL, );
+
+
+    PATCH_remove_event_receiver((struct Patch*)patch1,
+                                (struct Patch*)patch2);
 
     SP_remove_elink(to->_sound_producer, from->_sound_producer);
 
@@ -864,7 +891,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   Q_UNUSED(widget);
 
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-  struct Patch *patch = plugin->patch;
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   bool is_selected = (option->state & QStyle::State_Selected);
   /*
@@ -946,7 +974,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     get_name_coordinates(x1,y1,x2,y2);
     x1 = get_note_indicator_x2() + 2;
 
-    QColor patchcolor(custom_colors[patch->colornum]);
+    int colornum = patch->colornum;
+    QColor patchcolor(custom_colors[colornum]);
 
     if(is_selected){
       QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.05);
@@ -958,7 +987,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
 
-    QString text = SP_get_plugin(_sound_producer)->patch->name;
+    QString text = patch->name;
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
 
@@ -1082,11 +1111,14 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     int num_effects = plugin->type->num_effects;
 
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
     QPointF pos = event->pos();
 
     printf("Pressed. %f / %f\n",pos.x(),pos.y());
     struct Instruments *instrument = get_audio_instrument();
-    instrument->PP_Update(instrument,plugin->patch);
+    instrument->PP_Update(instrument,(struct Patch*)patch);
 
     if(event->modifiers() & Qt::ControlModifier)
       setSelected(true);
@@ -1098,14 +1130,14 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        Undo_AudioEffect_CurrPos(plugin->patch, num_effects+EFFNUM_VOLUME_ONOFF);
+        Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF);
 
         printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = plugin->volume_is_on?0.0f:1.0f;
 
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
-        GFX_update_instrument_widget(plugin->patch);
+        GFX_update_instrument_widget((struct Patch*)patch);
 
         event->accept();
         return;
@@ -1117,13 +1149,13 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_effects_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        Undo_AudioEffect_CurrPos(plugin->patch, num_effects+EFFNUM_EFFECTS_ONOFF);
+        Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF);
 
         float new_value = plugin->effects_are_on?0.0f:1.0f;
 
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
-        GFX_update_instrument_widget(plugin->patch);
+        GFX_update_instrument_widget((struct Patch*)patch);
 
         event->accept();
         return;
@@ -1152,14 +1184,14 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         else
           effect_num = num_effects+EFFNUM_VOLUME;
 
-        Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
+        Undo_AudioEffect_CurrPos((struct Patch*)patch, effect_num);
 
         float value = ::scale(pos.x(),x1,x2,0,1.0);
         PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
         CHIP_update(plugin);
 
-        GFX_update_instrument_widget(plugin->patch);
+        GFX_update_instrument_widget((struct Patch*)patch);
 
         _slider_being_edited = i+1;
       }
@@ -1213,8 +1245,10 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     CHIP_update(plugin);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-    GFX_update_instrument_widget(plugin->patch);
+    GFX_update_instrument_widget((struct Patch*)patch);
   }
 
   event->accept();
@@ -1233,7 +1267,9 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 static struct Patch *get_patch_from_chip(Chip *chip){
   SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  return plugin->patch;
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT(patch!=NULL);
+  return (struct Patch*)patch;
 }
 
 static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){

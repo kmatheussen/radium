@@ -830,7 +830,7 @@ struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){
   for (int i=0 ; i<g_num_allocated_click_plugins ; i++){
     SoundPlugin *plugin = g_click_plugins[i];
     if (plugin != NULL && plugin->patch != NULL) {      
-      g_click_patches[num] = plugin->patch;
+      g_click_patches[num] = (struct Patch*)plugin->patch;
       num++;
     }
   }

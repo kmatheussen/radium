@@ -500,8 +500,9 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
   fluid_synth_bank_select(data->synth,0,bank_num);
   fluid_synth_program_change(data->synth,0,preset_num);
 
-  if(plugin->patch != NULL)
-    GFX_update_instrument_widget(plugin->patch);
+  volatile struct Patch *patch = plugin->patch;
+  if(patch != NULL)
+    GFX_update_instrument_widget((struct Patch*)patch);
 
   return true;
 }

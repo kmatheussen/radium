@@ -254,8 +254,8 @@ typedef struct SoundPlugin{
 
   //const char *name; // Used to autocreate instance name. Sometime the type_name is not specific enough. (plugin containers). Can be NULL.
   
-  struct Patch *patch; // The patch points to the plugin and the plugin points to the patch. However, the patch outlives the plugin. Plugin comes and goes, while the patch stays.
-                       // Beware that this value might be NULL.
+  volatile struct Patch *patch; // The patch points to the plugin and the plugin points to the patch. However, the patch outlives the plugin. Plugin comes and goes, while the patch stays.
+                                // Beware that this value might be NULL.
 
   float *savable_effect_values; // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
   float *initial_effect_values; // Used when resetting.
