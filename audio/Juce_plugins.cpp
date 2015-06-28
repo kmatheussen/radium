@@ -53,8 +53,44 @@ namespace{
   struct PluginWindow;
   struct MyAudioPlayHead;
 
+  struct Listener : public AudioProcessorListener {
+
+    SoundPlugin *plugin;
+
+    Listener(SoundPlugin *plugin) : plugin(plugin) {}
+    
+    // Receives a callback when a parameter is changed.
+    virtual void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) {
+      printf("parm %d changed to %f\n",parameterIndex,newValue);
+      //PLUGIN_set_effect_value2(plugin, -1, parameterIndex, newValue, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_start, PLAYERLOCK_NOT_REQUIRED);
+      volatile struct Patch *patch = plugin->patch;
+      if (patch != NULL)
+        patch->widget_needs_to_be_updated = true;
+    }
+ 
+    // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
+    virtual void 	audioProcessorChanged (AudioProcessor *processor) {
+      printf("audioProcessorChanged...\n");
+    }
+ 
+
+    //Indicates that a parameter change gesture has started.
+    virtual void 	audioProcessorParameterChangeGestureBegin (AudioProcessor *processor, int parameterIndex) {
+      printf("gesture starts for %d\n",parameterIndex);
+    }
+
+    
+    //Indicates that a parameter change gesture has finished. 
+    virtual void 	audioProcessorParameterChangeGestureEnd (AudioProcessor *processor, int parameterIndex) {
+      printf("gesture ends for %d\n",parameterIndex);
+    }
+  };
+
+  
+
   struct Data{
     AudioPluginInstance *audio_instance;
+    
     PluginWindow *window;
 
     MyAudioPlayHead *playHead;
@@ -62,21 +98,26 @@ namespace{
     MidiBuffer midi_buffer;
     AudioSampleBuffer buffer;
 
+    Listener listener;
+
     int num_input_channels;
     int num_output_channels;
 
     int x;
     int y;
     
-    Data(AudioPluginInstance *audio_instance, int num_input_channels, int num_output_channels)
+    Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
       , window(NULL)
       , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
+      , listener(plugin)
       , num_input_channels(num_input_channels)
       , num_output_channels(num_output_channels)
       , x(-1)
       , y(-1)
-    {}
+    {
+      audio_instance->addListener(&listener);
+    }
   };
 
   struct MyAudioPlayHead : public AudioPlayHead{
