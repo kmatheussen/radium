@@ -12,7 +12,8 @@
 
 enum{
   CHANNEL = 0,
-  PROGRAM_CHANGE,
+  
+  PROGRAM_CHANGE, // must be the first non-channel effect
   CHANNEL_AFTERTOUCH,
   PITCH_BEND,
 
@@ -55,6 +56,9 @@ enum{
 typedef struct{
 
   int values[NUM_EFFECTS];
+
+  bool has_sent_initial_values;
+  
   /*  
   int channel;
   int program_change;
@@ -98,8 +102,22 @@ typedef struct{
 
 
 
+static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float floatvalue, enum ValueFormat value_format, FX_when when);
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  Data *data = (Data*)plugin->data;
+  
+  if (data->has_sent_initial_values==false) {
+    
+    data->has_sent_initial_values=true;
+
+    for(int effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
+      int value = data->values[effect_num];
+      if (value != -1)
+        RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_start);
+    }
+    
+  }
 }
 
 
