@@ -461,7 +461,7 @@ static void cleanup_chip_positions(MyScene *myscene){
   while(cleanup_a_chip_position(myscene)==true);
 }
 
-static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
+static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
   //myscene->removeItem(_slot_indicator);
   myscene->_parent->setCursor(QCursor(Qt::ArrowCursor));
@@ -495,6 +495,8 @@ static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
     Undo_CancelLastUndo();
 
   myscene->_moving_chips.clear();
+
+  return has_updated;
 }
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
@@ -762,6 +764,23 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   return false;
 }
 
+static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mouse_y){
+  Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
+  if(chip_under!=NULL){
+    if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true) {
+
+      SoundPlugin *plugin = SP_get_plugin(chip_under->_sound_producer);
+      volatile struct Patch *patch = plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+
+      InstrumentWidget_replace((struct Patch*)patch);
+        
+      return true;
+    }
+  }
+  return false;
+}
+
 static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
 
   Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
@@ -840,10 +859,10 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
       return;
 
   if(event->button()==Qt::RightButton){
-    if(mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true)
+    if(mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) // create
       return;
 
-    if(mousepress_select_chip(this,event,item,mouse_x,mouse_y)==true)
+    if(mousepress_select_chip(this,event,item,mouse_x,mouse_y)==true) // select
       return;
   }
 
@@ -910,12 +929,16 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _ecurrent_to_chip = NULL;
     event->accept();
     
-  }else if(_moving_chips.size()>0){
+  }else if(_moving_chips.size()>0 && stop_moving_chips(this,mouse_x,mouse_y)==true){
 
-    stop_moving_chips(this,mouse_x,mouse_y);
     event->accept();
 
   }else{
+
+    if (mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
+      event->accept();
+      return;
+    }
 
     QGraphicsScene::mouseReleaseEvent(event);
 
