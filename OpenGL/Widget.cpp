@@ -916,7 +916,7 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "<p>"
                                  "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
                                  "<p>"
-                                 "If you notice choppy graphics, it might help to install the binary driver instead. However for newer versions of MESA, the performance of this driver seems just as good. It might be worth trying though, but beware that the binary driver might be less stable.</A>."
+                                 "If you notice choppy graphics, it might help to install the binary driver instead. However for newer versions of MESA, the performance of this driver seems just as good. It could be worth trying though, but the binary driver might be less stable.</A>."
                                  );
         if (result==1)
           SETTINGS_write_bool("show_gallium_gfx_message_during_startup", false);
