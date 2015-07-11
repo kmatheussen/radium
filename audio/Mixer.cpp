@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundProducer_proc.h"
 #include "SoundPluginRegistry_proc.h"
+#include "MultiCore_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -98,28 +99,6 @@ static volatile int g_num_click_plugins = 0;
 static SoundPlugin **g_click_plugins = NULL;
 static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_click_patches.
 
-#ifndef DOESNT_HAVE_SSE
-#  include <xmmintrin.h>
-#endif
-
-
-#include <float.h>
-
-//#pragma fenv_access (on)
-
-// On Intel set FZ (Flush to Zero) and DAZ (Denormals Are Zero)
-// flags to avoid costly denormals
-// (Copied from faust)
-#ifdef __SSE__
-    #ifdef __SSE2__
-        #define AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8040)
-    #else
-        #define AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8000)
-    #endif
-#else
-#   error "AVOIDDENORMALS is not defined"
-    #define AVOIDDENORMALS 
-#endif
 
 #ifdef MEMORY_DEBUG
 #include <QMutex>
@@ -145,9 +124,13 @@ bool PLAYER_is_running(void){
   return g_jack_is_running;
 }
 
+void THREADING_acquire_player_thread_priority(void){
+  jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority);
+}
+
 static void PLAYER_acquire_same_priority(void){
   //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
-  jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority);
+  THREADING_acquire_player_thread_priority();
 }	
 
 static void PLAYER_drop_same_priority(void){
@@ -402,14 +385,7 @@ struct Mixer{
 
   void add_SoundProducer(SoundProducer *sound_producer){
     SoundPlugin *plugin = SP_get_plugin(sound_producer);
-    int bus_num = -1;
-
-    if(!strcmp(plugin->type->type_name,"Bus")){
-      if(!strcmp(plugin->type->name,"Bus 1"))
-        bus_num = 0;
-      else
-        bus_num = 1;
-    }
+    int bus_num = SP_get_bus_num(sound_producer);
 
     bool is_click_patch = false;
     SoundPlugin **new_g_click_plugins = NULL;
@@ -646,18 +622,25 @@ struct Mixer{
         RT_LPB_set_beat_position(RADIUM_BLOCKSIZE);
 
         RT_MIDI_handle_play_buffer();
-        
-        if(_bus1!=NULL)
-          SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, process_plugins);
-        if(_bus2!=NULL)
-          SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, process_plugins);
 
-        {
+        if (g_running_multicore) {
+
+          MULTICORE_run_all((SoundProducer*)MIXER_get_all_SoundProducers(), _time, RADIUM_BLOCKSIZE, process_plugins);
+          
+        } else {
+
+          if (_bus1!=NULL)
+            SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, process_plugins);
+
+          if (_bus2!=NULL)
+            SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, process_plugins);
+
           DoublyLinkedList *sound_producer = _sound_producers.next;
           while(sound_producer!=NULL){
             SP_RT_process((SoundProducer*)sound_producer, _time, RADIUM_BLOCKSIZE, process_plugins ); // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
             sound_producer = sound_producer->next;
           }
+          
         }
 
         _time += RADIUM_BLOCKSIZE;
@@ -744,6 +727,8 @@ static Mixer *g_mixer;
 bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
+
+  MULTICORE_init();
   
   init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
@@ -758,7 +743,7 @@ bool MIXER_start(void){
   //Sleep(3000);
 
   check_jackd_arguments();
-  
+
   return true;
 }
 

@@ -53,6 +53,8 @@ struct DoublyLinkedList{
   }
 };
 
+enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
+
 struct SoundProducer;
 
 SoundProducer *SP_create(SoundPlugin *plugin);
@@ -63,13 +65,22 @@ void SP_remove_elink(SoundProducer *target, SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_all_links(std::vector<SoundProducer*> soundproducers);
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);
+void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
 struct SoundPlugin *SP_get_plugin(SoundProducer *producer);
+int SP_get_bus_num(SoundProducer *sp);
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin);
 float SP_get_input_peak(SoundProducer *producer, int ch);
 float SP_get_output_peak(SoundProducer *producer, int ch);
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
+
+// Functions below used in multicore processing
+bool SP_can_start_processing(SoundProducer *sp);
+SoundProducer *SP_get_ready_to_process(SoundProducer *sp);
+SoundProducer *SP_next(SoundProducer *sp);
+SoundProducerRunningState SP_get_running_state(SoundProducer *sp);
+void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_state);
 
 #endif // __cplusplus
 

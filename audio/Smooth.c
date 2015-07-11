@@ -151,6 +151,10 @@ void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float s
   }
 }
 
+bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(Smooth *smooth){
+  return is_smoothing_necessary(smooth) || smooth->value > 0.0f;
+}
+
 void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_frames){
   int i;
   if(is_smoothing_necessary(smooth)==true){

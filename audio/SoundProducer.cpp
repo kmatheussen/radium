@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
+#include "MultiCore_proc.h"
 
 #include "fade_envelopes.h"
 
@@ -285,9 +286,14 @@ struct SoundProducer : DoublyLinkedList{
   int _num_inputs;
   int _num_outputs;
   int _num_dry_sounds;
-
+  
   int64_t _last_time;
 
+  bool _is_bus;
+  int _bus_num;
+  
+  volatile SoundProducerRunningState running_state;
+  
   float **_dry_sound;
   float **_input_sound; // I'm not sure if it's best to place this data on the heap or the stack. Currently the heap is used. Advantage of heap: Avoid (having to think about the possibility of) risking running out of stack. Advantage of stack: Fewer cache misses.
   float **_output_sound;
@@ -303,9 +309,18 @@ struct SoundProducer : DoublyLinkedList{
     , _num_inputs(plugin->type->num_inputs)
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
+    , _is_bus(!strcmp(plugin->type->type_name,"Bus"))
+    , _bus_num(-1)
   {
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
-    
+
+    if(_is_bus){
+      if(!strcmp(plugin->type->name,"Bus 1"))
+        _bus_num = 0;
+      else
+        _bus_num = 1;
+    }
+
     if(_num_inputs>0)
       _num_dry_sounds = _num_inputs;
     else
@@ -352,12 +367,100 @@ struct SoundProducer : DoublyLinkedList{
     free(_input_sound);
     free(_output_sound);
   }
+
+  bool RT_can_start_processing(void){
+    {
+      SoundProducerLink *elink = static_cast<SoundProducerLink*>(_input_eproducers.next);
+      while(elink!=NULL){
+        if (elink->sound_producer->running_state != FINISHED_RUNNING)
+          return false;
+        elink = static_cast<SoundProducerLink*>(elink->next);
+      }
+    }
+
+    for(int ch=0;ch<_num_inputs;ch++){
+      SoundProducerLink *link = static_cast<SoundProducerLink*>(_input_producers[ch].next);
+      while(link!=NULL){
+        if (link->sound_producer->running_state != FINISHED_RUNNING)
+          return false;
+        link = static_cast<SoundProducerLink*>(link->next);
+      }
+    }
+
+    return true;
+  }
+
+private:
+  SoundProducer *RT_get_dependency_process_candidate(SoundProducer *sp, bool &all_dependencies_covered){
+    if (sp->running_state == HASNT_RUN_YET) {
+      SoundProducer *candidate = sp->RT_get_ready_to_process();
+      if (candidate != NULL)
+        return candidate;
+      else
+        all_dependencies_covered = false;
+    } else if (sp->running_state == IS_RUNNING) {
+      all_dependencies_covered = false;
+    }
+    return NULL;
+  }
+public:
   
-  void RT_set_bus_descendant_type_for_plugin(){
+  SoundProducer *RT_get_ready_to_process(void){
+    bool all_dependencies_covered = true;
+
+    {
+      SoundProducerLink *elink = static_cast<SoundProducerLink*>(_input_eproducers.next);
+      while(elink!=NULL){
+        SoundProducer *candidate = RT_get_dependency_process_candidate(elink->sound_producer, all_dependencies_covered);
+        if (candidate != NULL)
+          return candidate;
+        elink = static_cast<SoundProducerLink*>(elink->next);
+      }
+    }
+
+    for(int ch=0;ch<_num_inputs;ch++){
+      SoundProducerLink *link = static_cast<SoundProducerLink*>(_input_producers[ch].next);
+      while(link!=NULL){
+        SoundProducer *candidate = RT_get_dependency_process_candidate(link->sound_producer, all_dependencies_covered);
+        if (candidate != NULL)
+          return candidate;
+        link = static_cast<SoundProducerLink*>(link->next);
+      }
+    }
+
+    #if 0
+    if (_is_bus) {
+
+      DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
+      while(sound_producer_list!=NULL){
+        SoundProducer         *sp     = (SoundProducer*)sound_producer_list;
+        SoundPlugin           *plugin = SP_get_plugin(sp);
+        
+        if(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT){
+          //if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(&plugin->bus_volume[_bus_num])){
+            SoundProducer *candidate = RT_get_dependency_process_candidate(sp, all_dependencies_covered);
+            if (candidate != NULL)
+              return candidate;
+            //}
+        }
+    
+        sound_producer_list = sound_producer_list->next;  
+      }
+
+    }
+    #endif
+    
+    if (all_dependencies_covered)
+      return this;
+    else
+      return NULL;
+  }
+    
+  void RT_set_bus_descendant_type_for_plugin(void){
     if(_plugin->bus_descendant_type != MAYBE_A_BUS_DESCENDANT)
       return;
 
-    if(!strcmp(_plugin->type->type_name,"Bus")){
+    if(_is_bus){
       _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
       return;
     }
@@ -640,8 +743,12 @@ struct SoundProducer : DoublyLinkedList{
     }
   }
 
+  bool has_run(int64_t time){
+    return _last_time == time;
+  }
+  
   void RT_process(int64_t time, int num_frames, bool process_plugins){
-    if(_last_time == time)
+    if(has_run(time))
       return;
 
     _last_time = time;
@@ -811,6 +918,9 @@ struct SoundProducer : DoublyLinkedList{
   }
 
   float *RT_get_channel(int64_t time, int num_frames, int ret_ch, bool process_plugins){
+    if(!has_run(time))
+      R_ASSERT(!g_running_multicore);
+
     RT_process(time, num_frames, process_plugins);
     return _output_sound[ret_ch];
   }
@@ -830,7 +940,7 @@ SoundProducer *SP_create(SoundPlugin *plugin){
 }
 
 void SP_delete(SoundProducer *producer){
-  if(strcmp(producer->_plugin->type->type_name,"Bus")){ // RT_process needs buses to always be alive.
+  if(!producer->_is_bus){ // RT_process needs buses to always be alive.
     printf("Deleting \"%s\"\n",producer->_plugin->type->type_name);
     delete producer;
   }
@@ -898,32 +1008,42 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
   producer->RT_process(time, num_frames, process_plugins);
 }
 
+#if 0
+void SP_RT_clean_output(SoundProducer *producer, int num_frames){
+  for(int ch=0;ch<producer->_num_outputs;ch++)
+    memset(producer->_output_sound[ch],0,sizeof(float)*num_frames);
+}
+#endif
+
 // This function is called from bus_type->RT_process.
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins){
-  DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
 
   memset(outputs[0],0,sizeof(float)*num_frames);
   memset(outputs[1],0,sizeof(float)*num_frames);
 
+  DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
   while(sound_producer_list!=NULL){
     SoundProducer         *sp     = (SoundProducer*)sound_producer_list;
     SoundPlugin           *plugin = SP_get_plugin(sp);
     const SoundPluginType *type   = plugin->type;
-
+    
     if(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT){
-      if(type->num_outputs==1){
-        float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
-        SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[0], channel_data0, num_frames);
-        SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[1], channel_data0, num_frames);
-      }else if(type->num_outputs>1){
-        float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
-        float *channel_data1 = sp->RT_get_channel(time, num_frames, 1, process_plugins);
-        SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[0], channel_data0, num_frames);
-        SMOOTH_mix_sounds(&plugin->bus_volume[bus_num], outputs[1], channel_data1, num_frames);
+      Smooth *smooth = &plugin->bus_volume[bus_num];
+      if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth)){
+        if(type->num_outputs==1){
+          float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
+          SMOOTH_mix_sounds(smooth, outputs[0], channel_data0, num_frames);
+          SMOOTH_mix_sounds(smooth, outputs[1], channel_data0, num_frames);
+        }else if(type->num_outputs>1){
+          float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
+          float *channel_data1 = sp->RT_get_channel(time, num_frames, 1, process_plugins);
+          SMOOTH_mix_sounds(smooth, outputs[0], channel_data0, num_frames);
+          SMOOTH_mix_sounds(smooth, outputs[1], channel_data1, num_frames);
+        }
       }
     }
-
-    sound_producer_list = sound_producer_list->next;
+    
+    sound_producer_list = sound_producer_list->next;  
   }
 }
 
@@ -933,6 +1053,10 @@ void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer){
 
 struct SoundPlugin *SP_get_plugin(SoundProducer *producer){
   return producer->_plugin;
+}
+
+int SP_get_bus_num(SoundProducer *sp){
+  return sp->_bus_num;
 }
 
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
@@ -975,3 +1099,26 @@ void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
   producer->free_sound_buffers();
   producer->allocate_sound_buffers(buffer_size);
 }
+
+// only used in multicore processing
+bool SP_can_start_processing(SoundProducer *sp){
+  return sp->RT_can_start_processing();
+}
+
+// only used in multicore processing. Will return an sp which is ready to process, or NULL.
+SoundProducer *SP_get_ready_to_process(SoundProducer *sp){
+  return sp->RT_get_ready_to_process();
+}
+
+SoundProducer *SP_next(SoundProducer *sp){
+  return static_cast<SoundProducer*>(sp->next);
+}
+
+SoundProducerRunningState SP_get_running_state(SoundProducer *sp){
+  return sp->running_state;
+}
+
+void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_state){
+  sp->running_state = running_state;
+}
+

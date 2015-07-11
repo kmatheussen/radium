@@ -100,6 +100,7 @@ extern LANGSPEC void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_f
 extern LANGSPEC void SMOOTH_apply_inverted_volume(Smooth *smooth, float *sound, int num_frames);
 extern LANGSPEC void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float start_volume, float end_volume);
+extern LANGSPEC bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(Smooth *smooth);
 extern LANGSPEC void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, float *source, int num_frames);
 extern LANGSPEC void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_frames);
