@@ -1,3 +1,19 @@
+Most important changes 3.1.3 -> 3.1.4
+* If plugin is not found during loading, give option to select a different plugin
+* Show the sound object menu when right-clicking on an existing sound object in the mixer
+  (doing the same as "replace" in the instrument widget)
+* Add "replace" button to instrument widget
+* Send inital values first time a "MIDI Messages" object is playing.
+* Fix plugin info dialog
+* VST: Update Radium sliders when changing controllers in native GUI.
+  This indirectly causes automation to update the sliders as well, but that's actually
+  what happens underneath for VST plugins too, so that's a good thing.
+* Rendering: Reset gfx timing when jumping to the start of a block.
+  (removes the "dragged by a spring" effect)
+* Linux: Show info during startup about the Gallium AMD OpenGL driver (if using that driver)
+
+
+
 Most important changes 3.1.2 -> 3.1.3
 * Don't crash if reducing the number of lines in a block.
   (This also fixes some crashes when importing MIDI file)

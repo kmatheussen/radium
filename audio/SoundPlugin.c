@@ -1152,7 +1152,7 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
 
 void PLUGIN_set_from_patch(SoundPlugin *old_plugin, struct Patch *new_patch){
   struct Patch *old_patch = (struct Patch*)old_plugin->patch;
-  R_ASSERT_RETURN_IF_FALSE2(old_patch!=NULL, NULL);
+  R_ASSERT_RETURN_IF_FALSE(old_patch!=NULL);
 
   CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
   

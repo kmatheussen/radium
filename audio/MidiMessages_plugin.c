@@ -114,7 +114,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     for(int effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
       int value = data->values[effect_num];
       if (value != -1)
-        RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_start);
+        RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_single);
     }
     
   }

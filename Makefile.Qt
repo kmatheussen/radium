@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.1.3
+VERSION = 3.1.4
 
 #----------------USER SETTINGS-------------------------------
 
@@ -1398,7 +1398,7 @@ Patchbay_plugin.o: audio/Patchbay_plugin.c
 	$(CC) audio/Patchbay_plugin.c $(OPT)
 
 MidiMessages_plugin.o: audio/MidiMessages_plugin.c
-	$(CC) audio/MidiMessages_plugin.c $(OPT)
+	$(CC) audio/MidiMessages_plugin.c $(OPT) -std=c99
 
 VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 	$(CCC) audio/VST_plugins.cpp $(QTOPT) -Wno-error # uses some Qt stuff to open GUI window
