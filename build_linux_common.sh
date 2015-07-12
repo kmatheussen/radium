@@ -19,9 +19,9 @@ if ! env |grep BUILDTYPE ; then
     exit -1
 fi
 
-if ! env |grep OPTIMIZE ; then
-    export OPTIMIZE="-O3"
-fi
+#if ! env |grep OPTIMIZE ; then
+export OPTIMIZE="-O3 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
+#fi
 
 export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
 #export CPUOPT=

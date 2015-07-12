@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>631</width>
-    <height>386</height>
+    <height>389</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -184,7 +184,7 @@
           <item>
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#00007f;&quot;&gt;Note: Using more than one CPU is currently an experimental feature&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#00007f;&quot;&gt;Note: More than one CPU is currently considered an experimental feature.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#00007f;&quot;&gt;Radium might use more CPU if this number is higher than 1,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#00007f;&quot;&gt;and it might also not behave properly.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
