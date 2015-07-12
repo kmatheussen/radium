@@ -126,10 +126,11 @@ bool PLAYER_is_running(void){
 
 void THREADING_acquire_player_thread_priority(void){
   static bool has_shown_warning = false;
-  
-  if (jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority) != 0 && has_shown_warning==false) {
+
+  int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
+  if (err != 0 && has_shown_warning==false) {
     has_shown_warning=true;
-    RT_message("Unable to set real time priority. You might want to check your system configuration.");
+    RT_message("Unable to set real time priority. You might want to check your system configuration\n\nError code: %d.", err);
   }
 }
 
@@ -745,8 +746,6 @@ bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
-  MULTICORE_init();
-  
   init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
   
@@ -761,6 +760,9 @@ bool MIXER_start(void){
 
   check_jackd_arguments();
 
+  // Multicore is initialized after starting jack, since the "runners" call THREADING_acquire_player_thread_priority in the constructor, which don't work before jack has started.
+  MULTICORE_init();
+  
   return true;
 }
 

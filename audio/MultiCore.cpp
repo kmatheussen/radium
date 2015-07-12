@@ -24,7 +24,7 @@ static RSemaphore *there_is_a_free_runner = NULL;
 static QMutex lock;
 static QWaitCondition broadcast;
 
-bool g_running_multicore = true;
+bool g_running_multicore = false; // Must be "false" since MultiCore is initialized after the mixer has started. This variable is protected by the player lock.
 
 namespace{
   
