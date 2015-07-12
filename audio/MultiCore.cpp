@@ -5,15 +5,16 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
+#include "../common/OS_Player_proc.h"
 
 #include "SoundProducer_proc.h"
 
 #include "MultiCore_proc.h"
 
 
-const static int num_runners = 8;
+static int num_runners = 0;
 
-static RSemaphore *there_is_a_free_runner;
+static RSemaphore *there_is_a_free_runner = NULL;
 
 static QMutex lock;
 static QWaitCondition broadcast;
@@ -25,8 +26,8 @@ namespace{
 
 struct Runner;
 
-static Runner *running_runners; // access to these two are protected by 'lock'.
-static Runner *free_runners;
+static Runner *running_runners = NULL; // access to these two are protected by 'lock'.
+static Runner *free_runners = NULL;
 
 static void add_runner(Runner **root, Runner *runner);
 static void remove_runner(Runner **root, Runner *runner);
@@ -46,13 +47,23 @@ public:
 
   RSemaphore *ready;
 
+  bool must_exit;
+  
   Runner() {
     ready = RSEMAPHORE_create(0);
-
+    must_exit = false;
+    
     start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
 
   ~Runner() {
+    //R_ASSERT(RSEMAPHORE_get_num_signallers(ready)==0);
+    
+    must_exit = true;
+    RSEMAPHORE_signal(ready, 1);
+    wait(2000);
+
+    //R_ASSERT(RSEMAPHORE_get_num_signallers(ready)==0);
     RSEMAPHORE_delete(ready);
   }
 
@@ -67,6 +78,9 @@ private:
 
     while(true){
       RSEMAPHORE_wait(ready, 1);
+
+      if(must_exit)
+        break;
       
       SP_RT_process(sp, time, num_frames, process_plugins);
 
@@ -253,14 +267,72 @@ void MULTICORE_run_all(SoundProducer *all_sp, int64_t time, int num_frames, bool
 #endif
 }
 
+#if 0
+void MULTICORE_stop(void){
+  R_ASSERT(running_runners==NULL);
+
+  while(free_runners != NULL){
+    Runner *next = free_runners->next;
+    delete free_runners;
+    free_runners = next;
+  }
+
+  free_runners = NULL;
+}
+#endif
+
+void MULTICORE_set_num_threads(int num_new_runners){
+  R_ASSERT(num_new_runners >= 1);
+
+  Runner *old_runners = NULL;
+  Runner *new_runners = NULL;
+
+  for(int i=0 ; i < num_new_runners ; i++)
+    add_runner(&new_runners, new Runner);
+
+  PLAYER_lock(); {
+    R_ASSERT(running_runners==NULL);
+    R_ASSERT(RSEMAPHORE_get_num_signallers(there_is_a_free_runner)==num_runners);
+    
+    old_runners = free_runners;
+    free_runners = new_runners;
+
+    num_runners = num_new_runners;
+      
+    RSEMAPHORE_set_num_signallers(there_is_a_free_runner, num_runners);
+    printf("a: %d, b: %d\n",RSEMAPHORE_get_num_signallers(there_is_a_free_runner),num_runners);
+    R_ASSERT(RSEMAPHORE_get_num_signallers(there_is_a_free_runner)==num_runners);
+    
+    if (num_runners == 1)
+      g_running_multicore = false;
+    else
+      g_running_multicore = true;
+
+  } PLAYER_unlock();
+
+
+  while(old_runners != NULL){
+    Runner *next = old_runners->next;
+    delete old_runners;
+    old_runners = next;
+  }
+}
 
 void MULTICORE_init(void){
 
   there_is_a_free_runner = RSEMAPHORE_create(0);
 
+#if 1
+  
+  MULTICORE_set_num_threads(8);
+  
+#else
+  
+  num_runners = 8;
   for(int i=0 ; i < num_runners ; i++) {
     add_runner(&free_runners, new Runner);
     RSEMAPHORE_signal(there_is_a_free_runner, 1);
   }
-  
+
+#endif
 }

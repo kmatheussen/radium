@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef RADIUM_AUDIO_SOUNDPLUGIN_REGISTRY_PROC_H
+#define RADIUM_AUDIO_SOUNDPLUGIN_REGISTRY_PROC_H
 
 #ifdef __cplusplus
 #  define LANGSPEC "C"
@@ -89,3 +91,5 @@ extern LANGSPEC int PR_get_num_plugin_types(void);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type(int num);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name);
 extern LANGSPEC void PR_init_plugin_types(void);
+
+#endif
