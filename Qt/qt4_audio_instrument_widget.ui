@@ -1445,6 +1445,9 @@
                         <verstretch>0</verstretch>
                        </sizepolicy>
                       </property>
+                      <property name="toolTip">
+                       <string>Sound sent to Bus #1</string>
+                      </property>
                       <property name="maximum">
                        <number>10000</number>
                       </property>
@@ -1491,6 +1494,12 @@
                         <horstretch>0</horstretch>
                         <verstretch>0</verstretch>
                        </sizepolicy>
+                      </property>
+                      <property name="acceptDrops">
+                       <bool>true</bool>
+                      </property>
+                      <property name="toolTip">
+                       <string>Send sound to Bus #2</string>
                       </property>
                       <property name="maximum">
                        <number>10000</number>

@@ -1017,7 +1017,7 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
   if (PLAYER_is_running()) {
     PLAYER_memory_debug_wake_up();
     RSEMAPHORE_wait(signal_from_RT,links_to_delete.size());
-
+    
     PLAYER_lock();{
       for(unsigned int i=0;i<links_to_delete.size();i++){
         SoundProducerLink *link = links_to_delete.at(i);
@@ -1025,11 +1025,11 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
       }
     }PLAYER_unlock();
     
-
+  }
     // Delete
   for(unsigned int i=0;i<links_to_delete.size();i++)
     delete links_to_delete.at(i);
-}
+  }
 
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
   producer->RT_process(time, num_frames, process_plugins);
