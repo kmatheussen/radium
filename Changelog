@@ -1,3 +1,22 @@
+
+Most important changes 3.1.4 -> 3.2.0
+* Include a custom version of qjackctl in the Windows version. (i.e the "Jack Command" program)
+  Hopefully there will be less struggle to start jack now since this version has better default
+  options and some bugs fixed.
+* Ensure all source files are compiled with sse support (-mfpmath=sse -msse2) in the binaries.
+* Move scrollplay and the "multiply etc." option into the preferences dialog under a new "Edit" tab.
+* Save scrollplay in config file
+* Rename the default "Chorus" and "Reverb" buses to "Corus Bus" and "Reverb Bus"
+* Moved OpenGL, CPU and VST preferences into a new Preferences dialog.
+* Dont stop processing plugins if using too much CPU. Some plugins might overcompensate when
+  they start again. Instead just stop playing, and if that didn't help,
+  stop processing plugins as well.
+* Fix soundfile saving (don't stop because using too much CPU)
+* Show warning message if unable to acquire real time priority
+* Multithreaded audio processing (i.e. "Multi-core")
+
+
+
 Most important changes 3.1.3 -> 3.1.4
 * If plugin is not found during loading, give option to select a different plugin
 * Show the sound object menu when right-clicking on an existing sound object in the mixer
