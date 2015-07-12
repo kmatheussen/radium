@@ -125,7 +125,12 @@ bool PLAYER_is_running(void){
 }
 
 void THREADING_acquire_player_thread_priority(void){
-  jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority);
+  static bool has_shown_warning = false;
+  
+  if (jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(),g_jack_client_priority) != 0 && has_shown_warning==false) {
+    has_shown_warning=true;
+    RT_message("Unable to set real time priority. You might want to check your system configuration.");
+  }
 }
 
 static void PLAYER_acquire_same_priority(void){
