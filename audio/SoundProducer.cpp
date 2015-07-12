@@ -107,16 +107,21 @@ namespace{
 struct SoundProducerLink : public DoublyLinkedList{
 
   // used both by audio links and event links
-  SoundProducer *sound_producer;
-
+  SoundProducer *source;
+  SoundProducer *target;
+  
   // only used by audio links
-  int sound_producer_ch;
+  int source_ch;
+  int target_ch;
+
   int fade_pos;
-  enum {NO_STATE, FADING_IN, STABLE, FADING_OUT} state;
+  volatile enum {NO_STATE, FADING_IN, STABLE, FADING_OUT, JUST_FADED_OUT, FADED_OUT} state;
 
   SoundProducerLink()
-    : sound_producer(NULL)
-    , sound_producer_ch(0)
+    : source(NULL)
+    , target(NULL)
+    , source_ch(0)
+    , target_ch(0)
     , fade_pos(0)
     , state(NO_STATE)
   {
@@ -372,7 +377,7 @@ struct SoundProducer : DoublyLinkedList{
     {
       SoundProducerLink *elink = static_cast<SoundProducerLink*>(_input_eproducers.next);
       while(elink!=NULL){
-        if (elink->sound_producer->running_state != FINISHED_RUNNING)
+        if (elink->source->running_state != FINISHED_RUNNING)
           return false;
         elink = static_cast<SoundProducerLink*>(elink->next);
       }
@@ -381,7 +386,7 @@ struct SoundProducer : DoublyLinkedList{
     for(int ch=0;ch<_num_inputs;ch++){
       SoundProducerLink *link = static_cast<SoundProducerLink*>(_input_producers[ch].next);
       while(link!=NULL){
-        if (link->sound_producer->running_state != FINISHED_RUNNING)
+        if (link->source->running_state != FINISHED_RUNNING)
           return false;
         link = static_cast<SoundProducerLink*>(link->next);
       }
@@ -411,7 +416,7 @@ public:
     {
       SoundProducerLink *elink = static_cast<SoundProducerLink*>(_input_eproducers.next);
       while(elink!=NULL){
-        SoundProducer *candidate = RT_get_dependency_process_candidate(elink->sound_producer, all_dependencies_covered);
+        SoundProducer *candidate = RT_get_dependency_process_candidate(elink->source, all_dependencies_covered);
         if (candidate != NULL)
           return candidate;
         elink = static_cast<SoundProducerLink*>(elink->next);
@@ -421,7 +426,7 @@ public:
     for(int ch=0;ch<_num_inputs;ch++){
       SoundProducerLink *link = static_cast<SoundProducerLink*>(_input_producers[ch].next);
       while(link!=NULL){
-        SoundProducer *candidate = RT_get_dependency_process_candidate(link->sound_producer, all_dependencies_covered);
+        SoundProducer *candidate = RT_get_dependency_process_candidate(link->source, all_dependencies_covered);
         if (candidate != NULL)
           return candidate;
         link = static_cast<SoundProducerLink*>(link->next);
@@ -469,8 +474,8 @@ public:
     for(int ch=0;ch<_num_inputs;ch++){
       SoundProducerLink *link = static_cast<SoundProducerLink*>(_input_producers[ch].next);
       while(link!=NULL){
-        link->sound_producer->RT_set_bus_descendant_type_for_plugin();
-        if(link->sound_producer->_plugin->bus_descendant_type==IS_BUS_DESCENDANT){
+        link->source->RT_set_bus_descendant_type_for_plugin();
+        if(link->source->_plugin->bus_descendant_type==IS_BUS_DESCENDANT){
           _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
           return;
         }
@@ -484,9 +489,9 @@ public:
       SoundProducerLink *elink = (SoundProducerLink*)_input_eproducers.next;
       while(elink!=NULL){
         
-        elink->sound_producer->RT_set_bus_descendant_type_for_plugin();
+        elink->source->RT_set_bus_descendant_type_for_plugin();
         
-        if(elink->sound_producer->_plugin->bus_descendant_type==IS_BUS_DESCENDANT){
+        if(elink->source->_plugin->bus_descendant_type==IS_BUS_DESCENDANT){
           _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
           return;
         }
@@ -519,7 +524,7 @@ public:
     for(int ch=0;ch<_num_inputs;ch++){
       SoundProducerLink *link = static_cast<SoundProducerLink*>(_input_producers[ch].next);
       while(link!=NULL){
-        if(link->sound_producer->is_recursive(start_producer)==true)
+        if(link->source->is_recursive(start_producer)==true)
           return true;
         
         link = static_cast<SoundProducerLink*>(link->next);
@@ -528,7 +533,7 @@ public:
 
     SoundProducerLink *elink = (SoundProducerLink*)_input_eproducers.next;
     while(elink!=NULL){
-      if(elink->sound_producer->is_recursive(start_producer)==true)
+      if(elink->source->is_recursive(start_producer)==true)
         return true;
       
       elink=(SoundProducerLink*)elink->next;
@@ -544,8 +549,9 @@ public:
     }
 
     SoundProducerLink *link = new SoundProducerLink;
-    link->sound_producer    = sound_producer;
-
+    link->source    = sound_producer;
+    link->target    = this;
+    
     PLAYER_lock();{
       _input_eproducers.add(link);
       MIXER_RT_set_bus_descendand_type_for_all_plugins(); // hmm.
@@ -563,8 +569,11 @@ public:
     }
 
     SoundProducerLink *link = new SoundProducerLink; // created here
-    link->sound_producer    = sound_producer;
-    link->sound_producer_ch = sound_producer_ch;
+    link->source    = sound_producer;
+    link->source_ch = sound_producer_ch;
+    link->target    = this;
+    link->target_ch = ch;
+    
     link->fade_pos          = 0;
     link->state = SoundProducerLink::FADING_IN;
 
@@ -577,12 +586,12 @@ public:
   }
 
 
-  void remove_eventSoundProducerInput(SoundProducer *sound_producer){
+  void remove_eventSoundProducerInput(SoundProducer *source){
     SoundProducerLink *link = (SoundProducerLink*)_input_eproducers.next;
     
     while(link!=NULL){
 
-      if(link->sound_producer==sound_producer){
+      if(link->source==source){
         
         PLAYER_lock();{
           _input_eproducers.remove(link);
@@ -610,9 +619,9 @@ public:
     //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
     SoundProducerLink *link = (SoundProducerLink*)_input_producers[ch].next;
     while(link!=NULL){
-      //fprintf(stderr,"link: %p. link channel: %d\n",link,link->sound_producer_ch);
+      //fprintf(stderr,"link: %p. link channel: %d\n",link,link->source_ch);
 
-      if(link->sound_producer==sound_producer && link->sound_producer_ch==sound_producer_ch){
+      if(link->source==sound_producer && link->source_ch==sound_producer_ch){
         
         while(link->state == SoundProducerLink::FADING_IN) {
           PLAYER_memory_debug_wake_up();
@@ -625,9 +634,15 @@ public:
         }PLAYER_unlock();
 
         PLAYER_memory_debug_wake_up();
+
         RSEMAPHORE_wait(signal_from_RT,1);
         
-        delete link; // deleted  here
+        PLAYER_lock();{
+          _input_producers[ch].remove(link);
+          MIXER_RT_set_bus_descendand_type_for_all_plugins();
+        }PLAYER_unlock();
+
+        delete link;
 
         return;
       }
@@ -635,7 +650,7 @@ public:
     }
 
     fprintf(stderr,"huffda. link: %p. ch: %d\n",link->next,ch);  // provoke a crash detected by the crash reporter
-    abort();
+    R_ASSERT(false);
   }
 
   std::vector<SoundProducerLink *> get_all_links(void){
@@ -758,7 +773,7 @@ public:
     {
       SoundProducerLink *elink = static_cast<SoundProducerLink*>(_input_eproducers.next);
       while(elink!=NULL){
-        elink->sound_producer->RT_process(time, num_frames, process_plugins);
+        elink->source->RT_process(time, num_frames, process_plugins);
         elink = static_cast<SoundProducerLink*>(elink->next);
       }
     }
@@ -777,12 +792,12 @@ public:
       while(link!=NULL){
         SoundProducerLink *next = (SoundProducerLink*)link->next; // Store next pointer since the link can be removed here.
 
-        SoundProducer *source_sound_producer = link->sound_producer;
+        SoundProducer *source_sound_producer = link->source;
         SoundPlugin *source_plugin = source_sound_producer->_plugin;
         
         float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
         
-        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->sound_producer_ch, process_plugins);
+        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->source_ch, process_plugins);
         
         // fade in
         if(link->state==SoundProducerLink::FADING_IN){
@@ -803,14 +818,19 @@ public:
           
           link->fade_pos += num_frames;
           if(link->fade_pos==FADE_LEN){
-            _input_producers[ch].remove(link);
+            //_input_producers[ch].remove(link);
             RSEMAPHORE_signal(signal_from_RT,1);
-            MIXER_RT_set_bus_descendand_type_for_all_plugins();
+            //MIXER_RT_set_bus_descendand_type_for_all_plugins();
+            link->state=SoundProducerLink::JUST_FADED_OUT;
           }
         }
           
-        // Apply volume and mix
-        SMOOTH_mix_sounds(&source_plugin->output_volume, channel_target, input_producer_sound, num_frames);
+        // Apply volume and mix, unless faded out.
+        if (link->state != SoundProducerLink::FADED_OUT)
+          SMOOTH_mix_sounds(&source_plugin->output_volume, channel_target, input_producer_sound, num_frames);
+
+        if (link->state == SoundProducerLink::JUST_FADED_OUT)
+          link->state = SoundProducerLink::FADED_OUT;
         
         link = next;
       } // while(link!=NULL)
@@ -993,13 +1013,20 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
     }
   }PLAYER_unlock();
 
-  // Wait
+  
   if (PLAYER_is_running()) {
     PLAYER_memory_debug_wake_up();
     RSEMAPHORE_wait(signal_from_RT,links_to_delete.size());
-  }
-  
-  // Delete
+
+    PLAYER_lock();{
+      for(unsigned int i=0;i<links_to_delete.size();i++){
+        SoundProducerLink *link = links_to_delete.at(i);
+        link->target->_input_producers[link->target_ch].remove(link);
+      }
+    }PLAYER_unlock();
+    
+
+    // Delete
   for(unsigned int i=0;i<links_to_delete.size();i++)
     delete links_to_delete.at(i);
 }
