@@ -5,6 +5,8 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
+#include "../common/settings_proc.h"
+
 #include "../common/OS_Player_proc.h"
 
 #include "SoundProducer_proc.h"
@@ -13,6 +15,9 @@
 
 
 static int num_runners = 0;
+
+static const int default_num_runners = 1;
+static const char *settings_key = "num_cpus";
 
 static RSemaphore *there_is_a_free_runner = NULL;
 
@@ -281,9 +286,16 @@ void MULTICORE_stop(void){
 }
 #endif
 
+int MULTICORE_get_num_threads(void){
+  return SETTINGS_read_int(settings_key, default_num_runners);
+}
+
 void MULTICORE_set_num_threads(int num_new_runners){
   R_ASSERT(num_new_runners >= 1);
 
+  if (SETTINGS_read_int(settings_key, default_num_runners) != num_new_runners)
+    SETTINGS_write_int(settings_key, num_new_runners);
+    
   Runner *old_runners = NULL;
   Runner *new_runners = NULL;
 
@@ -300,7 +312,6 @@ void MULTICORE_set_num_threads(int num_new_runners){
     num_runners = num_new_runners;
       
     RSEMAPHORE_set_num_signallers(there_is_a_free_runner, num_runners);
-    printf("a: %d, b: %d\n",RSEMAPHORE_get_num_signallers(there_is_a_free_runner),num_runners);
     R_ASSERT(RSEMAPHORE_get_num_signallers(there_is_a_free_runner)==num_runners);
     
     if (num_runners == 1)
@@ -322,13 +333,16 @@ void MULTICORE_init(void){
 
   there_is_a_free_runner = RSEMAPHORE_create(0);
 
+  int num_new_runners = SETTINGS_read_int(settings_key, default_num_runners);
+
 #if 1
   
-  MULTICORE_set_num_threads(8);
-  
+  MULTICORE_set_num_threads(num_new_runners);
+
 #else
+
+  num_runners = num_new_runners;
   
-  num_runners = 8;
   for(int i=0 ; i < num_runners ; i++) {
     add_runner(&free_runners, new Runner);
     RSEMAPHORE_signal(there_is_a_free_runner, 1);

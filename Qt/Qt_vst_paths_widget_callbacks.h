@@ -18,9 +18,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileDialog>
 
 #include "../audio/VST_plugins_proc.h"
+#include "../audio/SoundPlugin.h"
+#include "../audio/SoundPluginRegistry_proc.h"
+
+#include "Qt_MyQButton.h"
 
 #include "Qt_vst_paths_widget.h"
 
+namespace{
 class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
   Q_OBJECT
 
@@ -104,3 +109,4 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
   }
 
 };
+}

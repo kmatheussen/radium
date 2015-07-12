@@ -30,16 +30,26 @@ RSemaphore *RSEMAPHORE_create(int num_signallers){
 }
 
 void RSEMAPHORE_delete(RSemaphore *semaphore){
+  RSEMAPHORE_reset(semaphore);
   delete semaphore;
 }
 
+
 void RSEMAPHORE_reset(RSemaphore *semaphore){
   int n = semaphore->available();
-  if(n<0)
-    semaphore->release(-n);
-  else
+  if (n>0)
     semaphore->acquire(n);
 }
+
+void RSEMAPHORE_set_num_signallers(RSemaphore *semaphore, int num_signallers){
+  RSEMAPHORE_reset(semaphore);
+  semaphore->release(num_signallers);
+}
+
+int RSEMAPHORE_get_num_signallers(RSemaphore *semaphore){
+  return semaphore->available();
+}
+
 
 #if 0
 void RSEMAPHORE_set_num_waiters(RSemaphore *semaphore, int num_waiters){
@@ -48,11 +58,6 @@ void RSEMAPHORE_set_num_waiters(RSemaphore *semaphore, int num_waiters){
 void RSEMAPHORE_get_num_waiters(RSemaphore *semaphore){
 }
 
-void RSEMAPHORE_set_num_signallers(RSemaphore *semaphore, int num_signallers){
-}
-
-void RSEMAPHORE_get_num_signallers(RSemaphore *semaphore){
-}
 #endif
 
 void RSEMAPHORE_wait(RSemaphore *semaphore, int num_waiters){

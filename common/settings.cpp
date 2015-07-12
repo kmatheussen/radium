@@ -228,6 +228,10 @@ static const char* SETTINGS_get_chars(const char* key){
     return talloc_strdup(ret.toUtf8().constData());
 }
 
+bool SETTINGS_has_key(const char *key){
+  return SETTINGS_get_chars(key) != NULL;
+}
+
 void SETTINGS_set_custom_configfile(QString filename){
   custom_configuration_filename=filename;
 }

@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <QSpinBox>
+#include <QMouseEvent>
+
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
 
@@ -60,7 +62,7 @@ struct MyQSpinBox : public QSpinBox{
   void 	wheelEvent ( QWheelEvent * event ){
     printf("Got wheel event\n");
     QSpinBox::wheelEvent(event);
-    set_editor_focus(); 
+    set_editor_focus();
   }
 
 

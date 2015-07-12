@@ -20,8 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 
 #include <QMessageBox>
-#include <FocusSniffers.h>
-#include "helpers.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -29,8 +27,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/settings_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../audio/MultiCore_proc.h"
+
+#include "../Qt/Qt_MyQSpinBox.h"
+#include <FocusSniffers.h>
+#include "helpers.h"
+
+#include "mQt_vst_paths_widget_callbacks.h"
 
 #include "Qt_preferences.h"
+
 
 
 extern struct Root *root;
@@ -56,37 +62,59 @@ class Preferences : public QDialog, public Ui::Preferences {
   }
 
   void updateWidgets(){
-    vsyncOnoff->setChecked(GL_get_vsync());
 
-    switch(GL_get_multisample()){
-    case 1:
-      mma1->setChecked(true);
-      break;
-
-    case 2:
-      mma2->setChecked(true);
-      break;
+    // OpenGL
+    {
+      vsyncOnoff->setChecked(GL_get_vsync());
       
-    case 4:
-      mma4->setChecked(true);
-      break;
+      switch(GL_get_multisample()){
+      case 1:
+        mma1->setChecked(true);
+        break;
+        
+      case 2:
+        mma2->setChecked(true);
+        break;
+        
+      case 4:
+        mma4->setChecked(true);
+        break;
+        
+      case 8:
+        mma8->setChecked(true);
+        break;
+        
+      case 16:
+        mma16->setChecked(true);
+        break;
+        
+      case 32:
+        mma32->setChecked(true);
+        break;
+      }
       
-    case 8:
-      mma8->setChecked(true);
-      break;
       
-    case 16:
-      mma16->setChecked(true);
-      break;
-      
-    case 32:
-      mma32->setChecked(true);
-      break;
+      QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
+      eraseEstimatedVBlankInterval->setText(vblankbuttontext);
     }
 
+    // CPU
+    {
+      numCPUs->setValue(MULTICORE_get_num_threads());
+    }
+
+    // VST
+    {
+      QWidget *vst_tab_widget = tabWidget->widget(2);
+      //QVBoxLayout *layout = new QVBoxLayout(0);
+      //w->setLayout(layout);
+      
+      Vst_paths_widget *vst_widget = new Vst_paths_widget(vst_tab_widget);
+      vst_widget->buttonBox->hide();
+      
+      tabWidget->addTab(vst_widget, "VST");
+    }
     
-    QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
-    eraseEstimatedVBlankInterval->setText(vblankbuttontext);
   }
 
 public slots:
@@ -136,6 +164,24 @@ public slots:
   void on_mma32_toggled(bool val){
     if (val)
       GL_set_multisample(32);
+  }
+
+  void on_numCPUs_valueChanged(int val){
+    printf("cpus: %d\n",val);
+    MULTICORE_set_num_threads(val);
+    
+    //set_editor_focus();
+    //numCPUs->setFocusPolicy(Qt::NoFocus);
+    //on_numCPUs_editingFinished();
+  }
+  void on_numCPUs_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      numCPUs->clearFocus();
+    }GL_unlock();
+
+    //numCPUs->setFocusPolicy(Qt::NoFocus);
   }
 };
 }

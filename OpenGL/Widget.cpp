@@ -894,7 +894,7 @@ QWidget *GL_create_widget(QWidget *parent){
         int result = GFX_Message(&v,
                                  "AMD Catalyst OpenGL driver detected."
                                  "<p>"
-                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
+                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
                                  "<p>"
                                  "In addition, \"Tear Free Desktop\" should be turned on in the catalyst configuration program (run the \"amdcccle\" program)."
                                  "<p>"
@@ -914,7 +914,7 @@ QWidget *GL_create_widget(QWidget *parent){
         int result = GFX_Message(&v,
                                  "Gallium AMD OpenGL driver detected."
                                  "<p>"
-                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
+                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
                                  "<p>"
                                  "If you notice choppy graphics, it might help to install the binary driver instead. However for newer versions of MESA, the performance of this driver seems just as good. It could be worth trying though, but the binary driver might be less stable.</A>."
                                  );
@@ -969,7 +969,7 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "of the driver, which can be found here: <a href=\"https://01.org/linuxgraphics/\">https://01.org/linuxgraphics/</a>"
                                  "<p>"
                                  "<p>"
-                                 "<li>In addition, vsync in Radium should be turned off. You do this by going to the \"Edit\" menu and select \"OpenGL Preferences\"."
+                                 "<li>In addition, vsync in Radium should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
                                  "</ol>"
                                  );
 
