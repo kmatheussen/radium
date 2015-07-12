@@ -29,6 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 #include "../audio/MultiCore_proc.h"
 
+extern "C" {
+  struct PyObject;
+#include "../api/radium_proc.h"
+}
+
 #include "../Qt/Qt_MyQSpinBox.h"
 #include <FocusSniffers.h>
 #include "helpers.h"
@@ -103,6 +108,12 @@ class Preferences : public QDialog, public Ui::Preferences {
       numCPUs->setValue(MULTICORE_get_num_threads());
     }
 
+    // Edit
+    {
+      scrollplay_onoff->setChecked(doScrollPlay());
+      multiplyscrollbutton->setChecked(doScrollEditLines());
+    }
+
     // VST
     {
       QWidget *vst_tab_widget = tabWidget->widget(2);
@@ -166,6 +177,8 @@ public slots:
       GL_set_multisample(32);
   }
 
+  // cpu
+
   void on_numCPUs_valueChanged(int val){
     printf("cpus: %d\n",val);
     MULTICORE_set_num_threads(val);
@@ -182,6 +195,15 @@ public slots:
     }GL_unlock();
 
     //numCPUs->setFocusPolicy(Qt::NoFocus);
+  }
+
+  // edit
+
+  void on_scrollplay_onoff_toggled(bool val){
+    setScrollPlay(val);
+  }
+  void on_multiplyscrollbutton_toggled(bool val){
+    setScrollEditLines(val);
   }
 };
 }

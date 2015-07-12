@@ -313,10 +313,6 @@ public slots:
   void on_click_onoff_toggled(bool val){
     enableMetronome(val);
   }
-
-  void on_scrollplay_onoff_toggled(bool val){
-    enableScrollplay(val);
-  }
 };
 
 extern "C"{

@@ -1276,7 +1276,6 @@ struct Root{
 
 	volatile bool editonoff;
         volatile bool clickonoff;
-        volatile bool scrollplayonoff;
 };
 
 extern struct Root *root;

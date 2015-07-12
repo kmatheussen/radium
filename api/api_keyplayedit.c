@@ -110,10 +110,6 @@ void switchEditOnOff(void){
         GFX_SetStatusBar(window,temp);
 }
 
-void switchScrollPlayOnOff(void){
-	root->scrollplayonoff=root->scrollplayonoff?false:true;
-}
-
 void switchSoundScrollOnOff(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
