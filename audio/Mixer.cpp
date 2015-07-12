@@ -572,8 +572,8 @@ struct Mixer{
     QTime pause_time;
     pause_time.start();
     
-    QTime time;
-    time.start();
+    QTime excessive_time;
+    excessive_time.start();
     
     bool process_plugins = true;
 
@@ -600,14 +600,26 @@ struct Mixer{
       if (process_plugins==false) {
         if (pause_time.elapsed() > 5000)
           process_plugins = true;
-      } else if (time.elapsed() > 2000) { // 2 seconds
-        RT_message("Error!\n"
-                   "\n"
-                   "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer. "
-                   );
-        printf("stop processing plugins\n");
-        process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
+      } else if (_is_freewheeling==false && excessive_time.elapsed() > 2000) { // 2 seconds
+        if (pc->isplaying) {
+          RT_request_to_stop_playing();
+          RT_message("Error!\n"
+                     "\n"
+                     "Audio using too much CPU. Stopping player to avoid locking up the computer.%s",
+                     g_running_multicore ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+                     );
+        } else {
+          RT_message("Error!\n"
+                     "\n"
+                     "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer.%s",
+                     g_running_multicore ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+                     );
+          printf("stop processing plugins\n");
+          process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
+        }
+        
         pause_time.restart();
+        excessive_time.restart();
       }
             
 
@@ -659,7 +671,7 @@ struct Mixer{
       g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
 
       if (g_cpu_usage < 98)
-        time.restart();
+        excessive_time.restart();
           
     } // end while
 

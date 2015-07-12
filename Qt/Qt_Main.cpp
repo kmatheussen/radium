@@ -63,8 +63,9 @@ extern "C" {
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
-#include "../common/OS_settings_proc.h"
 
+#include "../common/OS_settings_proc.h"
+#include "../common/OS_Player_proc.h"
 #include "../common/OS_system_proc.h"
 
 #include "../crashreporter/crashreporter_proc.h"
@@ -328,6 +329,7 @@ enum RT_MESSAGE_STATUS {
 volatile RT_MESSAGE_STATUS rt_message_status = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
+volatile bool request_to_stop_playing = false;
 
 class CalledPeriodically : public QTimer {
 
@@ -412,7 +414,12 @@ protected:
     // Check if player has shut down
     if (PLAYER_is_running()==false)
       PlayStop();
-        
+
+    if(request_to_stop_playing == true) {
+      PlayStop();
+      request_to_stop_playing=false;
+    }
+    
     if(pc->isplaying)
       P2MUpdateSongPosCallBack();
 
@@ -446,6 +453,9 @@ void RT_message(const char *fmt,...){
   rt_message_status = RT_MESSAGE_READY_FOR_SHOWING;
 }
 
+void RT_request_to_stop_playing(void){
+  request_to_stop_playing = true;
+}
 
 #endif
 
