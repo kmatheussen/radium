@@ -5184,6 +5184,9 @@ Scrolling too often can be tiresome for the eyes.</string>
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows the &lt;span style=&quot; font-weight:600;&quot;&gt;highest&lt;/span&gt; amount of CPU measured for processing an audio block during the last second.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>CPU:   55.2%</string>
         </property>

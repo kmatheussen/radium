@@ -56,6 +56,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       usage.sprintf("CPU: %.1f",g_cpu_usage);
       //printf("Usage: %f\n",g_cpu_usage);
       bottom_bar_widget->cpu_label->setText(usage);
+      g_cpu_usage = 0.0;
     }
   };
 

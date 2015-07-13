@@ -453,14 +453,15 @@ struct Mixer{
       if(!strcmp(plugin->type->name,g_click_name))
         is_click_patch = true;
 
-    int pos;
-    for(pos=0 ; pos<_num_sound_producers ; pos++)
-      if (_sound_producers[pos]==sound_producer)
-        break;
-    R_ASSERT(pos < _num_sound_producers);
     
     PLAYER_lock();{
       {
+        int pos;
+        for(pos=0 ; pos<_num_sound_producers ; pos++)
+          if (_sound_producers[pos]==sound_producer)
+            break;
+        R_ASSERT(pos < _num_sound_producers);
+        
         if (_num_sound_producers==1){
           R_ASSERT(pos==0);
           _sound_producers[pos] = NULL;
@@ -603,6 +604,7 @@ struct Mixer{
       
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
+      jack_time_t start_time = jack_get_time();
       
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
@@ -642,8 +644,6 @@ struct Mixer{
 
       // Process sound.
 
-      jack_time_t start_time = jack_get_time();
-
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
 
@@ -680,7 +680,10 @@ struct Mixer{
       jack_cycle_signal(_rjack_client, 0);
 
       jack_time_t end_time = jack_get_time();
-      g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
+      float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
+      if (new_cpu_usage > g_cpu_usage)
+        g_cpu_usage = new_cpu_usage;
+      //g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
 
       if (g_cpu_usage < 98)
         excessive_time.restart();
