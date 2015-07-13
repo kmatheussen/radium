@@ -193,18 +193,17 @@ static bool sp_is_bus_dependant(SoundProducer *sp){
 }
 #endif
 
-static void run_soundproducers(SoundProducer *all_sp, int64_t time, int num_frames, bool process_plugins, BusDescendantType bus_descendant_type){
+static void run_soundproducers(SoundProducer **all_sp, int num_sp, int64_t time, int num_frames, bool process_plugins, BusDescendantType bus_descendant_type){
 
   bool all_are_scheduled = false;
 
   while(all_are_scheduled==false) {
     
     all_are_scheduled = true; // Start optimistically
-  
-    SoundProducer *sp = all_sp;
+
+    for (int i = 0 ; i<num_sp ; i++){
+      SoundProducer *sp = all_sp[i];
     
-    while(sp != NULL) {
-        
       if (SP_get_running_state(sp)==HASNT_RUN_YET) {
 
         SoundPlugin *plugin = SP_get_plugin(sp);
@@ -219,8 +218,6 @@ static void run_soundproducers(SoundProducer *all_sp, int64_t time, int num_fram
             schedule(ready_to_process, time, num_frames, process_plugins);
         }
       }
-      
-      sp = SP_next(sp);
     }
   
     if (all_are_scheduled==false) {
@@ -240,29 +237,23 @@ static void run_soundproducers(SoundProducer *all_sp, int64_t time, int num_fram
 
 }
 
-void MULTICORE_run_all(SoundProducer *all_sp, int64_t time, int num_frames, bool process_plugins){
+void MULTICORE_run_all(SoundProducer **all_sp, int num_sp, int64_t time, int num_frames, bool process_plugins){
 
   R_ASSERT(g_running_multicore);
 
   
   // 1. Set running state for all soundproducers
 
-  {
-    SoundProducer *sp = all_sp;
-
-    while(sp != NULL) {
-      SP_set_running_state(sp, HASNT_RUN_YET);
-      sp = SP_next(sp);
-    }
-  }
+  for (int i=0 ; i<num_sp ; i++)
+    SP_set_running_state(all_sp[i], HASNT_RUN_YET);
 
 
   // 2. run all soundproducers.
 
-  run_soundproducers(all_sp, time, num_frames, process_plugins, IS_NOT_A_BUS_DESCENDANT);
-  run_soundproducers(all_sp, time, num_frames, process_plugins, IS_BUS_DESCENDANT);
+  run_soundproducers(all_sp, num_sp, time, num_frames, process_plugins, IS_NOT_A_BUS_DESCENDANT);
+  run_soundproducers(all_sp, num_sp, time, num_frames, process_plugins, IS_BUS_DESCENDANT);
 
-  #if 0
+#if 0
     // Wait for all runners to finish.
   {
     QMutexLocker locker(&lock);

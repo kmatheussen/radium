@@ -347,7 +347,9 @@ struct Mixer{
   SoundProducer *_bus1;
   SoundProducer *_bus2;
 
-  DoublyLinkedList _sound_producers;
+  int _num_sound_producers;
+  SoundProducer **_sound_producers;
+  
   jack_client_t *_rjack_client;
   int64_t _last_time;
   int64_t _time;
@@ -360,6 +362,8 @@ struct Mixer{
   Mixer()
     : _bus1(NULL)
     , _bus2(NULL)
+    , _num_sound_producers(0)
+    , _sound_producers(NULL)
     , _rjack_client(NULL)
     , _last_time(0)
     , _time(0)
@@ -368,25 +372,17 @@ struct Mixer{
   }
 
   void RT_set_bus_descendant_type_for_all_plugins(){
-
+    
     // First set all descendant types to MAYBE.
-    {
-      DoublyLinkedList *sound_producer = _sound_producers.next;
-      while(sound_producer!=NULL){
-        struct SoundPlugin *plugin = SP_get_plugin((SoundProducer*)sound_producer);
-        plugin->bus_descendant_type = MAYBE_A_BUS_DESCENDANT;
-        sound_producer = sound_producer->next;
-      }    
+    for(int i=0 ; i<_num_sound_producers ; i++){
+      struct SoundPlugin *plugin = SP_get_plugin(_sound_producers[i]);
+      plugin->bus_descendant_type = MAYBE_A_BUS_DESCENDANT;      
     }
-
+    
     // Then set one by one.
-    {
-      DoublyLinkedList *sound_producer = _sound_producers.next;
-      while(sound_producer!=NULL){
-        SP_RT_set_bus_descendant_type_for_plugin((SoundProducer*)sound_producer);
-        sound_producer = sound_producer->next;
-      } 
-    }
+    for(int i=0 ; i<_num_sound_producers ; i++)
+      SP_RT_set_bus_descendant_type_for_plugin(_sound_producers[i]);
+
   }
 
   void add_SoundProducer(SoundProducer *sound_producer){
@@ -440,8 +436,10 @@ struct Mixer{
         
         R_ASSERT(i<g_num_allocated_click_plugins);
       }
-      
-      _sound_producers.add((DoublyLinkedList*)sound_producer);
+
+      _num_sound_producers++;
+      _sound_producers = (SoundProducer**)realloc(_sound_producers, sizeof(SoundProducer*) * _num_sound_producers);
+      _sound_producers[_num_sound_producers-1] = sound_producer;
       
     }PLAYER_unlock();
   }
@@ -454,10 +452,24 @@ struct Mixer{
     if (!strcmp(plugin->type->type_name,"Sample Player"))
       if(!strcmp(plugin->type->name,g_click_name))
         is_click_patch = true;
+
+    int pos;
+    for(pos=0 ; pos<_num_sound_producers ; pos++)
+      if (_sound_producers[pos]==sound_producer)
+        break;
+    R_ASSERT(pos < _num_sound_producers);
     
     PLAYER_lock();{
-      _sound_producers.remove((DoublyLinkedList*)sound_producer);
-
+      {
+        if (_num_sound_producers==1){
+          R_ASSERT(pos==0);
+          _sound_producers[pos] = NULL;
+        } else {
+          _sound_producers[pos] = _sound_producers[_num_sound_producers-1];
+        }
+        _num_sound_producers--;
+      }
+      
       if (is_click_patch) {
         int i;
         for(i=0; i<g_num_allocated_click_plugins ; i++){
@@ -636,28 +648,27 @@ struct Mixer{
       while(jackblock_delta_time < num_frames){
 
         PlayerTask(RADIUM_BLOCKSIZE);
-
+        
         RT_LPB_set_beat_position(RADIUM_BLOCKSIZE);
 
         RT_MIDI_handle_play_buffer();
-
+        
         if (g_running_multicore) {
 
-          MULTICORE_run_all((SoundProducer*)MIXER_get_all_SoundProducers(), _time, RADIUM_BLOCKSIZE, process_plugins);
+          MULTICORE_run_all(_sound_producers, _num_sound_producers, _time, RADIUM_BLOCKSIZE, process_plugins);
           
         } else {
-
+          
           if (_bus1!=NULL)
             SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, process_plugins);
-
+          
           if (_bus2!=NULL)
             SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, process_plugins);
 
-          DoublyLinkedList *sound_producer = _sound_producers.next;
-          while(sound_producer!=NULL){
-            SP_RT_process((SoundProducer*)sound_producer, _time, RADIUM_BLOCKSIZE, process_plugins ); // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
-            sound_producer = sound_producer->next;
-          }
+          for(int i=0 ; i<_num_sound_producers ; i++)
+            // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
+            // (Unless running MultiCore, then the MultiCore system takes care of running in the right order)
+            SP_RT_process(_sound_producers[i], _time, RADIUM_BLOCKSIZE, process_plugins );
           
         }
 
@@ -728,11 +739,9 @@ struct Mixer{
       if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
         RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
 
-      DoublyLinkedList *sound_producer = mixer->_sound_producers.next;
-      while(sound_producer!=NULL){
-        SP_set_buffer_size((SoundProducer*)sound_producer, mixer->_buffer_size);
-        sound_producer = sound_producer->next;
-      }
+      for(int i=0 ; i<mixer->_num_sound_producers ; i++)
+        SP_set_buffer_size(mixer->_sound_producers[i], mixer->_buffer_size);
+      
     }unlock_player();
 
     return 0;
@@ -824,8 +833,9 @@ void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
   g_mixer->remove_SoundProducer(sound_producer);
 }
 
-DoublyLinkedList *MIXER_get_all_SoundProducers(void){
-  return g_mixer->_sound_producers.next;
+SoundProducer **MIXER_get_all_SoundProducers(int &num_sound_producers){
+  num_sound_producers = g_mixer->_num_sound_producers;
+  return g_mixer->_sound_producers;
 }
 
 struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){

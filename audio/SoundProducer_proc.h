@@ -78,7 +78,6 @@ void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
 // Functions below used in multicore processing
 bool SP_can_start_processing(SoundProducer *sp);
 SoundProducer *SP_get_ready_to_process(SoundProducer *sp);
-SoundProducer *SP_next(SoundProducer *sp);
 SoundProducerRunningState SP_get_running_state(SoundProducer *sp);
 void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_state);
 

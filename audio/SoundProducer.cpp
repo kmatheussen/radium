@@ -285,7 +285,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 }
 
 
-struct SoundProducer : DoublyLinkedList{
+struct SoundProducer {
   SoundPlugin *_plugin;
 
   int _num_inputs;
@@ -1048,9 +1048,11 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
   memset(outputs[0],0,sizeof(float)*num_frames);
   memset(outputs[1],0,sizeof(float)*num_frames);
 
-  DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
-  while(sound_producer_list!=NULL){
-    SoundProducer         *sp     = (SoundProducer*)sound_producer_list;
+  int num_sp;
+  SoundProducer **all_sp = MIXER_get_all_SoundProducers(num_sp);
+  
+  for(int i=0 ; i<num_sp ; i++){
+    SoundProducer         *sp     = all_sp[i];
     SoundPlugin           *plugin = SP_get_plugin(sp);
     const SoundPluginType *type   = plugin->type;
     
@@ -1069,8 +1071,6 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
         }
       }
     }
-    
-    sound_producer_list = sound_producer_list->next;  
   }
 }
 
@@ -1087,15 +1087,13 @@ int SP_get_bus_num(SoundProducer *sp){
 }
 
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
-  DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
-
-  while(sound_producer_list!=NULL){
-    SoundProducer *sp = (SoundProducer*)sound_producer_list;
-    if(SP_get_plugin(sp)==plugin)
-      return sp;
-
-    sound_producer_list = sound_producer_list->next;
-  }
+  int num_sp;
+  SoundProducer **all_sp = MIXER_get_all_SoundProducers(num_sp);
+  
+  for(int i=0 ; i<num_sp ; i++)
+    if(SP_get_plugin(all_sp[i])==plugin)
+      return all_sp[i];
+  
   return NULL;
 }
 
@@ -1135,10 +1133,6 @@ bool SP_can_start_processing(SoundProducer *sp){
 // only used in multicore processing. Will return an sp which is ready to process, or NULL.
 SoundProducer *SP_get_ready_to_process(SoundProducer *sp){
   return sp->RT_get_ready_to_process();
-}
-
-SoundProducer *SP_next(SoundProducer *sp){
-  return static_cast<SoundProducer*>(sp->next);
 }
 
 SoundProducerRunningState SP_get_running_state(SoundProducer *sp){
