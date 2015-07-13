@@ -673,6 +673,18 @@ public:
     return links;
   }
 
+  std::vector<SoundProducerLink *> get_all_elinks(void){
+    std::vector<SoundProducerLink *> elinks;
+
+    SoundProducerLink *elink = (SoundProducerLink*)_input_eproducers.next;
+    while(elink!=NULL){
+      elinks.push_back(elink);
+      elink=(SoundProducerLink*)elink->next;
+    }
+
+    return elinks;
+  }
+
   // fade in 'input'
   void RT_crossfade_in2(float *input, float *output, int fade_pos, int num_frames){
     RT_fade_in2(input, fade_pos, num_frames);
@@ -995,11 +1007,15 @@ void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source,
 void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
 
   std::vector<SoundProducerLink *> links_to_delete;
+  std::vector<SoundProducerLink *> elinks_to_delete;
   
   // Find links
   for(unsigned int i=0;i<soundproducers.size();i++){
     std::vector<SoundProducerLink *> links_to_delete_here = soundproducers.at(i)->get_all_links();
     STD_VECTOR_APPEND(links_to_delete, links_to_delete_here);
+
+    std::vector<SoundProducerLink *> elinks_to_delete_here = soundproducers.at(i)->get_all_elinks();
+    STD_VECTOR_APPEND(elinks_to_delete, elinks_to_delete_here);
   }
 
   // Wait until all links are finished fading in.
@@ -1010,7 +1026,7 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
         usleep(3000);
       }
     }
-  
+
   // Change state
   PLAYER_lock();{
     for(unsigned int i=0;i<links_to_delete.size();i++){
@@ -1029,13 +1045,19 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
         SoundProducerLink *link = links_to_delete.at(i);
         link->target->_input_producers[link->target_ch].remove(link);
       }
+      for(unsigned int i=0;i<elinks_to_delete.size();i++){
+        SoundProducerLink *elink = elinks_to_delete.at(i);
+        elink->target->_input_eproducers.remove(elink);
+      }
     }PLAYER_unlock();
     
   }
     // Delete
   for(unsigned int i=0;i<links_to_delete.size();i++)
     delete links_to_delete.at(i);
-  }
+  for(unsigned int i=0;i<elinks_to_delete.size();i++)
+    delete elinks_to_delete.at(i);
+}
 
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
   double start_time = monotonic_seconds();

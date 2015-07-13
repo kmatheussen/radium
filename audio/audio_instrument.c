@@ -150,6 +150,7 @@ void AUDIO_InitPatch(struct Patch *patch, void *patchdata) {
   patch->closePatch     = AUDIO_closePatch;
   patch->changeTrackPan = AUDIO_changeTrackPan;
 
+  //R_ASSERT(patchdata!=NULL);
   patch->patchdata = patchdata;
 
   patch->instrument=get_audio_instrument();    
