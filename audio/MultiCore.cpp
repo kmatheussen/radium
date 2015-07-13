@@ -86,9 +86,9 @@ private:
 
       if(must_exit)
         break;
-      
-      SP_RT_process(sp, time, num_frames, process_plugins);
 
+      SP_RT_process(sp, time, num_frames, process_plugins);
+      
       SP_set_running_state(sp, FINISHED_RUNNING);
       
       {

@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "pa_memorybarrier.h"
 
+#include "monotonic_timer.c"
+
+
 #include "../common/nsmtracker.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_visual_input.h"
@@ -109,7 +112,7 @@ struct SoundProducerLink : public DoublyLinkedList{
   // used both by audio links and event links
   SoundProducer *source;
   SoundProducer *target;
-  
+
   // only used by audio links
   int source_ch;
   int target_ch;
@@ -294,6 +297,8 @@ struct SoundProducer {
   
   int64_t _last_time;
 
+  double running_time;
+
   bool _is_bus;
   int _bus_num;
   
@@ -314,6 +319,7 @@ struct SoundProducer {
     , _num_inputs(plugin->type->num_inputs)
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
+    , running_time(0.0)
     , _is_bus(!strcmp(plugin->type->type_name,"Bus"))
     , _bus_num(-1)
   {
@@ -1032,7 +1038,11 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
   }
 
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
-  producer->RT_process(time, num_frames, process_plugins);
+  double start_time = monotonic_seconds();
+  {
+    producer->RT_process(time, num_frames, process_plugins);
+  }
+  producer->running_time = monotonic_seconds() - start_time;
 }
 
 #if 0
@@ -1143,3 +1153,6 @@ void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_s
   sp->running_state = running_state;
 }
 
+double SP_get_running_time(const SoundProducer *sp){
+  return sp->running_time;
+}

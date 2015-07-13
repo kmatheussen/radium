@@ -80,6 +80,7 @@ bool SP_can_start_processing(SoundProducer *sp);
 SoundProducer *SP_get_ready_to_process(SoundProducer *sp);
 SoundProducerRunningState SP_get_running_state(SoundProducer *sp);
 void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_state);
+double SP_get_running_time(const SoundProducer *sp);
 
 #endif // __cplusplus
 

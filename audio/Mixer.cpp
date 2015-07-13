@@ -566,6 +566,30 @@ struct Mixer{
     return true;
   }
 
+  static int compare_sound_producers(const void *vsp1, const void *vsp2){
+    SoundProducer **sp1 = (SoundProducer**)(vsp1);
+    SoundProducer **sp2 = (SoundProducer**)(vsp2);
+    double dur1 = SP_get_running_time(*sp1);
+    double dur2 = SP_get_running_time(*sp2);
+
+    if (dur2<dur1)
+      return -1;
+    else if(dur2>dur1)
+      return 1;
+    else
+      return 0;
+  }
+  
+  // Start the most cpu intensive soundproducers first
+  void RT_sort_sound_producers_by_running_time(void){
+    qsort(_sound_producers, _num_sound_producers, sizeof(SoundProducer*), compare_sound_producers);
+#if 0    
+    printf("\n\n\n****************** START\n");
+    for(int i=0;i<_num_sound_producers;i++){
+      printf("%.4f\n", 1000.0*SP_get_running_time(_sound_producers[i]));
+    }
+#endif
+  }
 
   // Starting to get very chaotic...
 
@@ -655,6 +679,7 @@ struct Mixer{
         
         if (g_running_multicore) {
 
+          RT_sort_sound_producers_by_running_time();
           MULTICORE_run_all(_sound_producers, _num_sound_producers, _time, RADIUM_BLOCKSIZE, process_plugins);
           
         } else {
@@ -685,7 +710,7 @@ struct Mixer{
         g_cpu_usage = new_cpu_usage;
       //g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
 
-      if (g_cpu_usage < 98)
+      if (new_cpu_usage < 98)
         excessive_time.restart();
           
     } // end while
