@@ -79,7 +79,6 @@ struct Root *LoadRoot(void){
 	};
 	struct Root *ret=DC_alloc(sizeof(struct Root));
         ret->quantitize_options = root->quantitize_options;
-	ret->scrollplayonoff=true;
         ret->min_standardvel=MAX_VELOCITY*40/100;
         ret->editonoff=true;
         ret->grid_numerator=1;

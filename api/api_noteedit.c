@@ -173,6 +173,30 @@ void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenu
 }
 
 
+static bool g_scrollplay = false;
+
+bool doScrollPlay(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_scrollplay = SETTINGS_read_bool("scroll_play", true);
+    has_inited = true;
+  }
+
+  return g_scrollplay;
+}
+
+void setScrollPlay(bool doit){
+  g_scrollplay = doit;
+  SETTINGS_write_bool("scroll_play", doit);
+}
+                          
+void switchScrollPlayOnOff(void){
+  setScrollPlay(!doScrollPlay());
+}
+
+
+
 static bool g_do_scroll_edit_lines = false;
 
 bool doScrollEditLines(void){

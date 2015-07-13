@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
    implemented later).
 */
 
+#include "includepython.h"
 
 #include "nsmtracker.h"
 #include "playerclass.h"
@@ -30,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "vector_proc.h"
 #include "realline_calc_proc.h"
+
+#include "../api/radium_proc.h"
 
 #include "scroll_play_proc.h"
 
@@ -159,7 +162,7 @@ void Scroll_play_down(
                       int start_realline,
                       int end_realline
 ){
-	if(pc->isplaying || root->scrollplayonoff==false) return;
+        if(pc->isplaying || doScrollPlay()==false) return;
 
 	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
 	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
@@ -173,7 +176,7 @@ void Scroll_play_up(
                     int start_realline,
                     int end_realline
 ){
-	if(pc->isplaying || root->scrollplayonoff==false) return;
+       if(pc->isplaying || doScrollPlay()==false) return;
 
 	start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
 	end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);

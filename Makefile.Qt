@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 3.1.4
+VERSION = 3.2.0
 
 #----------------USER SETTINGS-------------------------------
 
@@ -1121,7 +1121,7 @@ $(P)Qt_comment_dialog.h: $(BUILD_DEPENDENCIES) $(P)qt4_comment_dialog.ui $(P)Qt_
 	cd $(P) && $(UIC) qt4_comment_dialog.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_comment_dialog.h
 	cd $(P) && $(MOC) Qt_comment_dialog_callbacks.cpp >mQt_comment_dialog_callbacks.cpp
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h
+Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h
 	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
 
 $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp
