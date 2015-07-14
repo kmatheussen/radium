@@ -935,7 +935,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
   }else{
 
-    if (mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
+    if (event->button()==Qt::RightButton && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
       event->accept();
       return;
     }
