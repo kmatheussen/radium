@@ -978,7 +978,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QColor patchcolor(custom_colors[colornum]);
 
     if(is_selected){
-      QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.05);
+      QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.45);      
       //painter->fillRect(x1-1,y1+1,x2-x1+2,y2-y1-2, g_editor->colors[9].light(86));
       painter->fillRect(x1-1,y1+1,button_x2-x1+2,y2-y1-2, c);
     }else{
