@@ -875,7 +875,9 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
       return;
 
   if(event->button()==Qt::RightButton){
-    if(mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) // create
+    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    
+    if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) // create
       return;
 
     if(mousepress_select_chip(this,event,item,mouse_x,mouse_y)==true) // select
@@ -951,7 +953,9 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
   }else{
 
-    if (event->button()==Qt::RightButton && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
+    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    
+    if (event->button()==Qt::RightButton && ctrl_pressed==false && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
       event->accept();
       return;
     }
