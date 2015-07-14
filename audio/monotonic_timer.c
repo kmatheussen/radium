@@ -10,8 +10,6 @@
 #include <stdint.h>
 
 
-static inline double monotonic_rdtsc_seconds();
-
 
 // CCALL/INITIALIZER macros picked up from http://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
 #ifdef _MSC_VER
@@ -69,6 +67,7 @@ static inline double monotonic_rdtsc_seconds();
   #include <windows.h>
   #include <stdio.h>
   #define NEED_RDTSC 1
+  static inline double monotonic_rdtsc_seconds();
 
   static double PCFreq = 0.0;
   static int has_qpc = 0;
@@ -90,6 +89,7 @@ static inline double monotonic_rdtsc_seconds();
       fprintf(stderr, "Warning: OS doesnt support the QueryPerformanceCounter function. Using tsc instead for timing.\n");
     }    
   }
+
 
   double monotonic_seconds() {
     if (has_qpc) {
@@ -118,6 +118,7 @@ static inline double monotonic_rdtsc_seconds();
   // Note that rdtscp will only be available on new processors.
 
   #define NEED_RDTSC 1
+  static inline double monotonic_rdtsc_seconds();
   double monotonic_seconds() {
     return monotonic_rdtsc_seconds();
   }
