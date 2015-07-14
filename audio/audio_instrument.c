@@ -150,6 +150,7 @@ void AUDIO_InitPatch(struct Patch *patch, void *patchdata) {
   patch->closePatch     = AUDIO_closePatch;
   patch->changeTrackPan = AUDIO_changeTrackPan;
 
+  //R_ASSERT(patchdata!=NULL);
   patch->patchdata = patchdata;
 
   patch->instrument=get_audio_instrument();    
@@ -369,6 +370,11 @@ static void AUDIO_StopPlaying(struct Instruments *instrument){
 }
 
 static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch){
+  if(patch->patchdata==NULL){
+    RError("plugin==NULL for %s\n",patch->name);
+    return;
+  }
+
   GFX_PP_Update(patch);
 }
 

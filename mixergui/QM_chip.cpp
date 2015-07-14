@@ -1315,6 +1315,7 @@ void CHIP_create_from_state(hash_t *state){
   double y = HASH_get_float(state, "y");
 
   struct SoundPlugin *plugin = PLUGIN_create_from_state(HASH_get_hash(state, "plugin"));
+  R_ASSERT(plugin != NULL);
   patch->patchdata = plugin;
 
   if(plugin!=NULL){
