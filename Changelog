@@ -1,4 +1,26 @@
 
+Most important changes 3.2.0 -> 3.2.1
+* Another default color scheme. A little bit darker and white text.
+* Increase default font size from 10 to 11 to get less flickering when using a white-on-black color scheme
+* Make color schemes with white text on black background look better.
+* Shut down jack at the right moment. Avoids crash at exit.
+* Fix some mixer UI/GUI issues.
+* Changed various button handlers from "pressed" callbacks into "clicked" callbacks.
+  Fixes buttons stuck in pressed state.
+* Removed the "scrollplay" and "window update" options from the menues.
+* Moved the MIDI preferences stuff from the MIDI menu and into the preferences dialog
+* Band-aid to avoid crash if song is saved with a patch that has no corresponding chip.
+* Tooltip for the quantization value in the MIDI post-recording dialog.
+* Also delete elinks when deleting all connections, not just the links.
+  Fixes crash if redoing an undoing of a deletion of a sound object.
+* Improve multi core by running most cpu intensive sound objects first
+* CPU: Show the maximum CPU usage which was measured during the last second,
+  not just the current CPU usage.
+* Include the custom qjackctl in the 32 bit windows binaries, not just
+  the 64 bit binaries.
+
+
+
 Most important changes 3.1.4 -> 3.2.0
 * Include a custom version of qjackctl in the Windows version. (i.e the "Jack Command" program)
   Hopefully there will be less struggle to start jack now since this version has better default
