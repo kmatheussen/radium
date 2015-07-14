@@ -643,7 +643,6 @@ void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, i
   //printf("mixcolor called\n");
 }
 
-
 void OS_GFX_SetClipRect(
                         struct Tracker_Windows *tvisual,
                         int x,int y,

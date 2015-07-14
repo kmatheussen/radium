@@ -83,6 +83,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_instruments_proc.h"
 //#include "../Qt/Qt_MyQCheckBox.h"
 #include "../Qt/Qt_mix_colors.h"
+#include "../Qt/Qt_colors_proc.h"
 
 #include "../common/patch_proc.h"
 
@@ -901,7 +902,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
-  QColor border_color(g_editor->colors[1]);
+  QColor border_color = get_qcolor(NULL, BLACK_COLOR_NUM);
   if(is_current_patch==false);
     border_color.setAlpha(160);
 
@@ -913,13 +914,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_coordinates(x1,y1,x2,y2);
 
-    if(is_current_patch==true){
-      QColor c(g_editor->colors[2]);
-      c.setAlpha(30);
-      painter->setBrush(QBrush(c,Qt::SolidPattern));
-    }
-
+    //    if(is_current_patch==true){
+      //}
+    painter->setPen(QPen(border_color, 2));
+    
     painter->drawRect(x1,y1,x2-x1,y2-y1);
+    //painter->fillRect(x1,y1,x2-x1,y2-y1);
   }
 
   int button_x2;
@@ -930,6 +930,19 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     button_x2 = x2;
 
+    {
+      QColor c = get_qcolor(NULL, BLACK_COLOR_NUM);
+      c.setAlpha(10);
+      painter->setBrush(QBrush(c,Qt::SolidPattern));
+      painter->fillRect(x1,y1,x2-x1,y2-y1, c);
+    }
+
+    if(0){
+      QColor c = get_qcolor(NULL, WHITE_COLOR_NUM);
+      c.setAlpha(60);
+      painter->setBrush(QBrush(c,Qt::SolidPattern));
+    }
+    
     // input slider
     if(plugin->type->num_outputs==0 && plugin->type->num_inputs>0){
       painter->translate(x1,y1);
@@ -992,7 +1005,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     float width = x2-x1;
 
     {
-      QColor c(g_editor->colors[1]);
+      QColor c = get_qcolor(NULL, BLACK_COLOR_NUM);
       if(is_current_patch==false)
         c.setAlpha(160);
 

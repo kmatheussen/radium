@@ -241,7 +241,9 @@ public slots:
   
   void on_system_volume_slider_valueChanged(int val){
     g_system_audio_instrument_widget->input_volume_slider->setValue(val);
-    
+    printf("val: %d\n",val);
+    GFX_SetBrightness(root->song->tracker_windows, scale(val,0,10000,0,1));
+                      
     SoundPlugin *plugin = (SoundPlugin*)g_system_out_patch->patchdata;
     if (plugin != NULL) { // temp fix
       const SoundPluginType *type = plugin->type;

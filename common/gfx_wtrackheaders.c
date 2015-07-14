@@ -54,9 +54,9 @@ void DrawWTrackNames(
   bool is_current_track = get_current_instruments_gui_patch()==patch;
   
   if(is_current_track)
-    GFX_SetMixColor(window, 2, colornum, 150);
+    GFX_SetMixColor(window, WHITE_COLOR_NUM, colornum, 150);
   else
-    GFX_SetMixColor(window, 2, colornum, 0);
+    GFX_SetMixColor(window, WHITE_COLOR_NUM, colornum, 0);
     
   GFX_T_FilledBox(window, 7,
                   x1,y1,x2,y2,

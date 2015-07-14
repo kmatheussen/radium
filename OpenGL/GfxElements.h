@@ -21,6 +21,9 @@ static inline GE_Rgb GE_rgb(unsigned char r, unsigned char g, unsigned char b){
   GE_Rgb ret = {r,g,b,255};
   return ret;
 }
+#define Black_rgb() GE_rgb(0,0,0)
+#define White_rgb() GE_rgb(255,255,255)
+
 static inline GE_Rgb GE_rgba(unsigned char r, unsigned char g, unsigned char b, unsigned char a){
   GE_Rgb ret = {r,g,b,a};
   return ret;
@@ -92,7 +95,6 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
 GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z);
 
-
 #ifdef __cplusplus
 GE_Context *GE_color_z(const QColor &color, int z);
 static inline GE_Context *GE_color(const QColor &color) {
@@ -132,6 +134,11 @@ static inline GE_Context *GE_textcolor(int colornum) {
 static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b) {
   return GE_rgb_color_z(r,g,b, Z_ZERO);
 }
+
+#define Black_color() GE_rgb_color(0,0,0)
+#define White_coolor() GE_rgb_color(0,0,0)
+
+
 static inline GE_Context *GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
   return GE_rgba_color_z(r,g,b,a, Z_ZERO);
 }

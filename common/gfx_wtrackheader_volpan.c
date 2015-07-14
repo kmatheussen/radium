@@ -37,10 +37,10 @@ static void DrawOnOffBox(
 	/* On/off box stuff. */
 
   // border
-  GFX_SetMixColor(window,1,0,300);
+  GFX_SetMixColor(window,BLACK_COLOR_NUM,0,300);
 
   GFX_T_Box(
-            window,1,
+            window,BLACK_COLOR_NUM,
             box.x1,box.y1,
             box.x2,box.y2,
             PAINT_BUFFER

@@ -136,11 +136,23 @@ int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
 }
 
 QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
+  if (tvisual==NULL)
+    tvisual = root->song->tracker_windows;
+    
+  static QColor black(1,1,1);//"black");
+  static QColor white(254,254,254);//"black");
+  
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   if(colornum < 16)
     return editor->colors[colornum];
 
+  if (colornum==BLACK_COLOR_NUM)
+    return black;
+  
+  if (colornum==WHITE_COLOR_NUM)
+    return white;
+  
   if(colornum >= first_custom_colornum)
     return custom_colors[colornum];
 
@@ -229,7 +241,9 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
   // Foreground, text, etc. (everything blackish)
   {
     QColor c(my_widget==NULL ? QColor(SETTINGS_read_string("color1","black")) : my_widget->colors[1]);
+    //QColor black(QColor("black"));
     c.setAlpha(180);
+    //black.setAlpha(108);
 
     pal.setColor(QPalette::Active, QColorGroup::Foreground, c);
     pal.setColor(QPalette::Inactive, QColorGroup::Foreground, c.light(93));
@@ -393,6 +407,56 @@ static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
     button_color->setRgb(rgb);
 }
 
+extern bool is_starting_up;
+
+void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
+  EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
+  if(is_starting_up)
+    return;
+  return;
+#if 0
+  float threshold = QColor(SETTINGS_read_string(talloc_format("color%d",15),"#d0d5d0")).valueF();
+  
+  for(int i=0;i<15;i++){
+    QColor color = QColor(SETTINGS_read_string(talloc_format("color%d",i),"#d0d5d0"));
+      
+    //QColor color = editorwidget->colors[i];
+    float value = color.valueF();
+    if (value > threshold)
+      color = color.lighter(scale(how_much, 0, 1, 0, 200));
+    else
+      color = color.darker(scale(how_much, 0, 1, 0, 200));
+
+    if (i!=11)
+      setColor(editorwidget, i, color.rgb());
+    printf("value for %d: %f\n",i,value);
+    //color.setLightntess(lightness
+  }
+#else
+  
+  how_much = scale(how_much,0,1,-1,1);
+
+  for(int i=0;i<16;i++){
+    QColor color = QColor(SETTINGS_read_string(talloc_format("color%d",i),"#d0d5d0"));
+
+    qreal h,s,v,a;
+    color.getHsvF(&h,&s,&v,&a);
+
+    float value = R_BOUNDARIES(0,v+how_much,1);
+    color.setHsvF(h, s, value, a);
+    
+    //QColor color = editorwidget->colors[i];
+    setColor(editorwidget, i, color.rgb());
+    
+    printf("value for %d: %f. s: %f, how_much: %f\n",i,value,s,how_much);
+    //color.setLightntess(lightness
+  }
+#endif
+  
+  updateAll(editorwidget);
+  tvisual->must_redraw = true;
+}
+
 void testColorInRealtime(int num, QColor color){
   if(num>=16)
     return;
@@ -461,7 +525,13 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   Scoped_GTK_EventHandler_Timer eventhandler;
 
   num_users_of_keyboard++;
-  if(QColorDialog3::getColor(editorwidget->colors[0],editorwidget).isValid()==false){
+  float getColorSuccess;
+
+  //  GL_lock();{
+    getColorSuccess = QColorDialog3::getColor(editorwidget->colors[0],editorwidget).isValid();
+    // }GL_unlock();
+
+  if(getColorSuccess==false){
     // "cancel"
     printf("Got CANCEL!\n");
     setEditorColors(editorwidget); // read back from file.
@@ -473,13 +543,19 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
     printf("Got OK!\n");
 
     SETTINGS_write_string("system_color",system_color->name());
-    system_color->setRgb(QColorDialog3::customColor(9));
-
+    GL_lock();{
+      system_color->setRgb(QColorDialog3::customColor(9));
+    }GL_unlock();
+    
     SETTINGS_write_string("button_color",button_color->name());
-    button_color->setRgb(QColorDialog3::customColor(11));
-
+    GL_lock();{
+      button_color->setRgb(QColorDialog3::customColor(11));
+    }GL_unlock();
+    
     for(int i=0;i<16;i++){
-      setColor(editorwidget,i,QColorDialog3::customColor(i));
+      GL_lock();{
+        setColor(editorwidget,i,QColorDialog3::customColor(i));
+      }GL_unlock();
       char key[500];
       sprintf(key,"color%d",i);
       SETTINGS_write_string(key,editorwidget->colors[i].name());

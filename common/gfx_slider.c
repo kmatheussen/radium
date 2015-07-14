@@ -41,10 +41,10 @@ void DrawSlider(
   int x = scale(f_val, f_min,f_max, box->x1, box->x2);
 
   if (!onoff)
-    GFX_SetMixColor(window,5,0,500);
-
+    GFX_SetMixColor(window,12,0,300);
+  
   GFX_FilledBox(
-                window,5,
+                window,12,
                 box->x1,y1,
                 x,y2,
                 where
@@ -63,7 +63,7 @@ void DrawSlider(
                 );
   
   // border
-  GFX_SetMixColor(window,1,0,300);
+  GFX_SetMixColor(window,BLACK_COLOR_NUM,0,300);
   GFX_Box(
           window,1,
           box->x1+1,y1,

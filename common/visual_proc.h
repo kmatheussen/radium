@@ -35,6 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 int GFX_Message(vector_t *buttons, QString message);
 #endif
 
+#define BLACK_COLOR_NUM 200
+#define WHITE_COLOR_NUM 201
+
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
 extern LANGSPEC const char *GFX_qVersion(void);
 
