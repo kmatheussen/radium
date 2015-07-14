@@ -71,17 +71,26 @@ struct MyReqType{
 
 extern EditorWidget *g_editor;
 
+// tvisual might be NULL
 ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
   num_users_of_keyboard++; // disable X11 keyboard sniffer
 
-  EditorWidget *editor = g_editor;
-  QSplitter *ysplitter = editor->ysplitter;
-
   MyReqType *reqtype = new MyReqType();
 
-  reqtype->frame = new QFrame(ysplitter);
+  if(tvisual==NULL){
+    
+    reqtype->frame = new QFrame();
+    reqtype->frame->show();
+    
+  }else {
+    
+    EditorWidget *editor = g_editor;
+    QSplitter *ysplitter = editor->ysplitter;
+  
+    reqtype->frame = new QFrame(ysplitter);
 
-  ysplitter->insertWidget(0,reqtype->frame);
+    ysplitter->insertWidget(0,reqtype->frame);
+  }
 
   reqtype->frame->resize(5,10);
   reqtype->frame->show();
@@ -91,6 +100,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   return reqtype;
 }
 
+// tvisual might be NULL
 void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   //EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);

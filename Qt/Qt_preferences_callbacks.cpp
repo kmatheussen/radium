@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../audio/MultiCore_proc.h"
+#include "../midi/midi_i_input_proc.h"
+#include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_menues_proc.h"
 
 extern "C" {
   struct PyObject;
@@ -62,6 +65,16 @@ class Preferences : public QDialog, public Ui::Preferences {
     setupUi(this);
 
     updateWidgets();
+
+    // VST
+    {    
+      Vst_paths_widget *vst_widget = new Vst_paths_widget;
+      vst_widget->buttonBox->hide();
+      
+      tabWidget->addTab(vst_widget, "VST");
+    }
+
+    tabWidget->setCurrentIndex(0);
 
     _initing = false;
   }
@@ -114,16 +127,22 @@ class Preferences : public QDialog, public Ui::Preferences {
       multiplyscrollbutton->setChecked(doScrollEditLines());
     }
 
-    // VST
+    // MIDI
     {
-      QWidget *vst_tab_widget = tabWidget->widget(2);
-      //QVBoxLayout *layout = new QVBoxLayout(0);
-      //w->setLayout(layout);
+      const char *name = MIDI_get_input_port();
+      input_port_name->setText(name==NULL ? "" : name);
+        
+      use0x90->setChecked(MIDI_get_use_0x90_for_note_off());
       
-      Vst_paths_widget *vst_widget = new Vst_paths_widget(vst_tab_widget);
-      vst_widget->buttonBox->hide();
+      if (MIDI_get_record_accurately())
+        record_sequencer_style->setChecked(true);
+      else
+        record_tracker_style->setChecked(true);
       
-      tabWidget->addTab(vst_widget, "VST");
+      if(MIDI_get_record_velocity())
+        record_velocity_on->setChecked(true);
+      else
+        record_velocity_off->setChecked(true);
     }
     
   }
@@ -205,6 +224,24 @@ public slots:
   void on_multiplyscrollbutton_toggled(bool val){
     setScrollEditLines(val);
   }
+
+  // MIDI
+
+  void on_set_input_port_clicked(){
+    MIDISetInputPort();
+  }
+
+  void on_use0x90_toggled(bool val){
+    MIDI_set_use_0x90_for_note_off(val);
+  }
+
+  void on_record_sequencer_style_toggled(bool val){
+    MIDI_set_record_accurately(val);
+  }
+
+  void on_record_velocity_on_toggled(bool val){
+    MIDI_set_record_velocity(val);
+  }
 };
 }
 
@@ -215,14 +252,15 @@ extern int num_users_of_keyboard;
 static void ensure_widget_is_created(void){
 }
 
+static Preferences *g_preferences_widget=NULL;
+
 void PREFERENCES_open(void){
-  static Preferences *widget=NULL;
-  if(widget==NULL){
-    widget = new Preferences(NULL);
+  if(g_preferences_widget==NULL){
+    g_preferences_widget = new Preferences(NULL);
     //widget->setWindowModality(Qt::ApplicationModal);
   }
 
-  safeShow(widget);
+  safeShow(g_preferences_widget);
 
   /*  
   num_users_of_keyboard++;
@@ -231,6 +269,14 @@ void PREFERENCES_open(void){
   */
 }
 
+void PREFERENCES_open_MIDI(void){
+  PREFERENCES_open();
+  g_preferences_widget->tabWidget->setCurrentIndex(3);
+}
+
+void PREFERENCES_update(void){
+  g_preferences_widget->updateWidgets();
+}
 
 #include "mQt_preferences_callbacks.cpp"
 

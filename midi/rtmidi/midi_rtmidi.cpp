@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../../common/visual_proc.h"
 
 #include "../midi_i_input_proc.h"
+#include "../midi_menues_proc.h"
 
 #include "../OS_midi_proc.h"
 
@@ -534,7 +535,7 @@ bool MIDI_New(struct Instruments *instrument){
 #endif
 #endif
 
-      const char *inport = SETTINGS_read_string("midi_input_port",NULL);
+      const char *inport = MIDI_get_input_port();
       if(inport!=NULL)
         MIDI_OS_SetInputPort(inport);
 

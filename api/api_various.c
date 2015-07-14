@@ -376,6 +376,10 @@ void openPreferencesDialog(void){
   PREFERENCES_open();
 }
 
+void openMIDIPreferencesDialog(void){
+  PREFERENCES_open_MIDI();
+}
+
 void openToolsDialog(void){
   TOOLS_open();
 }

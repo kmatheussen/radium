@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_i_plugin.h"
 
+extern LANGSPEC bool MIDI_get_use_0x90_for_note_off(void);
+extern LANGSPEC void MIDI_set_use_0x90_for_note_off(bool doit);
+
 extern LANGSPEC int MIDI_initInstrumentPlugIn(struct Instruments *instrument);
 
 extern LANGSPEC int MIDIgetStandardVelocity(struct Patch *patch);

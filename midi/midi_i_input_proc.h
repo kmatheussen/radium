@@ -21,7 +21,9 @@ extern LANGSPEC void MIDI_insert_recorded_midi_events(void);
 
 extern LANGSPEC void RT_MIDI_handle_play_buffer(void);
 
+extern LANGSPEC bool MIDI_get_record_accurately(void);
 extern LANGSPEC void MIDI_set_record_accurately(bool accurately);
+extern LANGSPEC bool MIDI_get_record_velocity(void);
 extern LANGSPEC void MIDI_set_record_velocity(bool doit);
 
 extern LANGSPEC void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2);

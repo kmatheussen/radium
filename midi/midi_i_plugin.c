@@ -214,7 +214,17 @@ static void MIDIplaynote(struct Patch *patch,
 }
 
 
-bool useOx90ForNoteOff=false;
+static bool useOx90ForNoteOff=false;
+
+bool MIDI_get_use_0x90_for_note_off(void){
+  return useOx90ForNoteOff;
+}
+
+void MIDI_set_use_0x90_for_note_off(bool doit){
+  SETTINGS_write_int("use_0x90_for_note_off",doit?1:0);
+  useOx90ForNoteOff = doit;
+}
+
 
 static void MIDIstopnote(struct Patch *patch,
                          float das_notenum,
@@ -476,7 +486,7 @@ char **MIDI_getPortNames(int *retsize, bool is_input){
 
 extern struct Root *root;
 
-char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool is_input){
+char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input){
   int num_ports;
 
   char **portnames=MIDI_getPortNames(&num_ports, is_input);
@@ -502,7 +512,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool i
   if(sel==num_ports){
     char *ret=NULL;
     while(ret==NULL)
-      ret = GFX_GetString(window,reqtype,"Name: ");
+      ret = GFX_GetString(NULL,reqtype,"Name: ");
     return ret;
   }
 
@@ -629,8 +639,7 @@ static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
 
 int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
 
-  useOx90ForNoteOff = SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true;
-  SETTINGS_write_int("use_0x90_for_note_off",useOx90ForNoteOff==true?1:0);
+  MIDI_set_use_0x90_for_note_off(SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true);
 
   if(MIDI_New(instrument)==false){
     RError("Unable to open MIDI");

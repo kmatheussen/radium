@@ -251,12 +251,20 @@ void RT_MIDI_handle_play_buffer(void){
 
 static bool g_record_accurately_while_playing = true;
 
+bool MIDI_get_record_accurately(void){
+  return g_record_accurately_while_playing;
+}
+
 void MIDI_set_record_accurately(bool accurately){
   SETTINGS_write_bool("record_midi_accurately", accurately);
   g_record_accurately_while_playing = accurately;
 }
 
 static bool g_record_velocity = true;
+
+bool MIDI_get_record_velocity(void){
+  return g_record_velocity;
+}
 
 void MIDI_set_record_velocity(bool doit){
   printf("doit: %d\n",doit);

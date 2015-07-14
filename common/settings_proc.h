@@ -38,5 +38,7 @@ extern QString SETTINGS_read_qstring(const char *key, QString val);
 #endif
 
 extern LANGSPEC void PREFERENCES_open(void); // open gui
+extern LANGSPEC void PREFERENCES_open_MIDI(void);
+extern LANGSPEC void PREFERENCES_update(void);
 
 #endif

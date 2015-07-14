@@ -156,7 +156,7 @@ bool Undo_are_you_shure_questionmark(void){
 			)
           ){
       ret=GFX_GetString(
-                        NULL,
+                        root->song->tracker_windows,
                         NULL,
                         temp
 			);
