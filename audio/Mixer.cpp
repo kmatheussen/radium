@@ -804,8 +804,15 @@ bool MIXER_start(void){
 }
 
 void MIXER_stop(void){
+  static bool has_been_called = false;
+  
+  R_ASSERT(g_mixer->_rjack_client != NULL);
+  R_ASSERT(has_been_called==false);
+    
   if (g_mixer->_rjack_client != NULL)
     jack_client_close(g_mixer->_rjack_client);
+
+  has_been_called=true;
 }
 
 static STime g_startup_time = 0;

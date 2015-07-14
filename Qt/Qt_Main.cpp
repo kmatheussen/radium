@@ -407,7 +407,6 @@ protected:
         static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
         
         if(doquit==true) {
-          MIXER_stop();
           QApplication::quit();
         }
       }
@@ -921,6 +920,8 @@ int radium_main(char *arg){
   posix_EndPlayer();
   //EndGuiThread();
 
+  MIXER_stop();
+  
   CRASHREPORTER_close();
 
   return 0;

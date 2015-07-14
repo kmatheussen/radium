@@ -320,6 +320,10 @@ void MULTICORE_set_num_threads(int num_new_runners){
   }
 }
 
+void MULTICORE_shut_down(void){
+  
+}
+
 void MULTICORE_init(void){
 
   there_is_a_free_runner = RSEMAPHORE_create(0);
