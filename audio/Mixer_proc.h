@@ -7,6 +7,7 @@ extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 extern LANGSPEC bool PLAYER_is_running(void);
   
 extern LANGSPEC bool MIXER_start(void);
+extern LANGSPEC void MIXER_stop(void);
 
 extern LANGSPEC bool MIXER_is_saving(void);
 extern LANGSPEC void MIXER_start_saving_soundfile(void);

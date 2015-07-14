@@ -406,8 +406,10 @@ protected:
           });
         static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
         
-        if(doquit==true)
+        if(doquit==true) {
+          MIXER_stop();
           QApplication::quit();
+        }
       }
     } // num_users_of_keyboard==0
 

@@ -803,6 +803,11 @@ bool MIXER_start(void){
   return true;
 }
 
+void MIXER_stop(void){
+  if (g_mixer->_rjack_client != NULL)
+    jack_client_close(g_mixer->_rjack_client);
+}
+
 static STime g_startup_time = 0;
 void OS_InitAudioTiming(void){
   g_startup_time = g_mixer->_time;
