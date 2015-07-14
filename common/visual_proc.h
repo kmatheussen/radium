@@ -122,7 +122,8 @@ extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
-extern LANGSPEC void GFX_SetDefaultColors(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
 extern LANGSPEC int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum);

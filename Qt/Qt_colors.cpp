@@ -569,7 +569,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   is_running = false;
 }
 
-void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
+static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfilename){
   EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
 
   QString curr_dir = QCoreApplication::applicationDirPath();
@@ -577,7 +577,7 @@ void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
 
   QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
   QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
-  QFile::copy(QString(curr_dir)+separator+"colors", OS_get_config_filename("color0"));
+  QFile::copy(QString(curr_dir)+separator+configfilename, OS_get_config_filename("color0"));
 
   setEditorColors(editorwidget); // read back from file.
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
@@ -586,3 +586,13 @@ void GFX_SetDefaultColors(struct Tracker_Windows *tvisual){
   updateAll(editorwidget);
 }
 
+
+void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual){
+  setDefaultColors(tvisual,"colors");
+}
+
+
+void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual){
+  setDefaultColors(tvisual,"colors2");
+  printf("hepp\n");
+}
