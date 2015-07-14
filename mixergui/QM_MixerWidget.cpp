@@ -279,6 +279,22 @@ static void draw_slot(MyScene *myscene, float x, float y){
   //myscene->setSceneRect(myscene->itemsBoundingRect ()); // Dangerous. Crashes now and then.
 
   _slot_indicator->setPos(x1,y1);
+
+  if (myscene->_moving_chips.size() > 0)
+    return;
+  
+  Chip *chip = MW_get_chip_at((x1+x2)/2, (y1+y2)/2, NULL);
+  if (chip != NULL) {
+    
+    SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL,);
+
+    struct Instruments *instrument = get_audio_instrument();
+    printf("Calling pp_update\n");
+    instrument->PP_Update(instrument,(struct Patch*)patch);
+  }
+
 }
 
 static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
