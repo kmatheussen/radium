@@ -253,11 +253,11 @@ public slots:
     }
   }
 
-  void on_octave_up_button_pressed(){
+  void on_octave_up_button_clicked(){
     incKeyAdd(12);
   }
 
-  void on_octave_down_button_pressed(){
+  void on_octave_down_button_clicked(){
     incKeyAdd(-12);
   }
 
@@ -298,11 +298,11 @@ public slots:
     update_velocity_sliders();
   }
 
-  void on_undo_button_pressed(){
+  void on_undo_button_clicked(){
     Undo();
   }
 
-  void on_redo_button_pressed(){
+  void on_redo_button_clicked(){
     Redo();
   }
 

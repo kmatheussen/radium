@@ -85,21 +85,21 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     set_editor_focus();
   }
 
-  void on_rescan_button_pressed(){
+  void on_rescan_button_clicked(){
     PR_init_plugin_types();
   }
 
-  void on_delete_button_pressed(){
+  void on_delete_button_clicked(){
     //printf("Trying to remove %p\n",path_list->currentItem());
     delete path_list->currentItem();
     write_settings();
   }
 
-  void on_add_button_pressed(){
+  void on_add_button_clicked(){
     add_current_path();    
   }
 
-  void on_open_file_dialog_button_pressed(){
+  void on_open_file_dialog_button_clicked(){
     QString dirname = QFileDialog::getExistingDirectory(this,"Select VST Directory");
     path_edit->setText(dirname);
   }

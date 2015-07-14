@@ -204,19 +204,19 @@ public:
       SAMPLER_set_resampler_type(plugin, val);
     }
 
-    void on_save_button_pressed(){
+    void on_save_button_clicked(){
       InstrumentWidget_save_preset(_patch);      
     }
 
-    void on_load_button_pressed(){
+    void on_load_button_clicked(){
       InstrumentWidget_load_preset(_patch);      
     }
 
-    void on_replace_button_pressed(){
+    void on_replace_button_clicked(){
       InstrumentWidget_replace(_patch);
     }
     
-    void on_reset_button_pressed(){
+    void on_reset_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_reset(plugin);
       
@@ -226,7 +226,7 @@ public:
       GFX_update_instrument_widget((struct Patch*)patch);
     }
 
-    void on_random_button_pressed(){
+    void on_random_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_random(plugin);
 
@@ -236,7 +236,7 @@ public:
       GFX_update_instrument_widget((struct Patch*)patch);
     }
 
-    void on_info_button_pressed(){
+    void on_info_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type = plugin->type;
 

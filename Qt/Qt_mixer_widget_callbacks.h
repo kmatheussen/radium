@@ -128,17 +128,17 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     view->setMatrix(matrix);
   }
 
-  void on_zoomin_button_pressed(){
+  void on_zoomin_button_clicked(){
     zoom_slider->setValue(zoom_slider->value() + 6);
   }
-  void on_zoomout_button_pressed(){
+  void on_zoomout_button_clicked(){
     zoom_slider->setValue(zoom_slider->value() - 6);
   }
-  void on_zoomreset_button_pressed(){
+  void on_zoomreset_button_clicked(){
     zoom_slider->setValue(250);
   }
 
-  void on_help_button_pressed(){
+  void on_help_button_clicked(){
     QMessageBox msgBox;
         
     msgBox.setText("Mixer Interface");

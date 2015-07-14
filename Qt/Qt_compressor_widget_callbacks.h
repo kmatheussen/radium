@@ -224,7 +224,7 @@ void on_enable_checkbox_toggled(bool val){
     set_compressor_parameter(_patch, COMP_EFF_BYPASS,val==true?1.0f:0.0f);
   }
 
-  void on_load_button_pressed(void){
+  void on_load_button_clicked(void){
     printf("load pressed\n");
 
     QString filename;
@@ -239,7 +239,7 @@ void on_enable_checkbox_toggled(bool val){
     load(filename);
   }
 
-  void on_save_button_pressed(void){
+  void on_save_button_clicked(void){
     printf("save pressed\n");
 
     QString filename;
