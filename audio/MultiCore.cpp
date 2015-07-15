@@ -62,13 +62,11 @@ public:
   }
 
   ~Runner() {
-    //R_ASSERT(RSEMAPHORE_get_num_signallers(ready)==0);
     
     must_exit = true;
     RSEMAPHORE_signal(ready, 1);
     wait(2000);
 
-    //R_ASSERT(RSEMAPHORE_get_num_signallers(ready)==0);
     RSEMAPHORE_delete(ready);
   }
 
@@ -219,22 +217,16 @@ static void run_soundproducers(SoundProducer **all_sp, int num_sp, int64_t time,
         }
       }
     }
-  
-    if (all_are_scheduled==false) {
-      QMutexLocker locker(&lock);
-      if (free_runners==NULL)
-        broadcast.wait(&lock, 1000);
-    }
-
   }
 
+#if 1
   // Wait for all runners to finish.
   {
     QMutexLocker locker(&lock);
     while(running_runners != NULL)
       broadcast.wait(&lock, 1000);
   }
-
+#endif
 }
 
 void MULTICORE_run_all(SoundProducer **all_sp, int num_sp, int64_t time, int num_frames, bool process_plugins){
