@@ -125,6 +125,10 @@ class Preferences : public QDialog, public Ui::Preferences {
     {
       scrollplay_onoff->setChecked(doScrollPlay());
       multiplyscrollbutton->setChecked(doScrollEditLines());
+      if (linenumbersVisible())
+        showLineNumbers->setChecked(true);
+      else
+        showBarsAndBeats->setChecked(true);
     }
 
     // MIDI
@@ -223,6 +227,9 @@ public slots:
   }
   void on_multiplyscrollbutton_toggled(bool val){
     setScrollEditLines(val);
+  }
+  void on_showLineNumbers_toggled(bool val){
+    setLinenumbersVisible(val);
   }
 
   // MIDI

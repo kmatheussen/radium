@@ -88,6 +88,7 @@ extern LANGSPEC bool THREADING_is_main_thread(void);
 extern LANGSPEC bool THREADING_is_player_thread(void);
 
 extern LANGSPEC void THREADING_acquire_player_thread_priority(void); // Implemented in audio/Mixer.cpp
+extern LANGSPEC void THREADING_drop_player_thread_priority(void); // Implemented in audio/Mixer.cpp
 
 extern LANGSPEC priority_t THREADING_get_priority(void);
 extern LANGSPEC void THREADING_set_priority(priority_t priority);

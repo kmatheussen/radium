@@ -142,8 +142,12 @@ static void PLAYER_acquire_same_priority(void){
   THREADING_acquire_player_thread_priority();
 }	
 
-static void PLAYER_drop_same_priority(void){
+static void THREADING_drop_same_priority(void){
   jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
+}
+
+static void PLAYER_drop_same_priority(void){
+  THREADING_drop_same_priority();
 }
 
 
