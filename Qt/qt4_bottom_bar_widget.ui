@@ -5185,7 +5185,7 @@ Scrolling too often can be tiresome for the eyes.</string>
          </size>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows the &lt;span style=&quot; font-weight:600;&quot;&gt;highest&lt;/span&gt; amount of CPU measured for processing an audio block during the last second.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The three numbers, from left to right, show:&lt;/p&gt;&lt;p&gt;1. The &lt;span style=&quot; font-size:11pt; font-weight:600; text-decoration: underline;&quot;&gt;lowest&lt;/span&gt; amount of CPU measured for processing an audio block during the last second.&lt;/p&gt;&lt;p&gt;2. The &lt;span style=&quot; font-size:11pt; font-weight:600; text-decoration: underline;&quot;&gt;average&lt;/span&gt; amount of CPU measured when processing audio blocks during the last second.&lt;/p&gt;&lt;p&gt;3. The &lt;span style=&quot; font-size:11pt; font-weight:600; text-decoration: underline;&quot;&gt;highest&lt;/span&gt; amount of CPU measured for processing an audio block during the last second.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>CPU:   55.2%</string>

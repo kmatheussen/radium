@@ -116,7 +116,10 @@ void PLAYER_memory_debug_wake_up(void){
 
 jack_client_t *g_jack_client;
 static int g_jack_client_priority;
-float g_cpu_usage = 0.0f;
+float g_max_cpu_usage = 0.0f;
+float g_min_cpu_usage = 0.0f;
+int g_num_cpu_usage = 0;
+float g_total_cpu_usage = 0;
 
 static bool g_jack_is_running = true;
 
@@ -702,18 +705,31 @@ struct Mixer{
         jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
 
-      // Tell jack we are finished.
-      jack_cycle_signal(_rjack_client, 0);
 
       jack_time_t end_time = jack_get_time();
-      float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
-      if (new_cpu_usage > g_cpu_usage)
-        g_cpu_usage = new_cpu_usage;
-      //g_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
 
+
+      // Tell jack we are finished.
+
+      jack_cycle_signal(_rjack_client, 0);
+
+
+      // Calculate CPU usage
+
+      float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
+
+      g_total_cpu_usage += new_cpu_usage;
+      g_num_cpu_usage++;
+      
+      if (new_cpu_usage > g_max_cpu_usage)
+        g_max_cpu_usage = new_cpu_usage;
+      
+      if (new_cpu_usage < g_min_cpu_usage)
+        g_min_cpu_usage = new_cpu_usage;
+      
       if (new_cpu_usage < 98)
         excessive_time.restart();
-          
+
     } // end while
 
     RT_unlock_player();
