@@ -628,7 +628,6 @@ struct Mixer{
       
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
-      jack_time_t start_time = jack_get_time();
       
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
@@ -663,6 +662,8 @@ struct Mixer{
             
 
       RT_lock_player();
+
+      jack_time_t start_time = jack_get_time();
 
       //jackblock_size = num_frames;
 
