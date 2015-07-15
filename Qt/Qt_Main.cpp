@@ -622,6 +622,7 @@ void Qt_EventHandler(void){
 static bool load_new_song=true;
 
 extern void TIME_init(void);
+extern void UPDATECHECKER_doit(void);
 
 int radium_main(char *arg){
 
@@ -892,6 +893,8 @@ int radium_main(char *arg){
   //abort();
 
   assertRadiumInHomeDirectory();
+
+  UPDATECHECKER_doit();
 
 #if USE_QT_VISUAL
   qapplication->exec();
