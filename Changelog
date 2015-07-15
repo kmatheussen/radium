@@ -1,4 +1,15 @@
 
+Most important changes 3.2.1 -> 3.2.2
+* Show message during startup if there is a newer version of the program available.
+* Reorganized the edit menu a little bit
+* Moved show/hide line numbers configuration from the menues and into the preferences dialog
+* Windows: Don't inform that Radium was unable to find jack process command line arguments in RELEASE builds
+* "CPU": Show min/avg/max instead of just max. Useful while figuring out multi core implementation.
+  (it's not working that well on Windows yet)
+* Remove some unnecessary locking/waiting in the multicore scheduler
+  (probably has very little impact on performance though)
+
+
 Most important changes 3.2.0 -> 3.2.1
 * Another default color scheme. A little bit darker and white text.
 * Increase default font size from 10 to 11 to get less flickering when using a white-on-black color scheme
