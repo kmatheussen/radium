@@ -994,10 +994,12 @@ int main(int argc, char **argv){
 
   QPixmap pixmap(QCoreApplication::applicationDirPath() + QDir::separator() + "radium_256x256x32.png");
   g_splashscreen = new QSplashScreen(pixmap);
+#ifdef RELEASE
   g_splashscreen->show();
   g_splashscreen->raise();
   g_splashscreen->showMessage("Starting up");
   QApplication::processEvents();
+#endif
   
   printf("1: argv[0]: \"%s\"\n",argv[0]);
 

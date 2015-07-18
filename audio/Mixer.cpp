@@ -142,12 +142,12 @@ static void PLAYER_acquire_same_priority(void){
   THREADING_acquire_player_thread_priority();
 }	
 
-static void THREADING_drop_same_priority(void){
+void THREADING_drop_player_thread_priority(void){
   jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
 }
 
 static void PLAYER_drop_same_priority(void){
-  THREADING_drop_same_priority();
+  THREADING_drop_player_thread_priority();
 }
 
 
@@ -441,6 +441,7 @@ struct Mixer{
         R_ASSERT(i<g_num_allocated_click_plugins);
       }
 
+      //MULTICORE_ensure_capacity(_sound_producers.num_elements);
       _sound_producers.add(sound_producer);
       
     }PLAYER_unlock();
@@ -471,6 +472,11 @@ struct Mixer{
         
         R_ASSERT(i<g_num_allocated_click_plugins);
       }
+
+      if (sound_producer==_bus1)
+        _bus1=NULL;
+      if (sound_producer==_bus2)
+        _bus2=NULL;
       
     }PLAYER_unlock();
   }
@@ -657,6 +663,11 @@ struct Mixer{
 
       // Process sound.
 
+      if (g_running_multicore)
+        RT_sort_sound_producers_by_running_time();
+      for (SoundProducer *sp : _sound_producers)
+        SP_RT_reset_running_time(sp);
+
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){
 
@@ -668,8 +679,7 @@ struct Mixer{
         
         if (g_running_multicore) {
 
-          RT_sort_sound_producers_by_running_time();
-          MULTICORE_run_all(_sound_producers.elements, _sound_producers.num_elements, _time, RADIUM_BLOCKSIZE, process_plugins);
+          MULTICORE_run_all(&_sound_producers, _time, RADIUM_BLOCKSIZE, process_plugins);
           
         } else {
           
@@ -864,7 +874,15 @@ STime MIXER_get_accurate_radium_time(void){
 }
 
 void MIXER_RT_set_bus_descendand_type_for_all_plugins(void){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  R_ASSERT(THREADING_is_main_thread());
+  
   g_mixer->RT_set_bus_descendant_type_for_all_plugins();
+}
+
+void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2){
+  bus1 = g_mixer->_bus1;
+  bus2 = g_mixer->_bus2;
 }
 
 void MIXER_add_SoundProducer(SoundProducer *sound_producer){

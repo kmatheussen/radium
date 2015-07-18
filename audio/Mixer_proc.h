@@ -27,6 +27,8 @@ extern void MIXER_add_SoundProducer(SoundProducer *sound_producer);
 
 extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
 
+extern void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2);
+
 #include "SoundProducer_proc.h"
 extern radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
 #endif // __cplusplus

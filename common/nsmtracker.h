@@ -125,7 +125,7 @@ enum{
   #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) return
   #define R_ASSERT_RETURN_IF_FALSE2(a,b) if(!(a)) return b
 #else
-  #define R_ASSERT(a) if(!(a))RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__)
+  #define R_ASSERT(a) do{ if(!(a)){ fflush(stderr);RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);} }while(0)
   #define R_ASSERT_RETURN_IF_FALSE2(a,b) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return b; }while(0)
   #define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT_RETURN_IF_FALSE2(a, /* */)
 #endif

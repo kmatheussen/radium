@@ -251,7 +251,9 @@ OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfro
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_lowpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_system_delay.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o MultiCore.o Jack_plugin.o Bus_plugins.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_pd_controllers.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
+OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_pd_controllers.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
+
+#MultiCore.o
 
 #Mixer
 QM=mixergui/
@@ -1598,8 +1600,8 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h
-	$(CCC) audio/SoundProducer.cpp $(CPPOPT)  -std=c++11 # $(CPUOPT)
+SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp
+	$(CCC) audio/SoundProducer.cpp $(QTOPT)  -std=c++11 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload

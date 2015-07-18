@@ -22,6 +22,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <math.h>
 
+static inline int myisnormal(float val){
+  return isnormal(val);
+}
+
+static inline int myfpclassify(float val){
+  return fpclassify(val);
+}
+
 #include "pa_memorybarrier.h"
 
 #include "monotonic_timer.c"
@@ -40,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "MultiCore_proc.h"
 
 #include "fade_envelopes.h"
+
 
 
 #if 0
@@ -256,13 +265,13 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
     for(int i=0;i<num_frames;i++)
       sum += outputs[ch][i];
 
-  if(sum!=0.0f && !isnormal(sum)){
+  if(sum!=0.0f && !myisnormal(sum) ){
     for(int ch=0;ch<plugin->type->num_outputs;ch++)
       for(int i=0;i<num_frames;i++)
         outputs[ch][i] = 0.0f;
 
     volatile struct Patch *patch = plugin->patch;
-    const char *sigtype = isnan(sum)?"nan":isinf(sum)?"inf":fpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
+    const char *sigtype = isnan(sum)?"nan":isinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
     RT_message("Error!\n"
                "\n"
                "The instrument named \"%s\" of type %s/%s\n"
@@ -285,9 +294,22 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
   }
 }
 
+static int get_bus_num(SoundPlugin *plugin){
+  int is_bus = !strcmp(plugin->type->type_name,"Bus");
+
+  if(is_bus){
+    if(!strcmp(plugin->type->name,"Bus 1"))
+      return 0;
+    else
+      return 1;
+  } else
+    return -1;
+}
 
 struct SoundProducer {
   SoundPlugin *_plugin;
+
+  volatile bool is_processed;
 
   int _num_inputs;
   int _num_outputs;
@@ -300,8 +322,6 @@ struct SoundProducer {
   bool _is_bus;
   int _bus_num;
   
-  volatile SoundProducerRunningState running_state;
-  
   float **_dry_sound;
   float **_input_sound; // I'm not sure if it's best to place this data on the heap or the stack. Currently the heap is used. Advantage of heap: Avoid (having to think about the possibility of) risking running out of stack. Advantage of stack: Fewer cache misses.
   float **_output_sound;
@@ -311,7 +331,10 @@ struct SoundProducer {
 
   radium::Vector<SoundProducer*> dependants;
 
-  int num_dependencies; // i.e. size(_input_eproducers)+size(_input_producers)
+  QAtomicInt num_dependencies_left;  // = num_dependencies + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
+
+  int num_dependencies;              // = size(_input_eproducers) + size(_input_producers)
+
   radium::Vector<SoundProducerLink*> _input_eproducers;
   radium::Vector<SoundProducerLink*> *_input_producers; // one SoundProducerLink per in-channel
 
@@ -321,18 +344,12 @@ struct SoundProducer {
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
     , running_time(0.0)
-    , _is_bus(!strcmp(plugin->type->type_name,"Bus"))
-    , _bus_num(-1)
     , num_dependencies(0)
   {
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
-    if(_is_bus){
-      if(!strcmp(plugin->type->name,"Bus 1"))
-        _bus_num = 0;
-      else
-        _bus_num = 1;
-    }
+    _bus_num = get_bus_num(plugin);
+    _is_bus = _bus_num >= 0;
 
     if(_num_inputs>0)
       _num_dry_sounds = _num_inputs;
@@ -355,12 +372,17 @@ struct SoundProducer {
     //getchar();
   }
 
-  ~SoundProducer(){
+  ~SoundProducer(){    
     MIXER_remove_SoundProducer(this);
 
     free(_input_peaks);
     free(_volume_peaks);
 
+    R_ASSERT(_input_eproducers.size()==0);
+
+    for(int ch=0;ch<_num_inputs;ch++)
+      R_ASSERT(_input_producers[ch].size()==0);
+    
     delete[] _input_producers;
 
     free_sound_buffers();
@@ -381,79 +403,10 @@ struct SoundProducer {
     free(_output_sound);
   }
 
-  bool RT_can_start_processing(void){
-    for (SoundProducerLink *elink : _input_eproducers)
-      if (elink->source->running_state != FINISHED_RUNNING)
-        return false;
-
-    for(int ch=0;ch<_num_inputs;ch++)
-      for (SoundProducerLink *link : _input_producers[ch])
-        if (link->source->running_state != FINISHED_RUNNING)
-          return false;
-
-    return true;
-  }
-
-private:
-  SoundProducer *RT_get_dependency_process_candidate(SoundProducer *sp, bool &all_dependencies_covered){
-    if (sp->running_state == HASNT_RUN_YET) {
-      SoundProducer *candidate = sp->RT_get_ready_to_process();
-      if (candidate != NULL)
-        return candidate;
-      else
-        all_dependencies_covered = false;
-    } else if (sp->running_state == IS_RUNNING) {
-      all_dependencies_covered = false;
-    }
-    return NULL;
-  }
-public:
-  
-  SoundProducer *RT_get_ready_to_process(void){
-    bool all_dependencies_covered = true;
-
-    for (SoundProducerLink *elink : _input_eproducers){
-      SoundProducer *candidate = RT_get_dependency_process_candidate(elink->source, all_dependencies_covered);
-      if (candidate != NULL)
-        return candidate;
-    }
-
-    for(int ch=0;ch<_num_inputs;ch++)
-      for (SoundProducerLink *link : _input_producers[ch]) {
-        SoundProducer *candidate = RT_get_dependency_process_candidate(link->source, all_dependencies_covered);
-        if (candidate != NULL)
-          return candidate;
-      }
-
-    #if 0
-    if (_is_bus) {
-
-      DoublyLinkedList *sound_producer_list = MIXER_get_all_SoundProducers();
-      while(sound_producer_list!=NULL){
-        SoundProducer         *sp     = (SoundProducer*)sound_producer_list;
-        SoundPlugin           *plugin = SP_get_plugin(sp);
-        
-        if(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT){
-          //if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(&plugin->bus_volume[_bus_num])){
-            SoundProducer *candidate = RT_get_dependency_process_candidate(sp, all_dependencies_covered);
-            if (candidate != NULL)
-              return candidate;
-            //}
-        }
-    
-        sound_producer_list = sound_producer_list->next;  
-      }
-
-    }
-    #endif
-    
-    if (all_dependencies_covered)
-      return this;
-    else
-      return NULL;
-  }
     
   void RT_set_bus_descendant_type_for_plugin(void){
+    R_ASSERT(PLAYER_current_thread_has_lock());
+
     if(_plugin->bus_descendant_type != MAYBE_A_BUS_DESCENDANT)
       return;
 
@@ -525,7 +478,10 @@ public:
     elink->source    = source;
     elink->target    = this;
     
+    fprintf(stderr, "____add einput");
+    
     PLAYER_lock();{
+
       source->dependants.add(this);
       
       _input_eproducers.add(elink);
@@ -554,11 +510,15 @@ public:
     link->fade_pos          = 0;
     link->state = SoundProducerLink::FADING_IN;
 
+    fprintf(stderr, "____add input");
+
     PLAYER_lock();{
+
       source->dependants.add(this);
             
       _input_producers[target_ch].add(link);
       num_dependencies++;
+      
       MIXER_RT_set_bus_descendand_type_for_all_plugins();
     }PLAYER_unlock();
 
@@ -570,8 +530,11 @@ public:
     for (SoundProducerLink *elink : _input_eproducers) {
 
       if(elink->source==source){
+
+        fprintf(stderr, "____remove einput");
         
         PLAYER_lock();{
+
           _input_eproducers.remove(elink);
           num_dependencies--;
           
@@ -615,6 +578,8 @@ public:
         PLAYER_memory_debug_wake_up();
 
         RSEMAPHORE_wait(signal_from_RT,1);
+
+        fprintf(stderr, "____remove input");
         
         PLAYER_lock();{
           
@@ -799,9 +764,7 @@ public:
           
           link->fade_pos += num_frames;
           if(link->fade_pos==FADE_LEN){
-            //_input_producers[ch].remove(link);
             RSEMAPHORE_signal(signal_from_RT,1);
-            //MIXER_RT_set_bus_descendand_type_for_all_plugins();
             link->state=SoundProducerLink::JUST_FADED_OUT;
           }
         }
@@ -936,14 +899,21 @@ SoundProducer *SP_create(SoundPlugin *plugin){
     semaphore_inited=true;
   }
 
+#if 0
+  int bus_num = get_bus_num(plugin);
+
+  if (bus_num != -1){
+    SoundProducer *bus1,*bus2;
+    MIXER_get_buses(bus1,bus2);
+  }
+#endif
+
   return new SoundProducer(plugin, MIXER_get_buffer_size());
 }
 
 void SP_delete(SoundProducer *producer){
-  if(!producer->_is_bus){ // RT_process needs buses to always be alive.
-    printf("Deleting \"%s\"\n",producer->_plugin->type->type_name);
-    delete producer;
-  }
+  printf("Deleting \"%s\"\n",producer->_plugin->type->type_name);
+  delete producer;
 }
 
 // Returns false if the link could not be made. (i.e. the link was recursive)
@@ -1006,15 +976,20 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
       for(unsigned int i=0;i<links_to_delete.size();i++){
         SoundProducerLink *link = links_to_delete.at(i);
         link->target->_input_producers[link->target_ch].remove(link);
+        link->source->dependants.remove(link->target);
+        link->target->num_dependencies--;
       }
       for(unsigned int i=0;i<elinks_to_delete.size();i++){
         SoundProducerLink *elink = elinks_to_delete.at(i);
         elink->target->_input_eproducers.remove(elink);
+        elink->source->dependants.remove(elink->target);
+        elink->target->num_dependencies--;
       }
     }PLAYER_unlock();
     
   }
-    // Delete
+  
+  // Delete
   for(unsigned int i=0;i<links_to_delete.size();i++)
     delete links_to_delete.at(i);
   for(unsigned int i=0;i<elinks_to_delete.size();i++)
@@ -1032,7 +1007,7 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
  *************** MULTICORE start *************************
  *********************************************************/
 
-//#include "MultiCore.cpp"
+#include "MultiCore.cpp"
 
 /*********************************************************
  *************** MULTICORE end ***************************
@@ -1127,24 +1102,10 @@ void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
   producer->allocate_sound_buffers(buffer_size);
 }
 
-// only used in multicore processing
-bool SP_can_start_processing(SoundProducer *sp){
-  return sp->RT_can_start_processing();
-}
-
-// only used in multicore processing. Will return an sp which is ready to process, or NULL.
-SoundProducer *SP_get_ready_to_process(SoundProducer *sp){
-  return sp->RT_get_ready_to_process();
-}
-
-SoundProducerRunningState SP_get_running_state(SoundProducer *sp){
-  return sp->running_state;
-}
-
-void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_state){
-  sp->running_state = running_state;
-}
-
 double SP_get_running_time(const SoundProducer *sp){
   return sp->running_time;
+}
+
+void SP_RT_reset_running_time(SoundProducer *sp){
+  sp->running_time = 0.0;
 }

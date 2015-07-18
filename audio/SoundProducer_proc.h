@@ -91,7 +91,19 @@ public:
   const T* end(){
     return &elements[num_elements];
   }
-  
+
+  void clear(void){
+    num_elements = 0;
+  }
+
+  bool is_empty(void){
+    return num_elements==0;
+  }
+
+  bool size(void){
+    return num_elements;
+  }
+
   void add(T t){
     num_elements++;
     
@@ -150,11 +162,8 @@ float SP_get_output_peak(SoundProducer *producer, int ch);
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
 
 // Functions below used in multicore processing
-bool SP_can_start_processing(SoundProducer *sp);
-SoundProducer *SP_get_ready_to_process(SoundProducer *sp);
-SoundProducerRunningState SP_get_running_state(SoundProducer *sp);
-void SP_set_running_state(SoundProducer *sp, SoundProducerRunningState running_state);
 double SP_get_running_time(const SoundProducer *sp);
+void SP_RT_reset_running_time(SoundProducer *sp);
 
 #endif // __cplusplus
 

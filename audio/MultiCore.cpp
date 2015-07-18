@@ -1,7 +1,21 @@
+// This file is not compiled directly, but #included into SoundProducer.cpp
+
+
+#include <boost/version.hpp>
+//#include <boost/thread/thread.hpp>
+#include <boost/lockfree/queue.hpp>
+//#include <boost/atomic.hpp>
+
+
+#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
+  #error "Boost too old or not found. Need at least 1.58.\n Quick fix: 1. Download boost from http://sourceforge.net/projects/boost/files/boost/, 2. Unpack it into somewhere (no need to compile it), 3. Add -Isomewhere into OS_OPTS"
+#endif
+
+
+#include "sema.h"
+
 #include <QThread>
-#include <QMutex>
-#include <QMutexLocker>
-#include <QWaitCondition>
+#include <QAtomicInt>
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
@@ -13,168 +27,25 @@
 
 #include "MultiCore_proc.h"
 
-
-static int num_runners = 0;
+//#undef R_ASSERT
+//#define R_ASSERT(a) do{ if(!(a)){ fflush(stderr);fprintf(stderr,">>>>>>>>>>>>>>>>>>> Assert failed: \"" # a "\". %s: " __FILE__":%d\n", __FUNCTION__, __LINE__);something_is_wrong=true;}}while(0)
 
 static const int default_num_runners = 1;
 static const char *settings_key = "num_cpus";
 
-static RSemaphore *there_is_a_free_runner = NULL;
-
-static QMutex lock;
-static QWaitCondition broadcast;
-
 bool g_running_multicore = false; // Must be "false" since MultiCore is initialized after the mixer has started. This variable is protected by the player lock.
 
-namespace{
-  
+static volatile bool something_is_wrong = false;
 
-struct Runner;
+static Semaphore all_sp_finished;
 
-static Runner *running_runners = NULL; // access to these two are protected by 'lock'.
-static Runner *free_runners = NULL;
+static Semaphore sp_ready;
+static QAtomicInt num_sp_left(0);
 
-static void add_runner(Runner **root, Runner *runner);
-static void remove_runner(Runner **root, Runner *runner);
-
-struct Runner : public QThread {
-  //  Q_OBJECT
-
-public:
-  
-  Runner *prev;
-  Runner *next;
-  
-  SoundProducer *sp;
-  int64_t time;
-  int num_frames;
-  bool process_plugins;
-
-  RSemaphore *ready;
-
-  bool must_exit;
-  
-  Runner() {
-    ready = RSEMAPHORE_create(0);
-    must_exit = false;
-    
-    start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
-  }
-
-  ~Runner() {
-    
-    must_exit = true;
-    RSEMAPHORE_signal(ready, 1);
-    wait(2000);
-
-    RSEMAPHORE_delete(ready);
-  }
-
-  
-private:
-  
-  void run() {
-
-    AVOIDDENORMALS;
-        
-    THREADING_acquire_player_thread_priority();
-
-    while(true){
-      RSEMAPHORE_wait(ready, 1);
-
-      if(must_exit)
-        break;
-
-      SP_RT_process(sp, time, num_frames, process_plugins);
-      
-      SP_set_running_state(sp, FINISHED_RUNNING);
-      
-      {
-        QMutexLocker locker(&lock);
-        remove_runner(&running_runners, this);
-        add_runner(&free_runners, this);
-
-        RSEMAPHORE_signal(there_is_a_free_runner, 1);
-        broadcast.wakeOne(); // Only the main player thread may be waiting.
-      }
-
-    }
-  }
-
-  
-public:
-  
-  void start_rt_process() {
-    RSEMAPHORE_signal(ready, 1);
-  }
-};
+// 1024 is just the initial value. boost::lockfree::queue automatically allocates more space if needed.
+static boost::lockfree::queue<SoundProducer*> ready_soundproducers(1024);
 
 
-
-
-static void add_runner(Runner **root, Runner *runner){
-  runner->next = (Runner*)*root;
-  if(*root!=NULL)
-    (*root)->prev = runner;
-  *root = runner;
-  runner->prev = NULL;
-}
-
-static void remove_runner(Runner **root, Runner *runner){
-  if(runner->prev!=NULL)
-    runner->prev->next = runner->next;
-  else
-    *root=runner->next;
-
-  if(runner->next!=NULL)
-    runner->next->prev = runner->prev;
-}
-
-
-
-static Runner *get_free_runner(void){
-  R_ASSERT(THREADING_is_player_thread());
-  
-  R_ASSERT(free_runners!=NULL);
-
-  Runner *ret;
-
-  {
-    QMutexLocker locker(&lock);
-    
-    ret = (Runner*)free_runners;
-
-    remove_runner(&free_runners, ret);
-    add_runner(&running_runners, ret);
-    
-  }
-
-  return ret;
-}
-
-
-} // end anonymous namespace
-
-
-
-
-static void schedule(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
-  R_ASSERT(THREADING_is_player_thread());
-
-  RSEMAPHORE_wait(there_is_a_free_runner, 1);
-
-  Runner *runner = get_free_runner();
-
-  runner->sp = sp;
-  runner->time = time;
-  runner->num_frames = num_frames;
-  runner->process_plugins = process_plugins;
-
-  SP_set_running_state(sp, IS_RUNNING);
-
-  runner->start_rt_process();
-
-}
 
 #if 0
 static bool sp_is_bus_dependant(SoundProducer *sp){
@@ -191,69 +62,237 @@ static bool sp_is_bus_dependant(SoundProducer *sp){
 }
 #endif
 
-static void run_soundproducers(SoundProducer **all_sp, int num_sp, int64_t time, int num_frames, bool process_plugins, BusDescendantType bus_descendant_type){
-
-  bool all_are_scheduled = false;
-
-  while(all_are_scheduled==false) {
-    
-    all_are_scheduled = true; // Start optimistically
-
-    for (int i = 0 ; i<num_sp ; i++){
-      SoundProducer *sp = all_sp[i];
-    
-      if (SP_get_running_state(sp)==HASNT_RUN_YET) {
-
-        SoundPlugin *plugin = SP_get_plugin(sp);
-        
-        if (plugin->bus_descendant_type==bus_descendant_type) {
-          SoundProducer *ready_to_process = SP_get_ready_to_process(sp);
-
-          if (ready_to_process != sp)
-            all_are_scheduled = false;
-
-          if (ready_to_process != NULL)
-            schedule(ready_to_process, time, num_frames, process_plugins);
-        }
-      }
-    }
+static void dec_sp_dependency(SoundProducer *parent, SoundProducer *sp){
+  if (!sp->num_dependencies_left.deref()) {
+    while(!ready_soundproducers.push(sp))
+      ;
+    //fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
+    //fflush(stderr);
+    sp_ready.signal();
   }
-
-#if 1
-  // Wait for all runners to finish.
-  {
-    QMutexLocker locker(&lock);
-    while(running_runners != NULL)
-      broadcast.wait(&lock, 1000);
-  }
-#endif
 }
 
-void MULTICORE_run_all(SoundProducer **all_sp, int num_sp, int64_t time, int num_frames, bool process_plugins){
+void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
+  R_ASSERT(g_running_multicore);
+  
+  double start_time = monotonic_seconds();
+  {
+    sp->RT_process(time, num_frames, process_plugins);
+  }
+  sp->running_time += monotonic_seconds() - start_time;
+
+  if (!num_sp_left.deref()){
+    //printf("num_left: %d\n",0);
+    R_ASSERT(sp->dependants.is_empty());
+    all_sp_finished.signal();
+    return;
+  }
+
+  //int num_left = num_sp_left;
+  //printf("num_left: %d\n",num_left);
+
+  for(auto sp_dep : sp->dependants)
+    dec_sp_dependency(sp, sp_dep);
+     
+  if (sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT) {
+    SoundProducer *bus1,*bus2;
+    MIXER_get_buses(bus1,bus2);
+    if (bus1!=NULL)
+      dec_sp_dependency(sp, bus1);
+    if (bus2!=NULL)
+      dec_sp_dependency(sp, bus2);
+  }
+}
+
+
+namespace{
+
+  
+struct Runner : public QThread {
+
+  volatile bool must_exit;
+
+  int64_t time;
+  int num_frames;
+  bool process_plugins;
+
+  Runner()
+    : must_exit(false)
+  {
+  }
+
+
+#if 0
+  ~Runner() {
+    R_ASSERT(must_exit==true);
+    sp_ready.signal();
+    wait(2000);
+  }
+#endif
+
+  int touch_stack(void){
+    int stack_size = 1024*64;
+    char hepp[stack_size];
+    for(int i=0;i<stack_size;i++)
+      hepp[i] = rand() % 128;
+
+    int ret = 0;
+
+    for(int i=0;i<stack_size;i++)
+      ret += hepp[i];
+
+    return ret;
+  }
+
+  void run(){
+    AVOIDDENORMALS;
+
+    printf("stack is hopefully touched: %d\n", touch_stack());
+        
+    THREADING_acquire_player_thread_priority();
+
+    while(true){
+
+      sp_ready.wait();
+
+      if (must_exit) {
+        sp_ready.signal();
+        break;
+      }
+      
+      SoundProducer *sp = NULL;
+      bool success = ready_soundproducers.pop(sp);
+      
+      R_ASSERT(success);
+      R_ASSERT(sp!=NULL);
+
+      //fprintf(stderr,"   Processing %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
+      //fflush(stderr);
+
+      R_ASSERT(sp->is_processed==false);
+      sp->is_processed=true;
+      
+      process_multicore(sp, time, num_frames, process_plugins);
+
+    } // end while
+
+
+    THREADING_drop_player_thread_priority();
+    
+    // delete this;  // Qt didn't allow this. Just leak a little bit instead.
+  }
+
+};
+
+}
+
+static int g_num_runners = 0;
+static Runner **g_runners = NULL;
+
+
+void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int num_frames, bool process_plugins){
 
   R_ASSERT(g_running_multicore);
 
+  if (sp_all->size()==0)
+    return;
+
+  int num_ready_sp = 0;
+
+
+  // 1. Initialize threads
+
+  for(int i=0;i<g_num_runners;i++){
+    g_runners[i]->time = time;
+    g_runners[i]->num_frames = num_frames;
+    g_runners[i]->process_plugins = process_plugins;
+  }
+
+
   
-  // 1. Set running state for all soundproducers
+  // 2. initialize soundproducers
+  
+  num_sp_left = sp_all->size();
+  //fprintf(stderr,"**************** STARTING %d\n",sp_all->num_elements);
+  //fflush(stderr);
 
-  for (int i=0 ; i<num_sp ; i++)
-    SP_set_running_state(all_sp[i], HASNT_RUN_YET);
+  SoundProducer *bus1,*bus2;
+  MIXER_get_buses(bus1,bus2);
 
+  
+  for (SoundProducer *sp : *sp_all)
+    sp->num_dependencies_left = sp->num_dependencies;
 
-  // 2. run all soundproducers.
+  for (SoundProducer *sp : *sp_all) {
+    sp->is_processed=false;
 
-  run_soundproducers(all_sp, num_sp, time, num_frames, process_plugins, IS_NOT_A_BUS_DESCENDANT);
-  run_soundproducers(all_sp, num_sp, time, num_frames, process_plugins, IS_BUS_DESCENDANT);
+    if (sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT) {
+      if (bus1!=NULL)
+        bus1->num_dependencies_left.ref();
+      if (bus2!=NULL)
+        bus2->num_dependencies_left.ref();
+    }
+  }
 
+  
 #if 0
-    // Wait for all runners to finish.
-  {
-    QMutexLocker locker(&lock);
-    while(running_runners != NULL)
-      broadcast.wait(&lock, 1000);
+  fprintf(stderr, "bus1: %p, bus2: %p\n",bus1,bus2);
+  fflush(stderr);
+
+  int num=0;
+
+  for (SoundProducer *sp : *sp_all){
+    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->dependants.size(), sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
+    fflush(stderr);
   }
 #endif
+
+
+
+  // 3. start threads;
+
+  if (bus1!=NULL && int(bus1->num_dependencies_left)==0){
+    //fprintf(stderr,"Scheduling bus1.\n");
+    num_ready_sp++;
+    while(!ready_soundproducers.push(bus1))
+      ;
+    sp_ready.signal();
+  }
+  
+  if (bus2!=NULL && int(bus2->num_dependencies_left)==0){
+    //fprintf(stderr,"Scheduling bus2.\n");
+    num_ready_sp++;
+    while(!ready_soundproducers.push(bus2))
+      ;
+    sp_ready.signal();
+  }
+  
+  for (SoundProducer *sp : *sp_all)
+    if (sp->num_dependencies==0 && sp!=bus1 && sp!=bus2){
+      num_ready_sp++;
+      //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
+      fflush(stderr);
+      while(!ready_soundproducers.push(sp))
+        ;
+      sp_ready.signal();
+    }
+
+
+
+  // 4. wait.
+
+  R_ASSERT(num_ready_sp > 0);
+
+  all_sp_finished.wait();
+
+  if(something_is_wrong){
+    fflush(stderr);
+    abort();
+  }
+
 }
+
+
 
 #if 0
 void MULTICORE_stop(void){
@@ -269,47 +308,54 @@ void MULTICORE_stop(void){
 }
 #endif
 
+
 int MULTICORE_get_num_threads(void){
   return SETTINGS_read_int(settings_key, default_num_runners);
 }
 
+
+// This function leaks a little bit of memory, but it's not a big deal.
+//
 void MULTICORE_set_num_threads(int num_new_runners){
   R_ASSERT(num_new_runners >= 1);
 
+  if (num_new_runners==g_num_runners)
+    return;
+
   if (SETTINGS_read_int(settings_key, default_num_runners) != num_new_runners)
     SETTINGS_write_int(settings_key, num_new_runners);
+
     
-  Runner *old_runners = NULL;
-  Runner *new_runners = NULL;
+  int num_old_runners = g_num_runners;
+  Runner **old_runners = g_runners;
+  
+  Runner **new_runners = (Runner**)calloc(num_new_runners,sizeof(Runner*));
 
   for(int i=0 ; i < num_new_runners ; i++)
-    add_runner(&new_runners, new Runner);
+    new_runners[i]=new Runner;
 
   PLAYER_lock(); {
-    R_ASSERT(running_runners==NULL);
-    R_ASSERT(RSEMAPHORE_get_num_signallers(there_is_a_free_runner)==num_runners);
-    
-    old_runners = free_runners;
-    free_runners = new_runners;
 
-    num_runners = num_new_runners;
-      
-    RSEMAPHORE_set_num_signallers(there_is_a_free_runner, num_runners);
-    R_ASSERT(RSEMAPHORE_get_num_signallers(there_is_a_free_runner)==num_runners);
+    for(int i=0 ; i < num_new_runners ; i++)
+      new_runners[i]->start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
+
+    g_num_runners = num_new_runners;
+    g_runners = new_runners;
     
-    if (num_runners == 1)
+    if (g_num_runners == 1)
       g_running_multicore = false;
     else
       g_running_multicore = true;
 
+    for(int i=0 ; i < num_old_runners ; i++)
+      old_runners[i]->must_exit = true;
+
   } PLAYER_unlock();
 
+  free(old_runners);
 
-  while(old_runners != NULL){
-    Runner *next = old_runners->next;
-    delete old_runners;
-    old_runners = next;
-  }
+  //for(int i=0 ; i < num_old_runners ; i++)
+  //  delete old_runners[i];
 }
 
 void MULTICORE_shut_down(void){
@@ -318,22 +364,7 @@ void MULTICORE_shut_down(void){
 
 void MULTICORE_init(void){
 
-  there_is_a_free_runner = RSEMAPHORE_create(0);
-
   int num_new_runners = SETTINGS_read_int(settings_key, default_num_runners);
 
-#if 1
-  
   MULTICORE_set_num_threads(num_new_runners);
-
-#else
-
-  num_runners = num_new_runners;
-  
-  for(int i=0 ; i < num_runners ; i++) {
-    add_runner(&free_runners, new Runner);
-    RSEMAPHORE_signal(there_is_a_free_runner, 1);
-  }
-
-#endif
 }
