@@ -311,9 +311,9 @@ struct SoundProducer {
   float *_input_peaks;
   float *_volume_peaks;
 
-  //QVector<SoundProducer*> dependants;
-  int num_dependencies;
-  
+  radium::Vector<SoundProducer*> dependants;
+
+  int num_dependencies; // i.e. size(_input_eproducers)+size(_input_producers) (the input producers should be replaced by a Vector, then we don't need this variable)
   SoundProducerLink _input_eproducers;
   SoundProducerLink *_input_producers; // one SoundProducerLink per in-channel
 
@@ -552,44 +552,49 @@ public:
     return false;
   }
 
-  bool add_eventSoundProducerInput(SoundProducer *sound_producer){
-    if(sound_producer->is_recursive(this)==true){
+  bool add_eventSoundProducerInput(SoundProducer *source){
+    if(source->is_recursive(this)==true){
       printf("Recursive tree detected\n");
       return false;
     }
 
-    SoundProducerLink *link = new SoundProducerLink;
-    link->source    = sound_producer;
-    link->target    = this;
+    SoundProducerLink *elink = new SoundProducerLink;
+    elink->source    = source;
+    elink->target    = this;
     
     PLAYER_lock();{
-      _input_eproducers.add(link);
+      source->dependants.add(this);
+      
+      _input_eproducers.add(elink);
       num_dependencies++;
+      
       MIXER_RT_set_bus_descendand_type_for_all_plugins(); // hmm.
     }PLAYER_unlock();
 
     return true;
   }
   
-  bool add_SoundProducerInput(SoundProducer *sound_producer, int sound_producer_ch, int ch){
+  bool add_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
     //fprintf(stderr,"*** this: %p. Adding input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
 
-    if(sound_producer->is_recursive(this)==true){
+    if(source->is_recursive(this)==true){
       printf("Recursive tree detected\n");
       return false;
     }
 
     SoundProducerLink *link = new SoundProducerLink; // created here
-    link->source    = sound_producer;
-    link->source_ch = sound_producer_ch;
+    link->source    = source;
+    link->source_ch = source_ch;
     link->target    = this;
-    link->target_ch = ch;
+    link->target_ch = target_ch;
     
     link->fade_pos          = 0;
     link->state = SoundProducerLink::FADING_IN;
 
     PLAYER_lock();{
-      _input_producers[ch].add(link);
+      source->dependants.add(this);
+            
+      _input_producers[target_ch].add(link);
       num_dependencies++;
       MIXER_RT_set_bus_descendand_type_for_all_plugins();
     }PLAYER_unlock();
@@ -608,6 +613,9 @@ public:
         PLAYER_lock();{
           _input_eproducers.remove(link);
           num_dependencies--;
+          
+          source->dependants.remove(this);
+          
           MIXER_RT_set_bus_descendand_type_for_all_plugins();
         }PLAYER_unlock();
                 
@@ -623,18 +631,18 @@ public:
     abort();
   }
   
-  void remove_SoundProducerInput(SoundProducer *sound_producer, int sound_producer_ch, int ch){
+  void remove_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
     //printf("**** Asking to remove connection\n");
 
     if (PLAYER_is_running()==false)
       return;
 
     //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
-    SoundProducerLink *link = (SoundProducerLink*)_input_producers[ch].next;
+    SoundProducerLink *link = (SoundProducerLink*)_input_producers[target_ch].next;
     while(link!=NULL){
       //fprintf(stderr,"link: %p. link channel: %d\n",link,link->source_ch);
 
-      if(link->source==sound_producer && link->source_ch==sound_producer_ch){
+      if(link->source==source && link->source_ch==source_ch){
         
         while(link->state == SoundProducerLink::FADING_IN) {
           PLAYER_memory_debug_wake_up();
@@ -651,8 +659,12 @@ public:
         RSEMAPHORE_wait(signal_from_RT,1);
         
         PLAYER_lock();{
-          _input_producers[ch].remove(link);
+          
+          _input_producers[target_ch].remove(link);
           num_dependencies--;
+
+          source->dependants.remove(this);
+          
           MIXER_RT_set_bus_descendand_type_for_all_plugins();
         }PLAYER_unlock();
 
@@ -663,7 +675,7 @@ public:
       link=(SoundProducerLink*)link->next;
     }
 
-    fprintf(stderr,"huffda. link: %p. ch: %d\n",link->next,ch);  // provoke a crash detected by the crash reporter
+    fprintf(stderr,"huffda. link: %p. ch: %d\n",link->next,target_ch);  // provoke a crash detected by the crash reporter
     R_ASSERT(false);
   }
 
@@ -1068,12 +1080,23 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
 }
 
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
-  double start_time = monotonic_seconds();
-  {
-    producer->RT_process(time, num_frames, process_plugins);
-  }
-  producer->running_time = monotonic_seconds() - start_time;
+  //R_ASSERT(!g_running_multicore);
+  producer->RT_process(time, num_frames, process_plugins);
 }
+
+
+
+/*********************************************************
+ *************** MULTICORE start *************************
+ *********************************************************/
+
+//#include "MultiCore.cpp"
+
+/*********************************************************
+ *************** MULTICORE end ***************************
+ *********************************************************/
+
+
 
 #if 0
 void SP_RT_clean_output(SoundProducer *producer, int num_frames){
