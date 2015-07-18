@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin.h"
 
+namespace radium{
+  
 struct DoublyLinkedList{
   DoublyLinkedList *next;
   DoublyLinkedList *prev;
@@ -52,6 +54,78 @@ struct DoublyLinkedList{
       l->next->prev = l->prev;
   }
 };
+
+  
+// When common/vector can't be used because it allocates the elements with talloc instead of malloc.
+template <typename T> struct Vector{
+  
+private:
+  int num_elements_max;
+  
+public:
+  
+  int num_elements;
+  T *elements;
+
+  Vector()
+    : num_elements_max(0)
+    , num_elements(0)
+    , elements(NULL)
+  {
+  }
+
+  ~Vector(){
+    free(elements);
+  }
+
+  T operator[](int i){
+    R_ASSERT(i>=0);
+    R_ASSERT(i<num_elements);
+    return elements[i];
+  }
+
+  const T* begin(){
+    return &elements[0];
+  }
+  
+  const T* end(){
+    return &elements[num_elements];
+  }
+  
+  void add(T t){
+    num_elements++;
+    
+    if (num_elements > num_elements_max) {
+      num_elements_max = num_elements;
+      elements = (T*) realloc(elements, sizeof(T) * num_elements_max);
+    }
+    
+    elements[num_elements-1] = t;
+  }
+
+  void remove(T t){
+    int pos;
+    
+    for(pos=0 ; pos<num_elements ; pos++)
+      if (elements[pos]==t)
+        break;
+    
+    R_ASSERT(pos < num_elements);
+
+    if (num_elements==1){
+      R_ASSERT(pos==0);
+      elements[pos] = NULL;
+    } else {
+      elements[pos] = elements[num_elements-1];
+    }
+    
+    num_elements--;    
+  }
+  
+};
+
+}
+
 
 enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
 

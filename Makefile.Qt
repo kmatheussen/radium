@@ -1598,8 +1598,8 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp audio/fade_envelopes.h
-	$(CCC) audio/SoundProducer.cpp $(CPPOPT) # $(CPUOPT)
+SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h
+	$(CCC) audio/SoundProducer.cpp $(CPPOPT)  -std=c++11 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -1616,8 +1616,8 @@ SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
 	$(CC) audio/SoundPlugin.c $(OPT) -std=c99
 ### $(CPUOPT)
 
-Mixer.o: audio/Mixer.cpp
-	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT)
+Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h
+	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -std=c++11
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC) audio/get_windows_commandlines.c $(OPT)

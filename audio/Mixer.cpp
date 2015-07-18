@@ -356,8 +356,7 @@ struct Mixer{
   SoundProducer *_bus1;
   SoundProducer *_bus2;
 
-  int _num_sound_producers;
-  SoundProducer **_sound_producers;
+  radium::Vector<SoundProducer*> _sound_producers;
   
   jack_client_t *_rjack_client;
   int64_t _last_time;
@@ -371,8 +370,6 @@ struct Mixer{
   Mixer()
     : _bus1(NULL)
     , _bus2(NULL)
-    , _num_sound_producers(0)
-    , _sound_producers(NULL)
     , _rjack_client(NULL)
     , _last_time(0)
     , _time(0)
@@ -383,14 +380,12 @@ struct Mixer{
   void RT_set_bus_descendant_type_for_all_plugins(){
     
     // First set all descendant types to MAYBE.
-    for(int i=0 ; i<_num_sound_producers ; i++){
-      struct SoundPlugin *plugin = SP_get_plugin(_sound_producers[i]);
-      plugin->bus_descendant_type = MAYBE_A_BUS_DESCENDANT;      
-    }
+    for (SoundProducer *sp : _sound_producers)
+      SP_get_plugin(sp)->bus_descendant_type = MAYBE_A_BUS_DESCENDANT;
     
     // Then set one by one.
-    for(int i=0 ; i<_num_sound_producers ; i++)
-      SP_RT_set_bus_descendant_type_for_plugin(_sound_producers[i]);
+    for (SoundProducer *sp : _sound_producers)
+      SP_RT_set_bus_descendant_type_for_plugin(sp);
 
   }
 
@@ -446,9 +441,7 @@ struct Mixer{
         R_ASSERT(i<g_num_allocated_click_plugins);
       }
 
-      _num_sound_producers++;
-      _sound_producers = (SoundProducer**)realloc(_sound_producers, sizeof(SoundProducer*) * _num_sound_producers);
-      _sound_producers[_num_sound_producers-1] = sound_producer;
+      _sound_producers.add(sound_producer);
       
     }PLAYER_unlock();
   }
@@ -464,21 +457,7 @@ struct Mixer{
 
     
     PLAYER_lock();{
-      {
-        int pos;
-        for(pos=0 ; pos<_num_sound_producers ; pos++)
-          if (_sound_producers[pos]==sound_producer)
-            break;
-        R_ASSERT(pos < _num_sound_producers);
-        
-        if (_num_sound_producers==1){
-          R_ASSERT(pos==0);
-          _sound_producers[pos] = NULL;
-        } else {
-          _sound_producers[pos] = _sound_producers[_num_sound_producers-1];
-        }
-        _num_sound_producers--;
-      }
+      _sound_producers.remove(sound_producer);
       
       if (is_click_patch) {
         int i;
@@ -591,7 +570,7 @@ struct Mixer{
   
   // Start the most cpu intensive soundproducers first
   void RT_sort_sound_producers_by_running_time(void){
-    qsort(_sound_producers, _num_sound_producers, sizeof(SoundProducer*), compare_sound_producers);
+    qsort(_sound_producers.elements, _sound_producers.num_elements, sizeof(SoundProducer*), compare_sound_producers);
 #if 0    
     printf("\n\n\n****************** START\n");
     for(int i=0;i<_num_sound_producers;i++){
@@ -690,7 +669,7 @@ struct Mixer{
         if (g_running_multicore) {
 
           RT_sort_sound_producers_by_running_time();
-          MULTICORE_run_all(_sound_producers, _num_sound_producers, _time, RADIUM_BLOCKSIZE, process_plugins);
+          MULTICORE_run_all(_sound_producers.elements, _sound_producers.num_elements, _time, RADIUM_BLOCKSIZE, process_plugins);
           
         } else {
           
@@ -700,10 +679,10 @@ struct Mixer{
           if (_bus2!=NULL)
             SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, process_plugins);
 
-          for(int i=0 ; i<_num_sound_producers ; i++)
+          for (SoundProducer *sp : _sound_producers)
             // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
             // (Unless running MultiCore, then the MultiCore system takes care of running in the right order)
-            SP_RT_process(_sound_producers[i], _time, RADIUM_BLOCKSIZE, process_plugins );
+            SP_RT_process(sp, _time, RADIUM_BLOCKSIZE, process_plugins );
           
         }
 
@@ -790,8 +769,8 @@ struct Mixer{
       if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
         RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
 
-      for(int i=0 ; i<mixer->_num_sound_producers ; i++)
-        SP_set_buffer_size(mixer->_sound_producers[i], mixer->_buffer_size);
+      for (SoundProducer *sp : mixer->_sound_producers)
+        SP_set_buffer_size(sp, mixer->_buffer_size);
       
     }unlock_player();
 
@@ -896,9 +875,8 @@ void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
   g_mixer->remove_SoundProducer(sound_producer);
 }
 
-SoundProducer **MIXER_get_all_SoundProducers(int &num_sound_producers){
-  num_sound_producers = g_mixer->_num_sound_producers;
-  return g_mixer->_sound_producers;
+radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void){
+  return &g_mixer->_sound_producers;
 }
 
 struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){

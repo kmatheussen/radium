@@ -107,7 +107,7 @@ static float iec_scale(float db) {
 #endif
 
 namespace{
-struct SoundProducerLink : public DoublyLinkedList{
+struct SoundProducerLink : public radium::DoublyLinkedList{
 
   // used both by audio links and event links
   SoundProducer *source;
@@ -311,6 +311,9 @@ struct SoundProducer {
   float *_input_peaks;
   float *_volume_peaks;
 
+  //QVector<SoundProducer*> dependants;
+  int num_dependencies;
+  
   SoundProducerLink _input_eproducers;
   SoundProducerLink *_input_producers; // one SoundProducerLink per in-channel
 
@@ -322,6 +325,7 @@ struct SoundProducer {
     , running_time(0.0)
     , _is_bus(!strcmp(plugin->type->type_name,"Bus"))
     , _bus_num(-1)
+    , num_dependencies(0)
   {
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
@@ -560,6 +564,7 @@ public:
     
     PLAYER_lock();{
       _input_eproducers.add(link);
+      num_dependencies++;
       MIXER_RT_set_bus_descendand_type_for_all_plugins(); // hmm.
     }PLAYER_unlock();
 
@@ -585,6 +590,7 @@ public:
 
     PLAYER_lock();{
       _input_producers[ch].add(link);
+      num_dependencies++;
       MIXER_RT_set_bus_descendand_type_for_all_plugins();
     }PLAYER_unlock();
 
@@ -601,6 +607,7 @@ public:
         
         PLAYER_lock();{
           _input_eproducers.remove(link);
+          num_dependencies--;
           MIXER_RT_set_bus_descendand_type_for_all_plugins();
         }PLAYER_unlock();
                 
@@ -645,6 +652,7 @@ public:
         
         PLAYER_lock();{
           _input_producers[ch].remove(link);
+          num_dependencies--;
           MIXER_RT_set_bus_descendand_type_for_all_plugins();
         }PLAYER_unlock();
 
@@ -1080,11 +1088,9 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
   memset(outputs[0],0,sizeof(float)*num_frames);
   memset(outputs[1],0,sizeof(float)*num_frames);
 
-  int num_sp;
-  SoundProducer **all_sp = MIXER_get_all_SoundProducers(num_sp);
-  
-  for(int i=0 ; i<num_sp ; i++){
-    SoundProducer         *sp     = all_sp[i];
+  radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
+
+  for (SoundProducer *sp : *all_sp) {
     SoundPlugin           *plugin = SP_get_plugin(sp);
     const SoundPluginType *type   = plugin->type;
     
@@ -1119,12 +1125,11 @@ int SP_get_bus_num(SoundProducer *sp){
 }
 
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){
-  int num_sp;
-  SoundProducer **all_sp = MIXER_get_all_SoundProducers(num_sp);
-  
-  for(int i=0 ; i<num_sp ; i++)
-    if(SP_get_plugin(all_sp[i])==plugin)
-      return all_sp[i];
+  radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
+
+  for (SoundProducer *sp : *all_sp)
+    if(SP_get_plugin(sp)==plugin)
+      return sp;
   
   return NULL;
 }

@@ -28,7 +28,7 @@ extern void MIXER_add_SoundProducer(SoundProducer *sound_producer);
 extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
 
 #include "SoundProducer_proc.h"
-extern SoundProducer **MIXER_get_all_SoundProducers(int &num_sound_producers);
+extern radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
 #endif // __cplusplus
 
 extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches);
