@@ -100,7 +100,7 @@ public:
     return num_elements==0;
   }
 
-  bool size(void){
+  int size(void){
     return num_elements;
   }
 
