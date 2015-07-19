@@ -87,6 +87,13 @@ int SYSTEM_show_message(const char *message){
   arguments << message;
 
   QProcess myProcess;
+
+#if defined(FOR_LINUX)
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
+  myProcess.setProcessEnvironment(env);
+#endif
+  
   myProcess.start(program, arguments);
 
   if (myProcess.waitForFinished(-1)==false) {

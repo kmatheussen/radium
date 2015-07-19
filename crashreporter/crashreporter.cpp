@@ -350,6 +350,7 @@ void CRASHREPORTER_init(void){
     //if(_spawnl( _P_NOWAIT, c, c, k, NULL)==-1){
     //if(_spawnl( _P_NOWAIT, "start", "start", "/B", c, k, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",c,k);
+    RError("Couldn't launch crashreporter: \"%s\" \"%s\"\n",c,k);
     Sleep(3000);
   }
 
@@ -359,14 +360,20 @@ void CRASHREPORTER_init(void){
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX)
+      
   //if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
-  if(system(QString("./crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) {
-    fprintf(stderr,"Couldn't start crashreporter\n");
+  QString a = "LD_LIBRARY_PATH=" + QString(getenv("LD_LIBRARY_PATH"));
+  QString command = a + " ./crashreporter " + key + " " + QString::number(getpid()) + "&";
+  
+  if(system(strdup(command.toUtf8().constData()))==-1) {
+    SYSTEM_show_message(strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",command.toUtf8().constData())));
 #ifndef RELEASE
     abort();
 #endif
   }
 
+  //RError("hello: -%s-",command.toUtf8().constData());
+         
   CRASHREPORTER_posix_init();
 
 #elif defined(FOR_MACOSX)
