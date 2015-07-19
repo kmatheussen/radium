@@ -65,14 +65,17 @@ static bool sp_is_bus_dependant(SoundProducer *sp){
 }
 #endif
 
-static void dec_sp_dependency(SoundProducer *parent, SoundProducer *sp){
-  if (!sp->num_dependencies_left.deref()) {
-    while(!ready_soundproducers.bounded_push(sp))
-      ;
-    //    fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
-    // fflush(stderr);
-    sp_ready.signal();
-  }
+static void schedule_sp(SoundProducer *sp){
+  while(!ready_soundproducers.bounded_push(sp))
+    ;
+  //    fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
+  // fflush(stderr);
+  sp_ready.signal();
+}
+
+static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp){
+  if (!sp->num_dependencies_left.deref())
+    schedule_sp(sp);
 }
 
 void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
@@ -126,12 +129,11 @@ struct Runner : public QThread {
   {
   }
 
-
 #if 0
   ~Runner() {
     R_ASSERT(must_exit==true);
-    sp_ready.signal();
-    wait(2000);
+    //sp_ready.signal();
+    wait();
   }
 #endif
 
@@ -264,17 +266,13 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   if (bus1!=NULL && int(bus1->num_dependencies_left)==0){
     //fprintf(stderr,"Scheduling bus1.\n");
     num_ready_sp++;
-    while(!ready_soundproducers.bounded_push(bus1))
-      ;
-    sp_ready.signal();
+    schedule_sp(bus1);
   }
   
   if (bus2!=NULL && int(bus2->num_dependencies_left)==0){
     //fprintf(stderr,"Scheduling bus2.\n");
     num_ready_sp++;
-    while(!ready_soundproducers.bounded_push(bus2))
-      ;
-    sp_ready.signal();
+    schedule_sp(bus2);
   }
   
   for (SoundProducer *sp : *sp_all)
@@ -282,9 +280,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
       num_ready_sp++;
       //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
       //fflush(stderr);
-      while(!ready_soundproducers.bounded_push(sp))
-        ;
-      sp_ready.signal();
+      schedule_sp(sp);
     }
 
 
@@ -362,10 +358,13 @@ void MULTICORE_set_num_threads(int num_new_runners){
 
   } PLAYER_unlock();
 
-  free(old_runners);
+#if 0
+  // a little bit tricky to get right. Safer to just leak a little bit instead.
+  for(int i=0 ; i < num_old_runners ; i++)
+    delete old_runners[i];
+#endif
 
-  //for(int i=0 ; i < num_old_runners ; i++)
-  //  delete old_runners[i];
+  free(old_runners);
 }
 
 void MULTICORE_shut_down(void){
