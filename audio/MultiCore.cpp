@@ -45,9 +45,9 @@ static radium::Semaphore all_sp_finished;
 static radium::Semaphore sp_ready;
 static QAtomicInt num_sp_left(0);
 
-// 1024 is just the initial value. boost::lockfree::queue automatically allocates more space if needed.
-static boost::lockfree::queue<SoundProducer*> ready_soundproducers(1024);
+#define MAX_NUM_SP 8192
 
+static boost::lockfree::queue<SoundProducer*,boost::lockfree::capacity<MAX_NUM_SP>> ready_soundproducers;
 
 
 #if 0
@@ -67,7 +67,7 @@ static bool sp_is_bus_dependant(SoundProducer *sp){
 
 static void dec_sp_dependency(SoundProducer *parent, SoundProducer *sp){
   if (!sp->num_dependencies_left.deref()) {
-    while(!ready_soundproducers.push(sp))
+    while(!ready_soundproducers.bounded_push(sp))
       ;
     //    fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
     // fflush(stderr);
@@ -200,6 +200,11 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   if (sp_all->size()==0)
     return;
 
+  if (sp_all->size() >= MAX_NUM_SP){
+    RWarning("Too many sound objects (%d). (this limit can be increased, but it's probably more likely to be a bug in the program.)", sp_all->size());
+    return;
+  }
+
   int num_ready_sp = 0;
 
 
@@ -257,7 +262,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   if (bus1!=NULL && int(bus1->num_dependencies_left)==0){
     //fprintf(stderr,"Scheduling bus1.\n");
     num_ready_sp++;
-    while(!ready_soundproducers.push(bus1))
+    while(!ready_soundproducers.bounded_push(bus1))
       ;
     sp_ready.signal();
   }
@@ -265,7 +270,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   if (bus2!=NULL && int(bus2->num_dependencies_left)==0){
     //fprintf(stderr,"Scheduling bus2.\n");
     num_ready_sp++;
-    while(!ready_soundproducers.push(bus2))
+    while(!ready_soundproducers.bounded_push(bus2))
       ;
     sp_ready.signal();
   }
@@ -275,7 +280,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
       num_ready_sp++;
       //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
       //fflush(stderr);
-      while(!ready_soundproducers.push(sp))
+      while(!ready_soundproducers.bounded_push(sp))
         ;
       sp_ready.signal();
     }
