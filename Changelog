@@ -1,6 +1,6 @@
 
 Most important changes 3.2.2 -> 3.2.3
-* Attempt to fix crashreporter on linux binaries
+* Fix qt version mismatch problem on linux binaries (and possibly windows and osx as well)
 * windows: Fix search for missing "-S" argument for jackd.
 * Replaced the use of QSemaphore with a native one based
   on this code: https://github.com/preshing/cpp11-on-multicore/blob/master/common/sema.h
