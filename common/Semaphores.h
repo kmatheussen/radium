@@ -1,3 +1,14 @@
+/*
+  I'm not 100% sure about if the 10000-iterations-looping in the lightweight semaphore (in sema.h) will work well for Radium
+  (the critical use is in audio/MultiCore.cpp), so here's one without that iteration.
+
+  The important thing in audio/MultiCore.cpp is just to avoid any unnecessary type of OS thread switch when a runner schedules a new job.
+  It's possible to avoid it manually in audio/MultiCore.cpp though, but then the scheduling order would be wrong (might lower performance since
+  the jobs are sorted by how much cpu they use), and/or the audio/MultiCore.cpp would become (even) more messy. It's likely that the
+  native posix/win/osx functions do this already, but we do it here anyway, just to be sure, since the overhead is small.
+ */
+
+
 #include <QAtomicInt>
 
 
