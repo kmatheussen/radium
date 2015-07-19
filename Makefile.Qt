@@ -133,7 +133,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(OS_OPTS) $(VST_OPTS)
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) $(FLAGOPTS) $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_58_0
 #$(CFLAGS)
 
 # OPT is C flags
@@ -927,7 +927,7 @@ threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
 	$(CCC)  $(CD)threading.cpp $(CPPOPT)
 
 Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.h common/OS_Semaphores.h
-	$(CCC) $(CD)Semaphores.cpp $(QTOPT) -std=c++11
+	$(CCC) $(CD)Semaphores.cpp $(QTOPT) -std=gnu++11
 
 X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
 	$(CC) $(P)X11_Main.c $(OPT)
@@ -1601,7 +1601,7 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp common/sema.h common/Semaphores.h
-	$(CCC) audio/SoundProducer.cpp $(QTOPT)  -std=c++11 # $(CPUOPT)
+	$(CCC) audio/SoundProducer.cpp $(QTOPT)  -std=gnu++11 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -1619,7 +1619,7 @@ SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
 ### $(CPUOPT)
 
 Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h
-	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -std=c++11
+	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -std=gnu++11
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC) audio/get_windows_commandlines.c $(OPT)

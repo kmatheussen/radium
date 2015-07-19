@@ -30,6 +30,14 @@ static inline int myfpclassify(float val){
   return fpclassify(val);
 }
 
+static inline int myisnan(float val){
+  return isnan(val);
+}
+
+static inline int myisinf(float val){
+  return isinf(val);
+}
+
 #include "pa_memorybarrier.h"
 
 #include "monotonic_timer.c"
@@ -271,7 +279,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
         outputs[ch][i] = 0.0f;
 
     volatile struct Patch *patch = plugin->patch;
-    const char *sigtype = isnan(sum)?"nan":isinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
+    const char *sigtype = myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
     RT_message("Error!\n"
                "\n"
                "The instrument named \"%s\" of type %s/%s\n"

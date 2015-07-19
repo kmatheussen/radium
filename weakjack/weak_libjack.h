@@ -176,6 +176,7 @@ int have_libjack(void);
 
 #endif // end USE_WEAK_JACK
 
+#include <jack/types.h>
 #include <jack/jack.h>
 #include <jack/transport.h>
 #include <jack/ringbuffer.h>

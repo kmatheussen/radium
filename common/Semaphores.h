@@ -1,8 +1,8 @@
 #include <QAtomicInt>
 
-namespace cpp11onmulticore{
-  #include "sema.h"
-}
+
+#include "sema.h"
+
 
 namespace radium{
 

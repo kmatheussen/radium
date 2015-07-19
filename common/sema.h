@@ -6,7 +6,6 @@
 #ifndef __CPP11OM_SEMAPHORE_H__
 #define __CPP11OM_SEMAPHORE_H__
 
-#include <atomic>
 #include <cassert>
 
 
@@ -20,6 +19,8 @@
 #undef min
 #undef max
 
+namespace cpp11onmulticore{
+  
 class Semaphore
 {
 private:
@@ -50,7 +51,7 @@ public:
         ReleaseSemaphore(m_hSema, count, NULL);
     }
 };
-
+}
 
 #elif defined(__MACH__)
 //---------------------------------------------------------
@@ -60,6 +61,7 @@ public:
 
 #include <mach/mach.h>
 
+namespace cpp11onmulticore{
 class Semaphore
 {
 private:
@@ -98,7 +100,7 @@ public:
         }
     }
 };
-
+}
 
 #elif defined(__unix__)
 //---------------------------------------------------------
@@ -108,6 +110,7 @@ public:
 #include <semaphore.h>
 #include <errno.h>
 
+namespace cpp11onmulticore{
 class Semaphore
 {
 private:
@@ -152,7 +155,7 @@ public:
         }
     }
 };
-
+}
 
 #else
 
@@ -160,11 +163,16 @@ public:
 
 #endif
 
+// atomic not found when compiling with clang. Don't bother to find out what happens since LightweightSemaphore is not used anyway.
+#if 0
 
+
+#include <atomic>
 
 //---------------------------------------------------------
 // LightweightSemaphore
 //---------------------------------------------------------
+namespace cpp11onmulticore{
 class LightweightSemaphore
 {
 private:
@@ -224,7 +232,8 @@ public:
 
 
 typedef LightweightSemaphore DefaultSemaphoreType;
-
+}
+#endif
 
 
 #endif // __CPP11OM_SEMAPHORE_H__

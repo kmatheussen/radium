@@ -79,7 +79,7 @@ static double Place2STime_from_times2(
 	double fp1 = line1;
         double fp2 = fp1+1.0;
 
-        if (fabsf(fp1 - fp) < 0.0000001)
+        if (fabs(fp1 - fp) < 0.0000001)
           return time1;
 
 	const struct STimeChanges *stc = stime->timechanges;
