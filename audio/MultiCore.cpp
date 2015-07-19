@@ -82,7 +82,9 @@ void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool pro
   {
     sp->RT_process(time, num_frames, process_plugins);
   }
-  sp->running_time += monotonic_seconds() - start_time;
+  double duration = monotonic_seconds() - start_time;
+  if (duration > sp->running_time)
+    sp->running_time = duration;
 
   if (!num_sp_left.deref()){
     //printf("num_left1: %d\n",0);
