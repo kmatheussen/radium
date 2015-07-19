@@ -16,14 +16,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include <QSemaphore>
+#include "nsmtracker.h"
 
-#include "../common/nsmtracker.h"
+#include "Semaphores.h"
 
+#include "OS_Semaphores.h"
 
-struct _RSemaphore : QSemaphore{
-  _RSemaphore(int n) : QSemaphore(n) {}
+ 
+struct _RSemaphore : radium::Semaphore{
+  _RSemaphore(int n) : radium::Semaphore(n) {}
 };
+
 
 RSemaphore *RSEMAPHORE_create(int num_signallers){
   return new RSemaphore(num_signallers);
@@ -34,20 +37,21 @@ void RSEMAPHORE_delete(RSemaphore *semaphore){
   delete semaphore;
 }
 
-
 void RSEMAPHORE_reset(RSemaphore *semaphore){
-  int n = semaphore->available();
+  int n = semaphore->numSignallers();
   if (n>0)
-    semaphore->acquire(n);
+    semaphore->wait(n);
 }
 
+#if 0
 void RSEMAPHORE_set_num_signallers(RSemaphore *semaphore, int num_signallers){
   RSEMAPHORE_reset(semaphore);
   semaphore->release(num_signallers);
 }
+#endif
 
 int RSEMAPHORE_get_num_signallers(RSemaphore *semaphore){
-  return semaphore->available();
+  return semaphore->numSignallers();
 }
 
 
@@ -55,15 +59,18 @@ int RSEMAPHORE_get_num_signallers(RSemaphore *semaphore){
 void RSEMAPHORE_set_num_waiters(RSemaphore *semaphore, int num_waiters){
 }
 
-void RSEMAPHORE_get_num_waiters(RSemaphore *semaphore){
-}
-
 #endif
 
-void RSEMAPHORE_wait(RSemaphore *semaphore, int num_waiters){
-  semaphore->acquire(num_waiters);
+int RSEMAPHORE_get_num_waiters(RSemaphore *semaphore){
+  return semaphore->numWaiters();
 }
 
+
+void RSEMAPHORE_wait(RSemaphore *semaphore, int num_waiters){
+  semaphore->wait(num_waiters);
+}
+
+#if 0
 bool RSEMAPHORE_trywait(RSemaphore *semaphore, int num_waiters){
   return semaphore->tryAcquire(num_waiters);
 }
@@ -71,8 +78,9 @@ bool RSEMAPHORE_trywait(RSemaphore *semaphore, int num_waiters){
 bool RSEMAPHORE_trywait_timeout(RSemaphore *semaphore, int num_waiters, int msecs){
   return semaphore->tryAcquire(num_waiters, msecs);
 }
+#endif
 
 void RSEMAPHORE_signal(RSemaphore *semaphore, int num_signallers){
-  semaphore->release(num_signallers);
+  semaphore->signal(num_signallers);
 }
 

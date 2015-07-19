@@ -12,23 +12,25 @@
 #endif
 
 
-#include "sema.h"
-
 #include <QThread>
 #include <QAtomicInt>
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
 #include "../common/settings_proc.h"
+#include "../common/Semaphores.h"
 
 #include "../common/OS_Player_proc.h"
 
 #include "SoundProducer_proc.h"
 
+
 #include "MultiCore_proc.h"
 
 //#undef R_ASSERT
 //#define R_ASSERT(a) do{ if(!(a)){ fflush(stderr);fprintf(stderr,">>>>>>>>>>>>>>>>>>> Assert failed: \"" # a "\". %s: " __FILE__":%d\n", __FUNCTION__, __LINE__);something_is_wrong=true;}}while(0)
+
+
 
 static const int default_num_runners = 1;
 static const char *settings_key = "num_cpus";
@@ -37,9 +39,10 @@ bool g_running_multicore = false; // Must be "false" since MultiCore is initiali
 
 static volatile bool something_is_wrong = false;
 
-static Semaphore all_sp_finished;
 
-static Semaphore sp_ready;
+static radium::Semaphore all_sp_finished;
+
+static radium::Semaphore sp_ready;
 static QAtomicInt num_sp_left(0);
 
 // 1024 is just the initial value. boost::lockfree::queue automatically allocates more space if needed.
@@ -66,8 +69,8 @@ static void dec_sp_dependency(SoundProducer *parent, SoundProducer *sp){
   if (!sp->num_dependencies_left.deref()) {
     while(!ready_soundproducers.push(sp))
       ;
-    //fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
-    //fflush(stderr);
+    //    fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
+    // fflush(stderr);
     sp_ready.signal();
   }
 }
@@ -82,14 +85,14 @@ void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool pro
   sp->running_time += monotonic_seconds() - start_time;
 
   if (!num_sp_left.deref()){
-    //printf("num_left: %d\n",0);
+    //printf("num_left1: %d\n",0);
     R_ASSERT(sp->dependants.is_empty());
     all_sp_finished.signal();
     return;
   }
 
-  //int num_left = num_sp_left;
-  //printf("num_left: %d\n",num_left);
+  //  int num_left = num_sp_left;
+  //printf("num_left2: %d\n",num_left);
 
   for(auto sp_dep : sp->dependants)
     dec_sp_dependency(sp, sp_dep);
@@ -166,11 +169,11 @@ struct Runner : public QThread {
       R_ASSERT(success);
       R_ASSERT(sp!=NULL);
 
-      //fprintf(stderr,"   Processing %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
+      //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
       //fflush(stderr);
 
-      R_ASSERT(sp->is_processed==false);
-      sp->is_processed=true;
+      R_ASSERT(int(sp->is_processed)==0);
+      sp->is_processed.ref();
       
       process_multicore(sp, time, num_frames, process_plugins);
 
@@ -213,7 +216,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   // 2. initialize soundproducers
   
   num_sp_left = sp_all->size();
-  //fprintf(stderr,"**************** STARTING %d\n",sp_all->num_elements);
+  //  fprintf(stderr,"**************** STARTING %d\n",sp_all->size());
   //fflush(stderr);
 
   SoundProducer *bus1,*bus2;
@@ -224,7 +227,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
     sp->num_dependencies_left = sp->num_dependencies;
 
   for (SoundProducer *sp : *sp_all) {
-    sp->is_processed=false;
+    sp->is_processed=0;
 
     if (sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT) {
       if (bus1!=NULL)
@@ -271,7 +274,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
     if (sp->num_dependencies==0 && sp!=bus1 && sp!=bus2){
       num_ready_sp++;
       //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
-      fflush(stderr);
+      //fflush(stderr);
       while(!ready_soundproducers.push(sp))
         ;
       sp_ready.signal();

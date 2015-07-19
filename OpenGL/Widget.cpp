@@ -16,6 +16,7 @@
 #include <QMainWindow>
 #include <QGLFormat>
 #include <QDebug>
+#include <QSemaphore>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -70,8 +71,8 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
-static RSemaphore *g_order_make_current;
-static RSemaphore *g_ack_make_current;
+static QSemaphore g_order_make_current;
+static QSemaphore g_ack_make_current;
 
 volatile char *GE_vendor_string=NULL;
 volatile char *GE_renderer_string=NULL;
@@ -513,9 +514,9 @@ public:
   virtual void updateEvent() {
     //printf("updateEvent\n");
 
-    if (RSEMAPHORE_trywait(g_order_make_current, 1)) {
+    if (g_order_make_current.tryAcquire(1)) {
       QGLWidget::makeCurrent();
-      RSEMAPHORE_signal(g_ack_make_current, 1);
+      g_ack_make_current.release(1);
     }
     
     if (GE_version_string==NULL) {
@@ -701,9 +702,9 @@ void GL_EnsureMakeCurrentIsCalled(void){
   if (has_gl_lock)
     return; // to avoid deadlock
     
-  RSEMAPHORE_signal(g_order_make_current, 1);
+  g_order_make_current.release(1);
   
-  if (RSEMAPHORE_trywait_timeout(g_ack_make_current, 1, 2000)==false){ // Need to wait for it. The catalyst driver on linux sometimes crashes if calling makeCurrent while the main thread is doing Qt stuff.
+  if (g_ack_make_current.tryAcquire(1, 2000)==false){ // Need to wait for it. The catalyst driver on linux sometimes crashes if calling makeCurrent while the main thread is doing Qt stuff.
     RError("GL_EnsureMakeCurrentIsCalled: OpenGL thread didn't answer");
     failed = true;
   }
@@ -807,9 +808,6 @@ QWidget *GL_create_widget(QWidget *parent){
   // doesn't work.
   //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
 #endif
-
-  g_order_make_current = RSEMAPHORE_create(0);
-  g_ack_make_current = RSEMAPHORE_create(0);
 
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");

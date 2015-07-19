@@ -309,7 +309,7 @@ static int get_bus_num(SoundPlugin *plugin){
 struct SoundProducer {
   SoundPlugin *_plugin;
 
-  volatile bool is_processed;
+  QAtomicInt is_processed;
 
   int _num_inputs;
   int _num_outputs;
