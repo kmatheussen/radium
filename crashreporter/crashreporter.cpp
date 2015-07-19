@@ -100,6 +100,9 @@ static QString string_to_file(QString filename){
 #endif
 
 int main(int argc, char **argv){
+  
+  QCoreApplication::setLibraryPaths(QStringList());
+  
   QString key = argv[1];
 
 #if defined(FOR_LINUX)

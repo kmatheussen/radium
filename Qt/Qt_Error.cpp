@@ -66,6 +66,8 @@ static int show_message(const char *message){
 }
 
 int main(int argc, char **argv){
+  QCoreApplication::setLibraryPaths(QStringList());
+  
   QApplication app(argc,argv);
   int ret = show_message(argv[1]);
   printf("ret: %d\n",ret);

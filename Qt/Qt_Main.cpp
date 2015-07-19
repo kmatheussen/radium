@@ -950,6 +950,7 @@ int main(int argc, char **argv){
 
   THREADING_init_main_thread_type();
 
+  QCoreApplication::setLibraryPaths(QStringList());
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
