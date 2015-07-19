@@ -8,7 +8,7 @@
 
 
 #if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
-  #error "Boost too old or not found. Need at least 1.58.\n Quick fix: 1. Download boost from http://sourceforge.net/projects/boost/files/boost/, 2. Unpack it into somewhere (no need to compile it), 3. Add -Isomewhere into OS_OPTS"
+  #error "Boost too old or not found. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.gz (that's it!)"
 #endif
 
 
