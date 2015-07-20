@@ -68,8 +68,8 @@ static bool sp_is_bus_dependant(SoundProducer *sp){
 static void schedule_sp(SoundProducer *sp){
   while(!ready_soundproducers.bounded_push(sp))
     ;
-  //    fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
-  // fflush(stderr);
+  //fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
+  //fflush(stderr);
   sp_ready.signal();
 }
 
@@ -78,7 +78,7 @@ static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp){
     schedule_sp(sp);
 }
 
-void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
+static void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
   R_ASSERT(g_running_multicore);
   
   double start_time = monotonic_seconds();
@@ -96,7 +96,7 @@ void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool pro
     return;
   }
 
-  //  int num_left = num_sp_left;
+  //int num_left = num_sp_left;
   //printf("num_left2: %d\n",num_left);
 
   for(auto sp_dep : sp->dependants)
@@ -205,7 +205,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
     return;
 
   if (sp_all->size() >= MAX_NUM_SP){
-    RWarning("Too many sound objects (%d). (this limit can be increased, but it's probably more likely to be a bug in the program.)", sp_all->size());
+    RT_message("Can't play since there are too many sound objects (%d). (this limit can be increased, but it's probably more likely that this message is shown because there is a bug in the program.)", sp_all->size());
     return;
   }
 
