@@ -1,40 +1,3 @@
-#if 0
-#include <stdio.h>
-#include <unistd.h>
-
-#include <QCoreApplication>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QMessageBox>
-
-
-int main(int argc, char **argv){
-  QCoreApplication app (argc, argv);
-
-  QNetworkAccessManager nam;
-  QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M;O=D"));
-  request.setUrl(QUrl("http://qt.nokia.com"));
-  request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
-
-//  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
-
-  QNetworkReply *reply = nam.get(request);
-
-  while(reply->isFinished()==false) {
-    app.processEvents();
-    //usleep(1000);
-    if (reply->bytesAvailable() > 0)
-      printf("got %d: -%s-\n", (int)reply->bytesAvailable(), reply->readAll().constData());
-  }
-
-  return 0;
-  
-}
-
-#endif
-
-
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -42,11 +5,23 @@ int main(int argc, char **argv){
 #include <QMessageBox>
 #include <QApplication>
 
-static void getVersionNumbers(QString versionString, int &major, int &minor, int &revision){
+#include "../common/nsmtracker.h"
+
+
+static bool getVersionNumbers(QString versionString, int &major, int &minor, int &revision){
   QStringList list = versionString.split(".");
+  if (list.size()<3) {
+#if !defined(RELEASE)
+    RError("getVersionNumbers error: -%s-",versionString.toUtf8().constData());
+#endif
+    return false;
+  }
+  
   major = list[0].toInt();
   minor = list[1].toInt();
   revision = list[2].toInt();
+
+  return true;
 }
 
 static bool hasNewer(QString newestversion, QString thisversion){
@@ -54,8 +29,10 @@ static bool hasNewer(QString newestversion, QString thisversion){
   int major1, minor1, revision1;
   int major2, minor2, revision2;
 
-  getVersionNumbers(newestversion, major1, minor1, revision1);
-  getVersionNumbers(thisversion, major2, minor2, revision2);
+  if (getVersionNumbers(newestversion, major1, minor1, revision1)==false)
+    return false;
+  
+  R_ASSERT_RETURN_IF_FALSE2(getVersionNumbers(thisversion, major2, minor2, revision2), false);
 
   int a = major1*10000 + minor1*100 + revision1;
   int b = major2*10000 + minor2*100 + revision2;
@@ -76,12 +53,15 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
     printf("Nope, %s is actually newer than (or just as old) as %s\n", VERSION, newestversion.toUtf8().constData());
 }
 
+
+
 namespace{
 
-  // Based on this example: http://www.codeprogress.com/cpp/libraries/qt/showQtExample.php?index=581&key=QNetworkAccessManagerDownloadFileHTTP
+// Based on this example: http://www.codeprogress.com/cpp/libraries/qt/showQtExample.php?index=581&key=QNetworkAccessManagerDownloadFileHTTP
 class MyNetworkAccessManager : public QNetworkAccessManager
 {
   Q_OBJECT
+  
 public:
   MyNetworkAccessManager()
   {
@@ -114,9 +94,11 @@ private slots:
     if (startPos > 0) {
       QString versionString = all.remove(0, startPos+searchString.length());
       int endPos = versionString.indexOf("-demo");
-      versionString = versionString.left(endPos);
-      printf("versionString: _%s_\n",versionString.toUtf8().constData());
-      maybeInformAboutNewVersion(versionString);
+      if (endPos > 0) {
+        versionString = versionString.left(endPos);
+        printf("versionString: _%s_\n",versionString.toUtf8().constData());
+        maybeInformAboutNewVersion(versionString);
+      }
     }
   }
 
@@ -135,10 +117,15 @@ private:
 }
 
 
+
+
 void UPDATECHECKER_doit(void){
   //MyNetworkAccessManager *nam = 
   new MyNetworkAccessManager;
 }
+
+
+
 
 
 #ifdef TEST_MAIN
