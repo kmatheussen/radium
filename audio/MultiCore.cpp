@@ -117,7 +117,9 @@ namespace{
 
   
 struct Runner : public QThread {
+  Q_OBJECT
 
+public:
   volatile bool must_exit;
 
   int64_t time;
@@ -127,6 +129,7 @@ struct Runner : public QThread {
   Runner()
     : must_exit(false)
   {
+    QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
   }
 
 #if 0
@@ -184,14 +187,19 @@ struct Runner : public QThread {
     } // end while
 
 
-    THREADING_drop_player_thread_priority();
-    
-    // delete this;  // Qt didn't allow this. Just leak a little bit instead.
+    THREADING_drop_player_thread_priority();    
+  }
+
+private slots:
+  void onFinished(){
+    //printf("\n\n\n ***************** FINISHED ****************** \n\n\n\n");
+    delete this;
   }
 
 };
-
+#include "mMultiCore.cpp"
 }
+
 
 static int g_num_runners = 0;
 static Runner **g_runners = NULL;
@@ -320,8 +328,6 @@ int MULTICORE_get_num_threads(void){
 }
 
 
-// This function leaks a little bit of memory, but it's not a big deal.
-//
 void MULTICORE_set_num_threads(int num_new_runners){
   R_ASSERT(num_new_runners >= 1);
 
@@ -358,11 +364,6 @@ void MULTICORE_set_num_threads(int num_new_runners){
 
   } PLAYER_unlock();
 
-#if 0
-  // a little bit tricky to get right. Safer to just leak a little bit instead.
-  for(int i=0 ; i < num_old_runners ; i++)
-    delete old_runners[i];
-#endif
 
   free(old_runners);
 }

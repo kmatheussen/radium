@@ -1601,6 +1601,7 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp common/sema.h common/Semaphores.h
+	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
 	$(CCC) audio/SoundProducer.cpp $(QTOPT)  -std=gnu++11 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
