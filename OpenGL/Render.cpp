@@ -20,10 +20,7 @@
 
 #include "GfxElements.h"
 
-extern "C" {
-typedef struct PyObject_ PyObject;
-#include "../api/radium_proc.h"
-}
+#include "../api/api_proc.h"
 
 #include "Render_proc.h"
 

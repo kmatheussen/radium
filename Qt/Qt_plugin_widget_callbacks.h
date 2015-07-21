@@ -245,7 +245,7 @@ public:
       else
         infoBox.setText("No information about this plugin."); // This message box should never show.
 
-      safeShow(&infoBox);
+      safeShowOrExec(&infoBox);
     }
 };
 

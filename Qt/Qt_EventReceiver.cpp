@@ -51,10 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
-extern "C" {
-  struct PyObject;
-#include "../api/radium_proc.h"
-}
+#include "../api/api_proc.h"
 
 
 #if USE_GTK_VISUAL

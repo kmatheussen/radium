@@ -12,9 +12,7 @@
 #include "../common/OS_visual_input.h"
 #include "../OpenGL/Widget_proc.h"
 
-extern "C" {
-#include "../api/radium_proc.h"
-}
+#include "../api/api_proc.h"
 
 #include "Qt_MyQButton.h"
 

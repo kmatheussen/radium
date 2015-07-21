@@ -14,10 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "mQt_tools_callbacks.h"
+
+//#include "../common/nsmtracker.h"
+
+#include "helpers.h"
+
 struct Root;
 extern struct Root *root;
-
-#include "mQt_tools_callbacks.h"
 
 
 extern int num_users_of_keyboard;
@@ -30,13 +34,7 @@ void TOOLS_open(void){
     //widget->setWindowModality(Qt::ApplicationModal);
   }
 
-  safeShow(widget);
-
-  /*  
-  num_users_of_keyboard++;
-  widget->exec();
-  num_users_of_keyboard--;
-  */
+  safeShowOrExec(widget);
 }
 
 

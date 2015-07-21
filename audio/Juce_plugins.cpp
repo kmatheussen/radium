@@ -20,10 +20,7 @@
 #include "../common/player_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 
-struct PyObject;
-extern "C" {
-#include "../api/radium_proc.h"
-}
+#include "../api/api_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"

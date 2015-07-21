@@ -1,3 +1,7 @@
+
+// Must always be included first.
+
+
 #ifdef FOR_WINDOWS
 #  ifdef _POSIX_C_SOURCE
 #    undef _POSIX_C_SOURCE
@@ -9,8 +13,20 @@
 #endif
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <Python.h>
 
+#define RADIUM_PYTHON_IS_DEFINED 1
+  
+#ifdef __cplusplus
+}
+#endif
+
+  
 #ifdef FOR_WINDOWS
 #  ifndef _POSIX_C_SOURCE
 #    define _POSIX_C_SOURCE 1

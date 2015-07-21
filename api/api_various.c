@@ -872,3 +872,22 @@ void evalScheme(char *code){
 bool isFullVersion(void){
   return FULL_VERSION==1;
 }
+
+
+static bool g_modal_windows;
+
+bool doModalWindows(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_modal_windows = SETTINGS_read_bool("modal_windows", GL_should_do_modal_windows());
+    has_inited = true;
+  }
+
+  return g_modal_windows;
+}
+
+void setModalWindows(bool doit){
+  g_modal_windows = doit;
+  SETTINGS_write_bool("modal_windows", doit);
+}

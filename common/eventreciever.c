@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/player_proc.h"
 
-#include "../api/radium_proc.h"
+#include "../api/api_proc.h"
 
 
 #include <string.h>

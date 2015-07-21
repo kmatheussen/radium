@@ -12,6 +12,8 @@
   extern "C" {
 #endif
 
+extern bool GL_should_do_modal_windows(void);
+    
 extern void GL_EnsureMakeCurrentIsCalled(void);
   
 extern void GL_erase_estimated_vblank(void);

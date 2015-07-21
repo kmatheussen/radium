@@ -32,10 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_menues_proc.h"
 
-extern "C" {
-  struct PyObject;
-#include "../api/radium_proc.h"
-}
+#include "../api/api_proc.h"
 
 #include "../Qt/Qt_MyQSpinBox.h"
 #include <FocusSniffers.h>
@@ -48,6 +45,7 @@ extern "C" {
 
 
 extern struct Root *root;
+
 
 namespace{
 
@@ -131,6 +129,11 @@ class Preferences : public QDialog, public Ui::Preferences {
         showBarsAndBeats->setChecked(true);
     }
 
+    // Windows
+    {
+      modal_windows->setChecked(doModalWindows());      
+    }
+    
     // MIDI
     {
       const char *name = MIDI_get_input_port();
@@ -232,6 +235,12 @@ public slots:
     setLinenumbersVisible(val);
   }
 
+  // windows
+
+  void on_modal_windows_toggled(bool val){
+    setModalWindows(val);
+  }
+  
   // MIDI
 
   void on_set_input_port_clicked(){
@@ -267,13 +276,7 @@ void PREFERENCES_open(void){
     //widget->setWindowModality(Qt::ApplicationModal);
   }
 
-  safeShow(g_preferences_widget);
-
-  /*  
-  num_users_of_keyboard++;
-  safeExec(msgBox);
-  num_users_of_keyboard--;
-  */
+  safeShowOrExec(g_preferences_widget);
 }
 
 void PREFERENCES_open_MIDI(void){

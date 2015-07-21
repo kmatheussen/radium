@@ -1262,7 +1262,11 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
 
   menu_up(&menu, PR_get_menu_entries());
 
-  MyQAction *action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+  MyQAction *action;
+  GL_lock();{
+    action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+  }GL_unlock();
+  
   if (action==NULL)
     return NULL;
 

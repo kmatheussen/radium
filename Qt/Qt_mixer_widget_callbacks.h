@@ -139,10 +139,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   }
 
   void on_help_button_clicked(){
-    QMessageBox msgBox;
+    static QMessageBox *msgBox = new QMessageBox;
         
-    msgBox.setText("Mixer Interface");
-    msgBox.setInformativeText(
+    msgBox->setText("Mixer Interface");
+    msgBox->setInformativeText(
                               "* Move objects with right mouse button.\n"
                               "\n"
                               "* Double-click the name of an object to open GUI.\n"
@@ -161,9 +161,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
                               "\n"
                               "* Zoom in and out by pressing CTRL and using the scroll wheel.\n"
                               );
-    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox->setStandardButtons(QMessageBox::Ok);
 
-    safeExec(msgBox);
+    safeShowOrExec(msgBox);
   }
 
 };

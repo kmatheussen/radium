@@ -67,7 +67,7 @@ static void ensure_widget_is_created(void){
   if(widget==NULL){
     widget = new comment_dialog(NULL);
     widget->setWindowFlags(Qt::WindowStaysOnTopHint);
-    widget->setWindowModality(Qt::ApplicationModal);
+    //widget->setWindowModality(Qt::ApplicationModal);
   }
 }
 
@@ -75,13 +75,7 @@ extern "C"{
   void COMMENTDIALOG_open(void){
     ensure_widget_is_created();
 
-    safeShow(widget);
-    
-    /*
-    num_users_of_keyboard++;
-    widget->exec();
-    num_users_of_keyboard--;
-    */
+    safeShowOrExec(widget);
   }
 
   bool COMMENT_show_after_loading(void){

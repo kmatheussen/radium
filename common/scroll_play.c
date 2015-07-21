@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "realline_calc_proc.h"
 
-#include "../api/radium_proc.h"
+#include "../api/api_proc.h"
 
 #include "scroll_play_proc.h"
 

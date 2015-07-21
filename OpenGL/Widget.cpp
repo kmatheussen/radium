@@ -71,6 +71,12 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
+static bool g_should_do_modal_windows = false;
+
+bool GL_should_do_modal_windows(void){
+  return g_should_do_modal_windows;
+}
+
 static QSemaphore g_order_make_current;
 static QSemaphore g_ack_make_current;
 
@@ -900,6 +906,8 @@ QWidget *GL_create_widget(QWidget *parent){
                                  );
         if (result==1)
           SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
+
+        g_should_do_modal_windows = true;
       }
 
     
@@ -975,6 +983,7 @@ QWidget *GL_create_widget(QWidget *parent){
           SETTINGS_write_bool("show_intel_gfx_message2_during_startup", false);
       }
 
+      g_should_do_modal_windows = true;
       show_mesa_warning = false;
     }
 #endif

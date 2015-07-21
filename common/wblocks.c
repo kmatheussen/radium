@@ -37,8 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "Signature_proc.h"
 
-typedef struct PyObject_ PyObject;
-#include "../api/radium_proc.h"
+#include "../api/api_proc.h"
 
 #include "wblocks_proc.h"
 
