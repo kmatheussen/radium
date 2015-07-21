@@ -946,6 +946,36 @@ extern "C" {
 }
 
 
+// based on qobject::qunsetenv from the qt 5 source
+static void qunsetenv(const char *varName)
+{
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+    _putenv_s(varName, "") == 0;
+#else
+    // POSIX.1-2001 and BSD have unsetenv
+    unsetenv(varName);
+
+#if FOR_WINDOWS
+    {
+      // On mingw, putenv("var=") removes "var" from the environment
+      QByteArray buffer(varName);
+      buffer += '=';
+      putenv(buffer.constData());
+    }
+#endif
+    
+    {
+      // Fallback to putenv("var=") which will insert an empty var into the
+      // environment and leak it
+      QByteArray buffer(varName);
+      buffer += '=';
+      char *envVar = qstrdup(buffer.constData());
+      putenv(envVar);
+    }
+#endif
+}
+
+
 int main(int argc, char **argv){
 
   THREADING_init_main_thread_type();
@@ -960,13 +990,16 @@ int main(int argc, char **argv){
   //signal(SIGSEGV,crash);
   //signal(SIGFPE,crash);
 
+  // http://stackoverflow.com/questions/27982443/qnetworkaccessmanager-crash-related-to-ssl
+  qunsetenv("OPENSSL_CONF");
+
 #if !defined(FOR_WINDOWS)
   setenv("LC_NUMERIC", "C", 1); // Qt insists on doing strange things with locale settings, causing commans to appear instead of punctation. In an ideal world, LC_NUMERIC/LANG should never be set to anything else than "C", but unfortunately, many computers runs with uncommon language settings such as french or swedish. By default, programs seems to respect the sane behaviour (in the programming world), namely to never use commas when converting between strings and floats, but Qt does something strange with the world inside the QApplication contructor, and causes commas to be used everywhere if there is an uncommon LC_NUMERIC settings (or uncommon LANG setting). This setenv call is the only way I was able to make Pd work, without modifying Pd itself. (I modified Pd too though, but kept this line to prevent similar errors to appear in other libraries.) This behaviour should be changed in Qt.)
 #endif
 
   // for mingw
   putenv(strdup("LC_NUMERIC=C"));
-
+  
   //QLocale::setDefault(QLocale::C);
   QLocale::setDefault(QLocale::c());
 
