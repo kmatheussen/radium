@@ -1,3 +1,10 @@
+Most important changes 3.2.3 -> 3.2.4
+* Make all dialogs modal by default if using intel or binary amd driver on linux (to avoid crashes)
+* Ensure all notes starts before they end, when recording from MIDI input.
+* Various note positions and value validations
+* Unset OPENSSL_CONF environment variable during startup. Fixes rare crashes during startup.
+
+
 
 Most important changes 3.2.2 -> 3.2.3
 * Fix qt version mismatch problem on linux binaries (and possibly windows and osx as well)
