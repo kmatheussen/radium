@@ -112,7 +112,7 @@ static void record_midi_event(uint32_t msg){
 }
 
 
-static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int notenum_to_find){
+static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int notenum_to_find, STime starttime_of_note){
   while(midi_event!=NULL){
     if (midi_event->wblock!=NULL) {
       
@@ -122,7 +122,7 @@ static midi_event_t *find_midievent_end_note(midi_event_t *midi_event, int noten
       int volume = msg&0xff;
       
       if (cc==0x80 || volume==0){
-        if (notenum==notenum_to_find)
+        if (notenum==notenum_to_find && midi_event->blocktime > starttime_of_note)
           return midi_event;
       }
     }
@@ -178,7 +178,7 @@ void MIDI_insert_recorded_midi_events(void){
           Place endplace;
           Place *endplace_p;
         
-          midi_event_t *midi_event_endnote = find_midievent_end_note(next,notenum);
+          midi_event_t *midi_event_endnote = find_midievent_end_note(next,notenum,time);
           if (midi_event_endnote!=NULL){
             midi_event_endnote->wblock = NULL; // only use it once
             endplace = STime2Place(block,midi_event_endnote->blocktime);
