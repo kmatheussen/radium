@@ -946,15 +946,18 @@ extern "C" {
 }
 
 
-// based on qobject::qunsetenv from the qt 5 source
+// based on qglobal::qunsetenv from the qt 5 source
 static void qunsetenv(const char *varName)
 {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
     _putenv_s(varName, "") == 0;
 #else
+
+#if (defined(_POSIX_VERSION) && (_POSIX_VERSION-0) >= 200112L) || defined(Q_OS_BSD4) || defined(Q_OS_HAIKU)
     // POSIX.1-2001 and BSD have unsetenv
     unsetenv(varName);
-
+#endif
+    
 #if FOR_WINDOWS
     {
       // On mingw, putenv("var=") removes "var" from the environment
