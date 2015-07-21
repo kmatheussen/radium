@@ -31,7 +31,9 @@ struct Notes *NewNote(void);
 
 bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
 struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
-  
+
+extern LANGSPEC void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Notes *note);
+
 extern struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

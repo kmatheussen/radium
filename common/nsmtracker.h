@@ -14,8 +14,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
 #ifndef __SSE2__
-#error "SSE2 is missing (this check is here to assert that binaries are always compiled with sse2)"
+#error "SSE2 is missing (i.e. -msse2 is lacking)"
+#endif
+
+#ifndef __SSE2_MATH__
+#error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
+#endif
+
+#ifdef RELEASE
+#ifndef __OPTIMIZE__
+#error "Missing -O2 or -O3 compiler option"
+#endif
 #endif
 
 

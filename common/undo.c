@@ -27,11 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "player_proc.h"
 
-#define RADIUM_UNDOISCALLINGNOW
 #include "undo.h"
-#undef RADIUM_UNDOISCALLINGNOW
 
-extern struct Root *root;
 
 struct UndoEntry{
   NInt windownum;
@@ -59,6 +56,7 @@ struct Undo{
   NInt tracknum;
   int realline;
 };
+
 
 static struct Undo UndoRoot={0};
 static struct Undo *CurrUndo=&UndoRoot;

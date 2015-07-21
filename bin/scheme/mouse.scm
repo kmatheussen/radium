@@ -136,6 +136,11 @@
       (ra:get-place-from-y Y)
       (ra:get-place-in-grid-from-y Y)))
 
+(define (get-next-place-from-y Button Y)
+  (if (ra:ctrl-pressed)
+      (ra:get-place-from-y (+ Y 1))
+      (ra:get-next-place-in-grid-from-y Y)))
+
 
 ;; Mouse move handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -576,6 +581,7 @@
                                   :Make-undo
                                   :Create-new-node
                                   :Move-node
+                                  :Release-node #f
                                   :Publicize
                                   :Get-pixels-per-value-unit #f
                                   :Create-button #f
@@ -616,8 +622,8 @@
                             (make-node :node-info Node-info
                                        :value Value
                                        :y Y)))))
-  
-  (define (move-and-release Button Dx Dy Node)
+
+  (define (move-or-release Button Dx Dy Node ismoving)
     (define node-info (Node :node-info))
     (define min (Get-min-value node-info))
     (define max (Get-max-value node-info))
@@ -639,13 +645,18 @@
                          (between (1- (ra:get-top-visible-y))
                                   try-it
                                   (+ 2 (ra:get-bot-visible-y))))))
+    
+    (define func (if ismoving Move-node Release-node))
                                    
-    (let ((node-info (Move-node node-info new-value (and new-y (get-place-from-y Button new-y)))))
+    (let ((node-info (func node-info new-value (and new-y (get-place-from-y Button new-y)))))
       (Publicize node-info)
       (make-node :node-info node-info
                  :value new-value
                  :y (or new-y (Node :y)))))
-
+    
+  (define (move-and-release Button Dx Dy Node)
+    (move-or-release Button Dx Dy Node #t))
+  
   (define (release Button Dx Dy Node)
     (define node-info (Node :node-info))
     (ra:move-mouse-pointer (Get-x node-info)
@@ -1350,7 +1361,8 @@
                                                                 (ra:get-track-pianoroll-x2 *current-track-num*)
                                                                 (ra:get-pianoroll-low-key *current-track-num*)
                                                                 (ra:get-pianoroll-high-key *current-track-num*)))
-                                           (define Num (ra:create-pianonote Value Place (+ 2 Place) *current-track-num*))
+                                           (define Next-Place (get-next-place-from-y *left-button* (ra:get-mouse-pointer-y)))
+                                           (define Num (ra:create-pianonote Value Place Next-Place *current-track-num*))
                                            (if (= -1 Num)
                                                #f
                                                (callback (make-pianonote-info :tracknum *current-track-num*

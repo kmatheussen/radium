@@ -201,6 +201,41 @@ float getPlaceInGridFromY(float y, int blocknum, int windownum) {
 }
 
 
+static double get_next_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
+  double grid = (double)root->grid_numerator / (double)root->grid_denominator;
+
+  float abs_realline = abs_y / window->fontheight;
+  
+  double rounded = round(abs_realline / grid) + 1.0;
+    
+  return rounded * grid * window->fontheight;
+}
+
+float getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0.0;
+
+  // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
+  float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
+  float gridded_abs_y = get_next_gridded_abs_y(window, abs_y);
+  float gridded_y = gridded_abs_y - wblock->top_realline*window->fontheight + wblock->t.y1;
+  
+  Place place;
+  
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           gridded_y,
+                           &place,
+                           NULL,
+                           NULL
+                           );
+  
+  return GetFloatFromPlace(&place);
+}
+
+
 
 
 // reltempo
@@ -1086,6 +1121,8 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   if (note==NULL)
     return notenum;
 
+  struct Blocks *block = wblock->block;
+  
   setPianoNoteValue(value, pianonotenum, note);
 
   window->must_redraw=true;
@@ -1096,7 +1133,7 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   struct Tracks *track = wtrack->track;
 
   Place lastplace;
-  PlaceSetLastPos(wblock->block, &lastplace);
+  PlaceSetLastPos(block, &lastplace);
   
 #if 0
   // something is wrong somewhere. This should have worked.
@@ -1156,6 +1193,8 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
     }
     
     ListAddElement3(&track->notes, &note->l);
+
+    NOTE_validate(block, track, note);
   }PLAYER_unlock();
 
 #endif
@@ -1171,6 +1210,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
   if (note==NULL)
     return notenum;
 
+  struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
 
 
@@ -1207,6 +1247,8 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
     Float2Placement(floatplace, &note->l.p);
     
     ListAddElement3(&track->notes, &note->l);
+
+    NOTE_validate(block, track, note);
   }PLAYER_unlock();
 
 
@@ -1223,9 +1265,12 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   if (note==NULL)
     return notenum;
 
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+  
   if (note->pitches!=NULL) {
     if (floatplace>=0) {
-      MoveEndNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace));
       window->must_redraw=true;
     }
     return notenum;
@@ -1237,8 +1282,6 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
     
   if (floatplace < 0)
     return notenum;
-
-  //struct Tracks *track = wtrack->track;
 
   float firstplacefloat = GetfloatFromPlace(&note->l.p);
   if (floatplace <= firstplacefloat)
@@ -1254,6 +1297,7 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
     
   PLAYER_lock();{
     Float2Placement(floatplace, &note->end);
+    NOTE_validate(block, track, note);
   }PLAYER_unlock();
 
 
@@ -1267,12 +1311,13 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
   if (wtrack==NULL)
     return -1;
 
+  struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
 
   value = R_BOUNDARIES(1,value,127);
 
   Place lastplace;
-  PlaceSetLastPos(wblock->block, &lastplace);
+  PlaceSetLastPos(block, &lastplace);
   float lastfloatplace = GetFloatFromPlace(&lastplace);
   
   if (floatplace < 0)
@@ -1290,11 +1335,11 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
   Float2Placement(floatplace, &startplace);
 
   Place endplace;
-  Float2Placement(floatplace, &endplace);
+  Float2Placement(endfloatplace, &endplace);
 
-  Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
+  Undo_Notes(window,block,track,window->wblock->curr_realline);
 
-  struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(wtrack->track), true);
+  struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(track), true);
   
   window->must_redraw = true;
 
@@ -1408,6 +1453,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   if (wtrack==NULL)
     return;
 
+  struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
   
   int num = 0;
@@ -1417,7 +1463,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
 
     if (pitchnum==num) {
       PLAYER_lock();{
-        RemoveNote(wblock->block, track, notes);
+        RemoveNote(block, track, notes);
       }PLAYER_unlock();
       goto gotit;
     }
@@ -1429,6 +1475,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
       if (pitchnum==num){
         PLAYER_lock();{
           ListRemoveElement3(&notes->pitches,&pitches->l);
+          NOTE_validate(block, track, notes);
         }PLAYER_unlock();
         goto gotit;
       }
@@ -1676,6 +1723,7 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
 
   PLAYER_lock();{
     note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+    NOTE_validate(block, track, note);
   }PLAYER_unlock();
     
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
@@ -1704,6 +1752,7 @@ static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
       note->l.p = *place;
       ListAddElement3(&track->notes, &note->l);
       ReplaceNoteEnds(block, track, &old_place, place);
+      NOTE_validate(block, track, note);
     }PLAYER_unlock();
 
   }
@@ -1718,9 +1767,9 @@ int setPitch(int num, float value, float floatplace, int tracknum, int blocknum,
 
   if (wtrack==NULL)
     return num;
-  
+
+  struct Blocks *block = wblock->block;  
   struct Tracks *track = wtrack->track;
-  struct Blocks *block = wblock->block;
 
   value = R_BOUNDARIES(1,value,127);
 
@@ -1746,6 +1795,7 @@ int setPitch(int num, float value, float floatplace, int tracknum, int blocknum,
 
       PLAYER_lock();{
         ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+        NOTE_validate(block, track, note);
       }PLAYER_unlock();
     }
                         
@@ -2031,6 +2081,9 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
   if (note==NULL)
     return notenum;
 
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+  
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
@@ -2044,12 +2097,12 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0) {
-      return MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
+      return MoveNote(block, track, note, PlaceCreate2(floatplace));
     }
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0)
-      MoveEndNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace));
 
   } else {
 
@@ -2067,6 +2120,7 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
 
       PLAYER_lock();{
         velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+        NOTE_validate(block, track, note);
       }PLAYER_unlock();
     }
     
@@ -2109,11 +2163,13 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
       note->end = last->l.p;
       note->velocity_end = last->velocity;
       ListRemoveElement3(&note->velocities, &last->l);
+      NOTE_validate(block, track, note);
     }PLAYER_unlock();
 
   } else {
     PLAYER_lock();{
       ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
+      NOTE_validate(block, track, note);
     }PLAYER_unlock();
   }
 
@@ -2399,7 +2455,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
     Place *last_pos = PlaceGetLastPos(wblock->block);
     
     PLAYER_lock();{
-      ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), last_pos);
+      ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), last_pos);      
     }PLAYER_unlock();
   }
   

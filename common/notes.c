@@ -120,8 +120,8 @@ struct Notes *GetCurrNote(struct Tracker_Windows *window){
     Set the _end attributes for note 'note'.
 **************************************************************/
 void SetEndAttributes(
-	struct Blocks *block,
-	struct Tracks *track,
+	const struct Blocks *block,
+	const struct Tracks *track,
 	struct Notes *note
 ){
 	Place *place;
@@ -251,6 +251,86 @@ struct Notes *NOTES_sort_by_pitch(struct Notes *notes){
   return notes;
 }
 
+static void set_new_position(struct Tracks *track, struct Notes *note, Place *start, Place *end){
+
+  bool has_lock = PLAYER_current_thread_has_lock();
+
+  if (track==NULL && has_lock)
+    RError("track==NULL && has_lock");
+
+  
+  if (track!=NULL) {
+    if (has_lock==false)
+      PLAYER_lock();
+    ListRemoveElement3(&track->notes, &note->l);
+  }
+
+  if (start!=NULL && start!=&note->l.p)
+    note->l.p = *start;
+
+  if (end!=NULL && end!=&note->end)
+    note->end = *end;
+
+  if (track!=NULL){
+    ListAddElement3(&track->notes, &note->l);
+    if (has_lock==false)
+      PLAYER_unlock();
+  }
+}
+
+static void set_legal_start_and_end_pos(const struct Blocks *block, struct Tracks *track, struct Notes *note){
+  Place *start = &note->l.p;
+  Place *end = &note->end;
+  Place endplace;
+
+  PlaceSetLastPos(block,&endplace);
+  
+  if(PlaceGreaterOrEqual(start,&endplace)) {
+    RError("note is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    set_new_position(track, note, PlaceCreate(block->num_lines - 2, 0, 1), NULL);
+  }
+  
+  if (start->line < 0) {
+    RError("note is placed before block start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    set_new_position(track, note, PlaceCreate(0,1,1), NULL);
+  }
+  
+  if(PlaceGreaterThan(end,&endplace)) {
+    RError("note end is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    set_new_position(track, note, NULL, &endplace);
+  }
+
+  if(PlaceLessOrEqual(end,start)) {
+    RError("note end is placed before (or on) note end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    float e = p_float(*start);
+    e += 0.01;
+    Place new_end;
+    Float2Placement(e, &new_end);
+    set_new_position(track, note, NULL, &new_end);
+  }
+
+}
+
+void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Notes *note){
+  R_ASSERT_RETURN_IF_FALSE(block!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(note!=NULL);
+  
+  R_ASSERT(track==NULL || PLAYER_current_thread_has_lock());
+  
+  if (note->note<=0.0f){
+    RError("notenum<=0.0f: %f. Setting to 0.01",note->note);
+    note->note=0.01f;
+  }
+  if(note->note>=128.0f){
+    RError("notenum>=128.0f: %f. Setting to 127.99",note->note);
+    note->note=127.99;
+  }
+
+  set_legal_start_and_end_pos(block, track, note);
+}
+
+
+
 struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -267,19 +347,17 @@ struct Notes *InsertNote(
 
 	PlaceCopy(&note->l.p,placement);
 
-        if (notenum<=0.0f){
-          RError("notenum<=0.0f: %f. Setting to 0.1",notenum);
-          notenum=0.1f;
-        }
-        if(notenum>=128.0f){
-          RError("notenum>=128.0f: %f. Setting to 127.9",notenum);
-          notenum=127.9;
-        }
-        
 	note->note=notenum;
 	note->velocity=velocity;
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
 	note->velocity_end=note->velocity;
+
+        if (end_placement==NULL)
+          SetEndAttributes(block,track,note);
+        else
+          PlaceCopy(&note->end, end_placement);
+
+        NOTE_validate(block, NULL, note);
 
         PLAYER_lock();
         {
@@ -287,11 +365,6 @@ struct Notes *InsertNote(
 
           if(polyphonic==false)
             StopAllNotesAtPlace(wblock,wtrack,placement);
-
-          if (end_placement==NULL)
-            SetEndAttributes(block,track,note);
-          else
-            PlaceCopy(&note->end, end_placement);
 
           track->notes = NOTES_sort_by_pitch(track->notes);
         }
@@ -329,6 +402,7 @@ static void MaybeScrollEditorDown(struct Tracker_Windows *window){
     ScrollEditorDown(window,g_downscroll);
   }
 }
+
 
 void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float velocity){
   if(notenum<0.001 || notenum>127.9) return;
