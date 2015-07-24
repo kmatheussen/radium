@@ -238,6 +238,11 @@ MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 static QSplashScreen *g_splashscreen;
 
+extern "C" void run_main_loop(void);
+void run_main_loop(void){
+  g_qapplication->exec();
+}
+
 #if 1 //USE_QT_VISUAL
 
 #if 0

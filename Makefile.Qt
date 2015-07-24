@@ -1666,7 +1666,7 @@ bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	rm crashbin.o
 
 crashreporter.o: crashreporter/crashreporter.cpp
-	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS)
+	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	$(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS)

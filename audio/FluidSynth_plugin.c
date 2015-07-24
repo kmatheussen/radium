@@ -11,6 +11,7 @@
 #include "../common/instruments_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../midi/midi_proc.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 #include "audio_instrument_proc.h"
 
@@ -94,7 +95,8 @@ static int64_t get_fluidsynth_time(Data *data, int64_t time){
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   //data =NULL; // crashreporter test.
-  
+  //CRASHREPORTER_send_assert_message("AIAI1!");
+
   //printf("telling sequencer that it is time %d\n",(int)data->time);
   fluid_sequencer_process(data->sequencer, get_fluidsynth_time(data,data->time));
   data->time += num_frames;
@@ -357,7 +359,9 @@ static void delete_data(Data *data){
 
 static void *create_data(const wchar_t *filename, float samplerate){
   Data *data = calloc(1,sizeof(Data));
-
+  //CRASHREPORTER_send_assert_message("AIAI2!");
+  //data = NULL;
+  
   data->pitch = 16384/2;
   data->pitch_range = 1;
   data->modulation = 0;

@@ -353,6 +353,15 @@ int jackblock_size = 0;
 jack_time_t jackblock_delta_time = 0;
 static STime jackblock_cycle_start_stime = 0;
 
+static QTime pause_time;
+static bool g_process_plugins = true;
+
+void RT_pause_plugins(void){
+  g_process_plugins = false;
+  pause_time.restart();
+}
+
+
 struct Mixer{
   SoundProducer *_bus1;
   SoundProducer *_bus2;
@@ -602,14 +611,11 @@ struct Mixer{
 
     RT_lock_player();  // This is a RT-safe lock. Priority inversion can not happen.
 
-    QTime pause_time;
     pause_time.start();
     
     QTime excessive_time;
     excessive_time.start();
     
-    bool process_plugins = true;
-
     while(true){
 
       // Schedule new notes, etc.
@@ -630,9 +636,9 @@ struct Mixer{
       jackblock_size = num_frames;
       jackblock_cycle_start_stime = pc->end_time;
 
-      if (process_plugins==false) {
+      if (g_process_plugins==false) {
         if (pause_time.elapsed() > 5000)
-          process_plugins = true;
+          g_process_plugins = true;
       } else if (_is_freewheeling==false && excessive_time.elapsed() > 2000) { // 2 seconds
         if (pc->isplaying) {
           RT_request_to_stop_playing();
@@ -648,7 +654,7 @@ struct Mixer{
                      g_running_multicore ? "" : "\n\nTip: Turning on Multi CPU processing might help."
                      );
           printf("stop processing plugins\n");
-          process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
+          g_process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
         }
         
         pause_time.restart();
@@ -680,20 +686,20 @@ struct Mixer{
         
         if (g_running_multicore) {
 
-          MULTICORE_run_all(&_sound_producers, _time, RADIUM_BLOCKSIZE, process_plugins);
+          MULTICORE_run_all(&_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
           
         } else {
           
           if (_bus1!=NULL)
-            SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, process_plugins);
+            SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, g_process_plugins);
           
           if (_bus2!=NULL)
-            SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, process_plugins);
+            SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, g_process_plugins);
 
           for (SoundProducer *sp : _sound_producers)
             // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
             // (Unless running MultiCore, then the MultiCore system takes care of running in the right order)
-            SP_RT_process(sp, _time, RADIUM_BLOCKSIZE, process_plugins );
+            SP_RT_process(sp, _time, RADIUM_BLOCKSIZE, g_process_plugins );
           
         }
 
@@ -733,8 +739,13 @@ struct Mixer{
       
 
   static void *RT_rjack_thread(void *arg){
+
     Mixer *mixer = static_cast<Mixer*>(arg);
     //printf("RT_rjack_process called %d\n",num_frames);
+
+    //char *hello = NULL;
+    //hello[0] = 50;
+
 
     THREADING_init_player_thread_type();
     R_ASSERT(THREADING_is_player_thread());

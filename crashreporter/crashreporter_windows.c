@@ -134,11 +134,11 @@ static void print_cpuinfo(struct output_buffer *ob){
     for (i=0; i<=nIds; ++i)
       {
         __cpuid(CPUInfo, i);
-        printf_s(ob,"\nFor InfoType %d", i); 
-        printf_s(ob,"CPUInfo[0] = 0x%x", CPUInfo[0]);
-        printf_s(ob,"CPUInfo[1] = 0x%x", CPUInfo[1]);
-        printf_s(ob,"CPUInfo[2] = 0x%x", CPUInfo[2]);
-        printf_s(ob,"CPUInfo[3] = 0x%x", CPUInfo[3]);
+        printf_s(ob,"\nFor InfoType %d\n", i); 
+        printf_s(ob,"CPUInfo[0] = 0x%x\n", CPUInfo[0]);
+        printf_s(ob,"CPUInfo[1] = 0x%x\n", CPUInfo[1]);
+        printf_s(ob,"CPUInfo[2] = 0x%x\n", CPUInfo[2]);
+        printf_s(ob,"CPUInfo[3] = 0x%x\n", CPUInfo[3]);
 
         // Interpret CPU feature information.
         if  (i == 1)
@@ -170,11 +170,11 @@ static void print_cpuinfo(struct output_buffer *ob){
     for (i=0x80000000; i<=nExIds; ++i)
       {
         __cpuid(CPUInfo, i);
-        printf_s(ob,"\nFor InfoType %x", i); 
-        printf_s(ob,"CPUInfo[0] = 0x%x", CPUInfo[0]);
-        printf_s(ob,"CPUInfo[1] = 0x%x", CPUInfo[1]);
-        printf_s(ob,"CPUInfo[2] = 0x%x", CPUInfo[2]);
-        printf_s(ob,"CPUInfo[3] = 0x%x", CPUInfo[3]);
+        printf_s(ob,"\nFor InfoType %x\n", i); 
+        printf_s(ob,"CPUInfo[0] = 0x%x\n", CPUInfo[0]);
+        printf_s(ob,"CPUInfo[1] = 0x%x\n", CPUInfo[1]);
+        printf_s(ob,"CPUInfo[2] = 0x%x\n", CPUInfo[2]);
+        printf_s(ob,"CPUInfo[3] = 0x%x\n", CPUInfo[3]);
 
         // Interpret CPU brand string and cache information.
         if  (i == 0x80000002)
@@ -193,44 +193,44 @@ static void print_cpuinfo(struct output_buffer *ob){
 
     // Display all the information in user-friendly format.
 
-    printf_s(ob,"\nCPU String: %s", CPUString);
+    printf_s(ob,"\nCPU String: %s\n", CPUString);
 
     if  (nIds >= 1)
       {
         if  (nSteppingID)
-          printf_s(ob,"Stepping ID = %d", nSteppingID);
+          printf_s(ob,"Stepping ID = %d\n", nSteppingID);
         if  (nModel)
-          printf_s(ob,"Model = %d", nModel);
+          printf_s(ob,"Model = %d\n", nModel);
         if  (nFamily)
-          printf_s(ob,"Family = %d", nFamily);
+          printf_s(ob,"Family = %d\n", nFamily);
         if  (nProcessorType)
-          printf_s(ob,"Processor Type = %d", nProcessorType);
+          printf_s(ob,"Processor Type = %d\n", nProcessorType);
         if  (nExtendedmodel)
-          printf_s(ob,"Extended model = %d", nExtendedmodel);
+          printf_s(ob,"Extended model = %d\n", nExtendedmodel);
         if  (nExtendedfamily)
-          printf_s(ob,"Extended family = %d", nExtendedfamily);
+          printf_s(ob,"Extended family = %d\n", nExtendedfamily);
         if  (nBrandIndex)
-          printf_s(ob,"Brand Index = %d", nBrandIndex);
+          printf_s(ob,"Brand Index = %d\n", nBrandIndex);
         if  (nCLFLUSHcachelinesize)
-          printf_s(ob,"CLFLUSH cache line size = %d",
+          printf_s(ob,"CLFLUSH cache line size = %d\n",
                    nCLFLUSHcachelinesize);
         if  (nAPICPhysicalID)
-          printf_s(ob,"APIC Physical ID = %d", nAPICPhysicalID);
+          printf_s(ob,"APIC Physical ID = %d\n", nAPICPhysicalID);
 
         if  (nFeatureInfo || bSSE3NewInstructions ||
              bMONITOR_MWAIT || bCPLQualifiedDebugStore ||
              bThermalMonitor2)
           {
-            printf_s(ob,"\nThe following features are supported:");
+            printf_s(ob,"\nThe following features are supported:\n");
 
             if  (bSSE3NewInstructions)
-              printf_s(ob,"\tSSE3 New Instructions");
+              printf_s(ob,"\tSSE3 New Instructions\n");
             if  (bMONITOR_MWAIT)
-              printf_s(ob,"\tMONITOR/MWAIT");
+              printf_s(ob,"\tMONITOR/MWAIT\n");
             if  (bCPLQualifiedDebugStore)
-              printf_s(ob,"\tCPL Qualified Debug Store");
+              printf_s(ob,"\tCPL Qualified Debug Store\n");
             if  (bThermalMonitor2)
-              printf_s(ob,"\tThermal Monitor 2");
+              printf_s(ob,"\tThermal Monitor 2\n");
 
             i = 0;
             nIds = 1;
@@ -238,9 +238,9 @@ static void print_cpuinfo(struct output_buffer *ob){
               {
                 if  (nFeatureInfo & nIds)
                   {
-                    printf_s(ob,"\t");
+                    printf_s(ob,"\t\n");
                     printf_s(ob,szFeatures[i]);
-                    printf_s(ob,"");
+                    printf_s(ob,"\n\n");
                   }
 
                 nIds <<= 1;
@@ -250,7 +250,7 @@ static void print_cpuinfo(struct output_buffer *ob){
       }
 
     if  (nExIds >= 0x80000004)
-      printf_s(ob,"\nCPU Brand String: %s", CPUBrandString);
+      printf_s(ob,"\nCPU Brand String: %s\n", CPUBrandString);
 
     if  (nExIds >= 0x80000006)
       {
@@ -348,18 +348,17 @@ struct find_info {
 };
 
 struct output_buffer {
-	char * buf;
+	char *buf;
 	size_t sz;
 	size_t ptr;
 };
 
 static void
-output_init(struct output_buffer *ob, char * buf, size_t sz)
+output_init(struct output_buffer *ob, size_t sz)
 {
-	ob->buf = buf;
-	ob->sz = sz;
-	ob->ptr = 0;
-	ob->buf[0] = '\0';
+  ob->sz = sz;
+  ob->ptr = 0;
+  ob->buf[0] = '\0';
 }
 
 static void
@@ -372,7 +371,6 @@ output_print(struct output_buffer *ob, const char * format, ...)
 	va_start(ap,format);
         char *rapport = ob->buf+ob->ptr;
 	vsnprintf(rapport , ob->sz - ob->ptr , format, ap);
-        CRASHREPORTER_report_crash((const char**)&rapport,1);
 	va_end(ap);
 
 	ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
@@ -427,7 +425,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	bfd *b = bfd_openr(procname, 0);
 	if (!b) {
-		output_print(ob,"Failed to open bfd from (%s)" , procname);
+		output_print(ob,"Failed to open bfd from (%s)\n" , procname);
 		return 1;
 	}
 
@@ -437,7 +435,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	if (!(r1 && r2 && r3)) {
 		bfd_close(b);
-		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d", procname,r1,r2,r3);
+		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d\n", procname,r1,r2,r3);
 		return 1;
 	}
 
@@ -448,7 +446,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 		if (bfd_read_minisymbols(b, TRUE, &symbol_table, &dummy) < 0) {
 			free(symbol_table);
 			bfd_close(b);
-			output_print(ob,"Failed to read symbols from (%s)", procname);
+			output_print(ob,"Failed to read symbols from (%s)\n", procname);
 			return 1;
 		}
 	}
@@ -565,11 +563,12 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 	char symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 255];
 	char module_name_raw[MAX_PATH];
 
+        int i = 0;
+
         int lokke;
         for(lokke=0;lokke<num_frames;lokke++){
-  DWORD offset = stack[lokke];
-
-                int i = 0;
+          
+                DWORD offset = stack[lokke];
 
 		--depth;
 		if (depth < 0)
@@ -623,14 +622,14 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 			}
 		}
 		if (func == NULL) {
-			output_print(ob,"%d: 0x%x : %s : %s ", 
+			output_print(ob,"%d: 0x%x : %s : %s\n", 
                                      i,
                                      offset,
                                      module_name,
                                      file);
 		}
 		else {
-			output_print(ob,"%d: 0x%x : %s : %s (%d) : in function (%s) ", 
+			output_print(ob,"%d: 0x%x : %s : %s (%d) : in function (%s)\n", 
                                      i,
                                      offset,
                                      module_name,
@@ -643,60 +642,167 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 	}
 }
 
-static char * g_output = NULL;
-static LPTOP_LEVEL_EXCEPTION_FILTER g_prev = NULL;
+static char *crash_buffer = NULL;
+
+static void send_message_with_backtrace(LPCONTEXT c, const char *additional_information, bool is_crash){
+  struct output_buffer ob;
+  ob.buf = is_crash ? crash_buffer : calloc(1, BUFFER_MAX);
+
+  output_init(&ob, BUFFER_MAX);
+
+  if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
+    output_print(&ob,"Failed to init symbol context\n");
+
+  } else {
+
+    bfd_init();
+
+    struct bfd_set *set = calloc(1,sizeof(*set));
+    _backtrace(&ob , set , 128 , c);
+
+    release_set(set);
+
+    SymCleanup(GetCurrentProcess());
+    
+  }
+
+  print_cpuinfo(&ob);
+  print_osinfo(&ob);
+  
+  const char *messages[1] = {ob.buf};
+  CRASHREPORTER_send_message(additional_information, messages, 1, is_crash);
+
+  fputs(ob.buf , stderr);
+
+  if (!is_crash)
+    free(ob.buf);
+}
+
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+  CONTEXT context; 
+  LPCONTEXT c = &context;
+
+#if defined(_WIN64)
+  
+  RtlCaptureContext(&context);
+  
+#else
+
+
+  // Found this dirty trick here: http://jpassing.com/2008/03/12/walking-the-stack-of-the-current-thread/
+  
+
+  ZeroMemory( &context, sizeof( CONTEXT ) );
+
+  context.ContextFlags = CONTEXT_CONTROL;
+    
+
+ label:
+  __asm__ ("mov %%ebp, %[a1] ;\n"
+           "mov %%esp, %[a2] ;\n"
+           : [a1] "=m" (context.Ebp), [a2] "=m" (context.Esp)
+           );
+  
+  context.Eip = (int)&&label;
+  
+  /*
+    The above gnu inline assembly is supposed to do this:
+
+    __asm
+    {
+    Label:
+      mov [Context.Ebp], ebp;
+      mov [Context.Esp], esp;
+      mov eax, [Label];
+      mov [Context.Eip], eax;
+    }
+
+    (the original ms-asm code from http://jpassing.com/2008/03/12/walking-the-stack-of-the-current-thread/)
+
+    I think it does the same, but the gnu asm syntax is complicated, so it's hard to know unless you spend a long time studying the syntax.
+    However, the generated assembler code looks correct:
+
+L2:
+	mov %ebp, 184(%esp) ;
+        mov %esp, 200(%esp) ;
+	movl	$L2, %eax
+	movl	%eax, 188(%esp)
+
+  */
+  
+#endif
+  
+  send_message_with_backtrace(c, additional_information, is_crash);  
+}
+
 
 static LONG WINAPI 
 exception_filter(LPEXCEPTION_POINTERS info)
 {
+  
         CONTEXT c_holder;
+
         LPCONTEXT c = &c_holder;
+
         memcpy(c,info->ContextRecord,sizeof(CONTEXT));
 
         //c->ContextFlags = CONTEXT_FULL;
 
-	struct output_buffer ob;
-	output_init(&ob, g_output, BUFFER_MAX);
+        Sleep(5);
+        send_message_with_backtrace(c, "", true);
+        fprintf(stderr, "E 5\n");fflush(stderr);
+	//exit(1);
 
-	if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
-		output_print(&ob,"Failed to init symbol context");
-	}
-	else {
-		bfd_init();
-		struct bfd_set *set = calloc(1,sizeof(*set));
-		_backtrace(&ob , set , 128 , c);
-		release_set(set);
-
-		SymCleanup(GetCurrentProcess());
-	}
-
-        print_cpuinfo(&ob);
-        print_osinfo(&ob);
-
-	fputs(g_output , stderr);
-
-	exit(1);
-
-	return 0;
+	return EXCEPTION_EXECUTE_HANDLER;
 }
+
+static LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS info)
+{
+  //fprintf(stderr, "\n\n\n ************* VectoredExceptionHandler ************** E 1\n");fflush(stderr);
+
+        CONTEXT c_holder;
+
+        LPCONTEXT c = &c_holder;
+
+        memcpy(c,info->ContextRecord,sizeof(CONTEXT));
+
+        //c->ContextFlags = CONTEXT_FULL;
+
+        //Sleep(5);
+        send_message_with_backtrace(c, "", true);
+        
+	//exit(1);
+
+	return EXCEPTION_EXECUTE_HANDLER;
+
+}
+
+
+static LPTOP_LEVEL_EXCEPTION_FILTER g_prev = NULL;
+static PVOID vectored_exception_handler = NULL;
 
 static void
 backtrace_register(void)
 {
-	if (g_output == NULL) {
-		g_output = malloc(BUFFER_MAX);
-		g_prev = SetUnhandledExceptionFilter(exception_filter);
-	}
+  if (crash_buffer==NULL){
+    crash_buffer = calloc(1,BUFFER_MAX);
+    g_prev = SetUnhandledExceptionFilter(exception_filter);
+    vectored_exception_handler = AddVectoredExceptionHandler(1, VectoredExceptionHandler);
+  }
 }
 
 static void
 backtrace_unregister(void)
 {
-	if (g_output) {
-		free(g_output);
-		SetUnhandledExceptionFilter(g_prev);
-		g_prev = NULL;
-		g_output = NULL;
+	if (crash_buffer!=NULL) {
+          RemoveVectoredExceptionHandler(vectored_exception_handler);
+          vectored_exception_handler = NULL;
+          
+          SetUnhandledExceptionFilter(g_prev);                
+          g_prev = NULL;
+          
+          free(crash_buffer);
+          crash_buffer=NULL;
 	}
 }
 

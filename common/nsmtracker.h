@@ -29,6 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #endif
 
+#ifndef DEBUG
+#  error "Missing DEBUG option. Edit the Makefile."
+#endif
+
+
 
 /******************************************************************
   Main header file for the tracker. Each struct often has a source-
@@ -46,11 +51,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define LANGSPEC "C"
 #else
 #  define LANGSPEC
-#endif
-
-
-#ifndef DEBUG
-#  error "Missing DEBUG option. Edit the Makefile."
 #endif
 
 #if !USE_GTK_VISUAL && !USE_GTK_REQTYPE && !USE_GTK_MENU

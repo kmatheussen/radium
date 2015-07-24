@@ -90,7 +90,7 @@ int SYSTEM_show_message(const char *message){
 
   QProcess myProcess;
 
-#if defined(FOR_LINUX)
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
   myProcess.setProcessEnvironment(env);

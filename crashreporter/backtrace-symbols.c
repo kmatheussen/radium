@@ -116,7 +116,7 @@ static void slurp_symtab(bfd * abfd)
 /* These global variables are used to pass information between
    translate_addresses and find_address_in_section.  */
 
-static bfd_vma pc;
+static bfd_vma pc2;
 static const char *filename;
 static const char *functionname;
 static unsigned int line;
@@ -137,14 +137,14 @@ static void find_address_in_section(bfd *abfd, asection *section, void *data __a
 		return;
 
 	vma = bfd_get_section_vma(abfd, section);
-	if (pc < vma)
+	if (pc2 < vma)
 		return;
 
 	size = bfd_section_size(abfd, section);
-	if (pc >= vma + size)
+	if (pc2 >= vma + size)
 		return;
 
-	found = bfd_find_nearest_line(abfd, section, syms, pc - vma,
+	found = bfd_find_nearest_line(abfd, section, syms, pc2 - vma,
 				      &filename, &functionname, &line);
 }
 
@@ -154,7 +154,7 @@ static void find_address_in_section(bfd *abfd, asection *section, void *data __a
 static void translate_addresses(bfd * abfd, char (*addr)[PTRSTR_LEN], int naddr)
 {
 	while (naddr) {
-		pc = bfd_scan_vma(addr[naddr-1], NULL, 16);
+		pc2 = bfd_scan_vma(addr[naddr-1], NULL, 16);
 
 		found = false;
 		bfd_map_over_sections(abfd, find_address_in_section,
@@ -214,7 +214,7 @@ static char** translate_addresses_buf(bfd * abfd, bfd_vma *addr, int naddr)
 	while (naddr) {
 		if (state == Print)
 			ret_buf[naddr-1] = buf;
-		pc = addr[naddr-1];
+		pc2 = addr[naddr-1];
 
 		found = false;
 		bfd_map_over_sections(abfd, find_address_in_section,

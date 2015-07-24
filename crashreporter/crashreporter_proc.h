@@ -25,7 +25,9 @@ extern "C"{
   void CRASHREPORTER_init(void);
   void CRASHREPORTER_set_plugin_name(const char *plugin_name);
   void CRASHREPORTER_unset_plugin_name(void);
-  void CRASHREPORTER_report_crash(const char **messages, int num_messages);
+  void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, bool is_crash);
+  void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash);
+  void CRASHREPORTER_send_assert_message(char *message);
   void CRASHREPORTER_close(void);
 
   void CRASHREPORTER_posix_init(void);

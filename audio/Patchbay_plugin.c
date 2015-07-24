@@ -35,6 +35,8 @@ typedef struct{
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  //plugin =NULL; // crashreporter test.
+
   Data *data = (Data*)plugin->data;
 
   int out_ch;

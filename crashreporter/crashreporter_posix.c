@@ -28,7 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <time.h>
 #include <stdbool.h>
 
+#include "../common/nsmtracker.h"
+#include "../common/threading.h"
+
 #include "crashreporter_proc.h"
+
 
 static double get_ms(void){
   struct timespec ts;
@@ -55,6 +59,25 @@ static bool crash_already_reported(void){
   return false;
 }
 
+void run_main_loop(void);
+
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+#define NUM_LINES 100
+      
+  void *buffer[NUM_LINES];
+  char **strings;
+  int nptrs = backtrace(buffer, NUM_LINES);
+  
+  strings = backtrace_symbols(buffer, nptrs);
+  
+  if (strings != NULL) {
+    CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,is_crash);
+  } else {
+    const char *message="no backtrace availabe\n";
+    CRASHREPORTER_send_message(additional_information, &message,1,true);
+  }
+}
+
 //static void crash(int sig){
 static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
@@ -71,22 +94,8 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
   if(crash_already_reported()==false){
 
     if(fork()==0){
-#define NUM_LINES 100
-      
-      void *buffer[NUM_LINES];
-      char **strings;
-      int nptrs = backtrace(buffer, NUM_LINES);
-      
-      strings = backtrace_symbols(buffer, nptrs);
-      
-      
-      if (strings != NULL) {
-        CRASHREPORTER_report_crash((const char**)strings,nptrs);
-        num_crash_reports++;
-      } else {
-        const char *message="no backtrace availabe\n";
-        CRASHREPORTER_report_crash(&message,1);
-      }
+      CRASHREPORTER_send_message_with_backtrace("", true);
+      num_crash_reports++;
 
       abort();
     }

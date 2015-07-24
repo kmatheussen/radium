@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // why doesn't LANGSPEC work here?
-extern LANGSPEC int SYSTEM_show_message(char *message); // Used before and after Qt is running
+extern LANGSPEC int SYSTEM_show_message(const char *message); // Used before and after Qt is running
 
 extern LANGSPEC bool Error_init(void);
 
