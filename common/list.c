@@ -643,7 +643,7 @@ void *ListPrevElement1(
 ){
 	struct ListHeader1 *prev=NULL;
 	while(list!=element){
-          R_ASSERT_RETURN_VALUE_IF_FALSE(list!=NULL, element);
+          R_ASSERT_RETURN_IF_FALSE2(list!=NULL, element);
           prev=list;
           list=list->next;
         }
@@ -745,7 +745,7 @@ int ListPosition3(struct ListHeader3 *list,
   int ret = 0;
   while(list!=element) {
     ret++;
-    R_ASSERT_RETURN_VALUE_IF_FALSE(list!=NULL, 0);
+    R_ASSERT_RETURN_IF_FALSE2(list!=NULL, 0);
     list = list->next;
   }
   return ret;
@@ -838,7 +838,7 @@ NInt ListFindElementPos1(
 ){
 	NInt pos=0;
 	while(list!=element){
-                R_ASSERT_RETURN_VALUE_IF_FALSE(list!=NULL, 0);
+                R_ASSERT_RETURN_IF_FALSE2(list!=NULL, 0);
 		list=list->next;
 		pos++;
                 if (list==NULL) {

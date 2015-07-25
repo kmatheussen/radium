@@ -131,7 +131,7 @@ static void send_crash_message_to_server(QString message, QString plugin_name, b
                            + ( (is_crash && plugin_name != NOPLUGINNAME)
                                ? QString("Please note that a third party plugin called \"" + plugin_name + "\" was currently processing audio. It might be responsible for the crash.")
                                : QString())
-                           + (!is_crash ? "\nAfterwards, you should save your work and start the program again. However, if this window just pops up again immediately after closing, just hide it." : "")
+                           + (!is_crash ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
                            + "\n"
                            );
     box.setDetailedText(message);
@@ -282,7 +282,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
       
   //if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
   QString a = "LD_LIBRARY_PATH=" + QString(getenv("LD_LIBRARY_PATH"));
-  QString full_command = a + " " + command + " " + arg1 + " " + arg2 + " " arg3;
+  QString full_command = a + " " + program + " " + arg1 + " " + arg2 + " " + arg3;
 
   if (wait_until_finished==false)
     full_command += "&";
@@ -420,9 +420,14 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
 }
 
-void CRASHREPORTER_send_assert_message(char *message){
-  static bool is_currently_sending = false;
+#ifdef FOR_MACOSX
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+  RError(additional_information);
+}
+#endif
 
+void CRASHREPORTER_send_assert_message(const char *fmt,...){
+  static bool is_currently_sending = false;
   
 #if 0
   static int last_time = -10000;
@@ -436,6 +441,13 @@ void CRASHREPORTER_send_assert_message(char *message){
   if (is_currently_sending)
     return;
 
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
   
   if (g_crashreporter_file!=NULL) {
 
@@ -456,6 +468,7 @@ void CRASHREPORTER_send_assert_message(char *message){
   is_currently_sending = true;
   RT_request_to_stop_playing();
   RT_pause_plugins();
+
 
   CRASHREPORTER_send_message_with_backtrace(message, false);
 

@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
 #endif
 
+#if __tune_corei7__
+#error "Compiled with -mtune=native or -mtune=corei7"
+#endif
+ 
 #ifdef RELEASE
 #ifndef __OPTIMIZE__
 #error "Missing -O2 or -O3 compiler option"
@@ -71,6 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker_events.h"
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 
 /* Unfortunately, AmigaOS has one absolute address that is legal to
@@ -131,18 +136,24 @@ enum{
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
-#ifdef RELEASE
-  #define R_ASSERT(a)
-  #define R_ASSERT_RETURN_IF_FALSE(a) if(!(a)) return
-  #define R_ASSERT_RETURN_IF_FALSE2(a,b) if(!(a)) return b
+#define R_ASSERT(a)                                                     \
+  if(!(a))                                                              \
+    CRASHREPORTER_send_assert_message("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);
+
+#define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \
+  if(!(a))                                                              \
+    do{                                                                 \
+      CRASHREPORTER_send_assert_message("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
+      return b;                                                         \
+    }while(0)
+
+#define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT_RETURN_IF_FALSE2(a,)
+
+#if defined(RELEASE)
+  #define R_ASSERT_NON_RELEASE(a)
 #else
-  #define R_ASSERT(a) do{ if(!(a)){ fflush(stderr);RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);} }while(0)
-  #define R_ASSERT_RETURN_IF_FALSE2(a,b) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return b; }while(0)
-  #define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT_RETURN_IF_FALSE2(a, /* */)
+  #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
 #endif
-
-#define R_ASSERT_RETURN_VALUE_IF_FALSE(a,value) if(!(a)) do{ RError("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); return value; }while(0)
-
 
 
 static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
