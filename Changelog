@@ -1,3 +1,10 @@
+Most important changes 3.2.4 -> 3.2.5
+* Start crashreporter also when just hitting an assert.
+* Improved crash reporter. Should hopefully work better in Windows.
+  The reports also includes a simple event log now.
+
+
+
 Most important changes 3.2.3 -> 3.2.4
 * Make all dialogs modal by default if using intel or binary amd driver on linux (to avoid crashes)
 * Ensure all notes starts before they end, when recording from MIDI input.
