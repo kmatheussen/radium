@@ -250,6 +250,9 @@ class Proto:
             oh.write(",&arg%d" % lokke)
         oh.write(")) return NULL;\n")
 
+        if ("menu" not in self.proc.varname) and ("Menu" not in self.proc.varname):
+            oh.write("EVENTLOG_add_event(\"" + self.proc.varname + " [py]\");\n")
+
         if not (len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void"):
             oh.write("result=")
         oh.write(self.proc.varname+"(")
@@ -424,12 +427,16 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
 
     # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
     def write_s7_call_c_function(self,oh):
+        if false: #"set" in self.proc.varname:
+            oh.write("  EVENTLOG_add_event(\"" + self.proc.varname + " [sc]\"); ")
+        else:
+            oh.write("  ");
         callstring = self.proc.varname+"("+self.get_arg_list(self.args)+")"
         if self.proc.type_string=="void":
-            oh.write("  "+callstring+"; return s7_undefined(radiums7_sc);\n")
+            oh.write(callstring+"; return s7_undefined(radiums7_sc);\n")
         else:
             conversion_function = self.proc.get_s7_make_type_function()
-            oh.write("  return "+conversion_function+"(radiums7_sc, "+callstring+");\n")
+            oh.write("return "+conversion_function+"(radiums7_sc, "+callstring+");\n")
 
     def write_s7_func(self,oh):
         if "PyObject*" in map(lambda arg: arg.type_string, self.args):
@@ -643,6 +650,7 @@ class Read:
         oh.write("#include \"Python.h\"\n\n")
         oh.write("#include \"s7.h\"\n\n")
         oh.write("#include \"radium_proc.h\"\n\n")
+        oh.write("#include \"../crashreporter/crashreporter_proc.h\"\n\n")
         self.protos.write_s7_funcs(oh)
         oh.write("void init_radium_s7(s7_scheme *s7){\n")
         self.protos.write_s7_defines(oh)

@@ -86,6 +86,7 @@ struct KeyConfigs{
 	uint32_t a;
 	int num_args;
 	int *args;
+        const char *funcname; // for the event log
 };
 
 struct KeyConfigs *keyconfigs[EVENT_DASMAX+1]={0};
@@ -125,6 +126,7 @@ const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
 	if(kc==NULL) return "Out of memory";
 
 	kc->func=func;
+        kc->funcname=strdup(talloc_format("%s [ev]",funcname));
 	kc->num_args=argslen;
 	kc->args=malloc(sizeof(int)*argslen);
 	if(kc==NULL) return "Out of memory";
@@ -152,6 +154,7 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 
 	while(kc!=NULL){
 		if(kc->a==a){
+                        EVENTLOG_add_event(kc->funcname);
 			switch(kc->num_args){
 				case 0:
 					(*((void (*)(void))(kc->func)))();

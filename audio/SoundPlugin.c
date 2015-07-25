@@ -281,7 +281,7 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
   if(!strcmp(plugin_type->type_name,"Bus"))
     plugin->bus_descendant_type = IS_BUS_DESCENDANT;
   else
-    plugin->bus_descendant_type = IS_NOT_A_BUS_DESCENDANT;
+    plugin->bus_descendant_type = IS_BUS_PROVIDER;
 
 
   {

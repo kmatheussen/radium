@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C"{
 #endif
 
+  void EVENTLOG_add_event(const char *log_entry);
+  
   void CRASHREPORTER_init(void);
   void CRASHREPORTER_set_plugin_name(const char *plugin_name);
   void CRASHREPORTER_unset_plugin_name(void);

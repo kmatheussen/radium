@@ -103,6 +103,28 @@ static void clear_file(QString filename){
   file.close();
 }
 
+
+#if !defined(CRASHREPORTER_BIN)
+
+#define NUM_EVENTS 100
+
+static const char *g_event_log[NUM_EVENTS] = {""};
+static int g_event_pos = 0;
+
+void EVENTLOG_add_event(const char *log_entry){
+ R_ASSERT(THREADING_is_main_thread());
+
+ g_event_log[g_event_pos] = log_entry;
+ 
+ g_event_pos++;
+ if (g_event_pos==NUM_EVENTS)
+   g_event_pos = 0;
+}
+
+#endif
+
+
+
 static void send_crash_message_to_server(QString message, QString plugin_name, bool is_crash){
 
   fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
@@ -365,6 +387,20 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   for(int i=0;i<num_messages;i++)
     tosend += QString::number(i) + ": "+messages[i] + "\n";
 
+  tosend += "\n\n";
+
+  int event_pos = g_event_pos;
+
+  tosend += "start event_pos: " + QString::number(event_pos) + "\n";
+
+  for(int i=event_pos-1; i>=0 ; i--)
+    tosend += QString(g_event_log[i]) + "\n";
+
+  for(int i=NUM_EVENTS-1; i>=event_pos ; i--)
+    tosend += QString(g_event_log[i]) + "\n";
+
+  tosend += "end event_pos: " + QString::number(g_event_pos) + "\n";
+  
   tosend += "\n\n";
 
 #if defined(FOR_LINUX)

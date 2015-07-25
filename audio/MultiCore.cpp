@@ -51,11 +51,10 @@ static boost::lockfree::queue<SoundProducer*,boost::lockfree::capacity<MAX_NUM_S
 
 
 #if 0
-static bool sp_is_bus_dependant(SoundProducer *sp){
+static bool sp_is_bus_provider(SoundProducer *sp, int bus_num){
   SoundPlugin *plugin = SP_get_plugin(sp);
 
-  if (plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT) {
-    int bus_num = SP_get_bus_num(sp);
+  if (plugin->bus_descendant_type==IS_BUS_PROVIDER) {
     Smooth *smooth = &plugin->bus_volume[bus_num];
     if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth))
       return true;
@@ -102,7 +101,7 @@ static void process_multicore(SoundProducer *sp, int64_t time, int num_frames, b
   for(auto sp_dep : sp->dependants)
     dec_sp_dependency(sp, sp_dep);
      
-  if (sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT) {
+  if (sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER) {
     SoundProducer *bus1,*bus2;
     MIXER_get_buses(bus1,bus2);
     if (bus1!=NULL)
@@ -246,7 +245,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   for (SoundProducer *sp : *sp_all) {
     sp->is_processed=0;
 
-    if (sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT) {
+    if (sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER) {
       if (bus1!=NULL)
         bus1->num_dependencies_left.ref();
       if (bus2!=NULL)
@@ -262,7 +261,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   int num=0;
 
   for (SoundProducer *sp : *sp_all){
-    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->dependants.size(), sp->_plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
+    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->dependants.size(), sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER);
     fflush(stderr);
   }
 #endif

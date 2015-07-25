@@ -240,7 +240,7 @@ typedef struct SystemFilter{
 
 enum BusDescendantType{
   IS_BUS_DESCENDANT,
-  IS_NOT_A_BUS_DESCENDANT,
+  IS_BUS_PROVIDER,
   MAYBE_A_BUS_DESCENDANT,
 };
 

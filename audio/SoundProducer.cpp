@@ -443,7 +443,7 @@ struct SoundProducer {
       }
     }
 
-    _plugin->bus_descendant_type = IS_NOT_A_BUS_DESCENDANT;
+    _plugin->bus_descendant_type = IS_BUS_PROVIDER;
   }
 
   void allocate_sound_buffers(int num_frames){
@@ -1042,7 +1042,7 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
     SoundPlugin           *plugin = SP_get_plugin(sp);
     const SoundPluginType *type   = plugin->type;
     
-    if(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT){
+    if(plugin->bus_descendant_type==IS_BUS_PROVIDER){
       Smooth *smooth = &plugin->bus_volume[bus_num];
       if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth)){
         if(type->num_outputs==1){
