@@ -61,15 +61,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define NOPLUGINNAME "<noplugin>"
 
-#if !defined(CRASHREPORTER_BIN)
-#ifdef RELEASE
-static bool g_block_non_main_threads = false;
-#else
-//static bool g_block_non_main_threads = false;
-static bool g_block_non_main_threads = true;
-#endif
-#endif
-
 
 static QString toBase64(QString s){
   return s.toLocal8Bit().toBase64();
@@ -435,16 +426,41 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
     string_to_file(tosend, file);
 
-    bool do_block;
+    /*
+      Whether to block
+      ================
+                                    RELEASE      !RELEASE
+                                -------------------------
+      Crash in main thread      |     no [1]       yes [2]
+      Crash in other thread     |     no [1]       yes [2]
+      Assert in main thread     |     no [4]       yes [2]
+      Assert in other thread    |     no [4]       yes [2,3]
 
-    if (is_crash==false)
-      do_block = false;
+      [1] When crashing in RELEASE mode, it doesn't matter wheter we block or not, because
+          radium will exit immediately after finishing this function anyway, and it's
+          probably better to do that as quickly as possible.
 
-    else if (THREADING_is_main_thread())
-      do_block = true;
+      [2] Ideally, this should happen though:
+          1. All threads immediately freezes
+          2. A dialog pops up asking whether to:
+             a) Stop program (causing gdb to kick in)
+             b) Ignore
+             c) Run assert crashreporter
 
-    else
-      do_block = g_block_non_main_threads;
+      [3] This can be annoying if the assert happens in the audio thread though.
+
+      [4] Asserts are not really supposed to happen, but there are a lot of them, 
+          and they might pop up unnecessarily (for instance a bug in the asserts themselves):
+          * Blocking might cause the program to be non-functional unnecessarily.
+          * Blocking could prevent the user from saving the current song,
+            for instance if the assert window just pops up immediately after closing it.
+     */
+
+#ifdef RELEASE
+    bool do_block = false;
+#else
+    bool do_block = true;
+#endif
     
     run_program(program,
                 toBase64(file->fileName()),
