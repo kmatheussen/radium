@@ -1,3 +1,11 @@
+Most important changes 3.2.5 -> 3.2.6
+* Fix: 1. General realtime performance, and: 2. Crashes when multicore is enabled.
+  (Don't use QString in realtime code, and especially don't access the same QString from several threads simultaneously.)
+  Bug introduced in 3.2.5.
+* Always block crash/assert-reporter in non-RELEASE mode, and never block in RELEASE mode
+* Avoid showing assert reporter when exiting after jack has shut down.
+
+
 Most important changes 3.2.4 -> 3.2.5
 * Start crashreporter also when just hitting an assert.
 * Improved crash reporter. Should hopefully work better in Windows.
