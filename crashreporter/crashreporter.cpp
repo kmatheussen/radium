@@ -260,14 +260,16 @@ int main(int argc, char **argv){
 
 #if !defined(CRASHREPORTER_BIN)
 
-static QString g_plugin_name=NOPLUGINNAME;
+static const char *g_plugin_name=NOPLUGINNAME;
+//static QString g_plugin_name=NOPLUGINNAME;
 
 static QTime running_time;
 
 
 void CRASHREPORTER_set_plugin_name(const char *plugin_name){
+  //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
   g_plugin_name = plugin_name;
-  if (g_plugin_name=="")
+  if (g_plugin_name[0]==0)
     g_plugin_name = NOPLUGINNAME;
 }
 
@@ -368,7 +370,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "OpenGL version: " + QString((GE_version_string==NULL ? "(null)" : (const char*)GE_version_string)) + "\n";
   tosend += QString("OpenGL flags: %1").arg(GE_opengl_version_flags, 0, 16) + "\n\n";
 
-  tosend += "Running plugin: " + g_plugin_name + "\n\n";
+  tosend += "Running plugin: " + QString(g_plugin_name) + "\n\n";
 
   tosend += "Running time: " + QString::number(running_time.elapsed()) + "\n\n";
 
