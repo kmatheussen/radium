@@ -383,17 +383,20 @@ struct SoundProducer {
   ~SoundProducer(){    
     MIXER_remove_SoundProducer(this);
 
-    free(_input_peaks);
-    free(_volume_peaks);
+    if (PLAYER_is_running()) {
 
-    R_ASSERT(_input_eproducers.size()==0);
+      free(_input_peaks);
+      free(_volume_peaks);
 
-    for(int ch=0;ch<_num_inputs;ch++)
-      R_ASSERT(_input_producers[ch].size()==0);
-    
-    delete[] _input_producers;
-
-    free_sound_buffers();
+      R_ASSERT(_input_eproducers.size()==0);
+      
+      for(int ch=0;ch<_num_inputs;ch++)
+        R_ASSERT(_input_producers[ch].size()==0);
+      
+      delete[] _input_producers;
+      
+      free_sound_buffers();
+    }
   }
 
   void free_sound_buffers(){
