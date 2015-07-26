@@ -104,7 +104,7 @@ static void clear_file(QString filename){
 #define NUM_EVENTS 100
 
 static const char *g_event_log[NUM_EVENTS] = {""};
-static int g_event_pos = 0;
+static volatile int g_event_pos = 0;
 
 void EVENTLOG_add_event(const char *log_entry){
  R_ASSERT(THREADING_is_main_thread());
