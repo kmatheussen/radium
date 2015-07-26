@@ -46,7 +46,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/OS_string_proc.h"
 #include "../common/threading.h"
+#include "../common/disk_save_proc.h"
+#include "../common/undo.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "crashreporter_proc.h"
@@ -60,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #define NOPLUGINNAME "<noplugin>"
+#define NOEMERGENCYSAVE "<noemergencysave>"
 
 
 static QString toBase64(QString s){
@@ -116,7 +120,7 @@ void EVENTLOG_add_event(const char *log_entry){
 
 
 
-static void send_crash_message_to_server(QString message, QString plugin_name, bool is_crash){
+static void send_crash_message_to_server(QString message, QString plugin_name, QString emergency_save_filename, bool is_crash){
 
   fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
 
@@ -133,6 +137,8 @@ static void send_crash_message_to_server(QString message, QString plugin_name, b
       box.setText("Radium is in a state it should not be in.\n"
                   );
 
+    bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
+    
     box.setInformativeText(QString("This %0 will be automatically reported when you press \"SEND\".\n"
                                    "\n"
                                    "The report is sent anonymously, and will only be seen by the author of Radium.\n"
@@ -145,6 +151,7 @@ static void send_crash_message_to_server(QString message, QString plugin_name, b
                                ? QString("Please note that a third party plugin called \"" + plugin_name + "\" was currently processing audio. It might be responsible for the crash.")
                                : QString())
                            + (!is_crash ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
+                           + (dosave ? "\nAn emergency version of your song has been saved as \""+emergency_save_filename+"\". However, this file should not be trusted. It could be malformed. (it is most likely okay though)" : "")
                            + "\n"
                            );
     box.setDetailedText(message);
@@ -241,9 +248,12 @@ int main(int argc, char **argv){
   QString filename = fromBase64(argv[1]);
 
   QString running_plugin_name = fromBase64(argv[2]);
-  bool is_crash = QString(argv[3])=="is_crash";
+  
+  QString emergency_save_filename = fromBase64(argv[3]);
+    
+  bool is_crash = QString(argv[4])=="is_crash";
 
-  send_crash_message_to_server(file_to_string(filename), running_plugin_name, is_crash);
+  send_crash_message_to_server(file_to_string(filename), running_plugin_name, emergency_save_filename, is_crash);
 
   if (is_crash)
     delete_file(filename);
@@ -278,7 +288,7 @@ void CRASHREPORTER_unset_plugin_name(void){
 }
 
 
-static void run_program(QString program, QString arg1, QString arg2, QString arg3, bool wait_until_finished){
+static void run_program(QString program, QString arg1, QString arg2, QString arg3, QString arg4, bool wait_until_finished){
 
 #if defined(FOR_WINDOWS)
 
@@ -286,8 +296,9 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   char *a1 = strdup(arg1.toAscii());
   char *a2 = strdup(arg2.toAscii());
   char *a3 = strdup(arg3.toAscii());
+  char *a4 = strdup(arg4.toAscii());
 
-  if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, NULL)==-1){
+  if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
     RError("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
     Sleep(3000);
@@ -297,7 +308,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
       
   //if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
   QString a = "LD_LIBRARY_PATH=" + QString(getenv("LD_LIBRARY_PATH"));
-  QString full_command = a + " " + program + " " + arg1 + " " + arg2 + " " + arg3;
+  QString full_command = a + " " + program + " " + arg1 + " " + arg2 + " " + arg3 + " " + arg4;
 
   if (wait_until_finished==false)
     full_command += "&";
@@ -463,13 +474,28 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #else
     bool do_block = true;
 #endif
+
+    QTemporaryFile emergency_save_file("radium_crash_save");
+
+#if 0
+    bool dosave = is_crash && Undo_num_undos_since_last_save()>0;
+#else
+    bool dosave = false; // saving inside a forked version of the program didn't really work that well. Maybe it works better in windows.
+#endif
+    
+    if (dosave)
+      emergency_save_file.open();
     
     run_program(program,
                 toBase64(file->fileName()),
                 toBase64(g_plugin_name),
+                toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
                 (is_crash ? "is_crash" : "is_assert"),
                 do_block
                 );
+
+    if (dosave)
+      Save_Clean(STRING_create(emergency_save_file.fileName()),root);
   }
   
 }
@@ -507,7 +533,7 @@ void CRASHREPORTER_send_assert_message(const char *fmt,...){
 
     if (!g_crashreporter_file->open()){
       SYSTEM_show_message("Unable to create temprary file. Disk may be full");
-      send_crash_message_to_server(message, g_plugin_name, false);
+      send_crash_message_to_server(message, g_plugin_name, NOEMERGENCYSAVE, false);
       goto exit;
     }
 

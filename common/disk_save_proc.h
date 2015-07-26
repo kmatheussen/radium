@@ -1,12 +1,6 @@
 
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void Save_Clean(const wchar_t *filename,struct Root *theroot);
-extern void Save(struct Root *theroot);
-extern void SaveAs(struct Root *theroot);
-
-#endif
-
+extern LANGSPEC void Save_Clean(const wchar_t *filename,struct Root *theroot);
+extern LANGSPEC void Save(struct Root *theroot);
+extern LANGSPEC void SaveAs(struct Root *theroot);
 
