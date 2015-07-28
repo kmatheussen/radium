@@ -1,3 +1,15 @@
+Most important changes 3.2.6 -> 3.2.7
+* Mixer: Must press left mouse button on a sound object to select it. Dont just set the the one currently under the mouse.
+* Added volume value to connections. This is both necessary to later optimize/simplify
+  the bus system (especially in conjuction with multi core), and to be able to control the volume of a connection.
+* Dont start making an audio connection in the mixer if the start pos doesnt have inputs or outputs
+* Fixed a bug which could cause the program to freeze when deleting sound objects,
+  loading songs, undoing, redoing, etc. Bug was introduced in V3.2.2.
+  *** Radium between V3.2.2 and V3.2.6 are particulary unstable. ***
+* Make sure song comment window is shown on top of all other windows after loading a song.
+
+
+
 Most important changes 3.2.5 -> 3.2.6
 * Fix: 1. General realtime performance, and: 2. Crashes when multicore is enabled.
   (Don't use QString in realtime code, and especially don't access the same QString from several threads simultaneously.)
