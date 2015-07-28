@@ -55,7 +55,7 @@ class Semaphore{
 
     void wait(int n){
       R_ASSERT(n>0);
-      while(--n)
+      while(n--)
         wait();
     }
   
@@ -68,7 +68,7 @@ class Semaphore{
 
     void signal(int n){
       R_ASSERT(n>0);
-      while(--n)
+      while(n--)
         signal();
     }
 
