@@ -7,6 +7,8 @@
 
 void SMOOTH_init(Smooth *smooth, float value, int blocksize){
 
+  memset(smooth, 0, sizeof(Smooth));
+  
   smooth->next_target_value = value;
   smooth->target_value = value;
   smooth->value = value;
@@ -38,6 +40,12 @@ void SMOOTH_set_target_value(Smooth *smooth, float value){
 
 float SMOOTH_get_target_value(Smooth *smooth){
   return smooth->next_target_value;
+}
+
+void SMOOTH_update_target_will_be_modified_value(Smooth *smooth){
+  smooth->target_will_be_modified = is_smoothing_necessary(smooth) ||
+                                    smooth->value > 0.0f ||
+                                    smooth->target_value != smooth->next_target_value;
 }
 
 // Must be called before processing a new block.
@@ -151,9 +159,11 @@ void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float s
   }
 }
 
+
 bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(Smooth *smooth){
-  return is_smoothing_necessary(smooth) || smooth->value > 0.0f;
+  return smooth->target_will_be_modified;
 }
+
 
 void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_frames){
   int i;

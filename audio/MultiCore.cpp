@@ -35,7 +35,7 @@
 static const int default_num_runners = 1;
 static const char *settings_key = "num_cpus";
 
-bool g_running_multicore = false; // Must be "false" since MultiCore is initialized after the mixer has started. This variable is protected by the player lock.
+bool g_running_multicore = false; // Must be "false" initially since MultiCore is initialized after the mixer has started. This variable is protected by the player lock.
 
 static volatile bool something_is_wrong = false;
 
@@ -119,6 +119,7 @@ struct Runner : public QThread {
   Q_OBJECT
 
 public:
+  radium::Semaphore can_start_main_loop;
   volatile bool must_exit;
 
   int64_t time;
@@ -129,6 +130,7 @@ public:
     : must_exit(false)
   {
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
+    start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
 
 #if 0
@@ -156,9 +158,11 @@ public:
   void run(){
     AVOIDDENORMALS;
 
-    printf("stack is hopefully touched: %d\n", touch_stack());
+    printf("stack is hopefully touched enough: %d\n", touch_stack());
         
     THREADING_acquire_player_thread_priority();
+
+    can_start_main_loop.wait();
 
     while(true){
 
@@ -348,7 +352,7 @@ void MULTICORE_set_num_threads(int num_new_runners){
   PLAYER_lock(); {
 
     for(int i=0 ; i < num_new_runners ; i++)
-      new_runners[i]->start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
+      new_runners[i]->can_start_main_loop.signal();
 
     g_num_runners = num_new_runners;
     g_runners = new_runners;

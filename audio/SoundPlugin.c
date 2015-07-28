@@ -263,7 +263,7 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
   }
 
   SMOOTH_init(&plugin->input_volume  , 1.0f, buffer_size);
-  SMOOTH_init(&plugin->output_volume , 1.0f, buffer_size);
+  plugin->output_volume = 1.0f;
   SMOOTH_init(&plugin->bus_volume[0] , 0.0f, buffer_size);
   SMOOTH_init(&plugin->bus_volume[1] , 0.0f, buffer_size);
   SMOOTH_init(&plugin->pan           , 0.5f, buffer_size);
@@ -366,8 +366,6 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
   
   SMOOTH_release(&plugin->input_volume);
     
-  SMOOTH_release(&plugin->output_volume);
-  
   SMOOTH_release(&plugin->bus_volume[0]);
   
   SMOOTH_release(&plugin->bus_volume[1]);
@@ -397,7 +395,6 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
 // Called at the start of each block
 void PLUGIN_update_smooth_values(SoundPlugin *plugin){
   SMOOTH_called_per_block(&plugin->input_volume);
-  SMOOTH_called_per_block(&plugin->output_volume);
   SMOOTH_called_per_block(&plugin->bus_volume[0]);
   SMOOTH_called_per_block(&plugin->bus_volume[1]);
   SMOOTH_called_per_block(&plugin->pan);
@@ -500,7 +497,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
     
   case EFFNUM_OUTPUT_VOLUME:
-    val = gain_2_db(plugin->output_volume.target_value/plugin->volume,MIN_DB,MAX_DB);
+    val = gain_2_db(plugin->output_volume,MIN_DB,MAX_DB);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
@@ -655,9 +652,6 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       store_value = get_gain_store_value(value,value_type);
 
       if(plugin->volume_is_on==true){
-        if(plugin->output_volume_is_on==true)
-          SMOOTH_set_target_value(&plugin->output_volume, store_value * plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
-        
         if(plugin->bus_volume_is_on[0]==true)
           SMOOTH_set_target_value(&plugin->bus_volume[0], store_value * plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
         
@@ -668,27 +662,35 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
       plugin->volume = store_value;
       break;
     case EFFNUM_VOLUME_ONOFF:
-      if(value>0.5f)
+      if(value>0.5f) {
         plugin->volume = plugin->savable_effect_values[num_effects+EFFNUM_VOLUME];
-      else
+        plugin->volume_is_on = true;
+      }else {
         plugin->volume = 0.0f;
-
-      if(plugin->output_volume_is_on==true)
-        set_smooth_on_off(&plugin->output_volume, &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
+        plugin->volume_is_on = false;
+      }
+      //if(plugin->output_volume_is_on==true)
+      //  set_smooth_on_off(&plugin->output_volume, &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
+      
       if(plugin->bus_volume_is_on[0]==true)
         set_smooth_on_off(&plugin->bus_volume[0], &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
+      
       if(plugin->bus_volume_is_on[1]==true)
         set_smooth_on_off(&plugin->bus_volume[1], &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
+      
       break;
 
     case EFFNUM_OUTPUT_VOLUME:
       store_value = get_gain_store_value(value,value_type);
       //printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
-      if(plugin->output_volume_is_on==true)
-        SMOOTH_set_target_value(&plugin->output_volume, store_value*plugin->volume);
+      plugin->output_volume = store_value;
       break;
+      
     case EFFNUM_OUTPUT_VOLUME_ONOFF:
-      set_smooth_on_off(&plugin->output_volume, &plugin->output_volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
+      if (value > 0.5f)
+        plugin->output_volume_is_on = true;
+      else
+        plugin->output_volume_is_on = false;
       break;
 
     case EFFNUM_BUS1:
@@ -942,15 +944,12 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return plugin->volume_is_on==true ? 1.0 : 0.0f;
 
   case EFFNUM_OUTPUT_VOLUME:
-#if 0
     {
-      float val = gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
-                                MIN_DB, MAX_DB);
+      float val = gain_2_slider(plugin->output_volume, MIN_DB, MAX_DB);
       //printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
+      return val;
     }
-#endif
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
-                         MIN_DB, MAX_DB);
+    
   case EFFNUM_OUTPUT_VOLUME_ONOFF:
     return plugin->output_volume_is_on==true ? 1.0 : 0.0f;
 

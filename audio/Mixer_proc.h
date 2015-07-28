@@ -29,8 +29,11 @@ extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
 
 extern void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2);
 
+#ifdef USE_QT4
 #include "SoundProducer_proc.h"
 extern radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
+#endif
+
 #endif // __cplusplus
 
 extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches);

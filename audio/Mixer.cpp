@@ -586,7 +586,7 @@ struct Mixer{
   
   // Start the most cpu intensive soundproducers first
   void RT_sort_sound_producers_by_running_time(void){
-    qsort(_sound_producers.elements, _sound_producers.num_elements, sizeof(SoundProducer*), compare_sound_producers);
+    qsort(_sound_producers.elements, _sound_producers.size(), sizeof(SoundProducer*), compare_sound_producers);
 #if 0    
     printf("\n\n\n****************** START\n");
     for(int i=0;i<_num_sound_producers;i++){
@@ -672,8 +672,11 @@ struct Mixer{
 
       if (g_running_multicore)
         RT_sort_sound_producers_by_running_time();
-      for (SoundProducer *sp : _sound_producers)
+      
+      for (SoundProducer *sp : _sound_producers) {
         SP_RT_reset_running_time(sp);
+        SP_RT_called_for_each_soundcard_block(sp);
+      }
 
       jackblock_delta_time = 0;
       while(jackblock_delta_time < num_frames){

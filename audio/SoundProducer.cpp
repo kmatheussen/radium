@@ -38,6 +38,7 @@ static inline int myisinf(float val){
   return isinf(val);
 }
 
+
 #include "pa_memorybarrier.h"
 
 #include "monotonic_timer.c"
@@ -46,6 +47,7 @@ static inline int myisinf(float val){
 #include "../common/nsmtracker.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/visual_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -130,21 +132,40 @@ struct SoundProducerLink {
   SoundProducer *source;
   SoundProducer *target;
 
-  // only used by audio links
+  // fields below only used by audio links
   int source_ch;
   int target_ch;
 
   int fade_pos;
   volatile enum {NO_STATE, FADING_IN, STABLE, FADING_OUT, JUST_FADED_OUT, FADED_OUT} state;
 
-  SoundProducerLink()
-    : source(NULL)
-    , target(NULL)
+  float link_volume; 
+  Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
+
+  float get_total_link_volume(void){
+    SoundPlugin *source_plugin = SP_get_plugin(source);
+    R_ASSERT_RETURN_IF_FALSE2(source_plugin != NULL, 0.0f);
+    
+    if (source_plugin->output_volume_is_on) // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
+      return link_volume * source_plugin->output_volume * source_plugin->volume;
+    else
+      return 0.0f;
+  }
+  
+  SoundProducerLink(SoundProducer *source, SoundProducer *target)
+    : source(source)
+    , target(target)
     , source_ch(0)
     , target_ch(0)
     , fade_pos(0)
     , state(NO_STATE)
+    , link_volume(1.0)
   {
+    SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
+  }
+
+  ~SoundProducerLink(){
+    SMOOTH_release(&volume);
   }
 };
 }
@@ -291,11 +312,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
                "\n"
                "If the instrument is a third party instrument, for instance a\n"
                "VST plugin, a LADSPA plugin, or a Pd patch, please contact the\n"
-               "third party to fix the bug.\n"
-               "\n"
-               "Note that this check is not a bug in Radium. Other plugin hosts\n"
-               "will usually just misbehave silently when an instrument generate\n"
-               "abnormal signals (with the exception of denormals).\n",
+               "third party to fix the bug.\n",
                patch==NULL?"<no name>":patch->name,
                plugin->type->type_name, plugin->type->name,
                sigtype);
@@ -481,16 +498,17 @@ struct SoundProducer {
 
   bool add_eventSoundProducerInput(SoundProducer *source){
     if(source->is_recursive(this)==true){
-      printf("Recursive tree detected\n");
+      GFX_Message(NULL, "Recursive graph not supported\n");
       return false;
     }
 
-    SoundProducerLink *elink = new SoundProducerLink;
-    elink->source    = source;
-    elink->target    = this;
+    SoundProducerLink *elink = new SoundProducerLink(source, this);
     
-    fprintf(stderr, "____add einput");
-    
+    fprintf(stderr, "____add einput\n");
+
+    source->dependants.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+    _input_eproducers.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+
     PLAYER_lock();{
 
       source->dependants.add(this);
@@ -508,21 +526,22 @@ struct SoundProducer {
     //fprintf(stderr,"*** this: %p. Adding input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
 
     if(source->is_recursive(this)==true){
-      printf("Recursive tree detected\n");
+      GFX_Message(NULL, "Recursive graph not supported\n");
       return false;
     }
 
-    SoundProducerLink *link = new SoundProducerLink; // created here
-    link->source    = source;
+    SoundProducerLink *link = new SoundProducerLink(source, this);
     link->source_ch = source_ch;
-    link->target    = this;
     link->target_ch = target_ch;
     
-    link->fade_pos          = 0;
-    link->state = SoundProducerLink::FADING_IN;
+    link->fade_pos = 0;
+    link->state    = SoundProducerLink::FADING_IN;
 
-    fprintf(stderr, "____add input");
+    fprintf(stderr, "____add input\n");
 
+    source->dependants.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+    _input_producers[target_ch].ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+      
     PLAYER_lock();{
 
       source->dependants.add(this);
@@ -542,7 +561,7 @@ struct SoundProducer {
 
       if(elink->source==source){
 
-        fprintf(stderr, "____remove einput");
+        fprintf(stderr, "____remove einput\n");
         
         PLAYER_lock();{
 
@@ -590,7 +609,7 @@ struct SoundProducer {
 
         RSEMAPHORE_wait(signal_from_RT,1);
 
-        fprintf(stderr, "____remove input");
+        fprintf(stderr, "____remove input\n");
         
         PLAYER_lock();{
           
@@ -722,10 +741,36 @@ struct SoundProducer {
     }
   }
 
+  void RT_called_for_each_soundcard_block(void){
+    
+    PLUGIN_update_smooth_values(_plugin);
+
+    for(int ch=0;ch<_num_inputs;ch++){
+      
+      for (SoundProducerLink *link : _input_producers[ch]) {
+
+        SMOOTH_set_target_value(&link->volume, link->get_total_link_volume());
+        
+        SMOOTH_update_target_will_be_modified_value(&link->volume);
+
+#if 0
+        if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(&link->volume))
+          link->target->num_dependencies++;
+#endif
+      }
+
+    }
+
+#if 0
+    for (SoundProducerLink *elink : _input_eproducers)
+      elink->target->num_dependencies++;
+#endif
+  }
+  
   bool has_run(int64_t time){
     return _last_time == time;
   }
-  
+
   void RT_process(int64_t time, int num_frames, bool process_plugins){
     if(has_run(time))
       return;
@@ -737,10 +782,8 @@ struct SoundProducer {
     for (SoundProducerLink *elink : _input_eproducers)
       elink->source->RT_process(time, num_frames, process_plugins);
       
-
     PLUGIN_update_smooth_values(_plugin);
-
-        
+    
     // Gather sound data
     for(int ch=0;ch<_num_inputs;ch++){
       float *channel_target = _dry_sound[ch];
@@ -748,47 +791,52 @@ struct SoundProducer {
       memset(channel_target, 0, sizeof(float)*num_frames);
 
       for (SoundProducerLink *link : _input_producers[ch]) {
+        
+        if (true || link->volume.target_will_be_modified) {
 
-        SoundProducer *source_sound_producer = link->source;
-        SoundPlugin *source_plugin = source_sound_producer->_plugin;
-        
-        float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
-        
-        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->source_ch, process_plugins);
-        
-        // fade in
-        if(link->state==SoundProducerLink::FADING_IN){
-          memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
-          RT_fade_in2(fade_sound, link->fade_pos, num_frames);
-          input_producer_sound = &fade_sound[0];
+          SMOOTH_called_per_block(&link->volume);
+                  
+          float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
           
-          link->fade_pos += num_frames;
-          if(link->fade_pos==FADE_LEN)
-            link->state=SoundProducerLink::STABLE;
-        }
-        
-        // fade out
-        else if(link->state==SoundProducerLink::FADING_OUT){
-          memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
-          RT_fade_out2(fade_sound, link->fade_pos, num_frames);
-          input_producer_sound = &fade_sound[0];
+          SoundProducer *source_sound_producer = link->source;
+          float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->source_ch, process_plugins);
           
-          link->fade_pos += num_frames;
-          if(link->fade_pos==FADE_LEN){
-            RSEMAPHORE_signal(signal_from_RT,1);
-            link->state=SoundProducerLink::JUST_FADED_OUT;
+          // fade in
+          if(link->state==SoundProducerLink::FADING_IN){
+            memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
+            RT_fade_in2(fade_sound, link->fade_pos, num_frames);
+            input_producer_sound = &fade_sound[0];
+            
+            link->fade_pos += num_frames;
+            if(link->fade_pos==FADE_LEN)
+              link->state=SoundProducerLink::STABLE;
           }
-        }
           
-        // Apply volume and mix, unless faded out.
-        if (link->state != SoundProducerLink::FADED_OUT)
-          SMOOTH_mix_sounds(&source_plugin->output_volume, channel_target, input_producer_sound, num_frames);
+          // fade out
+          else if(link->state==SoundProducerLink::FADING_OUT){
+            memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
+            RT_fade_out2(fade_sound, link->fade_pos, num_frames);
+            input_producer_sound = &fade_sound[0];
+            
+            link->fade_pos += num_frames;
+            if(link->fade_pos==FADE_LEN){
+              RSEMAPHORE_signal(signal_from_RT,1);
+              link->state=SoundProducerLink::JUST_FADED_OUT;
+            }
+          }
+          
+          // Apply volume and mix, unless faded out.
+          if (link->state != SoundProducerLink::FADED_OUT)
+            SMOOTH_mix_sounds(&link->volume, channel_target, input_producer_sound, num_frames);
+          
+          if (link->state == SoundProducerLink::JUST_FADED_OUT)
+            link->state = SoundProducerLink::FADED_OUT;
 
-        if (link->state == SoundProducerLink::JUST_FADED_OUT)
-          link->state = SoundProducerLink::FADED_OUT;
-
-      }
-    }
+        } // end if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(&link->volume))
+        
+      } // end for (SoundProducerLink *link : _input_producers[ch])
+      
+    } // for(int ch=0;ch<_num_inputs;ch++)
 
 
     bool is_a_generator = _num_inputs==0;
@@ -874,19 +922,27 @@ struct SoundProducer {
 
         float output_volume_peak = output_peak * _plugin->volume;
 
-        if(_plugin->volume_peak_values!=NULL)
-          _plugin->volume_peak_values[ch] = output_volume_peak;
-        
+        // Chip volume
         if(_plugin->volume_peak_values_for_chip!=NULL)
           _plugin->volume_peak_values_for_chip[ch] = output_volume_peak;
-        
-        if(_plugin->output_volume_peak_values!=NULL)
-          _plugin->output_volume_peak_values[ch] = output_peak * _plugin->output_volume.target_value;
 
+        // "Volume"
+        if(_plugin->volume_peak_values!=NULL)
+          _plugin->volume_peak_values[ch] = output_volume_peak;
+
+        // "Reverb Bus" and "Chorus Bus"
         if (ch < 2) // buses only have two channels
           for(int bus=0;bus<2;bus++)
             if(_plugin->bus_volume_peak_values[bus]!=NULL)
               _plugin->bus_volume_peak_values[bus][ch] = output_peak * _plugin->bus_volume[bus].target_value;
+        
+        // "Out"
+        if(_plugin->output_volume_peak_values!=NULL) {
+          if (_plugin->output_volume_is_on)
+            _plugin->output_volume_peak_values[ch] = output_peak * _plugin->output_volume;
+          else
+            _plugin->output_volume_peak_values[ch] = 0.0;
+        }
       }
     }
   }
@@ -1007,8 +1063,11 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
     delete elinks_to_delete.at(i);
 }
 
+void SP_RT_called_for_each_soundcard_block(SoundProducer *producer){
+  producer->RT_called_for_each_soundcard_block();
+}
+    
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
-  //R_ASSERT(!g_running_multicore);
   producer->RT_process(time, num_frames, process_plugins);
 }
 
@@ -1047,7 +1106,7 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
     
     if(plugin->bus_descendant_type==IS_BUS_PROVIDER){
       Smooth *smooth = &plugin->bus_volume[bus_num];
-      if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth)){
+      if (smooth->target_will_be_modified) { // SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth)){
         if(type->num_outputs==1){
           float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
           SMOOTH_mix_sounds(smooth, outputs[0], channel_data0, num_frames);
