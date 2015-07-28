@@ -694,13 +694,19 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
 
     // connection
     {
-      if(CHIP_is_at_output_port(chip,mouse_x,mouse_y))
+      if(CHIP_is_at_output_port(chip,mouse_x,mouse_y)) {
+        if (chip->_num_outputs==0)
+          return false;
+        
         scene->_current_from_chip = chip;
 
-      else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y))
+      } else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y)) {
         scene->_current_to_chip = chip;
-      
-      if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
+
+        if (chip->_num_inputs==0)
+          return false;
+
+      } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
         //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
         scene->_current_connection = new Connection(scene);
@@ -731,8 +737,9 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         event->accept();
         return true;
       }
-    }  
- }
+    }
+    
+  }
 
   return false;
 }
