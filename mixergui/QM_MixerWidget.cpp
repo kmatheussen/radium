@@ -282,7 +282,8 @@ static void draw_slot(MyScene *myscene, float x, float y){
 
   if (myscene->_moving_chips.size() > 0)
     return;
-  
+
+#if 0  
   Chip *chip = MW_get_chip_at((x1+x2)/2, (y1+y2)/2, NULL);
   if (chip != NULL) {
     
@@ -294,7 +295,7 @@ static void draw_slot(MyScene *myscene, float x, float y){
     printf("Calling pp_update\n");
     instrument->PP_Update(instrument,(struct Patch*)patch);
   }
-
+#endif
 }
 
 static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
@@ -516,7 +517,7 @@ static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 }
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
-    
+
   QPointF pos=event->scenePos();
 
   draw_slot(this, pos.x(), pos.y());
@@ -691,6 +692,12 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
   printf("chip: %p\n", chip);
 
   if(chip!=NULL){
+
+    struct Instruments *instrument = get_audio_instrument();
+    SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL,false);
+    instrument->PP_Update(instrument,(struct Patch*)patch);
 
     // connection
     {

@@ -1209,6 +1209,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         _slider_being_edited = i+1;
       }
     }
+
   }
 
   event->accept();
