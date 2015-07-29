@@ -122,15 +122,15 @@ hash_t *HASH_create(int approx_size){
   return hash;
 }
 
-int HASH_get_array_size(hash_t *hash){
+int HASH_get_array_size(const hash_t *hash){
   return hash->num_array_elements;
 }
 
-int HASH_get_num_elements(hash_t *hash){
+int HASH_get_num_elements(const hash_t *hash){
   return hash->num_elements;
 }
 
-hash_t *HASH_get_keys(hash_t *hash){
+hash_t *HASH_get_keys(const hash_t *hash){
   hash_t *keys = HASH_create(hash->num_elements);
   int pos=0;
   int i;
@@ -144,7 +144,7 @@ hash_t *HASH_get_keys(hash_t *hash){
   return keys;
 }
 
-vector_t *HASH_get_values(hash_t *hash){
+vector_t *HASH_get_values(const hash_t *hash){
   vector_t *vector = talloc(sizeof(vector_t));
   int i;
   for(i=0;i<hash->elements_size;i++){
@@ -263,7 +263,7 @@ void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val){
     hash->num_array_elements = new_size;
 }
 
-static hash_element_t *HASH_get_no_complaining(hash_t *hash, const char *key, int i){
+static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *key, int i){
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   hash_element_t *element=hash->elements[index];
 
@@ -278,7 +278,7 @@ static hash_element_t *HASH_get_no_complaining(hash_t *hash, const char *key, in
 }
 
 // Returns the stored pointed, if it needs to be reused.
-const char *HASH_get_key(hash_t *hash, const char *key){
+const char *HASH_get_key(const hash_t *hash, const char *key){
   hash_element_t *element = HASH_get_no_complaining(hash,key,0);
   if(element==NULL)
     return NULL;
@@ -286,15 +286,15 @@ const char *HASH_get_key(hash_t *hash, const char *key){
     return element->key;
 }
 
-bool HASH_has_key_at(hash_t *hash, const char *key, int i){
+bool HASH_has_key_at(const hash_t *hash, const char *key, int i){
   return HASH_get_no_complaining(hash,key,i) != NULL;
 }
 
-bool HASH_has_key(hash_t *hash, const char *key){
+bool HASH_has_key(const hash_t *hash, const char *key){
   return HASH_has_key_at(hash, key, 0);
 }
 
-static hash_element_t *HASH_get(hash_t *hash, const char *key, int i, int type){
+static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, int type){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
   if(element==NULL){
@@ -310,7 +310,7 @@ static hash_element_t *HASH_get(hash_t *hash, const char *key, int i, int type){
   return element;
 }
 
-static const wchar_t *get_string(hash_t *hash, const char *key, int i){
+static const wchar_t *get_string(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,STRING_TYPE);
   if(element==NULL)
     return NULL;
@@ -318,7 +318,7 @@ static const wchar_t *get_string(hash_t *hash, const char *key, int i){
   return element->string;
 }
 
-static const char *get_chars(hash_t *hash, const char *key, int i){
+static const char *get_chars(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,STRING_TYPE);
   if(element==NULL)
     return NULL;
@@ -326,7 +326,7 @@ static const char *get_chars(hash_t *hash, const char *key, int i){
   return STRING_get_chars(element->string);
 }
 
-static int64_t get_int(hash_t *hash, const char *key, int i){
+static int64_t get_int(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,INT_TYPE);
   if(element==NULL)
     return 0;
@@ -334,7 +334,7 @@ static int64_t get_int(hash_t *hash, const char *key, int i){
   return element->int_number;
 }
 
-static double get_float(hash_t *hash, const char *key, int i){
+static double get_float(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,FLOAT_TYPE);
   if(element==NULL)
     return 0.0;
@@ -343,7 +343,7 @@ static double get_float(hash_t *hash, const char *key, int i){
 }
 
 
-static hash_t *get_hash(hash_t *hash, const char *key, int i){
+static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,HASH_TYPE);
   if(element==NULL)
     return NULL;
@@ -351,48 +351,48 @@ static hash_t *get_hash(hash_t *hash, const char *key, int i){
   return element->hash;
 }
 
-const wchar_t *HASH_get_string(hash_t *hash, const char *key){
+const wchar_t *HASH_get_string(const hash_t *hash, const char *key){
   return get_string(hash, key, 0);
 }
 
-const char *HASH_get_chars(hash_t *hash, const char *key){
+const char *HASH_get_chars(const hash_t *hash, const char *key){
   return get_chars(hash, key, 0);
 }
 
-int64_t HASH_get_int(hash_t *hash, const char *key){
+int64_t HASH_get_int(const hash_t *hash, const char *key){
   return get_int(hash, key, 0);
 }
 
-double HASH_get_float(hash_t *hash, const char *key){
+double HASH_get_float(const hash_t *hash, const char *key){
   return get_float(hash, key, 0);
 }
 
-hash_t *HASH_get_hash(hash_t *hash, const char *key){
+hash_t *HASH_get_hash(const hash_t *hash, const char *key){
   return get_hash(hash, key, 0);
 }
 
-const wchar_t *HASH_get_string_at(hash_t *hash, const char *key, int i){
+const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i){
   return get_string(hash, key, i);
 }
 
-const char *HASH_get_chars_at(hash_t *hash, const char *key, int i){
+const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i){
   return get_chars(hash, key, i);
 }
 
-int64_t HASH_get_int_at(hash_t *hash, const char *key, int i){
+int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i){
   return get_int(hash, key, i);
 }
 
-double HASH_get_float_at(hash_t *hash, const char *key, int i){
+double HASH_get_float_at(const hash_t *hash, const char *key, int i){
   return get_float(hash, key, i);
 }
 
-hash_t *HASH_get_hash_at(hash_t *hash, const char *key, int i){
+hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i){
   return get_hash(hash, key, i);
 }
 
 
-static vector_t *get_elements(hash_t *hash){
+static vector_t *get_elements(const hash_t *hash){
   vector_t *vector = talloc(sizeof(vector_t));
   int i;
   for(i=0;i<hash->elements_size;i++){
