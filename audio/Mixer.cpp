@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
+#include "../common/stacktoucher_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/threading.h"
 #include "../common/PEQ_LPB_proc.h"
@@ -602,6 +603,9 @@ struct Mixer{
     AVOIDDENORMALS;
     //#endif
 
+    touch_stack();
+
+    
 #if 0
 #define CSR_FLUSH_TO_ZERO         (1 << 15)
     unsigned csr = __builtin_ia32_stmxcsr();

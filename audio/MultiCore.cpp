@@ -17,6 +17,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
+#include "../common/stacktoucher_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/Semaphores.h"
 
@@ -141,24 +142,10 @@ public:
   }
 #endif
 
-  int touch_stack(void){
-    int stack_size = 1024*64;
-    char hepp[stack_size];
-    for(int i=0;i<stack_size;i++)
-      hepp[i] = rand() % 128;
-
-    int ret = 0;
-
-    for(int i=0;i<stack_size;i++)
-      ret += hepp[i];
-
-    return ret;
-  }
-
   void run(){
     AVOIDDENORMALS;
 
-    printf("stack is hopefully touched enough: %d\n", touch_stack());
+    touch_stack();
         
     THREADING_acquire_player_thread_priority();
 
@@ -206,6 +193,7 @@ private slots:
 
 static int g_num_runners = 0;
 static Runner **g_runners = NULL;
+
 
 
 void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int num_frames, bool process_plugins){

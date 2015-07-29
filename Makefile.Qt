@@ -208,7 +208,7 @@ OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o 
 
 OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
 
-OBJ7= instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o 
+OBJ7= instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
 
 #Tempos and time
 OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o temponodes_legalize.o
@@ -928,6 +928,10 @@ threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
 
 Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.h common/OS_Semaphores.h
 	$(CCC) $(CD)Semaphores.cpp $(QTOPT) -std=gnu++11
+
+stacktoucher.o: $(CD)stacktoucher.c
+	$(CC) -O0 $(CD)stacktoucher.c -c -O0
+
 
 X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
 	$(CC) $(P)X11_Main.c $(OPT)
