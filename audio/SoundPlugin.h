@@ -272,7 +272,7 @@ typedef struct SoundPlugin{
   float output_volume;
   bool output_volume_is_on;
 
-  Smooth bus_volume[2];
+  float bus_volume[2];
   bool bus_volume_is_on[2];
 
   Smooth pan; // between 0 and 1

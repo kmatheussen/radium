@@ -646,7 +646,10 @@ int radium_main(char *arg){
 #if 1
     if(override_default_qt_style){
       //QApplication::setStyle( new QOxygenStyle());
-    QApplication::setStyle( new QPlastiqueStyle());
+      
+      QApplication::setStyle( new QPlastiqueStyle());
+      //QApplication::setStyle( new QMacStyle());
+    
     //QApplication::setStyle( new QCleanlooksStyle() );
     //QApplication::setStyle( new QWindowsStyle() );
     }
@@ -985,7 +988,7 @@ static void qunsetenv(const char *varName)
 int main(int argc, char **argv){
 
   THREADING_init_main_thread_type();
-
+  
   QCoreApplication::setLibraryPaths(QStringList());
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 

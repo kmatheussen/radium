@@ -301,11 +301,12 @@ void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patc
 
 #endif // __cplusplus
 
+struct SoundProducer;
 
 extern LANGSPEC void CHIP_has_new_plugin(struct SoundPlugin *plugin);
 
-extern LANGSPEC void CHIP_create_from_state(hash_t *state);
-extern LANGSPEC struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y);
+extern LANGSPEC void CHIP_create_from_state(hash_t *state, Buses buses);
+extern LANGSPEC struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses);
 
 extern LANGSPEC void CHIP_update(struct SoundPlugin *plugin);
 

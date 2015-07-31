@@ -52,6 +52,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../OpenGL/Widget_proc.h"
 
+#include "../audio/SoundProducer_proc.h"
+//extern void SP_write_mixer_tree_to_disk(QFile *file);
+
 #include "crashreporter_proc.h"
 
 #if defined(FOR_WINDOWS)
@@ -342,7 +345,7 @@ static bool file_is_empty(QTemporaryFile *file){
   return false;
 }
 
-bool string_to_file(QString s, QTemporaryFile *file){
+static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree){
   bool ret = false;
   
   if (!file->open()){
@@ -363,6 +366,9 @@ bool string_to_file(QString s, QTemporaryFile *file){
   if (bytesWritten != data.size())
     SYSTEM_show_message("Unable to write everything to temporary file. Disk may be full");
 
+  if (save_mixer_tree)
+    SP_write_mixer_tree_to_disk(file);
+  
  exit:
   file->close();
   
@@ -437,7 +443,14 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
       file = g_crashreporter_file;
     }
 
-    string_to_file(tosend, file);
+    bool save_mixer_tree;
+    
+    if (is_crash)
+      save_mixer_tree = false; // Don't want to risk crashing inside the crash handler.
+    else
+      save_mixer_tree = true;
+    
+    string_to_file(tosend, file, save_mixer_tree);
 
     /*
       Whether to block

@@ -145,7 +145,7 @@ void MW_update_all_chips(void);
 // MW_add_plugin/MW_delete_plugin are the entry points for audio plugins.
 // Creating/deleting a plugin goes through here, not through audio/
 
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y);
+SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Buses buses);
 
 void MW_autoconnect_plugin(SoundPlugin *plugin);
 

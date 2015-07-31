@@ -2,14 +2,10 @@
 
 
 #include <boost/version.hpp>
-//#include <boost/thread/thread.hpp>
-#include <boost/lockfree/queue.hpp>
-//#include <boost/atomic.hpp>
-
-
 #if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
-  #error "Boost too old or not found. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.gz ; tar xvzf boost_1_58_0.tar.gz (that's it!)"
+  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.gz ; tar xvzf boost_1_58_0.tar.gz (that's it!)"
 #endif
+#include <boost/lockfree/queue.hpp>
 
 
 #include <QThread>
@@ -51,20 +47,6 @@ static QAtomicInt num_sp_left(0);
 static boost::lockfree::queue<SoundProducer*,boost::lockfree::capacity<MAX_NUM_SP>> ready_soundproducers;
 
 
-#if 0
-static bool sp_is_bus_provider(SoundProducer *sp, int bus_num){
-  SoundPlugin *plugin = SP_get_plugin(sp);
-
-  if (plugin->bus_descendant_type==IS_BUS_PROVIDER) {
-    Smooth *smooth = &plugin->bus_volume[bus_num];
-    if (SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth))
-      return true;
-  }
-
-  return false;
-}
-#endif
-
 static void schedule_sp(SoundProducer *sp){
   while(!ready_soundproducers.bounded_push(sp))
     ;
@@ -91,7 +73,6 @@ static void process_multicore(SoundProducer *sp, int64_t time, int num_frames, b
 
   if (!num_sp_left.deref()){
     //printf("num_left1: %d\n",0);
-    R_ASSERT(sp->dependants.is_empty());
     all_sp_finished.signal();
     return;
   }
@@ -99,17 +80,9 @@ static void process_multicore(SoundProducer *sp, int64_t time, int num_frames, b
   //int num_left = num_sp_left;
   //printf("num_left2: %d\n",num_left);
 
-  for(auto sp_dep : sp->dependants)
-    dec_sp_dependency(sp, sp_dep);
-     
-  if (sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER) {
-    SoundProducer *bus1,*bus2;
-    MIXER_get_buses(bus1,bus2);
-    if (bus1!=NULL)
-      dec_sp_dependency(sp, bus1);
-    if (bus2!=NULL)
-      dec_sp_dependency(sp, bus2);
-  }
+  for(SoundProducerLink *link : sp->_output_links)
+    if (link->is_active)
+      dec_sp_dependency(link->source, link->target);
 }
 
 
@@ -133,14 +106,6 @@ public:
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
     start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
-
-#if 0
-  ~Runner() {
-    R_ASSERT(must_exit==true);
-    //sp_ready.signal();
-    wait();
-  }
-#endif
 
   void run(){
     AVOIDDENORMALS;
@@ -204,7 +169,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
     return;
 
   if (sp_all->size() >= MAX_NUM_SP){
-    RT_message("Can't play since there are too many sound objects (%d). (this limit can be increased, but it's probably more likely that this message is shown because there is a bug in the program.)", sp_all->size());
+    RT_message("Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.", sp_all->size(), MAX_NUM_SP);
     return;
   }
 
@@ -227,55 +192,22 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   //  fprintf(stderr,"**************** STARTING %d\n",sp_all->size());
   //fflush(stderr);
 
-  SoundProducer *bus1,*bus2;
-  MIXER_get_buses(bus1,bus2);
-
-  
-  for (SoundProducer *sp : *sp_all)
-    sp->num_dependencies_left = sp->num_dependencies;
-
   for (SoundProducer *sp : *sp_all) {
+    sp->num_dependencies_left = sp->num_dependencies;
     sp->is_processed=0;
-
-    if (sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER) {
-      if (bus1!=NULL)
-        bus1->num_dependencies_left.ref();
-      if (bus2!=NULL)
-        bus2->num_dependencies_left.ref();
-    }
   }
 
   
 #if 0
-  fprintf(stderr, "bus1: %p, bus2: %p\n",bus1,bus2);
-  fflush(stderr);
-
-  int num=0;
-
-  for (SoundProducer *sp : *sp_all){
-    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->dependants.size(), sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER);
-    fflush(stderr);
-  }
+  SP_print_tree(sp_all);
 #endif
 
 
 
   // 3. start threads;
 
-  if (bus1!=NULL && int(bus1->num_dependencies_left)==0){
-    //fprintf(stderr,"Scheduling bus1.\n");
-    num_ready_sp++;
-    schedule_sp(bus1);
-  }
-  
-  if (bus2!=NULL && int(bus2->num_dependencies_left)==0){
-    //fprintf(stderr,"Scheduling bus2.\n");
-    num_ready_sp++;
-    schedule_sp(bus2);
-  }
-  
   for (SoundProducer *sp : *sp_all)
-    if (sp->num_dependencies==0 && sp!=bus1 && sp!=bus2){
+    if (sp->num_dependencies==0){
       num_ready_sp++;
       //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
       //fflush(stderr);
@@ -319,7 +251,18 @@ int MULTICORE_get_num_threads(void){
 }
 
 
+#define TEST_MULTICORE_VS_SINGLECORE 0
+
 void MULTICORE_set_num_threads(int num_new_runners){
+#if TEST_MULTICORE_VS_SINGLECORE
+  bool will_be_running_multicore = false;
+    
+  if (num_new_runners==1)
+    will_be_running_multicore = true;
+  else
+    num_new_runners--;
+#endif
+  
   R_ASSERT(num_new_runners >= 1);
 
   if (num_new_runners==g_num_runners)
@@ -344,12 +287,16 @@ void MULTICORE_set_num_threads(int num_new_runners){
 
     g_num_runners = num_new_runners;
     g_runners = new_runners;
-    
+
+#if TEST_MULTICORE_VS_SINGLECORE
+    g_running_multicore = will_be_running_multicore;
+#else
     if (g_num_runners == 1)
       g_running_multicore = false;
     else
       g_running_multicore = true;
-
+#endif
+    
     for(int i=0 ; i < num_old_runners ; i++)
       old_runners[i]->must_exit = true;
 
@@ -365,6 +312,8 @@ void MULTICORE_shut_down(void){
 
 void MULTICORE_init(void){
 
+  R_ASSERT(g_num_runners==0);
+  
   int num_new_runners = SETTINGS_read_int(settings_key, default_num_runners);
 
   MULTICORE_set_num_threads(num_new_runners);

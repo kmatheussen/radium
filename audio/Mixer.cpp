@@ -904,6 +904,26 @@ void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2){
   bus2 = g_mixer->_bus2;
 }
 
+Buses MIXER_get_buses(void){
+  Buses ret = {g_mixer->_bus1, g_mixer->_bus2};
+  return ret;
+}
+
+#if 0
+struct SoundProducer *MIXER_get_bus(int bus_num){
+  //R_ASSERT(g_mixer->_bus1 != NULL);
+  //R_ASSERT(g_mixer->_bus2 != NULL);
+  
+  if (bus_num==0)
+    return g_mixer->_bus1;
+  if (bus_num==1)
+    return g_mixer->_bus2;
+
+  R_ASSERT(false);
+  return NULL;
+}
+#endif
+
 void MIXER_add_SoundProducer(SoundProducer *sound_producer){
   g_mixer->add_SoundProducer(sound_producer);
 }

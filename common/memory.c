@@ -82,7 +82,7 @@ size_t allocated=0;
 #if 0
 void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2)){
 
-          R_ASSERT(!THREADING_is_player_thread());
+          R_ASSERT(THREADING_is_main_thread());
           R_ASSERT(!PLAYER_current_thread_has_lock());
           
 #ifndef DISABLE_BDWGC
@@ -102,7 +102,7 @@ void *tracker_alloc_clean(size_t size,void *(*AllocFunction)(size_t size2)){
 void *tracker_alloc(size_t size,void *(*AllocFunction)(size_t size2)){
 	allocated+=size;
 
-        R_ASSERT(!THREADING_is_player_thread());
+        R_ASSERT(THREADING_is_main_thread());
         R_ASSERT(!PLAYER_current_thread_has_lock());
 
 #ifndef DISABLE_BDWGC

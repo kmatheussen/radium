@@ -827,7 +827,7 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
 
   Undo_Open();{
 
-    SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL);
+    SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL, MIXER_get_buses());
 
     if(plugin!=NULL){
 
@@ -1097,7 +1097,7 @@ void GFX_showHideMixerWidget(void){
     g_mixer_widget->hide();
 }
 
-static int g_main_pipe_patch_id = -1;
+static int g_main_pipe_patch_id = 0;
 
 SoundPlugin *get_main_pipe(void){
   struct Patch *patch = PATCH_get_from_id(g_main_pipe_patch_id);
@@ -1135,23 +1135,27 @@ void MixerWidget::populateScene()
   connect_chips(&scene,from, 0, to, 1);
 #endif
 
-  // NB! main_pipe must be created first. The patch id of main_pipe must be 0.
+  /*
+
+  // NB! main_pipe must be created first. The patch id of main_pipe must be 0. (really?)
   SoundPluginType *pipe_type = PR_get_plugin_type_by_name(NULL, "Pipe","Pipe");
   SoundPlugin *main_pipe = add_new_audio_instrument_widget(pipe_type, grid_width, 0,false,"Main Pipe");
   g_main_pipe_patch_id = main_pipe->patch->id;
 
-  SoundPluginType *system_out = PR_get_plugin_type_by_name(NULL, "Jack","System Out");
-  SoundPlugin *system_out_plugin = add_new_audio_instrument_widget(system_out, grid_width*2, 0,false,"Main Out");
 
   SoundPluginType *bus1 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 1");
-  SoundPlugin *bus1_plugin = add_new_audio_instrument_widget(bus1, 0, 0,false,"Bus 1");
+  SoundPlugin *bus1_plugin = add_new_audio_instrument_widget(bus1, 0, 0,false,"Bus 1", NULL, NULL);
 
   SoundPluginType *bus2 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 2");
-  SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2");
+  SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2", NULL, NULL);
+
+  SoundPluginType *system_out = PR_get_plugin_type_by_name(NULL, "Jack","System Out");
+  SoundPlugin *system_out_plugin = add_new_audio_instrument_widget(system_out, grid_width*2, 0,false,"Main Out");
 
   CHIP_connect_chips(&scene, main_pipe, system_out_plugin);
   CHIP_connect_chips(&scene, bus1_plugin, main_pipe);
   CHIP_connect_chips(&scene, bus2_plugin, main_pipe);
+  */
 }
 
 void MW_autoconnect_plugin(SoundPlugin *plugin){
@@ -1183,7 +1187,7 @@ void MW_set_autopos(double *x, double *y){
 //
 // The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
 //
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y){
+SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Buses buses){
   SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;
@@ -1191,7 +1195,7 @@ SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y){
   if(x<=-100000)
     MW_set_autopos(&x, &y);
     
-  SoundProducer   *sound_producer = SP_create(plugin);
+  SoundProducer   *sound_producer = SP_create(plugin, buses);
   Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer,x,y);
 
   MW_move_chip_to_slot(chip, x, y);
@@ -1437,10 +1441,10 @@ hash_t *MW_get_state(void){
   return state;
 }
 
-static void MW_create_chips_from_state(hash_t *chips){
+static void MW_create_chips_from_state(hash_t *chips, Buses buses){
   fprintf(stderr,"number of chips: %d\n",(int)HASH_get_int(chips, "num_chips"));
   for(int i=0;i<HASH_get_int(chips, "num_chips");i++)
-    CHIP_create_from_state(HASH_get_hash_at(chips, "", i));
+    CHIP_create_from_state(HASH_get_hash_at(chips, "", i), buses);
 }
 
 static void MW_create_connections_from_state_internal(hash_t *connections, int patch_id_old, int patch_id_new){
@@ -1457,13 +1461,64 @@ void MW_create_connections_from_state(hash_t *connections){
   MW_create_connections_from_state_and_replace_patch(connections, -1, -1);
 }
 
+// FIXME/TODO!
+
+static hash_t *convert_state_to_new_type(hash_t *state){
+  hash_t *old_chips = HASH_get_hash(state, "chips");
+  int num_old_chips = HASH_get_int(old_chips, "num_chips");
+  
+  hash_t *new_chips = HASH_create(17);
+  hash_t *buses = HASH_create(2);
+
+  int num_buses = 0;
+  int num_chips = 0;
+  
+  for(int i=0;i<num_old_chips;i++) {
+    hash_t *chip = HASH_get_hash_at(old_chips, "", i);
+    hash_t *plugin = HASH_get_hash(chip, "plugin");    
+    const char *type_name = HASH_get_chars(plugin, "type_name");
+    
+    if (!strcmp(type_name,"Bus"))
+      HASH_put_hash_at(buses, "", num_buses++, chip);
+    else
+      HASH_put_hash_at(new_chips, "", num_chips++, chip);
+  }
+
+  R_ASSERT(num_buses==2);
+  R_ASSERT(num_buses+num_chips == num_old_chips);
+  
+  HASH_put_int(new_chips, "num_chips", num_chips);
+  HASH_put_int(buses, "num_chips", num_buses);
+
+  hash_t *ret = HASH_create(3);
+
+  HASH_put_hash(ret, "bus_chips", buses);
+  HASH_put_hash(ret, "chips", new_chips);
+  HASH_put_hash(ret, "connections", HASH_get_hash(state, "connections"));
+                
+  return ret;
+}
+
 // Patches must be created before calling this one.
 // However, patch->patchdata are created here.
 void MW_create_from_state(hash_t *state){
 
   MW_cleanup();
 
-  MW_create_chips_from_state(HASH_get_hash(state, "chips"));
+  if (!HASH_has_key(state, "bus_chips"))
+    state = convert_state_to_new_type(state);
+
+  Buses old_buses = MIXER_get_buses();
+
+  Buses no_buses = {NULL, NULL};
+  MW_create_chips_from_state(HASH_get_hash(state, "bus_chips"), no_buses);
+
+  Buses new_buses = MIXER_get_buses();
+
+  R_ASSERT(old_buses.bus1 != new_buses.bus1);
+  R_ASSERT(old_buses.bus2 != new_buses.bus2);
+
+  MW_create_chips_from_state(HASH_get_hash(state, "chips"), new_buses);
   MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
 
   GFX_update_all_instrument_widgets();

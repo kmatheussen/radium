@@ -1,3 +1,7 @@
+#ifndef RADIUM_COMMON_THREADING_H
+#define RADIUM_COMMON_THREADING_H
+
+
 // Mutex and sleeping (copied from RtAudio.h, RtAudio.cpp and tests/qmidiin.cpp)
 
 #if defined(FOR_WINDOWS)
@@ -93,3 +97,4 @@ extern LANGSPEC void THREADING_drop_player_thread_priority(void); // Implemented
 extern LANGSPEC priority_t THREADING_get_priority(void);
 extern LANGSPEC void THREADING_set_priority(priority_t priority);
 
+#endif

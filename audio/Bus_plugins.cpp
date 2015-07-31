@@ -41,9 +41,11 @@ static SoundPluginType right_in_type = {0};
 static SoundPluginType left_out_type = {0};
 static SoundPluginType right_out_type = {0};
 
+#if 0
 static void RT_bus_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   SP_RT_process_bus(outputs, time, num_frames, plugin->type==&bus_type1 ? 0 : 1, true);
 }
+#endif
 
 static void RT_pipe_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   int ch;
@@ -87,9 +89,9 @@ static void cleanup_plugin_data(SoundPlugin *plugin_type){
 
 const char *BUS_get_bus_name(int bus_num){
   if(bus_num==0)
-    return bus1==NULL ? "Reverb" : bus1->patch->name;
+    return bus1==NULL ? "Reverb Bus" : bus1->patch->name;
   else
-    return bus2==NULL ? "Chorus" : bus2->patch->name;
+    return bus2==NULL ? "Chorus Bus" : bus2->patch->name;
 }
 
 #if 0
@@ -110,14 +112,15 @@ static SoundPluginType mono_plugin_type = {
 
 static SoundPluginType bus_type = {
  name                     : "Bus",
- num_inputs               : 0,
+ num_inputs               : 2,
  num_outputs              : 2,
  is_instrument            : false,
  num_effects              : 0,
  create_plugin_data       : create_plugin_data,
  cleanup_plugin_data      : cleanup_plugin_data,
 
- RT_process               : RT_bus_process,
+ //RT_process               : RT_bus_process,
+ RT_process               : RT_pipe_process,
 
  data                     : NULL
 };
@@ -143,14 +146,15 @@ void create_bus_plugins(void){
   {
     bus_type1.type_name                = "Bus";
     bus_type1.name                     = "Bus 1";
-    bus_type1.num_inputs               = 0;
+    bus_type1.num_inputs               = 2;
     bus_type1.num_outputs              = 2;
     bus_type1.is_instrument            = false;
     bus_type1.num_effects              = 0;
     bus_type1.create_plugin_data       = create_plugin_data;
     bus_type1.cleanup_plugin_data      = cleanup_plugin_data;
     
-    bus_type1.RT_process               = RT_bus_process;
+    //bus_type1.RT_process               = RT_bus_process;
+    bus_type1.RT_process               = RT_pipe_process;
   
     bus_type1.data                     = NULL;
   }
@@ -158,14 +162,15 @@ void create_bus_plugins(void){
   {
     bus_type2.type_name                = "Bus";
     bus_type2.name                     = "Bus 2";
-    bus_type2.num_inputs               = 0;
+    bus_type2.num_inputs               = 2;
     bus_type2.num_outputs              = 2;
     bus_type2.is_instrument            = false;
     bus_type2.num_effects              = 0;
     bus_type2.create_plugin_data       = create_plugin_data;
     bus_type2.cleanup_plugin_data      = cleanup_plugin_data;
     
-    bus_type2.RT_process               = RT_bus_process;
+    //bus_type2.RT_process               = RT_bus_process;
+    bus_type2.RT_process               = RT_pipe_process;
   
     bus_type2.data                     = NULL;
   }

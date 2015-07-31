@@ -31,7 +31,7 @@ typedef struct{
   int pos; // between 0 and SMOOTH_LENGTH (in intervals of 64)
 
   bool smoothing_is_necessary;
-  bool target_will_be_modified;
+  bool target_audio_will_be_modified;
 } Smooth;
 
 typedef struct{
@@ -96,7 +96,7 @@ extern LANGSPEC void SMOOTH_new_blocksize(Smooth *smooth, int blockframes);
 extern LANGSPEC void SMOOTH_release(Smooth *smooth);
 extern LANGSPEC void SMOOTH_set_target_value(Smooth *smooth, float value);
 extern LANGSPEC float SMOOTH_get_target_value(Smooth *smooth);
-extern LANGSPEC void SMOOTH_update_target_will_be_modified_value(Smooth *smooth);
+extern LANGSPEC void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth);
 extern LANGSPEC void SMOOTH_called_per_block(Smooth *smooth);
 extern LANGSPEC void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames);
 extern LANGSPEC void SMOOTH_apply_inverted_volume(Smooth *smooth, float *sound, int num_frames);

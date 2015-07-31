@@ -21,20 +21,21 @@ extern LANGSPEC void MIXER_RT_set_bus_descendand_type_for_all_plugins(void);
 
 #ifdef __cplusplus
 
-struct SoundProducer;
-
 extern void MIXER_add_SoundProducer(SoundProducer *sound_producer);
 
 extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
 
 extern void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2);
-
+  
 #ifdef USE_QT4
 #include "SoundProducer_proc.h"
 extern radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
 #endif
 
 #endif // __cplusplus
+
+extern LANGSPEC Buses MIXER_get_buses(void);
+//extern LANGSPEC struct SoundProducer *MIXER_get_bus(int bus_num);
 
 extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches);
 

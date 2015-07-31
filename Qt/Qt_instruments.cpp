@@ -584,7 +584,7 @@ static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch)
 // * This is the entry point for creating audio instruments.
 // * The entry point for delete any instrument is common/patch.c/PATCH_delete
 //
-SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name){
+SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses){
     if(plugin_type==NULL)
       plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect);
 
@@ -604,7 +604,7 @@ SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type
       Undo_InstrumentsWidget_CurrPos();
       Undo_MixerConnections_CurrPos();
 
-      plugin = MW_add_plugin(plugin_type, x, y);
+      plugin = MW_add_plugin(plugin_type, x, y, buses);
       if(plugin==NULL)
         return NULL;
 
@@ -826,7 +826,7 @@ struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, 
   Undo_InstrumentsWidget_CurrPos();
   Undo_MixerConnections_CurrPos();
   
-  struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y);
+  struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
   if (patch!=NULL){
     if (autoconnect) {
       struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
@@ -852,7 +852,7 @@ void InstrumentWidget_replace_old(struct Patch *old_patch){
 
     //SoundPlugin *new_plugin = PLUGIN_create_plugin(plugin_type, NULL);
     //SoundPlugin *new_plugin = MW_add_plugin(plugin_type, 0,0);
-    new_plugin = add_new_audio_instrument_widget(plugin_type, 0, 0, false, NULL);
+    new_plugin = add_new_audio_instrument_widget(plugin_type, 0, 0, false, NULL, MIXER_get_buses());
     if (new_plugin != NULL) {
   
       new_patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, new_plugin, PLUGIN_generate_new_patchname(plugin_type));

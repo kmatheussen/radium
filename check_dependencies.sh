@@ -105,7 +105,6 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 
-
 if ! pkg-config --cflags sndfile >/dev/null 2>/dev/null ; then
     echo "libsndfile not found"
     exit 5

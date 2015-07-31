@@ -264,8 +264,6 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
 
   SMOOTH_init(&plugin->input_volume  , 1.0f, buffer_size);
   plugin->output_volume = 1.0f;
-  SMOOTH_init(&plugin->bus_volume[0] , 0.0f, buffer_size);
-  SMOOTH_init(&plugin->bus_volume[1] , 0.0f, buffer_size);
   SMOOTH_init(&plugin->pan           , 0.5f, buffer_size);
   SMOOTH_init(&plugin->drywet        , 1.0f, buffer_size);
 
@@ -366,10 +364,6 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
   
   SMOOTH_release(&plugin->input_volume);
     
-  SMOOTH_release(&plugin->bus_volume[0]);
-  
-  SMOOTH_release(&plugin->bus_volume[1]);
-  
   SMOOTH_release(&plugin->pan);
   
   SMOOTH_release(&plugin->drywet);
@@ -395,8 +389,6 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
 // Called at the start of each block
 void PLUGIN_update_smooth_values(SoundPlugin *plugin){
   SMOOTH_called_per_block(&plugin->input_volume);
-  SMOOTH_called_per_block(&plugin->bus_volume[0]);
-  SMOOTH_called_per_block(&plugin->bus_volume[1]);
   SMOOTH_called_per_block(&plugin->pan);
   SMOOTH_called_per_block(&plugin->drywet);
 }
@@ -505,14 +497,14 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
     
   case EFFNUM_BUS1:
-    val = gain_2_db(plugin->bus_volume[0].target_value/plugin->volume,MIN_DB,MAX_DB);
+    val = gain_2_db(plugin->bus_volume[0]/plugin->volume,MIN_DB,MAX_DB);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
       snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
     break;
   case EFFNUM_BUS2:
-    val = gain_2_db(plugin->bus_volume[1].target_value/plugin->volume,MIN_DB,MAX_DB);
+    val = gain_2_db(plugin->bus_volume[1]/plugin->volume,MIN_DB,MAX_DB);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
@@ -647,18 +639,8 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
     case EFFNUM_INPUT_VOLUME_ONOFF:
       set_smooth_on_off(&plugin->input_volume, &plugin->input_volume_is_on, store_value, plugin->savable_effect_values[num_effects+EFFNUM_INPUT_VOLUME]);
       break;
-
     case EFFNUM_VOLUME:
       store_value = get_gain_store_value(value,value_type);
-
-      if(plugin->volume_is_on==true){
-        if(plugin->bus_volume_is_on[0]==true)
-          SMOOTH_set_target_value(&plugin->bus_volume[0], store_value * plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
-        
-        if(plugin->bus_volume_is_on[1]==true)
-          SMOOTH_set_target_value(&plugin->bus_volume[1], store_value * plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
-      }
-
       plugin->volume = store_value;
       break;
     case EFFNUM_VOLUME_ONOFF:
@@ -669,15 +651,6 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         plugin->volume = 0.0f;
         plugin->volume_is_on = false;
       }
-      //if(plugin->output_volume_is_on==true)
-      //  set_smooth_on_off(&plugin->output_volume, &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
-      
-      if(plugin->bus_volume_is_on[0]==true)
-        set_smooth_on_off(&plugin->bus_volume[0], &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
-      
-      if(plugin->bus_volume_is_on[1]==true)
-        set_smooth_on_off(&plugin->bus_volume[1], &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
-      
       break;
 
     case EFFNUM_OUTPUT_VOLUME:
@@ -695,20 +668,24 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
 
     case EFFNUM_BUS1:
       store_value = get_gain_store_value(value,value_type);
-      if(plugin->bus_volume_is_on[0]==true)
-        SMOOTH_set_target_value(&plugin->bus_volume[0], store_value*plugin->volume);
+      plugin->bus_volume[0] = store_value;
       break;
     case EFFNUM_BUS1_ONOFF:
-      set_smooth_on_off(&plugin->bus_volume[0], &plugin->bus_volume_is_on[0], store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
+      if (value > 0.5f)
+        plugin->bus_volume_is_on[0] = true;
+      else
+        plugin->bus_volume_is_on[0] = false;
       break;
 
     case EFFNUM_BUS2:
       store_value = get_gain_store_value(value,value_type);
-      if(plugin->bus_volume_is_on[1]==true)
-        SMOOTH_set_target_value(&plugin->bus_volume[1], store_value*plugin->volume);
+      plugin->bus_volume[1] = store_value;
       break;
     case EFFNUM_BUS2_ONOFF:
-      set_smooth_on_off(&plugin->bus_volume[1], &plugin->bus_volume_is_on[1], store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
+      if (value > 0.5f)
+        plugin->bus_volume_is_on[1] = true;
+      else
+        plugin->bus_volume_is_on[1] = false;
       break;
 
     case EFFNUM_PAN:
@@ -954,14 +931,12 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return plugin->output_volume_is_on==true ? 1.0 : 0.0f;
 
   case EFFNUM_BUS1:
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->bus_volume[0])/plugin->volume,
-                         MIN_DB, MAX_DB);
+    return gain_2_slider(plugin->bus_volume[0], MIN_DB, MAX_DB);
   case EFFNUM_BUS1_ONOFF:
     return plugin->bus_volume_is_on[0]==true ? 1.0 : 0.0f;
 
   case EFFNUM_BUS2:
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->bus_volume[1])/plugin->volume,
-                         MIN_DB, MAX_DB);
+    return gain_2_slider(plugin->bus_volume[1], MIN_DB, MAX_DB);
   case EFFNUM_BUS2_ONOFF:
     return plugin->bus_volume_is_on[1]==true ? 1.0 : 0.0f;
 

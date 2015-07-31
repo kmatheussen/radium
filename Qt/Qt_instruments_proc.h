@@ -35,7 +35,9 @@ extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
 
 struct SoundPlugin;
 struct SoundPluginType;
-extern LANGSPEC struct SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name);
+struct SoundProducer;
+
+extern LANGSPEC struct SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses);
 extern LANGSPEC void close_all_instrument_widgets(void);
 
 extern LANGSPEC struct Patch *get_current_instruments_gui_patch(void);

@@ -1323,7 +1323,7 @@ hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
 }
 
 
-void CHIP_create_from_state(hash_t *state){
+void CHIP_create_from_state(hash_t *state, Buses buses){
   struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
   double x = HASH_get_float(state, "x");
   double y = HASH_get_float(state, "y");
@@ -1334,14 +1334,16 @@ void CHIP_create_from_state(hash_t *state){
 
   if(plugin!=NULL){
     plugin->patch = patch;
-    Chip *chip = new Chip(&g_mixer_widget->scene,SP_create(plugin),x,y);
+    Chip *chip = new Chip(&g_mixer_widget->scene,
+                          SP_create(plugin,buses),
+                          x,y);
     printf("Made chip %p\n",chip);
   }else{
     printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
   }
 }
 
-struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y){
+struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses){
   struct SoundPlugin *plugin = PLUGIN_create_from_state(plugin_state);
   R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
 
@@ -1352,7 +1354,7 @@ struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *na
   patch->patchdata = plugin;
   plugin->patch = patch;
 
-  SoundProducer   *sound_producer = SP_create(plugin);
+  SoundProducer   *sound_producer = SP_create(plugin, buses);
 
   if(x<=-100000)
     MW_set_autopos(&x, &y);    
