@@ -15,7 +15,7 @@
 #include "../common/threading.h"
 #include "../common/stacktoucher_proc.h"
 #include "../common/settings_proc.h"
-#include "../common/Semaphores.h"
+#include "../common/Semaphores.hpp"
 
 #include "../common/OS_Player_proc.h"
 
