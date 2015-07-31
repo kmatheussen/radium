@@ -863,8 +863,7 @@ public:
   }
 
   void RT_process(int64_t time, int num_frames, bool process_plugins){
-    if(has_run(time))
-      return;
+    R_ASSERT(has_run(time)==false);
 
     _last_time = time;
 
@@ -872,15 +871,11 @@ public:
     PLUGIN_update_smooth_values(_plugin);
 
     // null out target channels
-    for(int ch=0;ch<_num_inputs;ch++){
-      float *channel_target = _dry_sound[ch];
-
-      memset(channel_target, 0, sizeof(float)*num_frames);
-    }
+    for(int ch=0;ch<_num_inputs;ch++)
+      memset(_dry_sound[ch], 0, sizeof(float)*num_frames);
 
 
-    // Run SoundProducers that sends events or audio to us
-    
+    // Fill inn target channels    
     for (SoundProducerLink *link : _input_links) {
 
       if (!link->is_active)
@@ -894,12 +889,11 @@ public:
 
         float *channel_target = _dry_sound[link->target_ch];
                 
-        SoundProducer *source_sound_producer = link->source;
-        float *input_producer_sound = source_sound_producer->_output_sound[link->source_ch];
+        float *input_producer_sound = link->source->_output_sound[link->source_ch];
 
         SMOOTH_mix_sounds(&link->volume, channel_target, input_producer_sound, num_frames);
 
-      } // end link->is_event_link
+      } // end !link->is_event_link
       
     } // end for (SoundProducerLink *link : _input_links)
 
