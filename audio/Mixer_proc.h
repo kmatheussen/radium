@@ -27,7 +27,7 @@ extern void MIXER_remove_SoundProducer(SoundProducer *sound_producer);
 extern void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2);
   
 #ifdef USE_QT4
-#include "SoundProducer_proc.h"
+#include "../common/Vector.hpp"
 extern radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void);
 #endif
 

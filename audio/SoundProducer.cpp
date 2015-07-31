@@ -51,6 +51,7 @@ static inline int myisinf(float val){
 #include "../common/OS_visual_input.h"
 #include "../common/threading.h"
 #include "../common/visual_proc.h"
+#include "../common/Vector.hpp"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
