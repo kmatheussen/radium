@@ -276,11 +276,6 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
   plugin->volume = 1.0f;
   plugin->volume_is_on = true;
 
-  if(!strcmp(plugin_type->type_name,"Bus"))
-    plugin->bus_descendant_type = IS_BUS_DESCENDANT;
-  else
-    plugin->bus_descendant_type = IS_BUS_PROVIDER;
-
 
   {
     int num_outputs=plugin_type->num_outputs;

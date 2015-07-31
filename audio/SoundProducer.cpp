@@ -185,7 +185,7 @@ struct SoundProducerLink {
     } else {
 
       if (is_bus_link)
-        if (SP_get_plugin(source)->bus_descendant_type==IS_BUS_DESCENDANT) {
+        if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) {
           is_active=false;
           return;
         }
@@ -394,6 +394,7 @@ struct SoundProducer {
 
   bool _is_bus;
   int _bus_num;
+  enum BusDescendantType _bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
   
   float **_dry_sound;
   float **_input_sound; // I'm not sure if it's best to place this data on the heap or the stack. Currently the heap is used. Advantage of heap: Avoid (having to think about the possibility of) risking running out of stack. Advantage of stack: Fewer cache misses.
@@ -436,7 +437,13 @@ struct SoundProducer {
       R_ASSERT(buses.bus1!=NULL);
       R_ASSERT(buses.bus2!=NULL);
     }
-    
+
+    if(_is_bus)
+      _bus_descendant_type = IS_BUS_DESCENDANT;
+    else
+      _bus_descendant_type = IS_BUS_PROVIDER;
+
+
     if(_num_inputs>0)
       _num_dry_sounds = _num_inputs;
     else
@@ -513,28 +520,38 @@ struct SoundProducer {
   }
 
     
-  void RT_set_bus_descendant_type_for_plugin(void){
-    R_ASSERT(PLAYER_current_thread_has_lock());
-
-    if(_plugin->bus_descendant_type != MAYBE_A_BUS_DESCENDANT)
+  void RT_set_bus_descendant_type(void){
+    if(_bus_descendant_type != MAYBE_A_BUS_DESCENDANT)
       return;
 
     if(_is_bus){
-      _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
+      _bus_descendant_type = IS_BUS_DESCENDANT;
       return;
     }
 
     for (SoundProducerLink *link : _input_links){
       if (!link->is_bus_link){
-        link->source->RT_set_bus_descendant_type_for_plugin();
-        if(link->source->_plugin->bus_descendant_type==IS_BUS_DESCENDANT){
-          _plugin->bus_descendant_type = IS_BUS_DESCENDANT;
+        link->source->RT_set_bus_descendant_type();
+        if(link->source->_bus_descendant_type==IS_BUS_DESCENDANT){
+          _bus_descendant_type = IS_BUS_DESCENDANT;
           return;
         }
       }
     }
     
-    _plugin->bus_descendant_type = IS_BUS_PROVIDER;
+    _bus_descendant_type = IS_BUS_PROVIDER;
+  }
+
+  static void RT_set_bus_descendant_types(void){
+    radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  
+    // First set all descendant types to MAYBE.
+    for (SoundProducer *sp : *sp_all)
+      sp->_bus_descendant_type = MAYBE_A_BUS_DESCENDANT;
+    
+    // Then set one by one.
+    for (SoundProducer *sp : *sp_all)
+      sp->RT_set_bus_descendant_type();
   }
 
   void allocate_sound_buffers(int num_frames){
@@ -575,7 +592,7 @@ struct SoundProducer {
       
       link->target->_input_links.add(link);
       
-      MIXER_RT_set_bus_descendand_type_for_all_plugins(); // hmm.
+      SoundProducer::RT_set_bus_descendant_types();
     }PLAYER_unlock();
 
     return true;
@@ -623,8 +640,8 @@ struct SoundProducer {
       link->target->_input_links.remove(link);
       
       link->source->_output_links.remove(link);
-      
-      MIXER_RT_set_bus_descendand_type_for_all_plugins();
+
+      SoundProducer::RT_set_bus_descendant_types();
     }PLAYER_unlock();
     
     delete link;    
@@ -1110,7 +1127,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
   int num=0;
   
   for (SoundProducer *sp : *sp_all){
-    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
+    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
     for (SoundProducerLink *link : sp->_output_links){
       volatile Patch *patch = link->target->_plugin->patch;
       file->write(QString().sprintf("  %s%s\n",patch==NULL?"<null>":patch->name, link->is_active?"":" (inactive)").toUtf8());
@@ -1122,7 +1139,7 @@ static void SP_print_tree(radium::Vector<SoundProducer*> *sp_all){
   int num=0;
 
   for (SoundProducer *sp : *sp_all){
-    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_plugin->bus_descendant_type==IS_BUS_PROVIDER);
+    fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER);
     /*
     fprintf(stderr,"  inputs:\n");
     for (SoundProducerLink *link : sp->_input_links){
@@ -1135,7 +1152,9 @@ static void SP_print_tree(radium::Vector<SoundProducer*> *sp_all){
     }    
   }
 }
-  
+
+
+
 /*********************************************************
  *************** MULTICORE start *************************
  *********************************************************/
@@ -1155,41 +1174,6 @@ void SP_RT_clean_output(SoundProducer *producer, int num_frames){
 }
 #endif
 
-#if 0
-// This function is called from bus_type->RT_process.
-void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins){
-
-  memset(outputs[0],0,sizeof(float)*num_frames);
-  memset(outputs[1],0,sizeof(float)*num_frames);
-
-  radium::Vector<SoundProducer*> *all_sp = MIXER_get_all_SoundProducers();
-
-  for (SoundProducer *sp : *all_sp) {
-    SoundPlugin           *plugin = SP_get_plugin(sp);
-    const SoundPluginType *type   = plugin->type;
-    
-    if(plugin->bus_descendant_type==IS_BUS_PROVIDER){
-      Smooth *smooth = &plugin->bus_volume[bus_num];
-      if (smooth->target_audio_will_be_modified) { // SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(smooth)){
-        if(type->num_outputs==1){
-          float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
-          SMOOTH_mix_sounds(smooth, outputs[0], channel_data0, num_frames);
-          SMOOTH_mix_sounds(smooth, outputs[1], channel_data0, num_frames);
-        }else if(type->num_outputs>1){
-          float *channel_data0 = sp->RT_get_channel(time, num_frames, 0, process_plugins);
-          float *channel_data1 = sp->RT_get_channel(time, num_frames, 1, process_plugins);
-          SMOOTH_mix_sounds(smooth, outputs[0], channel_data0, num_frames);
-          SMOOTH_mix_sounds(smooth, outputs[1], channel_data1, num_frames);
-        }
-      }
-    }
-  }
-}
-#endif
-
-void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer){
-  producer->RT_set_bus_descendant_type_for_plugin();
-}
 
 struct SoundPlugin *SP_get_plugin(SoundProducer *producer){
   return producer->_plugin;
@@ -1197,6 +1181,10 @@ struct SoundPlugin *SP_get_plugin(SoundProducer *producer){
 
 int SP_get_bus_num(SoundProducer *sp){
   return sp->_bus_num;
+}
+
+enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp){
+  return sp->_bus_descendant_type;
 }
 
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin){

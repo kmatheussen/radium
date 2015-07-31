@@ -388,18 +388,6 @@ struct Mixer{
   {
   }
 
-  void RT_set_bus_descendant_type_for_all_plugins(){
-    
-    // First set all descendant types to MAYBE.
-    for (SoundProducer *sp : _sound_producers)
-      SP_get_plugin(sp)->bus_descendant_type = MAYBE_A_BUS_DESCENDANT;
-    
-    // Then set one by one.
-    for (SoundProducer *sp : _sound_producers)
-      SP_RT_set_bus_descendant_type_for_plugin(sp);
-
-  }
-
   void add_SoundProducer(SoundProducer *sound_producer){
     SoundPlugin *plugin = SP_get_plugin(sound_producer);
     int bus_num = SP_get_bus_num(sound_producer);
@@ -890,13 +878,6 @@ STime MIXER_get_accurate_radium_time(void){
           0, jackblock_size,
           0, jackblock_size * block->reltempo
           );
-}
-
-void MIXER_RT_set_bus_descendand_type_for_all_plugins(void){
-  R_ASSERT(PLAYER_current_thread_has_lock());
-  R_ASSERT(THREADING_is_main_thread());
-  
-  g_mixer->RT_set_bus_descendant_type_for_all_plugins();
 }
 
 void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2){

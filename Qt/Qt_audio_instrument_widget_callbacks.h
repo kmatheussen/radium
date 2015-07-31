@@ -549,8 +549,8 @@ public:
         RError("weird");
     }
 
-    bus1_widget->setEnabled(plugin->bus_descendant_type==IS_BUS_PROVIDER);
-    bus2_widget->setEnabled(plugin->bus_descendant_type==IS_BUS_PROVIDER);
+    bus1_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+    bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
 
     if(num_outputs>0){
       input_volume_layout->setEnabled(plugin->effects_are_on);

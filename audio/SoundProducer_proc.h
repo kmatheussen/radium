@@ -338,6 +338,7 @@ void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_nu
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
 struct SoundPlugin *SP_get_plugin(SoundProducer *producer);
 int SP_get_bus_num(SoundProducer *sp);
+enum BusDescendantType SP_get_bus_descendant_type(SoundProducer *sp);
 SoundProducer *SP_get_SoundProducer(SoundPlugin *plugin);
 float SP_get_input_peak(SoundProducer *producer, int ch);
 float SP_get_output_peak(SoundProducer *producer, int ch);
