@@ -31,7 +31,7 @@ typedef struct{
   int pos; // between 0 and SMOOTH_LENGTH (in intervals of 64)
 
   bool smoothing_is_necessary;
-  bool target_audio_will_be_modified;
+  volatile bool target_audio_will_be_modified;
 } Smooth;
 
 typedef struct{

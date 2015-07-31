@@ -199,10 +199,11 @@ public:
 
     if (num_elements==1){
       R_ASSERT(pos==0);
-      elements[pos] = (T)NULL;
     } else {
       elements[pos] = elements[num_elements-1];
     }
+
+    elements[num_elements-1] = (T)NULL; // for debugging
 
     num_elements--;
   }

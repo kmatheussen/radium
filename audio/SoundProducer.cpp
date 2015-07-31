@@ -145,19 +145,26 @@ struct SoundProducerLink {
   int source_ch;
   int target_ch;
 
-  int fade_pos;
-  volatile enum {NO_STATE, FADING_IN, STABLE, FADING_OUT, JUST_FADED_OUT, FADED_OUT} state;
-
   float link_volume; 
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
   volatile bool is_active;
-  
+
+  volatile bool should_be_turned_off;
+
+  void turn_off(void){
+    R_ASSERT(should_be_turned_off==false);
+    should_be_turned_off=true;
+  }
+
   float get_total_link_volume(void){
     SoundPlugin *source_plugin = SP_get_plugin(source);
     float plugin_volume = source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
-    
-    if (is_bus_link){
+
+    if (should_be_turned_off)
+      return 0.0f;
+
+    else if (is_bus_link){
       
       int bus_num = SP_get_bus_num(target);
       
@@ -197,6 +204,10 @@ struct SoundProducerLink {
       is_active = volume.target_audio_will_be_modified;
     }
   }
+
+  bool can_be_removed(void){
+    return is_event_link==true || is_active==false;
+  }
   
   SoundProducerLink(SoundProducer *source, SoundProducer *target, bool is_event_link)
     : source(source)
@@ -205,12 +216,12 @@ struct SoundProducerLink {
     , is_bus_link(false)
     , source_ch(0)
     , target_ch(0)
-    , fade_pos(0)
-    , state(NO_STATE)
     , link_volume(1.0)
     , is_active(is_event_link)
+    , should_be_turned_off(false)
   {
-    SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
+    //SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
+    SMOOTH_init(&volume, 0.0f, MIXER_get_buffer_size()); // To fade in, we start with 0.0f as initial volume.
   }
 
   ~SoundProducerLink(){
@@ -324,8 +335,6 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
 }
 
 
-
-static RSemaphore *signal_from_RT = NULL;
 
 static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs, bool process_plugins){
 
@@ -489,8 +498,8 @@ struct SoundProducer {
     if (PLAYER_is_running()) {
       if (linkbus1 != NULL){
         R_ASSERT(linkbus2 != NULL);
-        SoundProducer::remove_audioInputLink(linkbus1);
-        SoundProducer::remove_audioInputLink(linkbus2);
+        SoundProducer::remove_link(linkbus1);
+        SoundProducer::remove_link(linkbus2);
       }
 
       free(_input_peaks);
@@ -624,9 +633,6 @@ struct SoundProducer {
     link->source_ch = source_ch;
     link->target_ch = target_ch;
     
-    link->fade_pos = 0;
-    link->state    = SoundProducerLink::FADING_IN;
-
     fprintf(stderr, "____add input\n");
 
     return SoundProducer::add_link(link);
@@ -635,7 +641,14 @@ struct SoundProducer {
 
   static void remove_link(SoundProducerLink *link){
     R_ASSERT(THREADING_is_main_thread());
-        
+
+    link->turn_off();
+    
+    while(link->can_be_removed()==false){
+      PLAYER_memory_debug_wake_up();
+      usleep(1000);
+    }
+
     PLAYER_lock();{
 
       link->target->_input_links.remove(link);
@@ -666,30 +679,6 @@ struct SoundProducer {
     R_ASSERT(false);
   }
 
-  static void remove_audioInputLink(SoundProducerLink *link){
-
-    if (link->is_active) {
-
-      while(link->state == SoundProducerLink::FADING_IN) {
-        PLAYER_memory_debug_wake_up();
-        usleep(3000);
-      }
-      
-      PLAYER_lock();{
-        link->fade_pos = 0;
-        link->state    = SoundProducerLink::FADING_OUT;
-      }PLAYER_unlock();
-      
-      PLAYER_memory_debug_wake_up();
-      
-      RSEMAPHORE_wait(signal_from_RT,1);
-      
-    }
-
-    fprintf(stderr, "____remove input\n");
-
-    SoundProducer::remove_link(link);
-  }
 
   void remove_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
     //printf("**** Asking to remove connection\n");
@@ -702,7 +691,9 @@ struct SoundProducer {
 
       if(link->is_bus_link==false && link->is_event_link==false && link->source==source && link->source_ch==source_ch && link->target_ch==target_ch){
 
-        SoundProducer::remove_audioInputLink(link);
+        fprintf(stderr, "____remove input\n");
+
+        SoundProducer::remove_link(link);
 
         return;
       }
@@ -856,42 +847,11 @@ struct SoundProducer {
         SMOOTH_called_per_block(&link->volume);
 
         float *channel_target = _dry_sound[link->target_ch];
-        
-        float fade_sound[num_frames]; // When fading, 'input_producer_sound' will point to this array.
-        
+                
         SoundProducer *source_sound_producer = link->source;
         float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->source_ch, process_plugins);
-        
-        // fade in
-        if(link->state==SoundProducerLink::FADING_IN){
-          memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
-          RT_fade_in2(fade_sound, link->fade_pos, num_frames);
-          input_producer_sound = &fade_sound[0];
-          
-          link->fade_pos += num_frames;
-          if(link->fade_pos==FADE_LEN)
-            link->state=SoundProducerLink::STABLE;
-        }
-        
-        // fade out
-        else if(link->state==SoundProducerLink::FADING_OUT){
-          memcpy(fade_sound,input_producer_sound, num_frames*sizeof(float));
-          RT_fade_out2(fade_sound, link->fade_pos, num_frames);
-          input_producer_sound = &fade_sound[0];
-          
-          link->fade_pos += num_frames;
-          if(link->fade_pos==FADE_LEN){
-            RSEMAPHORE_signal(signal_from_RT,1);
-            link->state=SoundProducerLink::JUST_FADED_OUT;
-          }
-        }
-        
-        // Apply volume and mix, unless faded out.
-        if (link->state != SoundProducerLink::FADED_OUT)
-          SMOOTH_mix_sounds(&link->volume, channel_target, input_producer_sound, num_frames);
-        
-        if (link->state == SoundProducerLink::JUST_FADED_OUT)
-          link->state = SoundProducerLink::FADED_OUT;
+
+        SMOOTH_mix_sounds(&link->volume, channel_target, input_producer_sound, num_frames);
 
       } // end link->is_event_link
       
@@ -1023,13 +983,6 @@ struct SoundProducer {
 
 
 SoundProducer *SP_create(SoundPlugin *plugin, Buses buses){
-  static bool semaphore_inited=false;
-
-  if(semaphore_inited==false){
-    signal_from_RT = RSEMAPHORE_create(0);
-    semaphore_inited=true;
-  }
-
   return new SoundProducer(plugin, MIXER_get_buffer_size(), buses);
 }
 
@@ -1059,50 +1012,37 @@ void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source,
 #define STD_VECTOR_APPEND(a,b) a.insert(a.end(),b.begin(),b.end());
 #endif
 
+
 // Does NOT delete the bus links. Those are deleted in the SoundProducer destructor.
 void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
 
   radium::Vector<SoundProducerLink *> links_to_delete;
   
-  // Find links
+  // Find all non-bus links
   for(auto soundproducer : soundproducers)
-    links_to_delete.append(soundproducer->_input_links);
-  
-  // Wait until all links are finished fading in.
-  if (PLAYER_is_running())
-    for(auto link : links_to_delete)
-      if (link->is_event_link==false && link->is_bus_link==false)
-        while(link->state == SoundProducerLink::FADING_IN) {
-          PLAYER_memory_debug_wake_up();
-          usleep(3000);
-        }
-
-  
-  // Change state
-  PLAYER_lock();{
-    for(auto link : links_to_delete)
-      if (link->is_event_link==false && link->is_bus_link==false){
-        link->state = SoundProducerLink::FADING_OUT;
-        link->fade_pos = 0;
-      }
-  }PLAYER_unlock();
-
+    for(auto link : soundproducer->_input_links)
+      if (link->is_bus_link==false)
+        links_to_delete.add(link);
+      
+  // tell them to turn off
+  for(auto link : links_to_delete)
+    link->turn_off();
   
   if (PLAYER_is_running()) {
     PLAYER_memory_debug_wake_up();
-
-    // Wait until all sound links are faded out
+    
+    // Wait until all sound links can be removed
     for(auto link : links_to_delete)
-      if(link->is_event_link==false && link->is_bus_link==false)
-        RSEMAPHORE_wait(signal_from_RT,1);
-
-    // Remove all
+      while(link->can_be_removed()==false){
+        PLAYER_memory_debug_wake_up();
+        usleep(3000);
+      }
+    
+    // Remove
     PLAYER_lock();{
       for(auto link : links_to_delete){
-        if (link->is_bus_link==false) {
-          link->target->_input_links.remove(link);
-          link->source->_output_links.remove(link);
-        }
+        link->target->_input_links.remove(link);
+        link->source->_output_links.remove(link);
       }
     }PLAYER_unlock();
     
@@ -1110,9 +1050,9 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
   
   // Delete
   for(auto link : links_to_delete)
-    if (link->is_bus_link==false)
-      delete link;
+    delete link;
 }
+
 
 void SP_RT_called_for_each_soundcard_block(SoundProducer *producer){
   producer->RT_called_for_each_soundcard_block();
