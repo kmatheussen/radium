@@ -516,10 +516,13 @@ struct SoundProducer {
         R_ASSERT(linkbus1b != NULL);
         R_ASSERT(linkbus2a != NULL);
         R_ASSERT(linkbus2b != NULL);
+
+        // This can be optimized by remove all four at once.
         SoundProducer::remove_link(linkbus1a);
         SoundProducer::remove_link(linkbus1b);
         SoundProducer::remove_link(linkbus2a);
         SoundProducer::remove_link(linkbus2b);
+
       }else{
         R_ASSERT(linkbus1b == NULL);
         R_ASSERT(linkbus2a == NULL);
