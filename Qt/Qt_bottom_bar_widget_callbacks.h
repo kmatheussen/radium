@@ -59,9 +59,14 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       QString usage;
       int num_cpu_usage = g_num_cpu_usage;
       if (num_cpu_usage==0)
-        usage.sprintf("CPU: 0.0 / 0.0 / 0.0");
+        usage.sprintf("0.0 /  0.0 /  0.0");
       else {
-        usage.sprintf("CPU: %.1f / %.1f / %.1f",g_min_cpu_usage,g_total_cpu_usage / (float)num_cpu_usage, g_max_cpu_usage);
+        float total = g_total_cpu_usage / (float)num_cpu_usage;
+        usage.sprintf("%s%.1f / %s%.1f / %s%.1f",
+                      g_min_cpu_usage < 10 ? " " : "", g_min_cpu_usage,
+                      total<10?" ":"", total,
+                      g_max_cpu_usage < 10?" ":"", g_max_cpu_usage
+                      );
         //printf("Usage: %f\n",g_cpu_usage);
         g_max_cpu_usage = 0.0;
         g_min_cpu_usage = 10000.0;
@@ -119,10 +124,19 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     // Adjust cpu label width
     {
-      QFontMetrics fm(QApplication::font());
+      QFont sansFont;
+      
+      sansFont.setFamily("Bitstream Vera Sans Mono");
+      sansFont.setStyleName("Bold");
+      sansFont.setPointSize(QApplication::font().pointSize()-0.02f);
+
+      cpu_label->setFont(sansFont);
+
+      QFontMetrics fm(sansFont); //QApplication::font());
       //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
-      int width = fm.width("CPU: 100.5") + 5;
+      int width = fm.width("50.0 / 90.5 / 00.5");// + 5;
       cpu_label->setMinimumWidth(width);
+      cpu_label->setMaximumWidth(width);
     }
 
     // Adjust velocity slider widths
