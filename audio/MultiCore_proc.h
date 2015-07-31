@@ -10,5 +10,3 @@ int MULTICORE_get_num_threads(void);
 void MULTICORE_set_num_threads(int num_threads);
 void MULTICORE_init(void);
 
-extern bool g_running_multicore;
-

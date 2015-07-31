@@ -859,21 +859,16 @@ struct SoundProducer {
       if (!link->is_active)
         continue;
       
-      link->source->RT_assert_has_run(time);
+      R_ASSERT(link->source->has_run(time));
       
-      if (link->is_event_link) {
-
-        if (g_running_multicore==false)
-          link->source->RT_process(time, num_frames, process_plugins);
-
-      } else {
+      if (!link->is_event_link) {
 
         SMOOTH_called_per_block(&link->volume);
 
         float *channel_target = _dry_sound[link->target_ch];
                 
         SoundProducer *source_sound_producer = link->source;
-        float *input_producer_sound = source_sound_producer->RT_get_channel(time, num_frames, link->source_ch, process_plugins);
+        float *input_producer_sound = source_sound_producer->_output_sound[link->source_ch];
 
         SMOOTH_mix_sounds(&link->volume, channel_target, input_producer_sound, num_frames);
 
@@ -989,18 +984,6 @@ struct SoundProducer {
         }
       }
     }
-  }
-
-  void RT_assert_has_run(int64_t time){
-    if(!has_run(time))
-      R_ASSERT(!g_running_multicore);
-  }
-  
-  float *RT_get_channel(int64_t time, int num_frames, int ret_ch, bool process_plugins){
-    RT_assert_has_run(time);
-    
-    RT_process(time, num_frames, process_plugins);
-    return _output_sound[ret_ch];
   }
 };
 

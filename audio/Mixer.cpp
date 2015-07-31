@@ -637,13 +637,13 @@ struct Mixer{
           RT_message("Error!\n"
                      "\n"
                      "Audio using too much CPU. Stopping player to avoid locking up the computer.%s",
-                     g_running_multicore ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+                     MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
                      );
         } else {
           RT_message("Error!\n"
                      "\n"
                      "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer.%s",
-                     g_running_multicore ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+                     MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
                      );
           printf("stop processing plugins\n");
           g_process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
@@ -662,7 +662,7 @@ struct Mixer{
 
       // Process sound.
 
-      if (g_running_multicore)
+      if (MULTICORE_get_num_threads() > 1)
         RT_sort_sound_producers_by_running_time();
       
       for (SoundProducer *sp : _sound_producers) {
@@ -679,25 +679,8 @@ struct Mixer{
 
         RT_MIDI_handle_play_buffer();
         
-        if (g_running_multicore) {
-
-          MULTICORE_run_all(&_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
+        MULTICORE_run_all(&_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
           
-        } else {
-          
-          if (_bus1!=NULL)
-            SP_RT_process(_bus1,_time,RADIUM_BLOCKSIZE, g_process_plugins);
-          
-          if (_bus2!=NULL)
-            SP_RT_process(_bus2,_time,RADIUM_BLOCKSIZE, g_process_plugins);
-
-          for (SoundProducer *sp : _sound_producers)
-            // A soundproducer is self responsible for first running other soundproducers it gets data or audio from, and not running itself more than once per block.
-            // (Unless running MultiCore, then the MultiCore system takes care of running in the right order)
-            SP_RT_process(sp, _time, RADIUM_BLOCKSIZE, g_process_plugins );
-          
-        }
-
         _time += RADIUM_BLOCKSIZE;
         jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
@@ -880,10 +863,12 @@ STime MIXER_get_accurate_radium_time(void){
           );
 }
 
+#if 0
 void MIXER_get_buses(SoundProducer* &bus1, SoundProducer* &bus2){
   bus1 = g_mixer->_bus1;
   bus2 = g_mixer->_bus2;
 }
+#endif
 
 Buses MIXER_get_buses(void){
   Buses ret = {g_mixer->_bus1, g_mixer->_bus2};

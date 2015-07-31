@@ -32,8 +32,6 @@
 static const int default_num_runners = 1;
 static const char *settings_key = "num_cpus";
 
-bool g_running_multicore = false; // Must be "false" initially since MultiCore is initialized after the mixer has started. This variable is protected by the player lock.
-
 static volatile bool something_is_wrong = false;
 
 
@@ -60,9 +58,20 @@ static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp){
     schedule_sp(sp);
 }
 
-static void process_multicore(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
-  R_ASSERT(g_running_multicore);
+static void process_next_soundproducer(int64_t time, int num_frames, bool process_plugins){
+
+  SoundProducer *sp = NULL;
+  bool success = ready_soundproducers.pop(sp);
+      
+  R_ASSERT(success);
+  R_ASSERT(sp!=NULL);
+
+  //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
+  //fflush(stderr);
   
+  R_ASSERT(int(sp->is_processed)==0);
+  sp->is_processed.ref();
+
   double start_time = monotonic_seconds();
   {
     sp->RT_process(time, num_frames, process_plugins);
@@ -84,6 +93,7 @@ static void process_multicore(SoundProducer *sp, int64_t time, int num_frames, b
     if (link->is_active)
       dec_sp_dependency(link->source, link->target);
 }
+
 
 
 namespace{
@@ -124,22 +134,9 @@ public:
         sp_ready.signal();
         break;
       }
-      
-      SoundProducer *sp = NULL;
-      bool success = ready_soundproducers.pop(sp);
-      
-      R_ASSERT(success);
-      R_ASSERT(sp!=NULL);
-
-      //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
-      //fflush(stderr);
-
-      R_ASSERT(int(sp->is_processed)==0);
-      sp->is_processed.ref();
-      
-      process_multicore(sp, time, num_frames, process_plugins);
-
-    } // end while
+            
+      process_next_soundproducer(time, num_frames, process_plugins);
+    }
 
 
     THREADING_drop_player_thread_priority();    
@@ -156,14 +153,24 @@ private slots:
 }
 
 
+static void process_single_core(int64_t time, int num_frames, bool process_plugins){
+  while( num_sp_left>0 ) {
+    R_ASSERT(sp_ready.numSignallers()>0);
+    sp_ready.wait();
+    process_next_soundproducer(time, num_frames, process_plugins);
+  }
+
+  R_ASSERT(all_sp_finished.numSignallers()==1);
+  
+  all_sp_finished.wait();
+}
+
+
 static int g_num_runners = 0;
 static Runner **g_runners = NULL;
 
 
-
 void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int num_frames, bool process_plugins){
-
-  R_ASSERT(g_running_multicore);
 
   if (sp_all->size()==0)
     return;
@@ -215,13 +222,14 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
     }
 
 
-
-  // 4. wait.
-
   R_ASSERT(num_ready_sp > 0);
 
-  all_sp_finished.wait();
-
+  if (g_num_runners==0)
+    process_single_core(time, num_frames, process_plugins);
+  else  
+    // 4. wait.
+    all_sp_finished.wait();
+  
   if(something_is_wrong){
     fflush(stderr);
     abort();
@@ -247,31 +255,25 @@ void MULTICORE_stop(void){
 
 
 int MULTICORE_get_num_threads(void){
-  return SETTINGS_read_int(settings_key, default_num_runners);
+  if (g_num_runners==0)
+    return 1;
+  else
+    return g_num_runners;
 }
 
 
-#define TEST_MULTICORE_VS_SINGLECORE 0
-
-void MULTICORE_set_num_threads(int num_new_runners){
-#if TEST_MULTICORE_VS_SINGLECORE
-  bool will_be_running_multicore = false;
-    
-  if (num_new_runners==1)
-    will_be_running_multicore = true;
-  else
-    num_new_runners--;
-#endif
-  
+void MULTICORE_set_num_threads(int num_new_runners){  
   R_ASSERT(num_new_runners >= 1);
-
-  if (num_new_runners==g_num_runners)
-    return;
 
   if (SETTINGS_read_int(settings_key, default_num_runners) != num_new_runners)
     SETTINGS_write_int(settings_key, num_new_runners);
 
-    
+  if (num_new_runners==1)
+    num_new_runners=0;
+  
+  if (num_new_runners==g_num_runners)
+    return;
+
   int num_old_runners = g_num_runners;
   Runner **old_runners = g_runners;
   
@@ -288,15 +290,6 @@ void MULTICORE_set_num_threads(int num_new_runners){
     g_num_runners = num_new_runners;
     g_runners = new_runners;
 
-#if TEST_MULTICORE_VS_SINGLECORE
-    g_running_multicore = will_be_running_multicore;
-#else
-    if (g_num_runners == 1)
-      g_running_multicore = false;
-    else
-      g_running_multicore = true;
-#endif
-    
     for(int i=0 ; i < num_old_runners ; i++)
       old_runners[i]->must_exit = true;
 
