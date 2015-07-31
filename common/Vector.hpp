@@ -18,7 +18,12 @@ private:
   int next_num_elements_max;
   
   LockAsserter lockAsserter;
+
   
+private:  
+  Vector(const Vector&);
+  Vector& operator=(const Vector&);
+
   
 public:
   

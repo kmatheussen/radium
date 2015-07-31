@@ -133,6 +133,13 @@ namespace{
   
 struct SoundProducerLink {
 
+  
+private:
+  SoundProducerLink(const SoundProducerLink&);
+  SoundProducerLink& operator=(const SoundProducerLink&);
+
+public:
+  
   // used both by audio links and event links
   SoundProducer *source;
   SoundProducer *target;
@@ -419,11 +426,14 @@ struct SoundProducer {
   radium::Vector<SoundProducerLink*> _input_links;
   radium::Vector<SoundProducerLink*> _output_links;
 
-  SoundProducerLink *linkbus1a;
-  SoundProducerLink *linkbus1b;
-  SoundProducerLink *linkbus2a;
-  SoundProducerLink *linkbus2b;
+  radium::Vector<SoundProducerLink*> _linkbuses;
 
+private:
+  SoundProducer(const SoundProducer&);
+  SoundProducer& operator=(const SoundProducer&);
+
+public:
+  
   SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses) // buses.bus1 and buses.bus2 must be NULL if the plugin itself is a bus.
     : _plugin(plugin)
     , _num_inputs(plugin->type->num_inputs)
@@ -431,10 +441,6 @@ struct SoundProducer {
     , _last_time(-1)
     , running_time(0.0)
     , num_dependencies(0)
-    , linkbus1a(NULL)
-    , linkbus1b(NULL)
-    , linkbus2a(NULL)
-    , linkbus2b(NULL)
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
@@ -468,10 +474,10 @@ struct SoundProducer {
     _volume_peaks = (float*)calloc(sizeof(float),_num_outputs);
 
     if (!_is_bus && _num_outputs>0){
-      linkbus1a = new SoundProducerLink(this, buses.bus1, false);
-      linkbus1b = new SoundProducerLink(this, buses.bus1, false);
-      linkbus2a = new SoundProducerLink(this, buses.bus2, false);
-      linkbus2b = new SoundProducerLink(this, buses.bus2, false);
+      SoundProducerLink *linkbus1a = new SoundProducerLink(this, buses.bus1, false);
+      SoundProducerLink *linkbus1b = new SoundProducerLink(this, buses.bus1, false);
+      SoundProducerLink *linkbus2a = new SoundProducerLink(this, buses.bus2, false);
+      SoundProducerLink *linkbus2b = new SoundProducerLink(this, buses.bus2, false);
 
       linkbus1a->is_bus_link = true;
       linkbus1b->is_bus_link = true;
@@ -500,6 +506,11 @@ struct SoundProducer {
       SoundProducer::add_link(linkbus1b);
       SoundProducer::add_link(linkbus2a);
       SoundProducer::add_link(linkbus2b);
+
+      _linkbuses.add(linkbus1a);
+      _linkbuses.add(linkbus1b);
+      _linkbuses.add(linkbus2a);
+      _linkbuses.add(linkbus2b);
     }    
 
     MIXER_add_SoundProducer(this);
@@ -512,22 +523,8 @@ struct SoundProducer {
     R_ASSERT(THREADING_is_main_thread());
 
     if (PLAYER_is_running()) {
-      if (linkbus1a != NULL){
-        R_ASSERT(linkbus1b != NULL);
-        R_ASSERT(linkbus2a != NULL);
-        R_ASSERT(linkbus2b != NULL);
-
-        // This can be optimized by remove all four at once.
-        SoundProducer::remove_link(linkbus1a);
-        SoundProducer::remove_link(linkbus1b);
-        SoundProducer::remove_link(linkbus2a);
-        SoundProducer::remove_link(linkbus2b);
-
-      }else{
-        R_ASSERT(linkbus1b == NULL);
-        R_ASSERT(linkbus2a == NULL);
-        R_ASSERT(linkbus2b == NULL);
-      }
+      if (!_linkbuses.is_empty())
+        SoundProducer::remove_links(_linkbuses);
 
       free(_input_peaks);
       free(_volume_peaks);
@@ -665,7 +662,37 @@ struct SoundProducer {
     return SoundProducer::add_link(link);
   }
 
-
+  static void remove_links(radium::Vector<SoundProducerLink*> &links){
+    
+      // tell them to turn off
+    for(auto link : links)
+      link->turn_off();
+  
+    if (PLAYER_is_running()) {
+      PLAYER_memory_debug_wake_up();
+      
+      // Wait until all sound links can be removed
+      for(auto link : links)
+        while(link->can_be_removed()==false){
+          PLAYER_memory_debug_wake_up();
+          usleep(3000);
+        }
+      
+      // Remove
+      PLAYER_lock();{
+        for(auto link : links){
+          link->target->_input_links.remove(link);
+          link->source->_output_links.remove(link);
+        }
+      }PLAYER_unlock();
+      
+    }
+    
+    // Delete
+    for(auto link : links)
+      delete link;
+  }
+  
   static void remove_link(SoundProducerLink *link){
     R_ASSERT(THREADING_is_main_thread());
 
@@ -1033,34 +1060,8 @@ void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
     for(auto link : soundproducer->_input_links)
       if (link->is_bus_link==false)
         links_to_delete.add(link);
-      
-  // tell them to turn off
-  for(auto link : links_to_delete)
-    link->turn_off();
-  
-  if (PLAYER_is_running()) {
-    PLAYER_memory_debug_wake_up();
-    
-    // Wait until all sound links can be removed
-    for(auto link : links_to_delete)
-      while(link->can_be_removed()==false){
-        PLAYER_memory_debug_wake_up();
-        usleep(3000);
-      }
-    
-    // Remove
-    PLAYER_lock();{
-      for(auto link : links_to_delete){
-        link->target->_input_links.remove(link);
-        link->source->_output_links.remove(link);
-      }
-    }PLAYER_unlock();
-    
-  }
-  
-  // Delete
-  for(auto link : links_to_delete)
-    delete link;
+
+  SoundProducer::remove_links(links_to_delete);
 }
 
 

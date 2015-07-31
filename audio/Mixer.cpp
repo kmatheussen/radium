@@ -679,7 +679,7 @@ struct Mixer{
 
         RT_MIDI_handle_play_buffer();
         
-        MULTICORE_run_all(&_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
+        MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
           
         _time += RADIUM_BLOCKSIZE;
         jackblock_delta_time += RADIUM_BLOCKSIZE;

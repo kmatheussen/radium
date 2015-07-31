@@ -102,6 +102,12 @@ namespace{
 struct Runner : public QThread {
   Q_OBJECT
 
+  
+private:
+  Runner(const Runner&);
+  Runner& operator=(const Runner&);
+
+
 public:
   radium::Semaphore can_start_main_loop;
   volatile bool must_exit;
@@ -170,13 +176,13 @@ static int g_num_runners = 0;
 static Runner **g_runners = NULL;
 
 
-void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int num_frames, bool process_plugins){
+void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t time, int num_frames, bool process_plugins){
 
-  if (sp_all->size()==0)
+  if (sp_all.size()==0)
     return;
 
-  if (sp_all->size() >= MAX_NUM_SP){
-    RT_message("Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.", sp_all->size(), MAX_NUM_SP);
+  if (sp_all.size() >= MAX_NUM_SP){
+    RT_message("Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.", sp_all.size(), MAX_NUM_SP);
     return;
   }
 
@@ -195,11 +201,11 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
   
   // 2. initialize soundproducers
   
-  num_sp_left = sp_all->size();
-  //  fprintf(stderr,"**************** STARTING %d\n",sp_all->size());
+  num_sp_left = sp_all.size();
+  //  fprintf(stderr,"**************** STARTING %d\n",sp_all.size());
   //fflush(stderr);
 
-  for (SoundProducer *sp : *sp_all) {
+  for (SoundProducer *sp : sp_all) {
     sp->num_dependencies_left = sp->num_dependencies;
     sp->is_processed=0;
   }
@@ -213,7 +219,7 @@ void MULTICORE_run_all(radium::Vector<SoundProducer*> *sp_all, int64_t time, int
 
   // 3. start threads;
 
-  for (SoundProducer *sp : *sp_all)
+  for (SoundProducer *sp : sp_all)
     if (sp->num_dependencies==0){
       num_ready_sp++;
       //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);

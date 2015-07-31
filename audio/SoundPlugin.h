@@ -245,6 +245,14 @@ enum BusDescendantType{
 };
 
 typedef struct SoundPlugin{
+
+#ifdef __cplusplus
+private:
+  SoundPlugin(const SoundPlugin&);
+  SoundPlugin& operator=(const SoundPlugin&);
+public:
+#endif
+  
   const SoundPluginType *type;
 
   // Data used by the plugin (the value returned by 'create_plugin_data')

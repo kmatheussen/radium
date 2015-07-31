@@ -25,6 +25,11 @@ class Semaphore{
     QAtomicInt m_count;
     cpp11onmulticore::Semaphore m_sema;
 
+
+ private:
+  Semaphore(const Semaphore&);
+  Semaphore& operator=(const Semaphore&);
+
   public:
     
     Semaphore(int n = 0)

@@ -12,7 +12,14 @@ class LockAsserter{
   QAtomicInt number_of_readers;
   QAtomicInt number_of_writers;
 
+private:
+  LockAsserter(const LockAsserter&);
+  LockAsserter& operator=(const LockAsserter&);
+
 public:
+  
+  LockAsserter(){}
+  
   struct Exclusive {
     LockAsserter *lockAsserter;
 
