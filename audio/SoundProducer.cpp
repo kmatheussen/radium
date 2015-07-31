@@ -95,7 +95,6 @@ static float linear2db(float val){
 }
 #endif
 
-struct SoundProducer;
 
 #if 0
 // Function iec_scale picked from meterbridge by Steve Harris.
@@ -420,8 +419,10 @@ struct SoundProducer {
   radium::Vector<SoundProducerLink*> _input_links;
   radium::Vector<SoundProducerLink*> _output_links;
 
-  SoundProducerLink *linkbus1;
-  SoundProducerLink *linkbus2;
+  SoundProducerLink *linkbus1a;
+  SoundProducerLink *linkbus1b;
+  SoundProducerLink *linkbus2a;
+  SoundProducerLink *linkbus2b;
 
   SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses) // buses.bus1 and buses.bus2 must be NULL if the plugin itself is a bus.
     : _plugin(plugin)
@@ -430,8 +431,10 @@ struct SoundProducer {
     , _last_time(-1)
     , running_time(0.0)
     , num_dependencies(0)
-    , linkbus1(NULL)
-    , linkbus2(NULL)
+    , linkbus1a(NULL)
+    , linkbus1b(NULL)
+    , linkbus2a(NULL)
+    , linkbus2b(NULL)
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
@@ -465,25 +468,38 @@ struct SoundProducer {
     _volume_peaks = (float*)calloc(sizeof(float),_num_outputs);
 
     if (!_is_bus && _num_outputs>0){
-      linkbus1 = new SoundProducerLink(this, buses.bus1, false);
-      linkbus2 = new SoundProducerLink(this, buses.bus2, false);
+      linkbus1a = new SoundProducerLink(this, buses.bus1, false);
+      linkbus1b = new SoundProducerLink(this, buses.bus1, false);
+      linkbus2a = new SoundProducerLink(this, buses.bus2, false);
+      linkbus2b = new SoundProducerLink(this, buses.bus2, false);
 
-      linkbus1->is_bus_link = true;
-      linkbus2->is_bus_link = true;
+      linkbus1a->is_bus_link = true;
+      linkbus1b->is_bus_link = true;
+      linkbus2a->is_bus_link = true;
+      linkbus2b->is_bus_link = true;
 
       // ch 1
-      linkbus1->source_ch = 0;
-      linkbus1->target_ch = 0;
+      linkbus1a->source_ch = 0;
+      linkbus1a->target_ch = 0;
+      linkbus2a->source_ch = 0;
+      linkbus2a->target_ch = 0;
 
       // ch 2
-      if (_num_outputs==1)
-        linkbus2->source_ch = 0;
-      else
-        linkbus2->source_ch = 1;
-      linkbus2->target_ch = 1;
+      if (_num_outputs==1) {
+        linkbus1b->source_ch = 0;
+        linkbus2b->source_ch = 0;
+      } else {
+        linkbus1b->source_ch = 1;
+        linkbus2b->source_ch = 1;
+      }
+      
+      linkbus1b->target_ch = 1;
+      linkbus2b->target_ch = 1;
 
-      SoundProducer::add_link(linkbus1);
-      SoundProducer::add_link(linkbus2);
+      SoundProducer::add_link(linkbus1a);
+      SoundProducer::add_link(linkbus1b);
+      SoundProducer::add_link(linkbus2a);
+      SoundProducer::add_link(linkbus2b);
     }    
 
     MIXER_add_SoundProducer(this);
@@ -496,10 +512,18 @@ struct SoundProducer {
     R_ASSERT(THREADING_is_main_thread());
 
     if (PLAYER_is_running()) {
-      if (linkbus1 != NULL){
-        R_ASSERT(linkbus2 != NULL);
-        SoundProducer::remove_link(linkbus1);
-        SoundProducer::remove_link(linkbus2);
+      if (linkbus1a != NULL){
+        R_ASSERT(linkbus1b != NULL);
+        R_ASSERT(linkbus2a != NULL);
+        R_ASSERT(linkbus2b != NULL);
+        SoundProducer::remove_link(linkbus1a);
+        SoundProducer::remove_link(linkbus1b);
+        SoundProducer::remove_link(linkbus2a);
+        SoundProducer::remove_link(linkbus2b);
+      }else{
+        R_ASSERT(linkbus1b == NULL);
+        R_ASSERT(linkbus2a == NULL);
+        R_ASSERT(linkbus2b == NULL);
       }
 
       free(_input_peaks);
