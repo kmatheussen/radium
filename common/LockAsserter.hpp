@@ -12,9 +12,8 @@ class LockAsserter{
   QAtomicInt number_of_readers;
   QAtomicInt number_of_writers;
 
-private:
-  LockAsserter(const LockAsserter&);
-  LockAsserter& operator=(const LockAsserter&);
+  LockAsserter(const LockAsserter&) = delete;
+  LockAsserter& operator=(const LockAsserter&) = delete;
 
 public:
   

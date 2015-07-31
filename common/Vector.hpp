@@ -20,9 +20,8 @@ private:
   LockAsserter lockAsserter;
 
   
-private:  
-  Vector(const Vector&);
-  Vector& operator=(const Vector&);
+  Vector(const Vector&) = delete;
+  Vector& operator=(const Vector&) = delete;
 
   
 public:

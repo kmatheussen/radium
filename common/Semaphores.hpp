@@ -26,9 +26,8 @@ class Semaphore{
     cpp11onmulticore::Semaphore m_sema;
 
 
- private:
-  Semaphore(const Semaphore&);
-  Semaphore& operator=(const Semaphore&);
+  Semaphore(const Semaphore&) = delete;
+  Semaphore& operator=(const Semaphore&) = delete;
 
   public:
     

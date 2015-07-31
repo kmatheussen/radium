@@ -103,9 +103,8 @@ struct Runner : public QThread {
   Q_OBJECT
 
   
-private:
-  Runner(const Runner&);
-  Runner& operator=(const Runner&);
+  Runner(const Runner&) = delete;
+  Runner& operator=(const Runner&) = delete;
 
 
 public:

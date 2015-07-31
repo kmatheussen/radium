@@ -247,10 +247,8 @@ enum BusDescendantType{
 typedef struct SoundPlugin{
 
 #ifdef __cplusplus
-private:
-  SoundPlugin(const SoundPlugin&);
-  SoundPlugin& operator=(const SoundPlugin&);
-public:
+  SoundPlugin(const SoundPlugin&) = delete;
+  SoundPlugin& operator=(const SoundPlugin&) = delete;
 #endif
   
   const SoundPluginType *type;

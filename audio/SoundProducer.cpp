@@ -134,11 +134,9 @@ namespace{
 struct SoundProducerLink {
 
   
-private:
-  SoundProducerLink(const SoundProducerLink&);
-  SoundProducerLink& operator=(const SoundProducerLink&);
+  SoundProducerLink(const SoundProducerLink&) = delete;
+  SoundProducerLink& operator=(const SoundProducerLink&) = delete;
 
-public:
   
   // used both by audio links and event links
   SoundProducer *source;
@@ -428,9 +426,8 @@ struct SoundProducer {
 
   radium::Vector<SoundProducerLink*> _linkbuses;
 
-private:
-  SoundProducer(const SoundProducer&);
-  SoundProducer& operator=(const SoundProducer&);
+  SoundProducer(const SoundProducer&) = delete;
+  SoundProducer& operator=(const SoundProducer&) = delete;
 
 public:
   

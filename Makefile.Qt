@@ -146,7 +146,7 @@ CPUOPT ?=
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function
+CPPOPT = $(COMMONOPT) -Wno-unused-function -std=gnu++11
 
 
 # Common QT opts (both 3 and 4)
@@ -927,7 +927,7 @@ threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
 	$(CCC)  $(CD)threading.cpp $(CPPOPT)
 
 Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
-	$(CCC) $(CD)Semaphores.cpp $(QTOPT) -std=gnu++11
+	$(CCC) $(CD)Semaphores.cpp $(QTOPT)
 
 stacktoucher.o: $(CD)stacktoucher.c
 	$(CC) -O0 $(CD)stacktoucher.c -c -O0
@@ -987,7 +987,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.c
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h
-	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) -Wno-error $(IS_LINUX_BINARY) -std=gnu++11
+	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) -Wno-error $(IS_LINUX_BINARY)
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
@@ -1061,7 +1061,7 @@ INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_wi
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
-	$(CCC) $(P)Qt_instruments.cpp $(QTOPT) -std=gnu++11
+	$(CCC) $(P)Qt_instruments.cpp $(QTOPT)
 
 $(P)Qt_instruments_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
@@ -1117,7 +1117,7 @@ $(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
 
 Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h
-	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT) -std=gnu++11
+	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)
 
 $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
 	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_soundfilesaver_widget.h
@@ -1131,7 +1131,7 @@ $(P)Qt_comment_dialog.h: $(BUILD_DEPENDENCIES) $(P)qt4_comment_dialog.ui $(P)Qt_
 	cd $(P) && $(MOC) Qt_comment_dialog_callbacks.cpp >mQt_comment_dialog_callbacks.cpp
 
 Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h
-	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -std=gnu++11
+	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
 
 $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp
 	cd $(P) && $(UIC) qt4_preferences.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: > Qt_preferences.h
@@ -1376,13 +1376,13 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(P)Qt_MyQButton.h
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
 QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h
-	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT) -std=gnu++11
+	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
 	$(CCC) $(QM)QM_view.cpp $(QTOPT)
 
 QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h
-	$(CCC) $(QM)QM_chip.cpp $(QTOPT) -std=gnu++11
+	$(CCC) $(QM)QM_chip.cpp $(QTOPT)
 
 undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
 	$(CC) $(OPT) $(QM)undo_chip_position.c
@@ -1403,7 +1403,7 @@ Sine_plugin.o: audio/Sine_plugin.c
 	$(CC) $(OPT) audio/Sine_plugin.c
 
 Bus_plugins.o: audio/Bus_plugins.cpp
-	$(CCC) audio/Bus_plugins.cpp $(QTOPT) -std=gnu++11
+	$(CCC) audio/Bus_plugins.cpp $(QTOPT)
 
 Patchbay_plugin.o: audio/Patchbay_plugin.c
 	$(CC) audio/Patchbay_plugin.c $(OPT)
@@ -1415,7 +1415,7 @@ VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 	$(CCC) audio/VST_plugins.cpp $(QTOPT) -Wno-error # uses some Qt stuff to open GUI window
 
 Ladspa_plugins.o: audio/Ladspa_plugins.cpp
-	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) -std=gnu++11
+	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT)
 
 Sampler_plugin.o: audio/Sampler_plugin.c audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h
 	$(GCC) $(OPT)  $(CPUOPT) audio/Sampler_plugin.c $(SNDFILEOPT) $(SAMPLERATEOPT) $(GLIBOPT)
@@ -1425,7 +1425,7 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 #`$(PKG) --cflags fluidsynth`
 
 Pd_plugin.o: audio/Pd_plugin.cpp
-	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src -std=gnu++11
+	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
@@ -1606,7 +1606,7 @@ audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp aud
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp common/sema.h common/Semaphores.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC) audio/SoundProducer.cpp $(QTOPT)  -std=gnu++11 # $(CPUOPT)
+	$(CCC) audio/SoundProducer.cpp $(QTOPT)  # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -1617,14 +1617,14 @@ MultiCore.o: audio/MultiCore.cpp audio/fade_envelopes.h
 
 
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp
-	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT) -std=gnu++11
+	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 SoundPlugin.o: audio/SoundPlugin.c audio/SoundPlugin.h audio/SoundPlugin_proc.h
 	$(CC) audio/SoundPlugin.c $(OPT) -std=c99
 ### $(CPUOPT)
 
 Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h
-	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -std=gnu++11
+	$(CCC) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT)
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC) audio/get_windows_commandlines.c $(OPT)
@@ -1665,12 +1665,12 @@ audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -vec -cn Faust_system_compressor audio/system_compressor.dsp >audio/system_compressor.cpp
 
 bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" `$(PKG) --cflags QtGui` `$(PKG) --cflags QtNetwork` -o crashbin.o -std=gnu++11
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" `$(PKG) --cflags QtGui` `$(PKG) --cflags QtNetwork` -o crashbin.o
 	$(LINKER) crashbin.o -o bin/crashreporter `$(PKG) --libs QtGui` `$(PKG) --libs QtNetwork`
 	rm crashbin.o
 
 crashreporter.o: crashreporter/crashreporter.cpp
-	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\" -std=gnu++11
+	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	$(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS)
