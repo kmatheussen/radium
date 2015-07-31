@@ -530,7 +530,7 @@ void setTrackVolume(float volume,int tracknum,int blocknum,int windownum){
   else
     wtrack->track->volume = (int)(volume * (float)MAXTRACKVOL);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
@@ -555,7 +555,7 @@ void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
   else
     wtrack->track->pan = (int)(pan * (float)MAXTRACKPAN);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
