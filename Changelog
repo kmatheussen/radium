@@ -1,3 +1,21 @@
+Most important changes 3.2.7 -> 3.2.8
+* Remove sound object from mixer before freeing buffers (might fix mysterious crashes)
+* Fix audio glitches when changing number of CPUs
+* Show the crash/assert window for most warning/error messages
+* Fix a LADSPA bug where sometimes the effects were set to default after undoing a deletion.
+* api: printMixerTree (mostly for debugging)
+* Finding peaks is approx. 2-4 times faster by using code from the JUCE SDK.
+  (juce::FloatVectorOperations::findMinAndMax)
+* Made the CPU widget fixed size. The bottom bar doesn't move left and right anymore.
+* Removed old sound object scheduling system. Everything now goes through
+  through the multicore scheduler, even when running single-threadedly.
+* Fixed realtime update of waveforms when changing track volume and track panning
+* Rewrote bus system. Buses are now just hidden sound object connections. Can in some
+  situations improve multicore performance.
+* Draw current sound object in darker color when selecting with
+  left button, not only right button
+
+
 Most important changes 3.2.6 -> 3.2.7
 * Mixer: Must press left mouse button on a sound object to select it. Dont just set the the one currently under the mouse.
 * Added volume value to connections. This is both necessary to later optimize/simplify
