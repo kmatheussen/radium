@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../common/OS_string_proc.h"
+#include "../audio/SoundProducer_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -890,4 +891,9 @@ bool doModalWindows(void){
 void setModalWindows(bool doit){
   g_modal_windows = doit;
   SETTINGS_write_bool("modal_windows", doit);
+}
+
+
+void printMixerTree(void){
+  SP_print_tree();
 }
