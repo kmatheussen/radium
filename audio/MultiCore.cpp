@@ -119,7 +119,7 @@ public:
     : must_exit(false)
   {
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
-    start(QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
+    start(QThread::LowestPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
 
   void run(){
@@ -160,7 +160,7 @@ private slots:
 
 static void process_single_core(int64_t time, int num_frames, bool process_plugins){
   while( num_sp_left>0 ) {
-    R_ASSERT(sp_ready.numSignallers()>0);
+    // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
     sp_ready.wait();
     process_next_soundproducer(time, num_frames, process_plugins);
   }
@@ -284,8 +284,14 @@ void MULTICORE_set_num_threads(int num_new_runners){
   
   Runner **new_runners = (Runner**)calloc(num_new_runners,sizeof(Runner*));
 
+  // start them
   for(int i=0 ; i < num_new_runners ; i++)
     new_runners[i]=new Runner;
+
+  // wait until they are ready (takes some time, but if we don't wait here, there will be a moment where there are no active runners, and no sound)
+  for(int i=0 ; i < num_new_runners ; i++)
+    while(new_runners[i]->can_start_main_loop.numWaiters()==0)
+      usleep(1000);
 
   PLAYER_lock(); {
 
