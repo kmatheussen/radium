@@ -56,6 +56,7 @@ static inline int myisinf(float val){
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "system_compressor_wrapper_proc.h"
+#include "Juce_plugins_proc.h"
 
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
@@ -254,9 +255,10 @@ static float scale(float x, float x1, float x2, float y1, float y2){
 
 #endif
 
+#if 0
 // Example using SSE instructions here: http://codereview.stackexchange.com/questions/5143/min-max-function-of-1d-array-in-c-c
 // That code is 4 times faster, but requires SSE.
-static float RT_get_max_val(float *array, int num_elements){
+static float RT_get_max_val(const float *array, const int num_elements){
   float ret=0.0f;
   float minus_ret = 0.0f;
   
@@ -273,6 +275,13 @@ static float RT_get_max_val(float *array, int num_elements){
 
   return ret;
 }
+
+#else
+
+#define RT_get_max_val JUCE_get_max_val
+
+#endif
+
 
 #if 0
 static void RT_apply_volume(float *sound, int num_frames, float volume){

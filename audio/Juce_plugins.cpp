@@ -840,7 +840,180 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
 }
 
 
+float JUCE_get_max_val(const float *array, const int num_elements){
+  auto both = FloatVectorOperations::findMinAndMax(array,num_elements);
+  float a = -both.getStart();
+  float b = both.getEnd();
+  return R_MAX(a,b);
+}
+
+
+#define TEST_GET_MAX_VAL 0
+
+#if TEST_GET_MAX_VAL
+
+static float RT_get_max_val(const float *array, const int num_elements){
+  float ret=0.0f;
+  float minus_ret = 0.0f;
+  
+  for(int i=0;i<num_elements;i++){
+    float val = array[i];
+    if(val>ret){
+      ret=val;
+      minus_ret = -val;
+    }else if (val<minus_ret){
+      ret = -val;
+      minus_ret = val;
+    }
+  }
+
+  return ret;
+}
+
+// Found here: http://codereview.stackexchange.com/questions/5143/min-max-function-of-1d-array-in-c-c/
+// performance is approx. the same as FloatVectorOperations::findMinAndMax(array,num_elements);
+static void x86_sse_find_peaks(const float *buf, unsigned nframes, float *min, float *max)
+{
+    __m128 current_max, current_min, work;
+
+    // Load max and min values into all four slots of the XMM registers
+    current_min = _mm_set1_ps(*min);
+    current_max = _mm_set1_ps(*max);
+
+    // Work input until "buf" reaches 16 byte alignment
+    while ( ((unsigned long)buf) % 16 != 0 && nframes > 0) {
+
+        // Load the next float into the work buffer
+        work = _mm_set1_ps(*buf);
+
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+
+        buf++;
+        nframes--;
+    }
+
+    // use 64 byte prefetch for quadruple quads
+    while (nframes >= 16) {
+        //__builtin_prefetch(buf+64,0,0); // for GCC 4.3.2+
+
+        work = _mm_load_ps(buf);
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+        buf+=4;
+        work = _mm_load_ps(buf);
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+        buf+=4;
+        work = _mm_load_ps(buf);
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+        buf+=4;
+        work = _mm_load_ps(buf);
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+        buf+=4;
+        nframes-=16;
+    }
+
+    // work through aligned buffers
+    while (nframes >= 4) {
+
+        work = _mm_load_ps(buf);
+
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+
+        buf+=4;
+        nframes-=4;
+    }
+
+    // work through the rest < 4 samples
+    while ( nframes > 0) {
+
+        // Load the next float into the work buffer
+        work = _mm_set1_ps(*buf);
+
+        current_min = _mm_min_ps(current_min, work);
+        current_max = _mm_max_ps(current_max, work);
+
+        buf++;
+        nframes--;
+    }
+
+    // Find min & max value in current_max through shuffle tricks
+
+    work = current_min;
+    work = _mm_shuffle_ps(work, work, _MM_SHUFFLE(2, 3, 0, 1));
+    work = _mm_min_ps (work, current_min);
+    current_min = work;
+    work = _mm_shuffle_ps(work, work, _MM_SHUFFLE(1, 0, 3, 2));
+    work = _mm_min_ps (work, current_min);
+
+    _mm_store_ss(min, work);
+
+    work = current_max;
+    work = _mm_shuffle_ps(work, work, _MM_SHUFFLE(2, 3, 0, 1));
+    work = _mm_max_ps (work, current_max);
+    current_max = work;
+    work = _mm_shuffle_ps(work, work, _MM_SHUFFLE(1, 0, 3, 2));
+    work = _mm_max_ps (work, current_max);
+
+    _mm_store_ss(max, work);
+}
+
+static float RT_get_max_val3(const float *array, const int num_elements){
+  float a;
+  float b;
+  x86_sse_find_peaks(array, num_elements, &a, &b);
+  return R_MAX(-a,b);
+}
+
+extern double monotonic_seconds();
+
+static void testing(void){
+  const int num_iterations = 1024*512;
+  float test_data[64];
+
+  // test run
+  for(int i=0;i<50;i++){
+    RT_get_max_val(test_data,64);
+    RT_get_max_val2(test_data,64);
+    RT_get_max_val3(test_data,64);
+  }
+  
+  double result = 0.0f;
+  
+  double start_time = monotonic_seconds();
+  
+  for(int i=0;i<num_iterations;i++){
+    result +=
+#if 0
+      RT_get_max_val(test_data,64);
+#else
+    RT_get_max_val2(test_data,64);
+    //FloatVectorOperations::findMinAndMax(test_data,64).getStart();
+    //FloatVectorOperations::findMinimum(test_data,64);
+#endif
+  }
+  
+  double end_time = monotonic_seconds();
+  double duration = end_time - start_time;
+
+  float a = RT_get_max_val(test_data,64);
+  float b = RT_get_max_val2(test_data,64);
+
+  fprintf(stderr,"time: %f (%f), %f %f\n",duration,result,a,b);
+  
+}
+#endif
+  
 void PLUGINHOST_init(void){
+#if TEST_GET_MAX_VAL
+  testing();
+  exit(0);
+#endif
+  
 #if JUCE_LINUX // Seems like a separate thread is only necessary on linux.
 
   JuceThread *juce_thread = new JuceThread;
