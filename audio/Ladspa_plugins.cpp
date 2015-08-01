@@ -981,7 +981,12 @@ void create_ladspa_plugins(void){
     //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
     QString home_ladspa_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.ladspa";
-    sprintf(ladspa_path, "%s:%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",home_ladspa_path.toUtf8().constData());
+    sprintf(ladspa_path,
+            "%s:%s:%s",
+            QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData(),
+            "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",
+            home_ladspa_path.toUtf8().constData()
+            );
   } else 
     sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
 #endif
