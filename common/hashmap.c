@@ -161,7 +161,7 @@ static void put(hash_t *hash, const char *key, int i, hash_element_t *element){
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
-  element->key=key;
+  element->key=talloc_strdup(key);
   element->i=i;
 
   hash->num_elements++;
