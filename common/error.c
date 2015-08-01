@@ -84,7 +84,8 @@ void RError(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  show_message(IS_ERROR,message);
+  CRASHREPORTER_send_assert_message(message);
+  //show_message(IS_ERROR,message);
 }
 
 void RWarning(const char *fmt,...){
