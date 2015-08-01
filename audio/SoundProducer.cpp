@@ -1051,7 +1051,7 @@ void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source,
 
 
 // Does NOT delete the bus links. Those are deleted in the SoundProducer destructor.
-void SP_remove_all_links(std::vector<SoundProducer*> soundproducers){
+void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers){
 
   radium::Vector<SoundProducerLink *> links_to_delete;
   

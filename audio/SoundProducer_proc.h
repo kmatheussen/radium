@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin.h"
 
+#include "../common/Vector.hpp"
+
 #if 0
 namespace radium{
 
@@ -68,7 +70,7 @@ bool SP_add_elink(SoundProducer *target, SoundProducer *source);
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_elink(SoundProducer *target, SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
-void SP_remove_all_links(std::vector<SoundProducer*> soundproducers);
+void SP_remove_all_links(radium::Vector<SoundProducer*> &soundproducers);
 void SP_RT_called_for_each_soundcard_block(SoundProducer *producer);
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);
 void SP_RT_clean_output(SoundProducer *producer, int num_frames);

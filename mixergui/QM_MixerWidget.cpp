@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/mQt_mixer_widget_callbacks.h"
 
 #include "../common/vector_proc.h"
+#include "../common/Vector.hpp"
 #include "../common/hashmap_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/patch_proc.h"
@@ -1348,34 +1349,33 @@ static bool delete_a_connection(){
 #endif
 
 static void MW_cleanup_connections(void){
-  //while(delete_a_connection());
-  std::vector<SoundProducer*> producers;
-  std::vector<Connection*> connections;
+  radium::Vector<SoundProducer*> producers;
+  radium::Vector<Connection*> connections;
+  
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL)
-      producers.push_back(chip->_sound_producer);
+      producers.add(chip->_sound_producer);
     else{
       Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
       if(connection!=NULL)
-        connections.push_back(connection);
+        connections.add(connection);
     }
   }
 
   SP_remove_all_links(producers);
 
-  for(unsigned int i=0;i<producers.size();i++){
-    SoundProducer *producer = producers.at(i);
+  for(auto producer : producers){
     SoundPlugin *plugin = SP_get_plugin(producer);
     volatile struct Patch *patch = plugin->patch;
     if (patch!=NULL)
       PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
-  for(unsigned int i=0;i<connections.size();i++)
-    CONNECTION_delete_a_connection_where_all_links_have_been_removed(connections.at(i));
+  for(auto connection : connections)
+    CONNECTION_delete_a_connection_where_all_links_have_been_removed(connection);
 }
 
 
