@@ -532,16 +532,16 @@ public:
       if (!_linkbuses.is_empty())
         SoundProducer::remove_links(_linkbuses);
 
-      free(_input_peaks);
-      free(_volume_peaks);
-
       R_ASSERT(_input_links.size()==0);
       R_ASSERT(_output_links.size()==0);
-      
-      free_sound_buffers();
     }
 
     MIXER_remove_SoundProducer(this);
+
+    free(_input_peaks);
+    free(_volume_peaks);
+          
+    free_sound_buffers();
   }
   
   void free_sound_buffers(){

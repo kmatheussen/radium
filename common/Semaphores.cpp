@@ -22,6 +22,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "OS_Semaphores.h"
 
+#if 0
+namespace{
+  struct SemaPhoreWaiter {
+    const char *file_name;
+    const char *line_number;
+    int thread_id;
+    double start_time;
+  };
+  
+  struct SemaphoreSurveiler : public QThread {
+    Q_OBJECT
+
+    Vector<SemaphoreWaiter> waiters;
+    
+    SemaphoreSurveiler(){
+      start();
+    }
+    
+    void run(){
+      while(true){
+        Sleep(1 second);
+        double current_time = time_now();
+        for(auto waiter : waiters){
+          if ( (current_time - waiter->start_time) > 5 seconds){
+            RError("Been waiting for more than 5 seconds on a semaphore");
+          }
+        }
+      }
+    }
+  };
+}
+#endif
+
  
 struct _RSemaphore : radium::Semaphore{
   _RSemaphore(int n) : radium::Semaphore(n) {}
