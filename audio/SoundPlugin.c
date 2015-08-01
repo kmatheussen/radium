@@ -1017,6 +1017,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 
 }
 
+
 hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
   hash_t *effects=HASH_create(type->num_effects);

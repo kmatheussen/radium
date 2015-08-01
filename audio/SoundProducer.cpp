@@ -1087,9 +1087,11 @@ void SP_write_mixer_tree_to_disk(QFile *file){
   }
 }
 
-static void SP_print_tree(radium::Vector<SoundProducer*> *sp_all){
+void SP_print_tree(void){
   int num=0;
 
+  radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  
   for (SoundProducer *sp : *sp_all){
     fprintf(stderr,"%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER);
     /*

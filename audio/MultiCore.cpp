@@ -211,7 +211,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
   
 #if 0
-  SP_print_tree(sp_all);
+  SP_print_tree();
 #endif
 
 
