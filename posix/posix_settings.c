@@ -32,7 +32,7 @@ char *OS_get_config_filename(void){
   char temp[500];
   sprintf(temp,"mkdir %s/.radium 2>/dev/null",getenv("HOME"));
   if(system(temp)==-1)
-    RWarning("Unable to create \"%s/.radium\" directory",getenv("HOME"));
+    GFX_Message(NULL, "Unable to create \"%s/.radium\" directory",getenv("HOME"));
 
   return talloc_format("%s/.radium/config",getenv("HOME"));
 #endif // __linux__

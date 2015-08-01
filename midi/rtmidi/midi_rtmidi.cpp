@@ -352,7 +352,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
       if(ret->midiout->getPortCount()>0)
         ret->midiout->openPort(0);
       else{
-        RWarning("No ports available.");
+        GFX_Message(NULL, "No ports available.");
         return NULL;
       }
 #endif

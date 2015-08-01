@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <sndfile.h>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/read_binary.h"
@@ -1619,7 +1620,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
   }
 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type)==false)
-    RWarning("Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
+    GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){

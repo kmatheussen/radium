@@ -273,6 +273,8 @@ $1 = (SoundPlugin *) 0x0
 #include <QCoreApplication>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
+
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "undo_pd_controllers_proc.h"
@@ -960,7 +962,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   blocksize = libpds_blocksize(pd);
 
   if( (block_size % blocksize) != 0)
-    RWarning("PD's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", blocksize, block_size);
+    GFX_Message(NULL, "PD's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", blocksize, block_size);
 
   // compute audio    [; pd dsp 1(
   libpds_start_message(pd, 1); // one entry in list

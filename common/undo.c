@@ -438,7 +438,7 @@ void SetMaxUndos(struct Tracker_Windows *window){
 
 	max_num_undos=newmax;
 
-        RWarning("The max number of undoes variables is ignored. Undo is unlimited.");
+        GFX_Message(NULL, "The max number of undoes variables is ignored. Undo is unlimited.");
 }
 
 

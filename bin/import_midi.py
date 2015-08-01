@@ -641,7 +641,7 @@ def get_tracks(filename):
     try:
         tracks = midi.read_midifile(filename)
     except:
-        radium.showWarning("Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.");
+        radium.showMessage("Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.");
         return False
     
     return tracks

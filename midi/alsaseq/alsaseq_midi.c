@@ -167,7 +167,7 @@ MidiPortOs MIDI_getMidiPortOs(char *name){
 
 
     if(ret!=0) {
-      RWarning("Could not connect to ALSA port %d. (%s).\n", port, snd_strerror(ret));
+      GFX_Message(NULL, "Could not connect to ALSA port %d. (%s).\n", port, snd_strerror(ret));
     }
 
     printf("myport: %d, connectret: %d\n",port,ret);

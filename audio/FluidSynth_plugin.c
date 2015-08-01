@@ -7,6 +7,7 @@
 #include "../bin/packages/fluidsynth-1.1.6/include/fluidsynth.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/OS_settings_proc.h"
@@ -521,7 +522,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state){
     return;
 
   if(FLUIDSYNTH_set_new_preset(plugin, filename, bank_num, preset_num)==false)
-    RWarning("Could not load soundfont \"%s\", bank %d, preset %d",filename,bank_num,preset_num);
+    GFX_Message(NULL, "Could not load soundfont \"%s\", bank %d, preset %d",filename,bank_num,preset_num);
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){

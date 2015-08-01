@@ -162,6 +162,10 @@ char* requestMidiPort(void){
   return ret;
 }
 
+void showMessage(char *text){
+  GFX_Message(NULL, text);
+}
+
 void showWarning(char *text){
   RWarning(text);
 }

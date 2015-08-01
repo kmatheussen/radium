@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "pa_memorybarrier.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
 #include "../common/stacktoucher_proc.h"
@@ -520,15 +521,15 @@ struct Mixer{
     _sample_rate = jack_get_sample_rate(_rjack_client);
     _buffer_size = jack_get_buffer_size(_rjack_client);
     if(_buffer_size < RADIUM_BLOCKSIZE)
-      RWarning("Jack's blocksize of %d is less than Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
+      GFX_Message(NULL, "Jack's blocksize of %d is less than Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
     else if((_buffer_size % RADIUM_BLOCKSIZE) != 0)
-      RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
+      GFX_Message(NULL, "Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
 
     g_last_set_producer_buffersize = _buffer_size;
     g_jack_client_priority = jack_client_real_time_priority(_rjack_client);
 
     if(_sample_rate<100.0)
-      RWarning("Sample rate value is strange: %f",(float)_sample_rate);
+      GFX_Message(NULL, "Sample rate value is strange: %f",(float)_sample_rate);
 
     pc->pfreq = _sample_rate; // bang!
 
@@ -767,7 +768,7 @@ struct Mixer{
     lock_player();{  // Not sure which thread this callback is called from.
       mixer->_buffer_size = num_frames;
       if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
-        RWarning("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
+        GFX_Message(NULL, "Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
 
       for (SoundProducer *sp : mixer->_sound_producers)
         SP_set_buffer_size(sp, mixer->_buffer_size);

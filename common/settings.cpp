@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCoreApplication>
 
 #include "nsmtracker.h"
+#include "visual_proc.h"
 #include "OS_settings_proc.h"
 #include "threading.h"
 #include "../config/config.h"
@@ -120,7 +121,7 @@ static QVector<QString> get_lines(const char* key){
       line.remove(0, line.indexOf("#"));
 
     if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
-      RWarning("A very long line (%d characters) in the config file was ignored",line.length());
+      GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored",line.length());
       line = "";
     }
     
