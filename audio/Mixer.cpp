@@ -756,11 +756,12 @@ struct Mixer{
                "(Reason from the server: \"%s\").\n"
                "\n"
                "To continue working:\n"
-               "1. Exit Radium.\n"
-               "2. Start Jack again.\n"
-               "3. Start Radium again.\n"
+               "1. Save.\n"
+               "2. Exit Radium.\n"
+               "3. Start Jack again.\n"
+               "4. Start Radium again.\n"
                "\n"
-               "Radium might be unstable if you  do other operations than the ones above"
+               "Radium can be unstable if you do other operations."
                );
   }
   
