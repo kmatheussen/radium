@@ -106,11 +106,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0;ch<type->num_inputs;ch++)
     memcpy(data->inputs[ch],inputs[ch],sizeof(float)*num_frames);
   {
-    CRASHREPORTER_set_plugin_name(plugin->type->name); {
+    int pos = CRASHREPORTER_set_plugin_name(plugin->type->name); {
       descriptor->run(data->handles[0], num_frames);
       if(type_data->uses_two_handles)
         descriptor->run(data->handles[1], num_frames);
-    } CRASHREPORTER_unset_plugin_name();
+    } CRASHREPORTER_unset_plugin_name(pos);
   }
   for(int ch=0;ch<type->num_outputs;ch++)
     memcpy(outputs[ch],data->outputs[ch],sizeof(float)*num_frames);

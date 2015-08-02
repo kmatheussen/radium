@@ -65,7 +65,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
-#define NOPLUGINNAME "<noplugin>"
+#if !defined(CRASHREPORTER_BIN)
+static const char *g_no_plugin_name = "<noplugin>";
+#endif
+
+#define NOPLUGINNAMES "<nopluginnames>"
 #define NOEMERGENCYSAVE "<noemergencysave>"
 
 
@@ -123,7 +127,7 @@ void EVENTLOG_add_event(const char *log_entry){
 
 
 
-static void send_crash_message_to_server(QString message, QString plugin_name, QString emergency_save_filename, bool is_crash){
+static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, bool is_crash){
 
   fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
 
@@ -150,8 +154,8 @@ static void send_crash_message_to_server(QString message, QString plugin_name, Q
                                    "\n"
                                    "Please don't report the same %0 more than two or three times.\n"
                                    ).arg(is_crash?"crash":"incident")
-                           + ( (is_crash && plugin_name != NOPLUGINNAME)
-                               ? QString("Please note that a third party plugin called \"" + plugin_name + "\" was currently processing audio. It might be responsible for the crash.")
+                           + ( (is_crash && plugin_names != NOPLUGINNAMES)
+                               ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")
                                : QString())
                            + (!is_crash ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
                            + (dosave ? "\nAn emergency version of your song has been saved as \""+emergency_save_filename+"\". However, this file should not be trusted. It could be malformed. (it is most likely okay though)" : "")
@@ -250,13 +254,13 @@ int main(int argc, char **argv){
 
   QString filename = fromBase64(argv[1]);
 
-  QString running_plugin_name = fromBase64(argv[2]);
+  QString running_plugin_names = fromBase64(argv[2]);
   
   QString emergency_save_filename = fromBase64(argv[3]);
     
   bool is_crash = QString(argv[4])=="is_crash";
 
-  send_crash_message_to_server(file_to_string(filename), running_plugin_name, emergency_save_filename, is_crash);
+  send_crash_message_to_server(file_to_string(filename), running_plugin_names, emergency_save_filename, is_crash);
 
   if (is_crash)
     delete_file(filename);
@@ -273,23 +277,49 @@ int main(int argc, char **argv){
 
 #if !defined(CRASHREPORTER_BIN)
 
-static const char *g_plugin_name=NOPLUGINNAME;
-//static QString g_plugin_name=NOPLUGINNAME;
+#define MAX_NUM_PLUGIN_NAMES 100
+static QAtomicInt g_plugin_name_pos;
+
+static const char *g_plugin_names[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
+//static QString g_plugin_name=g_no_plugin_name;
 
 static QTime running_time;
 
 
-void CRASHREPORTER_set_plugin_name(const char *plugin_name){
+int CRASHREPORTER_set_plugin_name(const char *plugin_name){
   //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
-  g_plugin_name = plugin_name;
-  if (g_plugin_name[0]==0)
-    g_plugin_name = NOPLUGINNAME;
+
+  int pos = g_plugin_name_pos.fetchAndAddOrdered(1) % MAX_NUM_PLUGIN_NAMES;
+
+  if (plugin_name[0]==0)
+    g_plugin_names[pos] = g_no_plugin_name;
+  else
+    g_plugin_names[pos] = plugin_name;
+
+  return pos;
 }
 
-void CRASHREPORTER_unset_plugin_name(void){
-  g_plugin_name = NOPLUGINNAME;
+void CRASHREPORTER_unset_plugin_name(int pos){
+  g_plugin_names[pos] = g_no_plugin_name;
 }
 
+static QString get_plugin_names(void){
+  QString ret;
+  
+  for(int i=0;i<MAX_NUM_PLUGIN_NAMES;i++){
+    if (g_plugin_names[i] != g_no_plugin_name){
+      if (ret!="")
+        ret += ", "+QString(g_plugin_names[i]);
+      else
+        ret = g_plugin_names[i];
+    }
+  }
+
+  if (ret=="")
+    return NOPLUGINNAMES;
+  else
+    return ret;
+}
 
 static void run_program(QString program, QString arg1, QString arg2, QString arg3, QString arg4, bool wait_until_finished){
 
@@ -377,6 +407,7 @@ static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree
 
 
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, bool is_crash){
+  QString plugin_names = get_plugin_names();
   
   QString tosend = QString(additional_information) + "\n\n";
 
@@ -387,7 +418,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "OpenGL version: " + QString((GE_version_string==NULL ? "(null)" : (const char*)GE_version_string)) + "\n";
   tosend += QString("OpenGL flags: %1").arg(GE_opengl_version_flags, 0, 16) + "\n\n";
 
-  tosend += "Running plugin: " + QString(g_plugin_name) + "\n\n";
+  tosend += "Running plugins: " + plugin_names + "\n\n";
 
   tosend += "Running time: " + QString::number(running_time.elapsed()) + "\n\n";
 
@@ -421,8 +452,6 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "\n\n";
   tosend += "/proc/cpuinfo: "+file_to_string("/proc/cpuinfo");
 #endif
-
-  QString running_plugin_name = toBase64(g_plugin_name);
 
   // start process
   {
@@ -501,7 +530,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
     
     run_program(program,
                 toBase64(file->fileName()),
-                toBase64(g_plugin_name),
+                toBase64(plugin_names),
                 toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
                 (is_crash ? "is_crash" : "is_assert"),
                 do_block
@@ -546,7 +575,7 @@ void CRASHREPORTER_send_assert_message(const char *fmt,...){
 
     if (!g_crashreporter_file->open()){
       SYSTEM_show_message("Unable to create temprary file. Disk may be full");
-      send_crash_message_to_server(message, g_plugin_name, NOEMERGENCYSAVE, false);
+      send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, false);
       goto exit;
     }
 

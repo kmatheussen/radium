@@ -370,9 +370,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0; ch<data->num_input_channels ; ch++)
     memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
 
-  CRASHREPORTER_set_plugin_name(plugin->type->name); {
+  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
     instance->processBlock(buffer, data->midi_buffer);
-  } CRASHREPORTER_unset_plugin_name();
+  }CRASHREPORTER_unset_plugin_name(pos);
 
   for(int ch=0; ch<data->num_output_channels ; ch++)
     memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);

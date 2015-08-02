@@ -25,8 +25,8 @@ extern "C"{
   void EVENTLOG_add_event(const char *log_entry);
   
   void CRASHREPORTER_init(void);
-  void CRASHREPORTER_set_plugin_name(const char *plugin_name);
-  void CRASHREPORTER_unset_plugin_name(void);
+  int CRASHREPORTER_set_plugin_name(const char *plugin_name);
+  void CRASHREPORTER_unset_plugin_name(int pos);
   void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, bool is_crash);
   void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash);
   void CRASHREPORTER_send_assert_message(const char *fmt,...);
