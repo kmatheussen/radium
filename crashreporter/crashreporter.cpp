@@ -291,9 +291,7 @@ int CRASHREPORTER_set_plugin_name(const char *plugin_name){
 
   int pos = g_plugin_name_pos.fetchAndAddOrdered(1) % MAX_NUM_PLUGIN_NAMES;
 
-  if (plugin_name[0]==0)
-    g_plugin_names[pos] = g_no_plugin_name;
-  else
+  if (plugin_name[0]!=0)
     g_plugin_names[pos] = plugin_name;
 
   return pos;

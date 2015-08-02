@@ -639,6 +639,9 @@ public:
   }
   
   bool add_eventSoundProducerInput(SoundProducer *source){
+    if (PLAYER_is_running()==false)
+      return false;
+
     if(source->is_recursive(this)==true){
       GFX_Message(NULL, "Recursive graph not supported\n");
       return false;
@@ -654,6 +657,9 @@ public:
   bool add_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
     //fprintf(stderr,"*** this: %p. Adding input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
 
+    if (PLAYER_is_running()==false)
+      return false;
+    
     if(source->is_recursive(this)==true){
       GFX_Message(NULL, "Recursive graph not supported\n");
       return false;
@@ -1079,10 +1085,17 @@ void SP_write_mixer_tree_to_disk(QFile *file){
   int num=0;
   
   for (SoundProducer *sp : *sp_all){
-    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
+    SoundPlugin *plugin = sp->_plugin;
+    volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
+    const char *name = patch==NULL ? "<null>" : patch->name;
+    
+    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,name,sp->num_dependencies,int(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
+    
     for (SoundProducerLink *link : sp->_output_links){
-      volatile Patch *patch = link->target->_plugin->patch;
-      file->write(QString().sprintf("  %s%s\n",patch==NULL?"<null>":patch->name, link->is_active?"":" (inactive)").toUtf8());
+      SoundPlugin *plugin = link->target->_plugin;
+      volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
+      const char *name = patch==NULL ? "<null>" : patch->name;
+      file->write(QString().sprintf("  %s%s\n",name, link->is_active?"":" (inactive)").toUtf8());
     }    
   }
 }

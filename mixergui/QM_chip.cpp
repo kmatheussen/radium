@@ -78,6 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/Mixer_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../Qt/EditorWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
@@ -1324,6 +1325,9 @@ hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
 
 
 void CHIP_create_from_state(hash_t *state, Buses buses){
+  if (PLAYER_is_running()==false)
+    return;
+
   struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
   double x = HASH_get_float(state, "x");
   double y = HASH_get_float(state, "y");

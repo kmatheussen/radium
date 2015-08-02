@@ -1189,6 +1189,9 @@ void MW_set_autopos(double *x, double *y){
 // The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
 //
 SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Buses buses){
+  if (PLAYER_is_running()==false)
+    return NULL;
+
   SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;

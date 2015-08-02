@@ -758,7 +758,9 @@ struct Mixer{
                "To continue working:\n"
                "1. Exit Radium.\n"
                "2. Start Jack again.\n"
-               "3. Start Radium again."
+               "3. Start Radium again.\n"
+               "\n"
+               "Radium might be unstable if you  do other operations than the ones above"
                );
   }
   
