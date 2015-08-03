@@ -952,7 +952,8 @@ void InstrumentWidget_save_preset(struct Patch *patch){
   
   HASH_save(state, file);
   
-  DISK_close_and_delete(file);
+  if (!DISK_close_and_delete(file))
+    GFX_Message(NULL, "Unable to write to disk. Disk may be full");
 }
 
 static void InstrumentWidget_remove_patch(struct Patch *patch){

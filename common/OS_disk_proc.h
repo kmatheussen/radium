@@ -6,6 +6,9 @@
 
 typedef struct _radium_os_disk disk_t;
 
+extern LANGSPEC bool DISK_file_exists(const wchar_t *filename);
+
+
 // OPEN
 extern LANGSPEC disk_t *DISK_open_for_writing(const wchar_t *filename);
 extern LANGSPEC disk_t *DISK_open_for_reading(const wchar_t *filename);
@@ -33,7 +36,7 @@ extern LANGSPEC int DISK_read_binary(disk_t *disk, void *destination, int num_by
 
 
 // CLOSE
-extern LANGSPEC void DISK_close_and_delete(disk_t *disk);
+extern LANGSPEC bool DISK_close_and_delete(disk_t *disk);
 
 
 #ifdef USE_QT4

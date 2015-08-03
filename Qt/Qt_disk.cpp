@@ -19,34 +19,148 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QString>
 #include <QFile>
 #include <QTextStream>
+#include <QTemporaryFile>
 
 #include "../common/nsmtracker.h"
 
 #include "../common/OS_disk_proc.h"
 
+
+bool DISK_file_exists(const wchar_t *wfilename){
+  QString filename = STRING_get_qstring(wfilename);
+  return QFile::exists(filename);
+}
+
+
 struct _radium_os_disk {
-  QFile file;
-  QTextStream *stream;  
-  bool is_binary;
+  enum Type{
+    READ,
+    WRITE
+  };
+
+private:
   
-  _radium_os_disk(QString filename, bool is_binary=false)
-    : file(filename)
-    , stream(NULL)
+  QString filename;
+  QFile *read_file;
+  QTemporaryFile *temporary_write_file;
+  enum Type type;
+
+public:
+
+  bool is_binary;
+  QTextStream *stream;  
+
+  _radium_os_disk(QString filename, enum Type type, bool is_binary=false)
+    : filename(filename)
+    , read_file(NULL)
+    , temporary_write_file(NULL)
+    , type(type)
     , is_binary(is_binary)
-  {}
+    , stream(NULL)
+  {
+  }
+
+  QFile *file(void){
+    if (type==WRITE){
+      R_ASSERT(temporary_write_file!=NULL);
+      return temporary_write_file;
+    } else {
+      R_ASSERT(read_file!=NULL);
+      return read_file;
+    }
+  }
+  
+  bool open(void){
+    R_ASSERT(temporary_write_file==NULL);
+    R_ASSERT(read_file==NULL);
+    
+    if (type==WRITE) {
+      
+      R_ASSERT(is_binary==false); // not supported yet
+      
+      temporary_write_file = new QTemporaryFile();
+      if (temporary_write_file->open()==false)
+        goto failed;
+      
+    } else {
+      
+      read_file = new QFile(filename);
+
+      if (is_binary) {
+        if (read_file->open(QIODevice::ReadOnly)==false)
+          goto failed;
+      } else {
+        if (read_file->open(QIODevice::ReadOnly | QIODevice::Text)==false)
+          goto failed;
+      }      
+    }
+
+    stream = new QTextStream(file());
+    stream->setCodec("UTF-8");
+
+    return true;
+
+    
+  failed:
+    if (temporary_write_file!=NULL)
+      delete temporary_write_file;
+    if (read_file!=NULL)
+      delete read_file;
+    return false;    
+  }
+
+  bool transfer_temporary_file_to_file(void){
+    R_ASSERT(type==WRITE);
+    R_ASSERT(temporary_write_file != NULL);
+    
+    if (QFile::exists(filename))
+      QFile::remove(filename);
+      
+    return QFile::copy(temporary_write_file->fileName(), filename);
+  }
+
+  bool close(void){
+    file()->close();
+    
+    if (type==WRITE)
+      return transfer_temporary_file_to_file();
+    else
+      return true;
+  }
+  
+  bool set_pos(int64_t pos){
+    R_ASSERT(is_binary==true);
+    return file()->seek(pos);
+  }
+  
+  bool spool(int64_t how_much){
+    R_ASSERT(is_binary==true);
+    return file()->seek(read_file->pos() + how_much);
+  }
+
+  int64_t pos(void){
+    R_ASSERT(is_binary==true);
+    return file()->pos();
+  }
+
+  ~_radium_os_disk(){
+    if (read_file!=NULL)
+      delete read_file;
+    if (temporary_write_file!=NULL)
+      delete temporary_write_file;
+    if (stream!=NULL)
+      delete stream;
+  }
 };
 
 
 disk_t *DISK_open_for_writing(QString filename){
-  disk_t *disk = new disk_t(filename);
+  disk_t *disk = new disk_t(filename, disk_t::WRITE);
   
-  if (disk->file.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+  if (disk->open()==false){
+    delete disk;
     return NULL;
-
-  disk->stream = new QTextStream(&disk->file);
-  disk->stream->setCodec("UTF-8");
-
-  //disk->file.write(QString(QChar::ByteOrderMark));
+  }
   
   return disk;
 }
@@ -58,13 +172,12 @@ disk_t *DISK_open_for_writing(const wchar_t *wfilename){
 
 
 disk_t *DISK_open_for_reading(QString filename){
-  disk_t *disk = new disk_t(filename);
-  
-  if (disk->file.open(QIODevice::ReadOnly | QIODevice::Text)==false)
-    return NULL;
+  disk_t *disk = new disk_t(filename, disk_t::READ);
 
-  disk->stream = new QTextStream(&disk->file);
-  disk->stream->setCodec("UTF-8");
+  if (disk->open()==false){
+    delete disk;
+    return NULL;
+  }
   
   return disk;
 }
@@ -76,12 +189,15 @@ disk_t *DISK_open_for_reading(const wchar_t *wfilename){
 
 disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
   QString filename = STRING_get_qstring(wfilename);
-  disk_t *disk = new disk_t(filename, true);
   
-  if (disk->file.open(QIODevice::ReadOnly)==false)
-    return NULL;
+  disk_t *disk = new disk_t(filename, disk_t::READ, true);
 
-  return disk;  
+  if (disk->open()==false){
+    delete disk;
+    return NULL;
+  }
+  
+  return disk;
 }
 
 int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
@@ -92,7 +208,7 @@ int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
   disk->stream->flush();
   return disk->stream->pos() - pos;
   
-  //return disk->file.write(data);
+  //return disk->file->write(data);
 }
 
 int DISK_write(disk_t *disk, const char *cdata){
@@ -106,7 +222,7 @@ int DISK_write(disk_t *disk, const char *cdata){
   disk->stream->flush();
   return disk->stream->pos() - pos;
 
-  //return disk->file.write(data);
+  //return disk->file->write(data);
 }
 
 
@@ -151,30 +267,27 @@ char *DISK_read_trimmed_line(disk_t *disk){
 }
 
 bool DISK_set_pos(disk_t *disk, int64_t pos){
-  R_ASSERT(disk->is_binary==true);
-  return disk->file.seek(pos);
+  return disk->set_pos(pos);
 }
 
 bool DISK_spool(disk_t *disk, int64_t how_much){
-  R_ASSERT(disk->is_binary==true);
-  return disk->file.seek(disk->file.pos() + how_much);
+  return disk->spool(how_much);
 }
 
 int64_t DISK_pos(disk_t *disk){
-  R_ASSERT(disk->is_binary==true);
-  return disk->file.pos();
+  return disk->pos();
 }
 
 int DISK_read_binary(disk_t *disk, void *destination, int num_bytes){
   R_ASSERT(disk->is_binary==true);
-  return disk->file.read((char*)destination, num_bytes);
+  return disk->file()->read((char*)destination, num_bytes);
 }
 
-void DISK_close_and_delete(disk_t *disk){
-  disk->file.close();
-  
-  if (disk->stream != NULL)
-    delete disk->stream;
+bool DISK_close_and_delete(disk_t *disk){
+  bool ret = disk->close();
 
   delete disk;
+
+  return ret;
 }
+

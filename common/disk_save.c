@@ -41,8 +41,8 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot){
 
         dc.file=DISK_open_for_writing(filename);
 	if(dc.file==NULL){
-		RError("Could not open file for writing.\n");
-		return;
+          GFX_Message(NULL, "Could not open file for writing.\n");
+          return;
 	}
 
         OS_set_saving_path(filename);
@@ -51,9 +51,9 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot){
 	length2=DISK_printf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
 
 	if(length1<0 || length2<0){
-		RError("Could not write to file.\n");
-                DISK_close_and_delete(dc.file);
-		return;
+          GFX_Message(NULL, "Could not write to file.\n");
+          DISK_close_and_delete(dc.file);
+          return;
 	}
 
 	DC_start("OSSTUFF");
@@ -63,17 +63,12 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot){
 	SaveRoot(theroot);
 
 	if( ! dc.success){
-		RError("Problems writing to file.\n");
+          GFX_Message(NULL, "Problems writing to file.\n");
 	}
 
-        DISK_close_and_delete(dc.file);
-#if 0
-	if(fclose(dc.file)==EOF){
-		RError("Could not close file. Out of disk-space?\n");
-		RError("Saving failed.\n");
-                return;
-	}
-#endif
+        if (!DISK_close_and_delete(dc.file))
+          GFX_Message(NULL, "Could not save file. Disk may be full.\n");
+        
         Undo_saved_song();
 
         show_nag_window("File successfully saved.<p>");
