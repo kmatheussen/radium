@@ -331,7 +331,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
   if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
-    RError("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
+    SYSTEM_show_message(stdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);));
     Sleep(3000);
   }
 
@@ -542,7 +542,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
 #ifdef FOR_MACOSX
 void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
-  RError(additional_information);
+  GFX_Message(NULL, additional_information);
 }
 #endif
 

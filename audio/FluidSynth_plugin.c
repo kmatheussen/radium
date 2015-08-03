@@ -373,13 +373,13 @@ static void *create_data(const wchar_t *filename, float samplerate){
 
   data->settings = new_fluid_settings();
   if(data->settings==NULL){
-    RError("Unable to create fluidsynth settings");
+    GFX_Message(NULL, "Unable to create fluidsynth settings");
     delete_data(data);
     return NULL;
   }
 
   if(fluid_settings_setnum(data->settings, "synth.sample-rate", samplerate)==0){
-    RError("Unable to set sample rate of fluidsynth to %f\n",samplerate);
+    GFX_Message(NULL, "Unable to set sample rate of fluidsynth to %f\n",samplerate);
     //delete_data(data);
     //return NULL;
   }
@@ -404,14 +404,14 @@ static void *create_data(const wchar_t *filename, float samplerate){
 
   data->synth = new_fluid_synth(data->settings);
   if(data->synth==NULL){
-    RError("Unable to create fluidsynth synth");
+    GFX_Message(NULL, "Unable to create fluidsynth synth");
     delete_data(data);
     return NULL;
   }
 
   data->sequencer = new_fluid_sequencer2(0);
   if(data->sequencer==NULL){
-    RError("Unable to create fluidsynth sequencer");
+    GFX_Message(NULL, "Unable to create fluidsynth sequencer");
     delete_data(data);
     return NULL;
   }
@@ -429,7 +429,7 @@ static void *create_data(const wchar_t *filename, float samplerate){
   data->synth_seq_ID = fluid_sequencer_register_fluidsynth(data->sequencer, data->synth);
   data->event = new_fluid_event();
   if(data->event==NULL){
-    RError("Unable to create fluidsynth event");
+    GFX_Message(NULL, "Unable to create fluidsynth event");
     delete_data(data);
     return NULL;
   }

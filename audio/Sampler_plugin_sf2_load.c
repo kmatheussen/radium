@@ -14,7 +14,7 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   hash_t *presets = HASH_get_hash(info,"presets");
   hash_t *preset = HASH_get_hash_at(presets, "", preset_bag_number);
   if(preset==NULL){
-    RError("No such preset number %d in instrument \"%s\"\n",preset_bag_number, filename);
+    GFX_Message(NULL, "No such preset number %d in instrument \"%s\"\n",preset_bag_number, filename);
     return false;
   }
 
@@ -39,9 +39,9 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   }
 
   if(instrument==NULL){
-    RError("load_sf2_instrument: Preset \"%s\" (bank %d / preset %d) in \"%s\" doesn't point to an instrument\n",
-           HASH_get_chars(preset,"name"),bank_num,HASH_get_int(preset,"num"),filename
-           );
+    GFX_Message(NULL, "load_sf2_instrument: Preset \"%s\" (bank %d / preset %d) in \"%s\" doesn't point to an instrument\n",
+                HASH_get_chars(preset,"name"),bank_num,HASH_get_int(preset,"num"),filename
+                );
     return false;
   }
 

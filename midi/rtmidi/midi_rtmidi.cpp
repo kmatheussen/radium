@@ -232,7 +232,7 @@ static const std::vector<std::string> get_port_names(RtMidi &rtmidi){
       portName = rtmidi.getPortName(i);
     }
     catch (RtError &error) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
       continue;
     }
     std::cout << "  Output Port #" << i+1 << ": " << portName << '\n';
@@ -273,7 +273,7 @@ static char **get_port_names(bool use_input_ports, int *num_ports){
       }
       ret.insert(ret.end(), port_names.begin(), port_names.end());
     }catch ( RtError &error ) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
     }
   }
 
@@ -316,7 +316,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
           goto got_portnum;
         }
     }catch ( RtError &error ) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
     }
   }
 
@@ -360,7 +360,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
       ret->midiout->openVirtualPort(name);
 #endif
     }catch ( RtError &error ) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
       return NULL;
     }
     return ret;
@@ -372,7 +372,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     ret->midiout = new RtMidiOut(api, "Radium");
     ret->midiout->openPort(portnum, name);
   }catch ( RtError &error ) {
-    RError(error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)
+    GFX_Message(NULL, error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)
     return NULL;
   }
   printf("opened. api %p: %d, portnum: %d\n",ret,(int)api,(int)portnum);
@@ -412,7 +412,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         try{
           delete inport_alsa;
         }catch ( RtError &error ) {
-          RError("Unable to delete old MIDI Port. (%s)", error.what());
+          GFX_Message(NULL, "Unable to delete old MIDI Port. (%s)", error.what());
           inport_alsa = NULL;
           return;
         }
@@ -432,7 +432,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         }
       
       }catch ( RtError &error ) {
-        RError("Couldn't open %s. (%s)", portname, error.what());
+        GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
         inport_alsa = NULL;
       }
 
@@ -450,7 +450,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         try{
           delete inport_winmm;
         }catch ( RtError &error ) {
-          RError("Unable to delete old MIDI Port. (%s)", error.what());
+          GFX_Message(NULL, "Unable to delete old MIDI Port. (%s)", error.what());
           inport_winmm = NULL;
           return;
         }
@@ -463,7 +463,7 @@ void MIDI_OS_SetInputPort(const char *portname){
           inport_winmm->setCallback(mycallback,NULL);          
         }
       }catch ( RtError &error ) {
-        RError("Couldn't open %s. (%s)", portname, error.what());
+        GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
         inport_winmm = NULL;
       }
     }
@@ -477,7 +477,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         try{
           delete inport_coremidi;
         }catch ( RtError &error ) {
-          RError("Unable to delete old MIDI Port. (%s)", error.what());
+          GFX_Message("Unable to delete old MIDI Port. (%s)", error.what());
           inport_coremidi = NULL;
           return;
         }
@@ -493,7 +493,7 @@ void MIDI_OS_SetInputPort(const char *portname){
           inport_coremidi->setCallback(mycallback,NULL);
         }
       }catch ( RtError &error ) {
-        RError("Couldn't open %s. (%s)", portname, error.what());
+        GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
         inport_coremidi = NULL;
       }
     }
@@ -529,7 +529,7 @@ bool MIDI_New(struct Instruments *instrument){
           fflush(stdout);
         }
       }catch ( RtError &error ) {
-        RError(error.what());
+        GFX_Message(NULL, error.what());
       }
   
 #endif

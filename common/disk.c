@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "visual_proc.h"
 #include "OS_settings_proc.h"
 
 #define TRACKER_DISK_IS_CALLING_NOW
@@ -148,9 +149,9 @@ static void DC_fgetsNoMatterWhat(void){
 	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
-          RError("Unable to load string. Line %d",curr_disk_line);
-		dc.success=false;
-		return;
+          GFX_Message(NULL, "Unable to load string. Line %d",curr_disk_line);
+          dc.success=false;
+          return;
 	}
 
 	//printf("loading -%s-\n",ret);
@@ -173,8 +174,8 @@ void DC_fgets(void){
 void *DC_doalloc(size_t size){
 	void *ret=tralloc(size);
 	if(ret==NULL){
-		RError("Not enough memory.\n");
-		dc.success=false;
+          GFX_Message(NULL, "Not enough memory.\n");
+          dc.success=false;
 	}
 	return ret;
 }
@@ -182,8 +183,8 @@ void *DC_doalloc(size_t size){
 void *DC_doalloc_atomic(size_t size){
 	void *ret=tralloc_atomic(size);
 	if(ret==NULL){
-		RError("Not enough memory (atomic).\n");
-		dc.success=false;
+          GFX_Message(NULL, "Not enough memory (atomic).\n");
+          dc.success=false;
 	}
 	return ret;
 }
@@ -294,8 +295,8 @@ int DC_Next(void){
 			break;
 		default:
                   RError("DC_Next: Unknown type: \"%s\". Line: %d ",dc.ret,curr_disk_line);
-			dc.success=false;
-			return LS_ERROR;
+                  dc.success=false;
+                  return LS_ERROR;
 	}
 
 	return dc.type;

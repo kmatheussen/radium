@@ -175,7 +175,7 @@ static bool add_library_reference(TypeData *type_data){
     LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) library->library->resolve("ladspa_descriptor");
 
     if(get_descriptor_func==NULL){
-      RError("Unable to load plugin. Has the plugin file \"%s\" disappeared?", library->filename);
+      GFX_Message(NULL, "Unable to load plugin. Has the plugin file \"%s\" disappeared?", library->filename);
       return false;
     }
 
@@ -184,7 +184,7 @@ static bool add_library_reference(TypeData *type_data){
 
   type_data->descriptor = library->get_descriptor_func(type_data->index);
   if (type_data->descriptor==NULL) {
-    RError("Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, library->filename);
+    GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, library->filename);
     return false;
   }
 

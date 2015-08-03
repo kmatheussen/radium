@@ -618,6 +618,8 @@ const wchar_t *GFX_GetSaveFileName(
 
 
 int GFX_Message(vector_t *buttons, QString message){
+  R_ASSERT(THREADING_is_main_thread());
+
   QMessageBox msgBox(g_editor);
   msgBox.setText(message);
 
@@ -649,9 +651,9 @@ int GFX_Message(vector_t *buttons, QString message){
 }
 
 int GFX_Message(vector_t *buttons, const char *fmt,...){
-  if (g_qt_is_running==false || !THREADING_is_main_thread())
-    return -1;
- 
+  if (buttons!=NULL)
+    R_ASSERT(THREADING_is_main_thread());
+
   char message[1000];
   va_list argp;
   
@@ -659,8 +661,17 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   /*	vfprintf(stderr,fmt,argp); */
   vsprintf(message,fmt,argp);
   va_end(argp);
-  
-  return GFX_Message(buttons,QString(message));
+
+  if (g_qt_is_running==false || !THREADING_is_main_thread()) {
+
+    SYSTEM_show_message(message);
+    return -1;
+
+  } else {
+ 
+    return GFX_Message(buttons,QString(message));
+
+  }
 }
 
 const char *GFX_qVersion(void){

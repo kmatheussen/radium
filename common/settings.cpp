@@ -102,7 +102,7 @@ static QVector<QString> get_lines(const char* key){
     
     file.setFileName(bin_filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
-      RError("Unable to open %s",bin_filename.toUtf8().constData());
+      GFX_Message(NULL, "Unable to open %s",bin_filename.toUtf8().constData());
       return ret;
     }
   }
@@ -165,7 +165,7 @@ static void write_lines(const char* key, QVector<QString> lines){
   QFile file(filename);
 
   if (file.open(QIODevice::WriteOnly | QIODevice::Text)==false) {
-    RError("Unable to write config data to \"%s\"",filename.toUtf8().constData());
+    GFX_Message(NULL, "Unable to write config data to \"%s\"",filename.toUtf8().constData());
     return;
   }
 

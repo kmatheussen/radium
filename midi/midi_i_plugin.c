@@ -100,8 +100,8 @@ void MyPutMidi(
                int skip
 ){
 	if(cc<0x80 || cc>0xef || (data1&0xff)>0x7f || (data2&0xff)>0x7f){
-		RError("Error. Faulty midi-message. status: %x, data1: %x, data2: %x\n",cc,data1,data2);
-		return;
+          GFX_Message(NULL, "Error. Faulty midi-message. status: %x, data1: %x, data2: %x\n",cc,data1,data2);
+          return;
 	}
 
 	OS_GoodPutMidi(midi_port->port,cc,data1,data2,time,(uint32_t)maxbuff);
@@ -642,7 +642,7 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
   MIDI_set_use_0x90_for_note_off(SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true);
 
   if(MIDI_New(instrument)==false){
-    RError("Unable to open MIDI");
+    GFX_Message(NULL, "Unable to open MIDI");
     return INSTRUMENT_FAILED;
   }
 
