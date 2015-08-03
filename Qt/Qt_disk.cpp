@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTemporaryFile>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 
 #include "../common/OS_disk_proc.h"
 
@@ -43,10 +44,10 @@ private:
   QString filename;
   QFile *read_file;
   QTemporaryFile *temporary_write_file;
-  enum Type type;
 
 public:
 
+  enum Type type;
   bool is_binary;
   QTextStream *stream;  
 
@@ -119,13 +120,51 @@ public:
     return QFile::copy(temporary_write_file->fileName(), filename);
   }
 
+  QString error_to_string(QFile::FileError error){
+    switch(error){
+      case QFile::NoError: {
+        R_ASSERT(false);
+        return "";
+      }
+      case QFile::ConnectError: return "connect error";
+      case QFile::ReadError: return "read error";
+      case QFile::WriteError: return "write error";
+      case QFile::FatalError: return "fatal error";
+      case QFile::ResourceError: return "resource error";
+      case QFile::OpenError: return "open error";
+      case QFile::AbortError: return "abort error";
+      case QFile::TimeOutError: return "timeout error";
+      case QFile::UnspecifiedError: return "unspecified error";
+      case QFile::RemoveError: return "remove error";
+      case QFile::RenameError: return "rename error";
+      case QFile::PositionError: return "position error";
+      case QFile::ResizeError: return "resize error";
+      case QFile::PermissionsError: return "permission error";
+      case QFile::CopyError: return "copy error";
+    }
+
+    R_ASSERT(false);
+    return "Unknown error";
+  }
+
   bool close(void){
+    bool ret = true;
+
     file()->close();
     
-    if (type==WRITE)
-      return transfer_temporary_file_to_file();
-    else
-      return true;
+    QFile::FileError error = file()->error();
+    if (error != 0) {
+      GFX_Message(NULL, "Error %s file: %s",type==WRITE ? "writing to" : "reading from", error_to_string(error).toUtf8().constData());
+      ret = false;
+    }
+
+    if (type==WRITE) {
+      bool copyret = transfer_temporary_file_to_file();
+      if (copyret==false)
+        ret = false;
+    }
+
+    return ret;
   }
   
   bool set_pos(int64_t pos){
@@ -200,29 +239,24 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
   return disk;
 }
 
-int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
-  QString data = STRING_get_qstring(wdata);
+static int write_qstring(disk_t *disk, QString s){
+  R_ASSERT(disk->is_binary==false);
+  R_ASSERT(disk->type==disk_t::WRITE);
 
   int pos = disk->stream->pos();
-  *disk->stream << data;
+  *disk->stream << s;
   disk->stream->flush();
   return disk->stream->pos() - pos;
-  
-  //return disk->file->write(data);
+}
+
+int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
+  QString data = STRING_get_qstring(wdata);
+  return write_qstring(disk, data);
 }
 
 int DISK_write(disk_t *disk, const char *cdata){
   QString data = QString::fromUtf8(cdata);
-
-  //printf("Writing chars: -%s- (%s)",data.toUtf8().constData(),cdata);
-  //fflush(stdout);
-
-  int pos = disk->stream->pos();
-  *disk->stream << data;
-  disk->stream->flush();
-  return disk->stream->pos() - pos;
-
-  //return disk->file->write(data);
+  return write_qstring(disk, data);
 }
 
 
@@ -230,6 +264,7 @@ QString g_file_at_end("_________FILE_AT_END");
 
 QString DISK_read_qstring_line(disk_t *disk){
   R_ASSERT(disk->is_binary==false);
+  R_ASSERT(disk->type==disk_t::READ);
   
   if (disk->stream->atEnd())
     return g_file_at_end;
@@ -256,8 +291,6 @@ char *DISK_readline(disk_t *disk){
 }
 
 char *DISK_read_trimmed_line(disk_t *disk){
-  R_ASSERT(disk->is_binary==false);
-    
   QString line = DISK_read_qstring_line(disk);
   
   if (line==g_file_at_end)
@@ -280,6 +313,7 @@ int64_t DISK_pos(disk_t *disk){
 
 int DISK_read_binary(disk_t *disk, void *destination, int num_bytes){
   R_ASSERT(disk->is_binary==true);
+  R_ASSERT(disk->type==disk_t::READ);
   return disk->file()->read((char*)destination, num_bytes);
 }
 

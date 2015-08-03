@@ -66,12 +66,12 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot){
           GFX_Message(NULL, "Problems writing to file.\n");
 	}
 
-        if (!DISK_close_and_delete(dc.file))
-          GFX_Message(NULL, "Could not save file. Disk may be full.\n");
+        bool success=DISK_close_and_delete(dc.file);
         
         Undo_saved_song();
 
-        show_nag_window("File successfully saved.<p>");
+        if (success)
+          show_nag_window("File successfully saved.<p>");
 }
 
 void SaveAs(struct Root *theroot){

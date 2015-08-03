@@ -105,7 +105,7 @@ static bool Load(const wchar_t *filename){
 
 	DC_Next();
 	if(strcmp(dc.ls,"OSSTUFF")){
-          RError("OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
+          GFX_Message(NULL, "OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
           DISK_close_and_delete(dc.file);
           EndProgram();
           exit(4);
@@ -115,7 +115,7 @@ static bool Load(const wchar_t *filename){
 
 	printf("dc.ls: -%s-\n",dc.ls);
 	if(strcmp(dc.ls,"ROOT")){
-          RError("ROOT not found. Found '%s' instead.\n", dc.ls);
+          GFX_Message(NULL, "ROOT not found. Found '%s' instead.\n", dc.ls);
           DISK_close_and_delete(dc.file);
           EndProgram();
           exit(5);
@@ -126,7 +126,7 @@ static bool Load(const wchar_t *filename){
         DISK_close_and_delete(dc.file);
 
 	if(!dc.success){
-          RError("Loading failed.\n");
+          GFX_Message(NULL, "Loading failed.\n");
           EndProgram();
           exit(6);
 	}
