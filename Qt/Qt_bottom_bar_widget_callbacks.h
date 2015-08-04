@@ -128,7 +128,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       
       sansFont.setFamily("Bitstream Vera Sans Mono");
       sansFont.setStyleName("Bold");
-      sansFont.setPointSize(QApplication::font().pointSize()-0.02f);
+      sansFont.setPointSize(QApplication::font().pointSize()-1.0);
 
       cpu_label->setFont(sansFont);
 
