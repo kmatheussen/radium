@@ -535,7 +535,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
                 );
 
     if (dosave)
-      Save_Clean(STRING_create(emergency_save_file.fileName()),root);
+      Save_Clean(STRING_create(emergency_save_file.fileName()),root,false);
   }
   
 }

@@ -122,11 +122,16 @@ class Preferences : public QDialog, public Ui::Preferences {
     // Edit
     {
       scrollplay_onoff->setChecked(doScrollPlay());
+
       multiplyscrollbutton->setChecked(doScrollEditLines());
+
       if (linenumbersVisible())
         showLineNumbers->setChecked(true);
       else
         showBarsAndBeats->setChecked(true);
+
+      autobackup_onoff->setChecked(doAutoBackups());
+      autobackup_interval->setValue(autobackupIntervalInMinutes());
     }
 
     // Windows
@@ -233,6 +238,22 @@ public slots:
   }
   void on_showLineNumbers_toggled(bool val){
     setLinenumbersVisible(val);
+  }
+
+  void on_autobackup_onoff_toggled(bool val){
+    setDoAutoBackups(val);
+  }
+
+  void on_autobackup_interval_valueChanged(int val){
+    printf("val: %d\n",val);
+    setAutobackupIntervalInMinutes(val);
+  }
+  void on_autobackup_interval_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      autobackup_interval->clearFocus();
+    }GL_unlock();
   }
 
   // windows

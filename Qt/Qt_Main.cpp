@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
+#include "Qt_AutoBackups_proc.h"
 
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
@@ -428,6 +429,7 @@ protected:
       P2MUpdateSongPosCallBack();
 
     PATCH_call_very_often();
+    BACKUP_call_very_often();
 
     if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
       GL_EnsureMakeCurrentIsCalled();

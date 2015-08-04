@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../config/config.h"
 
 
-void Save_Clean(const wchar_t *filename,struct Root *theroot){
+void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 	int length1,length2;
 
 	dc.success=true;
@@ -67,8 +67,9 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot){
 	}
 
         bool success=DISK_close_and_delete(dc.file);
-        
-        Undo_saved_song();
+
+        if (is_backup==false)
+          Undo_saved_song();
 
         if (success)
           show_nag_window("File successfully saved.<p>");
@@ -103,10 +104,10 @@ void SaveAs(struct Root *theroot){
 #endif
 	dc.filename=filename;
 
-        GFX_SetWindowTitle(theroot->song->tracker_windows,filename);
+	Save_Clean(filename,theroot,false);
 
-	Save_Clean(filename,theroot);
-
+        if (dc.success)
+          GFX_SetWindowTitle(theroot->song->tracker_windows,filename);
 }
 
 void Save(struct Root *theroot){
@@ -114,9 +115,18 @@ void Save(struct Root *theroot){
 	PlayStop();
 
 	if(dc.filename==NULL){
-		SaveAs(theroot);
+          SaveAs(theroot);
 	}else{
-		Save_Clean(dc.filename,theroot);
+          Save_Clean(dc.filename,theroot,false);
 	}
 }
 
+void Save_Backup(wchar_t *filename, struct Root *theroot){
+  printf("not saving backup to %s\n",STRING_get_chars(filename));
+
+  const wchar_t *filename_org = dc.filename;
+
+  Save_Clean(filename, theroot, true);
+
+  dc.filename=filename_org;
+}
