@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCoreApplication>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 
 #include "../common/OS_string_proc.h"
 #include "../common/OS_settings_proc.h"
@@ -131,12 +132,12 @@ static QDir get_dot_radium_dir(int *error){
   QDir dir(home_path);
 
   if(dir.mkpath(".radium")==false){
-    RError("Unable to create config directory");
+    GFX_Message(NULL, "Unable to create config directory");
     *error = 1;
   }
 
   else if(dir.cd(".radium")==false){
-    RError("Unable to read config directory\n");
+    GFX_Message(NULL, "Unable to read config directory\n");
     *error = 1;
   }
 

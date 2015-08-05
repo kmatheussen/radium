@@ -327,21 +327,21 @@ static void init_player_lock(void){
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   int s1 = pthread_mutexattr_init(&player_lock_mutexattr);
   if (s1!=0)
-    RError("pthread_mutexattr_init failed: %d\n",s1);
+    GFX_Message(NULL, "pthread_mutexattr_init failed: %d\n",s1);
 
   int s2 = pthread_mutexattr_settype(&player_lock_mutexattr, PTHREAD_MUTEX_RECURSIVE);
   if (s2!=0)
-    RError("pthread_mutexattr_settype failed: %d\n",s2);
+    GFX_Message(NULL, "pthread_mutexattr_settype failed: %d\n",s2);
 
 #ifdef FOR_LINUX
   int s3 = pthread_mutexattr_setprotocol(&player_lock_mutexattr, PTHREAD_PRIO_INHERIT);  // Regarding macosx, I don't know whether it supports PTHREAD_PRIO_INHERIT, so we just boost priority manually instead on that platform.
   if (s3!=0)
-    RError("pthread_mutexattr_setprotocol failed: %d\n",s3);
+    GFX_Message(NULL, "pthread_mutexattr_setprotocol failed: %d\n",s3);
 #endif
   
   int s4 = pthread_mutex_init(&player_lock, &player_lock_mutexattr);
   if (s4!=0)
-    RError("pthread_mutex_init failed: %d\n",s4);
+    GFX_Message(NULL, "pthread_mutex_init failed: %d\n",s4);
 
 #elif defined(FOR_WINDOWS)
    LOCK_INITIALIZE(player_lock);

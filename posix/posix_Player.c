@@ -66,7 +66,7 @@ static void *posix_PlayerThread(void *arg){
 
 #ifdef _FOR_WINDOWS
   if(SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_TIME_CRITICAL)==false)
-    RError("Could not set high priority for player thread.\n");
+    GFX_Message(NULL, "Could not set high priority for player thread.\n");
 #endif
 
   while(doexit==false){

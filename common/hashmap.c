@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "visual_proc.h"
 #include "vector_proc.h"
 #include "OS_settings_proc.h"
 #include "OS_disk_proc.h"
@@ -87,7 +88,7 @@ static int typename_to_type(const wchar_t *wtype_name){
   for(i=0;i<4;i++)
     if(!strcmp(type_name, type_names[i]))
       return i;
-  RError("Unknown type_name: \"\%s\"",type_name);
+  GFX_Message(NULL, "Unknown type_name: \"\%s\"",type_name);
   return 1;
 }
 
@@ -470,7 +471,7 @@ static wchar_t *read_line(disk_t *file){
   //printf("%d: -%s-\n", curr_disk_line, STRING_get_chars(line));
   
   if(line==NULL){
-    RError("End of file before finished reading hash map");
+    GFX_Message(NULL, "End of file before finished reading hash map");
     return NULL;
   }
 
@@ -483,7 +484,7 @@ hash_t *HASH_load(disk_t *file){
   wchar_t *line = read_line(file);
   if(!STRING_equals(line,">> HASH MAP BEGIN")){
     if(!STRING_equals(line,">> HASH MAP V2 BEGIN")){
-      RError("Trying to load something which is not a hash map. First line: \"%s\"",line);
+      GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",line);
       return NULL;
     }else {
       new_format = true;

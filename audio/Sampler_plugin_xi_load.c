@@ -129,7 +129,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   int    bits_per_frame = xi_get_bits_per_frame(file,sample_num);
 
   if(sample==NULL){
-    RError("Out of memory? Failed to allocate %d bytes\n",num_frames*sizeof(float));
+    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*sizeof(float));
     return NULL;
   }
 
@@ -138,7 +138,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   if(bits_per_frame==16){
     int16_t *s16=calloc(sizeof(int16_t),num_frames);
     if(s16==NULL){
-      RError("Out of memory? Failed to allocate %d bytes\n",num_frames*2);
+      GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*2);
       return sample;
     }
     if(DISK_read_binary(file, s16, 2*num_frames) != 2*num_frames)
@@ -155,7 +155,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   }else{
     int8_t *s8=calloc(sizeof(int8_t),num_frames);
     if(s8==NULL){
-      RError("Out of memory? Failed to allocate %d bytes\n",num_frames);
+      GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames);
       return sample;
     }
     if(DISK_read_binary(file, s8, num_frames) != num_frames)

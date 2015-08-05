@@ -543,14 +543,14 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 
 	if(file==NULL){
           perror(STRING_get_chars(filename));
-          RError("Could not open file\n");
+          GFX_Message(NULL, "Could not open file\n");
           return false;
 	}
 
         ID = read_be32uint(file);
 	//fread(&ID,4,1,file);
 	if(ID!=0x4d4d4432 && ID!=0x4d4d4433){
-          RError("This is not an MMD2 or MMD3 octamed module: %p\n",ID);
+          GFX_Message(NULL, "This is not an MMD2 or MMD3 octamed module: %p\n",ID);
           return false;
 	}
 
@@ -676,7 +676,8 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 
 	MMD_LoadPlayList(window,file,mmd0song);
 
-	DISK_close_and_delete(file);
+	if (DISK_close_and_delete(file)==false)
+          exit(0);
 
 	UpdateAllSTimes();
         UpdateAllBeats();

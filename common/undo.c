@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "player_proc.h"
 
+#include "../Qt/Qt_instruments_proc.h"
+
 #include "undo.h"
 
 
@@ -403,8 +405,10 @@ currently_undoing = true;
                       wblock
                       );
 
-         if(current_patch!=NULL)
+         if(current_patch!=NULL){
            GFX_update_instrument_patch_gui(current_patch);
+           GFX_update_instrument_widget(current_patch);
+         }
 
        }
 currently_undoing = false;

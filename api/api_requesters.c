@@ -144,7 +144,7 @@ char* requestString(char *text){
 }
 
 int requestMenu(char *text, PyObject* arguments){
-  RError("requestMenu not implemented");
+  GFX_Message(NULL, "requestMenu not implemented");
   return 0;
 }
 

@@ -1059,14 +1059,14 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
-
+  
   int i;
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     const char *effect_name = PLUGIN_get_effect_name(plugin,i);
     if(HASH_has_key(effects, effect_name)){
       float val = HASH_get_float(effects, effect_name);
       if(i<type->num_effects){
-        PLAYER_lock();{
+        PLAYER_lock();{          
           type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
           plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
         }PLAYER_unlock();
@@ -1085,7 +1085,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   const SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, name);
                           
   if(type==NULL){
-    RError("The \"%s\" plugin called \"%s\" was not found",type_name,name);
+    GFX_Message(NULL, "The \"%s\" plugin called \"%s\" was not found",type_name,name);
     return NULL;
   }
 

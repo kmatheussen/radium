@@ -1,6 +1,7 @@
 
 #ifndef TEST_THREADING
   #include "nsmtracker.h"
+  #include "visual_proc.h"
   #include "threading.h"
 #endif
 
@@ -39,7 +40,7 @@ priority_t THREADING_get_priority(void){
   priority.priority = GetThreadPriority(GetCurrentThread());
   
   if (priority.priority==THREAD_PRIORITY_ERROR_RETURN){
-    RError("GetThreadPriority failed: %d",GetLastError());
+    GFX_Message(NULL, "GetThreadPriority failed: %d",GetLastError());
     priority.priority = THREAD_PRIORITY_NORMAL;
   }
   
@@ -47,7 +48,7 @@ priority_t THREADING_get_priority(void){
     
   int success = pthread_getschedparam(pthread_self(), &priority.policy, &priority.param);
   if (success!=0) {
-    RError("pthread_getschedparam returned %d (really strange))",success);
+    GFX_Message(NULL, "pthread_getschedparam returned %d (really strange))",success);
   }
 
 #else
@@ -63,7 +64,7 @@ void THREADING_set_priority(priority_t priority){
   int success = SetThreadPriority(GetCurrentThread(), priority.priority);
 
   if (success==0) {
-    RError("SetThreadPriority failed: %d", success);
+    GFX_Message(NULL, "SetThreadPriority failed: %d", success);
   }
   
 #elif defined(__linux__) || defined(FOR_MACOSX)
@@ -71,13 +72,13 @@ void THREADING_set_priority(priority_t priority){
   int success = pthread_setschedparam(pthread_self(), priority.policy, &priority.param);
 
   if (success!=0) {
-    RError("pthread_getschedparam returned %d (%s)",
-           success,
-           success==EINVAL ? "policy is not a recognized policy, or param does not make sense for the policy."
-           : success==EPERM ? "The caller does not have appropriate privileges to set the specified scheduling policy and parameters."
-           : success==ENOTSUP ? "attempt was made to set the policy or scheduling parameters to an unsupported value"
-           : "Unknown error type... (really strange)"
-           );
+    GFX_Message(NULL, "pthread_getschedparam returned %d (%s)",
+                success,
+                success==EINVAL ? "policy is not a recognized policy, or param does not make sense for the policy."
+                : success==EPERM ? "The caller does not have appropriate privileges to set the specified scheduling policy and parameters."
+                : success==ENOTSUP ? "attempt was made to set the policy or scheduling parameters to an unsupported value"
+                : "Unknown error type... (really strange)"
+                );
   }
   
 #else

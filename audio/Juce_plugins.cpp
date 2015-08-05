@@ -239,7 +239,7 @@ int MIDI_msg_len(uint32_t msg){
   R_ASSERT(byte1!=0xf7);
   
   if (byte1<0x80 || byte1>0xff){
-    RError("Illegal msg: %x",msg);
+    RT_message("Illegal msg: %x",msg);
     return 0;
   }
   
@@ -287,7 +287,7 @@ int RT_MIDI_send_msg_to_patch_receivers(struct Patch *patch, void *data, int dat
   {
     uint8_t *d=(uint8_t*)data;
     if (d[0] < 0x80) {
-      RError("Illegal value in first byte of MIDI message: %d\n",d[0]);
+      RT_message("Illegal value in first byte of MIDI message: %d\n",d[0]);
       return 0;
     }
   }
@@ -339,7 +339,7 @@ int RT_MIDI_send_msg_to_patch(struct Patch *patch, void *data, int data_size, in
   {
     uint8_t *d=(uint8_t*)data;
     if (d[0] < 0x80) {
-      RError("Illegal value in first byte of MIDI message: %d\n",d[0]);
+      RT_message("Illegal value in first byte of MIDI message: %d\n",d[0]);
       return 0;
     }
   }
@@ -545,7 +545,7 @@ static AudioPluginInstance *get_audio_instance(const TypeData *type_data, float 
   AudioPluginInstance *instance = formatManager.createPluginInstance(description,sample_rate,block_size,errorMessage);
 
   if (instance==NULL){
-    RError("Unable to open VST plugin %s: %s\n",description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+    GFX_Message(NULL, "Unable to open VST plugin %s: %s\n",description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
     return NULL;
   }
 

@@ -815,6 +815,42 @@ void setLinenumbersVisible(bool doit){
   root->song->tracker_windows->must_redraw = true;
 }
 
+static bool g_do_autobackups = false;
+
+bool doAutoBackups(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_autobackups = SETTINGS_read_bool("do_auto_backups", true);
+    has_inited = true;
+  }
+
+  return g_do_autobackups;
+}
+
+void setDoAutoBackups(bool doit){
+  g_do_autobackups = doit;
+  SETTINGS_write_bool("do_auto_backups", doit);
+}
+
+static int g_autobackup_interval_minutes = false;
+
+int autobackupIntervalInMinutes(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_autobackup_interval_minutes = SETTINGS_read_int("autobackup_interval_minutes", 1);
+    has_inited = true;
+  }
+
+  return g_autobackup_interval_minutes;
+}
+
+void setAutobackupIntervalInMinutes(int interval){
+  g_autobackup_interval_minutes = interval;
+  SETTINGS_write_int("autobackup_interval_minutes", interval);
+}
+
 void addMenuMenu(char* name, char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuMenu(window, name, command);

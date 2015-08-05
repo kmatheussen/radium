@@ -711,7 +711,7 @@ void GL_EnsureMakeCurrentIsCalled(void){
   g_order_make_current.release(1);
   
   if (g_ack_make_current.tryAcquire(1, 2000)==false){ // Need to wait for it. The catalyst driver on linux sometimes crashes if calling makeCurrent while the main thread is doing Qt stuff.
-    RError("GL_EnsureMakeCurrentIsCalled: OpenGL thread didn't answer");
+    GFX_Message(NULL, "GL_EnsureMakeCurrentIsCalled: OpenGL thread didn't answer");
     failed = true;
   }
 }
