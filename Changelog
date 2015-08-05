@@ -1,3 +1,21 @@
+Most important changes 3.2.8 -> 3.2.9
+* VST: load/save FXB and FXP files
+* Fix note add bug. Dont make it polyphonic unless polyphonic is true. Bug was introduced in V3.2.4.
+* Update instrument widget after undo/redo (fix for non-moving peaks after undoing/redoing)
+* Try to fix cpu label width in Windows
+* Do automatic backup every minute if there are unsaved edits and radium is not playing.
+  The backup interval can be changed in the preferences. It can also be turned off.
+* Replaced a bunch of calls to RError with calls to GFX_Message
+  (RError was used the wrong way, causing uses messages to be reported as program errors)
+* Always show message if there is a disk error
+* Write to temporary file first if saving to an existing file to avoid destroying an
+  existing file if saving fails
+* Tried to improve stability after jack has shut down. Still not working well though.
+  User should not do anything else than save and exit if jack shuts down.
+* Fix plugin names in crashreporter when running multi core
+
+
+
 Most important changes 3.2.7 -> 3.2.8
 * Remove sound object from mixer before freeing buffers (might fix mysterious crashes)
 * Fix audio glitches when changing number of CPUs
