@@ -1,4 +1,6 @@
 Most important changes 3.2.8 -> 3.2.9
+* Windows: Don't start crash reporter all the time when loading and using VST plugins.
+  Bug was introduced in V3.2.5
 * VST: load/save FXB and FXP files
 * Fix note add bug. Dont make it polyphonic unless polyphonic is true. Bug was introduced in V3.2.4.
 * Update instrument widget after undo/redo (fix for non-moving peaks after undoing/redoing)
