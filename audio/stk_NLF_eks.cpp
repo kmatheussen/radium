@@ -5,7 +5,7 @@
 // license: "STK-4.3"
 // copyright: "Julius Smith"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -17,6 +17,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -343,8 +345,8 @@ class NLF_Eks_dsp : public dsp {
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
 		float 	fSlow0 = fslider0;
-		float 	fSlow1 = (0.5f * (1.0f + fSlow0));
-		float 	fSlow2 = (0.25f * (1.0f - fSlow0));
+		float 	fSlow1 = (0.25f * (1.0f - fSlow0));
+		float 	fSlow2 = (0.5f * (1.0f + fSlow0));
 		float 	fSlow3 = fentry0;
 		float 	fSlow4 = fentry1;
 		float 	fSlow5 = powf(0.001f,(1.0f / (fSlow4 * fslider1)));
@@ -393,7 +395,7 @@ class NLF_Eks_dsp : public dsp {
 		FAUSTFLOAT* output0 = output[0];
 		FAUSTFLOAT* output1 = output[1];
 		for (int i=0; i<count; i++) {
-			float fTemp0 = ((fSlow2 * (fRec0[(IOTA-1)&4095] + fRec0[(IOTA-3)&4095])) + (fSlow1 * fRec0[(IOTA-2)&4095]));
+			float fTemp0 = ((fSlow2 * fRec0[(IOTA-2)&4095]) + (fSlow1 * (fRec0[(IOTA-1)&4095] + fRec0[(IOTA-3)&4095])));
 			float fTemp1 = (fSlow5 * fTemp0);
 			fVec0[0] = fTemp1;
 			fRec1[0] = (fSlow9 + (0.999f * fRec1[1]));

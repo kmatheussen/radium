@@ -1237,11 +1237,10 @@ namespace{
   };
 }
 
-static unsigned int entries_i;
-static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
-  while(entries_i < entries.size()){
-    PluginMenuEntry entry = entries.at(entries_i);
-    entries_i++;
+static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, int i){
+  while(i < entries.size()){
+    PluginMenuEntry entry = entries[i];
+    i++;
 
     if(entry.type==PluginMenuEntry::IS_SEPARATOR){
       menu->insertSeparator();
@@ -1250,10 +1249,10 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
       const char *name = entry.level_up_name;
       QMenu *new_menu = new QMenu(name,menu);
       menu->addMenu(new_menu);
-      menu_up(new_menu,entries);
+      i = menu_up(new_menu,entries, i);
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_DOWN){
-      return;
+      return i;
 
     }else if(entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
       SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
@@ -1278,14 +1277,15 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
       menu->addAction(new MyQAction(name,menu,entry));
     }
   }
+
+  return i;
 }
 
 
 SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect){
   QMenu menu(0);
-  entries_i = 0;
 
-  menu_up(&menu, PR_get_menu_entries());
+  menu_up(&menu, PR_get_menu_entries(), 0);
 
   MyQAction *action;
   GL_lock();{

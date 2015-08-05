@@ -5,12 +5,14 @@
 // version: "1.0"
 // license: "STK-4.3"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"

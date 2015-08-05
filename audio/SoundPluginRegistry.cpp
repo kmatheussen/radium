@@ -42,8 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPluginRegistry_proc.h"
 
 
-static std::vector<SoundPluginType*> g_plugin_types;
-static std::vector<SoundPluginTypeContainer*> g_plugin_type_containers;
+static radium::Vector<SoundPluginType*> g_plugin_types;
+static radium::Vector<SoundPluginTypeContainer*> g_plugin_type_containers;
 
 int PR_get_num_plugin_types(void){
   return g_plugin_types.size();
@@ -54,25 +54,20 @@ static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const 
 }
 
 SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name){
-  for(unsigned int i=0;i<g_plugin_types.size();i++)
-    if(!strcmp(g_plugin_types.at(i)->type_name,type_name))
-      if(!strcmp(g_plugin_types.at(i)->name,plugin_name))
-        return g_plugin_types.at(i);
+  for(SoundPluginType *plugin_type : g_plugin_types)
+    if(!strcmp(plugin_type->type_name,type_name))
+      if(!strcmp(plugin_type->name,plugin_name))
+        return plugin_type;
 
   // check if the container needs to be populated.
-  if (container_name != NULL){
-    for(unsigned int i=0;i<g_plugin_type_containers.size();i++) {
-      SoundPluginTypeContainer *container = g_plugin_type_containers.at(i);
-      if (!container->is_populated){
-        if(!strcmp(container->type_name,type_name)){
+  if (container_name != NULL)
+    for(auto container : g_plugin_type_containers)
+      if (!container->is_populated)
+        if(!strcmp(container->type_name,type_name))
           if(!strcmp(container->name,container_name)){
             container->populate(container);
             return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
           }
-        }
-      }
-    }
-  }
 
   // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
   if(!strcmp(type_name,"VST") && container_name==NULL){
@@ -129,17 +124,17 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 }
 
 SoundPluginType *PR_get_plugin_type(int num){
-  return g_plugin_types.at(num);
+  return g_plugin_types[num];
 }
 
-static std::vector<PluginMenuEntry> g_plugin_menu_entries;
+static radium::Vector<PluginMenuEntry> g_plugin_menu_entries;
 
-const std::vector<PluginMenuEntry> &PR_get_menu_entries(void){
+const radium::Vector<PluginMenuEntry> &PR_get_menu_entries(void){
   return g_plugin_menu_entries;
 }
 
 void PR_add_menu_entry(PluginMenuEntry entry){
-  g_plugin_menu_entries.push_back(entry);
+  g_plugin_menu_entries.add(entry);
 }
 
 void PR_add_plugin_type_no_menu(SoundPluginType *type){
@@ -191,7 +186,7 @@ void PR_add_plugin_type_no_menu(SoundPluginType *type){
   if(!strcmp(type->type_name,"Faust") && !strcmp(type->name,"Tapiir"))
     type->info = "The tapiir program is a multitap delay program. It has a stereo input and a stereo output. Each channel of the stereo signal is sent to 6 independant delays, not necessarily with the same gain for each delay. Then, each delay output is sent to the 5 other delay input, and also to its own input (to provide feedback possibilities), and all volumes can be changed independantly. Finally, each delay output, and each input of the tapiir is connected to both channels of the stereo output of the tapiir, still with configurable volumes. A wide range of effect can be constructed out of this complex system of delays (feedback, echos, filters). (This text is copied from http://faust.grame.fr)\n\nThe first Tapiir was made by Maarten de Boer's. This Faust version is implemented by the Faust team.";
 
-  g_plugin_types.push_back(type);
+  g_plugin_types.add(type);
 }
 
 void PR_add_plugin_type(SoundPluginType *type){
@@ -217,7 +212,7 @@ void PR_add_plugin_type(SoundPluginType *type){
 }
 
 void PR_add_plugin_container(SoundPluginTypeContainer *container){
-  g_plugin_type_containers.push_back(container);
+  g_plugin_type_containers.add(container);
   PR_add_menu_entry(PluginMenuEntry::container(container));
 }
 

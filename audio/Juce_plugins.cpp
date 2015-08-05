@@ -1007,6 +1007,70 @@ static void testing(void){
   
 }
 #endif
+
+void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  String filename(wfilename);
+  File file(filename);
+
+  MemoryBlock memoryBlock;
+  
+  bool success = file.loadFileAsData(memoryBlock);
+  if (success==false){
+    GFX_Message(NULL, "Unable to load %s", STRING_get_chars(wfilename));
+    return;
+  }
+      
+  success = VSTPluginFormat::loadFromFXBFile(instance, memoryBlock.getData(), memoryBlock.getSize());
+  if (success==false){
+    GFX_Message(NULL, "Could not use %s for this plugin", STRING_get_chars(wfilename));
+    return;
+  }
+  
+  printf("************** size: %d\n",memoryBlock.getSize());
+}
+  
+static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  MemoryBlock memoryBlock;
+  bool result = VSTPluginFormat::saveToFXBFile(instance, memoryBlock, is_fxb);
+  if (result==false){
+    GFX_Message(NULL, "Unable to create FXB/FXP data for this plugin");
+    return;
+  }
+  
+  String filename(wfilename);
+
+  File file(filename);
+
+  Result result2 = file.create();
+
+  if (result2.failed()){
+    GFX_Message(NULL, "Unable to create file %s (%s)", STRING_get_chars(wfilename), result2.getErrorMessage().toRawUTF8());
+    return;
+  }
+  
+  bool result3 = file.replaceWithData(memoryBlock.getData(), memoryBlock.getSize());
+  if (result3==false){
+    GFX_Message(NULL, "Unable to write data to file %s (disk full?)", STRING_get_chars(wfilename));
+    return;
+  }
+  
+  
+  printf("\n\n\n ***************** result: %d\n\n\n\n",result);
+}
+
+void PLUGINHOST_save_fxb(SoundPlugin *plugin, wchar_t *filename){
+  save_fxbp(plugin, filename, true);
+}
+  
+void PLUGINHOST_save_fxp(SoundPlugin *plugin, wchar_t *filename){
+  save_fxbp(plugin, filename, false);
+}
   
 void PLUGINHOST_init(void){
 #if TEST_GET_MAX_VAL

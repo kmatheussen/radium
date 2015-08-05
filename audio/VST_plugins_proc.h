@@ -40,8 +40,11 @@ extern vector_t *VST_get_uids(const wchar_t *w_filename);
 extern int VST_get_uid(const wchar_t *w_filename);
 class QString;
 
+#ifdef USE_QT4
 std::vector<QString> VST_get_vst_paths(void);
 void VST_write_vst_paths(const std::vector<QString> &paths);
+#endif
+
 void VST_add_path(QString path);
 
 

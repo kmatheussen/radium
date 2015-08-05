@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/undo_pd_controllers_proc.h"
+#include "../audio/Juce_plugins_proc.h"
 
 #include "Qt_plugin_widget_callbacks_proc.h"
 
@@ -30,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "mQt_pd_plugin_widget_callbacks.h"
 #include "mQt_jack_plugin_widget_callbacks.h"
+
+
+static QString last_fxb_preset_path = "";
 
 
 class Plugin_widget : public QWidget, public Ui::Plugin_widget{
@@ -56,6 +60,8 @@ public:
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
     {
+      R_ASSERT(_patch!=NULL)
+        
     setupUi(this);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -112,6 +118,9 @@ public:
       }
     }
 
+    if(strcmp(type->type_name,"VST"))
+      delete fxbp_button;
+
     if(strcmp(type->type_name,"Faust") || strcmp(type->name,"Multiband Compressor"))
       delete limiter_bypass_button;
 
@@ -166,7 +175,72 @@ public:
       _jack_plugin_widget->update_gui();
   }
 
-  public slots:
+
+  
+private:
+  
+  void SaveFXBP(bool is_fxb){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    num_users_of_keyboard++;
+    QString filename;
+    
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getSaveFileName(
+                                              g_mixer_widget,
+                                              is_fxb ? "Save VST FXB file" : "Save VST FXP file",
+                                              last_fxb_preset_path,
+                                              is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
+                                              0,
+                                              QFileDialog::DontUseNativeDialog
+                                              );
+    }GL_unlock();
+    
+    num_users_of_keyboard--;
+    
+    if(filename=="")
+      return;
+    
+    last_fxb_preset_path = QFileInfo(filename).absoluteDir().path();
+
+    if (is_fxb)
+      PLUGINHOST_save_fxb(plugin, STRING_create(filename));
+    else
+      PLUGINHOST_save_fxp(plugin, STRING_create(filename));
+  }
+
+  void LoadFXBP(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    num_users_of_keyboard++;
+    QString filename;
+    
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getOpenFileName(
+                                              g_mixer_widget,
+                                              "Load VST FXB or FXP file",
+                                              last_fxb_preset_path,
+                                              "VST FXB/FXP files (*.fxb *.fxp) ;; All files (*)",
+                                              0,
+                                              QFileDialog::DontUseNativeDialog
+                                              );
+    }GL_unlock();
+    
+    num_users_of_keyboard--;
+    
+    if(filename=="")
+      return;
+    
+    last_fxb_preset_path = QFileInfo(filename).absoluteDir().path();
+    
+    PLUGINHOST_load_fxbp(plugin, STRING_create(filename));
+    
+    GFX_update_instrument_widget((struct Patch*)_patch);
+  }
+
+
+  
+public slots:
 
   void on_new_pd_controller_button_released() {
     Undo_PdControllers_CurrPos(_patch);
@@ -204,6 +278,20 @@ public:
       SAMPLER_set_resampler_type(plugin, val);
     }
 
+  void on_fxbp_button_clicked(){
+    vector_t v = {0};
+    VECTOR_push_back(&v, "Load FXB or FXP file");
+    VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
+    VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
+    
+    switch(GFX_Menu(root->song->tracker_windows, NULL, "", &v)){
+    case 0: LoadFXBP(); break;
+    case 1: SaveFXBP(true); break;
+    case 2: SaveFXBP(false); break;
+    default: break;
+    }
+  }
+  
     void on_save_button_clicked(){
       InstrumentWidget_save_preset(_patch);      
     }
@@ -219,21 +307,14 @@ public:
     void on_reset_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_reset(plugin);
-      
-      volatile struct Patch *patch = plugin->patch;
-      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-      
-      GFX_update_instrument_widget((struct Patch*)patch);
+      GFX_update_instrument_widget(_patch);
     }
 
     void on_random_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_random(plugin);
 
-      volatile struct Patch *patch = plugin->patch;
-      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-
-      GFX_update_instrument_widget((struct Patch*)patch);
+      GFX_update_instrument_widget(_patch);
     }
 
     void on_info_button_clicked(){

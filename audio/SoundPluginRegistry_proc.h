@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef __cplusplus
 
 #include <string.h>
-#include <vector>
+
 
 struct PluginMenuEntry{
   SoundPluginType *plugin_type;
@@ -75,7 +75,10 @@ struct PluginMenuEntry{
   }
 };
 
-const std::vector<PluginMenuEntry> &PR_get_menu_entries(void);
+#ifdef USE_QT4
+#include "../common/Vector.hpp"
+const radium::Vector<PluginMenuEntry> &PR_get_menu_entries(void);
+#endif
 
 void PR_add_menu_entry(PluginMenuEntry entry);
 #endif

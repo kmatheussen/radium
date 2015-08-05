@@ -4,7 +4,7 @@
 // copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -16,6 +16,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -612,7 +614,7 @@ class Tibetan_Bowl_dsp : public dsp {
 			fRec25[0] = (0 - (((fConst9 * fRec25[2]) + (fSlow24 * fRec25[1])) - (0.999982774366897f * fVec3[(IOTA-iSlow23)&4095])));
 			fRec24[0] = ((fConst12 * fRec25[2]) + (fConst11 * fRec25[0]));
 			fRec7[0] = fRec24[0];
-			fVec4[IOTA&2047] = (fSlow25 + (fTemp7 + fRec26[1]));
+			fVec4[IOTA&2047] = (fSlow25 + (fRec26[1] + fTemp7));
 			fRec27[0] = (0 - (((fConst9 * fRec27[2]) + (fSlow27 * fRec27[1])) - fVec4[(IOTA-iSlow26)&2047]));
 			fRec26[0] = ((fConst12 * fRec27[2]) + (fConst11 * fRec27[0]));
 			fRec8[0] = fRec26[0];
@@ -621,7 +623,7 @@ class Tibetan_Bowl_dsp : public dsp {
 			fRec29[0] = (0 - (((fConst9 * fRec29[2]) + (fSlow30 * fRec29[1])) - fVec5[(IOTA-iSlow29)&2047]));
 			fRec28[0] = ((fConst12 * fRec29[2]) + (fConst11 * fRec29[0]));
 			fRec10[0] = fRec28[0];
-			fVec6[IOTA&2047] = ((fTemp7 + fRec30[1]) + fSlow28);
+			fVec6[IOTA&2047] = (fSlow28 + (fTemp7 + fRec30[1]));
 			fRec31[0] = (0 - (((fConst9 * fRec31[2]) + (fSlow32 * fRec31[1])) - fVec6[(IOTA-iSlow31)&2047]));
 			fRec30[0] = ((fConst12 * fRec31[2]) + (fConst11 * fRec31[0]));
 			fRec11[0] = fRec30[0];

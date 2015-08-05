@@ -75,7 +75,7 @@ TARGET_OS ?= any
 S7OPTS ?=
 
 # The include files in audio/faudiostream are copied from Faust 0.9.55.
-FAUST ?= ~/faudiostream/compiler/faust
+FAUST ?= ~/site/bin/faust
 
 
 JACKOPT ?=

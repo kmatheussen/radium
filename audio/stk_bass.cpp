@@ -4,7 +4,7 @@
 // copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with : "" */
 #include <bass.h>
@@ -17,6 +17,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"

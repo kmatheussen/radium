@@ -1,6 +1,6 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with : "" */
 #include "typepunning.h"
@@ -13,6 +13,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -744,7 +746,7 @@ class Multibandcomp_dsp : public dsp {
 			FAUSTFLOAT* output0 = &output[0][index];
 			FAUSTFLOAT* output1 = &output[1][index];
 			// SECTION : 1
-			// LOOP 0x37b5100
+			// LOOP 0x2421b20
 			// pre processing
 			for (int i=0; i<4; i++) fYec0_tmp[i]=fYec0_perm[i];
 			// exec code
@@ -754,7 +756,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec0_perm[i]=fYec0_tmp[count+i];
 			
-			// LOOP 0x37bfcb0
+			// LOOP 0x242c6d0
 			// pre processing
 			for (int i=0; i<4; i++) fYec2_tmp[i]=fYec2_perm[i];
 			// exec code
@@ -765,7 +767,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fYec2_perm[i]=fYec2_tmp[count+i];
 			
 			// SECTION : 2
-			// LOOP 0x37b2e80
+			// LOOP 0x241f860
 			// pre processing
 			for (int i=0; i<4; i++) fRec3_tmp[i]=fRec3_perm[i];
 			// exec code
@@ -775,7 +777,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec3_perm[i]=fRec3_tmp[count+i];
 			
-			// LOOP 0x37bf710
+			// LOOP 0x242c130
 			// pre processing
 			for (int i=0; i<4; i++) fRec10_tmp[i]=fRec10_perm[i];
 			// exec code
@@ -786,7 +788,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec10_perm[i]=fRec10_tmp[count+i];
 			
 			// SECTION : 3
-			// LOOP 0x37b2b50
+			// LOOP 0x241f530
 			// pre processing
 			for (int i=0; i<4; i++) fRec2_tmp[i]=fRec2_perm[i];
 			// exec code
@@ -796,7 +798,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec2_perm[i]=fRec2_tmp[count+i];
 			
-			// LOOP 0x37bf350
+			// LOOP 0x242bd70
 			// pre processing
 			for (int i=0; i<4; i++) fRec9_tmp[i]=fRec9_perm[i];
 			// exec code
@@ -807,20 +809,20 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec9_perm[i]=fRec9_tmp[count+i];
 			
 			// SECTION : 4
-			// LOOP 0x37b9eb0
+			// LOOP 0x24268d0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec0[i] = (fRec2[i-2] + (fRec2[i] + (2 * fRec2[i-1])));
 			}
 			
-			// LOOP 0x37c2720
+			// LOOP 0x242f140
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec1[i] = (fRec9[i-2] + (fRec9[i] + (2 * fRec9[i-1])));
 			}
 			
 			// SECTION : 5
-			// LOOP 0x37b9dd0
+			// LOOP 0x24267f0
 			// pre processing
 			for (int i=0; i<4; i++) fYec1_tmp[i]=fYec1_perm[i];
 			// exec code
@@ -830,7 +832,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec1_perm[i]=fYec1_tmp[count+i];
 			
-			// LOOP 0x37c2640
+			// LOOP 0x242f060
 			// pre processing
 			for (int i=0; i<4; i++) fYec3_tmp[i]=fYec3_perm[i];
 			// exec code
@@ -840,7 +842,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec3_perm[i]=fYec3_tmp[count+i];
 			
-			// LOOP 0x37d0670
+			// LOOP 0x243d090
 			// pre processing
 			for (int i=0; i<4; i++) fRec13_tmp[i]=fRec13_perm[i];
 			// exec code
@@ -850,7 +852,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec13_perm[i]=fRec13_tmp[count+i];
 			
-			// LOOP 0x37d6b70
+			// LOOP 0x2443540
 			// pre processing
 			for (int i=0; i<4; i++) fRec19_tmp[i]=fRec19_perm[i];
 			// exec code
@@ -861,7 +863,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec19_perm[i]=fRec19_tmp[count+i];
 			
 			// SECTION : 6
-			// LOOP 0x37b27f0
+			// LOOP 0x241f1d0
 			// pre processing
 			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
 			// exec code
@@ -871,7 +873,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
 			
-			// LOOP 0x37bef10
+			// LOOP 0x242b930
 			// pre processing
 			for (int i=0; i<4; i++) fRec8_tmp[i]=fRec8_perm[i];
 			// exec code
@@ -881,7 +883,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec8_perm[i]=fRec8_tmp[count+i];
 			
-			// LOOP 0x37d02b0
+			// LOOP 0x243ccd0
 			// pre processing
 			for (int i=0; i<4; i++) fRec12_tmp[i]=fRec12_perm[i];
 			// exec code
@@ -891,7 +893,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec12_perm[i]=fRec12_tmp[count+i];
 			
-			// LOOP 0x37d67b0
+			// LOOP 0x2443180
 			// pre processing
 			for (int i=0; i<4; i++) fRec18_tmp[i]=fRec18_perm[i];
 			// exec code
@@ -901,7 +903,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec18_perm[i]=fRec18_tmp[count+i];
 			
-			// LOOP 0x37e6460
+			// LOOP 0x2452e30
 			// pre processing
 			for (int i=0; i<4; i++) fRec21_tmp[i]=fRec21_perm[i];
 			// exec code
@@ -911,7 +913,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec21_perm[i]=fRec21_tmp[count+i];
 			
-			// LOOP 0x37ea020
+			// LOOP 0x24569f0
 			// pre processing
 			for (int i=0; i<4; i++) fRec26_tmp[i]=fRec26_perm[i];
 			// exec code
@@ -922,7 +924,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec26_perm[i]=fRec26_tmp[count+i];
 			
 			// SECTION : 7
-			// LOOP 0x37b23f0
+			// LOOP 0x241edd0
 			// pre processing
 			for (int i=0; i<4; i++) fRec0_tmp[i]=fRec0_perm[i];
 			// exec code
@@ -932,7 +934,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec0_perm[i]=fRec0_tmp[count+i];
 			
-			// LOOP 0x37beb50
+			// LOOP 0x242b570
 			// pre processing
 			for (int i=0; i<4; i++) fRec7_tmp[i]=fRec7_perm[i];
 			// exec code
@@ -942,7 +944,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec7_perm[i]=fRec7_tmp[count+i];
 			
-			// LOOP 0x37cfff0
+			// LOOP 0x243ca10
 			// pre processing
 			for (int i=0; i<4; i++) fRec11_tmp[i]=fRec11_perm[i];
 			// exec code
@@ -953,7 +955,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec11_perm[i]=fRec11_tmp[count+i];
 			
-			// LOOP 0x37d6370
+			// LOOP 0x2442d40
 			// pre processing
 			for (int i=0; i<4; i++) fRec17_tmp[i]=fRec17_perm[i];
 			// exec code
@@ -964,7 +966,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec17_perm[i]=fRec17_tmp[count+i];
 			
-			// LOOP 0x37e61c0
+			// LOOP 0x2452b90
 			// pre processing
 			for (int i=0; i<4; i++) fRec20_tmp[i]=fRec20_perm[i];
 			// exec code
@@ -974,7 +976,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec20_perm[i]=fRec20_tmp[count+i];
 			
-			// LOOP 0x37e9c60
+			// LOOP 0x2456630
 			// pre processing
 			for (int i=0; i<4; i++) fRec25_tmp[i]=fRec25_perm[i];
 			// exec code
@@ -985,100 +987,100 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec25_perm[i]=fRec25_tmp[count+i];
 			
 			// SECTION : 8
-			// LOOP 0x37c5360
+			// LOOP 0x2431d80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec2[i] = (fSlow18 * (fRec0[i-2] + (fRec0[i] + (2 * fRec0[i-1]))));
 			}
 			
-			// LOOP 0x37c7240
+			// LOOP 0x2433c60
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec4[i] = (fSlow18 * (fRec7[i-2] + (fRec7[i] + (2 * fRec7[i-1]))));
 			}
 			
-			// LOOP 0x37daed0
+			// LOOP 0x24478a0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec9[i] = (fRec11[i-2] + (fSlow31 * (fZec7[i] + (fSlow30 * fRec11[i]))));
 			}
 			
-			// LOOP 0x37dd3c0
+			// LOOP 0x2449d90
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec11[i] = (fRec17[i-2] + (fSlow31 * (fZec8[i] + (fSlow30 * fRec17[i]))));
 			}
 			
-			// LOOP 0x37eca20
+			// LOOP 0x24593f0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec14[i] = (fSlow18 * (((fSlow15 * fRec20[i]) + (fSlow45 * fRec20[i-1])) + (fSlow15 * fRec20[i-2])));
 			}
 			
-			// LOOP 0x37ef4e0
+			// LOOP 0x245beb0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec16[i] = (fSlow18 * (((fSlow15 * fRec25[i]) + (fSlow45 * fRec25[i-1])) + (fSlow15 * fRec25[i-2])));
 			}
 			
 			// SECTION : 9
-			// LOOP 0x37c5280
+			// LOOP 0x2431ca0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec3[i] = ((iSlow19)?0:fZec2[i]);
 			}
 			
-			// LOOP 0x37c7160
+			// LOOP 0x2433b80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec5[i] = ((iSlow19)?0:fZec4[i]);
 			}
 			
-			// LOOP 0x37dadf0
+			// LOOP 0x24477c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec10[i] = ((iSlow33)?0:fZec9[i]);
 			}
 			
-			// LOOP 0x37dd2e0
+			// LOOP 0x2449cb0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec12[i] = ((iSlow33)?0:fZec11[i]);
 			}
 			
-			// LOOP 0x37ec940
+			// LOOP 0x2459310
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec15[i] = ((iSlow46)?0:fZec14[i]);
 			}
 			
-			// LOOP 0x37ef400
+			// LOOP 0x245bdd0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec17[i] = ((iSlow46)?0:fZec16[i]);
 			}
 			
 			// SECTION : 10
-			// LOOP 0x37c51a0
+			// LOOP 0x2431bc0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec6[i] = fabsf((fabsf((fSlow20 * fZec5[i])) + fabsf((fSlow20 * fZec3[i]))));
 			}
 			
-			// LOOP 0x37dad10
+			// LOOP 0x24476e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec13[i] = fabsf((fabsf((fSlow34 * fZec12[i])) + fabsf((fSlow34 * fZec10[i]))));
 			}
 			
-			// LOOP 0x37ec860
+			// LOOP 0x2459230
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec18[i] = fabsf((fabsf((fSlow47 * fZec17[i])) + fabsf((fSlow47 * fZec15[i]))));
 			}
 			
 			// SECTION : 11
-			// LOOP 0x37be730
+			// LOOP 0x242b150
 			// pre processing
 			for (int i=0; i<4; i++) fRec6_tmp[i]=fRec6_perm[i];
 			// exec code
@@ -1088,7 +1090,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec6_perm[i]=fRec6_tmp[count+i];
 			
-			// LOOP 0x37d5f70
+			// LOOP 0x2442940
 			// pre processing
 			for (int i=0; i<4; i++) fRec16_tmp[i]=fRec16_perm[i];
 			// exec code
@@ -1098,7 +1100,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec16_perm[i]=fRec16_tmp[count+i];
 			
-			// LOOP 0x37e9800
+			// LOOP 0x24561d0
 			// pre processing
 			for (int i=0; i<4; i++) fRec24_tmp[i]=fRec24_perm[i];
 			// exec code
@@ -1109,7 +1111,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec24_perm[i]=fRec24_tmp[count+i];
 			
 			// SECTION : 12
-			// LOOP 0x37be2d0
+			// LOOP 0x242acf0
 			// pre processing
 			for (int i=0; i<4; i++) fRec5_tmp[i]=fRec5_perm[i];
 			// exec code
@@ -1119,7 +1121,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec5_perm[i]=fRec5_tmp[count+i];
 			
-			// LOOP 0x37d5b10
+			// LOOP 0x24424e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec15_tmp[i]=fRec15_perm[i];
 			// exec code
@@ -1129,7 +1131,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec15_perm[i]=fRec15_tmp[count+i];
 			
-			// LOOP 0x37e93a0
+			// LOOP 0x2455d70
 			// pre processing
 			for (int i=0; i<4; i++) fRec23_tmp[i]=fRec23_perm[i];
 			// exec code
@@ -1140,7 +1142,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec23_perm[i]=fRec23_tmp[count+i];
 			
 			// SECTION : 13
-			// LOOP 0x37bdf10
+			// LOOP 0x242a930
 			// pre processing
 			for (int i=0; i<4; i++) fRec4_tmp[i]=fRec4_perm[i];
 			// exec code
@@ -1150,7 +1152,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec4_perm[i]=fRec4_tmp[count+i];
 			
-			// LOOP 0x37d5730
+			// LOOP 0x2442100
 			// pre processing
 			for (int i=0; i<4; i++) fRec14_tmp[i]=fRec14_perm[i];
 			// exec code
@@ -1160,7 +1162,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec14_perm[i]=fRec14_tmp[count+i];
 			
-			// LOOP 0x37e8fe0
+			// LOOP 0x24559b0
 			// pre processing
 			for (int i=0; i<4; i++) fRec22_tmp[i]=fRec22_perm[i];
 			// exec code
@@ -1171,82 +1173,82 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec22_perm[i]=fRec22_tmp[count+i];
 			
 			// SECTION : 14
-			// LOOP 0x37fae20
+			// LOOP 0x2467870
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec19[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec4[i])))));
 			}
 			
-			// LOOP 0x3802b70
+			// LOOP 0x246f5c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec23[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec14[i])))));
 			}
 			
-			// LOOP 0x3809e70
+			// LOOP 0x24768c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec27[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec22[i])))));
 			}
 			
 			// SECTION : 15
-			// LOOP 0x37fad40
+			// LOOP 0x2467790
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec20[i] = (fZec3[i] * fZec19[i]);
 			}
 			
-			// LOOP 0x37fc310
+			// LOOP 0x2468d60
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec21[i] = (fSlow20 * (fZec5[i] * fZec19[i]));
 			}
 			
-			// LOOP 0x3802a90
+			// LOOP 0x246f4e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec24[i] = (fZec10[i] * fZec23[i]);
 			}
 			
-			// LOOP 0x3803bd0
+			// LOOP 0x2470620
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec25[i] = (fSlow34 * (fZec12[i] * fZec23[i]));
 			}
 			
-			// LOOP 0x3809d90
+			// LOOP 0x24767e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec28[i] = (fZec15[i] * fZec27[i]);
 			}
 			
-			// LOOP 0x380aed0
+			// LOOP 0x2477920
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec29[i] = (fSlow47 * (fZec17[i] * fZec27[i]));
 			}
 			
 			// SECTION : 16
-			// LOOP 0x37fac60
+			// LOOP 0x24676b0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec22[i] = fabsf((fabsf(fZec21[i]) + fabsf((fSlow20 * fZec20[i]))));
 			}
 			
-			// LOOP 0x38029b0
+			// LOOP 0x246f400
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec26[i] = fabsf((fabsf(fZec25[i]) + fabsf((fSlow34 * fZec24[i]))));
 			}
 			
-			// LOOP 0x3809cb0
+			// LOOP 0x2476700
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec30[i] = fabsf((fabsf(fZec29[i]) + fabsf((fSlow47 * fZec28[i]))));
 			}
 			
 			// SECTION : 17
-			// LOOP 0x37fa840
+			// LOOP 0x2467290
 			// pre processing
 			for (int i=0; i<4; i++) fRec32_tmp[i]=fRec32_perm[i];
 			// exec code
@@ -1256,7 +1258,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec32_perm[i]=fRec32_tmp[count+i];
 			
-			// LOOP 0x3802590
+			// LOOP 0x246efe0
 			// pre processing
 			for (int i=0; i<4; i++) fRec35_tmp[i]=fRec35_perm[i];
 			// exec code
@@ -1266,7 +1268,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec35_perm[i]=fRec35_tmp[count+i];
 			
-			// LOOP 0x3809890
+			// LOOP 0x24762e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec38_tmp[i]=fRec38_perm[i];
 			// exec code
@@ -1277,7 +1279,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec38_perm[i]=fRec38_tmp[count+i];
 			
 			// SECTION : 18
-			// LOOP 0x37fa460
+			// LOOP 0x2466eb0
 			// pre processing
 			for (int i=0; i<4; i++) fRec31_tmp[i]=fRec31_perm[i];
 			// exec code
@@ -1287,7 +1289,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec31_perm[i]=fRec31_tmp[count+i];
 			
-			// LOOP 0x38021b0
+			// LOOP 0x246ec00
 			// pre processing
 			for (int i=0; i<4; i++) fRec34_tmp[i]=fRec34_perm[i];
 			// exec code
@@ -1297,7 +1299,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec34_perm[i]=fRec34_tmp[count+i];
 			
-			// LOOP 0x38094b0
+			// LOOP 0x2475f00
 			// pre processing
 			for (int i=0; i<4; i++) fRec37_tmp[i]=fRec37_perm[i];
 			// exec code
@@ -1308,7 +1310,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec37_perm[i]=fRec37_tmp[count+i];
 			
 			// SECTION : 19
-			// LOOP 0x37f9fa0
+			// LOOP 0x24669f0
 			// pre processing
 			for (int i=0; i<4; i++) fRec30_tmp[i]=fRec30_perm[i];
 			// exec code
@@ -1318,7 +1320,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec30_perm[i]=fRec30_tmp[count+i];
 			
-			// LOOP 0x3801d10
+			// LOOP 0x246e760
 			// pre processing
 			for (int i=0; i<4; i++) fRec33_tmp[i]=fRec33_perm[i];
 			// exec code
@@ -1328,7 +1330,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec33_perm[i]=fRec33_tmp[count+i];
 			
-			// LOOP 0x3809030
+			// LOOP 0x2475a80
 			// pre processing
 			for (int i=0; i<4; i++) fRec36_tmp[i]=fRec36_perm[i];
 			// exec code
@@ -1339,39 +1341,39 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec36_perm[i]=fRec36_tmp[count+i];
 			
 			// SECTION : 20
-			// LOOP 0x38108b0
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec31[i] = (fSlow61 * fZec28[i]);
-			}
-			
-			// LOOP 0x38145f0
+			// LOOP 0x247c690
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec32[i] = (fSlow63 * fZec24[i]);
 			}
 			
-			// LOOP 0x3816ac0
+			// LOOP 0x247d300
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec31[i] = (fSlow61 * fZec28[i]);
+			}
+			
+			// LOOP 0x2483570
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec33[i] = (fSlow65 * fZec20[i]);
 			}
 			
-			// LOOP 0x381c910
+			// LOOP 0x24893c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph0 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec36[i]))))));
 				fZec36[i] = (fSlow60 * fZec29[i]);
 			}
 			
-			// LOOP 0x381ffd0
+			// LOOP 0x248ca80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph2 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec33[i]))))));
 				fZec37[i] = (fSlow62 * fZec25[i]);
 			}
 			
-			// LOOP 0x3823fd0
+			// LOOP 0x2490a80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph4 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec30[i]))))));
@@ -1379,13 +1381,13 @@ class Multibandcomp_dsp : public dsp {
 			}
 			
 			// SECTION : 21
-			// LOOP 0x38107d0
+			// LOOP 0x247d220
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec34[i] = (((iSlow19)?fZec2[i]:fZec33[i]) + (((iSlow33)?fZec9[i]:fZec32[i]) + ((iSlow46)?fZec14[i]:fZec31[i])));
 			}
 			
-			// LOOP 0x381c730
+			// LOOP 0x24891e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph1 = (fabsf(fZec36[i]) + fabsf(fZec31[i]));
@@ -1395,27 +1397,27 @@ class Multibandcomp_dsp : public dsp {
 			}
 			
 			// SECTION : 22
-			// LOOP 0x38106f0
+			// LOOP 0x247d140
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec35[i] = ((iSlow66)?0:fZec34[i]);
 			}
 			
-			// LOOP 0x381c650
+			// LOOP 0x2489100
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec40[i] = ((iSlow66)?0:fZec39[i]);
 			}
 			
 			// SECTION : 23
-			// LOOP 0x3810610
+			// LOOP 0x247d060
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec41[i] = fabsf((fabsf((fSlow67 * fZec40[i])) + fabsf((fSlow67 * fZec35[i]))));
 			}
 			
 			// SECTION : 24
-			// LOOP 0x37f9a40
+			// LOOP 0x2466490
 			// pre processing
 			for (int i=0; i<4; i++) fRec29_tmp[i]=fRec29_perm[i];
 			// exec code
@@ -1426,7 +1428,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec29_perm[i]=fRec29_tmp[count+i];
 			
 			// SECTION : 25
-			// LOOP 0x37f9600
+			// LOOP 0x2466050
 			// pre processing
 			for (int i=0; i<4; i++) fRec28_tmp[i]=fRec28_perm[i];
 			// exec code
@@ -1437,7 +1439,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec28_perm[i]=fRec28_tmp[count+i];
 			
 			// SECTION : 26
-			// LOOP 0x37f9260
+			// LOOP 0x2465cb0
 			// pre processing
 			for (int i=0; i<4; i++) fRec27_tmp[i]=fRec27_perm[i];
 			// exec code
@@ -1448,20 +1450,20 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec27_perm[i]=fRec27_tmp[count+i];
 			
 			// SECTION : 27
-			// LOOP 0x3832510
+			// LOOP 0x249efc0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec42[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec27[i])))));
 			}
 			
 			// SECTION : 28
-			// LOOP 0x37b2130
+			// LOOP 0x241eb10
 			// exec code
 			for (int i=0; i<count; i++) {
 				output0[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec34[i]:(fSlow75 * (fZec35[i] * fZec42[i]))));
 			}
 			
-			// LOOP 0x3837d80
+			// LOOP 0x24a4870
 			// exec code
 			for (int i=0; i<count; i++) {
 				output1[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec39[i]:(fSlow75 * (fZec40[i] * fZec42[i]))));
@@ -1476,7 +1478,7 @@ class Multibandcomp_dsp : public dsp {
 			FAUSTFLOAT* output0 = &output[0][index];
 			FAUSTFLOAT* output1 = &output[1][index];
 			// SECTION : 1
-			// LOOP 0x37b5100
+			// LOOP 0x2421b20
 			// pre processing
 			for (int i=0; i<4; i++) fYec0_tmp[i]=fYec0_perm[i];
 			// exec code
@@ -1486,7 +1488,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec0_perm[i]=fYec0_tmp[count+i];
 			
-			// LOOP 0x37bfcb0
+			// LOOP 0x242c6d0
 			// pre processing
 			for (int i=0; i<4; i++) fYec2_tmp[i]=fYec2_perm[i];
 			// exec code
@@ -1497,7 +1499,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fYec2_perm[i]=fYec2_tmp[count+i];
 			
 			// SECTION : 2
-			// LOOP 0x37b2e80
+			// LOOP 0x241f860
 			// pre processing
 			for (int i=0; i<4; i++) fRec3_tmp[i]=fRec3_perm[i];
 			// exec code
@@ -1507,7 +1509,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec3_perm[i]=fRec3_tmp[count+i];
 			
-			// LOOP 0x37bf710
+			// LOOP 0x242c130
 			// pre processing
 			for (int i=0; i<4; i++) fRec10_tmp[i]=fRec10_perm[i];
 			// exec code
@@ -1518,7 +1520,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec10_perm[i]=fRec10_tmp[count+i];
 			
 			// SECTION : 3
-			// LOOP 0x37b2b50
+			// LOOP 0x241f530
 			// pre processing
 			for (int i=0; i<4; i++) fRec2_tmp[i]=fRec2_perm[i];
 			// exec code
@@ -1528,7 +1530,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec2_perm[i]=fRec2_tmp[count+i];
 			
-			// LOOP 0x37bf350
+			// LOOP 0x242bd70
 			// pre processing
 			for (int i=0; i<4; i++) fRec9_tmp[i]=fRec9_perm[i];
 			// exec code
@@ -1539,20 +1541,20 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec9_perm[i]=fRec9_tmp[count+i];
 			
 			// SECTION : 4
-			// LOOP 0x37b9eb0
+			// LOOP 0x24268d0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec0[i] = (fRec2[i-2] + (fRec2[i] + (2 * fRec2[i-1])));
 			}
 			
-			// LOOP 0x37c2720
+			// LOOP 0x242f140
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec1[i] = (fRec9[i-2] + (fRec9[i] + (2 * fRec9[i-1])));
 			}
 			
 			// SECTION : 5
-			// LOOP 0x37b9dd0
+			// LOOP 0x24267f0
 			// pre processing
 			for (int i=0; i<4; i++) fYec1_tmp[i]=fYec1_perm[i];
 			// exec code
@@ -1562,7 +1564,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec1_perm[i]=fYec1_tmp[count+i];
 			
-			// LOOP 0x37c2640
+			// LOOP 0x242f060
 			// pre processing
 			for (int i=0; i<4; i++) fYec3_tmp[i]=fYec3_perm[i];
 			// exec code
@@ -1572,7 +1574,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec3_perm[i]=fYec3_tmp[count+i];
 			
-			// LOOP 0x37d0670
+			// LOOP 0x243d090
 			// pre processing
 			for (int i=0; i<4; i++) fRec13_tmp[i]=fRec13_perm[i];
 			// exec code
@@ -1582,7 +1584,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec13_perm[i]=fRec13_tmp[count+i];
 			
-			// LOOP 0x37d6b70
+			// LOOP 0x2443540
 			// pre processing
 			for (int i=0; i<4; i++) fRec19_tmp[i]=fRec19_perm[i];
 			// exec code
@@ -1593,7 +1595,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec19_perm[i]=fRec19_tmp[count+i];
 			
 			// SECTION : 6
-			// LOOP 0x37b27f0
+			// LOOP 0x241f1d0
 			// pre processing
 			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
 			// exec code
@@ -1603,7 +1605,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
 			
-			// LOOP 0x37bef10
+			// LOOP 0x242b930
 			// pre processing
 			for (int i=0; i<4; i++) fRec8_tmp[i]=fRec8_perm[i];
 			// exec code
@@ -1613,7 +1615,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec8_perm[i]=fRec8_tmp[count+i];
 			
-			// LOOP 0x37d02b0
+			// LOOP 0x243ccd0
 			// pre processing
 			for (int i=0; i<4; i++) fRec12_tmp[i]=fRec12_perm[i];
 			// exec code
@@ -1623,7 +1625,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec12_perm[i]=fRec12_tmp[count+i];
 			
-			// LOOP 0x37d67b0
+			// LOOP 0x2443180
 			// pre processing
 			for (int i=0; i<4; i++) fRec18_tmp[i]=fRec18_perm[i];
 			// exec code
@@ -1633,7 +1635,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec18_perm[i]=fRec18_tmp[count+i];
 			
-			// LOOP 0x37e6460
+			// LOOP 0x2452e30
 			// pre processing
 			for (int i=0; i<4; i++) fRec21_tmp[i]=fRec21_perm[i];
 			// exec code
@@ -1643,7 +1645,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec21_perm[i]=fRec21_tmp[count+i];
 			
-			// LOOP 0x37ea020
+			// LOOP 0x24569f0
 			// pre processing
 			for (int i=0; i<4; i++) fRec26_tmp[i]=fRec26_perm[i];
 			// exec code
@@ -1654,7 +1656,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec26_perm[i]=fRec26_tmp[count+i];
 			
 			// SECTION : 7
-			// LOOP 0x37b23f0
+			// LOOP 0x241edd0
 			// pre processing
 			for (int i=0; i<4; i++) fRec0_tmp[i]=fRec0_perm[i];
 			// exec code
@@ -1664,7 +1666,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec0_perm[i]=fRec0_tmp[count+i];
 			
-			// LOOP 0x37beb50
+			// LOOP 0x242b570
 			// pre processing
 			for (int i=0; i<4; i++) fRec7_tmp[i]=fRec7_perm[i];
 			// exec code
@@ -1674,7 +1676,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec7_perm[i]=fRec7_tmp[count+i];
 			
-			// LOOP 0x37cfff0
+			// LOOP 0x243ca10
 			// pre processing
 			for (int i=0; i<4; i++) fRec11_tmp[i]=fRec11_perm[i];
 			// exec code
@@ -1685,7 +1687,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec11_perm[i]=fRec11_tmp[count+i];
 			
-			// LOOP 0x37d6370
+			// LOOP 0x2442d40
 			// pre processing
 			for (int i=0; i<4; i++) fRec17_tmp[i]=fRec17_perm[i];
 			// exec code
@@ -1696,7 +1698,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec17_perm[i]=fRec17_tmp[count+i];
 			
-			// LOOP 0x37e61c0
+			// LOOP 0x2452b90
 			// pre processing
 			for (int i=0; i<4; i++) fRec20_tmp[i]=fRec20_perm[i];
 			// exec code
@@ -1706,7 +1708,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec20_perm[i]=fRec20_tmp[count+i];
 			
-			// LOOP 0x37e9c60
+			// LOOP 0x2456630
 			// pre processing
 			for (int i=0; i<4; i++) fRec25_tmp[i]=fRec25_perm[i];
 			// exec code
@@ -1717,100 +1719,100 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec25_perm[i]=fRec25_tmp[count+i];
 			
 			// SECTION : 8
-			// LOOP 0x37c5360
+			// LOOP 0x2431d80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec2[i] = (fSlow18 * (fRec0[i-2] + (fRec0[i] + (2 * fRec0[i-1]))));
 			}
 			
-			// LOOP 0x37c7240
+			// LOOP 0x2433c60
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec4[i] = (fSlow18 * (fRec7[i-2] + (fRec7[i] + (2 * fRec7[i-1]))));
 			}
 			
-			// LOOP 0x37daed0
+			// LOOP 0x24478a0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec9[i] = (fRec11[i-2] + (fSlow31 * (fZec7[i] + (fSlow30 * fRec11[i]))));
 			}
 			
-			// LOOP 0x37dd3c0
+			// LOOP 0x2449d90
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec11[i] = (fRec17[i-2] + (fSlow31 * (fZec8[i] + (fSlow30 * fRec17[i]))));
 			}
 			
-			// LOOP 0x37eca20
+			// LOOP 0x24593f0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec14[i] = (fSlow18 * (((fSlow15 * fRec20[i]) + (fSlow45 * fRec20[i-1])) + (fSlow15 * fRec20[i-2])));
 			}
 			
-			// LOOP 0x37ef4e0
+			// LOOP 0x245beb0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec16[i] = (fSlow18 * (((fSlow15 * fRec25[i]) + (fSlow45 * fRec25[i-1])) + (fSlow15 * fRec25[i-2])));
 			}
 			
 			// SECTION : 9
-			// LOOP 0x37c5280
+			// LOOP 0x2431ca0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec3[i] = ((iSlow19)?0:fZec2[i]);
 			}
 			
-			// LOOP 0x37c7160
+			// LOOP 0x2433b80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec5[i] = ((iSlow19)?0:fZec4[i]);
 			}
 			
-			// LOOP 0x37dadf0
+			// LOOP 0x24477c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec10[i] = ((iSlow33)?0:fZec9[i]);
 			}
 			
-			// LOOP 0x37dd2e0
+			// LOOP 0x2449cb0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec12[i] = ((iSlow33)?0:fZec11[i]);
 			}
 			
-			// LOOP 0x37ec940
+			// LOOP 0x2459310
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec15[i] = ((iSlow46)?0:fZec14[i]);
 			}
 			
-			// LOOP 0x37ef400
+			// LOOP 0x245bdd0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec17[i] = ((iSlow46)?0:fZec16[i]);
 			}
 			
 			// SECTION : 10
-			// LOOP 0x37c51a0
+			// LOOP 0x2431bc0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec6[i] = fabsf((fabsf((fSlow20 * fZec5[i])) + fabsf((fSlow20 * fZec3[i]))));
 			}
 			
-			// LOOP 0x37dad10
+			// LOOP 0x24476e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec13[i] = fabsf((fabsf((fSlow34 * fZec12[i])) + fabsf((fSlow34 * fZec10[i]))));
 			}
 			
-			// LOOP 0x37ec860
+			// LOOP 0x2459230
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec18[i] = fabsf((fabsf((fSlow47 * fZec17[i])) + fabsf((fSlow47 * fZec15[i]))));
 			}
 			
 			// SECTION : 11
-			// LOOP 0x37be730
+			// LOOP 0x242b150
 			// pre processing
 			for (int i=0; i<4; i++) fRec6_tmp[i]=fRec6_perm[i];
 			// exec code
@@ -1820,7 +1822,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec6_perm[i]=fRec6_tmp[count+i];
 			
-			// LOOP 0x37d5f70
+			// LOOP 0x2442940
 			// pre processing
 			for (int i=0; i<4; i++) fRec16_tmp[i]=fRec16_perm[i];
 			// exec code
@@ -1830,7 +1832,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec16_perm[i]=fRec16_tmp[count+i];
 			
-			// LOOP 0x37e9800
+			// LOOP 0x24561d0
 			// pre processing
 			for (int i=0; i<4; i++) fRec24_tmp[i]=fRec24_perm[i];
 			// exec code
@@ -1841,7 +1843,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec24_perm[i]=fRec24_tmp[count+i];
 			
 			// SECTION : 12
-			// LOOP 0x37be2d0
+			// LOOP 0x242acf0
 			// pre processing
 			for (int i=0; i<4; i++) fRec5_tmp[i]=fRec5_perm[i];
 			// exec code
@@ -1851,7 +1853,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec5_perm[i]=fRec5_tmp[count+i];
 			
-			// LOOP 0x37d5b10
+			// LOOP 0x24424e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec15_tmp[i]=fRec15_perm[i];
 			// exec code
@@ -1861,7 +1863,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec15_perm[i]=fRec15_tmp[count+i];
 			
-			// LOOP 0x37e93a0
+			// LOOP 0x2455d70
 			// pre processing
 			for (int i=0; i<4; i++) fRec23_tmp[i]=fRec23_perm[i];
 			// exec code
@@ -1872,7 +1874,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec23_perm[i]=fRec23_tmp[count+i];
 			
 			// SECTION : 13
-			// LOOP 0x37bdf10
+			// LOOP 0x242a930
 			// pre processing
 			for (int i=0; i<4; i++) fRec4_tmp[i]=fRec4_perm[i];
 			// exec code
@@ -1882,7 +1884,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec4_perm[i]=fRec4_tmp[count+i];
 			
-			// LOOP 0x37d5730
+			// LOOP 0x2442100
 			// pre processing
 			for (int i=0; i<4; i++) fRec14_tmp[i]=fRec14_perm[i];
 			// exec code
@@ -1892,7 +1894,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec14_perm[i]=fRec14_tmp[count+i];
 			
-			// LOOP 0x37e8fe0
+			// LOOP 0x24559b0
 			// pre processing
 			for (int i=0; i<4; i++) fRec22_tmp[i]=fRec22_perm[i];
 			// exec code
@@ -1903,82 +1905,82 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec22_perm[i]=fRec22_tmp[count+i];
 			
 			// SECTION : 14
-			// LOOP 0x37fae20
+			// LOOP 0x2467870
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec19[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec4[i])))));
 			}
 			
-			// LOOP 0x3802b70
+			// LOOP 0x246f5c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec23[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec14[i])))));
 			}
 			
-			// LOOP 0x3809e70
+			// LOOP 0x24768c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec27[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec22[i])))));
 			}
 			
 			// SECTION : 15
-			// LOOP 0x37fad40
+			// LOOP 0x2467790
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec20[i] = (fZec3[i] * fZec19[i]);
 			}
 			
-			// LOOP 0x37fc310
+			// LOOP 0x2468d60
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec21[i] = (fSlow20 * (fZec5[i] * fZec19[i]));
 			}
 			
-			// LOOP 0x3802a90
+			// LOOP 0x246f4e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec24[i] = (fZec10[i] * fZec23[i]);
 			}
 			
-			// LOOP 0x3803bd0
+			// LOOP 0x2470620
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec25[i] = (fSlow34 * (fZec12[i] * fZec23[i]));
 			}
 			
-			// LOOP 0x3809d90
+			// LOOP 0x24767e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec28[i] = (fZec15[i] * fZec27[i]);
 			}
 			
-			// LOOP 0x380aed0
+			// LOOP 0x2477920
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec29[i] = (fSlow47 * (fZec17[i] * fZec27[i]));
 			}
 			
 			// SECTION : 16
-			// LOOP 0x37fac60
+			// LOOP 0x24676b0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec22[i] = fabsf((fabsf(fZec21[i]) + fabsf((fSlow20 * fZec20[i]))));
 			}
 			
-			// LOOP 0x38029b0
+			// LOOP 0x246f400
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec26[i] = fabsf((fabsf(fZec25[i]) + fabsf((fSlow34 * fZec24[i]))));
 			}
 			
-			// LOOP 0x3809cb0
+			// LOOP 0x2476700
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec30[i] = fabsf((fabsf(fZec29[i]) + fabsf((fSlow47 * fZec28[i]))));
 			}
 			
 			// SECTION : 17
-			// LOOP 0x37fa840
+			// LOOP 0x2467290
 			// pre processing
 			for (int i=0; i<4; i++) fRec32_tmp[i]=fRec32_perm[i];
 			// exec code
@@ -1988,7 +1990,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec32_perm[i]=fRec32_tmp[count+i];
 			
-			// LOOP 0x3802590
+			// LOOP 0x246efe0
 			// pre processing
 			for (int i=0; i<4; i++) fRec35_tmp[i]=fRec35_perm[i];
 			// exec code
@@ -1998,7 +2000,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec35_perm[i]=fRec35_tmp[count+i];
 			
-			// LOOP 0x3809890
+			// LOOP 0x24762e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec38_tmp[i]=fRec38_perm[i];
 			// exec code
@@ -2009,7 +2011,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec38_perm[i]=fRec38_tmp[count+i];
 			
 			// SECTION : 18
-			// LOOP 0x37fa460
+			// LOOP 0x2466eb0
 			// pre processing
 			for (int i=0; i<4; i++) fRec31_tmp[i]=fRec31_perm[i];
 			// exec code
@@ -2019,7 +2021,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec31_perm[i]=fRec31_tmp[count+i];
 			
-			// LOOP 0x38021b0
+			// LOOP 0x246ec00
 			// pre processing
 			for (int i=0; i<4; i++) fRec34_tmp[i]=fRec34_perm[i];
 			// exec code
@@ -2029,7 +2031,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec34_perm[i]=fRec34_tmp[count+i];
 			
-			// LOOP 0x38094b0
+			// LOOP 0x2475f00
 			// pre processing
 			for (int i=0; i<4; i++) fRec37_tmp[i]=fRec37_perm[i];
 			// exec code
@@ -2040,7 +2042,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec37_perm[i]=fRec37_tmp[count+i];
 			
 			// SECTION : 19
-			// LOOP 0x37f9fa0
+			// LOOP 0x24669f0
 			// pre processing
 			for (int i=0; i<4; i++) fRec30_tmp[i]=fRec30_perm[i];
 			// exec code
@@ -2050,7 +2052,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec30_perm[i]=fRec30_tmp[count+i];
 			
-			// LOOP 0x3801d10
+			// LOOP 0x246e760
 			// pre processing
 			for (int i=0; i<4; i++) fRec33_tmp[i]=fRec33_perm[i];
 			// exec code
@@ -2060,7 +2062,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec33_perm[i]=fRec33_tmp[count+i];
 			
-			// LOOP 0x3809030
+			// LOOP 0x2475a80
 			// pre processing
 			for (int i=0; i<4; i++) fRec36_tmp[i]=fRec36_perm[i];
 			// exec code
@@ -2071,39 +2073,39 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec36_perm[i]=fRec36_tmp[count+i];
 			
 			// SECTION : 20
-			// LOOP 0x38108b0
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec31[i] = (fSlow61 * fZec28[i]);
-			}
-			
-			// LOOP 0x38145f0
+			// LOOP 0x247c690
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec32[i] = (fSlow63 * fZec24[i]);
 			}
 			
-			// LOOP 0x3816ac0
+			// LOOP 0x247d300
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec31[i] = (fSlow61 * fZec28[i]);
+			}
+			
+			// LOOP 0x2483570
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec33[i] = (fSlow65 * fZec20[i]);
 			}
 			
-			// LOOP 0x381c910
+			// LOOP 0x24893c0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph0 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec36[i]))))));
 				fZec36[i] = (fSlow60 * fZec29[i]);
 			}
 			
-			// LOOP 0x381ffd0
+			// LOOP 0x248ca80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph2 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec33[i]))))));
 				fZec37[i] = (fSlow62 * fZec25[i]);
 			}
 			
-			// LOOP 0x3823fd0
+			// LOOP 0x2490a80
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph4 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec30[i]))))));
@@ -2111,13 +2113,13 @@ class Multibandcomp_dsp : public dsp {
 			}
 			
 			// SECTION : 21
-			// LOOP 0x38107d0
+			// LOOP 0x247d220
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec34[i] = (((iSlow19)?fZec2[i]:fZec33[i]) + (((iSlow33)?fZec9[i]:fZec32[i]) + ((iSlow46)?fZec14[i]:fZec31[i])));
 			}
 			
-			// LOOP 0x381c730
+			// LOOP 0x24891e0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph1 = (fabsf(fZec36[i]) + fabsf(fZec31[i]));
@@ -2127,27 +2129,27 @@ class Multibandcomp_dsp : public dsp {
 			}
 			
 			// SECTION : 22
-			// LOOP 0x38106f0
+			// LOOP 0x247d140
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec35[i] = ((iSlow66)?0:fZec34[i]);
 			}
 			
-			// LOOP 0x381c650
+			// LOOP 0x2489100
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec40[i] = ((iSlow66)?0:fZec39[i]);
 			}
 			
 			// SECTION : 23
-			// LOOP 0x3810610
+			// LOOP 0x247d060
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec41[i] = fabsf((fabsf((fSlow67 * fZec40[i])) + fabsf((fSlow67 * fZec35[i]))));
 			}
 			
 			// SECTION : 24
-			// LOOP 0x37f9a40
+			// LOOP 0x2466490
 			// pre processing
 			for (int i=0; i<4; i++) fRec29_tmp[i]=fRec29_perm[i];
 			// exec code
@@ -2158,7 +2160,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec29_perm[i]=fRec29_tmp[count+i];
 			
 			// SECTION : 25
-			// LOOP 0x37f9600
+			// LOOP 0x2466050
 			// pre processing
 			for (int i=0; i<4; i++) fRec28_tmp[i]=fRec28_perm[i];
 			// exec code
@@ -2169,7 +2171,7 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec28_perm[i]=fRec28_tmp[count+i];
 			
 			// SECTION : 26
-			// LOOP 0x37f9260
+			// LOOP 0x2465cb0
 			// pre processing
 			for (int i=0; i<4; i++) fRec27_tmp[i]=fRec27_perm[i];
 			// exec code
@@ -2180,20 +2182,20 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec27_perm[i]=fRec27_tmp[count+i];
 			
 			// SECTION : 27
-			// LOOP 0x3832510
+			// LOOP 0x249efc0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec42[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec27[i])))));
 			}
 			
 			// SECTION : 28
-			// LOOP 0x37b2130
+			// LOOP 0x241eb10
 			// exec code
 			for (int i=0; i<count; i++) {
 				output0[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec34[i]:(fSlow75 * (fZec35[i] * fZec42[i]))));
 			}
 			
-			// LOOP 0x3837d80
+			// LOOP 0x24a4870
 			// exec code
 			for (int i=0; i<count; i++) {
 				output1[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec39[i]:(fSlow75 * (fZec40[i] * fZec42[i]))));
