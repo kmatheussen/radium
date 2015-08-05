@@ -541,6 +541,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 }
 
 #ifdef FOR_MACOSX
+#include "../common/visual_proc.h"
 void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
   GFX_Message(NULL, additional_information);
 }

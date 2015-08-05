@@ -477,7 +477,7 @@ void MIDI_OS_SetInputPort(const char *portname){
         try{
           delete inport_coremidi;
         }catch ( RtError &error ) {
-          GFX_Message("Unable to delete old MIDI Port. (%s)", error.what());
+          GFX_Message(NULL, "Unable to delete old MIDI Port. (%s)", error.what());
           inport_coremidi = NULL;
           return;
         }

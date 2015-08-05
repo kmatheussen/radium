@@ -93,11 +93,12 @@ void SP_write_mixer_tree_to_disk(QFile *file);
 
 #endif // __cplusplus
 
+#ifndef AUDIO_SOUNDPLUGIN_H
 struct SoundPlugin;
-typedef struct SoundPlugin SoundPlugin;
+#endif
 
-extern LANGSPEC bool SP_replace_plugin(SoundPlugin *old_plugin, SoundPlugin *new_plugin);
-extern LANGSPEC bool SP_is_plugin_running(SoundPlugin *plugin);
+extern LANGSPEC bool SP_replace_plugin(struct SoundPlugin *old_plugin, struct SoundPlugin *new_plugin);
+extern LANGSPEC bool SP_is_plugin_running(struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);
 
 #endif // SOUNDPRODUCER_PROC_H
