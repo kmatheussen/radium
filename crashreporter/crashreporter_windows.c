@@ -756,6 +756,7 @@ exception_filter(LPEXCEPTION_POINTERS info)
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
+/*
 static LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS info)
 {
   //fprintf(stderr, "\n\n\n ************* VectoredExceptionHandler ************** E 1\n");fflush(stderr);
@@ -776,10 +777,10 @@ static LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS info)
 	return EXCEPTION_EXECUTE_HANDLER;
 
 }
-
+*/
 
 static LPTOP_LEVEL_EXCEPTION_FILTER g_prev = NULL;
-static PVOID vectored_exception_handler = NULL;
+//static PVOID vectored_exception_handler = NULL;
 
 static void
 backtrace_register(void)
@@ -787,23 +788,27 @@ backtrace_register(void)
   if (crash_buffer==NULL){
     crash_buffer = calloc(1,BUFFER_MAX);
     g_prev = SetUnhandledExceptionFilter(exception_filter);
-    vectored_exception_handler = AddVectoredExceptionHandler(1, VectoredExceptionHandler);
+    //vectored_exception_handler = AddVectoredExceptionHandler(1, VectoredExceptionHandler);
   }
 }
 
 static void
 backtrace_unregister(void)
 {
-	if (crash_buffer!=NULL) {
-          RemoveVectoredExceptionHandler(vectored_exception_handler);
-          vectored_exception_handler = NULL;
+  #if 0
+  if (vectored_exception_handler != NULL){
+    RemoveVectoredExceptionHandler(vectored_exception_handler);
+    vectored_exception_handler = NULL;
+  }
+#endif
+  if (crash_buffer!=NULL) {
           
-          SetUnhandledExceptionFilter(g_prev);                
-          g_prev = NULL;
+    SetUnhandledExceptionFilter(g_prev);                
+    g_prev = NULL;
           
-          free(crash_buffer);
-          crash_buffer=NULL;
-	}
+    free(crash_buffer);
+    crash_buffer=NULL;
+  }
 }
 
 #if 0

@@ -865,6 +865,7 @@ static void get_path_uris (std::vector<char*> &lrdf_uris){
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
   sprintf(lrdf_path,"%s%srdf",OS_get_program_path(), OS_get_directory_separator());
+  printf("lrdf_path: -%s-\n",lrdf_path);
   get_dir_uris(lrdf_uris,lrdf_path);
 #endif
 }
