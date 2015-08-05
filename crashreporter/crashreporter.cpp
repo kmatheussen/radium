@@ -331,7 +331,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
   if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
     fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
-    SYSTEM_show_message(stdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);));
+    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
     Sleep(3000);
   }
 
