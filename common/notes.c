@@ -352,13 +352,6 @@ struct Notes *InsertNote(
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
 	note->velocity_end=note->velocity;
 
-        if (end_placement==NULL)
-          SetEndAttributes(block,track,note);
-        else
-          PlaceCopy(&note->end, end_placement);
-
-        NOTE_validate(block, NULL, note);
-
         PLAYER_lock();
         {
           ListAddElement3(&track->notes,&note->l);
@@ -366,9 +359,16 @@ struct Notes *InsertNote(
           if(polyphonic==false)
             StopAllNotesAtPlace(wblock,wtrack,placement);
 
+          if (end_placement==NULL)
+            SetEndAttributes(block,track,note);
+          else
+            PlaceCopy(&note->end, end_placement);
+
           track->notes = NOTES_sort_by_pitch(track->notes);
         }
         PLAYER_unlock();
+
+        NOTE_validate(block, NULL, note);
 
         return note;
 }
