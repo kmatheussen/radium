@@ -938,7 +938,8 @@ QWidget *GL_create_widget(QWidget *parent){
         if (result==1)
           SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
 
-        g_should_do_modal_windows = true;
+        //g_should_do_modal_windows = true;
+        g_should_do_modal_windows = false;
       }
 
     
@@ -1014,7 +1015,8 @@ QWidget *GL_create_widget(QWidget *parent){
           SETTINGS_write_bool("show_intel_gfx_message2_during_startup", false);
       }
 
-      g_should_do_modal_windows = true;
+      //g_should_do_modal_windows = true;
+      g_should_do_modal_windows = false;
       show_mesa_warning = false;
     }
 #endif
