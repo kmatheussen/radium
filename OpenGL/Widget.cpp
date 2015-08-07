@@ -16,7 +16,6 @@
 #include <QMainWindow>
 #include <QGLFormat>
 #include <QDebug>
-#include <QSemaphore>
 #include <QWaitCondition>
 
 #include "../common/nsmtracker.h"
@@ -27,6 +26,7 @@
 #include "../common/settings_proc.h"
 #include "../common/OS_Semaphores.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/Semaphores.hpp"
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
@@ -87,10 +87,10 @@ bool GL_should_do_modal_windows(void){
   return g_should_do_modal_windows;
 }
 
-static QSemaphore g_order_pause_gl_thread;
+static radium::Semaphore g_order_pause_gl_thread;
 static QWaitCondition g_ack_pause_gl_thread;
 
-static QSemaphore g_order_make_current;
+static radium::Semaphore g_order_make_current;
 static QWaitCondition g_ack_make_current;
 
 volatile char *GE_vendor_string=NULL;
@@ -532,12 +532,12 @@ public:
   // OpenGL thread
   virtual void updateEvent() {
 
-    if (g_order_pause_gl_thread.tryAcquire(1)) {
+    if (g_order_pause_gl_thread.tryWait()) {
       g_ack_pause_gl_thread.wakeOne();
       OS_WaitAtLeast(1000);
     }
     
-    if (g_order_make_current.tryAcquire(1)) {
+    if (g_order_make_current.tryWait()) {
       QGLWidget::makeCurrent();
       g_ack_make_current.wakeOne();
     }
@@ -720,7 +720,7 @@ void GL_pause_gl_thread_a_short_while(void){
   if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;
 
-  g_order_pause_gl_thread.release(1);
+  g_order_pause_gl_thread.signal();
 
   if (g_ack_pause_gl_thread.wait(&mutex, 4000)==false){  // Have a timeout in case the opengl thread is stuck
 #ifdef RELEASE
@@ -736,7 +736,7 @@ void GL_EnsureMakeCurrentIsCalled(void){
   if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;
  
-  g_order_make_current.release(1);
+  g_order_make_current.signal();
 
   if (g_ack_make_current.wait(&mutex, 4000)==false){  // Have a timeout in case the opengl thread is stuck
 #ifdef RELEASE

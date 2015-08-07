@@ -45,10 +45,22 @@ class Semaphore{
       return -numSignallers();
     }
   
-  /*
-    void tryWait(void){
+
+    bool tryWait(void){
+
+      for(;;){
+        int old_count = int(m_count);
+
+        if (old_count <= 0)
+          return false;
+
+        if (m_count.testAndSetOrdered(old_count, old_count-1)==true)
+          return true;
+      }
+
+      return false;
     }
-  */
+
   
     void wait(void)
     {
