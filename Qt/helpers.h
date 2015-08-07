@@ -49,13 +49,12 @@ static inline int safeExec(QDialog *widget){
 
 static inline void safeShow(QWidget *widget){  
   GL_lock(); {
+    GL_pause_gl_thread_a_short_while();
     widget->show();
     widget->raise();
     widget->activateWindow();
   }GL_unlock();
 }
-
-
 
 static inline void safeShowOrExec(QDialog *widget){
   if (doModalWindows())

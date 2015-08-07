@@ -14,6 +14,7 @@
 
 extern bool GL_should_do_modal_windows(void);
     
+extern void GL_pause_gl_thread_a_short_while(void);
 extern void GL_EnsureMakeCurrentIsCalled(void);
   
 extern void GL_erase_estimated_vblank(void);

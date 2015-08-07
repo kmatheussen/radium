@@ -617,7 +617,7 @@ const wchar_t *GFX_GetSaveFileName(
 }
 
 
-int GFX_Message(vector_t *buttons, QString message){
+static int GFX_Message(vector_t *buttons, QString message){
   R_ASSERT(THREADING_is_main_thread());
 
   QMessageBox msgBox(g_editor);

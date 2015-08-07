@@ -1288,9 +1288,21 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
   menu_up(&menu, PR_get_menu_entries(), 0);
 
   MyQAction *action;
-  GL_lock();{
+
+  if (doModalWindows()) {
+    
+    GL_lock();{
+      action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+    }GL_unlock();
+    
+  } else {
+    
+    GL_lock();{
+      GL_pause_gl_thread_a_short_while();
+    }GL_unlock();    
     action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
-  }GL_unlock();
+    
+  }
   
   if (action==NULL)
     return NULL;

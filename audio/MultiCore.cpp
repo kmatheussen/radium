@@ -12,6 +12,7 @@
 #include <QAtomicInt>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
 #include "../common/threading.h"
 #include "../common/stacktoucher_proc.h"
 #include "../common/settings_proc.h"
@@ -181,7 +182,11 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     return;
 
   if (sp_all.size() >= MAX_NUM_SP){
-    RT_message("Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.", sp_all.size(), MAX_NUM_SP);
+    // Not doing anything in the audio thread might cause a deadlock, so the message window might now show if using RT_Message here.
+    GFX_Message(NULL,
+                "Maximum number of sound objects reached. Tried to play %d sound objects, but only %d sound objects are supported. Radium must be recompiled to increase this number.",
+                sp_all.size(),
+                MAX_NUM_SP);
     return;
   }
 

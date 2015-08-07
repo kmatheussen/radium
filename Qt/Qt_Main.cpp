@@ -432,7 +432,9 @@ protected:
     BACKUP_call_very_often();
 
     if ( (num_calls % (5*1000/interval)) == 0) { // Ask for gl.make_current each 5 seconds.
-      GL_EnsureMakeCurrentIsCalled();
+      GL_lock();{
+        GL_EnsureMakeCurrentIsCalled();
+      }GL_unlock();
     }
     
 #if 0

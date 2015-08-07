@@ -30,9 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TEXT_BOLD 32
 #define TEXT_SCALE 64 // Scales the text into the box.
 
+#if 0
+// better not expose this function. Many of the GFX_Message messages are never tested, and this particular function can only be called from the main thread.
 #ifdef USE_QT4
 #include <QString>
 int GFX_Message(vector_t *buttons, QString message);
+#endif
 #endif
 
 #define BLACK_COLOR_NUM 200

@@ -17,6 +17,7 @@
 #include <QGLFormat>
 #include <QDebug>
 #include <QSemaphore>
+#include <QWaitCondition>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -25,6 +26,7 @@
 #include "../common/time_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/OS_Semaphores.h"
+#include "../common/OS_Player_proc.h"
 
 #define GE_DRAW_VL
 #include "GfxElements.h"
@@ -58,16 +60,24 @@ static void set_realtime(int type, int priority){
 #endif
 
 
-static QMutex mutex(QMutex::Recursive);
-static bool has_gl_lock = false;
+static QMutex mutex;
+static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way instead of using the QThread::Recursive option since QWaitCondition doesn't work with recursive mutexes. We need recursive mutexes since calls to qsometing->exec() (which are often executed inside the gl lock) can process qt events, which again can call some function which calls gl_lock. I don't know why qt processes qt events inside exec() though. That definitely seems like the wrong desing, or maybe it's even a bug in qt. If there is some way of turning this peculiar behavior off, I would like to know about it. I don't feel that this behaviro is safe.
 
 void GL_lock(void){
+  g_gl_lock_visits++;  
+  if (g_gl_lock_visits>1)
+    return;
+  
   mutex.lock();
-  has_gl_lock = true;
 }
 
 void GL_unlock(void){
-  has_gl_lock = false;
+  R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>0);
+
+  g_gl_lock_visits--;
+  if (g_gl_lock_visits>0)
+    return;
+  
   mutex.unlock();
 }
 
@@ -77,8 +87,11 @@ bool GL_should_do_modal_windows(void){
   return g_should_do_modal_windows;
 }
 
+static QSemaphore g_order_pause_gl_thread;
+static QWaitCondition g_ack_pause_gl_thread;
+
 static QSemaphore g_order_make_current;
-static QSemaphore g_ack_make_current;
+static QWaitCondition g_ack_make_current;
 
 volatile char *GE_vendor_string=NULL;
 volatile char *GE_renderer_string=NULL;
@@ -518,11 +531,15 @@ public:
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   // OpenGL thread
   virtual void updateEvent() {
-    //printf("updateEvent\n");
 
+    if (g_order_pause_gl_thread.tryAcquire(1)) {
+      g_ack_pause_gl_thread.wakeOne();
+      OS_WaitAtLeast(1000);
+    }
+    
     if (g_order_make_current.tryAcquire(1)) {
       QGLWidget::makeCurrent();
-      g_ack_make_current.release(1);
+      g_ack_make_current.wakeOne();
     }
     
     if (GE_version_string==NULL) {
@@ -698,21 +715,35 @@ static bool have_earlier_estimated_value(){
   return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 
-void GL_EnsureMakeCurrentIsCalled(void){
-  //printf("GL_EnsureMakeCurrentIsCalled\n");
-  static bool failed = false;
-
-  if (failed)
+void GL_pause_gl_thread_a_short_while(void){
+  R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>=1);
+  if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;
-  
-  if (has_gl_lock)
-    return; // to avoid deadlock
-    
+
+  g_order_pause_gl_thread.release(1);
+
+  if (g_ack_pause_gl_thread.wait(&mutex, 4000)==false){  // Have a timeout in case the opengl thread is stuck
+#ifdef RELEASE
+    printf("warning: g_ack_pause_gl_thread timed out\n");
+#else
+    GFX_Message(NULL, "warning: g_ack_pause_gl_thread timed out\n");
+#endif
+  }
+}
+
+void GL_EnsureMakeCurrentIsCalled(void){
+  R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>=1); 
+  if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
+    return;
+ 
   g_order_make_current.release(1);
-  
-  if (g_ack_make_current.tryAcquire(1, 2000)==false){ // Need to wait for it. The catalyst driver on linux sometimes crashes if calling makeCurrent while the main thread is doing Qt stuff.
-    GFX_Message(NULL, "GL_EnsureMakeCurrentIsCalled: OpenGL thread didn't answer");
-    failed = true;
+
+  if (g_ack_make_current.wait(&mutex, 4000)==false){  // Have a timeout in case the opengl thread is stuck
+#ifdef RELEASE
+    printf("warning: g_ack_make_current timed out\n");
+#else
+    GFX_Message(NULL, "warning: g_ack_make_current timed out\n");
+#endif
   }
 }
 

@@ -61,6 +61,15 @@ public:
   {
   }
 
+  ~_radium_os_disk(){
+    if (stream!=NULL)
+      delete stream;
+    if (read_file!=NULL)
+      delete read_file;
+    if (temporary_write_file!=NULL)
+      delete temporary_write_file;
+  }
+
   QFile *file(void){
     if (type==WRITE){
       R_ASSERT(temporary_write_file!=NULL);
@@ -113,10 +122,12 @@ public:
   bool transfer_temporary_file_to_file(void){
     R_ASSERT(type==WRITE);
     R_ASSERT(temporary_write_file != NULL);
-    
+
+    // Maybe take backup of the existing file here.
     if (QFile::exists(filename))
       QFile::remove(filename);
-      
+
+    // And if this fails, use the backup (but still return false, of course)
     return QFile::copy(temporary_write_file->fileName(), filename);
   }
 
@@ -180,15 +191,6 @@ public:
   int64_t pos(void){
     R_ASSERT(is_binary==true);
     return file()->pos();
-  }
-
-  ~_radium_os_disk(){
-    if (read_file!=NULL)
-      delete read_file;
-    if (temporary_write_file!=NULL)
-      delete temporary_write_file;
-    if (stream!=NULL)
-      delete stream;
   }
 };
 

@@ -1,9 +1,37 @@
 
 #ifndef TEST_THREADING
+
   #include "nsmtracker.h"
   #include "visual_proc.h"
   #include "threading.h"
+
+  #include "OS_Player_proc.h"
+
+
+void OS_WaitForAShortTime(int milliseconds){
+#ifdef FOR_WINDOWS
+  Sleep(milliseconds);
+#else
+  usleep(milliseconds*1000);
 #endif
+}
+
+
+// Use this function if it is important that we don't return too early.
+void OS_WaitAtLeast(int milliseconds){
+  double start_time = TIME_get_ms();
+
+  OS_WaitForAShortTime(milliseconds);
+
+  while( (TIME_get_ms()-start_time) < milliseconds)
+    OS_WaitForAShortTime(10);
+}
+
+#endif // !TEST_THREADING
+
+
+
+
 
 
 enum ThreadType{
