@@ -1029,7 +1029,7 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
     return;
   }
   
-  printf("************** size: %d\n",memoryBlock.getSize());
+  printf("************** size: %d\n",(int)memoryBlock.getSize());
 }
   
 static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
