@@ -116,7 +116,7 @@ FULL_VERSION ?= 1
 
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
 #-DNDEBUG
-RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
+RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE) -DNDEBUG
 
 # Need to disable NDEBUG since it chashes on windows (!). Normally this flag would be defined in RELEASE_BUILD_OPTS
 # The crashreporter says the crash happens in QTextEngine::itemize, but there is no further backtrace, which is a sign of memory corruption, so this information might not be accurate.
