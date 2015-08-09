@@ -906,11 +906,13 @@ int radium_main(char *arg){
 
   UPDATECHECKER_doit();
 
+       
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
   GTK_MainLoop();
 #endif
+      
 
   g_qt_is_running = false;
 
@@ -987,6 +989,7 @@ static void qunsetenv(const char *varName)
     }
 #endif
 }
+
 
 
 int main(int argc, char **argv){

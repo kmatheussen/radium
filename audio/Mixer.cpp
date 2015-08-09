@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QString>
 #include <QStringList>
 #include <QTime>
+#include <QThread>
 
 
 // I'm not entirely sure where memory barriers should be placed, so I've tried to be more safe than sorry.
@@ -34,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
+#include "../common/Semaphores.hpp"
 #include "../common/stacktoucher_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/threading.h"
@@ -51,41 +53,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
-
-/*
-
-  TODO/FIX. This sometimes happens during startup:
-
--3.14.3-1.fc17.x86_64 openldap-2.4.33-3.fc17.x86_64 qt4-theme-quarticurve-0.0-0.17.beta8.fc17.x86_64 raptor2-2.0.7-1.fc17.x86_64 xz-libs-5.1.2-1alpha.fc17.x86_64 yajl-2.0.4-1.fc17.x86_64
-(gdb) bt
-#0  0x0000003b49435935 in raise () from /lib64/libc.so.6
-#1  0x0000003b494370e8 in abort () from /lib64/libc.so.6
-#2  0x00000000004ec954 in show_message (type=0, message=0x7fffffffa0b0 "Calling lock_player while holding the player lock") at X11/X11_error.c:71
-#3  0x00000000004eca31 in RError (fmt=0xa4e898 "Calling lock_player while holding the player lock") at X11/X11_error.c:87
-#4  0x00000000005d38e1 in lock_player () at audio/Mixer.cpp:228
-#5  PLAYER_lock () at audio/Mixer.cpp:253
-#6  0x00000000005b23f5 in remove_SoundProducerInput (ch=<optimized out>, sound_producer_ch=<optimized out>, sound_producer=<optimized out>, this=<optimized out>) at audio/SoundProducer.cpp:415
-#7  SP_remove_link (target=<optimized out>, target_ch=<optimized out>, source=<optimized out>, source_ch=<optimized out>) at audio/SoundProducer.cpp:728
-#8  0x00000000005de1fc in CONNECTION_delete_connection (connection=0x4959180) at mixergui/QM_chip.cpp:626
-#9  0x00000000005deb5f in Chip::~Chip (this=0x48bfe90, __in_chrg=<optimized out>) at mixergui/QM_chip.cpp:761
-#10 0x00000000005dece0 in Chip::~Chip (this=0x48bfe90, __in_chrg=<optimized out>) at mixergui/QM_chip.cpp:772
-#11 0x00000000005e8924 in MW_delete_plugin (plugin=0x488f5b0) at mixergui/QM_MixerWidget.cpp:1110
-#12 0x00000000005e9044 in delete_a_chip () at mixergui/QM_MixerWidget.cpp:1223
-#13 0x00000000005e90a6 in MW_cleanup () at mixergui/QM_MixerWidget.cpp:1231
-#14 0x00000000005e9486 in MW_create_from_state (state=0x2584340) at mixergui/QM_MixerWidget.cpp:1298
-#15 0x0000000000472a2e in DLoadSong (newroot=0x2bab380, song=0x2af90a0) at common/disk_song.c:168
-#16 0x0000000000473563 in DLoadRoot (theroot=0x2bab380) at common/disk_root.c:139
-#17 0x00000000004742fa in Load (filename=0x2a60630 "/home/kjetil/radium3.0/bin/new_song.rad") at common/disk_load.c:154
-#18 0x000000000047453d in Load_CurrPos_org (window=0x2affe00, filename=0x2a60630 "/home/kjetil/radium3.0/bin/new_song.rad") at common/disk_load.c:218
-#19 0x00000000004746db in NewSong_CurrPos (window=0x2affe00) at common/disk_load.c:258
-#20 0x000000000047b4de in radium_main (arg=0x23a152c "") at Qt/Qt_Main.cpp:642
-#21 0x00000000004e5f7a in init_radium (arg=0x23a152c "", gkf=<function at remote 0x261a140>) at api/api_common.c:61
-#22 0x00000000004dfa90 in _wrap_init_radium (self=0x0, args=('', <function at remote 0x261a140>)) at api/radium_wrap.c:572
-#23 0x0000003b5d4dd0e1 in call_function (oparg=<optimized out>, pp_stack=0x7fffffffcb88) at /usr/src/debug/Python-2.7.3/Python/ceval.c:4098
-#24 PyEval_EvalFrameEx (f=f@entry=Frame 0x25e8b50, for file /home/kjetil/radium3.0/bin/start.py, line 137, in <module> (), throwflag=throwflag@entry=0) at /usr/src/debug/Python-2.7.3/Python/ceval.c:2740
-#25 0x0000003b5d4ddb1f in PyEval_EvalCodeEx (co=co@entry=0x25af0b0, globals=globals@entry=
-
-*/
 
 
 extern PlayerClass *pc;
@@ -363,6 +330,16 @@ void RT_pause_plugins(void){
   pause_time.restart();
 }
 
+#if FOR_WINDOWS
+#define USE_WORKAROUND 1
+#else
+#define USE_WORKAROUND 0
+#endif
+
+#if USE_WORKAROUND
+static void start_workaround_thread(void);
+#endif
+
 
 struct Mixer{
   SoundProducer *_bus1;
@@ -588,27 +565,21 @@ struct Mixer{
   // Starting to get very chaotic...
 
   void RT_thread(void){
+    
+
     //#ifndef DOESNT_HAVE_SSE
     AVOIDDENORMALS;
     //#endif
 
     touch_stack();
 
-    
-#if 0
-#define CSR_FLUSH_TO_ZERO         (1 << 15)
-    unsigned csr = __builtin_ia32_stmxcsr();
-    csr |= CSR_FLUSH_TO_ZERO;
-    __builtin_ia32_ldmxcsr(csr);
-#endif
-
-    RT_lock_player();  // This is a RT-safe lock. Priority inversion can not happen.
+    RT_lock_player();  // This is an RT-safe lock. Priority inversion can (or at least should) not happen.
 
     pause_time.start();
     
     QTime excessive_time;
     excessive_time.start();
-    
+
     while(true){
 
       // Schedule new notes, etc.
@@ -681,7 +652,7 @@ struct Mixer{
         RT_MIDI_handle_play_buffer();
         
         MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
-          
+
         _time += RADIUM_BLOCKSIZE;
         jackblock_delta_time += RADIUM_BLOCKSIZE;
       }
@@ -716,9 +687,22 @@ struct Mixer{
     RT_unlock_player();
   }
       
-
   static void *RT_rjack_thread(void *arg){
+    /*
+      // crashreporter test
+      int *p=NULL;
+      p[5] = 2;
+    */
 
+#if USE_WORKAROUND
+    // workaround for non-working UnhandledExceptionFilter in the jack thread. (strange)
+    start_workaround_thread();
+    
+    while(true){
+      OS_WaitForAShortTime(1000*1000);
+    }
+#endif
+    
     Mixer *mixer = static_cast<Mixer*>(arg);
     //printf("RT_rjack_process called %d\n",num_frames);
 
@@ -785,12 +769,55 @@ struct Mixer{
 
 static Mixer *g_mixer;
 
+#if USE_WORKAROUND
+
+// workaround for non-working UnhandledExceptionFilter in the jack thread. (strange)
+
+namespace{
+struct Workaround : public QThread {
+
+  radium::Semaphore startit;
+  
+  Workaround(){
+    start(QThread::LowestPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
+  }
+  
+  void run(){
+        
+    THREADING_init_player_thread_type();
+    R_ASSERT(THREADING_is_player_thread());
+    R_ASSERT(!THREADING_is_main_thread());
+
+    PLAYER_acquire_same_priority();
+
+    startit.wait();
+    
+    g_mixer->RT_thread();
+  }
+};
+}
+
+static Workaround *g_workaround;
+
+static void create_workaround_thread(void){
+  g_workaround = new Workaround;
+}
+
+static void start_workaround_thread(void){
+  g_workaround->startit.signal();
+}
+#endif
+
 bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
   init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
+
+#if USE_WORKAROUND
+  create_workaround_thread();
+#endif
   
   g_mixer = new Mixer();
   

@@ -211,7 +211,7 @@ OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders
 OBJ7= instruments.o patch.o fxlines.o fxlines_legalize.o blocklist.o  scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
 
 #Tempos and time
-OBJ8= reltempo.o temponodes.o tempos.o time.o time2place.o temponodes_legalize.o
+OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o
 
 #Playing
 OBJ9= Ptask2Mtask.o player.o scheduler.o PEQrealline.o PEQline.o PEQmempool.o PEQblock.o PEQnotes.o PEQcommon.o playerclass.o player_startstop.o PEQvelocities.o PEQpitches.o PEQ_calc.o PEQfxs.o player_pause.o PEQ_type.o PEQ_calc_64bit.o PEQ_clock.o PEQ_LPB.o PEQ_Signature.o PEQ_Beats.o
@@ -841,9 +841,6 @@ undo_range.o:  $(BUILD_DEPENDENCIES) $(CD)undo_range.c
 
 undo_blocks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_blocks.c
 	$(CC) $(CD)undo_blocks.c $(OPT)
-
-time2place.o:  $(BUILD_DEPENDENCIES) $(CD)time2place.c
-	$(CC) $(CD)time2place.c $(OPT)
 
 PEQ_calc_64bit.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc_64bit.c
 	$(CC) $(CD)PEQ_calc_64bit.c $(OPT)

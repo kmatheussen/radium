@@ -140,7 +140,7 @@ public:
         sp_ready.signal();
         break;
       }
-            
+
       process_next_soundproducer(time, num_frames, process_plugins);
     }
 

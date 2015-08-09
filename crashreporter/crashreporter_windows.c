@@ -689,7 +689,7 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 #else
 
 
-  // Found this dirty trick here: http://jpassing.com/2008/03/12/walking-the-stack-of-the-current-thread/
+  // Found this (very) dirty trick here: http://jpassing.com/2008/03/12/walking-the-stack-of-the-current-thread/
   
 
   ZeroMemory( &context, sizeof( CONTEXT ) );
@@ -756,7 +756,9 @@ exception_filter(LPEXCEPTION_POINTERS info)
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
-/*
+#define USE_VECTORED_EXCEPTION_HANDLER 0
+
+#if USE_VECTORED_EXCEPTION_HANDLER
 static LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS info)
 {
   //fprintf(stderr, "\n\n\n ************* VectoredExceptionHandler ************** E 1\n");fflush(stderr);
@@ -777,10 +779,10 @@ static LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS info)
 	return EXCEPTION_EXECUTE_HANDLER;
 
 }
-*/
+static PVOID vectored_exception_handler = NULL;
+#endif
 
 static LPTOP_LEVEL_EXCEPTION_FILTER g_prev = NULL;
-//static PVOID vectored_exception_handler = NULL;
 
 static void
 backtrace_register(void)
@@ -788,14 +790,16 @@ backtrace_register(void)
   if (crash_buffer==NULL){
     crash_buffer = calloc(1,BUFFER_MAX);
     g_prev = SetUnhandledExceptionFilter(exception_filter);
-    //vectored_exception_handler = AddVectoredExceptionHandler(1, VectoredExceptionHandler);
+#if USE_VECTORED_EXCEPTION_HANDLER
+    vectored_exception_handler = AddVectoredExceptionHandler(0, VectoredExceptionHandler);
+#endif
   }
 }
 
 static void
 backtrace_unregister(void)
 {
-  #if 0
+#if USE_VECTORED_EXCEPTION_HANDLER
   if (vectored_exception_handler != NULL){
     RemoveVectoredExceptionHandler(vectored_exception_handler);
     vectored_exception_handler = NULL;
