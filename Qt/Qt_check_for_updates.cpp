@@ -6,6 +6,7 @@
 #include <QApplication>
 
 #include "../common/nsmtracker.h"
+#include "../common/settings_proc.h"
 
 #include "../OpenGL/Widget_proc.h"
 
@@ -43,9 +44,17 @@ static bool hasNewer(QString newestversion, QString thisversion){
   return a > b;
 }
 
+static QString last_informed_version(void){
+  return SETTINGS_read_string("latest_informed_update_version", "");
+}
+
+static void set_last_informed_version(QString version){
+  SETTINGS_write_string("latest_informed_update_version", version.toUtf8().constData());
+}
+
 static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
 
-  if (hasNewer(newestversion, VERSION)) {
+  if (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion) {
     printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
     GL_lock();{
       QMessageBox::information(NULL,
@@ -54,6 +63,7 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
                                "A newer version (V" + newestversion + ") is available for download at <A href=\"http://users.notam02.no/~kjetism/radium\">http://users.notam02.no/~kjetism/radium</a>"
                                );
     }GL_unlock();
+    set_last_informed_version(newestversion);
   } else
     printf("Nope, %s is actually newer than (or just as old) as %s\n", VERSION, newestversion.toUtf8().constData());
 }
