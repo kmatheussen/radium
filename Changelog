@@ -1,4 +1,5 @@
 Most important changes 3.2.9 -> 3.3.0
+* Windows: Turn off jack "-S" checking in production again. Still doesn't work.
 * Don't inform more than one time about a newer version of radium
 * Removed comment in the preferences dialog about MultiCore being
   an experimental feature. It seems stable.
