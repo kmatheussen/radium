@@ -171,7 +171,7 @@ static void check_jackd_arguments(void){
 
   }
 
-  //#if !defined(RELEASE)
+#if !defined(RELEASE)
   if(found_jack==false){
     num_users_of_keyboard++;
     QMessageBox msgBox;
@@ -183,7 +183,7 @@ static void check_jackd_arguments(void){
     msgBox.exec();
     num_users_of_keyboard--;
   }
-  //#endif
+#endif
 
 #endif
 }
