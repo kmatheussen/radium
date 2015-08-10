@@ -788,10 +788,10 @@ struct Workaround : public QThread {
     R_ASSERT(THREADING_is_player_thread());
     R_ASSERT(!THREADING_is_main_thread());
 
-    PLAYER_acquire_same_priority();
-
     startit.wait();
     
+    PLAYER_acquire_same_priority();
+
     g_mixer->RT_thread();
   }
 };
