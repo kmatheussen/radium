@@ -1,3 +1,17 @@
+Most important changes 3.2.9 -> 3.3.0
+* Don't inform more than one time about a newer version of radium
+* Removed comment in the preferences dialog about MultiCore being
+  an experimental feature. It seems stable.
+* windows: Use a home made jack process thread to make the unhandled
+  exceptions filter work also when crashing in the main audio thread.
+* Pause the gl thread for a second when opening a new window or dialog.
+  This might prevent some crashes caused by buggy gfx driver
+* Turn off modal windows by default for AMD/catalyst and Intel drivers
+  on Linux since the pausing seems to fix the crashes
+
+
+
+
 Most important changes 3.2.8 -> 3.2.9
 * Windows: Don't start crash reporter all the time when loading and using VST plugins.
   Bug was introduced in V3.2.5
