@@ -50,6 +50,34 @@ public:
 private:
   PluginWidget *_plugin_widget;
 
+  struct MyQTimer : public QTimer{
+    Plugin_widget *plugin_widget;
+    
+    MyQTimer(Plugin_widget *plugin_widget)
+      : plugin_widget(plugin_widget)
+    {
+      setInterval(100);
+    }
+    
+    void timerEvent(QTimerEvent * e){ // virtual method from QTimer
+      SoundPlugin *plugin = (SoundPlugin*)plugin_widget->_patch->patchdata;
+      const SoundPluginType *type = plugin->type;
+
+      if(type->gui_is_visible!=NULL){
+        if (plugin_widget->isVisible()==true){
+          bool checkbox = plugin_widget->show_gui_checkbox->isChecked();
+          bool gui = type->gui_is_visible(plugin);
+          if (checkbox==false && gui==true)
+            plugin_widget->show_gui_checkbox->setChecked(true);
+          else if(checkbox==true && gui==false)
+            plugin_widget->show_gui_checkbox->setChecked(false);
+        }
+      }
+    }
+  };
+
+  MyQTimer _timer;
+
 public:
 
   Plugin_widget(QWidget *parent, struct Patch *patch)
@@ -59,6 +87,7 @@ public:
     , _jack_plugin_widget(NULL)
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
+    , _timer(this)
     {
       R_ASSERT(_patch!=NULL)
         
@@ -159,6 +188,10 @@ public:
 
     if(plugin->type->show_gui!=NULL && plugin->type->hide_gui!=NULL)
       show_gui_button->hide();
+
+    if(plugin->type->gui_is_visible!=NULL){
+      _timer.start();
+    }
   }
 
   void update_widget() {

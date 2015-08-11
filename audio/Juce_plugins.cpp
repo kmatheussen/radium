@@ -475,6 +475,19 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   snprintf(buffer,buffersize-1,"%s",data->audio_instance->getParameterText(effect_num, buffersize-1).toRawUTF8());
 }
 
+static bool gui_is_visible(struct SoundPlugin *plugin){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+
+  if (data->window==NULL)
+    return false;
+  else
+    return data->window->isVisible();
+}
+
 static void show_gui(struct SoundPlugin *plugin){
 #if JUCE_LINUX
   const MessageManagerLock mmLock;
@@ -768,7 +781,8 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
   plugin_type->RT_process = RT_process;
   plugin_type->create_plugin_data = create_plugin_data;
   plugin_type->cleanup_plugin_data = cleanup_plugin_data;
-  
+
+  plugin_type->gui_is_visible = gui_is_visible;
   plugin_type->show_gui = show_gui;
   plugin_type->hide_gui = hide_gui;
   

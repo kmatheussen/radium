@@ -202,6 +202,7 @@ typedef struct SoundPluginType{
 
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 
+  bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL
   void (*show_gui)(struct SoundPlugin *plugin); // If NULL, the "GUI" button will not show.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
