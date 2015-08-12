@@ -116,11 +116,13 @@ FULL_VERSION ?= 1
 
 DEBUG_BUILD_OPTS = -DDEBUG -Werror -Wall -g
 #-DNDEBUG
-RELEASE_BUILD_OPTS = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE) -DNDEBUG
 
-# Need to disable NDEBUG since it chashes on windows (!). Normally this flag would be defined in RELEASE_BUILD_OPTS
+RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -DDEBUG -Wall -g $(OPTIMIZE)
+# NDEBUG chashes on windows 32 bit (!).
 # The crashreporter says the crash happens in QTextEngine::itemize, but there is no further backtrace, which is a sign of memory corruption, so this information might not be accurate.
-# -DNDEBUG
+
+RELEASE_BUILD_OPTS = $(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG) -DNDEBUG
+
 
 
 OS_OPTS ?= 
@@ -1353,7 +1355,14 @@ RtMidi.o:  $(BUILD_DEPENDENCIES) $(RTMIDI_DIR)/RtMidi.cpp $(RTMIDI_DIR)/RtMidi.h
 
 
 buildtype.opt: #Makefile
-	if [ $(BUILDTYPE) = DEBUG ] ; then echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; else echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; fi
+	echo $(TARGET_OS)
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; \
+	elif [ $(TARGET_OS) = mingw32 ] ; then \
+		echo "$(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG)" >buildtype.opt ; \
+	else \
+		echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; \
+	fi
 
 bin/X11_XSendEvent: X11/X11_XSendEvent.c
 	$(CC) X11/X11_XSendEvent.c -Wall -o bin/X11_XSendEvent -L/usr/X11R6/lib -lX11
