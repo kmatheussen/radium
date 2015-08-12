@@ -144,7 +144,7 @@ namespace{
 #endif
       
       result.ppqPosition = RT_LPB_get_beat_position();
-      result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start = 0.0;
+      result.ppqPositionOfLastBarStart = g_beat_position_of_last_bar_start;
 
       result.isPlaying = pc->isplaying;
 #if 0
