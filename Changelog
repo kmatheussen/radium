@@ -1,3 +1,15 @@
+Most important changes 3.3.0 -> 3.3.1
+* Fix crash during startup on windows 32 bit.
+  Bug (re)introduced in 3.3.0 (the NDEBUG option again).
+* Fix a copy-and-paste error which caused ppqPositionOfLastBarStart
+  to always have the value 0.0. Might make a difference
+  on some VST plugins.
+* Automatically uncheck the "GUI" button in the instrument
+  widget if the native plugin gui was closed by closing
+  the window directly.
+
+
+
 Most important changes 3.2.9 -> 3.3.0
 * Windows: Turn off jack "-S" checking in production again. Still doesn't work.
 * Don't inform more than one time about a newer version of radium
