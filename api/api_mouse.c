@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/list_proc.h"
+#include "../common/undo.h"
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
 #include "../common/time_proc.h"
@@ -1862,11 +1863,18 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
   value = R_BOUNDARIES(0,value,127);
 
   Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
-    
+
+  int ret;
+  
   if(note==NULL)
-    return addNote2(window, wblock, wtrack, &place, value);
+    ret = addNote2(window, wblock, wtrack, &place, value);
   else
-    return addPitch(window, wblock, wtrack, note, &place, value);
+    ret = addPitch(window, wblock, wtrack, note, &place, value);
+
+  if (ret==-1)
+    Undo_CancelLastUndo();
+
+  return ret;
 }
   
 
@@ -2426,6 +2434,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
 
   if (ret==-1){
     //RError("createFx: Can not create new fx with the same position as another fx");
+    Undo_CancelLastUndo();
     return -1;
   }
 
