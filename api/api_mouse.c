@@ -2393,13 +2393,14 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
 
   Place lastplace;
   PlaceSetLastPos(wblock->block, &lastplace);
-                  
+
   Place place;
   Float2Placement(floatplace, &place);
 
-  if (PlaceLessOrEqual(&place, PlaceGetFirstPos())){
-    RError("createFx: placement before top of block for fx #%d", fxnum);
-    return -1;
+  if (PlaceLessThan(&place, PlaceGetFirstPos())){
+    if (floatplace < 0)
+      RError("createFx: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
+    place = *PlaceGetFirstPos();
   }
 
   if (PlaceGreaterOrEqual(&place, &lastplace)) {
