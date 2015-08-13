@@ -2403,9 +2403,11 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
     place = *PlaceGetFirstPos();
   }
 
-  if (PlaceGreaterOrEqual(&place, &lastplace)) {
-    RError("createFx: placement after fx end for fx #%d", fxnum);
-    return -1;
+  if (PlaceGreaterThan(&place, &lastplace)) {
+    if (floatplace >= wblock->block->num_lines)
+      RError("createFx: placement after fx end for fx #%d (%f)", fxnum, floatplace);
+    
+    place = lastplace;
   }
 
   Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
