@@ -1,3 +1,14 @@
+Most important changes 3.3.1 -> 3.3.2
+* Select VST presets in the instrument widget
+* Change name of the current VST preset in the instrument widget
+* Don't crash when deleting vst plugin (bug introduced in 3.3.1)
+* Don't add undo if we couldn't create fx node or pitch
+* Don't assert crash reporter if trying to create an fx node in the
+  first legal position, or the last legal position. Only show assert
+  reporter if trying to create before first legal position, or
+  after last legal position.
+
+
 Most important changes 3.3.0 -> 3.3.1
 * Fix crash during startup on windows 32 bit.
   Bug (re)introduced in 3.3.0 (the NDEBUG option again).
