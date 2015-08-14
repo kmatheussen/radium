@@ -230,9 +230,15 @@ public:
     const SoundPluginType *type = plugin->type;
 
     if (type->get_num_presets != NULL){
+
       int preset_num = type->get_current_preset(plugin);
-      preset_selector->setValue(preset_num+1);
-      preset_button->setText(type->get_preset_name(plugin, preset_num));
+      if (preset_num != preset_selector->value())
+        preset_selector->setValue(preset_num+1);
+
+      const char *preset_name = type->get_preset_name(plugin, preset_num);
+      if (strcmp(preset_name, preset_button->text().toUtf8().constData()))
+        preset_button->setText(preset_name);
+
     }
   }
   
