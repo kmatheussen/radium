@@ -61,16 +61,19 @@ private:
     
     void timerEvent(QTimerEvent * e){ // virtual method from QTimer
       SoundPlugin *plugin = (SoundPlugin*)plugin_widget->_patch->patchdata;
-      const SoundPluginType *type = plugin->type;
 
-      if(type->gui_is_visible!=NULL){
-        if (plugin_widget->isVisible()==true){
-          bool checkbox = plugin_widget->show_gui_checkbox->isChecked();
-          bool gui = type->gui_is_visible(plugin);
-          if (checkbox==false && gui==true)
-            plugin_widget->show_gui_checkbox->setChecked(true);
-          else if(checkbox==true && gui==false)
-            plugin_widget->show_gui_checkbox->setChecked(false);
+      if (plugin != NULL) {
+        const SoundPluginType *type = plugin->type;
+        
+        if(type->gui_is_visible!=NULL){
+          if (plugin_widget->isVisible()==true){
+            bool checkbox = plugin_widget->show_gui_checkbox->isChecked();
+            bool gui = type->gui_is_visible(plugin);
+            if (checkbox==false && gui==true)
+              plugin_widget->show_gui_checkbox->setChecked(true);
+            else if(checkbox==true && gui==false)
+              plugin_widget->show_gui_checkbox->setChecked(false);
+          }
         }
       }
     }
