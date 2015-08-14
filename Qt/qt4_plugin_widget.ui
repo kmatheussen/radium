@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1181</width>
+    <width>1265</width>
     <height>193</height>
    </rect>
   </property>
@@ -231,6 +231,29 @@
         </property>
         <property name="text">
          <string>Random</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="preset_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Trumpet</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="preset_selector">
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="specialValueText">
+         <string/>
         </property>
        </widget>
       </item>

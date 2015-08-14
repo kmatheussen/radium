@@ -209,6 +209,13 @@ typedef struct SoundPluginType{
   void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set.
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
+  // Presets (optional)
+  int (*get_num_presets)(struct SoundPlugin *plugin);
+  int (*get_current_preset)(struct SoundPlugin *plugin);
+  void (*set_current_preset)(struct SoundPlugin *plugin, int num);
+  const char *(*get_preset_name)(struct SoundPlugin *plugin, int num);
+  void (*set_preset_name)(struct SoundPlugin *plugin, int num, const char* new_name);
+    
   // Free use by the plugin
   void *data;
 

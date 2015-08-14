@@ -65,8 +65,8 @@ private:
       if (plugin != NULL) {
         const SoundPluginType *type = plugin->type;
         
-        if(type->gui_is_visible!=NULL){
-          if (plugin_widget->isVisible()==true){
+        if (plugin_widget->isVisible()==true){
+          if(type->gui_is_visible!=NULL){
             bool checkbox = plugin_widget->show_gui_checkbox->isChecked();
             bool gui = type->gui_is_visible(plugin);
             if (checkbox==false && gui==true)
@@ -74,6 +74,8 @@ private:
             else if(checkbox==true && gui==false)
               plugin_widget->show_gui_checkbox->setChecked(false);
           }
+          
+          plugin_widget->update_preset_widgets();
         }
       }
     }
@@ -195,6 +197,16 @@ public:
     if(plugin->type->gui_is_visible!=NULL){
       _timer.start();
     }
+
+    if (type->get_num_presets==NULL || type->get_num_presets(plugin)==0){
+      preset_selector->hide();
+      preset_button->hide();
+    } else {
+      preset_selector->setMinimum(1);
+      preset_selector->setMaximum(type->get_num_presets(plugin));
+    }
+
+    update_widget();
   }
 
   void update_widget() {
@@ -209,9 +221,20 @@ public:
 
     if(_jack_plugin_widget != NULL)
       _jack_plugin_widget->update_gui();
+
+    update_preset_widgets();
   }
 
+  void update_preset_widgets(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
 
+    if (type->get_num_presets != NULL){
+      int preset_num = type->get_current_preset(plugin);
+      preset_selector->setValue(preset_num+1);
+      preset_button->setText(type->get_preset_name(plugin, preset_num));
+    }
+  }
   
 private:
   
@@ -363,6 +386,47 @@ public slots:
         infoBox.setText("No information about this plugin."); // This message box should never show.
 
       safeShowOrExec(&infoBox);
+    }
+
+    void on_preset_button_clicked(){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      const SoundPluginType *type = plugin->type;
+
+      int num_presets = type->get_num_presets(plugin);
+      
+      vector_t v = {0};
+
+      for(int i=0;i<num_presets;i++){
+        VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_preset_name(plugin, i)));
+      }
+
+      VECTOR_push_back(&v, "--------------");
+      VECTOR_push_back(&v, "<set new name>");
+      
+      int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+      if (num == num_presets+1) {
+        char *new_name = GFX_GetString(NULL, NULL, "new name: ");
+        if (new_name != NULL){
+          type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
+          update_preset_widgets();
+        }
+      } else if (num >= 0 && num<num_presets) {
+        type->set_current_preset(plugin, num);
+        update_preset_widgets();
+      }
+    }
+    
+    void on_preset_selector_editingFinished(){
+      int num = preset_selector->value() - 1;
+      printf("num: %d\n",num);
+      
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      const SoundPluginType *type = plugin->type;
+
+      type->set_current_preset(plugin, num);
+      update_preset_widgets();
+      
+      set_editor_focus();
     }
 };
 

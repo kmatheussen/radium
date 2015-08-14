@@ -751,6 +751,61 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
   return type_data->effect_names[effect_num];
 }
 
+static int get_num_presets(struct SoundPlugin *plugin){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  return instance->getNumPrograms();
+}
+
+static int get_current_preset(struct SoundPlugin *plugin){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  return instance->getCurrentProgram();
+}
+
+static void set_current_preset(struct SoundPlugin *plugin, int num){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  instance->setCurrentProgram(num);
+}
+
+static const char *get_preset_name(struct SoundPlugin *plugin, int num){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  return talloc_strdup(instance->getProgramName(num).toRawUTF8());
+}
+
+static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new_name){
+#if JUCE_LINUX
+  const MessageManagerLock mmLock;
+#endif
+
+  Data *data = (Data*)plugin->data;
+  AudioPluginInstance *instance = data->audio_instance;
+
+  instance->changeProgramName(num, new_name);
+}
+
 static SoundPluginType *create_plugin_type(const char *name, int uid, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
@@ -800,6 +855,12 @@ static SoundPluginType *create_plugin_type(const char *name, int uid, const wcha
 
   plugin_type->create_state = create_state;
   plugin_type->recreate_from_state = recreate_from_state;
+
+  plugin_type->get_num_presets = get_num_presets;
+  plugin_type->get_current_preset = get_current_preset;
+  plugin_type->set_current_preset = set_current_preset;
+  plugin_type->get_preset_name = get_preset_name;
+  plugin_type->set_preset_name = set_preset_name;
 
   printf("\n\n\nPopulated %s/%s\n",plugin_type->type_name,plugin_type->name);
   PR_add_plugin_type_no_menu(plugin_type);
