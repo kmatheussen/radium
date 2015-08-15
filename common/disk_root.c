@@ -44,7 +44,7 @@ DC_start("ROOT");
         DC_SSF("quantitize",(double)theroot->quantitize_options.quant.numerator / (double)theroot->quantitize_options.quant.denominator);
 	DC_SSI("grid_numerator",theroot->grid_numerator);
 	DC_SSI("grid_denominator",theroot->grid_denominator);
-	DC_SSI("keyoct",theroot->keyoct);
+	DC_SSI("keyoct",theroot->keyoct); // not used anymore. Still saved though so that new songs can be opened in older radiums.
 	DC_SSI("min_standardvel",theroot->min_standardvel);
 	DC_SSI("standardvel",theroot->standardvel);
 
@@ -78,6 +78,7 @@ struct Root *LoadRoot(void){
 		"standardvel"
 	};
 	struct Root *ret=DC_alloc(sizeof(struct Root));
+	ret->keyoct = root->keyoct;
         ret->quantitize_options = root->quantitize_options;
         ret->min_standardvel=MAX_VELOCITY*40/100;
         ret->editonoff=true;
@@ -134,7 +135,8 @@ var10:
         goto start;
 
 var11:
-	ret->keyoct=DC_LoadI();
+	DC_LoadI();
+        //ret->keyoct=DC_LoadI();
 	goto start;
 
 var12:

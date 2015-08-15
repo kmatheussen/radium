@@ -70,7 +70,7 @@ bool InitProgram(void){
 		return false;
 	}
 
-	root->keyoct=48;
+	root->keyoct=36;
         root->quantitize_options = Quantitize_get_default_options();
         root->grid_numerator=1;
         root->grid_denominator=1;
