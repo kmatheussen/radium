@@ -414,11 +414,11 @@ public slots:
         char *new_name = GFX_GetString(NULL, NULL, "new name: ");
         if (new_name != NULL){
           type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
-          update_preset_widgets();
+          update_widget();
         }
       } else if (num >= 0 && num<num_presets) {
         type->set_current_preset(plugin, num);
-        update_preset_widgets();
+        update_widget();
       }
     }
     
@@ -430,7 +430,7 @@ public slots:
       const SoundPluginType *type = plugin->type;
 
       type->set_current_preset(plugin, num);
-      update_preset_widgets();
+      update_widget();
       
       set_editor_focus();
     }
