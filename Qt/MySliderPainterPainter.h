@@ -19,7 +19,50 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace cvs{
 
+#if 0
+static inline void SLIDERPAINTERPAINTER_paint(MyPainter *p, int x1, int y1, int x2, int y2, bool is_enabled, float val, std::string text, bool alternative_color){
+  MyColor c1(98,59,33);
+  MyColor c2(18,59,13);
 
+  int height = y2-y1;
+  int width = x2-x1;
+
+  p->fillRect(0,0,width,height,c1);
+      
+  if(height > width){ // i.e. vertical
+    int pos=scale(val,0,1,0,height);
+    p->fillRect(0,pos,width,height,c2);
+  } else {
+    int pos=scale(val,0,1,0,width);
+    p->fillRect(pos,0,width,height,c2);
+  }
+
+
+  MyColor border_color(88,9,93);
+  p->drawRect(1,0,width,height,border_color);
+
+  
+
+  /////////////////////
+  // text
+   
+  MyRect rect(5,2,width,height);
+
+  if(text.compare("")!=0){
+    MyColor c(1);
+#ifndef JUCE_API
+    if(is_enabled)
+      c.setAlpha(160);
+    else
+      c.setAlpha(60);
+#endif
+    p->drawText(rect, text, c);
+  }
+
+}
+
+#else
+ 
 static inline void SLIDERPAINTERPAINTER_paint(MyPainter *p, int x1, int y1, int x2, int y2, bool is_enabled, float val, std::string text, bool alternative_color){
 #if 0 //def JUCE_API // Must do this to make the colors look equal. Don't know why, could be that the color mixing functions used for the two API's work differently.
     static MyColor gray(80,80,80);
@@ -105,7 +148,8 @@ static inline void SLIDERPAINTERPAINTER_paint(MyPainter *p, int x1, int y1, int 
     }
 
 }
-
+#endif
+ 
 } // namespace cvs
 
 

@@ -7,9 +7,13 @@
 
 void SMOOTH_init(Smooth *smooth, float value, int blocksize){
 
+  memset(smooth, 0, sizeof(Smooth));
+  
   smooth->next_target_value = value;
   smooth->target_value = value;
   smooth->value = value;
+
+  smooth->target_audio_will_be_modified = true;      
 
   smooth->num_values = blocksize;
   smooth->values = malloc(sizeof(float)*blocksize);
@@ -40,8 +44,16 @@ float SMOOTH_get_target_value(Smooth *smooth){
   return smooth->next_target_value;
 }
 
-// Must be called before processing a new block.
+void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth){
+  smooth->target_audio_will_be_modified = is_smoothing_necessary(smooth) ||
+                                          smooth->value > 0.0f ||
+                                          smooth->target_value != smooth->next_target_value;
+}
+
+// Must be called before processing a new block. (a Radium block, NOT a soundcard block)
 void SMOOTH_called_per_block(Smooth *smooth){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+    
   int num_values = smooth->num_values;
 
   float next_target_value = smooth->next_target_value; // Only one read. smooth->next_target_value can be written at any time from any thread.
@@ -80,6 +92,8 @@ void SMOOTH_called_per_block(Smooth *smooth){
 }
 
 void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+    
   int i;
   if(is_smoothing_necessary(smooth)==true){
     float *values = smooth->values;
@@ -97,6 +111,8 @@ void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames){
 }
 
 void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  
   int i;
   if(is_smoothing_necessary(smooth)==true){
     float *values = smooth->values;
@@ -116,6 +132,8 @@ void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames){
 }
 
 void SMOOTH_apply_volume_using_inverted_values(Smooth *smooth, float *sound, int num_frames){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  
   int i;
   if(is_smoothing_necessary(smooth)==true){
     float *values = smooth->values;
@@ -130,6 +148,7 @@ void SMOOTH_apply_volume_using_inverted_values(Smooth *smooth, float *sound, int
 }
 
 void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float start_volume, float end_volume){
+  
   int i;
   float diff = end_volume - start_volume;
 
@@ -151,7 +170,15 @@ void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float s
   }
 }
 
+
+bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(Smooth *smooth){
+  return smooth->target_audio_will_be_modified;
+}
+
+
 void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_frames){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  
   int i;
   if(is_smoothing_necessary(smooth)==true){
     float *values = smooth->values;
@@ -170,6 +197,8 @@ void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_fra
 }
 
 void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, float *source, int num_frames){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  
   int i;
   if(is_smoothing_necessary(smooth)==true){
     float *values = smooth->values;
@@ -241,7 +270,8 @@ static Panvals das_get_pan_vals_vector(float pan, int num_source_channels){
 // Think I found this pan calculation method in the ardour source many years ago.
 // TODO: Optimize panning when smoothing is necessary.
 void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_frames){
-
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  
   int i;
   if(num_channels>=2){
     float *sound0 = sound[0];

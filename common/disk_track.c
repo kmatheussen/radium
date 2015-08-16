@@ -149,6 +149,9 @@ var15:
 var16:
 var17:
 var18:
+var19:
+ var20:
+        
 obj3:
 obj4:
 obj5:
@@ -171,6 +174,8 @@ if(track==NULL) return;
           track->patch=PATCH_get_from_id(track->patch->id);
 	}
 
+        DLoadFXs(newroot, track, track->fxs);
+        
 DLoadTracks(newroot,NextTrack(track));
 }
 

@@ -14,7 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include "Python.h"
+
+#include "../common/includepython.h"
 
 
 #include <sys/stat.h>
@@ -31,7 +32,7 @@ char *OS_get_config_filename(void){
   char temp[500];
   sprintf(temp,"mkdir %s/.radium 2>/dev/null",getenv("HOME"));
   if(system(temp)==-1)
-    RWarning("Unable to create \"%s/.radium\" directory",getenv("HOME"));
+    GFX_Message(NULL, "Unable to create \"%s/.radium\" directory",getenv("HOME"));
 
   return talloc_format("%s/.radium/config",getenv("HOME"));
 #endif // __linux__
@@ -42,9 +43,11 @@ char *OS_get_config_filename(void){
 }
 #endif
 
+#if 0
 void OS_make_config_file_expired(const char *key){
   char *config_file = OS_get_config_filename(key);
   char temp[500];
   sprintf(temp,"%s_bu",config_file);
   rename(config_file,temp);
 }
+#endif

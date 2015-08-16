@@ -14,25 +14,23 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <math.h>
 #include <string.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "placement_proc.h"
-#include "nodelines_proc.h"
-#include "nodelines.h"
 #include "gfx_wblocks_proc.h"
 #include "time_proc.h"
 #include "reltempo_proc.h"
 #include "undo_temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
-//#include "blackbox_proc.h"
-#include "gfx_statusbar_proc.h"
 #include "player_proc.h"
 #include "undo.h"
 
 #include "temponodes_proc.h"
 
+#if !USE_OPENGL
 
 void MakeWTempoNodesCallBack(
 	struct Tracker_Windows *window,
@@ -117,6 +115,7 @@ void UpdateWTempoNodes(
 	}
 }
 
+#endif
 
 struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
@@ -153,18 +152,21 @@ void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo){
 		reltempo
 	);
 
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
 
-#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 #endif
-
-	GFX_DrawStatusBar(window,wblock);
 }
 
+
+// TODO/FIX: Implement
 void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
-	struct WBlocks *wblock=window->wblock;
+
+#if !USE_OPENGL
+
+  struct WBlocks *wblock=window->wblock;
 	WTempoNodes *wtemponode;
 	int realline=wblock->curr_realline;
 
@@ -184,26 +186,24 @@ void RemoveAllTempoNodesOnReallineCurrPos(struct Tracker_Windows *window){
 
 	UpdateWTempoNodes(window,wblock);
 
-#if !USE_OPENGL
 	DrawUpWTempoNodes(window,wblock);
 	UpdateSTimes(wblock->block);
 #endif
-
-	GFX_DrawStatusBar(window,wblock);
 }
 
 
 float FindHighestTempoNodeVal(struct Blocks *block){
 	struct TempoNodes *temponode=block->temponodes;
 
-	float max=temponode->reltempo;
+	float max = fabs(temponode->reltempo);
+        
 	temponode=NextTempoNode(temponode);
 
 	while(temponode!=NULL){
-		if(temponode->reltempo>max){
-			max=temponode->reltempo;
-		}
-		temponode=NextTempoNode(temponode);
+          if(fabs(temponode->reltempo) > max){
+            max=fabs(temponode->reltempo);
+          }
+          temponode=NextTempoNode(temponode);
 	}
 
 	return max;

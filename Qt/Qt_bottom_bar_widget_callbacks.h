@@ -42,7 +42,11 @@ Ui::Audio_instrument_widget *g_system_audio_instrument_widget = NULL;
 struct Patch *g_system_out_patch = NULL;
 
 extern bool drunk_velocity;
-extern float g_cpu_usage;
+extern float g_max_cpu_usage;
+extern float g_min_cpu_usage;
+extern int g_num_cpu_usage;
+extern float g_total_cpu_usage;
+
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
@@ -53,8 +57,22 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     Bottom_bar_widget *bottom_bar_widget;
     void timerEvent(QTimerEvent * e){
       QString usage;
-      usage.sprintf("CPU: %.1f",g_cpu_usage);
-      //printf("Usage: %f\n",g_cpu_usage);
+      int num_cpu_usage = g_num_cpu_usage;
+      if (num_cpu_usage==0)
+        usage.sprintf("0.0 /  0.0 /  0.0");
+      else {
+        float total = g_total_cpu_usage / (float)num_cpu_usage;
+        usage.sprintf("%s%.1f / %s%.1f / %s%.1f",
+                      g_min_cpu_usage < 10 ? " " : "", g_min_cpu_usage,
+                      total<10?" ":"", total,
+                      g_max_cpu_usage < 10?" ":"", g_max_cpu_usage
+                      );
+        //printf("Usage: %f\n",g_cpu_usage);
+        g_max_cpu_usage = 0.0;
+        g_min_cpu_usage = 10000.0;
+        g_total_cpu_usage = 0;
+        g_num_cpu_usage = 0;
+      }
       bottom_bar_widget->cpu_label->setText(usage);
     }
   };
@@ -64,6 +82,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     void timerEvent(QTimerEvent * e){
       if (bottom_bar_widget->edit_onoff->isChecked() != root->editonoff)
         bottom_bar_widget->edit_onoff->setChecked(root->editonoff);
+      if (bottom_bar_widget->click_onoff->isChecked() != root->clickonoff)
+        bottom_bar_widget->click_onoff->setChecked(root->clickonoff);
     }
   };
 
@@ -77,7 +97,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   {
     _initing = true;
     setupUi(this);
-
+    setStyle("cleanlooks");
+ 
     if(g_bottom_bar_widget != NULL)
       RError("g_bottom_bar_widget!=NULL");
 
@@ -92,14 +113,30 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     if(scrolls_per_second==-1)
       scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
 
+    editlines->setValue(1);
+    
     sps->setValue(scrolls_per_second);
+    
+    // For now, I haven't tried any machine where smooth scrolling doesn't work better than non-smooth scrolling. Anyay, just hide the sps options for now.
+    sps->hide();
+    sps_label->hide();
+    sps_line->hide();
 
     // Adjust cpu label width
     {
-      QFontMetrics fm(QApplication::font());
+      QFont sansFont;
+      
+      sansFont.setFamily("Bitstream Vera Sans Mono");
+      sansFont.setStyleName("Bold");
+      sansFont.setPointSize(QApplication::font().pointSize()-1.0);
+
+      cpu_label->setFont(sansFont);
+
+      QFontMetrics fm(sansFont); //QApplication::font());
       //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
-      int width = fm.width("CPU: 100.5") + 5;
+      int width = fm.width("50.0 / 90.5 / 00.5");// + 5;
       cpu_label->setMinimumWidth(width);
+      cpu_label->setMaximumWidth(width);
     }
 
     // Adjust velocity slider widths
@@ -113,13 +150,49 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     _initing = false;
 
-    _timer.bottom_bar_widget = this;
-    _timer.setInterval(1000);
-    _timer.start();
+    // set up timers
+    {
+      _timer.bottom_bar_widget = this;
+      _timer.setInterval(1000);
+      _timer.start();
+      
+      _timer2.bottom_bar_widget = this;
+      _timer2.setInterval(70);
+      _timer2.start();
+    }
 
-    _timer2.bottom_bar_widget = this;
-    _timer2.setInterval(70);
-    _timer2.start();
+    // Set up custom popup menues for the time widgets
+    {
+      bpm->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      bpm_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(bpm_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowBPMPopup(const QPoint&)));
+
+      lpb->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      lpb_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lpb_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLPBPopup(const QPoint&)));
+      
+      signature->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+
+      signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSignaturePopup(const QPoint&)));
+    }
+  }
+
+  void updateWidgets(void){
+    signature->setText(Rational(root->signature).toString());
+    lpb->setValue(root->lpb);
+    bpm->setValue(root->tempo);
   }
 
   void update_velocity_sliders(){
@@ -146,11 +219,57 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       velocity_slider->setMinimum(0);
   }
 
-public slots:
 
+public slots:
+  
+  void ShowBPMPopup(const QPoint& pos)
+  {
+    printf("GOTIT bpm\n");
+    if (popupMenu((char*)"show BPM track")==0)
+      showHideBPMTrack(-1);
+  }
+
+  void ShowLPBPopup(const QPoint& pos)
+  {
+    printf("GOTIT lpb\n");
+    if (popupMenu((char*)"show LPB track")==0)
+      showHideLPBTrack(-1);
+  }
+
+  void ShowSignaturePopup(const QPoint& pos)
+  {
+    printf("GOTIT signature\n");
+    if (popupMenu((char*)"show time signature track")==0)
+      showHideSignatureTrack(-1);
+  }
+
+  void on_signature_editingFinished(){
+    printf("signature bottombar\n");
+    
+    Rational rational = create_rational_from_string(signature->text());
+    signature->pushValuesToRoot(rational);
+
+    signature->setText(Rational(root->signature).toString());
+    set_editor_focus();
+  }
+
+  void on_lpb_editingFinished(){
+    printf("lpb bottombar\n");
+    setLPB(lpb->value());
+    set_editor_focus();
+  }
+
+  void on_bpm_editingFinished(){
+    printf("bpm bottombar\n");
+    setBPM(bpm->value());
+    set_editor_focus();
+  }
+  
   void on_system_volume_slider_valueChanged(int val){
     g_system_audio_instrument_widget->input_volume_slider->setValue(val);
-    
+    printf("val: %d\n",val);
+    GFX_SetBrightness(root->song->tracker_windows, scale(val,0,10000,0,1));
+                      
     SoundPlugin *plugin = (SoundPlugin*)g_system_out_patch->patchdata;
     if (plugin != NULL) { // temp fix
       const SoundPluginType *type = plugin->type;
@@ -162,12 +281,20 @@ public slots:
     }
   }
 
-  void on_octave_up_button_pressed(){
+  void on_octave_up_button_clicked(){
     incKeyAdd(12);
   }
 
-  void on_octave_down_button_pressed(){
+  void on_octave_down_button_clicked(){
     incKeyAdd(-12);
+  }
+
+  void on_editlines_valueChanged(int val){
+    setNoteScrollLength(val);
+  }
+
+  void on_editlines_editingFinished(){
+    set_editor_focus();
   }
 
   void on_sps_valueChanged(int val){
@@ -199,11 +326,11 @@ public slots:
     update_velocity_sliders();
   }
 
-  void on_undo_button_pressed(){
+  void on_undo_button_clicked(){
     Undo();
   }
 
-  void on_redo_button_pressed(){
+  void on_redo_button_clicked(){
     Redo();
   }
 
@@ -212,8 +339,8 @@ public slots:
       switchEditOnOff();
   }
 
-  void on_scrollplay_onoff_toggled(bool val){
-    root->scrollplayonoff = val;
+  void on_click_onoff_toggled(bool val){
+    enableMetronome(val);
   }
 };
 
@@ -223,9 +350,13 @@ extern "C"{
   }
 
   void GFX_OS_UpdateKeyOctave(void){
-    g_bottom_bar_widget->octave_label->setText(QString("Octave: ")+QString::number(root->keyoct/12,16));
+    g_bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
+  void GFX_OS_update_bottombar(void){
+    g_bottom_bar_widget->updateWidgets();
+  }
+  
   void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_available, bool has_unsaved_undos){
     g_bottom_bar_widget->num_undos_label->setText(QString::number(num_undos));
     g_bottom_bar_widget->unsaved_undos->setText(has_unsaved_undos?"*":" ");
@@ -260,5 +391,7 @@ void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument
     g_bottom_bar_widget->system_volume_slider->_effect_num = EFFNUM_INPUT_VOLUME;
     SLIDERPAINTER_set_num_channels(g_bottom_bar_widget->system_volume_slider->_painter, type->num_inputs);
   }
+
+  GFX_OS_UpdateKeyOctave();
 }
     

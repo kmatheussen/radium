@@ -39,6 +39,8 @@ extern LANGSPEC void *talloc_atomic_uncollectable(size_t size);
 
 extern LANGSPEC void *talloc_realloc(void *v, size_t new_size);
 
+extern LANGSPEC void *talloc_atomic_clean(size_t size);
+
 extern LANGSPEC char *talloc_strdup(const char *input);
 
 extern LANGSPEC char *talloc_numberstring(int number);

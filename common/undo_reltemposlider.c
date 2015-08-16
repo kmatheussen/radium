@@ -1,7 +1,6 @@
 
 
 #include "nsmtracker.h"
-#include "trackreallines_proc.h"
 
 #include "undo.h"
 
@@ -51,8 +50,6 @@ void *Undo_Do_RelTempoSlider(
 	wblock->block->reltempo=u_rts->reltempo;
 
 	u_rts->reltempo=reltempo;
-
-        TRACKREALLINES_update_peak_tracks(window,wtrack->track->patch);
 
 	return u_rts;
 }

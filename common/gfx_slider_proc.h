@@ -7,5 +7,5 @@ void DrawSlider(
 	float f_max,
 //	int max,
 	bool onoff,
-	bool t
+        int where
 );

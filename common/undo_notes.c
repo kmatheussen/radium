@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "list_proc.h"
-#include "trackreallines_proc.h"
 
 
 struct Undo_Notes{
@@ -91,8 +90,6 @@ void *Undo_Do_Notes(
 
 	undo_notes->stops=stemp;
 	undo_notes->notes=ntemp;
-
-	UpdateTrackReallines(window,wblock,wtrack);
 
 	return undo_notes;
 }

@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "Beats_proc.h"
 
 #include "clipboard_block_paste_proc.h"
 
@@ -51,6 +52,7 @@ void CB_PasteBlock(
 	struct WBlocks *wblock,
 	struct WBlocks *towblock
 ){
+
 	struct Blocks *block=wblock->block;
 	struct Blocks *toblock=towblock->block;
 	struct WTracks *towtrack=towblock->wtracks;
@@ -97,10 +99,10 @@ void CB_PasteBlock(
 	towblock->reallines=NULL;
 	UpdateRealLines(window,towblock);
 
-	towblock->wtempos=NULL;
-	towblock->wtemponodes=NULL;
-	towblock->wlpbs=NULL;
+	//towblock->wtempos=NULL;
+	//towblock->wlpbs=NULL;
 
+        toblock->signatures=CB_CopySignatures(block->signatures);
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 
 	toblock->tempos=CB_CopyTempos(block->tempos);
@@ -120,7 +122,6 @@ void CB_PasteBlock(
 		}
 
 		CB_PasteTrack(towblock,wtrack,towtrack);
-		towtrack->trackreallines=NULL;
 		towtrack=NextWTrack(towtrack);
 		wtrack=NextWTrack(wtrack);
 	}
@@ -131,6 +132,7 @@ void CB_PasteBlock(
 
 	UpdateSTimes(towblock->block);
 	UpdateReallinesDependens(window,towblock);
+        UpdateBeats(block);
 
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();

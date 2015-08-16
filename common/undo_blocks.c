@@ -86,6 +86,7 @@ void *Undo_Do_Block(
 	int realline,
 	void *pointer
 ){
+
 	struct WBlocks *undo_wblock=(struct WBlocks *)pointer;
 	struct WBlocks *temp=CB_CopyBlock(wblock);
 

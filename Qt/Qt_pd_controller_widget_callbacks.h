@@ -66,7 +66,7 @@ public:
         _pd_controller_widget->update();
       }
 
-      if (strcmp(_controller->name, _name.ascii())) {
+      if (strcmp(_controller->name, _name.toUtf8().constData())) {
         _name = _controller->name;
         _pd_controller_widget->paint_slider_text();
         _pd_controller_widget->paint_onoff_text();
@@ -109,11 +109,11 @@ public:
     setupUi(this);
 
     value_slider->_is_a_pd_slider = true;
-    value_slider->_patch = plugin->patch;
+    value_slider->_patch = (struct Patch*)plugin->patch;
     value_slider->_effect_num = controller_num;
 
     onoff_widget->_is_a_pd_slider = true;
-    onoff_widget->_patch = plugin->patch;
+    onoff_widget->_patch = (struct Patch*)plugin->patch;
     onoff_widget->_effect_num = controller_num;
 
     //SLIDERPAINTER_start_auto_updater(value_slider->_painter);
@@ -167,7 +167,7 @@ public:
   void paint_slider_text(void){
     char buf[64]={0};
     _plugin->type->get_display_value_string(_plugin, _controller->num, buf, 64);
-    SLIDERPAINTER_set_string(value_slider->_painter, QString::fromLatin1(buf));
+    SLIDERPAINTER_set_string(value_slider->_painter, QString::fromUtf8(buf));
   }
 
   void paint_onoff_text(void){

@@ -14,16 +14,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include <Python.h>
-
+#include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/placement_proc.h"
+#include "../common/vector_proc.h"
 #include "../common/list_proc.h"
+#include "../common/undo.h"
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
-#include "../common/gfx_statusbar_proc.h"
-#include "../common/trackreallines_proc.h"
 #include "../common/time_proc.h"
 #include "../common/common_proc.h"
 #include "../common/temponodes_proc.h"
@@ -34,6 +33,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_notes_proc.h"
 #include "../common/gfx_subtrack_proc.h"
 #include "../common/velocities_proc.h"
+#include "../common/visual_proc.h"
+#include "../common/undo_fxs_proc.h"
+#include "../common/fxlines_proc.h"
+#include "../common/instruments_proc.h"
+#include "../common/wblocks_proc.h"
+#include "../common/OS_Player_proc.h"
+#include "../common/player_proc.h"
+#include "../common/undo_trackheader_proc.h"
+#include "../common/patch_proc.h"
+#include "../common/nodelines_proc.h"
+#include "../common/wtracks_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 
@@ -47,29 +57,82 @@ extern struct Root *root;
 extern volatile float scroll_pos;
 
 
-extern struct ListHeader3 *current_node;
+extern const struct ListHeader3 *current_node;
+extern const struct ListHeader3 *indicator_node;
+extern int indicator_velocity_num;
+extern int indicator_pitch_num;
 
 
 // various
 ///////////////////////////////////////////////////
 
-void cancelCurrentNode(void){
-  if (current_node != NULL){
-    current_node = NULL;
-    root->song->tracker_windows->wblock->block->is_dirty = true;
+static void setCurrentNode(struct ListHeader3 *new_current_node){
+  if (current_node != new_current_node){
+    current_node = new_current_node;
+    root->song->tracker_windows->must_redraw = true;
+    //printf("current node dirty\n");
   }
 }
 
-float getHalfOfNodeWidth(void){
-  return root->song->tracker_windows->fontheight / 1.5;
+void cancelCurrentNode(void){
+  setCurrentNode(NULL);
 }
 
-static int get_realline_y1(const struct Tracker_Windows *window, int realline){
+static void setIndicatorNode(const struct ListHeader3 *new_indicator_node){
+  if (indicator_node != new_indicator_node){
+    indicator_node = new_indicator_node;
+    root->song->tracker_windows->must_redraw = true;
+    //printf("indicator node dirty\n");
+  }
+}
+
+void cancelIndicatorNode(void){
+  setIndicatorNode(NULL);
+  indicator_velocity_num = -1;
+  indicator_pitch_num = -1;
+}
+
+
+float getHalfOfNodeWidth(void){
+  return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in Render.cpp
+}
+
+static float get_mouse_realline_y1(const struct Tracker_Windows *window, int realline){
+  //printf("fontheight: %f\n",(float)window->fontheight);
+  //printf("wblock->t.y1: %f. scroll_pos: %f\n",(float)window->wblock->t.y1,(float)scroll_pos);
   return window->fontheight*realline - scroll_pos + window->wblock->t.y1;
 }
 
-static int get_realline_y2(const struct Tracker_Windows *window, int realline){
+static float get_mouse_realline_y2(const struct Tracker_Windows *window, int realline){
   return window->fontheight*(realline+1) - scroll_pos + window->wblock->t.y1;
+}
+
+float getTopVisibleY(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return get_mouse_realline_y1(window, R_MAX(0, wblock->top_realline));
+}
+
+float getBotVisibleY(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return get_mouse_realline_y2(window, R_MIN(wblock->num_reallines-1, wblock->bot_realline));
+}
+
+void setMouseTrack(int tracknum){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  if(tracknum != wblock->mouse_track){
+    wblock->mouse_track = tracknum;
+    window->must_redraw = true;
+  }
 }
 
 void setNoMouseTrack(void){
@@ -80,15 +143,6 @@ void setMouseTrackToReltempo(void){
   setMouseTrack(TEMPONODETRACK);
 }
 
-void setMouseTrack(int tracknum){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblock;
-
-  if(tracknum != wblock->mouse_track){
-    wblock->mouse_track = tracknum;
-    wblock->block->is_dirty = true;
-  }
-}
 
 // placement (block time)
 ///////////////////////////////////////////////////
@@ -96,24 +150,87 @@ void setMouseTrack(int tracknum){
 float getPlaceFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL) {
-    RError("getPlaceFromY: No block %d in window %d",blocknum,windownum);
+  if (wblock==NULL)
     return 0.0;
-  }
 
-  struct Blocks *block = wblock->block;
-  
-  Place *prevplace=PlaceGetFirstPos();
   Place place;
-  Place nextplace;
-  PlaceSetLastPos(block,&nextplace);
-      
+
   GetReallineAndPlaceFromY(window,
                            wblock,
                            y,
                            &place,
-                           prevplace,
-                           &nextplace
+                           NULL,
+                           NULL
+                           );
+  
+  return GetFloatFromPlace(&place);
+}
+
+
+static double get_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
+  double grid = (double)root->grid_numerator / (double)root->grid_denominator;
+
+  float abs_realline = abs_y / window->fontheight;
+  
+  double rounded = round(abs_realline / grid);
+    
+  return rounded * grid * window->fontheight;
+}
+
+float getPlaceInGridFromY(float y, int blocknum, int windownum) {
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0.0;
+
+  // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
+  float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
+  float gridded_abs_y = get_gridded_abs_y(window, abs_y);
+  float gridded_y = gridded_abs_y - wblock->top_realline*window->fontheight + wblock->t.y1;
+  
+  Place place;
+  
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           gridded_y,
+                           &place,
+                           NULL,
+                           NULL
+                           );
+  
+  return GetFloatFromPlace(&place);
+}
+
+
+static double get_next_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
+  double grid = (double)root->grid_numerator / (double)root->grid_denominator;
+
+  float abs_realline = abs_y / window->fontheight;
+  
+  double rounded = round(abs_realline / grid) + 1.0;
+    
+  return rounded * grid * window->fontheight;
+}
+
+float getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0.0;
+
+  // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
+  float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
+  float gridded_abs_y = get_next_gridded_abs_y(window, abs_y);
+  float gridded_y = gridded_abs_y - wblock->top_realline*window->fontheight + wblock->t.y1;
+  
+  Place place;
+  
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           gridded_y,
+                           &place,
+                           NULL,
+                           NULL
                            );
   
   return GetFloatFromPlace(&place);
@@ -125,17 +242,17 @@ float getPlaceFromY(float y, int blocknum, int windownum) {
 // reltempo
 ///////////////////////////////////////////////////
 
-int getReltempoSliderX1(void){
+float getReltempoSliderX1(void){
   return root->song->tracker_windows->wblock->reltempo.x1;
 }
-int getReltempoSliderY1(void){
+float getReltempoSliderY1(void){
   return root->song->tracker_windows->wblock->reltempo.y1;
 }
-int getReltempoSliderX2(void){
+float getReltempoSliderX2(void){
   return root->song->tracker_windows->wblock->reltempo.x2;
 }
-int getReltempoSliderY2(void){
-return root->song->tracker_windows->wblock->reltempo.y2;
+float getReltempoSliderY2(void){
+  return root->song->tracker_windows->wblock->reltempo.y2;
 }
 
 float getReltempo(int blocknum, int windownum){
@@ -151,12 +268,6 @@ void undoReltempo(void){
   Undo_RelTempoSlider(window,window->wblock);
 }
 
-static void update_statusbar(struct Tracker_Windows *window){
-  struct WBlocks *wblock = window->wblock;
-  GFX_SetChangeInt(window,wblock,"Block RelTempo 0.001*",(int)(wblock->block->reltempo*1000));
-  GFX_DrawStatusBar(window,wblock);
-}
-
 void setReltempo(float reltempo){
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
@@ -166,16 +277,12 @@ void setReltempo(float reltempo){
     MAXBLOCKRELTIME
   );
 
-  update_statusbar(window);
+  //update_statusbar(window);
   DrawBlockRelTempo(window,wblock);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
-void showReltempoInStatusbar(void){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  update_statusbar(window);
-}
 
 float getMinReltempo(void){
   return MINBLOCKRELTIME;
@@ -187,12 +294,315 @@ float getMaxReltempo(void){
 
 
 
+// Set track patch
+///////////////////////////////////////////////////
+void setTrackPatch(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  PATCH_select_patch_for_track(window,wtrack,true);
+}
+
+
+
+// track panning on/off
+///////////////////////////////////////////////////
+
+float getTrackPanOnOffX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.x1;
+}
+float getTrackPanOnOffY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.y1;
+}
+float getTrackPanOnOffX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.x2;
+}
+float getTrackPanOnOffY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->panonoff.y2;
+}
+
+bool getTrackPanOnOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->track->panonoff;
+}
+
+void undoTrackPanOnOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  wtrack->track->panonoff = onoff;
+  
+  window->must_redraw = true;
+}
+
+
+// track volumening on/off
+///////////////////////////////////////////////////
+
+float getTrackVolumeOnOffX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volumeonoff.x1;
+}
+float getTrackVolumeOnOffY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volumeonoff.y1;
+}
+float getTrackVolumeOnOffX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volumeonoff.x2;
+}
+float getTrackVolumeOnOffY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volumeonoff.y2;
+}
+
+bool getTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->track->volumeonoff;
+}
+
+void undoTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+void setTrackVolumeOnOff(bool onoff, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  wtrack->track->volumeonoff = onoff;
+  
+  window->must_redraw = true;
+}
+
+
+// track panning slider
+///////////////////////////////////////////////////
+
+float getTrackPanSliderX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.x1;
+}
+float getTrackPanSliderY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.y1;
+}
+float getTrackPanSliderX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.x2;
+}
+float getTrackPanSliderY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->pan.y2;
+}
+
+float getTrackPan(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return scale(wtrack->track->pan, -MAXTRACKPAN, MAXTRACKPAN, -1.0, 1.0);
+}
+
+void undoTrackPan(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+// void setTrackPan(float pan, int tracknum, int blocknum, int windownum)
+// was already (more correctly) implemented in api_various.c
+
+
+
+// track volumening slider
+///////////////////////////////////////////////////
+
+float getTrackVolumeSliderX1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.x1;
+}
+float getTrackVolumeSliderY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.y1;
+}
+float getTrackVolumeSliderX2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.x2;
+}
+float getTrackVolumeSliderY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return wtrack->volume.y2;
+}
+
+float getTrackVolume(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0.0f;
+
+  return scale(wtrack->track->volume, 0, MAXTRACKVOL, 0.0, 1.0);
+}
+
+void undoTrackVolume(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+// void setTrackVolume(float volume, int tracknum, int blocknum, int windownum)
+// was already (more correctly) implemented in api_various.c
+
+
+
+// block positions
+///////////////////////////////////////////////////
+
+float getBlockHeaderY2(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  return wblock==NULL ? 0 : wblock->t.y1;
+}
+
+
 // tracks positions
 ///////////////////////////////////////////////////
 
 float getTrackX1(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->x;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return WTRACK_getx1(window, wblock, tracknum);
 }
 
 float getTrackY1(int tracknum, int blocknum, int windownum){
@@ -201,11 +611,34 @@ float getTrackY1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackX2(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->x2;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return WTRACK_getx2(window, wblock, tracknum);
 }
 
 float getTrackY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+float getTrackPianorollX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->pianoroll_area.x;
+}
+
+float getTrackPianorollY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getTrackPianorollX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->pianoroll_area.x2;
+}
+
+float getTrackPianorollY2(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y2;
 }
@@ -216,8 +649,7 @@ float getTrackNotesX1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackNotesY1(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->y;
+  return getBlockHeaderY2(blocknum, windownum);
 }
 
 float getTrackNotesX2(int tracknum, int blocknum, int windownum){
@@ -236,8 +668,7 @@ float getTrackFxX1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackFxY1(int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-  return wtrack==NULL ? 0 : wtrack->y;
+  return getBlockHeaderY2(blocknum, windownum);
 }
 
 float getTrackFxX2(int tracknum, int blocknum, int windownum){
@@ -248,6 +679,29 @@ float getTrackFxX2(int tracknum, int blocknum, int windownum){
 float getTrackFxY2(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+int getLeftmostTrackNum(void){
+  return LEFTMOSTTRACK;
+}
+
+int getRelTempoTrackNum(void){
+  return TEMPONODETRACK;
+}
+int getTempoTrackNum(void){
+  return TEMPOTRACK;
+}
+int getLPBTrackNum(void){
+  return LPBTRACK;
+}
+int getSignatureTrackNum(void){
+  return SIGNATURETRACK;
+}
+int getTempoColorTrackNum(void){
+  return TEMPOCOLORTRACK;
+}
+int getLinenumTrackNum(void){
+  return LINENUMBTRACK;
 }
 
 
@@ -275,22 +729,20 @@ float getTemponodeMax(int blocknum, int windownum){
     return wblock->reltempomax;
 }
 
-static struct Node *get_temponodeline(int boxnum){
-  vector_t *nodes = root->song->tracker_windows->wblock->reltempo_nodes;
-  if (boxnum < 0 || boxnum>=nodes->num_elements) {
-    RError("There is no temponode %d",boxnum);
-    return NULL;
-  }else
-    return nodes->elements[boxnum];
+static const struct Node *get_temponode(int boxnum){
+  return VECTOR_get(GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock),
+                    boxnum,
+                    "temponode"
+                    );
 }
 
 float getTemponodeX(int num){
-  struct Node *nodeline = get_temponodeline(num);
+  const struct Node *nodeline = get_temponode(num);
   return nodeline==NULL ? 0 : nodeline->x;
 }
 
 float getTemponodeY(int num){
-  struct Node *nodeline = get_temponodeline(num);
+  const struct Node *nodeline = get_temponode(num);
   return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
 }
 
@@ -317,7 +769,7 @@ void undoTemponodes(void){
   Undo_TempoNodes_CurrPos(window);
 }
 
-void setCurrentTempoNode(int num, int blocknum){
+void setCurrentTemponode(int num, int blocknum){
   struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
   if (block==NULL) {
     RError("setCurrentTemponode: No block %d",blocknum);
@@ -326,13 +778,25 @@ void setCurrentTempoNode(int num, int blocknum){
   
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
 
-  if (current_node != &temponode->l) {
-    current_node = &temponode->l;
-    block->is_dirty = true;
+  setCurrentNode(&temponode->l);
+}
+
+void setIndicatorTemponode(int num, int blocknum){
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+  if (block==NULL) {
+    RError("setCurrentTemponode: No block %d",blocknum);
+    return;
   }
+  
+  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+
+  setIndicatorNode(&temponode->l);
 }
 
 void setTemponode(int num, float value, float floatplace, int blocknum, int windownum){
+
+  PlayStop();
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
@@ -345,14 +809,16 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   struct Blocks *block = wblock->block;
 
   struct TempoNodes *temponode;
+
+  const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
   
   if (num==0)
     temponode = block->temponodes; // don't want to set placement for the first node. It's always at top.
   
-  else if (num==wblock->reltempo_nodes->num_elements-1)
+  else if (num==tempo_nodes->num_elements-1)
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
 
-  else if (num>=wblock->reltempo_nodes->num_elements) {
+  else if (num>=tempo_nodes->num_elements) {
     RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
@@ -362,12 +828,9 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   } else {
     Place place;
     Float2Placement(floatplace, &place);
-
     temponode = (struct TempoNodes *)ListMoveElement3_FromNum_ns(&block->temponodes, num, &place, NULL, NULL);
   }
   
-  current_node = &temponode->l;
-    
   if ( (value+1) > wblock->reltempomax) {
     wblock->reltempomax = value+1;      
   } else if ( (value-1) < -wblock->reltempomax) {
@@ -377,46 +840,54 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   temponode->reltempo = value;
 
   UpdateSTimes(wblock->block);    
-  UpdateAllTrackReallines(window,wblock);
-  
-  block->is_dirty = true;
+
+  //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
+
+  window->must_redraw = true;
 }
 
 int getNumTemponodes(int blocknum, int windownum){
-  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
     return 0;
-  else
-    return wblock->reltempo_nodes->num_elements;
+  
+  const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
+  return tempo_nodes->num_elements;
 }
 
 void deleteTemponode(int num, int blocknum){
-  
+  PlayStop();
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(-1, &window, blocknum);
-  if (wblock==NULL) {
-    RError("deleteTemponode: No block %d",blocknum);
+  if (wblock==NULL)
     return;
-  }
 
-  if (num >= wblock->reltempo_nodes->num_elements){
+  const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
+
+  if (num >= tempo_nodes->num_elements){
     RError("deleteTemponode: No temponode %d in block %d",num,blocknum);
     return;
   }
 
   if (num==0){
     wblock->block->temponodes->reltempo = 0.0f;
-  } else if (num==wblock->reltempo_nodes->num_elements-1) {
+  } else if (num==tempo_nodes->num_elements-1) {
     struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
     last->reltempo = 0.0f;
   } else {
     ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
   }
 
-  wblock->block->is_dirty = true;
+  UpdateSTimes(wblock->block);    
+
+  window->must_redraw = true;
 }
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
+  PlayStop();
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
@@ -440,9 +911,8 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   } else if ( (value-1) < -wblock->reltempomax) {
     wblock->reltempomax = -1*(value -1);
   }
-  
+
   struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value);
-  current_node = &temponode->l;
 
   if (temponode==NULL)
     return -1;
@@ -452,13 +922,467 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   //GFX_DrawStatusBar(window,wblock);
 
   UpdateSTimes(block);
-  UpdateAllTrackReallines(window,wblock);
 
-  block->is_dirty = true;
+  window->must_redraw = true;
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
 
+
+// pianoroll
+//////////////////////////////////////////////////
+
+bool pianorollVisible(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return false;
+
+  return wtrack->pianoroll_on;
+}
+
+int getPioanorollLowKey(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return 0;
+
+  return wtrack->pianoroll_lowkey;
+}
+
+int getPioanorollHighKey(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(-1, blocknum, tracknum);
+
+  if (wtrack==NULL)
+    return 127;
+
+  return wtrack->pianoroll_highkey;
+}
+
+
+enum PianoNoteWhatToGet {
+  PIANONOTE_INFO_X1,
+  PIANONOTE_INFO_Y1,
+  PIANONOTE_INFO_X2,
+  PIANONOTE_INFO_Y2,
+  PIANONOTE_INFO_VALUE
+};
+
+static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return 0;
+
+  if (what_to_get==PIANONOTE_INFO_VALUE){
+    if (pianonotenum==0)
+      return note->note;
+    struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+    if (pitch==NULL){
+      RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+      return 0;
+    }
+    return pitch->note;
+  }
+  
+  const struct NodeLine *nodelines = GetPianorollNodeLines(window, wblock, wtrack, note);
+
+  const struct NodeLine *nodeline = Nodeline_n(nodelines, pianonotenum);
+  if(nodeline==NULL) {
+    RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+    return 0;
+  }
+
+  NodelineBox box = GetPianoNoteBox(wtrack, nodeline);
+  
+  switch (what_to_get){
+  case PIANONOTE_INFO_X1:
+    return box.x1;
+  case PIANONOTE_INFO_Y1:
+    return wblock->t.y1 + box.y1 - scroll_pos;
+  case PIANONOTE_INFO_X2:
+    return box.x2;
+  case PIANONOTE_INFO_Y2:
+    return wblock->t.y1 + box.y2 - scroll_pos;
+  default:
+    RError("Internal error");
+    return 0;
+  }
+}
+
+
+float getPianonoteX1(int num, int notenum, int tracknum, int blocknum, int windownum){
+  return get_pianonote_info(PIANONOTE_INFO_X1, num, notenum, tracknum, blocknum, windownum);
+}
+
+float getPianonoteY1(int num, int notenum, int tracknum, int blocknum, int windownum){
+  return get_pianonote_info(PIANONOTE_INFO_Y1, num, notenum, tracknum, blocknum, windownum);
+}
+
+float getPianonoteX2(int num, int notenum, int tracknum, int blocknum, int windownum){
+  return get_pianonote_info(PIANONOTE_INFO_X2, num, notenum, tracknum, blocknum, windownum);
+}
+
+float getPianonoteY2(int num, int notenum, int tracknum, int blocknum, int windownum){
+  return get_pianonote_info(PIANONOTE_INFO_Y2, num, notenum, tracknum, blocknum, windownum);
+}
+
+float getPianonoteValue(int num, int notenum, int tracknum, int blocknum, int windownum){
+  return get_pianonote_info(PIANONOTE_INFO_VALUE, num, notenum, tracknum, blocknum, windownum);
+}
+
+int getNumPianonotes(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+  if (note==NULL)
+    return 0;
+
+  return 1 + ListFindNumElements3(&note->pitches->l);
+}
+
+static void MOVE_PLACE(Place *place, float diff){
+  float oldplace = GetfloatFromPlace(place);
+  Float2Placement(oldplace+diff, place);
+}
+
+static void setPianoNoteValue(float value, int pianonotenum, struct Notes *note){
+
+  if (pianonotenum==0) {
+    note->note = R_BOUNDARIES(1, value, 127);
+    return;
+  }
+  
+  struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+  if (pitch==NULL){
+    RError("There is no pianonote %d",pianonotenum);
+    return;
+  }
+
+  pitch->note = R_BOUNDARIES(1, value, 127);
+}
+
+static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
+  if (pianonotenum==0)
+    return note->l.p;
+  
+  struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+  if (pitch==NULL){
+    RError("There is no pianonote %d",pianonotenum);
+    return note->l.p;
+  }
+
+  return pitch->l.p;
+}
+
+
+static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0;
+
+  struct Tracks *track = wtrack->track;
+
+  int ret = 0;
+  int notenum_so_far = 0;
+  
+  struct Notes *note = track->notes;
+
+  while(note!=NULL){
+
+    if (notenum_so_far==notenum) {
+      struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+      if (pitch==NULL){
+        RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+        return 0;
+      }
+      return ret + pianonotenum;
+    }
+      
+    ret++;
+
+    ret += ListFindNumElements3(&note->pitches->l);
+
+    notenum_so_far++;
+    
+    note = NextNote(note);
+  }
+
+  RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+  return 0;
+}
+
+int movePianonote(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  struct Blocks *block = wblock->block;
+  
+  setPianoNoteValue(value, pianonotenum, note);
+
+  window->must_redraw=true;
+    
+  if (floatplace < 0)
+    return notenum;
+
+  struct Tracks *track = wtrack->track;
+
+  Place lastplace;
+  PlaceSetLastPos(block, &lastplace);
+  
+#if 0
+  // something is wrong somewhere. This should have worked.
+  // For instance: p_Add(62 + 65533/65534, -1 + 0/1) returns a complex value! (must be investigated more)
+  
+  Place old_place = getPianoNotePlace(pianonotenum, note);
+  Place new_place; Float2Placement(floatplace, &new_place);
+  Place diff = p_Sub(new_place, old_place);
+  
+  if (PlaceGreaterOrEqual(&new_place, &lastplace))
+    return notenum;
+
+  note->l.p = new_place;
+  note->end = p_Add(note->end, diff);
+
+#else
+
+  // Work-around here. Work on floats instead of rationals.
+  
+  float lastplacefloat = GetfloatFromPlace(&lastplace);
+
+  Place old_place = getPianoNotePlace(pianonotenum, note);
+  float old_floatplace = GetfloatFromPlace(&old_place);
+  float diff      = floatplace - old_floatplace;
+
+  float old_start = GetfloatFromPlace(&note->l.p);
+  float new_start = old_start + diff;
+
+  float old_end   = GetfloatFromPlace(&note->end);
+  float new_end   = old_end + diff;
+
+  if (new_start < 0)
+    new_start = 0;
+
+  if (new_end >= lastplacefloat)
+    new_end = lastplacefloat - 0.001;
+
+  if (new_start >= new_end)
+    return notenum;
+
+  PLAYER_lock();{
+    ListRemoveElement3(&track->notes, &note->l);
+    
+    Float2Placement(new_start, &note->l.p);
+    Float2Placement(new_end, &note->end);
+
+    struct Velocities *velocity = note->velocities;
+    while(velocity != NULL){
+      MOVE_PLACE(&velocity->l.p, diff);
+      velocity = NextVelocity(velocity);
+    }
+
+    struct Pitches *pitch = note->pitches;
+    while(pitch != NULL){
+      MOVE_PLACE(&pitch->l.p, diff);
+      pitch = NextPitch(pitch);
+    }
+    
+    ListAddElement3(&track->notes, &note->l);
+
+    NOTE_validate(block, track, note);
+  }PLAYER_unlock();
+
+#endif
+
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
+int movePianonoteStart(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+
+
+  if (note->pitches!=NULL) {
+    setPitch(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
+             value, floatplace,
+             tracknum, blocknum, windownum
+             );
+    return ListPosition3(&track->notes->l, &note->l);
+  }
+
+  note->note = R_BOUNDARIES(1, value, 127);
+    
+  window->must_redraw=true;
+    
+  if (floatplace < 0)
+    return notenum;
+
+  float lastplacefloat = GetfloatFromPlace(&note->end);
+  if (floatplace >= lastplacefloat)
+    floatplace = lastplacefloat - 0.001;
+
+  if (note->velocities != NULL) {
+    float firstvelplace = GetfloatFromPlace(&note->velocities->l.p);
+    if (floatplace >= firstvelplace)
+      floatplace = firstvelplace - 0.001;
+  }
+
+  // (there are no pitches here)
+    
+  PLAYER_lock();{
+    ListRemoveElement3(&track->notes, &note->l);
+    
+    Float2Placement(floatplace, &note->l.p);
+    
+    ListAddElement3(&track->notes, &note->l);
+
+    NOTE_validate(block, track, note);
+  }PLAYER_unlock();
+
+
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
+static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place);
+
+int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return notenum;
+
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+  
+  if (note->pitches!=NULL) {
+    if (floatplace>=0) {
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace));
+      window->must_redraw=true;
+    }
+    return notenum;
+  }
+
+  note->note = R_BOUNDARIES(1, value, 127);
+    
+  window->must_redraw=true;
+    
+  if (floatplace < 0)
+    return notenum;
+
+  float firstplacefloat = GetfloatFromPlace(&note->l.p);
+  if (floatplace <= firstplacefloat)
+    floatplace = firstplacefloat + 0.001;
+
+  if (note->velocities != NULL) {
+    float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
+    if (floatplace <= lastvelplace)
+      floatplace = lastvelplace + 0.001;
+  }
+
+  // (there are no pitches here)
+    
+  PLAYER_lock();{
+    Float2Placement(floatplace, &note->end);
+    NOTE_validate(block, track, note);
+  }PLAYER_unlock();
+
+
+  return notenum;
+}
+
+int createPianonote(float value, float floatplace, float endfloatplace, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+
+  value = R_BOUNDARIES(1,value,127);
+
+  Place lastplace;
+  PlaceSetLastPos(block, &lastplace);
+  float lastfloatplace = GetFloatFromPlace(&lastplace);
+  
+  if (floatplace < 0)
+    floatplace = 0;
+
+  if (endfloatplace > lastfloatplace)
+    endfloatplace = lastfloatplace;
+
+  if (floatplace >= endfloatplace) {
+    RError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
+    return -1;
+  }
+
+  Place startplace;
+  Float2Placement(floatplace, &startplace);
+
+  Place endplace;
+  Float2Placement(endfloatplace, &endplace);
+
+  Undo_Notes(window,block,track,window->wblock->curr_realline);
+
+  struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(track), true);
+  
+  window->must_redraw = true;
+
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
+void deletePianonote(int pianonotenum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  window->must_redraw=true;
+    
+  PLAYER_lock();{
+    ListRemoveElement3(&wtrack->track->notes, &note->l);
+  }PLAYER_unlock();
+
+}
+
+
+extern struct CurrentPianoNote current_piano_note;
+  
+void setCurrentPianonote(int num, int notenum, int tracknum){
+  if (
+      current_piano_note.tracknum != tracknum ||
+      current_piano_note.notenum != notenum || 
+      current_piano_note.pianonotenum != num
+      )
+    {  
+      current_piano_note.tracknum = tracknum;
+      current_piano_note.notenum = notenum;
+      current_piano_note.pianonotenum = num;
+      root->song->tracker_windows->must_redraw = true;
+    }
+}
+
+void cancelCurrentPianonote(void){
+  setCurrentPianonote(-1, -1, -1);
+}
 
 // pitches
 //////////////////////////////////////////////////
@@ -476,7 +1400,7 @@ static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches 
     
     struct Pitches *pitch2 = note2->pitches;
     while(pitch2!=NULL){
-      if (note==note && pitch==pitch2)
+      if (note2==note && pitch==pitch2)
         return num;
 
       num++;
@@ -530,6 +1454,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   if (wtrack==NULL)
     return;
 
+  struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
   
   int num = 0;
@@ -538,7 +1463,9 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   while(notes!=NULL){
 
     if (pitchnum==num) {
-      RemoveNote(wblock->block, track, notes);
+      PLAYER_lock();{
+        RemoveNote(block, track, notes);
+      }PLAYER_unlock();
       goto gotit;
     }
     
@@ -547,7 +1474,10 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
     struct Pitches *pitches = notes->pitches;
     while(pitches!=NULL){
       if (pitchnum==num){
-        ListRemoveElement3(&notes->pitches,&pitches->l);
+        PLAYER_lock();{
+          ListRemoveElement3(&notes->pitches,&pitches->l);
+          NOTE_validate(block, track, notes);
+        }PLAYER_unlock();
         goto gotit;
       }
       
@@ -562,8 +1492,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   return;
   
  gotit:
-  UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 
@@ -608,7 +1537,13 @@ static int getReallineForPitch(struct WBlocks *wblock, struct Pitches *pitch, st
     return FindRealLineFor(wblock,note->Tline,&note->l.p);
 }
 
-static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int blocknum, int windownum){
+enum PitchInfoWhatToGet {
+  PITCH_INFO_Y1,
+  PITCH_INFO_Y2,
+  PITCH_INFO_VALUE,
+};
+
+static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -623,11 +1558,11 @@ static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int block
     return 0;
   
   switch (what_to_get){
-  case 0:
-    return get_realline_y1(window, getReallineForPitch(wblock, pitch, note));
-  case 1:
-    return get_realline_y2(window, getReallineForPitch(wblock, pitch, note));
-  case 2:
+  case PITCH_INFO_Y1:
+    return get_mouse_realline_y1(window, getReallineForPitch(wblock, pitch, note));
+  case PITCH_INFO_Y2:
+    return get_mouse_realline_y2(window, getReallineForPitch(wblock, pitch, note));
+  case PITCH_INFO_VALUE:
     {
       if (pitch!=NULL)
         return pitch->note;
@@ -641,11 +1576,11 @@ static float getPitchInfo(int what_to_get, int pitchnum, int tracknum, int block
 }
 
 float getPitchY1(int pitchnum, int tracknum, int blocknum, int windownum){
-  return getPitchInfo(0, pitchnum, tracknum, blocknum, windownum);
+  return getPitchInfo(PITCH_INFO_Y1, pitchnum, tracknum, blocknum, windownum);
 }
 
 float getPitchY2(int pitchnum, int tracknum, int blocknum, int windownum){
-  return getPitchInfo(1, pitchnum, tracknum, blocknum, windownum);
+  return getPitchInfo(PITCH_INFO_Y2, pitchnum, tracknum, blocknum, windownum);
 }
 
 float getPitchX1(int pitchnum, int tracknum, int blocknum, int windownum){
@@ -658,8 +1593,44 @@ float getPitchX2(int pitchnum, int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0.0f : wtrack->notearea.x2;
 }
 
+static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return NULL;
+
+  struct Notes *note;
+  struct Pitches *pitch;
+  if (getPitch(pitchnum, &pitch, &note, wtrack->track)==false)
+    return NULL;
+
+  int note_pitchnum;
+
+  if (pitch==NULL)
+    note_pitchnum = 0;
+  else
+    note_pitchnum = ListPosition3(&note->pitches->l, &pitch->l) + 1;
+
+  const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
+
+  return nodes->elements[note_pitchnum];
+}
+
+
+float getPitchX(int num,  int tracknum, int blocknum, int windownum){
+  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->x;
+}
+
+float getPitchY(int num, int tracknum, int blocknum, int windownum){
+  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
+  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+}
+
+
 float getPitchValue(int pitchnum, int tracknum, int blocknum, int windownum){
-  return getPitchInfo(2, pitchnum, tracknum, blocknum, windownum);
+  return getPitchInfo(PITCH_INFO_VALUE, pitchnum, tracknum, blocknum, windownum);
 }
 
 void setCurrentPitch(int num, int tracknum, int blocknum){
@@ -675,18 +1646,37 @@ void setCurrentPitch(int num, int tracknum, int blocknum){
     return;
 
   struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
-  
-  if (current_node != listHeader3){
-    current_node = listHeader3;
-    wblock->block->is_dirty = true;
+  setCurrentNode(listHeader3);
+}
+
+void setIndicatorPitch(int num, int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return;
+
+  struct Notes *note;
+  struct Pitches *pitch;
+  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+    return;
+
+  setIndicatorNode(&note->l);
+
+  if (pitch==NULL)
+    indicator_pitch_num = 0;
+  else {
+    int pitchnum = ListPosition3(&note->pitches->l, &pitch->l);
+    indicator_pitch_num = pitchnum + 1;
   }
 }
 
 static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
   Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
 
-  struct Notes *prev = ListPrevElement3(&track->notes->l, &note->l);
-
+  struct Notes *prev = FindPrevNoteOnSameSubTrack(track, note);
+  printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
+  
   if (prev != NULL) {
     end = &prev->l.p;
     if (prev->velocities!=NULL)
@@ -713,7 +1703,7 @@ static Place *getNextLegalNotePlace(struct Notes *note){
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
   Place firstLegal, lastLegal;
 
-  struct Notes *next = NextNote(note);
+  struct Notes *next = FindNextNoteOnSameSubtrack(note);
   
   if (next!=NULL)
     PlaceCopy(&lastLegal, &next->l.p);
@@ -732,38 +1722,55 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
-  note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
-
-  assert(PlaceLessOrEqual(&note->end, &lastLegal));
+  PLAYER_lock();{
+    note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+    NOTE_validate(block, track, note);
+  }PLAYER_unlock();
+    
+  R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
-static void MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
+static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
   Place old_place = note->l.p;
 
-  if (PlaceLessThan(place, &old_place)) {
-    Place *prev_legal = getPrevLegalNotePlace(track, note);
-    if (PlaceLessOrEqual(place, prev_legal))
-      PlaceFromLimit(place, prev_legal);
-  } else {
-    Place *next_legal = getNextLegalNotePlace(note);
-    if (PlaceGreaterOrEqual(place, next_legal))
-      PlaceTilLimit(place, next_legal);
+  if (!PlaceEqual(&old_place, place)) {
+
+    printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
+         
+    if (PlaceLessThan(place, &old_place)) {
+      Place *prev_legal = getPrevLegalNotePlace(track, note);
+      printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
+      if (PlaceLessOrEqual(place, prev_legal))
+        PlaceFromLimit(place, prev_legal);
+    } else {
+      Place *next_legal = getNextLegalNotePlace(note);
+      if (PlaceGreaterOrEqual(place, next_legal))
+        PlaceTilLimit(place, next_legal);
+    }
+    
+    PLAYER_lock();{
+      ListRemoveElement3(&track->notes, &note->l);
+      note->l.p = *place;
+      ListAddElement3(&track->notes, &note->l);
+      ReplaceNoteEnds(block, track, &old_place, place);
+      NOTE_validate(block, track, note);
+    }PLAYER_unlock();
+
   }
   
-  note->l.p = *place;
-  ReplaceNoteEnds(block, track, &old_place, place);    
+  return ListPosition3(&track->notes->l, &note->l);
 }
 
-void setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
+int setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
 
   if (wtrack==NULL)
-    return;
-  
+    return num;
+
+  struct Blocks *block = wblock->block;  
   struct Tracks *track = wtrack->track;
-  struct Blocks *block = wblock->block;
 
   value = R_BOUNDARIES(1,value,127);
 
@@ -771,7 +1778,9 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
   struct Pitches *pitch;
 
   if (getPitch(num, &pitch, &note, track)==false)
-    return;
+    return num;
+
+  window->must_redraw = true;
 
   if (pitch != NULL) {
     
@@ -785,19 +1794,23 @@ void setPitch(int num, float value, float floatplace, int tracknum, int blocknum
       Place place;
       Float2Placement(floatplace, &place);
 
-      ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+      PLAYER_lock();{
+        ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
+        NOTE_validate(block, track, note);
+      }PLAYER_unlock();
     }
                         
   } else {
     
     note->note = value;
 
-    if (floatplace >= 0)
+    if (floatplace >= 0) {
       MoveNote(block, track, note, PlaceCreate2(floatplace));
+      return getPitchNum(track, note, NULL);
+    }
   }
 
-  UpdateTrackReallines(window,wblock,wtrack);
-  block->is_dirty = true;
+  return num;
 }
 
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
@@ -815,26 +1828,21 @@ static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
 
 static int addNote2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *place, float value){
 
-  struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), 0);
+  struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), false);
 
-  current_node = &note->l;
-
-  UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
-             
+  window->must_redraw = true;
+  
   return getPitchNum(wtrack->track, note, NULL);
 }
 
 static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
 
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, note->note);
+
   if(pitch==NULL)
     return -1;
   
-  current_node = &pitch->l;
-
-  UpdateTrackReallines(window,wblock,wtrack);
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 
   return getPitchNum(wtrack->track, note, pitch);
 }
@@ -855,11 +1863,18 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
   value = R_BOUNDARIES(0,value,127);
 
   Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
-    
+
+  int ret;
+  
   if(note==NULL)
-    return addNote2(window, wblock, wtrack, &place, value);
+    ret = addNote2(window, wblock, wtrack, &place, value);
   else
-    return addPitch(window, wblock, wtrack, note, &place, value);
+    ret = addPitch(window, wblock, wtrack, note, &place, value);
+
+  if (ret==-1)
+    Undo_CancelLastUndo();
+
+  return ret;
 }
   
 
@@ -872,7 +1887,7 @@ int getNumSubtracks(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return 1;
 
-  return wtrack->num_vel;
+  return GetNumSubtracks(wtrack->track);
 }
 
 static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int blocknum, int windownum){
@@ -882,8 +1897,8 @@ static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int bloc
   if (wtrack==NULL)
     return NULL;
 
-  if (subtracknum>=wtrack->num_vel) {
-    RError("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, wtrack->num_vel);
+  if (subtracknum>=GetNumSubtracks(wtrack->track)){
+    RError("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack->track));
     return 0;
   }
 
@@ -937,16 +1952,27 @@ float getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
 }
 
 int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
-
-  if(note==NULL)
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
     return 0;
 
-  return note->subtrack;
+  return GetNoteSubtrack(wtrack->track, note);
 }
 
-void setNoMouseNote(void){
-  root->song->tracker_windows->wblock->mouse_note = NULL;
+void setNoMouseNote(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return;
+  
+  if (wblock->mouse_note != NULL){
+    wblock->mouse_note = NULL;
+    window->must_redraw = true;
+    //printf("no mouse note dirty\n");
+  }
 }
 
 void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
@@ -956,27 +1982,26 @@ void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
     return;
-  else
+  else if (wblock->mouse_note != note){
     wblock->mouse_note = note;
+    window->must_redraw = true;
+    //printf("mouse note dirty\n");
+  }
 }
 
 
 // velocities
 //////////////////////////////////////////////////
 
-static struct Node *get_velocitynodeline(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
     return NULL;
 
-  if (notenum<0 || notenum>=wtrack->velocity_nodes.num_elements){
-    RError("There is no note %d in track %d in block %d",notenum,tracknum,blocknum);
-    return NULL;
-  }
-
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return NULL;
@@ -987,52 +2012,34 @@ static struct Node *get_velocitynodeline(int velocitynum, int notenum, int track
 
 
 float getVelocityX(int num, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *nodeline = get_velocitynodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->x;
+  struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->x;
 }
 
 float getVelocityY(int num, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *nodeline = get_velocitynodeline(num, notenum, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+  struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->y-scroll_pos;
 }
 
 
 float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_velocitynode(velocitynum, notenum, tracknum, blocknum, windownum);
+  if (node==NULL)
+    return 0;
+
+  struct Velocities *velocity = (struct Velocities*)node->element;
+  return velocity->velocity / (float)MAX_VELOCITY;
+}
+
+int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
-    return 0.0;
-
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
-  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
-    return 0.0f;
-  }
-
-  if (velocitynum==0)
-    return note->velocity / (float)MAX_VELOCITY;
-
-  if (velocitynum==nodes->num_elements-1)
-    return note->velocity_end / (float)MAX_VELOCITY;
-
-  struct Velocities *velocity = ListFindElement3_num_r0(&note->velocities->l, velocitynum-1);
-
-  //printf("getting velocity for %d (%f)\n",velocitynum, velocity->velocity / (float)MAX_VELOCITY);
-
-  return velocity->velocity / (float)MAX_VELOCITY;
-}
-
-int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
-  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
-
-  if (notenum<0 || notenum>=wtrack->velocity_nodes.num_elements) {
-    RError("There is no note %d in track %d in block %d",notenum, tracknum, blocknum);
     return 0;
-  }
-  
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
 
   return nodes->num_elements;
 }
@@ -1049,7 +2056,8 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   Float2Placement(floatplace, &place);
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
-    RError("createVelocity: placement before note start for note #%d", notenum);
+    //if (notenum>0)
+    //  RError("createVelocity: placement before note start for note #%d", notenum);
     return -1;
   }
 
@@ -1059,43 +2067,50 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }
 
   Undo_Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline);
-  
+
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
-  
+
   if (ret==-1){
-    RError("createVelocity: Can not create new velocity with the same position as another velocity");
+    //RError("createVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
-  GL_create(window, wblock); // Need to update wtrack->velocity_nodes before returning to the qt event dispatcher.
-  //wblock->block->is_dirty = true;
+
+  window->must_redraw = true;
 
   return ret+1;
 }
   
-void setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
   if (note==NULL)
-    return;
+    return notenum;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+  
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
-    return;
+    return notenum;
   }
+
+  window->must_redraw = true;
+
+  printf("velocitynum==%d. floatplace: %f\n",velocitynum,floatplace);
 
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (floatplace>=0)
-      MoveNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
-
+    if (floatplace>=0) {
+      return MoveNote(block, track, note, PlaceCreate2(floatplace));
+    }
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0)
-      MoveEndNote(wblock->block, wtrack->track, note, PlaceCreate2(floatplace));
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace));
 
   } else {
 
@@ -1111,13 +2126,16 @@ void setVelocity(int velocitynum, float value, float floatplace, int notenum, in
       Place place;
       Float2Placement(floatplace, &place);
 
-      velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+      PLAYER_lock();{
+        velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
+        NOTE_validate(block, track, note);
+      }PLAYER_unlock();
     }
     
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
-  
-  wblock->block->is_dirty = true;
+
+  return notenum;
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
@@ -1131,7 +2149,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   struct Blocks *block=wblock->block;
   struct Tracks *track=wtrack->track;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
@@ -1143,22 +2161,29 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   bool is_last_and_there_are_pitches = is_last && note->pitches!=NULL;
 
   if (is_first || is_last_and_no_velocities || is_last_and_there_are_pitches){
-    RemoveNote(block, track, note);
-    UpdateTrackReallines(window,wblock,wtrack);
+    PLAYER_lock();{
+      RemoveNote(block, track, note);
+    }PLAYER_unlock();
 
   } else if (velocitynum==nodes->num_elements-1) {
     struct Velocities *last = (struct Velocities*)ListLast3(&note->velocities->l);
-    note->end = last->l.p;
-    note->velocity_end = last->velocity;
-    ListRemoveElement3(&note->velocities, &last->l);
+    PLAYER_lock();{
+      note->end = last->l.p;
+      note->velocity_end = last->velocity;
+      ListRemoveElement3(&note->velocities, &last->l);
+      NOTE_validate(block, track, note);
+    }PLAYER_unlock();
 
   } else {
-    ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
-
+    PLAYER_lock();{
+      ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
+      NOTE_validate(block, track, note);
+    }PLAYER_unlock();
   }
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
+
 
 void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
  struct Tracker_Windows *window;
@@ -1168,7 +2193,7 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
   if (note==NULL)
     return;
 
-  vector_t *nodes = wtrack->velocity_nodes.elements[notenum];
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
@@ -1176,8 +2201,435 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
 
   struct Node *node = nodes->elements[velocitynum];
   struct Velocities *current = (struct Velocities*)node->element;
-  current_node = &current->l;
+
+  setCurrentNode(&current->l);
 }
+
+void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  setIndicatorNode(&note->l);
+
+  const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
+  if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
+    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    return;
+  }
+
+  indicator_velocity_num = velocitynum;
+}
+
+
+// fxes
+//////////////////////////////////////////////////
+
+void addFX(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+                           windownum,
+                           &window,
+                           blocknum,
+                           &wblock,
+                           tracknum
+                           );
+
+  if(wtrack==NULL) return;
+
+  //printf("x: %f, y: %f\n",tevent.x, tevent.y);
+  
+  AddFXNodeLineCurrPos(window, wblock, wtrack);
+}
+
+void addFXMousePos(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return;
+
+  AddFXNodeLineCurrMousePos(window);
+}
+
+static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return NULL;
+  
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  return VECTOR_get(nodes, fxnodenum, "fx node");
+}
+
+
+float getFxnodeX(int num, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_fxnode(num, fxnum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->x;
+}
+
+float getFxnodeY(int num, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_fxnode(num, fxnum, tracknum, blocknum, windownum);
+  return node==NULL ? 0 : node->y-scroll_pos;
+}
+
+
+float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return 0.0f;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  if (node==NULL)
+    return 0.0f;
+
+  int max = fxs->fx->max;
+  int min = fxs->fx->min;
+
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines*)node->element;
+
+  return scale(fxnodeline->val, min, max, 0.0f, 1.0f);
+}
+
+const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return NULL;
+
+  return fxs->fx->name;
+}
+  
+char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return NULL;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  if (node==NULL)
+    return "<fxnode not found>";
+
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
+
+  float val = fxnodeline->val;
+
+  // Turned out this was a lot of work. Fix later, hopefully.
+  //return fx->getFXstring(fx, wtrack->track, val);
+
+  // instead we just do this:
+  struct FX *fx = fxs->fx;
+  static char ret[512];
+
+  if (wtrack->track->patch->instrument==get_MIDI_instrument())
+    snprintf(ret, 511, "%s: %d", fx->name, (int)val);
+  else
+    snprintf(ret, 511, "%s: %.02f", fx->name, scale(val, fx->min, fx->max, 0.0f, 1.0f));
+
+  return ret;
+}
+
+int getNumFxes(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack == NULL)
+    return 0;
+
+  return ListFindNumElements1(&wtrack->track->fxs->l);
+}
+
+int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return 0;
+
+  return ListFindNumElements3(&fxs->fxnodelines->l);
+}
+
+float getFxMinValue(int fxnum, int tracknum, int blocknum, int windownum){
+  return 0.0f;
+#if 0
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return 0;
+
+  return fx->fx->min;
+#endif
+}
+
+float getFxMaxValue(int fxnum, int tracknum, int blocknum, int windownum){
+  return 1.0f;
+#if 0
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return 1;
+
+  return fx->fx->max;
+#endif
+}
+
+int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return -1;
+
+  Place lastplace;
+  PlaceSetLastPos(wblock->block, &lastplace);
+
+  Place place;
+  Float2Placement(floatplace, &place);
+
+  if (PlaceLessThan(&place, PlaceGetFirstPos())){
+    if (floatplace < 0)
+      RError("createFx: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
+    place = *PlaceGetFirstPos();
+  }
+
+  if (PlaceGreaterThan(&place, &lastplace)) {
+    if (floatplace >= wblock->block->num_lines)
+      RError("createFx: placement after fx end for fx #%d (%f)", fxnum, floatplace);
+    
+    place = lastplace;
+  }
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+
+  int max = fx->fx->max;
+  int min = fx->fx->min;
+
+  int ret = AddFXNodeLine(
+                          window,
+                          wblock,
+                          wtrack,
+                          fx->l.num,
+                          scale(value, 0,1, min, max),
+                          &place
+                          );
+
+  if (ret==-1){
+    //RError("createFx: Can not create new fx with the same position as another fx");
+    Undo_CancelLastUndo();
+    return -1;
+  }
+
+  window->must_redraw = true;
+
+  return ret;
+}
+  
+void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
+  
+  if (floatplace >= 0.0f){
+    Place place;
+    Float2Placement(floatplace, &place);
+
+    Place *last_pos = PlaceGetLastPos(wblock->block);
+    
+    PLAYER_lock();{
+      ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), last_pos);      
+    }PLAYER_unlock();
+  }
+  
+  int max = fx->fx->max;
+  int min = fx->fx->min;
+  
+  fxnodeline->val=scale(value, 0.0f, 1.0f, min, max); //R_BOUNDARIES(min,value,max);
+
+  window->must_redraw = true;
+}
+
+void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+ struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
+  
+  DeleteFxNodeLine(wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
+
+  window->must_redraw = true;
+}
+
+
+void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+ struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[fxnodenum];
+  struct FXNodeLines *current = (struct FXNodeLines*)node->element;
+
+  setCurrentNode(&current->l);
+}
+
+void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fx = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fx==NULL)
+    return;
+
+  const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
+  if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
+    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+
+  struct Node *node = nodes->elements[fxnodenum];
+  setIndicatorNode(node->element);
+}
+
+void setNoMouseFx(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return;
+  
+  if (wblock->mouse_fxs != NULL){
+    wblock->mouse_fxs = NULL;
+    window->must_redraw = true;
+    //printf("no mouse fx dirty\n");
+  }
+}
+
+void setMouseFx(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+  else if (wblock->mouse_fxs != fxs){
+    wblock->mouse_fxs = fxs;
+    window->must_redraw = true;
+    //printf("mouse fx dirty\n");
+  }
+}
+
+void undoFxs(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  Undo_FXs(window, wblock->block, wtrack->track, wblock->curr_realline);
+}
+
+
+// track widths
+//////////////////////////////////////////////////
+
+float getTrackWidth(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+    
+  if (tracknum==-1){
+    wblock = getWBlockFromNumA(windownum, &window, blocknum);
+    if (wblock==NULL)
+      return 0.0f;
+    return wblock->temponodearea.width;
+  } else {
+    struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+    if (wtrack==NULL)
+      return 0.0f;
+    return wtrack->fxwidth;
+  }
+}
+
+void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
+  if (new_width < 2) {
+#if 0
+    RError("Can not set width smaller than 2");
+    return;
+#else
+    new_width = 2;
+#endif
+  }
+
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+    
+  if (tracknum==-1){
+    wblock = getWBlockFromNumA(windownum, &window, blocknum);
+    if (wblock==NULL)
+      return;
+    wblock->temponodearea.width = new_width;
+  } else {
+    struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+    if (wtrack==NULL)
+      return;
+    printf("new width: %d, old: %d\n",(int)new_width,wtrack->fxwidth);
+    wtrack->fxwidth = new_width;
+  }
+
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+
 
 
 // ctrl / shift keys
@@ -1202,4 +2654,75 @@ bool extraPressed(void){
 
 bool leftExtraPressed(void){
   return LeftExtra(tevent.keyswitch);
+}
+
+bool altPressed(void){
+  return AnyAlt(tevent.keyswitch);
+}
+
+
+
+// mouse pointer
+//////////////////////////////////////////////////
+
+/*
+enum MousePointerType {
+  MP_NORMAL,
+  MP_BLANK,
+  MP_DIAGONAL,
+  MP_HORIZONTAL,  
+};
+*/
+
+void setNormalMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetNormalPointer(window);
+}
+void setPointingMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetPointingPointer(window);
+}
+void setBlankMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetBlankPointer(window);
+}
+void setDiagonalResizeMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetDiagResizePointer(window);
+}
+void setHorizontalResizeMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetHorizResizePointer(window);
+}
+void setVerticalResizeMousePointer(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    SetVerticalResizePointer(window);
+}
+
+void moveMousePointer(float x, float y, int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    MovePointer(window, x, y);
+}
+float getMousePointerX(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  WPoint ret = GetPointerPos(window);
+  return ret.x;
+}
+float getMousePointerY(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  WPoint ret = GetPointerPos(window);
+  return ret.y;
 }

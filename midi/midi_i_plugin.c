@@ -15,6 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <string.h>
+
+
 #include "nsmtracker.h"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
@@ -27,8 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_playfromstart_proc.h"
 #include "midi_fx_proc.h"
 #include "disk_midi_fx_proc.h"
-
-#include <string.h>
 
 //#include "../instrprop/Amiga_instrprop_edit_proc.h"
 #include "OS_midi_proc.h"
@@ -99,8 +100,8 @@ void MyPutMidi(
                int skip
 ){
 	if(cc<0x80 || cc>0xef || (data1&0xff)>0x7f || (data2&0xff)>0x7f){
-		RError("Error. Faulty midi-message. status: %x, data1: %x, data2: %x\n",cc,data1,data2);
-		return;
+          GFX_Message(NULL, "Error. Faulty midi-message. status: %x, data1: %x, data2: %x\n",cc,data1,data2);
+          return;
 	}
 
 	OS_GoodPutMidi(midi_port->port,cc,data1,data2,time,(uint32_t)maxbuff);
@@ -213,7 +214,17 @@ static void MIDIplaynote(struct Patch *patch,
 }
 
 
-bool useOx90ForNoteOff=false;
+static bool useOx90ForNoteOff=false;
+
+bool MIDI_get_use_0x90_for_note_off(void){
+  return useOx90ForNoteOff;
+}
+
+void MIDI_set_use_0x90_for_note_off(bool doit){
+  SETTINGS_write_int("use_0x90_for_note_off",doit?1:0);
+  useOx90ForNoteOff = doit;
+}
+
 
 static void MIDIstopnote(struct Patch *patch,
                          float das_notenum,
@@ -286,7 +297,10 @@ static void MIDIchangevelocity(struct Patch *patch,float das_notenum, int64_t id
 }
 
 
-static void MIDIchangepitch(struct Patch *patch,float notenum, int64_t note_id, float pitch,STime time){
+static void MIDIchangepitch(struct Patch *patch,float notenum, int64_t note_id, float pitch,STime time){ // never called
+}
+
+static void MIDIsendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){ // never called
 }
 
 /******************** patch **************************/
@@ -472,7 +486,7 @@ char **MIDI_getPortNames(int *retsize, bool is_input){
 
 extern struct Root *root;
 
-char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool is_input){
+char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input){
   int num_ports;
 
   char **portnames=MIDI_getPortNames(&num_ports, is_input);
@@ -498,7 +512,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool i
   if(sel==num_ports){
     char *ret=NULL;
     while(ret==NULL)
-      ret = GFX_GetString(window,reqtype,"Name: ");
+      ret = GFX_GetString(NULL,reqtype,"Name: ");
     return ret;
   }
 
@@ -534,6 +548,7 @@ void MIDI_InitPatch(struct Patch *patch, void *patchdata) {
   patch->stopnote=MIDIstopnote;
   patch->changevelocity=MIDIchangevelocity;
   patch->changepitch=MIDIchangepitch;
+  patch->sendrawmidimessage=MIDIsendrawmidimessage;
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 
@@ -569,10 +584,11 @@ int MIDIgetPatch(
 
 /******************* instrument ***********************/
 
+#if 0
 static int MIDIgetMaxVelocity(const struct Patch *patch){
 	return 127;
 }
-
+#endif
 
 
 void MIDICloseInstrument(struct Instruments *instrument){
@@ -623,11 +639,10 @@ static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch){
 
 int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
 
-  useOx90ForNoteOff = SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true;
-  SETTINGS_write_int("use_0x90_for_note_off",useOx90ForNoteOff==true?1:0);
+  MIDI_set_use_0x90_for_note_off(SETTINGS_read_int("use_0x90_for_note_off",0)==0?false:true);
 
   if(MIDI_New(instrument)==false){
-    RError("Unable to open MIDI");
+    GFX_Message(NULL, "Unable to open MIDI");
     return INSTRUMENT_FAILED;
   }
 

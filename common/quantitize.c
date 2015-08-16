@@ -30,127 +30,65 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "undo_tracks_proc.h"
 #include "undo_range_proc.h"
+#include "undo_maintempos_proc.h"
 #include "wtracks_proc.h"
 #include "notes_legalize_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "player_proc.h"
+#include "visual_proc.h"
+#include "../Qt/Rational.h"
+#include "../embedded_scheme/scheme_proc.h"
+#include "settings_proc.h"
 
 #include "quantitize_proc.h"
 
 
 extern struct Root *root;
 
+/*
+static int g_quantization_type = -1;
 
-/******************************************************************
-  FUNCTION
-    Quantitize 'toquant' spesified by 'quant'. 'Block' is used
-    to know the last zposition in the block, so that 'toquant' isn't
-    placed after that.
-
-  EXAMPLES
-    toquant=1,2,3 quant=0.5 -> toquant=1,1,2
-    toquant=1,6,7 quant=0.5 -> toquant=2,0,1
-    toquant=5,0,1 quant=2.0 -> toquant=6,0,1
-******************************************************************/
-
-void Quantitize(
-	struct Blocks *block,
-	Place *toquant,
-	float quant
-){
-	float toquantfloat;
-
-	int upto;
-
-	float diff;
-	float out;
-
-	if(quant==0.0 || quant/2<0.00002) return;
-
-	toquantfloat=GetfloatFromPlace(toquant);
-
-	upto=(int)(toquantfloat/quant);
-	upto*=quant;
-
-	diff=toquantfloat-upto;
-	out=upto;
-
-	while(diff>=quant/2){
-		out+=quant;
-		diff-=quant;
-	}
-
-	Float2Placement(out,toquant);
-
-	if( ! PlaceLegal(block,toquant)){
-		PlaceSetLastPos(block,toquant);
-	}
+void Quantitize_get_quant_type(void){
+  if (g_quantization_type==-1)
+    g_quantization_type = SETTINGS_reqd_int("quantization_type", 3);
+  
+  return g_quantization_type;
 }
 
-
-/****************************************************************
-  NOTE
-    Could work better.
-****************************************************************/
-void Quantitize_Note(
-	struct Blocks *block,
-	struct Notes **notes,
-	struct Notes *note,
-	float quant
-){
-	Place tempstart,tempend;
-	Place end;
-
-	PlaceSetLastPos(block,&end);
-	PlaceCopy(&tempstart,&note->l.p);
-
-	if(PlaceEqual(&end,&note->l.p)){
-		return;
-	}
-
-	Quantitize(block,&note->l.p,quant);
-
-	if(PlaceEqual(&end,&note->l.p)){
-		PlaceCopy(&note->l.p,&tempstart);
-	}
-
-	PlaceCopy(&tempend,&note->end);
-
-	Quantitize(block,&note->end,quant);
-
-	if(PlaceLessOrEqual(&note->end,&note->l.p)){
-		PlaceCopy(&note->end,&tempend);
-	}
-
-	if(PlaceLessOrEqual(&note->end,&note->l.p)){
-		PlaceCopy(&note->l.p,&tempstart);
-		PlaceCopy(&note->end,&tempend);
-	}
-
-/*
-	while(PlaceLessOrEqual(&note->end,&note->l.p)){
-		note->end.counter+=quant*note->end.dividor;
-		PlaceHandleOverflow(&note->end);		//Haven't checked this too good. A small potensial for the program to hang.
-	}
+void Quantitize_set_quant_type(int type){
+  R_ASSERT_RETURN_IF_FALSE(type>=1 && type<=5);
+  
+  g_quantization_type = type;
+  SETTINGS_write_int("quantization_type", type);
+}
 */
 
-	if( ! PlaceLegal(block,&note->end)){
-		PlaceSetLastPos(block,&note->end);
-	}
+quantitize_options_t Quantitize_get_default_options(void){
+  quantitize_options_t options;
+  options.quant = ratio(1,1);
+  options.quantitize_start = true;
+  options.quantitize_end = false;
+  options.keep_note_length = false;
+  options.type = 3;
 
-	ListAddElement3(notes,&note->l);
+  return options;
+}
+
+static void Quantitize_Note(
+                            struct Blocks *block,
+                            struct Notes **notes,
+                            struct Notes *note
+                            )
+{
+  bool do_add = quantitize_note(block, note);
+
+  if (do_add)
+    ListAddElement3(notes,&note->l);        
 }
 
 void Quantitize_range(
-	struct WBlocks *wblock,
-	float quant
+                      struct WBlocks *wblock
 ){
-	struct Tracks *track;
-	struct Notes *notes=NULL;
-	struct Notes *note=NULL;
-	struct Notes *temp;
-	struct LocalZooms *realline1,*realline2;
-	int lokke;
 	Place first,last;
 
 	PlaceSetFirstPos(&first);
@@ -158,36 +96,41 @@ void Quantitize_range(
 
 	if( ! wblock->isranged) return;
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
-	realline1=wblock->reallines[wblock->rangey1];
-	realline2=wblock->reallines[wblock->rangey2];
+	struct LocalZooms *realline1 = wblock->reallines[wblock->rangey1];
+	struct LocalZooms *realline2 = wblock->reallines[wblock->rangey2];
 
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
-		note=NULL;
-		CopyRange_notes(&note,track->notes,&first,&last);
-		for(;;){
-			if(note==NULL) break;
-			if(PlaceGreaterThan(&note->l.p,&realline2->l.p)) break;
-			temp=NextNote(note);
-			if(PlaceGreaterOrEqual(&note->l.p,&realline1->l.p)){
-				Quantitize_Note(wblock->block,&notes,note,quant);
-			}
-			note=temp;
-		}
-		track->notes=notes;
-		notes=NULL;
-		track=NextTrack(track);
+        struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
-		LegalizeNotes(wblock->block,track);
+        int tracknum;
+	for(tracknum=0;tracknum<=wblock->rangex2-wblock->rangex1;tracknum++){
+
+          struct Notes *new_notes=NULL;
+
+          struct Notes *note=track->notes;
+
+          while(note != NULL) {
+            struct Notes *next=NextNote(note);
+                        
+            if( p_Greater_Or_Equal(note->l.p, realline1->l.p) && p_Less_Than(note->l.p, realline2->l.p))
+              Quantitize_Note(wblock->block,&new_notes,note);
+            else
+              ListAddElement3(&new_notes,&note->l);
+            
+            note=next;
+          }
+
+          track->notes=new_notes;          
+          LegalizeNotes(wblock->block,track);
+
+          track=NextTrack(track);
 	}
 
 }
 
 void Quantitize_track(
 	struct Blocks *block,
-	struct Tracks *track,
-	float quant
+	struct Tracks *track
 ){
 	struct Notes *note=NULL;
 	struct Notes *notes=NULL;
@@ -201,7 +144,7 @@ void Quantitize_track(
 
 	while(note!=NULL){
 		temp=NextNote(note);
-		Quantitize_Note(block,&notes,note,quant);
+		Quantitize_Note(block,&notes,note);
 		note=temp;
 	}
 	track->notes=notes;
@@ -211,18 +154,17 @@ void Quantitize_track(
 
 
 void Quantitize_block(
-	struct Blocks *block,
-	float quant
+	struct Blocks *block
 ){
 	struct Tracks *track=block->tracks;
 
 	while(track!=NULL){
-		Quantitize_track(block,track,quant);
+		Quantitize_track(block,track);
 		track=NextTrack(track);
 	}
 }
 
-	
+
 void Quantitize_track_CurrPos(
 	struct Tracker_Windows *window
 ){
@@ -231,7 +173,7 @@ void Quantitize_track_CurrPos(
 	PlayStop();
 
 	Undo_Track_CurrPos(window);
-	Quantitize_track(wblock->block,wblock->wtrack->track,root->quantitize);
+	Quantitize_track(wblock->block,wblock->wtrack->track);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -262,7 +204,7 @@ void Quantitize_block_CurrPos(
 		window->wblock->curr_realline
 	);
 
-	Quantitize_block(window->wblock->block,root->quantitize);
+	Quantitize_block(window->wblock->block);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -281,7 +223,7 @@ void Quantitize_range_CurrPos(
 
 	Undo_Range(window,window->wblock->block,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline);
 
-	Quantitize_range(window->wblock,root->quantitize);
+	Quantitize_range(window->wblock);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -291,3 +233,38 @@ void Quantitize_range_CurrPos(
 	);
 }
 
+void SetQuantitize_CurrPos(
+                           struct Tracker_Windows *window
+){
+    
+        Place before = {0, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator};
+        Place after;
+                  
+        ReqType reqtype = GFX_OpenReq(window, 100, 100, "Quantitize");
+
+        do{
+          GFX_WriteString(reqtype, "Quantitize Value : ");
+          GFX_SetString(reqtype, get_string_from_rational(&before));
+          
+          char temp[1024];
+          GFX_ReadString(reqtype, temp, 1010);
+
+          if (temp[0]==0){
+            printf("no new value\n");
+            GFX_CloseReq(window, reqtype);
+            return;
+          }
+          
+          after = get_rational_from_string(temp);
+        } while (after.dividor==0);
+        
+        GFX_CloseReq(window, reqtype);
+
+        if (root->quantitize_options.quant.numerator == after.counter && root->quantitize_options.quant.denominator == after.dividor)
+          return;
+
+        Undo_MainTempo(window, window->wblock);
+                       
+        root->quantitize_options.quant.numerator = after.counter;
+        root->quantitize_options.quant.denominator = after.dividor;
+}

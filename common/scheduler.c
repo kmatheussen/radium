@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "playerclass.h"
+#include "threading.h"
+#include "OS_Player_proc.h"
 
 #include "scheduler_proc.h"
 
@@ -42,6 +44,8 @@ typedef struct _event_t{
 static int64_t g_current_time = 0;
 
 static event_t g_event0 = {0};
+
+static event_t g_all_events[QUEUE_SIZE] = {{0}}; // stored as a static variable so the gc can easily reach the data.
 
 static event_t *g_free_events = NULL;
 
@@ -87,8 +91,22 @@ static int64_t seq_to_scheduler_time(int64_t seq_time){
 }
 
 void SCHEDULER_add_event(int64_t seq_time, SchedulerCallback callback, const union SuperType *args, int num_args, enum SchedulerPriority priority){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  
+  // An event created by an RT_process function needs to run right away.
+  // If not it won't be run until the next audio block since SCHEDULER_called_per_block
+  // has already been called for this audio block.
+  // (Q: why not do this for events genereated by the editor too?
+  //  A: Because then effects could be run after notes, "note on" events could be run before "note off" events, and so forth)
+  if (false==pc->is_treating_editor_events && seq_time < pc->end_time) {
+    callback(seq_time, args);
+    return;
+  }
+      
   int64_t time = seq_to_scheduler_time(seq_time);
 
+  //args=NULL; // test crashreporter
+  
 #if 0
   printf("|||||||||| Adding event at seq_time %d, scheduler_time %d. g_current_time: %d, pc->start_time: %d\n",
          (int)seq_time,(int)time,
@@ -171,7 +189,7 @@ void SCHEDULER_called_per_block(int64_t reltime){
     if(event_time < end_time){
       remove_first_event();
       {
-        event->callback(scheduler_to_seq_time(event_time), &event->args[0]);
+        event->callback(scheduler_to_seq_time(event_time), &event->args[0]); // note that the callback can also schedule new events
       }
       release_event(event);
     }else
@@ -188,7 +206,7 @@ void SCHEDULER_clear(void){
 void SCHEDULER_init(void){
   int i;
   for(i=0;i<QUEUE_SIZE;i++){
-    event_t *event = talloc(sizeof(event_t));
+    event_t *event = &g_all_events[i]; //talloc(sizeof(event_t));
     event->next = g_free_events;
     g_free_events = event;
   }

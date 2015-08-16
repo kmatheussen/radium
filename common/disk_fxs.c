@@ -94,7 +94,8 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+ var20:
 
 error:
 	printf("\tLoadFXs_error\n");
@@ -102,6 +103,15 @@ end:
 
 	printf("\tLoadFXs_end\n");
 	return fxs;
+}
+
+
+void DLoadFXs(struct Root *newroot,struct Tracks *track, struct FXs *fxs){
+if(fxs==NULL) return;
+
+   DLoadFX(newroot, track, fxs, fxs->fx);
+        
+DLoadFXs(newroot,track, NextFX(fxs));
 }
 
 

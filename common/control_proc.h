@@ -18,8 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#ifndef TRACKER_INCLUDE
-	extern LANGSPEC bool InitProgram(void);
-	extern LANGSPEC void EndProgram(void);
-#endif
+extern LANGSPEC bool InitProgram(void);
+extern LANGSPEC void EndProgram(void);
 

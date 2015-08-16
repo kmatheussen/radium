@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 
+extern struct Root *root;
+
 
 /************** Transpose ******************/
 
@@ -140,6 +142,7 @@ void quantitizeTrack(int windownum){
   if(window==NULL) return;
 
   Quantitize_track_CurrPos(window);
+  window->must_redraw = true;
 }
 
 void quantitizeBlock(int windownum){
@@ -147,6 +150,7 @@ void quantitizeBlock(int windownum){
   if(window==NULL) return;
 
   Quantitize_block_CurrPos(window);
+  window->must_redraw = true;
 }
 
 void quantitizeRange(int windownum){
@@ -154,8 +158,23 @@ void quantitizeRange(int windownum){
   if(window==NULL) return;
 
   Quantitize_range_CurrPos(window);
+  window->must_redraw = true;
 }
 
+float getQuantitize(void){
+  return (double)root->quantitize_options.quant.numerator / (double)root->quantitize_options.quant.denominator;
+}
+
+float getGrid(void){
+  return (double)root->grid_numerator / (double)root->grid_denominator;
+}
+
+void configQuantitize(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  SetQuantitize_CurrPos(window);
+}
 
 /************** Glissando ******************/
 

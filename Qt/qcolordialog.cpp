@@ -1576,11 +1576,14 @@ QColor QColorDialog3::getColor( const QColor& initial, QWidget *parent,
 #endif
     dlg->setColor( initial );
     dlg->selectColor( initial );
-    int resultCode = dlg->exec();
+    int resultCode;
+    //GL_lock();{
+      resultCode = dlg->exec();
+      //}GL_unlock();
     //QColor::leaveAllocContext();
     QColor result;
     if ( resultCode == QDialog::Accepted )
-	result = dlg->color();
+      result = dlg->color();
     //QColor::destroyAllocContext(allocContext);
     delete dlg;
     return result;
@@ -1616,7 +1619,10 @@ QRgb QColorDialog3::getRgba( QRgb initial, bool *ok,
     dlg->setColor( initial );
     dlg->selectColor( initial );
     dlg->setSelectedAlpha( qAlpha(initial) );
-    int resultCode = dlg->exec();
+    int resultCode;
+    GL_lock();{
+      resultCode = dlg->exec();
+    }GL_unlock();
     //QColor::leaveAllocContext();
     QRgb result = initial;
     if ( resultCode == QDialog::Accepted ) {

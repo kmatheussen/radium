@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_disk_proc.h"
+
+#ifndef TEST_PATH_RESOLVER
 
 #include "EditorWidget.h"
 
@@ -41,46 +44,115 @@ static void ask_to_add_resolved_path(QDir key, QDir value){
   msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
   msgBox.setDefaultButton(QMessageBox::Yes);
 
-  int ret = msgBox.exec();
+  int ret = safeExec(msgBox);
 
   if(ret==QMessageBox::Yes)
     resolved_paths[key.path()] = value;
 }
 
-static const char *_loading_path  = NULL;
 
-void OS_set_loading_path(const char *filename){
-  _loading_path = filename;
+#endif // !TEST_PATH_RESOLVER
+
+static const wchar_t *_loading_path  = NULL;
+
+void OS_set_loading_path(const wchar_t *filename){  
+  QFileInfo info(STRING_get_qstring(filename));
+  _loading_path = STRING_create(info.absoluteFilePath());
 }
 
 void OS_unset_loading_path(void){
   _loading_path = NULL;
 }
 
+static QString saving_path;
 
-const char *OS_get_resolved_file_path(const char *path){
+void OS_set_saving_path(const wchar_t *filename){
+  QFileInfo info(STRING_get_qstring(filename));
+  saving_path = info.absolutePath();
+  printf("saving_path: -%s-\n",saving_path.toUtf8().constData());
+}
+
+
+
+/*
+  Returns a path which is relative to the loading/saving path, if possible.
+
+  It works like this:
+
+  filepath      saving_path   result
+  ========================================
+  /a/b/c.wav    /a/b          c.wav          (returns a relative path)
+  /d/e/f.wav    /a/b          /d/e/f.wav     (returns a full path
+  /a/b/c.wav    /a            b/c.wav        (returns a relative path)
+
+*/
+const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath){  
+  if (saving_path.isEmpty())
+    return wfilepath;
+
+  QString filepath = STRING_get_qstring(wfilepath);
+  
+  QFileInfo info(filepath);
+
+  if (info.isRelative())
+    return wfilepath;
+  
+  printf("canonical: -%s-\n",info.absolutePath().toUtf8().constData());
+
+  QString filepath2 = info.absolutePath()+QDir::separator();
+  QString savepath2 = saving_path+QDir::separator();
+  printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.toUtf8().constData(),savepath2.toUtf8().constData());
+
+  if (filepath2.startsWith(savepath2))
+    return STRING_create(filepath.remove(0, savepath2.length()));
+  else
+    return wfilepath;
+}
+
+
+
+#ifdef TEST_PATH_RESOLVER
+static QHash<QString, QDir> resolved_paths;
+#endif
+
+
+#ifndef TEST_PATH_RESOLVER
+
+const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
+  QString path = QString::fromWCharArray(wpath);
   QFileInfo info(path);
 
-  // Try the original path
-  if(info.exists()==true)
-    return talloc_strdup(path);
+  printf("path: -%s-, loading-path: -%s-\n",path.toUtf8().constData(),STRING_get_chars(_loading_path));
 
+  // If the path is absolute, first try the original path.
+  if(!info.isRelative() && info.exists()==true){
+    return STRING_create(path);
+  }
+  
   QDir dir = info.dir();
+
+  // Try song path if relative
+  if(_loading_path!=NULL && info.isRelative()){
+    QFileInfo info3(QString::fromWCharArray(_loading_path));
+    QFileInfo info2(info3.dir().path(), info.filePath());
+    
+    //printf("gotit2 -%s- -%s-\n",info3.filePath(),info2.filePath());
+    //char temp[50];
+    //gets(temp);
+
+    if(info2.exists()){
+      return STRING_create(info2.filePath());
+    }
+  }
 
   // Try resolved paths
   if(resolved_paths.contains(dir.path())){
     QFileInfo info2(resolved_paths[dir.path()], info.fileName());
 
-    if(info2.exists())
-      return talloc_strdup(info2.filePath());
-  }
+    if(info2.exists()) {
 
-  // Try song path
-  if(_loading_path!=NULL){
-    QFileInfo info3(_loading_path);
-    QFileInfo info2(info3.dir().path(), info.fileName());
-    if(info2.exists())
-      return talloc_strdup(info2.filePath());
+      return STRING_create(info2.filePath());
+    }
   }
 
   // Ask user for path. Last resort.
@@ -94,18 +166,23 @@ const char *OS_get_resolved_file_path(const char *path){
       num_users_of_keyboard++;
 
       QMessageBox msgBox;
-        
-      msgBox.setText(QString("Could not find "+info.fileName()+" in"+dir.path()+".\nPlease select new file."));
+
+      msgBox.setText(QString("Could not find "+info.fileName()+" in "+dir.path()+".\nPlease select new file."));
       //msgBox.setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
       msgBox.setStandardButtons(QMessageBox::Ok);
       
-      msgBox.exec();
+      safeExec(msgBox);
 
-      QString filename = QFileDialog::getOpenFileName(editor, 
-                                                      QString("Select file to replace ")+info.fileName()
-                                                      //,QString()
-                                                      //,info.fileName()
-                                                      );
+      QString filename;
+
+      GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+        filename = QFileDialog::getOpenFileName(editor, 
+                                                QString("Select file to replace ")+info.fileName()
+                                                //,QString()
+                                                //,info.fileName()
+                                                );
+      }GL_unlock();
+
       num_users_of_keyboard--;
 
       if(filename == "")
@@ -118,6 +195,73 @@ const char *OS_get_resolved_file_path(const char *path){
     if(info3.fileName() == info.fileName())
       ask_to_add_resolved_path(dir, info3.dir());
 
-    return talloc_strdup(info3.filePath());
+    return STRING_create(info3.filePath());
   }
 }
+
+#endif // !TEST_PATH_RESOLVER
+
+
+
+#ifdef TEST_PATH_RESOLVER
+
+#include <stdarg.h>
+#include <assert.h>
+
+#include "../common/control_proc.h"
+
+#define talloc_strdup(a) strdup(a)
+#define talloc_atomic(a) malloc(a)
+
+#include "Qt_settings.cpp"
+
+                   
+void EndProgram(void){
+  printf("ENDPROGRAM called\n");
+}
+
+void RError(const char *fmt,...){
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  fprintf(stderr,"error: %s\n",message);
+}
+
+
+static wchar_t *s(const char *st){
+  QString string(st);
+  return STRING_create(string);
+}
+
+int main(void){
+
+  OS_set_saving_path(s("/asdf/tmp/filename.rad"));
+
+  printf("-%s- -%s-\n",STRING_get_chars(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai"))),saving_path.toUtf8().constData());
+
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/badffa")), "/badffa"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/badffa/aba")), "/badffa/aba"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("badffa/aba")), "badffa/aba"));
+  
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai")), "aiai"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/asdf/tmp2/aiai")), "/asdf/tmp2/aiai"));
+  
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai/aiai234")), "aiai/aiai234"));
+  
+
+  OS_set_saving_path(s("sounds/filename.rad"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("aiai234.wav")), "aiai234.wav"));
+  assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("aiai234.wav")), "aiai234.wav"));
+
+
+  printf("Success, no errors\n");
+
+  return 0;
+}
+
+#endif

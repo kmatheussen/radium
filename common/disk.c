@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "visual_proc.h"
 #include "OS_settings_proc.h"
 
 #define TRACKER_DISK_IS_CALLING_NOW
@@ -42,48 +43,48 @@ static const char *emptystringstring = "_________empty__________";
 
 void DC_SaveCleanString(const char *string){
   if(strlen(string)==0){
-    if(fprintf(dc.file,"%s",emptystringstring)<0) dc.success=false;
+    if(DISK_printf(dc.file,"%s",emptystringstring)<0) dc.success=false;
   }else{
-    if(fprintf(dc.file,"%s",string)<0) dc.success=false;
+    if(DISK_printf(dc.file,"%s",string)<0) dc.success=false;
   }
 }
 
 void DC_SaveST(const char *string){
-	if(fprintf(dc.file,"\n\\\n%s\n",string)<0) dc.success=false;
+	if(DISK_printf(dc.file,"\n\\\n%s\n",string)<0) dc.success=false;
 }
 
 void DC_SaveS(const char *string){
-	if(fprintf(dc.file,"\n?%s\n",string)<0) dc.success=false;
+	if(DISK_printf(dc.file,"\n?%s\n",string)<0) dc.success=false;
 }
 
 void DC_SaveI(int integer){
-	if(fprintf(dc.file,"%d\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%d\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveUI(unsigned int integer){
-	if(fprintf(dc.file,"%u\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%u\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveL(long integer){
-	if(fprintf(dc.file,"%ld\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%ld\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveN(long integer){
-	if(fprintf(dc.file,"%ld\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%ld\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveUL(unsigned long integer){
-	if(fprintf(dc.file,"%lu\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%lu\n",integer)<0) dc.success=false;
 }
 
 
 /******************** OS depended function. Must be removed later *************/
 void DC_SaveP(unsigned long integer){
-	if(fprintf(dc.file,"%lu\n",integer)<0) dc.success=false;
+	if(DISK_printf(dc.file,"%lu\n",integer)<0) dc.success=false;
 }
 
 void DC_SaveF(float integer){
-  if(fprintf(dc.file,"%s\n",OS_get_string_from_double(integer))<0) dc.success=false;
+  if(DISK_printf(dc.file,"%s\n",OS_get_string_from_double(integer))<0) dc.success=false;
 }
 
 void DC_SaveB(bool integer){
@@ -130,7 +131,7 @@ void DC_SSUL(const char *string,unsigned long integer){
 void DC_SSS(const char *string,const char *string2){
 	if(string2==NULL) return;
 	DC_SaveS(string);
-	if(fprintf(dc.file,"%s\n",string2)<0) dc.success=false;
+        DC_SaveCleanString(string2);DC_SaveCleanString("\n");
 }
 
 
@@ -140,38 +141,32 @@ void DC_SSS(const char *string,const char *string2){
 /*************************************************************
               LOAD FUNCTIONS
 *************************************************************/
+int curr_disk_line;
 
-void DC_fgets(void){
-	int offset=0;
+static void DC_fgetsNoMatterWhat(void){
+        curr_disk_line++;
 
-	char *ret=fgets(dc.ls,BUFFERLENGTH,dc.file);
+	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
-          RError("Unable to load string");
-		dc.success=false;
-		return;
-	}
-
-	while(ret[strlen(ret)-1]==' ' || ret[strlen(ret)-1]=='\n' || ret[strlen(ret)-1]=='\r'){
-		ret[strlen(ret)-1]=0;													//ret is allways longer than one, because of a newline-character.
-		if(strlen(ret)==0){
-			DC_fgets();
-			return;
-		}
-	}
-
-	while(ret[offset]==' ' || ret[offset]==9){
-		offset++;
-		if(ret[offset]==0){
-			DC_fgets();
-			return;
-		}
+          GFX_Message(NULL, "Unable to load string. Line %d",curr_disk_line);
+          dc.success=false;
+          return;
 	}
 
 	//printf("loading -%s-\n",ret);
 
 	dc.ret=ret;
+}
 
+void DC_fgets(void){
+
+  DC_fgetsNoMatterWhat();
+
+  if (!strcmp(dc.ret,"")){
+    DC_fgets();
+    return;
+  }
 }
 
 
@@ -179,8 +174,8 @@ void DC_fgets(void){
 void *DC_doalloc(size_t size){
 	void *ret=tralloc(size);
 	if(ret==NULL){
-		RError("Not enough memory.\n");
-		dc.success=false;
+          GFX_Message(NULL, "Not enough memory.\n");
+          dc.success=false;
 	}
 	return ret;
 }
@@ -188,8 +183,8 @@ void *DC_doalloc(size_t size){
 void *DC_doalloc_atomic(size_t size){
 	void *ret=tralloc_atomic(size);
 	if(ret==NULL){
-		RError("Not enough memory (atomic).\n");
-		dc.success=false;
+          GFX_Message(NULL, "Not enough memory (atomic).\n");
+          dc.success=false;
 	}
 	return ret;
 }
@@ -243,8 +238,23 @@ error:
 	return ret;
 }
 
+char *DC_LoadSNoMatterWhat(void){
+	char *ret;
+	DC_fgetsNoMatterWhat();
+        if(!strcmp(dc.ret, emptystringstring)){
+          ret=DC_alloc_atomic(1);
+          ret[0]='\0';
+        }else{
+          ret=DC_alloc_atomic(strlen(dc.ret)+1);
+          strcpy(ret,dc.ret);
+        }
+error:
+	return ret;
+}
+
 bool DC_LoadB(void){
 	DC_fgets();
+        R_ASSERT(!strcmp(dc.ret,"1") || !strcmp(dc.ret,"0"));
 	return (bool)(atoi(dc.ret)==1?true:false);
 }
 
@@ -284,9 +294,9 @@ int DC_Next(void){
 			dc.type=LS_ENDOBJECT;
 			break;
 		default:
-                  RError("DC_Next: Unknown type: \"%s\" ",dc.ret);
-			dc.success=false;
-			return LS_ERROR;
+                  RError("DC_Next: Unknown type: \"%s\". Line: %d ",dc.ret,curr_disk_line);
+                  dc.success=false;
+                  return LS_ERROR;
 	}
 
 	return dc.type;
@@ -310,9 +320,11 @@ int DC_whatString(char **variables,int num){
 		ret++;
 		if(ret>=num){
 			RError(
-			       "Error. Unknown identifier '%s', dc.type=%s.\n",
+			       "Error. Unknown identifier '%s', dc.type=%s., line: %d\n",
 			       string,
-			       dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN");
+			       dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN",
+                               curr_disk_line
+                               );
 			dc.success=false;
 			return LS_ERROR;
 		}

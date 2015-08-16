@@ -35,12 +35,10 @@ enum{
 };
 
 static void show_message(int type, char *message){
-  static double last_ignore = 0.0;
+  static double last_ignore = -3000.0; // don't want to ignore errors the first two seconds.
   static bool ignore_rest_of_the_program = false;
 
   char *typestring = type==IS_ERROR?"Error":"Warning";
-
-  fprintf(stderr,"%s: %s\n",typestring, message);
 
   if(ignore_rest_of_the_program==true)
     return;
@@ -48,20 +46,30 @@ static void show_message(int type, char *message){
   if(TIME_get_ms()-last_ignore < 2000)
     return;
 
+  char full_message[1000];
+  sprintf(full_message,"%s: %s", typestring, message);
+
+#if 0 // Always use SYSTEM_show_message.
   vector_t v = {0};
   VECTOR_push_back(&v, "continue");
   VECTOR_push_back(&v, "quit");
   VECTOR_push_back(&v, "ignore warnings and errors for two seconds");
   VECTOR_push_back(&v, "ignore warnings and errors for the rest of the program");
-
-  char full_message[1000];
-  sprintf(full_message,"%s: %s", typestring, message);
   
   int ret = GFX_Message(&v, full_message);
-  
+  if (ret==-1)
+    ret = SYSTEM_show_message(full_message);
+#else
+  int ret = SYSTEM_show_message(full_message);
+#endif
+      
   switch(ret){
   case 0: break;
-  case 1: abort();
+  case 1: {
+    char *hello = NULL;
+    hello[0] = 50;
+    abort();
+  }
   case 2: last_ignore=TIME_get_ms(); break;
   case 3: ignore_rest_of_the_program=true; break;
   }
@@ -76,7 +84,8 @@ void RError(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  show_message(IS_ERROR,message);
+  CRASHREPORTER_send_assert_message("RError: %s",message);
+  //show_message(IS_ERROR,message);
 }
 
 void RWarning(const char *fmt,...){
@@ -88,7 +97,8 @@ void RWarning(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  show_message(IS_WARNING,message);
+  CRASHREPORTER_send_assert_message("RWarning: %s",message);
+  //show_message(IS_WARNING,message);
 }
 
 void RWarning_not_prod(const char *fmt,...){

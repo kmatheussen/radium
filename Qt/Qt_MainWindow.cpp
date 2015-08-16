@@ -14,23 +14,21 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-extern "C"{
-#include <Python.h>
-#include "../api/radium_proc.h"
-}
+#include "../common/includepython.h"
+#include "../api/api_proc.h"
 
-#include <qapplication.h>
-#include <qmainwindow.h>
-#include <qsplitter.h>
+#include <QApplication>
+#include <QMainWindow>
+#include <QSplitter>
 #include <QCloseEvent>
 #include <QStatusBar>
 #include <QMenuBar>
 #include <QMessageBox>
 
-#include <qfiledialog.h>
+#include <QFileDialog>
 
 extern bool is_starting_up;
-
+extern bool g_qt_is_running;
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -59,6 +57,7 @@ static HWND gtk_hwnd = NULL;
 #endif
 
 #include "EditorWidget.h"
+#include "../common/threading.h"
 
 #if USE_GTK_VISUAL
 #  include "../GTK/GTK_visual_proc.h"
@@ -66,6 +65,7 @@ static HWND gtk_hwnd = NULL;
 
 #include "../common/gfx_proc.h"
 #include "../common/cursor_updown_proc.h"
+#include "../common/OS_string_proc.h"
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
@@ -77,10 +77,16 @@ static HWND gtk_hwnd = NULL;
 
 #include "../common/settings_proc.h"
 #include "../common/eventreciever_proc.h"
+#include "../common/OS_settings_proc.h"
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
+
+class Bottom_bar_widget;
+static Bottom_bar_widget *g_bottom_bar = NULL; // need to be defined here since it's used by the upperleft widget.
+
 #include "mQt_bottom_bar_widget_callbacks.h"
+#include "mQt_upperleft_widget_callbacks.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "Qt_MainWindow_proc.h"
@@ -125,6 +131,17 @@ public:
 };
 #endif
 
+
+void GFX_PositionUpperLeftArea(struct Tracker_Windows *tvisual, struct WBlocks *wblock){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->upperleft_widget->position(tvisual, wblock);
+}
+
+void GFX_UpdateUpperLeft(struct Tracker_Windows *tvisual, struct WBlocks *wblock){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  editor->upperleft_widget->updateWidgets(wblock);
+}
+
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
   : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
@@ -136,11 +153,19 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   , paintbuffer_painter(NULL)
   , cursorbuffer_painter(NULL)
 #endif
+
+#if USE_OPENGL
+  , gl_widget(NULL)
+#endif
   , qpa(256)
 {
 #if USE_QT_VISUAL
   this->paintbuffer=NULL;
 #endif
+
+
+  upperleft_widget = new Upperleft_widget(this);
+  upperleft_widget->move(0,0);
 
 #if USE_GTK_VISUAL
   if(sizeof(int64_t) < sizeof(WId))
@@ -241,9 +266,6 @@ extern struct Root *root;
 
 EditorWidget *g_editor = NULL;
 
-static Bottom_bar_widget *g_bottom_bar = NULL;
-
-
 #if 1
 // dangerous stuff
 extern "C" void grabKeyboard(void);
@@ -323,34 +345,25 @@ public:
     }
   }
 
-  // Want the wheel to work from everywhere.
-  void wheelEvent(QWheelEvent *qwheelevent){
+#if 0
+  // Want the wheel to work from everywhere. (actually we don't want that)
+  void wheelEvent(QWheelEvent *qwheelevent) {
     if(is_starting_up==true)
       return;
-
-    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-
-    int num_lines = R_ABS(qwheelevent->delta()/120);    
-
-    DO_GFX(
-           {
-             if(qwheelevent->delta()<0)
-               ScrollEditorDown(window,num_lines);
-             else
-               ScrollEditorUp(window,num_lines);
-           });
-
-#if USE_QT_VISUAL
-    g_editor->updateEditor();
-#endif
+    printf("Got wheel event\n");
+    g_editor->wheelEvent(qwheelevent);
   }
+#endif
 };
+
+QMainWindow *g_main_window = NULL;
 
 void SetupMainWindow(void){
 
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
   QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
-
+  g_main_window = main_window;
+  
 #ifdef USE_QT4
   //main_window->setAttribute(Qt::WA_PaintOnScreen);
   //main_window->setAttribute(Qt::WA_OpaquePaintEvent);
@@ -383,6 +396,11 @@ void SetupMainWindow(void){
 #if USE_QT_VISUAL && !defined(__linux__)  // double buffer actually improves performance on linux. Still not as good as gtk though.
   editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
+
+  //#if USE_OPENGL
+    // editor->setAttribute(Qt::WA_PaintOnScreen);
+  //#endif
+
   //editor->setAttribute(Qt::WA_PaintOnScreen);
 
   editor->setAttribute(Qt::WA_OpaquePaintEvent);
@@ -433,6 +451,11 @@ void SetupMainWindow(void){
     }
     main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
     status_bar->setSizeGripEnabled(false);
+
+    {
+      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      status_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name() + "; }");
+    }
   }
 #else
   {
@@ -460,17 +483,32 @@ void SetupMainWindow(void){
 #if USE_QT_VISUAL
 
   {
+    bool custom_config_set = false;
     QFont font = QFont("Monospace");
 
     const char *fontstring = SETTINGS_read_string("font",NULL);
-    if(fontstring!=NULL)
-      font.fromString(fontstring);
+    if(fontstring==NULL) {
+      SETTINGS_set_custom_configfile(QString(QCoreApplication::applicationDirPath()+OS_get_directory_separator()+"config").toUtf8().constData());
+      fontstring = SETTINGS_read_string("font",NULL);
+      R_ASSERT(fontstring != NULL);
+      custom_config_set = true;
+    }
 
-    //const char *fontstyle = SETTINGS_read_string("font_style",NULL);  //(arrgh, there's a billion bugs in qt when it comes to font styles)
-    //if(fontstyle!=NULL)
-    //  font.setStyleName(fontstyle);
+    font.fromString(fontstring);
+
+#if 0 //FOR_MACOSX
+    if (custom_config_set==true)
+      font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+
+    if(SETTINGS_read_string("font_style",NULL)!=NULL)
+      font.setStyleName(SETTINGS_read_string("font_style",NULL));
 
     editor->font = font;
+
+    if (custom_config_set==true){
+      SETTINGS_unset_custom_configfile();
+    }
 
     //editor->font->setStyleHint(QFont::TypeWriter);
     //editor->font->setFixedPitch(false);
@@ -492,9 +530,9 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 }
 
 
-void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const char *title){
+void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCaption(title);
+  main_window->setCaption(STRING_get_qstring(title));
 }
 
 void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
@@ -505,70 +543,85 @@ void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
   editor->status_label->setText(title);
 }
 
-static QString get_postfixes_filter(char *postfixes){
+static QString get_postfixes_filter(const char *postfixes){
   return postfixes==NULL 
          ? "Song files (*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3) ;; All files (*)"
          : QString("Song files (") + QString(postfixes) + ") ;; All files (*)";
 }
 
-const char *GFX_GetLoadFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir,
-        char *postfixes
+const wchar_t *GFX_GetLoadFileName(
+                                   struct Tracker_Windows *tvisual,
+                                   ReqType reqtype,
+                                   const char *seltext,
+                                   wchar_t *wdir,
+                                   const char *postfixes
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  const char *ret;
 
   num_users_of_keyboard++;
 
   QString filename;
+  
+  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
 
-  // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-  GL_lock();{
-    filename = QFileDialog::getOpenFileName(editor,seltext, "", get_postfixes_filter(postfixes));
+    QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+    filename = QFileDialog::getOpenFileName(editor,
+                                            seltext,
+                                            dir,
+                                            get_postfixes_filter(postfixes),
+                                            0,
+                                            QFileDialog::DontUseNativeDialog
+                                            );
+    
   }GL_unlock();
 
-  if(filename == ""){
-    ret=NULL;
-    goto exit;
-  }
-
-  ret = talloc_strdup(filename.ascii());
-
- exit:
   num_users_of_keyboard--;
-  return ret;
+    
+  if(filename == "")
+    return NULL;
+  else
+    return STRING_create(filename);  
 }
 
-const char *GFX_GetSaveFileName(
-	struct Tracker_Windows *tvisual,
-	ReqType reqtype,
-	char *seltext,
-	char *dir,
-        char *postfixes
-){
+const wchar_t *GFX_GetSaveFileName(
+                                   struct Tracker_Windows *tvisual,
+                                   ReqType reqtype,
+                                   const char *seltext,
+                                   wchar_t *wdir,
+                                   const char *postfixes
+                                   ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   num_users_of_keyboard++;
-  const char *ret = talloc_strdup((char*)QFileDialog::getSaveFileName(editor,
-                                                                      seltext,
-                                                                      "",
-                                                                      get_postfixes_filter(postfixes)
-                                                                      ).ascii());
+
+  QString filename;
+  
+  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+
+    QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+    filename = QFileDialog::getSaveFileName(editor,
+                                            seltext,
+                                            "",
+                                            get_postfixes_filter(postfixes),
+                                            0,
+                                            QFileDialog::DontUseNativeDialog
+                                            );
+  }GL_unlock();
+
   num_users_of_keyboard--;
-  return ret==NULL || strlen(ret)==0 
-    ? NULL 
-    : ret;
+
+  if (filename == "")
+    return NULL;
+
+  return STRING_create(filename);
 }
 
 
-static int show_message(vector_t *buttons, const char *message){
-        
+static int GFX_Message(vector_t *buttons, QString message){
+  R_ASSERT(THREADING_is_main_thread());
 
-  QMessageBox msgBox;
-  msgBox.setText(QString(message));
+  QMessageBox msgBox(g_editor);
+  msgBox.setText(message);
 
   if(buttons==NULL){
 
@@ -582,27 +635,25 @@ static int show_message(vector_t *buttons, const char *message){
 
   }
 
-
-  num_users_of_keyboard++;
-  {
-    msgBox.exec();
-  }
-  num_users_of_keyboard--;
+  safeExec(msgBox);
 
   QAbstractButton *clicked_button = msgBox.clickedButton();
 
-  for(int i=0;i<buttons->num_elements;i++)
-    if(QString((char*)buttons->elements[i])==clicked_button->text())
-      return i;
+  if (buttons != NULL) {
+    for(int i=0;i<buttons->num_elements;i++)
+      if(QString((char*)buttons->elements[i])==clicked_button->text())
+        return i;
 
-  fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+    fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
+  }
   
   return 0;
-
 }
 
-
 int GFX_Message(vector_t *buttons, const char *fmt,...){
+  if (buttons!=NULL)
+    R_ASSERT(THREADING_is_main_thread());
+
   char message[1000];
   va_list argp;
   
@@ -610,8 +661,21 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   /*	vfprintf(stderr,fmt,argp); */
   vsprintf(message,fmt,argp);
   va_end(argp);
-  
-  return show_message(buttons,message);
+
+  if (g_qt_is_running==false || !THREADING_is_main_thread()) {
+
+    SYSTEM_show_message(message);
+    return -1;
+
+  } else {
+ 
+    return GFX_Message(buttons,QString(message));
+
+  }
+}
+
+const char *GFX_qVersion(void){
+  return qVersion();
 }
 
 //#include "mgakk.cpp"

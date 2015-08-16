@@ -68,8 +68,9 @@ void *Undo_Do_RelTempoMax(
 	float reltempomax=wblock->reltempomax;
 
 	wblock->reltempomax=u_rt->reltempomax;
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
-
+#endif
 	u_rt->reltempomax=reltempomax;
 
 	return u_rt;

@@ -19,9 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileDialog>
 
 #include "Qt_PluginWidget.h"
+#include "helpers.h"
 
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/undo_pd_controllers_proc.h"
+#include "../audio/Juce_plugins_proc.h"
 
 #include "Qt_plugin_widget_callbacks_proc.h"
 
@@ -29,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "mQt_pd_plugin_widget_callbacks.h"
 #include "mQt_jack_plugin_widget_callbacks.h"
+
+
+static QString last_fxb_preset_path = "";
 
 
 class Plugin_widget : public QWidget, public Ui::Plugin_widget{
@@ -40,8 +45,43 @@ public:
   Jack_Plugin_widget *_jack_plugin_widget;
   bool _ignore_show_gui_checkbox_stateChanged;
 
+  QMessageBox infoBox;
+
 private:
   PluginWidget *_plugin_widget;
+
+  struct MyQTimer : public QTimer{
+    Plugin_widget *plugin_widget;
+    
+    MyQTimer(Plugin_widget *plugin_widget)
+      : plugin_widget(plugin_widget)
+    {
+      setInterval(100);
+    }
+    
+    void timerEvent(QTimerEvent * e){ // virtual method from QTimer
+      SoundPlugin *plugin = (SoundPlugin*)plugin_widget->_patch->patchdata;
+
+      if (plugin != NULL) {
+        const SoundPluginType *type = plugin->type;
+        
+        if (plugin_widget->isVisible()==true){
+          if(type->gui_is_visible!=NULL){
+            bool checkbox = plugin_widget->show_gui_checkbox->isChecked();
+            bool gui = type->gui_is_visible(plugin);
+            if (checkbox==false && gui==true)
+              plugin_widget->show_gui_checkbox->setChecked(true);
+            else if(checkbox==true && gui==false)
+              plugin_widget->show_gui_checkbox->setChecked(false);
+          }
+          
+          plugin_widget->update_preset_widgets();
+        }
+      }
+    }
+  };
+
+  MyQTimer _timer;
 
 public:
 
@@ -52,7 +92,10 @@ public:
     , _jack_plugin_widget(NULL)
     , _ignore_show_gui_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
+    , _timer(this)
     {
+      R_ASSERT(_patch!=NULL)
+        
     setupUi(this);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -109,6 +152,9 @@ public:
       }
     }
 
+    if(strcmp(type->type_name,"VST"))
+      delete fxbp_button;
+
     if(strcmp(type->type_name,"Faust") || strcmp(type->name,"Multiband Compressor"))
       delete limiter_bypass_button;
 
@@ -147,6 +193,20 @@ public:
 
     if(plugin->type->show_gui!=NULL && plugin->type->hide_gui!=NULL)
       show_gui_button->hide();
+
+    if(plugin->type->gui_is_visible!=NULL){
+      _timer.start();
+    }
+
+    if (type->get_num_presets==NULL || type->get_num_presets(plugin)==0){
+      preset_selector->hide();
+      preset_button->hide();
+    } else {
+      preset_selector->setMinimum(1);
+      preset_selector->setMaximum(type->get_num_presets(plugin));
+    }
+
+    update_widget();
   }
 
   void update_widget() {
@@ -161,9 +221,91 @@ public:
 
     if(_jack_plugin_widget != NULL)
       _jack_plugin_widget->update_gui();
+
+    update_preset_widgets();
   }
 
-  public slots:
+  void update_preset_widgets(){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    const SoundPluginType *type = plugin->type;
+
+    if (type->get_num_presets != NULL){
+
+      int preset_num = type->get_current_preset(plugin);
+      if (preset_num != preset_selector->value())
+        preset_selector->setValue(preset_num+1);
+
+      const char *preset_name = type->get_preset_name(plugin, preset_num);
+      if (strcmp(preset_name, preset_button->text().toUtf8().constData()))
+        preset_button->setText(preset_name);
+
+    }
+  }
+  
+private:
+  
+  void SaveFXBP(bool is_fxb){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    num_users_of_keyboard++;
+    QString filename;
+    
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getSaveFileName(
+                                              g_mixer_widget,
+                                              is_fxb ? "Save VST FXB file" : "Save VST FXP file",
+                                              last_fxb_preset_path,
+                                              is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
+                                              0,
+                                              QFileDialog::DontUseNativeDialog
+                                              );
+    }GL_unlock();
+    
+    num_users_of_keyboard--;
+    
+    if(filename=="")
+      return;
+    
+    last_fxb_preset_path = QFileInfo(filename).absoluteDir().path();
+
+    if (is_fxb)
+      PLUGINHOST_save_fxb(plugin, STRING_create(filename));
+    else
+      PLUGINHOST_save_fxp(plugin, STRING_create(filename));
+  }
+
+  void LoadFXBP(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    num_users_of_keyboard++;
+    QString filename;
+    
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getOpenFileName(
+                                              g_mixer_widget,
+                                              "Load VST FXB or FXP file",
+                                              last_fxb_preset_path,
+                                              "VST FXB/FXP files (*.fxb *.fxp) ;; All files (*)",
+                                              0,
+                                              QFileDialog::DontUseNativeDialog
+                                              );
+    }GL_unlock();
+    
+    num_users_of_keyboard--;
+    
+    if(filename=="")
+      return;
+    
+    last_fxb_preset_path = QFileInfo(filename).absoluteDir().path();
+    
+    PLUGINHOST_load_fxbp(plugin, STRING_create(filename));
+    
+    GFX_update_instrument_widget((struct Patch*)_patch);
+  }
+
+
+  
+public slots:
 
   void on_new_pd_controller_button_released() {
     Undo_PdControllers_CurrPos(_patch);
@@ -201,98 +343,96 @@ public:
       SAMPLER_set_resampler_type(plugin, val);
     }
 
-    void on_save_button_pressed(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
-      num_users_of_keyboard++;
-      QString filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Effect Configuration (*.rec)");
-      num_users_of_keyboard--;
-
-      if(filename=="")
-        return;
-
-      FILE *file = fopen(filename,"w");
-
-      if(file==NULL){
-        QMessageBox msgBox;
-        msgBox.setText("Could not save file.");
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
-        return;
-      }
-
-      hash_t *state = PLUGIN_get_effects_state(plugin);
-
-      HASH_save(state, file);
-
-      fclose(file);
+  void on_fxbp_button_clicked(){
+    vector_t v = {0};
+    VECTOR_push_back(&v, "Load FXB or FXP file");
+    VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
+    VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
+    
+    switch(GFX_Menu(root->song->tracker_windows, NULL, "", &v)){
+    case 0: LoadFXBP(); break;
+    case 1: SaveFXBP(true); break;
+    case 2: SaveFXBP(false); break;
+    default: break;
+    }
+  }
+  
+    void on_save_button_clicked(){
+      InstrumentWidget_save_preset(_patch);      
     }
 
-    void on_load_button_pressed(){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      const SoundPluginType *type = plugin->type;
-
-      num_users_of_keyboard++;
-      QString filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Effect Configuration (*.rec)");
-      num_users_of_keyboard--;
-
-      if(filename=="")
-        return;
-
-      FILE *file = fopen(filename,"r");
-      if(file==NULL){
-        QMessageBox msgBox;
-        msgBox.setText("Could not open file.");
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
-        return;
-      }
-
-      hash_t *state = HASH_load(file);
-      fclose(file);
-
-      if(state==NULL){
-        QMessageBox msgBox;
-        msgBox.setText("File does not appear to be a valid effects settings file");
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
-        return;
-      }
-
-      Undo_Open();{
-        for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-          Undo_AudioEffect_CurrPos(plugin->patch, i);
-      }Undo_Close();
-
-      PLUGIN_set_effects_from_state(plugin, state);
-      GFX_update_instrument_widget(plugin->patch);
+    void on_load_button_clicked(){
+      InstrumentWidget_load_preset(_patch);      
     }
 
-    void on_reset_button_pressed(){
+    void on_replace_button_clicked(){
+      InstrumentWidget_replace(_patch);
+    }
+    
+    void on_reset_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_reset(plugin);
-      GFX_update_instrument_widget(plugin->patch);
+      GFX_update_instrument_widget(_patch);
     }
 
-    void on_random_button_pressed(){
+    void on_random_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       PLUGIN_random(plugin);
-      GFX_update_instrument_widget(plugin->patch);
+
+      GFX_update_instrument_widget(_patch);
     }
 
-    void on_info_button_pressed(){
+    void on_info_button_clicked(){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       const SoundPluginType *type = plugin->type;
 
-      QMessageBox msgBox;
       if(type->info!=NULL)
-        msgBox.setText(type->info);
+        infoBox.setText(type->info);
       else
-        msgBox.setText("No information about this plugin."); // This message box should never show.
-      msgBox.exec();
+        infoBox.setText("No information about this plugin."); // This message box should never show.
+
+      safeShowOrExec(&infoBox);
+    }
+
+    void on_preset_button_clicked(){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      const SoundPluginType *type = plugin->type;
+
+      int num_presets = type->get_num_presets(plugin);
+      
+      vector_t v = {0};
+
+      for(int i=0;i<num_presets;i++){
+        VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_preset_name(plugin, i)));
+      }
+
+      VECTOR_push_back(&v, "--------------");
+      VECTOR_push_back(&v, "<set new name>");
+      
+      int num = GFX_Menu(root->song->tracker_windows, NULL, "", &v);
+      if (num == num_presets+1) {
+        char *new_name = GFX_GetString(NULL, NULL, "new name: ");
+        if (new_name != NULL){
+          type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
+          update_widget();
+        }
+      } else if (num >= 0 && num<num_presets) {
+        type->set_current_preset(plugin, num);
+        update_widget();
+      }
+    }
+    
+    void on_preset_selector_editingFinished(){
+      int num = preset_selector->value() - 1;
+      printf("num: %d\n",num);
+      
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      const SoundPluginType *type = plugin->type;
+
+      type->set_current_preset(plugin, num);
+      update_widget();
+      
+      set_editor_focus();
     }
 };
 

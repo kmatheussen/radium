@@ -17,18 +17,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef OS_SETTINGS_PROC_H
 #define OS_SETTINGS_PROC_H
 
-extern LANGSPEC void OS_set_loading_path(const char *filename);
+#include <wchar.h>
+
+extern LANGSPEC void OS_set_loading_path(const wchar_t *filename);
 extern LANGSPEC void OS_unset_loading_path(void);
+extern LANGSPEC const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *path);
+
+extern LANGSPEC const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *filepath);  
+extern LANGSPEC void OS_set_saving_path(const wchar_t *filename);
 
 extern LANGSPEC const char *OS_get_directory_separator(void);
 extern LANGSPEC void OS_set_argv0(char *argv0);
 extern LANGSPEC const char *OS_get_program_path(void);
+extern LANGSPEC const wchar_t *OS_get_program_path2(void);
 
 extern LANGSPEC bool OS_config_key_is_color(const char *key);
-extern LANGSPEC char *OS_get_config_filename(const char *key);
-extern LANGSPEC char *OS_get_conf_filename(const char *filename);
-extern LANGSPEC char *OS_get_keybindings_conf_filename(void);
-extern LANGSPEC char *OS_get_menues_conf_filename(void);
+
+#ifdef USE_QT4
+#include <QString>
+QString OS_get_config_filename(const char *key);
+QString OS_get_conf_filename(QString filename);
+#endif
+
+extern LANGSPEC char *OS_get_conf_filename2(const char *filename);
+
+#ifdef USE_QT4
+#include <QString>
+QString OS_get_keybindings_conf_filename(void);
+QString OS_get_menues_conf_filename(void);
+#endif
+extern LANGSPEC char *OS_get_keybindings_conf_filename2(void);
+extern LANGSPEC char *OS_get_menues_conf_filename2(void);
 
 extern LANGSPEC void OS_make_config_file_expired(const char *key);
 

@@ -24,19 +24,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_legalize_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "gfx_wblocks_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "temponodes_proc.h"
+#include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
-#include "trackreallines_proc.h"
 #include "reallines_insert_proc.h"
 #include "time_proc.h"
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "undo_lpbs_proc.h"
+#include "undo_signatures_proc.h"
 #include "undo_notes_proc.h"
 #include "undo_notesandfxs_proc.h"
 #include "player_proc.h"
+#include "Beats_proc.h"
 
 #include "reallines_insert_proc.h"
 
@@ -124,6 +125,14 @@ void InsertPlace_lpbs(
 	List_InsertPlaceLen3(block,&block->lpbs,&block->lpbs->l,place,toplace,NULL);
 }
 
+void InsertPlace_signatures(
+	struct Blocks *block,
+	float place,
+	float toplace
+){
+	List_InsertPlaceLen3(block,&block->signatures,&block->signatures->l,place,toplace,NULL);
+}
+
 void InsertPlace_stops(
 	struct Blocks *block,
 	struct Tracks *track,
@@ -166,29 +175,35 @@ void InsertRealLines_CurrPos(
 
 
 	switch(window->curr_track){
-		case TEMPOTRACK:
-			Undo_Tempos_CurrPos(window);
-			InsertPlace_tempos(block,place,toplace);
-			UpdateWTempos(window,wblock);
-#if !USE_OPENGL
-			DrawUpTempos(window,wblock);
-#endif
-			UpdateSTimes(wblock->block);
+		case SIGNATURETRACK:
+			Undo_Signatures_CurrPos(window);
+			InsertPlace_signatures(block,place,toplace);
+                        UpdateBeats(block);
 			break;
 		case LPBTRACK:
 			Undo_LPBs_CurrPos(window);
 			InsertPlace_lpbs(block,place,toplace);
-			UpdateWLPBs(window,wblock);
+			//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
+#endif
+			UpdateSTimes(wblock->block);
+                        UpdateBeats(block);
+			break;
+		case TEMPOTRACK:
+			Undo_Tempos_CurrPos(window);
+			InsertPlace_tempos(block,place,toplace);
+			//UpdateWTempos(window,wblock);
+#if !USE_OPENGL
+			DrawUpTempos(window,wblock);
 #endif
 			UpdateSTimes(wblock->block);
 			break;
 		case TEMPONODETRACK:
 			Undo_TempoNodes_CurrPos(window);
 			InsertPlace_temponodes(block,place,toplace);
-			UpdateWTempoNodes(window,wblock);
 #if !USE_OPENGL
+			UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
 			UpdateSTimes(wblock->block);
@@ -197,13 +212,14 @@ void InsertRealLines_CurrPos(
 			if(window->curr_track_sub>=0){
 				Undo_NotesAndFXs_CurrPos(window);
 				InsertPlace_fxs(block,wblock->wtrack->track,place,toplace);
+#if !USE_OPENGL
 				UpdateFXNodeLines(window,wblock,wblock->wtrack);
+#endif
 			}else{
 				Undo_Notes_CurrPos(window);
 			}
 			InsertPlace_notes(block,wblock->wtrack->track,place,toplace);
 			InsertPlace_stops(block,wblock->wtrack->track,place,toplace);
-			UpdateTrackReallines(window,wblock,wblock->wtrack);
 #if !USE_OPENGL
 			ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 			UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);

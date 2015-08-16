@@ -14,10 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-extern "C"{
-#include "Python.h"
-#include "../api/radium_proc.h"
-}
+#include "../api/api_proc.h"
+
 
 #include <qspinbox.h>
 
@@ -56,7 +54,6 @@ extern "C"{
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../audio/SoundPluginRegistry_proc.h"
-
 
 
 #include "Qt_instruments_proc.h"
@@ -108,7 +105,46 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch);
 
-static const char *ccnames[128];
+
+const char **get_ccnames(void){
+  static bool is_inited = false;
+  static const char *ccnames[128];
+
+  if (is_inited == false) {
+    for(int i=0;i<128;i++)
+      ccnames[i] = "";
+
+    {
+      ccnames[01] = "Modulation Wheel";
+      ccnames[02] = "Breath Controller";
+      ccnames[04] = "Foot Controller";
+      ccnames[05] = "Portamento Time";
+      ccnames[06] = "Data Entry MSB";
+      ccnames[07] = "Volume";
+      ccnames[10] = "Pan";
+      ccnames[11] = "Expression";
+      ccnames[16] = "Foot Controller";
+      ccnames[28] = "Data Entry LSB";
+      ccnames[64] = "Sustain Switch";
+      ccnames[65] = "Portamento Switch";
+      ccnames[66] = "Sostenuto";
+      ccnames[67] = "Soft Pedal";
+      ccnames[84] = "Portamento";
+      ccnames[94] = "Variation Depth";
+      ccnames[120] = "All Sounds Off";
+      ccnames[121] = "Reset All Controllers";
+      ccnames[123] = "All Notes Off";
+      ccnames[124] = "Omni Mode Off";
+      ccnames[125] = "Omni Mode On";
+      ccnames[126] = "Mono Mode";
+      ccnames[127] = "Poly Mode";
+    }
+
+    is_inited = true;
+  }
+
+    return ccnames;
+}
 
 //#define protected public
 #if USE_QT3
@@ -291,38 +327,7 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
     struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
     instrument->patchdata = patchdata;
 
-    for(int i=0;i<128;i++)
-      ccnames[i] = "";
-
-    {
-      ccnames[01] = "Modulation Wheel";
-      ccnames[02] = "Breath Controller";
-      ccnames[04] = "Foot Controller";
-      ccnames[05] = "Portamento Time";
-      ccnames[06] = "Data Entry MSB";
-      ccnames[07] = "Volume";
-      ccnames[10] = "Pan";
-      ccnames[11] = "Expression";
-      ccnames[16] = "Foot Controller";
-      ccnames[28] = "Data Entry LSB";
-      ccnames[64] = "Sustain Switch";
-      ccnames[65] = "Portamento Switch";
-      ccnames[66] = "Sostenuto";
-      ccnames[67] = "Soft Pedal";
-      ccnames[84] = "Portamento";
-      ccnames[94] = "Variation Depth";
-      ccnames[120] = "All Sounds Off";
-      ccnames[121] = "Reset All Controllers";
-      ccnames[123] = "All Notes Off";
-      ccnames[124] = "Omni Mode Off";
-      ccnames[125] = "Omni Mode On";
-      ccnames[126] = "Mono Mode";
-      ccnames[127] = "Poly Mode";
-      if(patchdata!=NULL)
-        for(int i=0;i<8;i++){
-          ccnames[(int)patchdata->cc[i]] = patchdata->ccnames[i];
-        }
-    }
+    const char **ccnames = get_ccnames();
 
     {
       int ccnum = 0;
@@ -334,7 +339,19 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
 
           for(int i=0;i<128;i++){
             char temp[500];
-            sprintf(temp, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
+            bool is_set = false;
+            
+            if(patchdata!=NULL)
+              for(int ip=0;ip<8;ip++)
+                if (patchdata->cc[ip] == i) {
+                  sprintf(temp, "%3d: %s", i, patchdata->ccnames[ip]);
+                  is_set = true;
+                  break;
+                }
+
+            if (is_set==false)
+              sprintf(temp, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
+            
             cc->cctype->insertItem(temp);
           }
 
@@ -398,6 +415,9 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   return instrument;
 }
 
+static void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch){
+  create_audio_instrument_widget(patch);
+}
 
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
   
@@ -564,10 +584,10 @@ static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch)
 // * This is the entry point for creating audio instruments.
 // * The entry point for delete any instrument is common/patch.c/PATCH_delete
 //
-SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x, int y, bool autoconnect, const char *name){
-    if(plugin_type==NULL){
-      plugin_type = MW_popup_plugin_selector();
-    }
+SoundPlugin *add_new_audio_instrument_widget(struct SoundPluginType *plugin_type, double x, double y, bool autoconnect, const char *name, Buses buses){
+    if(plugin_type==NULL)
+      plugin_type = MW_popup_plugin_selector(name, x, y, autoconnect);
+
     if(plugin_type==NULL)
       return NULL;
 
@@ -584,16 +604,11 @@ SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x
       Undo_InstrumentsWidget_CurrPos();
       Undo_MixerConnections_CurrPos();
 
-      plugin = MW_add_plugin(plugin_type, x, y);
+      plugin = MW_add_plugin(plugin_type, x, y, buses);
       if(plugin==NULL)
         return NULL;
 
-      char patchname[200];
-      if(name!=NULL)
-        snprintf(patchname,198,"%s",name);
-      else
-        snprintf(patchname,198,"%s %d",plugin_type->name,++plugin_type->instance_num);
-      struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, patchname);
+      struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name==NULL ? PLUGIN_generate_new_patchname(plugin_type) : name);
 
       Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created.
 
@@ -604,7 +619,6 @@ SoundPlugin *add_new_audio_instrument_widget(SoundPluginType *plugin_type, int x
 
       if(autoconnect==true)
         MW_autoconnect_plugin(plugin);
-
     }
 
     return plugin;
@@ -639,12 +653,14 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
 }
 
 void update_audio_instrument_widget(Audio_instrument_widget *instrument, struct Patch *patch){
+  
   instrument->updateWidgets();
 
   instrument->_plugin_widget->update_widget();
 }
 
 void GFX_update_instrument_widget(struct Patch *patch){
+
   if(patch->instrument==get_MIDI_instrument()){
     printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
 
@@ -740,33 +756,240 @@ void GFX_PP_Update(struct Patch *patch){
   }exit: called_from_pp_update = false;
 }
 
-void GFX_remove_patch_gui(struct Patch *patch){
+
+static QString last_filename;
+static QString last_preset_path = "";
+
+
+static hash_t *load_preset_state(void){
+  num_users_of_keyboard++;
+  QString filename;
+  
+  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    filename = QFileDialog::getOpenFileName(
+                                            g_mixer_widget,
+                                            "Load Effect configuration",
+                                            last_preset_path,
+                                            "Radium Effect Configuration (*.rec)",
+                                            0,
+                                            QFileDialog::DontUseNativeDialog
+                                            );
+  }GL_unlock();
+  
+  num_users_of_keyboard--;
+
+  if(filename=="")
+    return NULL;
+
+  last_preset_path = QFileInfo(filename).absoluteDir().path();
+  
+  disk_t *file = DISK_open_for_reading(filename);
+  if(file==NULL){
+    QMessageBox msgBox;
+    msgBox.setText("Could not open file.");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    safeExec(msgBox);
+    return NULL;
+  }
+
+  hash_t *state = HASH_load(file);
+  DISK_close_and_delete(file);
+
+  if(state==NULL){
+    QMessageBox msgBox;
+    msgBox.setText("File does not appear to be a valid effects settings file");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    safeExec(msgBox);
+    return NULL;
+  }
+
+  last_filename = QFileInfo(filename).baseName();
+
+  return state;
+}
+
+
+struct Patch *InstrumentWidget_new_from_preset(hash_t *state, const char *name, double x, double y, bool autoconnect){
+  if (state==NULL) {
+    state = load_preset_state();
+    if (state != NULL && name==NULL)
+      name = talloc_strdup(last_filename.toUtf8().constData());      
+  }
+  
+  if (state == NULL)
+    return NULL;
+
+  //Undo_Track(window,wblock,wtrack,wblock->curr_realline);      
+  Undo_Patch_CurrPos();
+  Undo_InstrumentsWidget_CurrPos();
+  Undo_MixerConnections_CurrPos();
+  
+  struct Patch *patch = CHIP_create_from_plugin_state(state, name, x, y, MIXER_get_buses());
+  if (patch!=NULL){
+    if (autoconnect) {
+      struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      MW_autoconnect_plugin(plugin);
+    }
+
+    Undo_Chip_Add_CurrPos(patch); // It works fine to call Undo_Chip_Add right after the chip has been created. (except that it's not very logical)
+    create_audio_instrument_widget(patch);
+  }
+
+  return patch;
+}
+
+void InstrumentWidget_replace_old(struct Patch *old_patch){
+  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
+  if (plugin_type==NULL)
+    return;
+
+  struct Patch *new_patch = NULL;
+  SoundPlugin *new_plugin = NULL;
+  
+  Undo_Open();{
+
+    //SoundPlugin *new_plugin = PLUGIN_create_plugin(plugin_type, NULL);
+    //SoundPlugin *new_plugin = MW_add_plugin(plugin_type, 0,0);
+    new_plugin = add_new_audio_instrument_widget(plugin_type, 0, 0, false, NULL, MIXER_get_buses());
+    if (new_plugin != NULL) {
+  
+      new_patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, new_plugin, PLUGIN_generate_new_patchname(plugin_type));
+      if (new_patch==NULL){
+        RError("new_patch!=NULL");
+      } else {
+        SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+        PLUGIN_set_from_patch(old_plugin, new_patch);
+      }
+    }
+    
+  }Undo_Close();
+        
+
+  if (new_plugin==NULL)
+    Undo_CancelLastUndo();
+  else 
+    GFX_update_instrument_widget(new_patch);
+}
+
+static void replace(struct Patch *old_patch, hash_t *state){
+  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+  SoundPlugin *new_plugin = NULL;
+  
+  Undo_Open();{
+    new_plugin = PLUGIN_set_from_state(old_plugin, state);
+  }Undo_Close();
+
+  if (new_plugin==NULL)
+    Undo_CancelLastUndo();
+  else {
+    volatile struct Patch *new_patch = new_plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(new_patch!=NULL);
+
+    GFX_update_instrument_widget((struct Patch*)new_patch);
+  }
+}
+
+void InstrumentWidget_replace(struct Patch *old_patch){
+  SoundPluginType *plugin_type = MW_popup_plugin_selector(NULL, 200, 200, false);
+  if (plugin_type==NULL)
+    return;
+
+  SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
+  hash_t *state = PLUGIN_get_state(plugin);
+
+  PLUGIN_delete_plugin(plugin); // not ideally to temporarily create a plugin, but alternative seems quite horrific, unfortunately.
+    
+  replace(old_patch, state);
+}
+
+void InstrumentWidget_load_preset(struct Patch *old_patch){
+  hash_t *state = load_preset_state();
+  if (state==NULL)
+    return;
+
+  replace(old_patch, state);
+}
+
+void InstrumentWidget_save_preset(struct Patch *patch){
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  
+  num_users_of_keyboard++;
+  QString filename;
+  
+  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+    filename = QFileDialog::getSaveFileName(
+                                            g_mixer_widget,
+                                            "Save Effect configuration",
+                                            last_preset_path,
+                                            "Radium Effect Configuration (*.rec)",
+                                            0,
+                                            QFileDialog::DontUseNativeDialog                                            
+                                            );
+  }GL_unlock();
+  
+  num_users_of_keyboard--;
+  
+  if(filename=="")
+    return;
+
+  last_preset_path = QFileInfo(filename).absoluteDir().path();
+    
+  disk_t *file = DISK_open_for_writing(filename);
+  
+  if(file==NULL){
+    QMessageBox msgBox;
+    msgBox.setText("Could not save file.");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    safeExec(msgBox);
+    return;
+  }
+  
+  hash_t *state = PLUGIN_get_state(plugin);
+  
+  HASH_save(state, file);
+  
+  DISK_close_and_delete(file);
+}
+
+static void InstrumentWidget_remove_patch(struct Patch *patch){
   QStackedWidget* tabs = instruments_widget->tabs;
 
   Undo_InstrumentsWidget_CurrPos();
 
-  {
-    MIDI_instrument_widget *w = get_midi_instrument_widget(patch);
-    if(w!=NULL){
-      tabs->removeWidget(w); // Undo is storing the tab widget, so we can't delete it.
-      return;
-    }
+  MIDI_instrument_widget *w1 = get_midi_instrument_widget(patch);
+  if(w1!=NULL){
+    tabs->removeWidget(w1); // Undo is storing the tab widget, so we can't delete it.
+    return;
   }
 
-  {
-    Audio_instrument_widget *w = get_audio_instrument_widget(patch);
-    if(w==NULL){
-      RError("No such patch widget: %p\n",patch);
-      return;
-    }
+  Audio_instrument_widget *w2 = get_audio_instrument_widget(patch);
+  if(w2==NULL){
+    RError("No such patch widget: %p\n",patch);
+    return;
+  } else
+    tabs->removeWidget(w2);  // Undo is storing the tab widget, so we can't delete it.
+}
 
-    tabs->removeWidget(w);  // Undo is storing the tab widget, so we can't delete it.
+void InstrumentWidget_update(struct Patch *patch){
+  InstrumentWidget_remove_patch(patch);
+  InstrumentWidget_create_audio_instrument_widget(patch);
+}
 
+void GFX_remove_patch_gui(struct Patch *patch){
+  InstrumentWidget_remove_patch(patch);
+
+  if (patch->instrument==get_audio_instrument()) {
+    
     SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
     MW_delete_plugin(plugin);
-  }
 
-  MW_update_all_chips();
+    MW_update_all_chips();
+      
+  }
 }
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){
@@ -795,10 +1018,9 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
   {
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
-    struct WTracks *wtrack = wblock->wtrack;
     DO_GFX(
-           g_currpatch->name = talloc_strdup((char*)new_name.ascii());
-           DrawWTrackHeader(window,wblock,wtrack);
+           g_currpatch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+           DrawAllWTrackHeaders(window,wblock);
            );
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
     editor->updateEditor();
@@ -807,7 +1029,7 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
 
 #if 0
 static void tab_selected(){
-  //printf("tab selected -%s-\n",tabname.ascii());
+  //printf("tab selected -%s-\n",tabname.toUtf8().constData());
 
   if(called_from_pp_update==true)
     return;
@@ -865,6 +1087,8 @@ void close_all_instrument_widgets(void){
   }
 
   MW_update_all_chips();
+
+  //ResetUndo();
 }
 
 struct Patch *get_current_instruments_gui_patch(void){
@@ -898,7 +1122,7 @@ hash_t *create_instrument_widget_order_state(void){
   hash_t *state = HASH_create(tabs->count());
 
   for(int i=0;i<tabs->count();i++)
-    HASH_put_string_at(state, i, tabs->tabText(i).ascii());
+    HASH_put_string_at(state, i, tabs->tabText(i).toUtf8().constData());
 
   printf("___________Saving state: =-----\n");
   HASH_save(state,stdout);

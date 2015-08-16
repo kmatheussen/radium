@@ -62,21 +62,22 @@ extern NInt currpatch;
 
 float disk_load_version;
 
-static bool Load(const char *filename){
+static bool Load(const wchar_t *filename){
 	struct Root *newroot;
 
-	dc.file=fopen(filename,"r");
+        curr_disk_line = 0;
+
+	dc.file=DISK_open_for_reading(filename);
 	if(dc.file==NULL){
-          GFX_Message(NULL,"Could not open \"%s\" for loading\n",filename);
+          GFX_Message(NULL,"Could not open \"%s\" for loading\n",STRING_get_chars(filename));
           return false;
 	}
 
-	dc.ls=talloc(BUFFERLENGTH+1);
 	DC_fgets();
 
 	if(strcmp("RADIUM SONG",dc.ls)){
           GFX_Message(NULL,"First line in song was not 'RADIUM SONG', but '%s'. Last: %d\n",dc.ls,dc.ls[strlen(dc.ls)-1]);
-          fclose(dc.file);
+          DISK_close_and_delete(dc.file);
           return false;
 	}
 
@@ -97,46 +98,37 @@ static bool Load(const char *filename){
           printf("Song diskVersion: %f\n",disk_load_version);
         }
 
-	dc.filename=talloc_strdup(filename);
+	dc.filename=filename;
 
 	dc.playlist=NULL;
 	dc.success=true;
 
 	DC_Next();
 	if(strcmp(dc.ls,"OSSTUFF")){
-		fprintf(stderr,"OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,filename);
-#ifdef DEBUG
-                abort();
-#endif
-		fclose(dc.file);
-		EndProgram();
-		exit(4);
+          GFX_Message(NULL, "OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
+          DISK_close_and_delete(dc.file);
+          EndProgram();
+          exit(4);
 	}
 
 	LoadOsStuff();
 
 	printf("dc.ls: -%s-\n",dc.ls);
 	if(strcmp(dc.ls,"ROOT")){
-          fprintf(stderr,"ROOT not found. Found '%s' instead.\n", dc.ls);
-#ifdef DEBUG
-          abort();
-#endif
-          fclose(dc.file);
+          GFX_Message(NULL, "ROOT not found. Found '%s' instead.\n", dc.ls);
+          DISK_close_and_delete(dc.file);
           EndProgram();
           exit(5);
 	}
 
 	newroot=LoadRoot();
 
-	fclose(dc.file);
+        DISK_close_and_delete(dc.file);
 
 	if(!dc.success){
-		printf("Loading failed.\n");
-#ifdef DEBUG
-                abort();
-#endif
-		EndProgram();
-		exit(6);
+          GFX_Message(NULL, "Loading failed.\n");
+          EndProgram();
+          exit(6);
 	}
 
 
@@ -160,15 +152,17 @@ static bool Load(const char *filename){
 	currpatch=-1;
 #endif
 
+        ResetUndo();
+                
 	return true;
 
 }
 
 //#ifdef _AMIGA
-static const char *mmp2filename;
+static const wchar_t *mmp2filename;
 //#endif
 
-static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filename){
+static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *filename){
 	bool ret = false;
 
         // So many things happen here, that we should turn off garbage collection while loading.
@@ -188,47 +182,40 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filenam
           goto exit;
 
         if(filename==NULL)
-          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", "obsolete", NULL);
+          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", NULL, NULL);
 
 	if(filename==NULL) goto exit;
 
-	if(strlen(filename)>4){
-		if(
-			!strcmp(filename+strlen(filename)-5,".MMD2") ||
-			!strcmp(filename+strlen(filename)-5,".MMD3") ||
-			!strcmp(filename+strlen(filename)-4,".MMD") ||
-			!strcmp(filename+strlen(filename)-5,".mmd2") ||
-			!strcmp(filename+strlen(filename)-5,".mmd3") ||
-			!strcmp(filename+strlen(filename)-4,".mmd")
-		){
-                  //#ifdef _AMIGA
-			mmp2filename=filename;
-                        //#endif
-                        char temp[4098];
-                        sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
-
-			ret = Load(temp);
-                        goto exit;
-		}
-	}
-
-        {
-          OS_set_loading_path(filename);
+        if (STRING_ends_with(filename,".MMD2") ||
+            STRING_ends_with(filename,".MMD3") ||
+            STRING_ends_with(filename,".MMD") ||
+            STRING_ends_with(filename,".mmd2") ||
+            STRING_ends_with(filename,".mmd3") ||
+            STRING_ends_with(filename,".mmd")
+            )
           {
-            ret = Load(filename);
-          }
-          OS_unset_loading_path();
 
-          GFX_SetWindowTitle(root->song->tracker_windows, filename);
+            mmp2filename=filename;
+            ret = Load(STRING_create("new_song.rad"));
 
-          GFX_EditorWindowToFront(root->song->tracker_windows);
+          } else {
 
-          struct WBlocks *wblock = root->song->tracker_windows->wblock;
-          GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
-
-          DrawUpTrackerWindow(root->song->tracker_windows);
-
-          fprintf(stderr,"Got here (loading finished)\n");
+            OS_set_loading_path(filename);
+            {
+              ret = Load(filename);
+            }
+            OS_unset_loading_path();
+            
+            GFX_SetWindowTitle(root->song->tracker_windows, filename);
+            
+            GFX_EditorWindowToFront(root->song->tracker_windows);
+            
+            struct WBlocks *wblock = root->song->tracker_windows->wblock;
+            GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
+            
+            DrawUpTrackerWindow(root->song->tracker_windows);
+            
+            fprintf(stderr,"Got here (loading finished)\n");
         }
 
  exit:
@@ -237,26 +224,30 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const char *filenam
           GC_enable();
         }
 
-	if(mmp2filename!=NULL) LoadMMP2(root->song->tracker_windows,mmp2filename);
-	mmp2filename=NULL;
+	if(mmp2filename!=NULL) {
+          LoadMMP2(root->song->tracker_windows, mmp2filename);
+          mmp2filename=NULL;
+        }
 
+        ResetUndo();
+        
         return ret;
-
 }
 
 bool Load_CurrPos(struct Tracker_Windows *window){
   return Load_CurrPos_org(window,NULL);
 }
 
-bool LoadSong_CurrPos(struct Tracker_Windows *window, const char *filename){
+bool LoadSong_CurrPos(struct Tracker_Windows *window, const wchar_t *filename){
   return Load_CurrPos_org(window,filename);
 }
 
 void NewSong_CurrPos(struct Tracker_Windows *window){
-  char temp[4098];
-  sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
-  Load_CurrPos_org(window,talloc_strdup(temp));
-  GFX_SetWindowTitle(root->song->tracker_windows, "Radium - New song.");
+  //char temp[4098];
+  //sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
+  //Load_CurrPos_org(window,talloc_strdup(temp));
+  Load_CurrPos_org(window, STRING_create("new_song.rad"));
+  GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
   dc.filename=NULL;
 }
 

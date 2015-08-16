@@ -35,15 +35,20 @@ int GFX_Menu(
    
     QMenu menu(0);
 
-    for(int i=0;i<v->num_elements;i++)
-      menu.addAction(new QAction((const char*)v->elements[i],&menu));
+    for(int i=0;i<v->num_elements;i++) {
+      QString text = (const char*)v->elements[i];
+      if (text.startsWith("----"))
+        menu.addSeparator();
+      else
+        menu.addAction(new QAction(text,&menu));  // are these actions automatically freed in ~QMenu?
+    }
 
     QAction *action = menu.exec(QCursor::pos());
     if(action==NULL)
       return -1;
 
     for(int i=0;i<v->num_elements;i++)
-      if(action->text() == (const char*)v->elements[i])
+      if(action == menu.actions()[i])
         return i;
 
     RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
@@ -57,4 +62,19 @@ int GFX_Menu(
   }
 }
 
+// The returned vector can be used as argument for GFX_Menu.
+vector_t *GFX_MenuParser(const char *texts, const char *separator){
+  vector_t *ret = (vector_t*)talloc(sizeof(vector_t));
+  
+  QStringList splitted = QString(texts).split(separator);
+  
+  for(int i=0 ; i<splitted.size() ; i++){
+    QString trimmed = splitted[i].trimmed();
+    if (trimmed != "")
+      VECTOR_push_back(ret, talloc_strdup(trimmed.toUtf8().constData()));
+  }
+
+  return ret;
+}
+                   
 #endif // USE_QT_MENU

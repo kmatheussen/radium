@@ -72,11 +72,21 @@ static void AUDIO_changepitch(struct Patch *patch,float notenum,int64_t note_id,
   if(plugin==NULL)
     return;
 
-  //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
-
   if(plugin->type->set_note_pitch != NULL)
     plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(time), notenum, note_id, pitch);
  
+}
+
+static void AUDIO_sendrawmidimessage(struct Patch *patch,uint32_t msg,STime time){
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL)
+    return;
+
+  //printf("audio velocity changed: %d. Time: %d\n",velocity,(int)MIXER_get_block_delta_time(time));
+
+  if(plugin->type->send_raw_midi_message != NULL)
+    plugin->type->send_raw_midi_message(plugin, PLAYER_get_block_delta_time(time), msg); 
 }
 
 static void AUDIO_stopnote(struct Patch *patch,float notenum,int64_t note_id,STime time){
@@ -136,9 +146,11 @@ void AUDIO_InitPatch(struct Patch *patch, void *patchdata) {
   patch->stopnote       = AUDIO_stopnote;
   patch->changevelocity = AUDIO_changevelocity;
   patch->changepitch    = AUDIO_changepitch;
+  patch->sendrawmidimessage = AUDIO_sendrawmidimessage;
   patch->closePatch     = AUDIO_closePatch;
   patch->changeTrackPan = AUDIO_changeTrackPan;
 
+  //R_ASSERT(patchdata!=NULL);
   patch->patchdata = patchdata;
 
   patch->instrument=get_audio_instrument();    
@@ -169,10 +181,16 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
-static void AUDIO_treat_FX(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-  SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
+static void AUDIO_treat_FX(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  
+  R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+          
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
-
+  if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
+    return;
+  
   float effect_val = val / (float)MAX_FX_VAL;
 
   PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(time),fx->effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
@@ -278,7 +296,7 @@ var0:
 	goto start;
 
 var1:
-        fx->name = DC_LoadS();
+        fx->name = DC_LoadSNoMatterWhat();
 	goto start;
 
 var2:
@@ -298,6 +316,8 @@ var15:
 var16:
 var17:
 var18:
+var19:
+ var20:
 
 obj0:
 obj1:
@@ -350,6 +370,11 @@ static void AUDIO_StopPlaying(struct Instruments *instrument){
 }
 
 static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch){
+  if(patch->patchdata==NULL){
+    RError("plugin==NULL for %s\n",patch->name);
+    return;
+  }
+
   GFX_PP_Update(patch);
 }
 
@@ -413,7 +438,9 @@ extern SoundPlugin *g_system_bus;
 
 bool AUDIO_is_permanent_patch(struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-  if(plugin==get_main_pipe() || !strcmp(plugin->type->type_name,"Bus"))
+  if(plugin==get_main_pipe() ||
+     //(!strcmp(plugin->type->type_name,"Sample Player") && !strcmp(plugin->type->name, "Click")) ||
+     !strcmp(plugin->type->type_name,"Bus"))
     return true;
   else
     return false;

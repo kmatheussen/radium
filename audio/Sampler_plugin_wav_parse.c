@@ -15,28 +15,32 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-static char *get_current_wav_chunk_id(FILE *file){
+static char *get_current_wav_chunk_id(disk_t *file){
   char *val=talloc(5);
-  if(fread(val,4,1,file)!=1)
+  
+  if(DISK_read_binary(file, val, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
-  fseek(file,-4,SEEK_CUR);
+  
+  DISK_spool(file,-4);
+  
   printf("current_wav_chunk_id: \"%s\"\n",val);
+  
   return val;
 }
 
-static bool spool_to_next_wav_chunk(FILE *file, int endpos){
-  if(fseek(file,4,SEEK_CUR) != 0) // chunk id
+static bool spool_to_next_wav_chunk(disk_t *file, int endpos){
+  if(DISK_spool(file,4)==false) // chunk id
     return false; // end of file
 
   int size=read_le32int(file);
   if(size%2) // chunks are aligned by two bytes, but the size doesn't have to be.
     size++;
 
-  if(ftell(file)>=endpos-1)
+  if(DISK_pos(file)>=endpos-1)
     return false; // end of file
 
 
-  if(size<4 || fseek(file,size,SEEK_CUR) !=0 ){
+  if(size<4 || DISK_spool(file,size)==false){
     RError("Broken wave file? Chunk size: %d\n",size);
     return false;
   }
@@ -44,20 +48,20 @@ static bool spool_to_next_wav_chunk(FILE *file, int endpos){
   return true;
 }
 
-static bool spool_to_wav_chunk(FILE *file, char *chunk_id, int num){ // chunk_id is a 4 byte string
-  fseek(file,0,SEEK_SET);
+static bool spool_to_wav_chunk(disk_t *file, char *chunk_id, int num){ // chunk_id is a 4 byte string
+  DISK_set_pos(file,0);
 
   if(strcmp(get_current_wav_chunk_id(file),"RIFF"))
     return false;
 
-  fseek(file,4,SEEK_SET);
+  DISK_set_pos(file,4);
 
   int filesize=read_le32int(file);
 
   if(strcmp(get_current_wav_chunk_id(file),"WAVE"))
     return false;
 
-  fseek(file,4,SEEK_CUR);
+  DISK_spool(file,4);
 
   int i=0;
 
@@ -79,50 +83,50 @@ static bool spool_to_wav_chunk(FILE *file, char *chunk_id, int num){ // chunk_id
 }
 
 // seek must be set to 0x0c into the cue chunk (start of the list). It will not change this seek when returning.
-static int find_loop_cue_pos(FILE *file, int cue_id, int num_cues){
+static int find_loop_cue_pos(disk_t *file, int cue_id, int num_cues){
   //fseek(file,0x18,SEEK_CUR);
-  long startpos = ftell(file);
+  long startpos = DISK_pos(file);
   int cue_pos=0;
   int ret = -1;
 
   while(read_le32int(file) != cue_id){   
-    fseek(file,0x14,SEEK_CUR);
+    DISK_spool(file,0x14);
     cue_pos++;
     if(cue_pos==num_cues)
       goto exit;
   }
 
-  fseek(file,0x10,SEEK_CUR);
+  DISK_spool(file,0x10);
   ret = read_le32int(file);
   
  exit:
-  fseek(file,startpos,SEEK_SET);
+  DISK_set_pos(file,startpos);
   return ret;
 }
 
-static int find_cue_id_for_label2(FILE *file, char *label){
+static int find_cue_id_for_label2(disk_t *file, char *label){
 
-  int startpos=ftell(file);
+  int startpos=DISK_pos(file);
 
-  fseek(file,4,SEEK_CUR); // "LIST"
+  DISK_spool(file,4); // "LIST"
 
   int list_size=read_le32int(file);
   if(list_size%2)
     list_size++;
 
-  fseek(file,4,SEEK_CUR); // "adtl"
+  DISK_spool(file,4); // "adtl"
 
   int end_pos=startpos+list_size;
 
   while(true){
-    printf("ftell(file): %d. end_pos: %d. startpos: %d, list_size: %d\n",(int)ftell(file), end_pos,startpos,list_size);
-    if(ftell(file)>=end_pos)
+    printf("ftell(file): %d. end_pos: %d. startpos: %d, list_size: %d\n",(int)DISK_pos(file), end_pos,startpos,list_size);
+    if(DISK_pos(file)>=end_pos)
       return -1;
 
     printf("  LIST:  \"%s\"\n",get_current_wav_chunk_id(file));
 
     if(!strcmp("labl",get_current_wav_chunk_id(file))){
-      fseek(file,4,SEEK_CUR);
+      DISK_spool(file,4);
       int size=read_le32int(file);
       if(size%2)
         size++;
@@ -130,7 +134,7 @@ static int find_cue_id_for_label2(FILE *file, char *label){
       int id=read_le32int(file);
 
       char *name=talloc(size);
-      if(fread(name,size-4,1,file)!=1){
+      if(DISK_read_binary(file, name, size-4) != (size-4)){
         fprintf(stderr,"Reading file failed\n");
         return -1;
       }
@@ -151,7 +155,7 @@ static int find_cue_id_for_label2(FILE *file, char *label){
   return -1;
 }
 
-static int find_cue_id_for_label(FILE *file, char *label){
+static int find_cue_id_for_label(disk_t *file, char *label){
   int i=0;
   while(true){
     if(spool_to_wav_chunk(file, "LIST", i)==false)
@@ -167,7 +171,7 @@ static int find_cue_id_for_label(FILE *file, char *label){
   return -1;
 }
 
-static bool set_wav_loop_points_using_cues(Sample *sample, FILE *file){
+static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file){
   int cue_id_loop_start=find_cue_id_for_label(file, "Loop Start");
   int cue_id_loop_end=find_cue_id_for_label(file, "Loop End");
 
@@ -177,7 +181,7 @@ static bool set_wav_loop_points_using_cues(Sample *sample, FILE *file){
   if(spool_to_wav_chunk(file, "cue ", 0)==false)
     return false;
 
-  fseek(file,8,SEEK_CUR);
+  DISK_spool(file,8);
   int num_cues = read_le32int(file);
 
   int loop_start = find_loop_cue_pos(file,cue_id_loop_start,num_cues);
@@ -190,14 +194,14 @@ static bool set_wav_loop_points_using_cues(Sample *sample, FILE *file){
 }
 
 #if 0
-static int get_bytes_per_frame_in_wav(FILE *file){
+static int get_bytes_per_frame_in_wav(disk_t *file){
   if(spool_to_wav_chunk(file, "fmt ", 0)==-1)
     return -1;
 
-  fseek(file,0x0a,SEEK_CUR);
+  DISK_spool(file,0x0a);
   int num_channels = read_le16int(file);
 
-  fseek(file,0x16-0xa-2,SEEK_CUR);
+  DISK_spool(file,0x16-0xa-2);
   int bits = read_le16int(file);
   if(bits%8!=0){
     float b=bits/8;
@@ -209,17 +213,17 @@ static int get_bytes_per_frame_in_wav(FILE *file){
 }
 #endif
 
-static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, FILE *file){
+static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file){
   if(spool_to_wav_chunk(file, "smpl", 0)==false)
     return false;
 
-  fseek(file,0x24,SEEK_CUR);
+  DISK_spool(file,0x24);
   int num_loops = read_le32int(file);
 
   if(num_loops==0)
     return false;
 
-  fseek(file,4 + 8,SEEK_CUR);
+  DISK_spool(file,4 + 8);
   int loop_start = read_le32int(file);
   int loop_end = read_le32int(file);
 
@@ -241,8 +245,10 @@ static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, FILE *file){
   return true;
 }
 
-static void set_wav_loop_points(Sample *sample, const char *filename){
-  FILE *file=fopen(filename,"rb");
+static void set_wav_loop_points(Sample *sample, const wchar_t *filename){
+  
+  disk_t *file = DISK_open_binary_for_reading(filename);
+  
   if(file==NULL){
     RError("Could not open file \"%s\". libsndfile could though, which is very strange",filename);
     return;
@@ -251,5 +257,5 @@ static void set_wav_loop_points(Sample *sample, const char *filename){
   if(set_wav_loop_points_using_smpl_chunk(sample,file)==false)
     set_wav_loop_points_using_cues(sample,file);
 
-  fclose(file);
+  DISK_close_and_delete(file);
 }

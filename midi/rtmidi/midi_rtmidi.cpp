@@ -15,7 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include <assert.h>
 #include <pthread.h>
 #include <string.h>
 
@@ -32,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../../common/visual_proc.h"
 
 #include "../midi_i_input_proc.h"
+#include "../midi_menues_proc.h"
 
 #include "../OS_midi_proc.h"
 
@@ -232,7 +232,7 @@ static const std::vector<std::string> get_port_names(RtMidi &rtmidi){
       portName = rtmidi.getPortName(i);
     }
     catch (RtError &error) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
       continue;
     }
     std::cout << "  Output Port #" << i+1 << ": " << portName << '\n';
@@ -273,7 +273,7 @@ static char **get_port_names(bool use_input_ports, int *num_ports){
       }
       ret.insert(ret.end(), port_names.begin(), port_names.end());
     }catch ( RtError &error ) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
     }
   }
 
@@ -316,7 +316,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
           goto got_portnum;
         }
     }catch ( RtError &error ) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
     }
   }
 
@@ -352,7 +352,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
       if(ret->midiout->getPortCount()>0)
         ret->midiout->openPort(0);
       else{
-        RWarning("No ports available.");
+        GFX_Message(NULL, "No ports available.");
         return NULL;
       }
 #endif
@@ -360,7 +360,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
       ret->midiout->openVirtualPort(name);
 #endif
     }catch ( RtError &error ) {
-      RError(error.what());
+      GFX_Message(NULL, error.what());
       return NULL;
     }
     return ret;
@@ -372,7 +372,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     ret->midiout = new RtMidiOut(api, "Radium");
     ret->midiout->openPort(portnum, name);
   }catch ( RtError &error ) {
-    RError(error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)
+    GFX_Message(NULL, error.what()); // Can't get this exception to work if provocing wrong arguments above. (tried -fexceptions)
     return NULL;
   }
   printf("opened. api %p: %d, portnum: %d\n",ret,(int)api,(int)portnum);
@@ -404,85 +404,104 @@ void MIDI_OS_SetInputPort(const char *portname){
   int portnum = get_portnum(portname);
 
 #ifdef __linux__
-#if 0
-    {
-      inport_jack = new RtMidiIn(RtMidi::UNIX_JACK,std::string("Radium"));
-      if(inport_jack!=NULL){
-        if(portnum==-1)
-          inport_jack->openVirtualPort("in");
-        else
-          inport_jack->openPort(portnum,"in");
-        inport_jack->setCallback(mycallback,NULL);
-      }
-    }
-#endif
 
     {
-      inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,std::string("Radium"));
-      if(inport_alsa!=NULL){
-        if(portnum==-1)
-          inport_alsa->openVirtualPort(portname);
-        else
-          inport_alsa->openPort(portnum,portname);
-        inport_alsa->setCallback(mycallback,NULL);
-      }
-    }
-#endif
 
-#ifdef FOR_WINDOWS
+      if (inport_alsa != NULL) {
+        fprintf(stderr, "deleting old\n");
+        try{
+          delete inport_alsa;
+        }catch ( RtError &error ) {
+          GFX_Message(NULL, "Unable to delete old MIDI Port. (%s)", error.what());
+          inport_alsa = NULL;
+          return;
+        }
+      }
+
+      try{
+        
+        fprintf(stderr,"trying to open\n");
+        inport_alsa = new RtMidiIn(RtMidi::LINUX_ALSA,std::string("Radium"));
+        fprintf(stderr,"Got. trying to open\n");
+        if(inport_alsa!=NULL){
+          if(portnum==-1)
+            inport_alsa->openVirtualPort(portname);
+          else
+            inport_alsa->openPort(portnum,portname);
+          inport_alsa->setCallback(mycallback,NULL);
+        }
+      
+      }catch ( RtError &error ) {
+        GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
+        inport_alsa = NULL;
+      }
+
+    }
+
+#elif FOR_WINDOWS
 
     if(portnum==-1)
       GFX_Message(NULL,"Unknown port %s",portname);
 
     else{
 
+      if (inport_winmm != NULL) {
+        fprintf(stderr, "deleting old\n");
+        try{
+          delete inport_winmm;
+        }catch ( RtError &error ) {
+          GFX_Message(NULL, "Unable to delete old MIDI Port. (%s)", error.what());
+          inport_winmm = NULL;
+          return;
+        }
+      }
+
       try{
         inport_winmm = new RtMidiIn(RtMidi::WINDOWS_MM,std::string("Radium"));
-      }catch ( RtError &error ) {
-        RError(error.what());
-      }
-      if(inport_winmm!=NULL){
-        inport_winmm->openPort(portnum,"in");
-        inport_winmm->setCallback(mycallback,NULL);
-      }
-    }
-
-#if 0
-    if(gotit==false){
-      try{
-        inport_winks = new RtMidiIn(RtMidi::WINDOWS_KS,std::string("Radium"));
-      }catch ( RtError &error ) {
-        RError(error.what());
-      }
-      if(inport_winks!=NULL){
-        //inport_winks->openVirtualPort("in");
-        try{
-          if(inport_winks->getPortCount()>0)
-            inport_winks->openPort(0);
-          else{
-            printf("No Windows Kernel Streaming MIDI Input ports.\n");
-            fflush(stdout);
-          }
-        }catch ( RtError &error ) {
-          RError(error.what());
+        if(inport_winmm!=NULL){
+          inport_winmm->openPort(portnum,"in");
+          inport_winmm->setCallback(mycallback,NULL);          
         }
-        inport_winks->setCallback(mycallback,NULL);
+      }catch ( RtError &error ) {
+        GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
+        inport_winmm = NULL;
       }
     }
-#endif // 0
-#endif // FOR_WINDOWS
 
-#ifdef FOR_MACOSX
+#elif FOR_MACOSX
+    
     {
-      inport_coremidi = new RtMidiIn(RtMidi::MACOSX_CORE,std::string("Radium"));
-      if(inport_coremidi!=NULL){
-        if(portnum==-1)
-          inport_coremidi->openVirtualPort("in");
-        else
-          inport_coremidi->openPort(portnum,"in");
-        inport_coremidi->setCallback(mycallback,NULL);
+
+      if (inport_coremidi != NULL) {
+        fprintf(stderr, "deleting old\n");
+        try{
+          delete inport_coremidi;
+        }catch ( RtError &error ) {
+          GFX_Message(NULL, "Unable to delete old MIDI Port. (%s)", error.what());
+          inport_coremidi = NULL;
+          return;
+        }
+      }
+
+      try{
+        inport_coremidi = new RtMidiIn(RtMidi::MACOSX_CORE,std::string("Radium"));
+        if(inport_coremidi!=NULL){
+          if(portnum==-1)
+            inport_coremidi->openVirtualPort("in");
+          else
+            inport_coremidi->openPort(portnum,"in");
+          inport_coremidi->setCallback(mycallback,NULL);
+        }
+      }catch ( RtError &error ) {
+        GFX_Message(NULL, "Couldn't open %s. (%s)", portname, error.what());
+        inport_coremidi = NULL;
       }
     }
+
+#else
+    
+    #error "unknown arghithceh;rture"
+    
 #endif
 
 }
@@ -510,13 +529,13 @@ bool MIDI_New(struct Instruments *instrument){
           fflush(stdout);
         }
       }catch ( RtError &error ) {
-        RError(error.what());
+        GFX_Message(NULL, error.what());
       }
   
 #endif
 #endif
 
-      const char *inport = SETTINGS_read_string("midi_input_port",NULL);
+      const char *inport = MIDI_get_input_port();
       if(inport!=NULL)
         MIDI_OS_SetInputPort(inport);
 

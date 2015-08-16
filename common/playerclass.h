@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 /*********************************************************************
  This is an oop struct. 'TreatMe' is a virtual procedure. Because
  of simplicity (GC_malloc can not be used from the player-thread, see
- PEQmempool.c), subclasses is not used.
+ PEQmempool.c), subclasses are not used.
 **********************************************************************/
 struct PEventQueue{
 	struct ListHeaderP l;
@@ -46,6 +46,9 @@ struct PEventQueue{
 
 // Used by PEQrealline
 	int realline;
+
+// Used by PEQline
+	int line;
 
 
 // Used by PEQvelocities
@@ -95,15 +98,21 @@ typedef struct{
         volatile STime start_time; // During current call to peq->treatMe
         volatile STime end_time;   // During current call to peq->treatMe
 
+        double start_time_f;       // double version of start_time.
+        double end_time_f;         // double version of end_time.
+
 	volatile STime therealtime;	// Shows the real time, not taking the block->reltempo variable into consideration. Only used by PEQ_clock and PTask2MTask.c.
 
         STime reltime; // The argument for PlayerTask. Will usually contain the audio blocksize. Necessary for calculating delta time.
 
-	STime seqtime;		/* Time being played at the top of the block that now is playing. */
+	volatile STime seqtime;		/* Time being played at the top of the block that now is playing. */
 
-	bool isplaying;
-	bool initplaying;
+	volatile bool isplaying;
+	volatile bool initplaying;
 
+        bool is_treating_editor_events; // Used by "SCHEDULER_add_event" to determine whether to run events (which belongs to the current block) NOW, or schedule it.
+        volatile bool playertask_has_been_called; // if true, we can be sure that the timing values are valid.
+        
 	int playtype;
 
 	struct Blocks *block;		// The block now playing.
@@ -111,6 +120,8 @@ typedef struct{
 	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
 	STime pausetime;
 	bool nowpausing;
+
+        int play_id; // A counter. Increased each time the program starts playing, and stops playing.
 
 }PlayerClass;
 

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "realline_calc_proc.h"
 #include "list_proc.h"
 #include "placement_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/Pd_plugin_proc.h"
@@ -88,20 +89,39 @@ void InitPEQrealline(struct Blocks *block,Place *place){
 
 
 static void PlayerFirstRealline(struct PEventQueue *peq,int doit){
+#ifdef WITH_PD
 	Place firstplace;
 	PlaceSetFirstPos(&firstplace);
 
-#ifdef WITH_PD
         int64_t next_time = pc->seqtime + Place2STime(
                                                       pc->block,
                                                       &peq->wblock->reallines[1]->l.p
                                                       );
 
-        RT_PD_set_subline(peq->l.time, next_time, &firstplace);
+        RT_PD_set_realline(peq->l.time, next_time, &firstplace);
 #endif
 
         ReturnPEQelement(peq);
 }
+
+/*
+"peq->realline" can have illegal value:
+
+$1 = (Place *) 0x8
+(gdb) bt
+#0  0x0000000000717b91 in RT_PD_set_realline (time=9591811, time_nextrealline=10057999, p=0x8) at audio/Pd_plugin.cpp:469
+#1  0x00000000005a1e66 in PlayerNewRealline (peq=0x367ffb0, doit=1) at common/PEQrealline.c:151
+#2  0x00000000005a1413 in PlayerTask (reltime=64) at common/player.c:116
+#3  0x00000000007204ea in Mixer::RT_thread (this=this@entry=0x2d7c240) at audio/Mixer.cpp:459
+#4  0x00000000007206bf in Mixer::RT_rjack_thread (arg=0x2d7c240) at audio/Mixer.cpp:502
+#5  0x0000003b564163fd in Jack::JackClient::Execute (this=0x2d8f150) at ../common/JackClient.cpp:565
+#6  0x0000003b56435910 in Jack::JackPosixThread::ThreadHandler (arg=0x2d8f2c0) at ../posix/JackPosixThread.cpp:59
+#7  0x0000003b49c07d14 in start_thread () from /lib64/libpthread.so.0
+#8  0x0000003b494f168d in clone () from /lib64/libc.so.6
+(gdb) thread apply all bt
+
+(should be fixed)
+*/
 
 
 void PlayerNewRealline(struct PEventQueue *peq,int doit){
@@ -110,12 +130,20 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	//int orgrealline=realline;
 
 #ifdef WITH_PD
-        bool inserted_pd_subline = false;
+        bool inserted_pd_realline = false;
         int64_t org_time = peq->l.time;
-        Place *org_pos = &peq->wblock->reallines[realline]->l.p;
+        Place *org_pos = NULL;
+
+        if (realline < peq->wblock->num_reallines) // number of reallines can change while playing.
+          org_pos = &peq->wblock->reallines[realline]->l.p;
 #endif
 
-	peq->wblock->till_curr_realline=realline;
+        // Set current realline in main thread (main thread picks up till_curr_realline and sets curr_realline afterwards)
+        peq->wblock->till_curr_realline = realline;
+
+        // Set current realline in opengl thread
+        GE_set_curr_realline(realline);
+        
 
 	if(doit){
 		Ptask2Mtask();
@@ -126,6 +154,14 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 		if(realline>=peq->wblock->rangey2){
 			realline=peq->wblock->rangey1;
 		}
+
+                // sanity checks to avoid crash. May happen if editing reallines while playing.
+                if (realline>=peq->wblock->num_reallines) // If outside range, first try to set realline to rangey1
+                  realline = peq->wblock->rangey1;
+
+                if (realline>=peq->wblock->num_reallines) // that didnt work, set realline to 0
+                  realline = 0;
+
 	}else{
 		if(realline>=peq->wblock->num_reallines){
 		        const struct Blocks *nextblock=PC_GetPlayBlock(1);
@@ -148,8 +184,9 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
                                                                  );
 #ifdef WITH_PD
                           //printf("org_time: %f. next_time: %f\n",org_time/48000.0,peq2->l.time/48000.0);
-                          RT_PD_set_subline(org_time, peq2->l.time, org_pos);
-                          inserted_pd_subline=true;
+                          if (org_pos != NULL)
+                            RT_PD_set_realline(org_time, peq2->l.time, org_pos);
+                          inserted_pd_realline=true;
 #endif
 
                           realline=1;
@@ -163,12 +200,13 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	peq->realline=realline;
 
         PC_InsertElement2_latencycompencated(
-                                             peq, addplaypos ,&peq->wblock->reallines[realline]->l.p
+                                             peq, addplaypos ,&peq->wblock->reallines[realline]->l.p // Race condition? Can the reallines change between the above check and here?
                                              );
 
 #ifdef WITH_PD
-        if(inserted_pd_subline==false)
-          RT_PD_set_subline(org_time, peq->l.time, org_pos);
+        if (org_pos != NULL)
+          if(inserted_pd_realline==false)
+            RT_PD_set_realline(org_time, peq->l.time, org_pos);
 #endif
 
 

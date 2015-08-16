@@ -28,6 +28,9 @@ float FindReallineForF(
                        const Place *place
                        )
 {
+  if (wblock->num_expand_lines<0)
+    reallineF=0;
+  
         int realline = reallineF;
 	struct LocalZooms **reallines=wblock->reallines;
 
@@ -37,8 +40,9 @@ float FindReallineForF(
 		return wblock->num_reallines-0.001f;
 	}
 
-        if(place->line > realline)
-          realline = place->line;
+        if (wblock->num_expand_lines>0)
+          if(place->line > realline)
+            realline = place->line;
 
         // find next realline higher than place.
         {
@@ -72,10 +76,13 @@ float FindReallineForF(
     in the wblock.
 *******************************************************************/
 int FindRealLineFor(
-	struct WBlocks *wblock,
-	int realline,
-	Place *place
+                    const struct WBlocks *wblock,
+                    int realline,
+                    const Place *place
 ){
+  if (wblock->num_expand_lines<0)
+    realline=0;
+
 	struct LocalZooms **reallines=wblock->reallines;
 
 	if(realline>=wblock->num_reallines){
@@ -84,7 +91,11 @@ int FindRealLineFor(
 		return wblock->num_reallines-1;
 	}
 
-	for(realline=R_MAX(realline,place->line);;realline++){
+        if (wblock->num_expand_lines>0)
+          if(place->line > realline)
+            realline = place->line;
+
+	for(;;realline++){
 		if(realline>=wblock->num_reallines) break;
 		if(
 			PlaceLessThan(place,&reallines[realline]->l.p) &&
@@ -97,17 +108,17 @@ int FindRealLineFor(
 
 
 int FindRealLineForNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+                        const struct WBlocks *wblock,
+                        int realline,
+                        const struct Notes *note
 ){
 	return FindRealLineFor(wblock,realline,&note->l.p);
 }
 
 int FindRealLineForEndNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+                           const struct WBlocks *wblock,
+                           int realline,
+                           const struct Notes *note
 ){
 	return FindRealLineFor(wblock,R_MAX(note->end.line,realline),&note->end);
 }
@@ -141,10 +152,10 @@ int FindRealLineForB(
     the windows font, we get the correct answer.
 ***********************************************************************/
 int FindSubRealLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	int realline,
-	Place *p
+                    const struct Tracker_Windows *window,
+                    const struct WBlocks *wblock,
+                    int realline,
+                    const Place *p
 ){
 	int line=p->line;
 	uint_32 counter=p->counter;

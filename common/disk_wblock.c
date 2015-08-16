@@ -40,6 +40,8 @@ DC_start("WBLOCK");
 	DC_SSI("tempotrackonoff",wblock->tempotrackonoff);
 	DC_SSI("temponodetrackonoff",wblock->temponodetrackonoff);
 
+        // the "area" values are proabably no point loading/saving...
+
 	//DC_SaveS("zoomlevelarea");SaveWArea(&wblock->zoomlevelarea);
 	DC_SaveS("linenumarea");SaveWArea(&wblock->linenumarea);
         //DC_SaveS("zoomlinearea");SaveWArea(&wblock->zoomlevelarea);
@@ -54,6 +56,8 @@ DC_start("WBLOCK");
 	DC_SSI("curr_realline",wblock->curr_realline);
 
 	DC_SSI("num_reallines",wblock->num_reallines);
+
+	DC_SSI("num_expand_lines",wblock->num_expand_lines);
 
 	DC_SSF("reltempomax",wblock->reltempomax);
 
@@ -77,7 +81,7 @@ struct WBlocks *LoadWBlock(void){
 		"WTRACK"
 	};
 
-	static char *vars[18]={
+	static char *vars[19]={
 		"tempotrackonoff",
 		"temponodetrackonoff",
 		"zoomlevelarea", // not used anymore, kept for being able to load old songs
@@ -90,6 +94,7 @@ struct WBlocks *LoadWBlock(void){
 		"maxwtracksize",
 		"curr_realline",
 		"num_reallines",
+                "num_expand_lines",
 		"reltempomax",
 		"isranged",
 		"rangex1",
@@ -100,10 +105,11 @@ struct WBlocks *LoadWBlock(void){
 	struct WBlocks *wblock=DC_alloc(sizeof(struct WBlocks));
 	wblock->l.num=DC_LoadN();
 	wblock->tempocolorarea.width=22;
+        wblock->num_expand_lines=1;
 
         WArea dummy;
 
-	GENERAL_LOAD(2,18)
+	GENERAL_LOAD(2,19)
 
 
 
@@ -147,24 +153,27 @@ var10:
 	wblock->curr_realline=DC_LoadI();
 	goto start;
 var11:
-	wblock->num_reallines_last=wblock->num_reallines=DC_LoadI();
+	wblock->num_reallines=DC_LoadI();
 	goto start;
 var12:
-	wblock->reltempomax=DC_LoadF();
+	wblock->num_expand_lines = DC_LoadI();
 	goto start;
 var13:
-	wblock->isranged=DC_LoadB();
+	wblock->reltempomax=DC_LoadF();
 	goto start;
 var14:
-	wblock->rangex1=DC_LoadN();
+	wblock->isranged=DC_LoadB();
 	goto start;
 var15:
-	wblock->rangex2=DC_LoadN();
+	wblock->rangex1=DC_LoadN();
 	goto start;
 var16:
-	wblock->rangey1=DC_LoadN();
+	wblock->rangex2=DC_LoadN();
 	goto start;
 var17:
+	wblock->rangey1=DC_LoadN();
+	goto start;
+var18:
 	wblock->rangey2=DC_LoadN();
 	goto start;
 
@@ -175,7 +184,9 @@ obj1:
 	DC_ListAdd1(&wblock->wtracks,LoadWTrack());
 	goto start;
 
-var18:
+        
+var19:
+ var20:
 obj2:
 obj3:
 obj4:

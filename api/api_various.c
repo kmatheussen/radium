@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/velocities_proc.h"
 #include "../common/tempos_proc.h"
+#include "../common/Signature_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/temponodes_proc.h"
 #include "../common/fxlines_proc.h"
@@ -34,15 +35,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/reallines_insert_proc.h"
 #include "../common/block_properties_proc.h"
 #include "../common/track_insert_proc.h"
+#include "../common/tracks_proc.h"
 #include "../common/wtracks_proc.h"
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
 #include "../common/block_split_proc.h"
 #include "../common/eventreciever_proc.h"
-#include "../common/gfx_wtracks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
-
+#include "../common/OS_visual_input.h"
+#include "../common/settings_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
+#include "../OpenGL/Widget_proc.h"
+#include "../common/OS_string_proc.h"
+#include "../audio/SoundProducer_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -121,6 +127,25 @@ void showHidePlaylist(int windownum){
   GFX_showHidePlaylist(window);
 }
 
+void showHideMenuBar(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  if (GFX_MenuVisible(window))
+    GFX_HideMenu(window);
+  else
+    GFX_ShowMenu(window);
+}
+
+void hideMenuBar(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_HideMenu(window);
+}
+
+void showMenuBar(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  GFX_ShowMenu(window);
+}
+
+
 // Switch between:
 // 1. Editor alone
 // 2. Editor + instrument
@@ -149,22 +174,8 @@ void switchWindowConfiguration(void){
   GFX_HideMixer();
 }
 
-void addFX(int windownum, int blocknum, int tracknum){
-  struct Tracker_Windows *window=NULL;
-  struct WTracks *wtrack;
-  struct WBlocks *wblock;
-
-  wtrack=getWTrackFromNumA(
-	windownum,
-	&window,
-	blocknum,
-	&wblock,
-	tracknum
-	);
-
-  if(wtrack==NULL) return;
-
-  AddFXNodeLineCurrPos(window, wblock, wtrack);
+void enableMetronome(bool onoff){
+  root->clickonoff = onoff;
 }
 
 void insertReallines(int toinsert,int windownum){
@@ -175,11 +186,14 @@ void insertReallines(int toinsert,int windownum){
 void generalDelete(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   switch(window->curr_track){
-  case TEMPOTRACK:
-    RemoveTemposCurrPos(window);
+  case SIGNATURETRACK:
+    RemoveSignaturesCurrPos(window);
     break;
   case LPBTRACK:
     RemoveLPBsCurrPos(window);
+    break;
+  case TEMPOTRACK:
+    RemoveTemposCurrPos(window);
     break;
   case TEMPONODETRACK:
     RemoveAllTempoNodesOnReallineCurrPos(window);
@@ -199,11 +213,14 @@ void generalReturn(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
   switch(window->curr_track){
-  case TEMPOTRACK:
-    SetTempoCurrPos(window);
+  case SIGNATURETRACK:
+    SetSignatureCurrPos(window);
     break;
   case LPBTRACK:
     SetLPBCurrPos(window);
+    break;
+  case TEMPOTRACK:
+    SetTempoCurrPos(window);
     break;
   case TEMPONODETRACK:
     AddTempoNodeCurrPos(window,(float) -0.0f);
@@ -214,7 +231,7 @@ void generalReturn(int windownum){
       if (window->curr_track_sub>=0)
         AddVelocityCurrPos(window);
       else if (window->curr_track_sub==-1)
-        SetPitchCurrPos(window);
+        EditNoteCurrPos(window);
     }
     break;
   }  
@@ -236,6 +253,32 @@ void swapTracks(int windownum){
   SwapTrack_CurrPos(window);
 }
 
+void makeTrackMonophonic(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum,tracknum);
+  if(wtrack==NULL)
+    return;
+  
+  TRACK_make_monophonic_destructively(wtrack->track);
+}
+
+void splitTrackIntoMonophonicTracks(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  TRACK_split_into_monophonic_tracks(window, wblock, wtrack);
+}
+  
 void splitBlock(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   BLOCK_Split_CurrPos(window);
@@ -281,6 +324,27 @@ void changeBlockNoteLength(int windownum){
   ChangeNoteLength_Block_CurrPos(window);
 }
 
+void changeTrackNoteAreaWidth(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return;
+
+  wtrack->is_wide = !wtrack->is_wide;
+  window->must_redraw = true;
+}
+
+void changeBlockNoteAreaWidth(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  ChangeNoteAreaWidth_Block_CurrPos(window);
+}
+
 void minimizeTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   MinimizeTrack_CurrPos(window);
@@ -309,20 +373,50 @@ void openCommentDialog(void){
   COMMENTDIALOG_open();
 }
 
+void openPreferencesDialog(void){
+  PREFERENCES_open();
+}
+
+void openMIDIPreferencesDialog(void){
+  PREFERENCES_open_MIDI();
+}
+
+void openToolsDialog(void){
+  TOOLS_open();
+}
+
+void openAboutWindow(void){
+  GFX_Message(NULL,"<center><b>Radium "  VERSION "</b></center>"
+              "<p>"
+              "OpenGL vendor: \"%s\"<br>"
+              "OpenGL renderer: \"%s\"<br>"
+              "OpenGL version: \"%s\"<br>"
+              "OpenGL flags: %x<br>"
+              "Qt version: \"%s\""
+              "<p>"
+              "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>",
+              GE_vendor_string==NULL ? "(null)" : GE_vendor_string,
+              GE_renderer_string==NULL ? "(null)" : GE_renderer_string,
+              GE_version_string==NULL ? "(null)" : GE_version_string,
+              GE_opengl_version_flags,
+              GFX_qVersion()
+              );
+}
+
 char *getProgramPath(void){
   return (char*)OS_get_program_path();
 }
 
 char *getConfPath(char *filename){
-  return (char*)OS_get_conf_filename(filename);
+  return (char*)OS_get_conf_filename2(filename);
 }
 
 char *getKeybindingsConfPath(void){
-  return (char*)OS_get_keybindings_conf_filename();
+  return (char*)OS_get_keybindings_conf_filename2();
 }
 
 char *getMenuesConfPath(void){
-  return (char*)OS_get_menues_conf_filename();
+  return (char*)OS_get_menues_conf_filename2();
 }
 
 void saveAs(void){
@@ -343,7 +437,7 @@ void load(void){
 }
 
 void loadSong(char *filename){
-  if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
+  if( LoadSong_CurrPos(getWindowFromNum(-1),STRING_create(filename))){
     isloaded=true;
   }
 }
@@ -437,7 +531,7 @@ void setTrackVolume(float volume,int tracknum,int blocknum,int windownum){
   else
     wtrack->track->volume = (int)(volume * (float)MAXTRACKVOL);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
@@ -462,7 +556,7 @@ void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
   else
     wtrack->track->pan = (int)(pan * (float)MAXTRACKPAN);
 
-  wblock->block->is_dirty = true;
+  window->must_redraw = true;
 }
 
 void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
@@ -489,7 +583,6 @@ void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
   }
 #endif
 }
-
 
 void setBlockNoteShowType(int type,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
@@ -539,6 +632,225 @@ void switchBlockNoteShowType(int blocknum,int windownum){
   setBlockNoteShowType(type, blocknum, windownum);
 }
 
+void showHidePianoroll(int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  wtrack->pianoroll_on = !wtrack->pianoroll_on;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHidePianorollInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  bool on = !wtrack->pianoroll_on;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->pianoroll_on = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideNoteTrack(int tracknum,int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return;
+
+  if (wtrack->notesonoff==0)
+    wtrack->notesonoff = 1;
+  else
+    wtrack->notesonoff = 0;
+      
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideNoteTracksInBlock(int blocknum,int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	-1
+	);
+
+  if(wtrack==NULL) return;
+
+  int on;
+  if (wtrack->notesonoff==0)
+    on = 1;
+  else
+    on = 0;
+
+  wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    wtrack->notesonoff = on;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideSignatureTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_signature_track = !window->show_signature_track;
+
+  if (!window->show_signature_track && window->curr_track==SIGNATURETRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideLPBTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_lpb_track = !window->show_lpb_track;
+
+  if (!window->show_lpb_track && window->curr_track==LPBTRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideBPMTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_bpm_track = !window->show_bpm_track;
+
+  if (!window->show_bpm_track && window->curr_track==TEMPOTRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+void showHideReltempoTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+
+  window->show_reltempo_track = !window->show_reltempo_track;
+
+  if (!window->show_reltempo_track && window->curr_track==TEMPONODETRACK)
+    window->curr_track = 0;
+
+  UpdateAllWBlockCoordinates(window);
+}
+
+bool signatureTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_signature_track;
+}
+
+bool lpbTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_lpb_track;
+}
+
+bool bpmTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_bpm_track;
+}
+
+bool reltempoTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_reltempo_track;
+}
+
+
+static bool g_show_linenumbers = false;
+
+bool linenumbersVisible(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_show_linenumbers = SETTINGS_read_bool("show_linenumbers", false);
+    has_inited = true;
+  }
+
+  return g_show_linenumbers;
+}
+
+void setLinenumbersVisible(bool doit){
+  g_show_linenumbers = doit;
+  SETTINGS_write_bool("show_linenumbers", doit);
+  root->song->tracker_windows->must_redraw = true;
+}
+
+static bool g_do_autobackups = false;
+
+bool doAutoBackups(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_autobackups = SETTINGS_read_bool("do_auto_backups", true);
+    has_inited = true;
+  }
+
+  return g_do_autobackups;
+}
+
+void setDoAutoBackups(bool doit){
+  g_do_autobackups = doit;
+  SETTINGS_write_bool("do_auto_backups", doit);
+}
+
+static int g_autobackup_interval_minutes = false;
+
+int autobackupIntervalInMinutes(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_autobackup_interval_minutes = SETTINGS_read_int("autobackup_interval_minutes", 1);
+    has_inited = true;
+  }
+
+  return g_autobackup_interval_minutes;
+}
+
+void setAutobackupIntervalInMinutes(int interval){
+  g_autobackup_interval_minutes = interval;
+  SETTINGS_write_int("autobackup_interval_minutes", interval);
+}
+
 void addMenuMenu(char* name, char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuMenu(window, name, command);
@@ -564,3 +876,60 @@ void addMenuSeparator(void){
   GFX_AddMenuSeparator(window);
 }
 
+void setStatusbarText(char* text, int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  static bool is_empty = false;
+  if (text[0]=='\0') {
+    if (!is_empty) {
+      GFX_SetStatusBar(window,text);
+      is_empty = true;
+    }
+    
+  } else {
+
+    GFX_SetStatusBar(window,text);
+    is_empty = false;
+    
+  }
+  
+}
+
+int getWebserverPort(void){
+  return SCHEME_get_webserver_port();
+}
+
+void eraseEstimatedVblank(void){
+  GL_erase_estimated_vblank();
+}
+
+void evalScheme(char *code){
+  SCHEME_eval(code);
+}
+
+bool isFullVersion(void){
+  return FULL_VERSION==1;
+}
+
+
+static bool g_modal_windows;
+
+bool doModalWindows(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_modal_windows = SETTINGS_read_bool("modal_windows", GL_should_do_modal_windows());
+    has_inited = true;
+  }
+
+  return g_modal_windows;
+}
+
+void setModalWindows(bool doit){
+  g_modal_windows = doit;
+  SETTINGS_write_bool("modal_windows", doit);
+}
+
+
+void printMixerTree(void){
+  SP_print_tree();
+}

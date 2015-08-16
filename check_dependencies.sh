@@ -4,8 +4,8 @@ PYTHONEXE=$1
 MOC=$2
 UIC=$3
 
-
 set -e
+#set -x
 
 mywhich() {
     if which $1 ; then
@@ -95,7 +95,7 @@ if [ `uname` == "Linux" ] ; then
 #    echo "#include <libiberty.h>" >>temp$$.c
     echo "main(){return 0;}" >>temp$$.c
     echo >>temp$$.c
-    if ! gcc temp$$.c -lbfd -ldl -liberty ; then
+    if ! gcc temp$$.c -lbfd -liberty -ldl; then
 	echo "Couldn't find -lbfd, -ldl, -liberty, or header files for bfd or dlfcn."
 	echo "On Fedora, binutils-devel, libtool-ltdl or libtool might be missing."
 	echo "On Debian, libc6-dev or binutils-dev might be missing."
@@ -105,34 +105,40 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 
-if ! pkg-config --cflags sndfile >/dev/null 2>devnull ; then
+if ! pkg-config --cflags sndfile >/dev/null 2>/dev/null ; then
     echo "libsndfile not found"
     exit 5
 fi
 
-if ! pkg-config --cflags samplerate >/dev/null 2>devnull ; then
+if ! pkg-config --cflags samplerate >/dev/null 2>/dev/null ; then
     echo "libsamplerate not found"
     exit 5
 fi
 
 if [ `uname` == "Linux" ] ; then
-    if ! pkg-config --cflags lrdf >/dev/null 2>devnull ; then
+    if ! pkg-config --cflags lrdf >/dev/null 2>/dev/null ; then
 	echo "liblrdf not found"
 	exit 5
     fi
 fi
 
-if ! pkg-config --cflags glib-2.0 >/dev/null 2>devnull ; then
+if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     echo "glib-2.0 not found"
     exit 5
 fi
 
-if ! pkg-config --cflags Qt3Support >/dev/null 2>devnull ; then
-    echo "Qt4 not found"
+if ! pkg-config --cflags Qt3Support >/dev/null 2>/dev/null ; then
+    echo "Qt3Support for Qt4 not found"
     exit 5
 fi
 
+if [ ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h ] ; then
+    echo 'Steinberg VST headers not found. (Missing "~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/")'
+    echo 'You should find these files in the "VST Audio Plug-Ins SDK" from http://www.steinberg.net/en/company/developers.html'
+    exit 5
+fi
 
+   
 if [ $4 == "test_build" ] ; then
     if [ `uname` == "Linux" ] ; then
         if [ ! -f bin/packages/deletemetorebuild ] ; then

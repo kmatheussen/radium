@@ -4,7 +4,7 @@
 // copyright: "Romain Michon"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with : "" */
 #include <instrument.h>
@@ -18,6 +18,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -453,8 +455,8 @@ class Modal_Bar_dsp : public dsp {
 		float 	fSlow13 = (0.09999999999999998f * fSlow10);
 		float 	fSlow14 = fentry3;
 		float 	fSlow15 = (1 - (0.03f * (fSlow14 * ((fSlow10 < 1) & (fentry4 != 1)))));
-		float 	fSlow16 = faustpower<2>(fSlow15);
-		float 	fSlow17 = (2 * fSlow15);
+		float 	fSlow16 = (2 * fSlow15);
+		float 	fSlow17 = faustpower<2>(fSlow15);
 		float 	fSlow18 = (0.0010000000000000009f * loadPreset(fSlow6, 2, 0));
 		float 	fSlow19 = (0.0010000000000000009f * loadPreset(fSlow6, 2, 2));
 		float 	fSlow20 = (0.0010000000000000009f * loadPreset(fSlow6, 2, 3));
@@ -494,25 +496,25 @@ class Modal_Bar_dsp : public dsp {
 			float fTemp4 = loadPreset(fSlow6, 1, fRec10[0]);
 			float fTemp5 = loadPreset(fSlow6, 0, fRec10[0]);
 			int iTemp6 = (fTemp5 < 0);
-			fRec4[0] = (0 - ((((fRec4[1] * cosf((fConst2 * ((iTemp6 * (0 - fTemp5)) + (fSlow3 * (fTemp5 * (0 - (iTemp6 - 1)))))))) * (0 - (fSlow17 * fTemp4))) + (fSlow16 * (faustpower<2>(fTemp4) * fRec4[2]))) - (fSlow14 * (fRec6[0] * fRec5[0]))));
+			fRec4[0] = (0 - (((fSlow17 * (faustpower<2>(fTemp4) * fRec4[2])) + ((fRec4[1] * cosf((fConst2 * ((iTemp6 * (0 - fTemp5)) + (fSlow3 * (fTemp5 * (0 - (iTemp6 - 1)))))))) * (0 - (fSlow16 * fTemp4)))) - (fSlow14 * (fRec6[0] * fRec5[0]))));
 			fRec12[0] = (fSlow18 + (0.999f * fRec12[1]));
 			fRec13[0] = (0.999f * fRec13[1]);
 			float fTemp7 = loadPreset(fSlow6, 1, fRec13[0]);
 			float fTemp8 = loadPreset(fSlow6, 0, fRec13[0]);
 			int iTemp9 = (fTemp8 < 0);
-			fRec11[0] = (0 - (((fSlow16 * (faustpower<2>(fTemp7) * fRec11[2])) + ((fRec11[1] * cosf((fConst2 * ((iTemp9 * (0 - fTemp8)) + (fSlow3 * (fTemp8 * (0 - (iTemp9 - 1)))))))) * (0 - (fSlow17 * fTemp7)))) - (fSlow14 * (fRec6[0] * fRec12[0]))));
+			fRec11[0] = (0 - (((fSlow17 * (faustpower<2>(fTemp7) * fRec11[2])) + ((fRec11[1] * cosf((fConst2 * ((iTemp9 * (0 - fTemp8)) + (fSlow3 * (fTemp8 * (0 - (iTemp9 - 1)))))))) * (0 - (fSlow16 * fTemp7)))) - (fSlow14 * (fRec6[0] * fRec12[0]))));
 			fRec15[0] = (fSlow19 + (0.999f * fRec15[1]));
 			fRec16[0] = (0.0020000000000000018f + (0.999f * fRec16[1]));
 			float fTemp10 = loadPreset(fSlow6, 1, fRec16[0]);
 			float fTemp11 = loadPreset(fSlow6, 0, fRec16[0]);
 			int iTemp12 = (fTemp11 < 0);
-			fRec14[0] = (0 - (((fSlow16 * (faustpower<2>(fTemp10) * fRec14[2])) + ((fRec14[1] * cosf((fConst2 * ((iTemp12 * (0 - fTemp11)) + (fSlow3 * (fTemp11 * (0 - (iTemp12 - 1)))))))) * (0 - (fSlow17 * fTemp10)))) - (fSlow14 * (fRec6[0] * fRec15[0]))));
+			fRec14[0] = (0 - (((fSlow17 * (faustpower<2>(fTemp10) * fRec14[2])) + ((fRec14[1] * cosf((fConst2 * ((iTemp12 * (0 - fTemp11)) + (fSlow3 * (fTemp11 * (0 - (iTemp12 - 1)))))))) * (0 - (fSlow16 * fTemp10)))) - (fSlow14 * (fRec6[0] * fRec15[0]))));
 			fRec18[0] = (fSlow20 + (0.999f * fRec18[1]));
 			fRec19[0] = (0.0030000000000000027f + (0.999f * fRec19[1]));
 			float fTemp13 = loadPreset(fSlow6, 1, fRec19[0]);
 			float fTemp14 = loadPreset(fSlow6, 0, fRec19[0]);
 			int iTemp15 = (fTemp14 < 0);
-			fRec17[0] = (0 - (((fSlow16 * (faustpower<2>(fTemp13) * fRec17[2])) + ((fRec17[1] * cosf((fConst2 * ((iTemp15 * (0 - fTemp14)) + (fSlow3 * (fTemp14 * (0 - (iTemp15 - 1)))))))) * (0 - (fSlow17 * fTemp13)))) - (fSlow14 * (fRec6[0] * fRec18[0]))));
+			fRec17[0] = (0 - (((fSlow17 * (faustpower<2>(fTemp13) * fRec17[2])) + ((fRec17[1] * cosf((fConst2 * ((iTemp15 * (0 - fTemp14)) + (fSlow3 * (fTemp14 * (0 - (iTemp15 - 1)))))))) * (0 - (fSlow16 * fTemp13)))) - (fSlow14 * (fRec6[0] * fRec18[0]))));
 			float fTemp16 = (fRec17[0] + (fRec14[0] + (fRec11[0] + fRec4[0])));
 			float fTemp17 = (fTemp16 + (fSlow21 * ((fSlow14 * fRec6[0]) - fTemp16)));
 			float fTemp18 = (fSlow22 + fRec20[1]);

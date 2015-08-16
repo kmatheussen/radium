@@ -21,7 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // Warning, PLAYER_lock will deadlock if called from the player thread.
 extern LANGSPEC void PLAYER_lock(void);
 extern LANGSPEC void PLAYER_unlock(void);
+
 extern LANGSPEC bool PLAYER_current_thread_has_lock(void);
+extern LANGSPEC bool PLAYER_someone_has_player_lock(void);
+extern LANGSPEC bool PLAYER_player_has_player_lock(void);
 
 extern LANGSPEC void StartPlayer(void);
 
@@ -32,7 +35,11 @@ extern LANGSPEC void StopPausePlayer(void);
 
 extern LANGSPEC double TIME_get_ms(void);
 extern LANGSPEC void OS_WaitForAShortTime(int milliseconds);
+extern LANGSPEC void OS_WaitAtLeast(int milliseconds); // Use this function instead if it is important that we don't return too early.
 
 extern LANGSPEC void PLAYER_volumeUp(float db);
 extern LANGSPEC void PLAYER_volumeDown(float db);
 extern LANGSPEC void PLAYER_mute(void);
+
+extern LANGSPEC void RT_request_to_stop_playing(void);
+extern LANGSPEC void RT_pause_plugins(void);

@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "PEQcommon_proc.h"
-#include "time2place_proc.h"
 #include "PEQ_type_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Pd_plugin_proc.h"
@@ -41,26 +40,27 @@ extern LANGSPEC void OS_InitMidiTiming(void);
 
 void PlayerTask(STime reltime){
 	static STime addreltime=0;
-
+        //RError("hepp");
         pc->reltime     = reltime;
 
         const struct Blocks *block = pc->isplaying ? pc->block : NULL;
 
         if(block==NULL){
-          if(root->song->tracker_windows != NULL && 
-             root->song->tracker_windows->wblock != NULL && 
-             root->song->tracker_windows->wblock->block != NULL) // check that we have started.
-            block=root->song->tracker_windows->wblock->block;
-          else
+          if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL) // fix.
             return;
+          else
+            block=root->song->tracker_windows->wblock->block;
         }
 
 	addreltime+=reltime;
 
-        STime tempoadjusted_reltime=addreltime*block->reltempo;
-        if(tempoadjusted_reltime<1)
+        double tempoadjusted_reltime_f = (double)addreltime * block->reltempo;
+        STime tempoadjusted_reltime    = tempoadjusted_reltime_f;
+        
+        if(tempoadjusted_reltime<1) {
+          pc->start_time_f += (double)reltime * block->reltempo;
           return;
-        else
+        } else
           addreltime=0;
 
 	if( ! pc->isplaying){
@@ -92,19 +92,26 @@ void PlayerTask(STime reltime){
         pc->start_time  = pc->end_time;
         pc->end_time   += tempoadjusted_reltime;
 
+        //printf("Setting new starttime to %f (%d)\n",pc->end_time_f,(int)pc->end_time);
+        pc->start_time_f = pc->end_time_f;
+        pc->end_time_f  += tempoadjusted_reltime_f;
+        
+#ifdef WITH_PD
         RT_PD_set_absolute_time(pc->start_time);
-
+#endif
+        
         //printf("time: %d. time of next event: %d\n",(int)time,(int)pc->peq->l.time);
         //fflush(stdout);
 
-        {
-          struct PEventQueue *peq = pc->peq;
+        pc->is_treating_editor_events = true; {
 
+          struct PEventQueue *peq = pc->peq;
+          
           while(
-		peq!=NULL
-		&& peq->l.time < pc->end_time
-		//&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
-		&& pc->isplaying
+                peq!=NULL
+                && peq->l.time < pc->end_time
+                //&& peq->l.time<time+(pc->pfreq*2)  // Dont want to run for more than two seconds.
+                && pc->isplaying
                 )
             {
               
@@ -115,9 +122,16 @@ void PlayerTask(STime reltime){
               pc->pausetime=peq->l.time;
               peq=pc->peq;
             }
-        }
 
-        SCHEDULER_called_per_block(tempoadjusted_reltime); // Currently, there are two scheduling systems. The old linked list (PEQ), and this one. This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER. Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
+          // Currently, there are two scheduling systems. The old linked list (PEQ), and this one.
+          // This one, the SCHEDULER, is a priority queue. The plan is to shift things from PEQ into SCHEDULER.
+          // Until everything is shifted from PEQ to SCHEDULER, and the PEQ-mess remains, things will be more complicated than necessary.
+          SCHEDULER_called_per_block(tempoadjusted_reltime);
+
+        } pc->is_treating_editor_events = false;
+
+        
+        pc->playertask_has_been_called = true;
 }
 
 STime PLAYER_get_block_delta_time(STime time){
@@ -125,7 +139,7 @@ STime PLAYER_get_block_delta_time(STime time){
     return 0;
 
   if(pc->isplaying){
-    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time));
+    STime ret = ((time - pc->start_time) * pc->reltime / (pc->end_time - pc->start_time)); // i.e. "scale(time, pc->start_time, pc->end_time, 0, pc->reltime)"
     if(ret<0){
       RWarning("ret<0: %d",ret);
       return 0;

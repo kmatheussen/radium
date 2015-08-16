@@ -58,15 +58,15 @@ void Glissando(
 		Float2Placement(f,&p);
 
 		InsertNote(
-			wblock,
-			wtrack,
-			&p,NULL,
-			notenote,
-			(int)(note1->velocity+(
-				((f-f1)*(note2->velocity-note1->velocity))/(f2-f1)
-			)),
-			0
-		);
+                           wblock,
+                           wtrack,
+                           &p,NULL,
+                           notenote,
+                           (int)(note1->velocity+(
+                                                  ((f-f1)*(note2->velocity-note1->velocity))/(f2-f1)
+                                                  )),
+                           false
+                           );
 
 	}
 

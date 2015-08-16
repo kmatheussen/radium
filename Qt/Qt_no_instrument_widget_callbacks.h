@@ -24,10 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/instruments_proc.h"
 
+#include "../audio/Mixer_proc.h"
+
 #include "Qt_no_instrument_widget.h"
 
 extern "C" void set_font_thickness(int val);
 extern QString default_style_name;
+
+// TODO: Remove all of this. Not used.
 
 class No_instrument_widget : public QWidget, public Ui::No_instrument_widget{
   Q_OBJECT
@@ -72,7 +76,7 @@ public slots:
     if(initing==true)
       return;
 
-    add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
+    add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL,MIXER_get_buses());
   }
 
   void on_create_sample_instrument_clicked()
@@ -81,7 +85,7 @@ public slots:
     if(initing==true)
       return;
 
-    add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
+    add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL,MIXER_get_buses());
   }
 
   void on_create_fluidsynth_clicked()
@@ -90,7 +94,7 @@ public slots:
     if(initing==true)
       return;
 
-    add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
+    add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL,MIXER_get_buses());
   }
 
   void on_use_system_colors_stateChanged(int state){
@@ -126,7 +130,7 @@ public slots:
 
     SETTINGS_write_bool("override_default_qt_style",override);
 
-    printf("default: %s\n",default_style_name.ascii());
+    printf("default: %s\n",default_style_name.toUtf8().constData());
 
     if(override==true){
       QApplication::setStyle("plastique");

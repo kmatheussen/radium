@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "wblocks_proc.h"
+#include "Beats_proc.h"
 
 #include "block_properties_proc.h"
 
@@ -131,6 +132,9 @@ void Block_Set_num_lines(
 	}
 
 
+        UpdateSTimes(block);
+        UpdateBeats(block);
+
 	window=root->song->tracker_windows;
 
 	while(window!=NULL){
@@ -140,7 +144,6 @@ void Block_Set_num_lines(
 		window=NextWindow(window);
 	}
 
-	UpdateSTimes(block);
 }
 
 
@@ -209,7 +212,7 @@ void Block_Properties(
 	while(window!=NULL){
 		struct WBlocks *wblock=ListFindElement1(&window->wblocks->l,block->l.num);
 		if(wblock->curr_realline>=wblock->num_reallines){
-			wblock->curr_realline=wblock->num_reallines-1;
+			wblock->curr_realline = wblock->num_reallines-1;
 		}
 
 		UpdateReallinesDependens(window,wblock);

@@ -152,22 +152,34 @@ extern struct MidiLink *inputmidilink;
 extern struct MidiNode *midinode;
 extern struct Root *root;
 
+const char *g_input_port_name = NULL;
+
+const char *MIDI_get_input_port(void){
+  static bool has_inited = false;
+  if (has_inited==false){
+    g_input_port_name = SETTINGS_read_string("midi_input_port",NULL);
+    has_inited = true;
+  }
+  
+  return g_input_port_name;
+}
+
 int MIDISetInputPort(void){
   char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true);
   if(portname!=NULL){
     MIDI_OS_SetInputPort(portname);
     SETTINGS_write_string("midi_input_port",portname);
+    g_input_port_name = portname;
+    PREFERENCES_update();
   }
   return 0;
 }
 
+#if 0
 extern bool useOx90ForNoteOff;
 
 int MIDIOx90ForNoteOff( void ){
 	useOx90ForNoteOff=useOx90ForNoteOff==false?true:false;
 	return 0;
 }
-
-
-
-
+#endif

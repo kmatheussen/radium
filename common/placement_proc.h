@@ -4,7 +4,7 @@ This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -14,11 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef TRACKER_PLACEMENT
-#define TRACKER_PLACEMENT
+#ifndef COMMON_PLACEMENT_PROC_H
+#define COMMON_PLACEMENT_PROC_H
 
-#include <assert.h>
 
+static inline Place place(int line, int counter, int dividor) {
+  Place place;
+  place.line = line;
+  place.counter = counter;
+  place.dividor = dividor;
+  return place;
+}
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
   Place *place=(Place*)talloc(sizeof(Place));
@@ -28,19 +34,27 @@ static inline Place *PlaceCreate(int line, int counter, int dividor) {
   return place;
 }
 
-
 /**********************************************************
   FUNCTION
     Convert a float into a placement.
 **********************************************************/
-static inline void Float2Placement(float f,Place *p){
-  assert(f >= 0.0f);
+static inline void Double2Placement(double f,Place *p){
+  if (f<0.0){
+    RError("Double2Placement: Position can not start before block starts: %f",f);
+    p->line=0;
+    p->counter=0;
+    p->dividor=1;
+  }
   
   p->line = (int)f;
   f -= p->line;
 
   p->counter = f * MAX_UINT32;
   p->dividor = MAX_UINT32;
+}
+
+static inline void Float2Placement(float f,Place *p){
+  Double2Placement(f,p);
 }
 
 static inline Place *PlaceCreate2(float f){
@@ -116,12 +130,36 @@ static inline Place *PlaceMin(  Place *p1,  Place *p2){
 
 #define PlaceBetween(p1, p, p2) PlaceMin(PlaceMax(p1, p), p2)
 
-extern void PlaceHandleOverflow(Place *p);
+extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
-extern void PlaceAdd(Place *p1,  const Place *p2);
-extern void PlaceSub(Place *p1,  const Place *p2);
-extern void PlaceMul(Place *p1,  const Place *p2);
-extern void PlaceDiv(Place *p1,  const Place *p2);
+// These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
+extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2);
+extern LANGSPEC void PlaceAdd(Place *p1,  const Place *p2);
+extern LANGSPEC void PlaceSub(Place *p1,  const Place *p2);
+extern LANGSPEC void PlaceMul(Place *p1,  const Place *p2);
+extern LANGSPEC void PlaceDiv(Place *p1,  const Place *p2);
+
+extern LANGSPEC Place p_Add(const Place p1, const Place p2);
+extern LANGSPEC Place p_Sub(const Place p1, const Place p2);
+extern LANGSPEC Place p_Mul(const Place p1, const Place p2);
+extern LANGSPEC Place p_Div(const Place p1, const Place p2);
+
+/******************************************************************
+  FUNCTION
+    Quantitize 'toquant' spesified by 'quant'. 'Block' is used
+    to know the last zposition in the block, so that 'toquant' isn't
+    placed after that.
+
+  EXAMPLES
+    toquant=1,2,3 quant=0.5 -> toquant=1,1,2
+    toquant=1,6,7 quant=0.5 -> toquant=2,0,1
+    toquant=5,0,1 quant=2.0 -> toquant=6,0,1
+******************************************************************/
+extern LANGSPEC Place p_Quantitize(const Place p, const Place q);
+
+static inline float p_float(const Place p){
+  return (float)p.line + (float)p.counter/(float)p.dividor;
+}
 
 extern float GetfloatFromCounterDividor(uint_32 counter,uint_32 dividor);
 extern float GetfloatFromLineCounterDividor(const Place *placement);
@@ -136,10 +174,10 @@ extern bool PlaceLegal(const struct Blocks *block,  const Place *p);
 extern void PlaceSetFirstPos(Place *p);
 extern Place *PlaceGetFirstPos(void);
 
-extern void PlaceSetReallinePlace(
-                                  const struct WBlocks *wblock,
-                                  int realline,
-                                  Place *p
+extern LANGSPEC void PlaceSetReallinePlace(
+                                           const struct WBlocks *wblock,
+                                           int realline,
+                                           Place *p
 );
 
 // Puts 'p' as near as possible 'tp' so that p<tp.
@@ -189,6 +227,49 @@ extern void PlaceFromLimit(Place *p,  const Place *tp);
 #define PlaceIsBetween3(a,b,c) (PlaceGreaterThan((a),(b)) && PlaceLessThan((a),(c)))
 
 
+#define p_Equal(a,b) (((a).line==(b).line) && ((a).counter*(b).dividor==(b).counter*(a).dividor))
+#define p_NOT_Equal(a,b) (((a).line!=(b).line) || ((a).counter*(b).dividor!=(b).counter*(a).dividor))
+
+#define p_Greather_Than(a,b) (							\
+((a).line>(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor > (b).counter*(a).dividor)) \
+)
+#define p_Less_Than(a,b) (							\
+((a).line<(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor < (b).counter*(a).dividor))	\
+)
+
+#define p_Greater_Or_Equal(a,b) (							\
+((a).line>(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor >= (b).counter*(a).dividor))	\
+)
+#define p_Less_Or_Equal(a,b) (							\
+((a).line<(b).line)									\
+|| 											\
+(((a).line == (b).line) && ((a).counter*(b).dividor <= (b).counter*(a).dividor))	\
+)
+
+
+
+// I don't trust the implementation of PlaceSub (warning: this one hasn't been tested or used and shouldn't be trusted)
+static inline void TrustedPlaceSub(const Place *p1,  const Place *p2, Place *result){
+  R_ASSERT(PlaceGreaterOrEqual(p1, p2));
+           
+  result->line = p1->line - p2->line;
+  
+  result->dividor = p1->dividor * p2->dividor;
+  
+  int64_t counter1 = p1->counter * p2->dividor;
+  int64_t counter2 = p2->counter * p1->dividor;
+
+  result->counter = counter1-counter2;
+
+  // todo: 
+}
+
 
 #ifndef RADIUM_PLACEMENTISCALLINGNOW
 extern Place PlaceFirstPos;
@@ -197,6 +278,8 @@ extern Place PlaceFirstPos;
 #define PlaceGetFirstPos() &PlaceFirstPos
 
 #define PlaceSetFirstPos(a) do { (a)->line=0;(a)->counter=0;(a)->dividor=1; }while(0)
+
+#define PlaceIsFirstPos(a) ((a)->line==0 && (a)->counter==0)
 
 #define PlaceCopy(a,b) do {                              \
     Place *das_a = (Place *)a;                           \
@@ -213,6 +296,13 @@ extern Place PlaceFirstPos;
 		) \
 	))
 
+#define GetDoubleFromPlace(a) ((double) ( \
+		(double)((a)->line) + ( \
+			(double)((a)->counter)/ \
+			(double)((a)->dividor) \
+		) \
+	))
+
 #define GetfloatFromLineCounterDividor(a) GetfloatFromPlace(a)
 #define GetfloatFromPlacement(a) GetfloatFromPlace(a)
 #define GetFloatFromPlace(a) GetfloatFromPlace(a)
@@ -224,7 +314,17 @@ extern Place PlaceFirstPos;
     (b)->counter = MAX_UINT32-1;   \
     (b)->dividor = MAX_UINT32;     \
   }while(0)
-   
+
+static inline Place *PlaceGetLastPos(const struct Blocks *block){
+  return PlaceCreate(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+}
+
+static inline Place p_Last_Pos(const struct Blocks *block){
+  return place(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+}
+
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
-#endif
+
+
+#endif // COMMON_PLACEMENT_PROC_H
 

@@ -61,7 +61,65 @@ int scrolls_per_second = -1;
 int default_scrolls_per_second = 20;
 
 
-#if !USE_OPENGL
+#if USE_OPENGL
+
+#include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/Render_proc.h"
+
+
+// Simpler version when using opengl
+void P2MUpdateSongPosCallBack(void){
+
+  bool setfirstpos=root->setfirstpos;
+  
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,root->curr_block);
+
+  int old_curr_realline = wblock->curr_realline;
+  int till_curr_realline = R_BOUNDARIES(0, wblock->till_curr_realline, wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
+
+  wblock->curr_realline = till_curr_realline;
+  wblock->top_realline += till_curr_realline - old_curr_realline;
+  wblock->bot_realline += till_curr_realline - old_curr_realline;
+
+  
+  if(pc->playtype==PLAYSONG)
+    BS_SelectPlaylistPos(root->curr_playlist);
+
+  if(window->curr_block!=root->curr_block){
+    printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
+    if(setfirstpos){
+      wblock->curr_realline=0;
+      SetWBlock_Top_And_Bot_Realline(window,wblock);
+      GE_set_curr_realline(0);
+    }
+    SelectWBlock(
+                 window,
+                 wblock
+                 );
+    printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
+  }      
+
+
+  // make sure "Rec" is updated
+  {
+    static struct Tracks *current_track = NULL;
+    static bool current_track_recording = false;
+    
+    struct Tracks *track = wblock->wtrack->track;
+    if (track != current_track || (current_track!=NULL && track->is_recording != current_track_recording)){
+      current_track = track;
+      current_track_recording = current_track->is_recording;
+      GL_create(window, wblock);
+    }
+  }
+
+  //GE_set_curr_realline(wblock->curr_realline);
+  //  printf("till_curr_realline: %d\n",wblock->till_curr_realline);
+  //ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+}
+
+#else
 
 static STime last_time = 0;
 
@@ -75,13 +133,14 @@ void P2MUpdateSongPosCallBack(void){
         if(scrolls_per_second==-1)
           scrolls_per_second = SETTINGS_read_int("scrolls_per_second", default_scrolls_per_second);
 
-	if(pc->playtype==PLAYSONG) BS_SelectPlaylistPos(root->curr_playlist);
+	if(pc->playtype==PLAYSONG)
+          BS_SelectPlaylistPos(root->curr_playlist);
 
 	while(window!=NULL){
 		if(window->playalong==true){
 
                   DO_GFX({
-			wblock=ListFindElement1(&window->wblocks->l,curr_block);
+                        wblock=ListFindElement1(&window->wblocks->l,curr_block);
 			till_curr_realline=wblock->till_curr_realline;
                         
 			if(window->curr_block!=curr_block){

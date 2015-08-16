@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
+extern LANGSPEC int getScrollMultiplication(void);
 
 extern LANGSPEC void ScrollEditorDown(struct Tracker_Windows *window,int num_lines);
 
@@ -49,6 +49,3 @@ extern LANGSPEC void ScrollEditorToPercentLine_CurrPos(
 	struct Tracker_Windows *window,
 	int percent
 );
-
-#endif
-

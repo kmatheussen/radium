@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_blocks_proc.h"
 #include "player_proc.h"
 #include "wblocks_proc.h"
+#include "block_properties_proc.h"
+#include "Beats_proc.h"
 
 #include "lines_proc.h"
 
@@ -118,7 +120,12 @@ void InsertLines(
 		toinsert=line-num_lines;
 	}
 
-	if( line<0 || line>=num_lines-1 ) return;
+        if (line==num_lines-1) { // special case
+          Block_Properties(block, block->num_tracks, block->num_lines + toinsert);
+          return;
+        }
+        
+	if( line<0 || line>=num_lines) return;
 
 	if(toinsert==0 || num_lines+toinsert<2 || num_lines+toinsert>=MAX_UINT32) return;
 
@@ -128,10 +135,12 @@ void InsertLines(
 
 	List_InsertLines3(&block->temponodes,block->temponodes->l.next,line,toinsert,NULL);
 	LegalizeTempoNodes(block);
+	List_InsertLines3(&block->signatures,&block->signatures->l,line,toinsert,NULL);
 	List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
 	List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
 
 	UpdateSTimes(block);
+        UpdateBeats(block);
 
 	while(track!=NULL){
 		List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
@@ -164,7 +173,8 @@ void InsertLines(
 			ListAddElement3(&wblock->localzooms,&localzoom->l);
 		}
                 UpdateWBlockWidths(window,wblock);
-		UpdateRealLines(window,wblock);
+                wblock->reallines = NULL; // We changed the localzooms, which is used to set new curr_realline. We don't need to set new curr_realline, so just set reallines to NULL.
+                UpdateRealLines(window,wblock);
 		UpdateReallinesDependens(window,wblock);
 		if(wblock->curr_realline>=wblock->num_reallines){
 			wblock->curr_realline=wblock->num_reallines-1;
@@ -193,7 +203,7 @@ void InsertLines_CurrPos(
 	if(toinsert==-(num_lines-curr_line)-1) return;
 
 	Undo_Block_CurrPos(window);
-
+        
 	InsertLines(window->wblock->block,curr_line,toinsert);
 
 	window=root->song->tracker_windows;

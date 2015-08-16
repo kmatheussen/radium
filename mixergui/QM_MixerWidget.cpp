@@ -66,6 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QGraphicsSceneMouseEvent>
 #include <QAction>
 #include <QMenu>
+#include <QFileDialog>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -79,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/mQt_mixer_widget_callbacks.h"
 
 #include "../common/vector_proc.h"
+#include "../common/Vector.hpp"
 #include "../common/hashmap_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/patch_proc.h"
@@ -278,6 +280,24 @@ static void draw_slot(MyScene *myscene, float x, float y){
   //myscene->setSceneRect(myscene->itemsBoundingRect ()); // Dangerous. Crashes now and then.
 
   _slot_indicator->setPos(x1,y1);
+
+  if (myscene->_moving_chips.size() > 0)
+    return;
+
+#if 0  
+  Chip *chip = MW_get_chip_at((x1+x2)/2, (y1+y2)/2, NULL);
+  if (chip != NULL) {
+    
+    SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL,);
+
+    struct Instruments *instrument = get_audio_instrument();
+    printf("Calling pp_update\n");
+    instrument->PP_Update(instrument,(struct Patch*)patch);
+    MW_set_selected_chip(chip);
+  }
+#endif
 }
 
 static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
@@ -356,7 +376,11 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL && chip->isSelected()==true){
 
-      Undo_ChipPos_CurrPos(SP_get_plugin(chip->_sound_producer)->patch);
+      SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+      volatile struct Patch *patch = plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+      Undo_ChipPos_CurrPos((struct Patch*)patch);
 
       chip->_moving_x_offset = chip->scenePos().x() - mouse_x;
       chip->_moving_y_offset = chip->scenePos().y() - mouse_y;
@@ -370,17 +394,26 @@ static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * even
   draw_slot(myscene,mouse_x,mouse_y);
 }
 
-static void move_chip_to_slot(Chip *chip, float x, float y){
+static bool move_chip_to_slot(Chip *chip, float x, float y){
   float x1,x2,y1,y2;
 
   get_slot_coordinates(get_slot_x(x), get_slot_y(y), x1,y1,x2,y2);
+
+  if (chip->pos().x()==x1 && chip->pos().y()==y1)
+    return false;
+
   chip->setPos(x1,y1);
+  return true;
 }
 
+bool MW_move_chip_to_slot(Chip *chip, float x, float y){
+  return move_chip_to_slot(chip, x, y);
+}
+  
 static Connection *find_clean_connection_at(MyScene *scene, float x, float y);
 
 // Also kicks.
-static void autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
+static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
   bool do_autoconnect = chip->_connections.size()==0; // don't autoconnect if the chip already has connections.
 
   Chip *chip_under = MW_get_chip_at(x,y,chip);
@@ -403,6 +436,8 @@ static void autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
       }
     }
 
+    return true;
+    
   }else if(do_autoconnect){
 
     Connection *connection = find_clean_connection_at(myscene, x, y);
@@ -414,9 +449,13 @@ static void autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
       CONNECTION_delete_connection(connection);
       CHIP_connect_chips(myscene, from, chip);
       CHIP_connect_chips(myscene, chip, to);
+
+      return true;
     }
 
   }
+
+  return false;
 }
 
 static bool cleanup_a_chip_position(MyScene *myscene){
@@ -441,7 +480,7 @@ static void cleanup_chip_positions(MyScene *myscene){
   while(cleanup_a_chip_position(myscene)==true);
 }
 
-static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
+static bool stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
   //myscene->removeItem(_slot_indicator);
   myscene->_parent->setCursor(QCursor(Qt::ArrowCursor));
@@ -450,27 +489,37 @@ static void stop_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
   float main_chip_x = main_chip->pos().x();
   float main_chip_y = main_chip->pos().y();
 
-  for(unsigned int i=0;i<myscene->_moving_chips.size();i++){
+  int size = myscene->_moving_chips.size();
+  bool has_updated = false;
+  
+  for(int i=0;i<size;i++){
     Chip *chip = myscene->_moving_chips.at(i);
     //float x = chip->_moving_x_offset+mouse_x;
     //float y = chip->_moving_y_offset+mouse_y;
     float x = mouse_x + (chip->pos().x() - main_chip_x);
     float y = mouse_y + (chip->pos().y() - main_chip_y);
     //printf("x: %d, mouse_x: %d, chip_x: %d, main_chip_x: %d, diff: %d\n",(int)x,(int)mouse_x,(int)chip->pos().x(),(int)main_chip_x,(int)
-    move_chip_to_slot(chip, x, y);
-    if(myscene->_moving_chips.size()==1)
-      autoconnect_chip(myscene, chip, mouse_x, mouse_y);
+    if (move_chip_to_slot(chip, x, y)==true)
+      has_updated=true;
+    if(size==1)
+      if (autoconnect_chip(myscene, chip, mouse_x, mouse_y)==true)
+        has_updated=true;
   }
 
   cleanup_chip_positions(myscene);
 
   Undo_Close();
 
+  if (has_updated==false)
+    Undo_CancelLastUndo();
+
   myscene->_moving_chips.clear();
+
+  return has_updated;
 }
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
-    
+
   QPointF pos=event->scenePos();
 
   draw_slot(this, pos.x(), pos.y());
@@ -621,13 +670,13 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
       if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
         printf("Found patch\n");
-        PATCH_delete(patch);
+        PATCH_delete_CurrPos(patch);
         break;
       }
     }END_VECTOR_FOR_EACH;
 
     if(before!=NULL)
-      CHIP_connect_chips(scene, before, after);
+      CHIP_connect_chips(scene, before, after); // undo for the connections are made in PATCH_delete_CurrPos
 
     // Shouldn't there be a "delete chip" call here? (Guess it's deleted through PATCH_delete). TODO: Check that this is correct, and add a comment here why there is no "delete chip" call here.
 
@@ -646,15 +695,28 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
 
   if(chip!=NULL){
 
+    struct Instruments *instrument = get_audio_instrument();
+    SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL,false);
+    instrument->PP_Update(instrument,(struct Patch*)patch);
+    MW_set_selected_chip(chip);
+
     // connection
     {
-      if(CHIP_is_at_output_port(chip,mouse_x,mouse_y))
+      if(CHIP_is_at_output_port(chip,mouse_x,mouse_y)) {
+        if (chip->_num_outputs==0)
+          return false;
+        
         scene->_current_from_chip = chip;
 
-      else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y))
+      } else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y)) {
         scene->_current_to_chip = chip;
-      
-      if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
+
+        if (chip->_num_inputs==0)
+          return false;
+
+      } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
         //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
         scene->_current_connection = new Connection(scene);
@@ -685,8 +747,9 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         event->accept();
         return true;
       }
-    }  
- }
+    }
+    
+  }
 
   return false;
 }
@@ -718,16 +781,37 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   Chip *chip = dynamic_cast<Chip*>(item);
 
   if(chip!=NULL){
-    struct Patch *patch = SP_get_plugin(chip->_sound_producer)->patch;
+    SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+    
     struct Instruments *instrument = get_audio_instrument();
     printf("Calling pp_update\n");
-    instrument->PP_Update(instrument,patch);
+    instrument->PP_Update(instrument,(struct Patch*)patch);
+    MW_set_selected_chip(chip);
     
     start_moving_chips(scene,event,chip,mouse_x,mouse_y);
     event->accept();
     return true;
   }
 
+  return false;
+}
+
+static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mouse_y){
+  Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
+  if(chip_under!=NULL){
+    if(chip_body_is_placed_at(chip_under, mouse_x, mouse_y)==true) {
+
+      SoundPlugin *plugin = SP_get_plugin(chip_under->_sound_producer);
+      volatile struct Patch *patch = plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+
+      InstrumentWidget_replace((struct Patch*)patch);
+        
+      return true;
+    }
+  }
   return false;
 }
 
@@ -744,7 +828,7 @@ static bool mousepress_create_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
 
   Undo_Open();{
 
-    SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL);
+    SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,mouse_x,mouse_y,false,NULL, MIXER_get_buses());
 
     if(plugin!=NULL){
 
@@ -794,6 +878,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
 
+  GFX_ScheduleRedraw();
+  
   if(event_can_delete(event))
     if(mousepress_delete_chip(this,event,item,mouse_x,mouse_y)==true)
       return;
@@ -807,10 +893,12 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
       return;
 
   if(event->button()==Qt::RightButton){
-    if(mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true)
+    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    
+    if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) // create
       return;
 
-    if(mousepress_select_chip(this,event,item,mouse_x,mouse_y)==true)
+    if(mousepress_select_chip(this,event,item,mouse_x,mouse_y)==true) // select
       return;
   }
 
@@ -820,6 +908,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   printf("mouse release: %p\n",_current_connection);
 
+  GFX_ScheduleRedraw();
+    
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();
   float mouse_y = pos.y();
@@ -875,12 +965,18 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _ecurrent_to_chip = NULL;
     event->accept();
     
-  }else if(_moving_chips.size()>0){
+  }else if(_moving_chips.size()>0 && stop_moving_chips(this,mouse_x,mouse_y)==true){
 
-    stop_moving_chips(this,mouse_x,mouse_y);
     event->accept();
 
   }else{
+
+    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    
+    if (event->button()==Qt::RightButton && ctrl_pressed==false && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
+      event->accept();
+      return;
+    }
 
     QGraphicsScene::mouseReleaseEvent(event);
 
@@ -899,10 +995,10 @@ namespace{
         if(chip!=NULL){
           SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
           if(plugin != NULL){
-            struct Patch *patch = plugin->patch;
+            volatile struct Patch *patch = plugin->patch;
             if(patch!=NULL){
               if(patch->visual_note_intencity > 0) {
-                patch->visual_note_intencity--; // Writing to the same variable from two threads simultaneously, but it shouldn't be a problem here.
+                patch->visual_note_intencity--; // We're writing to the same variable from two threads simultaneously here, but it shouldn't be a problem.
                 //printf("intencity: %d\n",intencity);
                 int x1,y1,x2,y2;
                 CHIP_get_name_coordinates(x1,y1,x2,y2);
@@ -1002,7 +1098,7 @@ void GFX_showHideMixerWidget(void){
     g_mixer_widget->hide();
 }
 
-static int g_main_pipe_patch_id = -1;
+static int g_main_pipe_patch_id = 0;
 
 SoundPlugin *get_main_pipe(void){
   struct Patch *patch = PATCH_get_from_id(g_main_pipe_patch_id);
@@ -1020,6 +1116,7 @@ SoundPlugin *get_main_pipe(void){
   RError("no system bus");
   return NULL;
 }
+
 
 void MixerWidget::populateScene()
 {
@@ -1039,24 +1136,27 @@ void MixerWidget::populateScene()
   connect_chips(&scene,from, 0, to, 1);
 #endif
 
-  // NB! main_pipe must be created first. The patch id of main_pipe must be 0.
-  SoundPluginType *pipe_type = PR_get_plugin_type_by_name("Pipe","Pipe");
+  /*
+
+  // NB! main_pipe must be created first. The patch id of main_pipe must be 0. (really?)
+  SoundPluginType *pipe_type = PR_get_plugin_type_by_name(NULL, "Pipe","Pipe");
   SoundPlugin *main_pipe = add_new_audio_instrument_widget(pipe_type, grid_width, 0,false,"Main Pipe");
   g_main_pipe_patch_id = main_pipe->patch->id;
 
-  SoundPluginType *system_out = PR_get_plugin_type_by_name("Jack","System Out");
+
+  SoundPluginType *bus1 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 1");
+  SoundPlugin *bus1_plugin = add_new_audio_instrument_widget(bus1, 0, 0,false,"Bus 1", NULL, NULL);
+
+  SoundPluginType *bus2 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 2");
+  SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2", NULL, NULL);
+
+  SoundPluginType *system_out = PR_get_plugin_type_by_name(NULL, "Jack","System Out");
   SoundPlugin *system_out_plugin = add_new_audio_instrument_widget(system_out, grid_width*2, 0,false,"Main Out");
-
-  SoundPluginType *bus1 = PR_get_plugin_type_by_name("Bus","Bus 1");
-  SoundPlugin *bus1_plugin = add_new_audio_instrument_widget(bus1, 0, 0,false,"Bus 1");
-
-  SoundPluginType *bus2 = PR_get_plugin_type_by_name("Bus","Bus 2");
-  SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2");
-
 
   CHIP_connect_chips(&scene, main_pipe, system_out_plugin);
   CHIP_connect_chips(&scene, bus1_plugin, main_pipe);
   CHIP_connect_chips(&scene, bus2_plugin, main_pipe);
+  */
 }
 
 void MW_autoconnect_plugin(SoundPlugin *plugin){
@@ -1075,27 +1175,35 @@ static float find_next_autopos_y(Chip *system_chip){
   return y;
 }
 
+void MW_set_autopos(double *x, double *y){
+  SoundPlugin *main_pipe    = get_main_pipe();
+  Chip        *system_chip  = find_chip_for_plugin(&g_mixer_widget->scene, main_pipe);
+  *x                         = system_chip->x()-grid_width;
+  *y                         = find_next_autopos_y(system_chip);
+  printf("Adding at pos %f %f\n",*x,*y);
+}
+
 // MW_add_plugin/MW_delete_plugin are one of two entry points for audio plugins.
 // Creating/deleting a plugin goes through here, not through audio/.
 //
 // The other entry point is CHIP_create_from_state, which is called from undo/redo and load.
 //
-SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, float x, float y){
-  SoundPlugin     *plugin         = PLUGIN_create_plugin(plugin_type, NULL);
+SoundPlugin *MW_add_plugin(SoundPluginType *plugin_type, double x, double y, Buses buses){
+  if (PLAYER_is_running()==false)
+    return NULL;
+
+  SoundPlugin *plugin = PLUGIN_create_plugin(plugin_type, NULL);
   if(plugin==NULL)
     return NULL;
 
-  SoundProducer   *sound_producer = SP_create(plugin);
-  if(x<=-100000){
-    SoundPlugin *main_pipe    = get_main_pipe();
-    Chip        *system_chip  = find_chip_for_plugin(&g_mixer_widget->scene, main_pipe);
-    x                         = system_chip->x()-grid_width;
-    y                         = find_next_autopos_y(system_chip);
-    printf("Adding at pos %f %f\n",x,y);
-  }
+  if(x<=-100000)
+    MW_set_autopos(&x, &y);
+    
+  SoundProducer   *sound_producer = SP_create(plugin, buses);
   Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer,x,y);
 
-  move_chip_to_slot(chip, x,y);
+  MW_move_chip_to_slot(chip, x, y);
+    
   return plugin;
 }
 
@@ -1109,9 +1217,10 @@ void MW_delete_plugin(SoundPlugin *plugin){
       if(SP_get_plugin(producer)==plugin){
         delete chip; // audio connections are deleted via ~Chip(). (Yes, it's somewhat messy)
         SP_delete(producer);
-        struct Patch *patch = plugin->patch;
+        volatile struct Patch *patch = plugin->patch;
         PLUGIN_delete_plugin(plugin);
         patch->patchdata = NULL; // Correct thing to do. A subtle bug in GFX_update_all_instrument_widgets prompted me to do add it (QT tabs are note updated right away). Somewhat messy this too.
+        patch->is_usable = false; // Make sure we don't use this patch if pasting it.
         return;
       }
     }
@@ -1120,19 +1229,18 @@ void MW_delete_plugin(SoundPlugin *plugin){
 
 namespace{
   struct MyQAction : public QAction{
-    MyQAction(const char* name, QMenu *menu, SoundPluginType *plugin_type)
+    MyQAction(const char* name, QMenu *menu, PluginMenuEntry entry)
       : QAction(name,menu)
-      , plugin_type(plugin_type)
+      , entry(entry)
     {}
-    SoundPluginType *plugin_type;
+    PluginMenuEntry entry;
   };
 }
 
-static unsigned int entries_i;
-static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
-  while(entries_i < entries.size()){
-    PluginMenuEntry entry = entries.at(entries_i);
-    entries_i++;
+static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, int i){
+  while(i < entries.size()){
+    PluginMenuEntry entry = entries[i];
+    i++;
 
     if(entry.type==PluginMenuEntry::IS_SEPARATOR){
       menu->insertSeparator();
@@ -1141,30 +1249,103 @@ static void menu_up(QMenu *menu, std::vector<PluginMenuEntry> entries){
       const char *name = entry.level_up_name;
       QMenu *new_menu = new QMenu(name,menu);
       menu->addMenu(new_menu);
-      menu_up(new_menu,entries);
+      i = menu_up(new_menu,entries, i);
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_DOWN){
-      return;
+      return i;
+
+    }else if(entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
+      SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+
+      for(int i=0 ; i < plugin_type_container->num_types ; i++){
+        SoundPluginType *type = plugin_type_container->plugin_types[i];
+        const char *name = type->name;
+        menu->addAction(new MyQAction(name,menu,PluginMenuEntry::normal(type)));
+      }
+    
+    }else if(entry.type==PluginMenuEntry::IS_CONTAINER){
+      SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+      const char *name = plugin_type_container->name;
+      menu->addAction(new MyQAction(name,menu,entry));
+
+    }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+      menu->addAction(new MyQAction("Load Preset", menu, entry));
+      menu->insertSeparator();
 
     }else{
       const char *name = entry.plugin_type->name;
-      menu->addAction(new MyQAction(name,menu,entry.plugin_type));
+      menu->addAction(new MyQAction(name,menu,entry));
     }
   }
+
+  return i;
 }
 
-SoundPluginType *MW_popup_plugin_selector(void){
+
+SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, bool autoconnect){
   QMenu menu(0);
-  entries_i = 0;
 
-  menu_up(&menu, PR_get_menu_entries());
+  menu_up(&menu, PR_get_menu_entries(), 0);
 
-  MyQAction *action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+  MyQAction *action;
 
-  if(action!=NULL)
-    return action->plugin_type;
-  else
+  if (doModalWindows()) {
+    
+    GL_lock();{
+      action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+    }GL_unlock();
+    
+  } else {
+    
+    GL_lock();{
+      GL_pause_gl_thread_a_short_while();
+    }GL_unlock();    
+    action = dynamic_cast<MyQAction*>(menu.exec(QCursor::pos()));
+    
+  }
+  
+  if (action==NULL)
     return NULL;
+
+  struct PluginMenuEntry entry = action->entry;
+
+  if (entry.type==PluginMenuEntry::IS_CONTAINER) {
+
+    vector_t names={0};
+
+    SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
+    plugin_type_container->populate(plugin_type_container);
+
+    if (plugin_type_container->num_types==0) {
+      //GFX_Message(NULL, talloc_format("%s does not contain any plugin",plugin_type_container->name));
+      return NULL; // no error message here. populate() must do that.
+    }
+     
+    if (plugin_type_container->num_types==1)
+      return plugin_type_container->plugin_types[0];
+
+    for(int i=0 ; i < plugin_type_container->num_types ;  i++)
+      VECTOR_push_back(&names,plugin_type_container->plugin_types[i]->name);
+
+    char temp[1024];
+    sprintf(temp,"Select plugin contained in %s", plugin_type_container->name);
+    int selection=GFX_Menu(NULL,NULL,temp,&names);
+    
+    if (selection==-1)
+      return NULL;
+    else
+      return plugin_type_container->plugin_types[selection];
+
+   }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+    InstrumentWidget_new_from_preset(NULL, name, x, y, autoconnect);
+    
+    return NULL;
+    
+  } else {
+
+    return entry.plugin_type;
+
+  }
 }
 
 #if 0
@@ -1183,33 +1364,33 @@ static bool delete_a_connection(){
 #endif
 
 static void MW_cleanup_connections(void){
-  //while(delete_a_connection());
-  std::vector<SoundProducer*> producers;
-  std::vector<Connection*> connections;
+  radium::Vector<SoundProducer*> producers;
+  radium::Vector<Connection*> connections;
+  
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL)
-      producers.push_back(chip->_sound_producer);
+      producers.add(chip->_sound_producer);
     else{
       Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
       if(connection!=NULL)
-        connections.push_back(connection);
+        connections.add(connection);
     }
   }
 
   SP_remove_all_links(producers);
 
-  for(unsigned int i=0;i<producers.size();i++){
-    SoundProducer *producer = producers.at(i);
+  for(auto producer : producers){
     SoundPlugin *plugin = SP_get_plugin(producer);
-    struct Patch *patch = plugin->patch;
-    PATCH_remove_all_event_receivers(patch);
+    volatile struct Patch *patch = plugin->patch;
+    if (patch!=NULL)
+      PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
-  for(unsigned int i=0;i<connections.size();i++)
-    CONNECTION_delete_a_connection_where_all_links_have_been_removed(connections.at(i));
+  for(auto connection : connections)
+    CONNECTION_delete_a_connection_where_all_links_have_been_removed(connection);
 }
 
 
@@ -1275,20 +1456,62 @@ hash_t *MW_get_state(void){
   return state;
 }
 
-static void MW_create_chips_from_state(hash_t *chips){
+static void MW_create_chips_from_state(hash_t *chips, Buses buses){
   fprintf(stderr,"number of chips: %d\n",(int)HASH_get_int(chips, "num_chips"));
   for(int i=0;i<HASH_get_int(chips, "num_chips");i++)
-    CHIP_create_from_state(HASH_get_hash_at(chips, "", i));
+    CHIP_create_from_state(HASH_get_hash_at(chips, "", i), buses);
 }
 
-static void MW_create_connections_from_state_internal(hash_t *connections){
+static void MW_create_connections_from_state_internal(hash_t *connections, int patch_id_old, int patch_id_new){
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++)
-    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i));
+    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i), patch_id_old, patch_id_new);
+}
+
+void MW_create_connections_from_state_and_replace_patch(hash_t *connections, int patch_id_old, int patch_id_new){
+  MW_cleanup_connections();
+  MW_create_connections_from_state_internal(connections, patch_id_old, patch_id_new);
 }
 
 void MW_create_connections_from_state(hash_t *connections){
-  MW_cleanup_connections();
-  MW_create_connections_from_state_internal(connections);
+  MW_create_connections_from_state_and_replace_patch(connections, -1, -1);
+}
+
+// FIXME/TODO!
+
+static hash_t *convert_state_to_new_type(hash_t *state){
+  hash_t *old_chips = HASH_get_hash(state, "chips");
+  int num_old_chips = HASH_get_int(old_chips, "num_chips");
+  
+  hash_t *new_chips = HASH_create(17);
+  hash_t *buses = HASH_create(2);
+
+  int num_buses = 0;
+  int num_chips = 0;
+  
+  for(int i=0;i<num_old_chips;i++) {
+    hash_t *chip = HASH_get_hash_at(old_chips, "", i);
+    hash_t *plugin = HASH_get_hash(chip, "plugin");    
+    const char *type_name = HASH_get_chars(plugin, "type_name");
+    
+    if (!strcmp(type_name,"Bus"))
+      HASH_put_hash_at(buses, "", num_buses++, chip);
+    else
+      HASH_put_hash_at(new_chips, "", num_chips++, chip);
+  }
+
+  R_ASSERT(num_buses==2);
+  R_ASSERT(num_buses+num_chips == num_old_chips);
+  
+  HASH_put_int(new_chips, "num_chips", num_chips);
+  HASH_put_int(buses, "num_chips", num_buses);
+
+  hash_t *ret = HASH_create(3);
+
+  HASH_put_hash(ret, "bus_chips", buses);
+  HASH_put_hash(ret, "chips", new_chips);
+  HASH_put_hash(ret, "connections", HASH_get_hash(state, "connections"));
+                
+  return ret;
 }
 
 // Patches must be created before calling this one.
@@ -1297,8 +1520,21 @@ void MW_create_from_state(hash_t *state){
 
   MW_cleanup();
 
-  MW_create_chips_from_state(HASH_get_hash(state, "chips"));
-  MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"));
+  if (!HASH_has_key(state, "bus_chips"))
+    state = convert_state_to_new_type(state);
+
+  Buses old_buses = MIXER_get_buses();
+
+  Buses no_buses = {NULL, NULL};
+  MW_create_chips_from_state(HASH_get_hash(state, "bus_chips"), no_buses);
+
+  Buses new_buses = MIXER_get_buses();
+
+  R_ASSERT(old_buses.bus1 != new_buses.bus1);
+  R_ASSERT(old_buses.bus2 != new_buses.bus2);
+
+  MW_create_chips_from_state(HASH_get_hash(state, "chips"), new_buses);
+  MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
 
   GFX_update_all_instrument_widgets();
 }

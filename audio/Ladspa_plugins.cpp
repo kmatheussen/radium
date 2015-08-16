@@ -54,12 +54,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/vector_proc.h"
+#include "../common/visual_proc.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "SoundPluginRegistry_proc.h"
 #include "Mixer_proc.h"
 
+namespace{
 struct Data{
   LADSPA_Handle handles[2];
   float *control_values;  
@@ -67,15 +71,29 @@ struct Data{
   float **outputs;
 };
 
+struct Library{ // Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
+  const char *filename; // used for error messages
+  QLibrary *library;
+  LADSPA_Descriptor_Function get_descriptor_func;
+  int num_references; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
+};
+
 struct TypeData{
+  Library *library; // Referenced from here.
+  
   const LADSPA_Descriptor *descriptor;
-  const char *filename;
+  int index; // index in this file
+
+  unsigned int UniqueID; // same value as descriptor->UniqueID, but copied here to avoid loading the library to get the value.
+  const char *Name; // same here
+  
   float output_control_port_value;
   float *min_values;
   float *default_values;
   float *max_values;
   bool uses_two_handles;
 };
+}
 
 static std::vector<SoundPluginType*> g_plugin_types;
 
@@ -88,9 +106,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0;ch<type->num_inputs;ch++)
     memcpy(data->inputs[ch],inputs[ch],sizeof(float)*num_frames);
   {
-    descriptor->run(data->handles[0], num_frames);
-    if(type_data->uses_two_handles)
-      descriptor->run(data->handles[1], num_frames);
+    int pos = CRASHREPORTER_set_plugin_name(plugin->type->name); {
+      descriptor->run(data->handles[0], num_frames);
+      if(type_data->uses_two_handles)
+        descriptor->run(data->handles[1], num_frames);
+    } CRASHREPORTER_unset_plugin_name(pos);
   }
   for(int ch=0;ch<type->num_outputs;ch++)
     memcpy(outputs[ch],data->outputs[ch],sizeof(float)*num_frames);
@@ -146,9 +166,53 @@ static void setup_audio_ports(const SoundPluginType *type, Data *data, int block
   }
 }
 
+static bool add_library_reference(TypeData *type_data){
+  Library *library = type_data->library;
+  
+  if (library->num_references==0){
+    printf("**** Loading %s\n",library->filename);
+        
+    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) library->library->resolve("ladspa_descriptor");
+
+    if(get_descriptor_func==NULL){
+      GFX_Message(NULL, "Unable to load plugin. Has the plugin file \"%s\" disappeared?", library->filename);
+      return false;
+    }
+
+    library->get_descriptor_func = get_descriptor_func;
+  }
+
+  type_data->descriptor = library->get_descriptor_func(type_data->index);
+  if (type_data->descriptor==NULL) {
+    GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, library->filename);
+    return false;
+  }
+
+  library->num_references++;
+  
+  return true;
+}
+
+static void remove_library_reference(TypeData *type_data){
+  Library *library = type_data->library;
+    
+  library->num_references--;
+
+  if (library->num_references==0) {
+    printf("**** Unloading %s\n",library->filename);
+    library->library->unload();
+    type_data->descriptor = NULL; // Make it easier to discover if plugin is used after beeing freed.
+  }
+}
+
+
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   Data *data = (Data*)calloc(1, sizeof(Data));
   TypeData *type_data = (TypeData*)plugin_type->data;
+
+  if (add_library_reference(type_data)==false)
+    return NULL;
+  
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
   data->control_values = (float*)calloc(sizeof(float),descriptor->PortCount);
@@ -206,6 +270,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 static void cleanup_plugin_data(SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
   TypeData *type_data = (TypeData*)type->data;
+
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
   Data *data = (Data*)plugin->data;
@@ -223,6 +288,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
   free(data->control_values);
   free(data);
+  
+  remove_library_reference(type_data);
 }
 
 static void buffer_size_is_changed(SoundPlugin *plugin, int new_buffer_size){
@@ -264,7 +331,7 @@ static const LADSPA_PortRangeHintDescriptor get_hintdescriptor(const SoundPlugin
     }
   }
 
-  RWarning("Unknown effect\n",effect_num);
+  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n",effect_num,type_data->Name);
   return 0;
 }
 
@@ -413,20 +480,62 @@ static char *create_info_string(const LADSPA_Descriptor *descriptor){
 static void add_ladspa_plugin_type(QFileInfo file_info){
   QString filename = file_info.absoluteFilePath();
 
-  fprintf(stderr,"\"%s\"... ",filename.ascii());
+  fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
 
-  QLibrary myLib(filename);
+  QLibrary *qlibrary = new QLibrary(filename);
 
-  LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) myLib.resolve("ladspa_descriptor");
+  LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
 
   if(get_descriptor_func==NULL){
+    if (qlibrary->errorString().contains("dlopen: cannot load any more object with static TLS")){
+      
+      if (PR_is_initing_vst_first()) {
+        
+        vector_t v = {0};
+        
+        VECTOR_push_back(&v,"Init LADSPA plugins first");
+        VECTOR_push_back(&v,"Continue without loading this plugin library.");
+        
+        int result = GFX_Message(&v,
+                                 "Error: Empty thread local storage.\n"
+                                 "\n"
+                                 "Unable to load LADSPA library file \"%s\".\n"
+                                 "\n"
+                                 "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                                 "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n"
+                                 "\n"
+                                 "You may be able to work around this problem by initing LADSPA plugins before VST plugins.\n"
+                                 "In case you want to try this, press the \"Init LADSPA plugins first\" button below and start radium again.\n",
+                                 qlibrary->fileName().toUtf8().constData()
+                                 );
+        if (result==0)
+          PR_set_init_ladspa_first();
+
+      } else {
+        GFX_Message(NULL,
+                    "Error: Empty thread local storage.\n"
+                    "\n"
+                    "Unable to load LADSPA library file \"%s\".\n"
+                    "\n"
+                    "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                    "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n",
+                    qlibrary->fileName().toUtf8().constData()
+                    );
+      }
+    }
+      
+    delete qlibrary;
     fprintf(stderr,"(failed) ");
     fflush(stderr);
     return;
   }
 
-  //printf("Resolved \"%s\"\n",myLib.fileName().ascii());
+  Library *library = (Library*)calloc(1, sizeof(Library));
+  library->library = qlibrary;
+  library->filename = strdup(filename.toUtf8().constData());
+  
+  //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
   const LADSPA_Descriptor *descriptor;
 
@@ -435,14 +544,21 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
     TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
 
     plugin_type->data = type_data;
-    type_data->descriptor = descriptor;
 
+    type_data->library = library;
+    //type_data->descriptor = descriptor;
+    type_data->UniqueID = descriptor->UniqueID;
+    type_data->Name = strdup(descriptor->Name);
+    type_data->index = i;
+    
+#if 0
     QString basename = file_info.fileName();
     basename.resize(basename.size()-strlen(LIB_SUFFIX)-1);
-    type_data->filename = strdup(basename.ascii());
+    type_data->filename = strdup(basename.toUtf8().constData());
+#endif
 
     plugin_type->type_name = "Ladspa";
-    plugin_type->name      = descriptor->Name;
+    plugin_type->name      = strdup(descriptor->Name);
     plugin_type->info      = create_info_string(descriptor);
 
     plugin_type->is_instrument = false;
@@ -599,14 +715,15 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
     PR_add_plugin_type_no_menu(plugin_type);
     g_plugin_types.push_back(plugin_type);
   }
+
+  qlibrary->unload();
 }
 
 static SoundPluginType *get_plugin_type_from_id(unsigned long id){
   for(unsigned int i=0;i<g_plugin_types.size();i++){
     SoundPluginType *plugin_type = g_plugin_types[i];
     TypeData *type_data = (TypeData*)plugin_type->data;
-    const LADSPA_Descriptor *descriptor = type_data->descriptor;
-    if(descriptor->UniqueID == id)
+    if(type_data->UniqueID == id)
       return plugin_type;
   }
   return NULL;
@@ -616,12 +733,8 @@ namespace{
 struct plugin_type_pred{
   bool operator()(SoundPluginType *a, SoundPluginType *b) const{
     TypeData *type_data_a = (TypeData*)a->data;
-    const LADSPA_Descriptor *descriptor_a = type_data_a->descriptor;
-
     TypeData *type_data_b = (TypeData*)b->data;
-    const LADSPA_Descriptor *descriptor_b = type_data_b->descriptor;
-    
-    return strcasecmp(descriptor_a->Name, descriptor_b->Name) < 0;
+    return strcasecmp(type_data_a->Name, type_data_b->Name) < 0;
   }
 };
 }
@@ -752,6 +865,7 @@ static void get_path_uris (std::vector<char*> &lrdf_uris){
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
   sprintf(lrdf_path,"%s%srdf",OS_get_program_path(), OS_get_directory_separator());
+  printf("lrdf_path: -%s-\n",lrdf_path);
   get_dir_uris(lrdf_uris,lrdf_path);
 #endif
 }
@@ -827,8 +941,8 @@ static void init_uncategorized_menues(){
   PR_add_menu_entry(PluginMenuEntry::level_up("Uncategorized"));
   {
     char last=0;
-    for(unsigned int i=0;i<diff.size() && diff.at(i)!=*end;i++){
-      fprintf(stderr,"i: %d\n",(int)i);
+    for(unsigned int i=0;i<diff.size() && diff.at(i)!=*end;i++){  // valgrind complains about "Invalid read of size 8" here. Maybe use QVector instead. This code is not easy to understand.
+      //fprintf(stderr,"i: %d\n",(int)i);
       SoundPluginType *plugin_type = diff.at(i);
       const char *name = plugin_type->name;
       if(name[0]==last){
@@ -868,13 +982,18 @@ void create_ladspa_plugins(void){
     //QMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
     QString home_ladspa_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.ladspa";
-    sprintf(ladspa_path, "%s:%s", "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",home_ladspa_path.ascii());
+    sprintf(ladspa_path,
+            "%s:%s:%s",
+            QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData(),
+            "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa",
+            home_ladspa_path.toUtf8().constData()
+            );
   } else 
     sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
 #endif
 
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").ascii());
+  sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData());
 #endif
 
   char *dirname = strtok (ladspa_path, ":");

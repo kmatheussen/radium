@@ -59,9 +59,8 @@ struct WBlocks *CB_CopyBlock(
 //	memcpy(towblock->title,wblock->title,strlen(wblock->title)+1);
 
         // Null out some data we don't need so it can be GC-ed.
-	towblock->wtempos=NULL;
-	towblock->wtemponodes=NULL;
-	towblock->wlpbs=NULL;
+	//towblock->wtempos=NULL;
+	//towblock->wlpbs=NULL;
 
 	toblock->l.next=NULL;
 
@@ -88,6 +87,7 @@ struct WBlocks *CB_CopyBlock(
           }
         }
 
+        toblock->signatures=CB_CopySignatures(block->signatures);
 	toblock->lpbs=CB_CopyLPBs(block->lpbs);
 	toblock->tempos=CB_CopyTempos(block->tempos);
 	toblock->temponodes=CB_CopyTempoNodes(block->temponodes);

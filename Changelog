@@ -1,3 +1,558 @@
+Most important changes 3.3.1 -> 3.3.2
+* Possible to select VST presets in the instrument widget
+* Possible to change name of the current VST preset in the instrument widget
+* Don't crash when deleting vst plugin (bug introduced in 3.3.1)
+* Don't add undo if we couldn't create fx node or pitch
+* Don't assert crash reporter if trying to create an fx node in the
+  first legal position, or the last legal position. Only show assert
+  reporter if trying to create before first legal position, or
+  after last legal position.
+
+
+Most important changes 3.3.0 -> 3.3.1
+* Fix crash during startup on windows 32 bit.
+  Bug (re)introduced in 3.3.0 (the NDEBUG option again).
+* Fix a copy-and-paste error which caused ppqPositionOfLastBarStart
+  to always have the value 0.0. Might make a difference
+  on some VST plugins.
+* Automatically uncheck the "GUI" button in the instrument
+  widget if the native plugin gui was closed by closing
+  the window directly.
+
+
+
+Most important changes 3.2.9 -> 3.3.0
+* Windows: Turn off jack "-S" checking in production again. Still doesn't work.
+* Don't inform more than one time about a newer version of radium
+* Removed comment in the preferences dialog about MultiCore being
+  an experimental feature. It seems stable.
+* windows: Use a home made jack process thread to make the unhandled
+  exceptions filter work also when crashing in the main audio thread.
+* Pause the gl thread for a second when opening a new window or dialog.
+  This might prevent some crashes caused by buggy gfx driver
+* Turn off modal windows by default for AMD/catalyst and Intel drivers
+  on Linux since the pausing seems to fix the crashes
+
+
+
+
+Most important changes 3.2.8 -> 3.2.9
+* Windows: Don't start crash reporter all the time when loading and using VST plugins.
+  Bug was introduced in V3.2.5
+* VST: load/save FXB and FXP files
+* Fix note add bug. Dont make it polyphonic unless polyphonic is true. Bug was introduced in V3.2.4.
+* Update instrument widget after undo/redo (fix for non-moving peaks after undoing/redoing)
+* Try to fix cpu label width in Windows
+* Do automatic backup every minute if there are unsaved edits and radium is not playing.
+  The backup interval can be changed in the preferences. It can also be turned off.
+* Replaced a bunch of calls to RError with calls to GFX_Message
+  (RError was used the wrong way, causing uses messages to be reported as program errors)
+* Always show message if there is a disk error
+* Write to temporary file first if saving to an existing file to avoid destroying an
+  existing file if saving fails
+* Tried to improve stability after jack has shut down. Still not working well though.
+  User should not do anything else than save and exit if jack shuts down.
+* Fix plugin names in crashreporter when running multi core
+
+
+
+Most important changes 3.2.7 -> 3.2.8
+* Remove sound object from mixer before freeing buffers (might fix mysterious crashes)
+* Fix audio glitches when changing number of CPUs
+* Show the crash/assert window for most warning/error messages
+* Fix a LADSPA bug where sometimes the effects were set to default after undoing a deletion.
+* api: printMixerTree (mostly for debugging)
+* Finding peaks is approx. 2-4 times faster by using code from the JUCE SDK.
+  (juce::FloatVectorOperations::findMinAndMax)
+* Made the CPU widget fixed size. The bottom bar doesn't move left and right anymore.
+* Removed old sound object scheduling system. Everything now goes through
+  through the multicore scheduler, even when running single-threadedly.
+* Fixed realtime update of waveforms when changing track volume and track panning
+* Rewrote bus system. Buses are now just hidden sound object connections. Can in some
+  situations improve multicore performance.
+* Draw current sound object in darker color when selecting with
+  left button, not only right button
+
+
+Most important changes 3.2.6 -> 3.2.7
+* Mixer: Must press left mouse button on a sound object to select it. Dont just set the the one currently under the mouse.
+* Added volume value to connections. This is both necessary to later optimize/simplify
+  the bus system (especially in conjuction with multi core), and to be able to control the volume of a connection.
+* Dont start making an audio connection in the mixer if the start pos doesnt have inputs or outputs
+* Fixed a bug which could cause the program to freeze when deleting sound objects,
+  loading songs, undoing, redoing, etc. Bug was introduced in V3.2.2.
+  *** Radium between V3.2.2 and V3.2.6 are particulary unstable. ***
+* Make sure song comment window is shown on top of all other windows after loading a song.
+
+
+
+Most important changes 3.2.5 -> 3.2.6
+* Fix: 1. General realtime performance, and: 2. Crashes when multicore is enabled.
+  (Don't use QString in realtime code, and especially don't access the same QString from several threads simultaneously.)
+  Bug introduced in 3.2.5.
+* Always block crash/assert-reporter in non-RELEASE mode, and never block in RELEASE mode
+* Avoid showing assert reporter when exiting after jack has shut down.
+
+
+Most important changes 3.2.4 -> 3.2.5
+* Start crashreporter also when just hitting an assert.
+* Improved crash reporter. Should hopefully work better in Windows.
+  The reports also includes a simple event log now.
+
+
+
+Most important changes 3.2.3 -> 3.2.4
+* Make all dialogs modal by default if using intel or binary amd driver on linux (to avoid crashes)
+* Ensure all notes starts before they end, when recording from MIDI input.
+* Various note positions and value validations
+* Unset OPENSSL_CONF environment variable during startup. Fixes rare crashes during startup.
+
+
+
+Most important changes 3.2.2 -> 3.2.3
+* Fix qt version mismatch problem on linux binaries (and possibly windows and osx as well)
+* windows: Fix search for missing "-S" argument for jackd.
+* Replaced the use of QSemaphore with a native one based
+  on this code: https://github.com/preshing/cpp11-on-multicore/blob/master/common/sema.h
+  The previous code could in rare situations cause priority inversion.
+* Improved multi core a lot. Seems to work fine on Windows now.
+
+
+
+Most important changes 3.2.1 -> 3.2.2
+* Show message during startup if there is a newer version of the program available.
+* Reorganized the edit menu a little bit
+* Moved show/hide line numbers configuration from the menues and into the preferences dialog
+* Windows: Don't inform that Radium was unable to find jack process command line arguments in RELEASE builds
+* "CPU": Show min/avg/max instead of just max. Useful while figuring out multi core implementation.
+  (it's not working that well on Windows yet)
+* Remove some unnecessary locking/waiting in the multicore scheduler
+  (probably has very little impact on performance though)
+
+
+
+Most important changes 3.2.0 -> 3.2.1
+* Another default color scheme. A little bit darker and white text.
+* Increase default font size from 10 to 11 to get less flickering when using a white-on-black color scheme
+* Make color schemes with white text on black background look better.
+* Shut down jack at the right moment. Avoids crash at exit.
+* Fix some mixer UI/GUI issues.
+* Changed various button handlers from "pressed" callbacks into "clicked" callbacks.
+  Fixes buttons stuck in pressed state.
+* Removed the "scrollplay" and "window update" options from the menues.
+* Moved the MIDI preferences stuff from the MIDI menu and into the preferences dialog
+* Band-aid to avoid crash if song is saved with a patch that has no corresponding chip.
+* Tooltip for the quantization value in the MIDI post-recording dialog.
+* Also delete elinks when deleting all connections, not just the links.
+  Fixes crash if redoing an undoing of a deletion of a sound object.
+* Improve multi core by running most cpu intensive sound objects first
+* CPU: Show the maximum CPU usage which was measured during the last second,
+  not just the current CPU usage.
+* Include the custom qjackctl in the 32 bit windows binaries, not just
+  the 64 bit binaries.
+
+
+
+Most important changes 3.1.4 -> 3.2.0
+* Include a custom version of qjackctl in the Windows version. (i.e the "Jack Command" program)
+  Hopefully there will be less struggle to start jack now since this version has better default
+  options and some bugs fixed.
+* Ensure all source files are compiled with sse support (-mfpmath=sse -msse2) in the binaries.
+* Move scrollplay and the "multiply etc." option into the preferences dialog under a new "Edit" tab.
+* Save scrollplay in config file
+* Rename the default "Chorus" and "Reverb" buses to "Corus Bus" and "Reverb Bus"
+* Moved OpenGL, CPU and VST preferences into a new Preferences dialog.
+* Dont stop processing plugins if using too much CPU. Some plugins might overcompensate when
+  they start again. Instead just stop playing, and if that didn't help,
+  stop processing plugins as well.
+* Fix soundfile saving (don't stop because using too much CPU)
+* Show warning message if unable to acquire real time priority
+* Multithreaded audio processing (i.e. "Multi-core")
+
+
+
+Most important changes 3.1.3 -> 3.1.4
+* If plugin is not found during loading, give option to select a different plugin
+* Show the sound object menu when right-clicking on an existing sound object in the mixer
+  (doing the same as "replace" in the instrument widget)
+* Add "replace" button to instrument widget
+* Send inital values first time a "MIDI Messages" object is playing.
+* Fix plugin info dialog
+* VST: Update Radium sliders when changing controllers in native GUI.
+  This indirectly causes automation to update the sliders as well, but that's actually
+  what happens underneath for VST plugins too, so that's a good thing.
+* Rendering: Reset gfx timing when jumping to the start of a block.
+  (removes the "dragged by a spring" effect)
+* Linux: Show info during startup about the Gallium AMD OpenGL driver (if using that driver)
+
+
+
+Most important changes 3.1.2 -> 3.1.3
+* Don't crash if reducing the number of lines in a block.
+  (This also fixes some crashes when importing MIDI file)
+* Sort notes by pitch for same-positioned notes.
+* Handle gracefully if jack shuts down. (dont freeze program)
+* Fixed moving the start of a pianonote when the pianonote
+  has pitch changes.
+
+
+
+Most important changes 3.1.0 -> 3.1.2
+* Fix automation after loading song
+* Fix a memory corruption for plugins with more than 2 channels
+* Send automation messages when track is ON, not OFF
+
+
+
+Most important changes 3.0.7 -> 3.1.0
+* Weak-link to the Jack library to avoid having to use the included version of Jack.
+* Don't crash if EL=0 and mousewheeling, plus behave like EL=1 if just scrolling and EL=0 ("edit lines").
+* Don't crash if pressing redo after loading a song.
+* Write notename above notes in the pianobar, and other graphical improvements.
+* Fix mouse issues when first pitch or first velocity in a note.
+* A new sound object called "Midi Messages" which can be used to send MIDI messages
+  to other sound objects. Can for instance be used to send pitch bend changes to VST plugins.
+* Option to show linenumbers instead of bars/beats
+* Updated ladspa rdf info for the kokkinizita plugins.
+* Customly compiled LADSPA plugins for OSX, Win32, and Win64. The included
+  plugin sets are now: calf, caps, cmt, swh, tap, and all kokkinizita plugins.
+* 64 binaries for windows
+* Include instructions on how to get audio from other simultaneously running ASIO programs
+  in and out of the Radium mixer.
+
+
+
+Most important changes 3.0.6 -> 3.0.7
+* Fix track-width mouse handling when pianoroll is visible
+
+
+
+Most important changes 3.0.5 -> 3.0.6
+* Simple pianoroll (Left Alt + P or Let Ctrl + P to enable/disable)
+* Fix crash that sometimes could happen if scrolling to rightmost track
+* Updated s7 scheme to latest version
+* Some minor changes to VST initialization which might prevent some plugins from crashing
+  during startup.
+
+
+
+Most important changes 3.0.4 -> 3.0.5
+* Always scroll-play when pressing up or down arrow, even "edit lines" is bigger than 1
+* Fix more than two vst plugins in the full version
+* load/save: Fix bug where empty string was saved as "" instead of "_________empty__________",
+  plus hack so that some old songs where this happened can be loaded again.
+
+
+
+Most important changes 3.0.3 -> 3.0.4
+* MIDI: Option to always record velocity
+
+
+
+Most important changes 3.0.2 -> 3.0.3
+* Add options to multiply the number of lines to scroll by the "Edit lines" value
+* VST: Fix crystal and other plugins using "main" instead of "VSTPluginMain".
+  (forgot this when switching to juce for hosting vst plugins)
+
+
+
+Most important changes 3.0.1 -> 3.0.2
+* Ctrl+J jumps to bar/beat instead of line. (line numbers are not visible anymore)
+* Don't update effect values for plugin while loading a plugin. Might
+  stop buggy plugins from crashing.
+* Option to record MIDI line by line and monophonic in the MIDI menu. (as before)
+* Fix realtime color update in the editor when using the color config dialog
+* Append "-qt4" to the last resort value in find_moc_and_uic_paths.c. (Arch linux fix)
+
+
+
+
+Most important changes 3.0.0 -> 3.0.1
+* Added a note that the qjackctl "Delay time" value might need to be increased
+  on windows for the system to start up.
+* Windows: Enable left win key again when radium is not active
+* Remove the "createVelocity: placement before note start for note #%d" error entirely
+
+
+
+Most important changes 3.0.rc22 -> 3.0.0
+* Bumped version number to 3.0.0
+
+
+Most important changes 3.0.rc21 -> 3.0.rc22
+* Readded calf chorus effect to new_song and demo song.
+
+
+Most important changes 3.0.rc20 -> 3.0.rc21
+* Don't show error window if trying to create velocity before start of the first note
+* build: Check for the steinberg vst headers in check_dependencies.sh
+
+
+
+
+Most important changes 3.0.rc18 -> 3.0.rc20
+* Compile the windows version with -fno-tree-vectorize since audio/SoundProducer.cpp crashed in windows 8
+  when using mingw gcc 4.7.2. (that behavior started in 3.0.rc15)
+
+
+
+Most important changes 3.0.rc17 -> 3.0.rc18
+* Fix crash in certain situations if changing instrument for a track with automation data, while playing
+
+
+
+Most important changes 3.0.rc16 -> 3.0.rc17
+* Set octave 4 as keyboard octave in new_song.rad (not 10)
+* Fix scheduler memory handling. Crash fix.
+* Turn up main volume on the demo song
+
+
+
+Most important changes 3.0.rc15 -> 3.0.rc16
+* Remember the path of the last loaded / saved preset.
+* Use the Qt file dialog instead of the native one, since filters don't work in the native file dialog in windows 7
+* Fix saving in Windows
+* Loading and saving presets now saves the whole instrument, not just the slider/button values.
+* Added "Load Preset" to the plugin menu.
+* Fix realtime peak updates when changing the slider values for the sampler instrument (again)
+* Don't create undo if just changing current instrument
+* Changed lpb from 8 to 4 and bpm from 78 to 156 in the Blowfish song
+* Clean up bars/beats rendering, and draw a single-pixeled line between all tracker lines again
+* Upgrade bdw-gc to 7.2f, and add "-g -O2" flags for the build
+
+
+
+
+Most important changes 3.0.rc14 -> 3.0.rc15
+* vst/linux: Wait for child window to be created (fix for no content in vst window)
+* Fix memory corruption for plugins with more than 2 output channels when running in 32 bit mode,
+  and more than 4 output channels when running in 64 bit mode.
+* Fix crash when the cursor is placed on the last line and changing the LZ value.
+* windows: Provoke crashreporter to kick in when selecting "quit" in the error/warning window
+* Minor improvement to the vst preferences dialog
+* VST: Make sure all timing info are defined
+* Remove support for CFLAGS and LDFLAGS. Seemed like the rtmidi (or possible) juce cflags somehow smitted over to radium somehow.
+* Fix non-realtime behavior in VST plugins. For instance, audio shouldn't stall for a short while anymore when opening the GUI.
+* Provide ppq value of the last bar start to VST plugins.
+* Hack juce into not compiling -march=native. Might fix issues with VST plugins on computers
+  with AMD CPU or older intel CPU.
+* Don't show a show/hide track popup when right-clicking on the reltempo slider
+* Hide LPB track in new_song.rad
+* Draw cents on top of the peaks, not below.
+
+
+
+
+Most important changes 3.0.rc13 -> 3.0.rc14
+* Windows: Don't abort program if glGetError() returns an error.
+  (i.e. compile the visualization library with the -DNDEBUG option)
+* Show opengl info, qt version and credits in the "about window".
+* crashreporter: Include QGLFormat::OpenGLVersionFlags in report
+* crashreporter: Add running time to report. Useful to see if the crash happened during startup.
+* crashreporter: Only insert opengl info and plugin name in the first call to CRASHREPORTER_report_crash
+* tooltip for the MSAA opengl option
+* Some post MIDI recording tool ui tweaks
+* Use color #8 for bar num
+* Tooltips for LPB and BPM widgets
+
+
+
+
+Most important changes 3.0.rc12 -> 3.0.rc13
+* Metronome
+* Sample player: Enable looping for all sounds, not just wav
+* Protect reset effect value with player lock
+* Protect all remaing calls to Q<class>::exec() with GL_lock()
+ (Linux Intel/AMD gfx card crash fix)
+* Fix graphical coordinates not updated when changing font size
+  and possible other situations (bug introduced in 3.0.rc12)
+* Adjust tempo color graph and line number width a little bit
+
+
+
+
+Most important changes 3.0.rc11 -> 3.0.rc12
+* Show bars and beats instead of line numbers
+* Rearranged timing tracks order.
+* Don't show signature and lpb track in the demo song
+* Update lz tooltip
+* Protect all calls QFileDialog with GL_lock() (Linux Intel/AMD gfx card crash fix)
+* Show popup for selecting instrument when right-clicking in the fx area of a track
+* Update editor graphics when pressing or releasing mouse in the mixer
+* Don't crash if pasting track containing deleted instrument
+* crashreporter: Send OpenGL information
+* crashreporter: Try to make the text clearer about only sending one report per crash
+* Fix focus issues in the MIDI tools post recording dialog
+* Adjusted grid track width
+* More quantization options
+* Readd chorus effect to newsong.rad
+* Fixed bug in path resolver
+* Darker color for measure start beat
+* Import time signatures from MIDI files
+* More accurate tempo graph rendering
+* VST plugins: Never set isLooping to true since we never jump back in time
+* Improve the examples when adding/editing note/pitch
+* Add popup menues to show/hide the time tracks
+* Ctrl+J jumps to line
+* Time signature track
+* Hide some menu entries in win/mac that only works in linux
+
+
+
+
+Most important changes 3.0.rc10 -> 3.0.rc11
+* Make the default track volume 100%. (MIDI recordings
+  should not sound differently when played back)
+* Windows: Fix left alt key
+* Improved waveform graphics rendering. Improved quality
+  and put a limit on cpu usage
+* Make the fluidsynth instrument support pitch wheel and
+  control change when played directly from MIDI.
+* Fixed a few MIDI input issues
+* midi/alsa: Use SCHED_RR for input threads, not SCHED_OTHER.
+* Improved PPQ/BPM calculation
+* Crashreporter: Detect currently running plugin
+* Linux: Don't report that Nvidia users have AMD card.
+* Pause plugins for 5 seconds if using too much cpu
+* Show a "stop playing" button in the realtime warning message
+  window.
+* midi: Send all raw midi data from input into current patch
+* VST: Send and receive raw midi, not just "note on"/"note off"/
+  "polyphonic aftertouch".
+* scheduler: Run events generated by RT_process functions
+  functions right away if they belong to the current audio block
+* Make sure the sampleposition values genereted by vst plugins
+  are in the legal range
+* Fix block tempo timing for events generated by a VST plugin
+  (still not tested though, need plugin to test with)
+* clap: The "time" argument for RT_Process is already a
+  "steady_time" variable. (not necessary to manually generate one)
+* Ensure event-producing soundproducers are run before the receivers
+* Pd: Fix MIDI velocity when receiving notes
+* Show warning/error message as popup window in RELEASE mode.
+* "About" window
+
+
+
+
+Most important changes 3.0.rc9 -> 3.0.rc10
+* Render: Write "rec" in the track being recorded (MIDI that is)
+* Windows: Fix crash if get_windows_command_lines fails
+* MIDI post-recording tools dialog (make monophonic and quantitize functions)
+* Proper implementation of PlaceAdd/Sub/Mul/Div (actually just use s7 rational)
+* Protect g_times_storage with mutex (crash fix)
+* Use rational number for quantization (no rounding errors anymore)
+* Allow strings with just one number when reading rational string (grid/lz/quantization)
+* Add a "split track into monophonic tracks" function
+* Dont stop playing if adding a stop "note".
+* Function to make track monophonic destructively
+* Refactor UpdateReallines to avoid holding the player lock all the time
+* Dont let error window be a popup window. (Couldn't switch virtual desktop then)
+* Record MIDI note on/note off accurately while playing, as a MIDI sequencer
+* Use posix priority inheritance in Linux instead of boosting/unboosting manually + various threading/mutex fixes
+
+
+
+
+Most important changes 3.0.rc8 -> 3.0.rc9
+* Don't use clang in Linux. SIGSEGV signal is not catched,
+  and crashreporter is not working (tested both 3.4 and 3.5)
+* Update nouveau warning
+* Don't give additional warning about mesa if using intel or nouveau
+  driver on Linux.
+* Use custom THREADING_get_priority/THREADING_set_priority functions
+  for manual priority inheritance (crash fix when using MIDI input).
+* Update graphics when adding notes using MIDI input
+
+
+
+Most important changes 3.0.rc7 -> 3.0.rc8
+* Both read and write config files as unicode. Earler it only used unicode for writing, and not reading, and that led to growing and growing files on windows
+* windows: Fix AltGr key
+* mouse: Fix left win key on windows
+
+
+
+Most important changes 3.0.rc6 -> 3.0.rc7
+* opengl: Update instructions for intel driver
+* opengl: Show instructions for AMD users during startup
+* Just show() the comment window, dont run exec() on it
+* Fix degree symbol in the pan slider (ascii->utf8 fix)
+* Don't freeze program if moving the cursor beyond the leftmost track
+  when either the lpb, bpm, or the reltempo track is not visible.
+* OpenGL preferences dialog
+* Upgrade to latest visualization library from github (fixes for AMD, etc.)
+* Fix crash when undoing block while playing
+* opengl: Use TRIANGLES+shader to draw that gradient line above the note name instead of GL_LINE+textile
+* OpenGL: Dont use GL_LINES. Create lines from triangles instead. Seems like only nvidia draws GL_LINES decently.
+* opengl: Reduce number of contexts by OR-ing 15 into the color values. Doesnt seem noticable, and cpu usage is reduced significantly
+* Tweaked how the tracker cursor looks
+
+
+
+Most important changes 3.0.rc5 -> 3.0.rc6
+* build: Remove NDEBUG flag from RELEASE_BUILD_OPTS since it makes radium crash on windows. Strange stuff.
+* Replaced "<click me>" with "(click me)"
+* Give option to init LADSPA first if initing VST first and TLS is empty
+* Fix write access check
+* Don't resolve VST plugins during startup if initializing LADSPA plugins first.
+  Just assume it is a VST plugin if the suffix is right.
+* Dont show GUI button for gui-less vst plugins. (and don't crash if double clicking it in the mixer)
+* Upgrade to latest visualization library at github
+* Fix keyboard handling in windows
+* Give warning and option to exit if OpenGL is older than 1.4.
+* Mouse: Fix one-track blocks
+* Clap plugin skeleton
+
+
+Most important changes 3.0.rc4 -> 3.0.rc5
+* Workaround for empty TLS when loading VST plugins
+  (Fix for u-he plugins)
+* Support VST shell plugins
+* Fix VST GUI close and re-open (not just show/hide window)
+* VST sub menues
+* Only keep LADSPA plugin libraries in memory when they are used
+* Cleaned up native keyboard handling a little bit
+* Force message window in front
+* Various OSX fixes
+* Improved gfx driver warnings
+* Give specific information about Intel GFX, instead of warning about using MESA
+* fix "./" in the sample file requester
+* More unicode fixes
+
+
+Most important changes 3.0.rc3 -> 3.0.rc4
+* Make sure packages are not built with -march=native for the binaries
+* Fix nasty memory corruption bug (introduced in 3.0.rc3)
+* Calculate current BPM from beat position values (used by VST plugins)
+* Always show cents if cents!=0
+* Always show notes graphically when noteshowtype==GFXTYPE1
+* Right mouse button reset slider values in the editor
+* Show warning if there is no write access to the binary directory
+
+
+
+Most important changes 3.0.rc2 -> 3.0.rc3
+* Fix pd plugin on fedora 21 (and other distributions having wish8.6)
+* Fix various crashes related to changing the number of visible lines while playing
+* Use Unicode everywhere. Don't crash if running Radium in a non-ascii path.
+* Fix "use last estimated vblank value" button
+* Fix clang 3.5 compilation
+* Give specific warning if using the Nouveau driver
+* Fix memory leaks when loading samples
+
+
+
+Most important changes 3.0.rc1 -> 3.0.rc2
+* Ignore environment CFLAGS so that binary is not built with march=native.
+
+
+Most important changes 3.0.beta2 -> 3.0.rc1
+* Mouse handling rewritten
+* Various graphics enhancements
+* Lots of bugs removed
+* Lots of features added
+
 
 Most important changes 3.0.beta1 -> 3.0.beta2
 * Set CMAKE_BUILD_TYPE for Visualisation library to RelWithDebInfo

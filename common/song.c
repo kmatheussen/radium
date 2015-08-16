@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "blocks_proc.h"
 #include "instruments_proc.h"
-#include "trackreallines_proc.h"
 #include "blocklist_proc.h"
 
 #include "song_proc.h"
@@ -40,6 +39,7 @@ bool NewSong(void){
 
 	root->tempo=128;
 	root->lpb=4;
+        root->signature = ratio(4,4);
 	pc->initplaying=false;
 	pc->isplaying=false;
 

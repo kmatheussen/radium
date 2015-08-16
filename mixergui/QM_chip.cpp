@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/instruments_proc.h"
+#include "../common/OS_Player_proc.h"
 
 #include "undo_mixer_proc.h"
 
@@ -77,11 +78,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/Mixer_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../Qt/EditorWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 //#include "../Qt/Qt_MyQCheckBox.h"
 #include "../Qt/Qt_mix_colors.h"
+#include "../Qt/Qt_colors_proc.h"
 
 #include "../common/patch_proc.h"
 
@@ -100,14 +103,14 @@ int get_text_width(const QFont &font, const QString &text){
 static const int left_border   = 2;
 static const int right_border  = 2;
 static const int top_border    = 2;
-static const int bottom_border = 2;
+//static const int bottom_border = 2;
 
 //static const int chip_width = 120;
 //static const int slider_height = 15;
 
 static const int name_height = 14;
 static const int button_width = 13;//name_height/2;
-static const int button_height = 13;//name_height/2;
+//static const int button_height = 13;//name_height/2;
 
 
 
@@ -381,6 +384,11 @@ void CHIP_update(SoundPlugin *plugin){
   chip->update();
 }
 
+void CHIP_has_new_plugin(SoundPlugin *plugin){
+  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, plugin);
+  chip->init_new_plugin();
+}
+  
 float CHIP_get_pos_x(struct Patch *patch){
   Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
   return chip->x();
@@ -427,7 +435,12 @@ void CHIP_kick_left(Chip *chip){
 
   for(std::set<Chip*>::iterator chip = kicks.begin() ; chip!=kicks.end() ; chip++){
     QPointF pos=(*chip)->pos();
-    Undo_ChipPos_CurrPos(SP_get_plugin((*chip)->_sound_producer)->patch);
+    
+    SoundPlugin *plugin = SP_get_plugin((*chip)->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+    
+    Undo_ChipPos_CurrPos((struct Patch*)patch);
     (*chip)->setPos(pos.x()-grid_width, pos.y());
   }
 }
@@ -464,7 +477,12 @@ void CHIP_kick_right(Chip *chip){
 
   for(std::set<Chip*>::iterator chip = kicks.begin() ; chip!=kicks.end() ; chip++){
     QPointF pos=(*chip)->pos();
-    Undo_ChipPos_CurrPos(SP_get_plugin((*chip)->_sound_producer)->patch);
+
+    SoundPlugin *plugin = SP_get_plugin((*chip)->_sound_producer);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+    Undo_ChipPos_CurrPos((struct Patch*)patch);
     (*chip)->setPos(pos.x()+grid_width, pos.y());
   }
 }
@@ -475,8 +493,27 @@ static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *t
 }
 
 static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
-  return PATCH_add_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
-                                  SP_get_plugin(to->_sound_producer)->patch);
+  if (SP_add_elink(to->_sound_producer, from->_sound_producer) == false)
+    return false;
+
+  SoundPlugin *plugin1 = SP_get_plugin(from->_sound_producer);
+  volatile struct Patch *patch1 = plugin1->patch;
+  R_ASSERT_RETURN_IF_FALSE2(patch1!=NULL, false);
+
+  SoundPlugin *plugin2 = SP_get_plugin(to->_sound_producer);
+  volatile struct Patch *patch2 = plugin2->patch;
+  R_ASSERT_RETURN_IF_FALSE2(patch2!=NULL, false);
+
+  if (PATCH_add_event_receiver((struct Patch*)patch1,
+                               (struct Patch*)patch2)
+      == false
+      )
+    {
+      RError("Impossible situation: PATCH_add_event_receiver()==true and SP_add_elink()==false");
+      return false;
+    }
+  
+  return true;
 }
 
 static bool chips_are_connected(Chip *from, Chip *to){
@@ -601,9 +638,20 @@ void CONNECTION_delete_connection(Connection *connection){
   Chip *to = connection->to;
 
   if (connection->_is_event_connection) {
+
+    SoundPlugin *plugin1 = SP_get_plugin(from->_sound_producer);
+    volatile struct Patch *patch1 = plugin1->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch1!=NULL, );
     
-    PATCH_remove_event_receiver(SP_get_plugin(from->_sound_producer)->patch,
-                                SP_get_plugin(to->_sound_producer)->patch);
+    SoundPlugin *plugin2 = SP_get_plugin(to->_sound_producer);
+    volatile struct Patch *patch2 = plugin2->patch;
+    R_ASSERT_RETURN_IF_FALSE2(patch2!=NULL, );
+
+
+    PATCH_remove_event_receiver((struct Patch*)patch1,
+                                (struct Patch*)patch2);
+
+    SP_remove_elink(to->_sound_producer, from->_sound_producer);
 
   } else {
 
@@ -708,35 +756,55 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
   CHIP_connect_chips(scene,left_chip,right_chip);
 }
 
+void Chip::init_new_plugin(void){
+
+  struct SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+
+  _num_inputs = plugin->type->num_inputs;
+  _num_outputs = plugin->type->num_outputs;
+
+  if (_input_slider!=NULL)
+    SLIDERPAINTER_delete(_input_slider);
+  if (_output_slider!=NULL)
+    SLIDERPAINTER_delete(_output_slider);
+    
+  {
+    int x1,x2,y1,y2;
+    get_slider1_coordinates(x1,x2,y1,y2);
+    _input_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
+    SLIDERPAINTER_set_alternative_color(_input_slider);
+    SLIDERPAINTER_set_num_channels(_input_slider, _num_inputs);
+  }
+  
+  {
+    int x1,x2,y1,y2;
+    get_slider2_coordinates(x1,x2,y1,y2);
+    _output_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
+    SLIDERPAINTER_set_num_channels(_output_slider, _num_outputs);
+  }
+  
+  if(_num_outputs>0)
+    plugin->volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs);
+  else if(_num_inputs>0)
+    plugin->input_volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs);
+  
+  CHIP_update(plugin);
+}
 
 Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y)
   : _scene(scene)
   , _sound_producer(sound_producer)
-  , _num_inputs(SP_get_plugin(sound_producer)->type->num_inputs)
-  , _num_outputs(SP_get_plugin(sound_producer)->type->num_outputs)
   , _color("white")
+  , _input_slider(NULL)
+  , _output_slider(NULL)
   , _slider_being_edited(0)
  {
-   printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
-
-   {
-     int x1,x2,y1,y2;
-     get_slider1_coordinates(x1,x2,y1,y2);
-     _input_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
-     SLIDERPAINTER_set_alternative_color(_input_slider);
-     SLIDERPAINTER_set_num_channels(_input_slider, _num_inputs);
-   }
-
-   {
-     int x1,x2,y1,y2;
-     get_slider2_coordinates(x1,x2,y1,y2);
-     _output_slider = SLIDERPAINTER_create(this,x1,x2,y1,y2);
-     SLIDERPAINTER_set_num_channels(_output_slider, _num_outputs);
-   }
 
    setPos(QPointF(x,y));
-   scene->addItem(this);
+   //MW_move_chip_to_slot(this, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
 
+   scene->addItem(this);
+   
  #if 0
    _line_item = new QGraphicsLineItem(0,0,50,50);
    _line_item->setPen(QPen(Qt::black, 2));
@@ -747,12 +815,9 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    setFlags(ItemIsSelectable | ItemIsMovable | ItemSendsGeometryChanges);
    setAcceptsHoverEvents(true);
 
-   if(_num_outputs>0)
-     SP_get_plugin(sound_producer)->volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs);
-   else if(_num_inputs>0)
-     SP_get_plugin(sound_producer)->input_volume_peak_values_for_chip = SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs);
-
-   CHIP_update(SP_get_plugin(sound_producer));
+   init_new_plugin();
+   
+   printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
  }
 
 Chip::~Chip(){
@@ -764,9 +829,12 @@ Chip::~Chip(){
     fprintf(stderr,"Deleting econnection. EConnections left: %d\n",(int)_econnections.size());
     CONNECTION_delete_connection(_econnections.at(0));
   }
-  SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
-  SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
-  
+
+  PLAYER_lock();{ // The player checks if these values are not null, before reading them. I got two valgrind hits because the player read these variables after they were freed, so that's why there is a lock here. The situation should never happen on a normal computer.
+    SP_get_plugin(_sound_producer)->input_volume_peak_values_for_chip = NULL;
+    SP_get_plugin(_sound_producer)->volume_peak_values_for_chip = NULL;
+  }PLAYER_unlock();
+
   SLIDERPAINTER_delete(_input_slider);
   SLIDERPAINTER_delete(_output_slider);
 }
@@ -825,7 +893,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   Q_UNUSED(widget);
 
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-  struct Patch *patch = plugin->patch;
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   bool is_selected = (option->state & QStyle::State_Selected);
   /*
@@ -834,7 +903,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
-  QColor border_color(g_editor->colors[1]);
+  QColor border_color = get_qcolor(NULL, BLACK_COLOR_NUM);
   if(is_current_patch==false);
     border_color.setAlpha(160);
 
@@ -846,13 +915,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_coordinates(x1,y1,x2,y2);
 
-    if(is_current_patch==true){
-      QColor c(g_editor->colors[2]);
-      c.setAlpha(30);
-      painter->setBrush(QBrush(c,Qt::SolidPattern));
-    }
-
+    //    if(is_current_patch==true){
+      //}
+    painter->setPen(QPen(border_color, 2));
+    
     painter->drawRect(x1,y1,x2-x1,y2-y1);
+    //painter->fillRect(x1,y1,x2-x1,y2-y1);
   }
 
   int button_x2;
@@ -863,6 +931,19 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     button_x2 = x2;
 
+    {
+      QColor c = get_qcolor(NULL, BLACK_COLOR_NUM);
+      c.setAlpha(10);
+      painter->setBrush(QBrush(c,Qt::SolidPattern));
+      painter->fillRect(x1,y1,x2-x1,y2-y1, c);
+    }
+
+    if(0){
+      QColor c = get_qcolor(NULL, WHITE_COLOR_NUM);
+      c.setAlpha(60);
+      painter->setBrush(QBrush(c,Qt::SolidPattern));
+    }
+    
     // input slider
     if(plugin->type->num_outputs==0 && plugin->type->num_inputs>0){
       painter->translate(x1,y1);
@@ -907,10 +988,11 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     get_name_coordinates(x1,y1,x2,y2);
     x1 = get_note_indicator_x2() + 2;
 
-    QColor patchcolor(custom_colors[patch->colornum]);
+    int colornum = patch->colornum;
+    QColor patchcolor(custom_colors[colornum]);
 
     if(is_selected){
-      QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.05);
+      QColor c = mix_colors(QColor(30,25,70,60), patchcolor, 0.45);      
       //painter->fillRect(x1-1,y1+1,x2-x1+2,y2-y1-2, g_editor->colors[9].light(86));
       painter->fillRect(x1-1,y1+1,button_x2-x1+2,y2-y1-2, c);
     }else{
@@ -919,12 +1001,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
 
-    QString text = SP_get_plugin(_sound_producer)->patch->name;
+    QString text = patch->name;
     float textlen = get_text_width(painter->font(),text);       
     float width = x2-x1;
 
     {
-      QColor c(g_editor->colors[1]);
+      QColor c = get_qcolor(NULL, BLACK_COLOR_NUM);
       if(is_current_patch==false)
         c.setAlpha(160);
 
@@ -1043,11 +1125,14 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     int num_effects = plugin->type->num_effects;
 
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
     QPointF pos = event->pos();
 
     printf("Pressed. %f / %f\n",pos.x(),pos.y());
     struct Instruments *instrument = get_audio_instrument();
-    instrument->PP_Update(instrument,plugin->patch);
+    instrument->PP_Update(instrument,(struct Patch*)patch);
 
     if(event->modifiers() & Qt::ControlModifier)
       setSelected(true);
@@ -1059,14 +1144,14 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        Undo_AudioEffect_CurrPos(plugin->patch, num_effects+EFFNUM_VOLUME_ONOFF);
+        Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF);
 
         printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         float new_value = plugin->volume_is_on?0.0f:1.0f;
 
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
-        GFX_update_instrument_widget(plugin->patch);
+        GFX_update_instrument_widget((struct Patch*)patch);
 
         event->accept();
         return;
@@ -1078,13 +1163,13 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       int x1,y1,x2,y2;
       get_effects_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-        Undo_AudioEffect_CurrPos(plugin->patch, num_effects+EFFNUM_EFFECTS_ONOFF);
+        Undo_AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF);
 
         float new_value = plugin->effects_are_on?0.0f:1.0f;
 
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         CHIP_update(plugin);
-        GFX_update_instrument_widget(plugin->patch);
+        GFX_update_instrument_widget((struct Patch*)patch);
 
         event->accept();
         return;
@@ -1113,18 +1198,19 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         else
           effect_num = num_effects+EFFNUM_VOLUME;
 
-        Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
+        Undo_AudioEffect_CurrPos((struct Patch*)patch, effect_num);
 
         float value = ::scale(pos.x(),x1,x2,0,1.0);
         PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
         CHIP_update(plugin);
 
-        GFX_update_instrument_widget(plugin->patch);
+        GFX_update_instrument_widget((struct Patch*)patch);
 
         _slider_being_edited = i+1;
       }
     }
+
   }
 
   event->accept();
@@ -1174,8 +1260,10 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     CHIP_update(plugin);
+    volatile struct Patch *patch = plugin->patch;
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-    GFX_update_instrument_widget(plugin->patch);
+    GFX_update_instrument_widget((struct Patch*)patch);
   }
 
   event->accept();
@@ -1194,7 +1282,9 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 static struct Patch *get_patch_from_chip(Chip *chip){
   SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  return plugin->patch;
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT(patch!=NULL);
+  return (struct Patch*)patch;
 }
 
 static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int patch_id){
@@ -1233,21 +1323,52 @@ hash_t *CHIP_get_chip_state_from_patch(struct Patch *patch){
   return CHIP_get_state(chip);
 }
 
-void CHIP_create_from_state(hash_t *state){
+
+void CHIP_create_from_state(hash_t *state, Buses buses){
+  if (PLAYER_is_running()==false)
+    return;
+
   struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
   double x = HASH_get_float(state, "x");
   double y = HASH_get_float(state, "y");
 
   struct SoundPlugin *plugin = PLUGIN_create_from_state(HASH_get_hash(state, "plugin"));
+  R_ASSERT(plugin != NULL);
   patch->patchdata = plugin;
 
   if(plugin!=NULL){
     plugin->patch = patch;
-    Chip *chip = new Chip(&g_mixer_widget->scene,SP_create(plugin),x,y);
+    Chip *chip = new Chip(&g_mixer_widget->scene,
+                          SP_create(plugin,buses),
+                          x,y);
     printf("Made chip %p\n",chip);
   }else{
     printf("Unable to create chip\n"); // proper error message given elsewhere. (ladspa or vst)
   }
+}
+
+struct Patch *CHIP_create_from_plugin_state(hash_t *plugin_state, const char *name, double x, double y, Buses buses){
+  struct SoundPlugin *plugin = PLUGIN_create_from_state(plugin_state);
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
+
+  if (name==NULL)
+    name = PLUGIN_generate_new_patchname((SoundPluginType*)plugin->type);
+
+  struct Patch *patch = NewPatchCurrPos(AUDIO_INSTRUMENT_TYPE, plugin, name);
+  patch->patchdata = plugin;
+  plugin->patch = patch;
+
+  SoundProducer   *sound_producer = SP_create(plugin, buses);
+
+  if(x<=-100000)
+    MW_set_autopos(&x, &y);    
+
+  Chip *chip = new Chip(&g_mixer_widget->scene,sound_producer, x, y);
+  printf("Made chip %p\n",chip);
+
+  MW_move_chip_to_slot(chip, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
+  
+  return patch;
 }
 
 hash_t *CONNECTION_get_state(Connection *connection){
@@ -1262,9 +1383,18 @@ hash_t *CONNECTION_get_state(Connection *connection){
   return state;
 }
 
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state){
-  Chip *from_chip = get_chip_from_patch_id(scene, HASH_get_int(state, "from_patch"));
-  Chip *to_chip   = get_chip_from_patch_id(scene, HASH_get_int(state, "to_patch"));
+void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int patch_id_old, int patch_id_new){
+  int id_from = HASH_get_int(state, "from_patch");
+  int id_to = HASH_get_int(state, "to_patch");
+
+  if (id_from==patch_id_old)
+    id_from = patch_id_new;
+  
+  if (id_to==patch_id_old)
+    id_to = patch_id_new;
+  
+  Chip *from_chip = get_chip_from_patch_id(scene, id_from);
+  Chip *to_chip   = get_chip_from_patch_id(scene, id_to);
 
   if(from_chip==NULL || to_chip==NULL) {
     RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);

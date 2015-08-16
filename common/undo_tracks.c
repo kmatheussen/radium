@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "undo_tracks_proc.h"
 #include "fxlines_proc.h"
-#include "trackreallines_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "clipboard_track_paste_proc.h"
 
@@ -74,13 +73,9 @@ void *Undo_Do_Track(
 
 	CB_PasteTrack(wblock,undo_wtrack,wtrack);
 
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
-	UpdateTrackReallines(window,wblock,wtrack);
-
-	undo_wtrack=wblock->wtracks;
-	while(undo_wtrack!=NULL){
-		undo_wtrack=NextWTrack(undo_wtrack);
-	}
+#endif
 
 	return temp;
 }

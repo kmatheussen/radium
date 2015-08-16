@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "X11.h"
+#include <X11/Xlib.h>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -31,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../audio/Mixer_proc.h"
 
-#include "X11_keyboard_proc.h"
+#include "../common/OS_system_proc.h"
 
 
 extern bool doquit;
@@ -41,10 +42,10 @@ extern PlayerClass *pc;
 
 static hash_t *keyupdowns = NULL;
 
-static int keycode_to_keynum[256];
+static int keycode_to_keynum[256]; // "A KeyCode represents a physical (or logical) key. KeyCodes lie in the inclusive range [8,255]" (keyboard-encoding.html)
 
 
-void X11_ResetKeysUpDowns(void){
+void OS_SYSTEM_ResetKeysUpDowns(void){
   keyupdowns = HASH_create(EVENT_DASMAX);
 }
 
@@ -75,10 +76,14 @@ static bool get_keyupdown(int keynum){
   return HASH_has_key(keyupdowns,key) && HASH_get_int(keyupdowns,key)==1;
 }
 
-void X11_init_keyboard(void) {
-  X11_ResetKeysUpDowns();
+void OS_SYSTEM_init_keyboard(void) {
+  OS_SYSTEM_ResetKeysUpDowns();
 }
 
+
+static bool keynum_is_qualifier(int keynum){
+  return keynum<EVENT_FIRST_NON_QUALIFIER;
+}
 
 static int keysym_to_keynum(KeySym keysym) {
 
@@ -223,48 +228,59 @@ struct displays_t{
 };
 
 static void init_keynums(void *focused_widget, XEvent *event){
-  static struct displays_t *displays = NULL;
   static bool inited_keynums = false;
 
 
-  if(event->type==KeyPress || event->type==KeyRelease) {
-
+    if(event->type==KeyPress || event->type==KeyRelease){
+    
     XAnyEvent *any_event = (XAnyEvent *)event;
 
-    if(inited_keynums==false){
-      
+    if(inited_keynums==false && any_event->display!=NULL){
+      // 1. Save original state of keyboard
       PyRun_SimpleString("import X11_xkb ; X11_xkb.save_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+      // 2. Temporarily set keyboard to "us"
       {
         PyRun_SimpleString("import X11_xkb ; X11_xkb.set_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"), \"us\")");
-        
         int i;
         for(i=0;i<256;i++)
           keycode_to_keynum[i] = keysym_to_keynum(XkbKeycodeToKeysym(any_event->display, i, 0, 0));
       }
+
+      // 3. Set back keyboard to the original state
       //sleep(1);
-      //PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-      
+      usleep(1000*100);
+      PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+
       inited_keynums = true;
     }
+
+#if 1 // This code should not be necessary... (but it is)
+    static struct displays_t *displays = NULL;
+
+    int keynum = keycode_to_keynum[((XKeyEvent *)any_event)->keycode]; 
+
+    if (!keynum_is_qualifier(keynum)){ // Setting back keyboard is only necessary if writing some text. This test was added to avoid minor pauses when pressing the ctrl key on the top of a new widget, for instance a slider.
+      struct displays_t *display = displays;
     
-    struct displays_t *display = displays;
-    
-    while(display!=NULL && display->focused_widget!=focused_widget)
-      display=display->next;
-    
-    if(display==NULL){
-      printf("\n\nSetting back keyboards for display %p\n\n",any_event->display);
-      PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
-      display = calloc(1,sizeof(struct displays_t));
-      display->focused_widget = focused_widget;
-      display->next = displays;
-      displays = display;
+      while(display!=NULL && display->focused_widget!=focused_widget)
+        display=display->next;
+      
+      if(display==NULL){
+        printf("\n\nSetting back keyboards for display %p\n\n",any_event->display);
+        PyRun_SimpleString("import X11_xkb ; X11_xkb.restore_xkb(os.path.join(sys.g_program_path,\"packages/setxkbmap/setxkbmap\"))");
+        display = calloc(1,sizeof(struct displays_t));
+        display->focused_widget = focused_widget;
+        display->next = displays;
+        displays = display;
+      }
     }
-  }
+#endif
+      }
 }
 
 
-int X11_get_keynum(void *focused_widget, XKeyEvent *key_event){
+int OS_SYSTEM_get_keynum(void *focused_widget, void *event){
+  XKeyEvent *key_event = event;
   init_keynums(focused_widget, (XEvent*)key_event);
   return keycode_to_keynum[key_event->keycode];
 }
@@ -303,7 +319,7 @@ static void setKeySwitch(unsigned int state){
 
 
 static void setKeyUpDowns(void *focused_widget, XKeyEvent *key_event){
-  int keynum = X11_get_keynum(focused_widget, key_event);
+  int keynum = OS_SYSTEM_get_keynum(focused_widget, key_event);
   if(keynum==-1)
     return;
 
@@ -327,7 +343,7 @@ static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *win
   g_last_pressed_key = keynum;
   g_last_pressed_key_time = MIXER_get_time();
 
-  if(tevent.SubID<EVENT_FIRST_NON_QUALIFIER)
+  if(keynum_is_qualifier(keynum))
     tevent.SubID=EVENT_NO;
 
   return EventReciever(&tevent,window);
@@ -336,7 +352,7 @@ static int X11Event_KeyPress(int keynum,int keystate,struct Tracker_Windows *win
 static int X11_MyKeyPress(void *focused_widget, XKeyEvent *key_event,struct Tracker_Windows *window){
   //printf("keynum: %x. keycode: %d. Audio: %x/%d\n",(unsigned int)sym,event->keycode,0x1008FF1,0x1008FF1);
 
-  int keynum = X11_get_keynum(focused_widget, key_event);
+  int keynum = OS_SYSTEM_get_keynum(focused_widget, key_event);
 
   if (keynum==-1)
     return 0;
@@ -371,7 +387,7 @@ static int X11Event_KeyRelease(int keynum,int keystate,struct Tracker_Windows *w
 }
 
 static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tracker_Windows *window){
-  int keynum = X11_get_keynum(focused_widget, key_event);
+  int keynum = OS_SYSTEM_get_keynum(focused_widget, key_event);
 
   if (keynum==-1)
     return 0;
@@ -381,9 +397,46 @@ static int X11_MyKeyRelease(void *focused_widget, XKeyEvent *key_event,struct Tr
 }
 
 
+void OS_SYSTEM_EventPreHandler(void *void_event){
+  XEvent *event = void_event;
+  
+  //init_keynums(NULL, event);
+
+  switch(event->type){
+  case EnterNotify:
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        OS_SYSTEM_ResetKeysUpDowns();
+    }
+    break;
+  case LeaveNotify:
+    {
+      XCrossingEvent *e = (XCrossingEvent*) event;
+      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
+      if(e->focus==False)
+        OS_SYSTEM_ResetKeysUpDowns();
+    }
+    break;
+  }
+}
+
+int OS_SYSTEM_get_event_type(void *void_event){
+  XEvent *event = void_event;
+  
+  if(event->type==KeyPress)
+    return TR_KEYBOARD;
+  else if (event->type==KeyRelease)
+    return TR_KEYBOARDUP;
+  else
+    return -1;
+}
+
 extern int num_users_of_keyboard;
 
-bool X11_KeyboardFilter(void *focused_widget, XEvent *event){
+bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_event){
+  XEvent *event = void_event;
 
   init_keynums(focused_widget, event);
 
@@ -410,36 +463,10 @@ bool X11_KeyboardFilter(void *focused_widget, XEvent *event){
 
     X11_MyKeyRelease(focused_widget, (XKeyEvent *)event,root->song->tracker_windows);
     return true;
-  case EnterNotify:
-    {
-      XCrossingEvent *e = (XCrossingEvent*) event;
-      //printf("got enter notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
-      if(e->focus==False)
-        X11_ResetKeysUpDowns();
-    }
-    break;
-  case LeaveNotify:
-    {
-      XCrossingEvent *e = (XCrossingEvent*) event;
-      //printf("got leave notify. mode: %d, same_screen: %d, focus: %d\n",(int)e->mode,(int)e->same_screen,(int)e->focus);
-      if(e->focus==False)
-        X11_ResetKeysUpDowns();
-    }
-    break;
-  case ClientMessage:
-#if 0
-    if(X11Event_ClientMessage((XClientMessageEvent *)&event,root->song->tracker_windows)==false){
-      this->quit();
-    }
-#endif
-    break;
-  default:
-    //printf("Got unknwon event %d. %d %d\n",num++,instrumentWidgetUsesKeyboard(),event->type);
-
-    //fprintf(stderr, "got Unknown x11 event\n");
-    break;
   }
 
+  RError("Not supposed to happen\n");
+  
   return false;
 }
 

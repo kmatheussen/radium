@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/hashmap_proc.h"
 
+#include "../audio/Mixer_proc.h"
+
 #include "QM_MixerWidget.h"
 #include "QM_chip.h"
 
@@ -49,6 +51,7 @@ static void Undo_Chip_AddRemove(
         struct Patch *patch,
         bool going_to_add
 ){
+
   struct Undo_Chip_AddRemove *u_rt=talloc(sizeof(struct Undo_Chip_AddRemove));
 
   u_rt->patch = patch;
@@ -69,7 +72,6 @@ static void Undo_Chip_AddRemove(
            u_rt,
            Undo_Do_Chip_AddRemove
            );
-
 }
 
 void Undo_Chip_Add_CurrPos(struct Patch *patch){
@@ -99,7 +101,7 @@ static void *Undo_Do_Chip_AddRemove(
       MW_delete_plugin((SoundPlugin *)u_rt->patch->patchdata);
       u_rt->is_present=false;
     }else{
-      CHIP_create_from_state(u_rt->chip_state);
+      CHIP_create_from_state(u_rt->chip_state, MIXER_get_buses());
       u_rt->is_present=true;
     }
     

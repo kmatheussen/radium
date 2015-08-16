@@ -1,6 +1,8 @@
 #include <math.h>
 #include <string>
 
+#include <vector>
+
 /*
 #include "/usr/share/faust/audio/dsp.h"
 #include "/usr/share/faust/gui/UI.h"

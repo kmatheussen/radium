@@ -19,11 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "list_proc.h"
 #include "settings_proc.h"
+#include "wtracks_proc.h"
 
 #include "sliders_proc.h"
 
 
+// Painting scroll bar.
 
+
+#if 0
 
 /*********************************************************
   FUNCTION
@@ -66,16 +70,21 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
-		if(wtrack->l.num==wblock->left_track) vx1=mdx;
-		mdx+=wtrack->fxwidth+(wtrack->notelength*window->fontwidth);
-		if(wtrack->l.num==wblock->right_track) vx2=mdx - (wtrack->x2-wblock->a.x2);
+		if (wtrack->l.num==wblock->left_track)
+                  vx1=mdx;
+                
+		mdx += wtrack->fxwidth + (wtrack->notelength*window->fontwidth);
+                
+		if(wtrack->l.num==wblock->right_track)
+                  vx2=mdx - (wtrack->x2-wblock->a.x2);
+                
 		wtrack=NextWTrack(wtrack);
 	}
 	vx2=R_MIN(vx2,mdx);
 	rx2=mdx;
 
-	x=sx1 + (sx2-sx1)*(vx1-rx1)/(rx2-rx1) + 2;
-	x2=sx1 + (sx2-sx1)*(vx2-rx1)/(rx2-rx1) - 2;
+	x  = sx1 + (sx2-sx1)*(vx1-rx1)/(rx2-rx1) + 2;
+	x2 = sx1 + (sx2-sx1)*(vx2-rx1)/(rx2-rx1) - 2;
 
 	if(lx2<=x || x2<=lx){
 		BottomSliderBox(0,lx,lx2);
@@ -102,7 +111,49 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 	window->bottomslider.lx=x;
 	window->bottomslider.lx2=x2;
 }
+#endif
 
+
+typedef struct {
+  int leftmost_visible_x;
+  int rightmost_visible_x;
+  int total_width;
+} SliderData;
+
+static SliderData get_sliderdata(struct Tracker_Windows *window){
+  SliderData data;
+
+  struct WBlocks *wblock = window->wblock;
+  struct WTracks *wtrack = wblock->wtracks;
+
+  int x = 0;
+
+  if (wblock->left_track < 0)
+    data.leftmost_visible_x = 0;
+
+  while(wtrack != NULL){
+    int num_subtracks = wtrack->track->num_subtracks;
+    int track_width = WTRACK_getWidth(window, wtrack);
+
+    if (wtrack->l.num == wblock->left_track){
+      if (wblock->left_subtrack==-1)
+        data.leftmost_visible_x = x;
+      else
+        data.leftmost_visible_x = x + scale(wblock->left_subtrack, 0, num_subtracks, (wtrack->notelength*window->fontwidth)+2, track_width);
+    }
+
+    x += track_width;
+
+    if (wtrack->l.num == wblock->right_track)
+      data.rightmost_visible_x = x - (wtrack->x2-wblock->a.x2);
+
+    wtrack = NextWTrack(wtrack);
+  }
+
+  data.total_width = x;
+
+  return data;
+}
 
 /********************************************************
   FUNCTION
@@ -110,17 +161,68 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 ********************************************************/
 
 void DrawBottomSlider(struct Tracker_Windows *window){
-	int y1,y2;
+  window->bottomslider.x = window->wblock->t.x1;
+  
+  int x1 = window->bottomslider.x;
+  int x2 = window->bottomslider.x2;
+  int y1 = window->wblock->reltempo.y1;
+  int y2 = window->wblock->reltempo.y2;
 
-	window->bottomslider.x=window->wblock->t.x1;
+  SliderData data = get_sliderdata(window);
+  
+  int inner_x1 = scale(data.leftmost_visible_x, 0, data.total_width, x1, x2);
+  int inner_x2 = scale(data.rightmost_visible_x, 0, data.total_width, x1, x2);
+
+  // background
+  GFX_FilledBox(
+                window,
+                11,
+                window->wblock->reltempo.x2,y1,
+                x2,y2,
+                PAINT_DIRECTLY
+                );
+
+  // slider
+  GFX_SetMixColor(window,1,0,300);
+  GFX_FilledBox(
+                window,1,
+                inner_x1,y1,
+                inner_x2,y2,
+                PAINT_DIRECTLY
+                );
+  
+  // border
+  GFX_SetMixColor(window,1,0,300);
+  GFX_Box(
+          window,1,
+          x1,y1,
+          x2,y2,
+          PAINT_DIRECTLY
+          );  
+                
+}
+
+
+#if 0
+void DrawBottomSlider_old(struct Tracker_Windows *window){
+
+	window->bottomslider.x = window->wblock->t.x1;
+
+        int y1 = window->height - window->bottomslider.width + 2;
+	int y2 = window->height - 3;
+
+        while(y2<=y1){
+          y1--;
+          y2++;
+	}
 
 	GFX_Box(
 		window,
 		1,
 		window->bottomslider.x,
-		window->height - window->bottomslider.width,
+                y1 - 2,
 		window->bottomslider.x2,
-		window->height-1,
+                y2 + 2,
                 PAINT_DIRECTLY
 	);
 
@@ -128,19 +230,11 @@ void DrawBottomSlider(struct Tracker_Windows *window){
 		window,
 		0,
 		window->bottomslider.x+1,
-		window->height - window->bottomslider.width+1,
+                y1 - 1,
 		window->bottomslider.x2-1,
-		window->height-2,
+                y1 + 1,
                 PAINT_DIRECTLY
 	);
-
-	y1=window->height - window->bottomslider.width + 2;
-	y2=window->height - 3;
-
-	while(y2<=y1){
-		y1--;
-		y2++;
-	}
 
 	window->bottomslider.lx=window->bottomslider.x + 2,
 	window->bottomslider.lx2=window->bottomslider.x2 - 2,
@@ -159,6 +253,7 @@ void DrawBottomSlider(struct Tracker_Windows *window){
 }
 
 
+#endif
 
 
 /*********************************************************

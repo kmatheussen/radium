@@ -26,9 +26,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_tempos_copy_proc.h"
 
 
+struct Signatures *cb_signature=NULL;
 struct LPBs *cb_lpb=NULL;
 struct Tempos *cb_tempo=NULL;
 struct TempoNodes *cb_temponode=NULL;
+
+
+struct Signatures *CB_CopySignatures(
+	struct Signatures *signature
+){
+	struct Signatures *to=NULL;
+	struct Signatures *new;
+
+	while(signature!=NULL){
+		new=talloc(sizeof(struct Signatures));
+		PlaceCopy(&new->l.p,&signature->l.p);
+		new->signature=signature->signature;
+		ListAddElement3(&to,&new->l);
+		signature=NextSignature(signature);
+	}
+	return to;
+}
 
 
 struct LPBs *CB_CopyLPBs(

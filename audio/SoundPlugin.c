@@ -23,12 +23,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/visual_proc.h"
+#include "../common/undo_patch_proc.h"
+#include "../common/player_proc.h"
+#include "../common/patch_proc.h"
+
+#include "../mixergui/QM_chip.h"
+#include "../mixergui/QM_MixerWidget.h"
+#include "../mixergui/undo_chip_addremove_proc.h"
+#include "../mixergui/undo_mixer_proc.h"
+#include "../Qt/Qt_instruments_proc.h"
+#include "../Qt/undo_instruments_widget_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
+#include "SoundProducer_proc.h"
 #include "undo_audio_effect_proc.h"
 #include "system_compressor_wrapper_proc.h"
+#include "audio_instrument_proc.h"
 
 #include "SoundPlugin_proc.h"
 
@@ -220,7 +233,7 @@ static void init_system_filter(SystemFilter *filter, int num_channels, const cha
   filter->plugins=calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
     filter->plugins[ch] = calloc(1, sizeof(SoundPlugin));
-    filter->plugins[ch]->type = PR_get_plugin_type_by_name("Faust",name);
+    filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, "Faust",name);
     filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
     filter->was_off = true;
     filter->was_on = false;
@@ -250,9 +263,7 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
   }
 
   SMOOTH_init(&plugin->input_volume  , 1.0f, buffer_size);
-  SMOOTH_init(&plugin->output_volume , 1.0f, buffer_size);
-  SMOOTH_init(&plugin->bus_volume[0] , 0.0f, buffer_size);
-  SMOOTH_init(&plugin->bus_volume[1] , 0.0f, buffer_size);
+  plugin->output_volume = 1.0f;
   SMOOTH_init(&plugin->pan           , 0.5f, buffer_size);
   SMOOTH_init(&plugin->drywet        , 1.0f, buffer_size);
 
@@ -264,11 +275,6 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
 
   plugin->volume = 1.0f;
   plugin->volume_is_on = true;
-
-  if(!strcmp(plugin_type->type_name,"Bus"))
-    plugin->bus_descendant_type = IS_BUS_DESCENDANT;
-  else
-    plugin->bus_descendant_type = IS_NOT_A_BUS_DESCENDANT;
 
 
   {
@@ -346,25 +352,31 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
     return;
 
   plugin_type->cleanup_plugin_data(plugin);
+
   free(plugin->initial_effect_values);
   free(plugin->savable_effect_values);
 
+  
   SMOOTH_release(&plugin->input_volume);
-  SMOOTH_release(&plugin->output_volume);
-  SMOOTH_release(&plugin->bus_volume[0]);
-  SMOOTH_release(&plugin->bus_volume[1]);
+    
   SMOOTH_release(&plugin->pan);
+  
   SMOOTH_release(&plugin->drywet);
-
+  
   COMPRESSOR_delete(plugin->compressor);
-
+  
   release_system_filter(&plugin->lowpass, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->eq1, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->eq2, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->lowshelf, plugin_type->num_outputs);
+    
   release_system_filter(&plugin->highshelf, plugin_type->num_outputs);
+  
   release_system_filter(&plugin->delay, plugin_type->num_outputs);
-
+  
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   free(plugin);
 }
@@ -372,9 +384,6 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
 // Called at the start of each block
 void PLUGIN_update_smooth_values(SoundPlugin *plugin){
   SMOOTH_called_per_block(&plugin->input_volume);
-  SMOOTH_called_per_block(&plugin->output_volume);
-  SMOOTH_called_per_block(&plugin->bus_volume[0]);
-  SMOOTH_called_per_block(&plugin->bus_volume[1]);
   SMOOTH_called_per_block(&plugin->pan);
   SMOOTH_called_per_block(&plugin->drywet);
 }
@@ -475,8 +484,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
     
   case EFFNUM_OUTPUT_VOLUME:
-    val = gain_2_db(plugin->output_volume.target_value/plugin->volume,MIN_DB,MAX_DB);
-    printf("*(((( EFFNUM_OUTPUT_VOLUME. val: %f. MIN_DB: %d. Target: %f. plugin->volume: %f\n",val,MIN_DB,plugin->output_volume.target_value,plugin->volume);
+    val = gain_2_db(plugin->output_volume,MIN_DB,MAX_DB);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
@@ -484,14 +492,14 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
     
   case EFFNUM_BUS1:
-    val = gain_2_db(plugin->bus_volume[0].target_value/plugin->volume,MIN_DB,MAX_DB);
+    val = gain_2_db(plugin->bus_volume[0]/plugin->volume,MIN_DB,MAX_DB);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
       snprintf(buffer,buffersize-1,"%s%.2f dB",val<0.0f?"":"+",val);
     break;
   case EFFNUM_BUS2:
-    val = gain_2_db(plugin->bus_volume[1].target_value/plugin->volume,MIN_DB,MAX_DB);
+    val = gain_2_db(plugin->bus_volume[1]/plugin->volume,MIN_DB,MAX_DB);
     if(val==MIN_DB)
       snprintf(buffer,buffersize-1,"-inf dB");
     else
@@ -499,7 +507,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     break;
 
   case EFFNUM_PAN:
-    snprintf(buffer,buffersize-1,"%d %c",(int)scale(plugin->pan.target_value,0,1,-90,90),0xb0);
+    snprintf(buffer,buffersize-1,"%d %s",(int)scale(plugin->pan.target_value,0,1,-90,90),"\u00B0");
     break;
   case EFFNUM_PAN_ONOFF:
     snprintf(buffer,buffersize-1,"%s",plugin->pan_is_on==true?"ON":"OFF");
@@ -626,63 +634,53 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
     case EFFNUM_INPUT_VOLUME_ONOFF:
       set_smooth_on_off(&plugin->input_volume, &plugin->input_volume_is_on, store_value, plugin->savable_effect_values[num_effects+EFFNUM_INPUT_VOLUME]);
       break;
-
     case EFFNUM_VOLUME:
       store_value = get_gain_store_value(value,value_type);
-
-      if(plugin->volume_is_on==true){
-        if(plugin->output_volume_is_on==true)
-          SMOOTH_set_target_value(&plugin->output_volume, store_value * plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
-        
-        if(plugin->bus_volume_is_on[0]==true)
-          SMOOTH_set_target_value(&plugin->bus_volume[0], store_value * plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
-        
-        if(plugin->bus_volume_is_on[1]==true)
-          SMOOTH_set_target_value(&plugin->bus_volume[1], store_value * plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
-      }
-
       plugin->volume = store_value;
       break;
     case EFFNUM_VOLUME_ONOFF:
-      if(value>0.5f)
+      if(value>0.5f) {
         plugin->volume = plugin->savable_effect_values[num_effects+EFFNUM_VOLUME];
-      else
+        plugin->volume_is_on = true;
+      }else {
         plugin->volume = 0.0f;
-
-      if(plugin->output_volume_is_on==true)
-        set_smooth_on_off(&plugin->output_volume, &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
-      if(plugin->bus_volume_is_on[0]==true)
-        set_smooth_on_off(&plugin->bus_volume[0], &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
-      if(plugin->bus_volume_is_on[1]==true)
-        set_smooth_on_off(&plugin->bus_volume[1], &plugin->volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
+        plugin->volume_is_on = false;
+      }
       break;
 
     case EFFNUM_OUTPUT_VOLUME:
       store_value = get_gain_store_value(value,value_type);
       //printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
-      if(plugin->output_volume_is_on==true)
-        SMOOTH_set_target_value(&plugin->output_volume, store_value*plugin->volume);
+      plugin->output_volume = store_value;
       break;
+      
     case EFFNUM_OUTPUT_VOLUME_ONOFF:
-      set_smooth_on_off(&plugin->output_volume, &plugin->output_volume_is_on, store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_OUTPUT_VOLUME]);
+      if (value > 0.5f)
+        plugin->output_volume_is_on = true;
+      else
+        plugin->output_volume_is_on = false;
       break;
 
     case EFFNUM_BUS1:
       store_value = get_gain_store_value(value,value_type);
-      if(plugin->bus_volume_is_on[0]==true)
-        SMOOTH_set_target_value(&plugin->bus_volume[0], store_value*plugin->volume);
+      plugin->bus_volume[0] = store_value;
       break;
     case EFFNUM_BUS1_ONOFF:
-      set_smooth_on_off(&plugin->bus_volume[0], &plugin->bus_volume_is_on[0], store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS1]);
+      if (value > 0.5f)
+        plugin->bus_volume_is_on[0] = true;
+      else
+        plugin->bus_volume_is_on[0] = false;
       break;
 
     case EFFNUM_BUS2:
       store_value = get_gain_store_value(value,value_type);
-      if(plugin->bus_volume_is_on[1]==true)
-        SMOOTH_set_target_value(&plugin->bus_volume[1], store_value*plugin->volume);
+      plugin->bus_volume[1] = store_value;
       break;
     case EFFNUM_BUS2_ONOFF:
-      set_smooth_on_off(&plugin->bus_volume[1], &plugin->bus_volume_is_on[1], store_value, plugin->volume*plugin->savable_effect_values[num_effects+EFFNUM_BUS2]);
+      if (value > 0.5f)
+        plugin->bus_volume_is_on[1] = true;
+      else
+        plugin->bus_volume_is_on[1] = false;
       break;
 
     case EFFNUM_PAN:
@@ -919,24 +917,21 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 
   case EFFNUM_OUTPUT_VOLUME:
     {
-      float val = gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
-                                MIN_DB, MAX_DB);
-      printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
+      float val = gain_2_slider(plugin->output_volume, MIN_DB, MAX_DB);
+      //printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
+      return val;
     }
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->output_volume)/plugin->volume,
-                         MIN_DB, MAX_DB);
+    
   case EFFNUM_OUTPUT_VOLUME_ONOFF:
     return plugin->output_volume_is_on==true ? 1.0 : 0.0f;
 
   case EFFNUM_BUS1:
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->bus_volume[0])/plugin->volume,
-                         MIN_DB, MAX_DB);
+    return gain_2_slider(plugin->bus_volume[0], MIN_DB, MAX_DB);
   case EFFNUM_BUS1_ONOFF:
     return plugin->bus_volume_is_on[0]==true ? 1.0 : 0.0f;
 
   case EFFNUM_BUS2:
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->bus_volume[1])/plugin->volume,
-                         MIN_DB, MAX_DB);
+    return gain_2_slider(plugin->bus_volume[1], MIN_DB, MAX_DB);
   case EFFNUM_BUS2_ONOFF:
     return plugin->bus_volume_is_on[1]==true ? 1.0 : 0.0f;
 
@@ -1022,6 +1017,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 
 }
 
+
 hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
   hash_t *effects=HASH_create(type->num_effects);
@@ -1042,8 +1038,11 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   hash_t *state=HASH_create(5);
 
-  HASH_put_string(state, "type_name", plugin->type->type_name);
-  HASH_put_string(state, "name", plugin->type->name);
+  HASH_put_chars(state, "type_name", type->type_name);
+  HASH_put_chars(state, "name", type->name);
+
+  if (type->container!=NULL)
+    HASH_put_chars(state, "container_name", type->container->name);
 
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
@@ -1053,19 +1052,21 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     type->create_state(plugin, plugin_state);
   }
 
+  HASH_put_int(state, "___radium_plugin_state_v3", 1);
+      
   return state;
 }
 
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
-
+  
   int i;
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     const char *effect_name = PLUGIN_get_effect_name(plugin,i);
     if(HASH_has_key(effects, effect_name)){
       float val = HASH_get_float(effects, effect_name);
       if(i<type->num_effects){
-        PLAYER_lock();{
+        PLAYER_lock();{          
           type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
           plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
         }PLAYER_unlock();
@@ -1077,18 +1078,28 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 }
 
 SoundPlugin *PLUGIN_create_from_state(hash_t *state){
-  const char *type_name = HASH_get_string(state, "type_name");
-  const char *name = HASH_get_string(state, "name");
+  const char *container_name = HASH_has_key(state, "container_name") ? HASH_get_chars(state, "container_name") : NULL;
+  const char *type_name = HASH_get_chars(state, "type_name");
+  const char *name = HASH_get_chars(state, "name");
 
-  const SoundPluginType *type = PR_get_plugin_type_by_name(type_name,name);
+  const SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, name);
                           
   if(type==NULL){
-    RError("The \"%s\" plugin called \"%s\" was not found",type_name,name);
+    GFX_Message(NULL, "The \"%s\" plugin called \"%s\" was not found",type_name,name);
     return NULL;
   }
 
-  hash_t *plugin_state = HASH_has_key(state, "plugin_state") ? HASH_get_hash(state, "plugin_state") : NULL;
+  hash_t *plugin_state;
 
+  if (strcmp(type->type_name, type_name) || strcmp(type->name, name))
+    plugin_state=NULL; //i.e. selected a different plugin.
+  
+  else if (HASH_has_key(state, "plugin_state"))
+    plugin_state=HASH_get_hash(state, "plugin_state");
+  
+  else
+    plugin_state=NULL;
+  
   SoundPlugin *plugin = PLUGIN_create_plugin(type, plugin_state);
 
   if(plugin==NULL)
@@ -1103,13 +1114,81 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state){
   return plugin;
 }
 
+
+char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
+  return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
+}
+
+
+void PLUGIN_set_from_patch(SoundPlugin *old_plugin, struct Patch *new_patch){
+  struct Patch *old_patch = (struct Patch*)old_plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(old_patch!=NULL);
+
+  CHIP_set_pos(new_patch, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch)); // Hack. MW_move_chip_to_slot (called from Chip::Chip) sometimes kicks the chip one or to slots to the left.
+  
+  hash_t *connections_state = MW_get_connections_state();
+    
+  PATCH_replace_patch_in_song(old_patch, new_patch);
+  PATCH_delete(old_patch);
+    
+  MW_create_connections_from_state_and_replace_patch(connections_state, old_patch->id, new_patch->id);
+}
+
+SoundPlugin *PLUGIN_set_from_state(SoundPlugin *old_plugin, hash_t *state){
+
+  R_ASSERT(Undo_Is_Open());
+    
+  volatile struct Patch *patch = old_plugin->patch;
+  if (patch==NULL) {
+    RError("patch not found for old plugin");
+    return NULL;
+  }
+
+  bool can_replace_patch = true;
+  
+  if (HASH_has_key(state, "___radium_plugin_state_v3")==false)  // Before 3.0.rc15, loading/saving states in the instrument widgets only loaded/saved the effect values, not the complete plugin state.
+    can_replace_patch = false;
+  
+  else if(AUDIO_is_permanent_patch((struct Patch*)patch)) {
+    state = HASH_get_hash(state, "effects");
+    R_ASSERT(state!=NULL);
+    can_replace_patch = false;
+  }
+        
+
+  
+  if (can_replace_patch==false) { 
+    for(int i=0;i<old_plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
+    
+    PLUGIN_set_effects_from_state(old_plugin, state);
+
+    return old_plugin;
+  }
+
+  struct Patch *old_patch = (struct Patch*)old_plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE2(old_patch!=NULL, NULL);
+
+  struct Patch *new_patch = InstrumentWidget_new_from_preset(state, old_patch->name, CHIP_get_pos_x(old_patch), CHIP_get_pos_y(old_patch), false);
+
+  if (new_patch!=NULL) {
+    PLUGIN_set_from_patch(old_plugin, new_patch);        
+    return (SoundPlugin*)new_patch->patchdata;
+  } else
+    return NULL;
+}
+
+
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
   int i;
 
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  
   Undo_Open();{
     for(i=0;i<type->num_effects;i++)
-      Undo_AudioEffect_CurrPos(plugin->patch, i);
+      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
   }Undo_Close();
 
   PLAYER_lock();{
@@ -1119,8 +1198,13 @@ void PLUGIN_reset(SoundPlugin *plugin){
 }
 
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
-  Undo_AudioEffect_CurrPos(plugin->patch, effect_num);
-  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  
+  Undo_AudioEffect_CurrPos((struct Patch*)patch, effect_num);
+  PLAYER_lock();{
+    PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
 }
 
 static float get_rand(void){
@@ -1136,9 +1220,12 @@ void PLUGIN_random(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
   int i;
 
+  volatile struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
   Undo_Open();{
     for(i=0;i<type->num_effects;i++)
-      Undo_AudioEffect_CurrPos(plugin->patch, i);
+      Undo_AudioEffect_CurrPos((struct Patch*)patch, i);
   }Undo_Close();
 
   float values[type->num_effects];

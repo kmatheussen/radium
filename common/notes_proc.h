@@ -15,10 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
-
+extern LANGSPEC void SetNoteSubtrackAttributes(struct Tracks *track);
+extern LANGSPEC int GetNoteSubtrack(struct Tracks *track, struct Notes *note);
+extern LANGSPEC int GetNumSubtracks(struct Tracks *track);
+  
 struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
@@ -29,6 +29,11 @@ static inline int64_t NotenumId(float notenum){
 
 struct Notes *NewNote(void);
 
+bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
+struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
+
+extern LANGSPEC void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Notes *note);
+
 extern struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -36,12 +41,12 @@ extern struct Notes *InsertNote(
         Place *end_placement,
 	float notenum,
 	int velocity,
-	int override
+	bool polyphonic
 );
 
 int NOTE_get_velocity(struct Tracks *track);
 
-extern void InsertNoteCurrPos(struct Tracker_Windows *window,int notenum,int override);
+extern void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
 
 void LengthenNotesTo(
                      struct Blocks *block,
@@ -62,15 +67,26 @@ void RemoveNote(struct Blocks *block,
 
 extern void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
+extern struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note);
+
 extern struct Notes *FindNoteOnSubTrack(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	int subtrack,
-	int realline,
-	Place *placement
+                                        struct Tracks *track,
+                                        int subtrack,
+                                        Place *placement
 );
 
-extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
+struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
 
-#endif
+struct Notes *FindNote(
+                       struct Tracks *track,
+                       Place *placement
+                       );
+
+struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
+
+char *notetext_from_notenum(float notenumf);
+float notenum_from_notetext(char *notetext);
+
+void EditNoteCurrPos(struct Tracker_Windows *window);
+
+extern void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);

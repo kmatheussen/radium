@@ -63,6 +63,9 @@ const int effGetChunk = 23;
 const int effSetChunk = 24;
 const int effFlagsProgramChunks = 32;
 
+const int kPlugCategShell = 10;
+const int effShellGetNextPlugin = 70;
+
 const int kVstMaxParamStrLen = 8;
 
 #else //  USE_VESTIGE
@@ -90,16 +93,21 @@ const int kVstMaxParamStrLen = 8;
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/OS_string_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/playerclass.h"
+#include "../common/vector_proc.h"
 
+#include "../Qt/helpers.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
 
-#include "../audio/VST_plugins_proc.h"
+#include "Juce_plugins_proc.h"
+
+#include "VST_plugins_proc.h"
 
 
 #if defined(Q_WS_X11)
@@ -116,6 +124,13 @@ extern PlayerClass *pc;
 extern "C"{
   typedef AEffect* (*VST_GetPluginInstance) (audioMasterCallback);
 }
+
+// Not necessary to load non-shell plugins during startup. In addition, some of these are, or can be, buggy.
+static const char *known_nonshell_plugins[] = {"3BandEQ", "drumsynth", "JuceDemoPlugin", "mdaDelay", "mdaLimiter", "mdaSplitter", "nekobeevst", "TheFunction", "3BandSplitter", "eqinox", "kmeter_stereo_x64", "mdaDetune", "mdaLooplex", "mdaStereo", "NewProject", "StringVST", "ThePilgrim", "AspectVST", "eqinoxvst", "kmeter_surround_x64", "mdaDither", "mdaLoudness", "mdaSubSynth", "peggy2000vst", "TAL-Dub-3", "tonespace", "bitmanglervst", "freeverb", "mdaDubDelay", "mdaMultiBand", "mdaTalkBox", "PingPongPan", "TAL-Filter-2", "wolpertingervst", "capsaicin", "mdaDX10", "mdaOverdrive", "mdaTestTone", "radium_compressor", "TAL-Filter", "glitch2", "mdaAmbience", "mdaDynamics", "mdaPiano", "mdaThruZero", "tal-filtervst", "drowaudio-distortionshaper", "gr-eq2", "mdaBandisto", "mdaEnvelope", "mdaRePsycho!", "mdaTracker", "soundcrabvst", "TAL-NoiseMaker", "zita_vst", "drowaudio-distortion", "highlifevst_juced", "mdaBeatBox", "mdaEPiano", "mdaRezFilter", "mdaTransient", "TAL-Reverb-2", "drowaudio-flanger", "highlifevst", "mdaCombo", "mdaImage", "mdaRingMod", "mdaVocInput", "TAL-Reverb-3", "drowaudio-reverb", "HybridReverb2", "mdaDe-ess", "mdaJX10", "mdaRoundPan", "mdaVocoder", "tal-reverbvst", "drowaudio-tremolo", "jostvst", "mdaDegrade", "mdaLeslie", "mdaShepard", "midiSimpleLFO", "String_FXVST", "TAL-Vocoder-2", "wolpertingervst", "soundcrabvst", "mdaVocoder", "mdaTalkBox", "mdaRingMod", "mdaLoudness", "mdaEPiano", "mdaDetune", "mdaBandisto", "freeverb", "tonespace", "Compressor", "mdaVocInput", "mdaSubSynth", "mdaRezFilter", "mdaLooplex", "mdaEnvelope", "mdaDelay", "mdaAmbience", "eqinoxvst", "tal-reverbvst", "radium_compressor", "mdaTransient", "mdaStereo", "mdaRePsycho!", "mdaLimiter", "mdaDynamics", "mdaDegrade", "jostvst", "bitmanglervst", "tal-filtervst", "peggy2000vst", "mdaTracker", "mdaSplitter", "mdaPiano", "mdaLeslie", "mdaDX10", "mdaDe-ess", "highlifevst", "AspectVST", "StringVST", "nekobeevst", "mdaThruZero", "mdaShepard", "mdaOverdrive", "mdaJX10", "mdaDubDelay", "mdaCombo", "highlifevst_juced", "String_FXVST", "midiSimpleLFO", "mdaTestTone", "mdaRoundPan", "mdaMultiBand", "mdaImage", "mdaDither", "mdaBeatBox", "gr-eq2", "AspectVST", "kmeter_surround_x64", "kmeter_stereo_x64", "Radium Compressor Mono", "Radium Compressor Stereo", NULL};
+
+// These are not banned (could be me having too old version for instance). But they are, like all known non-shell plugins, not loaded during program startup.
+static const char *known_nonshell_notworking_plugins[] = {"analyzervst", "argotlunar", "capsaicinvst", "drumsynthvst", "vexvst", "TAL-Reverb", NULL};
+
 
 #define MAX_EVENTS 512
 
@@ -139,8 +154,7 @@ namespace{ // Use namespace since we already have a widget called EditorWidget. 
     VST_GetPluginInstance get_plugin_instance;
     TypeDataParam *params;
   };
-
-
+  
 #ifdef __linux__
 
 // The rest of the code inside this namespace is first copied from the file src/qtracktorVstPlugin.c in QTractor (http://qtractor.sourceforge.net/)
@@ -242,6 +256,8 @@ public:
 
 #if defined(FOR_MACOSX)
 
+#if 0  // This block does not compile anymore. Doesn't matter since this code is not used anylonger anyway.
+                
 		Rect contentRect = {pRect->top+100, pRect->left+100, pRect->bottom+100, pRect->right+100};
 		//SetRect(&contentRect, 200, 200, 400, 400);
 		HIWindowRef windowRef;
@@ -252,6 +268,9 @@ public:
 		_effect->dispatcher(_effect,effEditOpen, 0, 0, (void*)windowRef, 0.0f);
 		
 		ShowWindow(windowRef);
+
+#endif
+                
 #endif // defined(FOR_MACOSX)
 
 
@@ -423,6 +442,9 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
                       void* ptr,
                       float opt)
 {
+  printf("Audiomaster called. opcode: %d\n",opcode);
+  //return 0;
+  
 #if 1 // If vst_tilde audioMaster (else plugin_tilde audioMaster)
 	// Support opcodes
   switch(opcode){
@@ -433,7 +455,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     return 9;		// vst version, currently 7 (0 for older)
     
   case audioMasterCurrentId:			
-    return 0x951432;	// returns the unique id of a plug that's currently loading
+    return 0; //0x951432;	// returns the unique id of a plug that's currently loading
     
   case audioMasterIdle:
     effect->dispatcher(effect, effEditIdle, 0, 0, NULL, 0.0f);
@@ -453,7 +475,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     return 0; 	// Support of vst events to host is not available
     
   case audioMasterGetTime:
-#if 0
+#if 1
     fprintf(stderr,"VST master dispatcher: audioMasterGetTime\n");
     break;
 #else
@@ -494,8 +516,8 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     effect->dispatcher(effect, effIdle, 0, 0, NULL, 0.0f);
     return 1;
     
-  case audioMasterGetSampleRate:		
-    if(effect!=NULL){
+  case audioMasterGetSampleRate:    
+    if(false && effect!=NULL){
       SoundPlugin *plugin = (SoundPlugin*)effect->user;
       Data *data = (Data*)plugin->data;
       return data->sample_rate;	
@@ -510,7 +532,7 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
     return 5000;	// HOST version 5000
     
   case audioMasterGetProductString:	// Just fooling product string
-    strcpy((char*)ptr,"A mighty crack from the past.");
+    strcpy((char*)ptr,"ss");//A mighty crack from the past.");
     return 0;
     
   case audioMasterVendorSpecific:		
@@ -673,19 +695,19 @@ VstIntPtr VSTS_audioMaster(AEffect* effect,
 #endif
 }
 
-
-  void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
-    Data *data = (Data*)plugin->data;
-    AEffect *aeffect = data->aeffect;
-
-    //fprintf(stderr,"Setting new buffer size for vst plugin: %d\n",new_buffer_size);
-
-    aeffect->dispatcher(aeffect, effMainsChanged, 0, 0, NULL, 0.0f);
-    aeffect->dispatcher(aeffect,
-                        effSetBlockSize,
-                        0, new_buffer_size, NULL, 0);
-    aeffect->dispatcher(aeffect, effMainsChanged, 0, 1, NULL, 0.0f);
-  }
+  
+static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
+  Data *data = (Data*)plugin->data;
+  AEffect *aeffect = data->aeffect;
+  
+  //fprintf(stderr,"Setting new buffer size for vst plugin: %d\n",new_buffer_size);
+  
+  aeffect->dispatcher(aeffect, effMainsChanged, 0, 0, NULL, 0.0f);
+  aeffect->dispatcher(aeffect,
+                      effSetBlockSize,
+                      0, new_buffer_size, NULL, 0);
+  aeffect->dispatcher(aeffect, effMainsChanged, 0, 1, NULL, 0.0f);
+}
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   const SoundPluginType *type = plugin->type;
@@ -799,11 +821,11 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
 
   static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
     //printf("****************** play note at %d\n",(int)time);
-    add_midi_event(plugin,time,0x9a,note_num,volume*127);
+    add_midi_event(plugin,time,0x90,note_num,volume*127);
   }
   
   static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
-    add_midi_event(plugin,time,0xaa,note_num,volume*127);
+    add_midi_event(plugin,time,0xa0,note_num,volume*127);
   }
 
   static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
@@ -874,7 +896,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
     aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
     
     if(strlen(vendor)>0 || strlen(product)>0)
-      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).ascii());
+      plugin_type->info = strdup(QString("Vendor: "+QString(vendor)+".\nProduct: "+QString(product)).toUtf8().constData());
   }
 
   plugin_type->num_effects = aeffect->numParams;
@@ -926,14 +948,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   AEffect *aeffect = type_data->get_plugin_instance(VSTS_audioMaster);
   if (aeffect == NULL){
     GFX_Message(NULL,"Loading VST plugin %s failed",plugin_type->name);
-    fprintf(stderr,"nope2\n");
-    //abort();
     return NULL;
   }
   if (aeffect->magic != kEffectMagic){
     GFX_Message(NULL,"Loading VST plugin %s failed. It doesn't seem to be a VST plugin...",plugin_type->name);
-    fprintf(stderr,"nope3\n");
-    //abort();
     return NULL;
   }
 
@@ -988,54 +1006,229 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
 } // extern "C"
 
-void add_vst_plugin_type(QFileInfo file_info){
-  QString filename = file_info.absoluteFilePath();
 
-  //fprintf(stderr,"Trying to open \"%s\"\n",filename.ascii());
-  fprintf(stderr,"\"%s\"... ",filename.ascii());
-  fflush(stderr);
+static bool name_is_in_list(QString name, const char *names[]){
+  int i=0;
+  while(names[i]!=NULL){
+    if (name==names[i])
+      return true;
+    i++;
+  }
+  return false;
+}
+
+static bool plugin_is_known_nonshell_plugin(QString basename){
+  return name_is_in_list(basename, known_nonshell_plugins) || name_is_in_list(basename, known_nonshell_notworking_plugins);
+}
+
+namespace{
+struct MyQLibrary : public QLibrary {
   
-  QLibrary myLib(filename);
+  MyQLibrary(QString filename)
+    : QLibrary(filename)
+  {}
+      
+  ~MyQLibrary() {
+    unload();
+  }
+};
+}
 
+vector_t *VST_get_uids(const wchar_t *w_filename){
+  vector_t *uids = (vector_t*)talloc(sizeof(vector_t));
+  
+  if (false) {
+    radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+    ruid->name = NULL; //talloc_strdup(plugin_name);
+    ruid->uid = 0;
+    
+    VECTOR_push_back(uids, ruid);
+    return uids;
+  }
+  
+  bool effect_opened = false;
 
-#if 0
-  // qtractor does this. Check later what this is. And what about WIN64?
-#if defined(FOR_WINDOWS) //defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
-  qtractorPluginFile_Function pfnInit
-    = (qtractorPluginFile_Function) QLibrary::resolve("_init");
-  if (pfnInit)
-    (*pfnInit)();
-#endif
-#endif
-
-
-  //fprintf(stderr,"Trying to resolve \"%s\"\n",filename.ascii());
-
+  QString filename = STRING_get_qstring(w_filename);
+  const char *plugin_name = STRING_get_chars(w_filename);
+  
+  MyQLibrary myLib(filename);
+  
   VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
+
   if (get_plugin_instance == NULL)
     get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
+  
   if (get_plugin_instance == NULL){
-    fprintf(stderr,"(failed) ");
+    fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
     fflush(stderr);
-    return;
+    
+    if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
+      vector_t v = {0};
+      
+      VECTOR_push_back(&v,"Init VST plugins first");
+      VECTOR_push_back(&v,"Continue without loading this plugin library.");
+      int result = GFX_Message(&v,
+                               "Error: Empty thread local storage.\n"
+                               "\n"
+                               "Unable to load VST library file \"%s\".\n"
+                               "\n"
+                               "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                               "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n"
+                               "\n"
+                               "You may be able to work around this problem by initing VST plugins before LADSPA plugins.\n"
+                               "In case you want to try this, press the \"Init VST plugins first\" button below and start radium again.\n"
+                               "(Beware that this option can cause undefined behaviour at any moment if you have unstable VST plugins in your path!)\n"
+                               ,
+                               myLib.fileName().toUtf8().constData());
+      if (result==0)
+        PR_set_init_vst_first();
+
+    } else {
+      GFX_Message(NULL, myLib.errorString().toUtf8().constData());
+    }
+
+    return uids;
+  }
+  
+  AEffect *effect = get_plugin_instance(VSTS_audioMaster);
+  if (effect == NULL) {
+    GFX_Message(NULL, "Unable to load plugin instance in the file \"%s\"",plugin_name);
+    return uids;
   }
 
-  //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().ascii());
+  if (effect->magic != kEffectMagic) {
+    GFX_Message(NULL, "Wrong effect magic value in the file \"%s\"",plugin_name);
+    return uids;
+  }
+
+  effect->dispatcher(effect, effOpen, 0, 0, NULL, 0.0f);
+  effect_opened = true;
+
+  const int category = effect->dispatcher(effect, effGetPlugCategory, 0, 0, NULL, 0.0f);
+  //printf("category: %d (%s)\n",category,basename.toUtf8().constData());
+  //getchar();
+  
+  if (category == kPlugCategShell) {
+    char buf[40];
+    fprintf(stderr,"found shell vst plugin %s\n",filename.toUtf8().constData());
+
+    while(true){
+      buf[0] = (char) 0; // these lines are copied from qtractor
+      int uid = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, (void *) buf, 0.0f);
+
+      printf("UID: %d\n",uid);
+      
+      if (uid == 0 || buf[0]==0)
+        break;
+
+      radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+      ruid->name = talloc_strdup(buf);
+      ruid->uid = uid;
+
+      VECTOR_push_back(uids, ruid);
+    }
+
+    if (uids->num_elements==0) {
+      GFX_Message(NULL, "Shell plugin %s does not seem to contain any plugins\n", plugin_name);
+      goto exit;
+    }
+
+  } else {
+
+    radium_vst_uids_t *ruid = (radium_vst_uids_t *)talloc(sizeof(radium_vst_uids_t));
+    ruid->name = NULL; //talloc_strdup(plugin_name);
+    ruid->uid = 0;
+    
+    VECTOR_push_back(uids, ruid);
+
+  }
+
+ exit:
+
+  if (effect_opened)
+    effect->dispatcher(effect, effClose, 0, 0, NULL, 0.0f);
+
+  return uids;
+}
+
+
+bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin){
+  QString filename = file_info.absoluteFilePath();
+
+  //fprintf(stderr,"Trying to open \"%s\"\n",filename.toUtf8().constData());
+  fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
+  fflush(stderr);
+
+  
+  bool do_resolve_it = PR_is_initing_vst_first(); // needs to resolve now if we want to init the libraries before the ladspa libraries.
+
+
+  if (do_resolve_it) {
+
+    MyQLibrary myLib(filename);
+
+#if 0
+    // qtractor does this. Check later what this is. And what about WIN64?
+#if defined(FOR_WINDOWS) //defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
+    qtractorPluginFile_Function pfnInit
+      = (qtractorPluginFile_Function) QLibrary::resolve("_init");
+    if (pfnInit)
+      (*pfnInit)();
+#endif
+#endif
+
+    
+    fprintf(stderr,"Trying to resolve \"%s\"\n",myLib.fileName().toUtf8().constData());
+    
+    VST_GetPluginInstance get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("VSTPluginMain");
+    if (get_plugin_instance == NULL)
+      get_plugin_instance = (VST_GetPluginInstance) myLib.resolve("main");
+    
+    if (get_plugin_instance == NULL){
+      fprintf(stderr,"(failed) %s", myLib.errorString().toUtf8().constData());
+      fflush(stderr);
+      if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
+        GFX_Message(NULL,
+                    "Error: Empty thread local storage.\n"
+                    "\n"
+                    "Unable to load \"%s\" VST library file.\n",
+                    filename.toUtf8().constData()
+                    );
+      }
+      return false;
+    }
+  }
+  //printf("okah\n");
+  //getchar();
+  
+  QString basename = file_info.fileName();
+
+#if defined(FOR_MACOSX)
+  const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
+#else
+  basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
+  const char *plugin_name = talloc_strdup(basename.toUtf8().constData());
+#endif
+
+  if (is_juce_plugin) {
+    add_juce_plugin_type(plugin_name, STRING_create(file_or_identifier), STRING_create(filename));
+    return true;  
+  }
+
+  R_ASSERT(false);
+
+  //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
   {
     SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
     TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
     plugin_type->data = type_data;
-    type_data->get_plugin_instance = get_plugin_instance;
-
-    QString basename = file_info.fileName();
-#if !defined(FOR_MACOSX)
-    basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
-#endif
-
+    //#if DO_RESOLVE_IT
+    //    type_data->get_plugin_instance = get_plugin_instance;
+    //#endif
     plugin_type->type_name = "VST";
-    plugin_type->name      = strdup(basename.ascii());
+    plugin_type->name      = strdup(basename.toUtf8().constData());
 
     plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
 
@@ -1061,9 +1254,12 @@ void add_vst_plugin_type(QFileInfo file_info){
 
     PR_add_plugin_type(plugin_type);
   }
+
+  return true;
 }
 
-static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
+#if !defined(FOR_MACOSX)
+static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, bool is_juce_plugin)
 {
   QDir dir(sDir);
   dir.setSorting(QDir::Name);
@@ -1074,14 +1270,14 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     QFileInfo file_info = list[i];
     
     QString file_path = file_info.filePath();
-    //printf("hepp: %s. Suffix: %s\n",file_path.ascii(),file_info.suffix().ascii());
+    //printf("hepp: %s. Suffix: %s\n",file_path.toUtf8().constData(),file_info.suffix().toUtf8().constData());
 
     if (time->elapsed() > 1000*30) {
       QMessageBox msgBox;
-      msgBox.setText("Have used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
+      msgBox.setText("We have currently used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
       msgBox.addButton(QMessageBox::Yes);
       msgBox.addButton(QMessageBox::No);
-      int ret = msgBox.exec();
+      int ret = safeExec(msgBox);
       if(ret==QMessageBox::Yes){
         time->restart();
       } else
@@ -1089,18 +1285,24 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time)
     }
 
     if (file_info.isDir()) {
-      if (create_vst_plugins_recursively(file_path, time)==false)
+      PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
+      bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin);
+      PR_add_menu_entry(PluginMenuEntry::level_down());
+
+      if (!continuing)
         return false;
+        
     }else if(file_info.suffix()==VST_SUFFIX){
-      add_vst_plugin_type(file_info);
+      add_vst_plugin_type(file_info, file_path, is_juce_plugin);
     }
   }
 
   return true;
 }
+#endif
 
 
-void create_vst_plugins(void){
+void create_vst_plugins(bool is_juce_plugin){
 
 #if defined(FOR_MACOSX)
   QDir dir("/Library/Audio/Plug-Ins/VST/");
@@ -1112,14 +1314,17 @@ void create_vst_plugins(void){
   QFileInfoList list = dir.entryInfoList();
   for (int i = 0; i < list.size(); ++i) {
     QFileInfo fileInfo = list.at(i);
+    QString file_or_identifier = fileInfo.absoluteFilePath();
+    
     QDir dir(fileInfo.absoluteFilePath() + "/Contents/MacOS/");
     dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     dir.setSorting(QDir::Name);
-    
+        
     QFileInfoList list = dir.entryInfoList();
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
-      add_vst_plugin_type(fileInfo);
+      if (add_vst_plugin_type(fileInfo, file_or_identifier, is_juce_plugin)==true)
+        break; // i.e. there was a file in that directory that probably was a vst library file we could run.
     }
   }
 
@@ -1130,11 +1335,11 @@ void create_vst_plugins(void){
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
-    const char *vst_path = SETTINGS_read_string(QString("vst_path")+QString::number(i), NULL);
-    if(vst_path==NULL)
+    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), "");
+    if(vst_path=="")
       continue;
-    printf("vst_path: %s\n",vst_path);
-    create_vst_plugins_recursively(vst_path, &time);
+    printf("vst_path: %s\n",vst_path.toUtf8().constData());
+    create_vst_plugins_recursively(vst_path, &time, is_juce_plugin);
     PR_add_menu_entry(PluginMenuEntry::separator());
   }    
 
@@ -1148,16 +1353,9 @@ std::vector<QString> VST_get_vst_paths(void){
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
-    const char *vst_path = SETTINGS_read_string(QString("vst_path")+QString::number(i), NULL);
-    if(vst_path==NULL)
-      continue;
-
-    QString s(vst_path);
-    s = s.trimmed();
-    if(s.length()==0)
-      continue;
-
-    paths.push_back(s);
+    QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), "");
+    if(vst_path!="")
+      paths.push_back(vst_path);
   }
 
   return paths;
@@ -1168,7 +1366,7 @@ void VST_write_vst_paths(const std::vector<QString> &paths){
   for(unsigned int i=0;i<paths.size();i++){
     QString key_name = "vst_path" + QString::number(i);
     QString value_name = paths.at(i);
-    SETTINGS_write_string(key_name.ascii(), value_name.ascii());
+    SETTINGS_write_string(key_name.toUtf8().constData(), value_name);
   }
 }
 

@@ -19,8 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "notes_proc.h"
 #include "list_proc.h"
-#include "trackreallines_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "placement_proc.h"
 #include "undo_notes_proc.h"
 #include "undo_blocks_proc.h"
@@ -28,12 +26,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "range_proc.h"
 #include "windows_proc.h"
+#include "OS_Player_proc.h"
 
 #include "velocities_proc.h"
 
 
 extern struct Root *root;
 
+
+#if 0
 
 struct FindNum_Velstruct{
 	struct ListHeader3 l;
@@ -97,6 +98,7 @@ void SetNum_Vel(
 
 	SetNum_Vel_rec(wtrack,&velroot,wtrack->track->notes);
 }
+#endif
 
 
 int AddVelocity(
@@ -112,7 +114,13 @@ int AddVelocity(
   
   /* ListAddElement3_ns returns -1 (and doesnt do anything else)
      if there allready is an element with the same placement. */
-  return ListAddElement3_ns(&note->velocities,&velocity->l);
+  int ret;
+
+  PLAYER_lock();{
+    ret = ListAddElement3_ns(&note->velocities,&velocity->l);
+  }PLAYER_unlock();
+  
+  return ret;
 }
 
 void AddVelocityCurrPos(struct Tracker_Windows *window){
@@ -128,11 +136,8 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 	Undo_Notes_CurrPos(window);
 
         struct Notes *note = FindNoteOnSubTrack(
-                                                window,
-                                                wblock,
-                                                wblock->wtrack,
+                                                wblock->wtrack->track,
                                                 subtrack,
-                                                wblock->curr_realline,
                                                 &realline->l.p
                                                 );
 
@@ -145,8 +150,6 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
                     note
                     );
 
-	UpdateTrackReallines(window,wblock,wblock->wtrack);
-
 #if !USE_OPENGL
 	ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
@@ -156,32 +159,16 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 }
 
 
-#if 0
-static struct Notes *get_note_at_realline(struct Tracker_Windows *window,struct WBlocks *wblock, struct WTracks *wtrack, int realline){
-  struct TrackRealline *trackrealline= &wtrack->trackreallines[realline];
-
-  
-}
-#endif
-
 
 void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
-	struct TrackRealline *trackrealline;
-	struct TrackReallineElements *element;
-	struct Notes *note;
-	int maxvelocity;
 
         inc = inc * MAX_VELOCITY / 100;
 
-
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-	trackrealline= &wtrack->trackreallines[wblock->curr_realline];
-	maxvelocity=MAX_VELOCITY;
+	struct WBlocks *wblock=window->wblock;
+	struct WTracks *wtrack=wblock->wtrack;
+	int maxvelocity=MAX_VELOCITY;
         
-        if(is_track_ranged(wblock,wblock->wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
+        if(is_track_ranged(wblock,wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
 
           vector_t *notes = get_all_ranged_notes(wblock);
           //printf("num_elements: %d\n",notes->num_elements);
@@ -199,38 +186,21 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
               note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
           }END_VECTOR_FOR_EACH;
 
-          UpdateAllTrackReallines(window,wblock);
           window->must_redraw = true;
 
         } else {
-
-          element=trackrealline->trackreallineelements;
-
-          if(element==NULL)
-            return;
 
           PC_Pause();
 
           Undo_Notes_CurrPos(window);
 
-          if(trackrealline->note<=0 || trackrealline->note>=NOTE_MUL){
-            element=trackrealline->trackreallineelements;
-            note=(struct Notes *)element->pointer;
-          }else{
-          
-            while(element->type!=TRE_THISNOTELINES) element=element->next;
-            note=(struct Notes *)element->pointer;
+          struct Notes *note = FindNoteCurrPos(window);
+
+          if (note != NULL) {
+            note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
+            if(note->velocities==NULL)
+              note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
           }
-
-          note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
-          if(note->velocities==NULL)
-            note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
-
-          UpdateTrackReallines(window,wblock,wtrack);
-#if !USE_OPENGL
-          ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-          UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
         }
 
 	PC_StopPause();

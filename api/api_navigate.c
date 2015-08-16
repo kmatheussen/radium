@@ -22,13 +22,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/cursor_proc.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/wblocks_proc.h"
-
+#include "../common/OS_visual_input.h"
+#include "../common/realline_calc_proc.h"
+#include "../Qt/Rational.h"
 
 #include "api_common_proc.h"
 
 
 extern struct Root *root;
-
 
 
 /*******************************************
@@ -39,19 +40,25 @@ void cursorDown(int numlines,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	ScrollEditorDown(window,numlines);
+        window->must_redraw = false;
+
+	ScrollEditorDown(window,numlines * getScrollMultiplication());
 }
 
 void cursorUp(int numlines,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	ScrollEditorUp(window,numlines);
+        window->must_redraw = false;
+
+	ScrollEditorUp(window,numlines * getScrollMultiplication());
 }
 
 void cursorNextNote(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
+
+        window->must_redraw = false;
 
 	ScrollEditorNextNote(window);
 }
@@ -59,6 +66,8 @@ void cursorNextNote(int windownum){
 void cursorPrevNote(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
+
+        window->must_redraw = false;
 
 	ScrollEditorPrevNote(window);
 }
@@ -69,7 +78,62 @@ void cursorPercentLine(int percent,int windownum){
 
 	if(percent<0 || percent>99) return;
 
+        window->must_redraw = false;
+
 	ScrollEditorToPercentLine_CurrPos(window,percent);
+}
+
+static int get_realline_from_line(struct WBlocks *wblock, int line){
+  int realline=0;
+  while(wblock->reallines[realline]->Tline!=line)
+    realline++;
+  return realline;
+}
+
+void cursorUserInputLine(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  struct WBlocks *wblock = window->wblock;
+  struct Blocks *block = wblock->block;
+  
+  int line = GFX_GetInteger(window,NULL,"Jump to line: >",0,block->num_lines-1);
+  if (line==-1)
+    return;
+
+  ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, line));
+}
+
+static int get_realline_from_beat(struct WBlocks *wblock, int barnum, int beatnum){
+  struct Beats *beat = wblock->block->beats;
+
+  while (beat != NULL) {
+    if (beat->bar_num == barnum && beat->beat_num==beatnum)
+      break;
+    beat = NextBeat(beat);
+  }
+
+  if (beat == NULL)
+    return -1;
+
+  return FindRealLineFor(wblock, 0, &beat->l.p);
+}
+
+void cursorUserInputBeat(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  struct WBlocks *wblock = window->wblock;
+  
+  char *line = GFX_GetString(window,NULL,"Jump to Bar/Beat (e.g. \"2/1\" or just \"2\"): >");
+  if (line==NULL)
+    return;
+
+  Place p = get_rational_from_string(line);
+  if (p.dividor==0)
+    return;
+
+  int realline = get_realline_from_beat(wblock, p.counter, p.dividor);
+  if (realline==-1)
+    return;
+
+  ScrollEditorToRealLine(window, wblock, realline);
 }
 
 void selectNextBlock(int windownum){

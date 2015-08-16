@@ -1,4 +1,4 @@
-#N canvas 861 263 863 779 8;
+#N canvas 125 172 863 779 8;
 #N canvas 703 407 957 374 send_receive_note_on 0;
 #X floatatom 280 149 10 0 0 0 - - -;
 #X floatatom 280 170 5 0 0 0 - - -;
@@ -213,9 +213,9 @@ of seconds to add to current time. May be useful for large time values.
 #X obj -2264 214 r_time;
 #X text -2215 215 <- Get time from radium;
 #X obj -2264 192 r_line;
-#X obj -2266 170 r_subline;
-#X text -2198 170 <- Get subline from radium;
 #X text -2211 192 <- Get line from radium;
+#X obj -2266 170 r_visibleline;
+#X text -2182 170 <- Get visible line from radium;
 #X connect 7 0 6 0;
 #X connect 7 0 0 0;
 #X connect 8 0 5 0;

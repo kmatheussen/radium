@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   multi-threading, so this is somewhat necesarry for the amiga-port.)
 *********************************************************************/
 
-
-
 #include "nsmtracker.h"
+#include "visual_proc.h"
+
 #include "playerclass.h"
 
 #include "t_gc_proc.h"
@@ -46,8 +46,8 @@ bool InitPEQmempool(int num_elements){
 	for(lokke=0;lokke<num_elements;lokke++){
 		temp=malloc(sizeof(struct PEventQueue));		// Its not supposed to ever be freed, and its not supposed to hold pointers to be scanned. Therefore 'malloc'. GC provide a special function for this: 'GC_malloc_atomic_uncollectable', but it "roughly" (word used in documetation of GC) does the same as malloc anyway.
 		if(temp==NULL){
-			RError("Out of memory\n");
-			return false;
+                  GFX_Message(NULL, "Out of memory\n");
+                  return false;
 		}
 		temp->l.next= &peqroot->l;
 
@@ -60,16 +60,17 @@ bool InitPEQmempool(int num_elements){
 
 struct PEventQueue *GetPEQelement(void){
 	struct PEventQueue *temp=peqroot;
-	peqroot=NextPEventQueue(temp);
 
 	if(temp==NULL){
-		RError("Warning. Peqmempool empty. (Set it higher, it must be very low now!)\n");
-		pc->isplaying=false;
+          //RError("Warning. Peqmempool empty. (probably playing extremely fast)\n");
+		//pc->isplaying=false;
 		temp=calloc(1,sizeof(struct PEventQueue));
 		if(temp==NULL){
-			RError("Error. Out of memory on a very bad place. Now probably crashing.\n");
+                  GFX_Message(NULL, "Error. Out of memory on a very bad place. Now probably crashing.\n");
 		}
 	}
+
+        peqroot=NextPEventQueue(temp);
 
 	return temp;
 
@@ -79,6 +80,3 @@ void ReturnPEQelement(struct PEventQueue *element){
 	element->l.next= &peqroot->l;
 	peqroot=element;
 }
-
-
-

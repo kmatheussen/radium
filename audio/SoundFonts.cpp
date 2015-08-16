@@ -16,8 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include <glib.h>
-
 #include <iostream>
 #include <cstdlib>
 #include <string>
@@ -201,11 +199,11 @@ static hash_t *get_region_info(sf2::Region *reg){
   }
 
   if (reg->pInstrument != NULL)
-    HASH_put_string(info, "instrument", reg->pInstrument->Name.c_str());
+    HASH_put_chars(info, "instrument", reg->pInstrument->Name.c_str());
 
   sf2::Sample* s = reg->GetSample();
   if(s!=NULL){
-    HASH_put_string(info, "sample_name", s->Name.c_str());
+    HASH_put_chars(info, "sample_name", s->Name.c_str());
     HASH_put_int(info, "fine tune", reg->fineTune);
     HASH_put_int(info, "coarse tune", reg->coarseTune);
     HASH_put_int(info, "root key", reg->GetUnityNote()); // TODO: 60 might be wrong. Maybe it's 48? (it's 48)
@@ -214,7 +212,7 @@ static hash_t *get_region_info(sf2::Region *reg){
       HASH_put_int(info, "loop end", reg->LoopEnd);
     }
   }else{
-    HASH_put_string(info, "sample_name", "<no sample!>");
+    HASH_put_chars(info, "sample_name", "<no sample!>");
   }
 
   HASH_put_float(info, "attack", reg->GetEG1Attack());
@@ -228,7 +226,7 @@ static hash_t *get_region_info(sf2::Region *reg){
 
 static hash_t *get_instrument_info(sf2::Instrument *instr){
   hash_t *info = HASH_create(5);
-  HASH_put_string(info, "name", instr->Name.c_str());
+  HASH_put_chars(info, "name", instr->Name.c_str());
   HASH_put_int(info, "bag", instr->InstBagNdx);
 
   hash_t *regions = HASH_create(instr->GetRegionCount());
@@ -252,7 +250,7 @@ static hash_t *get_instruments_info(sf2::File *file){
 
 static hash_t *get_preset_info(sf2::Preset *preset){
   hash_t *info = HASH_create(5);
-  HASH_put_string(info,"name",preset->Name.c_str());
+  HASH_put_chars(info,"name",preset->Name.c_str());
   HASH_put_int(info,"bank",preset->Bank);
   HASH_put_int(info,"num",preset->PresetNum);
   HASH_put_int(info,"bag",preset->PresetBagNdx); // what is this?
@@ -293,7 +291,7 @@ static hash_t *get_sample_info(sf2::Sample *sample, int i){
   HASH_put_int(info,"loop end",sample->EndLoop - sample->Start);
   HASH_put_int(info,"pitch",sample->OriginalPitch);
   HASH_put_int(info,"pitch correction",sample->PitchCorrection);
-  HASH_put_string(info,"type",GetSampleType(sample->SampleType).c_str());
+  HASH_put_chars(info,"type",GetSampleType(sample->SampleType).c_str());
   HASH_put_int(info,"sibling",sample->SampleLink);
   return info;
 }
@@ -316,7 +314,7 @@ static hash_t *get_menu(hash_t *info){
     hash_t     *preset         = (hash_t*)presets->elements[i];
     int         preset_num     = HASH_get_int(preset,"num");
     int         bank_num       = HASH_get_int(preset,"bank");
-    const char *preset_name    = HASH_get_string(preset,"name");
+    const char *preset_name    = HASH_get_chars(preset,"name");
 
     char bank_display[512];
     {
@@ -347,9 +345,9 @@ static hash_t *get_menu(hash_t *info){
 //
 // regions are stored within both instruments and presets. They are stored as an array within each of those.
 //
-hash_t *SF2_get_info(const char *filename){
+hash_t *SF2_get_info(const wchar_t *filename){
   try {
-    RIFF::File riff(filename);
+    RIFF::File riff(STRING_get_chars(filename));
     sf2::File file(&riff);
 
     hash_t *hash = HASH_create(5);
@@ -360,10 +358,10 @@ hash_t *SF2_get_info(const char *filename){
     return hash;
 
   }catch (RIFF::Exception e) {
-    GFX_Message(NULL,"Unable to parse soundfont file %s: %s",filename,e.Message.c_str());
+    GFX_Message(NULL,"Unable to parse soundfont file %s: %s", STRING_get_chars(filename), e.Message.c_str());
     e.PrintMessage();
   }catch (...) {
-    GFX_Message(NULL,"Unknown exception while trying to parse file: %s",filename);
+    GFX_Message(NULL,"Unknown exception while trying to parse file: %s", STRING_get_chars(filename));
   }
 
   return NULL;
@@ -380,8 +378,8 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
     hash_t *preset = HASH_get_hash_at(presets,"",i);
     char display[512];
     //sprintf(filename,"%s.%0*d.wav",base_filename,leading_zeros+1,0);
-    sprintf(display,"%03d. %s",(int)HASH_get_int(preset,"num"),HASH_get_string(preset,"name"));
-    HASH_put_string_at(displayable_names,"",i,display);
+    sprintf(display,"%03d. %s",(int)HASH_get_int(preset,"num"),HASH_get_chars(preset,"name"));
+    HASH_put_chars_at(displayable_names,"",i,display);
   }
 
   return displayable_names;
@@ -389,8 +387,8 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 #endif
 
 
-float *SF2_load_sample(const char *filename, int sample_num){
-  RIFF::File riff(filename);
+float *SF2_load_sample(const wchar_t *filename, int sample_num){
+  RIFF::File riff(STRING_get_chars(filename));
   sf2::File file(&riff);
   
   sf2::Sample *sample = file.GetSample(sample_num);
@@ -402,7 +400,7 @@ float *SF2_load_sample(const char *filename, int sample_num){
 
   float *ret=(float*)calloc(sizeof(float),num_frames);
   if(ret==NULL){
-    RError("Out of memory? Failed to allocate %d bytes\n",num_frames*4);
+    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*4);
     return NULL;
   }
 

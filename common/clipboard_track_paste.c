@@ -27,17 +27,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include "placement_proc.h"
 #include "fxlines_proc.h"
-#include "trackreallines_proc.h"
 #include "windows_proc.h"
 #include "clipboard_tempos_copy_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
+#include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "tempos_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "undo_tracks_proc.h"
+#include "undo_signatures_proc.h"
 #include "undo_lpbs_proc.h"
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
@@ -45,12 +46,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_legalize_proc.h"
 #include "notes_legalize_proc.h"
 #include "../midi/midi_fx_proc.h"
+#include "notes_proc.h"
+#include "windows_proc.h"
+#include "wblocks_proc.h"
+#include "Beats_proc.h"
 
 #include "clipboard_track_paste_proc.h"
 
 
 extern struct WTracks *cb_wtrack;
 
+extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
@@ -66,20 +72,16 @@ bool CB_PasteTrackFX(
 	struct Tracks *track;
 	Place *p1,p2;
 
-	if(towtrack==NULL){
-		RError("Error in function CB_PasteTrack in file clipboard_track_paste.c; towtrack=NULL\n");
-		return false;
-	}
+        R_ASSERT_RETURN_IF_FALSE2(towtrack!=NULL, false);
 
 	totrack=towtrack->track;
 	track=wtrack->track;
 
-	if(totrack->patch==NULL){
-		totrack->patch=track->patch;
-	}
-
-	totrack->patch=track->patch;
-
+        if (track->patch != NULL && track->patch->is_usable)
+          totrack->patch = track->patch;
+        else
+          totrack->patch = NULL;
+        
 	if(track->midi_instrumentdata!=NULL){
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -117,7 +119,11 @@ bool CB_PasteTrack(
 	towtrack->notelength=wtrack->notelength;
 	towtrack->fxwidth=wtrack->fxwidth;
 
-	totrack->patch=track->patch;
+        if (track->patch != NULL && track->patch->is_usable)
+          totrack->patch = track->patch;
+        else
+          totrack->patch = NULL;
+
 	totrack->onoff=track->onoff;
 	totrack->pan=track->pan;
 	totrack->volume=track->volume;
@@ -158,13 +164,24 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	PlaceSetLastPos(wblock->block,&lastplace);
 
 	switch(window->curr_track){
+		case SIGNATURETRACK:
+			if(cb_signature==NULL) return;
+			Undo_Signatures_CurrPos(window);
+			block->signatures=CB_CopySignatures(cb_signature);
+			CutListAt_a(&block->signatures,&lastplace);
+                        UpdateWBlockWidths(window, wblock);
+                        UpdateBeats(block);
+			//UpdateSTimes(block);
+			//UpdateWLPBs(window,wblock);
+			break;
 		case LPBTRACK:
 			if(cb_lpb==NULL) return;
 			Undo_LPBs_CurrPos(window);
 			block->lpbs=CB_CopyLPBs(cb_lpb);
 			CutListAt_a(&block->lpbs,&lastplace);
 			UpdateSTimes(block);
-			UpdateWLPBs(window,wblock);
+			//UpdateWLPBs(window,wblock);
+                        UpdateBeats(block);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
 #endif
@@ -174,7 +191,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			Undo_Tempos_CurrPos(window);
 			block->tempos=CB_CopyTempos(cb_tempo);
 			CutListAt_a(&block->tempos,&lastplace);
-			UpdateWTempos(window,wblock);
+			//UpdateWTempos(window,wblock);
 #if !USE_OPENGL
 			DrawUpTempos(window,wblock);
 #endif
@@ -186,8 +203,8 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			block->temponodes=CB_CopyTempoNodes(cb_temponode);
 			CutListAt_a(&block->temponodes,&lastplace);
 			LegalizeTempoNodes(block);
-			UpdateWTempoNodes(window,wblock);
 #if !USE_OPENGL
+			///UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
 #endif
 			UpdateSTimes(block);
@@ -197,8 +214,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			Undo_Track_CurrPos(window);
 			if(window->curr_track_sub==-1){
 				if(CB_PasteTrack(wblock,cb_wtrack,wtrack)){
+#if !USE_OPENGL
 					UpdateFXNodeLines(window,wblock,wtrack);
-					UpdateTrackReallines(window,wblock,wtrack);
+#endif
 					window->must_redraw = true;
 				}else{
 #if !USE_OPENGL
@@ -212,8 +230,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 				}
 			}else{
 				if(CB_PasteTrackFX(wblock,cb_wtrack,wtrack)){
-					UpdateFXNodeLines(window,wblock,wtrack);
-					UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
+                                  UpdateFXNodeLines(window,wblock,wtrack);
+#endif
 					window->must_redraw = true;
 				}else{
 #if !USE_OPENGL
@@ -228,6 +247,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 			}
 			break;
 	}
+
+        SetNoteSubtrackAttributes(wtrack->track);
+        ValidateCursorPos(window);
 }
 
 

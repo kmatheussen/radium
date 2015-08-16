@@ -27,12 +27,22 @@ extern LANGSPEC STime Place2STime(
                                   const Place *p
                                   );
 
+extern LANGSPEC double STime2Place_f(
+                                    const struct Blocks *block,
+                                    double time
+                                    );
+
+extern LANGSPEC Place STime2Place(
+                                  const struct Blocks *block,
+                                  STime time
+                                  );
+
 extern LANGSPEC bool isSTimeInBlock(const struct Blocks *block,STime time);
 extern LANGSPEC STime getBlockSTimeLength(const struct Blocks *block);
 
-extern void UpdateSTimes(struct Blocks *block);
+extern LANGSPEC void UpdateSTimes(struct Blocks *block);
 
-extern void UpdateAllSTimes(void);
+extern LANGSPEC void UpdateAllSTimes(void);
 
 #endif
 

@@ -3,7 +3,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <jack/jack.h>
+
+// NOTE! The weakjack C file is included here.
+//////////////////////////////////////////////
+#include "../weakjack/weak_libjack.c"
+//////////////////////////////////////////////
+
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"
@@ -168,7 +173,7 @@ void PLAYER_mute(void){
 
 void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
   if(!strcmp(plugin_type->name,"System Out")) {
-    GFX_OS_set_system_volume_peak_pointers(&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
+    GFX_OS_set_system_volume_peak_pointers((float*)&plugin->system_volume_peak_values[0], plugin_type->num_inputs);
     system_out = plugin;
   }
 
@@ -176,9 +181,9 @@ void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin 
   const char *output_portnames[plugin_type->num_inputs];
   int i;
   for(i=0;i<plugin_type->num_outputs;i++)
-    input_portnames[i] = state==NULL ? NULL : HASH_get_string_at(state, "input_portname",i);
+    input_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "input_portname",i);
   for(i=0;i<plugin_type->num_inputs;i++)
-    output_portnames[i] = state==NULL ? NULL : HASH_get_string_at(state, "output_portname",i);
+    output_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "output_portname",i);
 
   return create_data(plugin_type,
                      (jack_client_t*)plugin_type->data,
@@ -214,11 +219,11 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   if(plugin->type->num_outputs>0) {
-    HASH_put_string_at(state, "input_portname", 0, JACK_get_name(plugin,0));
-    HASH_put_string_at(state, "input_portname", 1, JACK_get_name(plugin,1));
+    HASH_put_chars_at(state, "input_portname", 0, JACK_get_name(plugin,0));
+    HASH_put_chars_at(state, "input_portname", 1, JACK_get_name(plugin,1));
   } else {
-    HASH_put_string_at(state, "output_portname", 0, JACK_get_name(plugin,0));
-    HASH_put_string_at(state, "output_portname", 1, JACK_get_name(plugin,1));
+    HASH_put_chars_at(state, "output_portname", 0, JACK_get_name(plugin,0));
+    HASH_put_chars_at(state, "output_portname", 1, JACK_get_name(plugin,1));
   }
 }
 

@@ -19,10 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-extern void UpdateWTempos(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-);
+extern LANGSPEC struct WBPMs *WBPMs_get(
+                                        const struct Tracker_Windows *window,
+                                        const struct WBlocks *wblock
+                                        );
 
 extern struct Tempos *SetTempo(
 	struct Blocks *block,

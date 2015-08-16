@@ -25,14 +25,16 @@ typedef struct _RSemaphore RSemaphore;
 extern LANGSPEC RSemaphore *RSEMAPHORE_create(int num_signallers);
 extern LANGSPEC void RSEMAPHORE_delete(RSemaphore *semaphore);
 
-extern LANGSPEC void RSEMAPHORE_reset(RSemaphore *semaphore);
+extern LANGSPEC void RSEMAPHORE_reset(RSemaphore *semaphore); // Must not be called if someone is waiting.
 
 extern LANGSPEC void RSEMAPHORE_set_num_waiters(RSemaphore *semaphore, int num_waiters);
-extern LANGSPEC void RSEMAPHORE_get_num_waiters(RSemaphore *semaphore);
+extern LANGSPEC int RSEMAPHORE_get_num_waiters(RSemaphore *semaphore);
 
 extern LANGSPEC void RSEMAPHORE_set_num_signallers(RSemaphore *semaphore, int num_signallers);
-extern LANGSPEC void RSEMAPHORE_get_num_signallers(RSemaphore *semaphore);
+extern LANGSPEC int RSEMAPHORE_get_num_signallers(RSemaphore *semaphore);
 
 extern LANGSPEC void RSEMAPHORE_wait(RSemaphore *semaphore, int num_waiters);
-extern LANGSPEC void RSEMAPHORE_signal(RSemaphore *semaphore, int num_signallers);
+extern LANGSPEC bool RSEMAPHORE_trywait(RSemaphore *semaphore, int num_waiters);
+extern LANGSPEC bool RSEMAPHORE_trywait_timeout(RSemaphore *semaphore, int num_waiters, int msecs);
 
+extern LANGSPEC void RSEMAPHORE_signal(RSemaphore *semaphore, int num_signallers);

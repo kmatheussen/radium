@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "visual_proc.h"
 #include "sliders_proc.h"
-#include "trackreallines_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "pixmap_proc.h"
 #include "blts_proc.h"
 #include "gfx_op_queue_proc.h"
@@ -33,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_proc.h"
 #include "gfx_subtrack_proc.h"
 #include "gfx_point_proc.h"
-#include "gfx_tempocolor_proc.h"
 
 #include "windows_proc.h"
 
@@ -71,7 +68,7 @@ void CloseAllTrackerWindows(void){
     Call after window has been made, or fontsize is changed.
 *********************************************************************/
 void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
-  window->bottomslider.x2=window->width-1;
+  window->bottomslider.x2 = window->width-1;
 }
 
 
@@ -204,6 +201,7 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
 }
 #endif
 
+#define UPDATECOORDINATES_WHEN_DRAWING 1
 
 /**************************************************************************
   FUNCTION
@@ -215,8 +213,10 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
   if(window->must_redraw==true)
     return;
 
+#if UPDATECOORDINATES_WHEN_DRAWING
   struct WBlocks *wblock = window->wblock;
-
+#endif
+  
 #if 0
         while(GetXSubTrack_B2(wblock,window->curr_track,window->curr_track_sub) >= wblock->a.x2){
 
@@ -235,8 +235,10 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 #endif
 
 	UpdateTrackerWindowCoordinates(window);
+#if UPDATECOORDINATES_WHEN_DRAWING
 	UpdateWBlockCoordinates(window,wblock);
-
+#endif
+        
 #if !USE_OPENGL
 	PixMap_reset(window);
 #endif
@@ -258,9 +260,9 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 
 	window->wblock->isgfxdatahere=true;
 
+#if !USE_OPENGL
         ClearUnusedWindowsAreas(window);
 
-#if !USE_OPENGL
         Blt_unMarkVisible(window); // Need a better name for this function.
 #endif
 }
@@ -298,6 +300,10 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	twindow->curr_track_sub= -1;
 
+        twindow->show_lpb_track=true;
+        twindow->show_bpm_track=true;
+        twindow->show_reltempo_track=true;
+        
 	//twindow->minnodesize=SETTINGS_read_int("minimum_node_size",20);
 
 	UpdateWBlocks(twindow);
@@ -366,5 +372,11 @@ void checkIfWBlocksAreDirty(void) {
   }
 }
 
-
+void ValidateCursorPos(struct Tracker_Windows *window){
+  struct WBlocks *wblock = window->wblock;
+  struct WTracks *wtrack = wblock->wtrack;
+  struct Tracks *track = wtrack->track;
+  if (window->curr_track_sub >= track->num_subtracks)
+    window->curr_track_sub = track->num_subtracks - 1;
+}
 

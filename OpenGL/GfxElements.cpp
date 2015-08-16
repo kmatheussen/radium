@@ -1,4 +1,4 @@
-
+#include <assert.h>
 #include <stdint.h>
 
 #include <map>
@@ -11,10 +11,16 @@
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
 #include <vlVG/SceneManagerVectorGraphics.hpp>
+#include <vlGraphics/Effect.hpp>
+#include <vlGraphics/GLSL.hpp>
+
+#define USE_FREETYPE 0
+#define RADIUM_DRAW_FONTS_DIRECTLY 0
 
 #include "TextBitmaps.hpp"
 
 #include "../common/nsmtracker.h"
+#include "../common/OS_settings_proc.h"
 
 #include "../Qt/Qt_colors_proc.h"
 
@@ -53,6 +59,239 @@ GE_Rgb GE_get_rgb(int colornum){
 }
 
 
+static vl::vec4 get_vec4(GE_Rgb rgb){
+  return vl::vec4(rgb.r/255.0f, rgb.g/255.0f, rgb.b/255.0f, rgb.a/255.0f);
+}
+
+
+static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type type){
+  static vl::ref<vl::GLSLFragmentShader> gradient_velocity_shader = NULL;
+  static vl::ref<vl::GLSLFragmentShader> gradient_horizontal_shader = NULL;
+
+  if(gradient_velocity_shader.get()==NULL) {
+    vl::String path1 =
+      vl::String(OS_get_program_path2())
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("glsl"))
+      .append(vl::String(OS_get_directory_separator()))
+      ;
+
+    vl::String path2 = path1;
+    
+    gradient_velocity_shader = new vl::GLSLFragmentShader(path1.append("gradient.fs"));
+    gradient_horizontal_shader = new vl::GLSLFragmentShader(path2.append("horizontal_gradient.fs"));
+
+    R_ASSERT(gradient_velocity_shader.get()!=NULL);
+    R_ASSERT(gradient_horizontal_shader.get()!=NULL);
+  }
+
+  if (type==GradientType::VELOCITY)
+    return gradient_velocity_shader.get();
+  else if (type==GradientType::HORIZONTAL)
+    return gradient_horizontal_shader.get();
+  else
+    RError("Unknown gradient type %d", type);
+   
+  return NULL;
+}
+
+#if 0
+static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
+  static vl::ref<vl::GLSLVertexShader> gradient_shader = NULL;
+
+  if(gradient_shader.get()==NULL) {
+    vl::String path =
+      vl::String(OS_get_program_path2())
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("glsl"))
+      .append(vl::String(OS_get_directory_separator()))
+      .append(vl::String("gradient.vs"))
+      ;
+
+    gradient_shader = new vl::GLSLVertexShader(path);
+  }
+  
+  return gradient_shader.get();
+}
+#endif
+
+struct GradientTriangles : public vl::Effect {
+  GradientTriangles *next;
+  
+  std::vector<vl::dvec2> triangles;
+
+  GradientType::Type type;
+  
+  float y, height;
+  float x, width;
+  
+  vl::fvec4 color1;
+  vl::fvec4 color2;
+   
+  vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
+  vl::Uniform *uniform_y;
+
+  GradientTriangles(GradientType::Type type)
+    : next(NULL)
+    , type(type)
+  {
+    setAutomaticDelete(false);
+  }
+
+  ~GradientTriangles(){
+    RError("~GradientTriangles was called. That should not happen. Expect crash.");
+    //abort();
+  }
+  
+  vl::Actor *render(vl::VectorGraphics *vg){
+
+    vl::Actor *actor = vg->fillTriangles(triangles);
+
+    actor->setEffect(this);
+
+    if (glsl.get()==NULL) {
+      vl::Shader* shader = this->shader();
+      shader->enable(vl::EN_BLEND);
+        
+      glsl = shader->gocGLSLProgram();    
+      //glsl->attachShader(get_gradient_vertex_shader()); 
+      glsl->attachShader(get_gradient_fragment_shader(type)); 
+
+      if (type==GradientType::VELOCITY)
+        uniform_y = glsl->gocUniform("y");
+    }
+
+
+    glsl->gocUniform("color1")->setUniform(color1);
+    glsl->gocUniform("color2")->setUniform(color2);
+    if (type==GradientType::VELOCITY)
+      glsl->gocUniform("height")->setUniformF(height);
+    glsl->gocUniform("x")->setUniformF(x);
+    glsl->gocUniform("width")->setUniformF(width);
+
+    if (type==GradientType::VELOCITY)
+      set_y_offset(0.0f);
+    
+    return actor;
+  }
+
+  // called from main thread
+  void clean(){
+    triangles.clear();
+  }
+  
+  void set_y_offset(float y_offset){
+    if (type==GradientType::VELOCITY)
+      uniform_y->setUniformF(y + y_offset);
+  }
+};
+
+
+struct GradientTrianglesCollection {
+
+  GradientType::Type type;
+
+  // These two are only accessed by the main thread
+  GradientTriangles *used_gradient_triangles;
+  GradientTriangles *free_gradient_triangles;
+
+  GradientTrianglesCollection(GradientType::Type type)
+    : type(type)
+    , used_gradient_triangles(NULL)
+    , free_gradient_triangles(NULL)
+  {}
+  
+  // main thread
+  void collect_gradient_triangles_garbage(void){
+    GradientTriangles *new_used = NULL;
+    GradientTriangles *new_free = NULL;
+    
+    R_ASSERT(free_gradient_triangles == NULL);
+    
+    GradientTriangles *gradient = used_gradient_triangles;
+    
+    while(gradient!=NULL){
+      GradientTriangles *next = gradient->next;
+      
+      if(gradient->referenceCount()==0) {
+        gradient->clean();
+        gradient->next = new_free;
+        new_free = gradient;
+      } else {
+        gradient->next = new_used;
+        new_used = gradient;
+      }
+      
+      gradient = next;
+    }
+    
+    used_gradient_triangles = new_used;
+    free_gradient_triangles = new_free;
+  }
+
+
+  // main thread
+  void add_gradient_triangles(void){
+    for(int i=0;i<15;i++){
+      GradientTriangles *gradient = new GradientTriangles(type);
+      gradient->next = free_gradient_triangles;
+      free_gradient_triangles = gradient;
+    }
+  }
+
+
+  // main thread
+  GradientTriangles *get_gradient_triangles(void){  
+    if (free_gradient_triangles==NULL)
+      collect_gradient_triangles_garbage();
+    
+    if (free_gradient_triangles==NULL) {
+      printf("1111. Allocating new gradient triangles\n");
+      add_gradient_triangles();
+    } else {
+      //printf("2222. Using recycled gradient triangles\n");
+    }
+    
+    // pop free
+    GradientTriangles *gradient = free_gradient_triangles;
+    free_gradient_triangles = gradient->next;
+    
+    // push used
+    gradient->next = used_gradient_triangles;
+    used_gradient_triangles = gradient;
+    
+#if 0
+    if(free_gradient_triangles!=NULL)
+      assert(free_gradient_triangles != used_gradient_triangles);
+    
+    if (free_gradient_triangles!=NULL)
+      assert(free_gradient_triangles->next != free_gradient_triangles);
+    
+    assert(used_gradient_triangles->next != used_gradient_triangles);
+    
+    if(free_gradient_triangles!=NULL)
+      assert(free_gradient_triangles != used_gradient_triangles);
+#endif
+  
+    return gradient;
+  }
+
+};
+   
+static GradientTrianglesCollection horizontalGradientTriangles(GradientType::HORIZONTAL);
+static GradientTrianglesCollection velocityGradientTriangles(GradientType::VELOCITY);
+
+static GradientTriangles *get_gradient_triangles(GradientType::Type type){
+  if (type==GradientType::HORIZONTAL)
+    return horizontalGradientTriangles.get_gradient_triangles();
+  else if (type==GradientType::VELOCITY)
+    return velocityGradientTriangles.get_gradient_triangles();
+
+  RError("Unknown gradient type %d",type);
+  return NULL;
+}
+    
+
 struct _GE_Context : public vl::Object{
   std::map< int, std::vector<vl::dvec2> > lines; // lines, boxes and polylines
   std::vector< vl::dvec2 > boxes; // filled boxes
@@ -64,6 +303,7 @@ struct _GE_Context : public vl::Object{
 #endif
 
   TextBitmaps textbitmaps;
+  TextBitmaps textbitmaps_halfsize;
 
   union Color{
     struct{
@@ -75,14 +315,33 @@ struct _GE_Context : public vl::Object{
 
   int _z;
 
-  vl::ref<vl::Image> gradient;
+  std::vector< vl::ref<GradientTriangles> > gradient_triangles;
+  
+  //private:
+  // vl::ref<vl::Image> gradient;
+public:
+  //bool is_gradient;
+  /*
+  vl::ref<vl::Image> get_gradient(){
+    if(gradient.get()==NULL)
+      gradient = vl::makeColorSpectrum(128,
+                                       get_vec4(color.c),
+                                       get_vec4(color.c_gradient)
+                                       );
+    return gradient;
+  }
+  */
 
   _GE_Context(const Color _color, int z)
-    : color(_color)
+    : textbitmaps(false)
+    , textbitmaps_halfsize(true)
+      //, has_scissor(false)
+    , color(_color)
     , _z(z)
-    , gradient(NULL)
+      //, gradient(NULL)
+      //, is_gradient(false)
   {
-    assert(sizeof(Color)==sizeof(uint64_t));
+    R_ASSERT(sizeof(Color)==sizeof(uint64_t));
   }
 
 #if 0
@@ -91,7 +350,7 @@ struct _GE_Context : public vl::Object{
   }
 #endif
 
-  float y(float y){
+  static float y(float y){
     return scale(y,0,g_height,
                  g_height,0);
   }
@@ -109,6 +368,14 @@ struct _GE_Context : public vl::Object{
 
 };
 
+    
+void GE_set_z(GE_Context *c, int new_z) {
+  c->_z = new_z;
+}
+
+int GE_get_z(GE_Context *c){
+  return c->_z;
+}
 
 /* Drawing */
 
@@ -131,7 +398,6 @@ static float get_pen_width_from_key(int key){
 }
 
 
-
 static QMutex mutex;
 
 static GE_Rgb background_color;
@@ -146,6 +412,7 @@ typedef QMap<int, std::map<uint64_t, vl::ref<GE_Context> > > Contexts;
 // Created in the main thread, and then transfered to the OpenGL thread.
 struct PaintingData{
   Contexts contexts;
+  std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   SharedVariables shared_variables;
 };
 
@@ -189,6 +456,7 @@ PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *ne
   return ret;
 }
 
+
 // Called from the main thread
 void GE_start_writing(void){
   g_painting_data = new PaintingData();
@@ -214,27 +482,43 @@ void GE_end_writing(GE_Rgb new_background_color){
 /****************************************/
 
 
-
 static void setColorBegin(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
-  if(c->gradient.get() != NULL) {
-    vg->setImage(c->gradient.get());
+#if 0
+  if(false && c->is_gradient){
+    vg->setImage(c->get_gradient().get());
     vg->setColor(vl::white);
   } else
-    vg->setColor(vl::fvec4(c->color.c.r/255.0f, c->color.c.g/255.0f, c->color.c.b/255.0f, c->color.c.a/255.0f));
+#endif
+    vg->setColor(get_vec4(c->color.c));
 }
 
 static void setColorEnd(vl::ref<vl::VectorGraphics> vg, vl::ref<GE_Context> c){
-  if(c->gradient.get() != NULL)
+#if 0
+  if(c->is_gradient)
     vg->setImage(NULL);
+#endif
+}
+
+
+// This function can probably be avoided somehow. The absolute y position of the vertexes should be available for the shader GLSL code, but I haven't
+// figured out how to get it yet.
+void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
+  for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
+    std::map<uint64_t, vl::ref<GE_Context> > contexts = it.value();
+      
+    for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {      
+      vl::ref<GE_Context> c = iterator->second;
+      
+      for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
+        vl::ref<GradientTriangles> gradient_triangles = *it;
+        gradient_triangles->set_y_offset(y_offset);
+      }
+    }
+  }
 }
 
 
 void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
-  vg->setLineSmoothing(true);
-  vg->setPolygonSmoothing(true);
-  //vg->setPointSmoothing(true); /* default value */
-  vg->setPointSmoothing(false); // images are drawn using drawPoint.
-  //vg->setTextureMode(vl::TextureMode_Repeat 	);
 
   GE_Rgb new_background_color;
 
@@ -243,9 +527,20 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
     new_background_color = background_color;
   }
 
-  viewport->setClearColor(vl::fvec4(new_background_color.r/255.0f, new_background_color.g/255.0f, new_background_color.b/255.0f, new_background_color.a/255.0f));
+  viewport->setClearColor(get_vec4(new_background_color));
 
   vg->startDrawing(); {
+
+#if RADIUM_DRAW_FONTS_DIRECTLY
+    vg->setFont("font/Cousine-Bold.ttf", 10, false);
+#endif
+
+    vg->setLineSmoothing(true);
+    vg->setPolygonSmoothing(true);
+    //vg->setPointSmoothing(true); /* default value */
+    //vg->setPointSmoothing(root->editonoff); /* default value */
+    vg->setPointSmoothing(false); // images are drawn using drawPoint.
+    //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
 
     for (Contexts::Iterator it = painting_data->contexts.begin(); it != painting_data->contexts.end(); ++it) {
 
@@ -271,14 +566,20 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
         vl::ref<GE_Context> c = iterator->second;
-        
-        if(c->textbitmaps.points.size()>0){
+
+        if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
+           
           setColorBegin(vg, c);
-          c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+
+          if(c->textbitmaps.points.size() > 0)
+            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+        
+          if(c->textbitmaps_halfsize.points.size() > 0)
+            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+
           setColorEnd(vg, c);
         }
       }
-
 
       // 2. triangle strips
       for(std::map<uint64_t, vl::ref<GE_Context> >::iterator iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
@@ -293,7 +594,13 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           
           setColorEnd(vg, c);
         }
+        // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
+        for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
+          vl::ref<GradientTriangles> gradient_triangles = *it;
+          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform);
+        }
+
         if(c->triangles.size() > 0) {
           setColorBegin(vg, c);
           
@@ -302,6 +609,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           
           setColorEnd(vg, c);
         }
+
 #endif
       }
 
@@ -334,6 +642,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 
     }
 
+    
   }vg->endDrawing();
 }
 
@@ -387,17 +696,17 @@ GE_Context *GE_color_alpha_z(int colornum, float alpha, int z){
 
 GE_Context *GE_textcolor_z(int colornum, int z){
   GE_Rgb rgb = GE_get_rgb(colornum);
-  rgb.a=200;
+  rgb.a=230;
   return GE_z(rgb, z);
 }
 
 GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z){
-#if 0
+#if 1
   // Reduce number of contexts. May also reduce cpu usage significantly.
-  r |= 7;
-  g |= 7;
-  b |= 7;
-  a |= 7;
+  r |= 15;
+  g |= 15;
+  b |= 15;
+  a |= 15;
 #endif
 
   GE_Rgb rgb = {r,g,b,a};
@@ -443,10 +752,7 @@ GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z){
 
   GE_Context *c = get_context(color, z);
 
-  c->gradient = vl::makeColorSpectrum(128,
-                                      vl::fvec4(c->color.c.r/255.0f, c->color.c.g/255.0f, c->color.c.b/255.0f, c->color.c.a/255.0f),
-                                      vl::fvec4(c->color.c_gradient.r/255.0f, c->color.c_gradient.g/255.0f, c->color.c_gradient.b/255.0f, c->color.c_gradient.a/255.0f)
-                                      );
+  //c->is_gradient = true;
 
   return c;
 }
@@ -465,17 +771,159 @@ void GE_set_font(const QFont &font){
   GE_set_new_font(font);
 }
 
+
+#if 0
+
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-  int key = get_key_from_pen_width(pen_width);
 
-  c->lines[key].push_back(vl::dvec2(x1,c->y(y1)));
-  c->lines[key].push_back(vl::dvec2(x2,c->y(y2)));
+  if (c->is_gradient || y1!=y2){
+    int key = get_key_from_pen_width(pen_width);
+    c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
+    c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
+  }else{
+    float half = pen_width/2.0f;
+    c->boxes.push_back(vl::dvec2(x1,c->y(y1-half)));
+    c->boxes.push_back(vl::dvec2(x1,c->y(y2+half)));
+    c->boxes.push_back(vl::dvec2(x2,c->y(y2+half)));
+    c->boxes.push_back(vl::dvec2(x2,c->y(y1-half)));
+  }
 }
 
-void GE_text(GE_Context *c, const char *text, float x, float y){
-  c->textbitmaps.addCharBoxes(text, x, c->y(y));
+#else
+
+static float scissor_x,scissor_x2;
+static bool has_x_scissor=false;
+
+//static float scissor_y,scissor_y2;
+//static bool has_y_scissor=false;
+
+/*  
+void GE_set_scissor(float x, float y, float x2, float y2) {
+  scissor_x = x;
+  scissor_y = y;
+  scissor_x2 = x2;
+  scissor_y2 = y2;
+  has_scissor=true;
+}
+*/
+
+void GE_set_x_scissor(float x, float x2) {
+  scissor_x = x;
+  scissor_x2 = x2;
+  has_x_scissor=true;
 }
 
+void GE_unset_x_scissor(void){
+  has_x_scissor=false;
+}
+
+#define SWAPFLOAT(a,b) \
+  do{                      \
+    float c = a;           \
+    a = b;                 \
+    b = c;                 \
+  } while(0)
+
+void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+
+  if (has_x_scissor){
+
+    if (x1 <= scissor_x && x2 <= scissor_x)
+      return;
+
+    if (x1 >= scissor_x2 && x2 >= scissor_x2)
+      return;
+
+    if (x2 < x1) {
+      SWAPFLOAT(y1,y2);
+      SWAPFLOAT(x1,x2);
+    }
+
+    if (x1 < scissor_x) {
+
+      if (y1 != y2)
+        y1 = scale(scissor_x, x1, x2, y1, y2);
+      
+      x1 = scissor_x;
+
+    } 
+
+    if (x2 > scissor_x2) {
+
+      if (y1 != y2)
+        y2 = scale(scissor_x2, x1, x2, y1, y2);
+
+      x2 = scissor_x2;
+
+    }
+
+    if (x1==x2 && y1==y2)
+      return;
+  }
+  
+#if 0
+  if (c->is_gradient) {
+    int key = get_key_from_pen_width(pen_width);
+    c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
+    c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
+    return;
+  }
+#endif
+
+
+  // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
+
+  float dx = x2-x1;
+  float dy = y2-y1;
+ 
+  float length = sqrt( dx*dx + dy*dy );   
+ 
+  // perp
+  float perp_x = -dy;
+  float perp_y = dx;
+  if ( length ){
+    // Normalize the perp
+    perp_x /= length;
+    perp_y /= length;
+  }
+ 
+  float h = pen_width;//.125*length;
+  
+  // since perp defines how wide our quad is, scale it
+  perp_x *= h;
+  perp_y *= h;
+ 
+  float v1x = x1 + perp_x*.5;
+  float v1y = y1 + perp_y*.5;
+  
+  float v2x = x2 + perp_x*.5;
+  float v2y = y2 + perp_y*.5;
+ 
+  float v3x = x2 - perp_x*.5;
+  float v3y = y2 - perp_y*.5;
+ 
+  float v4x = x1 - perp_x*.5;
+  float v4y = y1 - perp_y*.5;
+
+  c->triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
+  c->triangles.push_back(vl::dvec2(v2x, c->y(v2y)));
+  c->triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
+
+  c->triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
+  c->triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
+  c->triangles.push_back(vl::dvec2(v4x, c->y(v4y)));
+}
+#endif
+
+void GE_text(GE_Context *c, const char *text, int x, int y){
+  c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+}
+
+void GE_text_halfsize(GE_Context *c, const char *text, int x, int y){
+  c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
+}
+
+#if 0
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
   int key = get_key_from_pen_width(pen_width);
   y1=c->y(y1);
@@ -493,6 +941,14 @@ void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wid
   c->lines[key].push_back(vl::dvec2(x1, y2));
   c->lines[key].push_back(vl::dvec2(x1, y1));
 }
+#else
+void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+  GE_line(c, x1, y1, x2, y1, pen_width);
+  GE_line(c, x2, y1, x2, y2, pen_width);
+  GE_line(c, x2, y2, x1, y2, pen_width);
+  GE_line(c, x1, y2, x1, y1, pen_width);
+}
+#endif
 
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2){
   c->boxes.push_back(vl::dvec2(x1,c->y(y1)));
@@ -538,7 +994,7 @@ static std::vector<vl::dvec2> trianglestrip;
 void GE_trianglestrip_start(){
   trianglestrip.clear();
 }
-void GE_trianglestrip_add(float x, float y){
+void GE_trianglestrip_add(GE_Context *c, float x, float y){
   trianglestrip.push_back(vl::dvec2(x,y));
 }
 void GE_trianglestrip_end(GE_Context *c){
@@ -547,7 +1003,7 @@ void GE_trianglestrip_end(GE_Context *c){
 
 #else //  USE_TRIANGLE_STRIPS
 
-static float num_trianglestrips;
+static int num_trianglestrips;
 
 void GE_trianglestrip_start(){
   num_trianglestrips = 0;
@@ -569,5 +1025,66 @@ void GE_trianglestrip_add(GE_Context *c, float x, float y){
 }
 void GE_trianglestrip_end(GE_Context *c){
 }
+
+
+
+
+static int num_gradient_triangles;
+static vl::ref<GradientTriangles> current_gradient_rectangle;
+static float triangles_min_y;
+static float triangles_max_y;
+
+void GE_gradient_triangle_start(GradientType::Type type){
+  current_gradient_rectangle = get_gradient_triangles(type);
+  num_gradient_triangles = 0;
+}
+
+void GE_gradient_triangle_add(GE_Context *c, float x, float y){
+  static float y2,y1;
+  static float x2,x1;
+
+  if(num_gradient_triangles==0){
+    triangles_min_y = triangles_max_y = y;
+  }else{
+    if (y<triangles_min_y)
+      triangles_min_y = y;
+    
+    if (y>triangles_max_y)
+      triangles_max_y = y;
+  }
+  
+  num_gradient_triangles++;
+  
+  if(num_gradient_triangles>=3){
+    current_gradient_rectangle->triangles.push_back(vl::dvec2(x, c->y(y)));
+    current_gradient_rectangle->triangles.push_back(vl::dvec2(x1, c->y(y1)));
+    current_gradient_rectangle->triangles.push_back(vl::dvec2(x2, c->y(y2)));
+  }
+  
+  y2 = y1;  y1 = y;
+  x2 = x1;  x1 = x;
+}
+
+void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
+  //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
+  current_gradient_rectangle->y = c->y(triangles_max_y);
+  current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
+
+  current_gradient_rectangle->x = x1;
+  current_gradient_rectangle->width = x2-x1;
+
+  if (current_gradient_rectangle->type==GradientType::VELOCITY) {
+    current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
+    current_gradient_rectangle->color2 = get_vec4(c->color.c);
+  } else {
+    current_gradient_rectangle->color1 = get_vec4(c->color.c);
+    current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);  
+  }
+
+  c->gradient_triangles.push_back(current_gradient_rectangle);
+
+  current_gradient_rectangle = NULL;
+}
+
 
 #endif //  !USE_TRIANGLE_STRIPS

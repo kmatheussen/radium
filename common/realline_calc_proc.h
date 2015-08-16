@@ -15,7 +15,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
+#include "placement_proc.h"
+
+
+static inline void set_p1_and_p2(
+                                 struct WBlocks *wblock,
+                                 int start_realline,
+                                 int end_realline,
+                                 Place *p1,
+                                 Place *p2
+                                 )
+{
+  R_ASSERT_RETURN_IF_FALSE(start_realline>=0 && start_realline < wblock->num_reallines);
+  R_ASSERT_RETURN_IF_FALSE(start_realline>=0 && end_realline <= wblock->num_reallines);
+  
+  PlaceCopy(p1, &wblock->reallines[start_realline]->l.p);
+           
+  if (end_realline>=wblock->num_reallines-1)
+    PlaceSetLastPos(wblock->block, p2);
+  else
+    PlaceCopy(p2, &wblock->reallines[end_realline+1]->l.p);
+}
+
+
 
 extern LANGSPEC float FindReallineForF(
                                        const struct WBlocks *wblock,
@@ -23,30 +45,40 @@ extern LANGSPEC float FindReallineForF(
                                        const Place *place
                                        );
 
-extern int FindRealLineFor(
-	struct WBlocks *wblock,
-	int realline,
-	Place *place
+extern LANGSPEC int FindRealLineFor(
+                                    const struct WBlocks *wblock,
+                                    int realline,
+                                    const Place *place
+                                    );
+
+extern LANGSPEC int FindRealLineForNote(
+                                        const struct WBlocks *wblock,
+                                        int realline,
+                                        const struct Notes *note
 );
 
-extern int FindRealLineForNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+extern LANGSPEC int FindRealLineForEndNote(
+                                           const struct WBlocks *wblock,
+                                           int realline,
+                                           const struct Notes *note
 );
 
-extern int FindRealLineForEndNote(
-	struct WBlocks *wblock,
-	int realline,
-	struct Notes *note
+extern LANGSPEC int FindSubRealLine(
+                                    const struct Tracker_Windows *window,
+                                    const struct WBlocks *wblock,
+                                    int realline,
+                                    const Place *p
 );
 
-extern int FindSubRealLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	int realline,
-	Place *p
-);
+static inline int get_realline_y1(const struct Tracker_Windows *window, int realline){
+  return window->fontheight*realline;
+}
 
-#endif
+static inline int get_realline_y2(const struct Tracker_Windows *window, int realline){
+  return window->fontheight*(realline+1);
+}
+
+static inline float get_realline_y(const struct Tracker_Windows *window, float reallineF){
+  return window->fontheight*reallineF;
+}
 

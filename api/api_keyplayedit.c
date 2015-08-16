@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/notes_proc.h"
-#include "../common/gfx_upperleft_proc.h"
 #include "../common/visual_proc.h"
 
 #include "api_common_proc.h"
@@ -47,7 +46,7 @@ void keyDownPlay(int notenum,int windownum){
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
         if(root->editonoff)
-          InsertNoteCurrPos(window,notenum,0);
+          InsertNoteCurrPos(window,notenum,false,-1);
 }
 
 void polyKeyDownPlay(int notenum,int windownum){
@@ -60,7 +59,7 @@ void polyKeyDownPlay(int notenum,int windownum){
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
         if(root->editonoff)
-          InsertNoteCurrPos(window,notenum,1);
+          InsertNoteCurrPos(window,notenum,true,-1);
 }
 
 void keyUpPlay(int notenum,int windownum){
@@ -87,17 +86,16 @@ void setKeyAdd(int addnum){
   else
 #endif
     root->keyoct=addnum;
-
-  GFX_UpdateKeyOctave(root->song->tracker_windows,root->song->tracker_windows->wblock);
+    GFX_OS_UpdateKeyOctave();
 }
 
 void incKeyAdd(int incaddnum){
-	root->keyoct+=incaddnum;
-	if(root->keyoct>127 || root->keyoct<0){
-		root->keyoct-=incaddnum;
-	}else{
-		GFX_UpdateKeyOctave(root->song->tracker_windows,root->song->tracker_windows->wblock);
-	}
+  int keyoct = root->keyoct + incaddnum;
+	
+  if(keyoct>127 || keyoct<0)
+    return;
+
+  setKeyAdd(keyoct);
 }
 
 void decKeyAdd(int decaddnum){
@@ -110,10 +108,6 @@ void switchEditOnOff(void){
         char temp[1000];
         sprintf(temp,"Midi Input %s",root->editonoff?"On":"Off");
         GFX_SetStatusBar(window,temp);
-}
-
-void switchScrollPlayOnOff(void){
-	root->scrollplayonoff=root->scrollplayonoff?false:true;
 }
 
 void switchSoundScrollOnOff(int windownum){

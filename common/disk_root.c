@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "disk_root_proc.h"
 
+extern struct Root *root;
 
 
 void SaveRoot(struct Root *theroot){
@@ -36,8 +37,14 @@ DC_start("ROOT");
 	DC_SSN("curr_block",theroot->curr_block);
 	DC_SSI("tempo",theroot->tempo);
 	DC_SSI("lpb",theroot->lpb);
-	DC_SSF("quantitize",theroot->quantitize);
-	DC_SSI("keyoct",theroot->keyoct);
+        DC_SSI("signature_numerator",theroot->signature.numerator);
+        DC_SSI("signature_denominator",theroot->signature.denominator);
+	DC_SSI("quantitize_numerator",theroot->quantitize_options.quant.numerator);
+        DC_SSI("quantitize_denominator",theroot->quantitize_options.quant.denominator);
+        DC_SSF("quantitize",(double)theroot->quantitize_options.quant.numerator / (double)theroot->quantitize_options.quant.denominator);
+	DC_SSI("grid_numerator",theroot->grid_numerator);
+	DC_SSI("grid_denominator",theroot->grid_denominator);
+	DC_SSI("keyoct",theroot->keyoct); // not used anymore. Still saved though so that new songs can be opened in older radiums.
 	DC_SSI("min_standardvel",theroot->min_standardvel);
 	DC_SSI("standardvel",theroot->standardvel);
 
@@ -54,22 +61,33 @@ struct Root *LoadRoot(void){
 	static char *objs[1]={
 		"SONG"
 	};
-	static char *vars[8]={
+	static char *vars[14]={
 		"def_instrument",
 		"curr_block",
 		"tempo",
 		"lpb",
+                "signature_numerator",
+                "signature_denominator",                
 		"quantitize",
+                "quantitize_numerator",
+                "quantitize_denominator",
+                "grid_numerator",
+                "grid_denominator",
 		"keyoct",
 		"min_standardvel",
 		"standardvel"
 	};
 	struct Root *ret=DC_alloc(sizeof(struct Root));
-	ret->scrollplayonoff=true;
+	ret->keyoct = root->keyoct;
+        ret->quantitize_options = root->quantitize_options;
         ret->min_standardvel=MAX_VELOCITY*40/100;
         ret->editonoff=true;
+        ret->grid_numerator=1;
+        ret->grid_denominator=1;
+        ret->signature.numerator=4;
+        ret->signature.denominator=4;
 
-	GENERAL_LOAD(1,8)
+	GENERAL_LOAD(1,14);
 
 
 
@@ -89,33 +107,54 @@ var3:
 	goto start;
 
 var4:
-	ret->quantitize=DC_LoadF();
+	ret->signature.numerator=DC_LoadI();
 	goto start;
 
 var5:
-	ret->keyoct=DC_LoadI();
+	ret->signature.denominator=DC_LoadI();
 	goto start;
 
 var6:
-	ret->min_standardvel=DC_LoadI();
+        DC_LoadF();
 	goto start;
 
 var7:
-	ret->standardvel=DC_LoadI();
+        ret->quantitize_options.quant.numerator = DC_LoadI();
 	goto start;
 
 var8:
+        ret->quantitize_options.quant.denominator = DC_LoadI();
+	goto start;
+
 var9:
+        ret->grid_numerator=DC_LoadI();
+        goto start;
+
 var10:
+        ret->grid_denominator=DC_LoadI();
+        goto start;
+
 var11:
+	DC_LoadI();
+        //ret->keyoct=DC_LoadI();
+	goto start;
+
 var12:
+	ret->min_standardvel=DC_LoadI();
+	goto start;
+
 var13:
+	ret->standardvel=DC_LoadI();
+	goto start;
+
 var14:
 var15:
 var16:
 var17:
 var18:
-
+var19:
+ var20:
+        
 obj1:
 obj2:
 obj3:

@@ -14,15 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-
-#include <Python.h>
+#include "includepython.h"
 
 #include "nsmtracker.h"
 
 #include "windows_proc.h"
 #include "wblocks_proc.h"
-#include "mouse_proc.h"
 #include "gfx_op_queue_proc.h"
 #include "undo.h"
 
@@ -32,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/player_proc.h"
 
-#include "../api/radium_proc.h"
+#include "../api/api_proc.h"
 
 
 #include <string.h>
@@ -89,6 +86,7 @@ struct KeyConfigs{
 	uint32_t a;
 	int num_args;
 	int *args;
+        const char *funcname; // for the event log
 };
 
 struct KeyConfigs *keyconfigs[EVENT_DASMAX+1]={0};
@@ -128,6 +126,7 @@ const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
 	if(kc==NULL) return "Out of memory";
 
 	kc->func=func;
+        kc->funcname=strdup(talloc_format("%s [ev]",funcname));
 	kc->num_args=argslen;
 	kc->args=malloc(sizeof(int)*argslen);
 	if(kc==NULL) return "Out of memory";
@@ -155,6 +154,7 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 
 	while(kc!=NULL){
 		if(kc->a==a){
+                        EVENTLOG_add_event(kc->funcname);
 			switch(kc->num_args){
 				case 0:
 					(*((void (*)(void))(kc->func)))();
@@ -288,20 +288,6 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 			}
 
 			break;
-		case TR_MOUSEMOVE:
-                        MouseMove(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-			break;
-		case TR_LEFTMOUSEDOWN:
-			LeftMouseDown(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-			break;
-		case TR_LEFTMOUSEUP:
-			return LeftMouseUp(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-		case TR_RIGHTMOUSEDOWN:
-		        RightMouseDown(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
-                        //			AddFXNodeLineCurrPos(window);
-			break;
-		case TR_RIGHTMOUSEUP:
-		        return RightMouseUp(window, in_tevent->keyswitch, in_tevent->x,in_tevent->y);
 	}
 
 	if(doquit==true){return 1;}

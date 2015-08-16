@@ -15,30 +15,31 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <string.h>
 
 
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "vector_proc.h"
 #include "placement_proc.h"
-#include "nodelines_proc.h"
-#include "nodelines.h"
-#include "gfx_wtracks_proc.h"
 #include "visual_proc.h"
 #include "realline_calc_proc.h"
 #include "undo_fxs_proc.h"
-#include <string.h>
 #include "player_proc.h"
-#include "nodeboxes_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
+#include "wtracks_proc.h"
+#include "common_proc.h"
+#include "OS_Player_proc.h"
+#include "patch_proc.h"
 
 #include "fxlines_proc.h"
 
 
 extern struct Root *root;
+extern struct TEvent tevent;
 
-
+#if !USE_OPENGL
 struct FXextrainfo{
 	int color;
 	void *FXs;
@@ -196,6 +197,7 @@ void UpdateAllFXNodeLines(
 		wtrack=NextWTrack(wtrack);
 	}
 }
+#endif
 
 int getNumUsedFX(struct Tracks *track){
 	int ret;
@@ -282,126 +284,199 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
   }
 }
 
+static int newFXColor(void){  
+  int color = rand() % 15;
+
+  switch(color) {
+  case 0:
+  case 9:
+  case 10:
+  case 11:
+  case 15:
+    return newFXColor();
+  }
+  return color;
+}
+
 static struct FX *selectFX(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
 
-  if(wtrack->track->patch==NULL)
-    return NULL; // TODO: Ask for new patch.
-
+  struct Tracks *track = wtrack->track;
+  struct Patch *patch = track->patch;
+  
+  if(patch==NULL) {
+    PATCH_select_patch_for_track(window,wtrack,true);
+    //GFX_Message(NULL, "No instrument set for track %d\n",wtrack->l.num);
+    return NULL;
+  }
+  
 	struct FX *fx;
-	int num_usedFX=getNumUsedFX(wtrack->track);
+	int num_usedFX=getNumUsedFX(track);
 
 	if(num_usedFX>0){
           int lokke;
           vector_t v={0};
           for(lokke=0;lokke<num_usedFX;lokke++)
-            VECTOR_push_back(&v,getTrackFX(wtrack->track,lokke)->name);
+            VECTOR_push_back(&v,getTrackFX(track,lokke)->name);
 
           VECTOR_push_back(&v,"New FX");
           int selection=GFX_Menu(window,NULL,"Select FX",&v);
           if(selection==-1) return NULL;
-          if(selection<num_usedFX) return getTrackFX(wtrack->track,selection);
+          if(selection<num_usedFX) return getTrackFX(track,selection);
 	}
 
 	fx=talloc(sizeof(struct FX));
 
-        {
-          if(fx->color==0){
-            static int nextcolor=3;
+        fx->color = newFXColor();
 
-            nextcolor++;
-
-            if(nextcolor==3)
-              nextcolor=4;
-            if(nextcolor==7)
-              nextcolor=8;
-            if(nextcolor==9||nextcolor==10||nextcolor==11)
-              nextcolor=12;
-            if(nextcolor==15)
-              nextcolor=1;
-
-            fx->color=nextcolor;
-          }
-        }
-
+        fx->patch = patch;
+        
 	if(
-		(*wtrack->track->patch->instrument->getFX)(window,wtrack->track,fx)
+		patch->instrument->getFX(window,track,fx)
 		==
 		FX_FAILED
 	){
 		return NULL;
 	}
 
-        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(wtrack->track->patch,fx->effect_num);
-        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(wtrack->track->patch,fx->effect_num);
+        fx->slider_automation_value = OS_SLIDER_obtain_automation_value_pointer(patch,fx->effect_num);
+        fx->slider_automation_color = OS_SLIDER_obtain_automation_color_pointer(patch,fx->effect_num);
 
 	return fx;
 }
 
-void AddFXNodeLine(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	struct FX *fx,
-	int val,
-	Place *p1
+int AddFXNodeLine(
+                  struct Tracker_Windows *window,
+                  struct WBlocks *wblock,
+                  struct WTracks *wtrack,
+                  int fxnum,
+                  int val,
+                  const Place *p1
 ){
-	int realline;
-	Place p2;
-	struct FXs *fxs;
-	struct FXNodeLines *fxnodeline;
+	struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fxnum);
+	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
 
-	fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
-	if(fxs==NULL){
-          printf("new, fx->num: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
-		fxs=talloc(sizeof(struct FXs));
-		fxs->l.num=fx->num;
-		fxs->fx=fx;
-		ListAddElement1(&wtrack->track->fxs,&fxs->l);
+        int ret;
+        
+        PLAYER_lock();{
+          fxnodeline->val=R_BOUNDARIES(fxs->fx->min, val, fxs->fx->max);
+          PlaceCopy(&fxnodeline->l.p,p1);
+          ret = ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
+        }PLAYER_unlock();
 
-		realline=FindRealLineFor(wblock,0,p1);
-		if(realline==wblock->num_reallines-1){
-			PlaceSetLastPos(wblock->block,&p2);
-		}else{
-			PlaceCopy(&p2,&wblock->reallines[wblock->curr_realline+1]->l.p);
-		}
-		fxnodeline=talloc(sizeof(struct FXNodeLines));
-		fxnodeline->val=val;
-		PlaceCopy(&fxnodeline->l.p,&p2);
-		ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
-	}
-
-	fxnodeline=talloc(sizeof(struct FXNodeLines));
-	fxnodeline->val=val;
-	PlaceCopy(&fxnodeline->l.p,p1);
-	ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
-
+        return ret;
 }
 
-void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-	struct FX *fx;
+static void AddNewTypeOfFxNodeLine(const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
+  printf("new, fxnum: %d, wtrack->fxs->l.num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fxs->l.num);
+  
+  struct FXs *fxs=talloc(sizeof(struct FXs));
+  fxs->l.num=fx->num;
+  fxs->fx=fx;
+  ListAddElement1(&wtrack->track->fxs,&fxs->l);
+  
+  struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+  fxnodeline->val=val;
+  PlaceCopy(&fxnodeline->l.p,p2);
+  ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
+}
 
-	PlayStop();
-
-	fx=selectFX(window,wblock,wtrack);
-	if(fx==NULL) return;
+static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *place, float val){
 
 	Undo_FXs_CurrPos(window);
 
-	AddFXNodeLine(
-		window,wblock,wtrack,
-		fx,
-		(fx->max + fx->min)/2,
-		&wblock->reallines[wblock->curr_realline]->l.p
-	);
+        struct FXs *fxs=ListFindElement1_r0(&wtrack->track->fxs->l,fx->num);
+        if (fxs==NULL){
+          Place p2;
 
-	UpdateFXNodeLines(window,wblock,wtrack);
+          int realline=FindRealLineFor(wblock,0,place);
+          if(realline>=wblock->num_reallines-5){
+            PlaceSetLastPos(wblock->block,&p2);
+          }else{
+            PlaceCopy(&p2,&wblock->reallines[wblock->curr_realline+3]->l.p);
+          }
+
+          AddNewTypeOfFxNodeLine(wblock, wtrack, fx, &p2, val);
+        }
+
+	AddFXNodeLine(
+                      window,wblock,wtrack,
+                      fx->num,
+                      val,
+                      place
+                      );
 
 #if !USE_OPENGL
+	UpdateFXNodeLines(window,wblock,wtrack);
+
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
+}
+
+void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
+  struct WBlocks *wblock = window->wblock;
+  float x = tevent.x;
+  float y = tevent.y;
+  struct WTracks *wtrack = WTRACK_get(wblock, x);
+  if (wtrack==NULL)
+    return;
+  
+  Place place;
+  
+  GetReallineAndPlaceFromY(window,
+                           wblock,
+                           y,
+                           &place,
+                           NULL,
+                           NULL
+                           );
+
+  PlayStop();
+  
+  struct FX *fx=selectFX(window,wblock,wtrack);
+  if(fx==NULL)
+    return;
+
+  int val = scale(x, wtrack->fxarea.x, wtrack->fxarea.x2, fx->min, fx->max);
+                  
+  AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
+}
+
+void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
+  PlayStop();
+  
+  struct FX *fx=selectFX(window,wblock,wtrack);
+  if(fx==NULL) return;
+
+  Place place;
+  PlaceCopy(&place, &wblock->reallines[wblock->curr_realline]->l.p);
+
+  int val = (fx->max + fx->min)/2;
+
+  AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, &place, val);
+}
+
+
+void DeleteFxNodeLine(struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
+
+  R_ASSERT(ListFindNumElements3(&fxs->fxnodelines->l)>1);
+
+  PLAYER_lock();{
+    ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
+  }PLAYER_unlock();
+
+  if (ListFindNumElements3(&fxs->fxnodelines->l) <= 1 ){
+    PlayStop();
+
+    struct FX *fx = fxs->fx;
+    struct Tracks *track = wtrack->track;
+    
+    OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
+    (*fx->closeFX)(fx,track);
+    ListRemoveElement1(&track->fxs,&fxs->l);
+  }
 }

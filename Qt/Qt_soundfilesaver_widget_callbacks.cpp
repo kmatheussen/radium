@@ -32,9 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
 
+#include "helpers.h"
+
 #include "Qt_soundfilesaver_widget.h"
 
-extern struct Root *root;
 
 class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
   Q_OBJECT
@@ -62,7 +63,7 @@ class Soundfilesaver_widget : public QDialog, public Ui::Soundfilesaver_widget {
         //msgBox.setInformativeText(message);
         msgBox.setStandardButtons(QMessageBox::Ok);
 
-        msgBox.exec();
+        safeExec(msgBox);
 
         free((void*)message);
 
@@ -96,7 +97,8 @@ public slots:
 
       GFX_Message(NULL,
                   "Soundfile export is only available to subscribers.<p>"
-                "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
+                  "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>."
+                  );
 
 #else // FULL_VERSION==0
 
@@ -137,7 +139,7 @@ public slots:
         msgBox.setInformativeText(error_string);
         msgBox.setStandardButtons(QMessageBox::Ok);
 
-        msgBox.exec();
+        safeExec(msgBox);
         return;
 
       } else {
@@ -179,7 +181,7 @@ extern "C"{
     widget->show();
 #else
     num_users_of_keyboard++;
-    widget->exec();
+    safeExec(widget);
     num_users_of_keyboard--;
 #endif
   }

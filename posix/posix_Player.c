@@ -14,13 +14,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include <errno.h>
+#ifndef FOR_WINDOWS
 #include <sys/time.h>
+#endif
 #include <string.h>
 #include <stdint.h>
 #include <pthread.h>
+
+#ifndef FOR_WINDOWS
+#include <time.h>
 #include <unistd.h>
+#endif
+
 
 #ifdef FOR_WINDOWS
 #  include <windows.h>
@@ -51,6 +57,8 @@ static bool isplaying=false;
 
 //#include "google/profiler.h"
 
+#if USE_POSIX_PLAYER
+
 static void *posix_PlayerThread(void *arg){
   // TODO: Fix windows
   int64_t newtime;
@@ -58,7 +66,7 @@ static void *posix_PlayerThread(void *arg){
 
 #ifdef _FOR_WINDOWS
   if(SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_TIME_CRITICAL)==false)
-    RError("Could not set high priority for player thread.\n");
+    GFX_Message(NULL, "Could not set high priority for player thread.\n");
 #endif
 
   while(doexit==false){
@@ -95,6 +103,8 @@ static void *posix_PlayerThread(void *arg){
 
   return NULL;
 }
+#endif // USE_POSIX_PLAYER
+
 
 void posix_EndPlayer(void){
   doexit=true;
@@ -106,9 +116,11 @@ void posix_EndPlayer(void){
 bool posix_InitPlayer(void){
 
 #if !USE_POSIX_PLAYER
-  return true; // Using jack now.
-#endif
 
+  return true; // Using jack now.
+
+#else
+  
   if(pthread_create(&playerthread,NULL,posix_PlayerThread,NULL)!=0){
     fprintf(stderr,"Could not create player\n");
     return false;
@@ -123,12 +135,15 @@ bool posix_InitPlayer(void){
     rtparam.sched_priority = 1;
     
     if ((x = pthread_setschedparam (playerthread, SCHED_FIFO, &rtparam)) != 0) {
-      RWarning("cannot set thread to real-time priority (FIFO/%d) (%d: %s)", rtparam.sched_priority, x, strerror (errno));
+      GFX_Message(NULL, "cannot set thread to real-time priority (FIFO/%d) (%d: %s)", rtparam.sched_priority, x, strerror (errno));
     }
   }
 #endif
 
   return true;
+
+#endif // USE_POSIX_PLAYER
+
 }
 
 void StartPlayer(void){
@@ -144,9 +159,3 @@ void PausePlayer(void){
 
 void StopPausePlayer(void){
 }
-
-
-void OS_WaitForAShortTime(int milliseconds){
-  usleep(milliseconds*1000);
-}
-

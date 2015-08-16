@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #endif
 
+#include "../common/list_proc.h"
 #include "../common/blts_proc.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/PEQ_clock_proc.h"
@@ -42,11 +43,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/OS_Bs_edit_proc.h"
+#include "../common/cursor_updown_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
+
+#include "../api/api_proc.h"
 
 
 #if USE_GTK_VISUAL
@@ -70,17 +75,16 @@ extern PlayerClass *pc;
 
 extern bool is_starting_up;
 
-
+#if 0
+// Dont need customEvent anymore. This code should be moved to CalledPeriodically.
 void EditorWidget::customEvent(QEvent *e){
   if(is_starting_up==true)
     return;
 
   //printf("Got customEvent\n");
   DO_GFX({
-#if !USE_OPENGL
       if(pc->isplaying)
         P2MUpdateSongPosCallBack();
-#endif
       UpdateClock(this->window);
       //MIDI_HandleInputMessage();
     });
@@ -90,9 +94,10 @@ void EditorWidget::customEvent(QEvent *e){
 #endif
 
 #if USE_QT_VISUAL
-  updateEditor();
+  updateEditor(); // dont think this is necessary. updateEdiutor is already called in the main timer event (which triggers this event)
 #endif
 }
+#endif
 
 
 #if USE_QT_VISUAL && USE_QT4
@@ -124,13 +129,18 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     GL_create(window, window->wblock);
   }
 
+  //printf("height: %d, width: %d\n",e->rect().height(),e->rect().width());
+  //printf("update editor\n");
+  //GL_create(window, window->wblock);
+
+
   //printf("paintEvent called. queue size: %d\n",GFX_get_op_queue_size(this->window));
   //printf("paintevent. width: %d, height: %d\n",this->width(),this->height());
 
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
     this->painter = &paint;
-    this->painter->setFont(this->font);
+    //this->painter->setFont(this->font);
 
     {
       GFX_play_op_queue(this->window);
@@ -139,6 +149,8 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     this->painter = NULL;
   }
 }
+
+//void EditorWidget::showEvent ( QShowEvent * event )
 #endif
 
 void EditorWidget::updateEditor(){
@@ -148,6 +160,29 @@ void EditorWidget::updateEditor(){
   if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
     update();
   }
+}
+
+
+
+void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
+    if(is_starting_up==true)
+      return;
+
+    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+
+    int num_lines = R_ABS(qwheelevent->delta()/120);    
+
+    DO_GFX(
+           {
+             if(qwheelevent->delta()<0)
+               ScrollEditorDown(window,num_lines * getScrollMultiplication());
+             else
+               ScrollEditorUp(window,num_lines * getScrollMultiplication());
+           });
+
+#if USE_QT_VISUAL
+    updateEditor();
+#endif
 }
 
 struct TEvent tevent={0};
@@ -199,7 +234,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
   if(is_starting_up==true)
     return;
 
-  printf("ascii    : %d\n",qkeyevent->ascii());
+  printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
   printf("key      : %d\n",qkeyevent->key());
   printf("key press: %d,%d\n",qkeyevent->state(),Qt2SubId[max(0,qkeyevent->key()-0x41)]);
   printf("text     : -%s-\n",(const char *)qkeyevent->text());
@@ -270,7 +305,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
 void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
   RWarning("keyReleaseEvent should not be called.\n");
 
-  //  printf("key release: %d\n",qkeyevent->ascii());
+  //  printf("key release: %d\n",qkeyevent->toUtf8().constData());
   //  printf("key release: %d\n",qkeyevent->key());
   // printf("Released\n");
   //  this->keyPressEvent(qkeyevent);
@@ -280,27 +315,32 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 
 #if USE_QT_VISUAL
 
+static int currentButton = 0;
+
+static int getMouseButtonEventID( QMouseEvent *qmouseevent){
+  if(qmouseevent->button()==Qt::LeftButton)
+    return TR_LEFTMOUSEDOWN;
+  else if(qmouseevent->button()==Qt::RightButton)
+    return TR_RIGHTMOUSEDOWN;
+  else if(qmouseevent->button()==Qt::MiddleButton)
+    return TR_MIDDLEMOUSEDOWN;
+  else
+    return 0;
+}
+
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   if(is_starting_up==true)
     return;
 
-  if(qmouseevent->button()==Qt::LeftButton){
-    tevent.ID=TR_LEFTMOUSEDOWN;
-  }else{
-    if(qmouseevent->button()==Qt::RightButton){
-      tevent.ID=TR_RIGHTMOUSEDOWN;
-      //      exit(2);
-    }else{
-      tevent.ID=TR_MIDDLEMOUSEDOWN;
-    }
-  }
+  tevent.ID = getMouseButtonEventID(qmouseevent);
+  tevent.x  = qmouseevent->posF().x();//-XOFFSET;
+  tevent.y  = qmouseevent->posF().y();//-YOFFSET;
 
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
+  currentButton = tevent.ID;
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  if (SCHEME_mousepress(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
+  if (SCHEME_mousepress(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false) {
 
     EventReciever(&tevent,this->window);
 
@@ -313,18 +353,19 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent){
   updateEditor();
 }
 
+
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent){
   if(is_starting_up==true)
     return;
 
   tevent.ID=TR_MOUSEMOVE;
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
+  tevent.x=qmouseevent->posF().x();//-XOFFSET;
+  tevent.y=qmouseevent->posF().y();//-YOFFSET;
 
   //Qt::ButtonState buttonstate=qmouseevent->state();
-  //printf("buttonstate: %d, %d\n",buttonstate,tevent.keyswitch);
+  //printf("************** buttonstate: %d, %d, %d\n",getMouseButtonEventID(qmouseevent),buttonstate,tevent.keyswitch);
 
-  if (SCHEME_mousemove(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+  if (SCHEME_mousemove(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
@@ -347,13 +388,14 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent){
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
-  tevent.x=qmouseevent->x();//-XOFFSET;
-  tevent.y=qmouseevent->y();//-YOFFSET;
+  tevent.x=qmouseevent->posF().x();//-XOFFSET;
+  tevent.y=qmouseevent->posF().y();//-YOFFSET;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  if (SCHEME_mouserelease(tevent.ID, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
+  if (SCHEME_mouserelease(currentButton, qmouseevent->posF().x(), qmouseevent->posF().y())==false)
     EventReciever(&tevent,this->window);
 
+  currentButton = 0;
 
   updateEditor();
 }

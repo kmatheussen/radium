@@ -26,10 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "disk.h"
 #include "disk_track_proc.h"
+#include "disk_signatures_proc.h"
 #include "disk_lpbs_proc.h"
 #include "disk_tempos_proc.h"
 #include "disk_temponodes_proc.h"
 #include "time_proc.h"
+#include "Beats_proc.h"
 
 #include "disk_block_proc.h"
 
@@ -48,7 +50,8 @@ DC_start("BLOCK");
 	DC_SSF("reltempo",block->reltempo);
 
 	SaveTrack(block->tracks);
-	SaveLPBs(block->lpbs);
+	SaveSignatures(block->signatures);
+        SaveLPBs(block->lpbs);
 	SaveTempos(block->tempos);
 	SaveTempoNodes(block->temponodes);
 
@@ -60,9 +63,10 @@ SaveBlock(NextBlock(block));
 
 
 struct Blocks *LoadBlock(void){
-	static char *objs[4]={
+	static char *objs[5]={
 		"TRACK",
-		"LPBs",
+		"SIGNATURES",
+                "LPBs",
 		"TEMPOS",
 		"RELTEMPO"
 	};
@@ -77,7 +81,7 @@ struct Blocks *LoadBlock(void){
 
 	block->l.num=DC_LoadN();
 
-	GENERAL_LOAD(4,4)
+	GENERAL_LOAD(5,4)
 
 var0:
 	block->name=DC_LoadS();
@@ -96,12 +100,15 @@ obj0:
 	DC_ListAdd1(&block->tracks,LoadTrack());
 	goto start;
 obj1:
-	LoadLPBs(&block->lpbs);
+	LoadSignatures(&block->signatures);
 	goto start;
 obj2:
-	LoadTempos(&block->tempos);
+	LoadLPBs(&block->lpbs);
 	goto start;
 obj3:
+	LoadTempos(&block->tempos);
+	goto start;
+obj4:
 	LoadTempoNodes(&block->temponodes);
 	goto start;
 
@@ -121,7 +128,8 @@ var15:
 var16:
 var17:
 var18:
-obj4:
+var19:
+ var20:
 obj5:
 obj6:
 
@@ -144,6 +152,7 @@ if(block==NULL) return;
 	temp=root;
 	root=newroot;
 	UpdateSTimes(block);
+        UpdateBeats(block);
 	root=temp;
 
 DLoadBlocks(newroot,NextBlock(block));

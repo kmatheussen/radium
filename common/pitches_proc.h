@@ -15,4 +15,4 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float notenum);
-void SetPitchCurrPos(struct Tracker_Windows *window);
+void DeletePitch(struct Tracks *track, struct Notes *note, struct Pitches *pitchtodelete);

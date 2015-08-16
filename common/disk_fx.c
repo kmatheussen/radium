@@ -57,11 +57,12 @@ struct FX *LoadFX(struct Tracks *track){
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
 	DC_LoadN(); 
+        fx->patch = track->patch;
 	GENERAL_LOAD(0,5)
 
 
 var0:
-	fx->name=DC_LoadS();
+	fx->name=DC_LoadSNoMatterWhat();
 	goto start;
 var1:
 	fx->color=DC_LoadI();
@@ -103,7 +104,9 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+var20:
+        
 obj1:
 obj2:
 obj3:
@@ -118,4 +121,7 @@ end:
 }
 
 
+void DLoadFX(struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
+  fx->patch = track->patch;
+}
 

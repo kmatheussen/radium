@@ -74,14 +74,13 @@ void InitPEQBlockfxs(
 	}
 }
 
-static void scheduled_fx_change(int64_t time, union SuperType *args){
-  const struct Tracks *track = args[0].const_pointer;
-  struct FX     *fx    = args[1].pointer;
-  int            x     = args[2].int_num;
-  int64_t        skip  = args[3].int_num;
-  FX_when        when  = args[4].int_num;
+static void scheduled_fx_change(int64_t time, const union SuperType *args){
+  struct FX    *fx    = args[0].pointer;
+  int           x     = args[1].int_num;
+  int64_t       skip  = args[2].int_num;
+  FX_when       when  = args[3].int_num;
   
-  RT_FX_treat_fx(fx, x, track, time, skip, when);
+  RT_FX_treat_fx(fx, x, time, skip, when);
   
   if(fx->slider_automation_value!=NULL)
     *fx->slider_automation_value = scale(x,fx->min,fx->max,0.0f,1.0f);
@@ -91,17 +90,24 @@ static void scheduled_fx_change(int64_t time, union SuperType *args){
 
 static void fxhandle(int x, struct PEventQueue *peq, int skip, FX_when when){
   struct FX *fx = peq->fxs->fx;
+  struct Patch *patch = peq->track->patch;
 
-  if(fx!=NULL && peq->track->onoff==1){
-    union SuperType args[5];
-    args[0].const_pointer = peq->track;
-    args[1].pointer = fx;
-    args[2].int_num = x;
-    args[3].int_num = skip;
-    args[4].int_num = when;
-
-    SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 5, SCHEDULER_FX_PRIORITY);
-  }
+  if (fx==NULL)
+    return;
+  
+  if (patch != fx->patch) // This can happen if changing patch for a track while playing.
+    return;
+  
+  if (peq->track->onoff==0)
+    return;
+  
+  union SuperType args[4];
+  args[0].pointer = fx;
+  args[1].int_num = x;
+  args[2].int_num = skip;
+  args[3].int_num = when;
+  
+  SCHEDULER_add_event(peq->l.time, scheduled_fx_change, &args[0], 4, SCHEDULER_FX_PRIORITY);
 }
 
 void PE_HandleFirstFX(struct PEventQueue *peq,int doit){

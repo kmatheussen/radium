@@ -160,7 +160,7 @@ const char *NotesTexts2[131]={
 "gA",
 
 "MU",
-"ST",
+"--",
 "MR"
 };
 

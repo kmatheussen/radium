@@ -33,12 +33,68 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 #include "../audio/Bus_plugins_proc.h"
 
 
+extern bool is_starting_up;
+
 extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
 
 class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
   Q_OBJECT;
 
 public:
+
+  struct Timer : public QTimer{
+
+    Audio_instrument_widget *w;
+
+    // horror
+    void timerEvent(QTimerEvent * e){
+
+      if (is_starting_up)
+        return;
+      
+      static bool shrinking = false;
+      static int num_times_horizontal_is_not_visible;
+      static bool can_shrink = true;
+      static bool last_time_shrank = false;
+
+      bool is_visible = w->scrollArea->verticalScrollBar()->isVisible();
+
+      if (w->scrollArea->horizontalScrollBar()->isVisible())
+        num_times_horizontal_is_not_visible=0;
+      else
+        num_times_horizontal_is_not_visible++;
+
+      if (is_visible){
+        if (last_time_shrank)
+          can_shrink = false;
+        else
+          can_shrink = true;
+        w->setMinimumHeight(w->height()+1);
+        shrinking = false;
+      } else if (is_visible==false && num_times_horizontal_is_not_visible>50 && can_shrink==true){
+        shrinking = true;
+      }
+
+      if (shrinking){
+        int old_size = w->minimumHeight();
+        int new_size = old_size-1;
+        if(new_size > 50){
+          w->setMinimumHeight(new_size);
+        }
+        last_time_shrank = true;
+      }else
+        last_time_shrank = false;
+    }
+
+    Timer(Audio_instrument_widget *w){
+      this->w = w;
+      setInterval(60);
+    }
+  };
+
+  bool is_starting;
+  
+  Timer timer;
 
   bool _i_am_system_out;
   struct Patch *_patch;
@@ -85,6 +141,8 @@ public:
 
  Audio_instrument_widget(QWidget *parent,struct Patch *patch)
     : QWidget(parent)
+    , is_starting(true)
+    , timer(this)
     , _i_am_system_out(false)
     , _patch(patch)
     , _plugin_widget(NULL)
@@ -158,7 +216,7 @@ public:
     spacer_holder->setVisible(!plugin->show_controls_gui);
     
 
-    if(plugin->type==PR_get_plugin_type_by_name("Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name("FluidSynth","FluidSynth")){
+    if(plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Click") || plugin->type==PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth")){
       _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
       effects_layout->insertWidget(2,_sample_requester_widget);
       show_browser->setFixedWidth(browserArrow->width());
@@ -177,7 +235,7 @@ public:
       //effects_layout->
 
     } else
-      browserLayoutWidget->hide();
+      browserWidget->hide();
 
     // Add compressor
     {
@@ -198,7 +256,6 @@ public:
     filters_widget->setVisible(plugin->show_equalizer_gui);
 
 
-
     // Adjust output widget widths
     {
       QFontMetrics fm(QApplication::font());
@@ -216,11 +273,16 @@ public:
 #endif
 
 
+    // set the scroll bar itself to size 10.
     scrollArea->horizontalScrollBar()->setFixedHeight(10);
 
     updateWidgets();
-  }
 
+
+    timer.start();
+
+    is_starting = false;
+  }
 
   MyQSlider *get_system_slider(int system_effect){
     switch(system_effect){
@@ -394,14 +456,14 @@ public:
   }
 
   void updateWidgets(){
-    set_arrow_style(controlsArrow);
-    set_arrow_style(arrow2);
+    set_arrow_style(controlsArrow, false);
+    set_arrow_style(arrow2, false);
     set_arrow_style(arrow3);
     set_arrow_style(arrow4);
     set_arrow_style(arrow5);
     set_arrow_style(arrow6);
-    set_arrow_style(arrow7);
-    set_arrow_style(browserArrow);
+    set_arrow_style(arrow7, false);
+    set_arrow_style(browserArrow, false);
     if(pipe_label!=NULL)
       set_arrow_style(pipe_label,false);
 
@@ -443,12 +505,15 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
 
-    if(plugin->type->num_outputs>0){
+    int num_inputs = type->num_inputs;
+    int num_outputs = type->num_outputs;
+
+    if(num_outputs>0){
       if(plugin->volume_peak_values==NULL)
-        plugin->volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, plugin->type->num_outputs);
+        plugin->volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(volume_slider->_painter, num_outputs);
 
       if(plugin->output_volume_peak_values==NULL)
-        plugin->output_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, plugin->type->num_outputs);
+        plugin->output_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(output_volume_slider->_painter, num_outputs);
 
       if(plugin->bus_volume_peak_values[0]==NULL)
         plugin->bus_volume_peak_values[0] = SLIDERPAINTER_obtain_peak_value_pointers(bus1_slider->_painter,2);
@@ -458,11 +523,11 @@ public:
     }
 
     if(plugin->input_volume_peak_values==NULL)
-      if(plugin->type->num_inputs>0 || plugin->type->num_outputs>0){//plugin->input_volume_peak_values==NULL){
-        if(plugin->type->num_inputs>0)
-          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, plugin->type->num_inputs);
+      if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
+        if(num_inputs>0)
+          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_inputs);
         else
-          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, plugin->type->num_outputs);
+          plugin->input_volume_peak_values = SLIDERPAINTER_obtain_peak_value_pointers(input_volume_slider->_painter, num_outputs);
       }
 
     for(int system_effect=EFFNUM_INPUT_VOLUME;system_effect<NUM_SYSTEM_EFFECTS;system_effect++){
@@ -484,10 +549,10 @@ public:
         RError("weird");
     }
 
-    bus1_widget->setEnabled(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
-    bus2_widget->setEnabled(plugin->bus_descendant_type==IS_NOT_A_BUS_DESCENDANT);
+    bus1_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
+    bus2_widget->setEnabled(SP_get_bus_descendant_type(SP_get_SoundProducer(plugin))==IS_BUS_PROVIDER);
 
-    if(plugin->type->num_outputs>0){
+    if(num_outputs>0){
       input_volume_layout->setEnabled(plugin->effects_are_on);
       if(plugin->type->num_inputs>0)
         _plugin_widget->setEnabled(plugin->effects_are_on);
@@ -513,7 +578,9 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
-    PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think.
+
+    if (is_starting==false)
+      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think.
 
     updateSliderString(system_effect);
   }

@@ -1,4 +1,6 @@
 
+#include "Widget_proc.h"
+
 #include "../common/time_proc.h"
 #include "../common/vector_proc.h"
 
@@ -50,11 +52,16 @@ static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *
 
 #ifdef OPENGL_GFXELEMENTS_CPP
 
+static QMutex vector_mutex;
 static vector_t g_times_storage; // We just copy the 'times' pointer from 'root' (not the content), so we need to store the pointer somewhere where the GC can get hold of it.
 
+// Called from OpenGL thread
 SharedVariables::~SharedVariables(){
   free(realline_places);
-  VECTOR_remove(&g_times_storage, times);
+  {
+    QMutexLocker locker(&vector_mutex);
+    VECTOR_remove(&g_times_storage, times);
+  }
 }
 
 // Called from main thread
@@ -79,8 +86,11 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->times          = block->times;
 
-  VECTOR_push_back(&g_times_storage, sv->times);
-
+  {
+    QMutexLocker locker(&vector_mutex);
+    VECTOR_push_back(&g_times_storage, sv->times);
+  }
+  
   sv->realline_places = (Place*)malloc(sv->num_reallines * sizeof(Place));
   for(int i=0;i<sv->num_reallines;i++){
     sv->realline_places[i] = wblock->reallines[i]->l.p;

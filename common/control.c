@@ -34,7 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_clock_proc.h"
 #include "blts_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../midi/midi_i_input_proc.h"
 #include "scheduler_proc.h"
+#include "quantitize_proc.h"
 
 #include "control_proc.h"
 
@@ -49,8 +51,10 @@ bool InitProgram(void){
 //	GC_INIT();
   bool ret;
 
+#if !defined(FOR_MACOSX)
   RADIUM_ensure_bin_packages_gc_is_used();
-
+#endif
+  
   printf("Initializing...\n");
 
 	printf("...Error handler\n");
@@ -66,11 +70,12 @@ bool InitProgram(void){
 		return false;
 	}
 
-	root->keyoct=48;
-	root->quantitize=0.5f;
+	root->keyoct=36;
+        root->quantitize_options = Quantitize_get_default_options();
+        root->grid_numerator=1;
+        root->grid_denominator=1;
         root->min_standardvel=MAX_VELOCITY*40/100;
 	root->standardvel=MAX_VELOCITY*80/100;
-	root->scrollplayonoff=true;
         root->editonoff=true;
 
 	root->song=talloc(sizeof(struct Song));
@@ -89,6 +94,9 @@ bool InitProgram(void){
 		return false;
 	}
 */
+
+        printf("...Midi\n");
+        MIDI_input_init();
 
         SCHEDULER_init();
 
@@ -165,5 +173,4 @@ void EndProgram(void){
 
 	fflush(stdout);
 	fflush(stdin);
-
 }

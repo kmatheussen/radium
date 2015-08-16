@@ -2,8 +2,6 @@
 #define OPENGL_GFXELEMENTS_H
 
 
-#include <assert.h>
-
 #ifdef __cplusplus
 #include <QColor>
 #include <QFont>
@@ -23,6 +21,9 @@ static inline GE_Rgb GE_rgb(unsigned char r, unsigned char g, unsigned char b){
   GE_Rgb ret = {r,g,b,255};
   return ret;
 }
+#define Black_rgb() GE_rgb(0,0,0)
+#define White_rgb() GE_rgb(255,255,255)
+
 static inline GE_Rgb GE_rgba(unsigned char r, unsigned char g, unsigned char b, unsigned char a){
   GE_Rgb ret = {r,g,b,a};
   return ret;
@@ -47,6 +48,7 @@ void GE_set_height(int height);
 int GE_get_height(void);
 
 #if defined(GE_DRAW_VL)
+void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
 void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
 #endif
 
@@ -71,6 +73,9 @@ enum{
 
 GE_Context *GE_set_static_x(GE_Context *c);
 
+void GE_set_z(GE_Context *c, int new_z); // 'c' should not be used before calling this function.
+int GE_get_z(GE_Context *c);
+
 #ifdef __cplusplus
 SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
 PaintingData *GE_get_painting_data(PaintingData *current_painting_data, bool *needs_repaint);  // returns NULL if nothing was written since last call to the function.
@@ -90,7 +95,6 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
 GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z);
 
-
 #ifdef __cplusplus
 GE_Context *GE_color_z(const QColor &color, int z);
 static inline GE_Context *GE_color(const QColor &color) {
@@ -99,6 +103,9 @@ static inline GE_Context *GE_color(const QColor &color) {
 GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z);
 static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha){
   return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha));
+}
+static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int z){
+  return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), z);
 }
 
 #ifndef EDITOR_WIDGET_H
@@ -127,6 +134,11 @@ static inline GE_Context *GE_textcolor(int colornum) {
 static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b) {
   return GE_rgb_color_z(r,g,b, Z_ZERO);
 }
+
+#define Black_color() GE_rgb_color(0,0,0)
+#define White_coolor() GE_rgb_color(0,0,0)
+
+
 static inline GE_Context *GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
   return GE_rgba_color_z(r,g,b,a, Z_ZERO);
 }
@@ -142,16 +154,32 @@ static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2) {
 void GE_set_font(const QFont &font);
 #endif
 
+void GE_set_x_scissor(float x, float x2);
+void GE_unset_x_scissor(void);
+  
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
-void GE_text(GE_Context *c, const char *text, float x, float y);
+void GE_text(GE_Context *c, const char *text, int x, int y);
+void GE_text_halfsize(GE_Context *c, const char *text, int x, int y);
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2);
 void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width);
 //void GE_polygon(GE_Context *c, int num_points, const APoint *points);
 void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points);
+
 void GE_trianglestrip_start();
 void GE_trianglestrip_add(GE_Context *c, float x, float y);
 void GE_trianglestrip_end(GE_Context *c);
 
+struct GradientType {
+  enum Type {
+    NOTYPE,
+    HORIZONTAL,
+    VELOCITY
+  };
+};
+  
+void GE_gradient_triangle_start(GradientType::Type type);
+void GE_gradient_triangle_add(GE_Context *c, float x, float y);
+void GE_gradient_triangle_end(GE_Context *c, float x1, float x2);
 
 #endif

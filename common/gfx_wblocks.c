@@ -24,24 +24,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "common_proc.h"
 #include "wblocks_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "gfx_wtext_proc.h"
 #include "cursor_proc.h"
 #include "sliders_proc.h"
 #include "gfx_wtrackheaders_proc.h"
-#include "gfx_tempotrackheader_proc.h"
-#include "gfx_upperleft_proc.h"
-#include "gfx_statusbar_proc.h"
 #include "gfx_wblocks_reltempo_proc.h"
-#include "gfx_tempocolor_proc.h"
 #include "blts_proc.h"
-#include "nodeboxes_proc.h"
-#include "nodelines_proc.h"
 #include "settings_proc.h"
 
 #include "gfx_wblocks_proc.h"
 
-int lpb_opacity = -1;
+int first_beat_opacity = -1;
+int beat_opacity = -1;
 int line_opacity = -1;
 
 #if !USE_OPENGL
@@ -518,6 +512,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
   if(window->must_redraw==true)
     return;
 
+#if 0
 	GFX_DrawStatusBar(window,wblock);
 
 	DrawTempoTrackHeader(window,wblock);
@@ -543,6 +538,7 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
                 PAINT_DIRECTLY
 	);
 
+#endif
 
 #if !USE_OPENGL
 	DrawWBlockSpesific(
@@ -554,19 +550,20 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	
 	UpdateAllWTracks(window,wblock,wblock->top_realline,wblock->bot_realline);
 
-	SetCursorPos(window);
+	R_SetCursorPos(window);
 #endif
+        
+        // fill background in the bottom bar
+	GFX_FilledBox(
+		window,11,
+		0,            wblock->bottombar.y1,
+		wblock->t.x2, window->height-1,
+                PAINT_DIRECTLY
+	);
 
 	DrawBottomSlider(window);
 
-	GFX_Line(
-		window,1,
-		wblock->a.x1,
-		wblock->t.y2+1,
-		window->bottomslider.x-1,
-		wblock->t.y2+1,
-                PAINT_DIRECTLY
-	);
+        GFX_UpdateUpperLeft(window, wblock);
 
 	DrawAllWTrackHeaders(window,wblock);
 

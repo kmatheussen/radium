@@ -270,8 +270,11 @@ $1 = (SoundPlugin *) 0x0
 #include <QTextStream>
 #include <QMessageBox>
 #include <QVector>
+#include <QCoreApplication>
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
+
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "undo_pd_controllers_proc.h"
@@ -285,6 +288,9 @@ $1 = (SoundPlugin *) 0x0
 extern PlayerClass *pc;
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
+
+#include "../Qt/helpers.h"
+
 #include "SoundPluginRegistry_proc.h"
 #include "Mixer_proc.h"
 
@@ -363,6 +369,7 @@ static int RT_get_legal_note_id_pos(Data *data, float ids_pos){
     return data->note_ids[i_ids_pos];
 }
 
+// called from radium
 static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -370,11 +377,12 @@ static void RT_process(SoundPlugin *plugin, int64_t block_delta_time, int num_fr
   libpds_process_float_noninterleaved(pd, num_frames / libpds_blocksize(pd), (const float**) inputs, outputs);
 }
 
+// called from radium
 static void RT_play_note(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan){
 
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
-  //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*MAX_VELOCITY),volume);
+  //printf("RT_play_note. %f %d (%f)\n",note_num,(int)(volume*127),volume);
   libpds_noteon(pd, 0, note_num, volume*127);
   
   {
@@ -406,6 +414,7 @@ static void RT_stop_note(struct SoundPlugin *plugin, int64_t block_delta_time, f
   }
 }
 
+// called from radium
 static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -423,6 +432,7 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int64_t block_delta_t
   }
 }
 
+// called from radium
 static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch){
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -439,6 +449,7 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int64_t block_delta_ti
   }
 }
 
+// called from radium
 void RT_PD_set_absolute_time(int64_t time){ 
   if(g_instances != NULL) {
     t_atom v[3];
@@ -456,11 +467,11 @@ void RT_PD_set_absolute_time(int64_t time){
   } 
 }
 
-void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
+// called from radium
+void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, Place *p){
 
   if(g_instances != NULL) {
     t_atom v[8];
-    t_atom v_line[6];
     int sample_rate = MIXER_get_sample_rate();
 
     SETFLOAT(v + 0, int(time / sample_rate));
@@ -473,30 +484,40 @@ void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p){
     SETFLOAT(v + 6, int(duration / sample_rate));
     SETFLOAT(v + 7, duration % sample_rate);
 
-    if(p->counter==0){
-      const struct Blocks *block = PC_GetPlayBlock(0);
-      int64_t duration = block->times[p->line+1].time - block->times[p->line].time;
-      
-      SETFLOAT(v_line + 0, int(time / sample_rate));
-      SETFLOAT(v_line + 1, time % sample_rate);
-      SETFLOAT(v_line + 2, sample_rate);
-      SETFLOAT(v_line + 3, p->line);
-      SETFLOAT(v_line + 4, int(duration/sample_rate));
-      SETFLOAT(v_line + 5, duration % sample_rate);            
-    }
-
     Data *instance = g_instances;
     while(instance != NULL){
-      libpds_list(instance->pd, "radium_subline", 8, v);
-
-      if (p->counter==0)
-        libpds_list(instance->pd, "radium_line", 6, v_line);
-
+      libpds_list(instance->pd, "radium_visibleline", 8, v);
       instance = instance->next;
     }
   }
 }
 
+// called from radium
+void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
+
+  if(g_instances != NULL) {
+    t_atom v_line[6];
+    int sample_rate = MIXER_get_sample_rate();
+
+    const struct Blocks *block = PC_GetPlayBlock(0);
+    int64_t duration = block->times[line+1].time - block->times[line].time;
+      
+    SETFLOAT(v_line + 0, int(time / sample_rate));
+    SETFLOAT(v_line + 1, time % sample_rate);
+    SETFLOAT(v_line + 2, sample_rate);
+    SETFLOAT(v_line + 3, line);
+    SETFLOAT(v_line + 4, int(duration/sample_rate));
+    SETFLOAT(v_line + 5, duration % sample_rate);            
+
+    Data *instance = g_instances;
+    while(instance != NULL){
+      libpds_list(instance->pd, "radium_line", 6, v_line);
+      instance = instance->next;
+    }
+  }
+}
+
+// called from radium
 static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -540,6 +561,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int64_t block_delta_
   }
 }
 
+// called from radium
 static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   float raw = data->controllers[effect_num].value;
@@ -551,6 +573,7 @@ static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enu
     return raw;
 }
 
+// called from radium
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[effect_num];
@@ -563,6 +586,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)controller->value);
 }
 
+// called from radium
 static void show_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
@@ -571,11 +595,13 @@ static void show_gui(struct SoundPlugin *plugin){
   }PLAYER_unlock();
 }
 
-void save_file(SoundPlugin *plugin) {
+// called from radium
+static void save_file(SoundPlugin *plugin) {
   Data *data=(Data*)plugin->data;
   libpds_request_savefile(data->pd, data->file);
 }
 
+// called from radium
 static void hide_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
@@ -585,6 +611,7 @@ static void hide_gui(struct SoundPlugin *plugin){
   }PLAYER_unlock();
 }
 
+// called from Pd
 static void RT_pdfloathook(void *d, const char *sym, float val){
   Pd_Controller *controller = (Pd_Controller*)d;
 
@@ -601,12 +628,14 @@ static void RT_pdfloathook(void *d, const char *sym, float val){
   }
 }
 
+// called from Pd
 static void RT_bind_receiver(Pd_Controller *controller){
   char receive_symbol_name[PD_NAME_LENGTH+20];
   snprintf(receive_symbol_name, PD_NAME_LENGTH+19, "%s-receiver", controller->name);
   controller->pd_binding = libpds_bind(((Data*)controller->plugin->data)->pd, receive_symbol_name, controller);
 }
 
+// called from Pd
 static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value){
   Pd_Controller *controller;
   int controller_num;
@@ -615,12 +644,12 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   for(controller_num=0;controller_num<NUM_PD_CONTROLLERS;controller_num++) {
     controller = &data->controllers[controller_num];
 
-    if(controller->name != NULL && !strcmp(controller->name, controller_name)) {
+    if(controller->name[0]!=0 && !strcmp(controller->name, controller_name)) {
       creating_new = false;
       break;
     }
 
-    if(controller->name == NULL || !strcmp(controller->name, ""))
+    if(controller->name[0] == 0 || !strcmp(controller->name, ""))
       break;
   }
 
@@ -640,6 +669,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   controller->min_value = min_value;
   controller->value = value;
   controller->max_value = max_value;  
+
   strncpy(controller->name, controller_name, PD_NAME_LENGTH-1);
   snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", controller_name);
   snprintf(controller->fx_when_middle_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_middle", controller_name);
@@ -654,7 +684,9 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   PDGUI_schedule_clearing(data->qtgui);
 }
 
+
 // Note that hooks are always called from the player thread.
+// called from Pd
 static void RT_pdmessagehook(void *d, const char *source, const char *controller_name, int argc, t_atom *argv){
   SoundPlugin *plugin = (SoundPlugin*)d;
 
@@ -670,14 +702,17 @@ static void RT_pdmessagehook(void *d, const char *source, const char *controller
   }
 }
 
+// called from Pd
 static bool is_bang(t_atom atom){
   return libpd_is_symbol(atom); // && atom.a_w.w_symbol==&s_bang;
 }
 
+// called from Pd
 static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   SoundPlugin *plugin = (SoundPlugin*)d;
   Data *data = (Data*)plugin->data;
   int sample_rate = MIXER_get_sample_rate();
+  struct Patch *patch = (struct Patch*)plugin->patch;
   
   //printf("argc: %d\n",argc);
   //printf("recv: %s\n",recv);
@@ -719,7 +754,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds  = libpd_get_float(argv[4]);
         int     frames   = libpd_get_float(argv[5]);
         int64_t time     = seconds*sample_rate + frames;
-        RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, note_id, velocity, pan, time);
+        if (patch!=NULL)
+          RT_PATCH_send_play_note_to_receivers(patch, pitch, note_id, velocity, pan, time);
       }
     else
       printf("Wrong args for radium_send_note_on\n");
@@ -736,7 +772,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds = libpd_get_float(argv[2]);
         int     frames  = libpd_get_float(argv[3]);
         int64_t time    = seconds*sample_rate + frames;
-        RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, note_id, time);
+        if (patch!=NULL)
+          RT_PATCH_send_stop_note_to_receivers(patch, pitch, note_id, time);
       }
     else
       printf("Wrong args for radium_send_note_off\n");
@@ -756,7 +793,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int     frames   = libpd_get_float(argv[4]);
         int64_t time     = seconds*sample_rate + frames;
         //printf("send_velocity. id: %d, argv[0]: %f, notenum: %f, velocity: %f, seconds: %f, frames: %d\n",(int)note_id,libpd_get_float(argv[0]),notenum,velocity,seconds,frames);
-        RT_PATCH_send_change_velocity_to_receivers(plugin->patch, notenum, note_id, velocity, time);
+        if (patch!=NULL)
+          RT_PATCH_send_change_velocity_to_receivers(patch, notenum, note_id, velocity, time);
       }
     else
       printf("Wrong args for radium_send_velocity\n");
@@ -775,7 +813,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds = libpd_get_float(argv[3]);
         int     frames  = libpd_get_float(argv[4]);
         int64_t time    = seconds*sample_rate + frames;
-        RT_PATCH_send_change_pitch_to_receivers(plugin->patch, notenum, note_id, pitch, time);
+        if (patch!=NULL)
+          RT_PATCH_send_change_pitch_to_receivers(patch, notenum, note_id, pitch, time);
       }
     else
       printf("Wrong args for radium_send_pitch\n");
@@ -796,25 +835,31 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   }
 }
 
+// called from Pd
 static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
-  if(plugin->patch==NULL)
+  volatile struct Patch *patch = plugin->patch;
+  
+  if(patch==NULL)
     return;
 
   if(velocity>0)
-    RT_PATCH_send_play_note_to_receivers(plugin->patch, pitch, -1, velocity*MAX_VELOCITY/127, 0.0f, -1);
+    RT_PATCH_send_play_note_to_receivers((struct Patch*)patch, pitch, -1, (float)velocity / 127.0f, 0.0f, -1);
   else
-    RT_PATCH_send_stop_note_to_receivers(plugin->patch, pitch, -1, -1);
+    RT_PATCH_send_stop_note_to_receivers((struct Patch*)patch, pitch, -1, -1);
 
-  //printf("Got note on %d %d %d (%p)\n",channel,pitch,velocity,d);
+  //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
 }
 
+// called from Pd
 static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity){
   SoundPlugin *plugin = (SoundPlugin*)d;
-  if(plugin->patch==NULL)
+  volatile struct Patch *patch = plugin->patch;
+  
+  if(patch==NULL)
     return;
 
-  RT_PATCH_send_change_velocity_to_receivers(plugin->patch, pitch, -1, velocity*MAX_VELOCITY/127, -1);
+  RT_PATCH_send_change_velocity_to_receivers((struct Patch*)patch, pitch, -1, (float)velocity / 127.0f, -1);
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 
@@ -831,7 +876,7 @@ static QTemporaryFile *get_pdfile_from_state(hash_t *state){
   int num_lines = HASH_get_int(state, "num_lines");
 
   for(int i=0; i<num_lines; i++)
-    out << HASH_get_string_at(state, "line", i);
+    out << STRING_get_qstring(HASH_get_string_at(state, "line", i));
 
   pdfile->close();
 
@@ -855,8 +900,8 @@ static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *stat
   int i=0;
   QString line = in.readLine();
   while (!line.isNull()) {
-    //printf("line: -%s-\n",line.ascii());
-    HASH_put_string_at(state, "line", i, line.ascii());
+    //printf("line: -%s-\n",line.toUtf8().constData());
+    HASH_put_string_at(state, "line", i, STRING_create(line));
     i++;
     line = in.readLine();
   }
@@ -867,7 +912,7 @@ static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *stat
 }
 
 static QString get_search_path() {
-  return QString(OS_get_program_path()) + QDir::separator() + "pd";
+  return QCoreApplication::applicationDirPath() + QDir::separator() + "pd";
 }
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){
@@ -877,6 +922,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
+    data->controllers[i].display_name = NULL;
     data->controllers[i].plugin = plugin;
     data->controllers[i].num = i;
     data->controllers[i].max_value = 1.0f;
@@ -892,14 +938,15 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
     QMessageBox msgBox;
     msgBox.setText(QString(libpds_strerror()));
     msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.exec();
+    safeExec(msgBox);
+    free(data);
     return NULL;
   }
 
   data->pd = pd;
 
   QString search_path = get_search_path();
-  libpds_add_to_search_path(pd, search_path.ascii());
+  libpds_add_to_search_path(pd, search_path.toUtf8().constData());
 
   libpds_set_floathook(pd, RT_pdfloathook);
   libpds_set_messagehook(pd, RT_pdmessagehook);
@@ -915,7 +962,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   blocksize = libpds_blocksize(pd);
 
   if( (block_size % blocksize) != 0)
-    RWarning("PD's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", blocksize, block_size);
+    GFX_Message(NULL, "PD's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", blocksize, block_size);
 
   // compute audio    [; pd dsp 1(
   libpds_start_message(pd, 1); // one entry in list
@@ -935,23 +982,27 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   data->pdfile = pdfile;
 
   QFileInfo qfileinfo(pdfile->fileName());
-  printf("name: %s, dir: %s\n",qfileinfo.fileName().ascii(), qfileinfo.absolutePath().ascii());
+  printf("name: %s, dir: %s\n",qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
 
-  data->file = libpds_openfile(pd, qfileinfo.fileName().ascii(), qfileinfo.absolutePath().ascii());
-
+  data->file = libpds_openfile(pd, qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
+  
+  R_ASSERT(data->file != NULL);
+  if (data->file==NULL)
+    return NULL;
+  
   return data;
 }
 
-static QTemporaryFile *create_new_tempfile(const char *fileName){
+static QTemporaryFile *create_new_tempfile(QString *fileName){
   // create
-  QFile source(fileName);
+  QFile source(*fileName);
   QTemporaryFile *pdfile = create_temp_pdfile();
 
   // open
   printf("open: %d\n",pdfile->open());
   source.open(QIODevice::ReadOnly);
 
-  printf("filename: -%s-\n",pdfile->fileName().ascii());
+  printf("filename: -%s-\n",pdfile->fileName().toUtf8().constData());
 
   // copy
   pdfile->write(source.readAll());
@@ -967,7 +1018,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   QTemporaryFile *pdfile;
 
   if (state==NULL)
-    pdfile = create_new_tempfile((const char*)plugin_type->data);
+    pdfile = create_new_tempfile((QString *)plugin_type->data);
   else
     pdfile = get_pdfile_from_state(state);
 
@@ -1003,7 +1054,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
         prev->next = instance->next;
     }PLAYER_unlock();
   }
-
+  
   libpds_closefile(data->pd, data->file);  
   libpds_delete(data->pd);
 
@@ -1011,6 +1062,11 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
   delete data->pdfile;
 
+  for(int i=0;i<NUM_PD_CONTROLLERS;i++){
+    Pd_Controller *controller = &data->controllers[i];
+    free((void*)controller->display_name);
+  }
+  
   free(data);
 }
 
@@ -1050,13 +1106,16 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
   return &data->controllers[n];
 }
 
-void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name){
+void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
-
+  const char *name = STRING_get_chars(wname);
+  
   if(!strcmp(controller->name, name))
     return;
 
+  controller->display_name = wcsdup(wname);
+  
   // Should check if it is different before binding. (but also if it is already binded)
 
   PLAYER_lock();{
@@ -1084,7 +1143,9 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
       controller->pd_binding = NULL;
     }
 
-    const char *name = HASH_has_key_at(state, "name", i) ? HASH_get_string_at(state, "name", i) : NULL;
+    controller->display_name = HASH_has_key_at(state, "name", i) ? wcsdup(HASH_get_string_at(state, "name", i)) : NULL;
+    
+    const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
     if(name==NULL || !strcmp(name,""))
       controller->name[0] = 0;
     else
@@ -1097,13 +1158,14 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
     controller->has_gui   = HASH_get_int_at(state, "has_gui", i)==1 ? true : false;
     controller->config_dialog_visible = HASH_get_int_at(state, "config_dialog_visible", i)==1 ? true : false;
 
-    if(controller->name != NULL) {
+    if(controller->name[0] != 0) {
       RT_bind_receiver(controller);
     }
   }
 
-  if(plugin->patch != NULL)
-    GFX_update_instrument_widget(plugin->patch);
+  volatile struct Patch *patch = plugin->patch;
+  if(patch != NULL)
+    GFX_update_instrument_widget((struct Patch*)patch);
 }
 
 void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
@@ -1112,7 +1174,10 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   int i;
   for(i=0;i<NUM_PD_CONTROLLERS;i++) {
     Pd_Controller *controller = &data->controllers[i];
-    HASH_put_string_at(state, "name", i, controller->name);
+    if (controller->display_name != NULL)
+      HASH_put_string_at(state, "name", i, controller->display_name);
+    else
+      HASH_put_chars_at(state, "name", i, controller->name);
     HASH_put_int_at(state, "type", i, controller->type);
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);
@@ -1135,7 +1200,9 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   Data *data=(Data*)plugin->data;
 
-  Undo_PdControllers_CurrPos(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(plugin->patch!=NULL);
+  
+  Undo_PdControllers_CurrPos((struct Patch*)plugin->patch);
 
   int i;
   hash_t *state = HASH_create(NUM_PD_CONTROLLERS);
@@ -1143,7 +1210,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   for(i=0;i<NUM_PD_CONTROLLERS-1;i++) {
     int s = i>=controller_num ? i+1 : i;
     Pd_Controller *controller = &data->controllers[s];
-    HASH_put_string_at(state, "name", i, controller->name);
+    HASH_put_string_at(state, "name", i, controller->display_name);
     HASH_put_int_at(state, "type", i, controller->type);
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);
@@ -1152,7 +1219,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
     HASH_put_int_at(state, "config_dialog_visible", i, controller->config_dialog_visible);
   }
 
-  HASH_put_string_at(state, "name", NUM_PD_CONTROLLERS-1, "");
+  HASH_put_chars_at(state, "name", NUM_PD_CONTROLLERS-1, "");
   HASH_put_int_at(state, "type", NUM_PD_CONTROLLERS-1, EFFECT_FORMAT_FLOAT);
   HASH_put_float_at(state, "min_value", NUM_PD_CONTROLLERS-1, 0.0);
   HASH_put_float_at(state, "value", NUM_PD_CONTROLLERS-1, 0.0);
@@ -1164,11 +1231,11 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
 }
 
 
-static void add_plugin(const char *name, const char *filename) {
+static void add_plugin(const wchar_t *name, QString filename) {
   SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name                = "Pd";
-  plugin_type->name                     = strdup(name);
+  plugin_type->name                     = strdup(STRING_get_chars(name));
   plugin_type->info                     = "Pd is made by Miller Puckette. Radium uses a modified version of libpd to access it.\nlibpd is made by Peter Brinkmann.";
   plugin_type->num_inputs               = 2;
   plugin_type->num_outputs              = 2;
@@ -1196,17 +1263,17 @@ static void add_plugin(const char *name, const char *filename) {
   //plugin_type->recreate_from_state = recreate_from_state;
   plugin_type->create_state        = create_state;
 
-  plugin_type->data                = (void*)strdup(filename);
+  plugin_type->data                = (void*)new QString(filename);
 
   //PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
-  if(!strcmp(name,""))
+  if(STRING_equals(name,""))
     PR_add_plugin_type_no_menu(plugin_type);
   else
     PR_add_plugin_type(plugin_type);
 }
 
 static void build_plugins(QDir dir){
-  printf(">> dir: -%s-\n",dir.absolutePath().ascii());
+  printf(">> dir: -%s-\n",dir.absolutePath().toUtf8().constData());
   PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName()));
 
   dir.setSorting(QDir::Name);
@@ -1231,16 +1298,16 @@ static void build_plugins(QDir dir){
     
     for (int i = 0; i < list.size(); ++i) {
       QFileInfo fileInfo = list.at(i);
-      printf("   file: -%s-\n",fileInfo.absoluteFilePath().ascii());
+      printf("   file: -%s-\n",fileInfo.absoluteFilePath().toUtf8().constData());
       if(fileInfo.suffix()=="pd") {
         if(fileInfo.baseName()==QString("New_Audio_Effect"))
-          add_plugin("", fileInfo.absoluteFilePath().ascii());
-        add_plugin(fileInfo.baseName().replace("_"," ").ascii(), fileInfo.absoluteFilePath().ascii());
+          add_plugin(STRING_create(""), fileInfo.absoluteFilePath());
+        add_plugin(STRING_create(fileInfo.baseName().replace("_"," ")), fileInfo.absoluteFilePath());
       }
     }
   }
 
-  printf("<< dir: -%s-\n",dir.absolutePath().ascii());
+  printf("<< dir: -%s-\n",dir.absolutePath().toUtf8().constData());
   PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 
@@ -1261,7 +1328,7 @@ void create_pd_plugin(void){
 void create_pd_plugin(void){
 }
 
-void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name) {}
+void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {}
 Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n) {return NULL;}
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui) {}
 void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}

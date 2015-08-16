@@ -27,50 +27,83 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileDialog>
 
 #include "../common/nsmtracker.h"
+#include "../common/settings_proc.h"
+#include "../common/vector_proc.h"
+#include "../common/visual_proc.h"
+
+#include "../Qt/helpers.h"
 
 #include "SoundPlugin.h"
 #include "Jack_plugin_proc.h"
 #include "VST_plugins_proc.h"
 
+#include "../mixergui/QM_MixerWidget.h"
+
 #include "SoundPluginRegistry_proc.h"
 
-static std::vector<SoundPluginType*> g_plugin_types;
+
+static radium::Vector<SoundPluginType*> g_plugin_types;
+static radium::Vector<SoundPluginTypeContainer*> g_plugin_type_containers;
 
 int PR_get_num_plugin_types(void){
   return g_plugin_types.size();
 }
 
-SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
-  for(unsigned int i=0;i<g_plugin_types.size();i++)
-    if(!strcmp(g_plugin_types.at(i)->type_name,type_name))
-      if(!strcmp(g_plugin_types.at(i)->name,plugin_name))
-        return g_plugin_types.at(i);
+static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
+  return PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
+}
+
+SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name){
+  for(SoundPluginType *plugin_type : g_plugin_types)
+    if(!strcmp(plugin_type->type_name,type_name))
+      if(!strcmp(plugin_type->name,plugin_name))
+        return plugin_type;
+
+  // check if the container needs to be populated.
+  if (container_name != NULL)
+    for(auto container : g_plugin_type_containers)
+      if (!container->is_populated)
+        if(!strcmp(container->type_name,type_name))
+          if(!strcmp(container->name,container_name)){
+            container->populate(container);
+            return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+          }
+
+  // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
+  if(!strcmp(type_name,"VST") && container_name==NULL){
+    return PR_get_plugin_type_by_name(plugin_name,type_name,plugin_name);
+  }
 
   if(!strcmp(type_name,"VST")){
     while(true){
-      QMessageBox msgBox;
-      msgBox.setText("VST Plugin " + QString(plugin_name) + " not found.");
-      msgBox.setInformativeText("Press OK to select the plugin path, or Cancel to replace the plugin with a Pipe.");
-      msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-      msgBox.setDefaultButton(QMessageBox::Ok);
-      int ret = msgBox.exec();
-      
-      if(ret==QMessageBox::Cancel)
-        break;
+      vector_t v = {0};
 
-      if(ret==QMessageBox::Ok){
+      VECTOR_push_back(&v, "Select plugin file");
+      VECTOR_push_back(&v, "Use different plugin");
+      VECTOR_push_back(&v, "Replace with pipe");
+
+      int ret = GFX_Message(&v, "VST Plugin " + QString(plugin_name) + " not found.");
+
+      if (ret==0) {
         QString filename = QFileDialog::getOpenFileName(NULL, plugin_name);
         QFileInfo info(filename);
 
         QString basename = info.fileName();
         basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
 
-        if(basename==QString(plugin_name) && info.exists()){
-          VST_add_path(info.dir().path());
-          PR_init_plugin_types();
-          return PR_get_plugin_type_by_name(type_name, plugin_name);
-        }
-      }
+        //        if(basename==QString(plugin_name) && info.exists()){
+        VST_add_path(info.dir().path());
+        PR_init_plugin_types();
+        return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+        //}
+      } else if (ret==1) {
+        SoundPluginType *plugintype = MW_popup_plugin_selector(NULL, 0, 0, false);
+        if (plugintype==NULL)
+          break;
+        else
+          return plugintype;
+      } else
+        break;
     }
 
   }else if(!strcmp(type_name,"Pd") && strcmp(plugin_name, "")){ // type_name doesn't mean anything for already saved files. Without this excpetion, plugins would be replaced by pipes if a pd patch file was renamed.
@@ -84,24 +117,24 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *p
       msgBox.setInformativeText("(LADSPA_PATH is not set)");
 
     msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.exec();
+    safeExec(msgBox);
   }
 
   return PR_get_plugin_type_by_name("Pipe","Pipe");
 }
 
 SoundPluginType *PR_get_plugin_type(int num){
-  return g_plugin_types.at(num);
+  return g_plugin_types[num];
 }
 
-static std::vector<PluginMenuEntry> g_plugin_menu_entries;
+static radium::Vector<PluginMenuEntry> g_plugin_menu_entries;
 
-const std::vector<PluginMenuEntry> &PR_get_menu_entries(void){
+const radium::Vector<PluginMenuEntry> &PR_get_menu_entries(void){
   return g_plugin_menu_entries;
 }
 
 void PR_add_menu_entry(PluginMenuEntry entry){
-  g_plugin_menu_entries.push_back(entry);
+  g_plugin_menu_entries.add(entry);
 }
 
 void PR_add_plugin_type_no_menu(SoundPluginType *type){
@@ -153,7 +186,7 @@ void PR_add_plugin_type_no_menu(SoundPluginType *type){
   if(!strcmp(type->type_name,"Faust") && !strcmp(type->name,"Tapiir"))
     type->info = "The tapiir program is a multitap delay program. It has a stereo input and a stereo output. Each channel of the stereo signal is sent to 6 independant delays, not necessarily with the same gain for each delay. Then, each delay output is sent to the 5 other delay input, and also to its own input (to provide feedback possibilities), and all volumes can be changed independantly. Finally, each delay output, and each input of the tapiir is connected to both channels of the stereo output of the tapiir, still with configurable volumes. A wide range of effect can be constructed out of this complex system of delays (feedback, echos, filters). (This text is copied from http://faust.grame.fr)\n\nThe first Tapiir was made by Maarten de Boer's. This Faust version is implemented by the Faust team.";
 
-  g_plugin_types.push_back(type);
+  g_plugin_types.add(type);
 }
 
 void PR_add_plugin_type(SoundPluginType *type){
@@ -178,15 +211,23 @@ void PR_add_plugin_type(SoundPluginType *type){
   PR_add_menu_entry(PluginMenuEntry::normal(type));
 }
 
+void PR_add_plugin_container(SoundPluginTypeContainer *container){
+  g_plugin_type_containers.add(container);
+  PR_add_menu_entry(PluginMenuEntry::container(container));
+}
+
 //extern "C" void create_sine_plugin(void);
 extern void create_bus_plugins(void);
 extern "C" void create_patchbay_plugin(void);
-extern void create_vst_plugins(void);
+#include "VST_plugins_proc.h"
+extern void create_juce_plugins(void);
 extern void create_ladspa_plugins(void);
 extern "C" void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
 extern void create_pd_plugin(void);
 
+extern "C" void create_midimessages_plugin(void);
+  
 extern void create_zita_rev_plugin(void);
 extern void create_faust_tapiir_plugin(void);
 extern void create_faust_multibandcomp_plugin(void);
@@ -218,18 +259,56 @@ extern void create_stk_tuned_bar_plugin(void);
 extern void create_stk_uni_bar_plugin(void);
 extern void create_stk_voice_form_plugin(void);
 
+
+void PR_set_init_vst_first(void){
+  SETTINGS_write_bool("init_vst_first", true);
+}
+
+void PR_set_init_ladspa_first(void){
+  SETTINGS_write_bool("init_vst_first", false);
+}
+
+bool PR_is_initing_vst_first(void){
+  return SETTINGS_read_bool("init_vst_first", false);
+}
+
+
+
 void PR_init_plugin_types(void){
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
 
-  create_ladspa_plugins();
-  PR_add_menu_entry(PluginMenuEntry::separator());
+  if (PR_is_initing_vst_first()){
 
-  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));
-  {
-    create_vst_plugins();
+    PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
+      create_vst_plugins(true);
+    }PR_add_menu_entry(PluginMenuEntry::level_down());
+
+    PR_add_menu_entry(PluginMenuEntry::separator());
+    
+    create_ladspa_plugins();
+
+  } else {
+
+    create_ladspa_plugins();
+    PR_add_menu_entry(PluginMenuEntry::separator());
+
+    PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
+      create_vst_plugins(true);
+    }PR_add_menu_entry(PluginMenuEntry::level_down());
+  
   }
-  PR_add_menu_entry(PluginMenuEntry::level_down());
+
+  /*
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
+    create_vst_plugins(false);
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+  */
+  
+  PR_add_menu_entry(PluginMenuEntry::separator());
+  
+  PR_add_menu_entry(PluginMenuEntry::load_preset());
+  
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));
@@ -265,6 +344,7 @@ void PR_init_plugin_types(void){
 
   create_bus_plugins();
   create_patchbay_plugin();
+  create_midimessages_plugin();
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   //create_sine_plugin();

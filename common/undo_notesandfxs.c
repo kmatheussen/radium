@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
+#include <string.h>
 
 #include "nsmtracker.h"
 #include "undo.h"
@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_copy_proc.h"
 #include "list_proc.h"
 #include "fxlines_proc.h"
-#include <string.h>
-#include "trackreallines_proc.h"
 #include "../midi/midi_fx_proc.h"
 
 #include "undo_notesandfxs_proc.h"
@@ -106,9 +104,9 @@ void *Undo_Do_NotesAndFXs(
 	undo_notesandfxs->fxs=temp;
 	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
-	UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
-
+#endif
 	return undo_notesandfxs;
 }
 

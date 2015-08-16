@@ -15,32 +15,33 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
-
-extern void UpdateReallinesDependens(
+extern LANGSPEC void UpdateReallinesDependens(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
-extern void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock);
+extern LANGSPEC void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock);
 //extern int FindHighestLocalzoomLevel(struct WBlocks *wblock);
-extern void SetZoomLevelAreaWidth(struct Tracker_Windows *window,
-                                  struct WBlocks *wblock);
-
-extern void ExpandLine(
+#if 0
+extern LANGSPEC void SetZoomLevelAreaWidth(const struct Tracker_Windows *window,
+                                           struct WBlocks *wblock);
+#endif
+/*
+extern LANGSPEC void ExpandLine(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	int realline,
 	int num_newreallines
 );
-extern void ExpandLineCurrPos(
+*/
+
+extern LANGSPEC void ExpandLineCurrPos(
 	struct Tracker_Windows *window,
 	int num_newreallines
 );
-extern void Unexpand(struct Tracker_Windows *window,struct WBlocks *wblock,int realline);
-extern void UnexpandCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void Unexpand(struct Tracker_Windows *window,struct WBlocks *wblock,int realline);
+extern LANGSPEC void UnexpandCurrPos(struct Tracker_Windows *window);
 
-extern void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom);
+extern LANGSPEC void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom);
 
-#endif
+extern LANGSPEC void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines);
+extern LANGSPEC void LineZoomBlockInc(struct Tracker_Windows *window, struct WBlocks *wblock, int inc_num_lines);

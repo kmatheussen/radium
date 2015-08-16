@@ -68,6 +68,8 @@ class Argument:
             return "s7_make_real"
         elif self.type_string=="char*":
             return "s7_make_string"
+        elif self.type_string=="const_char*":
+            return "s7_make_string"
         elif self.type_string=="bool":
             return "s7_make_boolean"
         else:
@@ -81,8 +83,10 @@ class Argument:
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="char*":
             return "(char*)s7_string("
+        elif self.type_string=="const_char*":
+            return "(const_char*)s7_string("
         elif self.type_string=="bool":
-            return "s7_bool("
+            return "s7_boolean(radiums7_sc, "
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
@@ -94,34 +98,48 @@ class Argument:
             return "s7_is_number"
         elif self.type_string=="char*":
             return "s7_is_string"
+        elif self.type_string=="const_char*":
+            return "s7_is_string"
         elif self.type_string=="bool":
-            return "s7_is_bool"
+            return "s7_is_boolean"
         else:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise "Unknown type '"+type_string+"'"
 
     # keyDownPlay -> r-key-down-play
-    # keyDownBPM -> r-key-down-BPM
+    # keyDownBPM -> r-key-down-bpm
     # KeyDownP   -> r-key-down-p
+    # playLPBAi  -> play-lpb-ai
     def get_scheme_varname(self):
-        def loop(name, dontconvert):
+        def loop(current, name, previous_was_capitol):
             if name=="":
-                return ""
-            elif name[0].islower():
-                return name[0]+loop(name[1:], False)
-            elif name[0].isupper():
-                if dontconvert==True:
-                    return name[0]+loop(name[1:], False)
-                elif len(name)==1:
-                    return "-"+name[0].lower()
-                elif name[1].isupper():
-                    return "-"+name[0]+loop(name[1:], True)
-                else:
-                    return "-"+name[0].lower()+loop(name[1:], False)
-            else:
-                return name[0]+loop(name[1:], False)
+                return [current]
 
-        return "ra:"+loop(self.varname, False)
+            elif name[0].isupper() and not name[1].isupper() and not name[1]==' ':
+                return [current] + loop(name[0]+name[1], name[2:], False)
+
+            elif name[0].isupper() and not previous_was_capitol:
+                return [current] + loop(name[0], name[1:], True)
+            
+            elif name[0].isupper() and previous_was_capitol:
+                return loop(current+name[0], name[1:], True)
+            
+            else:
+                return loop(current+name[0], name[1:], False)
+
+            
+        #print(self.varname)
+        
+        result = ""
+        for element in loop(string.capitalize(self.varname[0]),self.varname[1:]+" ", True):
+            processed = string.strip(string.lower(element))
+            if processed != "":
+                if result=="":
+                    result = "ra:" + processed
+                else:
+                    result = result + "-" + processed
+                    
+        return result
 
     def write(self,oh,dodefault):
         for lokke in range(len(self.qualifiers)):
@@ -213,6 +231,8 @@ class Proto:
                 t="O"
             elif qualifier=="char*":
                 t="s"
+            elif qualifier=="const_char*":
+                t="s"
             elif qualifier=="bool":
                 t="b"
             else:
@@ -229,6 +249,9 @@ class Proto:
         for lokke in range(self.arglen):
             oh.write(",&arg%d" % lokke)
         oh.write(")) return NULL;\n")
+
+        if ("menu" not in self.proc.varname) and ("Menu" not in self.proc.varname):
+            oh.write("EVENTLOG_add_event(\"" + self.proc.varname + " [py]\");\n")
 
         if not (len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void"):
             oh.write("result=")
@@ -254,6 +277,8 @@ class Proto:
                 elif qualifier=="float":
                     t="PyFloat_FromDouble("
                 elif qualifier=="char*":
+                    t="PyString_FromString("
+                elif qualifier=="const_char*":
                     t="PyString_FromString("
                 elif qualifier=="bool":
                     t="PyBool_FromLong((long)"
@@ -402,12 +427,16 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
 
     # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
     def write_s7_call_c_function(self,oh):
+        if false: #"set" in self.proc.varname:
+            oh.write("  EVENTLOG_add_event(\"" + self.proc.varname + " [sc]\"); ")
+        else:
+            oh.write("  ");
         callstring = self.proc.varname+"("+self.get_arg_list(self.args)+")"
         if self.proc.type_string=="void":
-            oh.write("  "+callstring+"; return s7_undefined(radiums7_sc);\n")
+            oh.write(callstring+"; return s7_undefined(radiums7_sc);\n")
         else:
             conversion_function = self.proc.get_s7_make_type_function()
-            oh.write("  return "+conversion_function+"(radiums7_sc, "+callstring+");\n")
+            oh.write("return "+conversion_function+"(radiums7_sc, "+callstring+");\n")
 
     def write_s7_func(self,oh):
         if "PyObject*" in map(lambda arg: arg.type_string, self.args):
@@ -594,6 +623,7 @@ class Read:
     def makeRadium_h(self):
         oh=open("radium_proc.h","w")
         oh.write("/*This file is automaticly generated from protos.conf.*/\n");
+        oh.write("#define const_char const char\n")
         self.hs.write(oh)
         self.protos.writeH(oh)
         oh.close()
@@ -620,6 +650,7 @@ class Read:
         oh.write("#include \"Python.h\"\n\n")
         oh.write("#include \"s7.h\"\n\n")
         oh.write("#include \"radium_proc.h\"\n\n")
+        oh.write("#include \"../crashreporter/crashreporter_proc.h\"\n\n")
         self.protos.write_s7_funcs(oh)
         oh.write("void init_radium_s7(s7_scheme *s7){\n")
         self.protos.write_s7_defines(oh)

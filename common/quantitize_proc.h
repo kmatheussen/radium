@@ -16,17 +16,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-
-#ifndef TRACKER_INCLUDE
-
+#if 0
 extern void Quantitize(
-	struct Blocks *block,
 	Place *toquant,
-	float quant
+	Place quant
 );
+#endif
+
+extern LANGSPEC quantitize_options_t Quantitize_get_default_options(void);
 
 extern void Quantitize_track_CurrPos(
 	struct Tracker_Windows *window
@@ -40,6 +37,8 @@ extern void Quantitize_range_CurrPos(
 	struct Tracker_Windows *window
 );
 
-#endif
+void SetQuantitize_CurrPos(
+                           struct Tracker_Windows *window
+                           );
 
 

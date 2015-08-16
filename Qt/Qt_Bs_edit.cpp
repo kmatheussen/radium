@@ -200,7 +200,9 @@ struct ScopedVisitors{
   int x2=get_##widget##_x2(stacked,width,height); \
   int y2=get_##widget##_y2(stacked,width,height); \
   widget.move(MAX(xborder,x1),MAX(yborder,y1));    \
-  widget.setFixedSize(MIN(x2-x1,width-xborder),MIN(y2-y1,height-yborder)); \
+  int daswidth = MIN(x2-x1,width-xborder);            \
+  int dasheight = MIN(y2-y1,height-yborder);          \
+  if (daswidth>0 && dasheight>0) widget.setFixedSize(daswidth,dasheight); \
   }while(0);
 
 class BlockSelector : public QWidget

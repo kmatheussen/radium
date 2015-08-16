@@ -1,10 +1,8 @@
 settings_version = 0.72 # dont change this one
 
-font = DejaVu Sans Mono,12,-1,5,75,0,0,0,0,0
+font = Cousine,11,-1,5,75,0,0,0,0,0
 font_style = Bold
 
-system_font_size = 10
-system_font_stretch = 100
 system_font = Lato,8,-1,5,87,0,0,0,0,0
 system_font_style = Black
 
@@ -18,3 +16,6 @@ use_0x90_for_note_off = 0
 
 num_vst_paths = 1
 vst_path0 = C:/Program Files/Steinberg/VstPlugins
+
+last_system_font_version = 1.9.21
+last_editor_font_version = 3.0.b2.3

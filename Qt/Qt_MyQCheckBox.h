@@ -77,8 +77,8 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       //p.drawRect(1,1,width()-3,height()-3);
     }else{
       painter->setPen(col);
-      painter->drawRect(1,1,width-3,height-2);
-      painter->drawRect(2,2,width-5,height-4);
+      painter->drawRect(1,1,width-3,height-2); // outer
+      painter->drawRect(2,2,width-5,height-4); // inner
     }
 
 

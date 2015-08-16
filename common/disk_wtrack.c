@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "disk.h"
+#include "wtracks_proc.h"
 
 #include "disk_wtrack_proc.h"
 
@@ -39,9 +40,13 @@ DC_start("WTRACK");
 	DC_SSI("notesonoff",wtrack->notesonoff);
 	DC_SSI("notelength",wtrack->notelength);
 	DC_SSI("fxwidth",wtrack->fxwidth);
-	DC_SSI("num_vel",wtrack->num_vel);
+	//DC_SSI("num_vel",wtrack->num_vel);
         DC_SSB("is_wide",wtrack->is_wide);
 
+        DC_SSB("show_pianoroll",wtrack->pianoroll_on);
+        DC_SSI("pianoroll_lowkey",wtrack->pianoroll_lowkey);
+        DC_SSI("pianoroll_highkey",wtrack->pianoroll_highkey);
+        
 
 DC_end();
 SaveWTrack(NextWTrack(wtrack));
@@ -51,17 +56,20 @@ SaveWTrack(NextWTrack(wtrack));
 
 struct WTracks *LoadWTrack(void){
 	static char **objs=NULL;
-	static char *vars[5]={
+	static char *vars[8]={
 		"notesonoff",
 		"notelength",
 		"fxwidth",
 		"num_vel",
-                "is_wide"
+                "is_wide",
+                "show_pianoroll",
+                "pianoroll_lowkey",
+                "pianoroll_highkey"
 	};
-	struct WTracks *wtrack=DC_alloc(sizeof(struct WTracks));
+	struct WTracks *wtrack = WTRACK_new();
 	wtrack->l.num=DC_LoadN();
 
-	GENERAL_LOAD(0,5);
+	GENERAL_LOAD(0,8);
 
 
 var0:
@@ -74,16 +82,21 @@ var2:
 	wtrack->fxwidth=DC_LoadI();
 	goto start;
 var3:
-	wtrack->num_vel=DC_LoadI();
+	//wtrack->num_vel=DC_LoadI();
+        DC_LoadI();
 	goto start;
 var4:
 	wtrack->is_wide=DC_LoadB();
 	goto start;
-
-
 var5:
+        wtrack->pianoroll_on = DC_LoadB();
+        goto start;
 var6:
+        wtrack->pianoroll_lowkey = DC_LoadI();
+        goto start;
 var7:
+        wtrack->pianoroll_highkey = DC_LoadI();
+        goto start;
 var8:
 var9:
 var10:
@@ -95,7 +108,9 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+ var20:
+        
 obj0:
 obj1:
 obj2:

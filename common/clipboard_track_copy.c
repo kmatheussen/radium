@@ -16,15 +16,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#include <string.h>
 
 
 
 #include "nsmtracker.h"
 #include "clipboard_range_copy_proc.h"
 #include "clipboard_range_calc_proc.h"
-#include <string.h>
 #include "placement_proc.h"
 #include "clipboard_tempos_copy_proc.h"
+#include "wtracks_proc.h"
 
 #include "clipboard_track_copy_proc.h"
 
@@ -33,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct WTracks *cb_wtrack=NULL;
 
+extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
@@ -48,16 +50,17 @@ struct WTracks *CB_CopyTrack(
 	struct Tracks *totrack;
 	struct Tracks *track=wtrack->track;
 
-	towtrack=talloc(sizeof(struct WTracks));
+	towtrack=WTRACK_new();
 	memcpy(towtrack,wtrack,sizeof(struct WTracks));
 
 	towtrack->track=totrack=talloc(sizeof(struct Tracks));
 	memcpy(totrack,track,sizeof(struct Tracks));
 
         // Null out some data we don't need so it can be GC-ed.
-        towtrack->trackreallines = NULL;
+#if !USE_OPENGL
         towtrack->wfxnodes = NULL;
         towtrack->wpitches = NULL;
+#endif
 
         towtrack->track->trackname=talloc_strdup(wtrack->track->trackname);
 
@@ -84,6 +87,9 @@ void CB_CopyTrack_CurrPos(
 	struct WTracks *wtrack=wblock->wtrack;
 
 	switch(window->curr_track){
+		case SIGNATURETRACK:
+			cb_lpb=CB_CopyLPBs(block->lpbs);
+			break;
 		case LPBTRACK:
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			break;

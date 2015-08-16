@@ -15,35 +15,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-extern LANGSPEC void UpdateWTrackHeader(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-);
-
-extern LANGSPEC void DrawWTrackHeader(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-);
-
-extern LANGSPEC void UpdateAllWTrackHeaders(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-);
-
 extern LANGSPEC void DrawAllWTrackHeaders(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 );
-
-extern LANGSPEC void DrawUpAllWTrackHeaders(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-);
-
-#endif
-
 

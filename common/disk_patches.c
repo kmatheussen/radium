@@ -80,7 +80,9 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+ var20:
+  
 obj0:
 obj1:
 obj2:
@@ -146,7 +148,9 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+ var20:
+  
 obj1:
 obj2:
 obj3:
@@ -207,6 +211,7 @@ struct Patch *LoadPatch(void){
 
 	struct Patch *patch=DC_alloc(sizeof(struct Patch));
 	patch->id=DC_LoadN();
+        patch->is_usable = true;
         patch->forward_events = true; // default value
 
         PATCH_init_voices(patch);
@@ -262,7 +267,9 @@ var15:
 var16:
 var17:
 var18:
-
+var19:
+ var20:
+        
 obj2:
 obj3:
 obj4:

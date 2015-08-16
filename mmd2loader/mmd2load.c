@@ -80,9 +80,16 @@ typedef uint8_t UBYTE;
 #include "../common/blocklist_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/time_proc.h"
+#include "../common/Beats_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/read_binary.h"
+#include "../common/OS_disk_proc.h"
+
+
+#include "mmd2load_proc.h"
+
+
 
 int createNewInstrument(char *type, char *name);
 
@@ -351,7 +358,7 @@ static void LoadOctaBlock(
 }
 
 
-static char *MMD_GetInstrumentName(FILE *file,NInt num){
+static char *MMD_GetInstrumentName(disk_t *file,NInt num){
 	ULONG expdata;
 	ULONG iinfo;
 	UWORD i_ext_entries;
@@ -360,10 +367,10 @@ static char *MMD_GetInstrumentName(FILE *file,NInt num){
 	char temp[400];
 	char *name;
 
-	fseek(file,32,SEEK_SET);
+	DISK_set_pos(file,32);
         expdata = read_be32uint(file);
 
-	fseek(file,expdata+20,SEEK_SET);
+	DISK_set_pos(file,expdata+20);
         iinfo = read_be32uint(file);
 
         i_ext_entries = read_be16uint(file);
@@ -375,8 +382,8 @@ static char *MMD_GetInstrumentName(FILE *file,NInt num){
 
 	if(num>=i_ext_entries) return "NN";
 
-	fseek(file,iinfo+(num*i_ext_entrsz),SEEK_SET);        
-	fread(temp,i_ext_entrsz,1,file);
+	DISK_set_pos(file,iinfo+(num*i_ext_entrsz));        
+	DISK_read_binary(file, temp, i_ext_entrsz);
 
 	if(strlen(temp)<2) return "NN";
 
@@ -387,7 +394,7 @@ static char *MMD_GetInstrumentName(FILE *file,NInt num){
 }
 
 
-static void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
+static void MMD_LoadInstruments(disk_t *file,ULONG mmd0song){
 	NInt lokke;
 
 	struct MMD0sample *mmd0sample=talloc_atomic(sizeof(struct MMD0sample)*63);
@@ -405,8 +412,8 @@ static void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 	}
 #endif
 
-	fseek(file,mmd0song,SEEK_SET);
-	fread(mmd0sample,sizeof(struct MMD0sample)*63,1,file);
+	DISK_set_pos(file,mmd0song);
+	DISK_read_binary(file, mmd0sample,sizeof(struct MMD0sample)*63);
 
 
 #if 1
@@ -472,24 +479,24 @@ static void MMD_LoadInstruments(FILE *file,ULONG mmd0song){
 
 /* Uses the first Playseq only. */
 
-static void MMD_LoadPlayList(struct Tracker_Windows *window,FILE *file,ULONG mmd2song){
+static void MMD_LoadPlayList(struct Tracker_Windows *window,disk_t *file,ULONG mmd2song){
 	ULONG playseq;
 	UWORD length;
 	UWORD blocknum;
 	int lokke;
 	struct WBlocks *wblock;
 
-	fseek(file,mmd2song+(sizeof(struct MMD0sample)*63)+4,SEEK_SET);
+	DISK_set_pos(file,mmd2song+(sizeof(struct MMD0sample)*63)+4);
 	//fread(&playseq,4,1,file);
         playseq = read_be32uint(file);
 
 	printf("play: %x\n",playseq);
-	fseek(file,playseq,SEEK_SET);
+	DISK_set_pos(file,playseq);
         playseq = read_be32uint(file);
 	//fread(&playseq,4,1,file);
 
 	printf("play: %x\n",playseq);
-	fseek(file,playseq+40,SEEK_SET);
+	DISK_set_pos(file,playseq+40);
         length = read_be16uint(file);
 	//fread(&length,2,1,file);
 
@@ -508,8 +515,8 @@ static void MMD_LoadPlayList(struct Tracker_Windows *window,FILE *file,ULONG mmd
 
 
 
-bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
-	FILE *file;
+bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
+	disk_t *file;
 	NInt lokke;
 	int lokke2;
 
@@ -532,41 +539,41 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 
 	struct TrackLine *octablock;
 
-	file=fopen(filename,"rb");
+	file=DISK_open_binary_for_reading(filename);
 
 	if(file==NULL){
-          perror(filename);
-		RError("Could not open file\n");
-		return false;
+          perror(STRING_get_chars(filename));
+          GFX_Message(NULL, "Could not open file\n");
+          return false;
 	}
 
         ID = read_be32uint(file);
 	//fread(&ID,4,1,file);
 	if(ID!=0x4d4d4432 && ID!=0x4d4d4433){
-          RError("This is not an MMD2 or MMD3 octamed module: %p\n",ID);
+          GFX_Message(NULL, "This is not an MMD2 or MMD3 octamed module: %p\n",ID);
           return false;
 	}
 
 	ResetUndo();
 
-	fseek(file,8,SEEK_SET);
+	DISK_set_pos(file,8);
         mmd0song = read_be32uint(file);
 	//fread(&mmd0song,4,1,file);
 
 	MMD_LoadInstruments(file,mmd0song);
 
-	fseek(file,mmd0song+(sizeof(struct MMD0sample)*63),SEEK_SET);
+	DISK_set_pos(file,mmd0song+(sizeof(struct MMD0sample)*63));
         numblocks = read_be16uint(file);
 	//fread(&numblocks,2,1,file);
 
-	fseek(file,mmd0song+764,SEEK_SET);
+	DISK_set_pos(file,mmd0song+764);
         deftempo = read_be16uint(file);
 	//fread(&deftempo,2,1,file);
 
 	root->tempo=deftempo;
-	fseek(file,mmd0song+768,SEEK_SET);
-	fread(&flags2,1,1,file);
-	fread(&tempo2,1,1,file);
+	DISK_set_pos(file,mmd0song+768);
+	DISK_read_binary(file, &flags2,1);
+	DISK_read_binary(file, &tempo2,1);
         printf("flags2 before: %x\n",(uint32_t)flags2);
 
 	flags2&=0x1f;
@@ -579,7 +586,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
         //char gakk[1024];
         //fgets(gakk,100,stdin);
 
-	fseek(file,16,SEEK_SET);
+	DISK_set_pos(file,16);
         blockarr = read_be32uint(file);
 	//fread(&blockarr,4,1,file);
 
@@ -587,11 +594,11 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 	printf("numblocks: %d,blockarr: %x\n",numblocks,blockarr);
 
 	for(lokke=0;lokke<numblocks;lokke++){
-		fseek(file,blockarr+(lokke*4),SEEK_SET);
+		DISK_set_pos(file,blockarr+(lokke*4));
                 blockpointer = read_be32uint(file);
 		//fread(&blockpointer,4,1,file);
 
-		fseek(file,blockpointer,SEEK_SET);
+		DISK_set_pos(file,blockpointer);
                 numtracks = read_be16uint(file);
 		//fread(&numtracks,2,1,file);
                 numlines = read_be16uint(file);
@@ -601,7 +608,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
                 blockinfo = read_be32uint(file);
 		//fread(&blockinfo,4,1,file);
 		if(blockinfo>0){
-			fseek(file,blockinfo+4,SEEK_SET);
+			DISK_set_pos(file,blockinfo+4);
                         blocknamepos = read_be32uint(file);
 			//fread(&blocknamepos,4,1,file);
 
@@ -613,8 +620,8 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 
 			if(blocknamelen>0 && blocknamepos>0){
 				blockname=talloc_atomic((size_t)(blocknamelen));
-				fseek(file,blocknamepos,SEEK_SET);
-				fread(blockname,(size_t)blocknamelen,1,file);
+				DISK_set_pos(file,blocknamepos);
+				DISK_read_binary(file, blockname,(size_t)blocknamelen);
 			}else{
 				blockname="NN";
 			}
@@ -625,23 +632,23 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 
 		//printf("block: %s: blocknamelen: %d, numtracks: %d, numlines %d\n",blockname,blocknamelen,numtracks,numlines);
 
-		fseek(file,blockpointer+8,SEEK_SET);
+		DISK_set_pos(file,blockpointer+8);
 		octablock=talloc_atomic(numlines*numtracks*sizeof(struct TrackLine));
-		fread(octablock,numlines*numtracks*sizeof(struct TrackLine),1,file);
+		DISK_read_binary(file, octablock,numlines*numtracks*sizeof(struct TrackLine));
 
 		if(cmdpagepointer>0){
-			fseek(file,cmdpagepointer,SEEK_SET);
+			DISK_set_pos(file,cmdpagepointer);
                         numpages = read_be16uint(file);
 			//fread(&numpages,2,1,file);
 
 			cmdpagetable=talloc(numpages*sizeof(struct CmdTrackLine *));
 			for(lokke2=0;lokke2<numpages;lokke2++){
-				fseek(file,cmdpagepointer+4+(lokke2*4),SEEK_SET);		
+				DISK_set_pos(file,cmdpagepointer+4+(lokke2*4));		
                                 pagepointer = read_be32uint(file);
 				//fread(&pagepointer,4,1,file);
 				cmdpagetable[lokke2]=talloc_atomic(sizeof(struct CmdTrackLine)*numtracks*numlines);
-				fseek(file,pagepointer,SEEK_SET);
-				fread(cmdpagetable[lokke2],sizeof(struct CmdTrackLine)*numtracks*numlines,1,file);
+				DISK_set_pos(file,pagepointer);
+				DISK_read_binary(file, cmdpagetable[lokke2],sizeof(struct CmdTrackLine)*numtracks*numlines);
 			}
 		}else{
 			numpages=0;
@@ -669,9 +676,11 @@ bool LoadMMP2(struct Tracker_Windows *window,const char *filename){
 
 	MMD_LoadPlayList(window,file,mmd0song);
 
-	fclose(file);
+	if (DISK_close_and_delete(file)==false)
+          exit(0);
 
 	UpdateAllSTimes();
+        UpdateAllBeats();
 
 //	DrawUpTrackerWindow(window);
 	SelectWBlock(window,window->wblocks);

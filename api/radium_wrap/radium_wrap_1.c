@@ -8,6 +8,10 @@
  * interface file instead. 
  * ----------------------------------------------------------------------------- */
 
+#ifdef _WIN64
+//#define MS_WIN64 1 // http://stackoverflow.com/questions/2842469/python-undefined-reference-to-imp-py-initmodule4
+#endif
+
 #include "Python.h"
 
 #define SWIGPYTHON

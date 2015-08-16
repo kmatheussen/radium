@@ -31,6 +31,7 @@ typedef struct{
   int pos; // between 0 and SMOOTH_LENGTH (in intervals of 64)
 
   bool smoothing_is_necessary;
+  volatile bool target_audio_will_be_modified;
 } Smooth;
 
 typedef struct{
@@ -95,11 +96,13 @@ extern LANGSPEC void SMOOTH_new_blocksize(Smooth *smooth, int blockframes);
 extern LANGSPEC void SMOOTH_release(Smooth *smooth);
 extern LANGSPEC void SMOOTH_set_target_value(Smooth *smooth, float value);
 extern LANGSPEC float SMOOTH_get_target_value(Smooth *smooth);
+extern LANGSPEC void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth);
 extern LANGSPEC void SMOOTH_called_per_block(Smooth *smooth);
 extern LANGSPEC void SMOOTH_apply_volume(Smooth *smooth, float *sound, int num_frames);
 extern LANGSPEC void SMOOTH_apply_inverted_volume(Smooth *smooth, float *sound, int num_frames);
 extern LANGSPEC void SMOOTH_copy_sound(Smooth *smooth, float *dst, float *src, int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_raw(float *target, float *source, int num_frames, float start_volume, float end_volume);
+extern LANGSPEC bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(Smooth *smooth);
 extern LANGSPEC void SMOOTH_mix_sounds(Smooth *smooth, float *target, float *source, int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_using_inverted_values(Smooth *smooth, float *target, float *source, int num_frames);
 extern LANGSPEC void SMOOTH_apply_pan(Smooth *smooth, float **sound, int num_channels, int num_frames);

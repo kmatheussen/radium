@@ -20,6 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
+extern struct Signatures *CB_CopySignatures(
+	struct Signatures *signature
+);
+
 extern struct LPBs *CB_CopyLPBs(
 	struct LPBs *lpb
 );

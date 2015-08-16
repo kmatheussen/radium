@@ -15,8 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
 extern void UpdateWTempoNodes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
@@ -37,9 +35,4 @@ extern void FreeAllWTempoNodes(
 	struct WBlocks *wblock
 );
 
-extern float FindHighestTempoNodeVal(struct Blocks *block);
-
-#endif
-
-
-
+extern LANGSPEC float FindHighestTempoNodeVal(struct Blocks *block);

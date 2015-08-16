@@ -16,7 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
-#include "gfx_wtracks_proc.h"
 #include "windows_proc.h"
 #include "list_proc.h"
 #include "gfx_wtrackheaders_proc.h"
@@ -56,9 +55,7 @@ void SwitchTrackOnOff_CurrPos(
 
 	SwitchAllTracksOnOff(window->curr_track);
 
-//	DrawUpTrackerWindow(window);
-//	DrawAllWTrackHeaders(window,window->wblock);
-	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
+	DrawAllWTrackHeaders(window,window->wblock);
 }
 
 static void SoloTrack(
@@ -131,7 +128,7 @@ void TRACK_OF_switch_spesified_CurrPos(
 
 	wtrack=(struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
 	SwitchTrackOnOff(wtrack->track);
-	DrawWTrackHeader(window,window->wblock,wtrack);
+	DrawAllWTrackHeaders(window,window->wblock);
 }
 
 void TRACK_OF_solo_spesified_CurrPos(

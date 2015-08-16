@@ -41,11 +41,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_SliderPainter_proc.h"
 
-static int scale_int(int x, int x1, int x2, int y1, int y2){
+struct MyQSlider;
+
+static inline int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
 }
 
-struct MyQSlider;
 
 #ifdef COMPILING_RADIUM
 extern QVector<MyQSlider*> g_all_myqsliders;
@@ -53,6 +54,8 @@ extern struct Root *root;
 #else
 QVector<MyQSlider*> g_all_myqsliders;
 #endif
+
+extern struct TEvent tevent;
 
 static int g_minimum_height = 0;
 
@@ -80,7 +83,7 @@ struct MyQSlider : public QSlider {
       QFontMetrics fm(QApplication::font());
       QRect r =fm.boundingRect("In Out 234234 dB");
       g_minimum_height = r.height()+4;
-      printf("Minimum height: %d, family: %s, font pixelsize: %d, font pointsize: %d\n",g_minimum_height,QApplication::font().family().ascii(),QApplication::font().pixelSize(),QApplication::font().pointSize());
+      printf("Minimum height: %d, family: %s, font pixelsize: %d, font pointsize: %d\n",g_minimum_height,QApplication::font().family().toUtf8().constData(),QApplication::font().pixelSize(),QApplication::font().pointSize());
     }
 
     _minimum_size_set = false; // minimumSize must be set later. I think ui generated code overwrites it when set here.
@@ -94,8 +97,12 @@ struct MyQSlider : public QSlider {
   MyQSlider ( Qt::Orientation orientation, QWidget * parent = 0 ) : QSlider(orientation,parent) { init();}
 
   ~MyQSlider(){
+    //R_ASSERT(false);
     g_all_myqsliders.remove(g_all_myqsliders.indexOf(this));
     SLIDERPAINTER_delete(_painter);
+    
+    _painter = NULL; // quicker to discover memory corruption
+    _patch = NULL;
   }
 
   void hideEvent ( QHideEvent * event ) {
@@ -120,14 +127,43 @@ struct MyQSlider : public QSlider {
   }
 #endif
 
+  float last_value;
+  float last_pos;
   bool _has_mouse;
 
   void handle_mouse_event ( QMouseEvent * event ){
     //printf("Got mouse press event %d / %d\n",(int)event->x(),(int)event->y());
-    if (orientation() == Qt::Vertical)
-      setValue(scale_int(event->y(),height(),0,minimum(),maximum()));
-    else
-      setValue(scale_int(event->x(),0,width(),minimum(),maximum()));
+
+    float slider_length;
+    float new_pos;
+
+    if (orientation() == Qt::Vertical) {
+      new_pos = event->y();
+      slider_length = height();
+    } else {
+      new_pos = event->x();
+      slider_length = width();
+    }
+
+    float dx = new_pos - last_pos;
+    float per_pixel = (float)(maximum() - minimum()) / (float)slider_length;
+
+    //printf("***** last_pos: %d, new_pos: %d, dx: %d\n",(int)last_pos,(int)new_pos,(int)dx);
+    
+    if (AnyCtrl(tevent.keyswitch))
+      per_pixel /= 10.0f;
+
+    last_pos = new_pos;
+    last_value += dx*per_pixel;
+
+    if (last_value < minimum())
+      last_value = minimum();
+    if (last_value > maximum())
+      last_value = maximum();
+
+    setValue(last_value);
+
+    //printf("dx: %f, per_pixel: %f, min/max: %f / %f, value: %f\n",dx,per_pixel,(float)minimum(),(float)maximum(),(float)value());
 
     event->accept();
   }
@@ -148,7 +184,12 @@ struct MyQSlider : public QSlider {
       }
 #endif
 
-      handle_mouse_event(event);
+      last_value = value();
+      if (orientation() == Qt::Vertical)
+        last_pos = event->y();
+      else
+        last_pos = event->x();
+      //handle_mouse_event(event);
       _has_mouse = true;
 
     }else{
@@ -169,6 +210,7 @@ struct MyQSlider : public QSlider {
         //VECTOR_push_back(&options, "Set Value");
       }
 
+      //VECTOR_push_back(&options, "Set Value");
 
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", &options);
 
@@ -186,17 +228,29 @@ struct MyQSlider : public QSlider {
       }
 
 #if 0
+      else if(command==1){
+        char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
+        if(s!=NULL){
+          float value = OS_get_double_from_string(s);
+          printf("value: %f\n",value);
+          setValue(value);
+        }
+      }
+
+#else
+#if 0
       else if(command==1 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
         if(s!=NULL){
           float value = OS_get_double_from_string(s);
           Undo_AudioEffect_CurrPos(_patch, _effect_num);
-          PLUGIN_set_effect_value(plugin,-1,_effect_num,value,PLUGIN_STORED_TYPE,PLUGIN_STORE_VALUE);
+          PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
           GFX_update_instrument_widget(_patch);
         }
       }
-#endif // 0
+#endif
+#endif
 #endif // COMPILING_RADIUM
 
       event->accept();

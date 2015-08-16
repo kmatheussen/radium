@@ -27,10 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_range_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "blts_proc.h"
+#include "notes_proc.h"
 
 #include "transpose_proc.h"
+
 
 static float getTransposed(float val, int trans){
   if(val+trans<128 && val+trans>0)
@@ -162,33 +163,13 @@ void TransposeNote_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 ){
-	struct WBlocks *wblock;
-	struct WTracks *wtrack;
-	struct TrackRealline *trackrealline;
-	struct TrackReallineElements *element;
-	struct Notes *note;
-
-	wblock=window->wblock;
-	wtrack=wblock->wtrack;
-	trackrealline= &wtrack->trackreallines[wblock->curr_realline];
-
+        struct Notes *note = FindNoteCurrPos(window);
+        if (note==NULL)
+          return;
+        
 	Undo_Notes_CurrPos(window);
 
-	element=trackrealline->trackreallineelements;
-
-        while(element!=NULL && element->type!=TRE_THISNOTELINES)
-	  element=element->next;
-
-	if(element==NULL)
-	  return;
-
-	note=(struct Notes *)element->pointer;
-
 	Transpose_note(note,trans);
-	wtrack->trackreallines[wblock->curr_realline].note=note->note;
-
-#if !USE_OPENGL
-	UpdateWTrack(window,wblock,wtrack,wblock->curr_realline,wblock->curr_realline);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -196,7 +177,6 @@ void TransposeNote_CurrPos(
 		window->wblock->wtrack->l.num,
 		window->wblock->wtrack->l.num
 	);
-#endif
 }
 
 

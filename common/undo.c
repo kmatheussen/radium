@@ -27,11 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "player_proc.h"
 
-#define RADIUM_UNDOISCALLINGNOW
-#include "undo.h"
-#undef RADIUM_UNDOISCALLINGNOW
+#include "../Qt/Qt_instruments_proc.h"
 
-extern struct Root *root;
+#include "undo.h"
+
 
 struct UndoEntry{
   NInt windownum;
@@ -60,6 +59,7 @@ struct Undo{
   int realline;
 };
 
+
 static struct Undo UndoRoot={0};
 static struct Undo *CurrUndo=&UndoRoot;
 static struct Undo *curr_open_undo=NULL;
@@ -76,18 +76,21 @@ static bool currently_undoing = false;
 
 static bool showing_star_in_filename = false;
 
-static const char *get_filename(void){
+static const wchar_t *get_filename(void){
   if(dc.filename==NULL)
-    return "Radium - New song.";
+    return STRING_create("Radium - New song.");
   else
     return dc.filename;
 }
 
 static void show_star(void){
   if(showing_star_in_filename==false){
-    char temp[1024];
-    sprintf(temp, "** %s **", get_filename());
-    GFX_SetWindowTitle(root->song->tracker_windows,temp);
+    wchar_t *s = STRING_append(
+                               STRING_append(STRING_create("** "),
+                                             get_filename()),
+                               STRING_create(" **")
+                               );
+    GFX_SetWindowTitle(root->song->tracker_windows,s);
     showing_star_in_filename=true;
   }
 }
@@ -124,7 +127,10 @@ void ResetUndo(void){
     RError("Can not call ResetUndo from Undo()\n");
   }
 
+  memset(&UndoRoot,0,sizeof(struct Undo));
+
   CurrUndo=&UndoRoot;
+         
   num_undos=0;
   undo_pos_at_last_saving=0;
   update_gfx();
@@ -150,7 +156,7 @@ bool Undo_are_you_shure_questionmark(void){
 			)
           ){
       ret=GFX_GetString(
-                        NULL,
+                        root->song->tracker_windows,
                         NULL,
                         temp
 			);
@@ -163,6 +169,9 @@ bool Undo_are_you_shure_questionmark(void){
   return true;
 }
 
+bool Undo_Is_Open(void){
+  return undo_is_open;
+}
 
 void Undo_Open(void){
   if(currently_undoing){
@@ -197,7 +206,7 @@ void Undo_Open(void){
   undo_is_open = true;
 }
 
-void Undo_Close(void){
+bool Undo_Close(void){
   if(currently_undoing){
     RError("Can not call Undo_Close from Undo()\n");
   }
@@ -214,13 +223,16 @@ void Undo_Close(void){
     num_undos++;
 
     update_gfx();
-  }
+    
+    return true;
+
+  } else
+    return false;
 }
 
 void Undo_CancelLastUndo(void){
-  if(currently_undoing){
-    RError("Can not call Undo_CancelLastUndo from Undo()\n");
-  }
+  R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
+  R_ASSERT_RETURN_IF_FALSE(undo_is_open==false);
 
   CurrUndo=CurrUndo->prev;
   CurrUndo->next=NULL;
@@ -335,7 +347,7 @@ currently_undoing = true;
               if(wtrack!=NULL){
                 wblock->wtrack=wtrack;
               }
-              wblock->curr_realline=entry->realline;
+              wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
               window->curr_track=entry->tracknum;
             }
 
@@ -356,7 +368,7 @@ currently_undoing = true;
               wtrack=ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
             }
             wblock->wtrack=wtrack;
-            wblock->curr_realline=entry->realline;
+            wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
             window->curr_track=entry->tracknum;
           }
        }
@@ -385,7 +397,7 @@ currently_undoing = true;
            wtrack=wblock->wtracks;
            
          wblock->wtrack=wtrack;
-         wblock->curr_realline=undo->realline;
+         wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);
          window->curr_track=undo->tracknum;
 
          SelectWBlock(
@@ -393,8 +405,10 @@ currently_undoing = true;
                       wblock
                       );
 
-         if(current_patch!=NULL)
+         if(current_patch!=NULL){
            GFX_update_instrument_patch_gui(current_patch);
+           GFX_update_instrument_widget(current_patch);
+         }
 
        }
 currently_undoing = false;
@@ -404,7 +418,7 @@ currently_undoing = false;
 
 
 void Redo(void){
-  //printf("CurrUndo->next: %p\n",CurrUndo->next);
+  //printf("CurrUndo: %p, CurrUndo->next: %p, UndoRoot: %p, UndoRoot->next: %p\n",CurrUndo,CurrUndo->next,&UndoRoot,UndoRoot.next);
 
 	if(CurrUndo->next==NULL) return;
 
@@ -428,7 +442,7 @@ void SetMaxUndos(struct Tracker_Windows *window){
 
 	max_num_undos=newmax;
 
-        RWarning("The max number of undoes variables is ignored. Undo is unlimited.");
+        GFX_Message(NULL, "The max number of undoes variables is ignored. Undo is unlimited.");
 }
 
 

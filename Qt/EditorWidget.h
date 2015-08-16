@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <Q3PointArray>
 #include <QPainter>
+#include <QWheelEvent>
 #ifdef FOR_WINDOWS
 #  include <QKeyEvent>
 #endif
@@ -67,12 +68,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 class QMainWindow;
 class QSplitter;
+class Upperleft_widget;
 
 #if USE_QIMAGE_BUFFER
 typedef QImage PaintBuffer;
 #else
 typedef QPixmap PaintBuffer;
 #endif
+
+#include "helpers.h"
 
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
@@ -100,8 +104,10 @@ public:
 
     QMainWindow *main_window;
 
+    Upperleft_widget *upperleft_widget;
+
 #if USE_QT_VISUAL
-    QPainter *painter; // Set in paintEvent
+    QPainter *painter; // Set in paintEvent    
     QPainter *paintbuffer_painter; // Set in paintEvent
     QPainter *cursorbuffer_painter; // Set in paintEvent
 
@@ -109,7 +115,7 @@ public:
 #endif
 
 #if USE_OPENGL
-    QWidget *gl_widget;
+    QWidget *gl_widget; // Note: might be NULL
 #endif
 
     //QFrame *status_frame;
@@ -132,9 +138,13 @@ public:
 
     void updateEditor();
 
+#if 0
     void callCustomEvent(){
       customEvent(NULL);
     }
+#endif
+    
+    void wheelEvent(QWheelEvent *qwheelevent);
 
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
     void init_buffers(){
@@ -152,7 +162,7 @@ public:
          this->paintbuffer_painter = new QPainter(this->paintbuffer);
          this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
 
-         this->paintbuffer_painter->setFont(this->font);
+         //this->paintbuffer_painter->setFont(this->font);
        }
 
 #if 1
@@ -169,11 +179,14 @@ public:
 
 #if USE_OPENGL
     void position_gl_widget(struct Tracker_Windows *window){
-      gl_widget->move(0,window->wblock->t.y1);
-      int height = 1 + window->wblock->t.y2 - window->wblock->t.y1;
-      gl_widget->resize(width(), height);
-      GE_set_height(height);
-      GL_create(window, window->wblock);
+      if (gl_widget != NULL) {
+        gl_widget->move(0,window->wblock->t.y1);
+        int height = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
+        gl_widget->resize(width(), height);
+        GE_set_height(height);
+        //printf("a2\n");
+        GL_create(window, window->wblock);
+      }
     }
 #endif
 
@@ -199,6 +212,9 @@ protected:
     //    bool        event(QEvent *);
 #if 1 //USE_QT_VISUAL
     void	paintEvent( QPaintEvent * );
+    //void showEvent ( QShowEvent * event ){printf("showevent\n");}
+    //void changeEvent ( QEvent * event ) { printf("changeEvent\n"); }
+
 #endif
 
 #if 0 // Using X11filter for keys
@@ -225,7 +241,9 @@ protected:
 #endif
     void        resizeEvent( QResizeEvent *);
     void        closeEvent(QCloseEvent *);
+#if 0
     void        customEvent(QEvent *);
+#endif
 };
 
 #endif

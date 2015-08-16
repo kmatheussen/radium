@@ -35,17 +35,25 @@ typedef struct{
 
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  //plugin =NULL; // crashreporter test.
+
   Data *data = (Data*)plugin->data;
 
   int out_ch;
+  
   for(out_ch=0;out_ch<NUM_CHANNELS;out_ch++){
+    
     bool touched = false;
     int in_ch;
     float *out=outputs[out_ch];
+    
     for(in_ch=0;in_ch<NUM_CHANNELS;in_ch++){
+      
       int onoff = data->routes[in_ch*NUM_CHANNELS + out_ch];
+      
       if(onoff==1){
         float *in=inputs[in_ch];
+        
         if(touched==false){
           memcpy(out, in, sizeof(float)*num_frames);
           touched=true;
@@ -54,8 +62,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
           for(i=0;i<num_frames;i++)
             out[i] += in[i];
         }
+        
       }
+      
     }
+    
     if(touched==false)
       memset(out,0,sizeof(float)*num_frames);
   }

@@ -1,5 +1,5 @@
 RADIUM SONG
-0.67
+0.74
 
 \
 OSSTUFF
@@ -10,16 +10,34 @@ X11
 ROOT
 
 ?curr_block
-8
+2
 
 ?tempo
-128
+156
 
 ?lpb
+8
+
+?signature_numerator
 4
 
+?signature_denominator
+4
+
+?quantitize_numerator
+1
+
+?quantitize_denominator
+1
+
 ?quantitize
-0.5
+1
+
+?grid_numerator
+1
+
+?grid_denominator
+1
 
 ?keyoct
 36
@@ -45,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-10
+20
 author
 0
 STRING_TYPE
@@ -78,6 +96,46 @@ comment
 6
 STRING_TYPE
 
+comment
+7
+STRING_TYPE
+
+comment
+8
+STRING_TYPE
+
+comment
+9
+STRING_TYPE
+
+comment
+10
+STRING_TYPE
+
+comment
+11
+STRING_TYPE
+
+comment
+12
+STRING_TYPE
+
+comment
+13
+STRING_TYPE
+
+comment
+14
+STRING_TYPE
+
+comment
+15
+STRING_TYPE
+
+comment
+16
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -100,10 +158,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1100
+1009
 
 ?height
-819
+752
 
 ?fontID
 0
@@ -112,16 +170,16 @@ TRACKER_WINDOW
 0
 
 ?fontwidth
-11
+9
 
 ?fontheight
-19
+15
 
 ?org_fontheight
-19
+15
 
 ?curr_block
-8
+2
 
 ?maxwtracksize
 0
@@ -131,12 +189,24 @@ TRACKER_WINDOW
 
 ?leftslider
 1
-14
+8
 
 ?bottomslider
 1
 14
 
+?show_signature_track
+0
+
+?show_lpb_track
+0
+
+?show_bpm_track
+0
+
+?show_reltempo_track
+0
+
 \
 WBLOCK
 0
@@ -148,673 +218,34 @@ WBLOCK
 0
 
 ?linenumarea
-33
+26
 
 ?lpbTypearea
-11
-
-?lpbarea
-22
-
-?tempoTypearea
-11
-
-?tempoarea
-33
-
-?temponodearea
-186
-
-?maxwtracksize
-0
-
-?curr_realline
-43
-
-?num_reallines
-256
-
-?reltempomax
-2
-
-?isranged
-0
-
-?rangex1
-3
-
-?rangex2
-3
-
-?rangey1
-0
-
-?rangey2
-256
-
-\
-LOCALZOOMS
-256
-/
-
-\
-WTRACK
-0
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-175
-
-?num_vel
-2
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-175
-
-?num_vel
-2
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-/
-
-\
-WBLOCK
-1
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-33
-
-?lpbTypearea
-11
-
-?lpbarea
-22
-
-?tempoTypearea
-11
-
-?tempoarea
-33
-
-?temponodearea
-186
-
-?maxwtracksize
-0
-
-?curr_realline
-255
-
-?num_reallines
-256
-
-?reltempomax
-2
-
-?isranged
-0
-
-?rangex1
-3
-
-?rangex2
-3
-
-?rangey1
-0
-
-?rangey2
-256
-
-\
-LOCALZOOMS
-256
-/
-
-\
-WTRACK
-0
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-175
-
-?num_vel
-2
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-175
-
-?num_vel
-2
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-164
-
-?num_vel
-1
-/
-/
-
-\
-WBLOCK
-2
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-33
-
-?lpbTypearea
-11
-
-?lpbarea
-22
-
-?tempoTypearea
-11
-
-?tempoarea
-33
-
-?temponodearea
-100
-
-?maxwtracksize
-0
-
-?curr_realline
-255
-
-?num_reallines
-256
-
-?reltempomax
-2
-
-?isranged
-0
-
-?rangex1
-3
-
-?rangex2
-3
-
-?rangey1
-0
-
-?rangey2
-256
-
-\
-LOCALZOOMS
-256
-/
-
-\
-WTRACK
-0
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-7
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
 9
 
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-89
-
-?num_vel
-2
-/
-
-\
-WTRACK
-10
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-11
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-12
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-/
-
-\
-WBLOCK
-3
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-33
-
-?lpbTypearea
-11
-
 ?lpbarea
-22
+18
 
 ?tempoTypearea
-11
+9
 
 ?tempoarea
-33
+27
 
 ?temponodearea
-100
+232
 
 ?maxwtracksize
 0
 
 ?curr_realline
-255
+18
 
 ?num_reallines
-256
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -850,10 +281,19 @@ WTRACK
 3
 
 ?fxwidth
-78
+214
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -867,10 +307,19 @@ WTRACK
 3
 
 ?fxwidth
-78
+223
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -884,10 +333,19 @@ WTRACK
 3
 
 ?fxwidth
-78
+214
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -901,10 +359,19 @@ WTRACK
 3
 
 ?fxwidth
-78
+214
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -918,10 +385,19 @@ WTRACK
 3
 
 ?fxwidth
-78
+214
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -935,10 +411,19 @@ WTRACK
 3
 
 ?fxwidth
-78
+223
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -952,118 +437,25 @@ WTRACK
 3
 
 ?fxwidth
-78
+214
 
-?num_vel
-1
-/
+?is_wide
+0
 
-\
-WTRACK
-7
+?show_pianoroll
+0
 
-?notesonoff
-1
+?pianoroll_lowkey
+48
 
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-9
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-89
-
-?num_vel
-2
-/
-
-\
-WTRACK
-10
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-11
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-12
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
+?pianoroll_highkey
+60
 /
 /
 
 \
 WBLOCK
-4
+1
 
 ?tempotrackonoff
 1
@@ -1072,31 +464,1084 @@ WBLOCK
 0
 
 ?linenumarea
-33
+26
 
 ?lpbTypearea
-11
+9
 
 ?lpbarea
-22
+18
 
 ?tempoTypearea
-11
+9
 
 ?tempoarea
-33
+27
 
 ?temponodearea
+232
+
+?maxwtracksize
+0
+
+?curr_realline
+157
+
+?num_reallines
+256
+
+?num_expand_lines
+1
+
+?reltempomax
+2
+
+?isranged
+0
+
+?rangex1
+3
+
+?rangex2
+3
+
+?rangey1
+0
+
+?rangey2
+256
+
+\
+LOCALZOOMS
+256
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+214
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+223
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+214
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+214
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+214
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+223
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+214
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+/
+
+\
+WBLOCK
+2
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+26
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+119
+
+?maxwtracksize
+0
+
+?curr_realline
+0
+
+?num_reallines
+128
+
+?num_expand_lines
+-2
+
+?reltempomax
+2
+
+?isranged
+0
+
+?rangex1
+3
+
+?rangex2
+3
+
+?rangey1
+0
+
+?rangey2
+256
+
+\
+LOCALZOOMS
+256
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
 101
 
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+110
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+10
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+11
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+12
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+/
+
+\
+WBLOCK
+3
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+26
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+119
+
 ?maxwtracksize
 0
 
 ?curr_realline
-255
+127
 
 ?num_reallines
+128
+
+?num_expand_lines
+-2
+
+?reltempomax
+2
+
+?isranged
+0
+
+?rangex1
+3
+
+?rangex2
+3
+
+?rangey1
+0
+
+?rangey2
 256
+
+\
+LOCALZOOMS
+256
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+110
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+10
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+11
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+12
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+/
+
+\
+WBLOCK
+4
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+26
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+120
+
+?maxwtracksize
+0
+
+?curr_realline
+127
+
+?num_reallines
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -1132,10 +1577,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1149,10 +1603,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1166,10 +1629,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1183,10 +1655,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1200,10 +1681,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1217,10 +1707,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1234,10 +1733,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1251,10 +1759,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1268,10 +1785,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1285,10 +1811,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1302,10 +1837,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1319,10 +1863,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1336,10 +1889,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 /
 
@@ -1354,31 +1916,34 @@ WBLOCK
 0
 
 ?linenumarea
-33
+26
 
 ?lpbTypearea
-11
+9
 
 ?lpbarea
-22
+18
 
 ?tempoTypearea
-11
+9
 
 ?tempoarea
-33
+27
 
 ?temponodearea
-101
+120
 
 ?maxwtracksize
 0
 
 ?curr_realline
-255
+127
 
 ?num_reallines
-256
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -1414,10 +1979,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1431,10 +2005,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1448,10 +2031,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1465,10 +2057,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1482,10 +2083,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1499,10 +2109,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1516,10 +2135,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1533,10 +2161,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1550,10 +2187,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1567,10 +2213,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1584,10 +2239,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1601,10 +2265,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1618,10 +2291,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 /
 
@@ -1636,31 +2318,34 @@ WBLOCK
 0
 
 ?linenumarea
-33
+26
 
 ?lpbTypearea
-11
+9
 
 ?lpbarea
-22
+18
 
 ?tempoTypearea
-11
+9
 
 ?tempoarea
-33
+27
 
 ?temponodearea
-101
+120
 
 ?maxwtracksize
 0
 
 ?curr_realline
-255
+127
 
 ?num_reallines
-256
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -1696,10 +2381,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1713,10 +2407,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1730,10 +2433,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1747,10 +2459,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1764,10 +2485,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1781,10 +2511,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1798,10 +2537,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1815,10 +2563,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1832,10 +2589,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1849,10 +2615,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1866,10 +2641,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1883,10 +2667,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1900,10 +2693,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 /
 
@@ -1918,31 +2720,34 @@ WBLOCK
 0
 
 ?linenumarea
-33
+26
 
 ?lpbTypearea
-11
+9
 
 ?lpbarea
-22
+18
 
 ?tempoTypearea
-11
+9
 
 ?tempoarea
-33
+27
 
 ?temponodearea
-101
+120
 
 ?maxwtracksize
 0
 
 ?curr_realline
-255
+127
 
 ?num_reallines
-256
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -1978,10 +2783,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -1995,10 +2809,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2012,10 +2835,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2029,10 +2861,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2046,10 +2887,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2063,10 +2913,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2080,10 +2939,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2097,10 +2965,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2114,10 +2991,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2131,10 +3017,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2148,10 +3043,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2165,10 +3069,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2182,10 +3095,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+102
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 /
 
@@ -2200,31 +3122,34 @@ WBLOCK
 0
 
 ?linenumarea
-33
+26
 
 ?lpbTypearea
-11
+9
 
 ?lpbarea
-22
+18
 
 ?tempoTypearea
-11
+9
 
 ?tempoarea
-33
+27
 
 ?temponodearea
-100
+119
 
 ?maxwtracksize
 0
 
 ?curr_realline
-105
+127
 
 ?num_reallines
-256
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -2260,535 +3185,373 @@ WTRACK
 3
 
 ?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-7
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-9
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-89
-
-?num_vel
-2
-/
-
-\
-WTRACK
-10
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-11
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-12
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-/
-
-\
-WBLOCK
-9
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-33
-
-?lpbTypearea
-11
-
-?lpbarea
-22
-
-?tempoTypearea
-11
-
-?tempoarea
-33
-
-?temponodearea
-100
-
-?maxwtracksize
-0
-
-?curr_realline
-255
-
-?num_reallines
-256
-
-?reltempomax
-2
-
-?isranged
-0
-
-?rangex1
-3
-
-?rangex2
-3
-
-?rangey1
-0
-
-?rangey2
-256
-
-\
-LOCALZOOMS
-256
-/
-
-\
-WTRACK
-0
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-1
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-2
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-3
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-4
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-5
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-6
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-7
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-8
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-9
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-89
-
-?num_vel
-2
-/
-
-\
-WTRACK
-10
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-11
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-
-\
-WTRACK
-12
-
-?notesonoff
-1
-
-?notelength
-3
-
-?fxwidth
-78
-
-?num_vel
-1
-/
-/
-
-\
-WBLOCK
-10
-
-?tempotrackonoff
-1
-
-?temponodetrackonoff
-0
-
-?linenumarea
-33
-
-?lpbTypearea
-11
-
-?lpbarea
-22
-
-?tempoTypearea
-11
-
-?tempoarea
-33
-
-?temponodearea
 101
 
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+110
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+10
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+11
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+12
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+101
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+/
+
+\
+WBLOCK
+9
+
+?tempotrackonoff
+1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+26
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+119
+
 ?maxwtracksize
 0
 
 ?curr_realline
-207
+127
 
 ?num_reallines
-256
+128
+
+?num_expand_lines
+-2
 
 ?reltempomax
 2
@@ -2824,10 +3587,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2841,10 +3613,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2858,10 +3639,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2875,10 +3665,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2892,10 +3691,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2909,10 +3717,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2926,10 +3743,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2943,10 +3769,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2960,10 +3795,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2977,10 +3821,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+110
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -2994,10 +3847,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -3011,10 +3873,19 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
-1
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 
 \
@@ -3028,10 +3899,421 @@ WTRACK
 3
 
 ?fxwidth
-79
+101
 
-?num_vel
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+/
+
+\
+WBLOCK
+10
+
+?tempotrackonoff
 1
+
+?temponodetrackonoff
+0
+
+?linenumarea
+26
+
+?lpbTypearea
+9
+
+?lpbarea
+18
+
+?tempoTypearea
+9
+
+?tempoarea
+27
+
+?temponodearea
+120
+
+?maxwtracksize
+0
+
+?curr_realline
+53
+
+?num_reallines
+128
+
+?num_expand_lines
+-2
+
+?reltempomax
+2
+
+?isranged
+0
+
+?rangex1
+3
+
+?rangex2
+3
+
+?rangey1
+0
+
+?rangey2
+256
+
+\
+LOCALZOOMS
+256
+/
+
+\
+WTRACK
+0
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+1
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+2
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+3
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+4
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+5
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+6
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+7
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+8
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+9
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+10
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+11
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
+/
+
+\
+WTRACK
+12
+
+?notesonoff
+1
+
+?notelength
+3
+
+?fxwidth
+102
+
+?is_wide
+0
+
+?show_pianoroll
+0
+
+?pianoroll_lowkey
+48
+
+?pianoroll_highkey
+60
 /
 /
 /
@@ -3050,7 +4332,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -3093,6 +4375,14 @@ NOTE
 65534
 56554
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3108,6 +4398,14 @@ NOTE
 65534
 60218
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3123,6 +4421,14 @@ NOTE
 65534
 61849
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3138,6 +4444,14 @@ NOTE
 1
 58982
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3153,6 +4467,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3168,6 +4490,14 @@ NOTE
 65534
 51781
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3183,6 +4513,14 @@ NOTE
 65534
 55156
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3198,6 +4536,14 @@ NOTE
 65534
 58234
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3213,6 +4559,14 @@ NOTE
 65534
 61483
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3228,6 +4582,14 @@ NOTE
 65534
 37186
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3243,6 +4605,14 @@ NOTE
 65534
 58616
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3258,6 +4628,14 @@ NOTE
 65534
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3273,6 +4651,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3288,6 +4674,14 @@ NOTE
 65534
 49223
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3303,6 +4697,14 @@ NOTE
 65534
 55711
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3318,6 +4720,14 @@ NOTE
 65534
 61606
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3333,6 +4743,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3348,6 +4766,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3363,6 +4789,14 @@ NOTE
 65534
 58978
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3378,6 +4812,14 @@ NOTE
 65534
 50471
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3393,6 +4835,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3408,6 +4858,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3423,6 +4881,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 /
 
@@ -3475,6 +4941,10 @@ VELOCITIES
 13
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3498,6 +4968,10 @@ VELOCITIES
 13
 30310
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3520,6 +4994,10 @@ VELOCITIES
 12
 13
 49152
+/
+
+\
+PITCHES
 /
 /
 
@@ -3548,6 +5026,10 @@ VELOCITIES
 9
 5461
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3570,6 +5052,10 @@ VELOCITIES
 7
 9
 19504
+/
+
+\
+PITCHES
 /
 /
 
@@ -3602,6 +5088,10 @@ VELOCITIES
 9
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3617,6 +5107,14 @@ NOTE
 65534
 57697
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3632,6 +5130,14 @@ NOTE
 65534
 42598
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3647,6 +5153,14 @@ NOTE
 65534
 56173
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3662,6 +5176,14 @@ NOTE
 65534
 62958
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3688,6 +5210,10 @@ VELOCITIES
 17
 19
 0
+/
+
+\
+PITCHES
 /
 /
 
@@ -3723,6 +5249,10 @@ VELOCITIES
 3
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 /
@@ -3776,6 +5306,10 @@ VELOCITIES
 13
 16880
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3798,6 +5332,10 @@ VELOCITIES
 11
 13
 21845
+/
+
+\
+PITCHES
 /
 /
 
@@ -3822,6 +5360,10 @@ VELOCITIES
 13
 20852
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3845,6 +5387,10 @@ VELOCITIES
 13
 15887
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3860,6 +5406,14 @@ NOTE
 65534
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3875,6 +5429,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3890,6 +5452,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3905,6 +5475,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -3927,6 +5505,10 @@ VELOCITIES
 10
 13
 46669
+/
+
+\
+PITCHES
 /
 /
 
@@ -3951,6 +5533,10 @@ VELOCITIES
 13
 43690
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3974,6 +5560,10 @@ VELOCITIES
 13
 43690
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -3989,6 +5579,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4016,6 +5614,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -4031,6 +5633,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4046,6 +5656,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4061,6 +5679,14 @@ NOTE
 65534
 39125
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4076,6 +5702,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4091,6 +5725,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4106,6 +5748,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4121,6 +5771,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4136,6 +5794,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4151,6 +5817,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4166,6 +5840,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4181,6 +5863,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4196,6 +5886,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4211,6 +5909,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4226,6 +5932,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4315,6 +6029,10 @@ VELOCITIES
 19
 45676
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -4330,6 +6048,14 @@ NOTE
 65534
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4345,6 +6071,14 @@ NOTE
 65534
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4368,6 +6102,10 @@ VELOCITIES
 13
 45875
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -4383,6 +6121,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4398,6 +6144,14 @@ NOTE
 65534
 42598
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4421,6 +6175,10 @@ VELOCITIES
 30
 39718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -4436,6 +6194,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4451,6 +6217,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4466,6 +6240,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4481,6 +6263,14 @@ NOTE
 65534
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4496,6 +6286,14 @@ NOTE
 13
 0
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4511,6 +6309,14 @@ NOTE
 65534
 50840
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4526,6 +6332,14 @@ NOTE
 65534
 51634
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4541,6 +6355,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4556,6 +6378,14 @@ NOTE
 65534
 42598
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4571,6 +6401,14 @@ NOTE
 65534
 34183
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4586,6 +6424,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4601,6 +6447,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -4616,6 +6470,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5166,6 +7028,14 @@ NOTE
 19
 0
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5213,6 +7083,10 @@ VELOCITIES
 65534
 49449
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5236,6 +7110,10 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5251,6 +7129,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5266,6 +7152,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5288,6 +7182,10 @@ VELOCITIES
 17
 19
 49758
+/
+
+\
+PITCHES
 /
 /
 
@@ -5312,6 +7210,10 @@ VELOCITIES
 19
 62557
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5327,6 +7229,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5342,6 +7252,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5357,6 +7275,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5372,6 +7298,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5387,6 +7321,14 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5409,6 +7351,10 @@ VELOCITIES
 2
 14
 40513
+/
+
+\
+PITCHES
 /
 /
 
@@ -5437,6 +7383,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5464,6 +7414,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5490,6 +7444,10 @@ VELOCITIES
 18
 19
 59467
+/
+
+\
+PITCHES
 /
 /
 
@@ -5522,6 +7480,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5537,6 +7499,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5608,6 +7578,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5630,6 +7604,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -5658,6 +7636,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5673,6 +7655,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5716,6 +7706,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5739,6 +7733,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5754,6 +7752,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5769,6 +7775,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5800,6 +7814,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -5815,6 +7833,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5858,7 +7884,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -5901,6 +7927,14 @@ NOTE
 65534
 56554
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5916,6 +7950,14 @@ NOTE
 65534
 60218
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5931,6 +7973,14 @@ NOTE
 65534
 61849
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5946,6 +7996,14 @@ NOTE
 1
 58982
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5961,6 +8019,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5976,6 +8042,14 @@ NOTE
 65534
 51781
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -5991,6 +8065,14 @@ NOTE
 65534
 55156
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6006,6 +8088,14 @@ NOTE
 65534
 58234
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6021,6 +8111,14 @@ NOTE
 65534
 61483
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6036,6 +8134,14 @@ NOTE
 65534
 37186
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6051,6 +8157,14 @@ NOTE
 65534
 58616
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6066,6 +8180,14 @@ NOTE
 65534
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6081,6 +8203,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6096,6 +8226,14 @@ NOTE
 65534
 49223
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6111,6 +8249,14 @@ NOTE
 65534
 55711
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6126,6 +8272,14 @@ NOTE
 65534
 61606
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6141,6 +8295,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6156,6 +8318,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6171,6 +8341,14 @@ NOTE
 65534
 58978
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6186,6 +8364,14 @@ NOTE
 65534
 50471
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6201,6 +8387,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6216,6 +8410,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6231,6 +8433,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 /
 
@@ -6283,6 +8493,10 @@ VELOCITIES
 13
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6306,6 +8520,10 @@ VELOCITIES
 13
 30310
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6328,6 +8546,10 @@ VELOCITIES
 12
 13
 49152
+/
+
+\
+PITCHES
 /
 /
 
@@ -6356,6 +8578,10 @@ VELOCITIES
 9
 5461
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6378,6 +8604,10 @@ VELOCITIES
 7
 9
 19504
+/
+
+\
+PITCHES
 /
 /
 
@@ -6410,6 +8640,10 @@ VELOCITIES
 9
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6425,6 +8659,14 @@ NOTE
 65534
 57697
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6440,6 +8682,14 @@ NOTE
 65534
 42598
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6455,6 +8705,14 @@ NOTE
 65534
 56173
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6470,6 +8728,14 @@ NOTE
 65534
 62958
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6496,6 +8762,10 @@ VELOCITIES
 17
 19
 0
+/
+
+\
+PITCHES
 /
 /
 
@@ -6531,6 +8801,10 @@ VELOCITIES
 3
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 /
@@ -6584,6 +8858,10 @@ VELOCITIES
 13
 16880
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6606,6 +8884,10 @@ VELOCITIES
 11
 13
 21845
+/
+
+\
+PITCHES
 /
 /
 
@@ -6630,6 +8912,10 @@ VELOCITIES
 13
 20852
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6653,6 +8939,10 @@ VELOCITIES
 13
 15887
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6668,6 +8958,14 @@ NOTE
 65534
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6683,6 +8981,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6698,6 +9004,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6713,6 +9027,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6735,6 +9057,10 @@ VELOCITIES
 10
 13
 46669
+/
+
+\
+PITCHES
 /
 /
 
@@ -6759,6 +9085,10 @@ VELOCITIES
 13
 43690
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6782,6 +9112,10 @@ VELOCITIES
 13
 43690
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6797,6 +9131,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6824,6 +9166,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -6839,6 +9185,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6854,6 +9208,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6869,6 +9231,14 @@ NOTE
 65534
 39125
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6884,6 +9254,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6899,6 +9277,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6914,6 +9300,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6929,6 +9323,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6944,6 +9346,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6959,6 +9369,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6974,6 +9392,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -6989,6 +9415,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7004,6 +9438,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7019,6 +9461,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7034,6 +9484,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7123,6 +9581,10 @@ VELOCITIES
 19
 45676
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -7138,6 +9600,14 @@ NOTE
 65534
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7153,6 +9623,14 @@ NOTE
 65534
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7168,6 +9646,14 @@ NOTE
 65534
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7183,6 +9669,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7198,6 +9692,14 @@ NOTE
 65534
 42598
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7221,6 +9723,10 @@ VELOCITIES
 30
 39718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -7236,6 +9742,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7251,6 +9765,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7266,6 +9788,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7281,6 +9811,14 @@ NOTE
 65534
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7296,6 +9834,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7311,6 +9857,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7326,6 +9880,14 @@ NOTE
 1
 51634
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7341,6 +9903,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7356,6 +9926,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7371,6 +9949,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7386,6 +9972,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7401,6 +9995,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7416,6 +10018,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7431,6 +10041,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -7446,6 +10064,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8008,6 +10634,14 @@ NOTE
 19
 0
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8055,6 +10689,10 @@ VELOCITIES
 65534
 49449
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8078,6 +10716,10 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8093,6 +10735,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8108,6 +10758,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8130,6 +10788,10 @@ VELOCITIES
 17
 19
 49758
+/
+
+\
+PITCHES
 /
 /
 
@@ -8154,6 +10816,10 @@ VELOCITIES
 19
 62557
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8169,6 +10835,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8184,6 +10858,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8199,6 +10881,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8214,6 +10904,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8229,6 +10927,14 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8251,6 +10957,10 @@ VELOCITIES
 2
 14
 40513
+/
+
+\
+PITCHES
 /
 /
 
@@ -8279,6 +10989,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8306,6 +11020,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8332,6 +11050,10 @@ VELOCITIES
 18
 19
 59467
+/
+
+\
+PITCHES
 /
 /
 
@@ -8364,6 +11086,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8379,6 +11105,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8450,6 +11184,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8472,6 +11210,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -8500,6 +11242,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8515,6 +11261,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8558,6 +11312,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8581,6 +11339,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8596,6 +11358,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8611,6 +11381,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8642,6 +11420,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -8657,6 +11439,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8700,7 +11490,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -8743,6 +11533,14 @@ NOTE
 19
 56551
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8758,6 +11556,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8773,6 +11579,14 @@ NOTE
 19
 65007
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -8788,58 +11602,90 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 68
-4
-18
+2
+9
 34
 0
 36467
 75
-2
-18
+1
+9
 36467
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 76
-8
-14
+4
+7
 39
 0
 61687
 88
 0
-65534
+1
 61687
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 88
-4
-18
+2
+9
 35
 0
 53380
 92
 0
-65534
+1
 53380
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 92
-4
-18
+2
+9
 34
 0
 42281
@@ -8848,208 +11694,320 @@ NOTE
 18
 42281
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 100
 0
-65534
+1
 35
 0
 37186
 104
 0
-65534
+1
 37186
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 104
 0
-65534
+1
 34
 0
 47037
 107
-12
-18
+2
+3
 47037
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 120
 0
-65534
+1
 34
 0
 51118
 128
 0
-65534
+1
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 128
 0
-65534
+1
 27
 0
 65536
 152
 0
-65534
+1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 152
 0
-65534
+1
 41
 0
 49223
 156
 0
-65534
+1
 49223
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 156
 0
-65534
+1
 41
 0
 55711
 164
 0
-65534
+1
 55711
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 164
 0
-65534
+1
 34
 0
 61606
 168
 0
-65534
+1
 61606
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 168
 0
-65534
+1
 40
 0
 52428
 184
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 184
 0
-65534
+1
 37
 0
 52428
 192
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 192
 0
-65534
+1
 34
 0
 58978
 196
 0
-65534
+1
 58978
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 196
 0
-65534
+1
 34
 0
 50471
 204
 0
-65534
+1
 50471
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 204
-3
-18
+1
+6
 39
 0
 45980
 220
 0
-65534
+1
 45980
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 220
 0
-65534
+1
 39
 0
 65536
 224
 0
-65534
+1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 224
 0
-65534
+1
 34
 0
 52428
@@ -9058,6 +12016,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9097,7 +12063,7 @@ TRACK
 <click me>
 
 ?volume
-800
+844
 
 ?pan
 0
@@ -9139,6 +12105,10 @@ VELOCITIES
 19
 62861
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -9154,19 +12124,27 @@ NOTE
 13
 58982
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 92
-32767
-65534
+1
+2
 43
 0
 37449
 94
-32767
-65534
+1
+2
 0
 1
 
@@ -9177,19 +12155,23 @@ VELOCITIES
 9
 19504
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 100
 0
-65534
+1
 43
 0
 32768
 112
 0
-65534
+1
 32768
 0
 
@@ -9201,12 +12183,16 @@ VELOCITIES
 17164
 105
 0
-9
+1
 0
 109
 1
 9
 0
+/
+
+\
+PITCHES
 /
 /
 
@@ -9214,15 +12200,23 @@ VELOCITIES
 NOTE
 112
 0
-18
+1
 51
 0
 60250
 114
 0
-65534
+1
 60250
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9246,13 +12240,17 @@ VELOCITIES
 19
 42799
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 143
-14
-18
+7
+9
 46
 0
 61538
@@ -9272,6 +12270,10 @@ VELOCITIES
 3
 13
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -9295,6 +12297,10 @@ VELOCITIES
 16
 19
 61523
+/
+
+\
+PITCHES
 /
 /
 
@@ -9323,6 +12329,10 @@ VELOCITIES
 19
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -9349,6 +12359,10 @@ VELOCITIES
 17
 19
 27019
+/
+
+\
+PITCHES
 /
 /
 
@@ -9543,8 +12557,8 @@ FXNODELINES
 19
 38972
 213
-2
-14
+1
+7
 0
 218
 5
@@ -9599,6 +12613,14 @@ NOTE
 1
 40661
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9614,6 +12636,14 @@ NOTE
 1
 35612
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9629,13 +12659,21 @@ NOTE
 1
 35612
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 16
 0
-13
+1
 41
 0
 46879
@@ -9649,8 +12687,12 @@ NOTE
 VELOCITIES
 17
 0
-13
+1
 61709
+/
+
+\
+PITCHES
 /
 /
 
@@ -9667,13 +12709,21 @@ NOTE
 13
 58838
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 72
 0
-65534
+1
 42
 0
 47754
@@ -9682,13 +12732,21 @@ NOTE
 19
 47754
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 76
 0
-65534
+1
 37
 0
 57915
@@ -9697,13 +12755,21 @@ NOTE
 19
 57915
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 84
 0
-65534
+1
 42
 0
 57403
@@ -9712,13 +12778,21 @@ NOTE
 13
 57403
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 88
 0
-65534
+1
 42
 0
 64579
@@ -9727,13 +12801,21 @@ NOTE
 13
 64579
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 116
 0
-65534
+1
 42
 0
 49152
@@ -9742,13 +12824,21 @@ NOTE
 19
 49152
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 120
 0
-65534
+1
 42
 0
 58136
@@ -9757,13 +12847,21 @@ NOTE
 19
 58136
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 124
 0
-65534
+1
 42
 0
 59193
@@ -9772,19 +12870,27 @@ NOTE
 19
 59193
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 184
 0
-65534
+1
 38
 0
 54613
 192
 0
-65534
+1
 54613
 0
 
@@ -9799,13 +12905,17 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 192
 0
-65534
+1
 42
 0
 53908
@@ -9814,13 +12924,21 @@ NOTE
 19
 53908
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 196
 0
-65534
+1
 39
 0
 60779
@@ -9829,13 +12947,21 @@ NOTE
 19
 60779
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 198
 0
-65534
+1
 37
 0
 18498
@@ -9844,13 +12970,21 @@ NOTE
 19
 18498
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 200
 0
-65534
+1
 43
 0
 53380
@@ -9859,6 +12993,14 @@ NOTE
 19
 53380
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9882,6 +13024,10 @@ VELOCITIES
 19
 42809
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -9894,9 +13040,17 @@ NOTE
 33825
 207
 0
-65534
+1
 33825
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9909,24 +13063,40 @@ NOTE
 42809
 208
 0
-65534
+1
 42809
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 208
 0
-65534
+1
 40
 0
 52428
 209
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -9939,76 +13109,116 @@ NOTE
 57608
 216
 0
-65534
+1
 57608
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 216
 0
-65534
+1
 45
 0
 52428
 217
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 218
 0
-65534
+1
 42
 0
 52428
 219
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 220
 0
-65534
+1
 44
 0
 52428
 221
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 224
 0
-65534
+1
 42
 0
 65536
 232
 0
-65534
+1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 232
 0
-65534
+1
 42
 0
 64226
@@ -10017,6 +13227,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10131,6 +13349,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10146,6 +13372,14 @@ NOTE
 19
 52327
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10161,6 +13395,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10173,46 +13415,70 @@ NOTE
 59120
 64
 0
-65534
+1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 64
 0
-65534
+1
 46
 0
 65536
 80
 0
-65534
+1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 92
 0
-65534
+1
 46
 0
 65138
 93
-32767
-65534
+1
+2
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 104
 0
-65534
+1
 46
 0
 57608
@@ -10221,13 +13487,21 @@ NOTE
 19
 57608
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 120
 0
-65534
+1
 53
 0
 50737
@@ -10248,6 +13522,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -10263,6 +13541,14 @@ NOTE
 19
 44923
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10278,6 +13564,14 @@ NOTE
 19
 54965
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10293,13 +13587,21 @@ NOTE
 13
 0
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 168
 0
-65534
+1
 52
 0
 50840
@@ -10308,13 +13610,21 @@ NOTE
 1
 50840
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 176
 0
-65534
+1
 53
 0
 65536
@@ -10323,13 +13633,21 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 184
 0
-65534
+1
 49
 0
 60455
@@ -10338,21 +13656,37 @@ NOTE
 19
 60455
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 192
 0
-65534
+1
 46
 0
 52428
 208
 0
-65534
+1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -10373,8 +13707,12 @@ NOTE
 VELOCITIES
 225
 0
-13
+1
 48258
+/
+
+\
+PITCHES
 /
 /
 
@@ -10406,6 +13744,10 @@ VELOCITIES
 16
 19
 4228
+/
+
+\
+PITCHES
 /
 /
 
@@ -10506,7 +13848,7 @@ FXNODELINES
 0
 28
 0
-9
+1
 65536
 32
 6
@@ -10558,7 +13900,7 @@ FXNODELINES
 12787
 52
 0
-19
+1
 0
 56
 1
@@ -10578,7 +13920,7 @@ FXNODELINES
 65536
 64
 0
-30
+1
 49152
 67
 5
@@ -10593,8 +13935,8 @@ FXNODELINES
 19
 23901
 78
-20
-30
+2
+3
 0
 88
 12
@@ -10609,16 +13951,16 @@ FXNODELINES
 13
 45654
 93
-9
-15
+3
+5
 65536
 103
 11
 13
 6049
 105
-9
-15
+3
+5
 58609
 109
 2
@@ -10657,8 +13999,8 @@ FXNODELINES
 13
 0
 166
-10
-30
+1
+3
 30769
 167
 10
@@ -10721,8 +14063,8 @@ FXNODELINES
 19
 64000
 192
-5040
-65534
+360
+4681
 64512
 192
 1
@@ -10761,8 +14103,8 @@ FXNODELINES
 13
 25252
 227
-6
-30
+1
+5
 43157
 233
 16
@@ -10928,8 +14270,8 @@ FXNODELINES
 9
 15984
 40
+1
 3
-9
 5994
 45
 2
@@ -10964,12 +14306,12 @@ FXNODELINES
 30
 3210
 75
-9
-30
+3
+10
 13598
 80
+1
 3
-9
 0
 90
 4
@@ -11021,7 +14363,7 @@ FXNODELINES
 18697
 174
 0
-13
+1
 0
 180
 1
@@ -11048,12 +14390,12 @@ FXNODELINES
 19
 35328
 194
+1
 3
-9
 43438
 209
 0
-9
+1
 377
 223
 14
@@ -11225,7 +14567,7 @@ FXNODELINES
 0
 85
 0
-13
+1
 0
 90
 6
@@ -11400,8 +14742,8 @@ FXNODELINES
 1
 53814
 37
-10
-15
+2
+3
 34728
 38
 14
@@ -11409,19 +14751,19 @@ FXNODELINES
 47599
 48
 0
-15
+1
 53451
 51
-6
-15
+2
+5
 63466
 63
 11
 15
 57634
 81
-12
-15
+4
+5
 65536
 87
 11
@@ -11448,16 +14790,16 @@ FXNODELINES
 15
 6161
 157
-10
-15
+2
+3
 56797
 162
 0
-15
+1
 65536
 166
-3
-15
+1
+5
 65536
 168
 3
@@ -11488,8 +14830,8 @@ FXNODELINES
 15
 65536
 213
-5
-15
+1
+3
 40241
 221
 8
@@ -11504,12 +14846,12 @@ FXNODELINES
 13
 0
 236
-5
-15
+1
+3
 49439
 245
-3
-15
+1
+5
 61396
 255
 14
@@ -11637,7 +14979,7 @@ FXNODELINES
 47662
 136
 0
-13
+1
 65258
 140
 12
@@ -11677,7 +15019,7 @@ FXNODELINES
 6012
 184
 0
-13
+1
 65536
 189
 3
@@ -11688,8 +15030,8 @@ FXNODELINES
 13
 65536
 212
-5040
-65534
+360
+4681
 65536
 212
 1
@@ -11756,6 +15098,14 @@ NOTE
 19
 0
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -11768,7 +15118,7 @@ NOTE
 0
 26
 0
-65534
+1
 59148
 0
 
@@ -11804,7 +15154,7 @@ VELOCITIES
 35151
 24
 0
-19
+1
 65536
 24
 18
@@ -11814,6 +15164,10 @@ VELOCITIES
 65533
 65534
 49449
+/
+
+\
+PITCHES
 /
 /
 
@@ -11838,43 +15192,63 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 28
 0
-65534
+1
 45
 0
 51288
 30
 0
-65534
+1
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 30
 0
-65534
+1
 44
 0
 51288
 32
 0
-65534
+1
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 32
 0
-65534
+1
 41
 0
 61768
@@ -11895,6 +15269,10 @@ VELOCITIES
 19
 49758
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -11910,36 +15288,60 @@ NOTE
 1
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 72
 0
-65534
+1
 46
 0
 51288
 74
 0
-65534
+1
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 88
 0
-65534
+1
 41
 0
 51288
 90
 0
-65534
+1
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -11955,6 +15357,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -11970,6 +15380,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -11985,19 +15403,27 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 136
 0
-65534
+1
 46
 0
 51943
 164
 0
-65534
+1
 51288
 0
 
@@ -12016,19 +15442,23 @@ VELOCITIES
 14
 35075
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 164
 0
-65534
+1
 46
 0
 27405
 168
 0
-65534
+1
 51288
 0
 
@@ -12043,19 +15473,23 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 168
 0
-19
+1
 50
 0
 65536
 172
 0
-65534
+1
 32172
 0
 
@@ -12070,19 +15504,23 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 172
 0
-65534
+1
 41
 0
 49323
 176
 0
-65534
+1
 49323
 0
 
@@ -12097,19 +15535,23 @@ VELOCITIES
 19
 59467
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 176
 0
-65534
+1
 43
 0
 51288
 200
 0
-65534
+1
 51288
 0
 
@@ -12128,21 +15570,33 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 200
 0
-65534
+1
 34
 0
 51288
 202
 0
-65534
+1
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -12233,6 +15687,10 @@ VELOCITIES
 13
 22004
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -12268,6 +15726,10 @@ VELOCITIES
 13
 22961
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -12280,7 +15742,7 @@ NOTE
 35612
 72
 0
-65534
+1
 35612
 0
 
@@ -12292,7 +15754,7 @@ VELOCITIES
 40167
 35
 0
-19
+1
 41224
 36
 5
@@ -12347,13 +15809,17 @@ VELOCITIES
 13
 42096
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 72
 0
-65534
+1
 42
 0
 65536
@@ -12370,13 +15836,17 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 88
 0
-65534
+1
 41
 0
 65536
@@ -12393,19 +15863,23 @@ VELOCITIES
 19
 57195
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 104
 0
-65534
+1
 57
 0
 53253
 114
 0
-65534
+1
 51288
 1
 
@@ -12420,21 +15894,33 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 114
 0
-65534
+1
 58
 0
 51943
 116
 0
-65534
+1
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -12478,19 +15964,23 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 164
 0
-65534
+1
 50
 0
 51288
 168
 0
-65534
+1
 51288
 1
 
@@ -12501,49 +15991,69 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 168
 0
-65534
+1
 47
 0
 51288
 172
 0
-65534
+1
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 172
 0
-65534
+1
 41
 0
 51288
 176
 0
-65534
+1
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
 NOTE
 176
 0
-65534
+1
 55
 0
 51288
 200
 0
-65534
+1
 51288
 1
 
@@ -12555,12 +16065,16 @@ VELOCITIES
 16086
 188
 0
-14
+1
 27405
 198
 24
 25
 35746
+/
+
+\
+PITCHES
 /
 /
 
@@ -12568,15 +16082,23 @@ VELOCITIES
 NOTE
 200
 0
-65534
+1
 60
 0
 51288
 202
 0
-65534
+1
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -12686,11 +16208,11 @@ VELOCITIES
 51663
 18
 0
-13
+1
 53576
 20
 0
-13
+1
 50228
 21
 6
@@ -12761,6 +16283,10 @@ VELOCITIES
 19
 58665
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -12788,8 +16314,8 @@ VELOCITIES
 19
 56022
 65
-27594
-65534
+1971
+4681
 61307
 67
 8
@@ -12823,6 +16349,10 @@ VELOCITIES
 2
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -12859,6 +16389,10 @@ VELOCITIES
 19
 58665
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -12885,6 +16419,10 @@ VELOCITIES
 3
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -12966,12 +16504,16 @@ VELOCITIES
 62364
 154
 0
-19
+1
 63421
 158
 18
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -12988,6 +16530,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13003,6 +16553,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13046,6 +16604,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -13070,7 +16632,7 @@ VELOCITIES
 55705
 236
 0
-19
+1
 33296
 236
 13
@@ -13090,8 +16652,12 @@ VELOCITIES
 0
 254
 0
-19
+1
 20164
+/
+
+\
+PITCHES
 /
 /
 /
@@ -13197,6 +16763,10 @@ VELOCITIES
 13
 54886
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -13237,7 +16807,7 @@ VELOCITIES
 46509
 79
 0
-19
+1
 41752
 79
 17
@@ -13307,6 +16877,10 @@ VELOCITIES
 9
 13
 40140
+/
+
+\
+PITCHES
 /
 /
 
@@ -13431,6 +17005,10 @@ VELOCITIES
 13
 58163
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -13457,6 +17035,10 @@ VELOCITIES
 6
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -13498,8 +17080,12 @@ VELOCITIES
 0
 254
 0
-19
+1
 18484
+/
+
+\
+PITCHES
 /
 /
 /
@@ -13528,7 +17114,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -13571,6 +17157,14 @@ NOTE
 1
 56554
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13586,6 +17180,14 @@ NOTE
 1
 60218
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13601,6 +17203,14 @@ NOTE
 65534
 61849
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13616,6 +17226,14 @@ NOTE
 1
 58982
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13631,6 +17249,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13646,6 +17272,14 @@ NOTE
 18
 36467
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13661,6 +17295,14 @@ NOTE
 19
 57608
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13676,6 +17318,14 @@ NOTE
 1
 58234
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13691,6 +17341,14 @@ NOTE
 1
 61483
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13706,6 +17364,14 @@ NOTE
 1
 37186
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13721,6 +17387,14 @@ NOTE
 1
 58616
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13736,6 +17410,14 @@ NOTE
 1
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13751,6 +17433,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13766,6 +17456,14 @@ NOTE
 1
 49223
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13781,6 +17479,14 @@ NOTE
 65534
 55711
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13796,6 +17502,14 @@ NOTE
 1
 61606
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13811,6 +17525,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13826,6 +17548,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13841,6 +17571,14 @@ NOTE
 1
 58978
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13856,6 +17594,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13871,6 +17617,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13886,6 +17640,14 @@ NOTE
 65534
 53083
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -13984,6 +17746,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -14015,6 +17781,10 @@ VELOCITIES
 19
 57511
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -14041,6 +17811,10 @@ VELOCITIES
 12
 13
 49152
+/
+
+\
+PITCHES
 /
 /
 
@@ -14069,6 +17843,10 @@ VELOCITIES
 9
 5461
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -14091,6 +17869,10 @@ VELOCITIES
 7
 9
 19504
+/
+
+\
+PITCHES
 /
 /
 
@@ -14123,6 +17905,10 @@ VELOCITIES
 9
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -14138,6 +17924,14 @@ NOTE
 65534
 57697
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14160,6 +17954,10 @@ VELOCITIES
 1
 19
 42799
+/
+
+\
+PITCHES
 /
 /
 
@@ -14184,6 +17982,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -14206,6 +18008,10 @@ VELOCITIES
 8
 19
 49152
+/
+
+\
+PITCHES
 /
 /
 
@@ -14237,6 +18043,10 @@ VELOCITIES
 17
 19
 0
+/
+
+\
+PITCHES
 /
 /
 
@@ -14272,6 +18082,10 @@ VELOCITIES
 3
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -14487,6 +18301,14 @@ NOTE
 19
 54437
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14502,6 +18324,14 @@ NOTE
 19
 58136
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14517,6 +18347,14 @@ NOTE
 19
 44395
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14532,6 +18370,14 @@ NOTE
 19
 59193
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14547,6 +18393,14 @@ NOTE
 1
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14562,6 +18416,14 @@ NOTE
 19
 62487
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14577,6 +18439,14 @@ NOTE
 19
 47037
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14592,6 +18462,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14607,6 +18485,14 @@ NOTE
 19
 54437
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14622,6 +18508,14 @@ NOTE
 19
 54437
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14637,6 +18531,14 @@ NOTE
 19
 62893
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14652,6 +18554,14 @@ NOTE
 18
 49680
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14679,6 +18589,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -14694,6 +18608,14 @@ NOTE
 19
 54965
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14709,6 +18631,14 @@ NOTE
 19
 54437
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14724,6 +18654,14 @@ NOTE
 65534
 39125
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14739,6 +18677,14 @@ NOTE
 19
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14754,6 +18700,14 @@ NOTE
 19
 45452
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14769,6 +18723,14 @@ NOTE
 65534
 53908
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14784,6 +18746,14 @@ NOTE
 65534
 37524
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14799,6 +18769,14 @@ NOTE
 65534
 43338
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14814,6 +18792,14 @@ NOTE
 65534
 59193
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14829,6 +18815,14 @@ NOTE
 65534
 53908
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14844,6 +18838,14 @@ NOTE
 19
 42281
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14859,6 +18861,14 @@ NOTE
 19
 49152
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14874,6 +18884,14 @@ NOTE
 65534
 59722
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -14889,6 +18907,14 @@ NOTE
 65534
 58665
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15016,6 +19042,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -15031,6 +19061,14 @@ NOTE
 65534
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15046,6 +19084,14 @@ NOTE
 1
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15061,6 +19107,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15076,6 +19130,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15091,6 +19153,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15106,6 +19176,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15121,6 +19199,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15184,6 +19270,10 @@ VELOCITIES
 19
 40167
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -15199,6 +19289,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15214,6 +19312,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15229,6 +19335,14 @@ NOTE
 1
 51634
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15244,6 +19358,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15259,6 +19381,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15274,6 +19404,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15289,6 +19427,14 @@ NOTE
 19
 56551
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -15304,6 +19450,14 @@ NOTE
 19
 58136
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16569,6 +20723,10 @@ VELOCITIES
 65534
 49449
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -16592,6 +20750,10 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -16607,6 +20769,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16622,6 +20792,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16644,6 +20822,10 @@ VELOCITIES
 17
 19
 49758
+/
+
+\
+PITCHES
 /
 /
 
@@ -16668,6 +20850,10 @@ VELOCITIES
 19
 62557
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -16683,6 +20869,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16698,6 +20892,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16713,6 +20915,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16739,6 +20949,10 @@ VELOCITIES
 5
 14
 21845
+/
+
+\
+PITCHES
 /
 /
 
@@ -16779,6 +20993,10 @@ VELOCITIES
 19
 31775
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -16805,6 +21023,10 @@ VELOCITIES
 5
 19
 57040
+/
+
+\
+PITCHES
 /
 /
 
@@ -16833,6 +21055,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -16859,6 +21085,10 @@ VELOCITIES
 18
 19
 59467
+/
+
+\
+PITCHES
 /
 /
 
@@ -16891,6 +21121,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -16906,6 +21140,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -16944,6 +21186,10 @@ VELOCITIES
 9
 14
 52627
+/
+
+\
+PITCHES
 /
 /
 
@@ -16999,6 +21245,10 @@ VELOCITIES
 10
 13
 58756
+/
+
+\
+PITCHES
 /
 /
 
@@ -17077,6 +21327,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17099,6 +21353,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -17139,6 +21397,10 @@ VELOCITIES
 19
 53380
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17161,6 +21423,10 @@ VELOCITIES
 6
 19
 60250
+/
+
+\
+PITCHES
 /
 /
 
@@ -17225,6 +21491,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17248,6 +21518,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17263,6 +21537,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -17278,6 +21560,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -17329,6 +21619,10 @@ VELOCITIES
 19
 26954
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17344,6 +21638,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -17451,6 +21753,10 @@ VELOCITIES
 19
 64478
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17494,6 +21800,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17509,6 +21819,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -17564,6 +21882,10 @@ VELOCITIES
 19
 61440
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17614,6 +21936,10 @@ VELOCITIES
 7
 13
 49971
+/
+
+\
+PITCHES
 /
 /
 
@@ -17730,6 +22056,10 @@ VELOCITIES
 13
 61440
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17745,6 +22075,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -17848,6 +22186,10 @@ VELOCITIES
 19
 50209
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17950,6 +22292,10 @@ VELOCITIES
 19
 65007
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -17972,6 +22318,10 @@ VELOCITIES
 13
 19
 57608
+/
+
+\
+PITCHES
 /
 /
 
@@ -18000,6 +22350,10 @@ VELOCITIES
 19
 62893
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18022,6 +22376,10 @@ VELOCITIES
 3
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -18050,6 +22408,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18072,6 +22434,10 @@ VELOCITIES
 5
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -18144,6 +22510,10 @@ VELOCITIES
 13
 36044
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18167,6 +22537,10 @@ VELOCITIES
 13
 49971
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18182,6 +22556,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18253,6 +22635,10 @@ VELOCITIES
 19
 46661
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18305,7 +22691,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -18356,6 +22742,10 @@ VELOCITIES
 13
 28718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18382,6 +22772,10 @@ VELOCITIES
 5
 13
 33872
+/
+
+\
+PITCHES
 /
 /
 
@@ -18410,6 +22804,10 @@ VELOCITIES
 13
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18425,6 +22823,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18440,6 +22846,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18455,6 +22869,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18470,6 +22892,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18485,6 +22915,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18500,6 +22938,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18515,6 +22961,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18530,6 +22984,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18587,6 +23049,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18602,6 +23072,14 @@ NOTE
 19
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18617,6 +23095,14 @@ NOTE
 1
 4977
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18632,6 +23118,14 @@ NOTE
 19
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18659,6 +23153,10 @@ VELOCITIES
 9
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18674,6 +23172,14 @@ NOTE
 19
 57676
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18689,6 +23195,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18903,6 +23417,10 @@ VELOCITIES
 13
 43486
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -18918,6 +23436,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18933,6 +23459,14 @@ NOTE
 1
 50737
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18948,6 +23482,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18963,6 +23505,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18978,6 +23528,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -18993,6 +23551,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19008,6 +23574,14 @@ NOTE
 13
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19023,6 +23597,14 @@ NOTE
 1
 30624
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19038,6 +23620,14 @@ NOTE
 1
 35524
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19053,6 +23643,14 @@ NOTE
 1
 49611
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19068,6 +23666,14 @@ NOTE
 1
 37361
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19083,6 +23689,14 @@ NOTE
 1
 48386
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19098,6 +23712,14 @@ NOTE
 1
 31236
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19113,6 +23735,14 @@ NOTE
 1
 43486
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19128,6 +23758,14 @@ NOTE
 1
 14087
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19143,6 +23781,14 @@ NOTE
 1
 38586
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19158,6 +23804,14 @@ NOTE
 1
 32461
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19173,6 +23827,14 @@ NOTE
 1
 28786
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19188,6 +23850,14 @@ NOTE
 1
 58136
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19203,6 +23873,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19218,6 +23896,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19233,6 +23919,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19298,6 +23992,10 @@ VELOCITIES
 19
 45676
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -19313,6 +24011,14 @@ NOTE
 1
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19328,6 +24034,14 @@ NOTE
 1
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19343,6 +24057,14 @@ NOTE
 65534
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19358,6 +24080,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19373,6 +24103,14 @@ NOTE
 65534
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19396,6 +24134,10 @@ VELOCITIES
 30
 39718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -19411,6 +24153,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19442,6 +24192,10 @@ VELOCITIES
 19
 22726
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -19457,6 +24211,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19492,6 +24254,10 @@ VELOCITIES
 13
 24052
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -19507,6 +24273,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19522,6 +24296,14 @@ NOTE
 13
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19544,6 +24326,10 @@ VELOCITIES
 2
 13
 53099
+/
+
+\
+PITCHES
 /
 /
 
@@ -19588,6 +24374,10 @@ VELOCITIES
 19
 56173
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -19603,6 +24393,14 @@ NOTE
 65534
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19618,6 +24416,14 @@ NOTE
 1
 51981
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19633,6 +24439,14 @@ NOTE
 65534
 34183
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19648,6 +24462,14 @@ NOTE
 1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19663,6 +24485,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -19678,6 +24508,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20742,6 +25580,10 @@ VELOCITIES
 65534
 49449
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -20757,6 +25599,14 @@ NOTE
 1
 63594
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20772,6 +25622,14 @@ NOTE
 14
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20787,6 +25645,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20802,6 +25668,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20817,6 +25691,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20832,6 +25714,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20863,6 +25753,10 @@ VELOCITIES
 13
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -20878,6 +25772,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20893,6 +25795,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20908,6 +25818,14 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -20930,6 +25848,10 @@ VELOCITIES
 2
 14
 40513
+/
+
+\
+PITCHES
 /
 /
 
@@ -20958,6 +25880,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -20984,6 +25910,10 @@ VELOCITIES
 12
 19
 57040
+/
+
+\
+PITCHES
 /
 /
 
@@ -21012,6 +25942,10 @@ VELOCITIES
 19
 59467
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21027,6 +25961,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21042,6 +25984,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21057,6 +26007,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21072,6 +26030,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21087,6 +26053,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21102,6 +26076,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21117,6 +26099,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21132,6 +26122,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21147,6 +26145,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21237,6 +26243,14 @@ NOTE
 14
 47566
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21252,6 +26266,14 @@ NOTE
 14
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21267,6 +26289,14 @@ NOTE
 14
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21290,6 +26320,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21312,6 +26346,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -21340,6 +26378,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21355,6 +26397,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21370,6 +26420,14 @@ NOTE
 13
 36817
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21385,6 +26443,14 @@ NOTE
 13
 28718
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21428,6 +26494,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21451,6 +26521,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21466,6 +26540,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21481,6 +26563,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21504,6 +26594,10 @@ VELOCITIES
 25
 16086
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21519,6 +26613,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21534,6 +26636,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21549,6 +26659,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21564,6 +26682,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21579,6 +26705,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21594,6 +26728,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21776,6 +26918,10 @@ VELOCITIES
 19
 24445
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21859,6 +27005,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21894,6 +27044,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21928,6 +27082,10 @@ VELOCITIES
 8
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -21968,6 +27126,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -21983,6 +27145,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -21998,6 +27168,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22041,6 +27219,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22068,6 +27250,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22094,6 +27280,10 @@ VELOCITIES
 0
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -22138,6 +27328,10 @@ VELOCITIES
 19
 59814
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22172,6 +27366,10 @@ VELOCITIES
 7
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -22227,6 +27425,10 @@ VELOCITIES
 9
 13
 28807
+/
+
+\
+PITCHES
 /
 /
 
@@ -22342,6 +27544,10 @@ VELOCITIES
 19
 53052
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22357,6 +27563,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22407,6 +27621,10 @@ VELOCITIES
 18
 19
 27566
+/
+
+\
+PITCHES
 /
 /
 
@@ -22466,6 +27684,10 @@ VELOCITIES
 16
 19
 55653
+/
+
+\
+PITCHES
 /
 /
 
@@ -22546,6 +27768,10 @@ VELOCITIES
 19
 52532
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22577,6 +27803,10 @@ VELOCITIES
 19
 57213
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22603,6 +27833,10 @@ VELOCITIES
 6
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -22675,6 +27909,10 @@ VELOCITIES
 13
 25395
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -22715,7 +27953,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -22758,6 +27996,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22773,6 +28019,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22788,6 +28042,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22803,6 +28065,14 @@ NOTE
 1
 60489
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22818,6 +28088,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22833,6 +28111,14 @@ NOTE
 1
 61144
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22848,6 +28134,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22863,6 +28157,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22878,6 +28180,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22938,6 +28248,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22953,6 +28271,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22968,6 +28294,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22983,6 +28317,14 @@ NOTE
 18
 64495
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -22998,6 +28340,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23013,6 +28363,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23028,6 +28386,14 @@ NOTE
 19
 63455
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23234,6 +28600,14 @@ NOTE
 19
 59294
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23249,6 +28623,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23264,6 +28646,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23279,6 +28669,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23294,6 +28692,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23309,6 +28715,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23324,6 +28738,14 @@ NOTE
 13
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23339,6 +28761,14 @@ NOTE
 1
 30624
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23354,6 +28784,14 @@ NOTE
 1
 35524
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23369,6 +28807,14 @@ NOTE
 1
 49611
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23384,6 +28830,14 @@ NOTE
 1
 37361
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23399,6 +28853,14 @@ NOTE
 1
 48386
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23414,6 +28876,14 @@ NOTE
 1
 31236
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23429,6 +28899,14 @@ NOTE
 1
 43486
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23444,6 +28922,14 @@ NOTE
 1
 14087
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23459,6 +28945,14 @@ NOTE
 1
 38586
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23474,6 +28968,14 @@ NOTE
 1
 32461
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23489,6 +28991,14 @@ NOTE
 1
 28786
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23504,6 +29014,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23519,6 +29037,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23534,6 +29060,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23549,6 +29083,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23614,6 +29156,10 @@ VELOCITIES
 19
 58254
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -23629,6 +29175,14 @@ NOTE
 1
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23651,6 +29205,10 @@ VELOCITIES
 10
 13
 60266
+/
+
+\
+PITCHES
 /
 /
 
@@ -23675,6 +29233,10 @@ VELOCITIES
 65534
 37969
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -23690,6 +29252,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23705,6 +29275,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23728,6 +29306,10 @@ VELOCITIES
 13
 54879
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -23743,6 +29325,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23774,6 +29364,10 @@ VELOCITIES
 13
 7296
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -23789,6 +29383,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23804,6 +29406,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23831,6 +29441,10 @@ VELOCITIES
 13
 37700
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -23846,6 +29460,14 @@ NOTE
 1
 40537
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23861,6 +29483,14 @@ NOTE
 1
 51981
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23876,6 +29506,14 @@ NOTE
 1
 51981
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23891,6 +29529,14 @@ NOTE
 65534
 39825
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23906,6 +29552,14 @@ NOTE
 1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23921,6 +29575,14 @@ NOTE
 19
 49932
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -23936,6 +29598,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25016,6 +30686,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25051,6 +30729,10 @@ VELOCITIES
 13
 24576
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25066,6 +30748,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25081,6 +30771,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25096,6 +30794,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25111,6 +30817,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25126,6 +30840,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25141,6 +30863,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25167,6 +30897,10 @@ VELOCITIES
 7
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -25195,6 +30929,10 @@ VELOCITIES
 13
 52428
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25210,6 +30948,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25232,6 +30978,10 @@ VELOCITIES
 10
 13
 54067
+/
+
+\
+PITCHES
 /
 /
 
@@ -25256,6 +31006,10 @@ VELOCITIES
 13
 48332
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25278,6 +31032,10 @@ VELOCITIES
 5
 13
 41779
+/
+
+\
+PITCHES
 /
 /
 
@@ -25302,6 +31060,10 @@ VELOCITIES
 13
 51609
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25317,6 +31079,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25332,6 +31102,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25347,6 +31125,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25416,6 +31202,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25431,6 +31225,14 @@ NOTE
 18
 57734
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25454,6 +31256,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25476,6 +31282,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -25504,6 +31314,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25519,6 +31333,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25562,6 +31384,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25585,6 +31411,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25600,6 +31430,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25615,6 +31453,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25646,6 +31492,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25661,6 +31511,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25676,6 +31534,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25691,6 +31557,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -25855,6 +31729,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25918,6 +31796,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25957,6 +31839,10 @@ VELOCITIES
 19
 61374
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -25987,6 +31873,10 @@ VELOCITIES
 14
 18
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -26023,6 +31913,10 @@ VELOCITIES
 13
 64063
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26058,6 +31952,10 @@ VELOCITIES
 13
 58908
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26073,6 +31971,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26088,6 +31994,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26119,6 +32033,10 @@ VELOCITIES
 18
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26134,6 +32052,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26149,6 +32075,14 @@ NOTE
 19
 61895
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26219,6 +32153,10 @@ VELOCITIES
 4
 19
 45771
+/
+
+\
+PITCHES
 /
 /
 
@@ -26335,6 +32273,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26382,6 +32324,10 @@ VELOCITIES
 13
 51609
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26404,6 +32350,10 @@ VELOCITIES
 8
 13
 33872
+/
+
+\
+PITCHES
 /
 /
 
@@ -26440,6 +32390,10 @@ VELOCITIES
 65534
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26455,6 +32409,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26514,6 +32476,10 @@ VELOCITIES
 18
 59294
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26540,6 +32506,10 @@ VELOCITIES
 6
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -26608,6 +32578,10 @@ VELOCITIES
 13
 25395
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26645,7 +32619,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -26696,6 +32670,10 @@ VELOCITIES
 13
 28718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26719,6 +32697,10 @@ VELOCITIES
 13
 58172
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26734,6 +32716,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26761,6 +32751,10 @@ VELOCITIES
 13
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -26776,6 +32770,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26791,6 +32793,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26806,6 +32816,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26821,6 +32839,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26836,6 +32862,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26851,6 +32885,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26866,6 +32908,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26881,6 +32931,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26896,6 +32954,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26956,6 +33022,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26971,6 +33045,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -26986,6 +33068,14 @@ NOTE
 1
 63571
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27001,6 +33091,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27016,6 +33114,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27031,6 +33137,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27259,6 +33373,10 @@ VELOCITIES
 13
 43486
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -27274,6 +33392,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27289,6 +33415,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27304,6 +33438,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27319,6 +33461,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27334,6 +33484,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27349,6 +33507,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27364,6 +33530,14 @@ NOTE
 13
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27379,6 +33553,14 @@ NOTE
 1
 30624
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27394,6 +33576,14 @@ NOTE
 1
 35524
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27409,6 +33599,14 @@ NOTE
 1
 49611
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27424,6 +33622,14 @@ NOTE
 1
 37361
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27439,6 +33645,14 @@ NOTE
 1
 48386
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27454,6 +33668,14 @@ NOTE
 1
 31236
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27469,6 +33691,14 @@ NOTE
 1
 43486
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27484,6 +33714,14 @@ NOTE
 1
 14087
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27499,6 +33737,14 @@ NOTE
 1
 38586
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27514,6 +33760,14 @@ NOTE
 1
 32461
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27529,6 +33783,14 @@ NOTE
 1
 28786
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27544,6 +33806,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27559,6 +33829,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27574,6 +33852,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27589,6 +33875,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27646,6 +33940,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27661,6 +33963,14 @@ NOTE
 1
 50686
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27676,6 +33986,14 @@ NOTE
 1
 57810
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27691,6 +34009,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27706,6 +34032,14 @@ NOTE
 1
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27721,6 +34055,14 @@ NOTE
 1
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27736,6 +34078,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27751,6 +34101,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27774,6 +34132,10 @@ VELOCITIES
 30
 39718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -27789,6 +34151,14 @@ NOTE
 19
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27820,6 +34190,10 @@ VELOCITIES
 19
 28539
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -27835,6 +34209,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27858,6 +34240,10 @@ VELOCITIES
 13
 24052
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -27873,6 +34259,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27888,6 +34282,14 @@ NOTE
 13
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27911,6 +34313,10 @@ VELOCITIES
 13
 53099
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -27926,6 +34332,14 @@ NOTE
 1
 64226
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27957,6 +34371,10 @@ VELOCITIES
 19
 37969
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -27972,6 +34390,14 @@ NOTE
 1
 51981
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -27987,6 +34413,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -28002,6 +34436,14 @@ NOTE
 1
 58838
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -28017,6 +34459,14 @@ NOTE
 1
 38815
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -28032,6 +34482,14 @@ NOTE
 65534
 34183
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -28047,6 +34505,14 @@ NOTE
 1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -28062,6 +34528,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -28077,6 +34551,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29201,6 +35683,10 @@ VELOCITIES
 13
 17387
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29224,6 +35710,10 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29239,6 +35729,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29254,6 +35752,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29277,6 +35783,10 @@ VELOCITIES
 19
 49758
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29292,6 +35802,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29307,6 +35825,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29330,6 +35856,10 @@ VELOCITIES
 13
 61843
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29345,6 +35875,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29360,6 +35898,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29391,6 +35937,10 @@ VELOCITIES
 13
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29406,6 +35956,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29421,6 +35979,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29436,6 +36002,14 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29458,6 +36032,10 @@ VELOCITIES
 2
 14
 40513
+/
+
+\
+PITCHES
 /
 /
 
@@ -29486,6 +36064,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29513,6 +36095,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29539,6 +36125,10 @@ VELOCITIES
 18
 19
 59467
+/
+
+\
+PITCHES
 /
 /
 
@@ -29571,6 +36161,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29586,6 +36180,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29601,6 +36203,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29616,6 +36226,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29631,6 +36249,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29646,6 +36272,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29661,6 +36295,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29676,6 +36318,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29691,6 +36341,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29778,6 +36436,14 @@ NOTE
 13
 58355
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29793,6 +36459,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29820,6 +36494,10 @@ VELOCITIES
 19
 50452
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29835,6 +36513,14 @@ NOTE
 13
 16199
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29850,6 +36536,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29865,6 +36559,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29880,6 +36582,14 @@ NOTE
 13
 29454
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29907,6 +36617,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -29922,6 +36636,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29937,6 +36659,14 @@ NOTE
 13
 36817
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29952,6 +36682,14 @@ NOTE
 13
 28718
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -29995,6 +36733,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30018,6 +36760,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30033,6 +36779,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30048,6 +36802,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30079,6 +36841,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30094,6 +36860,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30109,6 +36883,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30124,6 +36906,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30139,6 +36929,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30261,6 +37059,10 @@ VELOCITIES
 19
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30276,6 +37078,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30291,6 +37101,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30306,6 +37124,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30336,6 +37162,10 @@ VELOCITIES
 3
 19
 45771
+/
+
+\
+PITCHES
 /
 /
 
@@ -30384,6 +37214,10 @@ VELOCITIES
 19
 62721
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30427,6 +37261,10 @@ VELOCITIES
 18
 64495
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30442,6 +37280,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -30472,6 +37318,10 @@ VELOCITIES
 8
 18
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -30516,6 +37366,10 @@ VELOCITIES
 13
 59801
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30538,6 +37392,10 @@ VELOCITIES
 17
 19
 56693
+/
+
+\
+PITCHES
 /
 /
 
@@ -30574,6 +37432,10 @@ VELOCITIES
 19
 60891
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30605,6 +37467,10 @@ VELOCITIES
 18
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30627,6 +37493,10 @@ VELOCITIES
 0
 13
 65019
+/
+
+\
+PITCHES
 /
 /
 
@@ -30658,6 +37528,10 @@ VELOCITIES
 10
 13
 51833
+/
+
+\
+PITCHES
 /
 /
 
@@ -30706,6 +37580,10 @@ VELOCITIES
 13
 64503
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30737,6 +37615,10 @@ VELOCITIES
 13
 57795
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30767,6 +37649,10 @@ VELOCITIES
 1
 13
 42830
+/
+
+\
+PITCHES
 /
 /
 
@@ -30863,6 +37749,10 @@ VELOCITIES
 19
 36408
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30893,6 +37783,10 @@ VELOCITIES
 14
 19
 6241
+/
+
+\
+PITCHES
 /
 /
 
@@ -30929,6 +37823,10 @@ VELOCITIES
 19
 14043
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30952,6 +37850,10 @@ VELOCITIES
 19
 47331
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -30974,6 +37876,10 @@ VELOCITIES
 16
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -31054,6 +37960,10 @@ VELOCITIES
 13
 40140
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -31121,6 +38031,10 @@ VELOCITIES
 13
 58163
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -31147,6 +38061,10 @@ VELOCITIES
 6
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -31195,6 +38113,10 @@ VELOCITIES
 13
 25395
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -31232,7 +38154,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -31275,6 +38197,14 @@ NOTE
 1
 61144
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31290,6 +38220,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31305,6 +38243,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31320,6 +38266,14 @@ NOTE
 1
 60489
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31335,6 +38289,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31350,6 +38312,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31365,6 +38335,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31380,6 +38358,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31395,6 +38381,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31452,6 +38446,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31467,6 +38469,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31482,6 +38492,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31497,6 +38515,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31512,6 +38538,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31527,6 +38561,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31542,6 +38584,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31740,6 +38790,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31755,6 +38813,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31770,6 +38836,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31785,6 +38859,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31800,6 +38882,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31815,6 +38905,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31830,6 +38928,14 @@ NOTE
 13
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31845,6 +38951,14 @@ NOTE
 1
 30624
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31860,6 +38974,14 @@ NOTE
 1
 35524
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31875,6 +38997,14 @@ NOTE
 1
 49611
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31890,6 +39020,14 @@ NOTE
 1
 37361
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31905,6 +39043,14 @@ NOTE
 1
 48386
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31920,6 +39066,14 @@ NOTE
 1
 31236
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31935,6 +39089,14 @@ NOTE
 1
 43486
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31950,6 +39112,14 @@ NOTE
 1
 14087
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31965,6 +39135,14 @@ NOTE
 1
 38586
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31980,6 +39158,14 @@ NOTE
 1
 32461
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -31995,6 +39181,14 @@ NOTE
 1
 28786
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32010,6 +39204,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32025,6 +39227,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32040,6 +39250,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32055,6 +39273,14 @@ NOTE
 65534
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32120,6 +39346,10 @@ VELOCITIES
 19
 45676
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -32135,6 +39365,14 @@ NOTE
 1
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32157,6 +39395,10 @@ VELOCITIES
 10
 13
 60266
+/
+
+\
+PITCHES
 /
 /
 
@@ -32181,6 +39423,10 @@ VELOCITIES
 13
 12026
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -32196,6 +39442,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32211,6 +39465,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32234,6 +39496,10 @@ VELOCITIES
 30
 39718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -32249,6 +39515,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32280,6 +39554,10 @@ VELOCITIES
 13
 7296
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -32295,6 +39573,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32310,6 +39596,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32353,6 +39647,10 @@ VELOCITIES
 19
 50972
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -32368,6 +39666,14 @@ NOTE
 1
 51981
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32383,6 +39689,14 @@ NOTE
 1
 51981
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32398,6 +39712,14 @@ NOTE
 65534
 34183
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32413,6 +39735,14 @@ NOTE
 1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32428,6 +39758,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -32443,6 +39781,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33559,6 +40905,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33574,6 +40924,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33608,6 +40966,10 @@ VELOCITIES
 6
 13
 24576
+/
+
+\
+PITCHES
 /
 /
 
@@ -33648,6 +41010,10 @@ VELOCITIES
 13
 42598
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33674,6 +41040,10 @@ VELOCITIES
 2
 13
 58982
+/
+
+\
+PITCHES
 /
 /
 
@@ -33706,6 +41076,10 @@ VELOCITIES
 13
 22118
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33721,6 +41095,14 @@ NOTE
 1
 51609
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33736,6 +41118,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33759,6 +41149,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33774,6 +41168,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33789,6 +41191,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33804,6 +41214,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33819,6 +41237,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -33845,6 +41271,10 @@ VELOCITIES
 7
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -33873,6 +41303,10 @@ VELOCITIES
 13
 52428
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33900,6 +41334,10 @@ VELOCITIES
 13
 53248
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33922,6 +41360,10 @@ VELOCITIES
 10
 13
 54067
+/
+
+\
+PITCHES
 /
 /
 
@@ -33946,6 +41388,10 @@ VELOCITIES
 13
 48332
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -33968,6 +41414,10 @@ VELOCITIES
 5
 13
 41779
+/
+
+\
+PITCHES
 /
 /
 
@@ -33992,6 +41442,10 @@ VELOCITIES
 13
 51609
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34007,6 +41461,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34022,6 +41484,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34037,6 +41507,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34109,6 +41587,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34124,6 +41610,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34139,6 +41633,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34154,6 +41656,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34169,6 +41679,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34184,6 +41702,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34199,6 +41725,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34221,6 +41755,10 @@ VELOCITIES
 7
 19
 54811
+/
+
+\
+PITCHES
 /
 /
 
@@ -34245,6 +41783,10 @@ VELOCITIES
 13
 52281
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34267,6 +41809,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -34295,6 +41841,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34310,6 +41860,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34353,6 +41911,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34376,6 +41938,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34391,6 +41957,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34406,6 +41980,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34437,6 +42019,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34452,6 +42038,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34467,6 +42061,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34482,6 +42084,14 @@ NOTE
 1
 59834
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34602,6 +42212,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34617,6 +42231,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34708,6 +42330,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34771,6 +42397,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34797,6 +42427,10 @@ VELOCITIES
 9
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -34828,6 +42462,10 @@ VELOCITIES
 8
 19
 58774
+/
+
+\
+PITCHES
 /
 /
 
@@ -34864,6 +42502,10 @@ VELOCITIES
 18
 65024
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34898,6 +42540,10 @@ VELOCITIES
 2
 13
 64063
+/
+
+\
+PITCHES
 /
 /
 
@@ -34934,6 +42580,10 @@ VELOCITIES
 13
 58908
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -34949,6 +42599,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34964,6 +42622,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -34995,6 +42661,10 @@ VELOCITIES
 18
 64519
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35010,6 +42680,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35089,6 +42767,10 @@ VELOCITIES
 19
 62487
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35104,6 +42786,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35119,6 +42809,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35149,6 +42847,10 @@ VELOCITIES
 17
 18
 59947
+/
+
+\
+PITCHES
 /
 /
 /
@@ -35234,6 +42936,10 @@ VELOCITIES
 19
 63455
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35249,6 +42955,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35291,6 +43005,10 @@ VELOCITIES
 13
 14
 43170
+/
+
+\
+PITCHES
 /
 /
 
@@ -35347,6 +43065,10 @@ VELOCITIES
 13
 51609
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35369,6 +43091,10 @@ VELOCITIES
 8
 13
 33872
+/
+
+\
+PITCHES
 /
 /
 
@@ -35405,6 +43131,10 @@ VELOCITIES
 18
 58774
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35420,6 +43150,14 @@ NOTE
 1
 59834
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35479,6 +43217,10 @@ VELOCITIES
 18
 60854
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35505,6 +43247,10 @@ VELOCITIES
 6
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -35573,6 +43319,10 @@ VELOCITIES
 13
 25395
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35607,7 +43357,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -35650,6 +43400,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35665,6 +43423,14 @@ NOTE
 65534
 51781
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35680,6 +43446,14 @@ NOTE
 65534
 55156
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35695,6 +43469,14 @@ NOTE
 65534
 58234
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35710,6 +43492,14 @@ NOTE
 65534
 61483
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35725,6 +43515,14 @@ NOTE
 65534
 37186
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35740,6 +43538,14 @@ NOTE
 65534
 58616
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35755,6 +43561,14 @@ NOTE
 65534
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35770,6 +43584,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35785,6 +43607,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35800,6 +43630,14 @@ NOTE
 65534
 61606
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35815,6 +43653,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35830,6 +43676,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35845,6 +43699,14 @@ NOTE
 65534
 58978
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35860,6 +43722,14 @@ NOTE
 65534
 50471
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35875,6 +43745,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35890,6 +43768,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35905,6 +43791,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -35968,6 +43862,10 @@ VELOCITIES
 19
 62861
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -35995,6 +43893,10 @@ VELOCITIES
 9
 5461
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -36017,6 +43919,10 @@ VELOCITIES
 7
 9
 19504
+/
+
+\
+PITCHES
 /
 /
 
@@ -36049,6 +43955,10 @@ VELOCITIES
 9
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -36064,6 +43974,14 @@ NOTE
 65534
 57697
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36091,6 +44009,10 @@ VELOCITIES
 19
 42799
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -36106,6 +44028,14 @@ NOTE
 19
 50412
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36128,6 +44058,10 @@ VELOCITIES
 16
 19
 61523
+/
+
+\
+PITCHES
 /
 /
 
@@ -36155,6 +44089,10 @@ VELOCITIES
 5
 19
 21005
+/
+
+\
+PITCHES
 /
 /
 
@@ -36190,6 +44128,10 @@ VELOCITIES
 3
 19
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -36429,6 +44371,14 @@ NOTE
 19
 59193
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36444,6 +44394,14 @@ NOTE
 19
 49152
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36459,6 +44417,14 @@ NOTE
 19
 54965
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36474,6 +44440,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36489,6 +44463,14 @@ NOTE
 1
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36504,6 +44486,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36519,6 +44509,14 @@ NOTE
 19
 62364
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36534,6 +44532,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36549,6 +44555,14 @@ NOTE
 19
 59193
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36564,6 +44578,14 @@ NOTE
 19
 61836
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36579,6 +44601,14 @@ NOTE
 19
 61307
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36594,6 +44624,14 @@ NOTE
 65534
 49680
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36621,6 +44659,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -36636,6 +44678,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36651,6 +44701,14 @@ NOTE
 19
 54965
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36666,6 +44724,14 @@ NOTE
 65534
 39125
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36681,6 +44747,14 @@ NOTE
 19
 53908
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36696,6 +44770,14 @@ NOTE
 19
 59722
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36711,6 +44793,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36726,6 +44816,14 @@ NOTE
 65534
 43866
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36741,6 +44839,14 @@ NOTE
 65534
 39110
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36756,6 +44862,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36771,6 +44885,14 @@ NOTE
 65534
 51794
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36786,6 +44908,14 @@ NOTE
 65534
 47566
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36801,6 +44931,14 @@ NOTE
 65534
 48094
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36816,6 +44954,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36831,6 +44977,14 @@ NOTE
 65534
 64226
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36939,6 +45093,14 @@ NOTE
 19
 55494
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36954,6 +45116,14 @@ NOTE
 65534
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -36977,6 +45147,10 @@ VELOCITIES
 13
 45875
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -36992,6 +45166,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37007,6 +45189,14 @@ NOTE
 65534
 42598
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37038,6 +45228,10 @@ VELOCITIES
 19
 35410
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -37053,6 +45247,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37068,6 +45270,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37083,6 +45293,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37098,6 +45316,14 @@ NOTE
 1
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37113,6 +45339,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37128,6 +45362,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37143,6 +45385,14 @@ NOTE
 19
 35665
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37166,6 +45416,10 @@ VELOCITIES
 19
 51185
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -37181,6 +45435,14 @@ NOTE
 65534
 63144
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37196,6 +45458,14 @@ NOTE
 13
 10045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37211,6 +45481,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37226,6 +45504,14 @@ NOTE
 65534
 22658
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37241,6 +45527,14 @@ NOTE
 65534
 34183
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37256,6 +45550,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37271,6 +45573,14 @@ NOTE
 1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37286,6 +45596,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37301,6 +45619,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -37316,6 +45642,14 @@ NOTE
 65534
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38415,6 +46749,10 @@ VELOCITIES
 65534
 49449
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38438,6 +46776,10 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38453,6 +46795,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38468,6 +46818,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38490,6 +46848,10 @@ VELOCITIES
 17
 19
 49758
+/
+
+\
+PITCHES
 /
 /
 
@@ -38514,6 +46876,10 @@ VELOCITIES
 19
 62557
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38529,6 +46895,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38544,6 +46918,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38559,6 +46941,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38574,6 +46964,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38589,6 +46987,14 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38611,6 +47017,10 @@ VELOCITIES
 2
 14
 40513
+/
+
+\
+PITCHES
 /
 /
 
@@ -38639,6 +47049,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38666,6 +47080,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38692,6 +47110,10 @@ VELOCITIES
 18
 19
 59467
+/
+
+\
+PITCHES
 /
 /
 
@@ -38724,6 +47146,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38739,6 +47165,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38810,6 +47244,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38832,6 +47270,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -38860,6 +47302,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38875,6 +47321,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38918,6 +47372,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38941,6 +47399,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -38956,6 +47418,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -38971,6 +47441,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39002,6 +47480,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39017,6 +47499,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39125,6 +47615,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39184,6 +47678,10 @@ VELOCITIES
 19
 18498
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39231,6 +47729,10 @@ VELOCITIES
 19
 48623
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39261,6 +47763,10 @@ VELOCITIES
 1
 19
 45452
+/
+
+\
+PITCHES
 /
 /
 
@@ -39297,6 +47803,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39312,6 +47822,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39327,6 +47845,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39369,6 +47895,10 @@ VELOCITIES
 10
 19
 60779
+/
+
+\
+PITCHES
 /
 /
 
@@ -39424,6 +47954,10 @@ VELOCITIES
 9
 13
 59801
+/
+
+\
+PITCHES
 /
 /
 
@@ -39515,6 +48049,10 @@ VELOCITIES
 13
 54886
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39578,6 +48116,10 @@ VELOCITIES
 13
 40140
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39616,6 +48158,10 @@ VELOCITIES
 6
 13
 40140
+/
+
+\
+PITCHES
 /
 /
 
@@ -39676,6 +48222,10 @@ VELOCITIES
 15
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -39702,6 +48252,10 @@ VELOCITIES
 6
 13
 53248
+/
+
+\
+PITCHES
 /
 /
 
@@ -39738,6 +48292,10 @@ VELOCITIES
 13
 25395
 /
+
+\
+PITCHES
+/
 /
 /
 
@@ -39765,7 +48323,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -39808,6 +48366,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39823,6 +48389,14 @@ NOTE
 1
 60218
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39838,6 +48412,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39853,6 +48435,14 @@ NOTE
 1
 58982
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39868,6 +48458,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39883,6 +48481,14 @@ NOTE
 65534
 43866
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39898,6 +48504,14 @@ NOTE
 1
 55156
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39913,6 +48527,14 @@ NOTE
 19
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39928,6 +48550,14 @@ NOTE
 65534
 58234
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39943,6 +48573,14 @@ NOTE
 65534
 61483
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39958,6 +48596,14 @@ NOTE
 65534
 37186
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39973,6 +48619,14 @@ NOTE
 65534
 58616
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -39988,6 +48642,14 @@ NOTE
 65534
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40003,6 +48665,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40018,6 +48688,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40033,6 +48711,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40048,6 +48734,14 @@ NOTE
 65534
 58978
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40063,6 +48757,14 @@ NOTE
 65534
 50471
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40078,6 +48780,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40093,6 +48803,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40108,6 +48826,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40162,6 +48888,14 @@ NOTE
 1
 64487
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40177,6 +48911,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40199,6 +48941,10 @@ VELOCITIES
 7
 9
 19504
+/
+
+\
+PITCHES
 /
 /
 
@@ -40231,6 +48977,10 @@ VELOCITIES
 9
 0
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -40246,6 +48996,14 @@ NOTE
 65534
 57697
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40281,6 +49039,10 @@ VELOCITIES
 19
 42799
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -40303,6 +49065,10 @@ VELOCITIES
 15
 19
 61523
+/
+
+\
+PITCHES
 /
 /
 
@@ -40330,6 +49096,10 @@ VELOCITIES
 17
 19
 0
+/
+
+\
+PITCHES
 /
 /
 
@@ -40361,6 +49131,10 @@ VELOCITIES
 16
 19
 15073
+/
+
+\
+PITCHES
 /
 /
 
@@ -40566,6 +49340,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40581,6 +49363,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40596,6 +49386,14 @@ NOTE
 19
 58195
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40611,6 +49409,14 @@ NOTE
 19
 58195
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40626,6 +49432,14 @@ NOTE
 19
 51904
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40641,6 +49455,14 @@ NOTE
 19
 60817
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40656,6 +49478,14 @@ NOTE
 19
 59244
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40671,6 +49501,14 @@ NOTE
 19
 47710
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40686,6 +49524,14 @@ NOTE
 19
 42991
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40701,6 +49547,14 @@ NOTE
 19
 59768
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40716,6 +49570,14 @@ NOTE
 19
 59768
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40731,6 +49593,14 @@ NOTE
 19
 60293
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40746,6 +49616,14 @@ NOTE
 19
 60817
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40761,6 +49639,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40776,6 +49662,14 @@ NOTE
 18
 47185
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40791,6 +49685,14 @@ NOTE
 18
 40894
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40806,6 +49708,14 @@ NOTE
 18
 29884
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40821,6 +49731,14 @@ NOTE
 18
 21495
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40848,6 +49766,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -40863,6 +49785,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40878,6 +49808,14 @@ NOTE
 19
 46137
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40893,6 +49831,14 @@ NOTE
 65534
 39125
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40908,6 +49854,14 @@ NOTE
 19
 48234
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40923,6 +49877,14 @@ NOTE
 19
 59244
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40938,6 +49900,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40953,6 +49923,14 @@ NOTE
 65534
 42467
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40968,6 +49946,14 @@ NOTE
 65534
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40983,6 +49969,14 @@ NOTE
 19
 49283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -40998,6 +49992,14 @@ NOTE
 65534
 37748
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41013,6 +50015,14 @@ NOTE
 65534
 41943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41028,6 +50038,14 @@ NOTE
 19
 45088
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41043,6 +50061,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41058,6 +50084,14 @@ NOTE
 65534
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41238,6 +50272,10 @@ VELOCITIES
 19
 45676
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -41253,6 +50291,14 @@ NOTE
 65534
 54017
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41268,6 +50314,14 @@ NOTE
 65534
 50045
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41283,6 +50337,14 @@ NOTE
 65534
 51118
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41298,6 +50360,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41313,6 +50383,14 @@ NOTE
 65534
 42598
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41336,6 +50414,10 @@ VELOCITIES
 30
 39718
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -41351,6 +50433,14 @@ NOTE
 65534
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41366,6 +50456,14 @@ NOTE
 65534
 65138
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41381,6 +50479,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41396,6 +50502,14 @@ NOTE
 1
 52428
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41411,6 +50525,14 @@ NOTE
 1
 57454
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41426,6 +50548,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41441,6 +50571,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41456,6 +50594,14 @@ NOTE
 1
 59120
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41471,6 +50617,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41486,6 +50640,14 @@ NOTE
 65534
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41501,6 +50663,14 @@ NOTE
 1
 51634
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41516,6 +50686,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41531,6 +50709,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41546,6 +50732,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41561,6 +50755,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41576,6 +50778,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41591,6 +50801,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41606,6 +50824,14 @@ NOTE
 1
 52428
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -41621,6 +50847,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42638,6 +51872,14 @@ NOTE
 19
 0
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42685,6 +51927,10 @@ VELOCITIES
 65534
 49449
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -42708,6 +51954,10 @@ VELOCITIES
 19
 63108
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -42723,6 +51973,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42738,6 +51996,14 @@ NOTE
 65534
 51288
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42760,6 +52026,10 @@ VELOCITIES
 17
 19
 49758
+/
+
+\
+PITCHES
 /
 /
 
@@ -42784,6 +52054,10 @@ VELOCITIES
 19
 62557
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -42799,6 +52073,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42814,6 +52096,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42829,6 +52119,14 @@ NOTE
 1
 53283
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42844,6 +52142,14 @@ NOTE
 1
 48335
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42859,6 +52165,14 @@ NOTE
 1
 49978
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -42881,6 +52195,10 @@ VELOCITIES
 2
 14
 40513
+/
+
+\
+PITCHES
 /
 /
 
@@ -42909,6 +52227,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -42936,6 +52258,10 @@ VELOCITIES
 19
 57040
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -42962,6 +52288,10 @@ VELOCITIES
 18
 19
 59467
+/
+
+\
+PITCHES
 /
 /
 
@@ -42994,6 +52324,10 @@ VELOCITIES
 19
 39321
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43009,6 +52343,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43088,6 +52430,10 @@ VELOCITIES
 19
 9961
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43135,6 +52481,10 @@ VELOCITIES
 19
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43158,6 +52508,10 @@ VELOCITIES
 19
 54811
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43180,6 +52534,10 @@ VELOCITIES
 5
 19
 57195
+/
+
+\
+PITCHES
 /
 /
 
@@ -43208,6 +52566,10 @@ VELOCITIES
 25
 54216
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43223,6 +52585,14 @@ NOTE
 65534
 51943
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43266,6 +52636,10 @@ VELOCITIES
 19
 64344
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43289,6 +52663,10 @@ VELOCITIES
 19
 38725
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43304,6 +52682,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43319,6 +52705,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43350,6 +52744,10 @@ VELOCITIES
 25
 35746
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43365,6 +52763,14 @@ NOTE
 65534
 51288
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43507,6 +52913,10 @@ VELOCITIES
 19
 51794
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43522,6 +52932,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43537,6 +52955,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43632,6 +53058,10 @@ VELOCITIES
 19
 9513
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43694,6 +53124,10 @@ VELOCITIES
 7
 13
 49971
+/
+
+\
+PITCHES
 /
 /
 
@@ -43798,6 +53232,10 @@ VELOCITIES
 13
 28001
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43856,6 +53294,10 @@ VELOCITIES
 12
 19
 60779
+/
+
+\
+PITCHES
 /
 /
 
@@ -43961,6 +53403,10 @@ VELOCITIES
 19
 58665
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -43976,6 +53422,14 @@ NOTE
 1
 57344
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -43998,6 +53452,10 @@ VELOCITIES
 11
 13
 54067
+/
+
+\
+PITCHES
 /
 /
 
@@ -44022,6 +53480,10 @@ VELOCITIES
 13
 58163
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44037,6 +53499,14 @@ NOTE
 1
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44059,6 +53529,10 @@ VELOCITIES
 0
 13
 57344
+/
+
+\
+PITCHES
 /
 /
 
@@ -44127,6 +53601,10 @@ VELOCITIES
 13
 36044
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44142,6 +53620,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44177,6 +53663,10 @@ VELOCITIES
 15
 65536
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44203,6 +53693,10 @@ VELOCITIES
 14
 15
 65536
+/
+
+\
+PITCHES
 /
 /
 
@@ -44235,6 +53729,10 @@ VELOCITIES
 15
 55538
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44262,6 +53760,10 @@ VELOCITIES
 15
 64425
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44277,6 +53779,14 @@ NOTE
 1
 65536
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44332,6 +53842,10 @@ VELOCITIES
 13
 47710
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44384,7 +53898,7 @@ First Block
 256
 
 ?reltempo
-2.43241286277771
+1
 
 \
 TRACK
@@ -44427,6 +53941,14 @@ NOTE
 18
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44442,6 +53964,14 @@ NOTE
 18
 57270
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44457,6 +53987,14 @@ NOTE
 18
 59041
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44472,6 +54010,14 @@ NOTE
 18
 53137
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44487,6 +54033,14 @@ NOTE
 18
 59631
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44502,6 +54056,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44517,6 +54079,14 @@ NOTE
 18
 63764
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44532,6 +54102,14 @@ NOTE
 18
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44604,6 +54182,14 @@ NOTE
 18
 7675
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44619,6 +54205,14 @@ NOTE
 18
 12989
 0
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44634,6 +54228,14 @@ NOTE
 18
 25387
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44656,6 +54258,10 @@ VELOCITIES
 17
 18
 34834
+/
+
+\
+PITCHES
 /
 /
 
@@ -44809,6 +54415,14 @@ NOTE
 18
 41919
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44824,6 +54438,14 @@ NOTE
 18
 40738
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -44886,6 +54508,10 @@ VELOCITIES
 13
 44585
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44925,6 +54551,10 @@ VELOCITIES
 13
 58552
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44951,6 +54581,10 @@ VELOCITIES
 9
 13
 38676
+/
+
+\
+PITCHES
 /
 /
 
@@ -44979,6 +54613,10 @@ VELOCITIES
 13
 58552
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -44994,6 +54632,14 @@ NOTE
 13
 65536
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -45628,6 +55274,10 @@ VELOCITIES
 13
 34379
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -45651,6 +55301,10 @@ VELOCITIES
 13
 20950
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -45673,6 +55327,10 @@ VELOCITIES
 9
 13
 19875
+/
+
+\
+PITCHES
 /
 /
 
@@ -45701,6 +55359,10 @@ VELOCITIES
 13
 44048
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -45723,6 +55385,10 @@ VELOCITIES
 7
 13
 54255
+/
+
+\
+PITCHES
 /
 /
 
@@ -45795,6 +55461,10 @@ VELOCITIES
 13
 40288
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -45825,6 +55495,10 @@ VELOCITIES
 0
 13
 59089
+/
+
+\
+PITCHES
 /
 /
 
@@ -45869,6 +55543,10 @@ VELOCITIES
 13
 34916
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -45884,6 +55562,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -45899,6 +55585,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -45978,6 +55672,10 @@ VELOCITIES
 13
 60164
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -46017,6 +55715,10 @@ VELOCITIES
 13
 64998
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -46032,6 +55734,14 @@ NOTE
 1
 59120
 1
+
+\
+VELOCITIES
+/
+
+\
+PITCHES
+/
 /
 
 \
@@ -46103,6 +55813,10 @@ VELOCITIES
 13
 60701
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -46137,6 +55851,10 @@ VELOCITIES
 8
 13
 54255
+/
+
+\
+PITCHES
 /
 /
 
@@ -46181,6 +55899,10 @@ VELOCITIES
 19
 54908
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -46220,6 +55942,10 @@ VELOCITIES
 13
 62312
 /
+
+\
+PITCHES
+/
 /
 
 \
@@ -46242,6 +55968,10 @@ VELOCITIES
 4
 13
 64998
+/
+
+\
+PITCHES
 /
 /
 
@@ -46763,7 +56493,7 @@ PATCH
 17
 
 ?name
-Chorus
+Chorus Bus
 
 ?forward_events
 1
@@ -46919,7 +56649,7 @@ PATCH
 19
 
 ?name
-Reverb
+Reverb Bus
 
 ?forward_events
 1
@@ -50813,6 +60543,162 @@ VOICE
 /
 /
 /
+
+\
+PATCH
+49
+
+?name
+Click
+
+?forward_events
+1
+
+\
+VOICES
+
+?max_voices
+6
+
+\
+VOICE
+0
+
+?is_on
+1
+
+?transpose
+0
+
+?volume
+0
+
+?start
+0
+
+?length
+0
+
+?time_format
+1
+/
+
+\
+VOICE
+1
+
+?is_on
+0
+
+?transpose
+12
+
+?volume
+0
+
+?start
+0
+
+?length
+0
+
+?time_format
+1
+/
+
+\
+VOICE
+2
+
+?is_on
+0
+
+?transpose
+19
+
+?volume
+0
+
+?start
+0
+
+?length
+0
+
+?time_format
+1
+/
+
+\
+VOICE
+3
+
+?is_on
+0
+
+?transpose
+24
+
+?volume
+0
+
+?start
+0
+
+?length
+0
+
+?time_format
+1
+/
+
+\
+VOICE
+4
+
+?is_on
+0
+
+?transpose
+-12
+
+?volume
+0
+
+?start
+0
+
+?length
+0
+
+?time_format
+1
+/
+
+\
+VOICE
+5
+
+?is_on
+0
+
+?transpose
+-24
+
+?volume
+0
+
+?start
+0
+
+?length
+0
+
+?time_format
+1
+/
+/
+/
 /
 
 \
@@ -50823,7 +60709,7 @@ chips
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-30
+31
 
 0
 HASH_TYPE
@@ -50837,12 +60723,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-40
+42
 Decay time (samples)
 0
 FLOAT_TYPE
@@ -50883,6 +60773,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -50930,7 +60824,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+0.1661977171897888
 System In On/Off
 0
 FLOAT_TYPE
@@ -50979,6 +60873,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -50990,7 +60888,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.1237015053629875
+0.6778366565704346
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -51035,12 +60933,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-46
+48
 Base_Gain
 0
 FLOAT_TYPE
@@ -51105,6 +61007,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -39.99199676513672
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -51201,6 +61107,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -51212,7 +61122,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-56.234130859375
+0.9154298901557922
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -51257,12 +61167,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-46
+48
 Base_Gain
 0
 FLOAT_TYPE
@@ -51327,6 +61241,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -38.70967864990234
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -51423,6 +61341,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -51479,12 +61401,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -51517,6 +61443,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -39.99199676513672
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -51610,6 +61540,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -51669,12 +61603,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -51707,6 +61645,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -51800,6 +61742,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -51859,12 +61805,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-41
+43
 Input gain (dB)
 0
 FLOAT_TYPE
@@ -51909,6 +61859,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -52005,6 +61959,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -52061,12 +62019,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-52
+54
 Blow_Position
 0
 FLOAT_TYPE
@@ -52147,6 +62109,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -52243,6 +62209,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -52307,12 +62277,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-54
+56
 Bow_Position
 0
 FLOAT_TYPE
@@ -52389,6 +62363,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -34.87179565429688
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -52485,6 +62463,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -52561,12 +62543,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-55
+57
 Envelope_Attack
 0
 FLOAT_TYPE
@@ -52647,6 +62633,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -32.90322113037109
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -52743,6 +62733,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -52819,12 +62813,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-54
+56
 Envelope_Attack
 0
 FLOAT_TYPE
@@ -52905,6 +62903,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -32.90322875976562
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -53001,6 +63003,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -53073,16 +63079,20 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-4
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-78
+80
 Bright
 0
 FLOAT_TYPE
-7426
+6955.99951171875
 NOTUSED 10
 0
 FLOAT_TYPE
@@ -53210,7 +63220,7 @@ FLOAT_TYPE
 NOTUSED 9
 0
 FLOAT_TYPE
-0.1178999990224838
+0.09910000115633011
 System Chorus
 0
 FLOAT_TYPE
@@ -53243,6 +63253,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 9.74359130859375
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -53336,6 +63350,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -55212,7 +65230,7 @@ FLOAT_TYPE
 value
 3
 FLOAT_TYPE
-7426
+6955.99951171875
 value
 4
 FLOAT_TYPE
@@ -55236,7 +65254,7 @@ FLOAT_TYPE
 value
 9
 FLOAT_TYPE
-0.1178999990224838
+0.09910000115633011
 value
 10
 FLOAT_TYPE
@@ -55385,12 +65403,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -55423,6 +65445,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 27.25663948059082
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -55519,6 +65545,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -55575,12 +65605,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -55613,6 +65647,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -32.72530364990234
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -55660,7 +65698,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+0.2749476432800293
 System In On/Off
 0
 FLOAT_TYPE
@@ -55709,6 +65747,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -55738,6 +65780,20 @@ name
 0
 STRING_TYPE
 System Out
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+2
+output_portname
+0
+STRING_TYPE
+out_3
+output_portname
+1
+STRING_TYPE
+out_4
+<< HASH MAP V2 END
 type_name
 0
 STRING_TYPE
@@ -55765,12 +65821,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-43
+45
 HF Damping
 0
 FLOAT_TYPE
@@ -55823,6 +65883,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -55919,6 +65983,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -55975,12 +66043,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -56013,6 +66085,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -56109,6 +66185,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -56165,12 +66245,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -56203,6 +66287,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -56299,6 +66387,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -56355,12 +66447,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-48
+50
 Nonlinearity
 0
 FLOAT_TYPE
@@ -56405,6 +66501,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -37.53845977783203
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -56501,6 +66601,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -56512,7 +66616,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-5.568652153015137
+0.9154298901557922
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -56585,12 +66689,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-50
+52
 Glob_Env_Attack
 0
 FLOAT_TYPE
@@ -56663,6 +66771,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -23.87096786499023
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -56759,6 +66871,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -56823,12 +66939,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-48
+50
 Nonlinearity
 0
 FLOAT_TYPE
@@ -56873,6 +66993,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -56966,6 +67090,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -57053,12 +67181,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-49
+52
 Amount
 0
 FLOAT_TYPE
@@ -57079,11 +67211,11 @@ Inter-voice phase
 0
 FLOAT_TYPE
 63.97200012207031
-Minimum delay
+Min delay
 0
 FLOAT_TYPE
 4.995742797851562
-Modulation depth
+Mod depth
 0
 FLOAT_TYPE
 5.997910499572754
@@ -57091,6 +67223,10 @@ Modulation rate
 0
 FLOAT_TYPE
 0.499700665473938
+Overlap
+0
+FLOAT_TYPE
+1
 Q
 0
 FLOAT_TYPE
@@ -57131,6 +67267,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -57224,6 +67364,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -57287,12 +67431,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-41
+43
 Input gain (dB)
 0
 FLOAT_TYPE
@@ -57337,6 +67485,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -57430,6 +67582,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -57489,12 +67645,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-41
+43
 Input gain (dB)
 0
 FLOAT_TYPE
@@ -57539,6 +67699,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -57635,6 +67799,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -57691,12 +67859,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-38
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -57729,6 +67901,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -57825,6 +68001,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -57854,6 +68034,20 @@ name
 0
 STRING_TYPE
 Jack Stereo Out
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+2
+output_portname
+0
+STRING_TYPE
+out_5
+output_portname
+1
+STRING_TYPE
+out_6
+<< HASH MAP V2 END
 type_name
 0
 STRING_TYPE
@@ -57881,13 +68075,21 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-4
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-47
+50
 Attack
+0
+FLOAT_TYPE
+0
+Crossfade
 0
 FLOAT_TYPE
 0
@@ -57955,6 +68157,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -7.173347473144531
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -58051,6 +68257,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -58062,7 +68272,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.7244360446929932
+0.828896164894104
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -58088,7 +68298,7 @@ HASH_TYPE
 filename
 0
 STRING_TYPE
-/home/kjetil/radium-qt4/bin/sounds/016.WAV
+016.WAV
 instrument_number
 0
 INT_TYPE
@@ -58096,7 +68306,7 @@ INT_TYPE
 resampler_type
 0
 INT_TYPE
-3
+2
 << HASH MAP V2 END
 type_name
 0
@@ -58125,12 +68335,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-41
+43
 Input gain (dB)
 0
 FLOAT_TYPE
@@ -58175,6 +68389,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -58271,6 +68489,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -58327,12 +68549,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-41
+43
 Input gain (dB)
 0
 FLOAT_TYPE
@@ -58377,6 +68603,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -58473,6 +68703,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -58529,12 +68763,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-41
+43
 Input gain (dB)
 0
 FLOAT_TYPE
@@ -58579,6 +68817,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -58675,6 +68917,10 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -58731,12 +68977,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-4
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-78
+80
 Damping
 0
 FLOAT_TYPE
@@ -58744,11 +68994,11 @@ FLOAT_TYPE
 Detune
 0
 FLOAT_TYPE
-1
+0.03510000184178352
 Dry/Wet
 0
 FLOAT_TYPE
-0.9794999957084656
+1
 Gain
 0
 FLOAT_TYPE
@@ -58880,7 +69130,7 @@ FLOAT_TYPE
 NOTUSED 7
 0
 FLOAT_TYPE
-0
+0.670562744140625
 NOTUSED 8
 0
 FLOAT_TYPE
@@ -58921,6 +69171,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -19.82608795166016
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -59014,6 +69268,10 @@ System Reverb
 FLOAT_TYPE
 0
 System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
 0
 FLOAT_TYPE
 1
@@ -61218,7 +71476,7 @@ INT_TYPE
 value
 0
 FLOAT_TYPE
-0.9794999957084656
+1
 value
 1
 FLOAT_TYPE
@@ -61230,7 +71488,7 @@ FLOAT_TYPE
 value
 3
 FLOAT_TYPE
-1
+0.03510000184178352
 value
 4
 FLOAT_TYPE
@@ -61246,7 +71504,7 @@ FLOAT_TYPE
 value
 7
 FLOAT_TYPE
-0
+0.670562744140625
 value
 8
 FLOAT_TYPE
@@ -61403,32 +71661,16 @@ plugin
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-3
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
 effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-43
-Gain (dB)
-0
-FLOAT_TYPE
--22.15299606323242
-Mute
-0
-FLOAT_TYPE
-0
-Phase Reverse
-0
-FLOAT_TYPE
-0
-Soft Clip
-0
-FLOAT_TYPE
-0
-SoftClip Threshold
-0
-FLOAT_TYPE
--3
+40
 System Chorus
 0
 FLOAT_TYPE
@@ -61461,6 +71703,10 @@ System Compression Threshold
 0
 FLOAT_TYPE
 -20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
 System Dry/Wet
 0
 FLOAT_TYPE
@@ -61508,7 +71754,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-1.181000709533691
+0.613232433795929
 System In On/Off
 0
 FLOAT_TYPE
@@ -61557,6 +71803,252 @@ System Reverb On/Off
 0
 FLOAT_TYPE
 1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+1.368910431861877
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+0
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Pipe
+type_name
+0
+STRING_TYPE
+Pipe
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+-480
+y
+0
+FLOAT_TYPE
+128
+<< HASH MAP V2 END
+
+29
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+49
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+50
+Attack
+0
+FLOAT_TYPE
+0
+Crossfade
+0
+FLOAT_TYPE
+0
+Decay
+0
+FLOAT_TYPE
+0
+Finetune
+0
+FLOAT_TYPE
+0.5
+Hold
+0
+FLOAT_TYPE
+0
+Loop
+0
+FLOAT_TYPE
+0
+Note adjustment
+0
+FLOAT_TYPE
+0
+Release
+0
+FLOAT_TYPE
+0
+Start Position
+0
+FLOAT_TYPE
+0
+Sustain
+0
+FLOAT_TYPE
+1
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+1
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+0
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Hs F.
+0
+FLOAT_TYPE
+1499.337646484375
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.9997119307518005
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
 System Show Compressor GUI
 0
 FLOAT_TYPE
@@ -61585,31 +72077,49 @@ FLOAT_TYPE
 name
 0
 STRING_TYPE
-Ampliflipador
+Click
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+3
+filename
+0
+STRING_TYPE
+243749__unfa__metronome-1khz-weak-pulse.flac
+instrument_number
+0
+INT_TYPE
+0
+resampler_type
+0
+INT_TYPE
+2
+<< HASH MAP V2 END
 type_name
 0
 STRING_TYPE
-Ladspa
+Sample Player
 << HASH MAP V2 END
 x
 0
 FLOAT_TYPE
--480
+120
 y
 0
 FLOAT_TYPE
-128
+-96
 << HASH MAP V2 END
 num_chips
 0
 INT_TYPE
-29
+30
 << HASH MAP V2 END
 connections
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-44
+45
 
 0
 HASH_TYPE
@@ -62384,10 +72894,28 @@ to_patch
 INT_TYPE
 31
 << HASH MAP V2 END
+
+43
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+3
+from_patch
+0
+INT_TYPE
+49
+is_event_connection
+0
+INT_TYPE
+0
+to_patch
+0
+INT_TYPE
+32
+<< HASH MAP V2 END
 num_connections
 0
 INT_TYPE
-43
+44
 << HASH MAP V2 END
 << HASH MAP V2 END
 /

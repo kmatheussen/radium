@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "temponodes_proc.h"
 #include "list_proc.h"
-#include "trackreallines_proc.h"
 #include "time_proc.h"
 
 #include "undo_temponodes_proc.h"
@@ -75,15 +74,10 @@ void *Undo_Do_TempoNodes(
 	wblock->block->temponodes=undo_temponodes;
 	wblock->block->lasttemponode=ListLast3(&undo_temponodes->l);
 
+#if !USE_OPENGL
 	UpdateWTempoNodes(window,wblock);
-
+#endif
 	UpdateSTimes(wblock->block);
-
-        UpdateAllTrackReallines(window,wblock);
 
 	return temp;
 }
-
-
-
-

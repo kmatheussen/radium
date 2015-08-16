@@ -15,14 +15,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-
-
-#ifndef TRACKER_DISK
-#define TRACKER_DISK
-
+#ifndef RADIUM_COMMON_DISK_H
+#define RADIUM_COMMON_DISK_H
 
 #include <string.h>
+
+#include "OS_disk_proc.h"
+
+
 
 //extern int errno;
 
@@ -40,8 +40,8 @@ struct PatchNumHolder{
 };
 
 typedef struct{
-	FILE *file;
-	const char *filename;
+	disk_t *file;
+	const wchar_t *filename;
 	bool success;
 	int type;
 	char *ls;
@@ -53,8 +53,6 @@ typedef struct{
 	bool colorize;
 	int startcolor;
 }DiskClass;
-
-#define BUFFERLENGTH 999
 
 //Types for ls:
 #define LS_OBJECT 0			// Lines that start with a '/'. ls contains OBJECT type (next string)
@@ -93,6 +91,7 @@ extern float DC_LoadF(void);
 extern uint_32 DC_LoadU32(void);
 extern NInt DC_LoadN(void);
 extern char *DC_LoadS(void);
+extern char *DC_LoadSNoMatterWhat(void);
 extern bool DC_LoadB(void);
 
 extern void *DC_doalloc(size_t size);
@@ -104,7 +103,7 @@ extern void DC_SkipBlock(void);
 extern int DC_whatString(char **variables,int num);
 
 extern float disk_load_version;
-
+extern int curr_disk_line;
 
 #include "list_proc.h"
 
@@ -168,6 +167,10 @@ start:															\
 						goto var17;								\
 					case 18:										\
 						goto var18;								\
+					case 19:										\
+						goto var19;								\
+					case 20:										\
+						goto var20;								\
 					default:										\
 						goto error;								\
 				}													\
@@ -198,9 +201,6 @@ start:															\
 				goto error;										\
 	}
 
-
-
-#endif
 
 /*
 
@@ -237,3 +237,4 @@ end:
 
 */
 
+#endif // RADIUM_COMMON_DISK_H

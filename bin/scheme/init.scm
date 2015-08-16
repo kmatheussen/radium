@@ -1,8 +1,17 @@
 (provide 'init.scm)
 
-(set! (*stacktrace* 'max-frames) 1000)
-(set! (*stacktrace* 'code-cols) 2000)
-(set! (*stacktrace* 'total-cols) 2450)
+(set! (*s7* 'stacktrace-defaults)
+      '(1000 ;; max-frames
+        245 ;; code-cols
+        455 ;; total-cols
+        245  ;; "where to place comments"
+        #t ;; whether the entire output should be displayed as a comment
+        ))
+
+
+;;(set! (*stacktrace* 'max-frames) 1000)
+;(set! (*stacktrace* 'code-cols) 2000)
+;(set! (*stacktrace* 'total-cols) 2450)
 
 (require stuff.scm)
 (require write.scm)
@@ -26,3 +35,6 @@
 (my-require 'common2.scm)
 
 (my-require 'mouse.scm)
+
+(my-require 'quantitize.scm)
+

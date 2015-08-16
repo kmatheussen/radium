@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <sys/types.h>
 #endif
 
-#include <QSharedMemory>
 #include <QString>
 #include <QApplication>
 #include <QMessageBox>
@@ -36,13 +35,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <QLayout>
 
-#if defined(CRASHREPORTER_BIN)
+#include <QTemporaryFile>
+#include <QDir>
+
+#include <QProcess>
+
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
-#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_Player_proc.h"
+#include "../common/OS_string_proc.h"
+#include "../common/threading.h"
+#include "../common/disk_save_proc.h"
+#include "../common/undo.h"
+#include "../OpenGL/Widget_proc.h"
+
+#include "../audio/SoundProducer_proc.h"
+//extern void SP_write_mixer_tree_to_disk(QFile *file);
 
 #include "crashreporter_proc.h"
 
@@ -53,34 +64,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define mysleep(ms) usleep((ms)*1000);
 #endif
 
-#define MESSAGE_LEN (1024*32)
 
-struct Report{
-  enum{
-    NO_MESSAGE,
-    THERE_IS_A_MESSAGE,
-    EXIT
-  } status;
+#if !defined(CRASHREPORTER_BIN)
+static const char *g_no_plugin_name = "<noplugin>";
+#endif
 
-  char data[MESSAGE_LEN];
-
-  Report() : status(NO_MESSAGE) {}
-};
+#define NOPLUGINNAMES "<nopluginnames>"
+#define NOEMERGENCYSAVE "<noemergencysave>"
 
 
-static QSharedMemory *g_sharedmemory;
-
-#if defined(CRASHREPORTER_BIN)
-
-
-static void exit_handler(int sig){
-  fprintf(stderr,"\n\nCrashreporter: Crashreporter crashed. signal: %d\n\n",sig);
-  delete g_sharedmemory;
-  abort();
+static QString toBase64(QString s){
+  return s.toLocal8Bit().toBase64();
 }
 
-#if defined(FOR_LINUX)
-static QString string_to_file(QString filename){
+static QString fromBase64(QString encoded){
+  return QString::fromLocal8Bit(QByteArray::fromBase64(encoded.toLocal8Bit()).data());
+}
+
+
+static QString file_to_string(QString filename){
   QFile file(filename);
   bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);
   if( ret )
@@ -91,204 +93,181 @@ static QString string_to_file(QString filename){
     }
   return "";
 }
+
+static void delete_file(QString filename){
+  QFile::remove(filename);
+}
+
+static void clear_file(QString filename){
+  QFile file(filename);
+  file.open(QIODevice::WriteOnly | QIODevice::Text);
+  file.write("");
+  file.close();
+}
+
+
+#if !defined(CRASHREPORTER_BIN)
+
+#define NUM_EVENTS 100
+
+static const char *g_event_log[NUM_EVENTS] = {""};
+static volatile int g_event_pos = 0;
+
+void EVENTLOG_add_event(const char *log_entry){
+ R_ASSERT(THREADING_is_main_thread());
+
+ g_event_log[g_event_pos] = log_entry;
+ 
+ g_event_pos++;
+ if (g_event_pos==NUM_EVENTS)
+   g_event_pos = 0;
+}
+
 #endif
 
-int main(int argc, char **argv){
-  QString key = argv[1];
-
-#if defined(FOR_LINUX)
-  pid_t parent_pid = atoi(argv[2]);
-#endif
-
-  g_sharedmemory = new QSharedMemory(key);
-
-  signal(SIGSEGV,exit_handler);
-  signal(SIGFPE,exit_handler);
-  signal(SIGINT,exit_handler);
-  signal(SIGTERM,exit_handler);
-
-  QApplication app(argc,argv);
-
-  if(g_sharedmemory->attach()==false){
-    fprintf(stderr,"Crashreporter: Couldn't attach... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
-    return 0;
-  }
-
-  bool do_exit = false;
-
-  Report *report = (Report*)g_sharedmemory->data();
-
-  QString tosend = VERSION "\n\n";
-
-  while(do_exit==false){
-    mysleep(1000);
 
 
-#if defined(FOR_LINUX)
-    // Should something like this be done for windows as well?
-    static int counter = 10; // wait 10 seconds
+static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, bool is_crash){
 
-    //printf("killing: %d / %d\n",(int)kill(parent_pid,0),(int)ESRCH);
+  fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
 
-    if(kill(parent_pid,0)==-1){
-      counter--;
-      if(counter>0){
-        if(0)
-          fprintf(stderr, "Radium crashreporter: Seems like parent process died. Counting down before exit: %d\n", counter);
-      }else{
-        if(0)
-          fprintf(stderr, "Radium crashreporter: Seems like parent process died. Exiting\n");
-        do_exit=true;
-      }
-    }
-#endif    
+  {
+    QMessageBox box;
+    
+    box.setIcon(QMessageBox::Critical);
+    box.addButton("SEND", QMessageBox::AcceptRole);
+    box.addButton("DON'T SEND", QMessageBox::RejectRole);
+    
+    if (is_crash)
+      box.setText("Radium Crashed. :((");
+    else
+      box.setText("Radium is in a state it should not be in.\n"
+                  );
 
-
-    if(g_sharedmemory->lock()==false){
-      fprintf(stderr,"Crashreporter: Couldn't lock...\n");
-      continue;
-    }else{
-
-      switch(report->status){
-      case Report::NO_MESSAGE:
-        break;
-      case Report::THERE_IS_A_MESSAGE:
-        {
-          fprintf(stderr,"Got message. Waiting 2 seconds.\n");
-
-          g_sharedmemory->unlock();
-          mysleep(2000);
-          g_sharedmemory->lock();
-
-          fprintf(stderr,"Got message:\n%s\n",report->data);
-          
-          tosend += report->data;
-          tosend += "\n\n";
-
-#if defined(FOR_LINUX)
-          tosend += "LINUX\n\n";
-          tosend += "/etc/os-release: "+string_to_file("/etc/os-release");
-          tosend += "\n\n";
-          tosend += "/proc/version: "+string_to_file("/proc/version");
-          tosend += "\n\n";
-          tosend += "/proc/cpuinfo: "+string_to_file("/proc/cpuinfo");
-#endif
-
-          {
-            QMessageBox box;
-
-            box.setIcon(QMessageBox::Critical);
-            box.addButton("SEND", QMessageBox::AcceptRole);
-            box.addButton("DON'T SEND", QMessageBox::RejectRole);
-
-            box.setText("Radium Crashed. :((");
-            box.setInformativeText("This crash will be automatically reported when you press \"SEND\".\n"
+    bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
+    
+    box.setInformativeText(QString("This %0 will be automatically reported when you press \"SEND\".\n"
                                    "\n"
                                    "The report is sent anonymously, and will only be seen by the author of Radium.\n"
-                                   //"The reporting is anonymous, and the report will not be available to the public.\n"
                                    "\n"
                                    "Only the information in \"Show details...\" is sent.\n"
-                                   );
-            box.setDetailedText(tosend);
-
-            QLabel space(" ");
-            box.layout()->addWidget(&space);
-
-            QLabel text_edit_label("\n\n"
-                                   "Please also include additional information below.\n"
                                    "\n"
-                                   "The best type of help you "
-                                   "can give is to write "
-                                   "down\na step by step "
-                                   "recipe in the following "
-                                   "format:"
-                                   "\n\n"
-                                   "1. Start Radium\n"
-                                   "2. Move the cursor to track 3.\n"
-                                   "3. Press the Q button.\n"
-                                   "4. Radium crashes\n"
-                                   "\n"
-                                   );
+                                   "Please don't report the same %0 more than two or three times.\n"
+                                   ).arg(is_crash?"crash":"incident")
+                           + ( (is_crash && plugin_names != NOPLUGINNAMES)
+                               ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")
+                               : QString())
+                           + (!is_crash ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
+                           + (dosave ? "\nAn emergency version of your song has been saved as \""+emergency_save_filename+"\". However, this file should not be trusted. It could be malformed. (it is most likely okay though)" : "")
+                           + "\n"
+                           );
+    box.setDetailedText(message);
 
-            //text_edit.setMinimumWidth(1000000);
-            //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
-            box.layout()->addWidget(&text_edit_label);
+    QLabel space(" ");
+    box.layout()->addWidget(&space);
 
-            QLabel space2(" ");
-            box.layout()->addWidget(&space2);
+    QLabel text_edit_label("\n\n"
+                           "Please also include additional information below.\n"
+                           "\n"
+                           "The best type of help you "
+                           "can give is to write "
+                           "down\na step by step "
+                           "recipe in the following "
+                           "format:"
+                           "\n\n"
+                           "1. Start Radium\n"
+                           "2. Move the cursor to track 3.\n"
+                           "3. Press the Q button.\n"
+                           "4. Radium crashes\n"
+                           "\n"
+                           );
 
-            QTextEdit text_edit;
-            text_edit.setText("<Please add recipe and/or email address here>");
-            //text_edit.setMinimumWidth(1000000);
-            //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
-            box.layout()->addWidget(&text_edit);
+    //text_edit.setMinimumWidth(1000000);
+    //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
+    box.layout()->addWidget(&text_edit_label);
 
-            box.show();
+    QLabel space2(" ");
+    box.layout()->addWidget(&space2);
 
-            box.activateWindow();
-            box.raise();
-            //box.stackUnder(box.parentWidget());
-            box.setWindowFlags(Qt::WindowStaysOnTopHint);
-            box.setWindowModality(Qt::ApplicationModal);
+    QTextEdit text_edit;
+    text_edit.setText("<Please add recipe and/or email address here>");
+    //text_edit.setMinimumWidth(1000000);
+    //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
+    box.layout()->addWidget(&text_edit);
+
+    box.show();
+
+    box.activateWindow();
+    box.raise();
+    //box.stackUnder(box.parentWidget());
+    box.setWindowFlags(Qt::WindowStaysOnTopHint);
+    box.setWindowModality(Qt::ApplicationModal);
 
 #ifdef FOR_WINDOWS
-            HWND wnd=box.winId();
-            SetFocus(wnd);
-            SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+    HWND wnd=box.winId();
+    SetFocus(wnd);
+    SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 #endif
-            
-            int ret = box.exec();
 
-            if(ret==QMessageBox::AcceptRole){
+    int ret = box.exec();
 
-              QByteArray data;
-              QUrl params;
-              params.addQueryItem("data", tosend);
-              data.append(params.toString().toAscii(),params.toString().length()-1);
-              data.remove(0,1);
-              data.append("\n");
-              data.append(text_edit.toPlainText());
+    if(ret==QMessageBox::AcceptRole){
 
-              QNetworkAccessManager nam;
-              QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
-              request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
+      QByteArray data;
+      QUrl params;
+      params.addQueryItem("data", message);
+      data.append(params.toString().toAscii(),params.toString().length()-1);
+      data.remove(0,1);
+      data.append("\n");
+      data.append(text_edit.toPlainText());
 
-              nam.post(request,data);
-            
+      QNetworkAccessManager nam;
+      QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
+      request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
+
+      nam.post(request,data);
+
 #if 1
-              {
-                QMessageBox box;
-                box.setText("Thanks for reporting the bug!");
-                box.setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
-                box.exec();
-              }
+      {
+        QMessageBox box;
+        box.setText("Thanks for reporting the bug!");
+        
+        box.setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
+        box.exec();
+      }
 #endif
 
-              g_sharedmemory->unlock();
-              mysleep(50000);
-              g_sharedmemory->lock();
-            }
-          }
-
-          do_exit=true;
-          break;
-        }
-
-      case Report::EXIT:
-        do_exit=true;
-        break;
-
-      }
-
-    }g_sharedmemory->unlock();
+    }
   }
 
-  //fprintf(stderr,"Crashreporter exiting\n");
+}
 
-  g_sharedmemory->detach();
 
-  delete g_sharedmemory;
 
+#if defined(CRASHREPORTER_BIN)
+
+int main(int argc, char **argv){
+  
+  QCoreApplication::setLibraryPaths(QStringList());
+  
+  QApplication app(argc,argv);
+
+  QString filename = fromBase64(argv[1]);
+
+  QString running_plugin_names = fromBase64(argv[2]);
+  
+  QString emergency_save_filename = fromBase64(argv[3]);
+    
+  bool is_crash = QString(argv[4])=="is_crash";
+
+  send_crash_message_to_server(file_to_string(filename), running_plugin_names, emergency_save_filename, is_crash);
+
+  if (is_crash)
+    delete_file(filename);
+  else
+    clear_file(filename);
+
+  
   return 0;
 }
 
@@ -298,51 +277,355 @@ int main(int argc, char **argv){
 
 #if !defined(CRASHREPORTER_BIN)
 
-void CRASHREPORTER_init(void){
-  QString key = "radium_crashreporter_" + QString::number(QDateTime::currentMSecsSinceEpoch());
+#define MAX_NUM_PLUGIN_NAMES 100
+static QAtomicInt g_plugin_name_pos;
 
-  g_sharedmemory = new QSharedMemory(key);
+static const char *g_plugin_names[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
+//static QString g_plugin_name=g_no_plugin_name;
 
-  if(g_sharedmemory->create(sizeof(Report))==false){
-    fprintf(stderr,"Crashreporter: Couldn't create... Error: %s\n",g_sharedmemory->error()==QSharedMemory::NoError?"No error (?)":g_sharedmemory->errorString().toAscii().data());
-#ifndef RELEASE
-    fprintf(stderr,"press return\n");
-    abort();
-#endif
+static QTime running_time;
+
+
+int CRASHREPORTER_set_plugin_name(const char *plugin_name){
+  //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
+
+  int pos = g_plugin_name_pos.fetchAndAddOrdered(1) % MAX_NUM_PLUGIN_NAMES;
+
+  if (plugin_name[0]!=0)
+    g_plugin_names[pos] = plugin_name;
+
+  return pos;
+}
+
+void CRASHREPORTER_unset_plugin_name(int pos){
+  g_plugin_names[pos] = g_no_plugin_name;
+}
+
+static QString get_plugin_names(void){
+  QString ret;
+  
+  for(int i=0;i<MAX_NUM_PLUGIN_NAMES;i++){
+    if (g_plugin_names[i] != g_no_plugin_name){
+      if (ret!="")
+        ret += ", "+QString(g_plugin_names[i]);
+      else
+        ret = g_plugin_names[i];
+    }
   }
 
+  if (ret=="")
+    return NOPLUGINNAMES;
+  else
+    return ret;
+}
+
+static void run_program(QString program, QString arg1, QString arg2, QString arg3, QString arg4, bool wait_until_finished){
+
 #if defined(FOR_WINDOWS)
-  //system(QString(QString("start ") + OS_get_program_path() + "\\crashreporter " + key + " /B").toAscii());
 
-#if 0
-  QString command=QString("start /B ") + OS_get_program_path() + "\\crashreporter.exe " + key;
-  //system(command.toAscii());
-#endif
-  QString command=QString(OS_get_program_path()) + "\\crashreporter.exe";
+  char *p = strdup(program.toAscii());
+  char *a1 = strdup(arg1.toAscii());
+  char *a2 = strdup(arg2.toAscii());
+  char *a3 = strdup(arg3.toAscii());
+  char *a4 = strdup(arg4.toAscii());
 
-  char *c = strdup(command.toAscii());
-  char *k = strdup(key.toAscii());
-
-  if(_spawnl( _P_DETACH, c, c, k, NULL)==-1){
-    //if(_spawnl( _P_NOWAIT, c, c, k, NULL)==-1){
-    //if(_spawnl( _P_NOWAIT, "start", "start", "/B", c, k, NULL)==-1){
-    fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",c,k);
+  if(_spawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
+    fprintf(stderr,"Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1);
+    SYSTEM_show_message(strdup(talloc_format("Couldn't launch crashreporter: \"%s\" \"%s\"\n",p,a1)));
     Sleep(3000);
   }
 
+#elif defined(FOR_LINUX) || defined(FOR_MACOSX)
+      
+  //if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
+  QString a = "LD_LIBRARY_PATH=" + QString(getenv("LD_LIBRARY_PATH"));
+  QString full_command = a + " " + program + " " + arg1 + " " + arg2 + " " + arg3 + " " + arg4;
 
-  //execv(args[0],args);
+  if (wait_until_finished==false)
+    full_command += "&";
 
+  fprintf(stderr, "Executing -%s-\n",full_command.toUtf8().constData());
+  
+  if(system(strdup(full_command.toUtf8().constData()))==-1) {
+    SYSTEM_show_message(strdup(talloc_format("Couldn't start crashreporter. command: -%s-\n",full_command.toUtf8().constData())));
+  }
+
+#else
+  #error "unknown system"
+#endif
+
+}
+
+
+static QTemporaryFile *g_crashreporter_file = NULL;
+
+static bool file_is_empty(QTemporaryFile *file){
+  if (file->pos()==0 && file->bytesAvailable()==0)
+    return true;
+
+  char data[16] = {0};
+  if (file->peek(data, 1) <= 0)
+    return true;
+
+  if (data[0]==0)
+    return true;
+
+  return false;
+}
+
+static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree){
+  bool ret = false;
+  
+  if (!file->open()){
+    SYSTEM_show_message("Unable to create temporary file. Disk may be full");
+    return false;
+  }
+
+  const QByteArray data = s.toUtf8();
+  int bytesWritten = file->write(data);
+    
+  if (bytesWritten==0){
+    SYSTEM_show_message("Unable to write to temporary file. Disk may be full");
+    goto exit;
+  }
+
+  ret = true;
+  
+  if (bytesWritten != data.size())
+    SYSTEM_show_message("Unable to write everything to temporary file. Disk may be full");
+
+  if (save_mixer_tree)
+    SP_write_mixer_tree_to_disk(file);
+  
+ exit:
+  file->close();
+  
+  return ret;
+}
+
+
+void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, bool is_crash){
+  QString plugin_names = get_plugin_names();
+  
+  QString tosend = QString(additional_information) + "\n\n";
+
+  tosend += VERSION "\n\n";
+
+  tosend += "OpenGL vendor: " + QString((GE_vendor_string==NULL ? "(null)" : (const char*)GE_vendor_string )) + "\n";
+  tosend += "OpenGL renderer: " + QString((GE_renderer_string==NULL ? "(null)" : (const char*)GE_renderer_string)) + "\n";
+  tosend += "OpenGL version: " + QString((GE_version_string==NULL ? "(null)" : (const char*)GE_version_string)) + "\n";
+  tosend += QString("OpenGL flags: %1").arg(GE_opengl_version_flags, 0, 16) + "\n\n";
+
+  tosend += "Running plugins: " + plugin_names + "\n\n";
+
+  tosend += "Running time: " + QString::number(running_time.elapsed()) + "\n\n";
+
+  tosend += "\n\n";
+
+    
+  for(int i=0;i<num_messages;i++)
+    tosend += QString::number(i) + ": "+messages[i] + "\n";
+
+  tosend += "\n\n";
+
+  int event_pos = g_event_pos;
+
+  tosend += "start event_pos: " + QString::number(event_pos) + "\n";
+
+  for(int i=event_pos-1; i>=0 ; i--)
+    tosend += QString(g_event_log[i]) + "\n";
+
+  for(int i=NUM_EVENTS-1; i>=event_pos ; i--)
+    tosend += QString(g_event_log[i]) + "\n";
+
+  tosend += "end event_pos: " + QString::number(g_event_pos) + "\n";
+  
+  tosend += "\n\n";
+
+#if defined(FOR_LINUX)
+  tosend += "LINUX\n\n";
+  tosend += "/etc/os-release: "+file_to_string("/etc/os-release");
+  tosend += "\n\n";
+  tosend += "/proc/version: "+file_to_string("/proc/version");
+  tosend += "\n\n";
+  tosend += "/proc/cpuinfo: "+file_to_string("/proc/cpuinfo");
+#endif
+
+  // start process
+  {
+    QString program = QCoreApplication::applicationDirPath() + QDir::separator() + "crashreporter";
+#if FOR_WINDOWS
+    program += ".exe";
+#endif
+
+    QTemporaryFile *file;
+    
+    if (is_crash) {
+      file = new QTemporaryFile;
+    } else {
+      if (g_crashreporter_file==NULL) {
+        g_crashreporter_file = new QTemporaryFile;
+        g_crashreporter_file->setAutoRemove(false); // We delete it in the sub process. This process is just going to exit as soon as possible.
+      }
+      file = g_crashreporter_file;
+    }
+
+    bool save_mixer_tree;
+    
+    if (is_crash)
+      save_mixer_tree = false; // Don't want to risk crashing inside the crash handler.
+    else
+      save_mixer_tree = true;
+    
+    string_to_file(tosend, file, save_mixer_tree);
+
+    /*
+      Whether to block
+      ================
+                                    RELEASE      !RELEASE
+                                -------------------------
+      Crash in main thread      |     no [1]       yes [2]
+      Crash in other thread     |     no [1]       yes [2]
+      Assert in main thread     |     no [4]       yes [2]
+      Assert in other thread    |     no [4]       yes [2,3]
+
+      [1] When crashing in RELEASE mode, it doesn't matter wheter we block or not, because
+          radium will exit immediately after finishing this function anyway, and it's
+          probably better to do that as quickly as possible.
+
+      [2] Ideally, this should happen though:
+          1. All threads immediately freezes
+          2. A dialog pops up asking whether to:
+             a) Stop program (causing gdb to kick in)
+             b) Ignore
+             c) Run assert crashreporter
+
+      [3] This can be annoying if the assert happens in the audio thread though.
+
+      [4] Asserts are not really supposed to happen, but there are a lot of them, 
+          and they might pop up unnecessarily (for instance a bug in the asserts themselves):
+          * Blocking might cause the program to be non-functional unnecessarily.
+          * Blocking could prevent the user from saving the current song,
+            for instance if the assert window just pops up immediately after closing it.
+     */
+
+#ifdef RELEASE
+    bool do_block = false;
+#else
+    bool do_block = true;
+#endif
+
+    QTemporaryFile emergency_save_file("radium_crash_save");
+
+#if 0
+    bool dosave = is_crash && Undo_num_undos_since_last_save()>0;
+#else
+    bool dosave = false; // saving inside a forked version of the program didn't really work that well. Maybe it works better in windows.
+#endif
+    
+    if (dosave)
+      emergency_save_file.open();
+    
+    run_program(program,
+                toBase64(file->fileName()),
+                toBase64(plugin_names),
+                toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
+                (is_crash ? "is_crash" : "is_assert"),
+                do_block
+                );
+
+    if (dosave)
+      Save_Clean(STRING_create(emergency_save_file.fileName()),root,false);
+  }
+  
+}
+
+#ifdef FOR_MACOSX
+#include "../common/visual_proc.h"
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+  GFX_Message(NULL, additional_information);
+}
+#endif
+
+void CRASHREPORTER_send_assert_message(const char *fmt,...){
+  static bool is_currently_sending = false;
+  
+#if 0
+  static int last_time = -10000;
+  
+  if ( last_time < (running_time.elapsed()-(30*1000)))
+    return;
+
+  last_time = running_time.elapsed();
+#endif
+
+  if (is_currently_sending)
+    return;
+
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+  
+  if (g_crashreporter_file!=NULL) {
+
+    if (!g_crashreporter_file->open()){
+      SYSTEM_show_message("Unable to create temprary file. Disk may be full");
+      send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, false);
+      goto exit;
+    }
+
+    if (false==file_is_empty(g_crashreporter_file)) {
+      g_crashreporter_file->close();
+      goto exit;
+    }
+
+    g_crashreporter_file->close();
+  }
+
+  is_currently_sending = true;
+  RT_request_to_stop_playing();
+  RT_pause_plugins();
+
+
+  CRASHREPORTER_send_message_with_backtrace(message, false);
+
+#if 0
+  if (may_do_blocking && THREADING_is_main_thread())
+    send_crash_message_to_server(message, g_plugin_name, false);
+  else{
+    const char *messages[1] = {message};
+    CRASHREPORTER_send_message(messages, 1, false);
+  }
+#endif
+  
+ exit:
+  is_currently_sending = false;
+}
+
+
+void CRASHREPORTER_close(void){
+#if defined(FOR_WINDOWS)
+  CRASHREPORTER_windows_close();
+#endif
+
+  if (g_crashreporter_file==NULL)
+    delete g_crashreporter_file;
+}
+
+
+
+void CRASHREPORTER_init(void){
+  running_time.start();
+  
+#if defined(FOR_WINDOWS)
   CRASHREPORTER_windows_init();
 
 #elif defined(FOR_LINUX)
-  if(system(QString(QString(OS_get_program_path()) + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) {
-    fprintf(stderr,"Couldn't start crashreporter\n");
-#ifndef RELEASE
-    abort();
-#endif
-  }
-
+      
   CRASHREPORTER_posix_init();
 
 #elif defined(FOR_MACOSX)
@@ -353,55 +636,6 @@ void CRASHREPORTER_init(void){
 #endif
 
   mysleep(1000);
-}
-
-void CRASHREPORTER_report_crash(const char **messages, int num_messages){
-  g_sharedmemory->lock();{
-
-    static int pos=0;
-    static int bytes_left=MESSAGE_LEN - 1;
-
-    Report *report = (Report*)g_sharedmemory->data();
-
-    for(int i=0;i<num_messages;i++){
-
-      if(num_messages>1)
-        snprintf(report->data+pos,bytes_left,"%d: %s\n",i,messages[i]);
-      else
-        snprintf(report->data+pos,bytes_left,"%s\n",messages[i]);
-
-      pos=strlen(report->data);
-      bytes_left = MESSAGE_LEN - pos - 1;
-    }
-
-    if(num_messages!=1){
-      snprintf(report->data+pos,bytes_left,"\n\n");
-      pos=strlen(report->data);
-      bytes_left = MESSAGE_LEN - pos - 1;
-    }
-
-    report->status=Report::THERE_IS_A_MESSAGE;
-    
-  }g_sharedmemory->unlock();
-}
-
-void CRASHREPORTER_close(void){
-#if defined(FOR_WINDOWS)
-  CRASHREPORTER_windows_close();
-#endif
-
-  Report *report = (Report*)g_sharedmemory->data();
-
-  if(g_sharedmemory->lock()==true){
-
-    report->status=Report::EXIT;
-
-    g_sharedmemory->unlock();
-  }
-
-  g_sharedmemory->detach();
-
-  delete g_sharedmemory;
 }
 
 

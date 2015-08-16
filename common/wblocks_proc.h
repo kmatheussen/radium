@@ -15,10 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
-
 extern LANGSPEC void CloseWBlock(struct Tracker_Windows *window, NInt blocknum);
 extern LANGSPEC void CloseAllWBlocks(struct Tracker_Windows *window);
 
@@ -61,5 +57,3 @@ extern LANGSPEC void UpdateWBlocks(struct Tracker_Windows *window);
 extern LANGSPEC void AppendWBlock(struct Tracker_Windows *window);
 
 extern LANGSPEC void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks);
-
-#endif

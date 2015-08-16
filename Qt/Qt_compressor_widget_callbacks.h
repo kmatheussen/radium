@@ -80,7 +80,7 @@ static float get_graph_value(struct Patch *patch, int num){
 #include "compressor_vertical_sliders.cpp"
 
 
-static double OS_get_double_from_string(const char *s){
+static double OS_get_double_from_string_here(const char *s){
   QLocale::setDefault(QLocale::C);
   QString string(s);
   return string.toDouble();
@@ -92,7 +92,7 @@ static float read_float(FILE *file){
   if(fgets(temp,500,file)==NULL)
     fprintf(stderr,"Unable to read float\n");
 
-  return OS_get_double_from_string(temp);
+  return OS_get_double_from_string_here(temp);
 }
 
 
@@ -172,7 +172,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
       msgBox.setText("Could not open file \""+filename+"\".");
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setDefaultButton(QMessageBox::Ok);
-      msgBox.exec();
+      safeExec(msgBox);
       return;
     }
     
@@ -224,10 +224,14 @@ void on_enable_checkbox_toggled(bool val){
     set_compressor_parameter(_patch, COMP_EFF_BYPASS,val==true?1.0f:0.0f);
   }
 
-  void on_load_button_pressed(void){
+  void on_load_button_clicked(void){
     printf("load pressed\n");
 
-    QString filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    QString filename;
+
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getOpenFileName(this, "Load Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    }GL_unlock();
 
     if(filename=="")
       return;
@@ -235,10 +239,14 @@ void on_enable_checkbox_toggled(bool val){
     load(filename);
   }
 
-  void on_save_button_pressed(void){
+  void on_save_button_clicked(void){
     printf("save pressed\n");
 
-    QString filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    QString filename;
+
+    GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      filename = QFileDialog::getSaveFileName(this, "Save Effect configuration", "", "Radium Compressor Configuration (*.rcc)");
+    }GL_unlock();
 
     if(filename=="")
       return;
@@ -250,7 +258,7 @@ void on_enable_checkbox_toggled(bool val){
       msgBox.setText("Could not save file.");
       msgBox.setStandardButtons(QMessageBox::Ok);
       msgBox.setDefaultButton(QMessageBox::Ok);
-      msgBox.exec();
+      safeExec(msgBox);
       return;
     }
 

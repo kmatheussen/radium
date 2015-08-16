@@ -36,9 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 #include "../GTK/GTK_visual_proc.h"
 
-#ifdef __linux__
-#  include "../X11/X11_keyboard_proc.h"
-#endif
+#include "../common/OS_system_proc.h"
 
 #include "../common/OS_visual_input.h"
 #include "../OpenGL/Widget_proc.h"
@@ -66,23 +64,33 @@ static const int y_margin = 5;
 struct MyReqType{
   QFrame *frame;
   QString label_text;
+  QString default_value;
   int y;
   bool widgets_disabled;
 };
 
 extern EditorWidget *g_editor;
 
+// tvisual might be NULL
 ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
   num_users_of_keyboard++; // disable X11 keyboard sniffer
 
-  EditorWidget *editor = g_editor;
-  QSplitter *ysplitter = editor->ysplitter;
-
   MyReqType *reqtype = new MyReqType();
 
-  reqtype->frame = new QFrame(ysplitter);
+  if(tvisual==NULL){
+    
+    reqtype->frame = new QFrame();
+    reqtype->frame->show();
+    
+  }else {
+    
+    EditorWidget *editor = g_editor;
+    QSplitter *ysplitter = editor->ysplitter;
+  
+    reqtype->frame = new QFrame(ysplitter);
 
-  ysplitter->insertWidget(0,reqtype->frame);
+    ysplitter->insertWidget(0,reqtype->frame);
+  }
 
   reqtype->frame->resize(5,10);
   reqtype->frame->show();
@@ -92,6 +100,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   return reqtype;
 }
 
+// tvisual might be NULL
 void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   //EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
@@ -100,9 +109,7 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
 
   num_users_of_keyboard--;
 
-#ifdef __linux__
-  X11_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
-#endif
+  OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 
   if(reqtype->widgets_disabled==true){
     Qt_EnableAllWidgets();
@@ -120,6 +127,12 @@ void GFX_WriteString(ReqType das_reqtype,const char *text){
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
   reqtype->label_text += text;
+}
+
+void GFX_SetString(ReqType das_reqtype,const char *text){
+  MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
+
+  reqtype->default_value = text;
 }
 
 namespace{
@@ -174,9 +187,10 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   }
 
   MyQLineEdit *edit = new MyQLineEdit(reqtype->frame);
+  edit->insert(reqtype->default_value);
   edit->move(x + 5, reqtype->y);
   edit->show();
-
+  
   reqtype->frame->adjustSize();
   reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
 
@@ -207,7 +221,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     GL_lock();{
       QCoreApplication::processEvents();
     }GL_unlock();
-
+    
     //GTK_HandleEvents();
     if(text!=edit->text()){
       text = edit->text();

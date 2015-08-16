@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "OS_Player_proc.h"
 #include "PEQrealline_proc.h"
+#include "PEQline_proc.h"
 #include "PEQblock_proc.h"
 #include "PEQnotes_proc.h"
 #include "instruments_proc.h"
@@ -34,13 +35,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Ptask2Mtask_proc.h"
 #include "time_proc.h"
 #include "PEQ_clock_proc.h"
-#include "gfx_upperleft_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "gfx_wblocks_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "patch_proc.h"
+#include "cursor_updown_proc.h"
+#include "PEQ_LPB_proc.h"
+#include "PEQ_Signature_proc.h"
+#include "PEQ_Beats_proc.h"
+#include "../midi/midi_i_input_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "player_proc.h"
 
@@ -60,10 +65,17 @@ extern void (*Ptask2MtaskCallBack)(void);
 static void PlayStopReally(bool doit){ 
 	pc->isplaying=false;
 	pc->initplaying=false;
-
+        pc->playertask_has_been_called = false;
+        
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
 
-	while(pc->peq!=NULL) OS_WaitForAShortTime(20);
+        if (PLAYER_current_thread_has_lock()){
+          RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
+          return;
+        }
+
+        if (PLAYER_is_running())
+          while(pc->peq!=NULL) OS_WaitForAShortTime(20);
 
 	StopAllInstruments();
 
@@ -72,10 +84,15 @@ static void PlayStopReally(bool doit){
 #endif
 
 	pc->end_time=0;
+        pc->end_time_f=0;
+
+        pc->play_id++;
 
         struct Tracker_Windows *window = root->song->tracker_windows;
         struct WBlocks *wblock = window->wblock;
-	GFX_UpdateQuantitize(window,wblock);
+
+        ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+
 #if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
         UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
@@ -86,6 +103,8 @@ static void PlayStopReally(bool doit){
         //while(GC_is_disabled())
         while(GC_dont_gc>0)
           GC_enable();
+
+        MIDI_insert_recorded_midi_events();
 }
 
 void PlayStop(void){
@@ -111,7 +130,8 @@ static void PlayBlock(
 	pc->initplaying=true;
 
 		pc->playpos=0;
-
+                pc->play_id++;
+                
                 if(do_loop==true)
                   pc->playtype=PLAYBLOCK;
                 else
@@ -132,7 +152,11 @@ static void PlayBlock(
 
                 PATCH_reset_time();
 		InitPEQclock();
+                InitPEQ_LPB(pc->block,place);
+                InitPEQ_Signature(pc->block,place);
+                InitPEQ_Beat(pc->block,place);
 		InitPEQrealline(block,place);
+		InitPEQline(block,place);
 		InitPEQblock(block,place);
 		InitAllPEQnotes(block,place);
 
@@ -212,7 +236,8 @@ static void PlaySong(
 		printf("Play song. blocknum:%d. Block: %p\n",block->l.num, block);
 
 		pc->playpos=playpos;
-
+                pc->play_id++;
+                
 		root->curr_playlist=playpos;
 
 		pc->playtype=PLAYSONG;
@@ -228,7 +253,11 @@ static void PlaySong(
 
                 PATCH_reset_time();
 		InitPEQclock();
+                InitPEQ_LPB(pc->block,place);
+                InitPEQ_Signature(pc->block,place);
+                InitPEQ_Beat(pc->block,place);
 		InitPEQrealline(block,place);
+		InitPEQline(block,place);
 		InitPEQblock(block,place);
 		InitAllPEQnotes(block,place);
 
@@ -275,7 +304,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 	root->setfirstpos=false;
 
 	playpos=root->curr_playlist;
-
+                
 	block=BL_GetBlockFromPos(playpos);
 	if(block==NULL) return;
 
@@ -288,7 +317,7 @@ void PlaySongCurrPos(struct Tracker_Windows *window){
 	if(
 		! changeblock &&
 		playpos==root->song->length-1 &&
-		wblock->curr_realline==wblock->num_reallines
+		wblock->curr_realline==wblock->num_reallines  // ??. Never supposed to happen.
 	){
 		return;
 	}

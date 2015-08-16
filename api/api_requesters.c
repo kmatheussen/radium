@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/window_config_proc.h"
 #include "../common/block_properties_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/OS_string_proc.h"
 
 #include "../midi/midi_i_plugin_proc.h"
 
@@ -45,8 +46,12 @@ void configColors(int windownum){
 #endif
 }
 
-void setDefaultColors(void){
-  GFX_SetDefaultColors(getWindowFromNum(-1));
+void setDefaultColors1(void){
+  GFX_SetDefaultColors1(getWindowFromNum(-1));
+}
+
+void setDefaultColors2(void){
+  GFX_SetDefaultColors2(getWindowFromNum(-1));
 }
 
 void configSystemFont(void){
@@ -65,6 +70,7 @@ void setDefaultEditorFont(void){
 
 void setDefaultSystemFont(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  //RWarning("Warning! (?)"); // warning window test
   GFX_SetDefaultSystemFont(window);
 }
 
@@ -85,20 +91,20 @@ void configVST(int windownum){
 
 const char *getLoadFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const char *ret = GFX_GetLoadFileName(window, NULL, text, dir, "*.mid *.MID *.midi *.MIDI)");
+  const wchar_t *ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), "*.mid *.MID *.midi *.MIDI)");
   if(ret==NULL)
     return "";
   else
-    return ret;
+    return STRING_get_chars(ret);
 }
 
 const char *getSaveFilename(char *text, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const char *ret = GFX_GetSaveFileName(window, NULL, text, dir, "*.mid *.MID *.midi *.MIDI)");
+  const wchar_t *ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), "*.mid *.MID *.midi *.MIDI)");
   if(ret==NULL)
     return "";
   else
-    return ret;
+    return STRING_get_chars(ret);
 }
 
 
@@ -138,8 +144,14 @@ char* requestString(char *text){
 }
 
 int requestMenu(char *text, PyObject* arguments){
-  RError("requestMenu not implemented");
+  GFX_Message(NULL, "requestMenu not implemented");
   return 0;
+}
+
+int popupMenu(char *texts){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+  vector_t *vec = GFX_MenuParser(texts, "%");
+  return GFX_Menu(window, NULL,"",vec);
 }
 
 char* requestMidiPort(void){
@@ -148,6 +160,10 @@ char* requestMidiPort(void){
   if(ret==NULL)
     ret="";
   return ret;
+}
+
+void showMessage(char *text){
+  GFX_Message(NULL, text);
 }
 
 void showWarning(char *text){

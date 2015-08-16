@@ -15,6 +15,27 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#ifndef __SSE2__
+#error "SSE2 is missing (i.e. -msse2 is lacking)"
+#endif
+
+#ifndef __SSE2_MATH__
+#error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
+#endif
+
+#if __tune_corei7__
+#error "Compiled with -mtune=native or -mtune=corei7"
+#endif
+ 
+#ifdef RELEASE
+#ifndef __OPTIMIZE__
+#error "Missing -O2 or -O3 compiler option"
+#endif
+#endif
+
+#ifndef DEBUG
+#  error "Missing DEBUG option. Edit the Makefile."
+#endif
 
 
 
@@ -36,11 +57,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define LANGSPEC
 #endif
 
-
-#ifndef DEBUG
-#  error "Missing DEBUG option. Edit the Makefile."
-#endif
-
 #if !USE_GTK_VISUAL && !USE_GTK_REQTYPE && !USE_GTK_MENU
 #  define GTK_IS_USED 0
 #else
@@ -52,11 +68,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+
 #include "debug_proc.h"
 #include "memory_proc.h"
 #include "nsmtracker_events.h"
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 
 /* Unfortunately, AmigaOS has one absolute address that is legal to
@@ -117,6 +136,33 @@ enum{
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
+#define R_ASSERT(a)                                                     \
+  if(!(a))                                                              \
+    CRASHREPORTER_send_assert_message("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);
+
+#define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \
+  if(!(a))                                                              \
+    do{                                                                 \
+      CRASHREPORTER_send_assert_message("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
+      return b;                                                         \
+    }while(0)
+
+#define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT_RETURN_IF_FALSE2(a,)
+
+#if defined(RELEASE)
+  #define R_ASSERT_NON_RELEASE(a)
+#else
+  #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
+#endif
+
+
+static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                (x2-x1)
+                );
+}
+
 static inline double scale_double(double x, double x1, double x2, double y1, double y2){
   return y1 + ( ((x-x1)*(y2-y1))
                 /
@@ -175,12 +221,15 @@ struct ListHeaderP{
 };
 
 
+
 /*********************************************************************
         playerclass
 *********************************************************************/
 
 #include "playerclass.h"
 extern PlayerClass *pc;
+
+
 
 /*********************************************************************
 	hashmap.h
@@ -200,6 +249,39 @@ typedef struct{
   int num_elements_allocated;
   void **elements;
 } vector_t;
+
+
+/*********************************************************************
+	ratio.h
+*********************************************************************/
+
+typedef struct {
+  int numerator;
+  int denominator;
+} Ratio;
+
+static inline Ratio ratio(int numerator, int denominator) {
+  Ratio ratio = {numerator, denominator};
+  return ratio;
+}
+
+static inline char *ratio_to_string(Ratio ratio){
+  return talloc_format("%d/%d", ratio.numerator, ratio.denominator);
+}
+
+
+/*********************************************************************
+	quantitize.h
+*********************************************************************/
+
+typedef struct{
+  Ratio quant;
+  bool quantitize_start;
+  bool quantitize_end;
+  bool keep_note_length;
+  int type;
+} quantitize_options_t;
+
 
 
 
@@ -242,6 +324,13 @@ enum{
 	notes.h
 *********************************************************************/
 
+#define NOTE_END_NORMAL 128
+enum{
+  NOTE_MUL=NOTE_END_NORMAL,
+  NOTE_STP,
+  NOTE_MUR
+};
+
 
 struct Notes{
 	struct ListHeader3 l;
@@ -253,6 +342,9 @@ struct Notes{
 	
 	struct Velocities *velocities;
 	int velocity_end;
+
+	struct Velocities first_velocity; // used by nodelines
+	struct Velocities last_velocity; // used by nodelines
 
 	struct Pitches *pitches;
 
@@ -278,6 +370,7 @@ union SuperType{
   void *pointer;
   const void *const_pointer;
   int64_t int_num;
+  uint32_t uint32_num;
   double float_num;
 };
 
@@ -320,7 +413,8 @@ static inline PatchPlayingNote NewPatchPlayingNote(float note_num, int64_t note_
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
   int id;
-
+  bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.
+  
   const char *name;
 
   int colornum;
@@ -330,6 +424,7 @@ struct Patch{
   void (*playnote)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time,float pan);
   void (*changevelocity)(struct Patch *patch,float notenum,int64_t note_id,float velocity,STime time);
   void (*changepitch)(struct Patch *patch,float notenum,int64_t note_id,float pitch,STime time);
+  void (*sendrawmidimessage)(struct Patch *patch,uint32_t msg,STime time); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
   void (*stopnote)(struct Patch *patch,float notenum,int64_t note_id,STime time);
   void (*closePatch)(struct Patch *patch);
   
@@ -354,6 +449,8 @@ struct Patch{
   struct Patch *event_receivers[MAX_NUM_EVENT_RECEIVERS];
 
   volatile int visual_note_intencity; // Used by the mixer to keep track of how bright the note indicator should light up.
+
+  volatile bool widget_needs_to_be_updated;
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1
@@ -382,8 +479,10 @@ static inline void Patch_removePlayingVoice(struct Patch *patch, int64_t note_id
       return;
     }
   }
-  if (pc->isplaying)
+  if (pc->isplaying){
     printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,patch->num_currently_playing_voices);
+    //abort();
+  }
 #if 0
   for(i=0;i<patch->num_currently_playing_voices;i++)
     printf("id: %d\n",(int)patch->playing_voices[i].note_id);
@@ -433,6 +532,8 @@ struct FX{
 	int min;
 	int max;
 
+        struct Patch *patch;
+  
   	int effect_num; // Set by the instrument plugin.
 
 	// Having pointers to variables in sliders is a bit strange, but letting sliders reference FX instead would cause bookkeeping of live and not alive FX objects.
@@ -443,7 +544,7 @@ struct FX{
 	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
 	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-	void (*treatFX)(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when);
+        void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
@@ -543,6 +644,8 @@ struct Tracks{
 	struct Stops *stops;
 	int onoff;
 
+        int num_subtracks;
+  
 	const char *trackname;
 	struct Patch *patch;
 	struct FXs *fxs;
@@ -554,6 +657,8 @@ struct Tracks{
 
 	bool panonoff;
         bool volumeonoff;                      /* The volume-button on/off, not track on/off. (i.e. if off, volume=1.0, not 0.0) */
+
+        volatile bool is_recording;
 };
 #define NextTrack(a) ((struct Tracks *)((a)->l.next))
 
@@ -598,9 +703,15 @@ typedef struct{
 	int x,x2;
 }WArea;
 
+typedef struct{
+  float x,y;
+}WPoint;
+
+
+
 
 /*********************************************************************
-	trackreallines.h
+	peaks.h
 *********************************************************************/
 
 #define NUM_PEAKS_PER_LINE 8
@@ -608,58 +719,23 @@ typedef struct{
   float x,y;
 } APoint;
 
-#define TRE_Max INT16_MAX
-struct TrackReallineElements{
-  struct TrackReallineElements *next;
-
-  struct Notes *note;
-
-  int type;
-  int subtype;
-  float y1,y2;
-  float x1,x2;
-  void *pointer;
-
-  APoint *velocity_polygon;
-
-  int num_peaks;
-  APoint *peaks[2];
-};
-
-/************* Types: */
-enum{
-  TRE_THISNOTELINES,
-  TRE_THISPITCHLINES,
-  TRE_VELLINECENTS,
-  TRE_VELLINENODE,
-  TRE_VELLINE,
-  TRE_VELLINESTART,
-  TRE_VELLINEEND,
-  TRE_STOPLINE,
-  TRE_REALSTARTSTOP
-};
-
-/* Subtype for 0-0x40 is
-   the same as subtrack for the note.
-*/
-
-
-struct TrackRealline{
-  struct Notes *dasnote;
-  struct Pitches *daspitch;
-  float note;										/* Is 0 if no note. */
-  struct TrackReallineElements *trackreallineelements;
-};
-#define NOTE_END_NORMAL 128
-enum{
-  NOTE_MUL=NOTE_END_NORMAL,
-  NOTE_STP,
-  NOTE_MUR
-};
 
 
 /*********************************************************************
-	OpenGL/Render.h
+	trackreallines2.h
+*********************************************************************/
+
+typedef struct{
+  Place p;
+  struct Notes *note;
+  struct Pitches *pitch;
+  struct Stops *stop;
+} TrackRealline2;
+
+
+
+/*********************************************************************
+	nodelinens.h
 *********************************************************************/
 
 struct NodeLine{
@@ -674,32 +750,30 @@ struct NodeLine{
   bool is_node;
 };
 
+static inline const struct NodeLine *Nodeline_n(const struct NodeLine *nodeline, int n){
+  while(n>0 && nodeline!=NULL) {
+    nodeline = nodeline->next;
+    n--;
+  }
+  return nodeline;
+}
+
 struct Node{
   float x, y;
   const struct ListHeader3 *element;
 };
 
-
-/*********************************************************************
-	wfxnodes.h
-*********************************************************************/
-
-
-typedef struct TrackReallineElements WFXNodes;
-/*
-struct WFXNodes{
-	struct WFXNodes *next;
-   SDB
-	unsigned char type;
-	unsigned char subtype;						// not used.
-	unsigned char y1,y2;
-	unsigned short x1,x2;
-	void *pointer;									// Only referenced.
+struct MinMax{
+  float min;
+  float max;
 };
-*/
-/************* Types: */
-#define TRE_FXNODE 0x50
-#define TRE_FXLINE 0x60
+
+typedef struct {
+  float x1,y1;
+  float x2,y2;
+} NodelineBox;
+
+
 
 
 /*********************************************************************
@@ -715,6 +789,9 @@ typedef struct TBoxstruct TBox;
 /*********************************************************************
 	wtracks.h
 *********************************************************************/
+
+#define WTRACKS_SPACE 2
+
 
 struct WTracks{
 	struct ListHeader1 l;
@@ -732,17 +809,17 @@ struct WTracks{
 
         bool is_wide;
 
+        bool pianoroll_on;
+        int pianoroll_lowkey;
+        int pianoroll_highkey;
 
-	int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
+        int pianoroll_width; // not necessary
+        Area pianoroll_area;
+  
+  //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
 	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
 
-	struct TrackRealline *trackreallines;
-	WFXNodes **wfxnodes;
-	WPitches **wpitches;
-
-        vector_t velocity_nodes; // contains vector of vectors of Node's. (element 1 contains velocities for note 1, element 2 contains velocities for note 2, etc.)
-  
 	TBox pan;
 	TBox volume;
 
@@ -757,6 +834,77 @@ struct WTracks{
 #define GFXTYPE1 1
 #define MAXTYPE 1
 
+struct CurrentPianoNote{
+  int tracknum;
+  int notenum;
+  int pianonotenum;
+};
+
+static inline const NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
+  const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  const float note_width = gfx_width / notespan;
+
+  const float x_min = R_MIN(nodeline->x1, nodeline->x2);
+  const float x_max = R_MAX(nodeline->x1, nodeline->x2);
+
+  const float y_min = R_MIN(nodeline->y1, nodeline->y2);
+  const float y_max = R_MAX(nodeline->y1, nodeline->y2);
+
+  NodelineBox nodelineBox;
+
+  nodelineBox.x1 = x_min-note_width/2.0;
+  nodelineBox.y1 = y_min;
+  nodelineBox.x2 = x_max+note_width/2.0;
+  nodelineBox.y2 = y_max;
+
+  return nodelineBox;
+}
+
+
+/*********************************************************************
+	Signature.h
+*********************************************************************/
+
+struct Signatures{
+  struct ListHeader3 l;
+  Ratio signature;
+};
+#define NextSignature(a) (struct Signatures *)((a)->l.next)
+
+struct WSignatures{
+  Ratio signature;
+  int bar_num;
+  int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
+  int type;	  /* 0=normal, 1=below positioned, 2=mul. */
+  vector_t how_much_below;  /* If type is 1 or 2, these values contains how much below (between 0 and 1) */
+};
+#define SIGNATURE_NORMAL 0
+#define SIGNATURE_BELOW 1
+#define SIGNATURE_MUL 2
+
+static inline bool WSIGNATURE_is_measure_change(const struct WSignatures *signature){
+  return signature->signature.numerator != 0 && signature->beat_num==1;
+}
+
+static inline bool WSIGNATURE_is_first_beat(const struct WSignatures *signature){
+  return signature->beat_num==1;
+}
+
+
+
+/*********************************************************************
+	Beats.h
+*********************************************************************/
+
+struct Beats{
+  struct ListHeader3 l;
+  Ratio signature; // Current signature for this beat.
+  int bar_num;
+  int beat_num;  // For instance, in a 4/4 measure, this value is either 1, 2 or 3, or 4.
+};
+#define NextBeat(a) (struct Beats *)((a)->l.next)
+  
 
 /*********************************************************************
 	lpb.h
@@ -772,10 +920,6 @@ struct LPBs{
 struct WLPBs{
 	int lpb;
 	int type;					/* 0=normal, 1=below positioned, 2=mul. */
-
-	bool is_beat;
-
-	struct LPBs *LPB;			/* Only referenced. */
 };
 #define LPB_NORMAL 0
 #define LPB_BELOW 1
@@ -784,7 +928,7 @@ struct WLPBs{
 
 
 /*********************************************************************
-	tempos.h
+	tempos.h (i.e. BPM)
 *********************************************************************/
 
 
@@ -793,18 +937,20 @@ struct Tempos{
 	int tempo;
 };
 #define NextTempo(a) (struct Tempos *)((a)->l.next)
+#define NextBPM(a) NextTempo(a)
 
 struct WTempos{
 	int tempo;
 	int type;							/* 0=normal, 1=below positioned, 2=mul. */
-   SDB
-	struct Tempos *Tempo;			/* Only referenced. */
 };
 /* Types */
 #define TEMPO_NORMAL 0
 #define TEMPO_BELOW 1
 #define TEMPO_MUL 2
 
+// Todo: Rename all Tempos to BPMs. First step:
+#define BPMs Tempos
+#define WBPMs WTempos
 
 
 /*********************************************************************
@@ -819,21 +965,6 @@ struct TempoNodes{
 };
 #define NextTempoNode(a) ((struct TempoNodes *)((a)->l.next))
 
-typedef struct TrackReallineElements WTempoNodes;
-/*
-struct WTempoNodes{
-	struct WTempoNodes *next;
-	unsigned char type;
-	unsigned char subtype;			// Currently not used.
-	unsigned char y1,y2;
-	unsigned short x1,x2;
-	
-	void *temponode;	// Only referenced.
-};
-*/
-/* Types */
-#define TEMPONODE_NODE 0
-#define TEMPONODE_LINE 1
 
 
 /*********************************************************************
@@ -855,6 +986,7 @@ struct STimes{									/* One element for each line. */
 	STime time;							/* Start-time for the line. */
    SDB
 	const struct STimeChanges *timechanges;
+        //bool is_beat; // true if this line starts a new beat
 };
 
 
@@ -872,7 +1004,9 @@ struct Blocks{
 	int num_lines;
 
 	struct Tracks *tracks;
-	struct LPBs   *lpbs;
+	struct Beats        *beats;
+	struct Signatures   *signatures;
+  	struct LPBs   *lpbs;
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
@@ -905,6 +1039,8 @@ struct LocalZooms{
 	int realline;
 
 	struct LocalZooms *uplevel;	/* Contains 'num_newlines' # of elements. */
+
+  bool autogenerated;
 };
 #define NextLocalZoom(a) ((struct LocalZooms *)((a)->l.next))
 
@@ -927,10 +1063,20 @@ struct WBlocks{
 	TBox t;
 //	int tx,ty,tx2,ty2;				/* lines, nodes, etc. GFX area. */
 
+        TBox bottombar;                                /* reltempo slider and track slider */
+
 	//WArea zoomlevelarea;
-	WArea linenumarea;
-	WArea zoomlinearea;
+        WArea linenumarea;
+        int linenumbers_max_num_characters;
+        int bars_max_num_characters;
+        int beats_x; int beats_max_num_characters;
+        int zoomlines_x; int zoomlines_max_num_characters;
+
+  //        WArea 
+  //WArea zoomlinearea;
         WArea tempocolorarea;
+  //WArea signatureTypearea;
+	WArea signaturearea;
 	WArea lpbTypearea;
 	WArea lpbarea;
 	WArea tempoTypearea; // When one character signals whether the tempo is down "d", or multi "m"
@@ -943,22 +1089,24 @@ struct WBlocks{
 
 	int num_visiblelines;
 
-	int top_realline;
-
-	int curr_realline;
-	int till_curr_realline;				/* The player-routine sets this on. */
-
-	int bot_realline;
+        volatile int till_curr_realline;       // Set by the player thread. Read by the main thread.
+  
+        int top_realline; // only access from main thread.
+        int curr_realline; // only access from main thread.
+        int bot_realline; // only access from main thread.
 
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.
         struct Notes *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note.
 
+        struct FXs *mouse_fxs; // The fxs the mouse is currently above. NULL if mouse is not above an fx.
+  
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */
 
-	struct LocalZooms *localzooms;
-	struct LocalZooms **reallines;
-	int num_reallines;
-	int num_reallines_last;
+	struct LocalZooms *localzooms;    /* These two variables (localzooms and reallines) contain the same elements, but 'localzooms' is organized as a tree, while 'reallines' is organized as an array. (roughly)*/
+	struct LocalZooms **reallines;   // Used by the player. Must be protected by PLAYER_lock
+	int num_reallines;               // Same here. Must be protected by PLAYER_lock.
+
+        int num_expand_lines;
 
 	struct WTracks *wtracks;
 	struct WTracks *wtrack;			/* Current track. Only referenced. */
@@ -970,10 +1118,7 @@ struct WBlocks{
 	NInt right_track;					/* The rightmost visible track. */
 	int right_subtrack;
 
-	struct WTempos *wtempos;
-	WTempoNodes **wtemponodes;
-        vector_t *reltempo_nodes; // contains vector of Node's
-	struct WLPBs *wlpbs;
+        //struct WTempos *wtempos;
 	float reltempomax;
 
 	bool isranged;
@@ -1028,9 +1173,20 @@ typedef struct{
 
 
 /*********************************************************************
+       Mixer.hpp
+********************************************************************/
+
+struct SoundProducer;
+
+typedef struct {
+  struct SoundProducer *bus1;
+  struct SoundProducer *bus2;
+} Buses;
+
+
+/*********************************************************************
 	windows.h
 *********************************************************************/
-#include "mouse.h"
 
 struct Tracker_Windows{
 	struct ListHeader1 l;
@@ -1042,7 +1198,8 @@ struct Tracker_Windows{
 	int fontID;							/* System spesific. For amiga: fontsize. */
 	int fontTags;						/* System spesific. For amiga: nothing. */
 	int fontwidth,fontheight;		/* Proportional fonts not so very allowed. */
-
+	int systemfontheight;
+  
 	NInt curr_track;
 	int curr_track_sub;				/* -1=note, 0,1,2,...,n=vel */
 	NInt curr_block;
@@ -1064,8 +1221,8 @@ struct Tracker_Windows{
 	uint32_t event_treat;		/* Chooses which event type(s) to treat. (0=all)*/
 	int dontbuffer;
 
-	struct MouseAction curraction;
-	struct MouseAction prevaction;
+  //	struct MouseAction curraction;
+  //	struct MouseAction prevaction;
 
 	int org_fontheight;
 #ifdef _AMIGA
@@ -1074,6 +1231,11 @@ struct Tracker_Windows{
 	int h_fontTags;						/* System spesific. For amiga: nothing. */
 	int h_fontwidth;
 #endif
+
+  bool show_signature_track;
+  bool show_lpb_track;
+  bool show_bpm_track;
+  bool show_reltempo_track;
 
   int num_pixmapdefs;
   int *pixmapdefs;
@@ -1084,16 +1246,19 @@ struct Tracker_Windows{
 #ifdef USE_GFX_OP_QUEUE
   void *op_queue;
 #endif
+
   bool must_redraw;
 };
 #define NextWindow(a) (struct Tracker_Windows *)((a)->l.next)
 
 /* curr_track types */
 #define TEMPONODETRACK -1
-#define TEMPOTRACK -2
-#define LPBTRACK -3
-#define LINENUMBTRACK -4
-#define TEMPOCOLORTRACK -5
+#define LINENUMBTRACK -2
+#define SIGNATURETRACK -3
+#define LPBTRACK -4
+#define TEMPOTRACK -5
+#define TEMPOCOLORTRACK -6
+#define LEFTMOSTTRACK TEMPOCOLORTRACK
 #define NOTRACK -10000
 
 /*********************************************************************
@@ -1127,21 +1292,28 @@ struct Root{
 	struct Song *song;
 	
 	int curr_playlist;
-	NInt curr_block;
+	volatile NInt curr_block;
 
-	bool setfirstpos;
+	volatile bool setfirstpos;
 
 	int tempo;			/* Standard tempo. */
-	int lpb;				/* Standard lpb. */
+	int lpb;			/* Standard lpb. */
+	Ratio signature;		/* Standard signature. */
 
-	float quantitize;
+        quantitize_options_t quantitize_options;
+  
+        int grid_numerator;
+        int grid_denominator;
+
 	int keyoct;
         int min_standardvel;
         int standardvel;
 
-	bool editonoff;
-	bool scrollplayonoff;
+	volatile bool editonoff;
+        volatile bool clickonoff;
 };
+
+extern struct Root *root;
 
 
 

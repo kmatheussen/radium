@@ -24,5 +24,7 @@ extern void SaveFXs(struct FXs *fxs,struct Tracks *track);
 
 extern struct FXs *LoadFXs(struct Tracks *track);
 
+extern void DLoadFXs(struct Root *newroot,struct Tracks *track, struct FXs *fxs);
+
 #endif
 

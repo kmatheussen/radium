@@ -4,7 +4,7 @@
 // copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -16,6 +16,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -509,7 +511,7 @@ class Flute_Stk_dsp : public dsp {
 			float fTemp6 = (0 - fTemp4);
 			float fTemp7 = cosf(fTemp3);
 			float fTemp8 = ((fVec0[0] * fTemp7) + (fTemp6 * fRec10[1]));
-			float fTemp9 = ((fTemp8 * fTemp7) + (fTemp6 * fRec11[1]));
+			float fTemp9 = ((fTemp7 * fTemp8) + (fTemp6 * fRec11[1]));
 			float fTemp10 = ((fTemp7 * fTemp9) + (fTemp6 * fRec12[1]));
 			float fTemp11 = ((fTemp7 * fTemp10) + (fTemp6 * fRec13[1]));
 			float fTemp12 = ((fTemp7 * fTemp11) + (fTemp6 * fRec14[1]));
@@ -518,7 +520,7 @@ class Flute_Stk_dsp : public dsp {
 			fRec13[0] = ((fTemp7 * fRec14[1]) + (fTemp4 * fTemp11));
 			fRec12[0] = ((fTemp7 * fRec13[1]) + (fTemp4 * fTemp10));
 			fRec11[0] = ((fTemp7 * fRec12[1]) + (fTemp4 * fTemp9));
-			fRec10[0] = ((fTemp7 * fRec11[1]) + (fTemp8 * fTemp4));
+			fRec10[0] = ((fTemp7 * fRec11[1]) + (fTemp4 * fTemp8));
 			float fTemp13 = (fTemp2 * (((fSlow25 * (fVec0[0] + fVec0[1])) + (fSlow24 * fVec0[0])) + (fSlow23 * faustpower<2>(fVec0[0]))));
 			float fTemp14 = sinf(fTemp13);
 			float fTemp15 = (0 - fTemp14);

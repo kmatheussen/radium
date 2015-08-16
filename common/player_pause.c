@@ -26,9 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "PEQnotes_proc.h"
 #include "PEQrealline_proc.h"
+#include "PEQline_proc.h"
 #include "PEQblock_proc.h"
 #include "PEQfxs_proc.h"
 #include "PEQ_clock_proc.h"
+#include "PEQ_LPB_proc.h"
+#include "PEQ_Signature_proc.h"
+#include "PEQ_Beats_proc.h"
 
 #include "player_pause_proc.h"
 
@@ -86,7 +90,11 @@ void PC_StopPause(void){
 	PlaceSetFirstPos(&place);
 
 	InitPEQclock();
+        InitPEQ_LPB(pc->block,place);
+        InitPEQ_Signature(pc->block,place);
+        InitPEQ_Beat(pc->block,place);
 	InitPEQrealline(pc->block,&place);
+	InitPEQline(pc->block,&place);
 	InitPEQblock(pc->block,&place);
 	InitAllPEQnotes(pc->block,&place);
 

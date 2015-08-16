@@ -17,9 +17,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+extern LANGSPEC void MIDI_insert_recorded_midi_events(void);
+
+extern LANGSPEC void RT_MIDI_handle_play_buffer(void);
+
+extern LANGSPEC bool MIDI_get_record_accurately(void);
+extern LANGSPEC void MIDI_set_record_accurately(bool accurately);
+extern LANGSPEC bool MIDI_get_record_velocity(void);
+extern LANGSPEC void MIDI_set_record_velocity(bool doit);
 
 extern LANGSPEC void MIDI_InputMessageHasBeenReceived(int cc,int data1,int data2);
 
 extern LANGSPEC void MIDI_SetThroughPatch(struct Patch *patch);
 
 extern LANGSPEC void MIDI_HandleInputMessage(void);
+
+extern LANGSPEC void MIDI_input_init(void);

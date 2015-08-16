@@ -87,6 +87,12 @@ int GFX_CreateVisual(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
 
+  {
+    const QFont &font=QApplication::font();
+    QFontMetrics fm(font);
+    tvisual->systemfontheight=fm.height();
+  }
+
 
 #if 0
 #if USE_GTK_VISUAL
@@ -379,11 +385,13 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
 
   QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
   if(g_use_custom_color==true) {
-    qcolor = get_note_color(editor,qcolor);
+    //    qcolor = get_note_color(editor,qcolor);
     g_use_custom_color = false;
   }
 
-
+#if USE_OPENGL
+  painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
+#else
   if(where==PAINT_BUFFER && (colornum==15 || colornum==12)){
     if(y>=tvisual->wblock->t.y1){
       //colornum = 15;
@@ -407,6 +415,7 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
     painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
 
   }
+#endif
 }
 
 void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
@@ -588,7 +597,7 @@ void OS_GFX_Polygon(
                     
 
 void OS_GFX_Polyline(
-                    struct Tracker_Windows *tvisual,
+                     struct Tracker_Windows *tvisual,
                     int colornum,
                     int x1, int y1, int x2, int y2,
                     int num_points,
@@ -622,6 +631,10 @@ void OS_GFX_Polyline(
 }
                     
 
+void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual){
+  g_use_custom_color = false;
+}
+
 void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, int mix_factor){
   //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("mix_factor: %d\n",mix_factor);
@@ -629,7 +642,6 @@ void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, i
   g_use_custom_color = true;
   //printf("mixcolor called\n");
 }
-
 
 void OS_GFX_SetClipRect(
                         struct Tracker_Windows *tvisual,
@@ -678,12 +690,16 @@ void OS_GFX_Text(
   }
 #endif
 
+  const int y_skew = 0;
+
   {  
     if(flags & TEXT_SCALE){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+      //QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
+      QRect rect(x,y,width,tvisual->systemfontheight);
 
-      const QFontMetrics fn = QFontMetrics(painter->font());
+      //const QFontMetrics fn = QFontMetrics(painter->font());
+      const QFontMetrics fn = QFontMetrics(QApplication::font());
       float text_width = fn.width(text);
 
       //printf("Got TEXT_SCALE. Text: \"%s\". text_width: %f. box_width: %f\n",text, text_width, (float)width);
@@ -696,21 +712,26 @@ void OS_GFX_Text(
 
         painter->save();
         painter->scale(s,1.0);
-        painter->drawText(x/s, (y+tvisual->org_fontheight-1), text);
+        painter->drawText(x/s, (y+tvisual->systemfontheight+y_skew), text);
         painter->restore();
-      }else{
-        painter->drawText(x,y+tvisual->org_fontheight-1,text);
-        //painter->drawText(rect, Qt::AlignVCenter, text);
+
+      }else if (flags & TEXT_CENTER) {
+        
+        painter->drawText(rect, Qt::AlignCenter, text);
+        
+      } else {
+        //painter->drawText(x,y+tvisual->systemfontheight+y_skew,text);
+        painter->drawText(rect, Qt::AlignVCenter | Qt::AlignLeft, text);
       }
 
-    }else if(flags & TEXT_CENTER){
+    }else if(true || (flags & TEXT_CENTER)){
 
-      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->org_fontheight);
+      QRect rect(x,y,tvisual->fontwidth*strlen(text),tvisual->systemfontheight);
       painter->drawText(rect, Qt::AlignVCenter, text);
 
     }else{
 
-      painter->drawText(x,y+tvisual->org_fontheight-1,text);
+      painter->drawText(x,y+tvisual->systemfontheight+y_skew,text);
 
     }
   }

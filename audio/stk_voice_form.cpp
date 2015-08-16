@@ -4,7 +4,7 @@
 // copyright: "Romain Michon"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with : "" */
 #include <math.h>
@@ -17,6 +17,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -333,9 +335,9 @@ class Voice_Form_dsp : public dsp {
 		for (int i=0; i<2; i++) fRec12[i] = 0;
 		for (int i=0; i<2; i++) iRec13[i] = 0;
 		for (int i=0; i<2; i++) iRec14[i] = 0;
-		fslider6 = 0.1f;
-		fslider7 = 0.05f;
-		fslider8 = 0.5f;
+		fslider6 = 0.05f;
+		fslider7 = 0.5f;
+		fslider8 = 0.1f;
 		for (int i=0; i<2; i++) fRec15[i] = 0;
 		fslider9 = 0.05f;
 		fentry1 = 4.4e+02f;
@@ -409,24 +411,24 @@ class Voice_Form_dsp : public dsp {
 		interface->addHorizontalSlider("Voiced_Release", &fslider3, 0.01f, 0.0f, 2.0f, 0.01f);
 		interface->closeBox();
 		interface->openVerticalBox("Vibrato_Parameters");
-		interface->declare(&fslider8, "3", "");
-		interface->declare(&fslider8, "tooltip", "Vibrato attack duration");
-		interface->declare(&fslider8, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Attack", &fslider8, 0.5f, 0.0f, 2.0f, 0.01f);
 		interface->declare(&fslider7, "3", "");
-		interface->declare(&fslider7, "tooltip", "Vibrato silence duration before attack");
+		interface->declare(&fslider7, "tooltip", "Vibrato attack duration");
 		interface->declare(&fslider7, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Begin", &fslider7, 0.05f, 0.0f, 2.0f, 0.01f);
+		interface->addHorizontalSlider("Vibrato_Attack", &fslider7, 0.5f, 0.0f, 2.0f, 0.01f);
+		interface->declare(&fslider6, "3", "");
+		interface->declare(&fslider6, "tooltip", "Vibrato silence duration before attack");
+		interface->declare(&fslider6, "unit", "s");
+		interface->addHorizontalSlider("Vibrato_Begin", &fslider6, 0.05f, 0.0f, 2.0f, 0.01f);
 		interface->declare(&fslider5, "3", "");
 		interface->declare(&fslider5, "unit", "Hz");
 		interface->addHorizontalSlider("Vibrato_Freq", &fslider5, 6.0f, 1.0f, 15.0f, 0.1f);
 		interface->declare(&fslider9, "3", "");
 		interface->declare(&fslider9, "tooltip", "A value between 0 and 1");
 		interface->addHorizontalSlider("Vibrato_Gain", &fslider9, 0.05f, 0.0f, 1.0f, 0.01f);
-		interface->declare(&fslider6, "3", "");
-		interface->declare(&fslider6, "tooltip", "Vibrato release duration");
-		interface->declare(&fslider6, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Release", &fslider6, 0.1f, 0.0f, 2.0f, 0.01f);
+		interface->declare(&fslider8, "3", "");
+		interface->declare(&fslider8, "tooltip", "Vibrato release duration");
+		interface->declare(&fslider8, "unit", "s");
+		interface->addHorizontalSlider("Vibrato_Release", &fslider8, 0.1f, 0.0f, 2.0f, 0.01f);
 		interface->closeBox();
 		interface->closeBox();
 		interface->openVerticalBox("Physical_Parameters");
@@ -459,12 +461,12 @@ class Voice_Form_dsp : public dsp {
 		float 	fSlow15 = (0.0010000000000000009f * loadPhonemeGains(fSlow0, 0));
 		float 	fSlow16 = (fConst11 * fslider5);
 		float 	fSlow17 = fslider6;
-		float 	fSlow18 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow17 == 0.0f) + (iConst0 * fSlow17))))));
-		float 	fSlow19 = fslider7;
-		float 	fSlow20 = (iConst0 * fSlow19);
-		float 	fSlow21 = ((fSlow19 == 0.0f) + fSlow20);
+		float 	fSlow18 = (iConst0 * fSlow17);
+		float 	fSlow19 = ((fSlow17 == 0.0f) + fSlow18);
+		float 	fSlow20 = fslider7;
+		float 	fSlow21 = (1.0f / ((fSlow20 == 0.0f) + (iConst0 * fSlow20)));
 		float 	fSlow22 = fslider8;
-		float 	fSlow23 = (1.0f / ((fSlow22 == 0.0f) + (iConst0 * fSlow22)));
+		float 	fSlow23 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow22 == 0.0f) + (iConst0 * fSlow22))))));
 		float 	fSlow24 = (100 * fslider9);
 		float 	fSlow25 = fentry1;
 		float 	fSlow26 = (fSlow9 + 0.030000000000000027f);
@@ -521,7 +523,7 @@ class Voice_Form_dsp : public dsp {
 			iRec13[0] = (iSlow3 & (iRec13[1] | (fRec15[1] >= 1)));
 			iRec14[0] = (iSlow3 * (1 + iRec14[1]));
 			int iTemp3 = (iSlow4 & (fRec15[1] > 0));
-			fRec15[0] = (((iTemp3 == 0) | (fRec15[1] >= 1e-06f)) * ((fSlow23 * ((1 - (iRec14[1] < fSlow21)) * ((((iRec13[1] == 0) & iSlow3) & (fRec15[1] < 1)) & (iRec14[1] > fSlow20)))) + (fRec15[1] * (1 - (fSlow18 * iTemp3)))));
+			fRec15[0] = (((iTemp3 == 0) | (fRec15[1] >= 1e-06f)) * ((fRec15[1] * (1 - (fSlow23 * iTemp3))) + (fSlow21 * ((1 - (iRec14[1] < fSlow19)) * ((((iRec13[1] == 0) & iSlow3) & (fRec15[1] < 1)) & (iRec14[1] > fSlow18))))));
 			float fTemp4 = float((fSlow25 + (fSlow24 * (fRec15[0] * ftbl0[int((65536.0f * fRec12[0]))]))));
 			fRec16[0] = fmodf(((fConst11 * fTemp4) + fRec16[1]),1);
 			float fTemp5 = faustpower<2>(((2 * fRec16[0]) - 1));

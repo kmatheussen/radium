@@ -15,8 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
-#include <Python.h>
+#include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -190,6 +189,26 @@ struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+}
+
+struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int fxnum){
+  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
+  if ((*wtrack)==NULL)
+    return NULL;
+
+  struct Tracks *track = (*wtrack)->track;
+  struct FXs *ret = ListFindElement1_num(&track->fxs->l,fxnum);
+  if (ret==NULL)
+    RError("FX #%d in track #%d in block #%d does not exist",fxnum,tracknum,blocknum);
+  
+  return ret;
+}
+
+struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  return getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
 }
 
 

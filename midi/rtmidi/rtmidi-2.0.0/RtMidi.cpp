@@ -1225,7 +1225,7 @@ extern "C" void *alsaMidiHandler( void *ptr )
       if ( !( data->ignoreFlags & 0x04 ) ) doDecode = true;
       break;
 
-		case SND_SEQ_EVENT_SYSEX:
+    case SND_SEQ_EVENT_SYSEX:
       if ( (data->ignoreFlags & 0x01) ) break;
       if ( ev->data.ext.len > apiData->bufferSize ) {
         apiData->bufferSize = ev->data.ext.len;
@@ -1523,7 +1523,11 @@ void MidiInAlsa :: openPort( unsigned int portNumber, const std::string portName
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
+    pthread_attr_setschedpolicy(&attr, SCHED_RR);
+
+    struct sched_param param = {0};
+    param.sched_priority=sched_get_priority_min(SCHED_RR);
+    pthread_attr_setschedparam(&attr, &param);
 
     inputData_.doInput = true;
     int err = pthread_create(&data->thread, &attr, alsaMidiHandler, &inputData_);
@@ -1582,8 +1586,12 @@ void MidiInAlsa :: openVirtualPort( std::string portName )
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_attr_setschedpolicy(&attr, SCHED_OTHER);
+    pthread_attr_setschedpolicy(&attr, SCHED_RR);
 
+    struct sched_param param = {0};
+    param.sched_priority=sched_get_priority_min(SCHED_RR);
+    pthread_attr_setschedparam(&attr, &param);
+      
     inputData_.doInput = true;
     int err = pthread_create(&data->thread, &attr, alsaMidiHandler, &inputData_);
     pthread_attr_destroy(&attr);

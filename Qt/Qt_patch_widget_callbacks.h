@@ -17,10 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
-#include "../common/trackreallines_proc.h"
-#include "../common/gfx_wtracks_proc.h"
 
 #include "Qt_patch_widget.h"
+
 
 class Patch_widget : public QWidget, public Ui::Patch_widget{
   Q_OBJECT;
@@ -76,6 +75,11 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
     for(int i=0;i<6;i++){
       PatchVoice *voice=&_voices[i];
 
+      get_t(i)->setStyle("cleanlooks");
+      get_v(i)->setStyle("cleanlooks");
+      get_s(i)->setStyle("cleanlooks");
+      get_l(i)->setStyle("cleanlooks");
+
       get_o(i)->setChecked(voice->is_on);
       get_o(i)->_patch = _patch;
       get_o(i)->_effect_num = i;
@@ -104,8 +108,11 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
 
   void update_peaks(){
     struct Tracker_Windows *window=root->song->tracker_windows;
-    TRACKREALLINES_update_peak_tracks(window,_patch);
+    window->wblock->block->is_dirty = true;
+    
 #if !USE_OPENGL
+    struct Tracker_Windows *window=root->song->tracker_windows;
+    TRACKREALLINES_update_peak_tracks(window,_patch);
     struct WBlocks *wblock=window->wblock;
     DrawUpAllPeakWTracks(window,wblock,_patch);
 #endif
@@ -248,7 +255,7 @@ public slots:
       new_name = "pip";
     }
 
-    printf("Calling Undo patchname. Old name: %s. New name: %s\n",_patch->name,new_name.ascii());
+    printf("Calling Undo patchname. Old name: %s. New name: %s\n",_patch->name,new_name.toUtf8().constData());
 
     Undo_PatchName_CurrPos(_patch);
 
@@ -264,10 +271,9 @@ public slots:
     {
       struct Tracker_Windows *window = root->song->tracker_windows;
       struct WBlocks *wblock = window->wblock;
-      struct WTracks *wtrack = wblock->wtrack;
       DO_GFX(
-             _patch->name = talloc_strdup((char*)new_name.ascii());
-             DrawWTrackHeader(window,wblock,wtrack);
+             _patch->name = talloc_strdup((char*)new_name.toUtf8().constData());
+             DrawAllWTrackHeaders(window,wblock);
              );
       EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
       editor->updateEditor();

@@ -30,7 +30,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TEXT_BOLD 32
 #define TEXT_SCALE 64 // Scales the text into the box.
 
+#if 0
+// better not expose this function. Many of the GFX_Message messages are never tested, and this particular function can only be called from the main thread.
+#ifdef USE_QT4
+#include <QString>
+int GFX_Message(vector_t *buttons, QString message);
+#endif
+#endif
+
+#define BLACK_COLOR_NUM 200
+#define WHITE_COLOR_NUM 201
+
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
+extern LANGSPEC const char *GFX_qVersion(void);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
 extern LANGSPEC void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval);
@@ -38,6 +50,9 @@ extern LANGSPEC void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command);
 extern LANGSPEC void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual);
 
+extern LANGSPEC bool GFX_MenuVisible(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_ShowMenu(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_HideMenu(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void QUEUE_GFX_C2V_bitBlt(
 				    struct Tracker_Windows *window,
@@ -68,6 +83,16 @@ extern LANGSPEC void GFX_enable_mouse_keyboard(void);
 extern LANGSPEC int GFX_CreateVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC int GFX_ShutDownVisual(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width);
+
+extern LANGSPEC void GFX_PositionUpperLeftArea(struct Tracker_Windows *tvisual, struct WBlocks *wblock);
+extern LANGSPEC void GFX_UpdateUpperLeft(struct Tracker_Windows *window, struct WBlocks *wblock);
+
+static inline void GFX_ScheduleRedraw(void){
+  if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
+    struct Tracker_Windows *window=root->song->tracker_windows;
+    window->must_redraw = true;
+  }
+}
 
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);
@@ -100,7 +125,8 @@ extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
-extern LANGSPEC void GFX_SetDefaultColors(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
+extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
 extern LANGSPEC int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum);
@@ -141,6 +167,8 @@ extern LANGSPEC void OS_GFX_Points(
                                    int where
                                    );
 
+extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
+extern LANGSPEC void QUEUE_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2,int mix_factor);
 extern LANGSPEC void QUEUE_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2,int mix_factor);
 
@@ -389,6 +417,7 @@ void GFXST_BorderType2(
 #define GFX_T_DrawTrackBorderDouble(a,b,c,d,e) GFXST_BorderType2(GFX_DrawTrackBorderDouble,a,b,c,d,e)
 
 #define GFX_SetMixColor QUEUE_GFX_SetMixColor
+#define GFX_CancelMixColor QUEUE_GFX_CancelMixColor
 
 #define GFX_Polygon QUEUE_GFX_Polygon
 #define GFX_Polyline QUEUE_GFX_Polyline

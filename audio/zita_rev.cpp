@@ -1,6 +1,6 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -12,6 +12,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -542,7 +544,7 @@ class Zita_dsp : public dsp {
 			fRec20[0] = fVec8[(IOTA-iConst23)&1023];
 			float 	fRec21 = (0.6f * fVec8[IOTA&1023]);
 			float fTemp6 = (fRec21 + (fRec17 + fTemp3));
-			fRec27[0] = ((fSlow12 * (fRec1[2] + fRec1[1])) + (fSlow11 * fRec27[1]));
+			fRec27[0] = ((fSlow12 * (fRec1[1] + fRec1[2])) + (fSlow11 * fRec27[1]));
 			fRec26[0] = ((fSlow52 * (fRec1[1] + (fSlow51 * fRec27[0]))) + (fSlow50 * fRec26[1]));
 			fVec9[IOTA&16383] = (1e-20f + (0.35355339059327373f * fRec26[0]));
 			fVec10[IOTA&8191] = (float)input1[i];

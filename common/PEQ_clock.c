@@ -60,7 +60,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "visual_proc.h"
-#include "gfx_upperleft_proc.h"
 
 #include "PEQ_clock_proc.h"
 
@@ -125,10 +124,11 @@ void PC_NewSecond(struct PEventQueue *peq,int doit){
 void UpdateClock(
 	struct Tracker_Windows *window
 ){
+#if 0
 	int clock_minutes,clock_seconds;
 	char temp[52];
-	int time=clock_time;
-        static int last_time = -1;
+	int64_t time=clock_time;
+        static int64_t last_time = -1;
 
 	if( ! pc->isplaying){
           if(last_time==-2)
@@ -155,6 +155,8 @@ void UpdateClock(
         last_time = time;
 
 //	ReleaseRSemaphore(ClockSemaphore);
+
+#endif
 }
 
 

@@ -66,7 +66,7 @@ extern int GetReallineFromY(
 extern int GetReallineAndPlaceFromY(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	int y,
+	float y,
 	Place *place,
 	Place *maxplace,
 	Place *minplace

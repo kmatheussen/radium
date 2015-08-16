@@ -23,19 +23,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "clipboard_tempos_copy_proc.h"
 #include "time_proc.h"
+#include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "tempos_proc.h"
 #include "gfx_wblocks_proc.h"
 #include "undo_tracks_proc.h"
+#include "undo_signatures_proc.h"
 #include "undo_lpbs_proc.h"
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
 #include "player_proc.h"
-
+#include "windows_proc.h"
+#include "notes_proc.h"
+#include "wblocks_proc.h"
+#include "Beats_proc.h"
 #include "clipboard_track_cut_proc.h"
 
+
+extern struct Signatures *cb_signature;
 extern struct LPBs *cb_lpb;
 extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
@@ -71,10 +78,10 @@ void CB_CutTrack(
 
 	cb_wtrack=CB_CopyTrack(wblock,wtrack);
 
-	if(window->curr_track_sub<0){
+        //	if(window->curr_track_sub<0){
 		wtrack->track->notes=NULL;
 		wtrack->track->stops=NULL;
-	}
+                //	}
 
 	while(fxs!=NULL){
 		(*fxs->fx->closeFX)(fxs->fx,wtrack->track);
@@ -94,24 +101,27 @@ void CB_CutTrack_CurrPos(
 	PlayStop();
 
 	switch(window->curr_track){
+		case SIGNATURETRACK:
+			Undo_Signatures_CurrPos(window);
+			cb_signature=CB_CopySignatures(block->signatures);
+			block->signatures=NULL;
+                        UpdateBeats(block);
+                        UpdateWBlockWidths(window, wblock);
+			//UpdateSTimes(block);
+			//UpdateWLPBs(window,wblock);
+			break;
 		case LPBTRACK:
 			Undo_LPBs_CurrPos(window);
 			cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
 			UpdateSTimes(block);
-			UpdateWLPBs(window,wblock);
-#if !USE_OPENGL
-			DrawUpLPBs(window,wblock);
-#endif
+                        UpdateBeats(block);
+			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:
 			Undo_Tempos_CurrPos(window);
 			cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
-			UpdateWTempos(window,wblock);
-#if !USE_OPENGL
-			DrawUpTempos(window,wblock);
-#endif
 			UpdateSTimes(block);
 			break;
 		case TEMPONODETRACK:
@@ -119,25 +129,26 @@ void CB_CutTrack_CurrPos(
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
-			UpdateWTempoNodes(window,wblock);
-#if !USE_OPENGL
-			DrawUpWTempoNodes(window,wblock);
-#endif
 			UpdateSTimes(block);
 			break;
 		default:
 			Undo_Track_CurrPos(window);
 			CB_CutTrack(window,wblock,wtrack);
-#if !USE_OPENGL
+                        //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,
 				window->wblock,
 				window->curr_track,
 				window->curr_track
 			);
-#endif
+                        SetNoteSubtrackAttributes(wtrack->track);
+                        ValidateCursorPos(window);
+                        //#endif
 			break;
 	}
+
+        
+        window->must_redraw=true;
 }
 
 

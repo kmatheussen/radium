@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_PLACEMENTISCALLINGNOW
 
 #include <math.h>
-#include <assert.h>
 
 #include "nsmtracker.h"
 
@@ -106,6 +105,7 @@ void PlaceHandleOverflow(Place *p){
 }
 
 
+#if 0
 /*************************************************************
   FUNCTION
     Calculating stuff.
@@ -238,6 +238,7 @@ p1->counter*=p2->line*p2->dividor
 p1->dividor*=p2->dividor
 */
 
+
 void PlaceDiv(Place *p1,  const Place *p2){
 	Place temp;
 	temp.line=0;
@@ -247,6 +248,8 @@ void PlaceDiv(Place *p1,  const Place *p2){
 
 	PlaceMul(p1,&temp);
 }
+#endif
+
 
 // most of the time, counter is 0. This is allso the procedure that is called most often.
 /*
@@ -266,6 +269,7 @@ float GetfloatFromPlace(Place *placement){
 	return (float)((float)(placement->line)+GetfloatFromCounterDividor(placement->counter,placement->dividor));
 }
 */
+
 
 void PlaceAddfloat(Place *p,float f){
 	float temp;
@@ -370,7 +374,7 @@ void PlaceTilLimit(Place *p, const Place *tp){
     p->counter=MAX_UINT32-1;
     p->dividor=MAX_UINT32;
 
-    assert(p->line>=0);
+    R_ASSERT(p->line>=0);
 
   }else{
 
@@ -417,6 +421,7 @@ gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c
 #endif
 
 #include <stdarg.h>
+#include <assert.h>
 
 void EndProgram(void){
   printf("ENDPROGRAM called\n");

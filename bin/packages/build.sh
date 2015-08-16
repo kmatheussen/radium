@@ -1,6 +1,19 @@
 #!/bin/bash
 
 set -e
+set -x
+
+unset CFLAGS
+unset CFLAGS
+unset CPPFLAGS
+unset LDFLAGS
+unset CXXFLAGS
+
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse"
+
+
 
 #rm -f /tmp/radium
 #ln -s `pwd` /tmp/radium
@@ -16,6 +29,7 @@ PREFIX=`dirname $PWD/$0`
 #make
 #make install
 #cd ..
+
 
 if [ $# -ne 2 ] ; then
     echo "Usage: PYTHONBIN use_pygtk(yes/no) QTDIR"
@@ -87,26 +101,25 @@ cd ..
 tar xvzf s7.tar.gz
 
 
-# gc.tar.gz is currently gc-7.2d, with ABORT made into a dummy operation.
-
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-tar xvzf gc.tar.gz
+tar xvzf gc-7.2f.tar.gz
 cd gc-7.2
+patch -p1 <../gc.patch
 echo "void RADIUM_ensure_bin_packages_gc_is_used(void){}" >>malloc.c
-CFLAGS=-fPIC ./configure --prefix=$PREFIX
-CFLAGS=-fPIC make -j3
+CFLAGS="-fPIC -g -O2" ./configure --prefix=$PREFIX
+CFLAGS="-fPIC -g -O2" make -j3
 cd ..
 
-#tar xvjf xmessage-1.0.3.tar.bz2
-#cd xmessage-1.0.3
-#./configure --prefix=$PREFIX
-#make -j3
-#cd ..
+tar xvjf xmessage-1.0.3.tar.bz2
+cd xmessage-1.0.3
+./configure --prefix=$PREFIX
+make -j3
+cd ..
 
 tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6
 make clean
-CFLAGS="-O3" CPPFLAGS="-O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
+CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
 # --enable-debug
 make -j3
 cd ..
@@ -114,7 +127,7 @@ cd ..
 tar xvzf libgig.tar.gz
 cd libgig
 make clean
-CFLAGS="-O3" CPPFLAGS="-O3" ./configure
+CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure
 make -j3
 cd ..
 

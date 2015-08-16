@@ -76,7 +76,7 @@ bool PC_GetNextNoteAfterCurrentBlock(NInt tracknum, int *playlistaddpos, struct 
 }
 
 static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, STime addtime,bool before,bool add_latency){
-	int time=pc->seqtime;
+	STime time=pc->seqtime;
 	int playpos;
 
 	if(addplaypos>0){
@@ -98,6 +98,9 @@ static void PC_InsertElement_private(struct PEventQueue *peq, int addplaypos, ST
 
 	//peq->l.time=addtime + time + (add_latency ? LATENCY : 0); // This didn't work properly I don't quite understand the code.
 	peq->l.time=addtime + time;
+
+        // (time can be negative when starting to play.)
+        // R_ASSERT_RETURN_IF_FALSE(peq->l.time >= 0);
 
 	peq->playpos=pc->playpos+addplaypos;
 
@@ -124,6 +127,13 @@ void PC_InsertElement_a(
 	struct PEventQueue *peq, int addplaypos, STime addtime
 ){
   PC_InsertElement_private(peq,addplaypos,addtime,false,false);
+}
+
+
+void PC_InsertElement_a_latencycompencated(
+	struct PEventQueue *peq, int addplaypos, STime addtime
+){
+  PC_InsertElement_private(peq,addplaypos,addtime,false,true);
 }
 
 

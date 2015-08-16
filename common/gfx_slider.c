@@ -25,8 +25,56 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "gfx_slider_proc.h"
 
-
 void DrawSlider(
+                struct Tracker_Windows *window,
+                TBox *box,
+                float f_val,
+                float f_min,
+                float f_max,
+                bool onoff,
+                int where
+){
+
+  int y1=box->y1;
+  int y2=box->y2;
+  
+  int x = scale(f_val, f_min,f_max, box->x1, box->x2);
+
+  if (!onoff)
+    GFX_SetMixColor(window,12,0,300);
+  
+  GFX_FilledBox(
+                window,12,
+                box->x1,y1,
+                x,y2,
+                where
+                );
+
+  //  if (!onoff)
+  //  GFX_SetMixColor(window,0,0,500);
+
+  // background
+  GFX_SetMixColor(window,0,11,500);
+  GFX_FilledBox(
+                window,0,
+                x,y1,
+                box->x2,y2,
+                where
+                );
+  
+  // border
+  GFX_SetMixColor(window,BLACK_COLOR_NUM,0,300);
+  GFX_Box(
+          window,1,
+          box->x1+1,y1,
+          box->x2,y2,
+          where
+          );
+}
+
+
+#if 0
+void DrawSlider_old(
 	struct Tracker_Windows *window,
 	TBox *box,
 	float f_val,
@@ -265,3 +313,4 @@ void DrawSlider(
 	);
 	}
 }
+#endif

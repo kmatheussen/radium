@@ -73,7 +73,7 @@ void *Undo_Do_Tempos(
 
 	wblock->block->tempos=undo_tempos;
 
-	UpdateWTempos(window,wblock);
+	//UpdateWTempos(window,wblock);
 
 	UpdateSTimes(wblock->block);
 

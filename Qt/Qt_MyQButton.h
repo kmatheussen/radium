@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QToolButton>
 
+#include "../audio/SoundPlugin.h"
+
 #include "Qt_MyQCheckBox.h"
 
 struct MyQButton : public QToolButton{
@@ -28,9 +30,13 @@ struct MyQButton : public QToolButton{
 
 
   void paintEvent ( QPaintEvent * ev ){
+    //QToolButton::paintEvent(ev);
     QPainter p(this);
+    //p.eraseRect(rect());
+    //printf("isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
     CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text());
   }
+  
 };
 
 

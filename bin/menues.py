@@ -15,6 +15,7 @@
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 import sys
+import platform
 
 import string,sys,os,cPickle
 
@@ -63,8 +64,6 @@ def parse_user_keys():
       code2read[key.strip()] = value.strip()
 
 
-import platform
-
 g_meta_name = "Meta" if platform.system()=="Linux" else ("Cmd" if platform.system()=="Darwin" else "Win")
 
 code2read={"CTRL_L":"Left Ctrl",
@@ -102,12 +101,13 @@ class LineParser:
 
     file=open(filename,'r')
 
-    self.lines=map(lambda x:
-                   self.constructmenuitemstring(string.split(x,"|"),keybindingsdict),
-                   filter(lambda x:
-                          len(x)>0 and x[0]!="#",
-                          map(lambda x:
-                              string.rstrip(x),file.readlines())))
+    self.lines=map(lambda x: self.constructmenuitemstring(string.split(x,"|"),keybindingsdict),
+                   filter(lambda x: len(x)>0 and x[0]!="#",
+                          map(lambda x: string.rstrip(x),
+                              file.readlines()
+                              )
+                        )
+                   )
 
     file.close()
     self.currline=0
@@ -155,7 +155,8 @@ class LineParser:
     if currlevel<numtabs:
       return -3,-3
     self.currline+=1
-    return numtabs,string.lstrip(self.lines[self.currline-1])
+    line = string.lstrip(self.lines[self.currline-1])
+    return numtabs,line
 
 
 class Menu:

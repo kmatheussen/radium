@@ -14,13 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <math.h>
 
 #include "nsmtracker.h"
 #include "list_proc.h"
-#include "trackreallines_proc.h"
 #include "gfx_subtrack_proc.h"
 #include "fxlines_proc.h"
-#include "gfx_wtracks_proc.h"
 #include "windows_proc.h"
 #include "undo_blocks_proc.h"
 #include "clipboard_track_paste_proc.h"
@@ -32,10 +31,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "playerclass.h"
 #include "tracks_proc.h"
+#include "notes_proc.h"
 
 #include "wtracks_proc.h"
 
 extern PlayerClass *pc;
+
 
 
 
@@ -45,6 +46,17 @@ void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 	ListRemoveElement1(&wblock->wtracks,&temp->l);
 }
 
+struct WTracks *WTRACK_new(void){
+  struct WTracks *wtrack=talloc(sizeof(struct WTracks));
+
+  //wtrack->pianoroll_on = true;
+  wtrack->pianoroll_on = false;
+  wtrack->pianoroll_lowkey = 48;
+  wtrack->pianoroll_highkey = 60;
+  wtrack->pianoroll_width = 240;
+  
+  return wtrack;
+}
 
 void NewWTrack(
 	struct Tracker_Windows *window,
@@ -59,11 +71,11 @@ void NewWTrack(
 	wtrack->fxwidth=window->fontwidth*10;
 	wtrack->notesonoff=1;
 	wtrack->fxonoff=1;
-	wtrack->num_vel=1;
+	//wtrack->num_vel=1;
 
-	NewTrackRealLines(wblock,wtrack);
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
-
+#endif
 	ListAddElement1(&wblock->wtracks,&wtrack->l);
 }
 
@@ -83,14 +95,13 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 
 	while(track!=NULL){
 		if(wtrack==NULL){
-			wtrack=talloc(sizeof(*new));
-			if(wtrack==NULL) return;
+                        wtrack=WTRACK_new();
 			NewWTrack(window,wblock,(struct WTracks *)wtrack,(struct Tracks *)track);
 		}
 
 		if(track->l.num!=wtrack->l.num){
-			new=talloc(sizeof(*new));
-			NewWTrack(window,wblock,new,track);
+                        new=WTRACK_new();
+  			NewWTrack(window,wblock,new,track);
 			return;
 		}
 
@@ -99,6 +110,16 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 	}
 }
 
+static int WTRACK_get_pianoroll_width(
+                                      struct Tracker_Windows *window,
+                                      struct WTracks *wtrack
+                                      )
+{
+  if (wtrack->pianoroll_on==false)
+    return 0;
+  
+  return (wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey) * 3 * ceilf(((float)window->fontheight/4.0f));
+}
 
 // Function to use when the coordinates are not calculated.
 int WTRACK_getWidth(
@@ -109,6 +130,7 @@ int WTRACK_getWidth(
   return 
     wtrack->notesonoff*((window->fontwidth*wtrack->notelength)) +
     2 + (wtrack->fxwidth*wtrack->fxonoff)
+    + WTRACK_get_pianoroll_width(window, wtrack)
     + 3
     ;
 }
@@ -121,10 +143,19 @@ void UpdateWTrackCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	int wtrack_notearea_x
+	int wtrack_x
 ){
 
-	wtrack->notearea.x  = wtrack_notearea_x;
+        int x = wtrack_x;
+
+        if (wtrack->pianoroll_on) {
+          wtrack->pianoroll_width = WTRACK_get_pianoroll_width(window, wtrack);
+          wtrack->pianoroll_area.x = x;
+          x = x + wtrack->pianoroll_width;
+          wtrack->pianoroll_area.x2 = x;
+        }
+  
+	wtrack->notearea.x  = x;
 	wtrack->notearea.x2 = wtrack->notearea.x  + wtrack->notesonoff*(wtrack->notewidth+(window->fontwidth*(0+wtrack->notelength)));
         if(wtrack->is_wide)
           wtrack->notearea.x2 += 100;
@@ -132,27 +163,32 @@ void UpdateWTrackCoordinates(
 	wtrack->fxarea.x    = wtrack->notearea.x2 + 2;
 	wtrack->fxarea.x2   = wtrack->fxarea.x    + wtrack->fxonoff*wtrack->fxwidth;
 
-	wtrack->x  = wtrack->notearea.x;
+	wtrack->x  = wtrack_x;
 	wtrack->y  = wblock->a.y1;
 	wtrack->y2 = wblock->a.y2;
 	wtrack->x2 = wtrack->fxarea.x2;
 
+        int y1_ = (wblock->a.y1+wblock->linearea.y)/2;
+        int y2_ = (y1_+wblock->linearea.y)/2;
+
 	wtrack->pan.x1 = wtrack->fxarea.x;
 	wtrack->pan.x2 = wtrack->x2;
-	wtrack->pan.y1 = wblock->a.y1+(window->org_fontheight);
-	wtrack->pan.y2 = wtrack->pan.y1+(window->org_fontheight/2)-2;
+	//wtrack->pan.y1 = wblock->a.y1+(window->systemfontheight) + WTRACKS_SPACE*2;
+	wtrack->pan.y1 = y1_;
+	wtrack->pan.y2 = y2_-1;
 
 //	wtrack->panonoff.x1 = wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)/2 - (window->fontwidth/2);
 //	wtrack->panonoff.x2 = wtrack->panonoff.x1+window->fontwidth;
-	wtrack->panonoff.x1=wtrack->notearea.x+1;
-	wtrack->panonoff.x2=wtrack->notearea.x2-1;
+	wtrack->panonoff.x1 = wtrack->notearea.x+1;
+	wtrack->panonoff.x2 = wtrack->notearea.x2-1;
 	wtrack->panonoff.y1 = wtrack->pan.y1;
 	wtrack->panonoff.y2 = wtrack->pan.y2;
 
 	wtrack->volume.x1 = wtrack->fxarea.x;
 	wtrack->volume.x2 = wtrack->x2;
 	wtrack->volume.y1 = wtrack->pan.y2+2;
-	wtrack->volume.y2 = wblock->a.y1+(window->org_fontheight*2)-2;
+	//wtrack->volume.y2 = wblock->a.y1+(window->systemfontheight*2)-2;
+	wtrack->volume.y2 = wtrack->volume.y1 + (wtrack->pan.y2-wtrack->pan.y1);//wblock->linearea.y-1;
 
 	wtrack->volumeonoff.x1 = wtrack->panonoff.x1;
 	wtrack->volumeonoff.x2 = wtrack->panonoff.x2;
@@ -193,11 +229,11 @@ void UpdateAllWTracksCoordinates(
 	if(wtrack==NULL) return;
 
 	while(wtrack!=NULL){
-	  if(wtrack->num_vel==0) wtrack->num_vel=1;
+          SetNoteSubtrackAttributes(wtrack->track); // need track->num_subtracks variable
 	  wtrack=NextWTrack(wtrack);
 	}
-
-	leftX=wblock->temponodearea.x2+3;
+        
+	leftX = wblock->t.x1;
 
 	wtrack=wblock->wtracks;
 	while(wtrack->l.num < wblock->left_track){
@@ -212,8 +248,8 @@ void UpdateAllWTracksCoordinates(
         }
 
 	if(wblock->left_subtrack>-1){
-	  leftX-=(wtrack->fxwidth*wblock->left_subtrack/wtrack->num_vel)
-	    + (wblock->left_subtrack>0 ? 1 : 0);
+	  leftX -= (wtrack->fxwidth*wblock->left_subtrack/wtrack->track->num_subtracks)
+       	           + (wblock->left_subtrack>0 ? 1 : 0);
 	}
 
 	UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);
@@ -242,8 +278,8 @@ void UpdateAllWTracksCoordinates(
 	while(wtrack!=NULL){
 		wblock->right_track=wtrack->l.num;
 		if(NextWTrack(wtrack)==NULL){
-			wblock->right_subtrack=wtrack->num_vel-1;
-			goto exit;
+                  wblock->right_subtrack=wtrack->track->num_subtracks-1;
+                  goto exit;
 		}
 		if(NextWTrack(wtrack)->notearea.x>=wblock->a.x2-2) break;
 		wtrack=NextWTrack(wtrack);
@@ -271,9 +307,8 @@ void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 ){
   //  struct WTracks *startwtrack,*endwtrack;
 
-	UpdateSomeTrackReallines(window,wblock,starttrack,endtrack);
-	UpdateSomeFXNodeLines(window,wblock,starttrack,endtrack);
 #if !USE_OPENGL
+	UpdateSomeFXNodeLines(window,wblock,starttrack,endtrack);
 	UpdateAndClearSomeWTracks(window,wblock,starttrack,endtrack,wblock->top_realline,wblock->bot_realline);
 #endif
 
@@ -320,12 +355,35 @@ void ChangeNoteLength_Block_CurrPos(
 	struct Tracker_Windows *window
 ){
 	struct WTracks *wtrack=window->wblock->wtrack;
-	int size=wtrack->notelength=wtrack->notelength==3?2:3;
-	wtrack=window->wblock->wtracks;
+	int size = wtrack->notelength==3?2:3;
 
+        wtrack=window->wblock->wtracks; // not setting the same value
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,size);
 		wtrack=NextWTrack(wtrack);
+	}
+
+	window->must_redraw = true;
+}
+
+void ChangeNoteAreaWidth_CurrPos(
+	struct Tracker_Windows *window
+){
+	struct WTracks *wtrack=window->wblock->wtrack;
+        wtrack->is_wide = !wtrack->is_wide;
+	window->must_redraw = true;
+}
+
+void ChangeNoteAreaWidth_Block_CurrPos(
+	struct Tracker_Windows *window
+){
+	struct WTracks *wtrack=window->wblock->wtrack;
+	bool is_wide = !wtrack->is_wide;
+
+        wtrack=window->wblock->wtracks; // not setting the same value
+	while(wtrack!=NULL){
+          wtrack->is_wide = is_wide;
+          wtrack=NextWTrack(wtrack);
 	}
 
 	window->must_redraw = true;
@@ -337,11 +395,14 @@ void MinimizeTrack_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
 
+        int num_subtracks = GetNumSubtracks(wtrack->track);
+        
 	SetNoteLength(window,wtrack,2);
-	wtrack->fxwidth=window->fontwidth*wtrack->num_vel*2;
+	wtrack->fxwidth=window->fontwidth*num_subtracks*2;
 
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
-	UpdateTrackReallines(window,wblock,wtrack);
+#endif       
 
 	window->must_redraw = true;
 }
@@ -376,7 +437,7 @@ void MinimizeBlock_CurrPos(
 	int nummul=1;
 	//	int orgnotelenght=wblock->wtrack->notelength;
 
-	Undo_Block_CurrPos(window);
+        Undo_Block_CurrPos(window);
 
 	SetCursorPosConcrete(window,wblock,0,-1);
 
@@ -398,7 +459,8 @@ void MinimizeBlock_CurrPos(
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,2);
-		wtrack->fxwidth=window->fontwidth*wtrack->num_vel;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
+		wtrack->fxwidth=window->fontwidth*num_subtracks;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -414,7 +476,8 @@ void MinimizeBlock_CurrPos(
 	wblock->temponodearea.width=window->fontwidth*3;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,3);
-		wtrack->fxwidth=window->fontwidth*wtrack->num_vel;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
+		wtrack->fxwidth=window->fontwidth*num_subtracks;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -447,7 +510,8 @@ void MinimizeBlock_CurrPos(
 		wtrack=wblock->wtracks;
 		while(wtrack!=NULL){
 			SetNoteLength(window,wtrack,notelength);
-			wtrack->fxwidth=(window->fontwidth*wtrack->num_vel*nummul)+inc;
+                        int num_subtracks = GetNumSubtracks(wtrack->track);
+			wtrack->fxwidth=(window->fontwidth*num_subtracks*nummul)+inc;
 			wtrack=NextWTrack(wtrack);
 		}
 		UpdateWBlockCoordinates(window,window->wblock);
@@ -457,7 +521,8 @@ void MinimizeBlock_CurrPos(
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
 		SetNoteLength(window,wtrack,notelength);
-		wtrack->fxwidth=(window->fontwidth*wtrack->num_vel*nummul)+inc-1;
+                int num_subtracks = GetNumSubtracks(wtrack->track);
+		wtrack->fxwidth=(window->fontwidth*num_subtracks*nummul)+inc-1;
 		wtrack=NextWTrack(wtrack);
 	}
 	UpdateWBlockCoordinates(window,window->wblock);
@@ -473,6 +538,14 @@ update:
 		wtrack=NextWTrack(wtrack);
 	}
 	*/
+
+#if 1
+        // small adjustment.
+        {
+          struct WTracks *rightwtrack = (struct WTracks *)ListFindElement1(&wblock->wtracks->l, wblock->right_track);
+          rightwtrack->x2 = wblock->a.x2;
+        }
+#endif
 
 	window->must_redraw = true;
 
@@ -503,11 +576,13 @@ void SwapTrack_CurrPos(
 	CB_PasteTrack(wblock,next,wtrack);
 	CB_PasteTrack(wblock,temp,next);
 
+#if !USE_OPENGL       
 	UpdateFXNodeLines(window,wblock,wtrack);
-	UpdateTrackReallines(window,wblock,wtrack);
+#endif
 
+#if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,next);
-	UpdateTrackReallines(window,wblock,next);
+#endif
 
 	window->must_redraw = true;
 
@@ -536,8 +611,7 @@ void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 int WTRACK_getx1(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	NInt tracknum,
-	bool onlyfx
+	NInt tracknum
 ){
 
 	struct WTracks *wtrack;
@@ -548,6 +622,9 @@ int WTRACK_getx1(
 		break;
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x;
+		break;
+	case SIGNATURETRACK:
+		return wblock->signaturearea.x;
 		break;
 	case LPBTRACK:
 		return wblock->lpbTypearea.x;
@@ -560,18 +637,14 @@ int WTRACK_getx1(
 		break;
 	}
 
-	if(tracknum>wblock->right_track){
-		RError("illegal starttrack at function WTRACK_getx1 in file wtracks.c");
-		return wblock->temponodearea.x2+3;
+	if(tracknum>=wblock->block->num_tracks || tracknum<0){
+          RError("illegal track number %d supplied function WTRACK_getx1 in file wtracks.c",tracknum);
+          return wblock->temponodearea.x2+3;
 	}
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
-	if(onlyfx==false){
-		return R_BOUNDARIES(wtrack->notearea.x,wblock->t.x1,wblock->t.x2);
-	}
-
-	return R_BOUNDARIES(wtrack->fxarea.x,wblock->t.x1,wblock->t.x2);
+	return wtrack->x;
 }
 
 
@@ -585,37 +658,45 @@ int WTRACK_getx2(
 
 	switch(tracknum){
 	case LINENUMBTRACK:
-		return wblock->zoomlinearea.x2;
+		return wblock->linenumarea.x2;
 		break;
 	case TEMPOCOLORTRACK:
 		return wblock->tempocolorarea.x2;
 		break;
+	case SIGNATURETRACK:
+		return wblock->signaturearea.x2;
+		break;
 	case LPBTRACK:
-		return wblock->lpbTypearea.x2;
+		return wblock->lpbarea.x2;
 		break;
 	case TEMPOTRACK:
-		return wblock->tempoTypearea.x2;
+		return wblock->tempoarea.x2;
 		break;
 	case TEMPONODETRACK:
 		return wblock->temponodearea.x2;
 		break;
 	}
 
-#if 0
-        // This can happen if we have deleted tracks.
-	if(tracknum > wblock->right_track){
-		RError("illegal starttrack at function WTRACK_getx2 in file wtracks.c (%d > %d)",tracknum,wblock->right_track);
-		return wblock->t.x2;
-	}
-#endif
-
-	if(tracknum>=wblock->right_track){
-		return wblock->t.x2;
+        if(tracknum>=wblock->block->num_tracks || tracknum<0){
+          RError("illegal track number %d supplied function WTRACK_getx2 in file wtracks.c",tracknum);
+          return wblock->temponodearea.x2+3;
 	}
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
 
-	return R_MAX(wtrack->fxarea.x2,wblock->t.x1);
+	return wtrack->x2;
 
+}
+
+struct WTracks *WTRACK_get(struct WBlocks *wblock, int x){
+  struct WTracks *wtrack = wblock->wtracks;
+
+  while(wtrack!=NULL){
+    if(x>=wtrack->x && x<wtrack->x2)
+      break;
+    wtrack = NextWTrack(wtrack);
+  }
+
+  return wtrack;  
 }
 

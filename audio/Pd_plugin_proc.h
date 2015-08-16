@@ -20,15 +20,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Pd_plugin.h"
 
-extern LANGSPEC void PD_set_controller_name(SoundPlugin *plugin, int n, const char *name);
-extern LANGSPEC Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n);
-extern LANGSPEC void PD_set_qtgui(SoundPlugin *plugin, void *qtgui);
-extern LANGSPEC void PD_delete_controller(SoundPlugin *plugin, int controller_num);
+extern LANGSPEC void PD_set_controller_name(struct SoundPlugin *plugin, int n, const wchar_t *name);
+extern LANGSPEC Pd_Controller *PD_get_controller(struct SoundPlugin *plugin, int n);
+extern LANGSPEC void PD_set_qtgui(struct SoundPlugin *plugin, void *qtgui);
+extern LANGSPEC void PD_delete_controller(struct SoundPlugin *plugin, int controller_num);
 
-extern LANGSPEC void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state);
-extern LANGSPEC void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state);
+extern LANGSPEC void PD_recreate_controllers_from_state(struct SoundPlugin *plugin, hash_t *state);
+extern LANGSPEC void PD_create_controllers_from_state(struct SoundPlugin *plugin, hash_t *state);
 
 extern LANGSPEC void RT_PD_set_absolute_time(int64_t time);
-extern LANGSPEC void RT_PD_set_subline(int64_t time, int64_t time_nextsubline, Place *p);
+extern LANGSPEC void RT_PD_set_line(int64_t time, int64_t time_line, int line);
+extern LANGSPEC void RT_PD_set_realline(int64_t time, int64_t time_nextrealline, Place *p);
 
 #endif // AUDIO_PD_PLUGIN_PROC_H

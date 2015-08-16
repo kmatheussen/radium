@@ -14,93 +14,93 @@ xm.txt says: "By Mr.H of Triton in 1994."
 
 
 
-static int xi_get_sample_number_for_note(FILE *file, int note_num){
+static int xi_get_sample_number_for_note(disk_t *file, int note_num){
   if(note_num>95)
     note_num=95;
-  fseek(file,0x42+note_num,SEEK_SET);
+  DISK_set_pos(file, 0x42+note_num);
   return read_8int(file);
 }
 
-static int xi_get_num_samples(FILE *file){ //i.e. the number of sounds in the file. Not number of frames.
-  fseek(file,0x128,SEEK_SET);
+static int xi_get_num_samples(disk_t *file){ //i.e. the number of sounds in the file. Not number of frames.
+  DISK_set_pos(file,0x128);
   return read_le16int(file);
 }
 
-static int xi_get_loop_type(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 14,SEEK_SET);
+static int xi_get_loop_type(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 14);
   return read_8int(file) & 3;
 }
 
-static int xi_get_bits_per_frame(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 14,SEEK_SET);
+static int xi_get_bits_per_frame(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 14);
   if (read_8int(file) & 16)
     return 16;
   else
     return 8; // I assume. Documentation doesn't say anything.
 }
 
-static int xi_get_bytes_per_frame(FILE *file, int sample_num){
+static int xi_get_bytes_per_frame(disk_t *file, int sample_num){
   return xi_get_bits_per_frame(file,sample_num) / 8;
 }
 
-static int xi_get_num_frames(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num),SEEK_SET);
+static int xi_get_num_frames(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num));
   return read_le32int(file) / xi_get_bytes_per_frame(file, sample_num);
 }
 
-static int xi_get_loop_start(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 4,SEEK_SET);
+static int xi_get_loop_start(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 4);
   return read_le32int(file) / xi_get_bytes_per_frame(file, sample_num);
 }
 
-static int xi_get_loop_end(FILE *file, int sample_num){
+static int xi_get_loop_end(disk_t *file, int sample_num){
   int start = xi_get_loop_start(file,sample_num);
-  fseek(file,0x12a + (0x28*sample_num) + 8,SEEK_SET);
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 8);
   return start + (read_le32int(file) / xi_get_bytes_per_frame(file, sample_num));
 }
 
-static float xi_get_sample_volume(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 12,SEEK_SET);
+static float xi_get_sample_volume(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 12);
   return read_8int(file) / (float)0x40;
 }
 
 
-static float xi_get_sample_finetune(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 13,SEEK_SET);
+static float xi_get_sample_finetune(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 13);
   return read_8int_signed(file); // -128 -> 128
 }
 
 #if 0
-static int xi_get_middle_note(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 16,SEEK_SET);
+static int xi_get_middle_note(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 16);
   int transpose = read_8int_signed(file);
   printf("transpose for %d: %d\n",sample_num,transpose);
   return 48+transpose; // 48 = "C-4". (And from xm.txt: 0 == "C-0")
 }
 #endif
 
-static int xi_get_relnote(FILE *file, int sample_num){
-  fseek(file,0x12a + (0x28*sample_num) + 16,SEEK_SET);
+static int xi_get_relnote(disk_t *file, int sample_num){
+  DISK_set_pos(file,0x12a + (0x28*sample_num) + 16);
   return read_8int_signed(file);
 }
 
-static void xi_seek_to_sample(FILE *file, int sample_num){
+static void xi_seek_to_sample(disk_t *file, int sample_num){
   int num_samples=xi_get_num_samples(file);
 
-  fseek(file,0x12a + (0x28*num_samples),SEEK_SET);
+  DISK_set_pos(file,0x12a + (0x28*num_samples));
 
   int i;
   for(i=0;i<sample_num;i++){
-    long pos = ftell(file);
+    long pos = DISK_pos(file);
     int num_frames = xi_get_num_frames(file,i);
     int bytes_per_frame = xi_get_bytes_per_frame(file,i);
-    fseek(file,pos + (num_frames*bytes_per_frame),SEEK_SET);
+    DISK_set_pos(file,pos + (num_frames*bytes_per_frame));
   }
 }
 
 #if 0
 typedef struct{
-  FILE *file;
+  disk_t *file;
   int8_t prev_sample_value_8;  // must be same type as data since it wraps around
   int16_t prev_sample_value_16;  // must be same type as data since it wraps around
   int bits_per_sample;
@@ -123,13 +123,13 @@ static float xi_read_next_sample(xi_sample_reader_t *sample_reader){
 }
 #endif
 
-static float *xi_get_sample(FILE *file, int sample_num){
+static float *xi_get_sample(disk_t *file, int sample_num){
   int    num_frames     = xi_get_num_frames(file,sample_num);
   float *sample         = calloc(sizeof(float),num_frames);
   int    bits_per_frame = xi_get_bits_per_frame(file,sample_num);
 
   if(sample==NULL){
-    RError("Out of memory? Failed to allocate %d bytes\n",num_frames*sizeof(float));
+    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*sizeof(float));
     return NULL;
   }
 
@@ -138,10 +138,10 @@ static float *xi_get_sample(FILE *file, int sample_num){
   if(bits_per_frame==16){
     int16_t *s16=calloc(sizeof(int16_t),num_frames);
     if(s16==NULL){
-      RError("Out of memory? Failed to allocate %d bytes\n",num_frames*2);
+      GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*2);
       return sample;
     }
-    if(fread(s16, 1, 2*num_frames, file)!=2*num_frames)
+    if(DISK_read_binary(file, s16, 2*num_frames) != 2*num_frames)
       fprintf(stderr,"Reading file failed\n");
     convert_16_bit_little_endian_to_native(s16,num_frames);
 
@@ -151,13 +151,14 @@ static float *xi_get_sample(FILE *file, int sample_num){
       value     += s16[i];
       sample[i]  = value / 32768.0f;
     }
+    free(s16);
   }else{
     int8_t *s8=calloc(sizeof(int8_t),num_frames);
     if(s8==NULL){
-      RError("Out of memory? Failed to allocate %d bytes\n",num_frames);
+      GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames);
       return sample;
     }
-    if(fread(s8, 1, num_frames, file)!=num_frames)
+    if(DISK_read_binary(file, s8, num_frames) != num_frames)
       fprintf(stderr,"Reading file failed\n");
 
     int8_t value=0;  // must be same type as data since it wraps around
@@ -166,6 +167,7 @@ static float *xi_get_sample(FILE *file, int sample_num){
       value     += s8[i];
       sample[i]  = value / 128.0f;
     }
+    free(s8);
   }
 
 #if 0
@@ -181,7 +183,7 @@ static float *xi_get_sample(FILE *file, int sample_num){
   return sample;
 }
 
-static double xi_get_frequency(FILE *file, int note, int sample_num){
+static double xi_get_frequency(disk_t *file, int note, int sample_num){
   double relnote = xi_get_relnote(file,sample_num);
   double finetune = xi_get_sample_finetune(file,sample_num);
 
@@ -197,10 +199,10 @@ static double xi_get_frequency(FILE *file, int note, int sample_num){
 //
 // Also, the interface for loading xi intruments with libsndfile is currently too limited, so we have to parse the files manually anyway.
 
-bool load_xi_instrument(Data *data,const char *filename){
+bool load_xi_instrument(Data *data,const wchar_t *filename){
   bool ret=false;
 
-  FILE *file=fopen(filename,"r");
+  disk_t *file=DISK_open_binary_for_reading(filename);
   if(file==NULL){
     fprintf(stderr,"Could not open file\n");
     return ret;
@@ -208,7 +210,7 @@ bool load_xi_instrument(Data *data,const char *filename){
 
   {
     char header_id[200]={0};
-    if(fread(header_id,1,15,file)!=15){
+    if(DISK_read_binary(file, header_id,15)!=15){
       printf("File not big enough to be xi instrument.\n");
       goto exit;
     }
@@ -261,8 +263,11 @@ bool load_xi_instrument(Data *data,const char *filename){
   }
 
   ret=true;
+  
  exit:
-  fclose(file);
+
+  DISK_close_and_delete(file);
+
   return ret;
 }
 

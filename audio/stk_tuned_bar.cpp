@@ -4,7 +4,7 @@
 // copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.55 (http://faust.grame.fr)
+// Code generated with Faust 0.9.58 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -16,6 +16,8 @@ template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
 template <> 	 inline int faustpower<1>(int x) 		{ return x; }
 #include <math.h>
 #include <string>
+
+#include <vector>
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
@@ -520,7 +522,7 @@ class Tuned_Bar_dsp : public dsp {
 			fRec24[0] = ((fTemp10 * fTemp15) + (fTemp9 * fRec24[1]));
 			fRec23[0] = ((fTemp10 * fRec24[1]) + (fTemp2 * fTemp15));
 			fRec22[0] = ((fTemp10 * fRec23[1]) + (fTemp2 * fTemp14));
-			fRec21[0] = ((fTemp10 * fRec22[1]) + (fTemp2 * fTemp13));
+			fRec21[0] = ((fTemp2 * fTemp13) + (fTemp10 * fRec22[1]));
 			fRec20[0] = ((fTemp10 * fRec21[1]) + (fTemp2 * fTemp12));
 			fRec19[0] = ((fTemp10 * fRec20[1]) + (fTemp2 * fTemp11));
 			float fTemp16 = (fRec3[0] * (((fSlow27 * (fVec4[0] + fVec4[1])) + (fSlow26 * fVec4[0])) + (fSlow25 * faustpower<2>(fVec4[0]))));

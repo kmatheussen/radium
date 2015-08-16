@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../midi/midi_i_plugin.h"
 #include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_menues_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/instruments_proc.h"
@@ -179,6 +180,14 @@ void midi_allNotesOff(void){
 
 void midi_allSoundsOff(void){
   MIDIAllSoundsOff();
+}
+
+void midi_recordAccurately(bool accurately){
+  MIDI_set_record_accurately(accurately);
+}
+
+void midi_alwaysRecordVelocity(bool doit){
+  MIDI_set_record_velocity(doit);
 }
 
 void midi_setInputPort(void){

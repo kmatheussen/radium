@@ -28,13 +28,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheader_volume_proc.h"
 
 
+static void DrawOnOffBox(
+                         struct Tracker_Windows *window,
+                         const TBox box,
+                         bool onoff
+                         )
+{
+	/* On/off box stuff. */
+
+  // border
+  GFX_SetMixColor(window,BLACK_COLOR_NUM,0,300);
+
+  GFX_T_Box(
+            window,BLACK_COLOR_NUM,
+            box.x1,box.y1,
+            box.x2,box.y2,
+            PAINT_BUFFER
+            );
+  
+
+  int x1=box.x1+1;
+  int x2=box.x2-1;
+  
+  int y1=box.y1+1;
+  int y2=box.y2-1;
+
+  GFX_T_FilledBox(
+                  window,onoff?5:15,
+                  x1,y1,
+                  x2,y2,
+                  PAINT_BUFFER
+                  );
+}
 
 void UpdateVolumeSlider(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	int x1,x2,y1,y2;
 
 	DrawSlider(
 		window,
@@ -43,52 +74,10 @@ void UpdateVolumeSlider(
 		0.0f,
 		(float)MAXTRACKVOL,
 		wtrack->track->volumeonoff,
-		true
+		PAINT_BUFFER
 	);
 
-
-
-	/* On/off box stuff. */
-
-	GFX_T_Box(
-                  window,1,
-                  wtrack->volumeonoff.x1,wtrack->volumeonoff.y1,
-                  wtrack->volumeonoff.x2,wtrack->volumeonoff.y2,
-                  PAINT_BUFFER
-	);
-
-	x1=wtrack->volumeonoff.x1+2;
-	x2=wtrack->volumeonoff.x2-2;
-	while(x2<x1){
-		x1--;
-		x2++;
-	}
-	y1=wtrack->volumeonoff.y1+2;
-	y2=wtrack->volumeonoff.y2-2;
-	while(y2<y1){
-		y1--;
-		y2++;
-	}
-
-	if(wtrack->track->volumeonoff){
-		GFX_T_FilledBox(
-                                window,2,
-                                x1,y1,
-                                x2,y2,
-                                PAINT_BUFFER
-                                );
-	}else{
-		GFX_T_FilledBox(
-                                window,0,
-                                x1,y1,
-                                x2,y2,
-                                PAINT_BUFFER
-		);
-	}
-
-#if !USE_OPENGL
-	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
-#endif
+        DrawOnOffBox(window, wtrack->volumeonoff, wtrack->track->volumeonoff);
 }
 
 void UpdatePanSlider(
@@ -96,7 +85,6 @@ void UpdatePanSlider(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-	int x1,x2,y1,y2;
 
 	DrawSlider(
 		window,
@@ -105,52 +93,10 @@ void UpdatePanSlider(
 		0.0f,
 		(float)(MAXTRACKPAN*2),
 		wtrack->track->panonoff,
-		true
+		PAINT_BUFFER
 	);
 
-
-	/* On/off box stuff. */
-
-	GFX_T_Box(
-                  window,1,
-                  wtrack->panonoff.x1,wtrack->panonoff.y1,
-                  wtrack->panonoff.x2,wtrack->panonoff.y2,
-                  PAINT_BUFFER
-	);
-
-	x1=wtrack->panonoff.x1+2;
-	x2=wtrack->panonoff.x2-2;
-	while(x2<x1){
-		x1--;
-		x2++;
-	}
-
-	y1=wtrack->panonoff.y1+2;
-	y2=wtrack->panonoff.y2-2;
-	while(y2<y1){
-		y1--;
-		y2++;
-	}
-
-	if(wtrack->track->panonoff){
-          GFX_T_FilledBox(
-                          window,2,
-                          x1,y1,
-                          x2,y2,
-                          PAINT_BUFFER
-                          );
-	}else{
-          GFX_T_FilledBox(
-                          window,0,
-                          x1,y1,
-                          x2,y2,
-                          PAINT_BUFFER
-                          );
-	}
-
-#if !USE_OPENGL
-	Blt_marktrackheader(window,wtrack->l.num,wtrack->l.num);
-#endif
+        DrawOnOffBox(window, wtrack->panonoff, wtrack->track->panonoff);
 }
 
 

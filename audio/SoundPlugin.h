@@ -134,13 +134,17 @@ struct SoundPluginEffect{
 #endif
 
 
+struct SoundPluginTypeContainer;
+
 // Note that only the fields 'name' and 'is_instrument' will be accessed before the call to 'create_plugin_data'.
 // The 'is_instrument' field will also be re-read after a call to 'create_plugin_data', in case it had the wrong value before.
 typedef struct SoundPluginType{
   const char *type_name; // I.e. Ladspa / Vst / FluidSynth / etc. Must be unique.
   const char *name;      // i.e. zita-reverb / low-pass filter / etc. Must be unique within plugins with the same type_name.
 
-  const char *info;     // Contains text inside the info box which appear when pressing the button with the name of the plugin. Can be NULL.
+  struct SoundPluginTypeContainer *container; // In case it is loaded from a container. (for instance a vst shell plugin)
+
+  const char *info;     // Contains text inside the info box which appear when pressing the button with the name of the plugin. Can be NULL.                               
 
   int num_inputs;
   int num_outputs;
@@ -163,7 +167,7 @@ typedef struct SoundPluginType{
   // If not, set_effect_value will be called instead.
   bool (*effect_is_RT)(const struct SoundPluginType *plugin_type, int effect_num);
 
-  void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size); // Called by Radium during the instantiation of a plugin. The function returns plugin->data.
+  void *(*create_plugin_data)(const struct SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size); // Called by Radium during the instantiation of a plugin. The function returns plugin->data. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called BEFORE the effect values are set. "state" is NULL when the instance is created from nothing, i.e. not loaded from file or undo information.
   void (*cleanup_plugin_data)(struct SoundPlugin *plugin);
 
   // If set, this callback will be called when the 'num_frames' argument to RT_process changes. The audio thread is suspended while this function is called.
@@ -183,6 +187,7 @@ typedef struct SoundPluginType{
   void (*play_note)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume, float pan);
   void (*set_note_volume)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float volume);
   void (*set_note_pitch)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id, float pitch);
+  void (*send_raw_midi_message)(struct SoundPlugin *plugin, int64_t block_delta_time, uint32_t msg);
   void (*stop_note)(struct SoundPlugin *plugin, int64_t block_delta_time, float note_num, int64_t note_id);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
@@ -197,12 +202,20 @@ typedef struct SoundPluginType{
 
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 
-  void (*show_gui)(struct SoundPlugin *plugin);
+  bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL
+  void (*show_gui)(struct SoundPlugin *plugin); // If NULL, the "GUI" button will not show.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
-  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state); // Optional function. Called after plugin has been created. The 'state' variable is also sent as argument to create_plugin_data.
+  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set.
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
+  // Presets (optional)
+  int (*get_num_presets)(struct SoundPlugin *plugin);
+  int (*get_current_preset)(struct SoundPlugin *plugin);
+  void (*set_current_preset)(struct SoundPlugin *plugin, int num);
+  const char *(*get_preset_name)(struct SoundPlugin *plugin, int num);
+  void (*set_preset_name)(struct SoundPlugin *plugin, int num, const char* new_name);
+    
   // Free use by the plugin
   void *data;
 
@@ -210,6 +223,20 @@ typedef struct SoundPluginType{
   int instance_num; // Only used to autocreate a name
 
 } SoundPluginType;
+
+typedef struct SoundPluginTypeContainer{
+  const char *type_name;
+
+  const char *name;
+  void *data;
+
+  int num_types;
+  SoundPluginType **plugin_types;
+
+  bool is_populated;
+  void (*populate)(struct SoundPluginTypeContainer *container); // Note: populate might be called even if 'is_populated' is true. (If that happens, just do nothing.)
+
+} SoundPluginTypeContainer;
 
 typedef struct SystemFilter{
   struct SoundPlugin **plugins;
@@ -221,11 +248,17 @@ typedef struct SystemFilter{
 
 enum BusDescendantType{
   IS_BUS_DESCENDANT,
-  IS_NOT_A_BUS_DESCENDANT,
+  IS_BUS_PROVIDER,
   MAYBE_A_BUS_DESCENDANT,
 };
 
 typedef struct SoundPlugin{
+
+#ifdef __cplusplus
+  SoundPlugin(const SoundPlugin&) = delete;
+  SoundPlugin& operator=(const SoundPlugin&) = delete;
+#endif
+  
   const SoundPluginType *type;
 
   // Data used by the plugin (the value returned by 'create_plugin_data')
@@ -233,8 +266,10 @@ typedef struct SoundPlugin{
 
   // Data below handled by Radium.
 
-  struct Patch *patch; // The patch points to the plugin and the plugin points to the patch. However, the patch outlives the plugin. Plugin comes and goes, while the patch stays.
-                       // Beware that this value might be NULL.
+  //const char *name; // Used to autocreate instance name. Sometime the type_name is not specific enough. (plugin containers). Can be NULL.
+  
+  volatile struct Patch *patch; // The patch points to the plugin and the plugin points to the patch. However, the patch outlives the plugin. Plugin comes and goes, while the patch stays.
+                                // Beware that this value might be NULL.
 
   float *savable_effect_values; // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
   float *initial_effect_values; // Used when resetting.
@@ -248,10 +283,10 @@ typedef struct SoundPlugin{
   float volume;
   bool volume_is_on;
 
-  Smooth output_volume;
+  float output_volume;
   bool output_volume_is_on;
 
-  Smooth bus_volume[2];
+  float bus_volume[2];
   bool bus_volume_is_on[2];
 
   Smooth pan; // between 0 and 1
@@ -292,19 +327,16 @@ typedef struct SoundPlugin{
 
   bool show_compressor_gui;
 
-  float *volume_peak_values;
-  float *volume_peak_values_for_chip;
+  volatile float *volume_peak_values;
+  volatile float *volume_peak_values_for_chip;
 
-  float *output_volume_peak_values;
+  volatile float *output_volume_peak_values;
 
-  float *input_volume_peak_values;
-  float *input_volume_peak_values_for_chip;
+  volatile float *input_volume_peak_values;
+  volatile float *input_volume_peak_values_for_chip;
 
-  float system_volume_peak_values[2]; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
-  float *bus_volume_peak_values[2];
-
-  enum BusDescendantType bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
-
+  volatile float system_volume_peak_values[2]; // The one in the status bar. (Only if this is the system out plugin.) Set in Jack_plugin.c
+  volatile float *bus_volume_peak_values[2];
 } SoundPlugin;
 
 

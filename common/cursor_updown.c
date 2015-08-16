@@ -24,17 +24,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "common_proc.h"
 #include "wtracks_proc.h"
-#include "gfx_wtracks_proc.h"
-#include "gfx_upperleft_proc.h"
 #include "wblocks_proc.h"
 #include "pixmap_proc.h"
 #include "scroll_proc.h"
 #include "scroll_play_proc.h"
 #include "blts_proc.h"
 #include "list_proc.h"
+#include "trackreallines2_proc.h"
+#include "../OpenGL/Widget_proc.h"
+
+#include "../api/api_proc.h"
 
 #include "cursor_updown_proc.h"
 
+extern int g_downscroll;
+int getScrollMultiplication(void){
+  if (doScrollEditLines())
+    return R_MAX(1, g_downscroll);
+  else
+    return 1;
+}
 
 void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 	struct WBlocks *wblock;
@@ -50,8 +59,8 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->num_reallines-1 - wblock->curr_realline;
 	}
 
-	if(num_lines==1 || num_lines==-1)
-		Scroll_play(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
+	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
+		Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
 
 	if(wblock->curr_realline+num_lines < wblock->num_reallines){
 	  Scroll_scroll(window,num_lines);
@@ -66,6 +75,7 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		}else{
 
 			wblock->curr_realline=0;
+                        GE_set_curr_realline(0);
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
 
@@ -112,8 +122,6 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		}
 	}
 
-	GFX_UpdateCurrLine(window,wblock);
-
 #if !USE_OPENGL
 	Blt_scrollMark(window);
 
@@ -133,8 +141,8 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->curr_realline;
 	}
 
-        if(num_lines==1 || num_lines==-1)
-          Scroll_play(wblock,wblock->curr_realline-num_lines+1,wblock->curr_realline);
+	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
+          Scroll_play_up(wblock,wblock->curr_realline-num_lines+1,wblock->curr_realline);
 
 	if(wblock->curr_realline-num_lines>=0){
 
@@ -145,6 +153,7 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 			Scroll_scroll(window,wblock->num_reallines-1);
 		}else{
 			wblock->curr_realline=wblock->num_reallines-1;
+                        GE_set_curr_realline(wblock->curr_realline);
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
 
@@ -183,8 +192,6 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 		}
 	}
 
-	GFX_UpdateCurrLine(window,wblock);
-
 #if !USE_OPENGL
 	Blt_scrollMark(window);
 
@@ -196,42 +203,48 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 void ScrollEditorNextNote(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
-	struct TrackRealline *trackreallines=wtrack->trackreallines;
+        vector_t *trs = TRS_get(wblock, wtrack);
+
 	int curr_realline=wblock->curr_realline;
-	int realline=curr_realline+1;
 
-	if(realline>=wblock->num_reallines-1){
-		ScrollEditorDown(window,1);
-		return;
-	}
+        if(curr_realline==wblock->num_reallines-1){ // last line
+          ScrollEditorDown(window,1);
+          return;
+        }
 
-	while(trackreallines[realline].note==0){
-		if(realline==wblock->num_reallines-1) break;
-		realline++;
-	}
+	int new_realline;
 
-	ScrollEditorDown(window,realline-curr_realline);	
+        for(new_realline=curr_realline+1 ; new_realline < wblock->num_reallines-1 ; new_realline++){
+          vector_t *tr = &trs[new_realline];                  
+          if (tr->num_elements>0)
+            break;
+        }
+
+	ScrollEditorDown(window,new_realline-curr_realline);
 }
 
 
 void ScrollEditorPrevNote(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
-	struct TrackRealline *trackreallines=wtrack->trackreallines;
+        vector_t *trs = TRS_get(wblock, wtrack);
+
 	int curr_realline=wblock->curr_realline;
-	int realline=curr_realline-1;
 
-	if(realline<=0){
-		ScrollEditorUp(window,1);
-		return;
+        if (curr_realline==0){
+          ScrollEditorUp(window,1);
+          return;
 	}
 
-	while(trackreallines[realline].note==0){
-		if(realline==0) break;
-		realline--;
-	}
+        int new_realline;
 
-	ScrollEditorUp(window,curr_realline-realline);	
+        for(new_realline=curr_realline-1 ; new_realline > 0 ; new_realline--){
+          vector_t *tr = &trs[new_realline];                  
+          if (tr->num_elements>0)
+            break;
+        }
+
+	ScrollEditorUp(window,curr_realline-new_realline);
 }
 
 void ScrollEditorToRealLine(

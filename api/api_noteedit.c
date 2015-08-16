@@ -22,11 +22,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/velocities_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/tracks_proc.h"
 #include "../common/notes_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/LPB_proc.h"
+#include "../common/Signature_proc.h"
 #include "../common/time_proc.h"
 #include "../advanced/ad_noteadd_proc.h"
+#include "../common/player_proc.h"
+#include "../common/undo_maintempos_proc.h"
+#include "../common/Beats_proc.h"
+#include "../common/wblocks_proc.h"
+#include "../common/settings_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -35,6 +42,102 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern struct Root *root;
+
+extern char *NotesTexts2[];
+extern char *NotesTexts3[];
+
+
+char *getNoteName2(int notenum){
+  if (notenum<0 || notenum>127)
+    return "";
+  else
+    return NotesTexts2[notenum];
+}
+
+char *getNoteName3(int notenum){
+  if (notenum<0 || notenum>127)
+    return "";
+  else
+    return NotesTexts3[notenum];
+}
+
+float getNoteNameValue(char *notename){
+  return notenum_from_notetext(notename);
+}
+
+int getPianorollLowKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 0;
+  return wtrack->pianoroll_lowkey;
+}
+
+int getPianorollHighKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 127;
+  return wtrack->pianoroll_highkey;
+}
+
+void setPianorollLowKey(int key, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  int newkey = R_BOUNDARIES(0, key, 127);
+
+  if (wtrack->pianoroll_highkey - newkey < 5)
+    return;
+  
+  wtrack->pianoroll_lowkey = newkey;
+  
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+
+void setPianorollHighKey(int key, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  int newkey = R_BOUNDARIES(0, key, 127);
+
+  if (newkey - wtrack->pianoroll_lowkey < 5)
+    return;
+  
+  wtrack->pianoroll_highkey = newkey;
+
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+
+float getLowestKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  return TRACK_get_min_pitch(wtrack->track);
+}
+
+float getHighestKey(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  return TRACK_get_max_pitch(wtrack->track);
+}
 
 
 void incNoteVolume(int incvolume,int windownum){
@@ -69,8 +172,52 @@ void putNoteNote(int notenote,int windownum,int blocknum,int tracknum,int notenu
 						);
 }
 
+
+static bool g_scrollplay = false;
+
+bool doScrollPlay(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_scrollplay = SETTINGS_read_bool("scroll_play", true);
+    has_inited = true;
+  }
+
+  return g_scrollplay;
+}
+
+void setScrollPlay(bool doit){
+  g_scrollplay = doit;
+  SETTINGS_write_bool("scroll_play", doit);
+}
+                          
+void switchScrollPlayOnOff(void){
+  setScrollPlay(!doScrollPlay());
+}
+
+
+
+static bool g_do_scroll_edit_lines = false;
+
+bool doScrollEditLines(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_scroll_edit_lines = SETTINGS_read_bool("arrow_keys_scroll_edit_lines", false);
+    has_inited = true;
+  }
+
+  return g_do_scroll_edit_lines;
+}
+
+void setScrollEditLines(bool doit){
+  g_do_scroll_edit_lines = doit;
+  SETTINGS_write_bool("arrow_keys_scroll_edit_lines", doit);
+}
+                          
 extern int g_downscroll;
 void setNoteScrollLength(int l){
+  R_ASSERT_RETURN_IF_FALSE(l>=0);
   g_downscroll = l;
 }
 
@@ -116,20 +263,81 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 	return ListFindNumElements3(&wtrack->track->notes->l);
 }
 
-void setLPB(int lpb_value){
-  root->lpb = lpb_value;
-  struct WBlocks *wblock=getWBlockFromNum(-1,-1);
-  wblock->block->is_dirty = true;
+void setSignature(int numerator, int denominator){
+  if (numerator<=0 || denominator<=0)
+    return;
+  if (numerator==root->signature.numerator && denominator==root->signature.denominator)
+    return;
+  
+  PlayStop();
 
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  Undo_MainTempo(window,wblock);
+  
+  root->signature = ratio(numerator, denominator);
+  UpdateAllBeats();
+  
+  window->must_redraw = true;
+}
+
+void setLPB(int lpb_value){
+  if (lpb_value <=1)
+    return;
+  if (lpb_value == root->lpb)
+    return;
+  
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  printf("Undo MainTempo lpb: %d\n",lpb_value);
+  Undo_MainTempo(window,wblock);
+  
+  root->lpb=lpb_value;
   UpdateAllSTimes();
+  UpdateAllBeats();
+  
+  //UpdateAllWLPBs(window);
+  window->must_redraw = true;
 }
 
 void setBPM(int bpm_value){
-  root->tempo = bpm_value;
-  struct WBlocks *wblock=getWBlockFromNum(-1,-1);
+  if (bpm_value <=1)
+    return;
+  if (bpm_value == root->tempo)
+    return;
+
+  PlayStop();
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  
+  Undo_MainTempo(window,wblock);
+  
+  root->tempo=bpm_value;
+  UpdateAllSTimes();
+}
+
+int addSignature(int numerator, int denominator,
+                 int line,int counter,int dividor,
+                 int blocknum)
+{
+  struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
+  if(wblock==NULL) {
+    RError("unknown block(%p)",blocknum);
+    return -1;
+  }
+
+  Place dasplace = place(line,counter,dividor);
+
+  struct Signatures *signature = SetSignature(wblock->block,&dasplace,ratio(numerator, denominator));
+
   wblock->block->is_dirty = true;
 
-  UpdateAllSTimes();
+  return ListFindElementPos3(&wblock->block->signatures->l,&signature->l);
 }
 
 int addLPB(int lpb_value,
@@ -170,6 +378,7 @@ int addBPM(int bpm,
   return ListFindElementPos3(&wblock->block->tempos->l,&tempo->l);
 }
 
+
 void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
@@ -198,7 +407,7 @@ int addNote(int notenum,int velocity,
                                   end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor),
                                   notenum,
                                   velocity,
-                                  1);
+                                  true);
 
   wblock->block->is_dirty = true;
 

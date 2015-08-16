@@ -15,6 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //#include <string>
+#include <math.h>
 
 #define GLIDING_PEAK_AREA 0 // Set to 1 to get gliding peaks area, which most meters use. Looks good, but I think it is slightly more confusing than the array used now.
 

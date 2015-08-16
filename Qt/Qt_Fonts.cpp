@@ -37,7 +37,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   editor->cursorbuffer_painter->setFont(editor->font);
-  editor->paintbuffer_painter->setFont(editor->font);
+  //editor->paintbuffer_painter->setFont(editor->font);
 
   GE_set_font(editor->font);
 
@@ -45,10 +45,10 @@ void setFontValues(struct Tracker_Windows *tvisual){
 
   QFontMetrics fm(font);
 
-  double width3 = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
-  tvisual->fontwidth=(int)(width3/3.0) + 1;
-  tvisual->org_fontheight=fm.height();
-  tvisual->fontheight=fm.height();
+  double width3           = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
+  tvisual->fontwidth      = (int)(width3/3.0) + 1;
+  tvisual->org_fontheight = fm.height() - 1;
+  tvisual->fontheight     = tvisual->org_fontheight;
 }
 
 void updateAllFonts(QWidget *widget){
@@ -69,10 +69,24 @@ static void set_system_font(QFont font){
   QApplication::setFont(font);
   qApp->setFont(font);
 
-  printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().ascii(),font.family().ascii(),font.styleName().ascii());
+  printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().toUtf8().constData(),font.family().toUtf8().constData(),font.styleName().toUtf8().constData());
 
-  SETTINGS_write_string("system_font",font.toString().ascii());
-  SETTINGS_write_string("system_font_style",font.styleName().ascii()); // toString doesn't seem to cover this.
+  {
+    QFont write_font = font;
+#if 0 //FOR_MACOSX
+    font.setPointSize(font.pointSize()*72.0/96.0); // macs have dpi of 72, while linux and mac have 96.
+#endif    
+    SETTINGS_write_string("system_font",write_font.toString());
+  }
+  
+  SETTINGS_write_string("system_font_style",font.styleName()); // toString doesn't seem to cover this.
+
+  {
+    struct Tracker_Windows *tvisual = root->song->tracker_windows;
+    const QFont &font=QApplication::font();
+    QFontMetrics fm(font);
+    tvisual->systemfontheight=fm.height();
+  }
 
   updateAllFonts(QApplication::mainWidget());
 }
@@ -90,14 +104,14 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   num_users_of_keyboard++;
   editor->font = QFontDialog::getFont( 0, editor->font ) ;
   num_users_of_keyboard--;
-  editor->setFont(editor->font);
+  //editor->setFont(editor->font);
 
-  printf("Raw font name: \"%s\"\n",editor->font.rawName().ascii());
+  printf("Raw font name: \"%s\"\n",editor->font.rawName().toUtf8().constData());
 
   setFontValues(tvisual);
 
-  //SETTINGS_write_string("font_style",editor->font.styleName().ascii()); // toString doesn't seem to cover this. (arrgh, there's a billion bugs in qt when it comes to font styles)
-  return talloc_strdup((char*)editor->font.toString().ascii());
+  //SETTINGS_write_string("font_style",editor->font.styleName().toUtf8().constData()); // toString doesn't seem to cover this. (arrgh, there's a billion bugs in qt when it comes to font styles)
+  return talloc_strdup((char*)editor->font.toString().toUtf8().constData());
 }
 
 void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
@@ -106,14 +120,14 @@ void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   DrawUpTrackerWindow(tvisual);
   SETTINGS_write_string("font",font);
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  SETTINGS_write_string("font_style",editor->font.styleName().ascii()); // toString doesn't seem to cover this.
+  SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
 }
 
 void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
   QFont font;
 
   {
-    const char *fontstring = SETTINGS_read_string("font",NULL);
+    QString fontstring = SETTINGS_read_qstring("font","");
     font.fromString(fontstring);
   }
 
@@ -123,6 +137,10 @@ void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
   setFontValues(tvisual);
   UpdateAllWBlockWidths(tvisual);
   DrawUpTrackerWindow(tvisual);
+
+#if USE_OPENGL
+  editor->position_gl_widget(tvisual);
+#endif
 }
 
 void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
@@ -148,29 +166,40 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   }
  exit:
   setFontValues(tvisual);
+
+  UpdateAllWBlockWidths(tvisual);
+  DrawUpTrackerWindow(tvisual);
+
+#if USE_OPENGL
+  editor->position_gl_widget(tvisual);
+#endif
 }
 
 void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+  SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + QString("config"));
   {
-    const char *fontstring = SETTINGS_read_string("font",NULL);
+    QString fontstring = SETTINGS_read_qstring("font","");
 
     font.fromString(fontstring);
-    if(SETTINGS_read_string("font_style",NULL)!=NULL)
-      font.setStyleName(SETTINGS_read_string("font_style",NULL));
+#if 0 //FOR_MACOSX
+    font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+
+    if(SETTINGS_read_qstring("font_style","")!="")
+      font.setStyleName(SETTINGS_read_qstring("font_style",""));
 
   }
   SETTINGS_unset_custom_configfile();
 
-  SETTINGS_write_string("font",font.toString().ascii());
-  SETTINGS_write_string("font_style",font.styleName().ascii()); // toString doesn't seem to cover this.
+  SETTINGS_write_string("font",font.toString());
+  SETTINGS_write_string("font_style",font.styleName()); // toString doesn't seem to cover this.
 
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font = font;
-  editor->setFont(editor->font);
+  //editor->setFont(editor->font);
   setFontValues(tvisual);
 
   UpdateAllWBlockWidths(tvisual);
@@ -180,13 +209,18 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile(QString(QString(OS_get_program_path())+OS_get_directory_separator()+"config").ascii());
+  SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + "config");
   {
-    const char *fontstring = SETTINGS_read_string("system_font",NULL);
+    QString fontstring = SETTINGS_read_qstring("system_font","");
 
     font.fromString(fontstring);
-    if(SETTINGS_read_string("system_font_style",NULL)!=NULL)
-      font.setStyleName(SETTINGS_read_string("system_font_style",NULL));
+
+#if 0 //FOR_MACOSX
+    font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+#endif
+
+    if(SETTINGS_read_qstring("system_font_style","")!="")
+      font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
 
   }
   SETTINGS_unset_custom_configfile();
@@ -195,8 +229,8 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
 }
 
 int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  const QFontMetrics fn = QFontMetrics(editor->font);
+  //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  const QFontMetrics fn = QFontMetrics(QApplication::font()); //editor->font);
   return fn.width(text);
 }
 

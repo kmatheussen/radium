@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "OS_Player_proc.h"
 #include "scheduler_proc.h"
-#include "trackreallines_proc.h"
 
 #include "undo.h"
 #include "undo_tracks_proc.h"
@@ -98,12 +97,27 @@ void PATCH_reset_time(void){
 }
 
 static void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
+
+  // 1. Do instrument specific changes
   if(old_patch==NULL || new_patch==NULL)
     track->fxs = NULL;
   else if(old_patch->instrument == new_patch->instrument)
     old_patch->instrument->handle_fx_when_theres_a_new_patch_for_track(track,old_patch,new_patch);
   else
     track->fxs = NULL;
+
+  // 2. Update fx->patch value
+  struct FXs *fxs = track->fxs;
+  if (fxs != NULL) {
+    PLAYER_lock();{
+      while(fxs!=NULL){
+        struct FX *fx = fxs->fx;
+        fx->patch = new_patch;
+        fxs = NextFX(fxs);
+      }
+    }PLAYER_unlock();
+  }
+
 }
 
 void PATCH_init_voices(struct Patch *patch){
@@ -126,6 +140,7 @@ void PATCH_init_voices(struct Patch *patch){
 static struct Patch *PATCH_create(int instrumenttype, void *patchdata, const char *name){
   struct Patch *patch = talloc(sizeof(struct Patch));
   patch->id = PATCH_get_new_id();
+  patch->is_usable = true;
   patch->forward_events = true;
 
   patch->name = talloc_strdup(name);
@@ -176,8 +191,9 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
       wtrack->track->patch = patch;
     }
 
-    UpdateTrackReallines(window,wblock,wtrack);
+#if !USE_OPENGL
     UpdateFXNodeLines(window,wblock,wtrack);
+#endif
     window->must_redraw = true;
 
     return patch;
@@ -185,30 +201,58 @@ struct Patch *NewPatchCurrPos_set_track(int instrumenttype, void *patchdata, con
 
 }
 
-static void remove_patch_from_song(struct Patch *patch){
+void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
+  R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open());
+
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
+    
   while(wblock!=NULL){
+    
     struct WTracks *wtrack = wblock->wtracks;
     while(wtrack!=NULL){
       struct Tracks *track = wtrack->track;
-      if(track->patch==patch){
+      if(track->patch==old_patch){
 
         PlayStop();
 
         Undo_Track(window,wblock,wtrack,wblock->curr_realline);
-        handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
-        track->patch = NULL;
-        UpdateTrackReallines(window,wblock,wtrack);
-        UpdateFXNodeLines(window,wblock,wtrack);
+        handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
+        track->patch = new_patch;
+        
       }
       wtrack = NextWTrack(wtrack);
     }
     wblock = NextWBlock(wblock);
-  }  
+  }    
 }
 
+static void remove_patch_from_song(struct Patch *patch){
+  PATCH_replace_patch_in_song(patch, NULL);
+}
+
+
 void PATCH_delete(struct Patch *patch){
+
+  R_ASSERT(Undo_Is_Open());
+
+  remove_patch_from_song(patch);
+
+  if(patch->instrument==get_audio_instrument()){
+    Undo_MixerConnections_CurrPos();
+    Undo_Chip_Remove_CurrPos(patch);
+  }
+
+  GFX_remove_patch_gui(patch);
+
+  patch->instrument->remove_patch(patch);
+
+  Undo_Patch_CurrPos();
+  VECTOR_remove(&patch->instrument->patches,patch);
+
+}
+
+void PATCH_delete_CurrPos(struct Patch *patch){
   if(patch->instrument==get_audio_instrument())
     if(AUDIO_is_permanent_patch(patch)==true){
       GFX_Message(NULL,"Can not be deleted");
@@ -216,25 +260,15 @@ void PATCH_delete(struct Patch *patch){
     }
 
   Undo_Open();{
-
-    remove_patch_from_song(patch);
-
-    if(patch->instrument==get_audio_instrument()){
-      Undo_MixerConnections_CurrPos();
-      Undo_Chip_Remove_CurrPos(patch);
-    }
-
-    GFX_remove_patch_gui(patch);
-
-    patch->instrument->remove_patch(patch);
-
-    Undo_Patch_CurrPos();
-    VECTOR_remove(&patch->instrument->patches,patch);
+    
+    PATCH_delete(patch);
 
   }Undo_Close();
 
   DrawUpTrackerWindow(root->song->tracker_windows);
 }
+
+                   
 
 void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks *wtrack, bool use_popup){
   ReqType reqtype;
@@ -257,6 +291,7 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
   VECTOR_push_back(&v,"<New FluidSynth>");
   VECTOR_push_back(&v,"<New Pd Instrument>");
   VECTOR_push_back(&v,"<New Audio Instrument>");
+  VECTOR_push_back(&v,"<Load New Preset>");
 
   VECTOR_FOR_EACH(struct Patch *patch,patches){
     VECTOR_push_back(&v,talloc_format("%d. %s",iterator666,patch->name));
@@ -273,32 +308,35 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
 
         Undo_Track(window,window->wblock,wtrack,window->wblock->curr_realline);
 
-        if(selection>=5){
-          patch=patches->elements[selection-5];
+        if(selection>=6){
+          patch=patches->elements[selection-6];
 
         }else if(selection==0){
           patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, "Unnamed");
           GFX_PP_Update(patch);
 
         }else if(selection==1){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Sample Player","Sample Player"),-100000,-100000,true,NULL);
+          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
             
         }else if(selection==2){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("FluidSynth","FluidSynth"),-100000,-100000,true,NULL);
+          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
             
         }else if(selection==3){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name("Pd","Simple Midi Synth"),-100000,-100000,true,NULL);
+          SoundPlugin *plugin = add_new_audio_instrument_widget(PR_get_plugin_type_by_name(NULL, "Pd","Simple Midi Synth"),-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
 
         }else if(selection==4){
-          SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL);
+          SoundPlugin *plugin = add_new_audio_instrument_widget(NULL,-100000,-100000,true,NULL,MIXER_get_buses());
           if(plugin!=NULL)
-            patch = plugin->patch;
+            patch = (struct Patch*)plugin->patch;
+
+        }else if(selection==5){
+          patch = InstrumentWidget_new_from_preset(NULL, NULL, -100000,-100000,true);
 
         }else
           printf("Unknown option\n");
@@ -312,14 +350,19 @@ void PATCH_select_patch_for_track(struct Tracker_Windows *window,struct WTracks 
             track->patch=patch;
           }PLAYER_unlock();
 
-          UpdateTrackReallines(window,window->wblock,wtrack);
+#if !USE_OPENGL
           UpdateFXNodeLines(window,window->wblock,wtrack);
+#endif
           window->must_redraw = true;
               
           (*patch->instrument->PP_Update)(patch->instrument,patch);
         }
 
       }Undo_Close();
+
+      if (patch==NULL)
+        Undo_CancelLastUndo();
+      
     } // if(selection>=0)
 
   }
@@ -344,6 +387,7 @@ static bool has_recursive_event_connection(struct Patch *patch, struct Patch *st
 }
 
 // Returns false if connection couldn't be made.
+// MUST ONLY BE CALLED FROM mixergui/QM_chip.cpp:econnect (because PATCH_add_event_receiver must be called at the same time as SP_add_link)
 bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
   int num_event_receivers = source->num_event_receivers;
 
@@ -360,6 +404,7 @@ bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
     }
 
   if(has_recursive_event_connection(destination, source)==true) {
+    GFX_Message(NULL, "Recursive event connections are not supported.\n(Send a feature request if you need it!)");
     printf("Recursive attempt\n");
     return false;
   }
@@ -372,6 +417,7 @@ bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
   return true;
 }
 
+// MUST ONLY BE CALLED FROM mixergui/QM_chip.cpp:PATCH_remove_event_receiver (because PATCH_add_event_receiver must be called at the same time as SP_remove_link)
 void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination){
   int i;
   int num_event_receivers = source->num_event_receivers;
@@ -401,6 +447,25 @@ void PATCH_remove_all_event_receivers(struct Patch *patch){
 }
 
 
+
+void PATCH_call_very_often(void){
+  struct Instruments *instrument = get_all_instruments();
+
+  while(instrument!=NULL){
+
+    VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+      if (patch->widget_needs_to_be_updated) {
+        patch->widget_needs_to_be_updated = false;
+        GFX_update_instrument_widget(patch);
+      }
+    }END_VECTOR_FOR_EACH;
+
+    instrument = NextInstrument(instrument);
+  }
+
+}
+
+
 void PATCH_init(void){
   //MUTEX_INITIALIZE();
 }
@@ -424,10 +489,7 @@ void RT_PATCH_send_play_note_to_receivers(struct Patch *patch, float notenum, in
 
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
-    if(receiver==patch){ // unnecessary. We detect recursions when creating connections.
-      fprintf(stderr,"Error. receiver==patch in patch.c");
-      abort();
-    }
+    R_ASSERT_RETURN_IF_FALSE(receiver!=patch); // unnecessary. We detect recursions when creating connections. (Not just once (which should have been enough) but both here and in SoundProducer.cpp)
     RT_PATCH_play_note(receiver, notenum, note_id, velocity, pan, time);
   }
 }
@@ -464,7 +526,7 @@ static void RT_play_voice(struct Patch *patch, float notenum, int64_t note_id, f
     RT_PATCH_send_play_note_to_receivers(patch, notenum, note_id, velocity, pan, time);
 }
 
-static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
+static void RT_scheduled_play_voice(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float   notenum  = args[1].float_num;
@@ -479,7 +541,7 @@ static void RT_scheduled_play_voice(int64_t time, union SuperType *args){
 }
 
 
-static void RT_scheduled_stop_voice(int64_t time_into_the_future, union SuperType *args);
+static void RT_scheduled_stop_voice(int64_t time_into_the_future, const union SuperType *args);
 
 void RT_PATCH_play_note(struct Patch *patch, float notenum, int64_t note_id, float velocity, float pan, STime time){
   //printf("\n\n___Starting note %d, time: %d\n\n",notenum,(int)time);
@@ -572,7 +634,7 @@ static void RT_stop_voice(struct Patch *patch, float notenum, int64_t note_id, S
     RT_PATCH_send_stop_note_to_receivers(patch, notenum, note_id, time);
 }
 
-static void RT_scheduled_stop_voice(int64_t time, union SuperType *args){
+static void RT_scheduled_stop_voice(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float notenum = args[1].float_num;
@@ -666,7 +728,7 @@ static void RT_change_voice_velocity(struct Patch *patch, float notenum, int64_t
     RT_PATCH_send_change_velocity_to_receivers(patch, notenum, note_id, velocity, time);
 }
 
-static void RT_scheduled_change_voice_velocity(int64_t time, union SuperType *args){
+static void RT_scheduled_change_voice_velocity(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float   notenum  = args[1].float_num;
@@ -755,7 +817,7 @@ static void RT_change_voice_pitch(struct Patch *patch, float notenum, int64_t no
     RT_PATCH_send_change_pitch_to_receivers(patch, notenum, note_id, pitch, time);
 }
 
-static void RT_scheduled_change_voice_pitch(int64_t time, union SuperType *args){
+static void RT_scheduled_change_voice_pitch(int64_t time, const union SuperType *args){
   struct Patch *patch = args[0].pointer;
 
   float   notenum = args[1].float_num;
@@ -808,30 +870,82 @@ void PATCH_change_pitch(struct Patch *patch,float notenum,int64_t note_id, float
 
 
 ////////////////////////////////////
+// Raw midi messages
+
+void RT_PATCH_send_raw_midi_message_to_receivers(struct Patch *patch, uint32_t msg, STime time){
+  int i;
+
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_send_raw_midi_message(receiver, msg, time);
+  }
+}
+
+static void RT_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time){
+  patch->sendrawmidimessage(patch,msg,time);
+
+  if(patch->forward_events)
+    RT_PATCH_send_raw_midi_message_to_receivers(patch, msg, time);
+}
+
+static void RT_scheduled_send_raw_midi_message(int64_t time, const union SuperType *args){
+  struct Patch *patch = args[0].pointer;
+
+  uint32_t msg = args[1].uint32_num;
+
+  RT_send_raw_midi_message(patch, msg, time);
+}
+
+void RT_PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg, STime time){
+  if(time==-1)
+    time = patch->last_time;
+
+  float sample_rate = MIXER_get_sample_rate();
+    
+  int i;
+  for(i=0;i<NUM_PATCH_VOICES;i++){
+    struct PatchVoice *voice = &patch->voices[i];
+
+    if(voice->is_on==true){
+
+      union SuperType args[2];
+      
+      args[0].pointer = patch;
+      args[1].uint32_num = msg;
+      
+      SCHEDULER_add_event(time + voice->start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 2, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
+    }
+  }
+}
+
+void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
+  PLAYER_lock();{
+    RT_PATCH_send_raw_midi_message(patch,msg,-1);
+  }PLAYER_unlock();
+}
+
+
+
+////////////////////////////////////
 // FX
 
 // All FX goes through this function.
 
-void RT_FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,STime time,int skip, FX_when when){
-  if(track->patch!=NULL){ // This function should take patch as first argument. The track argument is [probably not / should not be] needed.
-    if(time==-1)
-      time = track->patch->last_time;
-    else
-      track->patch->last_time = time;
-  }
+void RT_FX_treat_fx(struct FX *fx,int val,STime time,int skip, FX_when when){
+  struct Patch *patch = fx->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-  fx->treatFX(fx,val,track,time,skip,when);
+  if(time==-1)
+    time = patch->last_time;
+  else
+    patch->last_time = time;
+
+  fx->treatFX(fx,val,time,skip,when);
 }
 
-void FX_treat_fx(struct FX *fx,int val,const struct Tracks *track,int skip){
-  if(track->patch==NULL){
-    RError("FX_treat_fx: track->patch==NULL");
-    return;
-  }
-
+void FX_treat_fx(struct FX *fx,int val,int skip){
   PLAYER_lock();{
-    if(track->patch!=NULL)
-      RT_FX_treat_fx(fx,val,track,-1,skip, FX_single);
+    RT_FX_treat_fx(fx,val,-1,skip, FX_single);
   }PLAYER_unlock();
 }
 
