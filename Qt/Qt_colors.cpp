@@ -138,10 +138,13 @@ int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
 QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   if (tvisual==NULL)
     tvisual = root->song->tracker_windows;
-    
+  
   static QColor black(1,1,1);//"black");
   static QColor white(254,254,254);//"black");
-  
+
+  if (tvisual==NULL)
+    return white;
+
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   if(colornum < 16)

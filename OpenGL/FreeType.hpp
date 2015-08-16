@@ -8,6 +8,8 @@
 
 #include <QImage>
 
+#include "../Qt/Qt_colors_proc.h"
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -66,7 +68,8 @@ public:
 
     //QImage ret_image(glyphImage.width(), glyphImage.height(), QImage::Format_ARGB32);
     QImage ret_image(width, height, QImage::Format_ARGB32);
-    ret_image.fill(QColor(0.0, 0.0, 0.0, 0));
+    //ret_image.fill(get_qcolor(NULL, 1));//QColor(0.0, 0.0, 0.0, 0));
+    ret_image.fill(QColor(0.0, 0.0, 0.0, 0)); // Fill background with transparent color
     QPainter painter(&ret_image);
     
 #if 1
@@ -106,7 +109,7 @@ public:
     
     QVector<QRgb> colorTable;
     for (int i = 0; i < 256; ++i)
-      colorTable << qRgba(0, 0, 0, i);
+      colorTable << qRgba(255, 255, 255, i);
     glyphImage.setColorTable(colorTable);
     
     painter.drawImage(QPoint(0, 0),
