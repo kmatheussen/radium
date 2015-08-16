@@ -14,6 +14,9 @@
 #include <vlGraphics/Effect.hpp>
 #include <vlGraphics/GLSL.hpp>
 
+#define USE_FREETYPE 0
+#define RADIUM_DRAW_FONTS_DIRECTLY 0
+
 #include "TextBitmaps.hpp"
 
 #include "../common/nsmtracker.h"
@@ -528,7 +531,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 
   vg->startDrawing(); {
 
-#if defined(RADIUM_DRAW_FONTS_DIRECTLY)
+#if RADIUM_DRAW_FONTS_DIRECTLY
     vg->setFont("font/Cousine-Bold.ttf", 10, false);
 #endif
 

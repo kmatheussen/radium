@@ -17,8 +17,6 @@
 #include "../common/OS_error_proc.h"
 
 
-#define USE_FREETYPE 0
-
 #if USE_FREETYPE
 #include "FreeType.hpp"
 #endif
@@ -244,7 +242,7 @@ struct TextBitmaps{
   }
 
 
-#if defined(RADIUM_DRAW_FONTS_DIRECTLY)
+#if RADIUM_DRAW_FONTS_DIRECTLY
 
   // Called from OpenGL thread.
   // This one looks slightly better than the "ImageHolder" version below, and the code is a billion times simpler too (approx.), but it uses too much CPU. (needs more work though, can't just be enabled. By far, the biggest problem is to get a font file name from a QFont.)

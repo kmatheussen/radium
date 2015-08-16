@@ -112,7 +112,7 @@ public:
       colorTable << qRgba(255, 255, 255, i);
     glyphImage.setColorTable(colorTable);
     
-    painter.drawImage(QPoint(0, 0),
+    painter.drawImage(QPoint(0, height/3),
                       glyphImage);
 
 #else
