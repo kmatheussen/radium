@@ -30,10 +30,9 @@
 
 
 
-static const int default_num_runners = 1;
-static const char *settings_key = "num_cpus";
-
 static volatile bool something_is_wrong = false;
+
+static const char *settings_key = "num_cpus";
 
 
 static radium::Semaphore all_sp_finished;
@@ -44,7 +43,6 @@ static QAtomicInt num_sp_left(0);
 #define MAX_NUM_SP 8192
 
 static boost::lockfree::queue<SoundProducer*,boost::lockfree::capacity<MAX_NUM_SP>> ready_soundproducers;
-
 
 static void schedule_sp(SoundProducer *sp){
   while(!ready_soundproducers.bounded_push(sp))
@@ -272,10 +270,19 @@ int MULTICORE_get_num_threads(void){
 }
 
 
+static int get_num_runners_from_config(void){
+  static int default_num_runners = -1;
+
+  if (default_num_runners==-1)
+    default_num_runners = QThread::idealThreadCount();
+
+  return SETTINGS_read_int(settings_key, default_num_runners);
+}
+
 void MULTICORE_set_num_threads(int num_new_runners){  
   R_ASSERT(num_new_runners >= 1);
 
-  if (SETTINGS_read_int(settings_key, default_num_runners) != num_new_runners)
+  if (get_num_runners_from_config() != num_new_runners)
     SETTINGS_write_int(settings_key, num_new_runners);
 
   if (num_new_runners==1)
@@ -323,7 +330,7 @@ void MULTICORE_init(void){
 
   R_ASSERT(g_num_runners==0);
   
-  int num_new_runners = SETTINGS_read_int(settings_key, default_num_runners);
+  int num_new_runners = get_num_runners_from_config();
 
   MULTICORE_set_num_threads(num_new_runners);
 }
