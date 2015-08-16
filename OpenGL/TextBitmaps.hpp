@@ -15,6 +15,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_error_proc.h"
+#include "../Qt/Qt_colors_proc.h"
 
 
 #if USE_FREETYPE
@@ -97,8 +98,15 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
 #if USE_FREETYPE
     QImage qtgl_image = freeType.draw(c,width,height);
 #else
-    qt_image.fill(QColor(0.0, 0.0, 0.0, 0));
-    
+    //QColor qcol=get_qcolor(NULL, 15);
+    //QColor qcol("#888888");
+    QColor qcol("#fefefe");
+    //QColor qcol("#c0c0c0c0");
+    qcol.setAlpha(0);
+    qt_image.fill(qcol);//QColor(0.0, 0.0, 0.0, 0));
+    //qt_image.fill(QColor(0.0, 0.0, 0.0, 0));
+
+  
     QRect rect(0,0,width,height);
     p.drawText(rect, Qt::AlignVCenter, QString(QChar(c)));
 
