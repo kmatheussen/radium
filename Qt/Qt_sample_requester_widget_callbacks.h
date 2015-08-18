@@ -331,12 +331,12 @@ class Sample_requester_widget : public QWidget
       successfully_selected = FLUIDSYNTH_set_new_preset(plugin, STRING_create(_sf2_file), bank_num, preset_num);
 
     if(successfully_selected){
-      _sample_name_label->setText(get_display_name(STRING_create(_sf2_file),bank_num,preset_num));
+      update_sample_name_label(get_display_name(STRING_create(_sf2_file),bank_num,preset_num));
     }
 
     if(successfully_selected==true && pc->isplaying==false) {
       printf("playing note 1\n");
-      PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 1.0f);
+      PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 0.0f);
     }
   }
 
