@@ -190,13 +190,17 @@ class Sample_requester_widget : public QWidget
     updateWidgets();
   }
 
+  void update_sample_name_label(QString text){
+    _sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(), text));
+  }
+  
   void updateWidgets(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if(QString("Sample Player") == plugin->type->type_name){
-      _sample_name_label->setText(get_display_name(SAMPLER_get_filename_display(plugin)));
+      update_sample_name_label(STRING_get_qstring(SAMPLER_get_filename_display(plugin)));
     }else{
-      _sample_name_label->setText(get_display_name(FLUIDSYNTH_get_filename_display(plugin)));
+      update_sample_name_label(get_display_name(FLUIDSYNTH_get_filename_display(plugin)));
     }
   }
 
@@ -220,7 +224,7 @@ class Sample_requester_widget : public QWidget
         file_list->addItem(filename+"/");
       }else if(filename.endsWith(".sf2",Qt::CaseInsensitive)){
         QListWidgetItem *item = new QListWidgetItem(filename+"/");
-        item->setForeground(QBrush(QColor("green")));
+        item->setForeground(QBrush(get_qcolor(SOUNDFONT_COLOR_NUM)));
         QFont font;
 
         font.setBold(true);
@@ -238,7 +242,7 @@ class Sample_requester_widget : public QWidget
             if(display_name != QString("")){
 
               QListWidgetItem *item = new QListWidgetItem(display_name);
-              QColor color = QColor("blue").light(80);
+              QColor color = get_qcolor(SOUNDFILE_COLOR_NUM);
               color.setAlpha(150);
               item->setForeground(QBrush(color));
               QFont font;
@@ -398,7 +402,7 @@ class Sample_requester_widget : public QWidget
         //printf("playing note 2\n");
         PATCH_play_note(g_currpatch, 12*_preview_octave, -1, 0.5f, 1.0f);
       }
-      _sample_name_label->setText(get_display_name(STRING_create(filename)));
+      update_sample_name_label(get_display_name(STRING_create(filename)));
     }
   }
 

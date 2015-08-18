@@ -135,6 +135,41 @@ int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
   return colornum;
 }
 
+
+static QHash<const char*, QColor> settings_colors;
+
+static QColor get_config_qcolor_from_settings(const char *colorname, int replacement_color_num){
+  if (settings_colors.contains(colorname))
+    return settings_colors[colorname];
+
+  QColor col;
+  
+  const char *colorstring = SETTINGS_read_string(colorname, "");
+  
+  if (strlen(colorstring) <= 1)
+    col = get_qcolor(replacement_color_num);
+  else
+    col = QColor(colorstring);
+
+  settings_colors[colorname] = col;
+  
+  return col;
+}
+
+static QColor get_config_qcolor(int colornum){
+  switch(colornum){
+  case SOUNDFONT_COLOR_NUM:
+    return get_config_qcolor_from_settings("soundfont_color", 13); // 13=green
+  case SOUNDFILE_COLOR_NUM:
+    return get_config_qcolor_from_settings("soundfile_color", 7); // 7=bluish
+  case CURRENT_SOUNDFILE_COLOR_NUM:
+    return get_config_qcolor_from_settings("current_soundfile_color", 6);
+  }
+
+  RError("Unknown color num %d", colornum);
+  return QColor(50,50,50);
+}
+
 QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   if (tvisual==NULL)
     tvisual = root->song->tracker_windows;
@@ -155,6 +190,9 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   
   if (colornum==WHITE_COLOR_NUM)
     return white;
+
+  if (colornum > START_CONFIG_COLOR_NUM && colornum < END_CONFIG_COLOR_NUM)
+    return get_config_qcolor(colornum);
   
   if(colornum >= first_custom_colornum)
     return custom_colors[colornum];
@@ -175,6 +213,9 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   return g_note_colors[colornum];
 }
 
+QColor get_qcolor(int colornum){
+  return get_qcolor(root->song->tracker_windows, colornum);
+}
 
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
   if(system_color==NULL){
@@ -578,6 +619,8 @@ static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfile
   QString curr_dir = QCoreApplication::applicationDirPath();
   const char* separator = OS_get_directory_separator();
 
+  settings_colors.clear();
+    
   QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
   QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
   QFile::copy(QString(curr_dir)+separator+configfilename, OS_get_config_filename("color0"));
