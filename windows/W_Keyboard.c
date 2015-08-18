@@ -285,6 +285,12 @@ static int get_keypad_subID(MSG *msg){
   return EVENT_NO;
 }
 
+
+/*
+virtual key (vk) to scancode: https://msdn.microsoft.com/en-us/library/windows/desktop/ms646306%28v=vs.85%29.aspx
+scancode table: https://msdn.microsoft.com/en-us/library/Aa299374%28v=VS.60%29.aspx
+*/
+
 static int get_keyboard_subID(MSG *msg){
   if(msg->wParam >= 0x100)
     return EVENT_NO;
