@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 
 #include <QMessageBox>
+#include <QColorDialog>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -54,6 +55,7 @@ class Preferences : public QDialog, public Ui::Preferences {
 
  public:
   bool _initing;
+  QColorDialog _color_dialog;
 
  Preferences(QWidget *parent=NULL)
    : QDialog(parent, "Preferences")
@@ -70,6 +72,32 @@ class Preferences : public QDialog, public Ui::Preferences {
       vst_widget->buttonBox->hide();
       
       tabWidget->addTab(vst_widget, "VST");
+    }
+
+    // Colors
+    {
+      colorlayout->addWidget(&_color_dialog);
+      _color_dialog.setOption(QColorDialog::NoButtons, true);
+      _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);      
+      connect(&_color_dialog, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
+
+      scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+      scrollArea->setWidgetResizable(true);
+
+      QWidget *contents = scrollArea->widget();
+      QVBoxLayout *layout = new QVBoxLayout(contents);
+      layout->setSpacing(0);
+
+      for(int i=0;i<200;i++){
+        QPushButton *l = new QPushButton("hello " + QString::number(i));
+        layout->addWidget(l);
+        l->setCheckable(true);
+        //l->move(0, i*20);
+        l->show();
+        contents->resize(contents->width(), 200*20);
+      }
+
+      contents->adjustSize();
     }
 
     tabWidget->setCurrentIndex(0);
@@ -261,7 +289,12 @@ public slots:
   void on_modal_windows_toggled(bool val){
     setModalWindows(val);
   }
-  
+
+  // colors
+  void color_changed(const QColor &col){
+    printf("HAPP! %s\n",col.name().toUtf8().constData());
+  }
+
   // MIDI
 
   void on_set_input_port_clicked(){
