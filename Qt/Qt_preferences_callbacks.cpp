@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <FocusSniffers.h>
 #include "helpers.h"
 
+#include "Qt_colors_proc.h"
+
 #include "mQt_vst_paths_widget_callbacks.h"
 
 #include "Qt_preferences.h"
@@ -50,6 +52,123 @@ extern struct Root *root;
 
 namespace{
 
+struct ColorButton;
+static radium::Vector<ColorButton*> all_buttons;
+
+static int g_current_colornum = 0;
+ 
+struct ColorButton : public QPushButton{
+  Q_OBJECT
+
+public:
+  
+  int colornum;
+  bool is_current;
+
+  QColorDialog *color_dialog;
+  
+  
+  ColorButton(QString name, int colornum, QColorDialog *color_dialog)
+    : QPushButton(name)
+    , colornum(colornum)
+    , is_current(colornum==g_current_colornum)
+    , color_dialog(color_dialog)
+  {
+    setCheckable(true);
+
+    all_buttons.add(this);
+    
+    connect(this, SIGNAL(pressed()), this, SLOT(color_pressed()));
+    //connect(this, SIGNAL(released()), this, SLOT(color_released()));
+    //connect(this, SIGNAL(clicked(bool)), this, SLOT(color_clicked(bool)));
+    //connect(this, SIGNAL(toggled(bool)), this, SLOT(color_toggled(bool)));
+  }
+
+  ~ColorButton(){
+    all_buttons.remove(this);
+  }
+
+  /*
+  bool is_current(void){
+    return isChecked() || isDown();
+  }
+  */
+  
+  void paintEvent ( QPaintEvent * ev ){
+    //QToolButton::paintEvent(ev);
+    QPainter p(this);
+    p.eraseRect(rect());
+    printf("********** isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
+    //CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text());
+
+    int half_width = width() / 2;
+
+    QColor black(0,0,0);
+
+    /*
+    QColor white(255,255,255);
+    QColor col;
+    if (is_current){
+      col = black;
+      p.setPen(white);
+    } else {
+      col = white;
+      p.setPen(black);
+    }
+    
+    
+    p.fillRect(half_width,0,half_width,height(),col);
+    */
+
+    QRect rect(half_width+1,1,half_width-2,height()-1);
+
+    p.setPen(black);
+    p.drawText(rect, Qt::AlignCenter, text());
+
+    p.fillRect(0,0,half_width,height(),get_qcolor(colornum));
+
+    if (is_current) {
+      p.drawRect(0,0,width()-1,height()-1);
+      p.drawRect(1,1,width()-3,height()-3);
+    }
+  }
+
+  void set_current(void){
+    for(auto button : all_buttons){
+      if (button != this) {
+        if (button->is_current == true) {
+          button->is_current = false;
+          button->update();
+        }
+      }
+    }
+    is_current = true;
+
+    g_current_colornum = colornum;
+    color_dialog->setCurrentColor(get_qcolor(colornum));
+    
+    update();
+  }
+
+  public slots:
+
+  void color_pressed(){
+    printf("Color %d pressed to %d\n",colornum,is_current);
+    if (is_current==false)
+      set_current();
+  }
+  void color_released(){
+    printf("Color %d released to %d\n",colornum,is_current);
+  }
+  void color_clicked(bool checked){
+    printf("Color %d clicked to %d %d\n",colornum,is_current,checked);
+  }
+  void color_toggled(bool checked){
+    printf("Color %d toggled to %d %d\n",colornum,is_current,checked);
+  }
+
+};
+  
 class Preferences : public QDialog, public Ui::Preferences {
   Q_OBJECT
 
@@ -76,9 +195,10 @@ class Preferences : public QDialog, public Ui::Preferences {
 
     // Colors
     {
-      colorlayout->addWidget(&_color_dialog);
+      colorlayout_right->insertWidget(0, &_color_dialog);
       _color_dialog.setOption(QColorDialog::NoButtons, true);
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);      
+
       connect(&_color_dialog, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
 
       scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -86,18 +206,17 @@ class Preferences : public QDialog, public Ui::Preferences {
 
       QWidget *contents = scrollArea->widget();
       QVBoxLayout *layout = new QVBoxLayout(contents);
-      layout->setSpacing(0);
+      layout->setSpacing(1);
 
-      for(int i=0;i<200;i++){
-        QPushButton *l = new QPushButton("hello " + QString::number(i));
+      for(int i=0;i<16;i++){
+        ColorButton *l = new ColorButton("color #" + QString::number(i), i, &_color_dialog);
         layout->addWidget(l);
-        l->setCheckable(true);
         //l->move(0, i*20);
         l->show();
-        contents->resize(contents->width(), 200*20);
+        //contents->resize(contents->width(), 200*20);
       }
 
-      contents->adjustSize();
+      //contents->adjustSize();
     }
 
     tabWidget->setCurrentIndex(0);
@@ -205,7 +324,6 @@ public slots:
   void on_vsyncOnoff_toggled(bool val){
     GL_set_vsync(val);
   }
-
   void on_mma1_toggled(bool val){
     if (val)
       GL_set_multisample(1);
@@ -284,15 +402,36 @@ public slots:
     }GL_unlock();
   }
 
+  
+  // colors
+  void color_changed(const QColor &col){
+    printf("HAPP! %s\n",col.name().toUtf8().constData());
+    testColorInRealtime(g_current_colornum, col);
+
+    for(auto button : all_buttons){
+      button->update();
+    }
+
+  }
+
+  void on_color_reset_button_clicked(){
+    GFX_ResetColors();
+
+    for(auto button : all_buttons){
+      button->update();
+    }
+
+  }
+
+  void on_color_save_button_clicked(){
+    GFX_SaveColors();
+  }
+
+
   // windows
 
   void on_modal_windows_toggled(bool val){
     setModalWindows(val);
-  }
-
-  // colors
-  void color_changed(const QColor &col){
-    printf("HAPP! %s\n",col.name().toUtf8().constData());
   }
 
   // MIDI

@@ -552,6 +552,42 @@ public slots:
 
 extern int num_users_of_keyboard;
 
+void GFX_ResetColors(void){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+
+  setEditorColors(editorwidget); // read back from file.
+  system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
+  button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
+  updateAll(editorwidget);
+
+  window->must_redraw = true;
+}
+
+void GFX_SaveColors(void){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+    
+  SETTINGS_write_string("system_color",system_color->name());
+  GL_lock();{
+    system_color->setRgb(QColorDialog3::customColor(9));
+  }GL_unlock();
+  
+  SETTINGS_write_string("button_color",button_color->name());
+  GL_lock();{
+    button_color->setRgb(QColorDialog3::customColor(11));
+  }GL_unlock();
+  
+  for(int i=0;i<16;i++){
+    GL_lock();{
+      setColor(editorwidget,i,QColorDialog3::customColor(i));
+    }GL_unlock();
+    char key[500];
+    sprintf(key,"color%d",i);
+    SETTINGS_write_string(key,editorwidget->colors[i].name());
+  }
+}
+  
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   static bool is_running = false;
 
@@ -578,32 +614,12 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   if(getColorSuccess==false){
     // "cancel"
     printf("Got CANCEL!\n");
-    setEditorColors(editorwidget); // read back from file.
-    system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
-    button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
-    DrawUpTrackerWindow(root->song->tracker_windows);
+    GFX_ResetColors();
   }else{
     // "ok"
     printf("Got OK!\n");
 
-    SETTINGS_write_string("system_color",system_color->name());
-    GL_lock();{
-      system_color->setRgb(QColorDialog3::customColor(9));
-    }GL_unlock();
-    
-    SETTINGS_write_string("button_color",button_color->name());
-    GL_lock();{
-      button_color->setRgb(QColorDialog3::customColor(11));
-    }GL_unlock();
-    
-    for(int i=0;i<16;i++){
-      GL_lock();{
-        setColor(editorwidget,i,QColorDialog3::customColor(i));
-      }GL_unlock();
-      char key[500];
-      sprintf(key,"color%d",i);
-      SETTINGS_write_string(key,editorwidget->colors[i].name());
-    }
+    GFX_SaveColors();
   }
 
   num_users_of_keyboard--;

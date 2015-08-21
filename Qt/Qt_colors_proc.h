@@ -27,4 +27,8 @@ extern void setEditorColors(EditorWidget *editor);
 extern void testColorInRealtime(int num, QColor color);
 
 void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much);
+
+void GFX_ResetColors(void);
+void GFX_SaveColors(void);
+
 #endif
