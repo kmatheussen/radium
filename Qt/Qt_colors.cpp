@@ -483,7 +483,7 @@ static void updateAll(EditorWidget *my_widget, QWidget *widget){
 
 static void updateAll(EditorWidget *my_widget){
   foreach (QWidget *widget, QApplication::allWidgets())
-    updateAll(my_widget, widget);
+    updateWidget(my_widget, widget);
 
   //updateAll(my_widget,application->mainWidget());
   updateApplication(my_widget,application);

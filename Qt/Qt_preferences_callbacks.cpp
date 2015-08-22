@@ -98,7 +98,7 @@ public:
     //QToolButton::paintEvent(ev);
     QPainter p(this);
     p.eraseRect(rect());
-    printf("********** isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
+    //printf("********** isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
     //CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text());
 
     int split = 100;
