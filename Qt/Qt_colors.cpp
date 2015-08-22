@@ -153,6 +153,11 @@ static const char *get_color_config_name(int colornum){
     case SOUNDFONT_COLOR_NUM: return "soundfont_color";
     case SOUNDFILE_COLOR_NUM: return "soundfile_color";
     case CURRENT_SOUNDFILE_COLOR_NUM: return "current_soundfile_color";
+      
+    case SLIDER1_COLOR_NUM: return "slider1_color";
+    case SLIDER2_COLOR_NUM: return "slider2_color";
+    case SLIDER_DISABLED_COLOR_NUM: return "slider_disabled_color";
+    
   }
 
   RError("unknown color %d",colornum);
@@ -188,9 +193,15 @@ const char *get_color_display_name(int colornum){
     case 13: return "Peaks";
     case 14: return "Portamento notes";
     case 15: return "High Editor background";
+      
     case SOUNDFONT_COLOR_NUM: return "Browser: Soundfont";
     case SOUNDFILE_COLOR_NUM: return "Browser: Sound file";
     case CURRENT_SOUNDFILE_COLOR_NUM: return "Current sound file";
+      
+    case SLIDER1_COLOR_NUM: return "Slider 1";
+    case SLIDER2_COLOR_NUM: return "Slider 2";
+    case SLIDER_DISABLED_COLOR_NUM: return "Slider disabled";
+
   }
 
   RError("Unknown color num %d", colornum);
@@ -205,12 +216,26 @@ static int get_replacement_colornum(int colornum){
     return 7; // 7=bluish
   case CURRENT_SOUNDFILE_COLOR_NUM:
     return 6;
+    
+  case SLIDER2_COLOR_NUM:
+    return 13;
+  case SLIDER_DISABLED_COLOR_NUM:
+    return 11;
   }
 
   return -1;
 }
 
+static QColor get_replacement_color(int colornum){
+  switch(colornum){
+    case SLIDER1_COLOR_NUM: return QColor(108,65,36);
+  }
 
+  RWarning("Unable to find color %s in config file", get_color_config_name(colornum));
+
+  QColor ret;  
+  return ret;
+}
 
 static QColor *g_config_colors[END_CONFIG_COLOR_NUM] = {0};
 
@@ -241,9 +266,9 @@ static QColor get_config_qcolor(int colornum){
   if (strlen(colorstring) <= 1) {
     int replacement_colornum = get_replacement_colornum(colornum);
     if (replacement_colornum >= 0)
-      return get_config_qcolor(replacement_colornum);
+      col = get_config_qcolor(replacement_colornum);
     else
-      RWarning("Unable to find color %s in config file", colorname);
+      col = get_replacement_color(colornum);
   } else {
     col = QColor(colorstring);
   }
@@ -418,6 +443,8 @@ static void updateWidget(EditorWidget *my_widget,QWidget *widget){
   else
     widget->setPalette(sys_palette);
 
+  widget->update();
+  
   //QFont font=QFont("Bitstream Vera Sans Mono",4);
   //widget->setFont(QApplication::font());
 }

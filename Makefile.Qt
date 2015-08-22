@@ -1013,7 +1013,7 @@ Qt_Player.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Player.c $(P)EditorWidget.h
 Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
-Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp
+Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h
 	$(CCC) $(P)Qt_colors.cpp $(QTOPT)
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
@@ -1129,7 +1129,7 @@ $(P)Qt_comment_dialog.h: $(BUILD_DEPENDENCIES) $(P)qt4_comment_dialog.ui $(P)Qt_
 	cd $(P) && $(UIC) qt4_comment_dialog.ui | sed s/protected/public/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: > Qt_comment_dialog.h
 	cd $(P) && $(MOC) Qt_comment_dialog_callbacks.cpp >mQt_comment_dialog_callbacks.cpp
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h
+Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h
 	$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)
 
 $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_preferences_callbacks.cpp
