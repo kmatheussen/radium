@@ -217,11 +217,14 @@ static int get_replacement_colornum(int colornum){
 static QColor *g_config_colors[END_CONFIG_COLOR_NUM] = {0};
 
 
+static void clear_config_color(int num){
+  free(g_config_colors[num]);
+  g_config_colors[num] = NULL;
+}
+
 static void clear_config_colors(void){
-  for(int i=0;i<END_CONFIG_COLOR_NUM;i++){
-    free(g_config_colors[i]);
-    g_config_colors[i] = NULL;
-  }
+  for(int i=0;i<END_CONFIG_COLOR_NUM;i++)
+    clear_config_color(i);
 }
 
 static QColor get_config_qcolor(int colornum){
@@ -265,8 +268,8 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
-  if(colornum < 16)
-    return editor->colors[colornum];
+  //if(colornum < 16)
+  //  return editor->colors[colornum];
 
   if (colornum < END_CONFIG_COLOR_NUM)
     return get_config_qcolor(colornum);
@@ -654,6 +657,18 @@ void GFX_ResetColors(void){
 
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
   button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
+  updateAll(editorwidget);
+  GFX_update_current_instrument_widget();
+
+  window->must_redraw = true;
+}
+
+void GFX_ResetColor(int colornum){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+
+  clear_config_color(colornum);
+
   updateAll(editorwidget);
   GFX_update_current_instrument_widget();
 

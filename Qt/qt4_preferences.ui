@@ -1621,7 +1621,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>417</width>
+            <width>396</width>
             <height>300</height>
            </rect>
           </property>
@@ -1651,6 +1651,13 @@
          </item>
          <item>
           <layout class="QHBoxLayout" name="colorlayout_right_2">
+           <item>
+            <widget class="QPushButton" name="color_reset_all_button">
+             <property name="text">
+              <string>Reset all</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QPushButton" name="color_reset_button">
              <property name="text">
