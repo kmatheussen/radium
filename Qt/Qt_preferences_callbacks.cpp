@@ -101,7 +101,8 @@ public:
     printf("********** isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
     //CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text());
 
-    int half_width = width() / 2;
+    int split = 100;
+    int text_width = width() - split;
 
     QColor black(0,0,0);
 
@@ -120,12 +121,12 @@ public:
     p.fillRect(half_width,0,half_width,height(),col);
     */
 
-    QRect rect(half_width+1,1,half_width-2,height()-1);
+    QRect rect(split+1,1,text_width-2,height()-1);
 
     p.setPen(black);
     p.drawText(rect, Qt::AlignCenter, text());
 
-    p.fillRect(0,0,half_width,height(),get_qcolor(colornum));
+    p.fillRect(0,0,split,height(),get_qcolor(colornum));
 
     if (is_current) {
       p.drawRect(0,0,width()-1,height()-1);
@@ -208,8 +209,8 @@ class Preferences : public QDialog, public Ui::Preferences {
       QVBoxLayout *layout = new QVBoxLayout(contents);
       layout->setSpacing(1);
 
-      for(int i=0;i<16;i++){
-        ColorButton *l = new ColorButton("color #" + QString::number(i), i, &_color_dialog);
+      for(int i=0;i<END_CONFIG_COLOR_NUM;i++){
+        ColorButton *l = new ColorButton(get_color_display_name(i), i, &_color_dialog);
         layout->addWidget(l);
         //l->move(0, i*20);
         l->show();
@@ -312,8 +313,8 @@ public slots:
     if (button->text() == QString("Close")){
       printf("close\n");
       this->hide();
-    } else
-      RError("Unknown button \"%s\"\n",button->text().toUtf8().constData());
+    }// else
+    //RError("Unknown button \"%s\"\n",button->text().toUtf8().constData());
   }
 
   void on_eraseEstimatedVBlankInterval_clicked(){

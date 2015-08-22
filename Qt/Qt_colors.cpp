@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
+#include "Qt_instruments_proc.h"
 
 #include "../common/settings_proc.h"
 #include "../common/windows_proc.h"
@@ -117,7 +118,6 @@ static void configure_note_colors(EditorWidget *editor){
   }
 }
 
-
 QHash<int, QColor> custom_colors;
 static const int first_custom_colornum = 1024; // just start somewhere.
 
@@ -136,39 +136,122 @@ int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
 }
 
 
-static QHash<const char*, QColor> settings_colors;
+static bool is_configurable_color(int colornum){
+  if (colornum==BLACK_COLOR_NUM)
+    return false;
+  if (colornum==WHITE_COLOR_NUM)
+    return false;
 
-static QColor get_config_qcolor_from_settings(const char *colorname, int replacement_color_num){
-  if (settings_colors.contains(colorname))
-    return settings_colors[colorname];
+  return true;
+}
+
+
+static const char *get_color_config_name(int colornum){
+  if (colornum < 16){
+    return talloc_format("color%d",colornum);
+  }
+
+  switch(colornum){
+    case SOUNDFONT_COLOR_NUM: return "soundfont_color";
+    case SOUNDFILE_COLOR_NUM: return "soundfile_color";
+    case CURRENT_SOUNDFILE_COLOR_NUM: return "current_soundfile_color";
+  }
+
+  RError("unknown color %d",colornum);
+  return "color1";
+}
+
+static int get_colornum(const char *color_config_name){
+  for(int i=0;i<END_CONFIG_COLOR_NUM;i++){
+    if (is_configurable_color(i))
+      if (!strcmp(color_config_name, get_color_config_name(i)))
+        return i;
+  }
+
+  RError("Unknown color config name %s", color_config_name);
+  return -1;
+}
+
+const char *get_color_display_name(int colornum){
+  switch(colornum){
+    case 0: return "Low Editor background";
+    case 1: return "Text";
+    case 2: return "Waveform";
+    case 3: return "Automation 1";
+    case 4: return "Automation 2";
+    case 5: return "Velocity 1";
+    case 6: return "Velocity 2";
+    case 7: return "Cursor";
+    case 8: return "Instrument name";
+    case 9: return "Low Background";
+    case 10: return "Automation 3";
+    case 11: return "High Background";
+    case 12: return "Editor sliders";
+    case 13: return "Peaks";
+    case 14: return "Portamento notes";
+    case 15: return "High Editor background";
+    case SOUNDFONT_COLOR_NUM: return "Browser: Soundfont";
+    case SOUNDFILE_COLOR_NUM: return "Browser: Sound file";
+    case CURRENT_SOUNDFILE_COLOR_NUM: return "Current sound file";
+  }
+
+  RError("Unknown color num %d", colornum);
+  return "<unknown>";
+}
+
+static int get_replacement_colornum(int colornum){
+  switch(colornum){
+  case SOUNDFONT_COLOR_NUM:
+    return 13; // 13=green
+  case SOUNDFILE_COLOR_NUM:
+    return 7; // 7=bluish
+  case CURRENT_SOUNDFILE_COLOR_NUM:
+    return 6;
+  }
+
+  return -1;
+}
+
+
+
+static QColor *g_config_colors[END_CONFIG_COLOR_NUM] = {0};
+
+
+static void clear_config_colors(void){
+  for(int i=0;i<END_CONFIG_COLOR_NUM;i++){
+    free(g_config_colors[i]);
+    g_config_colors[i] = NULL;
+  }
+}
+
+static QColor get_config_qcolor(int colornum){
+
+  if (g_config_colors[colornum]!=NULL)
+    return *g_config_colors[colornum];
 
   QColor col;
-  
+
+  const char *colorname = get_color_config_name(colornum);
+  if (colorname==NULL)
+    return col;
+
   const char *colorstring = SETTINGS_read_string(colorname, "");
   
-  if (strlen(colorstring) <= 1)
-    col = get_qcolor(replacement_color_num);
-  else
+  if (strlen(colorstring) <= 1) {
+    int replacement_colornum = get_replacement_colornum(colornum);
+    if (replacement_colornum >= 0)
+      return get_config_qcolor(replacement_colornum);
+    else
+      RWarning("Unable to find color %s in config file", colorname);
+  } else {
     col = QColor(colorstring);
+  }
 
-  settings_colors[colorname] = col;
+  g_config_colors[colornum] = new QColor(col);
   
   return col;
 }
 
-static QColor get_config_qcolor(int colornum){
-  switch(colornum){
-  case SOUNDFONT_COLOR_NUM:
-    return get_config_qcolor_from_settings("soundfont_color", 13); // 13=green
-  case SOUNDFILE_COLOR_NUM:
-    return get_config_qcolor_from_settings("soundfile_color", 7); // 7=bluish
-  case CURRENT_SOUNDFILE_COLOR_NUM:
-    return get_config_qcolor_from_settings("current_soundfile_color", 6);
-  }
-
-  RError("Unknown color num %d", colornum);
-  return QColor(50,50,50);
-}
 
 QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   if (tvisual==NULL)
@@ -185,15 +268,15 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   if(colornum < 16)
     return editor->colors[colornum];
 
+  if (colornum < END_CONFIG_COLOR_NUM)
+    return get_config_qcolor(colornum);
+
   if (colornum==BLACK_COLOR_NUM)
     return black;
   
   if (colornum==WHITE_COLOR_NUM)
     return white;
 
-  if (colornum > START_CONFIG_COLOR_NUM && colornum < END_CONFIG_COLOR_NUM)
-    return get_config_qcolor(colornum);
-  
   if(colornum >= first_custom_colornum)
     return custom_colors[colornum];
 
@@ -436,19 +519,27 @@ void setEditorColors(EditorWidget *my_widget){
 }
 
 static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
-  if(num>=16)
-    return;
+  R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
+
+  GL_lock();{
 
 #if USE_GTK_VISUAL
-  GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
+    GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
 #endif
 
-  my_widget->colors[num].setRgb(rgb);
+    my_widget->colors[num].setRgb(rgb);
 
-  if(num==9)
-    system_color->setRgb(rgb);
-  else if(num==11)
-    button_color->setRgb(rgb);
+    if (g_config_colors[num]==NULL)
+      get_config_qcolor(num);
+
+    g_config_colors[num]->setRgb(rgb);
+    
+    if(num==9)
+      system_color->setRgb(rgb);
+    else if(num==11)
+      button_color->setRgb(rgb);
+    
+  }GL_unlock();
 }
 
 extern bool is_starting_up;
@@ -502,8 +593,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
 }
 
 void testColorInRealtime(int num, QColor color){
-  if(num>=16)
-    return;
+  R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
 
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
@@ -520,6 +610,8 @@ void testColorInRealtime(int num, QColor color){
     //GL_create(window, window->wblock);
     my_widget->updateEditor();
   }
+
+  GFX_update_current_instrument_widget();
 
   window->must_redraw = true;
   //window->wblock->block->is_dirty = true;
@@ -556,10 +648,14 @@ void GFX_ResetColors(void){
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
 
+  clear_config_colors();
+
   setEditorColors(editorwidget); // read back from file.
+
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
   button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
   updateAll(editorwidget);
+  GFX_update_current_instrument_widget();
 
   window->must_redraw = true;
 }
@@ -569,19 +665,25 @@ void GFX_SaveColors(void){
   EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
     
   SETTINGS_write_string("system_color",system_color->name());
+#if 0
   GL_lock();{
     system_color->setRgb(QColorDialog3::customColor(9));
   }GL_unlock();
-  
+#endif
+
   SETTINGS_write_string("button_color",button_color->name());
+#if 0
   GL_lock();{
     button_color->setRgb(QColorDialog3::customColor(11));
   }GL_unlock();
-  
+#endif
+
   for(int i=0;i<16;i++){
+#if 0
     GL_lock();{
       setColor(editorwidget,i,QColorDialog3::customColor(i));
     }GL_unlock();
+#endif
     char key[500];
     sprintf(key,"color%d",i);
     SETTINGS_write_string(key,editorwidget->colors[i].name());
@@ -635,8 +737,8 @@ static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfile
   QString curr_dir = QCoreApplication::applicationDirPath();
   const char* separator = OS_get_directory_separator();
 
-  settings_colors.clear();
-    
+  clear_config_colors();
+   
   QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
   QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
   QFile::copy(QString(curr_dir)+separator+configfilename, OS_get_config_filename("color0"));

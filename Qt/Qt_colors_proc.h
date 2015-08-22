@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 class EditorWidget;
 
+extern const char *get_color_display_name(int colornum);
 extern QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum);
 extern QColor get_qcolor(int colornum);
 extern void setWidgetColors(QWidget *widget);

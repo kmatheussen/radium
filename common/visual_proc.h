@@ -40,16 +40,14 @@ int GFX_Message(vector_t *buttons, QString message);
 
 enum ColorNums{
   
-  BLACK_COLOR_NUM = 200,
-  WHITE_COLOR_NUM,
-
-  START_CONFIG_COLOR_NUM,
-  
-  SOUNDFONT_COLOR_NUM,
+  SOUNDFONT_COLOR_NUM = 16,
   SOUNDFILE_COLOR_NUM,
   CURRENT_SOUNDFILE_COLOR_NUM,
   
-  END_CONFIG_COLOR_NUM
+  END_CONFIG_COLOR_NUM,
+
+  BLACK_COLOR_NUM,
+  WHITE_COLOR_NUM,
 };
 
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);

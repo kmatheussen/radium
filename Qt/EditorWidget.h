@@ -90,7 +90,7 @@ public:
   //const QPaintEngine* paintEngine();
 #endif
 
-    QColor     colors[16];				// color array
+    QColor     colors[END_CONFIG_COLOR_NUM];				// color array
 
 #if USE_QT_VISUAL
     PaintBuffer *paintbuffer;

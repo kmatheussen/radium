@@ -682,6 +682,10 @@ void GFX_update_instrument_widget(struct Patch *patch){
   }
 }
 
+void GFX_update_current_instrument_widget(void){
+  GFX_update_instrument_widget(g_currpatch);
+}
+
 void GFX_update_all_instrument_widgets(void){
   QStackedWidget* tabs = instruments_widget->tabs;
 
