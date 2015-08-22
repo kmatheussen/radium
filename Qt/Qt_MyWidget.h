@@ -47,7 +47,7 @@ namespace cvs{
 
     MyColor(int colnum)
 #ifdef COMPILING_RADIUM
-      : col(static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors[colnum])
+        : col(get_qcolor(colnum))
 #else
         : col(g_colors[colnum])
 #endif
@@ -55,7 +55,7 @@ namespace cvs{
 
     MyColor()
 #ifdef COMPILING_RADIUM
-      : col(static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors[11])
+      : col(get_qcolor(11))
 #else
       : col(g_colors[11])
 #endif

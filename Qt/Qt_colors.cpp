@@ -101,15 +101,15 @@ static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
 
 static void configure_note_colors(EditorWidget *editor){
   for(int i=0;i<NUM_NOTE_COLOR_CONF;i++){
-    QColor start_color = editor->colors[note_color_conf[i][1]];
-    QColor end_color = editor->colors[note_color_conf[i+1][1]];
+    QColor start_color = get_qcolor(note_color_conf[i][1]);
+    QColor end_color = get_qcolor(note_color_conf[i+1][1]);
     int start_note = note_color_conf[i][0];
     int end_note = note_color_conf[i+1][0];
 
     if(start_note<64)
-      start_color = editor->colors[1];
+      start_color = get_qcolor(1);
     else
-      end_color = editor->colors[2];
+      end_color = get_qcolor(2);
 
     for(int note=start_note;note<end_note;note++){
       //printf("setting %d (%d-%d) to %d %d %f\n",note,start_note,end_note,note_color_conf[i][1], note_color_conf[i+1][1], (float)(note-start_note)/(end_note-start_note));
@@ -128,9 +128,7 @@ int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
   if (colornum==-1)
     colornum = num_colors++;
 
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-
-  custom_colors[colornum] = mix_colors(QColor(qrand()%255,qrand()%255,qrand()%255), editor->colors[15], 0.10f);
+  custom_colors[colornum] = mix_colors(QColor(qrand()%255,qrand()%255,qrand()%255), get_qcolor(15), 0.10f);
 
   return colornum;
 }
@@ -257,16 +255,9 @@ static QColor get_config_qcolor(int colornum){
 
 
 QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
-  if (tvisual==NULL)
-    tvisual = root->song->tracker_windows;
-  
   static QColor black(1,1,1);//"black");
   static QColor white(254,254,254);//"black");
 
-  if (tvisual==NULL)
-    return white;
-
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   //if(colornum < 16)
   //  return editor->colors[colornum];
@@ -282,6 +273,16 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
 
   if(colornum >= first_custom_colornum)
     return custom_colors[colornum];
+
+
+
+  if (tvisual==NULL)
+    tvisual = root->song->tracker_windows;
+  
+  if (tvisual==NULL)
+    return white;
+
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   if(colornum > 16+128){
     RError("Illegal colornum: %d",colornum);
@@ -300,7 +301,7 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
 }
 
 QColor get_qcolor(int colornum){
-  return get_qcolor(root->song->tracker_windows, colornum);
+  return get_qcolor(NULL, colornum);
 }
 
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
@@ -328,7 +329,7 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     QColor b(*button_color);
 
     if(dynamic_cast<QComboBox*>(widget)!=NULL){
-      c = my_widget->colors[13];
+      c = get_qcolor(13);
       c=mix_colors(c.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
       c.setAlpha(76);
     }
@@ -370,7 +371,7 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 
   // Foreground, text, etc. (everything blackish)
   {
-    QColor c(my_widget==NULL ? QColor(SETTINGS_read_string("color1","black")) : my_widget->colors[1]);
+    QColor c = get_qcolor(1);
     //QColor black(QColor("black"));
     c.setAlpha(180);
     //black.setAlpha(108);
@@ -486,6 +487,7 @@ void setApplicationColors(QApplication *app){
 }
 
 
+#if 0
 void setEditorColors(EditorWidget *my_widget){
   my_widget->colors[0]=QColor(SETTINGS_read_string("color0","#d0d5d0"));
   my_widget->colors[1]=QColor(SETTINGS_read_string("color1","black"));
@@ -520,6 +522,7 @@ void setEditorColors(EditorWidget *my_widget){
                  );
 #endif
 }
+#endif
 
 static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
   R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
@@ -530,7 +533,7 @@ static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
     GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
 #endif
 
-    my_widget->colors[num].setRgb(rgb);
+    //my_widget->colors[num].setRgb(rgb);
 
     if (g_config_colors[num]==NULL)
       get_config_qcolor(num);
@@ -653,7 +656,7 @@ void GFX_ResetColors(void){
 
   clear_config_colors();
 
-  setEditorColors(editorwidget); // read back from file.
+  //setEditorColors(editorwidget); // read back from file.
 
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
   button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
@@ -676,36 +679,12 @@ void GFX_ResetColor(int colornum){
 }
 
 void GFX_SaveColors(void){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
-    
-  SETTINGS_write_string("system_color",system_color->name());
-#if 0
-  GL_lock();{
-    system_color->setRgb(QColorDialog3::customColor(9));
-  }GL_unlock();
-#endif
-
-  SETTINGS_write_string("button_color",button_color->name());
-#if 0
-  GL_lock();{
-    button_color->setRgb(QColorDialog3::customColor(11));
-  }GL_unlock();
-#endif
-
-  for(int i=0;i<16;i++){
-#if 0
-    GL_lock();{
-      setColor(editorwidget,i,QColorDialog3::customColor(i));
-    }GL_unlock();
-#endif
-    char key[500];
-    sprintf(key,"color%d",i);
-    SETTINGS_write_string(key,editorwidget->colors[i].name());
-  }
+  for(int i=0;i<END_CONFIG_COLOR_NUM;i++)
+    SETTINGS_write_string(get_color_config_name(i), get_qcolor(i).name());
 }
   
 void GFX_ConfigColors(struct Tracker_Windows *tvisual){
+  #if 0
   static bool is_running = false;
 
   if(is_running==true)
@@ -717,7 +696,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   override_default_qt_colors = SETTINGS_read_bool((char*)"override_default_qt_colors",true);
 
   for(int i=0;i<16;i++)
-    QColorDialog3::setCustomColor(i, editorwidget->colors[i].rgb());
+    QColorDialog3::setCustomColor(i, get_qcolor(i).rgb());
 
   Scoped_GTK_EventHandler_Timer eventhandler;
 
@@ -744,6 +723,7 @@ void GFX_ConfigColors(struct Tracker_Windows *tvisual){
   updateAll(editorwidget);
 
   is_running = false;
+  #endif
 }
 
 static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfilename){
@@ -758,7 +738,7 @@ static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfile
   QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
   QFile::copy(QString(curr_dir)+separator+configfilename, OS_get_config_filename("color0"));
 
-  setEditorColors(editorwidget); // read back from file.
+  //setEditorColors(editorwidget); // read back from file.
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
   button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
   DrawUpTrackerWindow(tvisual);

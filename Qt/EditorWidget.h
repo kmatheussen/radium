@@ -77,6 +77,8 @@ typedef QPixmap PaintBuffer;
 #endif
 
 #include "helpers.h"
+#include "Qt_colors_proc.h"
+
 
 class EditorWidget : public QWidget //QFrame
 //class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
@@ -90,7 +92,7 @@ public:
   //const QPaintEngine* paintEngine();
 #endif
 
-    QColor     colors[END_CONFIG_COLOR_NUM];				// color array
+  //QColor     colors[END_CONFIG_COLOR_NUM];				// color array
 
 #if USE_QT_VISUAL
     PaintBuffer *paintbuffer;
@@ -167,7 +169,7 @@ public:
 
 #if 1
       {
-        this->cursorbuffer_painter->fillRect(0,0,this->width(),this->height(),this->colors[15]);
+        this->cursorbuffer_painter->fillRect(0,0,this->width(),this->height(),get_qcolor(15));
       }
 #if 0
       {

@@ -24,7 +24,7 @@ extern QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum);
 extern QColor get_qcolor(int colornum);
 extern void setWidgetColors(QWidget *widget);
 extern void setApplicationColors(QApplication *app);
-extern void setEditorColors(EditorWidget *editor);
+//extern void setEditorColors(EditorWidget *editor);
 extern void testColorInRealtime(int num, QColor color);
 
 void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much);

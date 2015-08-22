@@ -387,7 +387,7 @@ struct SliderPainter{
     R_ASSERT(THREADING_is_main_thread());
         
 #ifdef COMPILING_RADIUM
-    QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
+    //QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
 #else
     QColor *colors = g_colors;
 #endif
@@ -411,9 +411,10 @@ struct SliderPainter{
       
       p->fillRect(data->requested_pos+1 ,y1+1,
                   2,                    height-1,
-                  colors[*data->color]);
+                  get_qcolor(*data->color)
+                  );
       
-      p->setPen(QPen(colors[11].light(120),1));
+      p->setPen(QPen(get_qcolor(11).light(120),1));
       p->drawRect(data->requested_pos, y1,
                   3,                   height);
       

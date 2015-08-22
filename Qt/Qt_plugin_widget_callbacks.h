@@ -113,8 +113,7 @@ public:
       interpolation_type->setCurrentIndex(SAMPLER_get_resampler_type(plugin));
 
       {
-        EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-        QColor c = editor->colors[13];
+        QColor c = get_qcolor(13);
         c=mix_colors(c.light(70),QColor(98,59,33),0.55);
         c.setAlpha(76);
         QPalette pal(interpolation_type->palette());

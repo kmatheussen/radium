@@ -48,7 +48,7 @@ static int get_text_width(QString text){
 
 inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text){
 #ifdef COMPILING_RADIUM
-    QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
+  //QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
 #else
     QColor *colors = g_colors;
 #endif
@@ -56,11 +56,11 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
     QColor col; // on
 
     if(text!=""){
-      col = colors[13];
+      col = get_qcolor(13);
       col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
       col.setAlpha(76);
     }else{
-      col = colors[9].light(52);
+      col = get_qcolor(9).light(52);
    }
 
 
@@ -83,7 +83,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 
 
     if(text!=""){
-      painter->setPen(colors[15]);
+      painter->setPen(get_qcolor(15));
       painter->drawRect(0,0,width,height);
 
       //QRect rect(5,3,width-5,height-3);

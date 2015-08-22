@@ -241,7 +241,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   }
 #endif // USE_GTK_VISUAL
 
-  setEditorColors(this);
+  //setEditorColors(this);
 
 #if USE_QT_VISUAL
   this->setMouseTracking(true);

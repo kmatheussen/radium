@@ -112,8 +112,7 @@ static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float
 #include "../Qt/EditorWidget.h"
 extern struct Root *root;
 static inline QColor GE_qcolor(int colornum){
-  EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
-  return editor->colors[colornum];
+  return get_qcolor(colornum);
 }
 #endif
 

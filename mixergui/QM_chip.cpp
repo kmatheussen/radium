@@ -1064,7 +1064,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     if(patch->visual_note_intencity>0){      
       //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
       //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
-      QColor c = g_editor->colors[12];
+      QColor c = get_qcolor(12);
       c.setAlphaF(::scale(patch->visual_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
       painter->setPen(c);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
@@ -1072,7 +1072,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
     // border
-    QColor border_color = g_editor->colors[7];
+    QColor border_color = get_qcolor(7);
     painter->setBrush(QBrush());
     painter->setPen(border_color);
     painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);

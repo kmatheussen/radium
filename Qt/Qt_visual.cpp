@@ -237,7 +237,7 @@ void OS_GFX_C_DrawCursor(
                                           x4-x1-2,height-2);
   
   editor->cursorbuffer_painter->setOpacity(0.2);
-  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
+  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,get_qcolor(7));
 
 #else
   DRAW_PIXMAP_ON_PIXMAP(editor->cursorbuffer,
@@ -248,7 +248,7 @@ void OS_GFX_C_DrawCursor(
 #endif
 
   editor->cursorbuffer_painter->setOpacity(0.75);
-  editor->cursorbuffer_painter->setPen(editor->colors[1]);
+  editor->cursorbuffer_painter->setPen(get_qcolor(1));
   editor->cursorbuffer_painter->drawRect(x1+1,0,
                                          x4-x1-2,height-1);
 
@@ -264,8 +264,8 @@ void OS_GFX_C_DrawCursor(
 
   // TODO: fix Qt4
 #ifdef USE_QT3
-  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,editor->colors[7]);
-  editor->cursorbuffer_painter->fillRect(x2,0,x3-x2+1,height,editor->colors[1]);
+  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,get_qcolor(7));
+  editor->cursorbuffer_painter->fillRect(x2,0,x3-x2+1,height,get_qcolor(1));
 
   bitBlt(
          editor->cursorbuffer,
@@ -375,7 +375,7 @@ static void setColor(QPainter *painter, int colornum, int where){
 #endif
 
 static QColor get_note_color(EditorWidget *editor, QColor base){
-  return mix_colors(base,editor->colors[15],0.4);
+  return mix_colors(base,get_qcolor(15),0.4);
 }
 
 
@@ -473,7 +473,7 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
     }else{
       gradient.setColorAt(0,qcolor);
       //gradient.setColorAt(0.5,qcolor.darker(95));
-      gradient.setColorAt(1,editor->colors[15].darker(scale(tvisual->wblock->tempocolorarea.x2,0,QApplication::desktop()->width(),100,112)));
+      gradient.setColorAt(1,get_qcolor(15).darker(scale(tvisual->wblock->tempocolorarea.x2,0,QApplication::desktop()->width(),100,112)));
     }
 
     QPen pen;
@@ -503,9 +503,9 @@ void OS_GFX_Point(
   QPainter *painter=GET_QPAINTER(editor,where);
 
   if(brightness==MAX_BRIGHTNESS && color!=1){
-    painter->setPen(editor->colors[color]);
+    painter->setPen(get_qcolor(color));
   }else{
-    painter->setPen(mix_colors(editor->colors[color], editor->colors[15], brightness/(float)MAX_BRIGHTNESS));
+    painter->setPen(mix_colors(get_qcolor(color), get_qcolor(15), brightness/(float)MAX_BRIGHTNESS));
   }
 
   painter->drawPoint(x,y);
@@ -525,9 +525,9 @@ void OS_GFX_Points(
   QPainter *painter=GET_QPAINTER(editor,where);
 
   if(brightness==MAX_BRIGHTNESS && color!=1)
-    painter->setPen(editor->colors[color]);
+    painter->setPen(get_qcolor(color));
   else
-    painter->setPen(mix_colors(editor->colors[color], editor->colors[0], brightness/(float)MAX_BRIGHTNESS));
+    painter->setPen(mix_colors(get_qcolor(color), get_qcolor(0), brightness/(float)MAX_BRIGHTNESS));
 
   while((int)editor->qpa.size() <= num_points)
     editor->qpa.resize(editor->qpa.size()*2);
@@ -560,7 +560,7 @@ void OS_GFX_Polygon(
     //printf("point %d set to %d/%d\n",i,x1 + (int)(peaks[i].x*width), y1 + (int)(peaks[i].y*height));
   }
 
-  QColor col = editor->colors[color];
+  QColor col = get_qcolor(color);
 
   if(g_use_custom_color==true){
     col = g_custom_color;
@@ -578,7 +578,7 @@ void OS_GFX_Polygon(
     gradient.setColorAt(1,col.darker(110));
 #else
     gradient.setColorAt(0,col);
-    gradient.setColorAt(1,editor->colors[10]);
+    gradient.setColorAt(1,get_qcolor(10));
 #endif
     
     painter->setPen(Qt::NoPen);
