@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "EditorWidget.h"
 
+static const int max_submenues = 200;
+
 int GFX_Menu(
              struct Tracker_Windows *tvisual,
              ReqType reqtype,
@@ -34,24 +36,39 @@ int GFX_Menu(
   if(reqtype==NULL || v->num_elements>20){
    
     QMenu menu(0);
+    QMenu *curr_menu = &menu;
+
+    int n_submenues=0;
 
     for(int i=0;i<v->num_elements;i++) {
       QString text = (const char*)v->elements[i];
       if (text.startsWith("----"))
         menu.addSeparator();
-      else
-        menu.addAction(new QAction(text,&menu));  // are these actions automatically freed in ~QMenu?
+      else {
+        if (n_submenues==max_submenues){
+          curr_menu = curr_menu->addMenu("Next");
+          n_submenues=0;
+        }
+
+        QAction *action = new QAction(text,curr_menu);
+        action->setData(i);
+        curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu?
+
+        n_submenues++;
+      }
     }
 
     QAction *action = menu.exec(QCursor::pos());
     if(action==NULL)
       return -1;
+    
+    bool ok;
+    int i=action->data().toInt(&ok);
 
-    for(int i=0;i<v->num_elements;i++)
-      if(action == menu.actions()[i])
-        return i;
+    if (ok)
+      return i;
 
-    RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
+    //RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
 
     return -1;
 
