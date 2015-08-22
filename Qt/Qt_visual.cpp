@@ -521,6 +521,7 @@ void OS_GFX_Points(
                    int where
                    )
 {
+  #if !USE_OPENGL
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
@@ -536,6 +537,7 @@ void OS_GFX_Points(
     editor->qpa.setPoint(i,x[i],y[i]);
 
   painter->drawPoints(editor->qpa,0,num_points);
+  #endif
 }
 
 void OS_GFX_Polygon(

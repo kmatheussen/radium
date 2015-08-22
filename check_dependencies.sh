@@ -127,11 +127,6 @@ if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     exit 5
 fi
 
-if ! pkg-config --cflags Qt3Support >/dev/null 2>/dev/null ; then
-    echo "Qt3Support for Qt4 not found"
-    exit 5
-fi
-
 if [ ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h ] ; then
     echo 'Steinberg VST headers not found. (Missing "~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/")'
     echo 'You should find these files in the "VST Audio Plug-Ins SDK" from http://www.steinberg.net/en/company/developers.html'

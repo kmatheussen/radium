@@ -31,7 +31,7 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
   int tracknum;
   
   Pianorollheader(QWidget *parent=NULL)
-    : QWidget(parent, "Pianorollheader")
+    : QWidget(parent)
     , blocknum(-1)
     , tracknum(-1)
   {

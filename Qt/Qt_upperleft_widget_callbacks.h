@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Rational.h"
 
+#include <QCleanlooksStyle>
+
+
 extern EditorWidget *g_editor;
 
 extern struct Root *root;
@@ -35,7 +38,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     : QWidget(parent)
   {
     setupUi(this);
-    setStyle("cleanlooks");
+    setStyle(new QCleanlooksStyle);
 
     // Set up custom popup menues for the time widgets
     {

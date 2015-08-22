@@ -1274,7 +1274,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
 
 static void build_plugins(QDir dir){
   printf(">> dir: -%s-\n",dir.absolutePath().toUtf8().constData());
-  PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName()));
+  PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName().toUtf8().constData()));
 
   dir.setSorting(QDir::Name);
 

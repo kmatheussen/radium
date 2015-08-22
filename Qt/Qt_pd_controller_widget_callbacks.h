@@ -101,7 +101,7 @@ public:
   Timer _timer;
 
   Pd_Controller_widget(QWidget *parent, SoundPlugin *plugin, int controller_num)
-    : QWidget(parent,"pd_plugin widget")
+    : QWidget(parent)
     , _plugin(plugin)
     , _controller(PD_get_controller(plugin, controller_num))
     , _calling_from_timer(false)

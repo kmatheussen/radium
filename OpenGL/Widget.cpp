@@ -252,7 +252,8 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      QPoint(p.x(), p.y() + root->song->tracker_windows->wblock->t.y1),
                      qmouseevent->globalPos(),
                      qmouseevent->button(),
-                     qmouseevent->buttons()
+                     qmouseevent->buttons(),
+                     Qt::NoModifier
                      );
 }
 

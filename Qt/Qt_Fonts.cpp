@@ -88,7 +88,10 @@ static void set_system_font(QFont font){
     tvisual->systemfontheight=fm.height();
   }
 
-  updateAllFonts(QApplication::mainWidget());
+  foreach (QWidget *widget, QApplication::allWidgets()) {
+    updateAllFonts(widget);
+    widget->update();
+  }
 }
 
 void GFX_ConfigSystemFont(void){

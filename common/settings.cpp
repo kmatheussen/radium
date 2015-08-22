@@ -281,6 +281,10 @@ QString SETTINGS_read_qstring(const char* key, QString def){
     return val;
 }
 
+QString SETTINGS_read_qstring(QString key, QString def){
+  return SETTINGS_read_qstring(key.toUtf8().constData(), def);
+}
+
 void SETTINGS_write_bool(const char* key, bool val){
   SETTINGS_write_string(key, val==true?"true":"false");
 }

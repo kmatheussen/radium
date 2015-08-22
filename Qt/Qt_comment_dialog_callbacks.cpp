@@ -91,7 +91,7 @@ extern "C"{
     HASH_put_string(state, "author", STRING_create(widget->author->text()));
     HASH_put_string(state, "title", STRING_create(widget->title->text()));
 
-    QStringList lines = widget->comment->text().split("\n");
+    QStringList lines = widget->comment->toPlainText().split("\n");
     for (int i = 0; i < lines.size(); i++)
       HASH_put_string_at(state, "comment", i, STRING_create(lines.at(i)));
 

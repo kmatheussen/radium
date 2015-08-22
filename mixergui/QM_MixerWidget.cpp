@@ -1243,7 +1243,7 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
     i++;
 
     if(entry.type==PluginMenuEntry::IS_SEPARATOR){
-      menu->insertSeparator();
+      menu->addSeparator();
 
     }else if(entry.type==PluginMenuEntry::IS_LEVEL_UP){
       const char *name = entry.level_up_name;
@@ -1270,7 +1270,7 @@ static int menu_up(QMenu *menu, const radium::Vector<PluginMenuEntry> &entries, 
 
     }else if(entry.type==PluginMenuEntry::IS_LOAD_PRESET){
       menu->addAction(new MyQAction("Load Preset", menu, entry));
-      menu->insertSeparator();
+      menu->addSeparator();
 
     }else{
       const char *name = entry.plugin_type->name;

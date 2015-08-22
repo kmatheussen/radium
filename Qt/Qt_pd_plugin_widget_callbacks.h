@@ -86,7 +86,7 @@ public:
   Timer _timer;
 
   Pd_Plugin_widget(QWidget *parent, struct Patch *patch)
-    : QWidget(parent,"pd_plugin widget")
+    : QWidget(parent)
     , _patch(patch)
     , _gui_is_visible(false)
     , _num_controllers(0)

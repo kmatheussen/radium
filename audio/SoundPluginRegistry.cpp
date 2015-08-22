@@ -82,7 +82,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       VECTOR_push_back(&v, "Use different plugin");
       VECTOR_push_back(&v, "Replace with pipe");
 
-      int ret = GFX_Message(&v, "VST Plugin " + QString(plugin_name) + " not found.");
+      int ret = GFX_Message(&v, ("VST Plugin " + QString(plugin_name) + " not found.").toUtf8().constData());
 
       if (ret==0) {
         QString filename = QFileDialog::getOpenFileName(NULL, plugin_name);

@@ -178,7 +178,7 @@ class Preferences : public QDialog, public Ui::Preferences {
   QColorDialog _color_dialog;
 
  Preferences(QWidget *parent=NULL)
-   : QDialog(parent, "Preferences")
+   : QDialog(parent)
   {
     _initing = true;
 

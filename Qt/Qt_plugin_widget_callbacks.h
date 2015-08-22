@@ -86,7 +86,7 @@ private:
 public:
 
   Plugin_widget(QWidget *parent, struct Patch *patch)
-    : QWidget(parent,"plugin widget")
+    : QWidget(parent)
     , _patch(patch)
     , _pd_plugin_widget(NULL)
     , _jack_plugin_widget(NULL)
@@ -117,9 +117,9 @@ public:
         c=mix_colors(c.light(70),QColor(98,59,33),0.55);
         c.setAlpha(76);
         QPalette pal(interpolation_type->palette());
-        pal.setColor( QPalette::Active, QColorGroup::Button, c);
-        pal.setColor( QPalette::Inactive, QColorGroup::Button, c);
-        pal.setColor( QPalette::Disabled, QColorGroup::Button, c.light(80));
+        pal.setColor( QPalette::Active, QPalette::Button, c);
+        pal.setColor( QPalette::Inactive, QPalette::Button, c);
+        pal.setColor( QPalette::Disabled, QPalette::Button, c.light(80));
         interpolation_type->setPalette(pal);
       }
     }

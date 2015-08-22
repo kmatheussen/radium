@@ -137,7 +137,7 @@ public:
         R_ASSERT(false);
         return "";
       }
-      case QFile::ConnectError: return "connect error";
+        //case QFile::ConnectError: return "connect error";
       case QFile::ReadError: return "read error";
       case QFile::WriteError: return "write error";
       case QFile::FatalError: return "fatal error";

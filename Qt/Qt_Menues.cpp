@@ -20,12 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QApplication>
 #include <QMainWindow>
 
-#ifdef USE_QT4
-#  include <Q3PopupMenu>
-#else
-#  include "qpopupmenu.h"
-#endif
-
 #include "../common/nsmtracker.h"
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
@@ -42,7 +36,7 @@ extern QApplication *qapplication;
 namespace{
 struct Menues{
   struct Menues *up;
-  Q3PopupMenu *menu;
+  QMenu *menu;
   QMenuBar *base;
 };
 }
@@ -53,24 +47,30 @@ class MenuItem : public QObject
 {
     Q_OBJECT
 public:
-  MenuItem(const char *name, const char *python_command, Q3PopupMenu *menu = NULL, bool checkable = false, int checkval = 0){
+  MenuItem(const char *name, const char *python_command, QMenu *menu = NULL, bool checkable = false, int checkval = 0){
     this->python_command = strdup(python_command);
     this->checkable = checkable;
     this->checkval = checkval;
 
+    printf("Adding menu item %s\n",name);
+    //getchar();
+    
     if(menu!=NULL) {
       if(current_menu->base!=NULL){
-        int id = current_menu->base->insertItem(name, menu);
-        current_menu->base->connectItem(id, this, SLOT(clicked()));
+        QAction *action = current_menu->base->addMenu(menu);
+        action->setText(name);
       }else{
-        int id = current_menu->menu->insertItem(name, menu);
-        current_menu->menu->connectItem(id, this, SLOT(clicked()));
+        QAction *action = current_menu->menu->addMenu(menu);
+        action->setText(name);
       }
     }else{
-      int id = current_menu->menu->insertItem(name, this, SLOT(clicked()));
+      QAction *action = current_menu->menu->addAction(name, this, SLOT(clicked()));
+      printf("action: %p\n",action);
       if(current_menu->base==NULL){
-        if(checkable==true)
-          current_menu->menu->setItemChecked(id, checkval);
+        if(checkable==true){
+          action->setCheckable(true);
+          action->setChecked(checkval);
+        }
       }
     }
   }
@@ -140,13 +140,13 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
     RError("Can not add separator at toplevel");
     return;
   }
-  current_menu->menu->insertSeparator();
+  current_menu->menu->addSeparator();
 }
 
 void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
   struct Menues *menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
-  menu->menu = new Q3PopupMenu();
+  menu->menu = new QMenu();
   //QFont sansFont("Liberation Mono", 8);
   //QFont sansFont("DejaVu Sans Mono", 7);
   //QFont sansFont("Nimbus Mono L", 9);
@@ -208,7 +208,7 @@ void initMenues(QMenuBar *base_menu){
   current_menu = (struct Menues*)calloc(1, sizeof(struct Menues));
   //g_base_menues = current_menu;
   current_menu->base = base_menu;
-
+  
 #if 0
   GFX_AddMenuItem(NULL, "item1", "dosomething");
   GFX_AddMenuItem(NULL, "item2", "");

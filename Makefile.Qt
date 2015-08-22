@@ -86,8 +86,8 @@ GLIBOPT ?= `$(PKG) --cflags glib-2.0`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
 PYPATH ?= 
-QT_CFLAGS ?= `$(PKG) --cflags Qt3Support --cflags QtOpenGL` -Ibin/packages/qhttpserver-master/src -DQHTTPSERVER_EXPORT
-QT_LDFLAGS ?= `$(PKG) --libs Qt3Support --libs QtOpenGL --libs QtNetwork`
+QT_CFLAGS ?= `$(PKG) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL` -Ibin/packages/qhttpserver-master/src -DQHTTPSERVER_EXPORT
+QT_LDFLAGS ?= `$(PKG) --libs QtGui --libs QtOpenGL --libs QtNetwork`
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
 
@@ -228,7 +228,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_lpbs.
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o qcolordialog.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog_callbacks.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Rational.o Qt_check_for_updates.o Qt_AutoBackups.o
+OBJ12= Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_instruments.o Qt_PluginWidget.o Qt_MyQSlider.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog_callbacks.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Rational.o Qt_check_for_updates.o Qt_AutoBackups.o
 
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
@@ -1042,13 +1042,6 @@ Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
-
-# Compile our own (modified) version of the qcolordialog in order to show real time update of colors.
-# (it was surprisingly simple to do this. I just had to copy the file. No editing or use of custom compiler flags was needed.)
-qcolordialog.o:  $(BUILD_DEPENDENCIES) $(QD)qcolordialog.cpp
-	$(MOC) $(QD)qcolordialog.h >$(QD)qcolordialog.moc
-	$(MOC) $(QD)qcolordialog.cpp >>$(QD)qcolordialog.moc
-	$(CCC) $(QD)qcolordialog.cpp $(QTOPT) -Wno-error -I.
 
 Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT)

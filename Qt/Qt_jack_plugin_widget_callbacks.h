@@ -33,7 +33,7 @@ public:
   Patch *_patch;
 
   Jack_Plugin_widget(QWidget *parent, struct Patch *patch)
-    : QWidget(parent,"jack_plugin widget")
+    : QWidget(parent)
     , _patch(patch)
   {
     setupUi(this);
@@ -53,14 +53,14 @@ public slots:
 
   void on_port1Edit_editingFinished(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    JACK_set_name(plugin, 0, port1Edit->text());
+    JACK_set_name(plugin, 0, port1Edit->text().toUtf8().constData());
     update_gui();
     set_editor_focus();
   }
 
   void on_port2Edit_editingFinished(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    JACK_set_name(plugin, 1, port2Edit->text());
+    JACK_set_name(plugin, 1, port2Edit->text().toUtf8().constData());
     update_gui();
     set_editor_focus();
   }

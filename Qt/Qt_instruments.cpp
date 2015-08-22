@@ -307,16 +307,16 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
     instrument->port->removeItem(0);
 
   for(int i = 0; i<num_ports ; i++){
-    instrument->port->insertItem(portnames[i]);
+    instrument->port->addItem(portnames[i]);
     if(!strcmp(portnames[i],instrument->patchdata->midi_port->name))
       item_num = i;
   }
 
-  instrument->port->insertItem("<Create new port>");
+  instrument->port->addItem("<Create new port>");
 
-  instrument->port->setCurrentItem(item_num);
+  instrument->port->setCurrentIndex(item_num);
 
-instrument->_patch_widget->updateWidgets();
+  instrument->_patch_widget->updateWidgets();
 }
 
 static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, struct Patch *patch){
@@ -352,13 +352,13 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
             if (is_set==false)
               sprintf(temp, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
             
-            cc->cctype->insertItem(temp);
+            cc->cctype->addItem(temp);
           }
 
           if(patchdata!=NULL){
             cc->patchdata = patchdata;
 
-            cc->cctype->setCurrentItem(patchdata->cc[ccnum]);
+            cc->cctype->setCurrentIndex(patchdata->cc[ccnum]);
           }
 
           instrument->cc_widgets[ccnum] = cc;
@@ -374,12 +374,12 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
       }
     }
 
-    instrument->preset->insertItem("<Not set>");
+    instrument->preset->addItem("<Not set>");
     {
       for(int i=0;i<128;i++) {
         char temp[500];
         sprintf(temp,"%3d:  %s", i+1, gm_names[i]);
-        instrument->preset->insertItem(temp);
+        instrument->preset->addItem(temp);
       }
     }
 
@@ -636,7 +636,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
   instrument->volumeBox->setChecked(patchdata->volumeonoff);
   instrument->panningBox->setChecked(patchdata->panonoff);
 
-  instrument->preset->setCurrentItem(patchdata->preset+1);
+  instrument->preset->setCurrentIndex(patchdata->preset+1);
 
   updateMidiPortsWidget(instrument);
 
@@ -644,7 +644,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
     Control_change_widget *cc = instrument->cc_widgets[ccnum];
     cc->value_spin->setValue(patchdata->ccvalues[ccnum]);
     cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
-    cc->cctype->setCurrentItem(patchdata->cc[ccnum]);
+    cc->cctype->setCurrentIndex(patchdata->cc[ccnum]);
 
     cc->value_slider->_patch = patch;
     cc->value_slider->_effect_num = patchdata->cc[ccnum];

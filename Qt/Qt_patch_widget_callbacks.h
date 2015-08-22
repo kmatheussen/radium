@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_patch_widget.h"
 
+#include <QCleanlooksStyle>
+
 
 class Patch_widget : public QWidget, public Ui::Patch_widget{
   Q_OBJECT;
@@ -75,10 +77,10 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
     for(int i=0;i<6;i++){
       PatchVoice *voice=&_voices[i];
 
-      get_t(i)->setStyle("cleanlooks");
-      get_v(i)->setStyle("cleanlooks");
-      get_s(i)->setStyle("cleanlooks");
-      get_l(i)->setStyle("cleanlooks");
+      get_t(i)->setStyle(new QCleanlooksStyle);
+      get_v(i)->setStyle(new QCleanlooksStyle);
+      get_s(i)->setStyle(new QCleanlooksStyle);
+      get_l(i)->setStyle(new QCleanlooksStyle);
 
       get_o(i)->setChecked(voice->is_on);
       get_o(i)->_patch = _patch;

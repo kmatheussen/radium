@@ -26,7 +26,7 @@ class Control_change_widget : public QWidget, public Ui::Control_change_widget{
 public:
 
   Control_change_widget(QWidget *parent=NULL, const char *name="control change widget")
-    : QWidget(parent,name)
+    : QWidget(parent)
   {
     setupUi(this);
   }

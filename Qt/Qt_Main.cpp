@@ -34,6 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDesktopServices>
 #include <QTextCodec>
 
+#ifdef __linux__
+#include <QX11Info>
+#endif
+
 #ifdef USE_QT4
 #include <QMainWindow>
 
@@ -256,6 +260,7 @@ static double get_ms(void){
 #endif
 #endif
 
+#if 0
 // Should ideally be atomic, but read and write are usually atomic anyway.
 static volatile int using_the_event;
 
@@ -277,6 +282,7 @@ public:
     using_the_event = 0;
   }
 };
+#endif
 
 // This is now a dummy function
 void Ptask2Mtask(void){
@@ -527,7 +533,7 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   main_window->raise();
 
 #ifdef __linux__
-  XSetInputFocus(main_window->x11Display(),(Window)main_window->x11AppRootWindow(),RevertToNone,CurrentTime);
+  XSetInputFocus(QX11Info::display(),(Window)QX11Info::appRootWindow(),RevertToNone,CurrentTime);
 #endif
 
   OS_SYSTEM_ResetKeysUpDowns();
@@ -565,9 +571,11 @@ void assertRadiumInHomeDirectory(void){
 
   if (!success)
     GFX_Message(NULL,
-                QString("Warning!\n\n") +
-                "Radium is installed in a directory without write access. (" + program_path + ")\n"
-                "Undefined behaviors may happen"
+                (
+                 QString("Warning!\n\n") +
+                 "Radium is installed in a directory without write access. (" + program_path + ")\n"
+                 "Undefined behaviors may happen"
+                 ).toUtf8().constData()
                 );
 #endif
 }
@@ -732,9 +740,10 @@ int radium_main(char *arg){
       editor->reparent(xsplitter, QPoint(0,0), true);
 #endif
       //xsplitter->show();
-      editor->reparent(xsplitter, QPoint(0,0), false);
+      editor->setParent(xsplitter); //, QPoint(0,0), false);
 
-      block_selector->reparent(xsplitter, QPoint(main_window->width()-100,0), true);
+      block_selector->setParent(xsplitter);//, QPoint(main_window->width()-100,0), true);
+      block_selector->move(main_window->width()-100,0);
 
       block_selector->resize(100,block_selector->height());
 
@@ -746,9 +755,10 @@ int radium_main(char *arg){
 
         QWidget *instruments = createInstrumentsWidget();
 
-        xsplitter->reparent(ysplitter, QPoint(0,0), true);
-        instruments->reparent(ysplitter, QPoint(0, main_window->height()-220), true);
-
+        xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
+        instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+        instruments->move(0, main_window->height()-220);
+    
         main_window->setCentralWidget(ysplitter);
 
         ysplitter->setStretchFactor(0,100000);
@@ -796,7 +806,7 @@ int radium_main(char *arg){
 
     }
 
-    qapplication->setMainWidget(main_window);
+    //qapplication->setMainWidget(main_window);
     //GFX_PlayListWindowToFront(); // To provoce setting width to 'blocklist_width'
     main_window->show();
   }

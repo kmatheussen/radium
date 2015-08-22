@@ -37,15 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 
-void configColors(int windownum){
-#ifdef _AMIGA
-  Amiga_ConfigColors();
-#else
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  GFX_ConfigColors(window);
-#endif
-}
-
 void setDefaultColors1(void){
   GFX_SetDefaultColors1(getWindowFromNum(-1));
 }

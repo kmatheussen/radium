@@ -88,7 +88,7 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
   int num_bytes = file_info.size();
 
   QString ret =
-    file_info.fileName().leftJustify(k_filename_len,'.')
+    file_info.fileName().leftJustified(k_filename_len,'.')
     + QString::number(num_channels)+"ch,";
 
   {
@@ -106,7 +106,7 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
     else
       size_string = QString::number(num_bytes/(1024*1024*1024))+"GB";
     
-    ret = ret + size_string.rightJustify(5,' ');
+    ret = ret + size_string.rightJustified(5,' ');
   }
 
   g_filenames_hash[ret] = full_filename;
@@ -300,7 +300,7 @@ class Sample_requester_widget : public QWidget
   hash_t *get_bank(const wchar_t *filename, QString bank_name){
     hash_t *info = SF2_get_info(filename);
     hash_t *menu = HASH_get_hash(info,"menu");
-    hash_t *bank = HASH_get_hash(menu,bank_name);
+    hash_t *bank = HASH_get_hash(menu,bank_name.toUtf8().constData());
     return bank;
   }
 
@@ -314,7 +314,7 @@ class Sample_requester_widget : public QWidget
     }
 
     hash_t *bank       = get_bank(STRING_create(_sf2_file),_sf2_bank);
-    hash_t *preset     = HASH_get_hash(bank,item_text);
+    hash_t *preset     = HASH_get_hash(bank,item_text.toUtf8().constData());
     int     bank_num   = HASH_get_int(preset,"bank");
     int     preset_num = HASH_get_int(preset,"num");
     int     preset_bag = HASH_get_int(preset,"bag");

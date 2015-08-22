@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSpinBox.h"
 #include <QTimer>
+#include <QCleanlooksStyle>
 
 #include "FocusSniffers.h"
 
@@ -97,7 +98,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   {
     _initing = true;
     setupUi(this);
-    setStyle("cleanlooks");
+    setStyle(new QCleanlooksStyle());
  
     if(g_bottom_bar_widget != NULL)
       RError("g_bottom_bar_widget!=NULL");

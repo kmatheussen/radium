@@ -27,7 +27,7 @@ class Tools : public QDialog, public Ui::Tools {
   bool _initing;
 
   Tools(QWidget *parent=NULL)
-   : QDialog(parent, "Tools")
+   : QDialog(parent)
   {
     _initing = true;
 

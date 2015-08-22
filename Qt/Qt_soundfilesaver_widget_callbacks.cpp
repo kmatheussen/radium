@@ -131,7 +131,7 @@ public slots:
 
       enum SOUNDFILESAVER_what what_to_save = save_block_button->isChecked()==true ? SAVE_BLOCK : SAVE_SONG;
 
-      if(SOUNDFILESAVER_save(filename_edit->text(), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
+      if(SOUNDFILESAVER_save(filename_edit->text().toUtf8().constData(), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), &error_string)==false){
 
         QMessageBox msgBox;
         

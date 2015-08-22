@@ -38,7 +38,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //Added by qt3to4:
 #include <QWidget>
 #include <QLabel>
+#if !USE_OPENGL
 #include <Q3PointArray>
+#endif
 #include <QPainter>
 #include <QWheelEvent>
 #ifdef FOR_WINDOWS
@@ -136,8 +138,10 @@ public:
       return this->height();
     }
 
+#if !USE_OPENGL
     Q3PointArray qpa;
-
+#endif
+    
     void updateEditor();
 
 #if 0

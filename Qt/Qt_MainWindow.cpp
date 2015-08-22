@@ -144,7 +144,7 @@ void GFX_UpdateUpperLeft(struct Tracker_Windows *tvisual, struct WBlocks *wblock
 
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
-  : QWidget( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
+  : QWidget( parent)
     //: QWidget( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
     //: EditorWidgetParent( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
 #if USE_QT_VISUAL
@@ -156,14 +156,16 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
 #if USE_OPENGL
   , gl_widget(NULL)
-#endif
+#else    
   , qpa(256)
+#endif
 {
 #if USE_QT_VISUAL
   this->paintbuffer=NULL;
 #endif
 
-
+  setAttribute(Qt::WA_StaticContents, true);
+  
   upperleft_widget = new Upperleft_widget(this);
   upperleft_widget->move(0,0);
 
@@ -331,7 +333,7 @@ class MyQMainWindow : public QMainWindow{
   //Q_OBJECT;
 
 public:
-  MyQMainWindow() : QMainWindow(NULL,"Radium") {}
+  MyQMainWindow() : QMainWindow(NULL) {}
 
   void closeEvent(QCloseEvent *ce){
     ce->ignore();
@@ -416,37 +418,38 @@ void SetupMainWindow(void){
   editor->setMinimumWidth(550);
   editor->setMinimumHeight(400);
 
-  main_window->setCaption("Radium editor window");
-  main_window->statusBar()->message( "Ready", 2000 );
+  main_window->setWindowTitle("Radium editor window");
+  main_window->statusBar()->showMessage( "Ready", 2000 );
 
 #if 1
   {
     QStatusBar *status_bar = main_window->statusBar();
     g_bottom_bar = new Bottom_bar_widget(main_window);
-    status_bar->addWidget(g_bottom_bar, 1, true);
+    status_bar->addWidget(g_bottom_bar, 1);//, true);
+    g_bottom_bar->show();
     //main_window->statusBar()->addWidget(g_bottom_bar, 1, true);
     editor->status_label = g_bottom_bar->status_label;
     //main_window->statusBar()->setFrameStyle(QFrame::NoFrame);
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
       QPalette pal(status_bar->palette());
-      pal.setColor( QPalette::Active, QColorGroup::Dark, system_color);
-      pal.setColor( QPalette::Active, QColorGroup::Light, system_color);
-      pal.setColor( QPalette::Inactive, QColorGroup::Dark, system_color);
-      pal.setColor( QPalette::Inactive, QColorGroup::Light, system_color);
-      pal.setColor( QPalette::Disabled, QColorGroup::Dark, system_color);
-      pal.setColor( QPalette::Disabled, QColorGroup::Light, system_color);
+      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Active, QPalette::Light, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
       status_bar->setPalette(pal);
     }
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
       QPalette pal(g_bottom_bar->palette());
-      pal.setColor( QPalette::Active, QColorGroup::Dark, system_color);
-      pal.setColor( QPalette::Active, QColorGroup::Light, system_color);
-      pal.setColor( QPalette::Inactive, QColorGroup::Dark, system_color);
-      pal.setColor( QPalette::Inactive, QColorGroup::Light, system_color);
-      pal.setColor( QPalette::Disabled, QColorGroup::Dark, system_color);
-      pal.setColor( QPalette::Disabled, QColorGroup::Light, system_color);
+      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Active, QPalette::Light, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
+      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
       g_bottom_bar->setPalette(pal);
     }
     main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
@@ -476,8 +479,11 @@ void SetupMainWindow(void){
   initMenues(menubar);
   //menubar->show();
   main_window->setMenuBar(menubar);
+  
 #else
   initMenues(main_window->menuBar());
+  main_window->menuBar()->show();
+  main_window->menuBar()->setNativeMenuBar(false);
 #endif
 
 #if USE_QT_VISUAL
@@ -532,7 +538,7 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title){
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCaption(STRING_get_qstring(title));
+  main_window->setWindowTitle(STRING_get_qstring(title));
 }
 
 void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){

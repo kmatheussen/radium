@@ -165,7 +165,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
   }
 
   void load(QString filename){
-    FILE *file = fopen(filename,"r");
+    FILE *file = fopen(filename.toUtf8().constData(),"r");
 
     if(file==NULL){
       QMessageBox msgBox;
@@ -251,7 +251,7 @@ void on_enable_checkbox_toggled(bool val){
     if(filename=="")
       return;
 
-    FILE *file = fopen(filename,"w");
+    FILE *file = fopen(filename.toUtf8().constData(),"w");
 
     if(file==NULL){
       QMessageBox msgBox;

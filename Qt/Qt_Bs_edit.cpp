@@ -45,11 +45,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QListWidget>
 #include <QListWidgetItem>
 
+namespace{
 class QListBox : public QListWidget{
 public:
   QListBox(QWidget *parent) : QListWidget(parent) {}
-  void insertItem(const char *text){
+  void insertItem(QString text){
     QListWidget::addItem(text);
+  }
+  void insertItem(const char *text){
+    insertItem(QString(text));
   }
   int currentItem(){
     return QListWidget::currentRow();
@@ -61,6 +65,7 @@ public:
     QListWidget::takeItem(pos);
   }
 };
+}
 
 #define QValueList QList
 #endif
@@ -211,7 +216,7 @@ class BlockSelector : public QWidget
 
 public:
   BlockSelector(QWidget *parent)
-    : QWidget(parent, (const char*)"Block selector", Qt::WType_Dialog)
+    : QWidget(parent) //, Qt::Dialog)
     , add_button("->",this)
     , remove_button("<-",this)
     , playlist(this)
