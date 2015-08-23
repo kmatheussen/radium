@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../audio/SoundPluginRegistry_proc.h"
-
+#include "../audio/Mixer_proc.h"
 
 #include "Qt_instruments_proc.h"
 
@@ -90,7 +90,7 @@ void set_editor_focus(void){
 class Instruments_widget;
 static Instruments_widget *instruments_widget;
 
-class No_instrument_widget;
+//class No_instrument_widget;
 //static No_instrument_widget *no_instrument_widget;
 
 class MIDI_instrument_widget;
@@ -152,7 +152,7 @@ const char **get_ccnames(void){
 #include "Qt_control_change_widget.cpp"
 #include "Qt_midi_instrument_widget.cpp"
 #include "Qt_audio_instrument_widget.cpp"
-#include "Qt_no_instrument_widget.cpp"
+//#include "Qt_no_instrument_widget.cpp"
 #endif
 
 #if USE_QT4
@@ -161,7 +161,6 @@ const char **get_ccnames(void){
 #include "mQt_patch_widget_callbacks.h"
 #include "mQt_midi_instrument_widget_callbacks.h"
 #include "mQt_audio_instrument_widget_callbacks.h"
-#include "mQt_no_instrument_widget_callbacks.h"
 #include "mQt_vst_paths_widget_callbacks.h"
 //#include "mQt_mixer_widget_callbacks.h"
 #endif
