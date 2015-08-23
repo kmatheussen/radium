@@ -1,3 +1,21 @@
+Most important changes 3.3.2 -> 3.3.3
+* Changed default editor font from Bold to Regular
+* Loop when playing range
+* New color configuration dialog.
+  * Not limited to 16 colors
+  * Separated cursor and pianonote colors
+  * Separated peaks and button colors
+  * Possible to configure slider colors
+* Make it possible to see all popup menu entries if the number of them fills up the screen (the screen must be able to show at least 200 entries at once)
+* Dont use Qt3Support anymore
+* Preview samples in both left and right channel in the sampler instrument file browser, not just the left channel.
+* Improved font rendering, especially for white text
+* Enable multi core by default, using QThread::idealThreadCount() to find the number of CPUs.
+* Also update sliders when changing vst preset
+* Don't use saved keyboard octave when loading songs.
+* Optimized VST preset widgets updating
+
+
 Most important changes 3.3.1 -> 3.3.2
 * Possible to select VST presets in the instrument widget
 * Possible to change name of the current VST preset in the instrument widget
