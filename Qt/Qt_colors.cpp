@@ -40,6 +40,69 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 
 
+namespace{
+  struct ColorConfig{
+    int num;
+    const char *config_name;
+    const char *display_name;
+  };
+  struct ReplacementColorNum{
+    int num;
+    int replacement_num;
+  };
+  struct ReplacementColor{
+    int num;
+    QColor color;
+  };
+}
+
+static const ColorConfig g_colorconfig[] = {
+  {0,                   "color0",  "Low Editor background"},
+  {1,                   "color1",  "Text"},
+  {2,                   "color2",  "Waveform"},
+  {3,                   "color3",  "Automation 1"},
+  {4,                   "color4",  "Automation 2"},
+  {5,                   "color5",  "Velocity 1"},
+  {6,                   "color6",  "Velocity 2"},
+  {7,                   "color7",  "Cursor"},
+  {8,                   "color8",  "Instrument name"},
+  {9,                   "color9",  "Low Background"},
+  {10,                  "color10", "Automation 3"},
+  {11,                  "color11", "High Background"},
+  {12,                  "color12", "Editor sliders"},
+  {13,                  "color13", "Peaks"},
+  {14,                  "color14", "Portamento notes"},
+  {15,                  "color15", "High Editor background"},
+
+  {SOUNDFONT_COLOR_NUM,         "soundfont_color",          "Browser: Soundfont"},
+  {SOUNDFILE_COLOR_NUM,         "soundfile_color",          "Browser: Sound file"},
+  {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile_color",  "Current sound file"},
+      
+  {SLIDER1_COLOR_NUM,           "slider1_color",            "Slider 1"},
+  {SLIDER2_COLOR_NUM,           "slider2_color",            "Slider 2"},
+  {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled_color",    "Slider disabled"},
+
+  {END_CONFIG_COLOR_NUM, NULL, NULL}
+};
+
+static ReplacementColorNum g_replacement_color_num[] = {
+  {SOUNDFONT_COLOR_NUM, 13}, // 13=green
+  {SOUNDFILE_COLOR_NUM, 7}, // 7=bluish
+  {CURRENT_SOUNDFILE_COLOR_NUM, 6},
+    
+  {SLIDER2_COLOR_NUM, 13},
+  {SLIDER_DISABLED_COLOR_NUM, 11},
+
+  {END_CONFIG_COLOR_NUM, -1}
+};
+
+static ReplacementColor g_replacement_color[] = {
+  {SLIDER1_COLOR_NUM, QColor(108,65,36)},
+  
+  {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
+};
+
+
 extern struct Root *root;
 
 static QApplication *application;
@@ -144,26 +207,23 @@ static bool is_configurable_color(int colornum){
 }
 
 
-static const char *get_color_config_name(int colornum){
-  if (colornum < 16){
-    return talloc_format("color%d",colornum);
+static const ColorConfig get_color_config(int colornum){
+  int i=0;
+  while(g_colorconfig[i].num != END_CONFIG_COLOR_NUM){
+    if (g_colorconfig[i].num==colornum)
+      return g_colorconfig[i];
+    i++;
   }
 
-  switch(colornum){
-    case SOUNDFONT_COLOR_NUM: return "soundfont_color";
-    case SOUNDFILE_COLOR_NUM: return "soundfile_color";
-    case CURRENT_SOUNDFILE_COLOR_NUM: return "current_soundfile_color";
-      
-    case SLIDER1_COLOR_NUM: return "slider1_color";
-    case SLIDER2_COLOR_NUM: return "slider2_color";
-    case SLIDER_DISABLED_COLOR_NUM: return "slider_disabled_color";
-    
-  }
-
-  RError("unknown color %d",colornum);
-  return "color1";
+  RError("Unknown color %s", colornum);
+  return g_colorconfig[0];
 }
 
+const char *get_color_display_name(int colornum){
+  return get_color_config(colornum).display_name;
+}
+
+/*
 static int get_colornum(const char *color_config_name){
   for(int i=0;i<END_CONFIG_COLOR_NUM;i++){
     if (is_configurable_color(i))
@@ -174,64 +234,28 @@ static int get_colornum(const char *color_config_name){
   RError("Unknown color config name %s", color_config_name);
   return -1;
 }
-
-const char *get_color_display_name(int colornum){
-  switch(colornum){
-    case 0: return "Low Editor background";
-    case 1: return "Text";
-    case 2: return "Waveform";
-    case 3: return "Automation 1";
-    case 4: return "Automation 2";
-    case 5: return "Velocity 1";
-    case 6: return "Velocity 2";
-    case 7: return "Cursor";
-    case 8: return "Instrument name";
-    case 9: return "Low Background";
-    case 10: return "Automation 3";
-    case 11: return "High Background";
-    case 12: return "Editor sliders";
-    case 13: return "Peaks";
-    case 14: return "Portamento notes";
-    case 15: return "High Editor background";
-      
-    case SOUNDFONT_COLOR_NUM: return "Browser: Soundfont";
-    case SOUNDFILE_COLOR_NUM: return "Browser: Sound file";
-    case CURRENT_SOUNDFILE_COLOR_NUM: return "Current sound file";
-      
-    case SLIDER1_COLOR_NUM: return "Slider 1";
-    case SLIDER2_COLOR_NUM: return "Slider 2";
-    case SLIDER_DISABLED_COLOR_NUM: return "Slider disabled";
-
-  }
-
-  RError("Unknown color num %d", colornum);
-  return "<unknown>";
-}
+*/
 
 static int get_replacement_colornum(int colornum){
-  switch(colornum){
-  case SOUNDFONT_COLOR_NUM:
-    return 13; // 13=green
-  case SOUNDFILE_COLOR_NUM:
-    return 7; // 7=bluish
-  case CURRENT_SOUNDFILE_COLOR_NUM:
-    return 6;
-    
-  case SLIDER2_COLOR_NUM:
-    return 13;
-  case SLIDER_DISABLED_COLOR_NUM:
-    return 11;
+  int i=0;
+  while(g_replacement_color_num[i].num != END_CONFIG_COLOR_NUM){
+    if (g_replacement_color_num[i].num==colornum)
+      return g_replacement_color_num[i].replacement_num;
+    i++;
   }
 
   return -1;
 }
 
 static QColor get_replacement_color(int colornum){
-  switch(colornum){
-    case SLIDER1_COLOR_NUM: return QColor(108,65,36);
+  int i=0;
+  while(g_replacement_color[i].num != END_CONFIG_COLOR_NUM){
+    if (g_replacement_color[i].num==colornum)
+      return g_replacement_color[i].color;
+    i++;
   }
 
-  RWarning("Unable to find color %s in config file", get_color_config_name(colornum));
+  RWarning("Unable to find color %s in config file", get_color_config(colornum).config_name);
 
   QColor ret;  
   return ret;
@@ -257,7 +281,7 @@ static QColor get_config_qcolor(int colornum){
 
   QColor col;
 
-  const char *colorname = get_color_config_name(colornum);
+  const char *colorname = get_color_config(colornum).config_name;
   if (colorname==NULL)
     return col;
 
@@ -710,7 +734,7 @@ void GFX_ResetColor(int colornum){
 
 void GFX_SaveColors(void){
   for(int i=0;i<END_CONFIG_COLOR_NUM;i++)
-    SETTINGS_write_string(get_color_config_name(i), get_qcolor(i).name());
+    SETTINGS_write_string(get_color_config(i).config_name, get_qcolor(i).name());
 }
   
 
