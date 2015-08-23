@@ -1105,12 +1105,12 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
   GE_Context *note_color;
 
-  int colornum = 7;
+  int colornum = PIANONOTE_COLOR_NUM;
   
   if (wtrack->track->patch==NULL)
     note_color = GE_color_alpha(colornum, 0.4);
   else
-    note_color = GE_mix_color(GE_get_rgb(wtrack->track->patch->colornum), GE_get_rgb(7), 400);
+    note_color = GE_mix_color(GE_get_rgb(wtrack->track->patch->colornum), GE_get_rgb(colornum), 400);
 
   GE_Context *current_note_color = GE_mix_color(GE_get_rgb(colornum), White_rgb(), 500);
   

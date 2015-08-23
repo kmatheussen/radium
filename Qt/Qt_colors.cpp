@@ -86,6 +86,8 @@ static const ColorConfig g_colorconfig[] = {
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
   {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks 4dB +"},
 
+  {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note"},
+
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
 
@@ -100,6 +102,8 @@ static ReplacementColorNum g_replacement_color_num[] = {
   {PEAKS_COLOR_NUM, 13},
   {PEAKS_0DB_COLOR_NUM, 6},
   {PEAKS_4DB_COLOR_NUM, 14},
+
+  {PIANONOTE_COLOR_NUM, 7},
 
   {END_CONFIG_COLOR_NUM, -1}
 };
