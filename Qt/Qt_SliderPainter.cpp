@@ -139,11 +139,11 @@ struct SliderPainter{
         else{
           float db = gain2db(*data->value);
           if(db>4.0f)
-            _painter->_peak_color = 14;
+            _painter->_peak_color = PEAKS_4DB_COLOR_NUM;
           else if(db>0.0f)
-            _painter->_peak_color = 6;
+            _painter->_peak_color = PEAKS_0DB_COLOR_NUM;
           else
-            _painter->_peak_color = 13;
+            _painter->_peak_color = PEAKS_COLOR_NUM;
 
           gain = db2linear(db);
         }

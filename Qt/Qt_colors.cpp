@@ -70,7 +70,7 @@ static const ColorConfig g_colorconfig[] = {
   {10,                  "color10", "Automation 3"},
   {11,                  "color11", "High Background"},
   {12,                  "color12", "Editor sliders"},
-  {13,                  "color13", "Peaks"},
+  {13,                  "color13", "Buttons"},
   {14,                  "color14", "Portamento notes"},
   {15,                  "color15", "High Editor background"},
 
@@ -82,6 +82,10 @@ static const ColorConfig g_colorconfig[] = {
   {SLIDER2_COLOR_NUM,           "slider2_color",            "Slider 2"},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled_color",    "Slider disabled"},
 
+  {PEAKS_COLOR_NUM,             "peaks",                    "Peaks - 0dB"},
+  {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
+  {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks 4dB +"},
+
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
 
@@ -92,6 +96,10 @@ static ReplacementColorNum g_replacement_color_num[] = {
     
   {SLIDER2_COLOR_NUM, 13},
   {SLIDER_DISABLED_COLOR_NUM, 11},
+
+  {PEAKS_COLOR_NUM, 13},
+  {PEAKS_0DB_COLOR_NUM, 6},
+  {PEAKS_4DB_COLOR_NUM, 14},
 
   {END_CONFIG_COLOR_NUM, -1}
 };
