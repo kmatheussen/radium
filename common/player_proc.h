@@ -19,6 +19,7 @@ extern LANGSPEC void PlayerTask(STime stime);
 extern LANGSPEC void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop);
 extern LANGSPEC void PlayBlockCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void PlayRangeCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void PlayHandleRangeLoop(void);
 extern LANGSPEC void PlaySongFromStart(struct Tracker_Windows *window);
 extern LANGSPEC void PlaySongCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void PlayStop(void);

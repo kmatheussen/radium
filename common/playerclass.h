@@ -115,6 +115,10 @@ typedef struct{
         
 	int playtype;
 
+        // These two are used when looping a range.
+        bool is_playing_range;
+        STime range_duration;
+        
 	struct Blocks *block;		// The block now playing.
 
 	volatile int playpos;				// Number of blocks currently being played. Not the same as root->curr_playlist.
@@ -128,7 +132,7 @@ typedef struct{
 //playtypes:
 #define PLAYSONG 0
 #define PLAYBLOCK 1
-#define PLAYRANGE 2
+#define PLAYRANGE 2 // Must never be set. We set pc->is_playing_range to true instead.
 #define PLAYBLOCK_NONLOOP 3
 
 typedef struct ListHeader1 PEQ_UsedTracks;

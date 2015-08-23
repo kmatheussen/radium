@@ -66,6 +66,7 @@ static void PlayStopReally(bool doit){
 	pc->isplaying=false;
 	pc->initplaying=false;
         pc->playertask_has_been_called = false;
+        pc->is_playing_range = false;
         
         printf("PlayStopReally called: %s\n",doit==true?"true":"false");
 
@@ -220,9 +221,31 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 
 //	printf("playrange, time: %d\n",pc->seqtime);
 
+        Place *place_start = getRangeStartPlace(wblock);
+        Place *place_end   = getRangeEndPlace(wblock);
+        pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place_start);
+        pc->is_playing_range = true;
+        
 	PlayBlock(wblock->block,place,true);
 }
 
+void PlayHandleRangeLoop(void){
+  if (pc->is_playing_range == false)
+    return;
+
+  //printf("duration: %d\nrealtime: %d\n\n", (int)duration, (int)pc->therealtime);
+
+  STime start_therealtime = pc->therealtime;
+
+  if (start_therealtime >= pc->range_duration) {
+    PlayRangeCurrPos(root->song->tracker_windows);
+    int counter = 0;
+    while (pc->therealtime == start_therealtime && counter < 50){ // Wait for the player to start up.
+      OS_WaitForAShortTime(20);
+      counter++;
+    }
+  }
+}
 
 static void PlaySong(
 	Place *place,

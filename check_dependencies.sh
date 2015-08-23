@@ -75,7 +75,7 @@ fi
 if [ `uname` == "Linux" ] ; then
  
     echo "#include <X11/Xaw/Scrollbar.h>" >temp$$.c
-    echo "main(){return 0;}" >>temp$$.c
+    echo "int main(){return 0;}" >>temp$$.c
     echo >>temp$$.c
     if ! gcc temp$$.c -lXaw ; then
 	echo "Might be missing libXaw-devel"
@@ -93,7 +93,7 @@ if [ `uname` == "Linux" ] ; then
     echo "#include <bfd.h>"  >>temp$$.c
     echo "#include <dlfcn.h>" >>temp$$.c
 #    echo "#include <libiberty.h>" >>temp$$.c
-    echo "main(){return 0;}" >>temp$$.c
+    echo "int main(){return 0;}" >>temp$$.c
     echo >>temp$$.c
     if ! gcc temp$$.c -lbfd -liberty -ldl; then
 	echo "Couldn't find -lbfd, -ldl, -liberty, or header files for bfd or dlfcn."

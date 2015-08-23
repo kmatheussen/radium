@@ -431,8 +431,10 @@ protected:
       request_to_stop_playing=false;
     }
     
-    if(pc->isplaying)
+    if(pc->isplaying) {
       P2MUpdateSongPosCallBack();
+      PlayHandleRangeLoop();
+    }
 
     PATCH_call_very_often();
     BACKUP_call_very_often();
