@@ -178,6 +178,92 @@ static inline float scale(float x, float x1, float x2, float y1, float y2){
 }
 
 
+
+/*********************************************************************
+	colors.h
+*********************************************************************/
+
+enum ColorNums {
+  ILLEGAL_COLOR_NUM = -1,
+  
+  START_CONFIG_COLOR_NUM = 0,
+
+  LOW_EDITOR_BACKGROUND_COLOR_NUM = START_CONFIG_COLOR_NUM, // 0
+  TEXT_COLOR_NUM,
+  WAVEFORM_COLOR_NUM,
+  AUTOMATION1_COLOR_NUM,
+  AUTOMATION2_COLOR_NUM,
+  VELOCITY1_COLOR_NUM,
+  VELOCITY2_COLOR_NUM,
+  CURSOR_EDIT_ON_COLOR_NUM,                       // 7
+  INSTRUMENT_NAME_COLOR_NUM,
+  LOW_BACKGROUND_COLOR_NUM,
+  AUTOMATION3_COLOR_NUM,
+  HIGH_BACKGROUND_COLOR_NUM,                 // 11
+  EDITOR_SLIDERS_COLOR_NUM,
+  BUTTONS_COLOR_NUM,                          // 13
+  PORTAMENTO_NOTE_TEXT_COLOR_NUM,
+  HIGH_EDITOR_BACKGROUND_COLOR_NUM,         // 15
+
+  SOUNDFONT_COLOR_NUM,
+  SOUNDFILE_COLOR_NUM,
+  CURRENT_SOUNDFILE_COLOR_NUM,
+
+  SLIDER1_COLOR_NUM,
+  SLIDER2_COLOR_NUM,
+  SLIDER_DISABLED_COLOR_NUM,
+  
+  PEAKS_COLOR_NUM,
+  PEAKS_0DB_COLOR_NUM,
+  PEAKS_4DB_COLOR_NUM,
+
+  PIANONOTE_COLOR_NUM,
+
+  NOTE_EVENT_INDICATOR_COLOR_NUM,
+  NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM,
+
+  AUTOMATION4_COLOR_NUM,
+  AUTOMATION5_COLOR_NUM,
+  AUTOMATION6_COLOR_NUM,
+  AUTOMATION7_COLOR_NUM,
+  AUTOMATION8_COLOR_NUM,
+  
+  AUTOMATION_INDICATOR_COLOR_NUM,
+
+  TRACK_SEPARATOR1_COLOR_NUM,
+  TRACK_SEPARATOR2_COLOR_NUM,
+
+  BAR_TEXT_COLOR_NUM,
+  ZOOMLINE_TEXT_COLOR_NUM1,
+  ZOOMLINE_TEXT_COLOR_NUM2,
+  ZOOMLINE_TEXT_COLOR_NUM3,
+  ZOOMLINE_TEXT_COLOR_NUM4,
+  ZOOMLINE_TEXT_COLOR_NUM5,
+  ZOOMLINE_TEXT_COLOR_NUM6,
+  ZOOMLINE_TEXT_COLOR_NUM7,
+
+  TEMPOGRAPH_COLOR_NUM,
+  RANGE_COLOR_NUM,  
+  PITCH_LINE_COLOR_NUM,
+
+  PIANOROLL_OCTAVE_COLOR_NUM,
+  PIANOROLL_NOTE_NAME_COLOR_NUM,
+
+  CURSOR_EDIT_OFF_COLOR_NUM,                       // 7
+  
+  END_CONFIG_COLOR_NUM,
+
+  BLACK_COLOR_NUM = 500,
+  WHITE_COLOR_NUM,
+  RED_COLOR_NUM,
+
+
+  END_ALL_COLOR_NUMS,
+};
+
+
+
+
 /*********************************************************************
 	placement.h
 *********************************************************************/
@@ -527,7 +613,7 @@ struct FX{
   //	struct ListHeader1 l; // The next field in 'l' is not used. FX objects are stored one by one in the FXs object.
 	int num;
 	const char *name;
-	int color;
+	enum ColorNums color;
 	void (*configureFX)(struct FX *fx,struct Tracks *track);
 	int min;
 	int max;
@@ -542,7 +628,7 @@ struct FX{
 	// (The refactor to let Patch own FX hasn't been done yet. It didn't make sense when there were only MIDI instrument, but now it's too complicated to let FX live independently.
         //  However, when an instrument is deleted, all tracks are scanned, and FX are deleted when a patch is deleted. Same when changing patch for a track.)
 	float *slider_automation_value; // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
-	int   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
+	enum ColorNums   *slider_automation_color; // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
         void (*treatFX)(struct FX *fx,int val,STime time,int skip, FX_when when);
 

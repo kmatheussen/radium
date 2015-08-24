@@ -43,7 +43,7 @@ float *OS_SLIDER_obtain_automation_value_pointer(struct Patch *patch,int effect_
     return SLIDERPAINTER_obtain_automation_value_pointer(slider->_painter);
 }
 
-int *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num){
+enum ColorNums *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num){
   MyQSlider *slider= find_slider(patch,effect_num);
   if(slider==NULL)
     return NULL;

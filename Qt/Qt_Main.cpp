@@ -767,7 +767,7 @@ int radium_main(char *arg){
         ysplitter->setStretchFactor(1,0);
         ysplitter->handle(1)->setEnabled(false);
 
-        qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(11).dark(110).name() + ";}"); 
+        qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}"); 
 
       } else {
         QWidget *w = new QWidget(main_window);

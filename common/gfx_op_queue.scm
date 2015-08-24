@@ -1,6 +1,6 @@
 #!/bin/sh
 # -*- scheme -*-
-exec guile-1.8 -e main -s $0 $*
+exec guile -e main -s $0 $*
 !#
 
 
@@ -59,9 +59,9 @@ void GFX_P2V_bitBlt(
 				int width,int height
 			);
 
-void GFX_FilledBox(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where);
+void GFX_FilledBox(struct Tracker_Windows* tvisual,enum ColorNums color,int x,int y,int x2,int y2,int where);
 
-void GFX_Box(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2, int where);
+void GFX_Box(struct Tracker_Windows* tvisual,enum ColorNums color,int x,int y,int x2,int y2, int where);
 
 void GFX_SetClipRect(
                                           struct Tracker_Windows* tvisual,
@@ -71,11 +71,11 @@ void GFX_SetClipRect(
                                           );
 void GFX_CancelClipRect(struct Tracker_Windows* tvisual,int where);
 
-void GFX_Line(struct Tracker_Windows* tvisual,int color,int x,int y,int x2,int y2,int where);
+void GFX_Line(struct Tracker_Windows* tvisual,enum ColorNums color,int x,int y,int x2,int y2,int where);
 
 void GFX_Polygon(
                                     struct Tracker_Windows* tvisual,
-                                    int color,
+                                    enum ColorNums color,
                                     int x1, int y1, int x2, int y2,
                                     int num_points,
                                     APoint* peaks,
@@ -84,7 +84,7 @@ void GFX_Polygon(
 
 void GFX_Polyline(
                                      struct Tracker_Windows* tvisual,
-                                     int color,
+                                     enum ColorNums color,
                                      int x1, int y1, int x2, int y2,
                                      int num_points,
                                      APoint* peaks,
@@ -92,11 +92,11 @@ void GFX_Polyline(
                                      );
 
 void GFX_CancelMixColor(struct Tracker_Windows* tvisual);
-void GFX_SetMixColor(struct Tracker_Windows* tvisual,int color1,int color2,int mix_factor);
+void GFX_SetMixColor(struct Tracker_Windows* tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
 
 void GFX_Text(
 	struct Tracker_Windows* tvisual,
-	int color,
+	enum ColorNums color,
 	const char* text,
 	int x,
 	int y,
@@ -163,10 +163,13 @@ void GFX_BitBlt(
 
 (define (get-element-slot-name type n)
   (<-> (cond ((string=? type "int") "i")
+             ((string=? type "enum ColorNums") "i")
              ((string=? type "bool") "b")
              ((string=? type "char*") "s")
              ((string=? type "const char*") "s")
-             ((string=? type "APoint*") "p"))
+             ((string=? type "APoint*") "p")
+             (else
+              (throw (<-> "   UNKNOWN TYPE " type))))
        (number->string (+ n 1))))
 
 (define (create-gfx-func funcdef)
@@ -261,6 +264,7 @@ void GFX_BitBlt(
   (newline)
   (c-display "#ifndef VISUAL_OP_QUEUE_PROC_H")
   (c-display "#define VISUAL_OP_QUEUE_PROC_H")
+  (c-display "#include \"visual_proc.h\"")
   (newline)
 
   (for-each (lambda (pre-os-include)

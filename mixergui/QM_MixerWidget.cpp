@@ -129,7 +129,7 @@ struct HelpText : public QTimer{
                            ,
                            font);
 
-    _text->setDefaultTextColor(get_qcolor(11).light(70));
+    _text->setDefaultTextColor(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(70));
     _text->setPos(-150,-150);
     _text->setZValue(-1000);
 

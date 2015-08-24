@@ -41,7 +41,7 @@ extern struct TEvent tevent;
 
 #if !USE_OPENGL
 struct FXextrainfo{
-	int color;
+	enum ColorNums color;
 	void *FXs;
 	void *FXNodeLine;
 };
@@ -284,18 +284,42 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
   }
 }
 
-static int newFXColor(void){  
-  int color = rand() % 15;
+static enum ColorNums newFXColor(void){  
+  static enum ColorNums last = AUTOMATION8_COLOR_NUM;
+  
+  switch(last) {
+    
+  case AUTOMATION1_COLOR_NUM:
+    last = AUTOMATION2_COLOR_NUM;
+    return last;
+  case AUTOMATION2_COLOR_NUM:
+    last = AUTOMATION3_COLOR_NUM;
+    return last;
+  case AUTOMATION3_COLOR_NUM:
+    last = AUTOMATION4_COLOR_NUM;
+    return last;
+  case AUTOMATION4_COLOR_NUM:
+    last = AUTOMATION5_COLOR_NUM;
+    return last;
+  case AUTOMATION5_COLOR_NUM:
+    last = AUTOMATION6_COLOR_NUM;
+    return last;
+  case AUTOMATION6_COLOR_NUM:
+    last = AUTOMATION7_COLOR_NUM;
+    return last;
+  case AUTOMATION7_COLOR_NUM:
+    last = AUTOMATION8_COLOR_NUM;
+    return last;
+  case AUTOMATION8_COLOR_NUM:
+    last = AUTOMATION1_COLOR_NUM;
+    return last;
 
-  switch(color) {
-  case 0:
-  case 9:
-  case 10:
-  case 11:
-  case 15:
-    return newFXColor();
+  default:
+    RWarning("Unknown last color %d\n",last);
+    last = AUTOMATION1_COLOR_NUM;
+    return last;
+    
   }
-  return color;
 }
 
 static struct FX *selectFX(

@@ -51,13 +51,18 @@ int GE_get_tracker_height(){
 
 extern struct Root *root;
 
-GE_Rgb GE_get_rgb(int colornum){
-  const QColor c = get_qcolor(root->song->tracker_windows, colornum);
+GE_Rgb GE_get_rgb(enum ColorNums colornum){
+  const QColor c = get_qcolor(colornum);
   //GE_Rgb ret = {50,60,20,255};
   GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
   return ret;
 }
 
+GE_Rgb GE_get_custom_rgb(int custom_colornum){
+  const QColor c = get_custom_qcolor(custom_colornum);
+  GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
+  return ret;
+}
 
 static vl::vec4 get_vec4(GE_Rgb rgb){
   return vl::vec4(rgb.r/255.0f, rgb.g/255.0f, rgb.b/255.0f, rgb.a/255.0f);
@@ -683,18 +688,18 @@ GE_Context *GE_color_z(const QColor &color, int z){
   return GE_z(rgb_from_qcolor(color), z);
 }
 
-GE_Context *GE_color_z(int colornum, int z){
+GE_Context *GE_color_z(enum ColorNums colornum, int z){
   //const QColor c = get_qcolor(window, colornum);
   return GE_z(GE_get_rgb(colornum), z);
 }
 
-GE_Context *GE_color_alpha_z(int colornum, float alpha, int z){
+GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a = alpha * 255;
   return GE_z(rgb, z);
 }
 
-GE_Context *GE_textcolor_z(int colornum, int z){
+GE_Context *GE_textcolor_z(enum ColorNums colornum, int z){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a=230;
   return GE_z(rgb, z);

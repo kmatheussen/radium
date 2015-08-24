@@ -17,19 +17,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_COLORS_PROC_H
 #define QT_COLORS_PROC_H
 
+#include "../common/visual_proc.h"
+
 class EditorWidget;
 
-extern const char *get_color_display_name(int colornum);
-extern QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum);
-extern QColor get_qcolor(int colornum);
+extern const char *get_color_display_name(enum ColorNums colornum);
+extern QColor get_qcolor(enum ColorNums colornum);
+extern QColor get_custom_qcolor(int colornum);
 extern void setWidgetColors(QWidget *widget);
 extern void setApplicationColors(QApplication *app);
 //extern void setEditorColors(EditorWidget *editor);
-extern void testColorInRealtime(int num, QColor color);
+extern void testColorInRealtime(enum ColorNums num, QColor color);
 
 void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much);
 
-void GFX_ResetColor(int colornum);
+void GFX_ResetColor(enum ColorNums colornum);
 void GFX_ResetColors(void);
 void GFX_SaveColors(void);
 

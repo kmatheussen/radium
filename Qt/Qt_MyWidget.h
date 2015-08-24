@@ -45,7 +45,7 @@ namespace cvs{
       : col(col)
     {}
 
-    MyColor(int colnum)
+    MyColor(enum ColorNums colnum)
 #ifdef COMPILING_RADIUM
         : col(get_qcolor(colnum))
 #else
@@ -55,7 +55,7 @@ namespace cvs{
 
     MyColor()
 #ifdef COMPILING_RADIUM
-      : col(get_qcolor(11))
+      : col(get_qcolor(HIGH_BACKGROUND_COLOR_NUM))
 #else
       : col(g_colors[11])
 #endif

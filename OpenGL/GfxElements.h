@@ -15,7 +15,8 @@ typedef struct{
 } GE_Rgb;
 
 
-GE_Rgb GE_get_rgb(int colornum);
+GE_Rgb GE_get_rgb(enum ColorNums colornum);
+GE_Rgb GE_get_custom_rgb(int custom_colornum);
 
 static inline GE_Rgb GE_rgb(unsigned char r, unsigned char g, unsigned char b){
   GE_Rgb ret = {r,g,b,255};
@@ -88,8 +89,8 @@ GE_Context *GE_z(const GE_Rgb rgb, int z);
 static inline GE_Context *GE(const GE_Rgb rgb){
   return GE_z(rgb, Z_ZERO);
 }
-GE_Context *GE_color_z(int colornum, int z);
-GE_Context *GE_textcolor_z(int colornum, int z);
+GE_Context *GE_color_z(enum ColorNums colornum, int z);
+GE_Context *GE_textcolor_z(enum ColorNums colornum, int z);
 GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z);
 GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z);
 GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z);
@@ -111,23 +112,23 @@ static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float
 #ifndef EDITOR_WIDGET_H
 #include "../Qt/EditorWidget.h"
 extern struct Root *root;
-static inline QColor GE_qcolor(int colornum){
+static inline QColor GE_qcolor(enum ColorNums colornum){
   return get_qcolor(colornum);
 }
 #endif
 
 #endif
 
-static inline GE_Context *GE_color(int colornum) {
+static inline GE_Context *GE_color(enum ColorNums colornum) {
   return GE_color_z(colornum, Z_ZERO);
 }
 
-GE_Context *GE_color_alpha_z(int colornum, float alpha, int z);
-static inline GE_Context *GE_color_alpha(int colornum, float alpha) {
+GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z);
+static inline GE_Context *GE_color_alpha(enum ColorNums colornum, float alpha) {
   return GE_color_alpha_z(colornum, alpha, Z_ZERO);
 }
 
-static inline GE_Context *GE_textcolor(int colornum) {
+static inline GE_Context *GE_textcolor(enum ColorNums colornum) {
   return GE_textcolor_z(colornum, Z_ZERO);
 }
 static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b) {

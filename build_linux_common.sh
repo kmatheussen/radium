@@ -29,7 +29,7 @@ export CPUOPT="$OPTIMIZE" # Some files are so CPU intensive that we need to turn
 #export CCC="clang++ -mfpmath=sse -msse2"
 export CCC="g++ -mfpmath=sse -msse2"
 export CC="gcc -mfpmath=sse -msse2"
-#export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2"
+#export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
 export GCC="gcc -mfpmath=sse -msse2"
 export LINKER=g++
 

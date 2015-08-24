@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //
 // Code copied from http://rosettacode.org/wiki/Xiaolin_Wu's_line_algorithm and slightly modified
 
-static void plot(int x, int y, struct Tracker_Windows *window, int color, float brightness, int where){
+static void plot(int x, int y, struct Tracker_Windows *window, enum ColorNums color, float brightness, int where){
   if(brightness>1.0f)
     brightness=1.0f;
 
@@ -44,7 +44,7 @@ static void plot(int x, int y, struct Tracker_Windows *window, int color, float 
 
 static void draw_line_aa(
                          struct Tracker_Windows *window,
-                         int color,
+                         enum ColorNums color,
                          unsigned int x1, unsigned int y1,
                          unsigned int x2, unsigned int y2,
                          int where
@@ -134,7 +134,7 @@ static void draw_line_aa(
 
 
 
-void PREOS_GFX_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2,int where){
+void PREOS_GFX_Line(struct Tracker_Windows *window,enum ColorNums color,int x,int y,int x2,int y2,int where){
   if(false && x!=x2 && y!=y2){
     draw_line_aa(window,color,x,y,x2,y2,where);
     //OS_GFX_BouncePoints(window); // doesn't seem necessary

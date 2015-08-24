@@ -237,7 +237,7 @@ void OS_GFX_C_DrawCursor(
                                           x4-x1-2,height-2);
   
   editor->cursorbuffer_painter->setOpacity(0.2);
-  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,get_qcolor(7));
+  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,get_qcolor(CURSOR_EDIT_ON_COLOR_NUM));
 
 #else
   DRAW_PIXMAP_ON_PIXMAP(editor->cursorbuffer,
@@ -248,7 +248,7 @@ void OS_GFX_C_DrawCursor(
 #endif
 
   editor->cursorbuffer_painter->setOpacity(0.75);
-  editor->cursorbuffer_painter->setPen(get_qcolor(1));
+  editor->cursorbuffer_painter->setPen(get_qcolor(TEXT_COLOR_NUM));
   editor->cursorbuffer_painter->drawRect(x1+1,0,
                                          x4-x1-2,height-1);
 
@@ -264,8 +264,8 @@ void OS_GFX_C_DrawCursor(
 
   // TODO: fix Qt4
 #ifdef USE_QT3
-  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,get_qcolor(7));
-  editor->cursorbuffer_painter->fillRect(x2,0,x3-x2+1,height,get_qcolor(1));
+  editor->cursorbuffer_painter->fillRect(x1,0,x4,height,get_qcolor(CURSOR_COLOR_NUM));
+  editor->cursorbuffer_painter->fillRect(x2,0,x3-x2+1,height,get_qcolor(TEXT_COLOR_NUM));
 
   bitBlt(
          editor->cursorbuffer,
@@ -370,20 +370,20 @@ void OS_GFX_BitBlt(
 #define GET_QPAINTER(editor,where) (where==PAINT_DIRECTLY ? editor->painter : editor->paintbuffer_painter)
 
 #if 0
-static void setColor(QPainter *painter, int colornum, int where){
+static void setColor(QPainter *painter, enum ColorNums colornum, int where){
 }
 #endif
 
 static QColor get_note_color(EditorWidget *editor, QColor base){
-  return mix_colors(base,get_qcolor(15),0.4);
+  return mix_colors(base,get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM),0.4);
 }
 
 
-void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
+void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,enum ColorNums colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(colornum);
   if(g_use_custom_color==true) {
     //    qcolor = get_note_color(editor,qcolor);
     g_use_custom_color = false;
@@ -392,7 +392,7 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
 #if USE_OPENGL
   painter->fillRect(x,y,x2-x+1,y2-y+1,qcolor);
 #else
-  if(where==PAINT_BUFFER && (colornum==15 || colornum==12)){
+  if(where==PAINT_BUFFER && (colornum==HIGH_EDITOR_BACKGROUND_COLOR_NUM || colornum==EDITOR_SLIDERS_COLOR_NUM)){
     if(y>=tvisual->wblock->t.y1){
       //colornum = 15;
 
@@ -418,11 +418,11 @@ void OS_GFX_FilledBox(struct Tracker_Windows *tvisual,int colornum,int x,int y,i
 #endif
 }
 
-void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
+void OS_GFX_Box(struct Tracker_Windows *tvisual,enum ColorNums colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(colornum);
   g_use_custom_color = false;
 
   painter->setPen(qcolor);
@@ -436,11 +436,11 @@ void OS_GFX_Box(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,
 #endif
 }
 
-void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2,int y2,int where){
+void OS_GFX_Line(struct Tracker_Windows *tvisual,enum ColorNums colornum,int x,int y,int x2,int y2,int where){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  QColor qcolor = g_use_custom_color==true ? g_custom_color : get_qcolor(colornum);
   g_use_custom_color = false;
 
   if(x!=x2 && y!=y2){
@@ -473,7 +473,7 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
     }else{
       gradient.setColorAt(0,qcolor);
       //gradient.setColorAt(0.5,qcolor.darker(95));
-      gradient.setColorAt(1,get_qcolor(15).darker(scale(tvisual->wblock->tempocolorarea.x2,0,QApplication::desktop()->width(),100,112)));
+      gradient.setColorAt(1,get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM).darker(scale(tvisual->wblock->tempocolorarea.x2,0,QApplication::desktop()->width(),100,112)));
     }
 
     QPen pen;
@@ -493,7 +493,7 @@ void OS_GFX_Line(struct Tracker_Windows *tvisual,int colornum,int x,int y,int x2
 
 void OS_GFX_Point(
 	struct Tracker_Windows *tvisual,
-	int color,
+	enum ColorNums color,
         int brightness,
 	int x,int y,
         int where
@@ -505,7 +505,7 @@ void OS_GFX_Point(
   if(brightness==MAX_BRIGHTNESS && color!=1){
     painter->setPen(get_qcolor(color));
   }else{
-    painter->setPen(mix_colors(get_qcolor(color), get_qcolor(15), brightness/(float)MAX_BRIGHTNESS));
+    painter->setPen(mix_colors(get_qcolor(color), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), brightness/(float)MAX_BRIGHTNESS));
   }
 
   painter->drawPoint(x,y);
@@ -514,7 +514,7 @@ void OS_GFX_Point(
 
 void OS_GFX_Points(
                    struct Tracker_Windows *tvisual,
-                   int color,
+                   enum ColorNums color,
                    int brightness,
                    int num_points,
                    uint16_t *x,uint16_t *y,
@@ -528,7 +528,7 @@ void OS_GFX_Points(
   if(brightness==MAX_BRIGHTNESS && color!=1)
     painter->setPen(get_qcolor(color));
   else
-    painter->setPen(mix_colors(get_qcolor(color), get_qcolor(0), brightness/(float)MAX_BRIGHTNESS));
+    painter->setPen(mix_colors(get_qcolor(color), get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM), brightness/(float)MAX_BRIGHTNESS));
 
   while((int)editor->qpa.size() <= num_points)
     editor->qpa.resize(editor->qpa.size()*2);
@@ -542,7 +542,7 @@ void OS_GFX_Points(
 
 void OS_GFX_Polygon(
                     struct Tracker_Windows *tvisual,
-                    int color,
+                    enum ColorNums color,
                     int x1, int y1, int x2, int y2,
                     int num_points,
                     APoint *peaks,
@@ -600,7 +600,7 @@ void OS_GFX_Polygon(
 
 void OS_GFX_Polyline(
                      struct Tracker_Windows *tvisual,
-                    int colornum,
+                    enum ColorNums colornum,
                     int x1, int y1, int x2, int y2,
                     int num_points,
                     APoint *peaks,
@@ -610,7 +610,7 @@ void OS_GFX_Polyline(
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  QColor color = g_use_custom_color==true ? g_custom_color : get_qcolor(tvisual,colornum);
+  QColor color = g_use_custom_color==true ? g_custom_color : get_qcolor(colornum);
   g_use_custom_color = false;
 
   color.setAlpha(160);
@@ -637,10 +637,10 @@ void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual){
   g_use_custom_color = false;
 }
 
-void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2, int mix_factor){
+void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2, int mix_factor){
   //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //printf("mix_factor: %d\n",mix_factor);
-  g_custom_color = mix_colors(get_qcolor(tvisual,color1), get_qcolor(tvisual,color2), mix_factor / 1000.0);
+  g_custom_color = mix_colors(get_qcolor(color1), get_qcolor(color2), mix_factor / 1000.0);
   g_use_custom_color = true;
   //printf("mixcolor called\n");
 }
@@ -670,7 +670,7 @@ void OS_GFX_CancelClipRect(struct Tracker_Windows *tvisual,int where){
 
 void OS_GFX_Text(
                  struct Tracker_Windows *tvisual,
-                 int color,
+                 enum ColorNums color,
                  const char *text,
                  int x,
                  int y,
@@ -681,7 +681,7 @@ void OS_GFX_Text(
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
-  QColor qcolor = get_qcolor(tvisual,color);
+  QColor qcolor = get_qcolor(color);
   qcolor.setAlpha(200);
   painter->setPen(qcolor);
 

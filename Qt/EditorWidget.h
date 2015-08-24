@@ -173,11 +173,11 @@ public:
 
 #if 1
       {
-        this->cursorbuffer_painter->fillRect(0,0,this->width(),this->height(),get_qcolor(15));
+        this->cursorbuffer_painter->fillRect(0,0,this->width(),this->height(),get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM));
       }
 #if 0
       {
-        this->paintbuffer_painter->fillRect(0,0,this->width(),this->height(),this->colors[0]);
+        this->paintbuffer_painter->fillRect(0,0,this->width(),this->height(),get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM));
       }
 #endif
 #endif

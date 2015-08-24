@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct SliderPainter;
 
+
 SliderPainter *SLIDERPAINTER_create(QAbstractSlider *qslider);
 SliderPainter *SLIDERPAINTER_create(QGraphicsItem *graphics_item, int x1, int y1, int x2, int y2);
 void SLIDERPAINTER_delete(SliderPainter *painter);
@@ -37,7 +38,7 @@ void SLIDERPAINTER_setValue(SliderPainter *painter, int value); // only works wi
 float *SLIDERPAINTER_obtain_peak_value_pointers(SliderPainter *painter, int num_channels);
 void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers);
 float *SLIDERPAINTER_obtain_automation_value_pointer(SliderPainter *painter);
-int *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter);
+enum ColorNums *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter);
 void SLIDERPAINTER_release_automation_pointers(SliderPainter *painter);
 
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter);

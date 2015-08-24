@@ -284,7 +284,7 @@ end:
 
 
         if(patch->colornum==0)
-          patch->colornum = GFX_MakeRandomCustomColor(root->song->tracker_windows, -1);
+          patch->colornum = GFX_MakeRandomCustomColor(-1);
 
 	return patch;
 }

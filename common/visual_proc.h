@@ -38,28 +38,6 @@ int GFX_Message(vector_t *buttons, QString message);
 #endif
 #endif
 
-enum ColorNums{
-  
-  SOUNDFONT_COLOR_NUM = 16,
-  SOUNDFILE_COLOR_NUM,
-  CURRENT_SOUNDFILE_COLOR_NUM,
-
-  SLIDER1_COLOR_NUM,
-  SLIDER2_COLOR_NUM,
-  SLIDER_DISABLED_COLOR_NUM,
-  
-  PEAKS_COLOR_NUM,
-  PEAKS_0DB_COLOR_NUM,
-  PEAKS_4DB_COLOR_NUM,
-
-  PIANONOTE_COLOR_NUM,
-
-  END_CONFIG_COLOR_NUM,
-
-  BLACK_COLOR_NUM = 500,
-  WHITE_COLOR_NUM,
-};
-
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
 extern LANGSPEC const char *GFX_qVersion(void);
 
@@ -94,7 +72,7 @@ extern LANGSPEC void QUEUE_GFX_P2V_bitBlt(
 				int width,int height
 			);
 
-extern LANGSPEC void QUEUE_GFX_P_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2);
+extern LANGSPEC void QUEUE_GFX_P_FilledBox(struct Tracker_Windows *tvisual,enum ColorNums color,int x,int y,int x2,int y2);
 
 extern LANGSPEC void GFX_disable_mouse_keyboard(void);
 extern LANGSPEC void GFX_enable_mouse_keyboard(void);
@@ -148,13 +126,13 @@ extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void GFX_SetCustomColor(struct Tracker_Windows *tvisual, void *color);
-extern LANGSPEC int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum);
+extern LANGSPEC int GFX_MakeRandomCustomColor(int colornum);
 
 //bool GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 
-extern LANGSPEC void QUEUE_GFX_FilledBox(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2, int where);
+extern LANGSPEC void QUEUE_GFX_FilledBox(struct Tracker_Windows *tvisual,enum ColorNums color,int x,int y,int x2,int y2, int where);
 
-extern LANGSPEC void QUEUE_GFX_Box(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2, int where);
+extern LANGSPEC void QUEUE_GFX_Box(struct Tracker_Windows *tvisual,enum ColorNums color,int x,int y,int x2,int y2, int where);
 
 extern LANGSPEC void QUEUE_GFX_SetClipRect(
                                            struct Tracker_Windows *tvisual,
@@ -164,22 +142,22 @@ extern LANGSPEC void QUEUE_GFX_SetClipRect(
                                            );
 extern LANGSPEC void QUEUE_GFX_CancelClipRect(struct Tracker_Windows *tvisual, int where);
 
-extern LANGSPEC void PREOS_GFX_Line(struct Tracker_Windows *window,int color,int x,int y,int x2,int y2,int where);
-extern LANGSPEC void QUEUE_GFX_Line(struct Tracker_Windows *tvisual,int color,int x,int y,int x2,int y2,int where);
+extern LANGSPEC void PREOS_GFX_Line(struct Tracker_Windows *window,enum ColorNums color,int x,int y,int x2,int y2,int where);
+extern LANGSPEC void QUEUE_GFX_Line(struct Tracker_Windows *tvisual,enum ColorNums color,int x,int y,int x2,int y2,int where);
 
-extern LANGSPEC void GFX_Point(struct Tracker_Windows *tvisual,int color,int brightness,int x,int y,int where); // brigtness is between 0 and MAX_BRIGHTNESS. Used by aa lines.
-extern LANGSPEC void QUEUE_GFX_Point(struct Tracker_Windows* tvisual,int color,int brightness,int x,int y,int where);
-extern LANGSPEC void QUEUE_GFX_Points(struct Tracker_Windows* tvisual,int color,int brightness,int num_points, uint16_t *x,uint16_t *y,int where);
+extern LANGSPEC void GFX_Point(struct Tracker_Windows *tvisual,enum ColorNums color,int brightness,int x,int y,int where); // brigtness is between 0 and MAX_BRIGHTNESS. Used by aa lines.
+extern LANGSPEC void QUEUE_GFX_Point(struct Tracker_Windows* tvisual,enum ColorNums color,int brightness,int x,int y,int where);
+extern LANGSPEC void QUEUE_GFX_Points(struct Tracker_Windows* tvisual,enum ColorNums color,int brightness,int num_points, uint16_t *x,uint16_t *y,int where);
 extern LANGSPEC void OS_GFX_Point(
                                   struct Tracker_Windows *tvisual,
-                                  int color,
+                                  enum ColorNums color,
                                   int brightness,
                                   int x,int y,
                                   int where
                                   );
 extern LANGSPEC void OS_GFX_Points(
                                    struct Tracker_Windows *tvisual,
-                                   int color,
+                                   enum ColorNums color,
                                    int brightness,
                                    int num_points,
                                    uint16_t *x,uint16_t *y,
@@ -188,12 +166,12 @@ extern LANGSPEC void OS_GFX_Points(
 
 extern LANGSPEC void OS_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
 extern LANGSPEC void QUEUE_GFX_CancelMixColor(struct Tracker_Windows* tvisual);
-extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2,int mix_factor);
-extern LANGSPEC void QUEUE_GFX_SetMixColor(struct Tracker_Windows *tvisual,int color1,int color2,int mix_factor);
+extern LANGSPEC void OS_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
+extern LANGSPEC void QUEUE_GFX_SetMixColor(struct Tracker_Windows *tvisual,enum ColorNums color1,enum ColorNums color2,int mix_factor);
 
 extern LANGSPEC void OS_GFX_Polygon(
                                     struct Tracker_Windows *tvisual,
-                                    int color,
+                                    enum ColorNums color,
                                     int x1, int y1, int x2, int y2,
                                     int num_points,
                                     APoint *peaks,
@@ -202,7 +180,7 @@ extern LANGSPEC void OS_GFX_Polygon(
 
 extern LANGSPEC void OS_GFX_Polyline(
                                      struct Tracker_Windows *tvisual,
-                                     int color,
+                                     enum ColorNums color,
                                      int x1, int y1, int x2, int y2,
                                      int num_points,
                                      APoint *peaks,
@@ -211,7 +189,7 @@ extern LANGSPEC void OS_GFX_Polyline(
 
 extern LANGSPEC void QUEUE_GFX_Polygon(
                                     struct Tracker_Windows *tvisual,
-                                    int color,
+                                    enum ColorNums color,
                                     int x1, int y1, int x2, int y2,
                                     int num_points,
                                     APoint *peaks,
@@ -220,7 +198,7 @@ extern LANGSPEC void QUEUE_GFX_Polygon(
 
 extern LANGSPEC void QUEUE_GFX_Polyline(
                                      struct Tracker_Windows *tvisual,
-                                     int color,
+                                     enum ColorNums color,
                                      int x1, int y1, int x2, int y2,
                                      int num_points,
                                      APoint *peaks,
@@ -232,7 +210,7 @@ extern LANGSPEC int GFX_get_num_characters(struct Tracker_Windows *tvisual, cons
 
 extern LANGSPEC void PREOS_GFX_Text(
 	struct Tracker_Windows *tvisual,
-	int color,
+	enum ColorNums color,
 	const char *text,
 	int x,
 	int y,
@@ -242,7 +220,7 @@ extern LANGSPEC void PREOS_GFX_Text(
 	);
 extern LANGSPEC void QUEUE_GFX_Text(
 	struct Tracker_Windows *tvisual,
-	int color,
+	enum ColorNums color,
 	const char *text,
 	int x,
 	int y,
@@ -277,24 +255,24 @@ extern LANGSPEC int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y
 void GFXS_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     );
 void GFXS_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     );
@@ -302,14 +280,14 @@ void GFXS_BoxType(
 void GFXS_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,const char *text,
+				enum ColorNums color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,const char *text,
+	     enum ColorNums color,const char *text,
 	     int x,int y,
              int width,
 	     int flags,
@@ -354,12 +332,12 @@ void GFXS_BitBltType(
 void GFXST_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     );
@@ -367,26 +345,26 @@ void GFXST_LineType(
 void GFXST_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     );
 void GFXST_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,const char *text,
+				enum ColorNums color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,const char *text,
+	     enum ColorNums color,const char *text,
 	     int x,int y,
              int width,
              int flags,

@@ -100,7 +100,7 @@ struct AutomationOrPeakData{
   int requested_pos;
   int last_drawn_pos;
 
-  int *color;
+  enum ColorNums *color;
 
   int ch;
   int num_ch;
@@ -189,8 +189,8 @@ struct SliderPainter{
   float *_peak_values;
   bool _local_peak_values;
   float _automation_value;
-  int _automation_color;
-  int _peak_color;
+  enum ColorNums _automation_color;
+  enum ColorNums _peak_color;
 
   bool _alternative_color;
 
@@ -280,8 +280,8 @@ struct SliderPainter{
     _num_channels = 0;
     _peak_values = NULL;
     _local_peak_values=false;
-    _automation_color = 13;
-    _peak_color = 13;
+    _automation_color = AUTOMATION1_COLOR_NUM;
+    _peak_color = PEAKS_COLOR_NUM;
     _alternative_color = false;
     _auto_updater_has_started = false;
     _automation_value = 0.0f;
@@ -347,7 +347,7 @@ struct SliderPainter{
     return &_automation_value;
   }
 
-  int *obtain_automation_color_pointer(){
+  enum ColorNums *obtain_automation_color_pointer(){
     return &_automation_color;
   }
 
@@ -414,7 +414,7 @@ struct SliderPainter{
                   get_qcolor(*data->color)
                   );
       
-      p->setPen(QPen(get_qcolor(11).light(120),1));
+      p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
       p->drawRect(data->requested_pos, y1,
                   3,                   height);
       
@@ -490,7 +490,7 @@ void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_chann
 float *SLIDERPAINTER_obtain_automation_value_pointer(SliderPainter *painter){
   return painter->obtain_automation_value_pointer();
 }
-int *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter){
+enum ColorNums *SLIDERPAINTER_obtain_automation_color_pointer(SliderPainter *painter){
   return painter->obtain_automation_color_pointer();
 }
 void SLIDERPAINTER_release_automation_pointers(SliderPainter *painter){

@@ -55,20 +55,20 @@ namespace{
 struct ColorButton;
 static radium::Vector<ColorButton*> all_buttons;
 
-static int g_current_colornum = 0;
+static enum ColorNums g_current_colornum = LOW_EDITOR_BACKGROUND_COLOR_NUM;
  
 struct ColorButton : public QPushButton{
   Q_OBJECT
 
 public:
   
-  int colornum;
+  enum ColorNums colornum;
   bool is_current;
 
   QColorDialog *color_dialog;
   
   
-  ColorButton(QString name, int colornum, QColorDialog *color_dialog)
+  ColorButton(QString name, enum ColorNums colornum, QColorDialog *color_dialog)
     : QPushButton(name)
     , colornum(colornum)
     , is_current(colornum==g_current_colornum)
@@ -104,7 +104,7 @@ public:
     int split = 100;
     int text_width = width() - split;
 
-    QColor black(0,0,0);
+    QColor text_color = get_qcolor(TEXT_COLOR_NUM); //black(0,0,0);
 
     /*
     QColor white(255,255,255);
@@ -123,7 +123,7 @@ public:
 
     QRect rect(split+1,1,text_width-2,height()-1);
 
-    p.setPen(black);
+    p.setPen(text_color);
     p.drawText(rect, Qt::AlignCenter, text());
 
     p.fillRect(0,0,split,height(),get_qcolor(colornum));
@@ -199,6 +199,7 @@ class Preferences : public QDialog, public Ui::Preferences {
       colorlayout_right->insertWidget(0, &_color_dialog);
       _color_dialog.setOption(QColorDialog::NoButtons, true);
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);      
+      //_color_dialog.setOption(QColorDialog::ShowAlphaChannel, true);
 
       connect(&_color_dialog, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
 
@@ -208,15 +209,16 @@ class Preferences : public QDialog, public Ui::Preferences {
       QWidget *contents = scrollArea->widget();
       QVBoxLayout *layout = new QVBoxLayout(contents);
       layout->setSpacing(1);
-
-      for(int i=0;i<END_CONFIG_COLOR_NUM;i++){
-        ColorButton *l = new ColorButton(get_color_display_name(i), i, &_color_dialog);
+      
+      for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
+        ColorButton *l = new ColorButton(get_color_display_name((enum ColorNums)i), (enum ColorNums)i, &_color_dialog);
+      
         layout->addWidget(l);
         //l->move(0, i*20);
         l->show();
         //contents->resize(contents->width(), 200*20);
       }
-
+      
       //contents->adjustSize();
     }
 

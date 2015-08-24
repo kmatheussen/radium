@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "visual_proc.h"
+
 
 extern LANGSPEC void GFX_ConfigSystemFont(void);
 //extern LANGSPEC char *GFX_SelectEditFont(struct Tracker_Windows *tvisual);
@@ -92,7 +94,7 @@ extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch);
 extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes the audio object itself. (yes, it's messy)
 
 extern LANGSPEC float *OS_SLIDER_obtain_automation_value_pointer(struct Patch *patch,int effect_num);
-extern LANGSPEC int *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num);
+extern LANGSPEC enum ColorNums *OS_SLIDER_obtain_automation_color_pointer(struct Patch *patch,int effect_num);
 extern LANGSPEC void OS_SLIDER_release_automation_pointers(struct Patch *patch,int effect_num);
 
 extern LANGSPEC void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels);

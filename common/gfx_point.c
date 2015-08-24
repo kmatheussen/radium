@@ -36,7 +36,7 @@ static bool is_dirty=false;
 
 void GFX_Point(
                struct Tracker_Windows *window,
-               int color,
+               enum ColorNums color,
                int brightness,
                int x,int y,
                int where
@@ -91,11 +91,11 @@ void GFX_BouncePoints(struct Tracker_Windows *window){
       struct Points *point=points[color][bright];
       if(point!=NULL){
         if(point->pos==1){
-          OS_GFX_Point(window,color,bright,point->x[0],point->y[0],PAINT_BUFFER);
+          OS_GFX_Point(window,(enum ColorNums)color,bright,point->x[0],point->y[0],PAINT_BUFFER);
           //printf("single point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
           point->pos=0;
         }else if(point->pos>1){
-          OS_GFX_Points(window,color,bright,point->pos,point->x,point->y,PAINT_BUFFER);
+          OS_GFX_Points(window,(enum ColorNums)color,bright,point->pos,point->x,point->y,PAINT_BUFFER);
           //printf("point %d/%d, %d/%d\n",color,bright,point->x[0],point->y[0]);
           point->pos=0;
         }

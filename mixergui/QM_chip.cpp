@@ -903,7 +903,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
-  QColor border_color = get_qcolor(NULL, BLACK_COLOR_NUM);
+  QColor border_color = get_qcolor(BLACK_COLOR_NUM);
   if(is_current_patch==false);
     border_color.setAlpha(160);
 
@@ -932,14 +932,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     button_x2 = x2;
 
     {
-      QColor c = get_qcolor(NULL, BLACK_COLOR_NUM);
+      QColor c = get_qcolor(BLACK_COLOR_NUM);
       c.setAlpha(10);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
       painter->fillRect(x1,y1,x2-x1,y2-y1, c);
     }
 
     if(0){
-      QColor c = get_qcolor(NULL, WHITE_COLOR_NUM);
+      QColor c = get_qcolor(WHITE_COLOR_NUM);
       c.setAlpha(60);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
     }
@@ -1006,7 +1006,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     float width = x2-x1;
 
     {
-      QColor c = get_qcolor(NULL, BLACK_COLOR_NUM);
+      QColor c = get_qcolor(BLACK_COLOR_NUM);
       if(is_current_patch==false)
         c.setAlpha(160);
 
@@ -1064,7 +1064,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     if(patch->visual_note_intencity>0){      
       //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
       //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
-      QColor c = get_qcolor(12);
+      QColor c = get_qcolor(NOTE_EVENT_INDICATOR_COLOR_NUM);
       c.setAlphaF(::scale(patch->visual_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
       painter->setPen(c);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
@@ -1072,7 +1072,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 
     // border
-    QColor border_color = get_qcolor(7);
+    QColor border_color = get_qcolor(NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM);
     painter->setBrush(QBrush());
     painter->setPen(border_color);
     painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.05,0.05);

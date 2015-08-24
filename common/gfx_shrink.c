@@ -64,12 +64,12 @@ bool GFXS_EnsureBoundaries(
 void GFXS_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     )
@@ -110,12 +110,12 @@ void GFXS_LineType(
 void GFXS_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     )
@@ -139,14 +139,14 @@ void GFXS_BoxType(
 void GFXS_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,const char *text,
+				enum ColorNums color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,const char *text,
+	     enum ColorNums color,const char *text,
 	     int x,int y,
              int width,
              int flags,

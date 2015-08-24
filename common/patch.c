@@ -144,7 +144,7 @@ static struct Patch *PATCH_create(int instrumenttype, void *patchdata, const cha
   patch->forward_events = true;
 
   patch->name = talloc_strdup(name);
-  patch->colornum = GFX_MakeRandomCustomColor(root->song->tracker_windows, -1);
+  patch->colornum = GFX_MakeRandomCustomColor(-1);
 
   PATCH_init_voices(patch);
 

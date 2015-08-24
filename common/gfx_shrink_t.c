@@ -36,12 +36,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void GFXST_LineType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     )
@@ -72,12 +72,12 @@ void GFXST_LineType(
 void GFXST_BoxType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,
+				enum ColorNums color,
 				int x,int y,int x2,int y2,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,
+	     enum ColorNums color,
 	     int x,int y,int x2,int y2,
              int where
 	     )
@@ -95,14 +95,14 @@ void GFXST_BoxType(
 void GFXST_TextType(
 	     void (*GFX_OSFunc)(
 				struct Tracker_Windows *window,
-				int color,const char *text,
+				enum ColorNums color,const char *text,
 				int x,int y,
                                 int width,
                                 int flags,
                                 int where
 				),
 	     struct Tracker_Windows *window,
-	     int color,const char *text,
+	     enum ColorNums color,const char *text,
 	     int x,int y,
              int width,
              int flags,

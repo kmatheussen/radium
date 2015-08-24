@@ -42,45 +42,45 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace{
   struct ColorConfig{
-    int num;
+    enum ColorNums num;
     const char *config_name;
     const char *display_name;
   };
   struct ReplacementColorNum{
-    int num;
-    int replacement_num;
+    enum ColorNums num;
+    enum ColorNums replacement_num;
   };
   struct ReplacementColor{
-    int num;
+    enum ColorNums num;
     QColor color;
   };
 }
 
 static const ColorConfig g_colorconfig[] = {
-  {0,                   "color0",  "Low Editor background"},
-  {1,                   "color1",  "Text"},
-  {2,                   "color2",  "Waveform"},
-  {3,                   "color3",  "Automation 1"},
-  {4,                   "color4",  "Automation 2"},
-  {5,                   "color5",  "Velocity 1"},
-  {6,                   "color6",  "Velocity 2"},
-  {7,                   "color7",  "Cursor"},
-  {8,                   "color8",  "Instrument name"},
-  {9,                   "color9",  "Low Background"},
-  {10,                  "color10", "Automation 3"},
-  {11,                  "color11", "High Background"},
-  {12,                  "color12", "Editor sliders"},
-  {13,                  "color13", "Buttons"},
-  {14,                  "color14", "Portamento notes"},
-  {15,                  "color15", "High Editor background"},
+  {LOW_EDITOR_BACKGROUND_COLOR_NUM, "color0",  "Low Editor background"},
+  {TEXT_COLOR_NUM,      "color1",  "Text"},
+  {WAVEFORM_COLOR_NUM,                   "color2",  "Waveform"},
+  {AUTOMATION1_COLOR_NUM,                   "color3",  "Automation 1"},
+  {AUTOMATION2_COLOR_NUM,                   "color4",  "Automation 2"},
+  {VELOCITY1_COLOR_NUM,                   "color5",  "Note background color 1"},
+  {VELOCITY2_COLOR_NUM,                   "color6",  "Note background color 2"},
+  {CURSOR_EDIT_ON_COLOR_NUM,                   "color7",  "Cursor, edit ON"},
+  {INSTRUMENT_NAME_COLOR_NUM,                   "color8",  "Instrument name"},
+  {LOW_BACKGROUND_COLOR_NUM,                   "color9",  "Low Background"},
+  {AUTOMATION3_COLOR_NUM,                  "color10", "Automation 3"},
+  {HIGH_BACKGROUND_COLOR_NUM,                  "color11", "High Background"},
+  {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders"},
+  {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
+  {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
+  {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "color15", "High Editor background"},
 
-  {SOUNDFONT_COLOR_NUM,         "soundfont_color",          "Browser: Soundfont"},
-  {SOUNDFILE_COLOR_NUM,         "soundfile_color",          "Browser: Sound file"},
-  {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile_color",  "Current sound file"},
+  {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont"},
+  {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file"},
+  {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile",  "Current sound file"},
       
-  {SLIDER1_COLOR_NUM,           "slider1_color",            "Slider 1"},
-  {SLIDER2_COLOR_NUM,           "slider2_color",            "Slider 2"},
-  {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled_color",    "Slider disabled"},
+  {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1"},
+  {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2"},
+  {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled"},
 
   {PEAKS_COLOR_NUM,             "peaks",                    "Peaks - 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
@@ -88,24 +88,86 @@ static const ColorConfig g_colorconfig[] = {
 
   {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note"},
 
+  {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator"},
+  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border"},
+
+  {AUTOMATION4_COLOR_NUM,                   "automation4",  "Automation 4"},
+  {AUTOMATION5_COLOR_NUM,                   "automation5",  "Automation 5"},
+  {AUTOMATION6_COLOR_NUM,                   "automation6",  "Automation 6"},
+  {AUTOMATION7_COLOR_NUM,                   "automation7",  "Automation 7"},
+  {AUTOMATION8_COLOR_NUM,                   "automation8",  "Automation 8"},  
+  {AUTOMATION_INDICATOR_COLOR_NUM,          "automation_indicator", "Automation indicator"},
+
+  {TRACK_SEPARATOR1_COLOR_NUM,              "track_separator1", "Track separator 1"},
+  {TRACK_SEPARATOR2_COLOR_NUM,              "track_separator2", "Track separator 2"},
+
+  {BAR_TEXT_COLOR_NUM,                      "bar_text", "Bar text"},
+  {ZOOMLINE_TEXT_COLOR_NUM1, "zoomline_text1", "Zoom line 1"},
+  {ZOOMLINE_TEXT_COLOR_NUM2, "zoomline_text2", "Zoom line 2"},
+  {ZOOMLINE_TEXT_COLOR_NUM3, "zoomline_text3", "Zoom line 3"},
+  {ZOOMLINE_TEXT_COLOR_NUM4, "zoomline_text4", "Zoom line 4"},
+  {ZOOMLINE_TEXT_COLOR_NUM5, "zoomline_text5", "Zoom line 5"},
+  {ZOOMLINE_TEXT_COLOR_NUM6, "zoomline_text6", "Zoom line 6"},
+  {ZOOMLINE_TEXT_COLOR_NUM7, "zoomline_text7", "Zoom line 7"},
+
+  {TEMPOGRAPH_COLOR_NUM, "tempograph", "Tempo graph"},
+  {RANGE_COLOR_NUM, "range", "Range"},
+  {PITCH_LINE_COLOR_NUM, "pitchlines", "Pitch change lines"},
+
+  {PIANOROLL_OCTAVE_COLOR_NUM, "pianoroll_octave", "Pianoroll octave color"},
+  {PIANOROLL_NOTE_NAME_COLOR_NUM, "pianoroll_note_name", "Pianoroll note names"},
+
+  {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
+  
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
 
 static ReplacementColorNum g_replacement_color_num[] = {
-  {SOUNDFONT_COLOR_NUM, 13}, // 13=green
-  {SOUNDFILE_COLOR_NUM, 7}, // 7=bluish
-  {CURRENT_SOUNDFILE_COLOR_NUM, 6},
+  {SOUNDFONT_COLOR_NUM, BUTTONS_COLOR_NUM}, // 13=green
+  {SOUNDFILE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM}, // 7=bluish
+  {CURRENT_SOUNDFILE_COLOR_NUM, VELOCITY2_COLOR_NUM},
     
-  {SLIDER2_COLOR_NUM, 13},
-  {SLIDER_DISABLED_COLOR_NUM, 11},
+  {SLIDER2_COLOR_NUM, BUTTONS_COLOR_NUM},
+  {SLIDER_DISABLED_COLOR_NUM, HIGH_BACKGROUND_COLOR_NUM},
 
-  {PEAKS_COLOR_NUM, 13},
-  {PEAKS_0DB_COLOR_NUM, 6},
-  {PEAKS_4DB_COLOR_NUM, 14},
+  {PEAKS_COLOR_NUM, BUTTONS_COLOR_NUM},
+  {PEAKS_0DB_COLOR_NUM, VELOCITY2_COLOR_NUM},
+  {PEAKS_4DB_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
 
-  {PIANONOTE_COLOR_NUM, 7},
+  {PIANONOTE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
+  
+  {NOTE_EVENT_INDICATOR_COLOR_NUM, EDITOR_SLIDERS_COLOR_NUM},
+  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
+  
+  {AUTOMATION4_COLOR_NUM, WAVEFORM_COLOR_NUM},
+  {AUTOMATION5_COLOR_NUM, VELOCITY1_COLOR_NUM},
+  {AUTOMATION6_COLOR_NUM, VELOCITY2_COLOR_NUM},
+  {AUTOMATION7_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
+  {AUTOMATION8_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
+  {AUTOMATION_INDICATOR_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
 
-  {END_CONFIG_COLOR_NUM, -1}
+  {TRACK_SEPARATOR1_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
+  {TRACK_SEPARATOR2_COLOR_NUM, LOW_BACKGROUND_COLOR_NUM},
+
+  {BAR_TEXT_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM1, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM2, WAVEFORM_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM3, AUTOMATION1_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM4, AUTOMATION2_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM5, VELOCITY1_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM6, VELOCITY2_COLOR_NUM},
+  {ZOOMLINE_TEXT_COLOR_NUM7, CURSOR_EDIT_ON_COLOR_NUM},
+
+  {TEMPOGRAPH_COLOR_NUM, VELOCITY1_COLOR_NUM},
+  {RANGE_COLOR_NUM, LOW_EDITOR_BACKGROUND_COLOR_NUM},
+  {PITCH_LINE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
+
+  {PIANOROLL_OCTAVE_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
+  {PIANOROLL_NOTE_NAME_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
+
+  {CURSOR_EDIT_OFF_COLOR_NUM, VELOCITY1_COLOR_NUM},
+  
+  {END_CONFIG_COLOR_NUM, ILLEGAL_COLOR_NUM}
 };
 
 static ReplacementColor g_replacement_color[] = {
@@ -135,6 +197,7 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 
   return QColor(r,g,b);
 }
+
 
 #if 0
 #define NUM_NOTE_COLOR_CONF 4
@@ -174,17 +237,17 @@ static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
   {128,8}
 };
 
-static void configure_note_colors(EditorWidget *editor){
+static void configure_note_colors(void){
   for(int i=0;i<NUM_NOTE_COLOR_CONF;i++){
-    QColor start_color = get_qcolor(note_color_conf[i][1]);
-    QColor end_color = get_qcolor(note_color_conf[i+1][1]);
+    QColor start_color = get_custom_qcolor(note_color_conf[i][1]);
+    QColor end_color = get_custom_qcolor(note_color_conf[i+1][1]);
     int start_note = note_color_conf[i][0];
     int end_note = note_color_conf[i+1][0];
 
     if(start_note<64)
-      start_color = get_qcolor(1);
+      start_color = get_qcolor(TEXT_COLOR_NUM);
     else
-      end_color = get_qcolor(2);
+      end_color = get_qcolor(WAVEFORM_COLOR_NUM);
 
     for(int note=start_note;note<end_note;note++){
       //printf("setting %d (%d-%d) to %d %d %f\n",note,start_note,end_note,note_color_conf[i][1], note_color_conf[i+1][1], (float)(note-start_note)/(end_note-start_note));
@@ -197,29 +260,32 @@ QHash<int, QColor> custom_colors;
 static const int first_custom_colornum = 1024; // just start somewhere.
 
 // if colornum==-1, create new color
-int GFX_MakeRandomCustomColor(struct Tracker_Windows *tvisual, int colornum){
+int GFX_MakeRandomCustomColor(int colornum){
   static int num_colors = first_custom_colornum;
 
   if (colornum==-1)
     colornum = num_colors++;
 
-  custom_colors[colornum] = mix_colors(QColor(qrand()%255,qrand()%255,qrand()%255), get_qcolor(15), 0.10f);
+  custom_colors[colornum] = mix_colors(QColor(qrand()%255,qrand()%255,qrand()%255), get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.10f);
 
   return colornum;
 }
 
 
-static bool is_configurable_color(int colornum){
+
+static bool is_configurable_color(enum ColorNums colornum){
   if (colornum==BLACK_COLOR_NUM)
     return false;
   if (colornum==WHITE_COLOR_NUM)
+    return false;
+  if (colornum==RED_COLOR_NUM)
     return false;
 
   return true;
 }
 
 
-static const ColorConfig get_color_config(int colornum){
+static const ColorConfig get_color_config(enum ColorNums colornum){
   int i=0;
   while(g_colorconfig[i].num != END_CONFIG_COLOR_NUM){
     if (g_colorconfig[i].num==colornum)
@@ -231,7 +297,7 @@ static const ColorConfig get_color_config(int colornum){
   return g_colorconfig[0];
 }
 
-const char *get_color_display_name(int colornum){
+const char *get_color_display_name(enum ColorNums colornum){
   return get_color_config(colornum).display_name;
 }
 
@@ -248,7 +314,7 @@ static int get_colornum(const char *color_config_name){
 }
 */
 
-static int get_replacement_colornum(int colornum){
+static enum ColorNums get_replacement_colornum(enum ColorNums colornum){
   int i=0;
   while(g_replacement_color_num[i].num != END_CONFIG_COLOR_NUM){
     if (g_replacement_color_num[i].num==colornum)
@@ -256,10 +322,10 @@ static int get_replacement_colornum(int colornum){
     i++;
   }
 
-  return -1;
+  return ILLEGAL_COLOR_NUM;
 }
 
-static QColor get_replacement_color(int colornum){
+static QColor get_replacement_color(enum ColorNums colornum){
   int i=0;
   while(g_replacement_color[i].num != END_CONFIG_COLOR_NUM){
     if (g_replacement_color[i].num==colornum)
@@ -276,17 +342,17 @@ static QColor get_replacement_color(int colornum){
 static QColor *g_config_colors[END_CONFIG_COLOR_NUM] = {0};
 
 
-static void clear_config_color(int num){
+static void clear_config_color(enum ColorNums num){
   free(g_config_colors[num]);
   g_config_colors[num] = NULL;
 }
 
 static void clear_config_colors(void){
-  for(int i=0;i<END_CONFIG_COLOR_NUM;i++)
-    clear_config_color(i);
+  for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++)
+    clear_config_color((enum ColorNums)i);
 }
 
-static QColor get_config_qcolor(int colornum){
+static QColor get_config_qcolor(enum ColorNums colornum){
 
   if (g_config_colors[colornum]!=NULL)
     return *g_config_colors[colornum];
@@ -297,11 +363,14 @@ static QColor get_config_qcolor(int colornum){
   if (colorname==NULL)
     return col;
 
+  if (!QString(colorname).contains("color"))
+    colorname = talloc_format("%s_color", colorname);
+  
   const char *colorstring = SETTINGS_read_string(colorname, "");
   
   if (strlen(colorstring) <= 1) {
-    int replacement_colornum = get_replacement_colornum(colornum);
-    if (replacement_colornum >= 0)
+    enum ColorNums replacement_colornum = get_replacement_colornum(colornum);
+    if (replacement_colornum != ILLEGAL_COLOR_NUM)
       col = get_config_qcolor(replacement_colornum);
     else
       col = get_replacement_color(colornum);
@@ -315,9 +384,10 @@ static QColor get_config_qcolor(int colornum){
 }
 
 
-QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
+static QColor get_qcolor_really(enum ColorNums colornum){
   static QColor black(1,1,1);//"black");
   static QColor white(254,254,254);//"black");
+  static QColor red("red");
 
 
   //if(colornum < 16)
@@ -332,18 +402,19 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
   if (colornum==WHITE_COLOR_NUM)
     return white;
 
+  if (colornum==RED_COLOR_NUM)
+    return red;
+
+  RError("Unknown color. Very strange %d", (int)colornum);
+  return white;
+}
+
+QColor get_custom_qcolor(int colornum){
+  if (colornum < END_ALL_COLOR_NUMS)
+    return get_qcolor_really((enum ColorNums)colornum);
+  
   if(colornum >= first_custom_colornum)
     return custom_colors[colornum];
-
-
-
-  if (tvisual==NULL)
-    tvisual = root->song->tracker_windows;
-  
-  if (tvisual==NULL)
-    return white;
-
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   if(colornum > 16+128){
     RError("Illegal colornum: %d",colornum);
@@ -354,15 +425,15 @@ QColor get_qcolor(struct Tracker_Windows *tvisual, int colornum){
 
   static bool note_colors_configured = false;
   if(note_colors_configured==false){
-    configure_note_colors(editor);
+    configure_note_colors();
     note_colors_configured=true;
   }
 
-  return g_note_colors[colornum];
+  return g_note_colors[colornum];  
 }
 
-QColor get_qcolor(int colornum){
-  return get_qcolor(NULL, colornum);
+QColor get_qcolor(enum ColorNums colornum){
+  return get_custom_qcolor((int)colornum);
 }
 
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
@@ -386,11 +457,11 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
   {
 
     //QColor c(0xe5, 0xe5, 0xe5);
-    QColor c(*system_color);
-    QColor b(*button_color);
+    QColor c = get_qcolor(LOW_BACKGROUND_COLOR_NUM); //(*system_color);
+    QColor b = get_qcolor(HIGH_BACKGROUND_COLOR_NUM); //(*system_color);
 
     if(dynamic_cast<QComboBox*>(widget)!=NULL){
-      c = get_qcolor(13);
+      c = get_qcolor(BUTTONS_COLOR_NUM);
       c=mix_colors(c.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
       c.setAlpha(76);
     }
@@ -432,7 +503,7 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 
   // Foreground, text, etc. (everything blackish)
   {
-    QColor c = get_qcolor(1);
+    QColor c = get_qcolor(TEXT_COLOR_NUM);
     //QColor black(QColor("black"));
     c.setAlpha(180);
     //black.setAlpha(108);
@@ -492,7 +563,7 @@ static void updateApplication(EditorWidget *my_widget,QApplication *app){
 }
 
 static void updateAll(EditorWidget *my_widget, QWidget *widget){
-  configure_note_colors(my_widget);
+  configure_note_colors();
 
   updateWidget(my_widget, widget);
 
@@ -590,7 +661,7 @@ void setEditorColors(EditorWidget *my_widget){
 }
 #endif
 
-static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
+static void setColor(enum ColorNums num, const QRgb &rgb){
   R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
 
   GL_lock();{
@@ -599,16 +670,14 @@ static void setColor(EditorWidget *my_widget,int num, const QRgb &rgb){
     GTK_SetColor(num,qRed(rgb),qGreen(rgb),qBlue(rgb));
 #endif
 
-    //my_widget->colors[num].setRgb(rgb);
-
     if (g_config_colors[num]==NULL)
       get_config_qcolor(num);
 
     g_config_colors[num]->setRgb(rgb);
     
-    if(num==9)
+    if(num==LOW_BACKGROUND_COLOR_NUM)
       system_color->setRgb(rgb);
-    else if(num==11)
+    else if(num==HIGH_BACKGROUND_COLOR_NUM)
       button_color->setRgb(rgb);
     
   }GL_unlock();
@@ -635,7 +704,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
       color = color.darker(scale(how_much, 0, 1, 0, 200));
 
     if (i!=11)
-      setColor(editorwidget, i, color.rgb());
+      setColor((enum ColorNums)i, color.rgb());
     printf("value for %d: %f\n",i,value);
     //color.setLightntess(lightness
   }
@@ -653,7 +722,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
     color.setHsvF(h, s, value, a);
     
     //QColor color = editorwidget->colors[i];
-    setColor(editorwidget, i, color.rgb());
+    setColor((enum ColorNums)i, color.rgb());
     
     printf("value for %d: %f. s: %f, how_much: %f\n",i,value,s,how_much);
     //color.setLightntess(lightness
@@ -664,12 +733,12 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
   tvisual->must_redraw = true;
 }
 
-void testColorInRealtime(int num, QColor color){
+void testColorInRealtime(enum ColorNums num, QColor color){
   R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
 
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
-  setColor(my_widget,num,color.rgb());
+  setColor(num,color.rgb());
   updateAll(my_widget);
 
   if(false && num==0)
@@ -732,7 +801,7 @@ void GFX_ResetColors(void){
   window->must_redraw = true;
 }
 
-void GFX_ResetColor(int colornum){
+void GFX_ResetColor(enum ColorNums colornum){
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
 
@@ -745,8 +814,14 @@ void GFX_ResetColor(int colornum){
 }
 
 void GFX_SaveColors(void){
-  for(int i=0;i<END_CONFIG_COLOR_NUM;i++)
-    SETTINGS_write_string(get_color_config(i).config_name, get_qcolor(i).name());
+  for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
+    const char *colorname = get_color_config((enum ColorNums)i).config_name;
+    
+    if (!QString(colorname).contains("color"))
+      colorname = talloc_format("%s_color", colorname);
+
+    SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name());
+  }
 }
   
 
