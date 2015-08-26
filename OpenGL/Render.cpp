@@ -986,10 +986,10 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       float y = (y1+y2) / 2.0f;
       float x1 = wtrack->notearea.x2;
       float x2 = (GetXSubTrack1(wtrack,tr2->note->subtrack) + GetXSubTrack2(wtrack,tr2->note->subtrack)) / 2.0f;
-      GE_line(GE_color(BUTTONS_COLOR_NUM),
+      GE_line(GE_color(TEXT_COLOR_NUM),
               x1, y,
               x2, y,
-              1.6);
+              0.8);
     }
 
     bool highlight;
