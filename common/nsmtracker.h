@@ -1412,6 +1412,7 @@ struct Root{
         int standardvel;
 
 	volatile bool editonoff;
+        volatile bool play_cursor_onoff;
         volatile bool clickonoff;
 };
 

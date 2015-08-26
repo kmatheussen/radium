@@ -85,6 +85,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
         bottom_bar_widget->edit_onoff->setChecked(root->editonoff);
       if (bottom_bar_widget->click_onoff->isChecked() != root->clickonoff)
         bottom_bar_widget->click_onoff->setChecked(root->clickonoff);
+      if (bottom_bar_widget->play_cursor_onoff->isChecked() != root->play_cursor_onoff)
+        bottom_bar_widget->play_cursor_onoff->setChecked(root->play_cursor_onoff);
     }
   };
 
@@ -342,6 +344,10 @@ public slots:
 
   void on_click_onoff_toggled(bool val){
     enableMetronome(val);
+  }
+
+  void on_play_cursor_onoff_toggled(bool val){
+    enablePlayCursor(val);
   }
 };
 

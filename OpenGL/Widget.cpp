@@ -418,9 +418,9 @@ private:
 
   // OpenGL thread
   double find_till_realline(SharedVariables *sv){
-    if(pc->isplaying && pc->playertask_has_been_called) // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
+    if(!root->play_cursor_onoff && pc->isplaying && pc->playertask_has_been_called) { // When pc->playertask_has_been_called is true, we can be sure that the timing values are valid.
       return find_current_realline_while_playing(sv);
-    else
+    } else
       return g_curr_realline;
   }
 
@@ -458,7 +458,7 @@ private:
         vg->clear();
       }
       
-      GE_set_curr_realline(sv->curr_realline);
+      //GE_set_curr_realline(sv->curr_realline);
 
       GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
     }
@@ -479,7 +479,7 @@ private:
     //printf("scrolling\n");
 
     scroll_pos = pos;
-    
+
     // scroll
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);

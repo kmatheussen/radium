@@ -153,6 +153,7 @@ void Scroll_scroll(
 	wblock->curr_realline+=num_lines;
 	wblock->bot_realline+=num_lines;
 
+        printf("scroll: Set realline to %d (%d)\n",wblock->curr_realline,num_lines);
         GE_set_curr_realline(wblock->curr_realline);
 
 #if !USE_OPENGL

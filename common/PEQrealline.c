@@ -138,12 +138,15 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           org_pos = &peq->wblock->reallines[realline]->l.p;
 #endif
 
-        // Set current realline in main thread (main thread picks up till_curr_realline and sets curr_realline afterwards)
-        peq->wblock->till_curr_realline = realline;
-
-        // Set current realline in opengl thread
-        GE_set_curr_realline(realline);
-        
+        if (!root->play_cursor_onoff){
+          
+          // Set current realline in main thread (main thread picks up till_curr_realline and sets curr_realline afterwards)          
+          peq->wblock->till_curr_realline = realline;
+          
+          // Set current realline in opengl thread
+          printf("PEQ: set realline %d\n",realline);
+          GE_set_curr_realline(realline);
+        }
 
 	if(doit){
 		Ptask2Mtask();
