@@ -464,8 +464,10 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 
     if(dynamic_cast<QComboBox*>(widget)!=NULL){
       c = get_qcolor(BUTTONS_COLOR_NUM);
-      c=mix_colors(c.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
+#if 1
+      c = mix_colors(c.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
       c.setAlpha(76);
+#endif
     }
 
     pal.setColor( QPalette::Active, QPalette::Background, b);
