@@ -116,7 +116,8 @@ static const ColorConfig g_colorconfig[] = {
 
   {PIANOROLL_OCTAVE_COLOR_NUM, "pianoroll_octave", "Pianoroll octave color"},
   {PIANOROLL_NOTE_NAME_COLOR_NUM, "pianoroll_note_name", "Pianoroll note names"},
-
+  {PIANOROLL_NOTE_BORDER_COLOR_NUM, "pianoroll_note_border", "Pianoroll note border"},
+  
   {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
@@ -164,7 +165,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 
   {PIANOROLL_OCTAVE_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   {PIANOROLL_NOTE_NAME_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
-
+  
   {CURSOR_EDIT_OFF_COLOR_NUM, VELOCITY1_COLOR_NUM},
   
   {END_CONFIG_COLOR_NUM, ILLEGAL_COLOR_NUM}
@@ -172,6 +173,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 
 static ReplacementColor g_replacement_color[] = {
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
+  {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };

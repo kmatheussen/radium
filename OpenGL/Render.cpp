@@ -1135,7 +1135,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
   GE_Context *current_note_color = GE_mix_color(GE_get_rgb(colornum), White_rgb(), 500);
   
-  GE_Context *border_color = GE_color_alpha_z(BLACK_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
+  GE_Context *border_color = GE_color_alpha_z(PIANOROLL_NOTE_BORDER_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
 
   GE_set_x_scissor(wtrack->pianoroll_area.x,
                    wtrack->pianoroll_area.x2+1);
