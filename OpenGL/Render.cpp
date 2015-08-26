@@ -1056,7 +1056,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
     if (indicator_pitch_num >= nodes->num_elements)
       RError("indicator_pitch_node_num(%d) >= nodes->num_elements(%d)",indicator_pitch_num,nodes->num_elements);
     else {
-      printf("indicator_pitch_num: %d\n",indicator_pitch_num);
+      //printf("indicator_pitch_num: %d\n",indicator_pitch_num);
       struct Node *node = (struct Node *)nodes->elements[indicator_pitch_num];
       draw_node_indicator(node->x, node->y-wblock->t.y1);
     }    
@@ -1149,12 +1149,17 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                                                              note
                                                              );
 
-    int pianonotenum = 0;
+    int pianonotenum = -1;
     
-    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next,pianonotenum++) {
+    for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
       GE_Context *c = note_color;
 
+      if (nodeline->is_node)
+        pianonotenum++;      
+
       bool is_current = wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum;
+
+      //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,current_piano_note.pianonotenum,is_current?"true":"false");
       
       if (is_current) {
         c = current_note_color;
@@ -1180,53 +1185,57 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                1.0
                );
 #endif
-      const NodelineBox nodelineBox = GetPianoNoteBox(wtrack, nodeline);
 
-      bool is_inside = false;
+      if (nodeline->is_node) {          
 
-      if (nodelineBox.x1 >= wtrack->pianoroll_area.x && nodelineBox.x1 < wtrack->pianoroll_area.x2)
-        is_inside = true;
-      else if (nodelineBox.x2 >= wtrack->pianoroll_area.x && nodelineBox.x2 < wtrack->pianoroll_area.x2)
-        is_inside = true;
-      
-      if (is_inside || is_current) {
-        GE_box(border_color,
-               nodelineBox.x1, nodelineBox.y1,
-               nodelineBox.x2, nodelineBox.y2,
-               1.0
-               );
+        const NodelineBox nodelineBox = GetPianoNoteBox(wtrack, nodeline);
 
-        struct Pitches *pitch = (struct Pitches*)nodeline->element1;
-        float  notenum = pitch->note;
+        bool is_inside = false;
         
-        int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
-            
-        char *text = NotesTexts3[(int)notenum];
-        char temp[32];
+        if (nodelineBox.x1 >= wtrack->pianoroll_area.x && nodelineBox.x1 < wtrack->pianoroll_area.x2)
+          is_inside = true;
+        else if (nodelineBox.x2 >= wtrack->pianoroll_area.x && nodelineBox.x2 < wtrack->pianoroll_area.x2)
+          is_inside = true;
         
-        if (cents!=0){
-          sprintf(temp,"%s.%d",NotesTexts3[(int)notenum],cents);
-          text = &temp[0];
+        if (is_inside || is_current) {
+          GE_box(border_color,
+                 nodelineBox.x1, nodelineBox.y1,
+                 nodelineBox.x2, nodelineBox.y2,
+                 1.0
+                 );
+          
+          struct Pitches *pitch = (struct Pitches*)nodeline->element1;
+          float  notenum = pitch->note;
+        
+          int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
+          
+          char *text = NotesTexts3[(int)notenum];
+          char temp[32];
+          
+          if (cents!=0){
+            sprintf(temp,"%s.%d",NotesTexts3[(int)notenum],cents);
+            text = &temp[0];
+          }
+          
+          float midpos = (nodeline->x1 + nodeline->x2) / 2;
+          float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
+          float x = midpos - (textgfxlength / 2.0);
+          
+          GE_Context *c = GE_color_alpha_z(PIANOROLL_NOTE_NAME_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
+        
+          float y = nodeline->y1 - (is_current ? window->fontheight : window->fontheight/2) - 2;
+          
+          if (is_current)
+            GE_text(c,text,x,y);
+          else
+            paint_halfsize_note(c,0,text,x,y);
         }
-        
-        float midpos = (nodeline->x1 + nodeline->x2) / 2;
-        float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
-        float x = midpos - (textgfxlength / 2.0);
-        
-        GE_Context *c = GE_color_alpha_z(PIANOROLL_NOTE_NAME_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
-        
-        float y = nodeline->y1 - (is_current ? window->fontheight : window->fontheight/2) - 2;
-
-        if (is_current)
-          GE_text(c,text,x,y);
-        else
-          paint_halfsize_note(c,0,text,x,y);
       }
+    
           
       if (is_current)
         GE_set_x_scissor(wtrack->pianoroll_area.x,
                          wtrack->pianoroll_area.x2+1);
-      
     }
 
     notenum++;

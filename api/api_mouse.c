@@ -987,11 +987,22 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     return pitch->note;
   }
   
-  const struct NodeLine *nodelines = GetPianorollNodeLines(window, wblock, wtrack, note);
+  const struct NodeLine *nodeline = GetPianorollNodeLines(window, wblock, wtrack, note);
 
-  const struct NodeLine *nodeline = Nodeline_n(nodelines, pianonotenum);
-  if(nodeline==NULL) {
-    RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+  int num = -1;
+
+  while(nodeline != NULL){
+    if (nodeline->is_node)
+      num++;
+
+    if (num==pianonotenum)
+      break;
+    
+    nodeline=nodeline->next;
+  }
+
+  if (nodeline==NULL) {
+    RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);  
     return 0;
   }
 
@@ -1169,8 +1180,10 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   if (new_start < 0)
     new_start = 0;
 
+  const float mindiff = 0.001;
+    
   if (new_end >= lastplacefloat)
-    new_end = lastplacefloat - 0.001;
+    new_end = lastplacefloat - mindiff;
 
   if (new_start >= new_end)
     return notenum;
@@ -1230,14 +1243,16 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
   if (floatplace < 0)
     return notenum;
 
+  const float mindiff = 0.001;
+    
   float lastplacefloat = GetfloatFromPlace(&note->end);
-  if (floatplace >= lastplacefloat)
-    floatplace = lastplacefloat - 0.001;
+  if (floatplace+mindiff >= lastplacefloat)
+    floatplace = lastplacefloat - mindiff;
 
   if (note->velocities != NULL) {
     float firstvelplace = GetfloatFromPlace(&note->velocities->l.p);
-    if (floatplace >= firstvelplace)
-      floatplace = firstvelplace - 0.001;
+    if (floatplace+mindiff >= firstvelplace)
+      floatplace = firstvelplace - mindiff;
   }
 
   // (there are no pitches here)
@@ -1284,14 +1299,16 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   if (floatplace < 0)
     return notenum;
 
+  const float mindiff = 0.001;
+  
   float firstplacefloat = GetfloatFromPlace(&note->l.p);
-  if (floatplace <= firstplacefloat)
-    floatplace = firstplacefloat + 0.001;
+  if (floatplace-mindiff <= firstplacefloat)
+    floatplace = firstplacefloat + mindiff;
 
   if (note->velocities != NULL) {
     float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
-    if (floatplace <= lastvelplace)
-      floatplace = lastvelplace + 0.001;
+    if (floatplace-mindiff <= lastvelplace)
+      floatplace = lastvelplace + mindiff;
   }
 
   // (there are no pitches here)

@@ -932,11 +932,26 @@ static inline const NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, co
   const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
   const float note_width = gfx_width / notespan;
 
-  const float x_min = R_MIN(nodeline->x1, nodeline->x2);
-  const float x_max = R_MAX(nodeline->x1, nodeline->x2);
+  float x_min = R_MIN(nodeline->x1, nodeline->x2);
+  float x_max = R_MAX(nodeline->x1, nodeline->x2);
 
-  const float y_min = R_MIN(nodeline->y1, nodeline->y2);
-  const float y_max = R_MAX(nodeline->y1, nodeline->y2);
+  float y_min = R_MIN(nodeline->y1, nodeline->y2);
+  float y_max = R_MAX(nodeline->y1, nodeline->y2);
+
+  const struct NodeLine *next = nodeline->next;
+  
+  while(next!=NULL){
+    if (next->is_node)
+      break;
+
+    x_min = R_MIN(x_min, R_MIN(next->x1, next->x2));
+    x_max = R_MAX(x_max, R_MAX(next->x1, next->x2));
+
+    y_min = R_MIN(y_min, R_MIN(next->y1, next->y2));
+    y_max = R_MAX(y_max, R_MAX(next->y1, next->y2));
+
+    next = next->next;
+  }
 
   NodelineBox nodelineBox;
 
