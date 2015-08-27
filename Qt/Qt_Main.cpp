@@ -1003,6 +1003,7 @@ static void qunsetenv(const char *varName)
 }
 
 
+void MONOTONIC_TIMER_init(void);
 
 int main(int argc, char **argv){
 
@@ -1013,6 +1014,8 @@ int main(int argc, char **argv){
 
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
 
+  MONOTONIC_TIMER_init();
+  
   PLUGINHOST_init();
   
   //signal(SIGSEGV,crash);

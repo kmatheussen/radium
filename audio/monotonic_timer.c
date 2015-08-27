@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-
+#if 0
 
 // CCALL/INITIALIZER macros picked up from http://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
 #ifdef _MSC_VER
@@ -28,6 +28,7 @@
 
 #endif
 
+#endif
 
 
 #if _POSIX_TIMERS > 0 && defined(_POSIX_MONOTONIC_CLOCK)
@@ -77,17 +78,28 @@
   // TODO(awreece) Actually attempt to compile on windows.
 
 
-  INITIALIZER(init_pcfreq){
-            
+  static void init_pcfreq(void ){
+
+    printf("INIT1\n");
+    fflush(stdout);
+    
     // Accoring to http://stackoverflow.com/a/1739265/447288, this will
     // properly initialize the QueryPerformanceCounter.
     LARGE_INTEGER li;
     has_qpc = QueryPerformanceFrequency(&li);
+
+    printf("INIT2\n");
+    fflush(stdout);
+
     if (has_qpc) {
       PCFreq = ((double) li.QuadPart) / 1000.0;
     } else {
       fprintf(stderr, "Warning: OS doesnt support the QueryPerformanceCounter function. Using tsc instead for timing.\n");
-    }    
+    }
+
+    printf("INIT3\n");
+    fflush(stdout);
+    
   }
 
 
@@ -140,7 +152,7 @@ static inline uint64_t rdtsc() {
 
 static uint64_t rdtsc_per_sec = 0;
 
-INITIALIZER(init_rdtsc_per_sec) {
+static void init_rdtsc_per_sec(void) {
   uint64_t before, after;
   
   before = rdtsc();
@@ -157,3 +169,21 @@ static inline double monotonic_rdtsc_seconds(){
 #undef NEED_RDTSC
 #endif
  
+
+
+void MONOTONIC_TIMER_init(void ){
+#if defined(_WIN32)
+  init_pcfreq();
+#endif
+
+  printf("INIT4\n");
+  fflush(stdout);
+
+#if defined(NEED_RDTSC)
+  init_rdtsc_per_sec();
+#endif
+
+    
+  printf("INIT5\n");
+  fflush(stdout);
+}
