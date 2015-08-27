@@ -472,14 +472,15 @@ private:
     if(pc->isplaying && sv->block!=pc->block) // sanity check
       return false;
 
-    bool current_realline_while_playing_is_valid = pc->isplaying  && pc->playertask_has_been_called;
+    bool current_realline_while_playing_is_valid = pc->isplaying && pc->playertask_has_been_called;
 
-    double till_realline;
     double current_realline_while_playing;
-
     if (current_realline_while_playing_is_valid)
       current_realline_while_playing = find_current_realline_while_playing(sv);
-
+    else
+      current_realline_while_playing = 0.0;
+    
+    double till_realline;
     if (root->play_cursor_onoff)
       till_realline = g_curr_realline;
     else if (current_realline_while_playing_is_valid)
