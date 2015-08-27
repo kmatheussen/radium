@@ -360,9 +360,11 @@ public:
                  g_height,0);
   }
 
-  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+  vl::Transform *get_transform(vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
     if (Z_IS_STATIC_X(_z))
       return static_x_transform.get();
+    else if (_z == Z_PLAYCURSOR)
+      return playcursor_transform.get();
     else if (_z <= Z_MAX_SCROLLTRANSFORM)
       return scroll_transform.get();
     else if (_z < Z_MIN_STATIC)
@@ -384,8 +386,8 @@ int GE_get_z(GE_Context *c){
 
 /* Drawing */
 
-static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
-  vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform);
+static void setScrollTransform(vl::ref<GE_Context> c, vl::Actor *actor, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
+  vl::Transform *transform = c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
   if (transform != NULL)
     actor->setTransform(transform);
 }
@@ -523,7 +525,7 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
 }
 
 
-void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform){
+void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> static_x_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform){
 
   GE_Rgb new_background_color;
 
@@ -561,7 +563,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
         if(c->boxes.size() > 0) {
           setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform);
+          setScrollTransform(c, vg->fillQuads(c->boxes), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
           
           setColorEnd(vg, c);
         }
@@ -577,10 +579,10 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           setColorBegin(vg, c);
 
           if(c->textbitmaps.points.size() > 0)
-            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+            c->textbitmaps.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
         
           if(c->textbitmaps_halfsize.points.size() > 0)
-            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform));
+            c->textbitmaps_halfsize.drawAllCharBoxes(vg.get(), c->get_transform(scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform));
 
           setColorEnd(vg, c);
         }
@@ -594,7 +596,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 #if USE_TRIANGLE_STRIPS
         if(c->trianglestrips.size() > 0) {
           setColorBegin(vg, c);
-          setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform);
+          setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
           //vg->fillPolygons(c->trianglestrips);
           
           setColorEnd(vg, c);
@@ -603,13 +605,13 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
 #else
         for (std::vector< vl::ref<GradientTriangles> >::iterator it = c->gradient_triangles.begin(); it != c->gradient_triangles.end(); ++it) {
           vl::ref<GradientTriangles> gradient_triangles = *it;
-          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform);
+          setScrollTransform(c, gradient_triangles->render(vg.get()), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
         }
 
         if(c->triangles.size() > 0) {
           setColorBegin(vg, c);
           
-          setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
+          setScrollTransform(c, vg->fillTriangles(c->triangles), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
           //printf("triangles size: %d\n",(int)c->triangles.size());
           
           setColorEnd(vg, c);
@@ -634,7 +636,7 @@ void GE_draw_vl(PaintingData *painting_data, vl::Viewport *viewport, vl::ref<vl:
           has_set_color=true;
           
           vg->setLineWidth(get_pen_width_from_key(iterator->first));
-          setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform);
+          setScrollTransform(c, vg->drawLines(iterator->second), scroll_transform, static_x_transform, scrollbar_transform, playcursor_transform);
           //if(c->triangles.size()>0)
           //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
         }

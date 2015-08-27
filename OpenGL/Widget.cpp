@@ -272,6 +272,7 @@ public:
   vl::ref<vl::Transform> _scroll_transform;
   vl::ref<vl::Transform> _linenumbers_transform;
   vl::ref<vl::Transform> _scrollbar_transform;
+  vl::ref<vl::Transform> _playcursor_transform;
   vl::ref<vl::SceneManagerActorTree> _sceneManager;
 
   vl::ref<vl::VectorGraphics> vg;
@@ -283,7 +284,8 @@ public:
   volatile double override_vblank_value;
   bool has_overridden_vblank_value;
 
-  float last_pos;
+  float last_scroll_pos;
+  double last_current_realline_while_playing;
 
   bool sleep_when_not_painting;
 
@@ -298,7 +300,8 @@ public:
     , is_training_vblank_estimator(true)
     , override_vblank_value(-1.0)
     , has_overridden_vblank_value(false)
-    , last_pos(-1.0f)
+    , last_scroll_pos(-1.0f)
+    , last_current_realline_while_playing(-1.0f)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     setMouseTracking(true);
@@ -327,6 +330,9 @@ public:
 
     _scrollbar_transform = new vl::Transform;
     _rendering->transform()->addChild(_scrollbar_transform.get());
+
+    _playcursor_transform = new vl::Transform;
+    _rendering->transform()->addChild(_playcursor_transform.get());
 
 
     // installs a SceneManagerActorTree as the default scene manager
@@ -460,57 +466,80 @@ private:
       
       //GE_set_curr_realline(sv->curr_realline);
 
-      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform);
+      GE_draw_vl(painting_data, _rendering->camera()->viewport(), vg, _scroll_transform, _linenumbers_transform, _scrollbar_transform, _playcursor_transform);
     }
     
     if(pc->isplaying && sv->block!=pc->block) // sanity check
       return false;
 
-    double till_realline = find_till_realline(sv);
-    float pos = GE_scroll_pos(sv, till_realline);
+    bool current_realline_while_playing_is_valid = pc->isplaying  && pc->playertask_has_been_called;
+
+    double till_realline;
+    double current_realline_while_playing;
+
+    if (current_realline_while_playing_is_valid)
+      current_realline_while_playing = find_current_realline_while_playing(sv);
+
+    if (root->play_cursor_onoff)
+      till_realline = g_curr_realline;
+    else if (current_realline_while_playing_is_valid)
+      till_realline = current_realline_while_playing;
+    else
+      till_realline = g_curr_realline;
+    
+    float scroll_pos = GE_scroll_pos(sv, till_realline);
     //printf("pos: %f\n",pos);
     
     if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
 
-    if (needs_repaint==false && pos==last_pos)
+    if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing)
       return false;
-
+    
     //printf("scrolling\n");
-
-    scroll_pos = pos;
 
     // scroll
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-      mat.translate(0,pos,0);
+      mat.translate(0,scroll_pos,0);
       _scroll_transform->setLocalAndWorldMatrix(mat);
     }
     
     // linenumbers
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-      mat.translate(0,pos,0);
+      mat.translate(0,scroll_pos,0);
       _linenumbers_transform->setLocalAndWorldMatrix(mat);
     }
     
     // scrollbar
     {
       vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
-      float scrollpos = scale(till_realline,
-                              0, sv->num_reallines - (pc->isplaying?0:1),
-                              -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
-                              );
+      float scrollbarpos = scale(till_realline,
+                                 0, sv->num_reallines - (pc->isplaying?0:1),
+                                 -2, -(sv->scrollbar_height - sv->scrollbar_scroller_height - 1)
+                                 );
       //printf("bar_length: %f, till_realline: %f. scrollpos: %f, pos: %f, max: %d\n",bar_length,till_realline, scrollpos, pos, window->leftslider.x2);
-      mat.translate(0,scrollpos,0);
+      mat.translate(0,scrollbarpos,0);
       _scrollbar_transform->setLocalAndWorldMatrix(mat);
     }
     
-    GE_update_triangle_gradient_shaders(painting_data, pos);
+    // playcursor
+    {
+      vl::mat4 mat = vl::mat4::getRotation(0.0f, 0, 0, 1);
+
+      float playcursorpos = scroll_pos - GE_scroll_pos(sv, current_realline_while_playing);
+
+      mat.translate(0,playcursorpos,0);
+      _playcursor_transform->setLocalAndWorldMatrix(mat);
+    }
+    
+    GE_update_triangle_gradient_shaders(painting_data, scroll_pos);
     
     _rendering->render();
     
-    last_pos = pos;
+    last_scroll_pos = scroll_pos;
+    last_current_realline_while_playing = current_realline_while_playing;
     
     return true;
   }

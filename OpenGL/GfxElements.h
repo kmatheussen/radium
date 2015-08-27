@@ -50,7 +50,7 @@ int GE_get_height(void);
 
 #if defined(GE_DRAW_VL)
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
-void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform);
+void GE_draw_vl(PaintingData *das_painting_data, vl::Viewport *viewport, vl::ref<vl::VectorGraphics> vg, vl::ref<vl::Transform> scroll_transform, vl::ref<vl::Transform> linenumbers_transform, vl::ref<vl::Transform> scrollbar_transform, vl::ref<vl::Transform> playcursor_transform);
 #endif
 
 #define Z_ABOVE(z) ((z)+2)
@@ -68,8 +68,11 @@ enum{
 
   Z_SCROLLBAR = 200, // All contexts with a z level higher than 100 and less than 200, belongs to the scrollbar transform.
 
-  Z_MIN_STATIC = 300,  // All contexts with a z level of at least 100 are static contexts. (I.e. not scrolling or scrollbar. Used to paint cursor, etc.)
-  Z_STATIC = 400
+  Z_MIN_STATIC = 300,  // All contexts with a z level of at least 300, and below Z_MAX_STATIC are static contexts. (I.e. not scrolling or scrollbar. Used to paint cursor, etc.)
+  Z_STATIC = 400,
+  Z_MAX_STATIC = 500,
+  
+  Z_PLAYCURSOR = 600, // The play cursor is drawn on top of everything else.
 };
 
 GE_Context *GE_set_static_x(GE_Context *c);

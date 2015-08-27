@@ -180,6 +180,9 @@ void enableMetronome(bool onoff){
 
 void enablePlayCursor(bool onoff){
   root->play_cursor_onoff = onoff;
+  
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  window->must_redraw = true;
 }
 
 void insertReallines(int toinsert,int windownum){

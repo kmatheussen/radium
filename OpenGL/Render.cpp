@@ -1475,7 +1475,7 @@ static void create_velocities_gradient_background(
   }
 }
 
-void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
+static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note){
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetXSubTrack1(wtrack,note->subtrack);
@@ -1598,7 +1598,7 @@ static void create_track_is_recording(const struct Tracker_Windows *window, cons
   GE_text(c, "Rec", wtrack->x, 0);
 }
 
-void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
+static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
   create_track_borders(window, wblock, wtrack, left_subtrack);
 
   SetNoteSubtrackAttributes(wtrack->track);
@@ -1647,7 +1647,7 @@ void create_track(const struct Tracker_Windows *window, const struct WBlocks *wb
 }
 
 
-void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+static void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 
   while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
@@ -1657,7 +1657,7 @@ void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *w
   }
 }
 
-void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+static void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
   GE_Context *c = GE_z(GE_alpha(GE_get_rgb(root->editonoff?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), Z_STATIC);
   
@@ -1711,6 +1711,24 @@ void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *w
   */
 }
 
+static void create_playcursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  if (root->play_cursor_onoff) {
+    
+    GE_Context *c = GE_z(GE_alpha(GE_get_rgb(PLAY_CURSOR_COLOR_NUM), 0.3), Z_PLAYCURSOR);
+    
+    int x1 = window->leftslider.width;
+    int x2 = window->width;
+    
+    int dy = wblock->t.y1;
+    int y = GetCursorY1Pos(window, wblock) - dy;
+    
+    GE_line(c,
+            x1, y,
+            x2, y,
+            2.0
+            );
+  }
+}
 
 /************************************
    block
@@ -1740,6 +1758,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
       create_reltempotrack(window, wblock);
     create_tracks(window, wblock);
     create_cursor(window, wblock);
-
+    create_playcursor(window, wblock);
+    
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 }

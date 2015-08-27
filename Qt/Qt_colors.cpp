@@ -119,6 +119,7 @@ static const ColorConfig g_colorconfig[] = {
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, "pianoroll_note_border", "Pianoroll note border"},
   
   {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
+  {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -174,6 +175,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 static ReplacementColor g_replacement_color[] = {
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
+  {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
   
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };

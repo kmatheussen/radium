@@ -77,7 +77,7 @@
   // TODO(awreece) Actually attempt to compile on windows.
 
 
-    INITIALIZER(init_pcfreq){
+  INITIALIZER(init_pcfreq){
             
     // Accoring to http://stackoverflow.com/a/1739265/447288, this will
     // properly initialize the QueryPerformanceCounter.

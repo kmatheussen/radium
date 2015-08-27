@@ -251,6 +251,7 @@ enum ColorNums {
   PIANOROLL_NOTE_BORDER_COLOR_NUM,
   
   CURSOR_EDIT_OFF_COLOR_NUM,                       // 7
+  PLAY_CURSOR_COLOR_NUM,
   
   END_CONFIG_COLOR_NUM,
 

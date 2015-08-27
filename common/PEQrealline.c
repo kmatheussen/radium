@@ -144,7 +144,7 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           peq->wblock->till_curr_realline = realline;
           
           // Set current realline in opengl thread
-          printf("PEQ: set realline %d\n",realline);
+          //printf("PEQ: set realline %d\n",realline);
           GE_set_curr_realline(realline);
         }
 
