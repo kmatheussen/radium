@@ -230,14 +230,17 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 }
 
 void PlayHandleRangeLoop(void){
-  if (pc->is_playing_range == false)
+  struct Blocks *block = pc->block;
+  
+  if (pc->is_playing_range == false || block==NULL)
     return;
 
   //printf("duration: %d\nrealtime: %d\n\n", (int)duration, (int)pc->therealtime);
 
+  
   STime start_therealtime = pc->therealtime;
 
-  if (start_therealtime >= pc->range_duration) {
+  if (start_therealtime >= pc->range_duration/block->reltempo) {
     PlayRangeCurrPos(root->song->tracker_windows);
     int counter = 0;
     while (pc->therealtime == start_therealtime && counter < 50){ // Wait for the player to start up.
