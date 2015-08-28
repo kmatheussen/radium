@@ -1,3 +1,14 @@
+Most important changes 3.3.3 -> 3.3.4
+* Adjusted minimum OpenGL version to 3.0
+* Initialize monotonic timer manually. Fix startup crash seen on 32 bit Windows.
+* Play range loop correctly when block tempo is not 1.0
+* Optional play cursor. Instead of scrolling the editor while playing,
+  a red horizontal line moves down instead, denoting the current play position.
+  Enabled when the "PC" button is pressed in the bottom bar.
+* Fixed some issues with the piano roll and locally zoomed lines
+* Lots of color configuration improvements
+
+
 Most important changes 3.3.2 -> 3.3.3
 * Changed default editor font from Bold to Regular
 * Loop when playing range
