@@ -845,7 +845,7 @@ extern "C" void cocoa_set_best_resolution(void *view);
 #endif
 
 static bool is_opengl_version_recent_enough_questionmark(void){
-  if ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_1_4) == QGLFormat::OpenGL_Version_1_4)
+  if ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_3_0) == QGLFormat::OpenGL_Version_3_0)
     return true;
   else
     return false;
