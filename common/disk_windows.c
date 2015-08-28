@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "control_proc.h"
 #include "gfx_op_queue_proc.h"
 #include "settings_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "disk_windows_proc.h"
 
@@ -254,6 +255,8 @@ if(window==NULL) return;
 	if(window->wblock->isgfxdatahere==false){
 		UpdateReallinesDependens(window,window->wblock);
 	}
+
+        GE_set_curr_realline(window->wblock->curr_realline);
 
 DLoadWindows(newroot,NextWindow(window));
 }

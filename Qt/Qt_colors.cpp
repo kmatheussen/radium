@@ -82,9 +82,9 @@ static const ColorConfig g_colorconfig[] = {
   {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2"},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled"},
 
-  {PEAKS_COLOR_NUM,             "peaks",                    "Peaks - 0dB"},
+  {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
-  {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks 4dB +"},
+  {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks > 4dB"},
 
   {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note"},
 

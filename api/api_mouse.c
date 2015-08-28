@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-extern volatile float scroll_pos;
+extern volatile float g_scroll_pos;
 
 
 extern const struct ListHeader3 *current_node;
@@ -100,11 +100,11 @@ float getHalfOfNodeWidth(void){
 static float get_mouse_realline_y1(const struct Tracker_Windows *window, int realline){
   //printf("fontheight: %f\n",(float)window->fontheight);
   //printf("wblock->t.y1: %f. scroll_pos: %f\n",(float)window->wblock->t.y1,(float)scroll_pos);
-  return window->fontheight*realline - scroll_pos + window->wblock->t.y1;
+  return window->fontheight*realline - g_scroll_pos + window->wblock->t.y1;
 }
 
 static float get_mouse_realline_y2(const struct Tracker_Windows *window, int realline){
-  return window->fontheight*(realline+1) - scroll_pos + window->wblock->t.y1;
+  return window->fontheight*(realline+1) - g_scroll_pos + window->wblock->t.y1;
 }
 
 float getTopVisibleY(int blocknum, int windownum){
@@ -743,7 +743,7 @@ float getTemponodeX(int num){
 
 float getTemponodeY(int num){
   const struct Node *nodeline = get_temponode(num);
-  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+  return nodeline==NULL ? 0 : nodeline->y-g_scroll_pos;
 }
 
 float getTemponodeValue(int num, int blocknum, int windownum){
@@ -1012,11 +1012,11 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   case PIANONOTE_INFO_X1:
     return box.x1;
   case PIANONOTE_INFO_Y1:
-    return wblock->t.y1 + box.y1 - scroll_pos;
+    return wblock->t.y1 + box.y1 - g_scroll_pos;
   case PIANONOTE_INFO_X2:
     return box.x2;
   case PIANONOTE_INFO_Y2:
-    return wblock->t.y1 + box.y2 - scroll_pos;
+    return wblock->t.y1 + box.y2 - g_scroll_pos;
   default:
     RError("Internal error");
     return 0;
@@ -1642,7 +1642,7 @@ float getPitchX(int num,  int tracknum, int blocknum, int windownum){
 
 float getPitchY(int num, int tracknum, int blocknum, int windownum){
   struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->y-scroll_pos;
+  return nodeline==NULL ? 0 : nodeline->y-g_scroll_pos;
 }
 
 
@@ -2035,7 +2035,7 @@ float getVelocityX(int num, int notenum, int tracknum, int blocknum, int windown
 
 float getVelocityY(int num, int notenum, int tracknum, int blocknum, int windownum){
   struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
-  return node==NULL ? 0 : node->y-scroll_pos;
+  return node==NULL ? 0 : node->y-g_scroll_pos;
 }
 
 
@@ -2293,7 +2293,7 @@ float getFxnodeX(int num, int fxnum, int tracknum, int blocknum, int windownum){
 
 float getFxnodeY(int num, int fxnum, int tracknum, int blocknum, int windownum){
   struct Node *node = get_fxnode(num, fxnum, tracknum, blocknum, windownum);
-  return node==NULL ? 0 : node->y-scroll_pos;
+  return node==NULL ? 0 : node->y-g_scroll_pos;
 }
 
 

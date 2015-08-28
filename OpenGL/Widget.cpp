@@ -241,7 +241,7 @@ static EditorWidget *get_editorwidget(void){
 }
 
 
-volatile float scroll_pos = 0.0f;
+volatile float g_scroll_pos = 0.0f;
 
 
 // Main thread
@@ -286,7 +286,8 @@ public:
 
   float last_scroll_pos;
   double last_current_realline_while_playing;
-
+  int last_curr_realline;
+  
   bool sleep_when_not_painting;
 
   // Main thread
@@ -302,6 +303,7 @@ public:
     , has_overridden_vblank_value(false)
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
+    , last_curr_realline(-1)
     , sleep_when_not_painting(true) //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
   {
     setMouseTracking(true);
@@ -487,14 +489,15 @@ private:
       till_realline = current_realline_while_playing;
     else
       till_realline = g_curr_realline;
-    
+
     float scroll_pos = GE_scroll_pos(sv, till_realline);
+      
     //printf("pos: %f\n",pos);
     
     if(pc->isplaying && sv->block!=pc->block) // Do the sanity check once more. pc->block might have changed value during computation of pos.
       return false;
 
-    if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing)
+    if (needs_repaint==false && scroll_pos==last_scroll_pos && current_realline_while_playing==last_current_realline_while_playing && g_curr_realline==last_curr_realline)
       return false;
     
     //printf("scrolling\n");
@@ -538,10 +541,12 @@ private:
     GE_update_triangle_gradient_shaders(painting_data, scroll_pos);
     
     _rendering->render();
+    g_scroll_pos = scroll_pos;
     
     last_scroll_pos = scroll_pos;
     last_current_realline_while_playing = current_realline_while_playing;
-    
+    last_curr_realline = g_curr_realline;
+  
     return true;
   }
 
