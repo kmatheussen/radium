@@ -251,16 +251,20 @@ static void EditorFollowsPlayCursorLoop(void){
 
   if (wblock->l.num != g_playing_blocknum)
     return;
-  
-  int diff = wblock->top_realline - wblock->curr_realline;
-    
-  if (g_playing_realline > wblock->bot_realline){
+
+  bool scrollit = false;
+
+  if (g_playing_realline > wblock->bot_realline)
+    scrollit = true;
+
+  if (g_playing_realline < wblock->top_realline)
+    scrollit = true;
+
+  if (scrollit) {      
+    int diff = wblock->top_realline - wblock->curr_realline;
     ScrollEditorToRealLine(window,wblock,g_playing_realline - diff - 1);
   }
 
-  if (g_playing_realline < wblock->top_realline){
-    ScrollEditorToRealLine(window,wblock,g_playing_realline - diff - 1);
-  }
 }
 
 // called very often
