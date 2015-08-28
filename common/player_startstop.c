@@ -229,7 +229,43 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
 	PlayBlock(wblock->block,place,true);
 }
 
-void PlayHandleRangeLoop(void){
+static int g_playing_realline = 0;
+static int g_playing_blocknum = 0;
+void Play_set_curr_playing_realline(int realline, int blocknum){
+  g_playing_realline = realline;
+  g_playing_blocknum = blocknum;
+}
+
+// called very often
+static void EditorFollowsPlayCursorLoop(void){
+  if (root->play_cursor_onoff==false)
+    return;
+  
+  if (root->editor_follows_play_cursor_onoff==false)
+    return;
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+
+  //printf("%d %d\n",g_playing_realline,wblock->bot_realline);
+
+  if (wblock->l.num != g_playing_blocknum)
+    return;
+  
+  int diff = wblock->top_realline - wblock->curr_realline;
+    
+  if (g_playing_realline > wblock->bot_realline){
+    ScrollEditorToRealLine(window,wblock,g_playing_realline - diff - 1);
+  }
+
+  if (g_playing_realline < wblock->top_realline){
+    ScrollEditorToRealLine(window,wblock,g_playing_realline - diff - 1);
+  }
+}
+
+// called very often
+static void PlayHandleRangeLoop(void){
+
   struct Blocks *block = pc->block;
   
   if (pc->is_playing_range == false || block==NULL)
@@ -248,6 +284,12 @@ void PlayHandleRangeLoop(void){
       counter++;
     }
   }
+}
+
+// called very often
+void PlayCallVeryOften(void){
+  EditorFollowsPlayCursorLoop();    
+  PlayHandleRangeLoop();
 }
 
 static void PlaySong(

@@ -86,7 +86,10 @@ struct Root *LoadRoot(void){
         ret->grid_denominator=1;
         ret->signature.numerator=4;
         ret->signature.denominator=4;
-
+        
+        ret->play_cursor_onoff = root->play_cursor_onoff;
+        ret->editor_follows_play_cursor_onoff = root->editor_follows_play_cursor_onoff;
+        
 	GENERAL_LOAD(1,14);
 
 

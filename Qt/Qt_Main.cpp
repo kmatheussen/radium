@@ -433,7 +433,7 @@ protected:
     
     if(pc->isplaying) {
       P2MUpdateSongPosCallBack();
-      PlayHandleRangeLoop();
+      PlayCallVeryOften();
     }
 
     PATCH_call_very_often();

@@ -87,6 +87,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
         bottom_bar_widget->click_onoff->setChecked(root->clickonoff);
       if (bottom_bar_widget->play_cursor_onoff->isChecked() != root->play_cursor_onoff)
         bottom_bar_widget->play_cursor_onoff->setChecked(root->play_cursor_onoff);
+      if (bottom_bar_widget->editor_follows_play_cursor_onoff->isChecked() != root->editor_follows_play_cursor_onoff)
+        bottom_bar_widget->editor_follows_play_cursor_onoff->setChecked(root->editor_follows_play_cursor_onoff);
     }
   };
 
@@ -196,6 +198,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     signature->setText(Rational(root->signature).toString());
     lpb->setValue(root->lpb);
     bpm->setValue(root->tempo);
+    editor_follows_play_cursor_onoff->setVisible(root->play_cursor_onoff);
   }
 
   void update_velocity_sliders(){
@@ -348,6 +351,11 @@ public slots:
 
   void on_play_cursor_onoff_toggled(bool val){
     enablePlayCursor(val);
+    editor_follows_play_cursor_onoff->setVisible(val);
+  }
+
+  void on_editor_follows_play_cursor_onoff_toggled(bool val){
+    enableEditorFollowsPlayCursor(val);
   }
 };
 

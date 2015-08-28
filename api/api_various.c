@@ -185,6 +185,13 @@ void enablePlayCursor(bool onoff){
   window->must_redraw = true;
 }
 
+void enableEditorFollowsPlayCursor(bool onoff){
+  root->editor_follows_play_cursor_onoff = onoff;
+  
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  window->must_redraw = true;
+}
+
 void insertReallines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   InsertRealLines_CurrPos(window,toinsert);

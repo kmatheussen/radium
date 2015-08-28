@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "playerclass.h"
+#include "player_proc.h"
 #include "time_proc.h"
 #include "PEQmempool_proc.h"
 #include "OS_Ptask2Mtask_proc.h"
@@ -123,7 +124,6 @@ $1 = (Place *) 0x8
 (should be fixed)
 */
 
-
 void PlayerNewRealline(struct PEventQueue *peq,int doit){
 	int addplaypos=0;
 	int realline=peq->realline;
@@ -146,8 +146,11 @@ void PlayerNewRealline(struct PEventQueue *peq,int doit){
           // Set current realline in opengl thread
           //printf("PEQ: set realline %d\n",realline);
           GE_set_curr_realline(realline);
+          
         }
 
+        Play_set_curr_playing_realline(realline, peq->wblock->l.num);        
+        
 	if(doit){
 		Ptask2Mtask();
 	}

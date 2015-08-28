@@ -1414,6 +1414,7 @@ struct Root{
 
 	volatile bool editonoff;
         volatile bool play_cursor_onoff;
+        volatile bool editor_follows_play_cursor_onoff;
         volatile bool clickonoff;
 };
 
