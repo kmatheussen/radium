@@ -2079,7 +2079,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }
 
   if (PlaceGreaterOrEqual(&place, &note->end)) {
-    RError("createVelocity: placement after note end for note #%d", notenum);
+    //RError("createVelocity: placement after note end for note #%d", notenum);
     return -1;
   }
 
