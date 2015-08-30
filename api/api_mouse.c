@@ -1345,7 +1345,7 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
     endfloatplace = lastfloatplace;
 
   if (floatplace >= endfloatplace) {
-    RError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
+    //RError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
     return -1;
   }
 

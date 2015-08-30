@@ -1286,7 +1286,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       
       if(num_peaks<0){
         
-        RError("num_peaks<0: %d",num_peaks);
+        RWarning("num_peaks<0: %d",num_peaks);
         continue;
         
       }
