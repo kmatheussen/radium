@@ -195,6 +195,11 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
     box.layout()->addWidget(&text_edit);
 
+    if (is_crash)
+      box.setWindowTitle("Report crash");
+    else
+      box.setWindowTitle("Report suspicious state");
+
     box.show();
 
     box.activateWindow();
