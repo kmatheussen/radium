@@ -138,12 +138,12 @@ enum{
 
 #define R_ASSERT(a)                                                     \
   if(!(a))                                                              \
-    CRASHREPORTER_send_assert_message("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);
+    CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);
 
 #define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \
   if(!(a))                                                              \
     do{                                                                 \
-      CRASHREPORTER_send_assert_message("Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
+      CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
       return b;                                                         \
     }while(0)
 

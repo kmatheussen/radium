@@ -84,7 +84,7 @@ void RError(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  CRASHREPORTER_send_assert_message("RError: %s",message);
+  CRASHREPORTER_send_assert_message(CT_ERROR, "RError: %s",message);
   //show_message(IS_ERROR,message);
 }
 
@@ -97,7 +97,7 @@ void RWarning(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
-  CRASHREPORTER_send_assert_message("RWarning: %s",message);
+  CRASHREPORTER_send_assert_message(CT_WARNING, "RWarning: %s",message);
   //show_message(IS_WARNING,message);
 }
 

@@ -61,7 +61,7 @@ static bool crash_already_reported(void){
 
 void run_main_loop(void);
 
-void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type){
 #define NUM_LINES 100
       
   void *buffer[NUM_LINES];
@@ -71,10 +71,10 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
   strings = backtrace_symbols(buffer, nptrs);
   
   if (strings != NULL) {
-    CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,is_crash);
+    CRASHREPORTER_send_message(additional_information, (const char**)strings,nptrs,crash_type);
   } else {
     const char *message="no backtrace availabe\n";
-    CRASHREPORTER_send_message(additional_information, &message,1,true);
+    CRASHREPORTER_send_message(additional_information, &message,1,crash_type);
   }
 }
 

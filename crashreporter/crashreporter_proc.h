@@ -18,6 +18,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef CRASHREPORTER_CRASHREPORTER_PROC_H
 #define CRASHREPORTER_CRASHREPORTER_PROC_H
 
+enum Crash_Type{
+  CT_CRASH,
+  CT_ERROR,
+  CT_WARNING
+};
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -27,9 +33,9 @@ extern "C"{
   void CRASHREPORTER_init(void);
   int CRASHREPORTER_set_plugin_name(const char *plugin_name);
   void CRASHREPORTER_unset_plugin_name(int pos);
-  void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, bool is_crash);
-  void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash);
-  void CRASHREPORTER_send_assert_message(const char *fmt,...);
+  void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type);
+  void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type);
+  void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...);
   void CRASHREPORTER_close(void);
 
   void CRASHREPORTER_posix_init(void);

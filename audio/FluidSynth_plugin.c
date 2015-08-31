@@ -98,6 +98,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   //data =NULL; // crashreporter test.
   //R_ASSERT(false);
   //CRASHREPORTER_send_assert_message("AIAI1!");
+  //RWarning("oops");
 
   //printf("telling sequencer that it is time %d\n",(int)data->time);
   fluid_sequencer_process(data->sequencer, get_fluidsynth_time(data,data->time));

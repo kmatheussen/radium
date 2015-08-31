@@ -127,9 +127,11 @@ void EVENTLOG_add_event(const char *log_entry){
 
 
 
-static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, bool is_crash){
+static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type){
 
   fprintf(stderr,"Got message:\n%s\n",message.toUtf8().constData());
+
+  bool is_crash = crash_type==CT_CRASH;
 
   {
     QMessageBox box;
@@ -138,11 +140,13 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     box.addButton("SEND", QMessageBox::AcceptRole);
     box.addButton("DON'T SEND", QMessageBox::RejectRole);
     
-    if (is_crash)
+    if (crash_type==CT_CRASH)
       box.setText("Radium Crashed. :((");
+    else if (crash_type==CT_ERROR)
+      box.setText("Error! Radium is in a state it should not be in. (But it has NOT crashed)\n");
     else
-      box.setText("Radium is in a state it should not be in.\n"
-                  );
+      box.setText("Warning! Radium is in a state it should not be in. (But it has NOT crashed)\n");
+
 
     bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
     
@@ -153,7 +157,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                                    "Only the information in \"Show details...\" is sent.\n"
                                    "\n"
                                    "Please don't report the same %0 more than two or three times.\n"
-                                   ).arg(is_crash?"crash":"incident")
+                                   ).arg(crash_type==CT_CRASH ? "crash" : crash_type==CT_ERROR ? "error" : "warning")
                            + ( (is_crash && plugin_names != NOPLUGINNAMES)
                                ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")
                                : QString())
@@ -195,10 +199,12 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
     box.layout()->addWidget(&text_edit);
 
-    if (is_crash)
+    if (crash_type==CT_CRASH)
       box.setWindowTitle("Report crash");
+    else if (crash_type==CT_ERROR)
+      box.setWindowTitle("Report error");
     else
-      box.setWindowTitle("Report suspicious state");
+      box.setWindowTitle("Report warning");
 
     box.show();
 
@@ -263,11 +269,11 @@ int main(int argc, char **argv){
   
   QString emergency_save_filename = fromBase64(argv[3]);
     
-  bool is_crash = QString(argv[4])=="is_crash";
+  Crash_Type crash_type = QString(argv[4])=="is_crash" ? CT_CRASH : QString(argv[4])=="is_error" ? CT_ERROR : CT_WARNING;
 
-  send_crash_message_to_server(file_to_string(filename), running_plugin_names, emergency_save_filename, is_crash);
+  send_crash_message_to_server(file_to_string(filename), running_plugin_names, emergency_save_filename, crash_type);
 
-  if (is_crash)
+  if (crash_type==CT_CRASH)
     delete_file(filename);
   else
     clear_file(filename);
@@ -409,7 +415,7 @@ static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree
 }
 
 
-void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, bool is_crash){
+void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type){
   QString plugin_names = get_plugin_names();
   
   QString tosend = QString(additional_information) + "\n\n";
@@ -465,7 +471,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
     QTemporaryFile *file;
     
-    if (is_crash) {
+    if (crash_type==CT_CRASH) {
       file = new QTemporaryFile;
     } else {
       if (g_crashreporter_file==NULL) {
@@ -477,7 +483,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
     bool save_mixer_tree;
     
-    if (is_crash)
+    if (crash_type==CT_CRASH)
       save_mixer_tree = false; // Don't want to risk crashing inside the crash handler.
     else
       save_mixer_tree = true;
@@ -535,7 +541,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
                 toBase64(file->fileName()),
                 toBase64(plugin_names),
                 toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
-                (is_crash ? "is_crash" : "is_assert"),
+                crash_type==CT_CRASH ? "is_crash" : crash_type==CT_ERROR ? "is_error" : "is_warning",
                 do_block
                 );
 
@@ -547,12 +553,12 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
 #ifdef FOR_MACOSX
 #include "../common/visual_proc.h"
-void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, Crash_Type crash_type){
   GFX_Message(NULL, additional_information);
 }
 #endif
 
-void CRASHREPORTER_send_assert_message(const char *fmt,...){
+void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
   static bool is_currently_sending = false;
   
 #if 0
@@ -579,7 +585,7 @@ void CRASHREPORTER_send_assert_message(const char *fmt,...){
 
     if (!g_crashreporter_file->open()){
       SYSTEM_show_message("Unable to create temprary file. Disk may be full");
-      send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, false);
+      send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, crash_type);
       goto exit;
     }
 
@@ -596,7 +602,7 @@ void CRASHREPORTER_send_assert_message(const char *fmt,...){
   RT_pause_plugins();
 
 
-  CRASHREPORTER_send_message_with_backtrace(message, false);
+  CRASHREPORTER_send_message_with_backtrace(message, crash_type);
 
 #if 0
   if (may_do_blocking && THREADING_is_main_thread())
@@ -610,7 +616,6 @@ void CRASHREPORTER_send_assert_message(const char *fmt,...){
  exit:
   is_currently_sending = false;
 }
-
 
 void CRASHREPORTER_close(void){
 #if defined(FOR_WINDOWS)

@@ -644,9 +644,9 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 
 static char *crash_buffer = NULL;
 
-static void send_message_with_backtrace(LPCONTEXT c, const char *additional_information, bool is_crash){
+static void send_message_with_backtrace(LPCONTEXT c, const char *additional_information, enum Crash_Type crash_type){
   struct output_buffer ob;
-  ob.buf = is_crash ? crash_buffer : calloc(1, BUFFER_MAX);
+  ob.buf = crash_type==CT_CRASH ? crash_buffer : calloc(1, BUFFER_MAX);
 
   output_init(&ob, BUFFER_MAX);
 
@@ -670,15 +670,15 @@ static void send_message_with_backtrace(LPCONTEXT c, const char *additional_info
   print_osinfo(&ob);
   
   const char *messages[1] = {ob.buf};
-  CRASHREPORTER_send_message(additional_information, messages, 1, is_crash);
+  CRASHREPORTER_send_message(additional_information, messages, 1, crash_type);
 
   fputs(ob.buf , stderr);
 
-  if (!is_crash)
+  if (crash_type!=CT_CRASH)
     free(ob.buf);
 }
 
-void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, bool is_crash){
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, Crash_Type crash_type){
   CONTEXT context; 
   LPCONTEXT c = &context;
 
@@ -732,7 +732,7 @@ L2:
   
 #endif
   
-  send_message_with_backtrace(c, additional_information, is_crash);  
+  send_message_with_backtrace(c, additional_information, crash_type);  
 }
 
 
