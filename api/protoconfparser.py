@@ -469,7 +469,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("\n")
 
         oh.write("  if (!s7_is_null(radiums7_sc, radiums7_args))\n")
-        oh.write('    return s7_wrong_number_of_args_error(radiums7_sc, "add2_secondargumenthasdefaultvalue9: wrong number of args: ~A", org_radiums7_args);\n')
+        oh.write('    return s7_wrong_number_of_args_error(radiums7_sc, "'+self.proc.varname+': wrong number of args: ~A", org_radiums7_args);\n')
         oh.write("\n")
         self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
         oh.write("}\n")
