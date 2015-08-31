@@ -22,4 +22,4 @@ system_color = #827e76
 button_color = #65645c
 
 override_default_qt_colors = true
-last_color_version = 3.0.b2.2
+last_color_version = 3.3.5
