@@ -90,10 +90,18 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
 
       n->x2 = nodelines->x2;
       n->y2 = nodelines->y2;
+      if (n->y2 < n->y1) {
+        RWarning("y2 < y1: %f < %f",n->y2,n->y1);
+        n->y2 = n->y1;
+      }
       n->element2 = nodelines->element2;
 
       nodelines->x2 = n->x1;
       nodelines->y2 = n->y1;
+      if (nodelines->y2 < nodelines->y1) {
+        RWarning("y2 < y1: %f < %f",nodelines->y2,nodelines->y1);
+        nodelines->y2 = nodelines->y1;
+      }
       nodelines->element2 = n->element1;
 
       return;
@@ -155,6 +163,12 @@ const struct NodeLine *create_nodelines(
     for(;;){
       ns->x2 = next->x1;
       ns->y2 = next->y1;
+
+      if (ns->y2 < ns->y1) {
+        RWarning("y2 < y1: %f < %f",ns->y2,ns->y1);
+        ns->y2 = ns->y1;
+      }
+
       ns->element2 = next->element1;
       if(next->next==NULL)
         break;
