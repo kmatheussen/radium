@@ -143,9 +143,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     if (crash_type==CT_CRASH)
       box.setText("Radium Crashed. :((");
     else if (crash_type==CT_ERROR)
-      box.setText("Error! Radium is in a state it should not be in. (But it has NOT crashed)\n");
+      box.setText("Error! Radium is in a state it should not be in. (Note that Radium has NOT crashed)\n");
     else
-      box.setText("Warning! Radium is in a state it should not be in. (But it has NOT crashed)\n");
+      box.setText("Warning! Radium is in a state it should not be in. (Note that Radium has NOT crashed, you can continue working)\n");
 
 
     bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
@@ -161,7 +161,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                            + ( (is_crash && plugin_names != NOPLUGINNAMES)
                                ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")
                                : QString())
-                           + (!is_crash ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
+                           + (crash_type==CT_ERROR ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
                            + (dosave ? "\nAn emergency version of your song has been saved as \""+emergency_save_filename+"\". However, this file should not be trusted. It could be malformed. (it is most likely okay though)" : "")
                            + "\n"
                            );

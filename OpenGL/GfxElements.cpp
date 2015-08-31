@@ -95,7 +95,7 @@ static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type t
   else if (type==GradientType::HORIZONTAL)
     return gradient_horizontal_shader.get();
   else
-    RError("Unknown gradient type %d", type);
+    RWarning("Unknown gradient type %d", type);
    
   return NULL;
 }
@@ -292,7 +292,7 @@ static GradientTriangles *get_gradient_triangles(GradientType::Type type){
   else if (type==GradientType::VELOCITY)
     return velocityGradientTriangles.get_gradient_triangles();
 
-  RError("Unknown gradient type %d",type);
+  RWarning("Unknown gradient type %d",type);
   return NULL;
 }
     

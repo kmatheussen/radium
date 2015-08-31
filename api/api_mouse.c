@@ -750,14 +750,14 @@ float getTemponodeValue(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RError("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+    RWarning("getTemponodeValue: No block %d in window %d",blocknum,windownum);
     return 0.0;
   }
 
   struct Blocks *block = wblock->block;
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
   if (temponode==NULL) {
-    RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return 0.0;
   }
 
@@ -772,7 +772,7 @@ void undoTemponodes(void){
 void setCurrentTemponode(int num, int blocknum){
   struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
   if (block==NULL) {
-    RError("setCurrentTemponode: No block %d",blocknum);
+    RWarning("setCurrentTemponode: No block %d",blocknum);
     return;
   }
   
@@ -784,7 +784,7 @@ void setCurrentTemponode(int num, int blocknum){
 void setIndicatorTemponode(int num, int blocknum){
   struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
   if (block==NULL) {
-    RError("setCurrentTemponode: No block %d",blocknum);
+    RWarning("setCurrentTemponode: No block %d",blocknum);
     return;
   }
   
@@ -800,7 +800,7 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RError("setTemponode: No block %d in window %d",blocknum,windownum);
+    RWarning("setTemponode: No block %d in window %d",blocknum,windownum);
     return;
   }
 
@@ -819,7 +819,7 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
 
   else if (num>=tempo_nodes->num_elements) {
-    RError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
+    RWarning("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
   } else if (floatplace < 0) {
@@ -867,7 +867,7 @@ void deleteTemponode(int num, int blocknum){
   const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
 
   if (num >= tempo_nodes->num_elements){
-    RError("deleteTemponode: No temponode %d in block %d",num,blocknum);
+    RWarning("deleteTemponode: No temponode %d in block %d",num,blocknum);
     return;
   }
 
@@ -891,7 +891,7 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL) {
-    RError("createTemponode: No block %d in window %d",blocknum,windownum);
+    RWarning("createTemponode: No block %d in window %d",blocknum,windownum);
     return -1;
   }
 
@@ -981,7 +981,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
       return note->note;
     struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
     if (pitch==NULL){
-      RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+      RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
       return 0;
     }
     return pitch->note;
@@ -1002,7 +1002,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   }
 
   if (nodeline==NULL) {
-    RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);  
+    RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);  
     return 0;
   }
 
@@ -1018,7 +1018,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   case PIANONOTE_INFO_Y2:
     return wblock->t.y1 + box.y2 - g_scroll_pos;
   default:
-    RError("Internal error");
+    RWarning("Internal error");
     return 0;
   }
 }
@@ -1066,7 +1066,7 @@ static void setPianoNoteValue(float value, int pianonotenum, struct Notes *note)
   
   struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
   if (pitch==NULL){
-    RError("There is no pianonote %d",pianonotenum);
+    RWarning("There is no pianonote %d",pianonotenum);
     return;
   }
 
@@ -1079,7 +1079,7 @@ static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
   
   struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
   if (pitch==NULL){
-    RError("There is no pianonote %d",pianonotenum);
+    RWarning("There is no pianonote %d",pianonotenum);
     return note->l.p;
   }
 
@@ -1106,7 +1106,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
     if (notenum_so_far==notenum) {
       struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
       if (pitch==NULL){
-        RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+        RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
         return 0;
       }
       return ret + pianonotenum;
@@ -1121,7 +1121,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, int notenum, int trackn
     note = NextNote(note);
   }
 
-  RError("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
+  RWarning("There is no pianonote %d in note %d in track %d in block %d",pianonotenum,notenum,tracknum,blocknum);
   return 0;
 }
 
@@ -1345,7 +1345,7 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
     endfloatplace = lastfloatplace;
 
   if (floatplace >= endfloatplace) {
-    //RError("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
+    //RWarning("Illegal parameters for createPianonote. start: %f, end: %f",floatplace, endfloatplace);
     return -1;
   }
 
@@ -1426,14 +1426,14 @@ static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches 
     }
 
     if (note==note2) {
-      RError("getPitchNum: Could not find pitch in note.");
+      RWarning("getPitchNum: Could not find pitch in note.");
       return 0;
     }
 
     note2 = NextNote(note2);
   }
 
-  RError("getPitchNum: Could not find it");
+  RWarning("getPitchNum: Could not find it");
   return 0;
 }
 
@@ -1505,7 +1505,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
     notes = NextNote(notes);
   }
 
-  RError("no pitch %d in track %d in block %d\n",pitchnum,tracknum,blocknum);
+  RWarning("no pitch %d in track %d in block %d\n",pitchnum,tracknum,blocknum);
   return;
   
  gotit:
@@ -1542,7 +1542,7 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
     notes = NextNote(notes);
   }
 
-  RError("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
+  RWarning("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
   return false;
 }
   
@@ -1588,7 +1588,7 @@ static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int
     }
   }
 
-  RError("internal error (getPitchInfo)\n");
+  RWarning("internal error (getPitchInfo)\n");
   return 0;
 }
 
@@ -1915,7 +1915,7 @@ static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int bloc
     return NULL;
 
   if (subtracknum>=GetNumSubtracks(wtrack->track)){
-    RError("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack->track));
+    RWarning("No subtrack %d in track %d in block %d (only %d subtracks in this track)\n", subtracknum, tracknum, blocknum, GetNumSubtracks(wtrack->track));
     return 0;
   }
 
@@ -2020,7 +2020,7 @@ static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum,
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return NULL;
   }
   
@@ -2074,12 +2074,12 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (notenum>0)
-    //  RError("createVelocity: placement before note start for note #%d", notenum);
+    //  RWarning("createVelocity: placement before note start for note #%d", notenum);
     return -1;
   }
 
   if (PlaceGreaterOrEqual(&place, &note->end)) {
-    //RError("createVelocity: placement after note end for note #%d", notenum);
+    //RWarning("createVelocity: placement after note end for note #%d", notenum);
     return -1;
   }
 
@@ -2088,7 +2088,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){
-    //RError("createVelocity: Can not create new velocity with the same position as another velocity");
+    //RWarning("createVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
@@ -2111,7 +2111,7 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
   
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return notenum;
   }
 
@@ -2168,7 +2168,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
@@ -2212,7 +2212,7 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
@@ -2234,7 +2234,7 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    RError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
@@ -2424,13 +2424,13 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
 
   if (PlaceLessThan(&place, PlaceGetFirstPos())){
     if (floatplace < 0)
-      RError("createFx: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
+      RWarning("createFx: placement before top of block for fx #%d. (%f)", fxnum, floatplace);
     place = *PlaceGetFirstPos();
   }
 
   if (PlaceGreaterThan(&place, &lastplace)) {
     if (floatplace >= wblock->block->num_lines)
-      RError("createFx: placement after fx end for fx #%d (%f)", fxnum, floatplace);
+      RWarning("createFx: placement after fx end for fx #%d (%f)", fxnum, floatplace);
     
     place = lastplace;
   }
@@ -2450,7 +2450,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
                           );
 
   if (ret==-1){
-    //RError("createFx: Can not create new fx with the same position as another fx");
+    //RWarning("createFx: Can not create new fx with the same position as another fx");
     Undo_CancelLastUndo();
     return -1;
   }
@@ -2470,7 +2470,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -2506,7 +2506,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -2531,7 +2531,7 @@ void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int 
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -2551,7 +2551,7 @@ void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, in
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
-    RError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
+    RWarning("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
     return;
   }
 
@@ -2620,7 +2620,7 @@ float getTrackWidth(int tracknum, int blocknum, int windownum){
 void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
   if (new_width < 2) {
 #if 0
-    RError("Can not set width smaller than 2");
+    RWarning("Can not set width smaller than 2");
     return;
 #else
     new_width = 2;
