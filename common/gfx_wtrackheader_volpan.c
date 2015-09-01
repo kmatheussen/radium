@@ -37,7 +37,7 @@ static void DrawOnOffBox(
 	/* On/off box stuff. */
 
   // border
-  GFX_SetMixColor(window,BLACK_COLOR_NUM,0,300);
+  GFX_SetMixColor(window,BLACK_COLOR_NUM,LOW_EDITOR_BACKGROUND_COLOR_NUM,300);
 
   GFX_T_Box(
             window,BLACK_COLOR_NUM,
@@ -54,7 +54,7 @@ static void DrawOnOffBox(
   int y2=box.y2-1;
 
   GFX_T_FilledBox(
-                  window,onoff?5:15,
+                  window,onoff?VELOCITY1_COLOR_NUM:HIGH_EDITOR_BACKGROUND_COLOR_NUM,
                   x1,y1,
                   x2,y2,
                   PAINT_BUFFER

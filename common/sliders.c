@@ -176,25 +176,25 @@ void DrawBottomSlider(struct Tracker_Windows *window){
   // background
   GFX_FilledBox(
                 window,
-                11,
+                HIGH_BACKGROUND_COLOR_NUM,
                 window->wblock->reltempo.x2,y1,
                 x2,y2,
                 PAINT_DIRECTLY
                 );
 
   // slider
-  GFX_SetMixColor(window,1,0,300);
+  GFX_SetMixColor(window,TEXT_COLOR_NUM,LOW_EDITOR_BACKGROUND_COLOR_NUM,300);
   GFX_FilledBox(
-                window,1,
+                window,TEXT_COLOR_NUM,
                 inner_x1,y1,
                 inner_x2,y2,
                 PAINT_DIRECTLY
                 );
   
   // border
-  GFX_SetMixColor(window,1,0,300);
+  GFX_SetMixColor(window,TEXT_COLOR_NUM,LOW_EDITOR_BACKGROUND_COLOR_NUM,300);
   GFX_Box(
-          window,1,
+          window,TEXT_COLOR_NUM,
           x1,y1,
           x2,y2,
           PAINT_DIRECTLY

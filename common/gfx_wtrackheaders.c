@@ -50,7 +50,7 @@ void DrawWTrackNames(
   int y2 = wtrack1->panonoff.y1 - 1;
 
   // Background
-  int colornum = patch==NULL ? 15 : patch->colornum;
+  int colornum = patch==NULL ? HIGH_EDITOR_BACKGROUND_COLOR_NUM : patch->colornum;
   bool is_current_track = get_current_instruments_gui_patch()==patch;
   
   if(is_current_track)
@@ -58,7 +58,7 @@ void DrawWTrackNames(
   else
     GFX_SetMixColor(window, WHITE_COLOR_NUM, colornum, 0);
     
-  GFX_T_FilledBox(window, 7,
+  GFX_T_FilledBox(window, CURSOR_EDIT_ON_COLOR_NUM,
                   x1,y1,x2,y2,
                   PAINT_BUFFER);
 
@@ -70,7 +70,7 @@ void DrawWTrackNames(
     static char temp[500];
     sprintf(temp,"%d->%d:", wtrack1->l.num, wtrack2->l.num);
     GFX_T_Text(
-               window,1,temp,
+               window,TEXT_COLOR_NUM,temp,
                wtrack1->x+window->fontwidth/2,
                wtrack1->y+WTRACKS_SPACE,
                wtrack1->x2-wtrack1->x-1,
@@ -80,7 +80,7 @@ void DrawWTrackNames(
     
     int name_x = wtrack1->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
     GFX_T_Text(
-                   window,8,patch==NULL ? wtrack1->track->trackname : patch->name,
+                   window,INSTRUMENT_NAME_COLOR_NUM,patch==NULL ? wtrack1->track->trackname : patch->name,
                    name_x,
                    wtrack1->y+WTRACKS_SPACE,
                    wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
@@ -155,12 +155,12 @@ static void DrawAllWTrackOnOffs(
   while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
 
 	if(wtrack->track->onoff==0){
-		GFX_T_Line(window,2,
+		GFX_T_Line(window,WAVEFORM_COLOR_NUM,
                            wtrack->x+2,wtrack->y+1,
                            wtrack->x2-2,wtrack->y+(window->org_fontheight*2)-1,
                            PAINT_BUFFER
 		);
-		GFX_T_Line(window,2,
+		GFX_T_Line(window,WAVEFORM_COLOR_NUM,
                            wtrack->x2-2,wtrack->y+1,
                            wtrack->x+2,wtrack->y+(window->org_fontheight*2)-1,
                            PAINT_BUFFER
@@ -276,7 +276,7 @@ void DrawAllWTrackHeaders(
 {  
 #if 1
 	GFX_T_FilledBox(
-		window, 11,
+		window, HIGH_BACKGROUND_COLOR_NUM,
 		wblock->t.x1, 0,
 		window->width, wblock->t.y1,
                 PAINT_BUFFER
@@ -286,9 +286,10 @@ void DrawAllWTrackHeaders(
 
         DrawAllWTrackSliders(window, wblock);
 
+        UpdateAllPianoRollHeaders(window, wblock);
+
         DrawAllWTrackOnOffs(window, wblock);
 
-        UpdateAllPianoRollHeaders(window, wblock);
 }
 
 

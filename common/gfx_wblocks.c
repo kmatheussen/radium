@@ -51,11 +51,11 @@ void EraseLine(
     lpb_opacity = SETTINGS_read_int("lpb_opacity", 900);
 
   if( (wblock->wlpbs[realline].is_beat))
-    GFX_SetMixColor(window, 15, 1, lpb_opacity);
+    GFX_SetMixColor(window, HIGH_EDITOR_BACKGROUND_COLOR_NUM, TEXT_COLOR_NUM, lpb_opacity);
 
   GFX_FilledBox(
                 window,
-                15,
+                HIGH_EDITOR_BACKGROUND_COLOR_NUM,
                 x1, GetReallineY1Pos(window, wblock, realline),
                 x2, GetReallineY2Pos(window, wblock, realline),
                 PAINT_BUFFER
@@ -65,11 +65,11 @@ void EraseLine(
     line_opacity = SETTINGS_read_int("line_opacity", 800);
 
   if(line_opacity != 1000) {
-    GFX_SetMixColor(window, 15, 1, line_opacity);
+    GFX_SetMixColor(window, HIGH_EDITOR_BACKGROUND_COLOR_NUM, TEXT_COLOR_NUM, line_opacity);
 
     GFX_Line(
              window,
-             2,
+             WAVEFORM_COLOR_NUM,
              x1, GetReallineY1Pos(window, wblock, realline),
              x2, GetReallineY1Pos(window, wblock, realline),
              PAINT_BUFFER);
@@ -555,11 +555,11 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         
         // fill background in the bottom bar
 	GFX_FilledBox(
-		window,11,
-		0,            wblock->bottombar.y1,
-		wblock->t.x2, window->height-1,
-                PAINT_DIRECTLY
-	);
+                      window, HIGH_BACKGROUND_COLOR_NUM,
+                      0,            wblock->bottombar.y1,
+                      wblock->t.x2, window->height-1,
+                      PAINT_DIRECTLY
+                      );
 
 	DrawBottomSlider(window);
 
