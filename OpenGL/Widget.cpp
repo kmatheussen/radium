@@ -411,7 +411,11 @@ public:
     //GL_create(get_window(), get_window()->wblock);
   }
     
-      
+  virtual void leaveEvent(QEvent * event){
+    fprintf(stderr, "LEAVING\n");
+    setNormalMousePointer(-1);
+  }
+  
   /** Event generated right before the bound OpenGLContext is destroyed. */
   virtual void destroyEvent() {
     fprintf(stderr,"destroyEvent\n");
