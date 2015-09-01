@@ -678,7 +678,7 @@ static void send_message_with_backtrace(LPCONTEXT c, const char *additional_info
     free(ob.buf);
 }
 
-void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, Crash_Type crash_type){
+void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type){
   CONTEXT context; 
   LPCONTEXT c = &context;
 

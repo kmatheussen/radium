@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/player_proc.h"
+#include "../common/scancodes_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "../common/OS_system_proc.h"
@@ -286,11 +287,6 @@ static int get_keypad_subID(MSG *msg){
 }
 
 
-/*
-virtual key (vk) to scancode: https://msdn.microsoft.com/en-us/library/windows/desktop/ms646306%28v=vs.85%29.aspx
-scancode table: https://msdn.microsoft.com/en-us/library/Aa299374%28v=VS.60%29.aspx
-*/
-
 static int get_keyboard_subID(MSG *msg){
   if(msg->wParam >= 0x100)
     return EVENT_NO;
@@ -299,6 +295,13 @@ static int get_keyboard_subID(MSG *msg){
   if(subID!=EVENT_NO)
     return subID;
 
+  int scancode = MapVirtualKey(msg->wParam, MAPVK_VK_TO_VSC);
+  if (scancode!=0){
+    subID = get_subID_from_scancode(scancode);
+    if (subID!=EVENT_NO)
+      return subID;
+  }
+  
   return keymap[msg->wParam];
 }
 
