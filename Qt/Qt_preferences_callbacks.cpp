@@ -420,6 +420,7 @@ public slots:
   void on_color_reset_button_clicked(){
     printf("HHH");
     GFX_ResetColor(g_current_colornum);
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
 
     for(auto button : all_buttons){
       button->update();
@@ -430,6 +431,7 @@ public slots:
   void on_color_reset_all_button_clicked(){
     printf("AAAxHHH");
     GFX_ResetColors();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
 
     for(auto button : all_buttons){
       button->update();
