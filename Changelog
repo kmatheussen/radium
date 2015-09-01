@@ -1,3 +1,19 @@
+Most important changes 3.3.4 -> 3.3.5
+* Mainly use scancode to find key on Windows. Should solve various problems,
+  for instance note order on non-qwerty keyboards
+* More organized color order
+* When right-clicking a pianonote, give option to either delete note, delete
+  portamento, or add portamento
+* Also reset current color in the color dialog color when resetting color
+* Set normal mouse pointer when leaving editor
+* Made button color completely configurable
+* Diffentiate between error and warning, and make it clear
+  that radium has NOT crashed when showing the assertion reporter.
+* Set assert reporter window title to "Report suspicious state"
+  (not "crashreporter.exe").
+* Don't show assert window when trying to create a velocity after note end
+
+
 Most important changes 3.3.3 -> 3.3.4
 * Adjusted minimum OpenGL version to 3.0
 * Initialize monotonic timer manually. Fix startup crash seen on 32 bit Windows.
