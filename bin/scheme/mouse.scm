@@ -1437,7 +1437,7 @@
                      )))))
 
 
-;; delete pianonote
+;; delete note / add pitch / delete pitch
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
@@ -1448,11 +1448,32 @@
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                        (if pianonote-info
                            (begin
-                             (ra:undo-notes (pianonote-info :tracknum))
-                             (ra:delete-pianonote (pianonote-info :pianonotenum)
-                                                  (pianonote-info :notenum)
-                                                  (pianonote-info :tracknum))
-                             #t)
+                             (define (delete-note)
+                               (ra:undo-notes (pianonote-info :tracknum))
+                               (ra:delete-pianonote 0
+                                                    (pianonote-info :notenum)
+                                                    (pianonote-info :tracknum))
+                               #f)
+                             (define (delete-pitch)
+                               (ra:undo-notes (pianonote-info :tracknum))
+                               (ra:delete-pianonote (pianonote-info :pianonotenum)
+                                                    (pianonote-info :notenum)
+                                                    (pianonote-info :tracknum))
+                               #f)
+                             (define (add-pitch)
+                               (ra:undo-notes (pianonote-info :tracknum))
+                               (define Place (get-place-from-y $button $y))
+                               (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+                               (define Num (ra:create-pitch Value Place (pianonote-info :tracknum)))
+                               (if (= -1 Num)
+                                   #f
+                                   #f))
+                             (if (= 0 (pianonote-info :pianonotenum))
+                                 (popup-menu "Delete Note" delete-note
+                                             "Add Portamento" add-pitch)
+                                 (popup-menu "Delete Note" delete-note
+                                             "Delete Portamento" delete-pitch
+                                             "Add Portamento" add-pitch)))
                            #f))))))
 
 

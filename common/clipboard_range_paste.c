@@ -58,6 +58,44 @@ void PasteRange_velocities(
 
 	PasteRange_velocities(block,tovelocity,NextVelocity(fromvelocity),place);
 }
+#if 0
+static bool PasteRange_FX(
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	struct WTracks *towtrack
+){
+	struct Tracks *totrack;
+	struct Tracks *track;
+	Place *p1,p2;
+
+        R_ASSERT_RETURN_IF_FALSE2(towtrack!=NULL, false);
+
+	totrack=towtrack->track;
+	track=wtrack->track;
+
+        if (track->patch != NULL && track->patch->is_usable)
+          totrack->patch = track->patch;
+        else
+          totrack->patch = NULL;
+        
+	if(track->midi_instrumentdata!=NULL){
+          totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
+	}
+
+	totrack->fxs=NULL;
+
+	p1=PlaceGetFirstPos();
+	PlaceSetLastPos(wblock->block,&p2);
+
+	CopyRange_fxs(&totrack->fxs,track->fxs,p1,&p2);
+
+	LegalizeFXlines(wblock->block,totrack);
+
+	return true;
+}
+
+#endif
+
 
 void PasteRange_pitches(
 	struct Blocks *block,

@@ -1372,12 +1372,19 @@ void deletePianonote(int pianonotenum, int notenum, int tracknum, int blocknum, 
   if (note==NULL)
     return;
 
-  window->must_redraw=true;
-    
-  PLAYER_lock();{
-    ListRemoveElement3(&wtrack->track->notes, &note->l);
-  }PLAYER_unlock();
+  if (pianonotenum==0) {
+    window->must_redraw=true;
 
+    PLAYER_lock();{
+      ListRemoveElement3(&wtrack->track->notes, &note->l);
+    }PLAYER_unlock();
+    
+    return;
+  }
+
+  int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum,  blocknum, windownum);
+
+  deletePitch(pitchnum, tracknum, blocknum);      
 }
 
 
@@ -1966,6 +1973,15 @@ float getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
     return -1.0f;
 
   return GetfloatFromPlace(&note->end);
+}
+
+float getNoteValue(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+
+  if(note==NULL)
+    return 64.0f;
+
+  return note->note;
 }
 
 int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
