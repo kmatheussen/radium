@@ -8,6 +8,7 @@
 virtual key (vk) to scancode: https://msdn.microsoft.com/en-us/library/windows/desktop/ms646306%28v=vs.85%29.aspx
 scancode table: https://msdn.microsoft.com/en-us/library/Aa299374%28v=VS.60%29.aspx
 http://www.quadibloc.com/comp/scan.htm
+ordinary scan codes: http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
 */
 static int scancode[0x100] = {EVENT_NO};
 static void init_scancodes(void){
@@ -46,6 +47,7 @@ static void init_scancodes(void){
   s(1F, 	S);    s(3F, 	F5);
   s(20,         D);    s(40,    F6);
 
+  s(56,         ZL1);
 #undef s
 }
   

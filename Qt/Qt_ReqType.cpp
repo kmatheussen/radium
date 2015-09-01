@@ -143,7 +143,7 @@ namespace{
       , gotit(false)
     {}
     void keyPressEvent ( QKeyEvent * event ){
-      printf("oh yeah baby %d\n",event->key());
+      printf("oh yeah baby %d, scancode: %x\n",event->key(),event->nativeScanCode()-8);
       //event->ignore();
       if(event->key()>0){
         QLineEdit::keyPressEvent(event);
