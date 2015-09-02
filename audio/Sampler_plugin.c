@@ -706,12 +706,39 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
   }
 }
 
-
-static int time_to_frame(Data *data, double time, float note_num){
+static bool note_has_sample(const Note *note){
+  int samplenum;
   
-  const Sample *sample=data->notes[(int)note_num].samples[0];
+  for(samplenum=0;samplenum<note->num_samples;samplenum++)
+    if (note->samples[samplenum]!=NULL)
+      return true;
 
-  double src_ratio = RT_get_src_ratio2(data, sample, note_num);
+  return false;
+}
+
+static int time_to_frame(Data *data, double time, float f_note_num){
+
+  int i_note_num = (int)f_note_num;
+  
+  const Sample *sample=NULL;
+  int samplenum = 0;
+  
+  const Note *note=&data->notes[(int)i_note_num];
+  
+  for(;;){
+    sample = note->samples[samplenum];
+    if (sample!=NULL)
+      break;
+    
+    samplenum++;
+    if (samplenum==note->num_samples) {
+      RError("samplenum==num_samples. %f\n",f_note_num);
+      return data->startpos*sample->num_frames + time/30000.0f;
+    }
+  }
+  
+
+  double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
 
   return
     data->startpos*sample->num_frames 
@@ -817,11 +844,20 @@ static int get_peaks(struct SoundPlugin *plugin,
     return 1;
   }
 
+  R_ASSERT_RETURN_IF_FALSE2(note_num >= 0.0f, 2);
+
+  const Note *note=&data->notes[(int)note_num];
+
+  if (!note_has_sample(note)){   
+    *min_value = 0.0f;
+    *max_value = 0.0f;
+    return 2;
+  } 
+  
   int start_frame = time_to_frame(data, start_time, note_num);
   int end_frame = time_to_frame(data, end_time, note_num);
 
   {
-    const Note *note=&data->notes[(int)note_num];
 
     float min=0.0f;
     float max=0.0f;
@@ -1282,7 +1318,7 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename){
         sample->ch = ch;
 
       int i;
-      for(i=1;i<128;i++){
+      for(i=0;i<128;i++){
         Note *note=(Note*)&data->notes[i];
         
         note->num_samples = num_channels;
