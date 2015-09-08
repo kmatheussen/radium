@@ -186,7 +186,9 @@ bool ER_gotKey(int key,uint32_t a,bool down){
 	return false;
 }
 
-static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
+static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
+  bool ret = false;
+  
 	uint32_t a=in_tevent->keyswitch;
 	static bool isPyObjects=false;
 	int lokke;
@@ -211,8 +213,11 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 		    break;
 		  }
                   //printf("subid: %d\n",in_tevent->SubID);
+
 			if(ER_gotKey(in_tevent->SubID,a,in_tevent->ID==TR_KEYBOARD?true:false)==true){
-				break;
+                          //printf("____________________ got key\n");
+                          ret = true;
+                          break;
 			}
 
 			len=0;
@@ -278,11 +283,25 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 				arglist=Py_BuildValue("llO",window->l.num,in_tevent->SubID,list);
 
 				/* Executing python-code */
-//				printf("EVALING!!!\n");
+				//printf("EVALING!!!\n");
 				result=PyEval_CallObject(gotkeyFunc,arglist);
-
+          
 				Py_DECREF(arglist);
 				if(result!=NULL){
+
+                                  bool resultbool;
+
+                                  if (result==Py_False)
+                                    resultbool=false;
+                                  else if (result==Py_True)
+                                    resultbool=true;
+                                  else {
+                                    RError("Something is wrong. keyboard exe function didnt return boolean");                                    
+                                    resultbool=true;
+                                  }
+                                  //printf("********** result: %d\n",resultbool);
+                                  ret = resultbool;
+                                  
 				  Py_DECREF(result);
 				}
 			}
@@ -290,52 +309,28 @@ static int EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window)
 			break;
 	}
 
-	if(doquit==true){return 1;}
-	if(isloaded==true){
+	if(isloaded==true)
 	  isloaded=false;
-	  return 2;
-	}
-	return 0;
+
+        printf("*********** ret: %d\n",ret);
+        return ret;
 }
 
+/*
 uint32_t CanITreatThisEvent_questionmark(int ID,struct Tracker_Windows *window){
 	return (window->event_treat&(1<<ID));
 }
+*/
 
-int EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
-	struct TEventFIFO *element;
-
-	if(window->dontbuffer==1) return 0;
-
-	if(CanITreatThisEvent_questionmark(in_tevent->ID,window)==0){
-
-          int ret;
-          DO_GFX({
-              ret=EventTreater(in_tevent,window);
-            });
-
-	  return ret;
-	}
-
-	if(window->TELlast==NULL){
-		element=window->TELroot=window->TELlast=talloc(sizeof(struct TEventFIFO));
-	}else{
-		element=window->TELlast->next=talloc(sizeof(struct TEventFIFO));
-	}
-
-	element->t.ID=in_tevent->ID;
-	element->t.SubID=in_tevent->SubID;
-	element->t.keyswitch=in_tevent->keyswitch;
-	element->t.x=in_tevent->x;
-	element->t.y=in_tevent->y;
-
-	window->TELlast=element;
-
-        closeRequester();
-
-	return 0;
+bool EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
+        int ret;
+        DO_GFX({
+            ret=EventTreater(in_tevent,window);
+          });
+        return ret;
 }
 
+/*
 static int DoTreatAllEvents(struct Tracker_Windows *window){
 	struct TEventFIFO *element,*prev=NULL;
 	int ret=0,nowret;
@@ -391,10 +386,4 @@ void DontTreatEvents(int ID,struct Tracker_Windows *window){
 	window->event_treat|=(1<<ID);
 }
 
-
-
-
-
-
-
-
+*/

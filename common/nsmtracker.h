@@ -1315,10 +1315,10 @@ struct Tracker_Windows{
 	struct WBlocks *wblock;			/* Current wblock. Only referenced. */
 	struct WBlocks *wblocks;
 
-	struct TEventFIFO *TELroot;
-	struct TEventFIFO *TELlast;
-	uint32_t event_treat;		/* Chooses which event type(s) to treat. (0=all)*/
-	int dontbuffer;
+  //	struct TEventFIFO *TELroot;
+  //	struct TEventFIFO *TELlast;
+  //	uint32_t event_treat;		/* Chooses which event type(s) to treat. (0=all)*/
+  //	int dontbuffer;
 
   //	struct MouseAction curraction;
   //	struct MouseAction prevaction;

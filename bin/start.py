@@ -65,8 +65,9 @@ class KeyHandler:
                     eval(self.handlers[lokke])
                 except:
                     traceback.print_exc(file=sys.stdout)
+                return True
                 break
-        return
+        return False
 
 
 def getKeyHandler(num):
@@ -78,7 +79,7 @@ keyhandles=map(getKeyHandler,range(len(keybindingsparser.keysub)))
 def gotKey(windownum,key,keys):
     #print "*********** key: " + keybindingsparser.keysub[key] + ". keys: " + str(map(lambda k:keybindingsparser.keysub[k], keys))
     #    key=keys.pop(0)
-    keyhandles[key].exe(windownum,keys);    
+    return keyhandles[key].exe(windownum,keys);    
 
 
 try:

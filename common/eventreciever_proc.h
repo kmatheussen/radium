@@ -17,23 +17,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC bool Quit(struct Tracker_Windows *window);
 
-#ifdef TRACKER_INCLUDE
+extern LANGSPEC bool EventReciever(struct TEvent *tevent,struct Tracker_Windows *window);
 
-int TreatAllEvents(struct Tracker_Windows *window);
-void DontTreatAnyEvents(struct Tracker_Windows *window);
-void DontTreatAnyEvents_AndDontBuffer(struct Tracker_Windows *window);
-int TreatEvents(int ID,struct Tracker_Windows *window);
-void DontTreatEvents(int ID,struct Tracker_Windows *window);
-
-#endif
-
-#ifndef TRACKER_INCLUDE
-
-extern LANGSPEC int EventReciever(struct TEvent *tevent,struct Tracker_Windows *window);
+/*
 extern int TreatAllEvents(struct Tracker_Windows *window);
 extern void DontTreatAnyEvents(struct Tracker_Windows *window);
 extern void DontTreatAnyEvents_AndDontBuffer(struct Tracker_Windows *window);
 extern int TreatEvents(int ID,struct Tracker_Windows *window);
 extern void DontTreatEvents(int ID,struct Tracker_Windows *window);
-
-#endif
+*/
