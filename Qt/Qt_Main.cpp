@@ -26,13 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qtabwidget.h>
 #include <qfontdatabase.h>
 #include <QEvent>
-#include <QKeyEvent>
 #include <Qt>
 #include <QDir>
 #include <QTextEdit>
 #include <QLayout>
 #include <QDesktopServices>
 #include <QTextCodec>
+#include <QLineEdit>
 
 #ifdef __linux__
 #include <QX11Info>
@@ -54,6 +54,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nag.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/scancodes_proc.h"
+#include "../common/player_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -126,6 +128,148 @@ bool g_qt_is_running = false;
 extern void set_editor_focus(void);
 
 
+extern struct TEvent tevent;
+
+static bool g_up_downs[EVENT_DASMAX];
+
+static void set_keyswitch(void){
+  static int keynumswitch[]={
+    EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPS,
+    EVENT_EXTRA_L,EVENT_ALT_L,EVENT_ALT_R,
+    EVENT_EXTRA_R, EVENT_CTRL_R, EVENT_SHIFT_R
+  };
+  
+  static int radiumswitch[]={
+    EVENT_LEFTCTRL,EVENT_LEFTSHIFT,EVENT_CAPSLOCK,
+    EVENT_LEFTEXTRA1,EVENT_LEFTALT,EVENT_RIGHTALT,
+    EVENT_RIGHTEXTRA1,EVENT_RIGHTCTRL,EVENT_RIGHTSHIFT
+  };
+  
+  int numswitches = sizeof(keynumswitch)/sizeof(int);
+  
+  tevent.keyswitch=0;
+  
+  for(int lokke=0;lokke<numswitches;lokke++){
+    int keynum = keynumswitch[lokke];
+    //printf("keynum: %d. is_down: %d\n",keynum, g_up_downs[keynum]);
+    if(g_up_downs[keynum]){
+      tevent.keyswitch |= radiumswitch[lokke];
+    }
+  }
+  
+  //printf("keyswtich: %x\n",tevent.keyswitch);
+}
+
+void OS_SYSTEM_ResetKeysUpDowns(void){
+  for(int i=0;i<EVENT_DASMAX;i++)
+    g_up_downs[i]=false;
+  set_keyswitch();
+}
+
+
+
+#if 0
+static bool handle_qt_keyboard(QKeyEvent *event, bool is_key_down){
+  int keynum = EVENT_NO;
+
+#define S(QT_VAL, EVENT_VAL) case Qt::Key_##QT_VAL: keynum=EVENT_##EVENT_VAL;break;  
+  switch(event->key()){
+    S(Escape, ESC);
+    S(Tab, TAB);
+    S(Backspace, BACKSPACE);
+    S(Return, RETURN);
+    S(Enter, KP_ENTER);
+    S(Insert, INSERT);
+    S(Delete, DEL);
+
+    S(Home, HOME);
+    S(End, END);
+    S(Left, LEFTARROW);
+    S(Right, RIGHTARROW);
+    S(Down, DOWNARROW);
+    S(Up, UPARROW);
+    S(PageUp, PAGE_UP);
+    S(PageDown, PAGE_DOWN);
+
+    S(F1, F1);
+    S(F2, F2);
+    S(F3, F3);
+    S(F4, F4);
+    S(F5, F5);
+    S(F6, F6);
+    S(F7, F7);
+    S(F8, F8);
+    S(F9, F9);
+    S(F10, F10);
+    S(F11, F11);
+    S(F12, F12);
+
+    S(0,0);
+    S(1,1);
+    S(2,2);
+    S(3,3);
+    S(4,4);
+    S(5,5);
+    S(6,6);
+    S(7,7);
+    S(8,8);
+    S(9,9);
+
+    S(A,A);
+    S(B,B);
+    S(C,C);
+    S(D,D);
+    S(E,E);
+    S(F,F);
+    S(G,G);
+    S(H,H);
+    S(I,I);
+    S(J,J);
+    S(K,K);
+    S(L,L);
+    S(M,M);
+    S(N,N);
+    S(O,O);
+    S(P,P);
+    S(Q,Q);
+    S(R,R);
+    S(S,S);
+    S(T,T);
+    S(V,U);
+    S(U,V);
+    S(W,W);
+    S(X,X);
+    S(Y,Y);
+    S(Z,Z);
+
+    S(Space, SPACE);
+    
+    S(Menu, MENU);
+
+    S(MediaPlay, PLAY);
+    S(MediaStop, STOP);
+    S(VolumeDown, VOLUME_DOWN);
+    S(VolumeUp, VOLUME_UP);
+    S(VolumeMute, MUTE);
+
+    S(Calculator, CALCULATOR);
+    S(LaunchMail, MAIL);
+    S(HomePage, HOMEPAGE);    
+  }
+#undef S
+
+#if FOR_LINUX
+  const int sub=8;
+#else
+  const int sub=0;
+#endif
+
+  return handle_keyboard(keynum, event->nativeScanCode()-sub, event->nativeVirtualKey(), is_key_down);
+}
+#endif
+
+extern EditorWidget *g_editor;
+
 class MyApplication : public QApplication{
 public:
 
@@ -135,11 +279,15 @@ protected:
 
   bool last_key_was_lalt;
 
-  bool EventFilter(void *event){
+  
+  bool SystemEventFilter(void *event){
+
     if(is_starting_up==true)// || return_false_now)
       return false;
 
     OS_SYSTEM_EventPreHandler(event);
+    
+    struct Tracker_Windows *window = root->song->tracker_windows;
 
     int type = OS_SYSTEM_get_event_type(event);
 
@@ -148,36 +296,62 @@ protected:
     
     bool is_key_press = type==TR_KEYBOARD;
     
-    if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
-      return false;
+    int modifier = OS_SYSTEM_get_modifier(event);
+    
+    if (modifier!=EVENT_NO) {
 
-    int keynum = OS_SYSTEM_get_keynum(QApplication::focusWidget(), event);
-
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    bool must_return_false = false;
-
-    if (keynum==EVENT_ALT_L){
-      if (is_key_press){
-        last_key_was_lalt = true;
-        must_return_false = true;
-      }else { // i.e. key release
-
-        if(last_key_was_lalt==true){
-
-          if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
-            GFX_HideMenu(window);
-            set_editor_focus();
-          } else
-            GFX_ShowMenu(window);
+      if (modifier==EVENT_ALT_L){
+        if (is_key_press){
+          last_key_was_lalt = true;
+        }else { // i.e. key release
           
-          must_return_false = true;
-          last_key_was_lalt = false;
+          if(last_key_was_lalt==true){
+            
+            if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
+              GFX_HideMenu(window);
+              set_editor_focus();
+            } else
+              GFX_ShowMenu(window);
+            
+            last_key_was_lalt = false;
+          }
+        }
+      }else
+        last_key_was_lalt = false;
+
+      static int64_t last_pressed_key_time = 0;
+      static int last_pressed_key = EVENT_NO;
+
+      int64_t time_now = MIXER_get_time();
+
+      if (is_key_press) {
+        
+        last_pressed_key_time = time_now;
+        last_pressed_key = modifier;
+        
+      } else {
+        
+        if( (time_now - last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
+          if(modifier==last_pressed_key && modifier==EVENT_ALT_R)
+            PlayBlockFromStart(window,true); // true == do_loop
+          
+          if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R)
+            PlayBlockFromStart(window,true); // true == do_loop
         }
       }
-    }else
-      last_key_was_lalt = false;
-    
 
+      g_up_downs[modifier] = is_key_press;
+      set_keyswitch();
+      //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
+      
+      return false;
+    }
+
+    if (num_users_of_keyboard > 0)
+      return false;
+
+    int keynum = OS_SYSTEM_get_keynum(event);
+    
     switch(keynum){
     case EVENT_ESC:
     case EVENT_UPARROW:
@@ -192,39 +366,61 @@ protected:
     }
     }
 
-    if (is_key_press && num_users_of_keyboard==0)
-      window->must_redraw = true;
-    
-    bool ret = OS_SYSTEM_KeyboardFilter(QApplication::focusWidget(), event);
+    window->must_redraw = true;
 
+    if (is_key_press)
+      tevent.ID=TR_KEYBOARD;
+    else
+      tevent.ID=TR_KEYBOARDUP;
+    
+    tevent.SubID=keynum;  
+        
+    
+    bool ret;
+    
+    if (keynum==EVENT_NO)
+      ret = false;
+    else
+      ret = EventReciever(&tevent,window);
+    
+    if (ret==false) {
+      keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+      
+      if (keynum==EVENT_NO){
+        //printf("Unknown key for n%p\n",event);//virtual_key);
+        return false;
+      }
+      
+      tevent.SubID=keynum;
+      
+      ret = EventReciever(&tevent,window);
+    }
+
+    //printf("ret2: %d\n",ret);
+    
     if(ret==true)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
-      
-    if(doquit==true)
-      QApplication::quit();
     
-    if (must_return_false==true)
-      return false;
-    else
-      return ret;
+    return true;
   }
   
 #ifdef __linux__
   bool x11EventFilter(XEvent *event){
-    return EventFilter(event);
+    bool ret = SystemEventFilter(event);
+    //printf("         eventfilter ret: %d\n",ret);
+    return ret;
   }
-
 #endif
 
 #ifdef FOR_WINDOWS
   bool 	winEventFilter ( MSG * msg, long * result ){
-    return EventFilter(msg);
+    return SystemEventFilter(msg);
   }
 #endif
 
 #ifdef FOR_MACOSX
   bool macEventFilter ( EventHandlerCallRef caller, EventRef event ){
-    return EventFilter(event);
+    return SystemEventFilter(event);
   }
 #endif
 };
@@ -402,6 +598,7 @@ protected:
     num_calls++;
     
     if(num_users_of_keyboard==0){
+      
       if(num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
         root->song->tracker_windows->must_redraw = true;
       }
@@ -1048,7 +1245,7 @@ int main(int argc, char **argv){
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
-
+ 
   g_qapplication = qapplication;
 
   OS_set_argv0(argv[0]);

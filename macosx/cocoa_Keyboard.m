@@ -168,9 +168,11 @@ static uint32_t get_keyswitch(void){
 
 static int keymap[0x100] = {EVENT_NO};
 
+// This only works for qwerty-keyboards (i.e. what scancode is used for in windows and linux). To get EVENT_A (for instance): http://stackoverflow.com/questions/8263618/convert-virtual-key-code-to-unicode-string
+// Mac vk overview: http://stackoverflow.com/questions/3202629/where-can-i-find-a-list-of-mac-virtual-key-codes
 static void init_keymap(void){
   // alpha
-  keymap[kVK_ANSI_A] = EVENT_A;
+  keymap[kVK_ANSI_A] = EVENT_A; // TODO: This is actually an EVENT_QWERTY_A event, not an EVENT_A event.
   keymap[kVK_ANSI_B] = EVENT_B;
   keymap[kVK_ANSI_C] = EVENT_C;
   keymap[kVK_ANSI_D] = EVENT_D;

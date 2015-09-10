@@ -59,13 +59,13 @@ bool Quit(struct Tracker_Windows *window){
 
 extern PyObject *gotkeyFunc;
 
-static PyObject *Integers_py[130];
+static PyObject *Integers_py[EVENT_DASMAX];
 static PyObject *Lists_py[12];
 
 void init_pyobjects(void){
 	int lokke;
 
-	for(lokke=0;lokke<130;lokke++){
+	for(lokke=0;lokke<EVENT_DASMAX;lokke++){
 		Integers_py[lokke]=PyInt_FromLong((long)lokke);
 		Py_INCREF(Integers_py[lokke]);
 		Py_INCREF(Integers_py[lokke]);
@@ -312,7 +312,7 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 	if(isloaded==true)
 	  isloaded=false;
 
-        printf("*********** ret: %d\n",ret);
+        //printf("*********** ret: %d\n",ret);
         return ret;
 }
 

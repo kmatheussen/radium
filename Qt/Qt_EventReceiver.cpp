@@ -187,6 +187,24 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 
 struct TEvent tevent={0};
 
+#if 0
+
+void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
+  if(is_starting_up==true)
+    return;
+
+  //printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
+  printf("key      : %d\n",qkeyevent->key());
+  //printf("key press: %d,%d\n",qkeyevent->state(),Qt2SubId[max(0,qkeyevent->key()-0x41)]);
+  printf("text     : -%s-\n",(const char *)qkeyevent->text().toUtf8().constData());
+  printf("Auto     : %d\n\n",qkeyevent->isAutoRepeat());
+  // return;
+}
+
+void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
+  printf("keyreleaseEvent\n");
+}
+#endif
 
 
 #if 0 // Old QT keyboard code. Not used, put everything through X11 instead.
