@@ -67,12 +67,12 @@ if test $2 = "yes" ; then
 fi
 
 
-tar xvf setxkbmap_56346c72127303a445a273217f7633c2afb29cfc.tar
-cd setxkbmap
-make clean
-./configure --prefix=/usr
-make
-cd ..
+#tar xvf setxkbmap_56346c72127303a445a273217f7633c2afb29cfc.tar
+#cd setxkbmap
+#make clean
+#./configure --prefix=/usr
+#make
+#cd ..
 
 
 rm -fr Visualization-Library-master
