@@ -229,7 +229,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           mmp2filename=NULL;
         }
 
-        ResetUndo();
+        if (ret)
+          ResetUndo();
         
         return ret;
 }
