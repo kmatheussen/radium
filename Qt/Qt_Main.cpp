@@ -289,8 +289,13 @@ protected:
     
     struct Tracker_Windows *window = root->song->tracker_windows;
 
-    int type = OS_SYSTEM_get_event_type(event, !doAutoRepeat());
+    bool ignore_autorepeat = !doAutoRepeat();
+    
+    int type = OS_SYSTEM_get_event_type(event, ignore_autorepeat);
 
+    if (type==TR_AUTOREPEAT)
+      return true;
+    
     if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
       return false;
     
