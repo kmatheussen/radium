@@ -267,6 +267,12 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   }
 }
 
+static bool event_is_arrow(XKeyEvent *event){
+  KeySym keysym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
+
+  return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
+}
+
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   XEvent *event = void_event;
   
@@ -277,7 +283,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   
   else if (event->type==KeyRelease){
 
-    if (ignore_autorepeat){
+    if (ignore_autorepeat && !event_is_arrow(&event->xkey)){
 
       // logic picked up from http://stackoverflow.com/questions/2100654/ignore-auto-repeat-in-x11-applications
       
@@ -297,7 +303,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
             
             // delete retriggered KeyPress event
             XNextEvent (dis, event);
-            return -1;
+            return TR_AUTOREPEAT;
           }
       }
     }

@@ -143,9 +143,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     if (crash_type==CT_CRASH)
       box.setText("Radium Crashed. :((");
     else if (crash_type==CT_ERROR)
-      box.setText("Error! Radium is in a state it should not be in. (Note that Radium has NOT crashed)\n");
+      box.setText("Error! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed)\n");
     else
-      box.setText("Warning! Radium is in a state it should not be in. (Note that Radium has NOT crashed, you can continue working)\n");
+      box.setText("Warning! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed, you can continue working)\n");
 
 
     bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
