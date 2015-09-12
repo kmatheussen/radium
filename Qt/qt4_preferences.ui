@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>5</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1621,8 +1621,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>396</width>
-            <height>300</height>
+            <width>403</width>
+            <height>286</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -1678,7 +1678,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="MIDI">
       <attribute name="title">
        <string>MIDI</string>
       </attribute>

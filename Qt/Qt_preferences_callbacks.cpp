@@ -490,7 +490,7 @@ void PREFERENCES_open(void){
 
 void PREFERENCES_open_MIDI(void){
   PREFERENCES_open();
-  g_preferences_widget->tabWidget->setCurrentIndex(3);
+  g_preferences_widget->tabWidget->setCurrentWidget(g_preferences_widget->MIDI);
 }
 
 void PREFERENCES_update(void){
