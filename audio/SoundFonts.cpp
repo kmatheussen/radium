@@ -242,7 +242,7 @@ static hash_t *get_instruments_info(sf2::File *file){
 
   for (int i = 0; i < file->GetInstrumentCount(); i++) {
     sf2::Instrument* instr = file->GetInstrument(i);
-    HASH_put_hash(instruments, talloc_strdup(instr->Name.c_str()), get_instrument_info(instr));
+    HASH_put_hash(instruments, instr->Name.c_str(), get_instrument_info(instr));
   }
 
   return instruments;
@@ -300,7 +300,7 @@ static hash_t *get_samples_info(sf2::File *file){
   hash_t *samples = HASH_create(50);
   for(int i=0; i<file->GetSampleCount();i++){
     sf2::Sample *sample = file->GetSample(i);
-    HASH_put_hash(samples, talloc_strdup(sample->Name.c_str()), get_sample_info(sample, i));
+    HASH_put_hash(samples, sample->Name.c_str(), get_sample_info(sample, i));
   }
   return samples;
 }
@@ -321,7 +321,7 @@ static hash_t *get_menu(hash_t *info){
       sprintf(bank_display,"Bank %d",bank_num);
 
       if(HASH_has_key(menu,bank_display)==false){
-        HASH_put_hash(menu,talloc_strdup(bank_display),HASH_create(num_presets));
+        HASH_put_hash(menu,bank_display,HASH_create(num_presets));
         printf("Creating new hash entry for \"%s\"\n",bank_display);
       }
     }
@@ -331,7 +331,7 @@ static hash_t *get_menu(hash_t *info){
       char preset_display[512];
       //sprintf(filename,"%s.%0*d.wav",base_filename,leading_zeros+1,0);
       sprintf(preset_display,"%03d. %s",preset_num,preset_name);
-      HASH_put_hash(bank,talloc_strdup(preset_display),preset);
+      HASH_put_hash(bank,preset_display,preset);
     }
   }
 

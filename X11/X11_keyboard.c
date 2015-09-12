@@ -240,9 +240,6 @@ int OS_SYSTEM_get_qwerty_keynum(void *event){
 
 
 
-extern struct TEvent tevent;
-
-
 
 
 void OS_SYSTEM_EventPreHandler(void *void_event){

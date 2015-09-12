@@ -158,11 +158,13 @@ vector_t *HASH_get_values(const hash_t *hash){
   return vector; 
 }
 
-static void put(hash_t *hash, const char *key, int i, hash_element_t *element){
+static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *element){
+  const char *key = STRING_get_utf8_chars(raw_key);
+  
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
-  element->key=talloc_strdup(key);
+  element->key=key;
   element->i=i;
 
   hash->num_elements++;
@@ -264,7 +266,9 @@ void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val){
     hash->num_array_elements = new_size;
 }
 
-static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *key, int i){
+static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *raw_key, int i){
+  const char *key = STRING_get_utf8_chars(raw_key);
+    
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   hash_element_t *element=hash->elements[index];
 

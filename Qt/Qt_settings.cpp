@@ -84,6 +84,11 @@ char* STRING_get_chars(const wchar_t *string){
   return talloc_strdup(s.toUtf8().constData());
 }
 
+char* STRING_get_utf8_chars(const char* s){
+  QString qstring = QString::fromUtf8(s);
+  return talloc_strdup(qstring.toUtf8().constData());
+}
+
 bool STRING_ends_with(const wchar_t *string, const char *endswith){
   QString s = STRING_get_qstring(string);
   return s.endsWith(endswith);
