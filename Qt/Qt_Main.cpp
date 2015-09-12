@@ -335,20 +335,27 @@ protected:
         last_pressed_key = modifier;
         
       } else {
+
+        // key release:
         
         if( (time_now - last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
-          if(modifier==last_pressed_key && modifier==EVENT_ALT_R)
+          if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
             PlayBlockFromStart(window,true); // true == do_loop
+          }
           
-          if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R)
+          if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R) {
             PlayBlockFromStart(window,true); // true == do_loop
+          }
         }
       }
 
       g_up_downs[modifier] = is_key_press;
       set_keyswitch();
       //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
-      
+
+      if (modifier==EVENT_ALT_R)
+        return true; // If not, Qt starts to navigate the menues.
+
       return false;
     }
 
