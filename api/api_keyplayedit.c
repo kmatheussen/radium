@@ -106,8 +106,9 @@ void switchEditOnOff(void){
 	struct Tracker_Windows *window=getWindowFromNum(-1);
 	root->editonoff=root->editonoff?false:true;
         char temp[1000];
-        sprintf(temp,"Midi Input %s",root->editonoff?"On":"Off");
+        sprintf(temp,"Edit %s",root->editonoff?"On":"Off");
         GFX_SetStatusBar(window,temp);
+        window->must_redraw=true;
 }
 
 void switchSoundScrollOnOff(int windownum){
