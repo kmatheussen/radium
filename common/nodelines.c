@@ -125,7 +125,12 @@ const struct NodeLine *create_nodelines(
   R_ASSERT(list != NULL);
   R_ASSERT(list->next != NULL || last_element!=NULL);
 
-
+  if (last_element!=NULL){
+    const Place *start = &list->p;
+    const Place *end = &last_element->p;
+    R_ASSERT(PlaceGreaterThan(end, start));
+  }
+  
   // 1. Create straight forward nodelines from the list
   {
     float reallineF = 0.0f;
