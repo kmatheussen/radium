@@ -267,13 +267,50 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   }
 }
 
-int OS_SYSTEM_get_event_type(void *void_event){
+int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   XEvent *event = void_event;
   
-  if(event->type==KeyPress)
+  if(event->type==KeyPress){
+    //printf(">>> Keypress\n");
     return TR_KEYBOARD;
-  else if (event->type==KeyRelease)
+  }
+  
+  else if (event->type==KeyRelease){
+
+    if (ignore_autorepeat){
+
+      // logic picked up from http://stackoverflow.com/questions/2100654/ignore-auto-repeat-in-x11-applications
+      
+      Display *dis = event->xkey.display;
+    
+      if (XEventsQueued(dis, QueuedAfterReading)) {
+        XEvent nev;
+        XPeekEvent(dis, &nev);
+        
+        if (nev.type == KeyPress &&
+            nev.xkey.time == event->xkey.time &&
+            nev.xkey.keycode == event->xkey.keycode
+            )
+          {
+            //fprintf (stdout, "key #%ld was retriggered.\n",
+            //         (long) XLookupKeysym (&nev.xkey, 0));
+            
+            // delete retriggered KeyPress event
+            XNextEvent (dis, event);
+            return -1;
+          }
+      }
+    }
+
+    //printf("<<< KeyRelease\n");
+    
+    //fprintf (stdout, "key #%ld was released.\n",
+    //         (long) XLookupKeysym (&event->xkey, 0));
+
+     
     return TR_KEYBOARDUP;
+  }
+  
   else
     return -1;
 }

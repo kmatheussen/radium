@@ -214,7 +214,27 @@ void setScrollEditLines(bool doit){
   g_do_scroll_edit_lines = doit;
   SETTINGS_write_bool("arrow_keys_scroll_edit_lines", doit);
 }
-                          
+
+
+static bool g_do_autorepeat = false;
+
+bool doAutoRepeat(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_autorepeat = SETTINGS_read_bool("keyboard_autorepeat", false);
+    has_inited = true;
+  }
+
+  return g_do_autorepeat;
+}
+
+void setAutoRepeat(bool doit){
+  g_do_autorepeat = doit;
+  SETTINGS_write_bool("keyboard_autorepeat", doit);
+}
+
+
 extern int g_downscroll;
 void setNoteScrollLength(int l){
   R_ASSERT_RETURN_IF_FALSE(l>=0);

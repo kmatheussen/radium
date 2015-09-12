@@ -2,9 +2,6 @@
 import radium as ra
 import bubble
 def keycodedef0():
-	bubble.bubble()
-	return
-def keycodedef1():
 	reload(bubble)
 	bubble.bubble()
 	return

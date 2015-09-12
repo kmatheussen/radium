@@ -275,6 +275,8 @@ class Preferences : public QDialog, public Ui::Preferences {
 
       multiplyscrollbutton->setChecked(doScrollEditLines());
 
+      autorepeatbutton->setChecked(doAutoRepeat());
+
       if (linenumbersVisible())
         showLineNumbers->setChecked(true);
       else
@@ -384,6 +386,9 @@ public slots:
   }
   void on_multiplyscrollbutton_toggled(bool val){
     setScrollEditLines(val);
+  }
+  void on_autorepeatbutton_toggled(bool val){
+    setAutoRepeat(val);
   }
   void on_showLineNumbers_toggled(bool val){
     setLinenumbersVisible(val);

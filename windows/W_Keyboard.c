@@ -405,6 +405,9 @@ int OS_SYSTEM_get_event_type(void *void_event){
 
 extern int num_users_of_keyboard;
 
+// How to detect autorepeat:
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
+
 bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
   MSG *msg = void_msg;
 
