@@ -141,7 +141,10 @@ namespace{
     MyQLineEdit(QFrame *parent)
       : QLineEdit(parent)
       , gotit(false)
-    {}
+    {
+      setContextMenuPolicy(Qt::NoContextMenu); // Only way I've found to avoid it from popping up on windows.
+    }
+        
     void keyPressEvent ( QKeyEvent * event ){
       printf("oh yeah baby %d, scancode: %x\n",event->key(),event->nativeScanCode()-8);
       //event->ignore();
