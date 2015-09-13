@@ -1,3 +1,23 @@
+Most important changes 3.3.5 -> 3.3.6
+* Windows: Don't show the qt context menu when configuring block
+* Don't start to navigate menues when using left alt as a modifier key
+  (bug introduced in 3.3.5)
+* Fix QWERTY_F key (bug introduced in 3.3.5)
+* Fixed "-S" argument check for jack on windows
+* Always swallow EVENT_ALT_R to avoid Qt starting to navigate the menues
+* Ignore autorepeat keyboard events, except for arrow keys and page up / page down
+* Update editor graphics immediately when pressing the "Edit" button,
+  and write "Edit On/Off" in the status bar, not "MIDI Input On/Off"
+* Fix open MIDI preferences dialog
+* Dont run the bubble example when pressing the 7 key
+* Dont crash if trying to load a soundfont preset name containing non-ascii characters
+* Clean up keyboard handling a bit, and remove unused setxkbmap build.
+* Don't reset undo if loading fails
+* Add "Mouse" and "Menues" to help menu
+* Fix crash when displaying peaks for soundfonts (and sometimes normal
+  samples too) in the sampler instrument
+
+
 Most important changes 3.3.4 -> 3.3.5
 * Mainly use scancode to find key on Windows. Should solve various problems,
   for instance note order on non-qwerty keyboards
