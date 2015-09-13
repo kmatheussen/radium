@@ -29,12 +29,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "W_Keyboard_proc.h"
 
 
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+
+
 extern struct TEvent tevent;
-extern struct Root *root;
-extern PlayerClass *pc;
 
 static bool left_windows_down = false;
 static bool right_windows_down = false;
+
+static unsigned int g_last_keyswitch;
+
 
 static uint32_t get_keyswitch(void){
   uint32_t keyswitch=0;
@@ -85,6 +89,7 @@ static uint32_t get_keyswitch(void){
 
 static int keymap[0x100] = {EVENT_NO};
 
+// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 static void init_keymap(void){
   // alpha
   keymap[0x41] = EVENT_A;
@@ -287,7 +292,9 @@ static int get_keypad_subID(MSG *msg){
 }
 
 
-static int get_keyboard_subID(MSG *msg){
+int OS_SYSTEM_get_keynum(void *void_event){
+  MSG *msg = (MSG*)void_event;
+  
   if(msg->wParam >= 0x100)
     return EVENT_NO;
 
@@ -295,17 +302,128 @@ static int get_keyboard_subID(MSG *msg){
   if(subID!=EVENT_NO)
     return subID;
 
-  int scancode = MapVirtualKey(msg->wParam, MAPVK_VK_TO_VSC);
-  if (scancode!=0){
-    subID = get_subID_from_scancode(scancode);
-    if (subID!=EVENT_NO)
-      return subID;
-  }
-  
   return keymap[msg->wParam];
 }
 
+int OS_SYSTEM_get_qwerty_keynum(void *void_event) {
+  MSG *msg = (MSG*)void_event;
+  
+  int scancode = MapVirtualKey(msg->wParam, MAPVK_VK_TO_VSC);
+  if (scancode!=0){
+    int subID = get_subID_from_scancode(scancode);
+    if (subID!=EVENT_NO)
+      return subID;
+  }
+
+  return EVENT_NO;
+}
+
 static bool g_bWindowActive = true;
+
+void OS_SYSTEM_EventPreHandler(void *void_event){
+  MSG *msg = (MSG*)void_event;
+
+  switch(msg->message){
+    
+  case WM_NCACTIVATE:
+    g_bWindowActive = msg->wParam ? true : false;
+    //printf("1. Got NC Activate. wParam: %d\n",(int)msg->wParam);
+    //fflush(stdout);
+    break;
+    
+  case WM_ACTIVATE:
+    g_bWindowActive = msg->wParam ? true : false;
+    //printf("2. Got Activate. wParam: %d\n",(int)msg->wParam);
+    //fflush(stdout);
+    break;
+    
+  case WM_ACTIVATEAPP:
+    g_bWindowActive = msg->wParam ? true : false;
+    //printf("3. Got Activate app. wParam: %d\n",(int)msg->wParam);
+    //fflush(stdout);
+    break;
+  }
+
+  int type = OS_SYSTEM_get_event_type(void_event, true);
+  if (type==TR_KEYBOARD || type==TR_KEYBOARDUP){
+    g_last_keyswitch = tevent.keyswitch;
+    tevent.keyswitch = get_keyswitch();
+  }
+}
+
+static bool event_is_arrow(WPARAM w){
+  return w==VK_DOWN || w==VK_UP || w==VK_LEFT || w==VK_RIGHT || w==VK_PRIOR || w==VK_NEXT;
+}
+
+int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
+  MSG *msg = (MSG*)void_event;
+  switch(msg->message){
+  case WM_KEYDOWN:
+  case WM_SYSKEYDOWN:
+    {
+      if (ignore_autorepeat && !event_is_arrow(msg->wParam)){
+        if (CHECK_BIT(msg->lParam, 30)) { // autorepeat. https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
+          return TR_AUTOREPEAT;
+        }
+      }
+      return TR_KEYBOARD;
+    }
+  case WM_KEYUP: 
+  case WM_SYSKEYUP:
+    return TR_KEYBOARDUP;
+  default:
+    return -1;
+  }
+}
+
+
+// Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event. Several other problems too.
+int OS_SYSTEM_get_modifier(void *void_msg){
+  MSG *msg = (MSG*)void_msg;
+  
+  int type = OS_SYSTEM_get_event_type(void_msg, true);
+  
+  unsigned int keyswitch;
+  if (type==TR_KEYBOARD)
+    keyswitch = tevent.keyswitch;
+  else if (type==TR_KEYBOARDUP)
+    keyswitch = g_last_keyswitch;
+  else
+    return EVENT_NO;
+  
+  switch(msg->wParam){
+  case VK_SHIFT:
+    {
+      if (keyswitch & EVENT_RIGHTSHIFT)
+        return EVENT_SHIFT_R;
+      if (keyswitch & EVENT_LEFTSHIFT)
+        return EVENT_SHIFT_L;
+    }
+    break;
+  case VK_CONTROL:
+    {
+      if (keyswitch & EVENT_RIGHTCTRL)
+        return EVENT_CTRL_R;
+      if (keyswitch & EVENT_LEFTCTRL)
+        return EVENT_CTRL_L;
+    }
+    break;
+  case VK_MENU:
+    {
+      if (keyswitch & EVENT_RIGHTALT)
+        return EVENT_ALT_R;
+      if (keyswitch & EVENT_LEFTALT)
+        return EVENT_ALT_L;
+    }
+    break;
+    //  case VK_APPS:
+    //    return EVENT_EXTRA_R;
+  }
+  
+  return EVENT_NO;
+}
+
+
 static HHOOK g_hKeyboardHook = NULL;
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/ee416808(v=vs.85).aspx
@@ -328,14 +446,15 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
         else
           right_windows_down = wParam==WM_KEYDOWN;
 
+        // Don't think this is any point.
         if (left_windows_down)
           tevent.keyswitch |= EVENT_LEFTEXTRA1;
         else
           tevent.keyswitch &= (~EVENT_LEFTEXTRA1);
         
-        //printf("active: %d, left: %s, right: %s\n",g_bWindowActive, left_windows_down?"down":"up", right_windows_down?"down":"up");
+        //printf("active: %d, left: %s, right: %s. switch: %x\n",g_bWindowActive, left_windows_down?"down":"up", right_windows_down?"down":"up", );
         if(g_bWindowActive)
-          return 1;
+          return 1; // To avoid having the windows menu pop up when the radium window is active and pressing left windows key.
       }
     }
  
@@ -352,165 +471,76 @@ void W_KeyboardHandlerShutDown(void){
     UnhookWindowsHookEx(g_hKeyboardHook);
 }
 
-// Seems like it's not necessary to do anything on windows
-void OS_SYSTEM_ResetKeysUpDowns(void){
+#ifdef RUN_TEST
+struct Root *root = NULL;
+struct TEvent tevent = {0};
+PlayerClass *pc = NULL;
+int num_users_of_keyboard = 0;
+int64_t MIXER_get_time(void){
+  return 0;
+}
+bool EventReciever(struct TEvent *tevent,struct Tracker_Windows *window){
+  return true;
+}
+void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 }
 
-int OS_SYSTEM_get_keynum(void *focused_widget, void *void_event){
-  MSG *msg = void_event;
-  if (msg->wParam==18)
-    return EVENT_ALT_L;
-  //printf("key: %d %x\n",msg->wParam,msg->wParam);
-  return get_keyboard_subID(msg);
-}
+// x86_64-w64-mingw32-g++ -Wall W_Keyboard.c -mconsole -DRUN_TEST -DFOR_WINDOWS -DDEBUG -I../Qt/ -DUSE_QT_REQTYPE=1 ../common/scancodes.c `mingw64-pkg-config --libs --cflags QtGui` && wine64 a.exe 
 
-void OS_SYSTEM_EventPreHandler(void *void_event){
-  MSG *msg = void_event;
+#include <QApplication>
+#include <QPushButton>
 
-  switch(msg->message){
+class MyApplication : public QApplication{
+public:
+
+  MyApplication(int &argc,char **argv)
+    : QApplication(argc,argv)
+    {
+      //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
+    }
+
+protected:
+
+  bool last_key_was_lalt;
+
+  
+  bool SystemEventFilter(void *event){
+    OS_SYSTEM_EventPreHandler(event);
     
-  case WM_NCACTIVATE:
-    g_bWindowActive = msg->wParam ? true : false;
-    //printf("1. Got NC Activate. wParam: %d\n",(int)msg->wParam);
-    //fflush(stdout);
-    break;
-    
-  case WM_ACTIVATE:
-    g_bWindowActive = msg->wParam ? true : false;
-    //printf("2. Got Activate. wParam: %d\n",(int)msg->wParam);
-    //fflush(stdout);
-    break;
-    
-  case WM_ACTIVATEAPP:
-    g_bWindowActive = msg->wParam ? true : false;
-    //printf("3. Got Activate app. wParam: %d\n",(int)msg->wParam);
-    //fflush(stdout);
-    break;
-  }
-}
-
-int OS_SYSTEM_get_event_type(void *void_event){
-  MSG *msg = void_event;
-  switch(msg->message){
-  case WM_KEYDOWN:
-  case WM_SYSKEYDOWN:
-    return TR_KEYBOARD;
-  case WM_KEYUP: 
-  case WM_SYSKEYUP:
-    return TR_KEYBOARDUP;
-  default:
-    return -1;
-  }
-}
-
-extern int num_users_of_keyboard;
-
-// How to detect autorepeat:
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
-
-bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_msg){
-  MSG *msg = void_msg;
-
-  static int last_pressed_key = -1;
-  static int64_t last_pressed_key_time = -1;
-  static int last_pressed_keyswitch = -1;
-
-  struct Tracker_Windows *window=root->song->tracker_windows;
-#if 0
-  static int num=0;
-  if(msg->message!=WM_TIMER && msg->message!=0x84 && msg->message!=WM_MOUSEFIRST && msg->message!=WM_MOUSEMOVE && msg->message!=WM_SETCURSOR){
-    char *temp="";
-    printf("Got something. Message: 0x%x. wParam: 0x%x. lParam: 0x%x. Num: %d. Name: \"%s\", Left shift? 0x%x\n",(int)msg->message,(int)msg->wParam,(int)msg->lParam,num++,temp,(int)GetKeyState(VK_LSHIFT));
-    fflush(stdout);
-  }
-#endif
-  switch(msg->message){
-    case WM_HOTKEY:
-      //printf("Got HotKey\n");
-      //fflush(stdout);
-      return true;
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-      if(num_users_of_keyboard>0)
-        return false;
-
-      tevent.ID=TR_KEYBOARD;
-
-      tevent.SubID=get_keyboard_subID(msg);
-      last_pressed_key = tevent.SubID;
-
-      if(last_pressed_key_time==-1)
-        last_pressed_key_time = MIXER_get_time();
-
-      tevent.keyswitch=get_keyswitch();
-      last_pressed_keyswitch = tevent.keyswitch;
-
-      /*
-      printf("____________ key down: %x. Switch down: %x, left ctrl: %x, left alt: %x, right ctrl: %x, right alt: %x\n",
-             last_pressed_key,last_pressed_keyswitch,
-             EVENT_LEFTCTRL,
-             EVENT_LEFTALT,
-             EVENT_RIGHTCTRL,
-             EVENT_RIGHTALT
+    MSG *msg = (MSG*)event;
+    int type = OS_SYSTEM_get_event_type(event, true);
+    if (type!=-1){
+      int keynum = OS_SYSTEM_get_keynum(event);
+      int qwerty = OS_SYSTEM_get_qwerty_keynum(event);
+      printf("Got %s event: %d / %d. swiktch: %x. wparam: 0x%x. Modifier: %d. Autorepeat: %s\n",
+             type==TR_KEYBOARD?"press":"release",keynum,qwerty,get_keyswitch(),msg->wParam,OS_SYSTEM_get_modifier(event),type==TR_AUTOREPEAT?"true":"false"
              );
-      */
-      
-      EventReciever(&tevent,window);
-
-      return true;
-
-    case WM_KEYUP: 
-    case WM_SYSKEYUP:
-      if(msg->wParam==VK_RWIN){
-        right_windows_down = false;
-        return false;
-      }
-      if(msg->wParam==VK_LWIN){
-        left_windows_down = false;
-        return false;
-      }
-
-      if(num_users_of_keyboard>0)
-        return false;
-
-      int keynum = get_keyboard_subID(msg);
-
-      tevent.ID=TR_KEYBOARDUP;
-      tevent.SubID=keynum;
-      tevent.keyswitch=get_keyswitch();
-
-      int64_t time_now = MIXER_get_time();
-
-      //printf("____________ key: %x. Switch down: %x, Switch up: %x\n",keynum,last_pressed_keyswitch,tevent.keyswitch);
-      //printf("keynum: %d, last_pressed: %d, ALT_R: %d, time_now: %d, last_time: %d, diff: %d\n",keynum,last_pressed_key,EVENT_ALT_R,(int)time_now,(int)last_pressed_key_time,(int)(time_now-last_pressed_key_time));
-      //fflush(stdout);
-
-      if( (time_now-last_pressed_key_time) < pc->pfreq/4){ // i.e. only play if holding the key less than 0.25 seconds.
-        bool isplaykeyswitch =
-          (last_pressed_keyswitch & EVENT_RIGHTALT) ||
-          last_pressed_keyswitch==EVENT_RIGHTSHIFT;
-        
-        /*
-        printf("****************** last_pressed_keyswitch: %x (%x) (%x) (%d)\n",last_pressed_keyswitch, EVENT_RIGHTALT, EVENT_LEFTALT|EVENT_LEFTCTRL, EVENT_RIGHTALT|EVENT_LEFTCTRL);
-        printf("isplaykeyswitch: %d, keynum==last_pressed_key: %d, keynum==0: %d, (tevent.keyswitch==0: %d || (similar: %x/%x/%x))\n",
-               isplaykeyswitch, keynum==last_pressed_key, keynum==0, tevent.keyswitch==0, tevent.keyswitch,EVENT_RIGHTALT,last_pressed_keyswitch);
-        */
-        if (isplaykeyswitch)
-          if(keynum==last_pressed_key && keynum==0 && (tevent.keyswitch==0 || (tevent.keyswitch==EVENT_RIGHTALT && EVENT_RIGHTALT==last_pressed_keyswitch)))
-            PlayBlockFromStart(window,true); // true == do_loop
-      }
-
-      last_pressed_key_time = -1;
-
-      EventReciever(&tevent,window);
-      return true;
-
-    default:
-      break;
+    }
+    return false;
   }
 
-  return false;
+  bool 	winEventFilter ( MSG * msg, long * result ){
+    return SystemEventFilter(msg);
+  }
+
+};
+
+int main(int argc, char **argv)
+{
+  OS_SYSTEM_init_keyboard();
+
+  MyApplication app (argc, argv);
+  
+  QPushButton button ("Hello world !");
+  button.show();
+  
+  app.exec();
+  
+  W_KeyboardHandlerShutDown();
+  return 0;
 }
+
+#endif
 
 #endif // FOR_WINDOWS
 
