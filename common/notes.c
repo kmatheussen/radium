@@ -183,7 +183,7 @@ static void StopAllNotesAtPlace(
 			CutListAt(&temp->velocities,placement);
 			CutListAt(&temp->pitches,placement);
 			PlaceCopy(&temp->end,placement);
-                        NOTE_validate(wblock->block, track, note);
+                        NOTE_validate(wblock->block, track, temp);
 		}
 		temp=NextNote(temp);
 	}
