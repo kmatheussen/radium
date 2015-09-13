@@ -83,9 +83,9 @@ static int keysym_to_keynum(KeySym keysym) {
   // row 2
   /////////////////////
 
-  S(grave, 1L1);
+  //S(grave, 1L1);
   T(1);T(2);T(3);T(4);T(5);T(6);T(7);T(8);T(9);T(0);
-  S(minus, 0R1);S(equal, 0R2); // Missing 0R3!
+  //S(minus, 0R1);S(equal, 0R2); // Missing 0R3!
   S(BackSpace, BACKSPACE);
 
 
@@ -95,7 +95,7 @@ static int keysym_to_keynum(KeySym keysym) {
 
   S(Tab, TAB);
   S(q,Q);S(w,W);S(e,E);S(r,R);S(t,T);S(y,Y);S(u,U);S(i,I);S(o,O);S(p,P);
-  S(bracketleft,PR1);S(bracketright,PR2);
+  //S(bracketleft,PR1);S(bracketright,PR2);
   S(Return, RETURN);
 
 
@@ -104,16 +104,16 @@ static int keysym_to_keynum(KeySym keysym) {
   /////////////////////
   S(ISO_Next_Group, CAPS);
   S(a,A);S(s,S);S(d,D);S(f,F);S(g,G);S(h,H);S(j,J);S(k,K);S(l,L);
-  S(semicolon,LR1);S(apostrophe,LR2);S(backslash,LR3);
+  //S(semicolon,LR1);S(apostrophe,LR2);S(backslash,LR3);
 
 
   // row 5
   /////////////////////
 
   // ZL1
-  S(less,ZL1);
+  //S(less,ZL1);
   S(z,Z);S(x,X);S(c,C);S(v,V);S(b,B);S(n,N);S(m,M);
-  S(comma,MR1);S(period,MR2);S(slash,MR3);
+  //S(comma,MR1);S(period,MR2);S(slash,MR3);
 
   
 
@@ -174,7 +174,7 @@ static int keysym_to_keynum(KeySym keysym) {
   S(KP_Up, KP_8);
   S(KP_Prior, KP_9);
 
-  return -1;
+  return EVENT_NO;
 
 # undef T
 # undef S

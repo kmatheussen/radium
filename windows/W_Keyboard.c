@@ -135,7 +135,7 @@ static void init_keymap(void){
   keymap[VK_F12] = EVENT_F12;
 
   // row 2
-  keymap[VK_OEM_3] = EVENT_1L1;
+  //keymap[VK_OEM_3] = EVENT_1L1;
   keymap[0x31] = EVENT_1;
   keymap[0x32] = EVENT_2;
   keymap[0x33] = EVENT_3;
@@ -146,26 +146,26 @@ static void init_keymap(void){
   keymap[0x38] = EVENT_8;
   keymap[0x39] = EVENT_9;
   keymap[0x30] = EVENT_0;
-  keymap[VK_OEM_MINUS] = EVENT_0R1;
-  keymap[VK_OEM_PLUS]  = EVENT_0R2;
+  //keymap[VK_OEM_MINUS] = EVENT_0R1;
+  //keymap[VK_OEM_PLUS]  = EVENT_0R2;
   keymap[VK_BACK]      = EVENT_BACKSPACE;
 
   // row 3
   keymap[VK_TAB]    = EVENT_TAB;
-  keymap[VK_OEM_4]  = EVENT_PR1;
-  keymap[VK_OEM_6]  = EVENT_PR2;
+  //keymap[VK_OEM_4]  = EVENT_PR1;
+  //keymap[VK_OEM_6]  = EVENT_PR2;
   keymap[VK_RETURN] = EVENT_RETURN;
 
   // row 4
-  keymap[VK_OEM_1] = EVENT_LR1;
-  keymap[VK_OEM_7] = EVENT_LR2;
-  keymap[VK_OEM_5] = EVENT_LR3;
+  //keymap[VK_OEM_1] = EVENT_LR1;
+  //keymap[VK_OEM_7] = EVENT_LR2;
+  //keymap[VK_OEM_5] = EVENT_LR3;
 
   // row 5
-  keymap[VK_OEM_102]    = EVENT_ZL1;
-  keymap[VK_OEM_COMMA]  = EVENT_MR1;
-  keymap[VK_OEM_PERIOD] = EVENT_MR2;
-  keymap[VK_OEM_2]      = EVENT_MR3;
+  //keymap[VK_OEM_102]    = EVENT_ZL1;
+  //keymap[VK_OEM_COMMA]  = EVENT_MR1;
+  //keymap[VK_OEM_PERIOD] = EVENT_MR2;
+  //keymap[VK_OEM_2]      = EVENT_MR3;
 
   // row 6
   keymap[VK_SPACE] = EVENT_SPACE;
