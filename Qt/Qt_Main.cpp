@@ -132,6 +132,13 @@ extern struct TEvent tevent;
 
 static bool g_up_downs[EVENT_DASMAX];
 
+#ifdef FOR_WINDOWS
+
+// W_Keyboars.c updates tevent.keyswitch in it's own way. Has to be that way since we don't register the left windows key the normal way, since that causes the windows menu to appear.
+static void set_keyswitch(void){
+}
+
+#else
 static void set_keyswitch(void){
   static int keynumswitch[]={
     EVENT_CTRL_L, EVENT_SHIFT_L,EVENT_CAPS,
@@ -159,6 +166,7 @@ static void set_keyswitch(void){
   
   //printf("keyswtich: %x\n",tevent.keyswitch);
 }
+#endif
 
 void OS_SYSTEM_ResetKeysUpDowns(void){
   for(int i=0;i<EVENT_DASMAX;i++)
@@ -301,25 +309,37 @@ protected:
     
     bool is_key_press = type==TR_KEYBOARD;
     
-    int modifier = OS_SYSTEM_get_modifier(event);
+    int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
+
+    //printf("modifier: %d\n",modifier);
     
     if (modifier!=EVENT_NO) {
 
+      bool must_return_true = false;
+      
       if (modifier==EVENT_ALT_L){
         if (is_key_press){
           last_key_was_lalt = true;
-        }else { // i.e. key release
+        }else {
+
+          // release
+          
+          must_return_true = true;
           
           if(last_key_was_lalt==true){
             
             if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
               GFX_HideMenu(window);
               set_editor_focus();
-            } else
+            } else if (!GFX_MenuVisible(window))
               GFX_ShowMenu(window);
+            else
+              must_return_true = false; // pass the EVENT_ALT_L event to qt so that we can navigate the menues.
             
             last_key_was_lalt = false;
+                      
           }
+
         }
       }else
         last_key_was_lalt = false;
@@ -353,16 +373,27 @@ protected:
       set_keyswitch();
       //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
 
-      if (modifier==EVENT_ALT_R)
+      if (modifier==EVENT_ALT_R || must_return_true)
         return true; // If not, Qt starts to navigate the menues.
 
       return false;
     }
 
+    last_key_was_lalt = false;
+
+#if 0
+    printf("is_key_press: %d, keynum: %d, EVENT_MENU: %d\n",is_key_press,keynum,EVENT_MENU);
+
+    if (is_key_press==false && keynum==EVENT_MENU)
+      return true; // swallow the general qt menu popup menu. Sometimes it pops up when configuring block. If you need it, just press right mouse button.
+#endif
+    
     if (num_users_of_keyboard > 0)
       return false;
 
     int keynum = OS_SYSTEM_get_keynum(event);
+
+    //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
     
     switch(keynum){
     case EVENT_ESC:
@@ -397,6 +428,8 @@ protected:
     
     if (ret==false) {
       keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+
+      //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
       
       if (keynum==EVENT_NO){
         //printf("Unknown key for n%p\n",event);//virtual_key);
