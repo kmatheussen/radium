@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
+#include "../OpenGL/Widget_proc.h"
 
 #include "undo.h"
 
@@ -397,7 +398,8 @@ currently_undoing = true;
            wtrack=wblock->wtracks;
            
          wblock->wtrack=wtrack;
-         wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);
+         
+         wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);         
          window->curr_track=undo->tracknum;
 
          SelectWBlock(
@@ -410,6 +412,7 @@ currently_undoing = true;
            GFX_update_instrument_widget(current_patch);
          }
 
+         GE_set_curr_realline(wblock->curr_realline);
        }
 currently_undoing = false;
 
