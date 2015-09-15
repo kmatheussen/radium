@@ -41,7 +41,8 @@ static bool spool_to_next_wav_chunk(disk_t *file, int endpos){
 
 
   if(size<4 || DISK_spool(file,size)==false){
-    RError("Broken wave file? Chunk size: %d\n",size);
+    //RError("Broken wave file? Chunk size: %d\n",size);
+    GFX_Message(NULL, "Warning: Wav file seems to be a little bit broken. If you think this might be a bug in Radium, please send the wave file to k.s.matheussen@notam02.no");
     return false;
   }
 
@@ -250,7 +251,7 @@ static void set_wav_loop_points(Sample *sample, const wchar_t *filename){
   disk_t *file = DISK_open_binary_for_reading(filename);
   
   if(file==NULL){
-    RError("Could not open file \"%s\". libsndfile could though, which is very strange",filename);
+    GFX_Message("Could not open file \"%s\". libsndfile could open the file though. Something might be wrong with your disk.",filename);
     return;
   }
 
