@@ -32,24 +32,74 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct TEvent tevent;
 extern struct Root *root;
 
-  
-int OS_SYSTEM_get_event_type(void *void_event){
+
+static bool modifiers[64] = {false};
+
+static void clear_modifiers(void){
+  int i;
+  for(i=0;i<64;i++)
+    modifiers[i]=false;
+}
+
+
+// https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/NSEvent_Class
+
+int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   NSEvent *event = (NSEvent *)void_event;
   NSEventType type = [event type];
-  if(type==NSKeyDown)
-    return TR_KEYBOARD;
-  else if (type==NSKeyUp)
-    return TR_KEYBOARDUP;
-  else
-    return -1;
+  int ret = -1;
+  
+  if(type==NSFlagsChanged || type==NSKeyDown || type==NSKeyUp){
+
+#if 0
+    if (type==NSFlagsChanged)
+      printf("type: %d. keycode: %d. modifiers: %d\n",(int)type, [event keyCode],(int)[event modifierFlags]);
+    else
+      printf("type: %d. keycode: %d. modifiers: %d. autorepeat: %d\n",(int)type, [event keyCode], (int)[event modifierFlags], [event isARepeat]);
+#endif
+    
+    if(type==NSFlagsChanged){
+      int keycode = [event keyCode];
+      
+      if (modifiers[keycode])
+        ret = TR_KEYBOARDUP;
+      else
+        ret = TR_KEYBOARD;
+      
+      modifiers[keycode] = !modifiers[keycode]; // This seems a bit fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
+      
+      //printf("   modifier is %s\n",(ret==TR_KEYBOARDUP)?"released":"pressed");
+      
+    }else if(type==NSKeyDown)
+      ret = TR_KEYBOARD;
+    
+    else if (type==NSKeyUp)
+      ret = TR_KEYBOARDUP;
+    
+    // Probably not necessary, but just in case, in case things get out sync (see above)
+    if ( ([event modifierFlags] & NSCommandKeyMask) == 0 &&
+         ([event modifierFlags] & NSAlphaShiftKeyMask) == 0 &&
+         ([event modifierFlags] & NSShiftKeyMask) == 0 &&
+         ([event modifierFlags] & NSAlternateKeyMask) == 0 &&
+         ([event modifierFlags] & NSControlKeyMask) == 0 &&
+         ([event modifierFlags] & NSFunctionKeyMask) == 0
+         )
+      {
+        //printf("No modifiers. Resetting\n");
+        clear_modifiers();
+      }
+  }
+
+  return ret;
 }
                              
-static enum SubIds cocoa_get_modifier_event(void *void_event){
+int OS_SYSTEM_get_modifier(void *void_event){
+
   NSEvent *event = (NSEvent *)void_event;
   
   switch ([event keyCode]) {
-  case 54: // Right Command
-    return EVENT_EXTRA_R;
+    //case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
+    //return EVENT_EXTRA_R;
   case 55: // Left Command
     return EVENT_EXTRA_L;
   //case 57: // Capslock
@@ -72,144 +122,51 @@ static enum SubIds cocoa_get_modifier_event(void *void_event){
 }
 
 
-static bool isModifierKey(NSEvent *event){
-  return cocoa_get_modifier_event(event) != EVENT_NO;
-}
-
-// Copied from http://opensource.apple.com/source/WebCore/WebCore-955.66/platform/mac/KeyEventMac.mm?txt
-static inline bool isKeyUpEvent(NSEvent *event)
-{
-    if ([event type] != NSFlagsChanged)
-        return [event type] == NSKeyUp;
-    // FIXME: This logic fails if the user presses both Shift keys at once, for example:
-    // we treat releasing one of them as keyDown.
-    switch ([event keyCode]) {
-        case 54: // Right Command
-        case 55: // Left Command
-            return ([event modifierFlags] & NSCommandKeyMask) == 0;
-
-        case 57: // Capslock
-            return ([event modifierFlags] & NSAlphaShiftKeyMask) == 0;
-
-        case 56: // Left Shift
-        case 60: // Right Shift
-            return ([event modifierFlags] & NSShiftKeyMask) == 0;
-
-        case 58: // Left Alt
-        case 61: // Right Alt
-            return ([event modifierFlags] & NSAlternateKeyMask) == 0;
-
-        case 59: // Left Ctrl
-        case 62: // Right Ctrl
-            return ([event modifierFlags] & NSControlKeyMask) == 0;
-
-        case 63: // Function
-            return ([event modifierFlags] & NSFunctionKeyMask) == 0;
-    }
-    return false;
-}
-
-static bool modifiers[64];
-
-static bool set_modifier(NSEvent *event){
-  if([event type]==NSFlagsChanged){
-    if(isModifierKey(event)){
-      int keyCode = [event keyCode];
-      if(isKeyUpEvent(event))
-        modifiers[keyCode] = false;
-      else
-        modifiers[keyCode] = true;
-
-      return true;
-    }
-  }
-  return false;
-}
-
-static void clear_modifiers(void){
-  int i;
-  for(i=0;i<64;i++)
-    modifiers[i]=false;
-}
-
-void OS_SYSTEM_ResetKeysUpDowns(void){
-  clear_modifiers();
-}
-
-static uint32_t get_keyswitch(void){
-  uint32_t keyswitch=0;
-
-  if(modifiers[62])
-    keyswitch |= EVENT_RIGHTCTRL;
-
-  if(modifiers[59])
-    keyswitch |= EVENT_LEFTCTRL;
-
-  if(modifiers[56])
-    keyswitch |= EVENT_LEFTSHIFT;
-
-  if(modifiers[60])
-    keyswitch |= EVENT_RIGHTSHIFT;
-
-  if(modifiers[58])
-    keyswitch |= EVENT_LEFTALT;
-
-  if(modifiers[61])
-    keyswitch |= EVENT_RIGHTALT;
-
-  if(modifiers[55])
-    keyswitch |= EVENT_LEFTEXTRA1;
-
-  if(modifiers[54])
-    keyswitch |= EVENT_RIGHTEXTRA1;
-
-  return keyswitch;
-}
-
 static int keymap[0x100] = {EVENT_NO};
+static int keymap_qwerty[0x100] = {EVENT_NO};
 
 // This only works for qwerty-keyboards (i.e. what scancode is used for in windows and linux). To get EVENT_A (for instance): http://stackoverflow.com/questions/8263618/convert-virtual-key-code-to-unicode-string
 // Mac vk overview: http://stackoverflow.com/questions/3202629/where-can-i-find-a-list-of-mac-virtual-key-codes
-static void init_keymap(void){
+static void init_keymaps(void){
   // alpha
-  keymap[kVK_ANSI_A] = EVENT_A; // TODO: This is actually an EVENT_QWERTY_A event, not an EVENT_A event.
-  keymap[kVK_ANSI_B] = EVENT_B;
-  keymap[kVK_ANSI_C] = EVENT_C;
-  keymap[kVK_ANSI_D] = EVENT_D;
-  keymap[kVK_ANSI_E] = EVENT_E;
-  keymap[kVK_ANSI_F] = EVENT_F;
-  keymap[kVK_ANSI_G] = EVENT_G;
-  keymap[kVK_ANSI_H] = EVENT_H;
-  keymap[kVK_ANSI_I] = EVENT_I;
-  keymap[kVK_ANSI_J] = EVENT_J;
-  keymap[kVK_ANSI_K] = EVENT_K;
-  keymap[kVK_ANSI_L] = EVENT_L;
-  keymap[kVK_ANSI_M] = EVENT_M;
-  keymap[kVK_ANSI_N] = EVENT_N;
-  keymap[kVK_ANSI_O] = EVENT_O;
-  keymap[kVK_ANSI_P] = EVENT_P;
-  keymap[kVK_ANSI_Q] = EVENT_Q;
-  keymap[kVK_ANSI_R] = EVENT_R;
-  keymap[kVK_ANSI_S] = EVENT_S;
-  keymap[kVK_ANSI_T] = EVENT_T;
-  keymap[kVK_ANSI_U] = EVENT_U;
-  keymap[kVK_ANSI_V] = EVENT_V;
-  keymap[kVK_ANSI_W] = EVENT_W;
-  keymap[kVK_ANSI_X] = EVENT_X;
-  keymap[kVK_ANSI_Y] = EVENT_Y;
-  keymap[kVK_ANSI_Z] = EVENT_Z;
+  keymap_qwerty[kVK_ANSI_A] = EVENT_QWERTY_A;
+  keymap_qwerty[kVK_ANSI_B] = EVENT_QWERTY_B;
+  keymap_qwerty[kVK_ANSI_C] = EVENT_QWERTY_C;
+  keymap_qwerty[kVK_ANSI_D] = EVENT_QWERTY_D;
+  keymap_qwerty[kVK_ANSI_E] = EVENT_QWERTY_E;
+  keymap_qwerty[kVK_ANSI_F] = EVENT_QWERTY_F;
+  keymap_qwerty[kVK_ANSI_G] = EVENT_QWERTY_G;
+  keymap_qwerty[kVK_ANSI_H] = EVENT_QWERTY_H;
+  keymap_qwerty[kVK_ANSI_I] = EVENT_QWERTY_I;
+  keymap_qwerty[kVK_ANSI_J] = EVENT_QWERTY_J;
+  keymap_qwerty[kVK_ANSI_K] = EVENT_QWERTY_K;
+  keymap_qwerty[kVK_ANSI_L] = EVENT_QWERTY_L;
+  keymap_qwerty[kVK_ANSI_M] = EVENT_QWERTY_M;
+  keymap_qwerty[kVK_ANSI_N] = EVENT_QWERTY_N;
+  keymap_qwerty[kVK_ANSI_O] = EVENT_QWERTY_O;
+  keymap_qwerty[kVK_ANSI_P] = EVENT_QWERTY_P;
+  keymap_qwerty[kVK_ANSI_Q] = EVENT_QWERTY_Q;
+  keymap_qwerty[kVK_ANSI_R] = EVENT_QWERTY_R;
+  keymap_qwerty[kVK_ANSI_S] = EVENT_QWERTY_S;
+  keymap_qwerty[kVK_ANSI_T] = EVENT_QWERTY_T;
+  keymap_qwerty[kVK_ANSI_U] = EVENT_QWERTY_U;
+  keymap_qwerty[kVK_ANSI_V] = EVENT_QWERTY_V;
+  keymap_qwerty[kVK_ANSI_W] = EVENT_QWERTY_W;
+  keymap_qwerty[kVK_ANSI_X] = EVENT_QWERTY_X;
+  keymap_qwerty[kVK_ANSI_Y] = EVENT_QWERTY_Y;
+  keymap_qwerty[kVK_ANSI_Z] = EVENT_QWERTY_Z;
 
   // num
-  keymap[kVK_ANSI_0] = EVENT_0;
-  keymap[kVK_ANSI_1] = EVENT_1;
-  keymap[kVK_ANSI_2] = EVENT_2;
-  keymap[kVK_ANSI_3] = EVENT_3;
-  keymap[kVK_ANSI_4] = EVENT_4;
-  keymap[kVK_ANSI_5] = EVENT_5;
-  keymap[kVK_ANSI_6] = EVENT_6;
-  keymap[kVK_ANSI_7] = EVENT_7;
-  keymap[kVK_ANSI_8] = EVENT_8;
-  keymap[kVK_ANSI_9] = EVENT_9;
+  keymap_qwerty[kVK_ANSI_0] = EVENT_QWERTY_0;
+  keymap_qwerty[kVK_ANSI_1] = EVENT_QWERTY_1;
+  keymap_qwerty[kVK_ANSI_2] = EVENT_QWERTY_2;
+  keymap_qwerty[kVK_ANSI_3] = EVENT_QWERTY_3;
+  keymap_qwerty[kVK_ANSI_4] = EVENT_QWERTY_4;
+  keymap_qwerty[kVK_ANSI_5] = EVENT_QWERTY_5;
+  keymap_qwerty[kVK_ANSI_6] = EVENT_QWERTY_6;
+  keymap_qwerty[kVK_ANSI_7] = EVENT_QWERTY_7;
+  keymap_qwerty[kVK_ANSI_8] = EVENT_QWERTY_8;
+  keymap_qwerty[kVK_ANSI_9] = EVENT_QWERTY_9;
 
   // row 1
   keymap[kVK_Escape] = EVENT_ESC;
@@ -227,27 +184,27 @@ static void init_keymap(void){
   keymap[kVK_F12] = EVENT_F12;
 
   // row 2
-  keymap[kVK_ISO_Section] = EVENT_1L1;
-  keymap[kVK_ANSI_Minus] = EVENT_0R1;
-  keymap[kVK_ANSI_Equal] = EVENT_0R2;
-  keymap[kVK_Delete] = EVENT_BACKSPACE;
+  keymap_qwerty[kVK_ISO_Section] = EVENT_1L1;
+  keymap_qwerty[kVK_ANSI_Minus] = EVENT_0R1;
+  keymap_qwerty[kVK_ANSI_Equal] = EVENT_0R2;
+  keymap_qwerty[kVK_Delete] = EVENT_BACKSPACE;
 
   // row 3
   keymap[kVK_Tab] = EVENT_TAB;
-  keymap[kVK_ANSI_LeftBracket] = EVENT_PR1;
-  keymap[kVK_ANSI_RightBracket] = EVENT_PR2;
+  keymap_qwerty[kVK_ANSI_LeftBracket] = EVENT_PR1;
+  keymap_qwerty[kVK_ANSI_RightBracket] = EVENT_PR2;
   keymap[kVK_Return] = EVENT_RETURN;
 
   // row 4
-  keymap[kVK_ANSI_Semicolon] = EVENT_LR1;
-  keymap[kVK_ANSI_Quote] = EVENT_LR2;
-  keymap[kVK_ANSI_Backslash] = EVENT_LR3;
+  keymap_qwerty[kVK_ANSI_Semicolon] = EVENT_LR1;
+  keymap_qwerty[kVK_ANSI_Quote] = EVENT_LR2;
+  keymap_qwerty[kVK_ANSI_Backslash] = EVENT_LR3;
 
   // row 5
-  keymap[kVK_ANSI_Grave]    = EVENT_ZL1;
-  keymap[kVK_ANSI_Comma]  = EVENT_MR1;
-  keymap[kVK_ANSI_Period] = EVENT_MR2;
-  keymap[kVK_ANSI_Slash]      = EVENT_MR3;
+  keymap_qwerty[kVK_ANSI_Grave]    = EVENT_ZL1;
+  keymap_qwerty[kVK_ANSI_Comma]  = EVENT_MR1;
+  keymap_qwerty[kVK_ANSI_Period] = EVENT_MR2;
+  keymap_qwerty[kVK_ANSI_Slash]      = EVENT_MR3;
 
   // row 6
   keymap[kVK_Space] = EVENT_SPACE;
@@ -285,28 +242,165 @@ static void init_keymap(void){
   keymap[kVK_ANSI_KeypadDivide] = EVENT_KP_DIV;
 }
 
-static int get_keyboard_subID(int keycode){
-  if(keycode >= 0x100)
-    return EVENT_NO;
-  else
-    return keymap[keycode];
+// copied some code from here: http://stackoverflow.com/questions/8263618/convert-virtual-key-code-to-unicode-string
+static char get_char_from_keycode(int keyCode){
+  static TISInputSourceRef currentKeyboard;
+  static CFDataRef uchr;
+  static const UCKeyboardLayout *keyboardLayout = NULL;
+
+  const bool reload_keyboard_every_time = true;
+
+  if (reload_keyboard_every_time || keyboardLayout==NULL){
+    currentKeyboard = TISCopyCurrentKeyboardInputSource();
+    uchr = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
+    keyboardLayout = (const UCKeyboardLayout*)CFDataGetBytePtr(uchr);
+  }
+  
+  if(keyboardLayout) {
+    UInt32 deadKeyState = 0;
+    UniCharCount maxStringLength = 255;
+    UniCharCount actualStringLength = 0;
+    UniChar unicodeString[maxStringLength];
+    
+    OSStatus status = UCKeyTranslate(keyboardLayout,
+                                     keyCode, kUCKeyActionDown, 0,
+                                     LMGetKbdType(), 0,
+                                     &deadKeyState,
+                                     maxStringLength,
+                                     &actualStringLength,
+                                     unicodeString);
+    
+    if (actualStringLength == 0 && deadKeyState) {
+      status = UCKeyTranslate(keyboardLayout,
+                              kVK_Space, kUCKeyActionDown, 0,
+                              LMGetKbdType(), 0,
+                              &deadKeyState,
+                              maxStringLength,
+                              &actualStringLength,
+                              unicodeString);   
+    }
+    
+    if(actualStringLength > 0 && status == noErr) {
+      //NSString *hepp = [[NSString stringWithCharacters:unicodeString length:(NSUInteger)actualStringLength] uppercaseString];
+      //printf("      ______________ some code: %s. %c\n",[hepp cStringUsingEncoding:NSUTF8StringEncoding],unicodeString[0]);
+      return unicodeString[0];
+    }
+  }
+
+  return -1;
 }
 
-int OS_SYSTEM_get_keynum(void *focused_widget, void *void_event){
+int OS_SYSTEM_get_keynum(void *void_event){
   NSEvent *event = (NSEvent *)void_event;
 
   int keycode = [event keyCode];
-  int keynum = get_keyboard_subID(keycode);
 
-  if (keynum==-1)
-    return cocoa_get_modifier_event(event);
-  else
-    return keynum;
+  if(keycode >= 0x100)
+    return EVENT_NO;
+
+  int ret = keymap[keycode];
+  if (ret != EVENT_NO)
+    return ret;
+
+  char c = toupper(get_char_from_keycode(keycode));
+
+  switch(c){
+    case 'A':
+      return EVENT_A;
+    case 'B':
+      return EVENT_B;
+    case 'C':
+      return EVENT_C;
+    case 'D':
+      return EVENT_D;
+    case 'E':
+      return EVENT_E;
+    case 'F':
+      return EVENT_F;
+    case 'G':
+      return EVENT_G;
+    case 'H':
+      return EVENT_H;
+    case 'I':
+      return EVENT_I;
+    case 'J':
+      return EVENT_J;
+    case 'K':
+      return EVENT_K;
+    case 'L':
+      return EVENT_L;
+    case 'M':
+      return EVENT_M;
+    case 'N':
+      return EVENT_N;
+    case 'O':
+      return EVENT_O;
+    case 'P':
+      return EVENT_P;
+    case 'Q':
+      return EVENT_Q;
+    case 'R':
+      return EVENT_R;
+    case 'S':
+      return EVENT_S;
+    case 'T':
+      return EVENT_T;
+    case 'U':
+      return EVENT_U;
+    case 'V':
+      return EVENT_V;
+    case 'W':
+      return EVENT_W;
+    case 'X':
+      return EVENT_X;
+    case 'Y':
+      return EVENT_Y;
+    case 'Z':
+      return EVENT_Z;
+
+
+    case '0':
+      return EVENT_0;
+    case '1':
+      return EVENT_1;
+    case '2':
+      return EVENT_2;
+    case '3':
+      return EVENT_3;
+    case '4':
+      return EVENT_4;
+    case '5':
+      return EVENT_5;
+    case '6':
+      return EVENT_6;
+    case '7':
+      return EVENT_7;
+    case '8':
+      return EVENT_8;
+    case '9':
+      return EVENT_9;
+      
+    default:
+      return EVENT_NO;
+  }
 }
 
+int OS_SYSTEM_get_qwerty_keynum(void *void_event){
+  NSEvent *event = (NSEvent *)void_event;
+
+  int keycode = [event keyCode];
+
+  return keymap_qwerty[keycode];
+}
+
+
 void OS_SYSTEM_init_keyboard(void){
-  init_keymap();
-  clear_modifiers();
+  static bool has_inited = false;
+  if (has_inited==false){
+    init_keymaps();
+    clear_modifiers();
+    has_inited=true;
+  }
 }
 
 
@@ -316,6 +410,8 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
 
   OS_SYSTEM_init_keyboard();
 
+  //printf("Got event. type: %u\n",(unsigned int)type);
+  
   static void *oldHotKeyMode = NULL;
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     clear_modifiers();
@@ -328,57 +424,9 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
     if(oldHotKeyMode==NULL)
       oldHotKeyMode = PushSymbolicHotKeyMode(kHIHotKeyModeAllDisabled); 
   }
-
-  set_modifier(event);
 }
 
 extern int num_users_of_keyboard;
 
-// Seems like NSEvent has a flag called 'isARepeat' which can be used to detect whehter the event was generated by autorepeat.
-// https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/NSEvent_Class/#//apple_ref/occ/instp/NSEvent/ARepeat
-
-bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *void_event){
-  NSEvent *event = (NSEvent *)void_event;
-  NSEventType type = [event type];
-
-#if 0
-  {
-    if(type==10||type==11||type==12){
-      int keycode = [event keyCode];
-      uint32_t keyswitch=get_keyswitch();
-      //printf("keycode: %x, switch: %x\n",keycode,(int)keyswitch);
-    }
-  }
-#endif
-
-
-
-  if(type!=NSKeyUp && type!=NSKeyDown)
-    return false;
-
-  if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
-    return false;
-
-  if(num_users_of_keyboard>0)
-    return false;
-
-  {
-    struct Tracker_Windows *window=root->song->tracker_windows;
-
-    int keycode = [event keyCode];
-
-    if(type==NSKeyDown)
-      tevent.ID=TR_KEYBOARD;
-    else
-      tevent.ID=TR_KEYBOARDUP;
-
-    tevent.SubID=get_keyboard_subID(keycode);
-    tevent.keyswitch=get_keyswitch();
-
-    EventReciever(&tevent,window);
-  }
-
-  return true;
-}
 
 #endif

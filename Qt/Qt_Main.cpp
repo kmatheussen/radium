@@ -331,13 +331,13 @@ protected:
             if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
               GFX_HideMenu(window);
               set_editor_focus();
-            } else if (!GFX_MenuVisible(window))
+            } else if (!GFX_MenuVisible(window)) {
               GFX_ShowMenu(window);
-            else
-              must_return_true = false; // pass the EVENT_ALT_L event to qt so that we can navigate the menues.
+            }
+              
+            must_return_true = false; // pass the EVENT_ALT_L event to qt so that we can navigate the menues.
             
-            last_key_was_lalt = false;
-                      
+            last_key_was_lalt = false;                      
           }
 
         }
