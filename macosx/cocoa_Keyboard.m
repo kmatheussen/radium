@@ -426,7 +426,5 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   }
 }
 
-extern int num_users_of_keyboard;
-
 
 #endif

@@ -130,6 +130,7 @@ static void check_jackd_arguments(void){
     "jackd -S";
   
   bool found_jack = false;
+  bool found_sync_flag=false;
   
   vector_t *command_lines = get_windows_command_lines();
 
@@ -146,7 +147,6 @@ static void check_jackd_arguments(void){
 
       found_jack = true;
 
-      bool found_sync_flag=false;
       QStringList elements = line.split(" ", QString::SkipEmptyParts);
 
       for(int i=0;i<elements.size();i++){
@@ -154,25 +154,11 @@ static void check_jackd_arguments(void){
         if(element=="-S")
           found_sync_flag=true;
       }
-
-      if(found_sync_flag==false){
-
-        num_users_of_keyboard++;
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Critical);
-        msgBox.setText("The -S parameter was not set for Jack.");
-        msgBox.setInformativeText(mandatory);
-        
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.exec();
-        num_users_of_keyboard--;
-      }
     }
-
   }
 
-#if !defined(RELEASE)
   if(found_jack==false){
+    
     num_users_of_keyboard++;
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Warning);
@@ -182,8 +168,20 @@ static void check_jackd_arguments(void){
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
     num_users_of_keyboard--;
+    
+  } else if(found_sync_flag==false){
+
+    num_users_of_keyboard++;
+    QMessageBox msgBox;
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.setText("The -S parameter was not set for Jack.");
+    msgBox.setInformativeText(mandatory);
+    
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
+    num_users_of_keyboard--;
   }
-#endif
+
 
 #endif
 }
