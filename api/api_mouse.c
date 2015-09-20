@@ -1730,7 +1730,7 @@ static Place *getNextLegalNotePlace(struct Notes *note){
 static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note){
   Place firstLegal, lastLegal;
 
-  if (last_legal_may_be_next_note){
+  if (last_legal_may_be_next_note && !ctrlPressed()){
     
     struct Notes *next = FindNextNoteOnSameSubtrack(note);
   
