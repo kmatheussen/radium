@@ -1776,7 +1776,7 @@ static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
       ListRemoveElement3(&track->notes, &note->l);
       note->l.p = *place;
       ListAddElement3(&track->notes, &note->l);
-      ReplaceNoteEnds(block, track, &old_place, place);
+      ReplaceNoteEnds(block, track, &old_place, place, note->subtrack);
       NOTE_validate(block, track, note);
     }PLAYER_unlock();
 

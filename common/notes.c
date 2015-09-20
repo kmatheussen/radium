@@ -556,16 +556,19 @@ void ReplaceNoteEnds(
 	struct Blocks *block,
 	struct Tracks *track,
 	Place *old_placement,
-        Place *new_placement
+        Place *new_placement,
+        int subtrack
 ){
 	struct Notes *note=track->notes;
 	while(note!=NULL){
-		if(PlaceGreaterThan(&note->l.p,old_placement)) break;
-		if(PlaceEqual(&note->end,old_placement)) {
-                  note->end = *new_placement;
-                  NOTE_validate(block, track, note);
-                }
-		note=NextNote(note);
+          if (note->subtrack == subtrack) {
+            if(PlaceGreaterThan(&note->l.p,old_placement)) break;
+            if(PlaceEqual(&note->end,old_placement)) {
+              note->end = *new_placement;
+              NOTE_validate(block, track, note);
+            }
+          }
+          note=NextNote(note);
 	}
 }
 
