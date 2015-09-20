@@ -301,6 +301,30 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
     set_new_position(track, note, NULL, &endplace);
   }
 
+  if (note->velocities != NULL) {
+    struct Velocities *last_velocity = (struct Velocities*)ListLast3(&note->velocities->l);
+    if(PlaceLessOrEqual(end, &last_velocity->l.p)){
+      RError("note end is placed before (or on) last velocity. start: %f, last: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&last_velocity->l.p), GetfloatFromPlace(&note->end));
+      float e = p_float(last_velocity->l.p);
+      e += 0.01;
+      Place new_end;
+      Float2Placement(e, &new_end);
+      set_new_position(track, note, NULL, &new_end);
+    }
+  }
+  
+  if (note->pitches != NULL) {
+    struct Pitches *last_pitch = (struct Pitches*)ListLast3(&note->pitches->l);
+    if(PlaceLessOrEqual(end, &last_pitch->l.p)){
+      RError("note end is placed before (or on) last pitch. start: %f, last: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&last_pitch->l.p), GetfloatFromPlace(&note->end));
+      float e = p_float(last_pitch->l.p);
+      e += 0.01;
+      Place new_end;
+      Float2Placement(e, &new_end);
+      set_new_position(track, note, NULL, &new_end);
+    }
+  }
+  
   if(PlaceLessOrEqual(end,start)) {
     RError("note end is placed before (or on) note end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
     float e = p_float(*start);
