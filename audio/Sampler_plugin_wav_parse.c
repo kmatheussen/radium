@@ -251,7 +251,7 @@ static void set_wav_loop_points(Sample *sample, const wchar_t *filename){
   disk_t *file = DISK_open_binary_for_reading(filename);
   
   if(file==NULL){
-    GFX_Message("Could not open file \"%s\". libsndfile could open the file though. Something might be wrong with your disk.",filename);
+    GFX_Message(NULL, "Could not open file \"%s\". libsndfile could open the file though. Something might be wrong with your disk.",filename);
     return;
   }
 
