@@ -57,7 +57,8 @@ void ReplaceNoteEnds(
                     struct Blocks *block,
                     struct Tracks *track,
                     Place *old_placement,
-                    Place *new_placement
+                    Place *new_placement,
+                    int subtrack
                     );
 
 void RemoveNote(struct Blocks *block,

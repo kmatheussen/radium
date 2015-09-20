@@ -458,7 +458,16 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int64_t block_delt
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
-  data->audio_instance->setParameter(effect_num, value);
+
+#if 1
+  // juce::VSTPluginInstance::setParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
+  // So instead, we call the vst setParameter function directly:
+  AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+  aeffect->setParameter(aeffect, effect_num, value);
+#else
+  // This causes glitches, especially when doing heavy operations such as opening the gui:
+   data->audio_instance->setParameter(effect_num, value);
+#endif
 }
 
 float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){

@@ -1216,6 +1216,8 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   return ListPosition3(&track->notes->l, &note->l);
 }
 
+static int setPitch2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends);
+  
 int movePianonoteStart(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -1229,9 +1231,10 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 
 
   if (note->pitches!=NULL) {
-    setPitch(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
-             value, floatplace,
-             tracknum, blocknum, windownum
+    setPitch2(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
+              value, floatplace,
+              tracknum, blocknum, windownum,
+              false
              );
     return ListPosition3(&track->notes->l, &note->l);
   }
@@ -1271,7 +1274,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
   return ListPosition3(&track->notes->l, &note->l);
 }
 
-static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place);
+static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note);
 
 int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1286,7 +1289,7 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   
   if (note->pitches!=NULL) {
     if (floatplace>=0) {
-      MoveEndNote(block, track, note, PlaceCreate2(floatplace));
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace), false);
       window->must_redraw=true;
     }
     return notenum;
@@ -1724,16 +1727,25 @@ static Place *getNextLegalNotePlace(struct Notes *note){
   return end;
 }
 
-static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
+static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note){
   Place firstLegal, lastLegal;
 
-  struct Notes *next = FindNextNoteOnSameSubtrack(note);
+  if (last_legal_may_be_next_note && !ctrlPressed()){
+    
+    struct Notes *next = FindNextNoteOnSameSubtrack(note);
   
-  if (next!=NULL)
-    PlaceCopy(&lastLegal, &next->l.p);
-  else
-    PlaceSetLastPos(block, &lastLegal);
+    if (next!=NULL)
+      PlaceCopy(&lastLegal, &next->l.p);
+    else
+      PlaceSetLastPos(block, &lastLegal);
 
+  }else{
+    
+    PlaceSetLastPos(block, &lastLegal);
+    
+  }
+
+  
   Place *last_pitch = ListLastPlace3(&note->pitches->l);
   Place *last_velocity = ListLastPlace3(&note->velocities->l);
   Place *startPlace = &note->l.p;
@@ -1754,7 +1766,7 @@ static void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
-static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place){
+static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
   Place old_place = note->l.p;
 
   if (!PlaceEqual(&old_place, place)) {
@@ -1776,7 +1788,8 @@ static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
       ListRemoveElement3(&track->notes, &note->l);
       note->l.p = *place;
       ListAddElement3(&track->notes, &note->l);
-      ReplaceNoteEnds(block, track, &old_place, place);
+      if (replace_note_ends && !ctrlPressed())
+        ReplaceNoteEnds(block, track, &old_place, place, note->subtrack);
       NOTE_validate(block, track, note);
     }PLAYER_unlock();
 
@@ -1785,7 +1798,7 @@ static int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
   return ListPosition3(&track->notes->l, &note->l);
 }
 
-int setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
+static int setPitch2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1829,7 +1842,7 @@ int setPitch(int num, float value, float floatplace, int tracknum, int blocknum,
     note->note = value;
 
     if (floatplace >= 0) {
-      MoveNote(block, track, note, PlaceCreate2(floatplace));
+      MoveNote(block, track, note, PlaceCreate2(floatplace), replace_note_ends);
       return getPitchNum(track, note, NULL);
     }
   }
@@ -1837,6 +1850,10 @@ int setPitch(int num, float value, float floatplace, int tracknum, int blocknum,
   return num;
 }
 
+int setPitch(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
+  return setPitch2(num, value, floatplace, tracknum, blocknum, windownum, true);
+}
+  
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
   struct Notes *note = track->notes;
 
@@ -2138,12 +2155,12 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0) {
-      return MoveNote(block, track, note, PlaceCreate2(floatplace));
+      return MoveNote(block, track, note, PlaceCreate2(floatplace), true);
     }
   } else if (velocitynum==nodes->num_elements-1) {
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
     if (floatplace>=0)
-      MoveEndNote(block, track, note, PlaceCreate2(floatplace));
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace), true);
 
   } else {
 

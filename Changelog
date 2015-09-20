@@ -1,7 +1,7 @@
-Most important changes 3.3.6 -> 3.3.7
-* Don"t show assert window if trying to load broken wave file
-* Undo/Redo: Move cursor back to where the undo was made again
-* Fixed keyboard handling for Mac OS X
+Changes 3.3.6 -> 3.3.7:
+* Don't show assert window if trying to load broken wave file
+* Undo/Redo: Move cursor back to where the undo event was made
+* Fixed keyboard handling for OSX
 
 
 Most important changes 3.3.5 -> 3.3.6
