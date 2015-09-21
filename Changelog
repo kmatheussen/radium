@@ -1,3 +1,17 @@
+Changes 3.3.7 -> 3.3.8:
+* Fix glitches in sound when opening a VST GUI while doing automation
+* Don't move end position of previous note automatically if pressing ctrl
+* Make it possible to move last position of a note below the start of the next note if pressing ctrl key
+* Don't limit where to set a pianobar note note start/end position based on prev/next note positions when the moving note has portamento
+* Don't crash when trying to move the start of a note before the start position of a previous note on a different subtrack
+* qjackctl: Import newest version from upstream
+* qjackctl: Fix autocomplete bug for the "Server prefix" text field
+* qjackctl: Show a "please wait, probing" window if probing audio hardware takes more than 1/2 second.
+  Also made it possible to cancel probing if it takes really long time.
+* qjackctl: Only probe hardware once
+* qjackctl: Made hardware selector combobox wider
+
+
 Changes 3.3.6 -> 3.3.7:
 * Don't show assert window if trying to load broken wave file
 * Undo/Redo: Move cursor back to where the undo event was made
