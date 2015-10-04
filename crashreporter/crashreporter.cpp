@@ -170,20 +170,23 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     QLabel space(" ");
     box.layout()->addWidget(&space);
 
-    QLabel text_edit_label("\n\n"
-                           "Please also include additional information below.\n"
-                           "\n"
+    QLabel text_edit_label("<br><br>"
+                           "Please also include additional information below.<br>"
+                           "<br>"
                            "The best type of help you "
                            "can give is to write "
-                           "down\na step by step "
+                           "down<br>a step by step "
                            "recipe in the following "
                            "format:"
-                           "\n\n"
-                           "1. Start Radium\n"
-                           "2. Move the cursor to track 3.\n"
-                           "3. Press the Q button.\n"
-                           "4. Radium crashes\n"
-                           "\n"
+                           "<br><br>"
+                           "1. Start Radium<br>"
+                           "2. Move the cursor to track 3.<br>"
+                           "3. Press the Q button.<br>"
+                           "4. Radium crashes<br>"
+                           "<br>"
+                           "<b>Note: Sometimes it is virtually impossible to fix the bug<br>"
+                           "without a recipe on how to reproduce the bug</b><br>"
+                           "<br>"
                            );
 
     //text_edit.setMinimumWidth(1000000);
