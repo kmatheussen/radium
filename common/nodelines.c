@@ -163,8 +163,12 @@ const struct NodeLine *create_nodelines(
 
   // 2. Insert x2, y2 and element2 attributes, and remove last element.
   {
+    R_ASSERT_RETURN_IF_FALSE2(nodelines!=NULL, NULL); // shouldn't be possible, but I got a crash report that indicates that this might have happened.
+    R_ASSERT_RETURN_IF_FALSE2(nodelines->next!=NULL, NULL); // shouldn't be possible either, but more likely than the line above.
+
     struct NodeLine *ns = nodelines;
     struct NodeLine *next = ns->next;
+    
     for(;;){
       ns->x2 = next->x1;
       ns->y2 = next->y1;
