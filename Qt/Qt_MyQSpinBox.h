@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
 
+#include "helpers.h"
+
 #include "../OpenGL/Widget_proc.h"
 
 
@@ -28,7 +30,7 @@ extern int num_users_of_keyboard;
 
 extern void set_editor_focus(void);
 
-struct MyQSpinBox : public QSpinBox{
+struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   bool _has_mouse;
   struct Patch *_patch;
   int _effect_num;

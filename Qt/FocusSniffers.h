@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTableWidgetItem>
 #include <QKeyEvent>
 
+#include "helpers.h"
+
 #include "../OpenGL/Widget_proc.h"
 
 
@@ -29,9 +31,8 @@ extern int num_users_of_keyboard;
 
 extern void set_editor_focus(void);
 
-
 #define MakeFocusSnifferClass(Class)                                    \
-  class FocusSniffer##Class : public Class {                            \
+  class FocusSniffer##Class : public GL_PauseCaller, public Class {      \
   public:                                                               \
   bool dontsniff;                                                       \
   FocusSniffer##Class(QWidget *parent, const char *name = "gakk")       \
@@ -66,7 +67,7 @@ extern void set_editor_focus(void);
 MakeFocusSnifferClass(QLineEdit);
 MakeFocusSnifferClass(QListWidget);
 
-class FocusSnifferQSpinBox : public QSpinBox{
+class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
   public:                                                               
   bool dontsniff;                                                       
  FocusSnifferQSpinBox(QWidget *parent, const char *name = "gakk")  
@@ -99,7 +100,7 @@ class FocusSnifferQSpinBox : public QSpinBox{
   }
 };
 
-class FocusSnifferQDoubleSpinBox : public QDoubleSpinBox{
+class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
   public:                                                               
   bool dontsniff;                                                       
  FocusSnifferQDoubleSpinBox(QWidget *parent, const char *name = "gakk")  

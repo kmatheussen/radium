@@ -11,6 +11,17 @@
 extern int num_users_of_keyboard;
 
 
+struct GL_PauseCaller{
+  GL_PauseCaller(){
+    bool locked = GL_maybeLock();
+    GL_pause_gl_thread_a_short_while();
+    if (locked)
+      GL_unlock();      
+  }
+};
+
+
+
 static inline int safeExec(QMessageBox *widget){
   int ret;
   

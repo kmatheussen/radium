@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCleanlooksStyle>
 
 
-class Patch_widget : public QWidget, public Ui::Patch_widget{
+class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_widget{
   Q_OBJECT;
 
  public:
@@ -36,7 +36,7 @@ class Patch_widget : public QWidget, public Ui::Patch_widget{
     : QWidget(parent)
     , _patch(patch)
     , _voices(&patch->voices[0])
-  {
+  {    
     initing = true;
     setupUi(this);
     updateWidgets();

@@ -81,12 +81,23 @@ void GL_unlock(void){
   mutex.unlock();
 }
 
+bool GL_maybeLock(void){
+  if (g_gl_lock_visits>1)
+    return false;
+  
+  GL_lock();
+  return true;
+}
+
+static bool g_gl_widget_started = false;
+
 static bool g_should_do_modal_windows = false;
 
 bool GL_should_do_modal_windows(void){
   return g_should_do_modal_windows;
 }
 
+static volatile bool g_is_currently_pausing = false;
 static radium::Semaphore g_order_pause_gl_thread;
 static QWaitCondition g_ack_pause_gl_thread;
 
@@ -581,6 +592,8 @@ public:
       QGLWidget::makeCurrent();
       g_ack_make_current.wakeOne();
     }
+
+    g_is_currently_pausing = false;
     
     if (GE_version_string==NULL) {
       GE_vendor_string = strdup((const char*)glGetString(GL_VENDOR));
@@ -756,10 +769,18 @@ static bool have_earlier_estimated_value(){
 }
 
 void GL_pause_gl_thread_a_short_while(void){
+  if (g_gl_widget_started == false) // deadlock without this check.
+    return;
+
+  if (g_is_currently_pausing)
+    return;
+    
   R_ASSERT_RETURN_IF_FALSE(g_gl_lock_visits>=1);
   if (g_gl_lock_visits>=2) // If this happens we are probably called from inside a widget/dialog->exec() call. Better not wake up the gl thread.
     return;
 
+  g_is_currently_pausing = true;
+  
   g_order_pause_gl_thread.signal();
 
   if (g_ack_pause_gl_thread.wait(&mutex, 4000)==false){  // Have a timeout in case the opengl thread is stuck
@@ -1074,7 +1095,8 @@ QWidget *GL_create_widget(QWidget *parent){
     
   }  
 
-
+  g_gl_widget_started = true;
+  
   return widget.get();
 }
 
