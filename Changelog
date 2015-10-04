@@ -1,3 +1,10 @@
+Changes 3.3.8 -> 3.3.9:
+* Workaround for fx rendering crash
+* Linux: Don't report that crash was just an assert.
+* Pause GL thread when opening a QLineEdit widget. Should fix
+  more crashes caused by buggy gfx drivers
+
+
 Changes 3.3.7 -> 3.3.8:
 * Fix glitches in sound when opening a VST GUI while doing automation
 * Don't move end position of previous note automatically if pressing ctrl
