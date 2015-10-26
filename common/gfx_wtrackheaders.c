@@ -68,7 +68,10 @@ void DrawWTrackNames(
   GFX_SetClipRect(window,x1, 0, x2, wblock->t.y1, PAINT_BUFFER);
   {
     static char temp[500];
-    sprintf(temp,"%d->%d:", wtrack1->l.num, wtrack2->l.num);
+    if (wtrack1->l.num==wtrack2->l.num)
+      sprintf(temp,"%d:", wtrack1->l.num);
+    else
+      sprintf(temp,"%d->%d:", wtrack1->l.num, wtrack2->l.num);
     GFX_T_Text(
                window,TEXT_COLOR_NUM,temp,
                wtrack1->x+window->fontwidth/2,
