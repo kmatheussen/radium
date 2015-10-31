@@ -25,6 +25,7 @@
 # * remove old instruments before generating
 # * Option to remove unused tracks.
 # * Remove reltempo track
+# * pad samples in kk-song are not looped.
 
 from __future__ import division # we always want floating point division
 

@@ -988,13 +988,13 @@ QWidget *GL_create_widget(QWidget *parent){
         VECTOR_push_back(&v,"Don't show this message again");
         
         int result = GFX_Message(&v,
-                                 "AMD Catalyst OpenGL driver detected."
+                                 "AMD Catalyst OpenGL driver on Linux detected."
                                  "<p>"
                                  "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
                                  "<p>"
                                  "In addition, \"Tear Free Desktop\" should be turned on in the catalyst configuration program (run the \"amdcccle\" program)."
                                  "<p>"
-                                 "If you notice choppy graphics, it might help to overclock the graphics card: <A href=\"http://www.overclock.net/t/517861/how-to-overclocking-ati-cards-in-linux\">Instructions for overclocking can be found here</A>. If Radium crashes when you show or hide windows, it might help to upgrade driver to the latest version, or (better) use the Gallium AMD OpenGL driver instead."
+                                 "If you notice choppy graphics, it might help to overclock the graphics card: <A href=\"http://www.overclock.net/t/517861/how-to-overclocking-ati-cards-in-linux\">Instructions for overclocking can be found here</A>. If Radium crashes when you show or hide windows, it might help to upgrade driver to the latest version, or (better) use the Gallium AMD OpenGL driver instead, or (even better) get an Nvidia card."
                                  );
         if (result==1)
           SETTINGS_write_bool("show_catalyst_gfx_message_during_startup", false);
@@ -1013,9 +1013,11 @@ QWidget *GL_create_widget(QWidget *parent){
         int result = GFX_Message(&v,
                                  "Gallium AMD OpenGL driver detected."
                                  "<p>"
-                                 "For best performance, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
+                                 "For best performance with this driver, vsync should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
                                  "<p>"
                                  "If you notice choppy graphics, it might help to install the binary driver instead. However for newer versions of MESA, the performance of this driver seems just as good. It could be worth trying though, but the binary driver might be less stable.</A>."
+                                 "<p>"
+                                 "However, although the Gallium driver seems less unstable than the Catalyst driver, Radium still crashes sometimes using this driver (tested with the Gallium 0.4). The best option on Linux is to get an Nvidia card, and use the binary driver for that card. Newest Intel GFX drivers also seems stable."
                                  );
         if (result==1)
           SETTINGS_write_bool("show_gallium_gfx_message_during_startup", false);
@@ -1031,9 +1033,9 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "Nouveau OpenGL driver detected."
                   "<p>"
-                  "The nouveau driver currently performes worse than the nvidia driver."
+                  "The Nouveau driver currently performes worse than the Nvidia driver."
                   "<p>"
-                  "The nvidia driver can be installed to get faster / smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
+                  "The Nvidia driver can be installed to get faster / smoother graphics. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                   );
       show_mesa_warning = false;
     }
