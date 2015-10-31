@@ -469,7 +469,7 @@ static double RT_get_src_ratio(Data *data, Voice *voice){
   float pitch = voice->end_pitch;
 
   // Add vibrato here instead of in get_src_ratio3 to avoid weird peaks
-  if (data->vibrato_depth > 0.001) {
+  if (data->vibrato_phase_add > 0.0) {
     pitch += data->vibrato_value;
     //printf("%f ,%f",data->vibrato_depth,data->vibrato_value);
   }
@@ -593,7 +593,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
-  if (data->vibrato_depth > 0.001) {
+  if (data->vibrato_phase_add > 0.0) {
     data->vibrato_value = data->vibrato_depth * sin(data->vibrato_phase);
     data->vibrato_phase += data->vibrato_phase_add*(double)num_frames;
   }
@@ -993,7 +993,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       data->vibrato_speed = scale(value,
                                   0.0,1.0,
                                   0,MAX_VIBRATO_SPEED);
-      data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+
+      if (data->vibrato_speed <= 0.001) {
+        data->vibrato_value = 0.0;
+        data->vibrato_phase = 0.0;
+        data->vibrato_phase_add = -1;
+      } else
+        data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+      
       break;
     case EFF_VIBRATO_DEPTH:
       data->vibrato_depth = scale(value,
@@ -1002,7 +1009,9 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       if (data->vibrato_depth <= 0.001) {
         data->vibrato_value = 0.0;
         data->vibrato_phase = 0.0;
-      }
+        data->vibrato_phase_add = -1;    
+      } else
+        data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
       break;
     case EFF_NOTE_ADJUST:
       data->note_adjust = scale(value,
@@ -1475,6 +1484,8 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->s=DEFAULT_S;
     data->r=DEFAULT_R;
 
+    data->vibrato_phase_add = -1;
+        
   }else{
 
     data->startpos = old_data->startpos;
