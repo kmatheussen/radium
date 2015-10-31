@@ -69,6 +69,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_S 1.0
 #define MAX_R 2000
 
+#define MAX_VIBRATO_SPEED 20
+#define MAX_VIBRATO_DEPTH 5
+
 const char *g_click_name = "Click";
 
 // Effect order
@@ -82,6 +85,8 @@ enum{
   EFF_D,
   EFF_S,
   EFF_R,
+  EFF_VIBRATO_SPEED,
+  EFF_VIBRATO_DEPTH,
   EFF_LOOP_ONOFF,
   EFF_CROSSFADE_LENGTH,
   EFF_NUM_EFFECTS
@@ -166,6 +171,12 @@ struct _Data{
   bool loop_onoff;
   int crossfade_length;
 
+  double vibrato_depth;
+  double vibrato_speed;
+  double vibrato_phase_add;
+  double vibrato_phase;
+  double vibrato_value;
+  
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
   int resampler_type;
@@ -429,7 +440,7 @@ static long RT_src_callback(void *cb_data, float **data){
 }
 #endif
 
-static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
+static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){    
   if(pitch<=0.0)
     pitch=0.0f;
   if(pitch>126)
@@ -441,6 +452,7 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
   return data->samplerate / scale(finetune, 0, 1, sample->frequency_table[notenum], sample->frequency_table[notenum+1]);
 }
 
+// Note: Also called from get_peaks
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
 
   double adjusted_pitch = pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
@@ -454,7 +466,15 @@ static double RT_get_src_ratio(Data *data, Voice *voice){
   //int notenum = voice->note_num + (int)data->note_adjust;
   //float pitch = voice->end_pitch + scale(data->finetune, 0, 1, -1, 1) + (int)data->note_adjust;
 
-  return RT_get_src_ratio2(data,sample,voice->end_pitch);
+  float pitch = voice->end_pitch;
+
+  // Add vibrato here instead of in get_src_ratio3 to avoid weird peaks
+  if (data->vibrato_depth > 0.001) {
+    pitch += data->vibrato_value;
+    //printf("%f ,%f",data->vibrato_depth,data->vibrato_value);
+  }
+
+  return RT_get_src_ratio2(data,sample,pitch);
 }
 
 static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_frames){
@@ -573,6 +593,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
+  if (data->vibrato_depth > 0.001) {
+    data->vibrato_value = data->vibrato_depth * sin(data->vibrato_phase);
+    data->vibrato_phase += data->vibrato_phase_add*(double)num_frames;
+  }
+  
   while(voice!=NULL){
     Voice *next = voice->next;
 
@@ -583,7 +608,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     voice = next;
   }
-
 
   if(data->new_data != NULL){
     RT_fade_out(outputs[0],num_frames);
@@ -965,6 +989,21 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
                       0.0,1.0,
                       0,MAX_R);
       break;
+    case EFF_VIBRATO_SPEED:
+      data->vibrato_speed = scale(value,
+                                  0.0,1.0,
+                                  0,MAX_VIBRATO_SPEED);
+      data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+      break;
+    case EFF_VIBRATO_DEPTH:
+      data->vibrato_depth = scale(value,
+                                  0.0,1.0,
+                                  0,MAX_VIBRATO_DEPTH);
+      if (data->vibrato_depth <= 0.001) {
+        data->vibrato_value = 0.0;
+        data->vibrato_phase = 0.0;
+      }
+      break;
     case EFF_NOTE_ADJUST:
       data->note_adjust = scale(value,
                                 0.0,1.0,
@@ -1022,6 +1061,13 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     case EFF_R:
       data->r = value;
       break;
+    case EFF_VIBRATO_SPEED:
+      data->vibrato_speed = value;
+      data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
+      break;
+    case EFF_VIBRATO_DEPTH:
+      data->vibrato_depth = value;
+      break;
     case EFF_NOTE_ADJUST:
       data->note_adjust = value;
       update_peaks(plugin);
@@ -1075,6 +1121,16 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return scale(data->r,
                    0,MAX_R,
                    0.0,1.0);
+    case EFF_VIBRATO_SPEED:
+      return scale(data->vibrato_speed,
+                   0,MAX_VIBRATO_SPEED,
+                   0.0,1.0
+                   );
+    case EFF_VIBRATO_DEPTH:
+      return scale(data->vibrato_depth,
+                   0,MAX_VIBRATO_DEPTH,
+                   0.0,1.0
+                   );      
     case EFF_NOTE_ADJUST:
       return scale(data->note_adjust,
                    -6.99,6.99,
@@ -1113,6 +1169,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return data->s;
     case EFF_R:
       return data->r;
+    case EFF_VIBRATO_SPEED:
+      return data->vibrato_speed;
+    case EFF_VIBRATO_DEPTH:
+      return data->vibrato_depth;
     case EFF_NOTE_ADJUST:
       return data->note_adjust;
 #if 0
@@ -1155,6 +1215,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
   case EFF_R:
     snprintf(buffer,buffersize-1,"%f ms",data->r);
+    break;
+  case EFF_VIBRATO_SPEED:
+    snprintf(buffer,buffersize-1,"%.1fHz",data->vibrato_speed);
+    break;
+  case EFF_VIBRATO_DEPTH:
+    snprintf(buffer,buffersize-1,"%.2f",data->vibrato_depth);
     break;
   case EFF_NOTE_ADJUST:
     if(false && data->num_different_samples>1)
@@ -1419,6 +1485,11 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->r = old_data->r;
     data->loop_onoff = old_data->loop_onoff;
     data->crossfade_length = old_data->crossfade_length;
+
+    data->vibrato_value = 0.0;
+    data->vibrato_depth = old_data->vibrato_depth;
+    data->vibrato_speed = old_data->vibrato_speed;
+    data->vibrato_phase_add = old_data->vibrato_phase_add;
   }
   
   data->samplerate = samplerate;
@@ -1639,6 +1710,10 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Sustain";
   case EFF_R:
     return "Release";
+  case EFF_VIBRATO_SPEED:
+    return "Vibrato Speed";
+  case EFF_VIBRATO_DEPTH:
+    return "Vibrato Depth";
   case EFF_NOTE_ADJUST:
     return "Note adjustment";
 #if 0

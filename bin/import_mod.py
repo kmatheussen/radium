@@ -26,6 +26,7 @@
 # * Option to remove unused tracks.
 # * Remove reltempo track
 # * pad samples in kk-song are not looped.
+# * mod volume can't be linearly scaled to radium volume. Mod volume is logarithmic, while radium volume is linear.
 
 from __future__ import division # we always want floating point division
 
@@ -1006,10 +1007,10 @@ def import_mod(filename=""):
     #file = open("workerstecnopop3.mod", "rb")
     #file = open("/home/kjetil/Downloads/temp/NIAGRA.MOD", "rb")
     #file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
-    file = open("/home/kjetil/Downloads/hoffman_and_daytripper_-_professional_tracker.mod", "rb")
+    #file = open("/home/kjetil/Downloads/hoffman_and_daytripper_-_professional_tracker.mod", "rb")
     #file = open("/home/kjetil/Downloads/hoisaga1.mod", "rb")
     #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
-    #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
+    file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
  
     song = read_song(file)
