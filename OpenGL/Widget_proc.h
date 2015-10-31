@@ -28,7 +28,8 @@ extern int GL_get_multisample(void);
 
 extern void GL_lock(void);
 extern void GL_unlock(void);
-
+extern bool GL_maybeLock(void);
+    
 volatile extern char *GE_vendor_string;
 volatile extern char *GE_renderer_string;
 volatile extern char *GE_version_string;

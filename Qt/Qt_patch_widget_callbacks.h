@@ -22,45 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QCleanlooksStyle>
 
-class MyQWidget : public QWidget {
- public:
-  MyQWidget(QWidget *parent)
-    : QWidget(parent)
-  {
-    /*
-    GL_lock(); {
-      GL_pause_gl_thread_a_short_while(); // might fix [1] crash
-    }GL_unlock();
-    */
-  }
-};
-
-/*
-  [1]
-  0: crashreporter_posix.c:71     CRASHREPORTER_send_message_with_backtrace()
-  1: crashreporter_posix.c:98     crash()
-  2: sigaction.c:0        __restore_rt()
-  3: ??:0 _ZNK18QThreadStorageData3getEv()
-  4: ??:0 _ZNK5QFont3keyEv()
-  5: ??:0 _ZNK12QFontPrivate15engineForScriptEi()
-  6: ??:0 _ZN11QTextEngine15FontEngineCacheC1Ev()
-  7: ??:0 _ZN9QTextLine13layout_helperEi()
-  8: ??:0 _ZN11QTextLayout9endLayoutEv()
-  9: ??:0 _ZN12QLineControl17updateDisplayTextEb()
-  10: ??:0        _ZN10QLCDNumber5eventEP6QEvent()
-  11: ??:0        _ZN9QLineEditC2EP7QWidget()
-  12: ??:0        _ZNK16QAbstractSpinBox8sizeHintEv()
-  13: ??:0        _ZN16QAbstractSpinBoxC1ER23QAbstractSpinBoxPrivateP7QWidget()
-  14: ??:0        _ZN8QSpinBoxC1EP7QWidget()
-  15: Qt_patch_widget.h:371       _ZN15Ui_Patch_widget7setupUiEP7QWidget()
-  16: Qt_patch_widget_callbacks.h:42      _ZN12Patch_widgetC4EP7QWidgetP5Patch()
-  17: Qt_instruments.cpp:397      _ZL30create_audio_instrument_widgetP5Patch()
-  18: Qt_instruments.cpp:619      add_new_audio_instrument_widget()
-  19: patch.c:330 PATCH_select_patch_for_track()
-  20: api_mouse.c:307     setTrackPatch()
-*/
-
-class Patch_widget : public MyQWidget, public Ui::Patch_widget{
+class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_widget{
   Q_OBJECT;
 
  public:
@@ -70,10 +32,10 @@ class Patch_widget : public MyQWidget, public Ui::Patch_widget{
   struct PatchVoice *_voices;
 
   Patch_widget(QWidget *parent, struct Patch *patch)
-    : MyQWidget(parent)
+    : QWidget(parent)
     , _patch(patch)
     , _voices(&patch->voices[0])
-  {
+  {    
     initing = true;
     /*
     GL_lock(); {

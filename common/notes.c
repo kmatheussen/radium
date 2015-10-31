@@ -289,18 +289,76 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
   if(PlaceGreaterOrEqual(start,&endplace)) {
     RError("note is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
     set_new_position(track, note, PlaceCreate(block->num_lines - 2, 0, 1), NULL);
+    start = &note->l.p;
   }
   
   if (start->line < 0) {
     RError("note is placed before block start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
     set_new_position(track, note, PlaceCreate(0,1,1), NULL);
+    start = &note->l.p;
   }
   
   if(PlaceGreaterThan(end,&endplace)) {
     RError("note end is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
     set_new_position(track, note, NULL, &endplace);
+    end = &note->end;
   }
 
+  if (note->velocities != NULL) {
+    {
+      struct Velocities *first_velocity = note->velocities;
+      if(PlaceGreaterThan(start, &first_velocity->l.p)){
+        RError("note start is placed after first velocity. start: %f, first: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&first_velocity->l.p), GetfloatFromPlace(&note->end));
+        float e = p_float(first_velocity->l.p);
+        e -= 0.01;
+        e = R_MAX(0.0, e);
+        Place new_start;
+        Float2Placement(e, &new_start);
+        set_new_position(track, note, &new_start, NULL);
+        start = &note->l.p;
+      }
+    }
+
+    struct Velocities *last_velocity = (struct Velocities*)ListLast3(&note->velocities->l);
+    if(PlaceLessThan(end, &last_velocity->l.p)){
+      RError("note end is placed before last velocity. start: %f, last: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&last_velocity->l.p), GetfloatFromPlace(&note->end));
+      float e = p_float(last_velocity->l.p);
+      e += 0.01;
+      Place new_end;
+      Float2Placement(e, &new_end);
+      set_new_position(track, note, NULL, &new_end);
+      end = &note->end;
+    }
+
+  }
+  
+  if (note->pitches != NULL) {
+    {
+      struct Pitches *first_pitch = note->pitches;
+      if(PlaceGreaterThan(start, &first_pitch->l.p)){
+        RError("note start is placed after first pitch. start: %f, first: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&first_pitch->l.p), GetfloatFromPlace(&note->end));
+        float e = p_float(first_pitch->l.p);
+        e -= 0.01;
+        e = R_MAX(0.0, e);
+        Place new_start;
+        Float2Placement(e, &new_start);
+        set_new_position(track, note, &new_start, NULL);
+        start = &note->l.p;
+      }
+    }
+    
+    struct Pitches *last_pitch = (struct Pitches*)ListLast3(&note->pitches->l);
+    if(PlaceLessThan(end, &last_pitch->l.p)){
+      RError("note end is placed before last pitch. start: %f, last: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&last_pitch->l.p), GetfloatFromPlace(&note->end));
+      float e = p_float(last_pitch->l.p);
+      e += 0.01;
+      Place new_end;
+      Float2Placement(e, &new_end);
+      set_new_position(track, note, NULL, &new_end);
+      end = &note->end;
+    }
+  }
+  
   if(PlaceLessOrEqual(end,start)) {
     RError("note end is placed before (or on) note start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
     float e = p_float(*start);
@@ -498,16 +556,19 @@ void ReplaceNoteEnds(
 	struct Blocks *block,
 	struct Tracks *track,
 	Place *old_placement,
-        Place *new_placement
+        Place *new_placement,
+        int subtrack
 ){
 	struct Notes *note=track->notes;
 	while(note!=NULL){
-		if(PlaceGreaterThan(&note->l.p,old_placement)) break;
-		if(PlaceEqual(&note->end,old_placement)) {
-                  note->end = *new_placement;
-                  NOTE_validate(block, track, note);
-                }
-		note=NextNote(note);
+          if (note->subtrack == subtrack) {
+            if(PlaceGreaterThan(&note->l.p,old_placement)) break;
+            if(PlaceEqual(&note->end,old_placement)) {
+              note->end = *new_placement;
+              NOTE_validate(block, track, note);
+            }
+          }
+          note=NextNote(note);
 	}
 }
 

@@ -68,11 +68,12 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 
         bool success=DISK_close_and_delete(dc.file);
 
-        if (is_backup==false)
+        if (is_backup==false) {
           Undo_saved_song();
 
-        if (success)
-          show_nag_window("File successfully saved.<p>");
+          if (success)
+            show_nag_window("File successfully saved.<p>");
+        }
 }
 
 void SaveAs(struct Root *theroot){
