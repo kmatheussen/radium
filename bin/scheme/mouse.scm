@@ -361,7 +361,7 @@
 (define (radium-mouse-press $button $x $y)
   (handling-nodes
    (lambda()
-     (c-display "%%%%%%%%%%%%%%%%% mouse press" $button $x $y *current-mouse-cycle*)
+     ;;(c-display "%%%%%%%%%%%%%%%%% mouse press" $button $x $y *current-mouse-cycle*)
      ;;(cancel-current-stuff)
      (if (not *current-mouse-cycle*)
          (set! *current-mouse-cycle* (get-mouse-cycle $button $x $y)))
@@ -440,14 +440,15 @@
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (define track-num (get-track-num X Y))
-         ;;(c-display "track-num:" track-num)
          (set! *current-track-num-all-tracks* track-num)
          (if (and track-num
                   (>= track-num 0))
-             (set! *current-track-num* track-num))
+             (set! *current-track-num* track-num)
+             (set! *current-track-num* #f))
          (cond (*current-track-num*
                 (set-mouse-track *current-track-num*))
                ((and (ra:reltempo-track-visible)
+                     *current-track-num-all-tracks*
                      (= *current-track-num-all-tracks* (ra:get-rel-tempo-track-num)))
                 (set-mouse-track-to-reltempo)))))
 
@@ -909,7 +910,7 @@
                         :Get-value ra:get-track-pan
                         :Make-undo ra:undo-track-pan
                         :Move (lambda (Tracknum Value)
-                                (c-display Tracknum Value)
+                                ;;(c-display Tracknum Value)
                                 (ra:set-track-pan Value Tracknum))
                         :Publicize (lambda (Tracknum)
                                      (show-track-pan-in-statusbar Tracknum))
@@ -961,7 +962,7 @@
                         :Get-value ra:get-track-volume
                         :Make-undo ra:undo-track-volume
                         :Move (lambda (Tracknum Value)
-                                (c-display Tracknum Value)
+                                ;;(c-display Tracknum Value)
                                 (ra:set-track-volume Value Tracknum))
                         :Publicize (lambda (Tracknum)
                                      (show-track-volume-in-statusbar Tracknum))
@@ -1355,7 +1356,7 @@
                         :Get-y get-pianonote-y
                         :Make-undo (lambda (_) (ra:undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
-                                           (c-display "Create" X Place)
+                                           ;;(c-display "Create" X Place)
                                            (define Value (scale X
                                                                 (ra:get-track-pianoroll-x1 *current-track-num*)
                                                                 (ra:get-track-pianoroll-x2 *current-track-num*)
@@ -1420,7 +1421,7 @@
                             (box-to-string (get-pianonote-box 0 1 0)))
                 (and pianonote-info
                      (begin
-                       (c-display "type: " (pianonote-info :move-type))
+                       ;;(c-display "type: " (pianonote-info :move-type))
                        (set-current-pianonote (pianonote-info :pianonotenum)
                                               (pianonote-info :notenum)
                                               (pianonote-info :tracknum))
@@ -2154,9 +2155,8 @@
   :press-func (lambda (Button X Y)
                 (and ;(= Button *middle-button*)
                  *current-track-num*
-                 (c-display "hepp: " *current-track-num*)
-                     (ra:select-track *current-track-num*)
-                     #f))))
+                 (ra:select-track *current-track-num*)
+                 #f))))
 
 
 ;; show/hide time tracks
