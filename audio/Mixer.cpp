@@ -765,7 +765,7 @@ struct Mixer{
 
 };
 
-static Mixer *g_mixer;
+static Mixer *g_mixer = NULL;
 
 #if USE_WORKAROUND
 
@@ -928,7 +928,10 @@ void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
 }
 
 radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void){
-  return &g_mixer->_sound_producers;
+  if (g_mixer==NULL)
+    return NULL;
+  else
+    return &g_mixer->_sound_producers;
 }
 
 struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){

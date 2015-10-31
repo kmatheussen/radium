@@ -393,7 +393,6 @@ static QColor get_qcolor_really(enum ColorNums colornum){
   static QColor white(254,254,254);//"black");
   static QColor red("red");
 
-
   //if(colornum < 16)
   //  return editor->colors[colornum];
 

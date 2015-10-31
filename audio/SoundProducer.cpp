@@ -1082,6 +1082,9 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
 
 void SP_write_mixer_tree_to_disk(QFile *file){
   radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  if (sp_all==NULL)
+    return;
+  
   int num=0;
   
   for (SoundProducer *sp : *sp_all){
