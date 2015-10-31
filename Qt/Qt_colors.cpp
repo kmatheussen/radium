@@ -395,7 +395,8 @@ static QColor get_qcolor_really(enum ColorNums colornum){
 
   //if(colornum < 16)
   //  return editor->colors[colornum];
-
+  //  RError("Unknown color. Very strange %d", (int)colornum);
+  
   if (colornum < END_CONFIG_COLOR_NUM)
     return get_config_qcolor(colornum);
 

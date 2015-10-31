@@ -150,7 +150,15 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
     bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
     
-    box.setInformativeText(QString("This %0 will be automatically reported when you press \"SEND\".\n"
+    box.setInformativeText(QString(
+                                   #if FOR_LINUX
+                                   "Linux users: Please don't report bugs caused by a non-properly compiled version of Radium. "
+                                   "If you have compiled Radium yourself, or are using a version of Radium "
+                                   "distributed by a third party, please try the official binaries first. "
+                                   "At least execute a \"make very_clean\" command to see if the bug disappears. Thank you.\n"
+                                   "\n"
+                                   #endif
+                                   "This %0 will be automatically reported when you press \"SEND\".\n"
                                    "\n"
                                    "The report is sent anonymously, and will only be seen by the author of Radium.\n"
                                    "\n"
