@@ -409,10 +409,10 @@ void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum
   PlaceCopy(&note->end, PlaceCreate(line,counter,dividor));
 }
 
-int addNote(int notenum,int velocity,
-            int line,int counter,int dividor,
-            int end_line,int end_counter,int end_dividor, 
-            int windownum, int blocknum, int tracknum)
+int addNote2(float notenum,int velocity,
+             int line,int counter,int dividor,
+             int end_line,int end_counter,int end_dividor, 
+             int windownum, int blocknum, int tracknum)
 {
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
@@ -434,6 +434,17 @@ int addNote(int notenum,int velocity,
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
 
+int addNote(int notenum,int velocity,
+             int line,int counter,int dividor,
+             int end_line,int end_counter,int end_dividor, 
+             int windownum, int blocknum, int tracknum)
+{
+  return addNote2(notenum, velocity,
+                  line, counter, dividor,
+                  end_line, end_counter, end_dividor,
+                  windownum, blocknum, tracknum
+                  );
+}
 void addNoteAdds(
 	PyObject *noteadds,
 	int windownum,

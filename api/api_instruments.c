@@ -27,6 +27,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_menues_proc.h"
+
+#include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
+#include "../audio/SoundPluginRegistry_proc.h"
+#include "../audio/Mixer_proc.h"
+#include "../audio/Sampler_plugin_proc.h"
+
+#include "../Qt/Qt_instruments_proc.h"
+
 #include "../common/patch_proc.h"
 #include "../common/instruments_proc.h"
 
@@ -72,59 +81,138 @@ void setInstrumentForTrack(int instrument_num, int tracknum, int blocknum, int w
 
   if(wtrack==NULL) return;
 
-  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return;
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    RError("instrument %d not found", instrument_num);
+    return;
+  }
 
   wtrack->track->patch = patch;
 
   wblock->block->is_dirty = true;
 
-  (*instrument->PP_Update)(instrument,patch);
+  (*patch->instrument->PP_Update)(patch->instrument,patch);
 }
 
-int createNewInstrument(char *type, char *name) {
-  int instrument_num;
+int createMIDIInstrument(char *name) {
+  struct Patch *patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, name);
+  GFX_PP_Update(patch);
+  return patch->id;
+}
 
-  /*
-  struct Patch *patch=talloc(sizeof(struct Patch)); // ??? What is the point of this one? (This function is not finished, it's only used by the midi importer.
-  patch->id = PATCH_get_new_id();
-  patch->forward_events = true;
-  */
-
-  struct Instruments *instrument = NULL;
-
-  if(!strcmp("midi", type)) {
-    struct Patch *patch = NewPatchCurrPos(MIDI_INSTRUMENT_TYPE, NULL, name);
-    GFX_PP_Update(patch);
-    instrument = get_MIDI_instrument();
-    instrument_num = 0;
-  } else if(!strcmp("audio", type)) {
-    abort();
-//AUDIO_InitPatch(patch);
-    instrument = get_audio_instrument();
-    instrument_num = 1;
-  }else{
-    RError("Unknown instrument type '%s'.", type);
-    return 0;
+int createAudioInstrument(char *type_name, char *plugin_name, char *name) {
+  SoundPluginType *type = PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
+  if (type==NULL){
+    GFX_Message(NULL, "Audio plugin %s / %s not found", type_name, plugin_name);
+    return -1;
   }
 
-  return getInstrumentPatchNum(instrument_num, instrument->patches.num_elements-1);
+  SoundPlugin *plugin = add_new_audio_instrument_widget(type,-100000,-100000,true,talloc_strdup(name),MIXER_get_buses());
+  if (plugin==NULL)
+    return -1;
+
+  struct Patch *patch = (struct Patch*)plugin->patch;
+  if (patch==NULL){
+    RError(NULL, "Plugin contains no patch");
+    return -1;
+  }
+
+  GFX_PP_Update(patch);
+  return patch->id;
 }
 
+void setInstrumentSample(int instrument_num, char *filename){
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return;
+  }
+
+  if (patch->instrument != get_audio_instrument()) {
+    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_num);
+    return;
+  }
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+
+  if (strcmp(plugin->type->name, "Sample Player")) {
+    GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_num);
+    return;
+  }
+
+
+  SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
+}
+
+void setInstrumentLoopData(int instrument_num, int start, int length){
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return;
+  }
+
+  if (patch->instrument != get_audio_instrument()) {
+    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_num);
+    return;
+  }
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+
+  if (strcmp(plugin->type->name, "Sample Player")) {
+    GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_num);
+    return;
+  }
+
+
+  SAMPLER_set_loop_data(plugin, start, length);
+
+  GFX_update_instrument_widget(patch);
+
+}
+
+
 void setInstrumentName(int instrument_num, char *name) {
-  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return;
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return;
+  }
 
   patch->name = talloc_strdup(name);
 
-  (*instrument->PP_Update)(instrument,patch);
+  (*patch->instrument->PP_Update)(patch->instrument,patch);
+}
+
+void setInstrumentEffect(int instrument_num, char *effect_name, float value){
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return;
+  }
+
+  if (patch->instrument != get_audio_instrument()) {
+    GFX_Message(NULL, "instrument %d is not an audio instrument", instrument_num);
+    return;
+  }
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+
+  if (strcmp(plugin->type->name, "Sample Player")) {
+    GFX_Message(NULL, "instrument %d is not a Sample Player plugin", instrument_num);
+    return;
+  }
+
+  PLUGIN_set_effect_from_name(plugin, effect_name, value);
+
+  GFX_update_instrument_widget(patch);
 }
 
 char *getInstrumentName(int instrument_num) {
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return NULL;
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return NULL;
+  }
 
   return (char*)patch->name;
 }
@@ -135,7 +223,7 @@ void setInstrumentVolume(int instrument_num, float volume) {
   struct Patch *patch = getPatchFromNum(instrument_num);
   if(patch==NULL) return NULL;
 
-  (*instrument->PP_Update)(instrument,patch);
+  (*patch->instrument->PP_Update)(instrument,patch);
 }
 
 float getInstrumentVolume(int instrument_num) {
@@ -144,21 +232,25 @@ float getInstrumentVolume(int instrument_num) {
 #endif
 
 void setInstrumentData(int instrument_num, char *key, char *value) {
-  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return;
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return;
+  }
 
-  instrument->setPatchData(patch, key, value);
+  patch->instrument->setPatchData(patch, key, value);
 
-  (*instrument->PP_Update)(instrument,patch);
+  (*patch->instrument->PP_Update)(patch->instrument,patch);
 }
 
 char *getInstrumentData(int instrument_num, char *key) {
-  struct Instruments *instrument = getInstrumentFromNum(instrument_num);
-  struct Patch *patch = getPatchFromNum(instrument_num);
-  if(patch==NULL) return "";
+  struct Patch *patch = PATCH_get_from_id(instrument_num);
+  if(patch==NULL){
+    GFX_Message(NULL, "instrument %d not found", instrument_num);
+    return NULL;
+  }
 
-  return instrument->getPatchData(patch, key);
+  return patch->instrument->getPatchData(patch, key);
 }
 
 void midi_resetAllControllers(void){

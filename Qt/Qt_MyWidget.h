@@ -219,10 +219,10 @@ namespace cvs{
   };
 
   struct MyWidget{
-    struct MyQWidget : public QWidget{
+    struct MyQWidget2 : public QWidget{
 
       MyWidget *mywidget;
-      MyQWidget(QWidget *parent, MyWidget *mywidget) : QWidget(parent),mywidget(mywidget){
+      MyQWidget2(QWidget *parent, MyWidget *mywidget) : QWidget(parent),mywidget(mywidget){
       }
 
       void mousePressEvent ( QMouseEvent * event ){
@@ -247,7 +247,7 @@ namespace cvs{
       }
     };
 
-    MyQWidget w;
+    MyQWidget2 w;
 
     MyWidget(void *parent)
       : w(static_cast<QWidget*>(parent),this)

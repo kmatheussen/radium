@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "undo_playlist_proc.h"
 #include "OS_Bs_edit_proc.h"
+#include "visual_proc.h"
 
 #include "blocklist_proc.h"
 
@@ -159,4 +160,47 @@ void BL_removeBlockFromPlaylist(struct Blocks *block){
     }
     BL_delete(get_first_block_pos(block));
   }
+}
+
+void BL_setLength(int length){
+  PlayStop();
+  Undo_Playlist();
+
+  if (length < 1) {
+    GFX_Message(NULL, "Can not set playlist length to %d",length);
+    return;
+  }
+
+  if (length > root->song->length) {
+
+    struct Blocks **playlist = talloc(sizeof(struct Blocks*)*length);
+
+    int pos;
+
+    for(pos=0;pos<root->song->length;pos++)
+      playlist[pos] = root->song->playlist[pos];
+    
+    for(;pos<length;pos++)
+      playlist[pos] = playlist[root->song->length-1];
+
+    root->song->playlist = playlist;
+  }
+
+  root->song->length = length;
+
+  BS_UpdatePlayList();
+}
+
+void BL_setBlock(int pos, struct Blocks *block){
+  if (pos < 0 || pos >= root->song->length){
+    GFX_Message(NULL, "No such playlist pos: %d (pos must be between %d and %d)\n",pos, 0, root->song->length-1);
+    return;
+  }
+    
+  PlayStop();
+  Undo_Playlist();
+
+  root->song->playlist[pos] = block;
+
+  BS_UpdatePlayList();
 }

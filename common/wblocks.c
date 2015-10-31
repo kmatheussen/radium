@@ -435,14 +435,22 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 	SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
 
 	window->curr_block=wblock->l.num;
+        //MinimizeBlock_CurrPos(window);
+        //window->must_redraw = false;
 
-	window->must_redraw = true;
+	//window->must_redraw = true;
 
 	BS_SelectBlock(wblock->block);
 
 	if( ! pc->isplaying){
           GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 	}
+
+	//window->must_redraw = false;
+        //MinimizeBlock_CurrPos(window);
+        //wblock->block->is_dirty = true;
+
+	window->must_redraw = true;
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){

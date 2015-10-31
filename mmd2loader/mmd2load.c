@@ -66,6 +66,7 @@ typedef uint8_t UBYTE;
 #endif
 
 #include "../common/nsmtracker.h"
+#include "../api/api_proc.h"
 #include "../common/list_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/wblocks_proc.h"
@@ -89,9 +90,6 @@ typedef uint8_t UBYTE;
 
 #include "mmd2load_proc.h"
 
-
-
-int createNewInstrument(char *type, char *name);
 
 typedef uint8_t A_UBYTE;
 
@@ -418,7 +416,7 @@ static void MMD_LoadInstruments(disk_t *file,ULONG mmd0song){
 
 #if 1
 	for(lokke=0;lokke<63;lokke++){		//Why 63 and not 64?
-          createNewInstrument("midi", MMD_GetInstrumentName(file,lokke));
+          createMIDIInstrument(MMD_GetInstrumentName(file,lokke));
         }
 #else
         struct Instruments *instrument=get_MIDI_instrument();

@@ -302,7 +302,7 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
   }
 
   if(PlaceLessOrEqual(end,start)) {
-    RError("note end is placed before (or on) note end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    RError("note end is placed before (or on) note start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
     float e = p_float(*start);
     e += 0.01;
     Place new_end;

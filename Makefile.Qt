@@ -1189,7 +1189,7 @@ posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.cpp
 	$(CCC) $(CD)settings.cpp $(QTOPT)
 
-mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c
+mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c bin/protos.conf
 	$(CC) mmd2loader/mmd2load.c $(OPT)
 
 scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c

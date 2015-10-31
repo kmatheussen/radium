@@ -360,7 +360,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
     getPatchData(patch)->preset = atoi(value);
 
   } else
-    RWarning("MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
+    GFX_Message(NULL, "MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
 }
 
 static char *MIDIGetPatchData(struct Patch *patch, char *key){

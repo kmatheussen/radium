@@ -1057,6 +1057,26 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   return state;
 }
 
+void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value){
+  const SoundPluginType *type=plugin->type;
+  int i;
+
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name))
+      break;
+  }
+
+  if (i==type->num_effects) {
+    GFX_Message(NULL, "No effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
+    return;
+  }
+
+  //GFX_Message(NULL, "Going to set %s to %f\n",effect_name,value);
+  PLAYER_lock();{
+    PLUGIN_set_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  }PLAYER_unlock();
+}
+
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
   
@@ -1066,7 +1086,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     if(HASH_has_key(effects, effect_name)){
       float val = HASH_get_float(effects, effect_name);
       if(i<type->num_effects){
-        PLAYER_lock();{          
+        PLAYER_lock();{
           type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
           plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
         }PLAYER_unlock();

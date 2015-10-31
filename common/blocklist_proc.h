@@ -15,8 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
-
 extern LANGSPEC void BL_init(void);
 extern LANGSPEC int *BL_copy(void);
 extern LANGSPEC void BL_paste(int *playlist);
@@ -27,5 +25,6 @@ extern LANGSPEC void BL_deleteCurrPos(int pos);
 extern LANGSPEC struct Blocks *BL_GetBlockFromPos(int pos);
 extern LANGSPEC void BL_removeBlockFromPlaylist(struct Blocks *block);
 
-#endif
+extern LANGSPEC void BL_setLength(int length);
+extern LANGSPEC void BL_setBlock(int pos, struct Blocks *block);
 

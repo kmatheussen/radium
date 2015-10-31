@@ -21,7 +21,7 @@ import sys,os
 
 #sys.setrecursionlimit(1500)
 
-if __name__ == "__main__":
+if __name__ == "__main__" or sys.g_program_path=='__main__':
     sys.path.append("python-midi")
 else:
     sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
@@ -36,30 +36,44 @@ class RadiumMock:
                 line, counter, dividor,
                 end_line, end_counter, end_dividor,
                 windownum, blocknum, tracknum):
-        return
-        print "addNote",tracknum,notenum,velocity
+#        return
+        print "addNote",tracknum,line,end_line,notenum,velocity
     def setLPB(self,lpb):
         pass
     def setBPM(self,pbm):
         pass
     def dummy(self,*args):
         pass
-
+    def addLPB(self, lpb, linenum, counter, dividor):
+        print "addLPB", str(linenum) + ": "+hex(lpb)
+    def addBPM(self, bpm, linenum, counter, dividor):
+        print "addBPM", str(linenum) + ": "+hex(bpm)
+    def createVelocity(self, value, floatplace, notenum, tracknum):
+        print "   createVelocity",floatplace,value
     def getMaxVolume(self):
         return 127
 
-if __name__ == "__main__":
+    def setPlaylistBlock(self, pos, blocknum):
+        print "Playlist ",pos,blocknum
+
+    def setInstrumentEffect(self, instrument_num, effect_name, value):
+        print "setInstrumentEffect ",instrument_num,effect_name,value
+
+def get_radium_mock():
     radium = RadiumMock()
     radium.addNote = radium.addNote
+    radium.addNote2 = radium.addNote
     radium.setLPB = radium.setLPB
     radium.setBPM = radium.setBPM
     radium.setNumLines = radium.dummy
     radium.setNumTracks = radium.dummy
     radium.openRequester = radium.dummy
     radium.closeRequester = radium.dummy
-    radium.addBPM = radium.dummy
     radium.addSignature = radium.dummy
-    radium.createNewInstrument = radium.dummy
+    radium.createMIDIInstrument = radium.dummy
+    radium.createAudioInstrument = radium.dummy
+    radium.setInstrumentSample = radium.dummy
+    radium.setInstrumentLoopData = radium.dummy
     radium.setInstrumentData = radium.dummy
     radium.setInstrumentForTrack = radium.dummy
     radium.getNumBlocks = radium.dummy
@@ -67,10 +81,17 @@ if __name__ == "__main__":
     radium.selectPrevBlock=radium.dummy
     radium.deleteBlock=radium.dummy
     radium.setTrackVolume = radium.dummy
-    
+    radium.setTrackPan = radium.dummy
+    radium.setTrackPanOnOff = radium.dummy
+    radium.setPlaylistLength = radium.dummy
+    radium.minimizeBlockTracks = radium.dummy
+    radium.setVelocity = radium.dummy
+    return radium
+
+if __name__ == "__main__" or sys.g_program_path=='__main__':
+    radium = get_radium_mock()
 else:
     import radium
-
 
 class Note:
     def __init__(self, start_tick, channel=0, notenum=64, velocity=100, end_tick=-1):
@@ -538,7 +559,7 @@ def handle_radium_instruments(tracks, port=""):
     for track in tracks:
         instrument = track.instrument
         if instrument not in instruments:
-            instrument_num = radium.createNewInstrument("midi", instrument.name)
+            instrument_num = radium.createMIDIInstrument(instrument.name) # No need to check return value. createNewMIDIInstrument never fails.
             radium.setInstrumentData(instrument_num, "channel", str(instrument.channel))
             radium.setInstrumentData(instrument_num, "preset", str(instrument.preset))
             radium.setInstrumentData(instrument_num, "port", port)

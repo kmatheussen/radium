@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
 #include "../common/block_split_proc.h"
+#include "../common/blocklist_proc.h"
 #include "../common/eventreciever_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
@@ -310,6 +311,7 @@ void setNumTracks(int numtracks, int blocknum, int windownum){
   if(wblock==NULL) return;
 
   Block_Set_num_tracks(wblock->block, numtracks);
+  //MinimizeBlock_CurrPos(window);
   wblock->block->is_dirty = true;
 }
 
@@ -467,6 +469,17 @@ void importMidi(void){
     imported=true;
   }
   PyRun_SimpleString("import_midi.import_midi()");
+}
+
+void importMod(void){
+  static bool imported=false;
+  if(imported==false){
+    PyRun_SimpleString("import import_mod");
+    imported=true;
+  }else
+    PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
+
+  PyRun_SimpleString("import_mod.import_mod()");
 }
 
 void insertTracks(int numtracks,int windownum){
@@ -946,4 +959,20 @@ void setModalWindows(bool doit){
 
 void printMixerTree(void){
   SP_print_tree();
+}
+
+
+
+// PLAYLIST
+
+void setPlaylistLength(int len){
+  BL_setLength(len);
+}
+
+void setPlaylistBlock(int pos, int blocknum){
+  struct Blocks *block = getBlockFromNum(blocknum);
+  if (block==NULL)
+    return;
+
+  BL_setBlock(pos, block);
 }

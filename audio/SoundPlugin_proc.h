@@ -58,6 +58,7 @@ extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);
 extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
+extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value);
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state);
 extern LANGSPEC char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type);
 extern LANGSPEC void PLUGIN_set_from_patch(SoundPlugin *old_plugin, struct Patch *new_patch);

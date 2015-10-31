@@ -1542,6 +1542,37 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
   return success;
 }
 
+void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
+  Data *data=plugin->data;
+
+
+  PLAYER_lock();{  
+    if (length==0)
+      data->loop_onoff = false;
+    else
+      data->loop_onoff = true;
+
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    
+    int i;
+    for(i=0;i<MAX_NUM_SAMPLES;i++){
+      Sample *sample=(Sample*)&data->samples[i];
+      if(sample->sound!=NULL){
+        if (start < sample->num_frames)
+          sample->loop_start = start;
+        else
+          sample->loop_start = sample->num_frames - 1;
+        
+        int loop_end = sample->loop_start + length;
+        if (loop_end <= sample->num_frames)
+          sample->loop_end = loop_end;
+        else
+          sample->loop_end = sample->num_frames;
+      }
+    }
+  }PLAYER_unlock();
+}
+
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
   Data *data=plugin->data;
   return set_new_sample(plugin,filename,instrument_number,data->resampler_type);
