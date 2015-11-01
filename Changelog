@@ -1,3 +1,14 @@
+Changes 3.3.9 -> 3.4.0:
+* Fix import large MIDI files in windows
+* crashreporter: Ask linux users not to report bugs caused by non-properly compiled versions of Radium
+* Don't crash if reporting assert failure before mixer has been initialized
+* Sampler instrument: Add vibrato effect
+* Updated info texts about various gfx drivers on Linux shown during startup
+* Remove common warning about non-existing tracks when switching blocks.
+* Import mod files. Pitch changes, vibrato and portamento effects missing.
+* Only write "<ch>:" in the track header when the trackheader only spans one track
+
+
 Changes 3.3.8 -> 3.3.9:
 * Workaround for fx rendering crash
 * Linux: Don't report that crash was just an assert.
