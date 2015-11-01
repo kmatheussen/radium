@@ -21,6 +21,13 @@ import sys,os
 
 #sys.setrecursionlimit(1500)
 
+class NullWriter(object):
+    def write(self, value): pass
+
+if os.isatty(1):
+    sys.stdout = sys.stderr = NullWriter()
+
+
 if __name__ == "__main__" or sys.g_program_path=='__main__':
     sys.path.append("python-midi")
 else:

@@ -25,9 +25,17 @@
 
 from __future__ import division # we always want floating point division
 
-import sys, os, filecmp
+import sys, os, filecmp, traceback
 import struct, copy
 import wave
+
+
+class NullWriter(object):
+    def write(self, value): pass
+
+if os.isatty(1):
+    sys.stdout = sys.stderr = NullWriter()
+
 
 
 if __name__ == "__main__":
@@ -221,7 +229,7 @@ class Note:
         last_end_line = -1
 
         for velocity in self.velocities:
-            print("velocity",velocity.linenum,velocity.value)
+            #print("velocity",velocity.linenum,velocity.value)
             if velocity.value==0:
                 if last_end_line == -1:
                     last_end_line = velocity.linenum
@@ -243,7 +251,7 @@ class Note:
     # * Move velocity nodes that are placed on top of another velocity node to right before that next velocity node
     # * last note can't end at line 64, but right before
     def add_velocities_from_mod_effects(self, pattern, samples):
-        print "len / num",len(samples),self.samplenum
+        #print "len / num",len(samples),self.samplenum
         #if self.samplenum==31:
         #    self.samplenum=30
 
@@ -306,7 +314,7 @@ class Note:
 
         self.legalize_velocities()
 
-        print("velo",self.velocities)
+        #print("velo",self.velocities)
 
     def prepare_mod(self, pattern, samples):
         self.set_start_note_based_on_mod_effects(pattern)
@@ -567,7 +575,7 @@ class Pattern:
                     self.tempos.append(tempos[linenum])
 
         ending_bpm, ending_tpd = self.__get_ending_mod_speed(start_mod_bpm, start_mod_tpd)
-        print "ending "+str(self.patternnum)+": ",start_mod_bpm, ending_bpm, " --- ", start_mod_tpd,ending_tpd
+        #print "ending "+str(self.patternnum)+": ",start_mod_bpm, ending_bpm, " --- ", start_mod_tpd,ending_tpd
         return self.patternnum, ending_bpm, ending_tpd
                 
 
@@ -975,8 +983,8 @@ def read_trackline(file, pattern, tracknum, linenum, pos):
         
                 note.printit()
  
-    print "period: "+str(period)
-    print "samplenum: "+str(samplenum)
+    #print "period: "+str(period)
+    #print "samplenum: "+str(samplenum)
 
     effectnum = byte3 & 0x0f
     effectvalue = byte4
@@ -1002,8 +1010,8 @@ def read_pattern(file, num_channels, patternnum, pos):
             break
 
         for ch in range(num_channels):
-            print
-            print "******************* line "+str(linenum)+", track "+str(ch)
+            #print
+            #print "******************* line "+str(linenum)+", track "+str(ch)
             read_trackline(file, pattern, ch, linenum, pos)
             pos += 4
 
@@ -1111,7 +1119,11 @@ def import_mod(filename=""):
         generate_from_mod(song)
         
     except:
-        radium.showMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no")
+        e = sys.exc_info()[0]
+        message = traceback.format_exc()
+        radium.showMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+        for m in message.split("\n"):
+            radium.showMessage(m)
 
 
 if __name__ == "__main__":
