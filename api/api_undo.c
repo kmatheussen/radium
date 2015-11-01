@@ -36,3 +36,8 @@ void redo(void){
 void undo(void){
   Undo();
 }
+
+void resetUndo(void){
+  ResetUndo();
+}
+

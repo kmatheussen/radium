@@ -19,6 +19,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 static inline Place place(int line, int counter, int dividor) {
+  // Uncomment here. place() is used more for calculation
+  /*
+  R_ASSERT(line >= 0);
+  R_ASSERT(counter >= 0);
+  R_ASSERT(counter < dividor);
+  R_ASSERT(dividor > 0);
+  R_ASSERT(dividor <= MAX_UINT32);
+  */
+  
   Place place;
   place.line = line;
   place.counter = counter;
@@ -27,7 +36,13 @@ static inline Place place(int line, int counter, int dividor) {
 }
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
-  Place *place=(Place*)talloc(sizeof(Place));
+  R_ASSERT(line >= 0);
+  R_ASSERT(counter >= 0);
+  R_ASSERT(counter < dividor);
+  R_ASSERT(dividor > 0);
+  R_ASSERT(dividor <= MAX_UINT32);
+  
+  Place *place=(Place*)talloc(sizeof(Place));  
   place->line = line;
   place->counter = counter;
   place->dividor = dividor;

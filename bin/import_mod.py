@@ -20,13 +20,8 @@
 # * get max velocity for sample instrument
 # * get max counter/division value
 # * bound volume values between 0 and max.
-# * sample finetune
-# * don't add unused samples to radium (quite messy)
-# * remove old instruments before generating
-# * Option to remove unused tracks.
+# * re-add continue playing next block for ending notes, and organize tracks so that continuing plaing notes hits the correct track in the next block.
 # * Remove reltempo track
-# * pad samples in kk-song are not looped.
-# * mod volume can't be linearly scaled to radium volume. Mod volume is logarithmic, while radium volume is linear.
 
 from __future__ import division # we always want floating point division
 
@@ -125,15 +120,26 @@ def period_to_note(period):
 class Velocity:
     def __init__(self, linenum, value, do_glide):
         self.linenum = linenum
+        self.counter = 0
+        self.dividor = 1
         self.value = value
         self.do_glide = do_glide
+        
+radium_smallest_tick = 1 / 65534
 
 class Note:
     def __init__(self, tracknum, linenum, samplenum, notenum):
         self.mod_tracknum = tracknum
         self.radium_tracknum = -1 # assigned later
+        
         self.linenum = linenum
+        self.counter = 0
+        self.dividor = 1
+        
         self.end_linenum = -1
+        self.end_counter = 0
+        self.end_dividor = 1
+
         self.samplenum = samplenum
         self.notenum = notenum
         self.velocities = []
@@ -144,12 +150,15 @@ class Note:
             self.pan = 1
         self.effects = []
 
-#    def print_note(self):
+        self.last_volume = 0
+        self.parentnote = None
         
+#    def print_note(self):
+
     # todo: Convert velocity values from 0-64 range to radium range
     def generate(self, pattern):
         
-        if self.linenum==self.end_linenum: # happens if note starts with volume 0.
+        if self.linenum+self.counter/self.dividor == self.end_linenum+self.end_counter/self.end_dividor: # happens if note starts with volume 0.
             return
 
         # 1. find end place
@@ -159,29 +168,55 @@ class Note:
             end_dividor = 65534
         else:
             end_line = self.end_linenum
-            end_counter = 0
-            end_dividor = 1
+            end_counter = self.end_counter
+            end_dividor = self.end_dividor
 
         # 1. create note
         radium_notenum = radium.addNote2(
             self.notenum, self.velocities[0].value * (65536 // 64),
-            self.linenum, 0, 1,
+            self.linenum, self.counter, self.dividor,
             end_line, end_counter, end_dividor,
             -1, -1, self.radium_tracknum
         )
-        
-        # 2. set end note velocity (if necessary)
-        if len(self.velocities) > 0:
-            radium.setVelocity(1, self.velocities[-1].value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
 
+        # comment out. tracks often don't match from block to block, so it creates hanging notes.
+        #radium.setNoteContinueNextBlock(True, radium_notenum, self.radium_tracknum)
+
+        # 2. set end note velocity (if necessary)
+        #        if len(self.velocities) > 0:
+        #    radium.setVelocity(1, self.velocities[-1].value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
+
+        last_volume = 0
         # 3. add velocities
         for velocity in self.velocities:
-            if velocity.linenum > self.linenum and velocity.linenum < self.end_linenum:
-                radium.createVelocity(velocity.value / 64, velocity.linenum, radium_notenum, self.radium_tracknum)
-
+            if velocity.linenum > self.linenum: # and velocity.linenum < self.end_linenum:
+                place = velocity.linenum + velocity.counter/velocity.dividor
+                if velocity.do_glide:
+                    radium.createVelocity(velocity.value / 64, place, radium_notenum, self.radium_tracknum)
+                else:
+                    radium.createVelocity(last_volume / 64, place-radium_smallest_tick, radium_notenum, self.radium_tracknum)
+                    if velocity.linenum==self.end_linenum:
+                        num_velocities = radium.getNumVelocities(radium_notenum, self.radium_tracknum)
+                        radium.setVelocity(num_velocities-1, velocity.value / 64, end_line + (end_counter/end_dividor), radium_notenum, self.radium_tracknum)
+                    else:
+                        radium.createVelocity(velocity.value / 64, place, radium_notenum, self.radium_tracknum)
+                        
+            last_volume = velocity.value
+                    
     def legalize_velocities(self):
         pass
 
+    def set_start_note_based_on_mod_effects(self, pattern):
+        for effect in self.effects:
+            if effect.effectnum==0xe and effect.value1==0xd and effect.linenum==self.linenum:
+                tpd = pattern.get_tpd(effect.linenum)
+                if effect.value2 >= tpd:
+                    value = tpd - 1
+                else:
+                    value = effect.value2
+                self.counter = value
+                self.dividor = tpd
+        
     def set_end_note_based_on_velocities(self):
         last_end_line = -1
 
@@ -190,12 +225,16 @@ class Note:
             if velocity.value==0:
                 if last_end_line == -1:
                     last_end_line = velocity.linenum
+                    last_counter = velocity.counter
+                    last_dividor = velocity.dividor
             else:
                 last_end_line = -1
 
         if last_end_line != -1:
             self.end_linenum = last_end_line
-
+            self.end_counter = last_counter
+            self.end_dividor = last_dividor
+            
     # todo:
     # * End note at last velocity with value 0
     # * Convert values to 0-1
@@ -209,41 +248,59 @@ class Note:
         #    self.samplenum=30
 
         sample = samples[self.samplenum]
-        last_volume = sample.volume
+        if self.parentnote:
+            self.last_volume = self.parentnote.last_volume
+        else:
+            self.last_volume = sample.volume
 
-        self.velocities.append(Velocity(self.linenum, last_volume, False))
+        self.velocities.append(Velocity(self.linenum, self.last_volume, False))
 
         for effect in self.effects:
-            if effect.effectnum==12 or (effect.effectnum==14 and (effect.value1==10 or effect.value1==11)):
-                if effect.effectnum==14 and effect.value1==10:
-                    last_volume = last_volume + effect.value2
-                elif effect.effectnum==14 and effect.value1==11:
-                    last_volume = last_volume - effect.value2
+            if effect.effectnum==0xe and effect.value1==0xc: # cut note
+                self.last_volume = 0
+                tpd = pattern.get_tpd(effect.linenum)
+                if effect.value2 >= tpd:
+                    value = tpd - 1
                 else:
-                    last_volume = effect.value
+                    value = effect.value2
+                    
+                velocity = Velocity(effect.linenum, self.last_volume, False)
+                velocity.counter = value
+                velocity.dividor = tpd
+                self.velocities.append(velocity)
+                
+            elif effect.effectnum==12 or (effect.effectnum==14 and (effect.value1==10 or effect.value1==11 or effect.value1==12)):
+                if effect.effectnum==14 and effect.value1==10:
+                    self.last_volume = self.last_volume + effect.value2
+                elif effect.effectnum==14 and effect.value1==11:
+                    self.last_volume = self.last_volume - effect.value2
+                elif effect.effectnum==14 and effect.value1==12:
+                    self.last_volume = 0
+                else:
+                    self.last_volume = effect.value
 
-                if last_volume < 0:
-                    last_volume = 0
-                elif last_volume > 64: # happens, even for 0xc0 commands. Mikmod calls them ""heavy" volumes" and sets them to 0x40.
-                    last_volume = 64
+                if self.last_volume < 0:
+                    self.last_volume = 0
+                elif self.last_volume > 64: # happens, even for 0xc0 commands. Mikmod calls them ""heavy" volumes" and sets them to 0x40.
+                    self.last_volume = 64
 
                 if effect.linenum==self.linenum:
                     assert(len(self.velocities)==1)
-                    self.velocities[0].value = last_volume # i.e. use custom value for note
+                    self.velocities[0].value = self.last_volume # i.e. use custom value for note
                 else:
-                    self.velocities.append(Velocity(effect.linenum, last_volume, False))
+                    self.velocities.append(Velocity(effect.linenum, self.last_volume, False))
 
             elif effect.effectnum==10 or effect.effectnum==5 or effect.effectnum==6:
                 if effect.value1 > 0:
                     value = effect.value1
                 else:
                     value = -effect.value2
-                next_volume = last_volume + (value * (pattern.get_tpd(effect.linenum) - 1))
-                self.velocities.append(Velocity(effect.linenum, last_volume, False))
+                next_volume = self.last_volume + (value * (pattern.get_tpd(effect.linenum) - 1))
+                self.velocities.append(Velocity(effect.linenum, self.last_volume, False))
                 self.velocities.append(Velocity(effect.linenum+1, next_volume, True))
-                last_volume = next_volume
+                self.last_volume = next_volume
 
-        self.velocities.append(Velocity(self.end_linenum, last_volume, False))
+        self.velocities.append(Velocity(self.end_linenum, self.last_volume, False))
 
         self.set_end_note_based_on_velocities()
 
@@ -251,8 +308,12 @@ class Note:
 
         print("velo",self.velocities)
 
+    def prepare_mod(self, pattern, samples):
+        self.set_start_note_based_on_mod_effects(pattern)
+        self.add_velocities_from_mod_effects(pattern, samples)
+        
     def printit(self):
-        print str(self.samplenum) + ": " + str(self.notenum)
+        print "  add note. "+str(self.samplenum) + ": " + str(self.notenum)
 
 
 class Effect:
@@ -389,9 +450,9 @@ class Pattern:
             if note.end_linenum==-1:
                 note.end_linenum = self.num_lines
 
-    def add_note_velocities_from_mod_effects(self, samples):
+    def prepare_mod(self, samples):
         for note in self.notes:
-            note.add_velocities_from_mod_effects(self, samples)
+            note.prepare_mod(self, samples)
 
     def has_last_note(self, tracknum):
         return self.lastNotes.has_key(tracknum)
@@ -662,6 +723,7 @@ class Sample:
                 print "setInstrumentEffect, orgval: ",self.finetune
                 #radium.showMessage("setInstrumentEffect, orgval: "+str(self.finetune)+", instrument num: "+str(self.instrument_num))
                 radium.setInstrumentEffect(self.instrument_num, "Finetune", scale(self.finetune,-8,7,0.25,0.75))
+                radium.setInstrumentEffect(self.instrument_num, "Release", 2); # We don't hear clicks that well in modules.
 
     def save(self, file, pos):
         homedir = os.path.expanduser("~") # supposed to work on windows too, according to the internet
@@ -733,9 +795,9 @@ class Song:
         self.samples = samples
         self.playlist = playlist
 
-    def add_note_velocities_from_mod_effects(self):
+    def prepare_mod(self):
         for pattern in self.patterns:
-            pattern.add_note_velocities_from_mod_effects(self.samples)
+            pattern.prepare_mod(self.samples)
 
     def add_tempos_from_mod_speeds(self):
         mod_bpm, mod_tpd = (125, 6)
@@ -772,6 +834,9 @@ class Song:
             radium.appendBlock()
 
         self.playlist.generate()
+
+        for a in range(200):
+            radium.selectPrevBlock()
 
 # copied from http://code.activestate.com/recipes/577610-decoding-binary-files/ (Yony Kochinski)
 typeNames = {
@@ -877,25 +942,41 @@ def read_trackline(file, pattern, tracknum, linenum, pos):
 
     #print(hex(byte1))
     #print(hex(byte3))
-    
-    samplenum = (byte1 & 0xf0) + (byte3 >> 4)
-    if samplenum > 0:
-        period = ((byte1 & 0x0f) << 8) + byte2
-        if period==0:
-            if pattern.has_last_note(tracknum):
-                notenum = pattern.last_note(tracknum).notenum
-            else:
-                notenum = 0
-        else:
-            notenum = period_to_note(period)
 
-        if notenum > 0:
-            note = Note(tracknum, linenum, samplenum-1, notenum)
-            pattern.add_note(note)
+    period = ((byte1 & 0x0f) << 8) + byte2
+    samplenum = (byte1 & 0xf0) + (byte3 >> 4)
+            
+    if period > 0 or samplenum > 0:
+
+        parentnote = None
         
-            note.printit()
-#        print "period: "+str(period)
-#        print "samplenum: "+str(samplenum)
+        if samplenum==0:
+            if pattern.has_last_note(tracknum):
+                samplenum = pattern.last_note(tracknum).samplenum
+                parentnote = pattern.last_note(tracknum)
+            else:
+                samplenum = -1
+        else:
+            samplenum -= 1
+            
+        if samplenum != -1:
+            if period==0:
+                if pattern.has_last_note(tracknum):
+                    notenum = pattern.last_note(tracknum).notenum
+                else:
+                    notenum = 0
+            else:
+                notenum = period_to_note(period)
+
+            if notenum > 0:
+                note = Note(tracknum, linenum, samplenum, notenum)
+                note.parentnote = parentnote
+                pattern.add_note(note)
+        
+                note.printit()
+ 
+    print "period: "+str(period)
+    print "samplenum: "+str(samplenum)
 
     effectnum = byte3 & 0x0f
     effectvalue = byte4
@@ -997,33 +1078,48 @@ def read_song(file):
 def generate_from_mod(song):
     song.add_tempos_from_mod_speeds()
 
-    song.add_note_velocities_from_mod_effects()
+    song.prepare_mod()
+
+    radium.newSong()
 
     song.generate()
 
+    radium.resetUndo()
+    
 
 
 def import_mod(filename=""):
+    if filename=="":
+        filename = radium.getLoadFilename("Choose MOD file", "*.mod *.MOD mod.* MOD.*")
+    if not filename or filename=="":
+        return
+
+    try:
+        file = open(filename, "rb")
+
     #file = open("workerstecnopop3.mod", "rb")
     #file = open("/home/kjetil/Downloads/temp/NIAGRA.MOD", "rb")
     #file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
     #file = open("/home/kjetil/Downloads/hoffman_and_daytripper_-_professional_tracker.mod", "rb")
     #file = open("/home/kjetil/Downloads/hoisaga1.mod", "rb")
     #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
-    file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
+    #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
- 
-    song = read_song(file)
 
-    generate_from_mod(song)
+        song = read_song(file)
+
+        generate_from_mod(song)
+        
+    except:
+        radium.showMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no")
 
 
 if __name__ == "__main__":
     #file = open("workerstecnopop3.mod", "rb")
     #file = open("/home/kjetil/Downloads/1990_mix.mod", "rb")
     file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
-    file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
-    file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
+    #file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
+    #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
 
     song = read_song(file)

@@ -1590,7 +1590,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
     goto exit;
 
   // Put loop_onoff into storage.
-  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED);
+  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, data->loop_onoff==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED);
 
   if(SP_is_plugin_running(plugin)){
 

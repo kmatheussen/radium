@@ -604,7 +604,7 @@ static void set_smooth_on_off(Smooth *smooth, bool *on_off, float value, float s
   }
 }
 
-void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required){
+void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
@@ -617,8 +617,11 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int64_t time, int effe
         RWarning_not_prod("PLUGIN_set_effect_value_internal called without holding the player lock");
     }
 
-    plugin->type->set_effect_value(plugin,time,effect_num,value,PLUGIN_FORMAT_SCALED,when);
+    plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
 
+    if (value_format==PLUGIN_FORMAT_NATIVE)
+      store_value = plugin->type->get_effect_value(plugin, effect_num, PLUGIN_FORMAT_SCALED);
+    
   }else{
 
     int num_effects = plugin->type->num_effects;
@@ -1073,7 +1076,7 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
 
   //GFX_Message(NULL, "Going to set %s to %f\n",effect_name,value);
   PLAYER_lock();{
-    PLUGIN_set_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_native_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
 }
 

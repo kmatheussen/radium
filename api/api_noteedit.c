@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Beats_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/undo_notes_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -407,6 +408,23 @@ void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum
   if(note==NULL) return;
 
   PlaceCopy(&note->end, PlaceCreate(line,counter,dividor));
+}
+
+void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+  
+  Undo_Notes(window,
+             wblock->block,
+             wtrack->track,
+             wblock->curr_realline
+             );
+
+  note->noend = continuenextblock?1:0;
 }
 
 int addNote2(float notenum,int velocity,

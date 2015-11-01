@@ -80,18 +80,18 @@ void configVST(int windownum){
   OS_VST_config(window);
 }
 
-const char *getLoadFilename(char *text, char *dir){
+const char *getLoadFilename(char *text, char *filetypes, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const wchar_t *ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), "*.mid *.MID *.midi *.MIDI)");
+  const wchar_t *ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), filetypes);
   if(ret==NULL)
     return "";
   else
     return STRING_get_chars(ret);
 }
 
-const char *getSaveFilename(char *text, char *dir){
+const char *getSaveFilename(char *text, char *filetypes, char *dir){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  const wchar_t *ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), "*.mid *.MID *.midi *.MIDI)");
+  const wchar_t *ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), filetypes);
   if(ret==NULL)
     return "";
   else
