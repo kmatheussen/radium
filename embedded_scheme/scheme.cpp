@@ -58,30 +58,23 @@ static s7_pointer place_to_ratio(const Place *p){
   return ratio;
 }
 
+                           
 static Place *ratio_to_place(s7_pointer ratio){
-  int num = s7_numerator(ratio);
-  int den = s7_denominator(ratio);
+  s7_Int num = s7_numerator(ratio);
+  s7_Int den = s7_denominator(ratio);
 
-  int lines = num/den;
+  Place ret = place_from_64b(num, den);
 
-  Place *ret = PlaceCreate(lines, num - (lines*den), den);
-  PlaceHandleOverflow(ret);
-
-  return ret;
+  return PlaceCreate(ret.line, ret.counter, ret.dividor);
 }
 
 static Place number_to_place(s7_pointer number){
 
   if (s7_is_ratio(number)) {
-    int num = s7_numerator(number);
-    int den = s7_denominator(number);
+    s7_Int num = s7_numerator(number);
+    s7_Int den = s7_denominator(number);
 
-    int lines = num/den;
-    
-    Place ret = place(lines, num - (lines*den), den);
-    PlaceHandleOverflow(&ret);
-    
-    return ret;
+    return place_from_64b(num, den);
   }
 
   if (s7_is_integer(number))

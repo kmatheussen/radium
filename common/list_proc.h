@@ -65,7 +65,7 @@ extern LANGSPEC void ListRemoveElement3(
 
 extern LANGSPEC void ListRemoveElement1(
 	void *listroot,
-	struct ListHeader1 *element
+	const struct ListHeader1 *element
 );
 
 extern LANGSPEC void ListRemoveElements3(

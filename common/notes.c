@@ -159,6 +159,7 @@ void SetEndAttributes(
         	note->noend=1;
 	}
 
+        ValidatePlace(&note->end);
 }
 
 /**************************************************************
@@ -386,6 +387,9 @@ void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Note
   }
 
   set_legal_start_and_end_pos(block, track, note);
+
+  ValidatePlace(&note->l.p);
+  ValidatePlace(&note->end);
 }
 
 

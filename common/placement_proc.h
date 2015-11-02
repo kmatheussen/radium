@@ -35,13 +35,60 @@ static inline Place place(int line, int counter, int dividor) {
   return place;
 }
 
-static inline Place *PlaceCreate(int line, int counter, int dividor) {
-  R_ASSERT(line >= 0);
-  R_ASSERT(counter >= 0);
-  R_ASSERT(counter < dividor);
-  R_ASSERT(dividor > 0);
-  R_ASSERT(dividor <= MAX_UINT32);
+static inline void ValidatePlace(const Place *place){
+  R_ASSERT(place->line >= 0);
+  R_ASSERT(place->counter >= 0);
+  R_ASSERT(place->counter < place->dividor);
+  R_ASSERT(place->dividor > 0);
+  R_ASSERT(place->dividor <= MAX_UINT32);
+}
+
+static inline Place place_from_64(int64_t line, int64_t num, int64_t den){
+
+  R_ASSERT(den > 0);
   
+  while(num > den) {
+    line++;
+    num -= den;
+  }
+
+  while(num < 0){
+    line--;
+    num += den;
+  }
+
+  R_ASSERT(line >= 0);
+  R_ASSERT(line < INT_MAX);
+
+  Place ret;
+  
+  if (den > MAX_UINT32) {
+    int counter = scale_double(num, 0, den, 0, MAX_UINT32);
+    int dividor = MAX_UINT32;
+
+    if (counter >= dividor)
+      ret = place(line+1, 0, 1);
+    else
+      ret = place(line, counter, dividor);
+    
+  } else {
+    
+    ret = place(line, num, den);
+    
+  }
+
+  ValidatePlace(&ret);
+  
+  return ret;
+}
+
+static inline Place place_from_64b(int64_t num, int64_t den){
+  int64_t lines = num/den;
+
+  return place_from_64(lines, num - (lines*den), den);
+}
+
+static inline Place *PlaceCreate(int line, int counter, int dividor) {  
   Place *place=(Place*)talloc(sizeof(Place));  
   place->line = line;
   place->counter = counter;

@@ -75,6 +75,8 @@ void ListAddElement3(
 
 	if(element==NULL) return;
 
+        ValidatePlace(&element->p);
+                
 	/* According to profiling, this function used quite a bit of time,
 	   and by adding the next four lines, it seems to be a bit better. */
 	while(temp!=NULL && temp->p.line < element->p.line){
@@ -109,6 +111,8 @@ void ListAddElement3_a(
 	struct ListHeader3 *prev=NULL;
 	struct ListHeader3 *temp=listroot->root;
 
+        ValidatePlace(&element->p);
+        
 	if(element==NULL) return;
 
 	while(temp!=NULL){
@@ -298,13 +302,13 @@ void ListRemoveElement1_fromNum(
   ListRemoveElement3_fromNum(voidlistroot,num);
 }
 
-void ListRemoveElement3(
+void ListRemoveElement1(
 	void *voidlistroot,
-	const struct ListHeader3 *element
+	const struct ListHeader1 *element
 ){
-	struct ListHeaderPointer3 *listroot=voidlistroot;
-	struct ListHeader3 *temp=listroot->root;
-	struct ListHeader3 *prev=NULL;
+	struct ListHeaderPointer1 *listroot=voidlistroot;
+	struct ListHeader1 *temp=listroot->root;
+	struct ListHeader1 *prev=NULL;
 
 	if(temp==element){
                 R_ASSERT_RETURN_IF_FALSE(element!=NULL);
@@ -322,11 +326,13 @@ void ListRemoveElement3(
 	}
 }
 
-void ListRemoveElement1(
+void ListRemoveElement3(
 	void *voidlistroot,
-	struct ListHeader1 *element
+	const struct ListHeader3 *element
 ){
-	ListRemoveElement3(voidlistroot,(struct ListHeader3 *)element);
+        ValidatePlace(&element->p);
+        
+	ListRemoveElement1(voidlistroot,(struct ListHeader1 *)element);
 }
 
 /*****************************************************************************
@@ -343,6 +349,9 @@ void ListRemoveElements3(
 	struct ListHeader3 *l=listroot->root;
 	struct ListHeader3 *temp;
 
+        ValidatePlace(p1);
+        ValidatePlace(p2);
+        
 	while(l!=NULL){
 		temp=l->next;
 		if(PlaceIsBetween2(&l->p,p1,p2)){
@@ -377,6 +386,11 @@ void ListMoveElement3_ns(
   struct ListHeader3 *next = element->next;
   struct ListHeader3 *l=listroot->root;
 
+  ValidatePlace(&element->p);
+  ValidatePlace(newplace);
+  ValidatePlace(firstlegalpos);
+  ValidatePlace(lastlegalpos);
+  
   while(l!=element){    
     prev = l;
     R_ASSERT_RETURN_IF_FALSE(l!=NULL);
@@ -406,7 +420,11 @@ struct ListHeader3 *ListMoveElement3_FromNum_ns(
                                                 const Place *lastlegalpos
 ){
   const struct ListHeaderPointer3 *listroot=voidlistroot;
-  
+
+  ValidatePlace(newplace);
+  ValidatePlace(firstlegalpos);
+  ValidatePlace(lastlegalpos);
+
   struct ListHeader3 *element = ListFindElement3_num(listroot->root, num);
   if (element!=NULL)
     ListMoveElement3_ns(voidlistroot, element, newplace, firstlegalpos, lastlegalpos);
@@ -426,6 +444,8 @@ int ListAddElement3_ns(
 ){
 	if(element==NULL) return -1;
 
+        ValidatePlace(&element->p);
+          
         struct ListHeaderPointer3 *listroot=voidlistroot;
 
 	ListAddElement3(listroot,element);
@@ -525,6 +545,8 @@ void *ListFindElement3(
 	const struct ListHeader3 *element,
 	const Place *placement
 ){
+  ValidatePlace(placement);
+  
 	for(;element!=NULL;element=element->next)
           if(p_Greater_Or_Equal(element->p,*placement))
             return (void*)element;
@@ -671,6 +693,8 @@ void CutListAt(void *listroot,Place *place){
 	struct ListHeaderPointer3 *root=(struct ListHeaderPointer3 *)listroot;
 	struct ListHeader3 *element=root->root;
 
+        ValidatePlace(place);
+          
 	if(element==NULL) return;
 
 	if(PlaceGreaterOrEqual(&element->p,place)){
@@ -693,6 +717,8 @@ void CutListAt(void *listroot,Place *place){
 
 /* Nearly the same, except that it cuts first one that is placed _after_ 'place' */
 void CutListAt_a(void *listroot,Place *place){
+  ValidatePlace(place);
+          
 	struct ListHeaderPointer3 *root=(struct ListHeaderPointer3 *)listroot;
 	struct ListHeader3 *element=root->root;
 
@@ -742,6 +768,8 @@ int ListPosition3(struct ListHeader3 *list,
                   struct ListHeader3 *element
                   )
 {
+  ValidatePlace(&element->p);
+          
   int ret = 0;
   while(list!=element) {
     ret++;

@@ -78,30 +78,8 @@ void PlaceCopy(Place *p1,  Place *p2){
 ************************************************************/
 void PlaceHandleOverflow(Place *p){
 
-	while(p->counter>=p->dividor){
-		p->line++;
-		p->counter-=p->dividor;
-	}
-
-	if(p->dividor>=MAX_UINT32){
-		if(p->counter>=MAX_UINT32){
-			p->counter=
-				(uint_32)(
-					(float)(
-						(float)(p->counter)*
-						(float)(MAX_UINT32)/
-						(float)(p->dividor)
-					)
-					);
-		}else{
-			p->counter=(p->counter*MAX_UINT32)/p->dividor;
-		}
-		p->dividor=MAX_UINT32;
-		if(p->counter>=p->dividor){
-			fprintf(stderr,"Error in function PlaceHandleOverflow in file placement.c\n");
-		}
-	}
-
+  *p = place_from_64(p->line, p->counter, p->dividor);
+  
 }
 
 
