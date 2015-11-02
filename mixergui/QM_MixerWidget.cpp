@@ -1409,6 +1409,7 @@ static bool delete_a_chip(){
 }
 
 void MW_cleanup(void){
+  MW_cleanup_connections(); // All connecting connections are deleted when deleting a chip as well, but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
   while(delete_a_chip()); // remove all chips. All connections are removed as well when removing all chips.
 }
 
