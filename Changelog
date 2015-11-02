@@ -1,3 +1,8 @@
+Changes 3.4.0 -> 3.4.1:
+* Fix internal ratio bug (less warnings, and probably bugs)
+* Speed up clearing the mixer. Loading a new song only takes a couple of seconds now.
+
+
 Changes 3.3.9 -> 3.4.0:
 * Fix import large MIDI files in windows
 * crashreporter: Ask linux users not to report bugs caused by non-properly compiled versions of Radium

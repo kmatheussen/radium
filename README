@@ -1,7 +1,7 @@
 
 
-Radium V3.4.0
-Released 2015-11-01
+Radium V3.4.1
+Released 2015-11-02
 
 
 
@@ -27,7 +27,7 @@ IF YOU GOT THE SOURCE FROM GIT
 
           touch audio/*.cpp common/gfx_op_queue_generated.c common/visual_op_queue_proc.h
 
-   And after a git pull, you must do:
+   And after a git pull, you must (i.e. sometimes have to) do:
           make very_clean
 
      (since not all dependencies are tracked in the makefile)
