@@ -482,6 +482,17 @@ void importMod(void){
   PyRun_SimpleString("import_mod.import_mod()");
 }
 
+void importXM(void){
+  static bool imported=false;
+  if(imported==false){
+    PyRun_SimpleString("import import_xm");
+    imported=true;
+  }else
+    PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
+
+  PyRun_SimpleString("import_mod.import_xm()");
+}
+
 void insertTracks(int numtracks,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   InsertTracks_CurrPos(window,(NInt)numtracks);

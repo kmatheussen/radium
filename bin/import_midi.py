@@ -24,14 +24,13 @@ import sys,os
 class NullWriter(object):
     def write(self, value): pass
 
-if os.isatty(1):
-    sys.stdout = sys.stderr = NullWriter()
-
 
 if __name__ == "__main__" or sys.g_program_path=='__main__':
     sys.path.append("python-midi")
 else:
     sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
+    if os.isatty(1):
+        sys.stdout = sys.stderr = NullWriter()
 
 import src as midi
 
@@ -66,6 +65,13 @@ class RadiumMock:
     def setInstrumentEffect(self, instrument_num, effect_name, value):
         print "setInstrumentEffect ",instrument_num,effect_name,value
 
+    def showMessage(self, message):
+        print "MESSAGE: "+message
+
+    def getNumVelocities(self, *args):
+        return 2
+
+
 def get_radium_mock():
     radium = RadiumMock()
     radium.addNote = radium.addNote
@@ -93,6 +99,8 @@ def get_radium_mock():
     radium.setPlaylistLength = radium.dummy
     radium.minimizeBlockTracks = radium.dummy
     radium.setVelocity = radium.dummy
+    radium.newSong = radium.dummy
+    radium.resetUndo = radium.dummy
     return radium
 
 if __name__ == "__main__" or sys.g_program_path=='__main__':

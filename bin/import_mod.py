@@ -25,6 +25,8 @@
 
 from __future__ import division # we always want floating point division
 
+
+
 import sys, os, filecmp, traceback
 import struct, copy
 import wave
@@ -33,13 +35,15 @@ import wave
 class NullWriter(object):
     def write(self, value): pass
 
-if os.isatty(1):
-    sys.stdout = sys.stderr = NullWriter()
-
 
 
 if __name__ == "__main__":
     sys.g_program_path = '__main__' # hack to be able to import import_midi
+else:
+    if os.isatty(1):
+        sys.stdout = sys.stderr = NullWriter()
+
+print "hello"
 
 import import_midi # some helper methods there
 
@@ -50,6 +54,8 @@ if __name__ == "__main__":
     radium = import_midi.get_radium_mock()
 else:
     import radium
+
+
 
 # table copied from the MikMod source
 numchanneldict = {
@@ -692,6 +698,18 @@ def find_free_wav_filename(base_filename):
 
     return similars,filename
 
+def find_free_xi_filename(base_filename):
+    filename = base_filename+".xi"
+    num = 2
+    similars = []
+
+    while os.path.exists(filename):
+        similars.append(filename)
+        filename = base_filename + str(num) + ".xi"
+        num += 1
+
+    return similars,filename
+
 def clean_filename_char(c):
     if c.isalnum():
         return c
@@ -777,6 +795,122 @@ class Sample:
 
         self.filename = filename
 
+def filecopy(infile, inpos, outfile, size):
+    for i in range(size):
+        byte = read_uint8(infile, inpos+i)
+        write_uint8(outfile, byte)
+
+class Xi:
+    def __init__(self, name):
+        self.name = name
+        self.instrument_num = -1
+        self.volume = 64 # should never be used
+        self.filename = ""
+
+    def generate(self):
+        if self.filename != "": # and self.num_samples>0:
+            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name)
+            radium.setInstrumentSample(self.instrument_num, self.filename)
+
+    def save(self, file, pos):
+
+        homedir = os.path.expanduser("~") # supposed to work on windows too, according to the internet
+        base_dir = os.path.join(homedir, ".radium", "xm_xi")
+
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+
+        base_filename = os.path.join(base_dir, clean_filename(self.name))
+
+        similars,filename = find_free_xi_filename(base_filename)
+
+        file.seek(pos)
+        print "pos before",file.tell()
+        assert(file.tell()==pos)
+
+        xifile = open(filename, "wb")
+
+        xifile.write("Extended Instrument: ")
+
+        # name
+        xifile.seek(0x15)
+        xifile.write("                      ")
+        xifile.seek(0x15)
+        xifile.write(self.name)
+
+        # $1a
+        xifile.seek(0x2b)
+        write_uint8(xifile, 0x1a)
+
+        # tracker name
+        xifile.seek(0x2c)
+        xifile.write("                      ")
+        xifile.seek(0x2c)
+        xifile.write("Radium                                                                          ") # fix. just copy
+
+        # version
+        xifile.seek(0x40)
+        write_le16(xifile, 0x0102)
+
+        # instrument header
+        filecopy(file, pos+33, xifile, 241 - 33)
+        assert(241-33 == 0x112-0x42)
+
+        print "ai",hex(xifile.tell())
+
+        # reserved data
+        for i in range(0x16):
+            write_uint8(xifile, 0)
+
+        print "ai2",hex(xifile.tell())
+
+        # num_samples
+        num_samples = read_le16(file, pos+27)
+        filecopy(file, pos+27, xifile, 2)
+
+        #if "Composed" in self.name:
+        #    print "num_samples: ",num_samples,hex(xifile.tell())
+        #    assert(False)
+
+        #sample_header_size_in = read_le32(file, 29)
+        sample_header_size_out = 0x28
+
+        #print "hepp:",num_samples,sample_header_size_in,sample_header_size_out
+        #assert(sample_header_size_in == sample_header_size_out)
+
+        instrument_header_size = read_le32(file, pos)
+        pos += instrument_header_size
+
+        # sample headers
+        num_bytess = []
+        for sample_num in range(num_samples):
+            sampleheaderpos = pos + sample_num*sample_header_size_out
+            is_16bit = read_uint8(file, sampleheaderpos + 14) & 16
+            sample_length = read_le32(file, sampleheaderpos)
+            if is_16bit:
+                num_bytess.append(sample_length*2)
+            else:
+                num_bytess.append(sample_length)
+            filecopy(file, sampleheaderpos, xifile, sample_header_size_out)
+
+        pos += num_samples*sample_header_size_out
+        for sample_num in range(num_samples):
+            num_bytes = num_bytess[sample_num]
+            filecopy(file, pos, xifile, num_bytes)
+            pos += num_bytes
+            print "num_bytes",num_bytes
+            #sys.stdin.read(1)
+
+        xifile.close()
+
+        for similar in similars:
+            if filecmp.cmp(similar, filename):
+                os.remove(filename)
+                filename = similar
+                break
+
+        self.filename = filename
+        
 
 class Playlist:
     def __init__(self, patternnums):
@@ -869,11 +1003,32 @@ def read_uint8(file, start):
     c = file.read(1)
     return unpack(c, 'uint8')
 
+def write_uint8(file, byte):
+    file.write(struct.pack('B', byte))
+
+def write_le16(file, word):
+    b1 = word >> 8
+    b2 = word & 0xff
+    write_uint8(file, b2)
+    write_uint8(file, b1)
+
 def read_bigendian16(file, start):
     b1 = read_uint8(file, start)
     b2 = read_uint8(file, start+1)
     return (b1 << 8) + b2
 
+def read_le16(file, start):
+    b1 = read_uint8(file, start)
+    b2 = read_uint8(file, start+1)
+    return (b2 << 8) + b1
+    
+def read_le32(file, start):
+    b1 = read_uint8(file, start)
+    b2 = read_uint8(file, start+1)
+    b3 = read_uint8(file, start+2)
+    b4 = read_uint8(file, start+3)
+    return (b4 << 24) + (b3 << 16) + (b2 << 8) + b1
+    
 def read_string(file, start, length):
     file.seek(start)
     ret = ""
@@ -914,6 +1069,27 @@ def read_sample(file, pos):
 
     return Sample(name, num_samples, finetune, volume, loop_start, loop_length)
 
+def read_xi(file, instrument_num, pos):
+    org_pos = pos
+    instrument_header_size = read_le32(file, pos)
+    name = read_string(file, pos+4, 22)
+    num_samples = read_le16(file, pos+27)
+
+    print "***** instrument ",instrument_num,"size:",instrument_header_size,"num_samples:",num_samples,", name: -"+name+"-"
+
+    pos += instrument_header_size
+    for sample_num in range(num_samples):
+        sample_length = read_le32(file,pos)
+        print("sample_length: ",sample_length)
+        #sys.stdin.read(1)
+        pos += 40 + sample_length
+
+    #assert(False)
+
+    xi = Xi(name)
+    xi.save(file, org_pos)
+
+    return xi, pos
 
 def read_samples(file, pos):
     samples = []
@@ -1019,6 +1195,116 @@ def read_pattern(file, num_channels, patternnum, pos):
 
     return pattern
 
+def read_xm_trackline(file, pattern, tracknum, linenum, pos):
+    notenum = 0
+    samplenum = 0
+    volume = 0
+    effectnum = 0
+    effectvalue = 0
+
+    byte1 = read_uint8(file, pos)
+    pos += 1
+
+    if byte1 & 0x80:
+        if byte1 & 0x01:
+            notenum = read_uint8(file, pos)
+            pos += 1
+	if byte1 & 0x02:
+	    samplenum = read_uint8(file, pos)
+            pos += 1
+        if byte1 & 0x04:
+	    volume = read_uint8(file, pos)
+            pos += 1
+        if byte1 & 0x08:
+	    effectnum = read_uint8(file, pos)
+            pos += 1
+	if byte1 & 0x10:
+	    effectvalue = read_uint8(file, pos)
+            pos += 1
+    else:
+        notenum = byte1
+        samplenum = read_uint8(file, pos)
+        pos += 1
+        volume = read_uint8(file, pos)
+        pos += 1
+        effectnum = read_uint8(file, pos)
+        pos += 1
+        effectvalue = read_uint8(file, pos)
+        pos += 1
+
+        
+    if notenum > 0 or samplenum > 0:
+
+        parentnote = None
+        
+        if samplenum==0:
+            if pattern.has_last_note(tracknum):
+                samplenum = pattern.last_note(tracknum).samplenum
+                parentnote = pattern.last_note(tracknum)
+            else:
+                samplenum = -1
+        else:
+            samplenum -= 1
+            
+        if samplenum != -1:
+            if notenum==0:
+                if pattern.has_last_note(tracknum):
+                    notenum = pattern.last_note(tracknum).notenum
+                else:
+                    notenum = 0
+
+            if notenum > 0:
+                note = Note(tracknum, linenum, samplenum, notenum)
+                note.parentnote = parentnote
+                pattern.add_note(note)
+        
+                note.printit()
+ 
+    #print "period: "+str(period)
+    #print "samplenum: "+str(samplenum)
+
+    if effectnum>0:
+        print "effect: "+str(effectnum)+", "+str(effectvalue)
+
+    if effectnum==15:
+        pattern.add_mod_speed(ModSpeed(linenum, effectvalue))
+
+    elif effectnum==11 or effectnum==13:
+        pattern.num_lines = linenum+1
+
+    elif effectnum>0:
+        pattern.add_effect(Effect(tracknum, linenum, effectnum, effectvalue))
+
+    #print "**************** track/line "+str(tracknum)+"/"+str(linenum)+": ",hex(byte1),notenum,samplenum,volume,effectnum,effectvalue
+
+    return pos
+
+def read_xm_pattern(file, num_channels, patternnum, pos):
+    header_length = read_le32(file, pos)
+    print "header_length",header_length,pos
+
+    num_lines = read_le16(file, pos+5)
+    pattern_data_size = read_le16(file, pos+7)
+    return_pos = pos + header_length + pattern_data_size
+    
+    print "num_lines / num_channels: ",num_lines,num_channels
+
+    pos += header_length
+
+    pattern = Pattern(patternnum, num_channels, "Pattern "+str(patternnum))
+    pattern.num_lines = num_lines
+
+    for linenum in range(num_lines):
+        #if linenum == pattern.num_lines: # in case there is a note end command
+        #    break
+
+        for ch in range(num_channels):
+            pos = read_xm_trackline(file, pattern, ch, linenum, pos)
+
+    print "pos,return_pos",pos,return_pos
+
+    return (pattern, return_pos)
+
 
 def read_patterns(file, num_channels, num_patterns, pos):
     patterns = []
@@ -1027,6 +1313,16 @@ def read_patterns(file, num_channels, num_patterns, pos):
         pattern = read_pattern(file, num_channels, patternnum, pos)
         patterns.append(pattern)
         pos += 64 * 4 * num_channels
+
+    return (patterns, pos)
+
+
+def read_xm_patterns(file, num_channels, num_patterns, pos):
+    patterns = []
+
+    for patternnum in range(num_patterns):
+        (pattern, pos) = read_xm_pattern(file, num_channels, patternnum, pos)
+        patterns.append(pattern)
 
     return (patterns, pos)
 
@@ -1083,6 +1379,77 @@ def read_song(file):
     return song
 
 
+def read_xm_song(file):
+    reset_bpm()
+
+    pos = 0
+    id = read_string(file, pos, 17) # must be 'Extended module: '
+    print "id: -"+id+"-"
+    pos += 17
+
+    name = read_string(file, pos, 20)
+    print "name: ",name
+    pos += 20
+
+    pos += 1 # $1a (?)
+
+    tracker_name = read_string(file, pos, 20)
+    print "tracker_name: ",tracker_name
+    pos += 20
+
+    version_number = read_le16(file, pos)
+    print "version_number: ",hex(version_number)
+    pos += 2
+
+    header_size = read_le32(file, pos)
+    print "header_size: ",header_size
+    pos += 4
+
+    song_length = read_le16(file, pos)
+    print "song_length: ",song_length
+    pos += 2
+
+    pos += 2 # restart_position
+
+    num_channels = read_le16(file, pos)
+    pos += 2
+
+    num_patterns = read_le16(file, pos)
+    pos += 2
+    print "num_patterns",num_patterns
+
+    num_instruments = read_le16(file, pos)
+    pos += 2
+
+    pos += 2 # flags
+    
+    default_tempo = read_le16(file, pos)
+    pos += 2
+
+    default_bpm = read_le16(file, pos)
+    pos += 2
+
+    patternnums = []
+    for p in range(song_length):
+        patternnums.append(read_uint8(file, pos+p))
+    pos += 256
+    print "patternnums", patternnums
+    playlist = Playlist(patternnums)
+
+    (patterns, pos) = read_xm_patterns(file, num_channels, num_patterns, pos)
+
+    instruments = []
+
+    for instrument_num in range(num_instruments):
+        print "reading instr",instrument_num,pos
+        (instrument, pos) = read_xi(file, instrument_num, pos)
+        instruments.append(instrument)
+
+    song = Song(name, patterns, instruments, playlist)
+
+    return song
+
+
 def generate_from_mod(song):
     song.add_tempos_from_mod_speeds()
 
@@ -1095,8 +1462,40 @@ def generate_from_mod(song):
     radium.resetUndo()
     
 
+def import_xm(filename=""):
+    if filename=="":
+        filename = radium.getLoadFilename("Choose XM file (unstable)", "*.xm *.XM")
+    if not filename or filename=="":
+        return
+
+    try:
+        file = open(filename, "rb")
+
+        #file = open("workerstecnopop3.mod", "rb")
+        #file = open("/home/kjetil/Downloads/temp/NIAGRA.MOD", "rb")
+        #file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
+        #file = open("/home/kjetil/Downloads/hoffman_and_daytripper_-_professional_tracker.mod", "rb")
+        #file = open("/home/kjetil/Downloads/hoisaga1.mod", "rb")
+        #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
+        #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
+        #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
+
+        song = read_xm_song(file)
+
+        #generate_from_xm(song)
+        generate_from_mod(song)
+        
+    except:
+        e = sys.exc_info()[0]
+        message = traceback.format_exc()
+        radium.showMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+        #        for m in message.split("\n"):
+        radium.showMessage(message)
 
 def import_mod(filename=""):
+    #import_xm(filename)
+    #return
+
     if filename=="":
         filename = radium.getLoadFilename("Choose MOD file", "*.mod *.MOD mod.* MOD.*")
     if not filename or filename=="":
@@ -1127,15 +1526,15 @@ def import_mod(filename=""):
 
 
 if __name__ == "__main__":
+    print "hmm"
     #file = open("workerstecnopop3.mod", "rb")
     #file = open("/home/kjetil/Downloads/1990_mix.mod", "rb")
-    file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
+    #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
     #file = open("/home/kjetil/Downloads/GODZILLA.MOD", "rb")
     #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
-
-    song = read_song(file)
-
-    generate_from_mod(song)
+    #import_mod("/home/kjetil/Downloads/velcoitytest.mod")
+    import_xm("/home/kjetil/Downloads/DEADLOCK.XM")
+    #import_xm("/home/kjetil/Downloads/xmtest.xm")
 
 
