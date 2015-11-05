@@ -1,3 +1,8 @@
+Changes 3.4.1 -> 3.4.2:
+* Importing fasttracker modules (xm). Quite buggy for now.
+* Fix common crash introduced in 3.4.1
+
+
 Changes 3.4.0 -> 3.4.1:
 * Fix internal ratio bug (less warnings, and probably bugs)
 * Speed up clearing the mixer. Loading a new song only takes a couple of seconds now.
