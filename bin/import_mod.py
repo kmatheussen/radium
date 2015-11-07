@@ -327,7 +327,8 @@ class Note:
         self.add_velocities_from_mod_effects(pattern, samples)
         
     def printit(self):
-        print "  add note. "+str(self.samplenum) + ": " + str(self.notenum)
+        pass
+        #print "  add note. "+str(self.samplenum) + ": " + str(self.notenum)
 
 
 class Effect:
@@ -769,6 +770,10 @@ class Sample:
         print "name:", self.name, ", num_bytes: ",self.num_bytes(), "loop start/length:",self.loop_start,self.loop_length
 
         data = file.read(self.num_bytes())
+        if c=="":
+            print "Premature end of file. pos:",pos
+            raise
+
         print "pos after",file.tell()
         num_bytes_read = file.tell() - pos
 
@@ -951,7 +956,12 @@ class Song:
 
         # first generate those patterns that belongs to a playlist. We know more about tempo here.
         for patternnum in self.playlist.patternnums:
-            pattern = self.patterns[patternnum]
+            print "patternnum",patternnum
+            if patternnum >= len(self.patterns):
+                pattern = Pattern(patternnum, 8, "Pattern "+str(patternnum)) # The xm format is a little bit strange this way
+                self.patterns.append(pattern)
+            else:
+                pattern = self.patterns[patternnum]
             new_patternnum, mod_bpm, mod_tpd = pattern.add_tempos_from_mod_speeds(self, mod_bpm, mod_tpd)
             new_playlist_patternnums.append(new_patternnum)
 
@@ -1001,6 +1011,9 @@ def unpack(data, typename):
 def read_uint8(file, start):
     file.seek(start)
     c = file.read(1)
+    if c=="":
+        print "Premature end of file. pos:",start
+        raise
     return unpack(c, 'uint8')
 
 def write_uint8(file, byte):
@@ -1165,8 +1178,8 @@ def read_trackline(file, pattern, tracknum, linenum, pos):
     effectnum = byte3 & 0x0f
     effectvalue = byte4
 
-    if effectnum>0:
-        print "effect: "+str(effectnum)+", "+str(effectvalue)
+    #if effectnum>0:
+    #    print "effect: "+str(effectnum)+", "+str(effectvalue)
 
     if effectnum==15:
         pattern.add_mod_speed(ModSpeed(linenum, effectvalue))
@@ -1263,8 +1276,8 @@ def read_xm_trackline(file, pattern, tracknum, linenum, pos):
     #print "period: "+str(period)
     #print "samplenum: "+str(samplenum)
 
-    if effectnum>0:
-        print "effect: "+str(effectnum)+", "+str(effectvalue)
+    #if effectnum>0:
+    #    print "effect: "+str(effectnum)+", "+str(effectvalue)
 
     if effectnum==15:
         pattern.add_mod_speed(ModSpeed(linenum, effectvalue))
@@ -1534,7 +1547,7 @@ if __name__ == "__main__":
     #file = open("/home/kjetil/Downloads/knulla-kuk.mod", "rb")
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #import_mod("/home/kjetil/Downloads/velcoitytest.mod")
-    import_xm("/home/kjetil/Downloads/DEADLOCK.XM")
-    #import_xm("/home/kjetil/Downloads/xmtest.xm")
+    #import_xm("/home/kjetil/Downloads/DEADLOCK.XM")
+    import_xm("/home/kjetil/Downloads/xmtest2.xm")
 
 

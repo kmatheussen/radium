@@ -471,25 +471,22 @@ void importMidi(void){
   PyRun_SimpleString("import_midi.import_midi()");
 }
 
-void importMod(void){
+static void import_importmod_file(void){
   static bool imported=false;
   if(imported==false){
     PyRun_SimpleString("import import_mod");
     imported=true;
   }else
     PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
+}
 
+void importMod(void){
+  import_importmod_file();
   PyRun_SimpleString("import_mod.import_mod()");
 }
 
 void importXM(void){
-  static bool imported=false;
-  if(imported==false){
-    PyRun_SimpleString("import import_xm");
-    imported=true;
-  }else
-    PyRun_SimpleString("import_mod=reload(import_mod)"); // Avoid having to restart radium if code is changed. Practical during development. No practical impact on performance either.
-
+  import_importmod_file();
   PyRun_SimpleString("import_mod.import_xm()");
 }
 
