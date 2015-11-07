@@ -886,18 +886,17 @@ class Xi:
         instrument_header_size = read_le32(file, pos)
         pos += instrument_header_size
 
-        # sample headers
+        # save sample headers
         num_bytess = []
         for sample_num in range(num_samples):
             sampleheaderpos = pos + sample_num*sample_header_size_out
-            is_16bit = read_uint8(file, sampleheaderpos + 14) & 16
+            #is_16bit = read_uint8(file, sampleheaderpos + 14) & 16
             sample_length = read_le32(file, sampleheaderpos)
-            if is_16bit:
-                num_bytess.append(sample_length*2)
-            else:
-                num_bytess.append(sample_length)
+            num_bytess.append(sample_length)
+            #print "is_16bit: ",is_16bit,sample_length
             filecopy(file, sampleheaderpos, xifile, sample_header_size_out)
 
+        # save the samples
         pos += num_samples*sample_header_size_out
         for sample_num in range(num_samples):
             num_bytes = num_bytess[sample_num]
@@ -1548,6 +1547,7 @@ if __name__ == "__main__":
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #import_mod("/home/kjetil/Downloads/velcoitytest.mod")
     #import_xm("/home/kjetil/Downloads/DEADLOCK.XM")
-    import_xm("/home/kjetil/Downloads/xmtest2.xm")
+    #import_xm("/home/kjetil/Downloads/xmtest2.xm")
+    import_xm("/home/kjetil/radium/bin/xmtest.xm")
 
 
