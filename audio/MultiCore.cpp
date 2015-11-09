@@ -1,13 +1,6 @@
 // This file is not compiled directly, but #included into SoundProducer.cpp
 
 
-#include <boost/version.hpp>
-#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
-  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.gz ; tar xvzf boost_1_58_0.tar.gz (that's it!)"
-#endif
-#include <boost/lockfree/queue.hpp>
-
-
 #include <QThread>
 #include <QAtomicInt>
 
@@ -17,6 +10,7 @@
 #include "../common/stacktoucher_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/Semaphores.hpp"
+#include "../common/Queue.hpp"
 
 #include "../common/OS_Player_proc.h"
 
@@ -37,32 +31,19 @@ static const char *settings_key = "num_cpus";
 
 static radium::Semaphore all_sp_finished;
 
-static radium::Semaphore sp_ready;
 static QAtomicInt num_sp_left(0);
 
 #define MAX_NUM_SP 8192
 
-static boost::lockfree::queue<SoundProducer*,boost::lockfree::capacity<MAX_NUM_SP>> ready_soundproducers;
-
-static void schedule_sp(SoundProducer *sp){
-  while(!ready_soundproducers.bounded_push(sp))
-    ;
-  //fprintf(stderr, "*** inline scheduling %s (from %s)\n",sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,parent->_plugin->patch==NULL?"<null>":parent->_plugin->patch->name);
-  //fflush(stderr);
-  sp_ready.signal();
-}
+static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
 
 static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp){
   if (!sp->num_dependencies_left.deref())
-    schedule_sp(sp);
+    soundproducer_queue.put(sp);
 }
 
-static void process_next_soundproducer(int64_t time, int num_frames, bool process_plugins){
+static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
 
-  SoundProducer *sp = NULL;
-  bool success = ready_soundproducers.pop(sp);
-      
-  R_ASSERT(success);
   R_ASSERT(sp!=NULL);
 
   //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
@@ -131,15 +112,14 @@ public:
     can_start_main_loop.wait();
 
     while(true){
-
-      sp_ready.wait();
-
+      
+      SoundProducer *sp = soundproducer_queue.get();
       if (must_exit) {
-        sp_ready.signal();
+        soundproducer_queue.put(sp);
         break;
       }
-
-      process_next_soundproducer(time, num_frames, process_plugins);
+            
+      process_soundproducer(sp, time, num_frames, process_plugins);
     }
 
 
@@ -160,8 +140,8 @@ private slots:
 static void process_single_core(int64_t time, int num_frames, bool process_plugins){
   while( num_sp_left>0 ) {
     // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
-    sp_ready.wait();
-    process_next_soundproducer(time, num_frames, process_plugins);
+    SoundProducer *sp = soundproducer_queue.get();    
+    process_soundproducer(sp, time, num_frames, process_plugins);
   }
 
   R_ASSERT(all_sp_finished.numSignallers()==1);
@@ -226,7 +206,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
       num_ready_sp++;
       //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
       //fflush(stderr);
-      schedule_sp(sp);
+      soundproducer_queue.put(sp);
     }
 
 

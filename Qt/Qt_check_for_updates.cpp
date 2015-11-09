@@ -5,10 +5,25 @@
 #include <QMessageBox>
 #include <QApplication>
 
+#ifndef TEST_MAIN
+
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
-
 #include "../OpenGL/Widget_proc.h"
+
+#else
+#include <assert.h>
+
+static void RError(const char *fmt, const char *arg){
+  fprintf(stderr, "RError ");
+  fprintf(stderr, fmt, arg);
+}
+#define R_ASSERT_RETURN_IF_FALSE2(a,b) assert(a)
+
+static void GL_lock(void){}
+static void GL_unlock(void){}
+#endif
+
 
 
 
@@ -44,6 +59,7 @@ static bool hasNewer(QString newestversion, QString thisversion){
   return a > b;
 }
 
+#ifndef TEST_MAIN
 static QString last_informed_version(void){
   return SETTINGS_read_string("latest_informed_update_version", "");
 }
@@ -51,9 +67,18 @@ static QString last_informed_version(void){
 static void set_last_informed_version(QString version){
   SETTINGS_write_string("latest_informed_update_version", version.toUtf8().constData());
 }
+#else
+#define VERSION "2.0.0"
+static QString last_informed_version(void){
+  return "9.9.9";
+}
+
+static void set_last_informed_version(QString version){}
+#endif
 
 static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
-
+  fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), VERSION, last_informed_version().toUtf8().constData());
+  //abort();
   if (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion) {
     printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
     GL_lock();{

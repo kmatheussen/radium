@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/undo_notes_proc.h"
+#include "../common/visual_proc.h"
 
 #include "api_common_proc.h"
 #include "api_support_proc.h"
@@ -348,11 +349,15 @@ int addSignature(int numerator, int denominator,
 {
   struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
   if(wblock==NULL) {
-    RError("unknown block(%p)",blocknum);
+    GFX_Message(NULL, "unknown block(%p)",blocknum);
     return -1;
   }
 
   Place dasplace = place(line,counter,dividor);
+  if (!PlaceLegal(wblock->block, &dasplace)) {
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    return -1;
+  }
 
   struct Signatures *signature = SetSignature(wblock->block,&dasplace,ratio(numerator, denominator));
 
@@ -367,11 +372,15 @@ int addLPB(int lpb_value,
 {
   struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
   if(wblock==NULL) {
-    RError("unknown block(%p)",blocknum);
+    GFX_Message(NULL, "unknown block(%p)",blocknum);
     return -1;
   }
 
   Place *place = PlaceCreate(line,counter,dividor);
+  if (!PlaceLegal(wblock->block, place)) {
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    return -1;
+  }
 
   struct LPBs *lpb = SetLPB(wblock->block,place,lpb_value);
 
@@ -386,12 +395,16 @@ int addBPM(int bpm,
 {
   struct WBlocks *wblock=getWBlockFromNum(-1,blocknum);
   if(wblock==NULL) {
-    RError("unknown block(%p)",blocknum);
+    GFX_Message(NULL, "unknown block(%p)",blocknum);
     return -1;
   }
 
   Place *place = PlaceCreate(line,counter,dividor);
-
+  if (!PlaceLegal(wblock->block, place)) {
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    return -1;
+  }
+    
   struct Tempos *tempo = SetTempo(wblock->block,place,bpm);
 
   wblock->block->is_dirty = true;
@@ -401,13 +414,21 @@ int addBPM(int bpm,
 
 
 void setNoteEndPlace(int line,int counter,int dividor,int windownum,int blocknum,int tracknum,int notenum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
 
-  if(window==NULL) return;
-  if(note==NULL) return;
+  Place *place = PlaceCreate(line,counter,dividor);
 
-  PlaceCopy(&note->end, PlaceCreate(line,counter,dividor));
+  if (!PlaceLegal(wblock->block, place)) {
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    return;
+  }
+
+  PlaceCopy(&note->end, place);
 }
 
 void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum, int blocknum, int windownum){
@@ -435,14 +456,28 @@ int addNote2(float notenum,int velocity,
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
   if(wblock==NULL || wtrack==NULL) {
-    RError("unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
+    GFX_Message(NULL, "unknown wblock(%p) or wtrack(%p) %d/%d/%d\n",wblock,wtrack,windownum,blocknum,tracknum);
+    return -1;
+  }
+
+  Place *place = PlaceCreate(line,counter,dividor);
+
+  if (!PlaceLegal(wblock->block, place)) {
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    return -1;
+  }
+
+  Place *end_place = end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor);
+
+  if (end_place != NULL && !PlaceLegal(wblock->block, end_place)) {
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
     return -1;
   }
 
   struct Notes *note = InsertNote(wblock,
                                   wtrack,
-                                  PlaceCreate(line,counter,dividor),
-                                  end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor),
+                                  place,
+                                  end_place,
                                   notenum,
                                   velocity,
                                   true);

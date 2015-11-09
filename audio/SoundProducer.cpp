@@ -198,7 +198,7 @@ struct SoundProducerLink {
     } else {
 
       if (is_bus_link)
-        if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) {
+        if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) { // need comment here what this is about
           is_active=false;
           return;
         }

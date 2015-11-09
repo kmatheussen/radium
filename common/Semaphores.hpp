@@ -1,3 +1,7 @@
+#ifndef _RADIUM_COMMON_SEMAPHORES_HPP
+#define _RADIUM_COMMON_SEMAPHORES_HPP
+
+
 /*
   I'm not 100% sure about if the 10000-iterations-looping in the lightweight semaphore (in sema.h) will work well for Radium
   (the critical use is in audio/MultiCore.cpp), so here's one without that iteration.
@@ -91,3 +95,5 @@ class Semaphore{
 };
 
 }
+
+#endif
