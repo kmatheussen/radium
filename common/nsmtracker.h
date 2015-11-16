@@ -137,15 +137,18 @@ enum{
 #define R_BOUNDARIES(a,b,c) (R_MIN(R_MAX((a),(b)),(c)))
 
 #define R_ASSERT(a)                                                     \
-  if(!(a))                                                              \
-    CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__);
+  do{                                                                   \
+    if(!(a))                                                            \
+      CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
+  }while(0)
 
 #define R_ASSERT_RETURN_IF_FALSE2(a,b)                                  \
-  if(!(a))                                                              \
-    do{                                                                 \
+  do{                                                                   \
+    if(!(a)) {                                                          \
       CRASHREPORTER_send_assert_message(CT_ERROR, "Assert failed: \"" # a "\". %s: " __FILE__":%d", __FUNCTION__, __LINE__); \
       return b;                                                         \
-    }while(0)
+    }                                                                   \
+  }while(0)
 
 #define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT_RETURN_IF_FALSE2(a,)
 

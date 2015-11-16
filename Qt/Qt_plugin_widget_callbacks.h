@@ -94,9 +94,9 @@ public:
     , _plugin_widget(NULL)
     , _timer(this)
     {
-      R_ASSERT(_patch!=NULL)
+      R_ASSERT(_patch!=NULL);
         
-    setupUi(this);
+      setupUi(this);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;

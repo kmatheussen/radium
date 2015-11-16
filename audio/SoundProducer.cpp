@@ -395,7 +395,11 @@ static int get_bus_num(SoundPlugin *plugin){
     return -1;
 }
 
+static int id_counter = 0;
+
 struct SoundProducer {
+  int64_t _id;
+  
   SoundPlugin *_plugin;
 
   QAtomicInt is_processed;
@@ -434,7 +438,8 @@ struct SoundProducer {
 public:
   
   SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses) // buses.bus1 and buses.bus2 must be NULL if the plugin itself is a bus.
-    : _plugin(plugin)
+    : _id(id_counter++)
+    , _plugin(plugin)
     , _num_inputs(plugin->type->num_inputs)
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
@@ -1025,6 +1030,10 @@ SoundProducer *SP_create(SoundPlugin *plugin, Buses buses){
 void SP_delete(SoundProducer *producer){
   printf("Deleting \"%s\"\n",producer->_plugin->type->type_name);
   delete producer;
+}
+
+int64_t SP_get_id(SoundProducer *producer){
+  return producer->_id;
 }
 
 // Returns false if the link could not be made. (i.e. the link was recursive)

@@ -66,6 +66,7 @@ struct SoundProducer;
 
 SoundProducer *SP_create(SoundPlugin *plugin, Buses buses);
 void SP_delete(SoundProducer *producer);
+int64_t SP_get_id(SoundProducer *producer);
 bool SP_add_elink(SoundProducer *target, SoundProducer *source);
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_elink(SoundProducer *target, SoundProducer *source);

@@ -1531,8 +1531,17 @@ void MW_create_from_state(hash_t *state){
 
   Buses new_buses = MIXER_get_buses();
 
-  R_ASSERT(old_buses.bus1 != new_buses.bus1);
-  R_ASSERT(old_buses.bus2 != new_buses.bus2);
+  
+  if (old_buses.bus1!=NULL && new_buses.bus1!=NULL)
+    R_ASSERT(SP_get_id(old_buses.bus1) != SP_get_id(new_buses.bus1));
+  else  
+    R_ASSERT(old_buses.bus1 != new_buses.bus1);
+  
+  if (old_buses.bus2!=NULL && new_buses.bus2!=NULL)
+    R_ASSERT(SP_get_id(old_buses.bus2) != SP_get_id(new_buses.bus2));
+  else  
+    R_ASSERT(old_buses.bus2 != new_buses.bus2);
+  
 
   MW_create_chips_from_state(HASH_get_hash(state, "chips"), new_buses);
   MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
