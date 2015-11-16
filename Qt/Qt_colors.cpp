@@ -834,14 +834,11 @@ void GFX_SaveColors(void){
 static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfilename){
   EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
 
-  QString curr_dir = QCoreApplication::applicationDirPath();
-  const char* separator = OS_get_directory_separator();
-
   clear_config_colors();
    
   QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
   QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
-  QFile::copy(QString(curr_dir)+separator+configfilename, OS_get_config_filename("color0"));
+  QFile::copy(OS_get_full_program_file_path(configfilename), OS_get_config_filename("color0"));
 
   //setEditorColors(editorwidget); // read back from file.
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());

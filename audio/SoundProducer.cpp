@@ -75,13 +75,6 @@ zita output default: curr: -40, min: -70, max: 40
 
 #if 0
 
-static float scale(float x, float x1, float x2, float y1, float y2){
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
-}
-
 static float linear2db(float val){
   if(val<=0.0f)
     return 0.0f;

@@ -475,7 +475,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   // start process
   {
-    QString program = QCoreApplication::applicationDirPath() + QDir::separator() + "crashreporter";
+    QString program = OS_get_full_program_file_path("crashreporter");
 #if FOR_WINDOWS
     program += ".exe";
 #endif

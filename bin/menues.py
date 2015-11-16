@@ -40,11 +40,11 @@ def get_command(menutext):
 def parse_user_keys():
   import codecs
 
+  if not ra.hasConfPath("keys"):
+    return
+    
   user_key_file = ra.getConfPath("keys")
   
-  if os.path.isfile(user_key_file)==False:
-    return
-
   try:
     f = open(user_key_file,'r')
     filecontent = f.read()

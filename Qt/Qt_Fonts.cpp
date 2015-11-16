@@ -181,7 +181,7 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
 void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + QString("config"));
+  SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
   {
     QString fontstring = SETTINGS_read_qstring("font","");
 
@@ -212,7 +212,7 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath() + QString(OS_get_directory_separator()) + "config");
+  SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
   {
     QString fontstring = SETTINGS_read_qstring("system_font","");
 

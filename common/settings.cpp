@@ -98,11 +98,13 @@ static QVector<QString> get_lines(const char* key){
     sprintf(filename,"%s%s%s",curr_dir,separator,basefilename);
     file = fopen(filename,"r");
 #endif
-    QString bin_filename = QCoreApplication::applicationDirPath() + QDir::separator() + (is_color_config ? "colors" : "config");
+    QString bin_filename = OS_get_full_program_file_path(is_color_config ? "colors" : "config");
     
     file.setFileName(bin_filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
-      GFX_Message(NULL, "Unable to open %s",bin_filename.toUtf8().constData());
+      GFX_Message(NULL, "Unable to open %s. Make sure Radium is installed properly. Exiting program.",bin_filename.toUtf8().constData());
+      exit(-1);
+      abort();
       return ret;
     }
   }

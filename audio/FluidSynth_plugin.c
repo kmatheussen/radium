@@ -453,12 +453,11 @@ static void *create_data(const wchar_t *filename, float samplerate){
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
-  wchar_t *default_sound_filename = STRING_append(OS_get_program_path2(),
-                                    STRING_append(STRING_create(OS_get_directory_separator()),
-                                    STRING_append(STRING_create("sounds"),
-                                    STRING_append(STRING_create(OS_get_directory_separator()),
-                                                  STRING_create("Orgue.sf2")))));
-
+  wchar_t *default_sound_filename = OS_get_full_program_file_path(
+                                                                  STRING_append(STRING_create("sounds"),
+                                                                                STRING_append(STRING_create(OS_get_directory_separator()),
+                                                                                              STRING_create("Orgue.sf2"))));
+  
   Data *data = create_data(default_sound_filename, samplerate);
   
   if(data!=NULL){

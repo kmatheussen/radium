@@ -1302,7 +1302,7 @@ int main(int argc, char **argv){
 
   GC_INIT(); // mingw/wine crashes immediately if not doing this when compiling without --enable-threads=no. (wine doesn't work very well with libgc. Should perhaps file a report.)
 
-  QPixmap pixmap(QCoreApplication::applicationDirPath() + QDir::separator() + "radium_256x256x32.png");
+  QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   g_splashscreen = new QSplashScreen(pixmap);
 #ifdef RELEASE
   g_splashscreen->show();
@@ -1330,14 +1330,14 @@ int main(int argc, char **argv){
   setenv("PYTHONHOME","temp/dist",1);
   setenv("PYTHONPATH","temp/dist",1);
 #else
-  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib";
+  QString pythonlibpath = OS_get_full_program_file_path("python2.7" + QDir::separator() + "lib");
   setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
 #endif
 
 #if defined(FOR_MACOSX)
-  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+  QString pythonlibpath = OS_get_full_program_file_path("python2.7" + QDir::separator() + "lib");
   setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
@@ -1345,7 +1345,7 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
 #if __WIN64
   //QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
-  QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
+  QString pythonlibpath = OS_get_full_program_file_path("python2.7"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
   //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toUtf8().constData()));
   //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toUtf8().constData()));
   printf("pythonlibpath: -%s-\n",pythonlibpath.toUtf8().constData());
@@ -1388,12 +1388,12 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  qapplication->setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + OS_get_directory_separator() + "radium_256x256x32.png"));
+  qapplication->setWindowIcon(QIcon(OS_get_full_program_file_path("radium_256x256x32.png")));
 
   {
     // Add fonts in the "fonts" directory
     {
-      QDir dir(QCoreApplication::applicationDirPath() + OS_get_directory_separator() + "fonts");
+      QDir dir(OS_get_full_program_file_path("fonts"));
       QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
       for (int i=0;i<list.count();i++){
         QFileInfo file_info = list[i];
@@ -1412,7 +1412,7 @@ int main(int argc, char **argv){
     QString fontstring = SETTINGS_read_qstring("system_font","");
 
     if(fontstring=="") {
-      SETTINGS_set_custom_configfile(QCoreApplication::applicationDirPath()+OS_get_directory_separator()+"config");
+      SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
       fontstring = SETTINGS_read_qstring("system_font","");
       R_ASSERT(fontstring != "");
       custom_config_set = true;
@@ -1454,8 +1454,10 @@ int main(int argc, char **argv){
 
   initradium();
 
-  PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))"); // keybindings.conf start.sh\")");
-
+  OS_get_full_program_file_path("start.py"); // ensure file is there
+  
+  PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))");
+  
   Py_Finalize();
 
   //RError("hepp");

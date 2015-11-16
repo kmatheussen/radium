@@ -427,6 +427,10 @@ char *getConfPath(char *filename){
   return (char*)OS_get_conf_filename2(filename);
 }
 
+bool hasConfPath(char *filename){
+  return OS_has_conf_filename2(filename);
+}
+
 char *getKeybindingsConfPath(void){
   return (char*)OS_get_keybindings_conf_filename2();
 }

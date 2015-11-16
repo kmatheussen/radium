@@ -35,10 +35,15 @@ extern LANGSPEC bool OS_config_key_is_color(const char *key);
 
 #ifdef USE_QT4
 #include <QString>
+bool OS_has_full_program_file_path(QString filename);
+QString OS_get_full_program_file_path(QString filename); // Note, will exit radium if filename doesn't exist
+bool OS_has_conf_filename(QString filename);
 QString OS_get_config_filename(const char *key);
 QString OS_get_conf_filename(QString filename);
 #endif
 
+extern LANGSPEC wchar_t *OS_get_full_program_file_path(const wchar_t *filename);
+extern LANGSPEC bool OS_has_conf_filename2(const char *filename);
 extern LANGSPEC char *OS_get_conf_filename2(const char *filename);
 
 #ifdef USE_QT4

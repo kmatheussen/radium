@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QLocale>
 #include <QCoreApplication>
+#include <QMessageBox>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -55,6 +56,37 @@ void OS_set_argv0(char *argv0){
 
   //chdir(QCoreApplication::applicationDirPath().toUtf8().constData());
   QDir::setCurrent(QCoreApplication::applicationDirPath());
+}
+
+bool OS_has_full_program_file_path(QString filename){
+  QString full_path = QCoreApplication::applicationDirPath() + QDir::separator() + filename;
+  QFileInfo info(full_path);
+
+  if (!info.exists()){
+    return false;
+  }
+
+  return true;
+}
+
+QString OS_get_full_program_file_path(QString filename){
+  QString full_path = QCoreApplication::applicationDirPath() + QDir::separator() + filename;
+  QFileInfo info(full_path);
+
+  if (!info.exists()){
+    QMessageBox msgBox;
+    msgBox.setText("The file " + full_path + " does not exist. Make sure all files in the zip file are unpacked before starting the program. Exiting program.");
+    msgBox.exec();
+    exit(-1);
+    abort();
+  }
+
+  return full_path;
+}
+
+wchar_t *OS_get_full_program_file_path(const wchar_t *filename){
+  QString ret = OS_get_full_program_file_path(STRING_get_qstring(filename));
+  return STRING_create(ret);
 }
 
 // TODO: Remove.
@@ -149,6 +181,22 @@ static QDir get_dot_radium_dir(int *error){
   return dir;
 }
 
+bool OS_has_conf_filename(QString filename){
+  QString path;
+
+  int error;
+  QDir dir = get_dot_radium_dir(&error);
+  if(error!=0)
+    return NULL;
+
+  QFileInfo info(dir, filename);
+
+  if(info.exists()==false)
+    return OS_has_full_program_file_path(filename);
+
+  return true;
+}
+
 QString OS_get_conf_filename(QString filename){
   QString path;
 
@@ -160,7 +208,7 @@ QString OS_get_conf_filename(QString filename){
   QFileInfo info(dir, filename);
 
   if(info.exists()==false)
-    info = QFileInfo(QDir(QCoreApplication::applicationDirPath()), filename);
+    info = QFileInfo(OS_get_full_program_file_path(filename));
 
   printf("************* conf filename: -%s\n",info.absoluteFilePath().toUtf8().constData());
   return info.absoluteFilePath();
@@ -168,6 +216,10 @@ QString OS_get_conf_filename(QString filename){
 
 char *OS_get_conf_filename2(const char *filename){
   return talloc_strdup(OS_get_conf_filename(filename).toUtf8().constData());
+}
+
+bool OS_has_conf_filename2(const char *filename){
+  return OS_has_conf_filename(filename);
 }
 
 QString OS_get_keybindings_conf_filename(void){

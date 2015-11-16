@@ -89,7 +89,7 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
   p.setFont(qfont);
 
 #if USE_FREETYPE
-  FreeType freeType((QCoreApplication::applicationDirPath() + QDir::separator() + "fonts/Cousine-Bold.ttf").toUtf8().constData(), qfont.pointSize());
+  FreeType freeType(OS_get_full_program_file_path("fonts/Cousine-Bold.ttf").toUtf8().constData(), qfont.pointSize());
 #endif
   
   for(int i=0;i<(int)strlen(chars);i++){
