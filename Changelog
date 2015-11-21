@@ -1,3 +1,10 @@
+Changes 3.4.2 -> 3.4.3:
+* Various internal fixes
+* Exit radium if included file is not found (don't report it as an
+  internal bug when radium is not installed properly)
+* Som xm import improvements
+
+
 Changes 3.4.1 -> 3.4.2:
 * Importing fasttracker modules (xm). Quite buggy for now.
 * Fix common crash introduced in 3.4.1
