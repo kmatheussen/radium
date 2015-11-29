@@ -171,26 +171,56 @@
   (define key (gensym "key"))
   (define ret (gensym "ret"))
   (define keysvar (gensym "keys"))
-  `(define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
-     ,@(map (lambda (must-be-defined)
-              `(if (eq? ,(car must-be-defined) 'must-be-defined)
-                   (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
-            must-be-defined)
-     (let* ((,table (make-hash-table 32 eq?))
-            (,keysvar (quote ,keys)))
-       ,@(map (lambda (key)
-                `(hash-table-set! ,table ,(symbol->keyword key) ,key))
-              keys)
-       (lambda (,key)
-         (if (eq? ,key :dir)
-             ,table
-             (let ((,ret (,table ,key)))
-               (if (and (not ,ret)
-                        (not (memq (keyword->symbol ,key) ,keysvar)))
-                   (throw (<-displayable-> "key '" ,key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword ,keysvar)))
-                   ,ret)))))))
+  (define original (gensym "original"))
+  
+  `(begin
+     (define (,(<_> 'make- name '-internal) ,table)
+       (let ((,keysvar (quote ,keys)))
+         (lambda (,key)
+           (cond ((eq? ,key :dir)
+                  ,table)
+                 (else
+                  (let ((,ret (,table ,key)))
+                    (if (and (not ,ret)
+                             (not (memq (keyword->symbol ,key) ,keysvar)))
+                        (throw (<-displayable-> "key '" ,key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword ,keysvar)))
+                        ,ret)))))))
 
+     (define (,(<_> 'copy- name) ,original new-key new-value)
+       ;;(c-display "copy-" new-key new-value)
+       (define ,table (make-hash-table 32 eq?))
+       ,@(map (lambda (key)                
+                `(hash-table-set! ,table ,(symbol->keyword key) (,original ,(symbol->keyword key))))
+              keys)
+       (hash-table-set! ,table new-key new-value)
+       (,(<_> 'make- name '-internal) ,table))
+
+     (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
+       ,@(map (lambda (must-be-defined)
+                `(if (eq? ,(car must-be-defined) 'must-be-defined)
+                     (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
+              must-be-defined)
+       (let* ((,table (make-hash-table 32 eq?))
+              (,keysvar (quote ,keys)))
+         ,@(map (lambda (key)
+                  `(hash-table-set! ,table ,(symbol->keyword key) ,key))
+                keys)
+         (,(<_> 'make- name '-internal) ,table)))))
 #||
+(define-struct test
+  :b 59
+  :c)
+
+(define t (make-test :c 2))
+(t :b)
+(t :c)
+(t :dir)
+
+
+
+(define t2 (copy-test t :b 2))
+(t2 :b)
+
 (pretty-print (macroexpand (define-struct teststruct
                              :a 'asdf
                              :b
@@ -202,10 +232,6 @@
                  :c)))
 
            
-(define-struct test
-  :b 59
-  :c)
-
 (make-test :b 33)
 
 (define t (make-test :c 2))
@@ -213,9 +239,15 @@
 (t :c)
 (t :dir)
 (t :bc)
-(t :b 90)
+(t :b)
 
-(t :dir)
+(define t2 (t :copy :b 2))
+
+(define tab (make-hash-table 32 eq?))
+(hash-table-set! tab :hello 2)
+(hash-table-set! tab :hello 3)
+(tab :hello)
+
 
 ||#
 
@@ -504,3 +536,63 @@ for .emacs:
             "hepp" (lambda ()
                      (c-display "hepp")))
 ||#
+
+(define (my-equal-structs? a b)
+  (define alist-a (hash-table->alist (a :dir)))
+  (define alist-b (hash-table->alist (b :dir)))
+  (define keys-a (map car alist-a))
+  
+  (and (= (length keys-a)
+          (length alist-b))
+       (let loop ((keys-a keys-a))
+         (if (null? keys-a)
+             #t
+             (and (my-equal? (a (car keys-a))
+                             (b (car keys-a)))
+                  (loop (cdr keys-a)))))))
+
+(define (my-equal? a b)
+  (cond ((and (pair? a)
+              (pair? b))
+         (and (my-equal? (car a)
+                         (car b))
+              (my-equal? (cdr a)
+                         (cdr b))))
+        ((and (vector? a)
+              (vector? b))
+         (my-equal? (vector->list a)
+                    (vector->list b)))
+        ((and (procedure? a)
+              (procedure? b))
+         (my-equal-structs? a b))
+        (else
+         (equal? a b))))
+           
+
+(define (***assert*** a b)
+  (define (test -__Arg1 -__Arg2)
+    (define (-__Func1)
+      (let ((A -__Arg1))
+        (if (my-equal? A -__Arg2)
+            (begin
+              (newline)
+              (pretty-print "Correct: ")
+              (pretty-print (to-displayable-string A))
+              (pretty-print "")
+              #t)
+            (-__Func2))))
+    (define (-__Func2)
+      (let ((A -__Arg1))
+        (let ((B -__Arg2))
+          (begin
+            (newline)
+            (pretty-print "Wrong. Result: ")
+            (pretty-print (to-displayable-string A))
+            (pretty-print ". Correct: ")
+            (pretty-print (to-displayable-string B))
+            (pretty-print "")
+            #f))))
+    (-__Func1))
+
+  (assert (test a b)))
+

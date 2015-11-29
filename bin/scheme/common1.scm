@@ -1,5 +1,9 @@
 (provide 'common1.scm)
 
+(define (assert something)
+  (if (not something)
+      (throw 'assert-failed)))
+
 #||
 (define (c-display . rest)
   (for-each (lambda (d)
@@ -23,9 +27,15 @@
         ((equal? #f a)
          "#f")
         ((list? a)
-         (<-> "(" (apply <-> (map (lambda (b) (<-> b " ")) a)) ")"))
+         (<-> "(" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) a)) ")"))
         ((pair? a)
          (<-> "(" (to-displayable-string (car a)) " . " (to-displayable-string (cdr a)) ")"))
+        ((procedure? a)
+         (catch #t
+                (lambda ()
+                  (event-to-string a))
+                (lambda args
+                  (<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))
         (else
          "#unknown type")))
 
@@ -38,6 +48,12 @@
          "#t")
         ((equal? #f a)
          "#f")
+        ((procedure? a)
+         (catch #t
+                (lambda ()
+                  (event-to-string a))
+                (lambda args
+                  a)))
         ((keyword? a)
          (<-> "#:" (to-string (keyword->symbol a))))
         (else
@@ -76,3 +92,17 @@
 (define (1- n)
   (- n 1))
 
+(define (delete-from das-list element)
+  (if (eqv? (car das-list) element)
+      (cdr das-list)
+      (cons (car das-list)
+            (delete (cdr das-list) element))))
+
+(define (delete-list-from das-list elements)
+  (if (null? elements)
+      das-list
+      (delete-list-from (delete-from das-list (car elements))
+                        (cdr elements))))
+
+(define (last das-list)
+  (car (reverse das-list)))
