@@ -462,6 +462,8 @@ int addNote2(float notenum,int velocity,
 
   Place *place = PlaceCreate(line,counter,dividor);
 
+  ValidatePlace(place);
+
   if (!PlaceLegal(wblock->block, place)) {
     GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
     return -1;
@@ -469,8 +471,10 @@ int addNote2(float notenum,int velocity,
 
   Place *end_place = end_line==-1 ? NULL : PlaceCreate(end_line,end_counter,end_dividor);
 
+  ValidatePlace(end_place);
+
   if (end_place != NULL && !PlaceLegal(wblock->block, end_place)) {
-    GFX_Message(NULL, "Place %d + %d/%d is not legal", line, counter, dividor);
+    GFX_Message(NULL, "Place %d + %d/%d is not legal", end_line, end_counter, end_dividor);
     return -1;
   }
 
