@@ -59,7 +59,7 @@ void OS_set_argv0(char *argv0){
 }
 
 bool OS_has_full_program_file_path(QString filename){
-  QString full_path = QCoreApplication::applicationDirPath() + QDir::separator() + filename;
+  QString full_path = QCoreApplication::applicationDirPath() + "/" + filename;
   QFileInfo info(full_path);
 
   if (!info.exists()){
@@ -70,7 +70,7 @@ bool OS_has_full_program_file_path(QString filename){
 }
 
 QString OS_get_full_program_file_path(QString filename){
-  QString full_path = QCoreApplication::applicationDirPath() + QDir::separator() + filename;
+  QString full_path = QCoreApplication::applicationDirPath() + "/" + filename;
   QFileInfo info(full_path);
 
   if (!info.exists()){
@@ -81,7 +81,7 @@ QString OS_get_full_program_file_path(QString filename){
     abort();
   }
 
-  return full_path;
+  return QDir::toNativeSeparators(full_path);
 }
 
 wchar_t *OS_get_full_program_file_path(const wchar_t *filename){
@@ -91,7 +91,7 @@ wchar_t *OS_get_full_program_file_path(const wchar_t *filename){
 
 // TODO: Remove.
 const char *OS_get_program_path(void){
-  return talloc_strdup(QCoreApplication::applicationDirPath().toUtf8().constData());
+  return talloc_strdup(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).toUtf8().constData());
 }
 
 wchar_t *STRING_create(const QString s){
@@ -144,7 +144,7 @@ wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
 const wchar_t *OS_get_program_path2(void){
   static wchar_t *array=NULL;
   if (array==NULL){
-    QString s = QCoreApplication::applicationDirPath();
+    QString s = QDir::toNativeSeparators(QCoreApplication::applicationDirPath());
     array = (wchar_t*)calloc(1, sizeof(wchar_t)*(s.length()+1));
     s.toWCharArray(array);
   }

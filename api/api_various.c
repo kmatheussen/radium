@@ -973,7 +973,15 @@ void printMixerTree(void){
   SP_print_tree();
 }
 
+void testCrashreporter(void){
+  int *ai=NULL;
+  ai[0] = 50;
+}
 
+extern bool g_test_crashreporter_in_audio_thread;
+void testCrashreporterInAudioThread(void){
+  g_test_crashreporter_in_audio_thread = true;
+}
 
 // PLAYLIST
 

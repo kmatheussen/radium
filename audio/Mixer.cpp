@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
-
+volatile bool g_test_crashreporter_in_audio_thread = false;
 
 extern PlayerClass *pc;
 extern int num_users_of_keyboard;
@@ -626,6 +626,11 @@ struct Mixer{
 
       RT_lock_player();
 
+      if(g_test_crashreporter_in_audio_thread){
+        int *ai2=NULL;
+        ai2[0] = 50;
+      }
+      
       jack_time_t start_time = jack_get_time();
 
       //jackblock_size = num_frames;
