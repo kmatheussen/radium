@@ -983,6 +983,10 @@ void testCrashreporterInAudioThread(void){
   g_test_crashreporter_in_audio_thread = true;
 }
 
+void testErrorMessage(void){
+  SYSTEM_show_message("Error message seems to work");
+}
+
 // PLAYLIST
 
 void setPlaylistLength(int len){
