@@ -1,3 +1,8 @@
+Changes 3.4.3 -> 3.4.4:
+* Fixed crash reporter on windows, which was broken in 3.4.3
+* Updated s7 scheme interpreter to latest version
+
+
 Changes 3.4.2 -> 3.4.3:
 * Various internal fixes
 * Exit radium if included file is not found (don't report it as an
