@@ -475,10 +475,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   // start process
   {
-#if FOR_WINDOWS
-    QString program = OS_get_full_program_file_path("crashreporter");
-#else
+#ifdef FOR_WINDOWS
     QString program = OS_get_full_program_file_path("crashreporter.exe");
+#else
+    QString program = OS_get_full_program_file_path("crashreporter");
 #endif
 
     QTemporaryFile *file;
