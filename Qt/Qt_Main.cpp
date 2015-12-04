@@ -797,7 +797,7 @@ void assertRadiumInHomeDirectory(void){
                 );
   }
 #else
-  QFile file(program_path + QDir::separator() + "checking_write_permission.txt");
+  QFile file(program_path + "/checking_write_permission.txt");
 
   bool success = file.open(QIODevice::WriteOnly);
 
@@ -1330,14 +1330,14 @@ int main(int argc, char **argv){
   setenv("PYTHONHOME","temp/dist",1);
   setenv("PYTHONPATH","temp/dist",1);
 #else
-  QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7") + QDir::separator() + "lib");
+  QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib");
   setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
 #endif
 
 #if defined(FOR_MACOSX)
-  QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7") + QDir::separator() + "lib");
+  QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib");
   setenv("PYTHONHOME",pythonlibpath.toUtf8().constData(),1);
   setenv("PYTHONPATH",pythonlibpath.toUtf8().constData(),1);
 #endif
