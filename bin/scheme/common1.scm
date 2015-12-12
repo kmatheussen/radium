@@ -2,7 +2,7 @@
 
 (define (assert something)
   (if (not something)
-      (throw 'assert-failed)))
+      (throw "assert-failed")))
 
 #||
 (define (c-display . rest)
@@ -30,6 +30,8 @@
          (<-> "(" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) a)) ")"))
         ((pair? a)
          (<-> "(" (to-displayable-string (car a)) " . " (to-displayable-string (cdr a)) ")"))
+        ((vector? a)
+         (<-> "[" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) (vector->list a))) "]"))
         ((procedure? a)
          (catch #t
                 (lambda ()
@@ -109,3 +111,11 @@
 
 (define (last das-list)
   (car (reverse das-list)))
+
+(define (find-first das-list func)
+  (cond ((null? das-list)
+         #f)
+        ((func (car das-list))
+         (car das-list))
+        (else
+         (find-first (cdr das-list) func))))

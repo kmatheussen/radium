@@ -251,6 +251,20 @@
 
 ||#
 
+(define (structs-equal? a b)
+  (define alist-a (hash-table->alist (a :dir)))
+  (define alist-b (hash-table->alist (b :dir)))
+  (define keys-a (map car alist-a))
+  
+  (and (= (length keys-a)
+          (length alist-b))
+       (let loop ((keys-a keys-a))
+         (if (null? keys-a)
+             #t
+             (and (my-equal? (a (car keys-a))
+                             (b (car keys-a)))
+                  (loop (cdr keys-a)))))))
+
 
 
 
@@ -537,21 +551,8 @@ for .emacs:
                      (c-display "hepp")))
 ||#
 
-(define (my-equal-structs? a b)
-  (define alist-a (hash-table->alist (a :dir)))
-  (define alist-b (hash-table->alist (b :dir)))
-  (define keys-a (map car alist-a))
-  
-  (and (= (length keys-a)
-          (length alist-b))
-       (let loop ((keys-a keys-a))
-         (if (null? keys-a)
-             #t
-             (and (my-equal? (a (car keys-a))
-                             (b (car keys-a)))
-                  (loop (cdr keys-a)))))))
-
 (define (my-equal? a b)
+  ;;(c-display "my-equal?" a b)
   (cond ((and (pair? a)
               (pair? b))
          (and (my-equal? (car a)
@@ -564,9 +565,9 @@ for .emacs:
                     (vector->list b)))
         ((and (procedure? a)
               (procedure? b))
-         (my-equal-structs? a b))
+         (structs-equal? a b))
         (else
-         (equal? a b))))
+         (morally-equal? a b))))
            
 
 (define (***assert*** a b)
