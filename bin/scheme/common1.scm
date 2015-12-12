@@ -92,6 +92,9 @@
 (define (1- n)
   (- n 1))
 
+(define (yppla l c)
+  (apply c l))
+
 (define (delete-from das-list element)
   (if (eqv? (car das-list) element)
       (cdr das-list)

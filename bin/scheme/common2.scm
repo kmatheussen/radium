@@ -579,6 +579,7 @@ for .emacs:
               (pretty-print "Correct: ")
               (pretty-print (to-displayable-string A))
               (pretty-print "")
+              (newline)
               #t)
             (-__Func2))))
     (define (-__Func2)
@@ -591,6 +592,7 @@ for .emacs:
             (pretty-print ". Correct: ")
             (pretty-print (to-displayable-string B))
             (pretty-print "")
+            (newline)
             #f))))
     (-__Func1))
 

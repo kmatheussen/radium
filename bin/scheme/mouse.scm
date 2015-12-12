@@ -193,7 +193,6 @@
              (not value))
         value
         (begin
-
           (define dx (cond ((only-y-direction)
                             0)
                            ((ra:ctrl-pressed)

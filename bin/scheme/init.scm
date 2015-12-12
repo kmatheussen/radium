@@ -8,6 +8,9 @@
         #t ;; whether the entire output should be displayed as a comment
         ))
 
+(set! (hook-functions *error-hook*) 
+      (list (lambda (hook)
+              (display (ow!)))))
 
 ;;(set! (*stacktrace* 'max-frames) 1000)
 ;(set! (*stacktrace* 'code-cols) 2000)

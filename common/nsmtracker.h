@@ -37,6 +37,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error "Missing DEBUG option. Edit the Makefile."
 #endif
 
+#ifdef FOR_WINDOWS
+#if FOR_WINDOWS
+#else
+#error "oops"
+#endif
+#endif
+
+#ifdef FOR_LINUX
+#if FOR_LINUX
+#else
+#error "oops"
+#endif
+#endif
+
+#ifdef FOR_MACOSX
+#if FOR_MACOSX
+#else
+#error "oops"
+#endif
+#endif
+
 
 
 /******************************************************************
