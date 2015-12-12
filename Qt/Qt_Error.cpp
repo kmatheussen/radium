@@ -82,9 +82,13 @@ int main(int argc, char **argv){
 
 extern "C" {
 int SYSTEM_show_message(const char *message){
-  
-  QString program = OS_get_full_program_file_path("radium_error_message");
 
+#if FOR_WINDOWS
+  QString program = OS_get_full_program_file_path("radium_error_message.exe");
+#else
+  QString program = OS_get_full_program_file_path("radium_error_message");
+#endif
+  
   QStringList arguments;
   arguments << message;
 
