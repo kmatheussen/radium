@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 import sys,os
+import platform
 
 #sys.setrecursionlimit(1500)
 
@@ -29,7 +30,7 @@ if __name__ == "__main__" or sys.g_program_path=='__main__':
     sys.path.append("python-midi")
 else:
     sys.path.append(os.path.join(sys.g_program_path,"python-midi"))
-    if os.isatty(1):
+    if platform.system() != "Linux" and os.isatty(sys.stdout.fileno()):
         sys.stdout = sys.stderr = NullWriter()
 
 import src as midi
