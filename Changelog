@@ -1,3 +1,8 @@
+Changes 3.4.4 -> 3.4.5:
+* Tremolo effect for the sampler instrument
+* Update s7 scheme interpreter to latest version
+
+
 Changes 3.4.3 -> 3.4.4:
 * Fixed crash reporter on windows, which was broken in 3.4.3
 * Updated s7 scheme interpreter to latest version
