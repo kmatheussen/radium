@@ -250,7 +250,7 @@ OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfro
 # alsaseq_midi.o
 
 #Faust plugins
-OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_lowpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_system_delay.o faust_multibandcomp.o
+OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_tremolo.o faust_system_lowpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_system_delay.o faust_multibandcomp.o
 
 #AUDIO
 OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Bus_plugins.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o undo_audio_effect.o undo_pd_controllers.o undo_sample.o SoundfileSaver.o system_compressor_wrapper.o
@@ -1571,6 +1571,12 @@ faust_system_eq.o: audio/faust_system_eq.cpp
 
 audio/faust_system_eq.cpp: audio/system_eq.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Eq_dsp -a Faust_plugins.cpp system_eq.dsp >faust_system_eq.cpp
+
+faust_system_tremolo.o: audio/faust_system_tremolo.cpp
+	$(CCC) audio/faust_system_tremolo.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Tremolo_dsp -DDSP_NAME=\"System\ Tremolo\" -DCREATE_NAME=create_faust_system_tremolo_plugin -DDONT_NORMALIZE_EFFECT_VALUES
+
+audio/faust_system_tremolo.cpp: audio/system_tremolo.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
+	cd audio && $(FAUST) -cn System_Tremolo_dsp -a Faust_plugins.cpp system_tremolo.dsp >faust_system_tremolo.cpp
 
 faust_system_lowpass.o: audio/faust_system_lowpass.cpp
 	$(CCC) audio/faust_system_lowpass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DDONT_NORMALIZE_EFFECT_VALUES

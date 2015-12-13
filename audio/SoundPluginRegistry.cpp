@@ -233,6 +233,7 @@ extern void create_faust_tapiir_plugin(void);
 extern void create_faust_multibandcomp_plugin(void);
 
 extern void create_faust_system_eq_plugin(void);
+extern void create_faust_system_tremolo_plugin(void);
 extern void create_faust_system_lowpass_plugin(void);
 extern void create_faust_system_lowshelf_plugin(void);
 extern void create_faust_system_highshelf_plugin(void);
@@ -356,6 +357,7 @@ void PR_init_plugin_types(void){
   create_faust_multibandcomp_plugin();
 
   create_faust_system_eq_plugin();
+  create_faust_system_tremolo_plugin();
   create_faust_system_lowpass_plugin();
   create_faust_system_lowshelf_plugin();
   create_faust_system_highshelf_plugin();

@@ -72,6 +72,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_VIBRATO_SPEED 20
 #define MAX_VIBRATO_DEPTH 5
 
+#define MAX_TREMOLO_SPEED 50
+#define MAX_TREMOLO_DEPTH 1
+
 const char *g_click_name = "Click";
 
 // Effect order
@@ -87,6 +90,8 @@ enum{
   EFF_R,
   EFF_VIBRATO_SPEED,
   EFF_VIBRATO_DEPTH,
+  EFF_TREMOLO_SPEED,
+  EFF_TREMOLO_DEPTH,
   EFF_LOOP_ONOFF,
   EFF_CROSSFADE_LENGTH,
   EFF_NUM_EFFECTS
@@ -176,6 +181,10 @@ struct _Data{
   double vibrato_phase_add;
   double vibrato_phase;
   double vibrato_value;
+
+  struct SoundPlugin *tremolo;
+  float tremolo_depth;
+  float tremolo_speed;
   
   float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
@@ -597,6 +606,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     data->vibrato_value = data->vibrato_depth * sin(data->vibrato_phase);
     data->vibrato_phase += data->vibrato_phase_add*(double)num_frames;
   }
+
+  bool was_playing_something = data->voices_playing != NULL;
   
   while(voice!=NULL){
     Voice *next = voice->next;
@@ -609,6 +620,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     voice = next;
   }
 
+  if (was_playing_something)
+    data->tremolo->type->RT_process(data->tremolo, time, num_frames, outputs, outputs);
+          
   if(data->new_data != NULL){
     RT_fade_out(outputs[0],num_frames);
     RT_fade_out(outputs[1],num_frames);
@@ -1013,6 +1027,18 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
       } else
         data->vibrato_phase_add = data->vibrato_speed * 2.0 * M_PI / data->samplerate;
       break;
+    case EFF_TREMOLO_SPEED:
+      data->tremolo_speed = scale(value,
+                                  0.0,1.0,
+                                  0,MAX_TREMOLO_SPEED);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
+      break;
+    case EFF_TREMOLO_DEPTH:
+      data->tremolo_depth = scale(value,
+                                  0.0,1.0,
+                                  0,MAX_TREMOLO_DEPTH);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
+      break;
     case EFF_NOTE_ADJUST:
       data->note_adjust = scale(value,
                                 0.0,1.0,
@@ -1077,6 +1103,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effec
     case EFF_VIBRATO_DEPTH:
       data->vibrato_depth = value;
       break;
+    case EFF_TREMOLO_SPEED:
+      data->tremolo_speed = value;
+      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
+      break;
+    case EFF_TREMOLO_DEPTH:
+      data->tremolo_depth = value;
+      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
+      break;
     case EFF_NOTE_ADJUST:
       data->note_adjust = value;
       update_peaks(plugin);
@@ -1140,6 +1174,16 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
                    0,MAX_VIBRATO_DEPTH,
                    0.0,1.0
                    );      
+    case EFF_TREMOLO_SPEED:
+      return scale(data->tremolo_speed,
+                   0,MAX_TREMOLO_SPEED,
+                   0.0,1.0
+                   );
+    case EFF_TREMOLO_DEPTH:
+      return scale(data->tremolo_depth,
+                   0,MAX_TREMOLO_DEPTH,
+                   0.0,1.0
+                   );      
     case EFF_NOTE_ADJUST:
       return scale(data->note_adjust,
                    -6.99,6.99,
@@ -1182,6 +1226,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return data->vibrato_speed;
     case EFF_VIBRATO_DEPTH:
       return data->vibrato_depth;
+    case EFF_TREMOLO_SPEED:
+      return data->tremolo_speed;
+    case EFF_TREMOLO_DEPTH:
+      return data->tremolo_depth;
     case EFF_NOTE_ADJUST:
       return data->note_adjust;
 #if 0
@@ -1230,6 +1278,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
   case EFF_VIBRATO_DEPTH:
     snprintf(buffer,buffersize-1,"%.2f",data->vibrato_depth);
+    break;
+  case EFF_TREMOLO_SPEED:
+    snprintf(buffer,buffersize-1,"%.1fHz",data->tremolo_speed);
+    break;
+  case EFF_TREMOLO_DEPTH:
+    snprintf(buffer,buffersize-1,"%.2f",data->tremolo_depth);
     break;
   case EFF_NOTE_ADJUST:
     if(false && data->num_different_samples>1)
@@ -1471,11 +1525,27 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
   return true;
 }
 
+static SoundPlugin *create_tremolo(void){
+  SoundPlugin *ret = calloc(1, sizeof(SoundPlugin));
+  
+  ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
+  ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
+  
+  return ret;
+}
+
+static void free_tremolo(SoundPlugin *tremolo){
+  tremolo->type->cleanup_plugin_data(tremolo);
+  free(tremolo);
+}
+
 static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type){
   Data *data = calloc(1,sizeof(Data));
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
+  data->tremolo = create_tremolo();
+      
   if(old_data==NULL){
     data->finetune = 0.5f;
 
@@ -1501,6 +1571,12 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->vibrato_depth = old_data->vibrato_depth;
     data->vibrato_speed = old_data->vibrato_speed;
     data->vibrato_phase_add = old_data->vibrato_phase_add;
+
+    data->tremolo_depth = old_data->tremolo_depth;
+    data->tremolo_speed = old_data->tremolo_speed;
+    
+    data->tremolo->type->set_effect_value(data->tremolo, 0, 0, data->tremolo_speed, PLUGIN_FORMAT_NATIVE, FX_single);
+    data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->tremolo_depth, PLUGIN_FORMAT_NATIVE, FX_single);
   }
   
   data->samplerate = samplerate;
@@ -1571,6 +1647,8 @@ static void delete_data(Data *data){
 
   RSEMAPHORE_delete(data->signal_from_RT);
 
+  free_tremolo(data->tremolo);
+    
   free(data);
 }
 
@@ -1725,6 +1803,10 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Vibrato Speed";
   case EFF_VIBRATO_DEPTH:
     return "Vibrato Depth";
+  case EFF_TREMOLO_SPEED:
+    return "Tremolo Speed";
+  case EFF_TREMOLO_DEPTH:
+    return "Tremolo Depth";
   case EFF_NOTE_ADJUST:
     return "Note adjustment";
 #if 0
