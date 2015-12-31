@@ -212,7 +212,9 @@
           (set! prev-y $y)
           
           ;; dirty trick to avoid the screen edges
-          (when mouse-pointer-is-hidden
+          ;;
+          ;;(when mouse-pointer-is-hidden  ;; <- this line can cause mouse pointer to be stuck between 16,16 and 500,500 if something goes wrong.
+          (when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
             (when (or (< (ra:get-mouse-pointer-x) 16)
                       (< (ra:get-mouse-pointer-y) 16)
                       (> (ra:get-mouse-pointer-x) 500)
@@ -307,7 +309,8 @@
 (define mouse-pointer-has-been-set #f)
 (define (set-mouse-pointer func)
   (set! mouse-pointer-has-been-set #t)
-  (func))
+  (func)
+  )
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)

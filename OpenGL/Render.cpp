@@ -383,7 +383,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
       struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
       while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
 
-        int x1 = wtrack->x;
+        int x1 = wtrack->x - 1;
         int x2 = wtrack->x2;
         //int y1 = wtrack1->y;
         //int y2 = wtrack1->panonoff.y1 - 1;
