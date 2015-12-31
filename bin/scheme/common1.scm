@@ -37,7 +37,11 @@
                 (lambda ()
                   (event-to-string a))
                 (lambda args
-                  (<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))
+                  (catch #t
+                         (lambda ()
+                           (cloned-instrument-to-string a))
+                         (lambda args
+                           (<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
         (else
          "#unknown type")))
 
@@ -78,7 +82,7 @@
 
 (define (c-display . args)
   (for-each (lambda (arg)
-              (display arg)
+              (display (to-displayable-string arg))
               (display " "))
             args)
   (newline))
@@ -101,7 +105,7 @@
   (if (eqv? (car das-list) element)
       (cdr das-list)
       (cons (car das-list)
-            (delete (cdr das-list) element))))
+            (delete-from (cdr das-list) element))))
 
 (define (delete-list-from das-list elements)
   (if (null? elements)

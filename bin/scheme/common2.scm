@@ -36,6 +36,9 @@
           (cons (car list)
                 (remove func (cdr list))))))
 
+(define-macro (push! list el)
+  `(set! ,list (cons ,el ,list)))
+
 (define-macro (push-back! list el)
   `(set! ,list (append ,list (list ,el))))
 
@@ -202,6 +205,8 @@
                         ,ret)))))))
 
      (define (,(<_> 'copy- name) ,original new-key new-value)
+       (if (not (memq (keyword->symbol new-key) (quote ,keys)))
+           (throw (<-displayable-> "key '" new-key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword (quote ,keys)))))
        ;;(c-display "copy-" new-key new-value)
        (define ,table (make-hash-table 32 eq?))
        ,@(map (lambda (key)                
@@ -231,6 +236,8 @@
 (t :c)
 (t :dir)
 
+;; error, unknown key:
+(copy-test t :unknown-key 2))
 
 
 (define t2 (copy-test t :b 2))
@@ -266,6 +273,7 @@
 
 ||#
 
+;; doesn't "(morally-equal? hash-table1 hash-tabl2)" work?
 (define (structs-equal? a b)
   (define alist-a (hash-table->alist (a :dir)))
   (define alist-b (hash-table->alist (b :dir)))
