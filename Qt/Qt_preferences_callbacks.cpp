@@ -262,6 +262,8 @@ class Preferences : public QDialog, public Ui::Preferences {
       
       QString vblankbuttontext = QString("Erase Estimated Vertical Blank (")+QString::number(1000.0/GL_get_estimated_vblank())+" Hz)";
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
+
+      safeModeOnoff->setChecked(GL_get_safe_mode());
     }
 
     // CPU
@@ -329,6 +331,11 @@ public slots:
   void on_vsyncOnoff_toggled(bool val){
     GL_set_vsync(val);
   }
+
+  void on_safeModeOnoff_toggled(bool val){
+    GL_set_safe_mode(val);
+  }
+
   void on_mma1_toggled(bool val){
     if (val)
       GL_set_multisample(1);

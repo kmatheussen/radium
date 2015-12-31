@@ -49,9 +49,24 @@
   (/ (apply + numbers)
      (length numbers)))
 
+;; fix max, which is buggy in s7 (the bug is most likely fixed now if you read this though)
+(define (max a . rest)
+  (if (null? rest)
+      a
+      (let ((b (apply max rest)))
+        (if (< a b)
+            b
+            a))))
+
+(assert (= 0 (max 0 -1/2)))
+
 (define (between Min Try-it Max)
-  (min Max
-       (max Min Try-it)))
+  (cond ((< Try-it Min)
+         Min)
+        ((> Try-it Max)
+         Max)
+        (else
+         Try-it)))     
 
 ;; (round 2.5) -> 2
 ;; (roundup 2.5) -> 3

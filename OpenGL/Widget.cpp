@@ -60,6 +60,9 @@ static void set_realtime(int type, int priority){
 #endif
 
 
+static bool g_safe_mode = false;
+
+  
 static QMutex mutex;
 static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way instead of using the QThread::Recursive option since QWaitCondition doesn't work with recursive mutexes. We need recursive mutexes since calls to qsometing->exec() (which are often executed inside the gl lock) can process qt events, which again can call some function which calls gl_lock. I don't know why qt processes qt events inside exec() though. That definitely seems like the wrong desing, or maybe it's even a bug in qt. If there is some way of turning this peculiar behavior off, I would like to know about it. I don't feel that this behaviro is safe.
 
@@ -567,13 +570,15 @@ private:
 
   // OpenGL thread
   void swap(){
-    GL_lock();
+    if (!g_safe_mode)
+      GL_lock();
     {
       // show rendering
       if ( openglContext()->hasDoubleBuffer() )
         openglContext()->swapBuffers();
     }
-    GL_unlock();
+    if (!g_safe_mode)
+      GL_unlock();
   }
 
 public:
@@ -623,7 +628,10 @@ public:
 
 
     // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
-  
+
+    if (g_safe_mode)
+      GL_lock();
+        
     if (is_training_vblank_estimator==true)
       swap();
 
@@ -633,11 +641,14 @@ public:
     else if (draw()==true)
       swap();
 
-    else if (!sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
+    else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
       swap();
     
     else
       usleep(1000 * time_estimator.get_vblank());
+
+    if (g_safe_mode)
+      GL_unlock();
   }
 
   // Main thread
@@ -839,6 +850,15 @@ int GL_get_multisample(void){
   return R_BOUNDARIES(1, SETTINGS_read_int("multisample", 4), 32);
 }
 
+void GL_set_safe_mode(bool onoff){
+  printf("setting safe mode to %d\n",onoff);
+  SETTINGS_write_bool("safe_mode", onoff);
+}
+
+bool GL_get_safe_mode(void){
+  return SETTINGS_read_bool("safe_mode", false);
+}
+
 static void show_message_box(QMessageBox *box){
   box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");
   box->setInformativeText("!!! Don't move the mouse or press any key !!!");
@@ -907,6 +927,8 @@ QWidget *GL_create_widget(QWidget *parent){
   //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
 #endif
 
+  g_safe_mode = GL_get_safe_mode();
+    
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
     return NULL;
