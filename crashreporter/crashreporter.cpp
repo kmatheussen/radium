@@ -91,7 +91,7 @@ static QString file_to_string(QString filename){
       QString content = stream.readAll();
       return content;
     }
-  return "";
+  return "(unable to open file)";
 }
 
 static void delete_file(QString filename){

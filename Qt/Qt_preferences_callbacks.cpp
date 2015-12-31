@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/settings_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/Render_proc.h"
 #include "../audio/MultiCore_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
@@ -264,6 +265,8 @@ class Preferences : public QDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 
       safeModeOnoff->setChecked(GL_get_safe_mode());
+
+      colorTracksOnoff->setChecked(GL_get_colored_tracks());
     }
 
     // CPU
@@ -334,6 +337,10 @@ public slots:
 
   void on_safeModeOnoff_toggled(bool val){
     GL_set_safe_mode(val);
+  }
+
+  void on_colorTracksOnoff_toggled(bool val){
+    GL_set_colored_tracks(val);
   }
 
   void on_mma1_toggled(bool val){
