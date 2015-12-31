@@ -945,6 +945,10 @@ void evalScheme(char *code){
   SCHEME_eval(code);
 }
 
+void evalPython(char *code){
+  PyRun_SimpleString(code);
+}
+
 bool isFullVersion(void){
   return FULL_VERSION==1;
 }
