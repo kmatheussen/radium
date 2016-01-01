@@ -120,20 +120,22 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
   if(is_starting_up==true)
     return;
 
+  window->redraw_has_been_scheduled=false;
+
   if(window->must_redraw==true){
     //printf("** Drawing up everything!\n");
     window->must_redraw=false;
     GFX_clear_op_queue(this->window);
     DO_GFX(DrawUpTrackerWindow(this->window));
-
-    window->must_redraw_editor=true;
   }
 
+#if 0
   if (window->must_redraw_editor==true){
     window->must_redraw_editor=false;
     //printf("calling gl_create\n")
     GL_create(window, window->wblock);
   }
+#endif
   
   //printf("height: %d, width: %d\n",e->rect().height(),e->rect().width());
   //printf("update editor\n");
@@ -163,13 +165,73 @@ void EditorWidget::updateEditor(){
   if(is_starting_up==true)
     return;
 
-  if(this->window->must_redraw==true || this->window->must_redraw_editor==true || GFX_get_op_queue_size(this->window)>0) {
-    update();
+  bool did_gl_create = false;
+  
+  if (this->window->must_redraw_editor==true){
+    this->window->must_redraw_editor=false;
+    GL_create(this->window, this->window->wblock);
+    did_gl_create = true;
+  }
+
+  if (this->window->redraw_has_been_scheduled==false) {
+    if (this->window->must_redraw==true && did_gl_create==false)
+      GL_create(this->window, this->window->wblock);
+    
+    if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
+      this->window->redraw_has_been_scheduled=true;
+      update();
+    }
   }
 }
 
+  /*
+void GFX_ScheduleRedraw(void){
+  if(is_starting_up==true)
+    return;
+  
+  if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
+    struct Tracker_Windows *window=root->song->tracker_windows;
 
+    bool is_main_thread = THREADING_is_main_thread(); 
+    
+    if (is_main_thread)
+      GL_create(window, window->wblock);
+    
+    window->must_redraw = true;
 
+    if (is_main_thread){
+      EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+      editor->update();
+    } else {
+      window->must_redraw_editor = true;
+    }
+  }
+}
+
+void GFX_ScheduleRedrawEditor(void){
+  if(is_starting_up==true)
+    return;
+  
+  if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
+    struct Tracker_Windows *window=root->song->tracker_windows;
+
+    bool is_main_thread = THREADING_is_main_thread(); 
+    
+    if (is_main_thread)
+      GL_create(window, window->wblock);
+    
+    window->must_redraw = true;
+
+    if (is_main_thread){
+      EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
+      editor->update();
+    } else {
+      window->must_redraw_editor = true;
+    }
+  }
+}
+  */
+  
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
     if(is_starting_up==true)
       return;

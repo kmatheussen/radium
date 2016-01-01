@@ -84,6 +84,11 @@ extern LANGSPEC void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, 
 extern LANGSPEC void GFX_PositionUpperLeftArea(struct Tracker_Windows *tvisual, struct WBlocks *wblock);
 extern LANGSPEC void GFX_UpdateUpperLeft(struct Tracker_Windows *window, struct WBlocks *wblock);
 
+/*
+extern LANGSPEC void GFX_ScheduleRedraw(void);
+extern LANGSPEC void GFX_ScheduleEditorRedraw(void);
+*/
+
 static inline void GFX_ScheduleRedraw(void){
   if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
     struct Tracker_Windows *window=root->song->tracker_windows;
@@ -97,6 +102,7 @@ static inline void GFX_ScheduleEditorRedraw(void){
     window->must_redraw_editor = true;
   }
 }
+
 
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);
