@@ -333,9 +333,7 @@
   (set! mouse-pointer-has-been-set #f)
 
   (ra:set-statusbar-text "")
-
   (define ret (thunk))
-
   (if (not mouse-fx-has-been-set)
       (ra:set-no-mouse-fx))
 
@@ -372,7 +370,7 @@
 (define (radium-mouse-move $button $x $y)
   (handling-nodes
    (lambda()
-     ;;(c-display "mouse move" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
+     ;;(c-display "mouse move2" $button $x $y (ra:ctrl-pressed) (ra:shift-pressed))
      ;;(cancel-current-stuff)
      (if *current-mouse-cycle*
          (begin 

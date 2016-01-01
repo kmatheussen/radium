@@ -287,9 +287,11 @@ int SCHEME_get_webserver_port(void){
 void SCHEME_start(void){
 
   s7 = s7_init();
-  if (s7==NULL)
+  if (s7==NULL) {
     RError("Can't start s7 scheme");
-
+    return;
+  }
+  
   std::string os_path = ""; //OS_get_program_path() + OS_get_directory_separator();
   //printf("%s\n",os_path);
 

@@ -1,5 +1,68 @@
 (provide 'common1.scm)
 
+
+;; redefine 'ow!'
+(define (ow!)
+  (call-with-output-string
+   (lambda (p)
+     (let ((ow (owlet))
+	   (elist (list (rootlet))))
+       
+       ;; show current error data
+       (format p "\n;error: ~A" (ow 'error-type))
+       (when (pair? (ow 'error-data))
+             (format p ": ~A" (apply format #f (ow 'error-data))))
+
+       (format p "~%;error-code: ~S~%" (ow 'error-code))
+       (if (ow 'error-line)
+           (format p "~%;error-file/line: ~S[~A]~%" (ow 'error-file) (ow 'error-line))
+           (format p "~%;error-file/line: ; no file/linenum"))
+
+       (define (print-frame num x l f)
+         (if (and (integer? (car l))
+                  (string? (car f))
+                  (not (string=? (car f) "*stdout*")))
+             (format p " ~%    ~A. ~S~40T;~A[~A]" num (car x) (car f) (car l))
+             (format p " ~%    ~A. ~S; no file/linenum" num (car x))))
+         
+       ;; show history, if available
+       (when (pair? (ow 'error-history)) ; a circular list, starts at error-code, entries stored backwards
+	 (let ((history ())
+	       (lines ())
+	       (files ())
+               (num 2)
+	       (start (ow 'error-history)))
+	   (do ((x (cdr start) (cdr x)))
+	       ((eq? x start)
+		(format p "~%error-history:~%    1. ~S ; no file/linenum" (car start))
+                ;;(print-frame 1 x lines files)
+		(do ((x history (cdr x))
+		     (l lines (cdr l))
+		     (f files (cdr f)))
+		    ((null? x))
+		  (if (and (integer? (car l))
+			   (string? (car f))
+			   (not (string=? (car f) "*stdout*")))
+		      (format p " ~%    ~A. ~S~40T;~A[~A]" num (car x) (car f) (car l))
+		      (format p " ~%    ~A. ~S; no file/linenum" num (car x)))
+                  (set! num (1+ num)))
+		(format p "~%"))
+	     (set! history (cons (car x) history))
+	     (set! lines (cons (pair-line-number (car x)) lines))
+	     (set! files (cons (pair-filename (car x)) files)))))
+       
+       ;; show the enclosing contexts
+       (let ((old-print-length (*s7* 'print-length)))
+	 (set! (*s7* 'print-length) 8)
+	 (do ((e (outlet ow) (outlet e))) 
+	     ((memq e elist)
+	      (set! (*s7* 'print-length) old-print-length))
+	   (if (> (length e) 0)
+	       (format p "~%~{~A~| ~}~%" e))
+	   (set! elist (cons e elist))))))))
+
+
+
 (define (assert something)
   (if (not something)
       (throw "assert-failed")))
@@ -14,6 +77,7 @@
 ||#
 
 (define (to-displayable-string a)
+  ;;(display "____ a: ")(display a)(newline)
   (cond ((keyword? a)
          (<-> "#:" (to-displayable-string (keyword->symbol a))))
         ((symbol? a)
@@ -33,21 +97,85 @@
         ((vector? a)
          (<-> "[" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) (vector->list a))) "]"))
         ((procedure? a)
-         (catch #t
-                (lambda ()
-                  (event-to-string a))
-                (lambda args
-                  (catch #t
-                         (lambda ()
-                           (cloned-instrument-to-string a))
-                         (lambda args
-                           (<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
+         (if #t
+             "something"
+             (catch #t
+                    (lambda ()
+                      (non-existing-event-to-string2 a))
+                    (lambda args
+                      (catch #t
+                             (lambda ()
+                               (cloned-instrument-to-string4 a))
+                             (lambda args
+                               "something2"))))))
+                                        ;                           (with-output-to-string
+                                        ;                             (lambda ()
+                                        ;                               (display a))))))))
+        
+        ;;(<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
         (else
          "#unknown type")))
+
+
+#||
+
+(define (provoceit)
+  (define (delete-note2)
+    (ra:undo-notes (pianonote-info :tracknum))
+    (ra:delete-pianonote 0
+                         (pianonote-info :notenum)
+                         (pianonote-info :tracknum))
+    #f)
+  
+  (define (add-pitch2)
+    (ra:undo-notes (pianonote-info :tracknum))
+    (define Place (get-place-from-y $button $y))
+    (define Value (ra:get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+    (define Num (ra:create-pitch Value Place (pianonote-info :tracknum)))
+    (if (= -1 Num)
+        #f
+        #f))
+  (popup-menu "Delete Note2" delete-note2
+              "Add Portamento2" add-pitch2))
+
+;;(provoceit)
+
+
+
+'(string-append ""
+               (catch #t
+                      (lambda ()
+                        (cloned-instrument-to-string 'asdf))
+                      (lambda args
+                        (catch #t
+                               (lambda ()
+                                 (event-to-string a))
+                               (lambda args
+                                 "error"))))
+               "")
+(define level 0)
+(define (to-displayable-string2 a)
+  (for-each (lambda (level)
+             (display "  "))
+           (iota level))
+  (display level)(display ": ")(display a)(newline)
+  (set! level (1+ level))
+  (define result (to-displayable-string-intern a))
+  (set! level (1- level))
+  (for-each (lambda (level)
+             (display "  "))
+           (iota level))
+  (display level)(display "<____ res: ")(display result)(newline)
+  result)
+
+||#
+
 
 (define (to-string a)
   (cond ((symbol? a)
          (symbol->string a))
+        ((string? a)
+         a)
         ((number? a)
          (number->string a))
         ((equal? #t a)
@@ -63,12 +191,22 @@
         ((keyword? a)
          (<-> "#:" (to-string (keyword->symbol a))))
         (else
-         a)))
+         (with-output-to-string
+           (lambda ()
+             (display a))))))
 
 (define (<-> . args) (apply string-append (map to-string args)))
 (define (<_> . args) (string->symbol (apply <-> args)))
 
 (define (<-displayable-> . args) (apply string-append (map to-displayable-string args)))
+
+#||
+(let ((result (<-> "hello: "
+                   (with-output-to-string
+                     (lambda ()
+                       (write (lambda (a b c) 'hello)))))))
+  (c-display "result2: -" result "-"))
+||#
 
 
 #||

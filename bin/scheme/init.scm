@@ -32,7 +32,6 @@
                   (load filename)
                   (loop (cdr load-path))))))))
                       
-
 (my-require 'define-match.scm)
 
 (my-require 'common2.scm)
@@ -41,3 +40,4 @@
 
 (my-require 'quantitize.scm)
 
+;;(gc #f)
