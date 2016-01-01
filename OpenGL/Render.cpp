@@ -1803,9 +1803,9 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
   set_g_colored_tracks();
   
-  static int level=0;
+  //static int level=0;
   //static int n=0; printf("GL_create called %d\n",n++);
-  printf("GL_create called %d\n",level++);
+  //printf("GL_create called %d\n",level++);
 
   GE_start_writing(); {
     

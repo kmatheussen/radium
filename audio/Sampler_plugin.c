@@ -945,7 +945,7 @@ static void update_peaks(SoundPlugin *plugin){
 #endif
 
 #if USE_OPENGL
-  GFX_ScheduleRedraw();
+  GFX_ScheduleEditorRedraw();
 
 #else
   if(plugin->patch!=NULL)

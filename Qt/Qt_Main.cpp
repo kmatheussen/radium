@@ -598,14 +598,15 @@ public:
     : interval(20)
     , num_calls(0)
   {
-    setInterval(interval);
-    start();
     msgBox.setModal(false);
     msgBox_dontshowagain = (QAbstractButton*)msgBox.addButton("Dont show this message again",QMessageBox::ApplyRole);
     msgBox_stop_playing = (QAbstractButton*)msgBox.addButton("Stop playing!",QMessageBox::ApplyRole);
     msgBox_ok = (QAbstractButton*)msgBox.addButton("Ok",QMessageBox::AcceptRole);
     msgBox.open();
     msgBox.hide();
+    
+    setInterval(interval);
+    start();
   }
 protected:
 

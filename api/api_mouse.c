@@ -278,7 +278,7 @@ void setReltempo(float reltempo){
   );
 
   //update_statusbar(window);
-  DrawBlockRelTempo(window,wblock);
+  //DrawBlockRelTempo(window,wblock);
 
   window->must_redraw = true;
 }
@@ -376,7 +376,7 @@ void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
     return;
 
   wtrack->track->panonoff = onoff;
-  
+        
   window->must_redraw = true;
 }
 

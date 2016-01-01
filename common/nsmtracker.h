@@ -1371,6 +1371,7 @@ struct Tracker_Windows{
 #endif
 
   bool must_redraw;
+  bool must_redraw_editor; // Same as must_redraw, but only redraws the editor.
 };
 #define NextWindow(a) (struct Tracker_Windows *)((a)->l.next)
 

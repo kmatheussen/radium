@@ -91,6 +91,13 @@ static inline void GFX_ScheduleRedraw(void){
   }
 }
 
+static inline void GFX_ScheduleEditorRedraw(void){
+  if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
+    struct Tracker_Windows *window=root->song->tracker_windows;
+    window->must_redraw_editor = true;
+  }
+}
+
 extern LANGSPEC void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_PlayListWindowToFront(void);
 extern LANGSPEC void GFX_PlayListWindowToBack(void);

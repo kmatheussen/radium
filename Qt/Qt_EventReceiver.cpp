@@ -126,9 +126,15 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
     GFX_clear_op_queue(this->window);
     DO_GFX(DrawUpTrackerWindow(this->window));
 
-    GL_create(window, window->wblock);
+    window->must_redraw_editor=true;
   }
 
+  if (window->must_redraw_editor==true){
+    window->must_redraw_editor=false;
+    //printf("calling gl_create\n")
+    GL_create(window, window->wblock);
+  }
+  
   //printf("height: %d, width: %d\n",e->rect().height(),e->rect().width());
   //printf("update editor\n");
   //GL_create(window, window->wblock);
@@ -157,7 +163,7 @@ void EditorWidget::updateEditor(){
   if(is_starting_up==true)
     return;
 
-  if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
+  if(this->window->must_redraw==true || this->window->must_redraw_editor==true || GFX_get_op_queue_size(this->window)>0) {
     update();
   }
 }
