@@ -173,11 +173,11 @@ void EditorWidget::updateEditor(){
     did_gl_create = true;
   }
 
-  if (this->window->redraw_has_been_scheduled==false) {
-    if (this->window->must_redraw==true && did_gl_create==false)
-      GL_create(this->window, this->window->wblock);
-    
+  if (this->window->redraw_has_been_scheduled==false) {    
     if(this->window->must_redraw==true || GFX_get_op_queue_size(this->window)>0) {
+      if (this->window->must_redraw==true && did_gl_create==false)
+        GL_create(this->window, this->window->wblock);
+
       this->window->redraw_has_been_scheduled=true;
       update();
     }

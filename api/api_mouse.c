@@ -69,7 +69,7 @@ extern int indicator_pitch_num;
 static void setCurrentNode(struct ListHeader3 *new_current_node){
   if (current_node != new_current_node){
     current_node = new_current_node;
-    root->song->tracker_windows->must_redraw = true;
+    root->song->tracker_windows->must_redraw_editor = true;
     //printf("current node dirty\n");
   }
 }
@@ -81,7 +81,7 @@ void cancelCurrentNode(void){
 static void setIndicatorNode(const struct ListHeader3 *new_indicator_node){
   if (indicator_node != new_indicator_node){
     indicator_node = new_indicator_node;
-    root->song->tracker_windows->must_redraw = true;
+    root->song->tracker_windows->must_redraw_editor = true;
     //printf("indicator node dirty\n");
   }
 }
@@ -131,7 +131,7 @@ void setMouseTrack(int tracknum){
 
   if(tracknum != wblock->mouse_track){
     wblock->mouse_track = tracknum;
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
   }
 }
 
@@ -843,7 +843,7 @@ void setTemponode(int num, float value, float floatplace, int blocknum, int wind
 
   //printf("before: %f, now: %f\n",floatplace, GetfloatFromPlace(&temponode->l.p));
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 }
 
 int getNumTemponodes(int blocknum, int windownum){
@@ -882,7 +882,7 @@ void deleteTemponode(int num, int blocknum){
 
   UpdateSTimes(wblock->block);    
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 }
 
 int createTemponode(float value, float floatplace, int blocknum, int windownum){
@@ -923,7 +923,7 @@ int createTemponode(float value, float floatplace, int blocknum, int windownum){
 
   UpdateSTimes(block);
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
   return ListFindElementPos3(&block->temponodes->l, &temponode->l);
 }
@@ -1137,7 +1137,7 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   
   setPianoNoteValue(value, pianonotenum, note);
 
-  window->must_redraw=true;
+  window->must_redraw_editor = true;
     
   if (floatplace < 0)
     return notenum;
@@ -1241,7 +1241,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 
   note->note = R_BOUNDARIES(1, value, 127);
     
-  window->must_redraw=true;
+  window->must_redraw_editor = true;
     
   if (floatplace < 0)
     return notenum;
@@ -1290,14 +1290,14 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   if (note->pitches!=NULL) {
     if (floatplace>=0) {
       MoveEndNote(block, track, note, PlaceCreate2(floatplace), false);
-      window->must_redraw=true;
+      window->must_redraw_editor=true;
     }
     return notenum;
   }
 
   note->note = R_BOUNDARIES(1, value, 127);
     
-  window->must_redraw=true;
+  window->must_redraw_editor=true;
     
   if (floatplace < 0)
     return notenum;
@@ -1362,7 +1362,7 @@ int createPianonote(float value, float floatplace, float endfloatplace, int trac
 
   struct Notes *note = InsertNote(wblock, wtrack, &startplace, &endplace, value, NOTE_get_velocity(track), true);
   
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
   return ListPosition3(&track->notes->l, &note->l);
 }
@@ -1376,7 +1376,7 @@ void deletePianonote(int pianonotenum, int notenum, int tracknum, int blocknum, 
     return;
 
   if (pianonotenum==0) {
-    window->must_redraw=true;
+    window->must_redraw_editor=true;
 
     PLAYER_lock();{
       ListRemoveElement3(&wtrack->track->notes, &note->l);
@@ -1403,7 +1403,7 @@ void setCurrentPianonote(int num, int notenum, int tracknum){
       current_piano_note.tracknum = tracknum;
       current_piano_note.notenum = notenum;
       current_piano_note.pianonotenum = num;
-      root->song->tracker_windows->must_redraw = true;
+      root->song->tracker_windows->must_redraw_editor = true;
     }
 }
 
@@ -1519,7 +1519,7 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
   return;
   
  gotit:
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 }
 
 
@@ -1817,7 +1817,7 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
   if (getPitch(num, &pitch, &note, track)==false)
     return num;
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
   if (pitch != NULL) {
     
@@ -1871,7 +1871,7 @@ static int addNote3(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), false);
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
   
   return getPitchNum(wtrack->track, note, NULL);
 }
@@ -1883,7 +1883,7 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   if(pitch==NULL)
     return -1;
   
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
   return getPitchNum(wtrack->track, note, pitch);
 }
@@ -2020,7 +2020,7 @@ void setNoMouseNote(int blocknum, int windownum){
   
   if (wblock->mouse_note != NULL){
     wblock->mouse_note = NULL;
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
     //printf("no mouse note dirty\n");
   }
 }
@@ -2034,7 +2034,7 @@ void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
     return;
   else if (wblock->mouse_note != note){
     wblock->mouse_note = note;
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
     //printf("mouse note dirty\n");
   }
 }
@@ -2126,7 +2126,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   }
 
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
   return ret+1;
 }
@@ -2148,9 +2148,9 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
     return notenum;
   }
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
-  printf("velocitynum==%d. floatplace: %f\n",velocitynum,floatplace);
+  //printf("velocitynum==%d. floatplace: %f\n",velocitynum,floatplace);
 
   if (velocitynum==0) {
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
@@ -2231,7 +2231,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
     }PLAYER_unlock();
   }
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 }
 
 
@@ -2488,7 +2488,7 @@ int createFxnode(float value, float floatplace, int fxnum, int tracknum, int blo
     return -1;
   }
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 
   return ret;
 }
@@ -2526,7 +2526,7 @@ void setFxnode(int fxnodenum, float value, float floatplace, int fxnum, int trac
   
   fxnodeline->val=scale(value, 0.0f, 1.0f, min, max); //R_BOUNDARIES(min,value,max);
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 }
 
 void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -2550,7 +2550,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   
   DeleteFxNodeLine(wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
 }
 
 
@@ -2600,7 +2600,7 @@ void setNoMouseFx(int blocknum, int windownum){
   
   if (wblock->mouse_fxs != NULL){
     wblock->mouse_fxs = NULL;
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
     //printf("no mouse fx dirty\n");
   }
 }
@@ -2614,7 +2614,7 @@ void setMouseFx(int fxnum, int tracknum, int blocknum, int windownum){
     return;
   else if (wblock->mouse_fxs != fxs){
     wblock->mouse_fxs = fxs;
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
     //printf("mouse fx dirty\n");
   }
 }
