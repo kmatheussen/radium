@@ -45,7 +45,7 @@ void DrawSlider(
   
   GFX_FilledBox(
                 window,EDITOR_SLIDERS_COLOR_NUM,
-                box->x1,y1,
+                box->x1+2,y1,
                 x,y2,
                 where
                 );
