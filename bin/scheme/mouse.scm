@@ -212,7 +212,9 @@
           (set! prev-y $y)
           
           ;; dirty trick to avoid the screen edges
-          (when mouse-pointer-is-hidden
+          ;;
+          ;;(when mouse-pointer-is-hidden  ;; <- this line can cause mouse pointer to be stuck between 16,16 and 500,500 if something goes wrong.
+          (when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
             (when (or (< (ra:get-mouse-pointer-x) 16)
                       (< (ra:get-mouse-pointer-y) 16)
                       (> (ra:get-mouse-pointer-x) 500)
