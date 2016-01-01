@@ -307,7 +307,8 @@
 (define mouse-pointer-has-been-set #f)
 (define (set-mouse-pointer func)
   (set! mouse-pointer-has-been-set #t)
-  (func))
+  (func)
+  )
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)

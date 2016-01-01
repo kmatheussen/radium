@@ -102,8 +102,8 @@ static void PlayStopReally(bool doit){
         PATCH_reset_time();
 
         //while(GC_is_disabled())
-        while(GC_dont_gc>0)
-          GC_enable();
+        //while(GC_dont_gc>0)
+        //  GC_enable();
 
         MIDI_insert_recorded_midi_events();
 }
@@ -124,9 +124,9 @@ static void PlayBlock(
         // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
         //while(GC_is_disabled()==false){
           //printf("Calling gc_disable: %d\n",GC_dont_gc);
-        while(GC_dont_gc<=0){
-          GC_disable();
-        }
+  //while(GC_dont_gc<=0){
+  //        GC_disable();
+  //      }
 
 	pc->initplaying=true;
 
@@ -340,8 +340,8 @@ static void PlaySong(
 	pc->initplaying=false;
 
         // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
-        while(GC_is_disabled()==false)
-          GC_disable();
+        //while(GC_is_disabled()==false)
+        //  GC_disable();
 }
 
 
