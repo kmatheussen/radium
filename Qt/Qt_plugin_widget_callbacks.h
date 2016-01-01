@@ -256,7 +256,7 @@ private:
                                               last_fxb_preset_path,
                                               is_fxb ? "VST FXB (*.fxb) ;; All files (*)" : "VST FXP (*.fxp) ;; All files (*)",
                                               0,
-                                              QFileDialog::DontUseNativeDialog
+                                              useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                               );
     }GL_unlock();
     
@@ -286,7 +286,7 @@ private:
                                               last_fxb_preset_path,
                                               "VST FXB/FXP files (*.fxb *.fxp) ;; All files (*)",
                                               0,
-                                              QFileDialog::DontUseNativeDialog
+                                              useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                               );
     }GL_unlock();
     

@@ -157,9 +157,11 @@ public slots:
 
   void on_filename_button_clicked(){
     QString filename = QFileDialog::getSaveFileName(this, 
-                                                    QString("Select file")
-                                                    //,QString()
-                                                    //,info.fileName()
+                                                    QString("Select file"),
+                                                    QString(),
+                                                    QString(),
+                                                    0,
+                                                    useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                                     );
     filename_edit->setText(filename);
   }

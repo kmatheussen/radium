@@ -85,7 +85,13 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       int ret = GFX_Message(&v, ("VST Plugin " + QString(plugin_name) + " not found.").toUtf8().constData());
 
       if (ret==0) {
-        QString filename = QFileDialog::getOpenFileName(NULL, plugin_name);
+        QString filename = QFileDialog::getOpenFileName(NULL,
+                                                        plugin_name,
+                                                        QString(),
+                                                        QString(),
+                                                        0,
+                                                        useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
+                                                        );
         QFileInfo info(filename);
 
         QString basename = info.fileName();

@@ -175,11 +175,22 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
 
       QString filename;
 
+#if 0
+      QStringList QFileDialog::getOpenFileNames(QWidget * parent = 0,
+                                                const QString & caption = QString(),
+                                                const QString & dir = QString(),
+                                                const QString & filter = QString(),
+                                                QString * selectedFilter = 0,
+                                                Options options = 0)
+#endif
+        
       GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
         filename = QFileDialog::getOpenFileName(editor, 
-                                                QString("Select file to replace ")+info.fileName()
-                                                //,QString()
-                                                //,info.fileName()
+                                                QString("Select file to replace ")+info.fileName(),
+                                                QString(),
+                                                QString(),
+                                                0,
+                                                useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                                 );
       }GL_unlock();
 

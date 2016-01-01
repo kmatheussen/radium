@@ -973,6 +973,25 @@ void setModalWindows(bool doit){
 }
 
 
+static bool g_native_file_requesters;
+
+bool useNativeFileRequesters(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_native_file_requesters = SETTINGS_read_bool("native_file_requesters", false);
+    has_inited = true;
+  }
+
+  return g_native_file_requesters;
+}
+
+void setUseNativeFileRequesters(bool doit){
+  g_native_file_requesters = doit;
+  SETTINGS_write_bool("native_file_requesters", doit);
+}
+
+
 void printMixerTree(void){
   SP_print_tree();
 }

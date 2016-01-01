@@ -775,7 +775,7 @@ static hash_t *load_preset_state(void){
                                             last_preset_path,
                                             "Radium Effect Configuration (*.rec)",
                                             0,
-                                            QFileDialog::DontUseNativeDialog
+                                            useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                             );
   }GL_unlock();
   
@@ -929,7 +929,7 @@ void InstrumentWidget_save_preset(struct Patch *patch){
                                             last_preset_path,
                                             "Radium Effect Configuration (*.rec)",
                                             0,
-                                            QFileDialog::DontUseNativeDialog                                            
+                                            useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog
                                             );
   }GL_unlock();
   

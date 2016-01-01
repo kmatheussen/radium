@@ -396,7 +396,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
         if (patch != NULL){
           int colornum = patch==NULL ? HIGH_EDITOR_BACKGROUND_COLOR_NUM : patch->colornum;
 
-          bool is_current_track = get_current_instruments_gui_patch()==patch;
+          //bool is_current_track = get_current_instruments_gui_patch()==patch;
           
           GE_Context *c = GE_z(shade_realline(GE_get_custom_rgb(colornum), wsignature, localzoom), Z_BACKGROUND | Z_STATIC_X);
           

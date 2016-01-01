@@ -293,7 +293,8 @@ class Preferences : public QDialog, public Ui::Preferences {
 
     // Windows
     {
-      modal_windows->setChecked(doModalWindows());      
+      modal_windows->setChecked(doModalWindows());
+      native_file_requesters->setChecked(useNativeFileRequesters());
     }
     
     // MIDI
@@ -467,6 +468,10 @@ public slots:
 
   void on_modal_windows_toggled(bool val){
     setModalWindows(val);
+  }
+
+  void on_native_file_requesters_toggled(bool val){
+    setUseNativeFileRequesters(val);
   }
 
   // MIDI
