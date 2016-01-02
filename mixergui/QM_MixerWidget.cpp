@@ -311,6 +311,8 @@ static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
     chip->setPos(x,y);
   }
 
+  //printf("size: %d\n",(int)myscene->_moving_chips.size());
+  
   draw_slot(myscene,mouse_x,mouse_y);
 
   // Find out whether the new position is on top of another chip. If so, set cursor.
@@ -358,17 +360,21 @@ void MW_update_all_chips(void){
   }
 }
 
+static void handle_chip_selection(MyScene *myscene, QGraphicsSceneMouseEvent * event, Chip *chip){
+  if(chip->isSelected()==false){
+    if(event->modifiers() & Qt::ControlModifier)
+      chip->setSelected(true);
+    else
+      MW_set_selected_chip(chip);
+  }
+
+  myscene->_moving_chips.push_back(chip);
+}
+
 static void start_moving_chips(MyScene *myscene, QGraphicsSceneMouseEvent * event, Chip *main_chip, float mouse_x, float mouse_y){
   Undo_Open();
 
-  if(main_chip->isSelected()==false){
-    if(event->modifiers() & Qt::ControlModifier)
-      main_chip->setSelected(true);
-    else
-      MW_set_selected_chip(main_chip);
-  }
-
-  myscene->_moving_chips.push_back(main_chip);
+  handle_chip_selection(myscene, event, main_chip);
 
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
 
@@ -777,7 +783,7 @@ static bool mousepress_delete_connection(MyScene *scene, QGraphicsSceneMouseEven
   return false;
 }
 
-static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y){
+static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * event, QGraphicsItem *item, float mouse_x, float mouse_y, bool ctrl_pressed){
   Chip *chip = dynamic_cast<Chip*>(item);
 
   if(chip!=NULL){
@@ -788,8 +794,7 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     struct Instruments *instrument = get_audio_instrument();
     printf("Calling pp_update\n");
     instrument->PP_Update(instrument,(struct Patch*)patch);
-    MW_set_selected_chip(chip);
-    
+
     start_moving_chips(scene,event,chip,mouse_x,mouse_y);
     event->accept();
     return true;
@@ -879,6 +884,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
 
   GFX_ScheduleRedraw();
+
+  bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
   if(event_can_delete(event))
     if(mousepress_delete_chip(this,event,item,mouse_x,mouse_y)==true)
@@ -888,18 +895,29 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
 
-  if(event->button()==Qt::LeftButton)
-    if(mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
+  if(event->button()==Qt::LeftButton) {
+    if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
 
-  if(event->button()==Qt::RightButton){
-    bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
+    if(ctrl_pressed==true && mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
+      return;
+
+  } if(event->button()==Qt::RightButton){
     
     if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) // create
       return;
 
-    if(mousepress_select_chip(this,event,item,mouse_x,mouse_y)==true) // select
+    // start moving chip    
+    Chip *chip = dynamic_cast<Chip*>(item);
+      
+    if(chip!=NULL){
+      start_moving_chips(this,event,chip,mouse_x,mouse_y);
+      event->accept();
       return;
+    }
+    
+    //if(mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
+    //  return;
   }
 
   QGraphicsScene::mousePressEvent(event);
