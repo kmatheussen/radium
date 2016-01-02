@@ -65,6 +65,9 @@ public:
 #define QGraphicsView MyQGraphicsView
 #include "Qt_mixer_widget.h"
 
+extern EditorWidget *g_editor;
+
+
 class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   Q_OBJECT
 
@@ -73,14 +76,23 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   qreal _rotate;
 
+  qreal _middle_zoom;
+  
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
     , _rotate(0)
+    , _middle_zoom(1.0)
   {
     initing = true;
     setupUi(this);
     g_zoom_slider = zoom_slider;
     initing = false;
+
+    // Tro to find default zoom level based on system font
+    QFont font = g_editor->main_window->font();
+    _middle_zoom = 230 - (font.pointSize()-12) * 4.0;
+    
+    on_zoom_slider_valueChanged(zoom_slider->value());
   }
 
   void set_rotate(qreal rotate){
@@ -119,7 +131,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   }
 
   void on_zoom_slider_valueChanged(int val){
-    qreal scale = qPow(qreal(2), (val - 250) / qreal(50));
+    
+    qreal scale = qPow(qreal(2), (val - _middle_zoom) / qreal(50));
 
     QMatrix matrix;
     matrix.scale(scale, scale);

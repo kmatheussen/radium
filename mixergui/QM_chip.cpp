@@ -95,7 +95,7 @@ extern EditorWidget *g_editor;
 //
 
 
-int get_text_width(const QFont &font, const QString &text){
+static int get_text_width(const QFont &font, const QString &text){
   const QFontMetrics fn = QFontMetrics(font);
   return fn.width(text);
 }
@@ -908,7 +908,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     border_color.setAlpha(160);
 
   painter->setPen(QPen(border_color, 2));
-  painter->setFont(g_editor->main_window->font());
+
+  QFont font = g_editor->main_window->font();
+  font.setPointSize(12);
+  font.setPixelSize(12);
+
+  painter->setFont(font);
 
   // main box
   {

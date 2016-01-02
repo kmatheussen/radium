@@ -65,12 +65,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #endif
 
+#include <QMainWindow>
+
 #include "../common/nsmtracker.h"
 #include "../Qt/Qt_MyQSlider.h"
 #include "QM_view.h"
 
-
 #include <qmath.h>
+
+extern EditorWidget *g_editor;
+
 
 void GraphicsView::wheelEvent(QWheelEvent *e)
 {
@@ -124,7 +128,10 @@ View::View(const QString &name, QWidget *parent)
     zoomSlider = new MyQSlider;
     zoomSlider->setMinimum(0);
     zoomSlider->setMaximum(500);
+
     zoomSlider->setValue(250);
+
+    
     zoomSlider->setTickPosition(QSlider::TicksRight);
 
     // Zoom slider layout
