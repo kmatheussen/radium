@@ -91,6 +91,20 @@ static bool Load(const wchar_t *filename){
 		dc.colorize=false;
 	}
 
+        if (disk_load_version < 0.75){
+          GFX_Message(NULL,
+                      "<p>Note! The portamento behavior for polyphonic tracks changed in Radium V3.4.9"
+                      "</p>"
+                      "<p>"
+                      "Before Radium V3.4.9, the final portamento value was the pitch value of the next note after the <i>start</i> of the note. "
+                      "Now, the final portamento value is the pitch value of the next note after the <i>end</i> of the note."
+                      "</p>"
+                      "<p>"
+                      "Old songs with portamento in polyphonic tracks might not sound the same."
+                      "</p>"
+                      );
+        }
+        
         if(disk_load_version>DISKVERSION+0.0001){
           GFX_Message(NULL,"You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
           return false;

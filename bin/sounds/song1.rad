@@ -1,5 +1,5 @@
 RADIUM SONG
-0.74
+0.75
 
 \
 OSSTUFF
@@ -40,7 +40,7 @@ ROOT
 1
 
 ?keyoct
-120
+36
 
 ?min_standardvel
 26214
@@ -63,7 +63,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V2 BEGIN
-24
+25
 author
 0
 STRING_TYPE
@@ -152,6 +152,10 @@ comment
 20
 STRING_TYPE
 
+comment
+21
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -174,10 +178,10 @@ TRACKER_WINDOW
 0
 
 ?width
-857
+550
 
 ?height
-525
+400
 
 ?fontID
 0
@@ -884,7 +888,7 @@ FXS
 
 \
 FX
-24
+28
 
 ?name
 System Lp F.
@@ -899,13 +903,13 @@ System Lp F.
 65536
 
 ?effect_num
-24
+28
 
 \
 FXDATA
 
 ?num
-24
+28
 
 ?name
 System Lp F.
@@ -1864,7 +1868,7 @@ FXS
 
 \
 FX
-20
+24
 
 ?name
 System Pan
@@ -1879,13 +1883,13 @@ System Pan
 65536
 
 ?effect_num
-20
+24
 
 \
 FXDATA
 
 ?num
-20
+24
 
 ?name
 System Pan
@@ -3695,7 +3699,7 @@ FXS
 
 \
 FX
-20
+24
 
 ?name
 System Pan
@@ -3710,13 +3714,13 @@ System Pan
 65536
 
 ?effect_num
-20
+24
 
 \
 FXDATA
 
 ?num
-20
+24
 
 ?name
 System Pan
@@ -5855,7 +5859,7 @@ HASH_TYPE
 patch
 0
 INT_TYPE
-24
+25
 plugin
 0
 HASH_TYPE
@@ -5869,51 +5873,289 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-52
-Amount
+50
+Cross Mode
+0
+FLOAT_TYPE
+1
+Dry Level [dB]
+0
+FLOAT_TYPE
+0
+Haas Effect
+0
+FLOAT_TYPE
+0
+L Delay [ms]
+0
+FLOAT_TYPE
+32.20000076293945
+L Echo Level [dB]
+0
+FLOAT_TYPE
+0
+L Feedback [%]
+0
+FLOAT_TYPE
+28.22999954223633
+R Echo Level [dB]
+0
+FLOAT_TYPE
+0
+R/Haas Delay [ms]
+0
+FLOAT_TYPE
+58.79999923706055
+R/Haas Feedback [%]
+0
+FLOAT_TYPE
+31.61000061035156
+Swap Outputs
+0
+FLOAT_TYPE
+0
+System Chorus
+0
+FLOAT_TYPE
+0.05325678735971451
+System Chorus On/Off
+0
+FLOAT_TYPE
+1
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
 0
 FLOAT_TYPE
 2
-Center Frq 1
+System Compression Release
 0
 FLOAT_TYPE
-99.89689636230469
-Center Frq 2
+100.2368087768555
+System Compression Threshold
 0
 FLOAT_TYPE
-4999.4501953125
-Dry Amount
-0
-FLOAT_TYPE
-1
-Inter-voice phase
-0
-FLOAT_TYPE
-63.97200012207031
-Min delay
-0
-FLOAT_TYPE
-4.998042583465576
-Mod depth
-0
-FLOAT_TYPE
-5.997910499572754
-Modulation rate
-0
-FLOAT_TYPE
-0.499700665473938
-Overlap
+-20
+System Controls On/Off
 0
 FLOAT_TYPE
 1
-Q
+System Dry/Wet
 0
 FLOAT_TYPE
-0.125
-Stereo phase
+1
+System Effects On/Off
 0
 FLOAT_TYPE
-180
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+0
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Hs F.
+0
+FLOAT_TYPE
+1499.337646484375
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.6249927282333374
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.571399986743927
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+1.389152765274048
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+0.9666069149971008
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+19.73999977111816
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+TAP Stereo Echo
+type_name
+0
+STRING_TYPE
+Ladspa
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+-120
+y
+0
+FLOAT_TYPE
+-64
+<< HASH MAP V2 END
+
+1
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+23
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+54
+Attack
+0
+FLOAT_TYPE
+0
+Crossfade
+0
+FLOAT_TYPE
+0
+Decay
+0
+FLOAT_TYPE
+0
+Finetune
+0
+FLOAT_TYPE
+0.5
+Hold
+0
+FLOAT_TYPE
+0
+Loop
+0
+FLOAT_TYPE
+0
+Note adjustment
+0
+FLOAT_TYPE
+0
+Release
+0
+FLOAT_TYPE
+0
+Start Position
+0
+FLOAT_TYPE
+0
+Sustain
+0
+FLOAT_TYPE
+1
 System Chorus
 0
 FLOAT_TYPE
@@ -5997,7 +6239,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9154298901557922
+0.9997119307518005
 System In On/Off
 0
 FLOAT_TYPE
@@ -6061,7 +6303,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.3036512136459351
+0.9997119307518005
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -6074,19 +6316,49 @@ System Width On/Off
 0
 FLOAT_TYPE
 0
-Voices
+Tremolo Depth
 0
 FLOAT_TYPE
-3.999500036239624
+0
+Tremolo Speed
+0
+FLOAT_TYPE
+0
+Vibrato Depth
+0
+FLOAT_TYPE
+0
+Vibrato Speed
+0
+FLOAT_TYPE
+0
 << HASH MAP V2 END
 name
 0
 STRING_TYPE
-Calf MultiChorus LADSPA
+Click
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+3
+filename
+0
+STRING_TYPE
+243749__unfa__metronome-1khz-weak-pulse.flac
+instrument_number
+0
+INT_TYPE
+3
+resampler_type
+0
+INT_TYPE
+2
+<< HASH MAP V2 END
 type_name
 0
 STRING_TYPE
-Ladspa
+Sample Player
 << HASH MAP V2 END
 x
 0
@@ -6095,10 +6367,1478 @@ FLOAT_TYPE
 y
 0
 FLOAT_TYPE
--192
+-160
 << HASH MAP V2 END
 
+2
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+18
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
 1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+54
+Attack
+0
+FLOAT_TYPE
+3.799999952316284
+Crossfade
+0
+FLOAT_TYPE
+0
+Decay
+0
+FLOAT_TYPE
+20
+Finetune
+0
+FLOAT_TYPE
+0.4990000128746033
+Hold
+0
+FLOAT_TYPE
+0
+Loop
+0
+FLOAT_TYPE
+0
+Note adjustment
+0
+FLOAT_TYPE
+0
+Release
+0
+FLOAT_TYPE
+20
+Start Position
+0
+FLOAT_TYPE
+0
+Sustain
+0
+FLOAT_TYPE
+0.5662000179290771
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+4.724998474121094
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Hs F.
+0
+FLOAT_TYPE
+3833.91259765625
+System Hs L.
+0
+FLOAT_TYPE
+1.889999389648438
+System Hs On/Off
+0
+FLOAT_TYPE
+1
+System In
+0
+FLOAT_TYPE
+0.5812659859657288
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+7.090999603271484
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.3755130171775818
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0
+System Pan On/Off
+0
+FLOAT_TYPE
+1
+System Reverb
+0
+FLOAT_TYPE
+0.3941168487071991
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+0.246817022562027
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+1.679999947547913
+System Width On/Off
+0
+FLOAT_TYPE
+0
+Tremolo Depth
+0
+FLOAT_TYPE
+0
+Tremolo Speed
+0
+FLOAT_TYPE
+0
+Vibrato Depth
+0
+FLOAT_TYPE
+0
+Vibrato Speed
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Sample Player
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+3
+filename
+0
+STRING_TYPE
+Guitar_Nylon.wav
+instrument_number
+0
+INT_TYPE
+45
+resampler_type
+0
+INT_TYPE
+2
+<< HASH MAP V2 END
+type_name
+0
+STRING_TYPE
+Sample Player
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+-240
+y
+0
+FLOAT_TYPE
+-64
+<< HASH MAP V2 END
+
+3
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+17
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+54
+Attack
+0
+FLOAT_TYPE
+7.699999809265137
+Crossfade
+0
+FLOAT_TYPE
+0
+Decay
+0
+FLOAT_TYPE
+4.800000190734863
+Finetune
+0
+FLOAT_TYPE
+0.5
+Hold
+0
+FLOAT_TYPE
+0
+Loop
+0
+FLOAT_TYPE
+0
+Note adjustment
+0
+FLOAT_TYPE
+0
+Release
+0
+FLOAT_TYPE
+23.19999885559082
+Start Position
+0
+FLOAT_TYPE
+0.001900000032037497
+Sustain
+0
+FLOAT_TYPE
+0.7504000067710876
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+-10.40900039672852
+System Eq2 On/Off
+0
+FLOAT_TYPE
+1
+System Hs F.
+0
+FLOAT_TYPE
+1493.061645507812
+System Hs L.
+0
+FLOAT_TYPE
+8.980998992919922
+System Hs On/Off
+0
+FLOAT_TYPE
+1
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+11346.845703125
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+1.41400146484375
+System Ls On/Off
+0
+FLOAT_TYPE
+1
+System Out
+0
+FLOAT_TYPE
+0.666806697845459
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5210000276565552
+System Pan On/Off
+0
+FLOAT_TYPE
+1
+System Reverb
+0
+FLOAT_TYPE
+0.06846994906663895
+System Reverb On/Off
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+0.1093326956033707
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+28.04000091552734
+System Width On/Off
+0
+FLOAT_TYPE
+1
+Tremolo Depth
+0
+FLOAT_TYPE
+0
+Tremolo Speed
+0
+FLOAT_TYPE
+0
+Vibrato Depth
+0
+FLOAT_TYPE
+0
+Vibrato Speed
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Sample Player
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+3
+filename
+0
+STRING_TYPE
+016.WAV
+instrument_number
+0
+INT_TYPE
+10
+resampler_type
+0
+INT_TYPE
+2
+<< HASH MAP V2 END
+type_name
+0
+STRING_TYPE
+Sample Player
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+-240
+y
+0
+FLOAT_TYPE
+-96
+<< HASH MAP V2 END
+
+4
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+16
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+54
+Attack
+0
+FLOAT_TYPE
+0
+Crossfade
+0
+FLOAT_TYPE
+0
+Decay
+0
+FLOAT_TYPE
+0
+Finetune
+0
+FLOAT_TYPE
+0.4309000074863434
+Hold
+0
+FLOAT_TYPE
+0
+Loop
+0
+FLOAT_TYPE
+0
+Note adjustment
+0
+FLOAT_TYPE
+0
+Release
+0
+FLOAT_TYPE
+208.8000030517578
+Start Position
+0
+FLOAT_TYPE
+0
+Sustain
+0
+FLOAT_TYPE
+1
+System Chorus
+0
+FLOAT_TYPE
+0.1015956327319145
+System Chorus On/Off
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+106.2451705932617
+System Eq1 L.
+0
+FLOAT_TYPE
+-1.378997802734375
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+7.090999603271484
+System Eq2 On/Off
+0
+FLOAT_TYPE
+1
+System Hs F.
+0
+FLOAT_TYPE
+11353.646484375
+System Hs L.
+0
+FLOAT_TYPE
+6.146003723144531
+System Hs On/Off
+0
+FLOAT_TYPE
+1
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+1
+System Lp F.
+0
+FLOAT_TYPE
+20000
+System Ls F.
+0
+FLOAT_TYPE
+50.00000762939453
+System Ls L.
+0
+FLOAT_TYPE
+-19.01900100708008
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+1.248102188110352
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.579800009727478
+System Pan On/Off
+0
+FLOAT_TYPE
+1
+System Reverb
+0
+FLOAT_TYPE
+0.1227439343929291
+System Reverb On/Off
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+0.246817022562027
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+8.399999618530273
+System Width On/Off
+0
+FLOAT_TYPE
+1
+Tremolo Depth
+0
+FLOAT_TYPE
+0
+Tremolo Speed
+0
+FLOAT_TYPE
+0
+Vibrato Depth
+0
+FLOAT_TYPE
+0
+Vibrato Speed
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Sample Player
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+3
+filename
+0
+STRING_TYPE
+bbs2.wav
+instrument_number
+0
+INT_TYPE
+98
+resampler_type
+0
+INT_TYPE
+2
+<< HASH MAP V2 END
+type_name
+0
+STRING_TYPE
+Sample Player
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+-240
+y
+0
+FLOAT_TYPE
+-128
+<< HASH MAP V2 END
+
+5
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+0
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+40
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+1
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+0.3470669984817505
+System Eq1 L.
+0
+FLOAT_TYPE
+0.4969978332519531
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1073.258422851562
+System Eq2 L.
+0
+FLOAT_TYPE
+-2.841999053955078
+System Eq2 On/Off
+0
+FLOAT_TYPE
+1
+System Hs F.
+0
+FLOAT_TYPE
+9400.9228515625
+System Hs L.
+0
+FLOAT_TYPE
+1.889999389648438
+System Hs On/Off
+0
+FLOAT_TYPE
+1
+System In
+0
+FLOAT_TYPE
+1.355969905853271
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+0.7686219811439514
+System Ls F.
+0
+FLOAT_TYPE
+0.3470669984817505
+System Ls L.
+0
+FLOAT_TYPE
+0.4969978332519531
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.9666069149971008
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+1.117506384849548
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+19.73999977111816
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Pipe
+type_name
+0
+STRING_TYPE
+Pipe
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+0
+y
+0
+FLOAT_TYPE
+-128
+<< HASH MAP V2 END
+
+6
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+1
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+5
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+40
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+1
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+0.3470669984817505
+System Eq1 L.
+0
+FLOAT_TYPE
+0.4969978332519531
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+0.5
+System Eq2 L.
+0
+FLOAT_TYPE
+0.4969978332519531
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Hs F.
+0
+FLOAT_TYPE
+0.5676739811897278
+System Hs L.
+0
+FLOAT_TYPE
+0.4969978332519531
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.4122162461280823
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+0.7686219811439514
+System Ls F.
+0
+FLOAT_TYPE
+0.3470669984817505
+System Ls L.
+0
+FLOAT_TYPE
+0.4969978332519531
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.5318019986152649
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+0.5318019986152649
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+0.004999999888241291
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+System Out
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+2
+output_portname
+0
+STRING_TYPE
+out_3
+output_portname
+1
+STRING_TYPE
+out_4
+<< HASH MAP V2 END
+type_name
+0
+STRING_TYPE
+Jack
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+240
+y
+0
+FLOAT_TYPE
+-128
+<< HASH MAP V2 END
+
+7
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+patch
+0
+INT_TYPE
+7
+plugin
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+4
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+effects
+0
+HASH_TYPE
+>> HASH MAP V2 BEGIN
+45
+HF Damping
+0
+FLOAT_TYPE
+8550.8037109375
+Input: In Delay
+0
+FLOAT_TYPE
+1.300000071525574
+LF X
+0
+FLOAT_TYPE
+221
+Low RT60
+0
+FLOAT_TYPE
+2.515500068664551
+Mid RT60
+0
+FLOAT_TYPE
+4.455900192260742
+System Chorus
+0
+FLOAT_TYPE
+0
+System Chorus On/Off
+0
+FLOAT_TYPE
+1
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1023.641723632812
+System Eq2 L.
+0
+FLOAT_TYPE
+-12.29899978637695
+System Eq2 On/Off
+0
+FLOAT_TYPE
+1
+System Hs F.
+0
+FLOAT_TYPE
+4418.8671875
+System Hs L.
+0
+FLOAT_TYPE
+4.724998474121094
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9154298901557922
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.7492470145225525
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Reverb On/Off
+0
+FLOAT_TYPE
+1
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Volume
+0
+FLOAT_TYPE
+0.828896164894104
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Width
+0
+FLOAT_TYPE
+24.78499984741211
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V2 END
+name
+0
+STRING_TYPE
+Zita Reverb
+type_name
+0
+STRING_TYPE
+Faust
+<< HASH MAP V2 END
+x
+0
+FLOAT_TYPE
+-120
+y
+0
+FLOAT_TYPE
+-224
+<< HASH MAP V2 END
+
+8
 HASH_TYPE
 >> HASH MAP V2 BEGIN
 4
@@ -6432,14 +8172,14 @@ FLOAT_TYPE
 -128
 << HASH MAP V2 END
 
-2
+9
 HASH_TYPE
 >> HASH MAP V2 BEGIN
 4
 patch
 0
 INT_TYPE
-7
+24
 plugin
 0
 HASH_TYPE
@@ -6453,27 +8193,51 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-45
-HF Damping
+52
+Amount
 0
 FLOAT_TYPE
-8550.8037109375
-Input: In Delay
+2
+Center Frq 1
 0
 FLOAT_TYPE
-1.300000071525574
-LF X
+99.89689636230469
+Center Frq 2
 0
 FLOAT_TYPE
-221
-Low RT60
+4999.4501953125
+Dry Amount
 0
 FLOAT_TYPE
-2.515500068664551
-Mid RT60
+1
+Inter-voice phase
 0
 FLOAT_TYPE
-4.455900192260742
+63.97200012207031
+Min delay
+0
+FLOAT_TYPE
+4.995742797851562
+Mod depth
+0
+FLOAT_TYPE
+5.997910499572754
+Modulation rate
+0
+FLOAT_TYPE
+0.499700665473938
+Overlap
+0
+FLOAT_TYPE
+1
+Q
+0
+FLOAT_TYPE
+0.125
+Stereo phase
+0
+FLOAT_TYPE
+180
 System Chorus
 0
 FLOAT_TYPE
@@ -6533,23 +8297,23 @@ FLOAT_TYPE
 System Eq2 F.
 0
 FLOAT_TYPE
-1023.641723632812
+1000.000366210938
 System Eq2 L.
 0
 FLOAT_TYPE
--12.29899978637695
+0
 System Eq2 On/Off
 0
 FLOAT_TYPE
-1
+0
 System Hs F.
 0
 FLOAT_TYPE
-4418.8671875
+1499.337646484375
 System Hs L.
 0
 FLOAT_TYPE
-4.724998474121094
+0
 System Hs On/Off
 0
 FLOAT_TYPE
@@ -6585,7 +8349,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-0.7492470145225525
+0.9997119307518005
 System Out On/Off
 0
 FLOAT_TYPE
@@ -6621,7 +8385,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.828896164894104
+0.3036512136459351
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -6629,20 +8393,24 @@ FLOAT_TYPE
 System Width
 0
 FLOAT_TYPE
-24.78499984741211
+0
 System Width On/Off
 0
 FLOAT_TYPE
 0
+Voices
+0
+FLOAT_TYPE
+3.999500036239624
 << HASH MAP V2 END
 name
 0
 STRING_TYPE
-Zita Reverb
+Calf MultiChorus LADSPA
 type_name
 0
 STRING_TYPE
-Faust
+Ladspa
 << HASH MAP V2 END
 x
 0
@@ -6651,1410 +8419,10 @@ FLOAT_TYPE
 y
 0
 FLOAT_TYPE
--224
+-192
 << HASH MAP V2 END
 
-3
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-5
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-40
-System Chorus
-0
-FLOAT_TYPE
-0
-System Chorus On/Off
-0
-FLOAT_TYPE
-1
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-0.3470669984817505
-System Eq1 L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-0.5
-System Eq2 L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Hs F.
-0
-FLOAT_TYPE
-2392.544189453125
-System Hs L.
-0
-FLOAT_TYPE
-1.917999267578125
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.5318019986152649
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-0.7686219811439514
-System Ls F.
-0
-FLOAT_TYPE
-0.3470669984817505
-System Ls L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.8989800214767456
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Reverb On/Off
-0
-FLOAT_TYPE
-1
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-1.20157265663147
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-0.004999999888241291
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-Bus 1
-type_name
-0
-STRING_TYPE
-Bus
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
--240
-y
-0
-FLOAT_TYPE
--224
-<< HASH MAP V2 END
-
-4
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-1
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-5
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-40
-System Chorus
-0
-FLOAT_TYPE
-0
-System Chorus On/Off
-0
-FLOAT_TYPE
-1
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-0.3470669984817505
-System Eq1 L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-0.5
-System Eq2 L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Hs F.
-0
-FLOAT_TYPE
-0.5676739811897278
-System Hs L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.4122162461280823
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-0.7686219811439514
-System Ls F.
-0
-FLOAT_TYPE
-0.3470669984817505
-System Ls L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.5318019986152649
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Reverb On/Off
-0
-FLOAT_TYPE
-1
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-0.5318019986152649
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-0.004999999888241291
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-System Out
-plugin_state
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-2
-output_portname
-0
-STRING_TYPE
-out_3
-output_portname
-1
-STRING_TYPE
-out_4
-<< HASH MAP V2 END
-type_name
-0
-STRING_TYPE
-Jack
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
-240
-y
-0
-FLOAT_TYPE
--128
-<< HASH MAP V2 END
-
-5
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-0
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-40
-System Chorus
-0
-FLOAT_TYPE
-0
-System Chorus On/Off
-0
-FLOAT_TYPE
-1
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-0.3470669984817505
-System Eq1 L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1073.258422851562
-System Eq2 L.
-0
-FLOAT_TYPE
--2.841999053955078
-System Eq2 On/Off
-0
-FLOAT_TYPE
-1
-System Hs F.
-0
-FLOAT_TYPE
-9400.9228515625
-System Hs L.
-0
-FLOAT_TYPE
-1.889999389648438
-System Hs On/Off
-0
-FLOAT_TYPE
-1
-System In
-0
-FLOAT_TYPE
-1.355969905853271
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-0.7686219811439514
-System Ls F.
-0
-FLOAT_TYPE
-0.3470669984817505
-System Ls L.
-0
-FLOAT_TYPE
-0.4969978332519531
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.9666069149971008
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Reverb On/Off
-0
-FLOAT_TYPE
-1
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-1.117506384849548
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-19.73999977111816
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-Pipe
-type_name
-0
-STRING_TYPE
-Pipe
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
-0
-y
-0
-FLOAT_TYPE
--128
-<< HASH MAP V2 END
-
-6
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-16
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-5
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-50
-Attack
-0
-FLOAT_TYPE
-0
-Crossfade
-0
-FLOAT_TYPE
-0
-Decay
-0
-FLOAT_TYPE
-0
-Finetune
-0
-FLOAT_TYPE
-0.4309000074863434
-Hold
-0
-FLOAT_TYPE
-0
-Loop
-0
-FLOAT_TYPE
-0
-Note adjustment
-0
-FLOAT_TYPE
-0
-Release
-0
-FLOAT_TYPE
-208.8000030517578
-Start Position
-0
-FLOAT_TYPE
-0
-Sustain
-0
-FLOAT_TYPE
-1
-System Chorus
-0
-FLOAT_TYPE
-0.1015956327319145
-System Chorus On/Off
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-106.2451705932617
-System Eq1 L.
-0
-FLOAT_TYPE
--1.378997802734375
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
-7.090999603271484
-System Eq2 On/Off
-0
-FLOAT_TYPE
-1
-System Hs F.
-0
-FLOAT_TYPE
-11353.646484375
-System Hs L.
-0
-FLOAT_TYPE
-6.146003723144531
-System Hs On/Off
-0
-FLOAT_TYPE
-1
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-1
-System Lp F.
-0
-FLOAT_TYPE
-20000
-System Ls F.
-0
-FLOAT_TYPE
-50.00000762939453
-System Ls L.
-0
-FLOAT_TYPE
--19.01900100708008
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-1.248102188110352
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.579800009727478
-System Pan On/Off
-0
-FLOAT_TYPE
-1
-System Reverb
-0
-FLOAT_TYPE
-0.1227439343929291
-System Reverb On/Off
-0
-FLOAT_TYPE
-0
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-0.246817022562027
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-8.399999618530273
-System Width On/Off
-0
-FLOAT_TYPE
-1
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-Sample Player
-plugin_state
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-3
-filename
-0
-STRING_TYPE
-bbs2.wav
-instrument_number
-0
-INT_TYPE
-98
-resampler_type
-0
-INT_TYPE
-2
-<< HASH MAP V2 END
-type_name
-0
-STRING_TYPE
-Sample Player
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
--240
-y
-0
-FLOAT_TYPE
--128
-<< HASH MAP V2 END
-
-7
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-17
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-5
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-50
-Attack
-0
-FLOAT_TYPE
-7.699999809265137
-Crossfade
-0
-FLOAT_TYPE
-0
-Decay
-0
-FLOAT_TYPE
-4.800000190734863
-Finetune
-0
-FLOAT_TYPE
-0.5
-Hold
-0
-FLOAT_TYPE
-0
-Loop
-0
-FLOAT_TYPE
-0
-Note adjustment
-0
-FLOAT_TYPE
-0
-Release
-0
-FLOAT_TYPE
-23.19999885559082
-Start Position
-0
-FLOAT_TYPE
-0.001900000032037497
-Sustain
-0
-FLOAT_TYPE
-0.7504000067710876
-System Chorus
-0
-FLOAT_TYPE
-0
-System Chorus On/Off
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
--10.40900039672852
-System Eq2 On/Off
-0
-FLOAT_TYPE
-1
-System Hs F.
-0
-FLOAT_TYPE
-1493.061645507812
-System Hs L.
-0
-FLOAT_TYPE
-8.980998992919922
-System Hs On/Off
-0
-FLOAT_TYPE
-1
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-11346.845703125
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-1.41400146484375
-System Ls On/Off
-0
-FLOAT_TYPE
-1
-System Out
-0
-FLOAT_TYPE
-0.666806697845459
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5210000276565552
-System Pan On/Off
-0
-FLOAT_TYPE
-1
-System Reverb
-0
-FLOAT_TYPE
-0.06846994906663895
-System Reverb On/Off
-0
-FLOAT_TYPE
-0
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-0.1093326956033707
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-28.04000091552734
-System Width On/Off
-0
-FLOAT_TYPE
-1
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-Sample Player
-plugin_state
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-3
-filename
-0
-STRING_TYPE
-016.WAV
-instrument_number
-0
-INT_TYPE
 10
-resampler_type
-0
-INT_TYPE
-2
-<< HASH MAP V2 END
-type_name
-0
-STRING_TYPE
-Sample Player
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
--240
-y
-0
-FLOAT_TYPE
--96
-<< HASH MAP V2 END
-
-8
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-18
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-5
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-50
-Attack
-0
-FLOAT_TYPE
-3.799999952316284
-Crossfade
-0
-FLOAT_TYPE
-0
-Decay
-0
-FLOAT_TYPE
-20
-Finetune
-0
-FLOAT_TYPE
-0.4990000128746033
-Hold
-0
-FLOAT_TYPE
-0
-Loop
-0
-FLOAT_TYPE
-0
-Note adjustment
-0
-FLOAT_TYPE
-0
-Release
-0
-FLOAT_TYPE
-20
-Start Position
-0
-FLOAT_TYPE
-0
-Sustain
-0
-FLOAT_TYPE
-0.5662000179290771
-System Chorus
-0
-FLOAT_TYPE
-0
-System Chorus On/Off
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
-4.724998474121094
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Hs F.
-0
-FLOAT_TYPE
-3833.91259765625
-System Hs L.
-0
-FLOAT_TYPE
-1.889999389648438
-System Hs On/Off
-0
-FLOAT_TYPE
-1
-System In
-0
-FLOAT_TYPE
-0.5812659859657288
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-4999.34716796875
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-7.090999603271484
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.3755130171775818
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0
-System Pan On/Off
-0
-FLOAT_TYPE
-1
-System Reverb
-0
-FLOAT_TYPE
-0.3941168487071991
-System Reverb On/Off
-0
-FLOAT_TYPE
-1
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-0.246817022562027
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-1.679999947547913
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-Sample Player
-plugin_state
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-3
-filename
-0
-STRING_TYPE
-Guitar_Nylon.wav
-instrument_number
-0
-INT_TYPE
-45
-resampler_type
-0
-INT_TYPE
-2
-<< HASH MAP V2 END
-type_name
-0
-STRING_TYPE
-Sample Player
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
--240
-y
-0
-FLOAT_TYPE
--64
-<< HASH MAP V2 END
-
-9
 HASH_TYPE
 >> HASH MAP V2 BEGIN
 4
@@ -8256,266 +8624,6 @@ FLOAT_TYPE
 -192
 << HASH MAP V2 END
 
-10
-HASH_TYPE
->> HASH MAP V2 BEGIN
-4
-patch
-0
-INT_TYPE
-23
-plugin
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-5
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-effects
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-50
-Attack
-0
-FLOAT_TYPE
-0
-Crossfade
-0
-FLOAT_TYPE
-0
-Decay
-0
-FLOAT_TYPE
-0
-Finetune
-0
-FLOAT_TYPE
-0.5
-Hold
-0
-FLOAT_TYPE
-0
-Loop
-0
-FLOAT_TYPE
-0
-Note adjustment
-0
-FLOAT_TYPE
-0
-Release
-0
-FLOAT_TYPE
-0
-Start Position
-0
-FLOAT_TYPE
-0
-Sustain
-0
-FLOAT_TYPE
-1
-System Chorus
-0
-FLOAT_TYPE
-0
-System Chorus On/Off
-0
-FLOAT_TYPE
-1
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
-0
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Hs F.
-0
-FLOAT_TYPE
-1499.337646484375
-System Hs L.
-0
-FLOAT_TYPE
-0
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-4999.34716796875
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-0
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.9997119307518005
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Reverb On/Off
-0
-FLOAT_TYPE
-1
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Volume
-0
-FLOAT_TYPE
-0.9997119307518005
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Width
-0
-FLOAT_TYPE
-0
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V2 END
-name
-0
-STRING_TYPE
-Click
-plugin_state
-0
-HASH_TYPE
->> HASH MAP V2 BEGIN
-3
-filename
-0
-STRING_TYPE
-243749__unfa__metronome-1khz-weak-pulse.flac
-instrument_number
-0
-INT_TYPE
-3
-resampler_type
-0
-INT_TYPE
-2
-<< HASH MAP V2 END
-type_name
-0
-STRING_TYPE
-Sample Player
-<< HASH MAP V2 END
-x
-0
-FLOAT_TYPE
--120
-y
-0
-FLOAT_TYPE
--160
-<< HASH MAP V2 END
-
 11
 HASH_TYPE
 >> HASH MAP V2 BEGIN
@@ -8523,7 +8631,7 @@ HASH_TYPE
 patch
 0
 INT_TYPE
-25
+5
 plugin
 0
 HASH_TYPE
@@ -8537,51 +8645,11 @@ effects
 0
 HASH_TYPE
 >> HASH MAP V2 BEGIN
-50
-Cross Mode
-0
-FLOAT_TYPE
-1
-Dry Level [dB]
-0
-FLOAT_TYPE
-0
-Haas Effect
-0
-FLOAT_TYPE
-0
-L Delay [ms]
-0
-FLOAT_TYPE
-32.20000076293945
-L Echo Level [dB]
-0
-FLOAT_TYPE
-0
-L Feedback [%]
-0
-FLOAT_TYPE
-28.22999954223633
-R Echo Level [dB]
-0
-FLOAT_TYPE
-0
-R/Haas Delay [ms]
-0
-FLOAT_TYPE
-58.79999923706055
-R/Haas Feedback [%]
-0
-FLOAT_TYPE
-31.61000061035156
-Swap Outputs
-0
-FLOAT_TYPE
-0
+40
 System Chorus
 0
 FLOAT_TYPE
-0.05325678735971451
+0
 System Chorus On/Off
 0
 FLOAT_TYPE
@@ -8625,11 +8693,11 @@ FLOAT_TYPE
 System Eq1 F.
 0
 FLOAT_TYPE
-399.1208801269531
+0.3470669984817505
 System Eq1 L.
 0
 FLOAT_TYPE
-0
+0.4969978332519531
 System Eq1 On/Off
 0
 FLOAT_TYPE
@@ -8637,11 +8705,11 @@ FLOAT_TYPE
 System Eq2 F.
 0
 FLOAT_TYPE
-1000.000366210938
+0.5
 System Eq2 L.
 0
 FLOAT_TYPE
-0
+0.4969978332519531
 System Eq2 On/Off
 0
 FLOAT_TYPE
@@ -8649,11 +8717,11 @@ FLOAT_TYPE
 System Hs F.
 0
 FLOAT_TYPE
-1499.337646484375
+2392.544189453125
 System Hs L.
 0
 FLOAT_TYPE
-0
+1.917999267578125
 System Hs On/Off
 0
 FLOAT_TYPE
@@ -8661,7 +8729,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+0.5318019986152649
 System In On/Off
 0
 FLOAT_TYPE
@@ -8673,15 +8741,15 @@ FLOAT_TYPE
 System Lp F.
 0
 FLOAT_TYPE
-4999.34716796875
+0.7686219811439514
 System Ls F.
 0
 FLOAT_TYPE
-399.1208801269531
+0.3470669984817505
 System Ls L.
 0
 FLOAT_TYPE
-0
+0.4969978332519531
 System Ls On/Off
 0
 FLOAT_TYPE
@@ -8689,7 +8757,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-0.6249927282333374
+0.8989800214767456
 System Out On/Off
 0
 FLOAT_TYPE
@@ -8697,7 +8765,7 @@ FLOAT_TYPE
 System Pan
 0
 FLOAT_TYPE
-0.571399986743927
+0.5
 System Pan On/Off
 0
 FLOAT_TYPE
@@ -8705,7 +8773,7 @@ FLOAT_TYPE
 System Reverb
 0
 FLOAT_TYPE
-1.389152765274048
+0
 System Reverb On/Off
 0
 FLOAT_TYPE
@@ -8725,7 +8793,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.9666069149971008
+1.20157265663147
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -8733,7 +8801,7 @@ FLOAT_TYPE
 System Width
 0
 FLOAT_TYPE
-19.73999977111816
+0.004999999888241291
 System Width On/Off
 0
 FLOAT_TYPE
@@ -8742,20 +8810,20 @@ FLOAT_TYPE
 name
 0
 STRING_TYPE
-TAP Stereo Echo
+Bus 1
 type_name
 0
 STRING_TYPE
-Ladspa
+Bus
 << HASH MAP V2 END
 x
 0
 FLOAT_TYPE
--120
+-240
 y
 0
 FLOAT_TYPE
--64
+-224
 << HASH MAP V2 END
 num_chips
 0
@@ -8775,7 +8843,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-23
+24
 is_event_connection
 0
 INT_TYPE
@@ -8793,7 +8861,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-17
+22
 is_event_connection
 0
 INT_TYPE
@@ -8801,7 +8869,7 @@ INT_TYPE
 to_patch
 0
 INT_TYPE
-0
+24
 << HASH MAP V2 END
 
 2
@@ -8811,7 +8879,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-16
+18
 is_event_connection
 0
 INT_TYPE
@@ -8819,7 +8887,7 @@ INT_TYPE
 to_patch
 0
 INT_TYPE
-0
+25
 << HASH MAP V2 END
 
 3
@@ -8829,7 +8897,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-7
+25
 is_event_connection
 0
 INT_TYPE
@@ -8847,7 +8915,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-5
+20
 is_event_connection
 0
 INT_TYPE
@@ -8855,7 +8923,7 @@ INT_TYPE
 to_patch
 0
 INT_TYPE
-7
+1
 << HASH MAP V2 END
 
 5
@@ -8883,7 +8951,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-20
+5
 is_event_connection
 0
 INT_TYPE
@@ -8891,7 +8959,7 @@ INT_TYPE
 to_patch
 0
 INT_TYPE
-1
+7
 << HASH MAP V2 END
 
 7
@@ -8901,7 +8969,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-25
+7
 is_event_connection
 0
 INT_TYPE
@@ -8919,7 +8987,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-18
+16
 is_event_connection
 0
 INT_TYPE
@@ -8927,7 +8995,7 @@ INT_TYPE
 to_patch
 0
 INT_TYPE
-25
+0
 << HASH MAP V2 END
 
 9
@@ -8937,7 +9005,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-22
+17
 is_event_connection
 0
 INT_TYPE
@@ -8945,7 +9013,7 @@ INT_TYPE
 to_patch
 0
 INT_TYPE
-24
+0
 << HASH MAP V2 END
 
 10
@@ -8955,7 +9023,7 @@ HASH_TYPE
 from_patch
 0
 INT_TYPE
-24
+23
 is_event_connection
 0
 INT_TYPE
