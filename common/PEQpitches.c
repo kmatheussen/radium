@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQmempool_proc.h"
 #include "PEQ_calc_proc.h"
 #include "time_proc.h"
+#include "pitches_proc.h"
 #include "patch_proc.h"
 #include "scheduler_proc.h"
 
@@ -198,8 +199,8 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 
 }
 
-static float FindNextPitch(struct PEventQueue *peq){
-  struct Notes *next_note = NextNote(peq->note);
+static float FindLastPitch(struct PEventQueue *peq){
+  struct Notes *next_note = GetNextPitchNote(peq->note);
   if(next_note!=NULL)
 
     return next_note->note;
@@ -228,7 +229,7 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 		return;
 	}
 
-        float next_pitch = FindNextPitch(peq);
+        float next_pitch = FindLastPitch(peq);
         if(next_pitch<=0.0f){
           ReturnPEQelement(peq);
           return;

@@ -1091,6 +1091,24 @@ int radium_main(char *arg){
 
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
 
+  if (SETTINGS_read_bool("show_portamento_warning", true)){
+    vector_t v = {0};
+    VECTOR_push_back(&v,"Ok");
+    VECTOR_push_back(&v,"Don't show this message again");
+
+    int result = GFX_Message(&v,
+                             "<strong>Note! The portamento behavior for polyphonic tracks changed in Radium V3.4.9</strong>"
+                             "<p>"
+                             "Before Radium V3.4.9, the final portamento value was the pitch value of the next note after the <b>start</b> of the note. "
+                             "Now, the final portamento value is the pitch value of the next note after the <b>end</b> of the note."
+                             "<p>"
+                             "Old songs with portamento in polyphonic tracks might not sound the same."
+                             );
+    if (result==1)
+      SETTINGS_write_bool("show_portamento_warning", false);
+  }
+    
+  
   if(strcmp(SETTINGS_read_string("last_color_version","0.0"),"3.3.5")){
     GFX_Message(NULL,
                 "Note!\n\n"

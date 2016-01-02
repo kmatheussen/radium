@@ -17,9 +17,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "vector_proc.h"
+#include "list_proc.h"
 #include "placement_proc.h"
 #include "realline_calc_proc.h"
 #include "tracks_proc.h"
+#include "pitches_proc.h"
 #include "gfx_subtrack_proc.h"
 
 #include "nodelines_proc.h"
@@ -273,10 +275,13 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   
   if (note->pitches==NULL)
     last_pitch->note = note->note;
-  else if (NextNote(note)==NULL)
-    last_pitch->note = wtrack->track->notes->note;
-  else
-    last_pitch->note = NextNote(note)->note;
+  else {
+    struct Notes *next_pitch_note = GetNextPitchNote(note);
+    if (next_pitch_note!=NULL)
+      last_pitch->note = next_pitch_note->note;
+    else
+      last_pitch->note = wtrack->track->notes->note;
+  }
 
   return create_nodelines(window,
                           wblock,
@@ -332,10 +337,21 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   
   if (note->pitches==NULL)
     last_pitch->note = note->note;
-  else if (NextNote(note)==NULL)
-    last_pitch->note = wtrack->track->notes->note;
-  else
-    last_pitch->note = NextNote(note)->note;
+  else {
+    struct Pitches *actual_last_pitch = ListLast3(&note->pitches->l);
+    
+    if ( (GetfloatFromPlace(&last_pitch->l.p) - GetfloatFromPlace(&actual_last_pitch->l.p)) < 0.01) {
+      
+      last_pitch = actual_last_pitch;
+
+    } else {
+      struct Notes *next_pitch_note = GetNextPitchNote(note);
+      if (next_pitch_note!=NULL)
+        last_pitch->note = next_pitch_note->note;
+      else
+        last_pitch->note = wtrack->track->notes->note;
+    }
+  }
 
   return create_nodelines(window,
                           wblock,

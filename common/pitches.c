@@ -27,6 +27,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "pitches_proc.h"
 
+struct Notes *GetNextPitchNote(const struct Notes *note){
+  R_ASSERT(note->pitches != NULL);
+
+  struct Notes *note2 = (struct Notes*)note;
+  
+  Place *end = &note2->end;
+  
+  note2 = NextNote(note2);
+  while(note2 != NULL){
+    if (PlaceGreaterOrEqual(&note2->l.p, end))
+      return note2;
+    note2 = NextNote(note2);
+  }
+
+  return NULL;
+}
 
 struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float notenum){
   struct Pitches *pitch = talloc(sizeof(struct Pitches));
