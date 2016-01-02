@@ -1474,8 +1474,8 @@
                                              "Add Portamento" add-pitch)
                                  (popup-menu "Delete Note" delete-note
                                              "Delete Portamento" delete-pitch
-                                             "Add Portamento" add-pitch)))
-                           #f))))))
+                                             "Add Portamento" add-pitch))))
+                       #f)))))
 
 
 ;; velocities
