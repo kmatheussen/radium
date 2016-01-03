@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 
-static struct PEventQueue peqrootelements[INITIAL_NUM_ELEMENTS] = {0}; // store as a static variable so the gc can scan it.
+static struct PEventQueue peqrootelements[INITIAL_NUM_ELEMENTS]; // store as a static variable so the gc can scan it.
 
 static struct PEventQueue *peqroot = NULL;
 
