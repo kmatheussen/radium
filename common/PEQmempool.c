@@ -53,6 +53,8 @@ bool InitPEQmempool(void){
         R_ASSERT(num_elements_used==0);
         
         memset(peqrootelements, 0, INITIAL_NUM_ELEMENTS*sizeof(struct PEventQueue)); // So the garbage collector can free unused memory.
+
+        peqroot = NULL;
         
 	for(lokke=0;lokke<INITIAL_NUM_ELEMENTS;lokke++){
           struct PEventQueue *temp = &peqrootelements[lokke];
