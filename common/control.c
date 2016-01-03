@@ -112,7 +112,7 @@ bool InitProgram(void){
 
 	printf("...Player 1/2\n");
 
-	if( ( ! InitPEQmempool(1000) )   ){	// 1000 and 4000 are hardcoded values. Not good.
+	if( ( ! InitPEQmempool() )   ){	// 1000 and 4000 are hardcoded values. Not good.
 		return false;
 	}
 

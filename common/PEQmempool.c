@@ -28,55 +28,75 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 
 #include "playerclass.h"
+#include "OS_Player_proc.h"
 
 #include "t_gc_proc.h"
 
 #include "PEQmempool_proc.h"
 
+#define SAFETY_BUFFER 500
+#define INITIAL_NUM_ELEMENTS 2000
 
 extern PlayerClass *pc;
 
+static struct PEventQueue peqrootelements[INITIAL_NUM_ELEMENTS] = {0}; // stored as a static variable so the gc can easily reach the data.
 
-struct PEventQueue *peqroot;
+static struct PEventQueue *peqroot = NULL;
 
-bool InitPEQmempool(int num_elements){
-	struct PEventQueue *temp;
+static int num_elements_used = 0;
+
+bool InitPEQmempool(void){
 	int lokke;
 
-	for(lokke=0;lokke<num_elements;lokke++){
-		temp=malloc(sizeof(struct PEventQueue));		// Its not supposed to ever be freed, and its not supposed to hold pointers to be scanned. Therefore 'malloc'. GC provide a special function for this: 'GC_malloc_atomic_uncollectable', but it "roughly" (word used in documetation of GC) does the same as malloc anyway.
-		if(temp==NULL){
-                  GFX_Message(NULL, "Out of memory\n");
-                  return false;
-		}
-		temp->l.next= &peqroot->l;
-
-		peqroot=temp;
+	for(lokke=0;lokke<INITIAL_NUM_ELEMENTS;lokke++){
+          struct PEventQueue *temp = &peqrootelements[lokke];
+          temp->l.next = &peqroot->l;
+          
+          peqroot=temp;
 	}
+        
 	return true;
 }
 
 //void *my_fastcalloc(size_t size);
 
 struct PEventQueue *GetPEQelement(void){
+
 	struct PEventQueue *temp=peqroot;
 
-	if(temp==NULL){
-          //RError("Warning. Peqmempool empty. (probably playing extremely fast)\n");
-		//pc->isplaying=false;
-		temp=calloc(1,sizeof(struct PEventQueue));
-		if(temp==NULL){
-                  GFX_Message(NULL, "Error. Out of memory on a very bad place. Now probably crashing.\n");
-		}
-	}
+	if(temp==NULL){ // This should REALLY not happen.
 
-        peqroot=NextPEventQueue(temp);
+          //temp=GC_malloc(sizeof(struct PEventQueue));
+          temp=malloc(sizeof(struct PEventQueue));
+          if(temp==NULL){
+            RT_message("Error. Out of memory on a very bad place. Now probably crashing.\n");
+          }
+          
+	} else {
 
+          peqroot=NextPEventQueue(temp);
+
+        }
+
+        ++num_elements_used;
+        //printf("   +NUM ELEMENTS: %d\n",num_elements_used);
+
+        if(num_elements_used > INITIAL_NUM_ELEMENTS-SAFETY_BUFFER){
+          RT_message("<p>Stopping player.</p><p>We are at risk of running out of memory for the player.</p>This is a bug in Radium, and is not supposed to happen.</p><p>Please report this bug.</p>");
+          RT_request_to_stop_playing();
+        }
+        
 	return temp;
 
 }
 
 void ReturnPEQelement(struct PEventQueue *element){
-	element->l.next= &peqroot->l;
-	peqroot=element;
+  //memset(element, 0, sizeof(struct PEventQueue));
+
+  --num_elements_used;
+
+  //printf("   -NUM ELEMENTS: %d\n",num_elements_used);
+          
+  element->l.next= &peqroot->l;
+  peqroot=element;
 }

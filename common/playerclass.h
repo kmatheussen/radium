@@ -43,7 +43,6 @@ struct PEventQueue{
 	const struct Tracks *track;
 	const struct Notes *note;
 
-
 // Used by PEQrealline
 	int realline;
 
