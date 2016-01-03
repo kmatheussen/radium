@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "PEQ_LPB_proc.h"
 #include "PEQ_Signature_proc.h"
 #include "PEQ_Beats_proc.h"
+#include "PEQmempool_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../audio/Mixer_proc.h"
 
@@ -110,6 +111,8 @@ static void PlayStopReally(bool doit){
 #endif
         
         MIDI_insert_recorded_midi_events();
+
+        InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
 }
 
 void PlayStop(void){

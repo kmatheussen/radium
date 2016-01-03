@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   multi-threading, so this is somewhat necesarry for the amiga-port.)
 *********************************************************************/
 
+#include <string.h>
+
 #include "nsmtracker.h"
 #include "visual_proc.h"
 
@@ -39,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 
-static struct PEventQueue peqrootelements[INITIAL_NUM_ELEMENTS] = {0}; // stored as a static variable so the gc can easily reach the data.
+static struct PEventQueue peqrootelements[INITIAL_NUM_ELEMENTS] = {0}; // store as a static variable so the gc can scan it.
 
 static struct PEventQueue *peqroot = NULL;
 
@@ -48,17 +50,21 @@ static int num_elements_used = 0;
 bool InitPEQmempool(void){
 	int lokke;
 
+        R_ASSERT(num_elements_used==0);
+        
+        memset(peqrootelements, 0, INITIAL_NUM_ELEMENTS*sizeof(struct PEventQueue)); // So the garbage collector can free unused memory.
+        
 	for(lokke=0;lokke<INITIAL_NUM_ELEMENTS;lokke++){
           struct PEventQueue *temp = &peqrootelements[lokke];
+
           temp->l.next = &peqroot->l;
           
           peqroot=temp;
 	}
-        
+
 	return true;
 }
 
-//void *my_fastcalloc(size_t size);
 
 struct PEventQueue *GetPEQelement(void){
 
