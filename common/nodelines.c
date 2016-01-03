@@ -272,16 +272,11 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
   last_pitch->l.next = NULL;
-  
-  if (note->pitches==NULL)
+
+  if (note->pitch_end>0)
+    last_pitch->note = note->pitch_end;
+  else
     last_pitch->note = note->note;
-  else {
-    struct Notes *next_pitch_note = GetNextPitchNote(note);
-    if (next_pitch_note!=NULL)
-      last_pitch->note = next_pitch_note->note;
-    else
-      last_pitch->note = wtrack->track->notes->note;
-  }
 
   return create_nodelines(window,
                           wblock,
@@ -335,24 +330,11 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   last_pitch->l.p = note->end;
   last_pitch->l.next = NULL;
   
-  if (note->pitches==NULL)
+  if (note->pitch_end>0)
+    last_pitch->note = note->pitch_end;
+  else
     last_pitch->note = note->note;
-  else {
-    struct Pitches *actual_last_pitch = ListLast3(&note->pitches->l);
-    
-    if ( (GetfloatFromPlace(&last_pitch->l.p) - GetfloatFromPlace(&actual_last_pitch->l.p)) < 0.01) {
-      
-      last_pitch = actual_last_pitch;
-
-    } else {
-      struct Notes *next_pitch_note = GetNextPitchNote(note);
-      if (next_pitch_note!=NULL)
-        last_pitch->note = next_pitch_note->note;
-      else
-        last_pitch->note = wtrack->track->notes->note;
-    }
-  }
-
+  
   return create_nodelines(window,
                           wblock,
                           &first_pitch->l,

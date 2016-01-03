@@ -72,6 +72,7 @@ static const ColorConfig g_colorconfig[] = {
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders"},
   {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
+  {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text"},
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "color15", "High Editor background"},
 
   {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont"},
@@ -120,7 +121,7 @@ static const ColorConfig g_colorconfig[] = {
   
   {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
   {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor"},
-  
+
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
 
@@ -168,8 +169,11 @@ static ReplacementColorNum g_replacement_color_num[] = {
   {PIANOROLL_NOTE_NAME_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   
   {CURSOR_EDIT_OFF_COLOR_NUM, VELOCITY1_COLOR_NUM},
-  
+
+  {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
+
   {END_CONFIG_COLOR_NUM, ILLEGAL_COLOR_NUM}
+
 };
 
 static ReplacementColor g_replacement_color[] = {

@@ -174,6 +174,8 @@ if(track==NULL) return;
           track->patch=PATCH_get_from_id(track->patch->id);
 	}
 
+        DLoadNotes(newroot, track, track->notes);
+        
         DLoadFXs(newroot, track, track->fxs);
         
 DLoadTracks(newroot,NextTrack(track));

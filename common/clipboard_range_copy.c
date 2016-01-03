@@ -109,6 +109,7 @@ void CopyRange_notes(
 	PlaceSub(&note->end,p1);
 
 	note->velocity_end=fromnote->velocity_end;
+        note->pitch_end=fromnote->pitch_end;
 
 	ListAddElement3(tonote,&note->l);
 

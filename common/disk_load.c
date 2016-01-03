@@ -91,6 +91,7 @@ static bool Load(const wchar_t *filename){
 		dc.colorize=false;
 	}
 
+#if 0
         if (disk_load_version < 0.75){
           GFX_Message(NULL,
                       "<p>Note! The portamento behavior for polyphonic tracks changed in Radium V3.4.9"
@@ -104,9 +105,10 @@ static bool Load(const wchar_t *filename){
                       "</p>"
                       );
         }
+#endif
         
         if(disk_load_version>DISKVERSION+0.0001){
-          GFX_Message(NULL,"You are trying to load a %f version, while this program is only %f.\n",disk_load_version,DISKVERSION);
+          GFX_Message(NULL,"Need a newer version of Radium to load this song. The song version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
           return false;
         }else{
           printf("Song diskVersion: %f\n",disk_load_version);

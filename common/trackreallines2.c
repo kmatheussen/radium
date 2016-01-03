@@ -23,9 +23,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "trackreallines2_proc.h"
 
-
+int find_realline_for_end_pitch(const struct WBlocks *wblock, const Place *p){
+  int realline = FindRealLineFor(wblock, 0, p);
+  if (p->counter==0 && realline>=1)
+    realline--;
+  
+  return realline;
+}
+                                
 static void add_tr(const struct WBlocks *wblock, vector_t *trs, const TrackRealline2 *tr){
-  int realline = FindRealLineFor(wblock, 0, &tr->p);
+  int realline;
+
+  if (tr->is_end_pitch)
+    realline = find_realline_for_end_pitch(wblock, &tr->p);
+  else
+    realline = FindRealLineFor(wblock, 0, &tr->p);
+      
   vector_t *v = &trs[realline];
   VECTOR_insert_place(v, &tr->p);
 }
@@ -48,6 +61,14 @@ static void add_note(const struct WBlocks *wblock, vector_t *trs, struct Notes *
   while(pitch != NULL){
     add_pitch(wblock, trs, note, pitch);
     pitch = NextPitch(pitch);
+  }
+
+  if (note->pitch_end > 0) {
+    TrackRealline2 *tr = talloc(sizeof(TrackRealline2));
+    tr->p = note->end;
+    tr->note = note;
+    tr->is_end_pitch = true;
+    add_tr(wblock, trs, tr);
   }
 }
 
@@ -92,7 +113,7 @@ static void spread_trackreallines(const struct WBlocks *wblock, vector_t *trs){
   int realline1 = 0;
   while(realline1 < wblock->num_reallines){
     if (trs[realline1].num_elements > 1) {
-      
+
       int realline2 = find_next_used_trackrealline(wblock, trs, realline1+1);
       //printf("next realline: %d -> %d\n",realline1,realline2);
       if (realline2 > realline1+1) {

@@ -156,6 +156,7 @@ void PasteRange_notes(
 	note->note=fromnote->note;
 	note->velocity=fromnote->velocity;
 	note->velocity_end=fromnote->velocity_end;
+        note->pitch_end=fromnote->pitch_end;
 
 	ListAddElement3(&track->notes,&note->l);
 

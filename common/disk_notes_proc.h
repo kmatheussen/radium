@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern void SaveNotes(struct Notes *note);
 extern struct Notes *LoadNote(void);
-
+extern void DLoadNotes(struct Root *newroot,struct Tracks *track, struct Notes *notes);
 
 #endif
 

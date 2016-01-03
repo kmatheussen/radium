@@ -45,6 +45,8 @@ void Transpose_note(
 	int trans
 ){
   note->note = getTransposed(note->note, trans);
+  note->pitch_end = getTransposed(note->pitch_end, trans);
+  
   struct Pitches *pitch = note->pitches;
   while(pitch!=NULL){
     pitch->note = getTransposed(pitch->note, trans);

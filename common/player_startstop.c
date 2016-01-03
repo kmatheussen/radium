@@ -49,6 +49,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "player_proc.h"
 
+// Safer (and simpler) if set to 1, except that we might run out of memory while playing.
+#define STOP_GC_WHILE_PLAYING 0
 
 
 /******************** NOTES ******************************
@@ -100,11 +102,13 @@ static void PlayStopReally(bool doit){
 #endif
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
         PATCH_reset_time();
-
+        
+#if STOP_GC_WHILE_PLAYING
         //while(GC_is_disabled())
-        //while(GC_dont_gc>0)
-        //  GC_enable();
-
+        while(GC_dont_gc>0)
+          GC_enable();
+#endif
+        
         MIDI_insert_recorded_midi_events();
 }
 
@@ -124,9 +128,11 @@ static void PlayBlock(
         // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
         //while(GC_is_disabled()==false){
           //printf("Calling gc_disable: %d\n",GC_dont_gc);
-  //while(GC_dont_gc<=0){
-  //        GC_disable();
-  //      }
+#if STOP_GC_WHILE_PLAYING
+  while(GC_dont_gc<=0){
+    GC_disable();
+  }
+#endif
 
 	pc->initplaying=true;
 
@@ -340,8 +346,10 @@ static void PlaySong(
 	pc->initplaying=false;
 
         // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
-        //while(GC_is_disabled()==false)
-        //  GC_disable();
+#if STOP_GC_WHILE_PLAYING
+        while(GC_is_disabled()==false)
+          GC_disable();
+#endif
 }
 
 

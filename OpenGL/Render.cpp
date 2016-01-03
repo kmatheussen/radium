@@ -954,7 +954,10 @@ static GE_Context *get_note_background(float notenum, bool highlight){
 }
 
 static float get_notenum(TrackRealline2 *tr2){
-  if (tr2->pitch != NULL)
+  if (tr2->is_end_pitch)
+    return tr2->note->pitch_end;
+  
+  else if (tr2->pitch != NULL)
     return tr2->pitch->note;
 
   else if (tr2->note != NULL)
@@ -979,6 +982,8 @@ static float get_notenum(vector_t *trs){
 static ColorNums get_colnum(TrackRealline2 *tr2, bool isranged){
   if (tr2!=NULL && tr2->pitch != NULL)
     return PORTAMENTO_NOTE_TEXT_COLOR_NUM;
+  else if(tr2!=NULL && tr2->is_end_pitch==true)
+    return PORTAMENTO_END_NOTE_TEXT_COLOR_NUM;
   else
     return TEXT_COLOR_NUM;
 }
@@ -1173,6 +1178,31 @@ static void create_pianoroll_grid(const struct Tracker_Windows *window, const st
 
 struct CurrentPianoNote current_piano_note = {-1,-1,-1};
 
+static void draw_pianonote_text(const struct Tracker_Windows *window, float notenum, bool is_current, float midpos, float y){
+  
+  int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
+  
+  char *text = NotesTexts3[(int)notenum];
+  char temp[32];
+  
+  if (cents!=0){
+    sprintf(temp,"%s.%d",NotesTexts3[(int)notenum],cents);
+    text = &temp[0];
+  }
+  
+  float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
+  float x = midpos - (textgfxlength / 2.0);
+  
+  GE_Context *c = GE_color_alpha_z(PIANOROLL_NOTE_NAME_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
+  
+  y -= (is_current ? window->fontheight : window->fontheight/2) + 2;
+  
+  if (is_current)
+    GE_text(c,text,x,y);
+  else
+    paint_halfsize_note(c,0,text,x,y);
+}
+
 static void create_pianoroll(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   //int x1 = 100;
   //int x2 = 200;
@@ -1268,36 +1298,21 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                  nodelineBox.x2, nodelineBox.y2,
                  1.0
                  );
-          
+
           struct Pitches *pitch = (struct Pitches*)nodeline->element1;
           float  notenum = pitch->note;
-        
-          int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
-          
-          char *text = NotesTexts3[(int)notenum];
-          char temp[32];
-          
-          if (cents!=0){
-            sprintf(temp,"%s.%d",NotesTexts3[(int)notenum],cents);
-            text = &temp[0];
+  
+          draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y1);
+
+          // pitch_end
+          if (nodeline->next==NULL && note->pitch_end > 0) {
+            struct Pitches *pitch = (struct Pitches*)nodeline->element2;
+            float  notenum = pitch->note;
+            draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y2);
           }
-          
-          float midpos = (nodeline->x1 + nodeline->x2) / 2;
-          float textgfxlength = strlen(text) * (is_current ? window->fontwidth : window->fontwidth/2);
-          float x = midpos - (textgfxlength / 2.0);
-          
-          GE_Context *c = GE_color_alpha_z(PIANOROLL_NOTE_NAME_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO));
-        
-          float y = nodeline->y1 - (is_current ? window->fontheight : window->fontheight/2) - 2;
-          
-          if (is_current)
-            GE_text(c,text,x,y);
-          else
-            paint_halfsize_note(c,0,text,x,y);
         }
       }
-    
-          
+        
       if (is_current)
         GE_set_x_scissor(wtrack->pianoroll_area.x,
                          wtrack->pianoroll_area.x2+1);

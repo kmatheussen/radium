@@ -219,6 +219,7 @@ enum ColorNums {
   BAR_TEXT_COLOR_NUM,
   INSTRUMENT_NAME_COLOR_NUM,
   PORTAMENTO_NOTE_TEXT_COLOR_NUM,
+  PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,
   
   LOW_BACKGROUND_COLOR_NUM,
   HIGH_BACKGROUND_COLOR_NUM,                 // 11
@@ -278,7 +279,6 @@ enum ColorNums {
   BLACK_COLOR_NUM = 500,
   WHITE_COLOR_NUM,
   RED_COLOR_NUM,
-
 
   END_ALL_COLOR_NUMS,
 };
@@ -451,6 +451,8 @@ struct Notes{
 	struct Velocities *velocities;
 	int velocity_end;
 
+	float pitch_end;
+  
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
 
@@ -838,6 +840,7 @@ typedef struct{
   struct Notes *note;
   struct Pitches *pitch;
   struct Stops *stop;
+  bool is_end_pitch;
 } TrackRealline2;
 
 

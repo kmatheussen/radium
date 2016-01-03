@@ -42,6 +42,7 @@ DC_start("NOTE");
 	DC_SaveI(note->velocity);
 	SavePlace(&note->end);
 	DC_SaveI(note->velocity_end);
+        DC_SaveF(note->pitch_end);
 	DC_SaveI(note->noend);
 
 	SaveVelocities(note->velocities);
@@ -62,6 +63,8 @@ struct Notes *LoadNote(void){
 	note->velocity=DC_LoadI(); if(disk_load_version<0.67) note->velocity=note->velocity*MAX_VELOCITY/127;
 	LoadPlace(&note->end);
 	note->velocity_end=DC_LoadI(); if(disk_load_version<0.67) note->velocity_end=note->velocity_end*MAX_VELOCITY/127;
+        if (disk_load_version>0.75)
+          note->pitch_end = DC_LoadF();
 	note->noend=DC_LoadI();
 
         if(disk_load_version<0.69) {
@@ -80,12 +83,27 @@ struct Notes *LoadNote(void){
             LoadPitches(&note->pitches);
             DC_Next();
         }
-
+        
         /*
 error:
         */
-	if(!dc.success) debug("note not okey\n");else debug("note okey\n");
+	if(!dc.success) debug("note not okay\n");else debug("note okay\n");
 	return note;
+}
+
+
+void DLoadNotes(struct Root *newroot,struct Tracks *track, struct Notes *notes){
+  if(notes==NULL) return;
+
+  // Fix pitch_end for older songs.
+  if(notes->pitches != NULL && notes->pitch_end==0){
+    struct Notes *next_note = NextNote(notes);
+    if (next_note==NULL)
+      next_note = track->notes;
+    notes->pitch_end = next_note->note;
+  }
+  
+  DLoadNotes(newroot, track, NextNote(notes));
 }
 
 

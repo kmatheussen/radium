@@ -563,7 +563,7 @@ void Ptask2Mtask(void){
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/player_proc.h"
 
-// #define TEST_GC
+//#define TEST_GC
 
 #ifdef TEST_GC
 #  include "gc.h"

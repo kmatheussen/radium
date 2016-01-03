@@ -65,28 +65,37 @@ void InitPEQpitches(
 	const struct Notes *note,
 	int playlistaddpos
 ){
-	struct PEventQueue *peq;
-
-	struct Pitches *pitch=note->pitches;
 
         if(track->patch==NULL)
           return;
 
-	if(pitch==NULL)
+	struct Pitches *pitch=note->pitches;
+
+	if(pitch==NULL && note->pitch_end==0.0)
           return;
 
 
-	peq=GetPEQelement();
+	struct PEventQueue *peq=GetPEQelement();
 	peq->block=block;
 	peq->track=track;
 	peq->note=note;
         peq->pitch=pitch;
 	peq->time1=Place2STime(block,&note->l.p);
 
-        peq->nextpitch = pitch;
-        peq->time2=Place2STime(block,&pitch->l.p);
-        peq->TreatMe=PE_ChangePitch;
+        if (pitch==NULL) {
 
+          peq->nextpitch = NULL;
+          peq->time2=Place2STime(block,&note->end);
+          peq->TreatMe=PE_ChangePitchToEnd;
+
+        } else {
+        
+          peq->nextpitch = pitch;
+          peq->time2=Place2STime(block,&pitch->l.p);
+          peq->TreatMe=PE_ChangePitch;
+
+        }
+        
         int x;
 	PC_InsertElement(
                          peq,playlistaddpos,
@@ -199,26 +208,6 @@ static void PE_ChangePitch(struct PEventQueue *peq,int doit){
 
 }
 
-static float FindLastPitch(struct PEventQueue *peq){
-  struct Notes *next_note = GetNextPitchNote(peq->note);
-  if(next_note!=NULL)
-
-    return next_note->note;
-
-  else {
-
-    const struct Blocks *block;
-    struct Tracks *track;
-    struct Notes *note;
-    int playlistaddpos=0;
-    
-    if (PC_GetNextNoteAfterCurrentBlock(peq->track->l.num, &playlistaddpos, &note, &track, &block) == false)
-      return -1.0f;
-
-    return note->note;
-  }
-}
-
 static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 	float x;
 
@@ -229,20 +218,22 @@ static void PE_ChangePitchToEnd(struct PEventQueue *peq,int doit){
 		return;
 	}
 
-        float next_pitch = FindLastPitch(peq);
-        if(next_pitch<=0.0f){
-          ReturnPEQelement(peq);
-          return;
-	}
+        const struct Notes *note = peq->note;
+
+        float prev_pitch = peq->pitch!=NULL ? peq->pitch->note : note->note;
+        
+        float next_pitch = note->pitch_end;
+        if(next_pitch<=1) // not supposed to happen though.
+          next_pitch = 1;
 
 	STime ntime=PEQ_CalcNextPitchEvent(
-                                     peq,
-                                     peq->time1,
-                                     btime,
-                                     peq->time2,
-                                     peq->pitch->note,
-                                     &x,
-                                     next_pitch
+                                           peq,
+                                           peq->time1,
+                                           btime,
+                                           peq->time2,
+                                           prev_pitch,
+                                           &x,
+                                           next_pitch
 	);
 
 	if(ntime>peq->time2){

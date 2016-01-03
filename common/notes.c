@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "placement_proc.h"
 #include "wtracks_proc.h"
+#include "realline_calc_proc.h"
 #include "player_pause_proc.h"
 #include "undo_notes_proc.h"
 #include "cursor_updown_proc.h"
@@ -488,8 +489,15 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       return;
     }
 
+
     if (tr2->note != NULL) {
-      tr2->note->note = notenum; // lock not necessary
+
+      // lock not necessary
+      if (tr2->is_end_pitch)
+        tr2->note->pitch_end = notenum;
+      else
+        tr2->note->note = notenum;
+      
       MaybeScrollEditorDown(window);
       return;
     }
@@ -612,6 +620,15 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     return;
   }
 
+  if (tr2->is_end_pitch) {
+    struct Pitches *pitch = ListLast3(&tr2->note->pitches->l);
+    if (pitch!=NULL)
+      tr2->note->pitch_end = pitch->note;
+    else
+      tr2->note->pitch_end = 0;
+    return;
+  }
+                              
   if (tr2->note != NULL) {
     PLAYER_lock();{
       ListRemoveElement3(&track->notes,&tr2->note->l);
@@ -693,6 +710,23 @@ struct Notes *FindNote(
     note = NextNote(note);
   }
   return note;
+}
+
+static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct Notes *note, int realline){  
+  int last_note_line = FindRealLineFor(wblock, 0, &note->end);
+  //printf("last_note_line/realline: %d %d\n",last_note_line,realline);
+
+  if (last_note_line == realline)
+    return true;
+
+  if (realline>=wblock->num_reallines-1) // Shouldn't happen, but just for safety.
+    return false;
+  
+  struct LocalZooms *realline_plus1 = wblock->reallines[realline+1];
+  if (realline_plus1->l.p.counter==0 && last_note_line == realline+1)
+    return true;
+
+  return false;
 }
 
 struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
@@ -1003,6 +1037,12 @@ static void r_add_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, 
     AddPitch(window, wblock, wtrack, note, p, notenum);
 }
 
+static void r_add_last_pitch(struct Tracker_Windows *window, struct Notes *note){
+  float notenum = request_notenum(window, "Add last pitch", -1);
+  if(notenum > 0.0f)
+    note->pitch_end = notenum;
+}
+
 static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *p){
   float notenum = request_notenum(window, "Add note", -1);
   
@@ -1015,6 +1055,13 @@ static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   
   if(notenum > 0.0f)
     pitch->note = notenum; // lock not necessary
+}
+
+static void r_edit_end_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
+  float notenum = request_notenum(window, "Edit last pitch", note->pitch_end);
+  
+  if(notenum > 0.0f)
+    note->pitch_end = notenum; // lock not necessary
 }
 
 static void r_edit_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
@@ -1037,9 +1084,12 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
     Place             *p        = &realline->l.p;
     struct Notes      *note     = FindNote(wtrack->track, p);
       
-    if (note != NULL)
-      r_add_pitch(window, wblock, wtrack, note, p);
-    else
+    if (note != NULL) {
+      if (is_at_last_line_of_note(wblock, note, wblock->curr_realline))
+        r_add_last_pitch(window, note);
+      else        
+        r_add_pitch(window, wblock, wtrack, note, p);
+    } else
       r_add_note(window, wblock, wtrack, p);
       
   } else {
@@ -1049,7 +1099,11 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
     if (tr2->pitch != NULL)
       r_edit_pitch(window, wblock, wtrack, tr2->pitch);
 
-    else if (tr2->note != NULL)
+    else if (tr2->is_end_pitch)
+      r_edit_end_pitch(window, wblock, wtrack, tr2->note);
+      
+    else if(tr2->note != NULL)
+      
       r_edit_note(window, wblock, wtrack, tr2->note);
     
   }

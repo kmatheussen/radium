@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "pitches_proc.h"
 
+/*
 struct Notes *GetNextPitchNote(const struct Notes *note){
   R_ASSERT(note->pitches != NULL);
 
@@ -43,6 +44,7 @@ struct Notes *GetNextPitchNote(const struct Notes *note){
 
   return NULL;
 }
+*/
 
 struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float notenum){
   struct Pitches *pitch = talloc(sizeof(struct Pitches));
@@ -53,6 +55,10 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   int pos;
   PC_Pause(); {
     pos=ListAddElement3_ns(&note->pitches, &pitch->l);
+    if (pos >= 0){
+      if (note->pitch_end==0.0)
+        note->pitch_end = notenum;
+    }
   }PC_StopPause();
 
   if(pos==-1)
@@ -68,5 +74,7 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
 void DeletePitch(struct Tracks *track, struct Notes *note, struct Pitches *pitch){
   PLAYER_lock();{
     ListRemoveElement3(&note->pitches, &pitch->l);
+    //if (note->pitches==NULL)
+    //  note->pitch_end = 0;
   }PLAYER_unlock();
 }

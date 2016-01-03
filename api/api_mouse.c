@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_reltemposlider_proc.h"
 #include "../common/gfx_wblocks_reltempo_proc.h"
 #include "../common/time_proc.h"
+#include "../common/trackreallines2_proc.h"
 #include "../common/common_proc.h"
 #include "../common/temponodes_proc.h"
 #include "../common/undo_temponodes_proc.h"
@@ -1057,20 +1058,45 @@ static void MOVE_PLACE(Place *place, float diff){
   Float2Placement(oldplace+diff, place);
 }
 
-static void setPianoNoteValue(float value, int pianonotenum, struct Notes *note){
+static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note){
 
+  // 1. Find delta
+  //
+  float old_value;
+  
   if (pianonotenum==0) {
-    note->note = R_BOUNDARIES(1, value, 127);
-    return;
+    
+    old_value = note->note;
+    
+  } else {
+  
+    struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+    if (pitch==NULL){
+      RWarning("There is no pianonote %d",pianonotenum);
+      return;
+    }
+
+    old_value = pitch->note;
+  }
+
+  
+  float delta = value - old_value;
+
+  // 2. Apply
+  //
+  //note->note + note->note - value
+    
+  note->note = R_BOUNDARIES(1, note->note + delta, 127);
+
+  if (note->pitch_end > 0)
+    note->pitch_end = R_BOUNDARIES(1, note->pitch_end + delta, 127);
+
+  struct Pitches *pitch = note->pitches;
+  while(pitch != NULL){
+    pitch->note = R_BOUNDARIES(1, pitch->note + delta, 127);
+    pitch = NextPitch(pitch);
   }
   
-  struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
-  if (pitch==NULL){
-    RWarning("There is no pianonote %d",pianonotenum);
-    return;
-  }
-
-  pitch->note = R_BOUNDARIES(1, value, 127);
 }
 
 static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
@@ -1135,7 +1161,7 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
 
   struct Blocks *block = wblock->block;
   
-  setPianoNoteValue(value, pianonotenum, note);
+  setPianoNoteValues(value, pianonotenum, note);
 
   window->must_redraw_editor = true;
     
@@ -1287,6 +1313,13 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
   
+  window->must_redraw_editor=true;
+    
+  if(note->pitch_end > 0 || note->pitches!=NULL)
+    note->pitch_end = R_BOUNDARIES(1, value, 127);
+  else
+    note->note = R_BOUNDARIES(1, value, 127);
+  
   if (note->pitches!=NULL) {
     if (floatplace>=0) {
       MoveEndNote(block, track, note, PlaceCreate2(floatplace), false);
@@ -1295,10 +1328,6 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
     return notenum;
   }
 
-  note->note = R_BOUNDARIES(1, value, 127);
-    
-  window->must_redraw_editor=true;
-    
   if (floatplace < 0)
     return notenum;
 
@@ -1411,16 +1440,18 @@ void cancelCurrentPianonote(void){
   setCurrentPianonote(-1, -1, -1);
 }
 
+
+
 // pitches
 //////////////////////////////////////////////////
 
-static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches *pitch){
+static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches *pitch, bool is_end_pitch){
   int num = 0;
   struct Notes *note2 = track->notes;
-  
+
   while(note2!=NULL){
 
-    if (note==note2 && pitch==NULL)
+    if (note==note2 && pitch==NULL && is_end_pitch==false)
       return num;
 
     num++;
@@ -1433,6 +1464,13 @@ static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches 
       num++;
 
       pitch2 = NextPitch(pitch2);
+    }
+
+    if (note2->pitch_end > 0){
+      if (note==note2 && pitch==NULL && is_end_pitch==true)
+        return num;
+      
+      num++;
     }
 
     if (note==note2) {
@@ -1467,7 +1505,10 @@ int getNumPitches(int tracknum, int blocknum, int windownum){
       num++;
       pitches = NextPitch(pitches);
     }
-      
+
+    if (notes->pitch_end > 0)
+      num++;
+    
     notes = NextNote(notes);
   }
 
@@ -1511,7 +1552,19 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
       num++;
       pitches = NextPitch(pitches);
     }
-      
+
+    if (notes->pitch_end > 0) {
+      if (pitchnum==num){
+        struct Pitches *pitch = ListLast3(&notes->pitches->l);
+        if (pitch!=NULL)
+          notes->pitch_end = pitch->note;
+        else
+          notes->pitch_end = 0;
+        goto gotit;
+      }
+      num++;
+    }
+    
     notes = NextNote(notes);
   }
 
@@ -1524,9 +1577,12 @@ void deletePitch(int pitchnum, int tracknum, int blocknum){
 
 
 
-static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, struct Tracks *track){
+static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, bool *is_end_pitch, struct Tracks *track){
   int num = 0;
   struct Notes *notes = track->notes;
+  
+  *is_end_pitch = false;
+  
   while(notes!=NULL){
 
     if(num==pitchnum) {
@@ -1548,7 +1604,17 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
       num++;
       pitches = NextPitch(pitches);
     }
-      
+
+    if (notes->pitch_end > 0) {
+      if(num==pitchnum) {
+        *note = notes;
+        *is_end_pitch = true;
+        *pitch = NULL;
+        return true;
+      }
+      num++;
+    }
+    
     notes = NextNote(notes);
   }
 
@@ -1557,9 +1623,11 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
 }
   
 
-static int getReallineForPitch(struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note){
+static int getReallineForPitch(const struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note, bool is_end_pitch){
   if( pitch!=NULL)
     return FindRealLineFor(wblock,pitch->Tline,&pitch->l.p);
+  else if (is_end_pitch)
+    return find_realline_for_end_pitch(wblock, &note->end);
   else
     return FindRealLineFor(wblock,note->Tline,&note->l.p);
 }
@@ -1580,19 +1648,22 @@ static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int
 
   struct Notes *note;
   struct Pitches *pitch;
-
-  if (getPitch(pitchnum, &pitch, &note, wtrack->track)==false)
+  bool is_end_pitch;
+  
+  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, wtrack->track)==false)
     return 0;
   
   switch (what_to_get){
   case PITCH_INFO_Y1:
-    return get_mouse_realline_y1(window, getReallineForPitch(wblock, pitch, note));
+    return get_mouse_realline_y1(window, getReallineForPitch(wblock, pitch, note, is_end_pitch));
   case PITCH_INFO_Y2:
-    return get_mouse_realline_y2(window, getReallineForPitch(wblock, pitch, note));
+    return get_mouse_realline_y2(window, getReallineForPitch(wblock, pitch, note, is_end_pitch));
   case PITCH_INFO_VALUE:
     {
       if (pitch!=NULL)
         return pitch->note;
+      else if (is_end_pitch)
+        return note->pitch_end;
       else
         return note->note;
     }
@@ -1620,7 +1691,7 @@ float getPitchX2(int pitchnum, int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0.0f : wtrack->notearea.x2;
 }
 
-static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, int windownum){
+static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, int windownum, bool *is_end_pitch){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1628,15 +1699,20 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
     return NULL;
 
   struct Notes *note;
-  struct Pitches *pitch;
-  if (getPitch(pitchnum, &pitch, &note, wtrack->track)==false)
+  struct Pitches *pitch;  
+  
+  if (getPitch(pitchnum, &pitch, &note, is_end_pitch, wtrack->track)==false)
     return NULL;
 
   int note_pitchnum;
 
-  if (pitch==NULL)
-    note_pitchnum = 0;
-  else
+  if (pitch==NULL) {
+    if (*is_end_pitch) {
+      note_pitchnum = note->pitches==NULL ? 1 : ListFindNumElements3(&note->pitches->l) + 1;
+    } else {
+      note_pitchnum = 0;
+    }
+  } else
     note_pitchnum = ListPosition3(&note->pitches->l, &pitch->l) + 1;
 
   const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
@@ -1646,13 +1722,24 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
 
 
 float getPitchX(int num,  int tracknum, int blocknum, int windownum){
-  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->x;
+  bool is_end_pitch;
+  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
+  if (nodeline==NULL)
+    return 0;
+
+  return nodeline->x;
 }
 
 float getPitchY(int num, int tracknum, int blocknum, int windownum){
-  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum);
-  return nodeline==NULL ? 0 : nodeline->y-g_scroll_pos;
+  bool is_end_pitch;
+  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
+  if (nodeline==NULL)
+    return 0;
+
+  if (is_end_pitch)
+    return nodeline->y-g_scroll_pos;
+  else
+    return nodeline->y-g_scroll_pos;
 }
 
 
@@ -1669,7 +1756,8 @@ void setCurrentPitch(int num, int tracknum, int blocknum){
 
   struct Notes *note;
   struct Pitches *pitch;
-  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+  bool is_end_pitch;
+  if (getPitch(num, &pitch, &note, &is_end_pitch, wtrack->track)==false)
     return;
 
   struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
@@ -1685,14 +1773,19 @@ void setIndicatorPitch(int num, int tracknum, int blocknum){
 
   struct Notes *note;
   struct Pitches *pitch;
-  if (getPitch(num, &pitch, &note, wtrack->track)==false)
+  bool is_end_pitch;
+  
+  if (getPitch(num, &pitch, &note, &is_end_pitch, wtrack->track)==false)
     return;
 
   setIndicatorNode(&note->l);
 
-  if (pitch==NULL)
-    indicator_pitch_num = 0;
-  else {
+  if (pitch==NULL) {
+    if (is_end_pitch)
+      indicator_pitch_num = 1 + ListFindNumElements3(&note->pitches->l);
+    else
+      indicator_pitch_num = 0;
+  } else {
     int pitchnum = ListPosition3(&note->pitches->l, &pitch->l);
     indicator_pitch_num = pitchnum + 1;
   }
@@ -1813,8 +1906,9 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
 
   struct Notes *note;
   struct Pitches *pitch;
-
-  if (getPitch(num, &pitch, &note, track)==false)
+  bool is_end_pitch;
+  
+  if (getPitch(num, &pitch, &note, &is_end_pitch, track)==false)
     return num;
 
   window->must_redraw_editor = true;
@@ -1837,13 +1931,21 @@ static int setPitch2(int num, float value, float floatplace, int tracknum, int b
       }PLAYER_unlock();
     }
                         
+  } else if (is_end_pitch){
+
+    note->pitch_end = value;
+    if (floatplace >= 0) {
+      MoveEndNote(block, track, note, PlaceCreate2(floatplace), true);
+      return getPitchNum(track, note, NULL, true);
+    }
+    
   } else {
     
     note->note = value;
 
     if (floatplace >= 0) {
       MoveNote(block, track, note, PlaceCreate2(floatplace), replace_note_ends);
-      return getPitchNum(track, note, NULL);
+      return getPitchNum(track, note, NULL, false);
     }
   }
 
@@ -1872,8 +1974,8 @@ static int addNote3(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   struct Notes *note = InsertNote(wblock, wtrack, place, NULL, value, NOTE_get_velocity(wtrack->track), false);
 
   window->must_redraw_editor = true;
-  
-  return getPitchNum(wtrack->track, note, NULL);
+
+  return getPitchNum(wtrack->track, note, NULL, false);
 }
 
 static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
@@ -1882,10 +1984,13 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   if(pitch==NULL)
     return -1;
+
+  if (note->pitch_end==0)
+    note->pitch_end = value;
   
   window->must_redraw_editor = true;
 
-  return getPitchNum(wtrack->track, note, pitch);
+  return getPitchNum(wtrack->track, note, pitch, false);
 }
 
 int createPitch(float value, float floatplace, int tracknum, int blocknum, int windownum){
@@ -1915,9 +2020,50 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
   if (ret==-1)
     Undo_CancelLastUndo();
 
+  printf("\n\n\n\n ***** NUM: %d\n",ret);
   return ret;
 }
+
+bool portamentoEnabled(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return false;
+
+  return note->pitch_end > 0;
+}
+
+void enablePortamento(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  if (note->pitch_end == 0) {
+    window->must_redraw_editor = true;
+    note->pitch_end = note->note;
+  }
+}
+
+void disablePortamento(int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  PLAYER_lock();{
+    note->pitches = NULL;
+    note->pitch_end = 0;
+  }PLAYER_unlock();
   
+  window->must_redraw_editor = true;
+}
 
 // subtracks
 ///////////////////////////////////////////////////
@@ -1999,6 +2145,15 @@ float getNoteValue(int notenum, int tracknum, int blocknum, int windownum){
     return 64.0f;
 
   return note->note;
+}
+
+float getNoteEndPitch(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+
+  if(note==NULL)
+    return 0;
+
+  return note->pitch_end;
 }
 
 int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){

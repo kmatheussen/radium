@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef COMMON_TRACKREALLINES2_PROC_H
 #define COMMON_TRACKREALLINES2_PROC_H
 
+extern LANGSPEC int find_realline_for_end_pitch(const struct WBlocks *wblock, const Place *p);
+
 // Returns a pointer to an array of vectors (one vector for each realline), not a pointer to a vector.
 extern LANGSPEC vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
 extern LANGSPEC vector_t *TR_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
