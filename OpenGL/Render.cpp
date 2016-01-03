@@ -1625,7 +1625,8 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
   if (indicator_node == &note->l && indicator_velocity_num!=-1) {
     if (indicator_velocity_num >= nodes->num_elements)
-      RError("indicator_velocity_node_num(%d) >= nodes->num_elements(%d)",indicator_velocity_num,nodes->num_elements);
+      //RError("indicator_velocity_node_num(%d) >= nodes->num_elements(%d)",indicator_velocity_num,nodes->num_elements);
+      printf("indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
     else {
       struct Node *node = (struct Node *)nodes->elements[indicator_velocity_num];
       draw_node_indicator(node->x, node->y-wblock->t.y1);

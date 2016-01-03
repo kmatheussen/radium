@@ -2418,14 +2418,13 @@ void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int bl
   if (note==NULL)
     return;
 
-  setIndicatorNode(&note->l);
-
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
     RWarning("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
     return;
   }
 
+  setIndicatorNode(&note->l);
   indicator_velocity_num = velocitynum;
 }
 
