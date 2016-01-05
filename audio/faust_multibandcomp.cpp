@@ -1,16 +1,19 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.58 (http://faust.grame.fr)
+// Code generated with Faust 0.9.67 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with : "" */
 #include "typepunning.h"
 #include <math.h>
+#ifndef FAUSTPOWER
+#define FAUSTPOWER
 #include <cmath>
-template <int N> inline float faustpower(float x) 		{ return powf(x,N); } 
-template <int N> inline double faustpower(double x) 	{ return pow(x,N); }
-template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
-template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
-template <> 	 inline int faustpower<1>(int x) 		{ return x; }
+template <int N> inline float faustpower(float x)          { return powf(x,N); } 
+template <int N> inline double faustpower(double x)        { return pow(x,N); }
+template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
+template <> 	 inline int faustpower<0>(int x)            { return 1; }
+template <> 	 inline int faustpower<1>(int x)            { return x; }
+#endif
 #include <math.h>
 #include <string>
 
@@ -159,14 +162,14 @@ typedef long double quad;
 
 class Multibandcomp_dsp : public dsp {
   private:
+	float 	fYec0_perm[4];
 	FAUSTFLOAT 	fslider0;
 	int 	iConst0;
 	float 	fConst1;
-	float 	fYec0_perm[4];
 	float 	fRec3_perm[4];
 	float 	fRec2_perm[4];
-	FAUSTFLOAT 	fslider1;
 	float 	fYec1_perm[4];
+	FAUSTFLOAT 	fslider1;
 	float 	fRec1_perm[4];
 	float 	fRec0_perm[4];
 	float 	fYec2_perm[4];
@@ -182,38 +185,38 @@ class Multibandcomp_dsp : public dsp {
 	float 	fRec6_perm[4];
 	FAUSTFLOAT 	fslider4;
 	float 	fRec5_perm[4];
-	float 	fConst3;
 	FAUSTFLOAT 	fslider5;
+	float 	fConst3;
 	FAUSTFLOAT 	fslider6;
 	float 	fRec4_perm[4];
-	float 	fRec13_perm[4];
 	float 	fRec12_perm[4];
 	float 	fRec11_perm[4];
-	float 	fRec19_perm[4];
-	float 	fRec18_perm[4];
 	float 	fRec17_perm[4];
+	float 	fRec16_perm[4];
 	FAUSTFLOAT 	fcheckbox1;
 	FAUSTFLOAT 	fslider7;
 	FAUSTFLOAT 	fslider8;
-	float 	fRec16_perm[4];
-	FAUSTFLOAT 	fslider9;
 	float 	fRec15_perm[4];
+	FAUSTFLOAT 	fslider9;
+	float 	fRec14_perm[4];
 	FAUSTFLOAT 	fslider10;
 	FAUSTFLOAT 	fslider11;
-	float 	fRec14_perm[4];
-	float 	fRec21_perm[4];
+	float 	fRec13_perm[4];
 	float 	fRec20_perm[4];
+	float 	fRec19_perm[4];
+	float 	fRec18_perm[4];
 	float 	fRec26_perm[4];
 	float 	fRec25_perm[4];
+	float 	fRec24_perm[4];
 	FAUSTFLOAT 	fcheckbox2;
 	FAUSTFLOAT 	fslider12;
 	FAUSTFLOAT 	fslider13;
-	float 	fRec24_perm[4];
-	FAUSTFLOAT 	fslider14;
 	float 	fRec23_perm[4];
+	FAUSTFLOAT 	fslider14;
+	float 	fRec22_perm[4];
 	FAUSTFLOAT 	fslider15;
 	FAUSTFLOAT 	fslider16;
-	float 	fRec22_perm[4];
+	float 	fRec21_perm[4];
 	float 	fRec32_perm[4];
 	float 	fRec31_perm[4];
 	float 	fRec30_perm[4];
@@ -223,20 +226,20 @@ class Multibandcomp_dsp : public dsp {
 	float 	fRec38_perm[4];
 	float 	fRec37_perm[4];
 	float 	fRec36_perm[4];
+	FAUSTFLOAT 	fbargraph0;
 	FAUSTFLOAT 	fslider17;
 	FAUSTFLOAT 	fcheckbox3;
 	FAUSTFLOAT 	fcheckbox4;
 	FAUSTFLOAT 	fcheckbox5;
-	FAUSTFLOAT 	fslider18;
-	FAUSTFLOAT 	fslider19;
-	FAUSTFLOAT 	fcheckbox6;
-	FAUSTFLOAT 	fslider20;
-	FAUSTFLOAT 	fbargraph0;
 	FAUSTFLOAT 	fbargraph1;
 	FAUSTFLOAT 	fbargraph2;
+	FAUSTFLOAT 	fslider18;
 	FAUSTFLOAT 	fbargraph3;
 	FAUSTFLOAT 	fbargraph4;
+	FAUSTFLOAT 	fslider19;
 	FAUSTFLOAT 	fbargraph5;
+	FAUSTFLOAT 	fcheckbox6;
+	FAUSTFLOAT 	fslider20;
 	FAUSTFLOAT 	fslider21;
 	float 	fConst4;
 	float 	fRec29_perm[4];
@@ -271,6 +274,11 @@ class Multibandcomp_dsp : public dsp {
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/version", "1.33");
 		m->declare("effect.lib/license", "STK-4.3");
+		m->declare("effect.lib/exciter_name", "Harmonic Exciter");
+		m->declare("effect.lib/exciter_author", "Priyanka Shekar (pshekar@ccrma.stanford.edu)");
+		m->declare("effect.lib/exciter_copyright", "Copyright (c) 2013 Priyanka Shekar");
+		m->declare("effect.lib/exciter_version", "1.0");
+		m->declare("effect.lib/exciter_license", "MIT License (MIT)");
 	}
 
 	virtual int getNumInputs() 	{ return 2; }
@@ -279,14 +287,14 @@ class Multibandcomp_dsp : public dsp {
 	}
 	virtual void instanceInit(int samplingFreq) {
 		fSamplingFreq = samplingFreq;
+		for (int i=0; i<4; i++) fYec0_perm[i]=0;
 		fslider0 = 1.5e+03f;
 		iConst0 = min(192000, max(1, fSamplingFreq));
 		fConst1 = (3.141592653589793f / float(iConst0));
-		for (int i=0; i<4; i++) fYec0_perm[i]=0;
 		for (int i=0; i<4; i++) fRec3_perm[i]=0;
 		for (int i=0; i<4; i++) fRec2_perm[i]=0;
-		fslider1 = 166.0f;
 		for (int i=0; i<4; i++) fYec1_perm[i]=0;
+		fslider1 = 166.0f;
 		for (int i=0; i<4; i++) fRec1_perm[i]=0;
 		for (int i=0; i<4; i++) fRec0_perm[i]=0;
 		for (int i=0; i<4; i++) fYec2_perm[i]=0;
@@ -302,38 +310,38 @@ class Multibandcomp_dsp : public dsp {
 		for (int i=0; i<4; i++) fRec6_perm[i]=0;
 		fslider4 = 1e+02f;
 		for (int i=0; i<4; i++) fRec5_perm[i]=0;
-		fConst3 = (2.0f / float(iConst0));
 		fslider5 = -2e+01f;
+		fConst3 = (2.0f / float(iConst0));
 		fslider6 = 2.0f;
 		for (int i=0; i<4; i++) fRec4_perm[i]=0;
-		for (int i=0; i<4; i++) fRec13_perm[i]=0;
 		for (int i=0; i<4; i++) fRec12_perm[i]=0;
 		for (int i=0; i<4; i++) fRec11_perm[i]=0;
-		for (int i=0; i<4; i++) fRec19_perm[i]=0;
-		for (int i=0; i<4; i++) fRec18_perm[i]=0;
 		for (int i=0; i<4; i++) fRec17_perm[i]=0;
+		for (int i=0; i<4; i++) fRec16_perm[i]=0;
 		fcheckbox1 = 0.0;
 		fslider7 = 0.0f;
 		fslider8 = 2e+02f;
-		for (int i=0; i<4; i++) fRec16_perm[i]=0;
-		fslider9 = 1e+02f;
 		for (int i=0; i<4; i++) fRec15_perm[i]=0;
+		fslider9 = 1e+02f;
+		for (int i=0; i<4; i++) fRec14_perm[i]=0;
 		fslider10 = -2e+01f;
 		fslider11 = 2.0f;
-		for (int i=0; i<4; i++) fRec14_perm[i]=0;
-		for (int i=0; i<4; i++) fRec21_perm[i]=0;
+		for (int i=0; i<4; i++) fRec13_perm[i]=0;
 		for (int i=0; i<4; i++) fRec20_perm[i]=0;
+		for (int i=0; i<4; i++) fRec19_perm[i]=0;
+		for (int i=0; i<4; i++) fRec18_perm[i]=0;
 		for (int i=0; i<4; i++) fRec26_perm[i]=0;
 		for (int i=0; i<4; i++) fRec25_perm[i]=0;
+		for (int i=0; i<4; i++) fRec24_perm[i]=0;
 		fcheckbox2 = 0.0;
 		fslider12 = 0.0f;
 		fslider13 = 2e+02f;
-		for (int i=0; i<4; i++) fRec24_perm[i]=0;
-		fslider14 = 1e+02f;
 		for (int i=0; i<4; i++) fRec23_perm[i]=0;
+		fslider14 = 1e+02f;
+		for (int i=0; i<4; i++) fRec22_perm[i]=0;
 		fslider15 = -2e+01f;
 		fslider16 = 2.0f;
-		for (int i=0; i<4; i++) fRec22_perm[i]=0;
+		for (int i=0; i<4; i++) fRec21_perm[i]=0;
 		for (int i=0; i<4; i++) fRec32_perm[i]=0;
 		for (int i=0; i<4; i++) fRec31_perm[i]=0;
 		for (int i=0; i<4; i++) fRec30_perm[i]=0;
@@ -414,87 +422,87 @@ class Multibandcomp_dsp : public dsp {
 		interface->declare(&fcheckbox4, "0", "");
 		interface->declare(&fcheckbox4, "tooltip", "When this is checked, the compressor is enabled. If not, sound is muted.");
 		interface->addCheckButton("Band 2:  Solo", &fcheckbox4);
-		interface->declare(&fbargraph1, "1", "");
-		interface->declare(&fbargraph1, "7", "");
-		interface->addHorizontalBargraph("Band 2:   Outgain", &fbargraph1, 0.0f, 1.0f);
-		interface->declare(&fcheckbox2, "0.5", "");
-		interface->declare(&fcheckbox2, "tooltip", "When this is checked, the compressor is enabled. If not, sound is muted.");
-		interface->addCheckButton("Band 2: Bypass", &fcheckbox2);
-		interface->declare(&fslider16, "2", "");
-		interface->declare(&fslider16, "style", "slider");
-		interface->declare(&fslider16, "tooltip", "A compression Ratio of N means that for each N dB increase in input signal level above Threshold, the output level goes up 1 dB");
-		interface->addHorizontalSlider("Band 2: Ratio", &fslider16, 2.0f, 1.0f, 2e+01f, 0.1f);
-		interface->declare(&fslider15, "3", "");
-		interface->declare(&fslider15, "style", "slider");
-		interface->declare(&fslider15, "tooltip", "When the signal level exceeds the Threshold (in dB), its level is compressed according to the Ratio");
-		interface->declare(&fslider15, "unit", "dB");
-		interface->addHorizontalSlider("Band 2: Threshold", &fslider15, -2e+01f, -1e+02f, 1e+01f, 0.1f);
-		interface->declare(&fslider14, "4", "");
-		interface->declare(&fslider14, "style", "slider");
-		interface->declare(&fslider14, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new lower target level (the compression `kicking in')");
-		interface->declare(&fslider14, "unit", "ms");
-		interface->addHorizontalSlider("Band 2: Attack", &fslider14, 1e+02f, 0.0f, 5e+02f, 0.1f);
-		interface->declare(&fslider13, "5", "");
-		interface->declare(&fslider13, "style", "slider");
-		interface->declare(&fslider13, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new higher target level (the compression 'releasing')");
-		interface->declare(&fslider13, "unit", "ms");
-		interface->addHorizontalSlider("Band 2: Release", &fslider13, 2e+02f, 0.0f, 1e+03f, 0.1f);
-		interface->declare(&fbargraph0, "1", "");
-		interface->declare(&fbargraph0, "6", "");
-		interface->declare(&fbargraph0, "tooltip", "dummy tooltip");
-		interface->addHorizontalBargraph("Band 2: Input Gain", &fbargraph0, 0.0f, 1.0f);
-		interface->declare(&fslider12, "2", "");
-		interface->declare(&fslider12, "6", "");
-		interface->declare(&fslider12, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
-		interface->declare(&fslider12, "unit", "dB");
-		interface->addHorizontalSlider("Band 2: Input Gain", &fslider12, 0.0f, -4e+01f, 4e+01f, 0.1f);
-		interface->declare(&fslider17, "2", "");
-		interface->declare(&fslider17, "7", "");
-		interface->declare(&fslider17, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
-		interface->declare(&fslider17, "unit", "dB");
-		interface->addHorizontalSlider("Band 2: Output Gain", &fslider17, 0.0f, -4e+01f, 4e+01f, 0.1f);
-		interface->declare(&fcheckbox3, "0", "");
-		interface->declare(&fcheckbox3, "tooltip", "When this is checked, the compressor is enabled. If not, sound is muted.");
-		interface->addCheckButton("Band 3:  Solo", &fcheckbox3);
 		interface->declare(&fbargraph3, "1", "");
 		interface->declare(&fbargraph3, "7", "");
-		interface->addHorizontalBargraph("Band 3:   Outgain", &fbargraph3, 0.0f, 1.0f);
+		interface->addHorizontalBargraph("Band 2:   Outgain", &fbargraph3, 0.0f, 1.0f);
 		interface->declare(&fcheckbox1, "0.5", "");
 		interface->declare(&fcheckbox1, "tooltip", "When this is checked, the compressor is enabled. If not, sound is muted.");
-		interface->addCheckButton("Band 3: Bypass", &fcheckbox1);
+		interface->addCheckButton("Band 2: Bypass", &fcheckbox1);
 		interface->declare(&fslider11, "2", "");
 		interface->declare(&fslider11, "style", "slider");
 		interface->declare(&fslider11, "tooltip", "A compression Ratio of N means that for each N dB increase in input signal level above Threshold, the output level goes up 1 dB");
-		interface->addHorizontalSlider("Band 3: Ratio", &fslider11, 2.0f, 1.0f, 2e+01f, 0.1f);
+		interface->addHorizontalSlider("Band 2: Ratio", &fslider11, 2.0f, 1.0f, 2e+01f, 0.1f);
 		interface->declare(&fslider10, "3", "");
 		interface->declare(&fslider10, "style", "slider");
 		interface->declare(&fslider10, "tooltip", "When the signal level exceeds the Threshold (in dB), its level is compressed according to the Ratio");
 		interface->declare(&fslider10, "unit", "dB");
-		interface->addHorizontalSlider("Band 3: Threshold", &fslider10, -2e+01f, -1e+02f, 1e+01f, 0.1f);
+		interface->addHorizontalSlider("Band 2: Threshold", &fslider10, -2e+01f, -1e+02f, 1e+01f, 0.1f);
 		interface->declare(&fslider9, "4", "");
 		interface->declare(&fslider9, "style", "slider");
 		interface->declare(&fslider9, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new lower target level (the compression `kicking in')");
 		interface->declare(&fslider9, "unit", "ms");
-		interface->addHorizontalSlider("Band 3: Attack", &fslider9, 1e+02f, 0.0f, 5e+02f, 0.1f);
+		interface->addHorizontalSlider("Band 2: Attack", &fslider9, 1e+02f, 0.0f, 5e+02f, 0.1f);
 		interface->declare(&fslider8, "5", "");
 		interface->declare(&fslider8, "style", "slider");
 		interface->declare(&fslider8, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new higher target level (the compression 'releasing')");
 		interface->declare(&fslider8, "unit", "ms");
-		interface->addHorizontalSlider("Band 3: Release", &fslider8, 2e+02f, 0.0f, 1e+03f, 0.1f);
+		interface->addHorizontalSlider("Band 2: Release", &fslider8, 2e+02f, 0.0f, 1e+03f, 0.1f);
 		interface->declare(&fbargraph2, "1", "");
 		interface->declare(&fbargraph2, "6", "");
 		interface->declare(&fbargraph2, "tooltip", "dummy tooltip");
-		interface->addHorizontalBargraph("Band 3: Input Gain", &fbargraph2, 0.0f, 1.0f);
+		interface->addHorizontalBargraph("Band 2: Input Gain", &fbargraph2, 0.0f, 1.0f);
 		interface->declare(&fslider7, "2", "");
 		interface->declare(&fslider7, "6", "");
 		interface->declare(&fslider7, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
 		interface->declare(&fslider7, "unit", "dB");
-		interface->addHorizontalSlider("Band 3: Input Gain", &fslider7, 0.0f, -4e+01f, 4e+01f, 0.1f);
+		interface->addHorizontalSlider("Band 2: Input Gain", &fslider7, 0.0f, -4e+01f, 4e+01f, 0.1f);
 		interface->declare(&fslider18, "2", "");
 		interface->declare(&fslider18, "7", "");
 		interface->declare(&fslider18, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
 		interface->declare(&fslider18, "unit", "dB");
-		interface->addHorizontalSlider("Band 3: Output Gain", &fslider18, 0.0f, -4e+01f, 4e+01f, 0.1f);
+		interface->addHorizontalSlider("Band 2: Output Gain", &fslider18, 0.0f, -4e+01f, 4e+01f, 0.1f);
+		interface->declare(&fcheckbox3, "0", "");
+		interface->declare(&fcheckbox3, "tooltip", "When this is checked, the compressor is enabled. If not, sound is muted.");
+		interface->addCheckButton("Band 3:  Solo", &fcheckbox3);
+		interface->declare(&fbargraph1, "1", "");
+		interface->declare(&fbargraph1, "7", "");
+		interface->addHorizontalBargraph("Band 3:   Outgain", &fbargraph1, 0.0f, 1.0f);
+		interface->declare(&fcheckbox2, "0.5", "");
+		interface->declare(&fcheckbox2, "tooltip", "When this is checked, the compressor is enabled. If not, sound is muted.");
+		interface->addCheckButton("Band 3: Bypass", &fcheckbox2);
+		interface->declare(&fslider16, "2", "");
+		interface->declare(&fslider16, "style", "slider");
+		interface->declare(&fslider16, "tooltip", "A compression Ratio of N means that for each N dB increase in input signal level above Threshold, the output level goes up 1 dB");
+		interface->addHorizontalSlider("Band 3: Ratio", &fslider16, 2.0f, 1.0f, 2e+01f, 0.1f);
+		interface->declare(&fslider15, "3", "");
+		interface->declare(&fslider15, "style", "slider");
+		interface->declare(&fslider15, "tooltip", "When the signal level exceeds the Threshold (in dB), its level is compressed according to the Ratio");
+		interface->declare(&fslider15, "unit", "dB");
+		interface->addHorizontalSlider("Band 3: Threshold", &fslider15, -2e+01f, -1e+02f, 1e+01f, 0.1f);
+		interface->declare(&fslider14, "4", "");
+		interface->declare(&fslider14, "style", "slider");
+		interface->declare(&fslider14, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new lower target level (the compression `kicking in')");
+		interface->declare(&fslider14, "unit", "ms");
+		interface->addHorizontalSlider("Band 3: Attack", &fslider14, 1e+02f, 0.0f, 5e+02f, 0.1f);
+		interface->declare(&fslider13, "5", "");
+		interface->declare(&fslider13, "style", "slider");
+		interface->declare(&fslider13, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new higher target level (the compression 'releasing')");
+		interface->declare(&fslider13, "unit", "ms");
+		interface->addHorizontalSlider("Band 3: Release", &fslider13, 2e+02f, 0.0f, 1e+03f, 0.1f);
+		interface->declare(&fbargraph0, "1", "");
+		interface->declare(&fbargraph0, "6", "");
+		interface->declare(&fbargraph0, "tooltip", "dummy tooltip");
+		interface->addHorizontalBargraph("Band 3: Input Gain", &fbargraph0, 0.0f, 1.0f);
+		interface->declare(&fslider12, "2", "");
+		interface->declare(&fslider12, "6", "");
+		interface->declare(&fslider12, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
+		interface->declare(&fslider12, "unit", "dB");
+		interface->addHorizontalSlider("Band 3: Input Gain", &fslider12, 0.0f, -4e+01f, 4e+01f, 0.1f);
+		interface->declare(&fslider17, "2", "");
+		interface->declare(&fslider17, "7", "");
+		interface->declare(&fslider17, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
+		interface->declare(&fslider17, "unit", "dB");
+		interface->addHorizontalSlider("Band 3: Output Gain", &fslider17, 0.0f, -4e+01f, 4e+01f, 0.1f);
 		interface->declare(&fslider1, "C", "");
 		interface->declare(&fslider1, "style", "knob");
 		interface->declare(&fslider1, "tooltip", "Center-frequency of second-order Regalia-Mitra peaking equalizer section 1");
@@ -553,34 +561,34 @@ class Multibandcomp_dsp : public dsp {
 		float 	fRec6_tmp[32+4];
 		float 	fRec5_tmp[32+4];
 		float 	fRec4_tmp[32+4];
-		float 	fRec13_tmp[32+4];
 		float 	fRec12_tmp[32+4];
-		float 	fZec7[32];
 		float 	fRec11_tmp[32+4];
-		float 	fRec19_tmp[32+4];
-		float 	fRec18_tmp[32+4];
-		float 	fZec8[32];
 		float 	fRec17_tmp[32+4];
+		float 	fRec16_tmp[32+4];
+		float 	fZec7[32];
+		float 	fZec8[32];
 		float 	fZec9[32];
 		float 	fZec10[32];
 		float 	fZec11[32];
-		float 	fZec12[32];
-		float 	fZec13[32];
-		float 	fRec16_tmp[32+4];
 		float 	fRec15_tmp[32+4];
 		float 	fRec14_tmp[32+4];
-		float 	fRec21_tmp[32+4];
+		float 	fRec13_tmp[32+4];
 		float 	fRec20_tmp[32+4];
+		float 	fRec19_tmp[32+4];
+		float 	fZec12[32];
+		float 	fRec18_tmp[32+4];
 		float 	fRec26_tmp[32+4];
 		float 	fRec25_tmp[32+4];
+		float 	fZec13[32];
+		float 	fRec24_tmp[32+4];
 		float 	fZec14[32];
 		float 	fZec15[32];
 		float 	fZec16[32];
 		float 	fZec17[32];
 		float 	fZec18[32];
-		float 	fRec24_tmp[32+4];
 		float 	fRec23_tmp[32+4];
 		float 	fRec22_tmp[32+4];
+		float 	fRec21_tmp[32+4];
 		float 	fZec19[32];
 		float 	fZec20[32];
 		float 	fZec21[32];
@@ -617,12 +625,12 @@ class Multibandcomp_dsp : public dsp {
 		float 	fRec28_tmp[32+4];
 		float 	fRec27_tmp[32+4];
 		float 	fZec42[32];
-		float 	fSlow0 = tanf((fConst1 * fslider0));
+		float* 	fYec0 = &fYec0_tmp[4];
+		float 	fSlow0 = tanf((fConst1 * float(fslider0)));
 		float 	fSlow1 = (1.0f / fSlow0);
 		float 	fSlow2 = (1 + fSlow1);
-		float 	fSlow3 = (0 - ((1 - fSlow1) / fSlow2));
-		float* 	fYec0 = &fYec0_tmp[4];
-		float 	fSlow4 = (1.0f / fSlow2);
+		float 	fSlow3 = (1.0f / fSlow2);
+		float 	fSlow4 = (0 - ((1 - fSlow1) / fSlow2));
 		float* 	fRec3 = &fRec3_tmp[4];
 		float 	fSlow5 = (1.0f / faustpower<2>(fSlow0));
 		float 	fSlow6 = (2 * (1 - fSlow5));
@@ -630,12 +638,12 @@ class Multibandcomp_dsp : public dsp {
 		float 	fSlow8 = (1 + ((1.0000000000000004f + fSlow1) / fSlow0));
 		float 	fSlow9 = (1.0f / fSlow8);
 		float* 	fRec2 = &fRec2_tmp[4];
-		float 	fSlow10 = tanf((fConst1 * fslider1));
+		float* 	fYec1 = &fYec1_tmp[4];
+		float 	fSlow10 = tanf((fConst1 * float(fslider1)));
 		float 	fSlow11 = (1.0f / fSlow10);
 		float 	fSlow12 = (1 + fSlow11);
-		float 	fSlow13 = (0 - ((1 - fSlow11) / fSlow12));
-		float* 	fYec1 = &fYec1_tmp[4];
-		float 	fSlow14 = (1.0f / fSlow12);
+		float 	fSlow13 = (1.0f / fSlow12);
+		float 	fSlow14 = (0 - ((1 - fSlow11) / fSlow12));
 		float* 	fRec1 = &fRec1_tmp[4];
 		float 	fSlow15 = (1.0f / faustpower<2>(fSlow10));
 		float 	fSlow16 = (2 * (1 - fSlow15));
@@ -648,62 +656,62 @@ class Multibandcomp_dsp : public dsp {
 		float* 	fYec3 = &fYec3_tmp[4];
 		float* 	fRec8 = &fRec8_tmp[4];
 		float* 	fRec7 = &fRec7_tmp[4];
-		int 	iSlow19 = int(fcheckbox0);
-		float 	fSlow20 = powf(10,(0.05f * fslider2));
-		float 	fSlow21 = expf((0 - (fConst2 / max(fConst2, (0.001f * fslider3)))));
+		int 	iSlow19 = int(float(fcheckbox0));
+		float 	fSlow20 = powf(10,(0.05f * float(fslider2)));
+		float 	fSlow21 = expf((0 - (fConst2 / max(fConst2, (0.001f * float(fslider3))))));
 		float 	fSlow22 = (1.0f - fSlow21);
 		float* 	fRec6 = &fRec6_tmp[4];
-		float 	fSlow23 = max(fConst2, (0.001f * fslider4));
+		float 	fSlow23 = max(fConst2, (0.001f * float(fslider4)));
 		float 	fSlow24 = expf((0 - (fConst2 / fSlow23)));
 		float 	fSlow25 = (1.0f - fSlow24);
 		float* 	fRec5 = &fRec5_tmp[4];
-		float 	fSlow26 = expf((0 - (fConst3 / fSlow23)));
-		float 	fSlow27 = fslider5;
-		float 	fSlow28 = (((1.0f / float(fslider6)) - 1.0f) * (1.0f - fSlow26));
+		float 	fSlow26 = float(fslider5);
+		float 	fSlow27 = expf((0 - (fConst3 / fSlow23)));
+		float 	fSlow28 = (((1.0f / float(float(fslider6))) - 1.0f) * (1.0f - fSlow27));
 		float* 	fRec4 = &fRec4_tmp[4];
-		float 	fSlow29 = (0 - fSlow1);
-		float* 	fRec13 = &fRec13_tmp[4];
+		float 	fSlow29 = (0 - fSlow11);
+		float 	fSlow30 = (1.0f / (fSlow10 * fSlow8));
 		float* 	fRec12 = &fRec12_tmp[4];
-		float 	fSlow30 = (1 + ((fSlow11 - 1.0f) / fSlow10));
-		float 	fSlow31 = (1.0f / (1 + ((1.0f + fSlow11) / fSlow10)));
-		float 	fSlow32 = (2 * (0 - fSlow5));
 		float* 	fRec11 = &fRec11_tmp[4];
-		float* 	fRec19 = &fRec19_tmp[4];
-		float* 	fRec18 = &fRec18_tmp[4];
 		float* 	fRec17 = &fRec17_tmp[4];
-		int 	iSlow33 = int(fcheckbox1);
-		float 	fSlow34 = powf(10,(0.05f * fslider7));
-		float 	fSlow35 = expf((0 - (fConst2 / max(fConst2, (0.001f * fslider8)))));
-		float 	fSlow36 = (1.0f - fSlow35);
 		float* 	fRec16 = &fRec16_tmp[4];
-		float 	fSlow37 = max(fConst2, (0.001f * fslider9));
-		float 	fSlow38 = expf((0 - (fConst2 / fSlow37)));
-		float 	fSlow39 = (1.0f - fSlow38);
+		float 	fSlow31 = (2 * (0 - fSlow15));
+		int 	iSlow32 = int(float(fcheckbox1));
+		float 	fSlow33 = powf(10,(0.05f * float(fslider7)));
+		float 	fSlow34 = expf((0 - (fConst2 / max(fConst2, (0.001f * float(fslider8))))));
+		float 	fSlow35 = (1.0f - fSlow34);
 		float* 	fRec15 = &fRec15_tmp[4];
-		float 	fSlow40 = expf((0 - (fConst3 / fSlow37)));
-		float 	fSlow41 = fslider10;
-		float 	fSlow42 = (((1.0f / float(fslider11)) - 1.0f) * (1.0f - fSlow40));
+		float 	fSlow36 = max(fConst2, (0.001f * float(fslider9)));
+		float 	fSlow37 = expf((0 - (fConst2 / fSlow36)));
+		float 	fSlow38 = (1.0f - fSlow37);
 		float* 	fRec14 = &fRec14_tmp[4];
-		float 	fSlow43 = (1.0f / (fSlow10 * fSlow8));
-		float 	fSlow44 = (0 - fSlow11);
-		float* 	fRec21 = &fRec21_tmp[4];
+		float 	fSlow39 = float(fslider10);
+		float 	fSlow40 = expf((0 - (fConst3 / fSlow36)));
+		float 	fSlow41 = (((1.0f / float(float(fslider11))) - 1.0f) * (1.0f - fSlow40));
+		float* 	fRec13 = &fRec13_tmp[4];
+		float 	fSlow42 = (0 - fSlow1);
 		float* 	fRec20 = &fRec20_tmp[4];
+		float* 	fRec19 = &fRec19_tmp[4];
+		float 	fSlow43 = (1 + ((fSlow11 - 1.0f) / fSlow10));
+		float 	fSlow44 = (1.0f / (1 + ((1.0f + fSlow11) / fSlow10)));
+		float 	fSlow45 = (2 * (0 - fSlow5));
+		float* 	fRec18 = &fRec18_tmp[4];
 		float* 	fRec26 = &fRec26_tmp[4];
 		float* 	fRec25 = &fRec25_tmp[4];
-		float 	fSlow45 = (2 * (0 - fSlow15));
-		int 	iSlow46 = int(fcheckbox2);
-		float 	fSlow47 = powf(10,(0.05f * fslider12));
-		float 	fSlow48 = expf((0 - (fConst2 / max(fConst2, (0.001f * fslider13)))));
-		float 	fSlow49 = (1.0f - fSlow48);
 		float* 	fRec24 = &fRec24_tmp[4];
-		float 	fSlow50 = max(fConst2, (0.001f * fslider14));
+		int 	iSlow46 = int(float(fcheckbox2));
+		float 	fSlow47 = powf(10,(0.05f * float(fslider12)));
+		float 	fSlow48 = expf((0 - (fConst2 / max(fConst2, (0.001f * float(fslider13))))));
+		float 	fSlow49 = (1.0f - fSlow48);
+		float* 	fRec23 = &fRec23_tmp[4];
+		float 	fSlow50 = max(fConst2, (0.001f * float(fslider14)));
 		float 	fSlow51 = expf((0 - (fConst2 / fSlow50)));
 		float 	fSlow52 = (1.0f - fSlow51);
-		float* 	fRec23 = &fRec23_tmp[4];
-		float 	fSlow53 = expf((0 - (fConst3 / fSlow50)));
-		float 	fSlow54 = fslider15;
-		float 	fSlow55 = (((1.0f / float(fslider16)) - 1.0f) * (1.0f - fSlow53));
 		float* 	fRec22 = &fRec22_tmp[4];
+		float 	fSlow53 = float(fslider15);
+		float 	fSlow54 = expf((0 - (fConst3 / fSlow50)));
+		float 	fSlow55 = (((1.0f / float(float(fslider16))) - 1.0f) * (1.0f - fSlow54));
+		float* 	fRec21 = &fRec21_tmp[4];
 		float* 	fRec32 = &fRec32_tmp[4];
 		float* 	fRec31 = &fRec31_tmp[4];
 		float* 	fRec30 = &fRec30_tmp[4];
@@ -713,30 +721,36 @@ class Multibandcomp_dsp : public dsp {
 		float* 	fRec38 = &fRec38_tmp[4];
 		float* 	fRec37 = &fRec37_tmp[4];
 		float* 	fRec36 = &fRec36_tmp[4];
-		int 	iSlow56 = int(fcheckbox3);
-		int 	iSlow57 = int(fcheckbox4);
-		int 	iSlow58 = int(fcheckbox5);
-		int 	iSlow59 = (((iSlow58 == 0) & (iSlow57 == 0)) & (iSlow56 == 0));
-		float 	fSlow60 = (float((iSlow57 | iSlow59)) * powf(10,(0.05f * fslider17)));
-		float 	fSlow61 = (fSlow60 * fSlow47);
-		float 	fSlow62 = (float((iSlow56 | iSlow59)) * powf(10,(0.05f * fslider18)));
-		float 	fSlow63 = (fSlow62 * fSlow34);
-		float 	fSlow64 = (float((iSlow58 | iSlow59)) * powf(10,(0.05f * fslider19)));
-		float 	fSlow65 = (fSlow64 * fSlow20);
-		int 	iSlow66 = int(fcheckbox6);
-		float 	fSlow67 = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fslider20)))));
-		float 	fSlow68 = expf((0 - (fConst4 / fslider21)));
-		float 	fSlow69 = (1.0f - fSlow68);
+		float 	fSlow56 = powf(10,(0.05f * float(fslider17)));
+		int 	iSlow57 = int(float(fcheckbox3));
+		int 	iSlow58 = int(float(fcheckbox4));
+		int 	iSlow59 = int(float(fcheckbox5));
+		int 	iSlow60 = (((iSlow59 == 0) & (iSlow58 == 0)) & (iSlow57 == 0));
+		float 	fSlow61 = float((iSlow57 | iSlow60));
+		float 	fSlow62 = (fSlow61 * fSlow56);
+		float 	fSlow63 = ((fSlow61 * fSlow47) * fSlow56);
+		float 	fSlow64 = powf(10,(0.05f * float(fslider18)));
+		float 	fSlow65 = float((iSlow58 | iSlow60));
+		float 	fSlow66 = (fSlow65 * fSlow64);
+		float 	fSlow67 = ((fSlow65 * fSlow33) * fSlow64);
+		float 	fSlow68 = powf(10,(0.05f * float(fslider19)));
+		float 	fSlow69 = float((iSlow59 | iSlow60));
+		float 	fSlow70 = (fSlow69 * fSlow68);
+		float 	fSlow71 = ((fSlow69 * fSlow20) * fSlow68);
+		int 	iSlow72 = int(float(fcheckbox6));
+		float 	fSlow73 = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * float(fslider20))))));
+		float 	fSlow74 = expf((0 - (fConst4 / float(fslider21))));
+		float 	fSlow75 = (1.0f - fSlow74);
 		float* 	fRec29 = &fRec29_tmp[4];
-		float 	fSlow70 = fslider22;
-		float 	fSlow71 = expf((0 - (fConst5 / fSlow70)));
-		float 	fSlow72 = (1.0f - fSlow71);
+		float 	fSlow76 = float(fslider22);
+		float 	fSlow77 = expf((0 - (fConst5 / fSlow76)));
+		float 	fSlow78 = (1.0f - fSlow77);
 		float* 	fRec28 = &fRec28_tmp[4];
-		float 	fSlow73 = expf((0 - (fConst6 / fSlow70)));
-		float 	fSlow74 = (((1.0f / float(fslider23)) - 1.0f) * (1.0f - fSlow73));
+		float 	fSlow79 = expf((0 - (fConst6 / fSlow76)));
+		float 	fSlow80 = (((1.0f / float(float(fslider23))) - 1.0f) * (1.0f - fSlow79));
 		float* 	fRec27 = &fRec27_tmp[4];
-		float 	fSlow75 = (pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fslider24))))) * fSlow67);
-		float 	fSlow76 = powf(10,(0.05f * fslider25));
+		float 	fSlow81 = (fSlow73 * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * float(fslider24)))))));
+		float 	fSlow82 = powf(10,(0.05f * float(fslider25)));
 		int index;
 		for (index = 0; index <= fullcount - 32; index += 32) {
 			// compute by blocks of 32 samples
@@ -746,7 +760,7 @@ class Multibandcomp_dsp : public dsp {
 			FAUSTFLOAT* output0 = &output[0][index];
 			FAUSTFLOAT* output1 = &output[1][index];
 			// SECTION : 1
-			// LOOP 0x2421b20
+			// LOOP 0x39f00f0
 			// pre processing
 			for (int i=0; i<4; i++) fYec0_tmp[i]=fYec0_perm[i];
 			// exec code
@@ -756,7 +770,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec0_perm[i]=fYec0_tmp[count+i];
 			
-			// LOOP 0x242c6d0
+			// LOOP 0x39fc9c0
 			// pre processing
 			for (int i=0; i<4; i++) fYec2_tmp[i]=fYec2_perm[i];
 			// exec code
@@ -767,28 +781,28 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fYec2_perm[i]=fYec2_tmp[count+i];
 			
 			// SECTION : 2
-			// LOOP 0x241f860
+			// LOOP 0x39efec0
 			// pre processing
 			for (int i=0; i<4; i++) fRec3_tmp[i]=fRec3_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec3[i] = ((fSlow4 * ((float)input0[i] + fYec0[i-1])) + (fSlow3 * fRec3[i-1]));
+				fRec3[i] = ((fSlow4 * fRec3[i-1]) + (fSlow3 * ((float)input0[i] + fYec0[i-1])));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec3_perm[i]=fRec3_tmp[count+i];
 			
-			// LOOP 0x242c130
+			// LOOP 0x39fc6e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec10_tmp[i]=fRec10_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec10[i] = ((fSlow4 * ((float)input1[i] + fYec2[i-1])) + (fSlow3 * fRec10[i-1]));
+				fRec10[i] = ((fSlow4 * fRec10[i-1]) + (fSlow3 * ((float)input1[i] + fYec2[i-1])));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec10_perm[i]=fRec10_tmp[count+i];
 			
 			// SECTION : 3
-			// LOOP 0x241f530
+			// LOOP 0x39efb90
 			// pre processing
 			for (int i=0; i<4; i++) fRec2_tmp[i]=fRec2_perm[i];
 			// exec code
@@ -798,7 +812,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec2_perm[i]=fRec2_tmp[count+i];
 			
-			// LOOP 0x242bd70
+			// LOOP 0x39fc320
 			// pre processing
 			for (int i=0; i<4; i++) fRec9_tmp[i]=fRec9_perm[i];
 			// exec code
@@ -809,20 +823,20 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec9_perm[i]=fRec9_tmp[count+i];
 			
 			// SECTION : 4
-			// LOOP 0x24268d0
+			// LOOP 0x39f5e60
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec0[i] = (fRec2[i-2] + (fRec2[i] + (2 * fRec2[i-1])));
 			}
 			
-			// LOOP 0x242f140
+			// LOOP 0x39ff4b0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec1[i] = (fRec9[i-2] + (fRec9[i] + (2 * fRec9[i-1])));
 			}
 			
 			// SECTION : 5
-			// LOOP 0x24267f0
+			// LOOP 0x39f5d80
 			// pre processing
 			for (int i=0; i<4; i++) fYec1_tmp[i]=fYec1_perm[i];
 			// exec code
@@ -832,7 +846,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec1_perm[i]=fYec1_tmp[count+i];
 			
-			// LOOP 0x242f060
+			// LOOP 0x39ff3d0
 			// pre processing
 			for (int i=0; i<4; i++) fYec3_tmp[i]=fYec3_perm[i];
 			// exec code
@@ -842,89 +856,89 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec3_perm[i]=fYec3_tmp[count+i];
 			
-			// LOOP 0x243d090
+			// LOOP 0x3a207a0
 			// pre processing
-			for (int i=0; i<4; i++) fRec13_tmp[i]=fRec13_perm[i];
+			for (int i=0; i<4; i++) fRec20_tmp[i]=fRec20_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec13[i] = ((fSlow4 * ((fSlow29 * fYec0[i-1]) + (fSlow1 * (float)input0[i]))) + (fSlow3 * fRec13[i-1]));
+				fRec20[i] = ((fSlow4 * fRec20[i-1]) + (fSlow3 * ((fSlow1 * (float)input0[i]) + (fSlow42 * fYec0[i-1]))));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec13_perm[i]=fRec13_tmp[count+i];
+			for (int i=0; i<4; i++) fRec20_perm[i]=fRec20_tmp[count+i];
 			
-			// LOOP 0x2443540
-			// pre processing
-			for (int i=0; i<4; i++) fRec19_tmp[i]=fRec19_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec19[i] = ((fSlow4 * ((fSlow29 * fYec2[i-1]) + (fSlow1 * (float)input1[i]))) + (fSlow3 * fRec19[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec19_perm[i]=fRec19_tmp[count+i];
-			
-			// SECTION : 6
-			// LOOP 0x241f1d0
-			// pre processing
-			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec1[i] = ((fSlow14 * (fYec1[i] + fYec1[i-1])) + (fSlow13 * fRec1[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
-			
-			// LOOP 0x242b930
-			// pre processing
-			for (int i=0; i<4; i++) fRec8_tmp[i]=fRec8_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec8[i] = ((fSlow14 * (fYec3[i] + fYec3[i-1])) + (fSlow13 * fRec8[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec8_perm[i]=fRec8_tmp[count+i];
-			
-			// LOOP 0x243ccd0
-			// pre processing
-			for (int i=0; i<4; i++) fRec12_tmp[i]=fRec12_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec12[i] = (fRec13[i] - (fSlow9 * ((fSlow7 * fRec12[i-2]) + (fSlow6 * fRec12[i-1]))));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec12_perm[i]=fRec12_tmp[count+i];
-			
-			// LOOP 0x2443180
-			// pre processing
-			for (int i=0; i<4; i++) fRec18_tmp[i]=fRec18_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec18[i] = (fRec19[i] - (fSlow9 * ((fSlow7 * fRec18[i-2]) + (fSlow6 * fRec18[i-1]))));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec18_perm[i]=fRec18_tmp[count+i];
-			
-			// LOOP 0x2452e30
-			// pre processing
-			for (int i=0; i<4; i++) fRec21_tmp[i]=fRec21_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec21[i] = ((fSlow14 * ((fSlow44 * fYec1[i-1]) + (fSlow43 * fZec0[i]))) + (fSlow13 * fRec21[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec21_perm[i]=fRec21_tmp[count+i];
-			
-			// LOOP 0x24569f0
+			// LOOP 0x3a26c50
 			// pre processing
 			for (int i=0; i<4; i++) fRec26_tmp[i]=fRec26_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec26[i] = ((fSlow14 * ((fSlow44 * fYec3[i-1]) + (fSlow43 * fZec1[i]))) + (fSlow13 * fRec26[i-1]));
+				fRec26[i] = ((fSlow4 * fRec26[i-1]) + (fSlow3 * ((fSlow1 * (float)input1[i]) + (fSlow42 * fYec2[i-1]))));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec26_perm[i]=fRec26_tmp[count+i];
 			
+			// SECTION : 6
+			// LOOP 0x39ef830
+			// pre processing
+			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec1[i] = ((fSlow14 * fRec1[i-1]) + (fSlow13 * (fYec1[i] + fYec1[i-1])));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
+			
+			// LOOP 0x39fbee0
+			// pre processing
+			for (int i=0; i<4; i++) fRec8_tmp[i]=fRec8_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec8[i] = ((fSlow14 * fRec8[i-1]) + (fSlow13 * (fYec3[i] + fYec3[i-1])));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec8_perm[i]=fRec8_tmp[count+i];
+			
+			// LOOP 0x3a0d380
+			// pre processing
+			for (int i=0; i<4; i++) fRec12_tmp[i]=fRec12_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec12[i] = ((fSlow14 * fRec12[i-1]) + (fSlow13 * ((fSlow30 * fZec0[i]) + (fSlow29 * fYec1[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec12_perm[i]=fRec12_tmp[count+i];
+			
+			// LOOP 0x3a10ef0
+			// pre processing
+			for (int i=0; i<4; i++) fRec17_tmp[i]=fRec17_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec17[i] = ((fSlow14 * fRec17[i-1]) + (fSlow13 * ((fSlow30 * fZec1[i]) + (fSlow29 * fYec3[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec17_perm[i]=fRec17_tmp[count+i];
+			
+			// LOOP 0x3a203e0
+			// pre processing
+			for (int i=0; i<4; i++) fRec19_tmp[i]=fRec19_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec19[i] = (fRec20[i] - (fSlow9 * ((fSlow7 * fRec19[i-2]) + (fSlow6 * fRec19[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec19_perm[i]=fRec19_tmp[count+i];
+			
+			// LOOP 0x3a26890
+			// pre processing
+			for (int i=0; i<4; i++) fRec25_tmp[i]=fRec25_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec25[i] = (fRec26[i] - (fSlow9 * ((fSlow7 * fRec25[i-2]) + (fSlow6 * fRec25[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec25_perm[i]=fRec25_tmp[count+i];
+			
 			// SECTION : 7
-			// LOOP 0x241edd0
+			// LOOP 0x39ef430
 			// pre processing
 			for (int i=0; i<4; i++) fRec0_tmp[i]=fRec0_perm[i];
 			// exec code
@@ -934,7 +948,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec0_perm[i]=fRec0_tmp[count+i];
 			
-			// LOOP 0x242b570
+			// LOOP 0x39fbb20
 			// pre processing
 			for (int i=0; i<4; i++) fRec7_tmp[i]=fRec7_perm[i];
 			// exec code
@@ -944,529 +958,529 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec7_perm[i]=fRec7_tmp[count+i];
 			
-			// LOOP 0x243ca10
+			// LOOP 0x3a0d0e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec11_tmp[i]=fRec11_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec7[i] = (fSlow16 * fRec11[i-1]);
-				fRec11[i] = ((fSlow9 * (((fSlow5 * fRec12[i]) + (fSlow32 * fRec12[i-1])) + (fSlow5 * fRec12[i-2]))) - (fSlow31 * ((fSlow30 * fRec11[i-2]) + fZec7[i])));
+				fRec11[i] = (fRec12[i] - (fSlow18 * ((fSlow17 * fRec11[i-2]) + (fSlow16 * fRec11[i-1]))));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec11_perm[i]=fRec11_tmp[count+i];
 			
-			// LOOP 0x2442d40
+			// LOOP 0x3a10b30
 			// pre processing
-			for (int i=0; i<4; i++) fRec17_tmp[i]=fRec17_perm[i];
+			for (int i=0; i<4; i++) fRec16_tmp[i]=fRec16_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec8[i] = (fSlow16 * fRec17[i-1]);
-				fRec17[i] = ((fSlow9 * (((fSlow5 * fRec18[i]) + (fSlow32 * fRec18[i-1])) + (fSlow5 * fRec18[i-2]))) - (fSlow31 * ((fSlow30 * fRec17[i-2]) + fZec8[i])));
+				fRec16[i] = (fRec17[i] - (fSlow18 * ((fSlow17 * fRec16[i-2]) + (fSlow16 * fRec16[i-1]))));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec17_perm[i]=fRec17_tmp[count+i];
+			for (int i=0; i<4; i++) fRec16_perm[i]=fRec16_tmp[count+i];
 			
-			// LOOP 0x2452b90
+			// LOOP 0x3a20120
 			// pre processing
-			for (int i=0; i<4; i++) fRec20_tmp[i]=fRec20_perm[i];
+			for (int i=0; i<4; i++) fRec18_tmp[i]=fRec18_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec20[i] = (fRec21[i] - (fSlow18 * ((fSlow17 * fRec20[i-2]) + (fSlow16 * fRec20[i-1]))));
+				fZec12[i] = (fSlow16 * fRec18[i-1]);
+				fRec18[i] = ((fSlow9 * (((fSlow5 * fRec19[i]) + (fSlow45 * fRec19[i-1])) + (fSlow5 * fRec19[i-2]))) - (fSlow44 * ((fSlow43 * fRec18[i-2]) + fZec12[i])));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec20_perm[i]=fRec20_tmp[count+i];
+			for (int i=0; i<4; i++) fRec18_perm[i]=fRec18_tmp[count+i];
 			
-			// LOOP 0x2456630
+			// LOOP 0x3a26490
 			// pre processing
-			for (int i=0; i<4; i++) fRec25_tmp[i]=fRec25_perm[i];
+			for (int i=0; i<4; i++) fRec24_tmp[i]=fRec24_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec25[i] = (fRec26[i] - (fSlow18 * ((fSlow17 * fRec25[i-2]) + (fSlow16 * fRec25[i-1]))));
+				fZec13[i] = (fSlow16 * fRec24[i-1]);
+				fRec24[i] = ((fSlow9 * (((fSlow5 * fRec25[i]) + (fSlow45 * fRec25[i-1])) + (fSlow5 * fRec25[i-2]))) - (fSlow44 * ((fSlow43 * fRec24[i-2]) + fZec13[i])));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec25_perm[i]=fRec25_tmp[count+i];
+			for (int i=0; i<4; i++) fRec24_perm[i]=fRec24_tmp[count+i];
 			
 			// SECTION : 8
-			// LOOP 0x2431d80
+			// LOOP 0x3a02340
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec2[i] = (fSlow18 * (fRec0[i-2] + (fRec0[i] + (2 * fRec0[i-1]))));
+				fZec2[i] = (fSlow18 * (fRec7[i-2] + (fRec7[i] + (2 * fRec7[i-1]))));
 			}
 			
-			// LOOP 0x2433c60
+			// LOOP 0x3a04270
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec4[i] = (fSlow18 * (fRec7[i-2] + (fRec7[i] + (2 * fRec7[i-1]))));
+				fZec4[i] = (fSlow18 * (fRec0[i-2] + (fRec0[i] + (2 * fRec0[i-1]))));
 			}
 			
-			// LOOP 0x24478a0
+			// LOOP 0x3a138e0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec9[i] = (fRec11[i-2] + (fSlow31 * (fZec7[i] + (fSlow30 * fRec11[i]))));
+				fZec7[i] = (fSlow18 * (((fSlow15 * fRec16[i]) + (fSlow31 * fRec16[i-1])) + (fSlow15 * fRec16[i-2])));
 			}
 			
-			// LOOP 0x2449d90
+			// LOOP 0x3a16480
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec11[i] = (fRec17[i-2] + (fSlow31 * (fZec8[i] + (fSlow30 * fRec17[i]))));
+				fZec9[i] = (fSlow18 * (((fSlow15 * fRec11[i]) + (fSlow31 * fRec11[i-1])) + (fSlow15 * fRec11[i-2])));
 			}
 			
-			// LOOP 0x24593f0
+			// LOOP 0x3a2af90
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec14[i] = (fSlow18 * (((fSlow15 * fRec20[i]) + (fSlow45 * fRec20[i-1])) + (fSlow15 * fRec20[i-2])));
+				fZec14[i] = (fRec24[i-2] + (fSlow44 * (fZec13[i] + (fSlow43 * fRec24[i]))));
 			}
 			
-			// LOOP 0x245beb0
+			// LOOP 0x3a2dc80
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec16[i] = (fSlow18 * (((fSlow15 * fRec25[i]) + (fSlow45 * fRec25[i-1])) + (fSlow15 * fRec25[i-2])));
+				fZec16[i] = (fRec18[i-2] + (fSlow44 * (fZec12[i] + (fSlow43 * fRec18[i]))));
 			}
 			
 			// SECTION : 9
-			// LOOP 0x2431ca0
+			// LOOP 0x3a02260
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec3[i] = ((iSlow19)?0:fZec2[i]);
 			}
 			
-			// LOOP 0x2433b80
+			// LOOP 0x3a04190
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec5[i] = ((iSlow19)?0:fZec4[i]);
 			}
 			
-			// LOOP 0x24477c0
+			// LOOP 0x3a13800
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec10[i] = ((iSlow33)?0:fZec9[i]);
+				fZec8[i] = ((iSlow32)?0:fZec7[i]);
 			}
 			
-			// LOOP 0x2449cb0
+			// LOOP 0x3a163a0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec12[i] = ((iSlow33)?0:fZec11[i]);
+				fZec10[i] = ((iSlow32)?0:fZec9[i]);
 			}
 			
-			// LOOP 0x2459310
+			// LOOP 0x3a2aeb0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec15[i] = ((iSlow46)?0:fZec14[i]);
 			}
 			
-			// LOOP 0x245bdd0
+			// LOOP 0x3a2dba0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec17[i] = ((iSlow46)?0:fZec16[i]);
 			}
 			
 			// SECTION : 10
-			// LOOP 0x2431bc0
+			// LOOP 0x3a02180
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec6[i] = fabsf((fabsf((fSlow20 * fZec5[i])) + fabsf((fSlow20 * fZec3[i]))));
 			}
 			
-			// LOOP 0x24476e0
+			// LOOP 0x3a13720
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec13[i] = fabsf((fabsf((fSlow34 * fZec12[i])) + fabsf((fSlow34 * fZec10[i]))));
+				fZec11[i] = fabsf((fabsf((fSlow33 * fZec10[i])) + fabsf((fSlow33 * fZec8[i]))));
 			}
 			
-			// LOOP 0x2459230
+			// LOOP 0x3a2add0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec18[i] = fabsf((fabsf((fSlow47 * fZec17[i])) + fabsf((fSlow47 * fZec15[i]))));
 			}
 			
 			// SECTION : 11
-			// LOOP 0x242b150
+			// LOOP 0x39fb6e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec6_tmp[i]=fRec6_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec6[i] = ((fSlow22 * fZec6[i]) + (fSlow21 * max(fZec6[i], fRec6[i-1])));
+				fRec6[i] = ((fSlow21 * max(fZec6[i], fRec6[i-1])) + (fSlow22 * fZec6[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec6_perm[i]=fRec6_tmp[count+i];
 			
-			// LOOP 0x2442940
-			// pre processing
-			for (int i=0; i<4; i++) fRec16_tmp[i]=fRec16_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec16[i] = ((fSlow36 * fZec13[i]) + (fSlow35 * max(fZec13[i], fRec16[i-1])));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec16_perm[i]=fRec16_tmp[count+i];
-			
-			// LOOP 0x24561d0
-			// pre processing
-			for (int i=0; i<4; i++) fRec24_tmp[i]=fRec24_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec24[i] = ((fSlow49 * fZec18[i]) + (fSlow48 * max(fZec18[i], fRec24[i-1])));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec24_perm[i]=fRec24_tmp[count+i];
-			
-			// SECTION : 12
-			// LOOP 0x242acf0
-			// pre processing
-			for (int i=0; i<4; i++) fRec5_tmp[i]=fRec5_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec5[i] = ((fSlow25 * fRec6[i]) + (fSlow24 * fRec5[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec5_perm[i]=fRec5_tmp[count+i];
-			
-			// LOOP 0x24424e0
+			// LOOP 0x3a106b0
 			// pre processing
 			for (int i=0; i<4; i++) fRec15_tmp[i]=fRec15_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec15[i] = ((fSlow39 * fRec16[i]) + (fSlow38 * fRec15[i-1]));
+				fRec15[i] = ((fSlow34 * max(fZec11[i], fRec15[i-1])) + (fSlow35 * fZec11[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec15_perm[i]=fRec15_tmp[count+i];
 			
-			// LOOP 0x2455d70
+			// LOOP 0x3a26030
 			// pre processing
 			for (int i=0; i<4; i++) fRec23_tmp[i]=fRec23_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec23[i] = ((fSlow52 * fRec24[i]) + (fSlow51 * fRec23[i-1]));
+				fRec23[i] = ((fSlow48 * max(fZec18[i], fRec23[i-1])) + (fSlow49 * fZec18[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec23_perm[i]=fRec23_tmp[count+i];
 			
-			// SECTION : 13
-			// LOOP 0x242a930
+			// SECTION : 12
+			// LOOP 0x39fb280
 			// pre processing
-			for (int i=0; i<4; i++) fRec4_tmp[i]=fRec4_perm[i];
+			for (int i=0; i<4; i++) fRec5_tmp[i]=fRec5_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec4[i] = ((fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec5[i]))) - 87.989971088f)) - fSlow27), 0.0f)) + (fSlow26 * fRec4[i-1]));
+				fRec5[i] = ((fSlow24 * fRec5[i-1]) + (fSlow25 * fRec6[i]));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec4_perm[i]=fRec4_tmp[count+i];
+			for (int i=0; i<4; i++) fRec5_perm[i]=fRec5_tmp[count+i];
 			
-			// LOOP 0x2442100
+			// LOOP 0x3a10250
 			// pre processing
 			for (int i=0; i<4; i++) fRec14_tmp[i]=fRec14_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec14[i] = ((fSlow42 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec15[i]))) - 87.989971088f)) - fSlow41), 0.0f)) + (fSlow40 * fRec14[i-1]));
+				fRec14[i] = ((fSlow37 * fRec14[i-1]) + (fSlow38 * fRec15[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec14_perm[i]=fRec14_tmp[count+i];
 			
-			// LOOP 0x24559b0
+			// LOOP 0x3a25bd0
 			// pre processing
 			for (int i=0; i<4; i++) fRec22_tmp[i]=fRec22_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec22[i] = ((fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec23[i]))) - 87.989971088f)) - fSlow54), 0.0f)) + (fSlow53 * fRec22[i-1]));
+				fRec22[i] = ((fSlow51 * fRec22[i-1]) + (fSlow52 * fRec23[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec22_perm[i]=fRec22_tmp[count+i];
 			
+			// SECTION : 13
+			// LOOP 0x39faec0
+			// pre processing
+			for (int i=0; i<4; i++) fRec4_tmp[i]=fRec4_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec4[i] = ((fSlow27 * fRec4[i-1]) + (fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec5[i]))) - 87.989971088f)) - fSlow26), 0.0f)));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec4_perm[i]=fRec4_tmp[count+i];
+			
+			// LOOP 0x3a0fe90
+			// pre processing
+			for (int i=0; i<4; i++) fRec13_tmp[i]=fRec13_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec13[i] = ((fSlow40 * fRec13[i-1]) + (fSlow41 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec14[i]))) - 87.989971088f)) - fSlow39), 0.0f)));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec13_perm[i]=fRec13_tmp[count+i];
+			
+			// LOOP 0x3a257f0
+			// pre processing
+			for (int i=0; i<4; i++) fRec21_tmp[i]=fRec21_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec21[i] = ((fSlow54 * fRec21[i-1]) + (fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec22[i]))) - 87.989971088f)) - fSlow53), 0.0f)));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec21_perm[i]=fRec21_tmp[count+i];
+			
 			// SECTION : 14
-			// LOOP 0x2467870
+			// LOOP 0x3a39680
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec19[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec4[i])))));
 			}
 			
-			// LOOP 0x246f5c0
+			// LOOP 0x3a41370
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec23[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec14[i])))));
+				fZec23[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec13[i])))));
 			}
 			
-			// LOOP 0x24768c0
+			// LOOP 0x3a48a20
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec27[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec22[i])))));
+				fZec27[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec21[i])))));
 			}
 			
 			// SECTION : 15
-			// LOOP 0x2467790
+			// LOOP 0x3a395a0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec20[i] = (fZec3[i] * fZec19[i]);
+				fZec20[i] = (fSlow20 * (fZec3[i] * fZec19[i]));
 			}
 			
-			// LOOP 0x2468d60
+			// LOOP 0x3a3abd0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec21[i] = (fSlow20 * (fZec5[i] * fZec19[i]));
+				fZec21[i] = (fZec5[i] * fZec19[i]);
 			}
 			
-			// LOOP 0x246f4e0
+			// LOOP 0x3a41290
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec24[i] = (fZec10[i] * fZec23[i]);
+				fZec24[i] = (fSlow33 * (fZec8[i] * fZec23[i]));
 			}
 			
-			// LOOP 0x2470620
+			// LOOP 0x3a424b0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec25[i] = (fSlow34 * (fZec12[i] * fZec23[i]));
+				fZec25[i] = (fZec10[i] * fZec23[i]);
 			}
 			
-			// LOOP 0x24767e0
+			// LOOP 0x3a48940
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec28[i] = (fZec15[i] * fZec27[i]);
+				fZec28[i] = (fSlow47 * (fZec15[i] * fZec27[i]));
 			}
 			
-			// LOOP 0x2477920
+			// LOOP 0x3a49b60
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec29[i] = (fSlow47 * (fZec17[i] * fZec27[i]));
+				fZec29[i] = (fZec17[i] * fZec27[i]);
 			}
 			
 			// SECTION : 16
-			// LOOP 0x24676b0
+			// LOOP 0x3a394c0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec22[i] = fabsf((fabsf(fZec21[i]) + fabsf((fSlow20 * fZec20[i]))));
+				fZec22[i] = fabsf((fabsf((fSlow20 * fZec21[i])) + fabsf(fZec20[i])));
 			}
 			
-			// LOOP 0x246f400
+			// LOOP 0x3a411b0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec26[i] = fabsf((fabsf(fZec25[i]) + fabsf((fSlow34 * fZec24[i]))));
+				fZec26[i] = fabsf((fabsf((fSlow33 * fZec25[i])) + fabsf(fZec24[i])));
 			}
 			
-			// LOOP 0x2476700
+			// LOOP 0x3a48860
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec30[i] = fabsf((fabsf(fZec29[i]) + fabsf((fSlow47 * fZec28[i]))));
+				fZec30[i] = fabsf((fabsf((fSlow47 * fZec29[i])) + fabsf(fZec28[i])));
 			}
 			
 			// SECTION : 17
-			// LOOP 0x2467290
+			// LOOP 0x3a390a0
 			// pre processing
 			for (int i=0; i<4; i++) fRec32_tmp[i]=fRec32_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec32[i] = ((fSlow22 * fZec22[i]) + (fSlow21 * max(fZec22[i], fRec32[i-1])));
+				fRec32[i] = ((fSlow21 * max(fZec22[i], fRec32[i-1])) + (fSlow22 * fZec22[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec32_perm[i]=fRec32_tmp[count+i];
 			
-			// LOOP 0x246efe0
+			// LOOP 0x3a40d90
 			// pre processing
 			for (int i=0; i<4; i++) fRec35_tmp[i]=fRec35_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec35[i] = ((fSlow36 * fZec26[i]) + (fSlow35 * max(fZec26[i], fRec35[i-1])));
+				fRec35[i] = ((fSlow34 * max(fZec26[i], fRec35[i-1])) + (fSlow35 * fZec26[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec35_perm[i]=fRec35_tmp[count+i];
 			
-			// LOOP 0x24762e0
+			// LOOP 0x3a48440
 			// pre processing
 			for (int i=0; i<4; i++) fRec38_tmp[i]=fRec38_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec38[i] = ((fSlow49 * fZec30[i]) + (fSlow48 * max(fZec30[i], fRec38[i-1])));
+				fRec38[i] = ((fSlow48 * max(fZec30[i], fRec38[i-1])) + (fSlow49 * fZec30[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec38_perm[i]=fRec38_tmp[count+i];
 			
 			// SECTION : 18
-			// LOOP 0x2466eb0
+			// LOOP 0x3a38cc0
 			// pre processing
 			for (int i=0; i<4; i++) fRec31_tmp[i]=fRec31_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec31[i] = ((fSlow25 * fRec32[i]) + (fSlow24 * fRec31[i-1]));
+				fRec31[i] = ((fSlow24 * fRec31[i-1]) + (fSlow25 * fRec32[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec31_perm[i]=fRec31_tmp[count+i];
 			
-			// LOOP 0x246ec00
+			// LOOP 0x3a409b0
 			// pre processing
 			for (int i=0; i<4; i++) fRec34_tmp[i]=fRec34_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec34[i] = ((fSlow39 * fRec35[i]) + (fSlow38 * fRec34[i-1]));
+				fRec34[i] = ((fSlow37 * fRec34[i-1]) + (fSlow38 * fRec35[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec34_perm[i]=fRec34_tmp[count+i];
 			
-			// LOOP 0x2475f00
+			// LOOP 0x3a48060
 			// pre processing
 			for (int i=0; i<4; i++) fRec37_tmp[i]=fRec37_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec37[i] = ((fSlow52 * fRec38[i]) + (fSlow51 * fRec37[i-1]));
+				fRec37[i] = ((fSlow51 * fRec37[i-1]) + (fSlow52 * fRec38[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec37_perm[i]=fRec37_tmp[count+i];
 			
 			// SECTION : 19
-			// LOOP 0x24669f0
+			// LOOP 0x3a38800
 			// pre processing
 			for (int i=0; i<4; i++) fRec30_tmp[i]=fRec30_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec30[i] = ((fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec31[i]))) - 87.989971088f)) - fSlow27), 0.0f)) + (fSlow26 * fRec30[i-1]));
+				fRec30[i] = ((fSlow27 * fRec30[i-1]) + (fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec31[i]))) - 87.989971088f)) - fSlow26), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec30_perm[i]=fRec30_tmp[count+i];
 			
-			// LOOP 0x246e760
+			// LOOP 0x3a40530
 			// pre processing
 			for (int i=0; i<4; i++) fRec33_tmp[i]=fRec33_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec33[i] = ((fSlow42 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec34[i]))) - 87.989971088f)) - fSlow41), 0.0f)) + (fSlow40 * fRec33[i-1]));
+				fRec33[i] = ((fSlow40 * fRec33[i-1]) + (fSlow41 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec34[i]))) - 87.989971088f)) - fSlow39), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec33_perm[i]=fRec33_tmp[count+i];
 			
-			// LOOP 0x2475a80
+			// LOOP 0x3a47c00
 			// pre processing
 			for (int i=0; i<4; i++) fRec36_tmp[i]=fRec36_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec36[i] = ((fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec37[i]))) - 87.989971088f)) - fSlow54), 0.0f)) + (fSlow53 * fRec36[i-1]));
+				fRec36[i] = ((fSlow54 * fRec36[i-1]) + (fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec37[i]))) - 87.989971088f)) - fSlow53), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec36_perm[i]=fRec36_tmp[count+i];
 			
 			// SECTION : 20
-			// LOOP 0x247c690
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec32[i] = (fSlow63 * fZec24[i]);
-			}
-			
-			// LOOP 0x247d300
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec31[i] = (fSlow61 * fZec28[i]);
-			}
-			
-			// LOOP 0x2483570
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec33[i] = (fSlow65 * fZec20[i]);
-			}
-			
-			// LOOP 0x24893c0
+			// LOOP 0x3a4f0b0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph0 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec36[i]))))));
-				fZec36[i] = (fSlow60 * fZec29[i]);
+				fZec31[i] = (fSlow62 * fZec28[i]);
 			}
 			
-			// LOOP 0x248ca80
+			// LOOP 0x3a55250
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec32[i] = (fSlow63 * fZec29[i]);
+			}
+			
+			// LOOP 0x3a56d30
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph2 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec33[i]))))));
-				fZec37[i] = (fSlow62 * fZec25[i]);
+				fZec33[i] = (fSlow66 * fZec24[i]);
 			}
 			
-			// LOOP 0x2490a80
+			// LOOP 0x3a5a580
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec34[i] = (fSlow67 * fZec25[i]);
+			}
+			
+			// LOOP 0x3a5bc50
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph4 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec30[i]))))));
-				fZec38[i] = (fSlow64 * fZec21[i]);
+				fZec35[i] = (fSlow70 * fZec20[i]);
+			}
+			
+			// LOOP 0x3a5ec00
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec36[i] = (fSlow71 * fZec21[i]);
 			}
 			
 			// SECTION : 21
-			// LOOP 0x247d220
+			// LOOP 0x3a4efd0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec34[i] = (((iSlow19)?fZec2[i]:fZec33[i]) + (((iSlow33)?fZec9[i]:fZec32[i]) + ((iSlow46)?fZec14[i]:fZec31[i])));
+				fbargraph1 = (fabsf(fZec32[i]) + fabsf(fZec31[i]));
+				fbargraph3 = (fabsf(fZec34[i]) + fabsf(fZec33[i]));
+				fbargraph5 = (fabsf(fZec36[i]) + fabsf(fZec35[i]));
+				fZec37[i] = ((((iSlow19)?fZec2[i]:fZec35[i]) + ((iSlow32)?fZec7[i]:fZec33[i])) + ((iSlow46)?fZec14[i]:fZec31[i]));
 			}
 			
-			// LOOP 0x24891e0
+			// LOOP 0x3a65300
 			// exec code
 			for (int i=0; i<count; i++) {
-				fbargraph1 = (fabsf(fZec36[i]) + fabsf(fZec31[i]));
-				fbargraph3 = (fabsf(fZec37[i]) + fabsf(fZec32[i]));
-				fbargraph5 = (fabsf(fZec38[i]) + fabsf(fZec33[i]));
-				fZec39[i] = (((iSlow19)?fZec4[i]:fZec38[i]) + (((iSlow33)?fZec11[i]:fZec37[i]) + ((iSlow46)?fZec16[i]:fZec36[i])));
+				fZec39[i] = ((((iSlow19)?fZec4[i]:fZec36[i]) + ((iSlow32)?fZec9[i]:fZec34[i])) + ((iSlow46)?fZec16[i]:fZec32[i]));
 			}
 			
 			// SECTION : 22
-			// LOOP 0x247d140
+			// LOOP 0x3a4eef0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec35[i] = ((iSlow66)?0:fZec34[i]);
+				fZec38[i] = ((iSlow72)?0:fZec37[i]);
 			}
 			
-			// LOOP 0x2489100
+			// LOOP 0x3a65220
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec40[i] = ((iSlow66)?0:fZec39[i]);
+				fZec40[i] = ((iSlow72)?0:fZec39[i]);
 			}
 			
 			// SECTION : 23
-			// LOOP 0x247d060
+			// LOOP 0x3a4ee10
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec41[i] = fabsf((fabsf((fSlow67 * fZec40[i])) + fabsf((fSlow67 * fZec35[i]))));
+				fZec41[i] = fabsf((fabsf((fSlow73 * fZec40[i])) + fabsf((fSlow73 * fZec38[i]))));
 			}
 			
 			// SECTION : 24
-			// LOOP 0x2466490
+			// LOOP 0x3a38260
 			// pre processing
 			for (int i=0; i<4; i++) fRec29_tmp[i]=fRec29_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec29[i] = ((fSlow69 * fZec41[i]) + (fSlow68 * max(fZec41[i], fRec29[i-1])));
+				fRec29[i] = ((fSlow74 * max(fZec41[i], fRec29[i-1])) + (fSlow75 * fZec41[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec29_perm[i]=fRec29_tmp[count+i];
 			
 			// SECTION : 25
-			// LOOP 0x2466050
+			// LOOP 0x3a37e20
 			// pre processing
 			for (int i=0; i<4; i++) fRec28_tmp[i]=fRec28_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec28[i] = ((fSlow72 * fRec29[i]) + (fSlow71 * fRec28[i-1]));
+				fRec28[i] = ((fSlow77 * fRec28[i-1]) + (fSlow78 * fRec29[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec28_perm[i]=fRec28_tmp[count+i];
 			
 			// SECTION : 26
-			// LOOP 0x2465cb0
+			// LOOP 0x3a37ae0
 			// pre processing
 			for (int i=0; i<4; i++) fRec27_tmp[i]=fRec27_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec27[i] = ((fSlow74 * max((6 + (8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec28[i]))) - 87.989971088f))), 0.0f)) + (fSlow73 * fRec27[i-1]));
+				fRec27[i] = ((fSlow79 * fRec27[i-1]) + (fSlow80 * max((6 + (8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec28[i]))) - 87.989971088f))), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec27_perm[i]=fRec27_tmp[count+i];
 			
 			// SECTION : 27
-			// LOOP 0x249efc0
+			// LOOP 0x3a71290
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec42[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec27[i])))));
 			}
 			
 			// SECTION : 28
-			// LOOP 0x241eb10
+			// LOOP 0x39ef170
 			// exec code
 			for (int i=0; i<count; i++) {
-				output0[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec34[i]:(fSlow75 * (fZec35[i] * fZec42[i]))));
+				output0[i] = (FAUSTFLOAT)(fSlow82 * ((iSlow72)?fZec39[i]:(fSlow81 * (fZec40[i] * fZec42[i]))));
 			}
 			
-			// LOOP 0x24a4870
+			// LOOP 0x3a76b10
 			// exec code
 			for (int i=0; i<count; i++) {
-				output1[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec39[i]:(fSlow75 * (fZec40[i] * fZec42[i]))));
+				output1[i] = (FAUSTFLOAT)(fSlow82 * ((iSlow72)?fZec37[i]:(fSlow81 * (fZec38[i] * fZec42[i]))));
 			}
 			
 		}
@@ -1478,7 +1492,7 @@ class Multibandcomp_dsp : public dsp {
 			FAUSTFLOAT* output0 = &output[0][index];
 			FAUSTFLOAT* output1 = &output[1][index];
 			// SECTION : 1
-			// LOOP 0x2421b20
+			// LOOP 0x39f00f0
 			// pre processing
 			for (int i=0; i<4; i++) fYec0_tmp[i]=fYec0_perm[i];
 			// exec code
@@ -1488,7 +1502,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec0_perm[i]=fYec0_tmp[count+i];
 			
-			// LOOP 0x242c6d0
+			// LOOP 0x39fc9c0
 			// pre processing
 			for (int i=0; i<4; i++) fYec2_tmp[i]=fYec2_perm[i];
 			// exec code
@@ -1499,28 +1513,28 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fYec2_perm[i]=fYec2_tmp[count+i];
 			
 			// SECTION : 2
-			// LOOP 0x241f860
+			// LOOP 0x39efec0
 			// pre processing
 			for (int i=0; i<4; i++) fRec3_tmp[i]=fRec3_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec3[i] = ((fSlow4 * ((float)input0[i] + fYec0[i-1])) + (fSlow3 * fRec3[i-1]));
+				fRec3[i] = ((fSlow4 * fRec3[i-1]) + (fSlow3 * ((float)input0[i] + fYec0[i-1])));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec3_perm[i]=fRec3_tmp[count+i];
 			
-			// LOOP 0x242c130
+			// LOOP 0x39fc6e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec10_tmp[i]=fRec10_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec10[i] = ((fSlow4 * ((float)input1[i] + fYec2[i-1])) + (fSlow3 * fRec10[i-1]));
+				fRec10[i] = ((fSlow4 * fRec10[i-1]) + (fSlow3 * ((float)input1[i] + fYec2[i-1])));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec10_perm[i]=fRec10_tmp[count+i];
 			
 			// SECTION : 3
-			// LOOP 0x241f530
+			// LOOP 0x39efb90
 			// pre processing
 			for (int i=0; i<4; i++) fRec2_tmp[i]=fRec2_perm[i];
 			// exec code
@@ -1530,7 +1544,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec2_perm[i]=fRec2_tmp[count+i];
 			
-			// LOOP 0x242bd70
+			// LOOP 0x39fc320
 			// pre processing
 			for (int i=0; i<4; i++) fRec9_tmp[i]=fRec9_perm[i];
 			// exec code
@@ -1541,20 +1555,20 @@ class Multibandcomp_dsp : public dsp {
 			for (int i=0; i<4; i++) fRec9_perm[i]=fRec9_tmp[count+i];
 			
 			// SECTION : 4
-			// LOOP 0x24268d0
+			// LOOP 0x39f5e60
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec0[i] = (fRec2[i-2] + (fRec2[i] + (2 * fRec2[i-1])));
 			}
 			
-			// LOOP 0x242f140
+			// LOOP 0x39ff4b0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec1[i] = (fRec9[i-2] + (fRec9[i] + (2 * fRec9[i-1])));
 			}
 			
 			// SECTION : 5
-			// LOOP 0x24267f0
+			// LOOP 0x39f5d80
 			// pre processing
 			for (int i=0; i<4; i++) fYec1_tmp[i]=fYec1_perm[i];
 			// exec code
@@ -1564,7 +1578,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec1_perm[i]=fYec1_tmp[count+i];
 			
-			// LOOP 0x242f060
+			// LOOP 0x39ff3d0
 			// pre processing
 			for (int i=0; i<4; i++) fYec3_tmp[i]=fYec3_perm[i];
 			// exec code
@@ -1574,89 +1588,89 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fYec3_perm[i]=fYec3_tmp[count+i];
 			
-			// LOOP 0x243d090
+			// LOOP 0x3a207a0
 			// pre processing
-			for (int i=0; i<4; i++) fRec13_tmp[i]=fRec13_perm[i];
+			for (int i=0; i<4; i++) fRec20_tmp[i]=fRec20_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec13[i] = ((fSlow4 * ((fSlow29 * fYec0[i-1]) + (fSlow1 * (float)input0[i]))) + (fSlow3 * fRec13[i-1]));
+				fRec20[i] = ((fSlow4 * fRec20[i-1]) + (fSlow3 * ((fSlow1 * (float)input0[i]) + (fSlow42 * fYec0[i-1]))));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec13_perm[i]=fRec13_tmp[count+i];
+			for (int i=0; i<4; i++) fRec20_perm[i]=fRec20_tmp[count+i];
 			
-			// LOOP 0x2443540
-			// pre processing
-			for (int i=0; i<4; i++) fRec19_tmp[i]=fRec19_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec19[i] = ((fSlow4 * ((fSlow29 * fYec2[i-1]) + (fSlow1 * (float)input1[i]))) + (fSlow3 * fRec19[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec19_perm[i]=fRec19_tmp[count+i];
-			
-			// SECTION : 6
-			// LOOP 0x241f1d0
-			// pre processing
-			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec1[i] = ((fSlow14 * (fYec1[i] + fYec1[i-1])) + (fSlow13 * fRec1[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
-			
-			// LOOP 0x242b930
-			// pre processing
-			for (int i=0; i<4; i++) fRec8_tmp[i]=fRec8_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec8[i] = ((fSlow14 * (fYec3[i] + fYec3[i-1])) + (fSlow13 * fRec8[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec8_perm[i]=fRec8_tmp[count+i];
-			
-			// LOOP 0x243ccd0
-			// pre processing
-			for (int i=0; i<4; i++) fRec12_tmp[i]=fRec12_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec12[i] = (fRec13[i] - (fSlow9 * ((fSlow7 * fRec12[i-2]) + (fSlow6 * fRec12[i-1]))));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec12_perm[i]=fRec12_tmp[count+i];
-			
-			// LOOP 0x2443180
-			// pre processing
-			for (int i=0; i<4; i++) fRec18_tmp[i]=fRec18_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec18[i] = (fRec19[i] - (fSlow9 * ((fSlow7 * fRec18[i-2]) + (fSlow6 * fRec18[i-1]))));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec18_perm[i]=fRec18_tmp[count+i];
-			
-			// LOOP 0x2452e30
-			// pre processing
-			for (int i=0; i<4; i++) fRec21_tmp[i]=fRec21_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec21[i] = ((fSlow14 * ((fSlow44 * fYec1[i-1]) + (fSlow43 * fZec0[i]))) + (fSlow13 * fRec21[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec21_perm[i]=fRec21_tmp[count+i];
-			
-			// LOOP 0x24569f0
+			// LOOP 0x3a26c50
 			// pre processing
 			for (int i=0; i<4; i++) fRec26_tmp[i]=fRec26_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec26[i] = ((fSlow14 * ((fSlow44 * fYec3[i-1]) + (fSlow43 * fZec1[i]))) + (fSlow13 * fRec26[i-1]));
+				fRec26[i] = ((fSlow4 * fRec26[i-1]) + (fSlow3 * ((fSlow1 * (float)input1[i]) + (fSlow42 * fYec2[i-1]))));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec26_perm[i]=fRec26_tmp[count+i];
 			
+			// SECTION : 6
+			// LOOP 0x39ef830
+			// pre processing
+			for (int i=0; i<4; i++) fRec1_tmp[i]=fRec1_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec1[i] = ((fSlow14 * fRec1[i-1]) + (fSlow13 * (fYec1[i] + fYec1[i-1])));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec1_perm[i]=fRec1_tmp[count+i];
+			
+			// LOOP 0x39fbee0
+			// pre processing
+			for (int i=0; i<4; i++) fRec8_tmp[i]=fRec8_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec8[i] = ((fSlow14 * fRec8[i-1]) + (fSlow13 * (fYec3[i] + fYec3[i-1])));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec8_perm[i]=fRec8_tmp[count+i];
+			
+			// LOOP 0x3a0d380
+			// pre processing
+			for (int i=0; i<4; i++) fRec12_tmp[i]=fRec12_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec12[i] = ((fSlow14 * fRec12[i-1]) + (fSlow13 * ((fSlow30 * fZec0[i]) + (fSlow29 * fYec1[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec12_perm[i]=fRec12_tmp[count+i];
+			
+			// LOOP 0x3a10ef0
+			// pre processing
+			for (int i=0; i<4; i++) fRec17_tmp[i]=fRec17_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec17[i] = ((fSlow14 * fRec17[i-1]) + (fSlow13 * ((fSlow30 * fZec1[i]) + (fSlow29 * fYec3[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec17_perm[i]=fRec17_tmp[count+i];
+			
+			// LOOP 0x3a203e0
+			// pre processing
+			for (int i=0; i<4; i++) fRec19_tmp[i]=fRec19_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec19[i] = (fRec20[i] - (fSlow9 * ((fSlow7 * fRec19[i-2]) + (fSlow6 * fRec19[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec19_perm[i]=fRec19_tmp[count+i];
+			
+			// LOOP 0x3a26890
+			// pre processing
+			for (int i=0; i<4; i++) fRec25_tmp[i]=fRec25_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec25[i] = (fRec26[i] - (fSlow9 * ((fSlow7 * fRec25[i-2]) + (fSlow6 * fRec25[i-1]))));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec25_perm[i]=fRec25_tmp[count+i];
+			
 			// SECTION : 7
-			// LOOP 0x241edd0
+			// LOOP 0x39ef430
 			// pre processing
 			for (int i=0; i<4; i++) fRec0_tmp[i]=fRec0_perm[i];
 			// exec code
@@ -1666,7 +1680,7 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec0_perm[i]=fRec0_tmp[count+i];
 			
-			// LOOP 0x242b570
+			// LOOP 0x39fbb20
 			// pre processing
 			for (int i=0; i<4; i++) fRec7_tmp[i]=fRec7_perm[i];
 			// exec code
@@ -1676,529 +1690,529 @@ class Multibandcomp_dsp : public dsp {
 			// post processing
 			for (int i=0; i<4; i++) fRec7_perm[i]=fRec7_tmp[count+i];
 			
-			// LOOP 0x243ca10
+			// LOOP 0x3a0d0e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec11_tmp[i]=fRec11_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec7[i] = (fSlow16 * fRec11[i-1]);
-				fRec11[i] = ((fSlow9 * (((fSlow5 * fRec12[i]) + (fSlow32 * fRec12[i-1])) + (fSlow5 * fRec12[i-2]))) - (fSlow31 * ((fSlow30 * fRec11[i-2]) + fZec7[i])));
+				fRec11[i] = (fRec12[i] - (fSlow18 * ((fSlow17 * fRec11[i-2]) + (fSlow16 * fRec11[i-1]))));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec11_perm[i]=fRec11_tmp[count+i];
 			
-			// LOOP 0x2442d40
+			// LOOP 0x3a10b30
 			// pre processing
-			for (int i=0; i<4; i++) fRec17_tmp[i]=fRec17_perm[i];
+			for (int i=0; i<4; i++) fRec16_tmp[i]=fRec16_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec8[i] = (fSlow16 * fRec17[i-1]);
-				fRec17[i] = ((fSlow9 * (((fSlow5 * fRec18[i]) + (fSlow32 * fRec18[i-1])) + (fSlow5 * fRec18[i-2]))) - (fSlow31 * ((fSlow30 * fRec17[i-2]) + fZec8[i])));
+				fRec16[i] = (fRec17[i] - (fSlow18 * ((fSlow17 * fRec16[i-2]) + (fSlow16 * fRec16[i-1]))));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec17_perm[i]=fRec17_tmp[count+i];
+			for (int i=0; i<4; i++) fRec16_perm[i]=fRec16_tmp[count+i];
 			
-			// LOOP 0x2452b90
+			// LOOP 0x3a20120
 			// pre processing
-			for (int i=0; i<4; i++) fRec20_tmp[i]=fRec20_perm[i];
+			for (int i=0; i<4; i++) fRec18_tmp[i]=fRec18_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec20[i] = (fRec21[i] - (fSlow18 * ((fSlow17 * fRec20[i-2]) + (fSlow16 * fRec20[i-1]))));
+				fZec12[i] = (fSlow16 * fRec18[i-1]);
+				fRec18[i] = ((fSlow9 * (((fSlow5 * fRec19[i]) + (fSlow45 * fRec19[i-1])) + (fSlow5 * fRec19[i-2]))) - (fSlow44 * ((fSlow43 * fRec18[i-2]) + fZec12[i])));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec20_perm[i]=fRec20_tmp[count+i];
+			for (int i=0; i<4; i++) fRec18_perm[i]=fRec18_tmp[count+i];
 			
-			// LOOP 0x2456630
+			// LOOP 0x3a26490
 			// pre processing
-			for (int i=0; i<4; i++) fRec25_tmp[i]=fRec25_perm[i];
+			for (int i=0; i<4; i++) fRec24_tmp[i]=fRec24_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec25[i] = (fRec26[i] - (fSlow18 * ((fSlow17 * fRec25[i-2]) + (fSlow16 * fRec25[i-1]))));
+				fZec13[i] = (fSlow16 * fRec24[i-1]);
+				fRec24[i] = ((fSlow9 * (((fSlow5 * fRec25[i]) + (fSlow45 * fRec25[i-1])) + (fSlow5 * fRec25[i-2]))) - (fSlow44 * ((fSlow43 * fRec24[i-2]) + fZec13[i])));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec25_perm[i]=fRec25_tmp[count+i];
+			for (int i=0; i<4; i++) fRec24_perm[i]=fRec24_tmp[count+i];
 			
 			// SECTION : 8
-			// LOOP 0x2431d80
+			// LOOP 0x3a02340
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec2[i] = (fSlow18 * (fRec0[i-2] + (fRec0[i] + (2 * fRec0[i-1]))));
+				fZec2[i] = (fSlow18 * (fRec7[i-2] + (fRec7[i] + (2 * fRec7[i-1]))));
 			}
 			
-			// LOOP 0x2433c60
+			// LOOP 0x3a04270
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec4[i] = (fSlow18 * (fRec7[i-2] + (fRec7[i] + (2 * fRec7[i-1]))));
+				fZec4[i] = (fSlow18 * (fRec0[i-2] + (fRec0[i] + (2 * fRec0[i-1]))));
 			}
 			
-			// LOOP 0x24478a0
+			// LOOP 0x3a138e0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec9[i] = (fRec11[i-2] + (fSlow31 * (fZec7[i] + (fSlow30 * fRec11[i]))));
+				fZec7[i] = (fSlow18 * (((fSlow15 * fRec16[i]) + (fSlow31 * fRec16[i-1])) + (fSlow15 * fRec16[i-2])));
 			}
 			
-			// LOOP 0x2449d90
+			// LOOP 0x3a16480
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec11[i] = (fRec17[i-2] + (fSlow31 * (fZec8[i] + (fSlow30 * fRec17[i]))));
+				fZec9[i] = (fSlow18 * (((fSlow15 * fRec11[i]) + (fSlow31 * fRec11[i-1])) + (fSlow15 * fRec11[i-2])));
 			}
 			
-			// LOOP 0x24593f0
+			// LOOP 0x3a2af90
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec14[i] = (fSlow18 * (((fSlow15 * fRec20[i]) + (fSlow45 * fRec20[i-1])) + (fSlow15 * fRec20[i-2])));
+				fZec14[i] = (fRec24[i-2] + (fSlow44 * (fZec13[i] + (fSlow43 * fRec24[i]))));
 			}
 			
-			// LOOP 0x245beb0
+			// LOOP 0x3a2dc80
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec16[i] = (fSlow18 * (((fSlow15 * fRec25[i]) + (fSlow45 * fRec25[i-1])) + (fSlow15 * fRec25[i-2])));
+				fZec16[i] = (fRec18[i-2] + (fSlow44 * (fZec12[i] + (fSlow43 * fRec18[i]))));
 			}
 			
 			// SECTION : 9
-			// LOOP 0x2431ca0
+			// LOOP 0x3a02260
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec3[i] = ((iSlow19)?0:fZec2[i]);
 			}
 			
-			// LOOP 0x2433b80
+			// LOOP 0x3a04190
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec5[i] = ((iSlow19)?0:fZec4[i]);
 			}
 			
-			// LOOP 0x24477c0
+			// LOOP 0x3a13800
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec10[i] = ((iSlow33)?0:fZec9[i]);
+				fZec8[i] = ((iSlow32)?0:fZec7[i]);
 			}
 			
-			// LOOP 0x2449cb0
+			// LOOP 0x3a163a0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec12[i] = ((iSlow33)?0:fZec11[i]);
+				fZec10[i] = ((iSlow32)?0:fZec9[i]);
 			}
 			
-			// LOOP 0x2459310
+			// LOOP 0x3a2aeb0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec15[i] = ((iSlow46)?0:fZec14[i]);
 			}
 			
-			// LOOP 0x245bdd0
+			// LOOP 0x3a2dba0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec17[i] = ((iSlow46)?0:fZec16[i]);
 			}
 			
 			// SECTION : 10
-			// LOOP 0x2431bc0
+			// LOOP 0x3a02180
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec6[i] = fabsf((fabsf((fSlow20 * fZec5[i])) + fabsf((fSlow20 * fZec3[i]))));
 			}
 			
-			// LOOP 0x24476e0
+			// LOOP 0x3a13720
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec13[i] = fabsf((fabsf((fSlow34 * fZec12[i])) + fabsf((fSlow34 * fZec10[i]))));
+				fZec11[i] = fabsf((fabsf((fSlow33 * fZec10[i])) + fabsf((fSlow33 * fZec8[i]))));
 			}
 			
-			// LOOP 0x2459230
+			// LOOP 0x3a2add0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec18[i] = fabsf((fabsf((fSlow47 * fZec17[i])) + fabsf((fSlow47 * fZec15[i]))));
 			}
 			
 			// SECTION : 11
-			// LOOP 0x242b150
+			// LOOP 0x39fb6e0
 			// pre processing
 			for (int i=0; i<4; i++) fRec6_tmp[i]=fRec6_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec6[i] = ((fSlow22 * fZec6[i]) + (fSlow21 * max(fZec6[i], fRec6[i-1])));
+				fRec6[i] = ((fSlow21 * max(fZec6[i], fRec6[i-1])) + (fSlow22 * fZec6[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec6_perm[i]=fRec6_tmp[count+i];
 			
-			// LOOP 0x2442940
-			// pre processing
-			for (int i=0; i<4; i++) fRec16_tmp[i]=fRec16_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec16[i] = ((fSlow36 * fZec13[i]) + (fSlow35 * max(fZec13[i], fRec16[i-1])));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec16_perm[i]=fRec16_tmp[count+i];
-			
-			// LOOP 0x24561d0
-			// pre processing
-			for (int i=0; i<4; i++) fRec24_tmp[i]=fRec24_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec24[i] = ((fSlow49 * fZec18[i]) + (fSlow48 * max(fZec18[i], fRec24[i-1])));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec24_perm[i]=fRec24_tmp[count+i];
-			
-			// SECTION : 12
-			// LOOP 0x242acf0
-			// pre processing
-			for (int i=0; i<4; i++) fRec5_tmp[i]=fRec5_perm[i];
-			// exec code
-			for (int i=0; i<count; i++) {
-				fRec5[i] = ((fSlow25 * fRec6[i]) + (fSlow24 * fRec5[i-1]));
-			}
-			// post processing
-			for (int i=0; i<4; i++) fRec5_perm[i]=fRec5_tmp[count+i];
-			
-			// LOOP 0x24424e0
+			// LOOP 0x3a106b0
 			// pre processing
 			for (int i=0; i<4; i++) fRec15_tmp[i]=fRec15_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec15[i] = ((fSlow39 * fRec16[i]) + (fSlow38 * fRec15[i-1]));
+				fRec15[i] = ((fSlow34 * max(fZec11[i], fRec15[i-1])) + (fSlow35 * fZec11[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec15_perm[i]=fRec15_tmp[count+i];
 			
-			// LOOP 0x2455d70
+			// LOOP 0x3a26030
 			// pre processing
 			for (int i=0; i<4; i++) fRec23_tmp[i]=fRec23_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec23[i] = ((fSlow52 * fRec24[i]) + (fSlow51 * fRec23[i-1]));
+				fRec23[i] = ((fSlow48 * max(fZec18[i], fRec23[i-1])) + (fSlow49 * fZec18[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec23_perm[i]=fRec23_tmp[count+i];
 			
-			// SECTION : 13
-			// LOOP 0x242a930
+			// SECTION : 12
+			// LOOP 0x39fb280
 			// pre processing
-			for (int i=0; i<4; i++) fRec4_tmp[i]=fRec4_perm[i];
+			for (int i=0; i<4; i++) fRec5_tmp[i]=fRec5_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec4[i] = ((fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec5[i]))) - 87.989971088f)) - fSlow27), 0.0f)) + (fSlow26 * fRec4[i-1]));
+				fRec5[i] = ((fSlow24 * fRec5[i-1]) + (fSlow25 * fRec6[i]));
 			}
 			// post processing
-			for (int i=0; i<4; i++) fRec4_perm[i]=fRec4_tmp[count+i];
+			for (int i=0; i<4; i++) fRec5_perm[i]=fRec5_tmp[count+i];
 			
-			// LOOP 0x2442100
+			// LOOP 0x3a10250
 			// pre processing
 			for (int i=0; i<4; i++) fRec14_tmp[i]=fRec14_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec14[i] = ((fSlow42 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec15[i]))) - 87.989971088f)) - fSlow41), 0.0f)) + (fSlow40 * fRec14[i-1]));
+				fRec14[i] = ((fSlow37 * fRec14[i-1]) + (fSlow38 * fRec15[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec14_perm[i]=fRec14_tmp[count+i];
 			
-			// LOOP 0x24559b0
+			// LOOP 0x3a25bd0
 			// pre processing
 			for (int i=0; i<4; i++) fRec22_tmp[i]=fRec22_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec22[i] = ((fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec23[i]))) - 87.989971088f)) - fSlow54), 0.0f)) + (fSlow53 * fRec22[i-1]));
+				fRec22[i] = ((fSlow51 * fRec22[i-1]) + (fSlow52 * fRec23[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec22_perm[i]=fRec22_tmp[count+i];
 			
+			// SECTION : 13
+			// LOOP 0x39faec0
+			// pre processing
+			for (int i=0; i<4; i++) fRec4_tmp[i]=fRec4_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec4[i] = ((fSlow27 * fRec4[i-1]) + (fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec5[i]))) - 87.989971088f)) - fSlow26), 0.0f)));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec4_perm[i]=fRec4_tmp[count+i];
+			
+			// LOOP 0x3a0fe90
+			// pre processing
+			for (int i=0; i<4; i++) fRec13_tmp[i]=fRec13_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec13[i] = ((fSlow40 * fRec13[i-1]) + (fSlow41 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec14[i]))) - 87.989971088f)) - fSlow39), 0.0f)));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec13_perm[i]=fRec13_tmp[count+i];
+			
+			// LOOP 0x3a257f0
+			// pre processing
+			for (int i=0; i<4; i++) fRec21_tmp[i]=fRec21_perm[i];
+			// exec code
+			for (int i=0; i<count; i++) {
+				fRec21[i] = ((fSlow54 * fRec21[i-1]) + (fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec22[i]))) - 87.989971088f)) - fSlow53), 0.0f)));
+			}
+			// post processing
+			for (int i=0; i<4; i++) fRec21_perm[i]=fRec21_tmp[count+i];
+			
 			// SECTION : 14
-			// LOOP 0x2467870
+			// LOOP 0x3a39680
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec19[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec4[i])))));
 			}
 			
-			// LOOP 0x246f5c0
+			// LOOP 0x3a41370
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec23[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec14[i])))));
+				fZec23[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec13[i])))));
 			}
 			
-			// LOOP 0x24768c0
+			// LOOP 0x3a48a20
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec27[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec22[i])))));
+				fZec27[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec21[i])))));
 			}
 			
 			// SECTION : 15
-			// LOOP 0x2467790
+			// LOOP 0x3a395a0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec20[i] = (fZec3[i] * fZec19[i]);
+				fZec20[i] = (fSlow20 * (fZec3[i] * fZec19[i]));
 			}
 			
-			// LOOP 0x2468d60
+			// LOOP 0x3a3abd0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec21[i] = (fSlow20 * (fZec5[i] * fZec19[i]));
+				fZec21[i] = (fZec5[i] * fZec19[i]);
 			}
 			
-			// LOOP 0x246f4e0
+			// LOOP 0x3a41290
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec24[i] = (fZec10[i] * fZec23[i]);
+				fZec24[i] = (fSlow33 * (fZec8[i] * fZec23[i]));
 			}
 			
-			// LOOP 0x2470620
+			// LOOP 0x3a424b0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec25[i] = (fSlow34 * (fZec12[i] * fZec23[i]));
+				fZec25[i] = (fZec10[i] * fZec23[i]);
 			}
 			
-			// LOOP 0x24767e0
+			// LOOP 0x3a48940
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec28[i] = (fZec15[i] * fZec27[i]);
+				fZec28[i] = (fSlow47 * (fZec15[i] * fZec27[i]));
 			}
 			
-			// LOOP 0x2477920
+			// LOOP 0x3a49b60
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec29[i] = (fSlow47 * (fZec17[i] * fZec27[i]));
+				fZec29[i] = (fZec17[i] * fZec27[i]);
 			}
 			
 			// SECTION : 16
-			// LOOP 0x24676b0
+			// LOOP 0x3a394c0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec22[i] = fabsf((fabsf(fZec21[i]) + fabsf((fSlow20 * fZec20[i]))));
+				fZec22[i] = fabsf((fabsf((fSlow20 * fZec21[i])) + fabsf(fZec20[i])));
 			}
 			
-			// LOOP 0x246f400
+			// LOOP 0x3a411b0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec26[i] = fabsf((fabsf(fZec25[i]) + fabsf((fSlow34 * fZec24[i]))));
+				fZec26[i] = fabsf((fabsf((fSlow33 * fZec25[i])) + fabsf(fZec24[i])));
 			}
 			
-			// LOOP 0x2476700
+			// LOOP 0x3a48860
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec30[i] = fabsf((fabsf(fZec29[i]) + fabsf((fSlow47 * fZec28[i]))));
+				fZec30[i] = fabsf((fabsf((fSlow47 * fZec29[i])) + fabsf(fZec28[i])));
 			}
 			
 			// SECTION : 17
-			// LOOP 0x2467290
+			// LOOP 0x3a390a0
 			// pre processing
 			for (int i=0; i<4; i++) fRec32_tmp[i]=fRec32_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec32[i] = ((fSlow22 * fZec22[i]) + (fSlow21 * max(fZec22[i], fRec32[i-1])));
+				fRec32[i] = ((fSlow21 * max(fZec22[i], fRec32[i-1])) + (fSlow22 * fZec22[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec32_perm[i]=fRec32_tmp[count+i];
 			
-			// LOOP 0x246efe0
+			// LOOP 0x3a40d90
 			// pre processing
 			for (int i=0; i<4; i++) fRec35_tmp[i]=fRec35_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec35[i] = ((fSlow36 * fZec26[i]) + (fSlow35 * max(fZec26[i], fRec35[i-1])));
+				fRec35[i] = ((fSlow34 * max(fZec26[i], fRec35[i-1])) + (fSlow35 * fZec26[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec35_perm[i]=fRec35_tmp[count+i];
 			
-			// LOOP 0x24762e0
+			// LOOP 0x3a48440
 			// pre processing
 			for (int i=0; i<4; i++) fRec38_tmp[i]=fRec38_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec38[i] = ((fSlow49 * fZec30[i]) + (fSlow48 * max(fZec30[i], fRec38[i-1])));
+				fRec38[i] = ((fSlow48 * max(fZec30[i], fRec38[i-1])) + (fSlow49 * fZec30[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec38_perm[i]=fRec38_tmp[count+i];
 			
 			// SECTION : 18
-			// LOOP 0x2466eb0
+			// LOOP 0x3a38cc0
 			// pre processing
 			for (int i=0; i<4; i++) fRec31_tmp[i]=fRec31_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec31[i] = ((fSlow25 * fRec32[i]) + (fSlow24 * fRec31[i-1]));
+				fRec31[i] = ((fSlow24 * fRec31[i-1]) + (fSlow25 * fRec32[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec31_perm[i]=fRec31_tmp[count+i];
 			
-			// LOOP 0x246ec00
+			// LOOP 0x3a409b0
 			// pre processing
 			for (int i=0; i<4; i++) fRec34_tmp[i]=fRec34_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec34[i] = ((fSlow39 * fRec35[i]) + (fSlow38 * fRec34[i-1]));
+				fRec34[i] = ((fSlow37 * fRec34[i-1]) + (fSlow38 * fRec35[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec34_perm[i]=fRec34_tmp[count+i];
 			
-			// LOOP 0x2475f00
+			// LOOP 0x3a48060
 			// pre processing
 			for (int i=0; i<4; i++) fRec37_tmp[i]=fRec37_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec37[i] = ((fSlow52 * fRec38[i]) + (fSlow51 * fRec37[i-1]));
+				fRec37[i] = ((fSlow51 * fRec37[i-1]) + (fSlow52 * fRec38[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec37_perm[i]=fRec37_tmp[count+i];
 			
 			// SECTION : 19
-			// LOOP 0x24669f0
+			// LOOP 0x3a38800
 			// pre processing
 			for (int i=0; i<4; i++) fRec30_tmp[i]=fRec30_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec30[i] = ((fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec31[i]))) - 87.989971088f)) - fSlow27), 0.0f)) + (fSlow26 * fRec30[i-1]));
+				fRec30[i] = ((fSlow27 * fRec30[i-1]) + (fSlow28 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec31[i]))) - 87.989971088f)) - fSlow26), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec30_perm[i]=fRec30_tmp[count+i];
 			
-			// LOOP 0x246e760
+			// LOOP 0x3a40530
 			// pre processing
 			for (int i=0; i<4; i++) fRec33_tmp[i]=fRec33_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec33[i] = ((fSlow42 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec34[i]))) - 87.989971088f)) - fSlow41), 0.0f)) + (fSlow40 * fRec33[i-1]));
+				fRec33[i] = ((fSlow40 * fRec33[i-1]) + (fSlow41 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec34[i]))) - 87.989971088f)) - fSlow39), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec33_perm[i]=fRec33_tmp[count+i];
 			
-			// LOOP 0x2475a80
+			// LOOP 0x3a47c00
 			// pre processing
 			for (int i=0; i<4; i++) fRec36_tmp[i]=fRec36_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec36[i] = ((fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec37[i]))) - 87.989971088f)) - fSlow54), 0.0f)) + (fSlow53 * fRec36[i-1]));
+				fRec36[i] = ((fSlow54 * fRec36[i-1]) + (fSlow55 * max(((8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec37[i]))) - 87.989971088f)) - fSlow53), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec36_perm[i]=fRec36_tmp[count+i];
 			
 			// SECTION : 20
-			// LOOP 0x247c690
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec32[i] = (fSlow63 * fZec24[i]);
-			}
-			
-			// LOOP 0x247d300
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec31[i] = (fSlow61 * fZec28[i]);
-			}
-			
-			// LOOP 0x2483570
-			// exec code
-			for (int i=0; i<count; i++) {
-				fZec33[i] = (fSlow65 * fZec20[i]);
-			}
-			
-			// LOOP 0x24893c0
+			// LOOP 0x3a4f0b0
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph0 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec36[i]))))));
-				fZec36[i] = (fSlow60 * fZec29[i]);
+				fZec31[i] = (fSlow62 * fZec28[i]);
 			}
 			
-			// LOOP 0x248ca80
+			// LOOP 0x3a55250
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec32[i] = (fSlow63 * fZec29[i]);
+			}
+			
+			// LOOP 0x3a56d30
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph2 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec33[i]))))));
-				fZec37[i] = (fSlow62 * fZec25[i]);
+				fZec33[i] = (fSlow66 * fZec24[i]);
 			}
 			
-			// LOOP 0x2490a80
+			// LOOP 0x3a5a580
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec34[i] = (fSlow67 * fZec25[i]);
+			}
+			
+			// LOOP 0x3a5bc50
 			// exec code
 			for (int i=0; i<count; i++) {
 				fbargraph4 = (0.5f * pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec30[i]))))));
-				fZec38[i] = (fSlow64 * fZec21[i]);
+				fZec35[i] = (fSlow70 * fZec20[i]);
+			}
+			
+			// LOOP 0x3a5ec00
+			// exec code
+			for (int i=0; i<count; i++) {
+				fZec36[i] = (fSlow71 * fZec21[i]);
 			}
 			
 			// SECTION : 21
-			// LOOP 0x247d220
+			// LOOP 0x3a4efd0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec34[i] = (((iSlow19)?fZec2[i]:fZec33[i]) + (((iSlow33)?fZec9[i]:fZec32[i]) + ((iSlow46)?fZec14[i]:fZec31[i])));
+				fbargraph1 = (fabsf(fZec32[i]) + fabsf(fZec31[i]));
+				fbargraph3 = (fabsf(fZec34[i]) + fabsf(fZec33[i]));
+				fbargraph5 = (fabsf(fZec36[i]) + fabsf(fZec35[i]));
+				fZec37[i] = ((((iSlow19)?fZec2[i]:fZec35[i]) + ((iSlow32)?fZec7[i]:fZec33[i])) + ((iSlow46)?fZec14[i]:fZec31[i]));
 			}
 			
-			// LOOP 0x24891e0
+			// LOOP 0x3a65300
 			// exec code
 			for (int i=0; i<count; i++) {
-				fbargraph1 = (fabsf(fZec36[i]) + fabsf(fZec31[i]));
-				fbargraph3 = (fabsf(fZec37[i]) + fabsf(fZec32[i]));
-				fbargraph5 = (fabsf(fZec38[i]) + fabsf(fZec33[i]));
-				fZec39[i] = (((iSlow19)?fZec4[i]:fZec38[i]) + (((iSlow33)?fZec11[i]:fZec37[i]) + ((iSlow46)?fZec16[i]:fZec36[i])));
+				fZec39[i] = ((((iSlow19)?fZec4[i]:fZec36[i]) + ((iSlow32)?fZec9[i]:fZec34[i])) + ((iSlow46)?fZec16[i]:fZec32[i]));
 			}
 			
 			// SECTION : 22
-			// LOOP 0x247d140
+			// LOOP 0x3a4eef0
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec35[i] = ((iSlow66)?0:fZec34[i]);
+				fZec38[i] = ((iSlow72)?0:fZec37[i]);
 			}
 			
-			// LOOP 0x2489100
+			// LOOP 0x3a65220
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec40[i] = ((iSlow66)?0:fZec39[i]);
+				fZec40[i] = ((iSlow72)?0:fZec39[i]);
 			}
 			
 			// SECTION : 23
-			// LOOP 0x247d060
+			// LOOP 0x3a4ee10
 			// exec code
 			for (int i=0; i<count; i++) {
-				fZec41[i] = fabsf((fabsf((fSlow67 * fZec40[i])) + fabsf((fSlow67 * fZec35[i]))));
+				fZec41[i] = fabsf((fabsf((fSlow73 * fZec40[i])) + fabsf((fSlow73 * fZec38[i]))));
 			}
 			
 			// SECTION : 24
-			// LOOP 0x2466490
+			// LOOP 0x3a38260
 			// pre processing
 			for (int i=0; i<4; i++) fRec29_tmp[i]=fRec29_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec29[i] = ((fSlow69 * fZec41[i]) + (fSlow68 * max(fZec41[i], fRec29[i-1])));
+				fRec29[i] = ((fSlow74 * max(fZec41[i], fRec29[i-1])) + (fSlow75 * fZec41[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec29_perm[i]=fRec29_tmp[count+i];
 			
 			// SECTION : 25
-			// LOOP 0x2466050
+			// LOOP 0x3a37e20
 			// pre processing
 			for (int i=0; i<4; i++) fRec28_tmp[i]=fRec28_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec28[i] = ((fSlow72 * fRec29[i]) + (fSlow71 * fRec28[i-1]));
+				fRec28[i] = ((fSlow77 * fRec28[i-1]) + (fSlow78 * fRec29[i]));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec28_perm[i]=fRec28_tmp[count+i];
 			
 			// SECTION : 26
-			// LOOP 0x2465cb0
+			// LOOP 0x3a37ae0
 			// pre processing
 			for (int i=0; i<4; i++) fRec27_tmp[i]=fRec27_perm[i];
 			// exec code
 			for (int i=0; i<count; i++) {
-				fRec27[i] = ((fSlow74 * max((6 + (8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec28[i]))) - 87.989971088f))), 0.0f)) + (fSlow73 * fRec27[i-1]));
+				fRec27[i] = ((fSlow79 * fRec27[i-1]) + (fSlow80 * max((6 + (8.685889638065037f * ((8.262958288192749e-08f * float(pun_float_to_int(fRec28[i]))) - 87.989971088f))), 0.0f)));
 			}
 			// post processing
 			for (int i=0; i<4; i++) fRec27_perm[i]=fRec27_tmp[count+i];
 			
 			// SECTION : 27
-			// LOOP 0x249efc0
+			// LOOP 0x3a71290
 			// exec code
 			for (int i=0; i<count; i++) {
 				fZec42[i] = pun_int_to_float((8388608 * (126.94269504f + max(-126.0f, (0.16609640464202244f * fRec27[i])))));
 			}
 			
 			// SECTION : 28
-			// LOOP 0x241eb10
+			// LOOP 0x39ef170
 			// exec code
 			for (int i=0; i<count; i++) {
-				output0[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec34[i]:(fSlow75 * (fZec35[i] * fZec42[i]))));
+				output0[i] = (FAUSTFLOAT)(fSlow82 * ((iSlow72)?fZec39[i]:(fSlow81 * (fZec40[i] * fZec42[i]))));
 			}
 			
-			// LOOP 0x24a4870
+			// LOOP 0x3a76b10
 			// exec code
 			for (int i=0; i<count; i++) {
-				output1[i] = (FAUSTFLOAT)(fSlow76 * ((iSlow66)?fZec39[i]:(fSlow75 * (fZec40[i] * fZec42[i]))));
+				output1[i] = (FAUSTFLOAT)(fSlow82 * ((iSlow72)?fZec37[i]:(fSlow81 * (fZec38[i] * fZec42[i]))));
 			}
 			
 		}
@@ -2824,7 +2838,7 @@ static void fill_type(SoundPluginType *type){
  type->data                     = NULL;
 };
 
-static SoundPluginType faust_type = {0};
+static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void CREATE_NAME (void){
   fill_type(&faust_type);

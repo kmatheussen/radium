@@ -4,16 +4,19 @@
 // copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.58 (http://faust.grame.fr)
+// Code generated with Faust 0.9.67 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
+#ifndef FAUSTPOWER
+#define FAUSTPOWER
 #include <cmath>
-template <int N> inline float faustpower(float x) 		{ return powf(x,N); } 
-template <int N> inline double faustpower(double x) 	{ return pow(x,N); }
-template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
-template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
-template <> 	 inline int faustpower<1>(int x) 		{ return x; }
+template <int N> inline float faustpower(float x)          { return powf(x,N); } 
+template <int N> inline double faustpower(double x)        { return pow(x,N); }
+template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
+template <> 	 inline int faustpower<0>(int x)            { return 1; }
+template <> 	 inline int faustpower<1>(int x)            { return x; }
+#endif
 #include <math.h>
 #include <string>
 
@@ -248,6 +251,11 @@ class Uni_Bar_dsp : public dsp {
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/version", "1.33");
 		m->declare("effect.lib/license", "STK-4.3");
+		m->declare("effect.lib/exciter_name", "Harmonic Exciter");
+		m->declare("effect.lib/exciter_author", "Priyanka Shekar (pshekar@ccrma.stanford.edu)");
+		m->declare("effect.lib/exciter_copyright", "Copyright (c) 2013 Priyanka Shekar");
+		m->declare("effect.lib/exciter_version", "1.0");
+		m->declare("effect.lib/exciter_license", "MIT License (MIT)");
 	}
 
 	virtual int getNumInputs() 	{ return 0; }
@@ -272,14 +280,14 @@ class Uni_Bar_dsp : public dsp {
 		IOTA = 0;
 		for (int i=0; i<4096; i++) fVec0[i] = 0;
 		fentry2 = 4.4e+02f;
-		fConst4 = (6.283185307179586f / float(iConst0));
-		fConst5 = (1 - (100.53096491487338f / float(iConst0)));
-		fConst6 = (0 - (2 * fConst5));
-		fConst7 = faustpower<2>(fConst5);
+		fConst4 = (1 - (100.53096491487338f / float(iConst0)));
+		fConst5 = faustpower<2>(fConst4);
+		fConst6 = (6.283185307179586f / float(iConst0));
+		fConst7 = (0 - (2 * fConst4));
 		for (int i=0; i<3; i++) fRec5[i] = 0;
-		fConst8 = (0.5f * fConst7);
-		fConst9 = (0.5f - fConst8);
-		fConst10 = (fConst8 - 0.5f);
+		fConst8 = (0.5f * fConst5);
+		fConst9 = (fConst8 - 0.5f);
+		fConst10 = (0.5f - fConst8);
 		for (int i=0; i<2; i++) fRec4[i] = 0;
 		for (int i=0; i<2; i++) fRec0[i] = 0;
 		for (int i=0; i<4096; i++) fVec1[i] = 0;
@@ -362,64 +370,66 @@ class Uni_Bar_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = fbutton0;
+		float 	fSlow0 = float(fbutton0);
 		int 	iSlow1 = (fSlow0 > 0);
 		int 	iSlow2 = (fSlow0 <= 0);
-		float 	fSlow3 = (0.0010000000000000009f * fentry0);
-		float 	fSlow4 = (0.8999999999999999f + (0.1f * fslider0));
-		float 	fSlow5 = fslider1;
-		float 	fSlow6 = (10 - (9 * fslider2));
-		float 	fSlow7 = fentry1;
+		float 	fSlow3 = (0.0010000000000000009f * float(fentry0));
+		float 	fSlow4 = (0.8999999999999999f + (0.1f * float(fslider0)));
+		float 	fSlow5 = float(fslider1);
+		float 	fSlow6 = (10 - (9 * float(fslider2)));
+		float 	fSlow7 = float(fentry1);
 		float 	fSlow8 = (0 - (fSlow7 - 1));
-		float 	fSlow9 = fentry2;
+		float 	fSlow9 = float(fentry2);
 		int 	iSlow10 = int((int((float(iConst0) / fSlow9)) & 4095));
-		float 	fSlow11 = (fConst6 * cosf((fConst4 * fSlow9)));
+		float 	fSlow11 = (fConst7 * cosf((fConst6 * fSlow9)));
 		int 	iSlow12 = int((int((fConst11 / fSlow9)) & 4095));
-		float 	fSlow13 = (fConst6 * cosf((fConst12 * fSlow9)));
+		float 	fSlow13 = (fConst7 * cosf((fConst12 * fSlow9)));
 		int 	iSlow14 = int((int((fConst13 / fSlow9)) & 4095));
-		float 	fSlow15 = (fConst6 * cosf((fConst14 * fSlow9)));
+		float 	fSlow15 = (fConst7 * cosf((fConst14 * fSlow9)));
 		int 	iSlow16 = int((int((fConst15 / fSlow9)) & 4095));
-		float 	fSlow17 = (fConst6 * cosf((fConst16 * fSlow9)));
-		float 	fSlow18 = fslider3;
+		float 	fSlow17 = (fConst7 * cosf((fConst16 * fSlow9)));
+		float 	fSlow18 = float(fslider3);
 		float 	fSlow19 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow18 == 0.0f) + (iConst0 * fSlow18))))));
-		float 	fSlow20 = fslider4;
+		float 	fSlow20 = float(fslider4);
 		float 	fSlow21 = (1.0f / ((fSlow20 == 0.0f) + (iConst0 * fSlow20)));
-		float 	fSlow22 = fslider5;
+		float 	fSlow22 = float(fslider5);
 		float 	fSlow23 = (7.0f * (1.0f - fSlow22));
-		int 	iSlow24 = int((int((fConst17 * (fslider6 / fSlow9))) & 4095));
+		int 	iSlow24 = int((int((fConst17 * (float(fslider6) / fSlow9))) & 4095));
 		float 	fSlow25 = (7.0f * fSlow22);
 		FAUSTFLOAT* output0 = output[0];
 		FAUSTFLOAT* output1 = output[1];
 		for (int i=0; i<count; i++) {
 			iRec6[0] = (iSlow1 & (iRec6[1] | (fRec7[1] >= 1)));
 			int iTemp0 = (iSlow2 & (fRec7[1] > 0));
-			fRec7[0] = (((iTemp0 == 0) | (fRec7[1] >= 1e-06f)) * ((fConst3 * (((iRec6[1] == 0) & iSlow1) & (fRec7[1] < 1))) + (fRec7[1] * ((1 - (fConst2 * (iRec6[1] & (fRec7[1] > 90)))) - (fConst1 * iTemp0)))));
-			fRec8[0] = (fSlow3 + (0.999f * fRec8[1]));
-			float fTemp1 = (0 - ((fSlow5 + (fSlow4 * ((fRec3[1] + fRec1[1]) + (fRec2[1] + fRec0[1])))) - ((0.03f + (0.1f * fRec8[0])) * fRec7[0])));
+			fRec7[0] = (((fConst3 * (((iRec6[1] == 0) & iSlow1) & (fRec7[1] < 1))) + (fRec7[1] * ((1 - (fConst2 * (iRec6[1] & (fRec7[1] > 90)))) - (fConst1 * iTemp0)))) * ((iTemp0 == 0) | (fRec7[1] >= 1e-06f)));
+			fRec8[0] = ((0.999f * fRec8[1]) + fSlow3);
+			float fTemp1 = (0 - ((fSlow5 + (fSlow4 * ((fRec0[1] + fRec2[1]) + (fRec1[1] + fRec3[1])))) - ((0.03f + (0.1f * fRec8[0])) * fRec7[0])));
 			float fTemp2 = faustpower<4>((0.75f + fabsf((fSlow6 * fTemp1))));
 			float fTemp3 = (1.0f / fTemp2);
-			float fTemp4 = ((fSlow7 * fRec8[0]) + (fSlow8 * (fTemp1 * ((float((fTemp3 <= 1)) / fTemp2) + (fTemp3 > 1)))));
-			fVec0[IOTA&4095] = (fTemp4 + (4.0f * fRec4[1]));
-			fRec5[0] = (0 - (((fConst7 * fRec5[2]) + (fSlow11 * fRec5[1])) - (0.225f * fVec0[(IOTA-iSlow10)&4095])));
-			fRec4[0] = ((fConst10 * fRec5[2]) + (fConst9 * fRec5[0]));
+			float fTemp4 = (fSlow8 * (fTemp1 * ((fTemp3 > 1) + (float((fTemp3 <= 1)) / fTemp2))));
+			float fTemp5 = (fSlow7 * fRec8[0]);
+			fVec0[IOTA&4095] = (fTemp5 + (fTemp4 + (4.0f * fRec4[1])));
+			fRec5[0] = (0 - (((fSlow11 * fRec5[1]) + (fConst5 * fRec5[2])) - (0.225f * fVec0[(IOTA-iSlow10)&4095])));
+			fRec4[0] = ((fConst10 * fRec5[0]) + (fConst9 * fRec5[2]));
 			fRec0[0] = fRec4[0];
-			fVec1[IOTA&4095] = (fTemp4 + (4.0f * fRec9[1]));
-			fRec10[0] = (0 - (((fConst7 * fRec10[2]) + (fSlow13 * fRec10[1])) - (0.2025f * fVec1[(IOTA-iSlow12)&4095])));
-			fRec9[0] = ((fConst10 * fRec10[2]) + (fConst9 * fRec10[0]));
+			float fTemp6 = (fTemp4 + fTemp5);
+			fVec1[IOTA&4095] = (fTemp6 + (4.0f * fRec9[1]));
+			fRec10[0] = (0 - (((fSlow13 * fRec10[1]) + (fConst5 * fRec10[2])) - (0.2025f * fVec1[(IOTA-iSlow12)&4095])));
+			fRec9[0] = ((fConst10 * fRec10[0]) + (fConst9 * fRec10[2]));
 			fRec1[0] = fRec9[0];
-			fVec2[IOTA&2047] = (fTemp4 + (4.0f * fRec11[1]));
-			fRec12[0] = (0 - (((fConst7 * fRec12[2]) + (fSlow15 * fRec12[1])) - (0.18225000000000002f * fVec2[(IOTA-iSlow14)&2047])));
-			fRec11[0] = ((fConst10 * fRec12[2]) + (fConst9 * fRec12[0]));
+			fVec2[IOTA&2047] = (fTemp6 + (4.0f * fRec11[1]));
+			fRec12[0] = (0 - (((fSlow15 * fRec12[1]) + (fConst5 * fRec12[2])) - (0.18225000000000002f * fVec2[(IOTA-iSlow14)&2047])));
+			fRec11[0] = ((fConst10 * fRec12[0]) + (fConst9 * fRec12[2]));
 			fRec2[0] = fRec11[0];
-			fVec3[IOTA&2047] = (fTemp4 + (4.0f * fRec13[1]));
-			fRec14[0] = (0 - (((fConst7 * fRec14[2]) + (fSlow17 * fRec14[1])) - (0.164025f * fVec3[(IOTA-iSlow16)&2047])));
-			fRec13[0] = ((fConst10 * fRec14[2]) + (fConst9 * fRec14[0]));
+			fVec3[IOTA&2047] = (fTemp6 + (4.0f * fRec13[1]));
+			fRec14[0] = (0 - (((fSlow17 * fRec14[1]) + (fConst5 * fRec14[2])) - (0.164025f * fVec3[(IOTA-iSlow16)&2047])));
+			fRec13[0] = ((fConst10 * fRec14[0]) + (fConst9 * fRec14[2]));
 			fRec3[0] = fRec13[0];
 			iRec15[0] = (iSlow1 & (iRec15[1] | (fRec16[1] >= 1)));
-			int iTemp5 = (iSlow2 & (fRec16[1] > 0));
-			fRec16[0] = (((iTemp5 == 0) | (fRec16[1] >= 1e-06f)) * ((fSlow21 * (((iRec15[1] == 0) & iSlow1) & (fRec16[1] < 1))) + (fRec16[1] * (1 - (fSlow19 * iTemp5)))));
-			float fTemp6 = (fRec16[0] * (fRec3[0] + ((fRec0[0] + fRec2[0]) + fRec1[0])));
-			fVec4[IOTA&4095] = fTemp6;
+			int iTemp7 = (iSlow2 & (fRec16[1] > 0));
+			fRec16[0] = (((fSlow21 * (((iRec15[1] == 0) & iSlow1) & (fRec16[1] < 1))) + (fRec16[1] * (1 - (fSlow19 * iTemp7)))) * ((iTemp7 == 0) | (fRec16[1] >= 1e-06f)));
+			float fTemp8 = (fRec16[0] * (fRec3[0] + ((fRec0[0] + fRec2[0]) + fRec1[0])));
+			fVec4[IOTA&4095] = fTemp8;
 			output0[i] = (FAUSTFLOAT)(fSlow23 * fVec4[IOTA&4095]);
 			output1[i] = (FAUSTFLOAT)(fSlow25 * fVec4[(IOTA-iSlow24)&4095]);
 			// post processing
@@ -1064,7 +1074,7 @@ static void fill_type(SoundPluginType *type){
  type->data                     = NULL;
 };
 
-static SoundPluginType faust_type = {0};
+static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void CREATE_NAME (void){
   fill_type(&faust_type);

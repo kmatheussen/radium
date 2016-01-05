@@ -5,6 +5,9 @@
    modification, are permitted.
 */
 
+#ifndef __OSCUI__
+#define __OSCUI__
+
 #include "faust/gui/OSCControler.h"
 #include "faust/gui/GUI.h"
 #include <vector>
@@ -41,33 +44,35 @@ all the other osc excluded characters with '-' (hyphen)
 This solution is implemented in the proposed OSC UI;
 */
 
-using namespace std;
+///using namespace std;
 
 //class oscfaust::OSCIO;
+
 class OSCUI : public GUI 
 {
+     
 	oscfaust::OSCControler*	fCtrl;
-	vector<const char*>		fAlias;
+	std::vector<const char*>		fAlias;
 	
 	const char* tr(const char* label) const;
 	
 	// add all accumulated alias
-	void addalias(FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max) 
+	void addalias(FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, const char* label)
 	{
 		for (unsigned int i=0; i<fAlias.size(); i++) {
-			fCtrl->addfullpathnode(fAlias[i], zone, (FAUSTFLOAT)0, (FAUSTFLOAT)1, init, min, max);
+			fCtrl->addAlias(fAlias[i], zone, (FAUSTFLOAT)0, (FAUSTFLOAT)1, init, min, max, label);
 		}
 		fAlias.clear();
 	}
 	
  public:
-		
-	OSCUI(char* /*applicationname*/, int argc, char *argv[], oscfaust::OSCIO* io=0) : GUI() 
+
+    OSCUI(char* /*applicationname*/, int argc, char *argv[], oscfaust::OSCIO* io=0, ErrorCallback errCallback = NULL, void* arg = NULL) : GUI() 
     { 
-		fCtrl = new oscfaust::OSCControler(argc, argv, io); 
-//		fCtrl->opengroup(applicationname);
+		fCtrl = new oscfaust::OSCControler(argc, argv, this, io, errCallback, arg); 
+        //		fCtrl->opengroup(applicationname);
 	}
-	
+    
 	virtual ~OSCUI() { delete fCtrl; }
     
     // -- widget's layouts
@@ -79,11 +84,14 @@ class OSCUI : public GUI
 
 	
 	// -- active widgets
-	virtual void addButton(const char* label, FAUSTFLOAT* zone) 		{ addalias(zone, 0, 0, 1); fCtrl->addnode( tr(label), zone, (FAUSTFLOAT)0, (FAUSTFLOAT)0, (FAUSTFLOAT)1); }
-	virtual void addCheckButton(const char* label, FAUSTFLOAT* zone) 	{ addalias(zone, 0, 0, 1); fCtrl->addnode( tr(label), zone, (FAUSTFLOAT)0, (FAUSTFLOAT)0, (FAUSTFLOAT)1); }
-	virtual void addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT /*step*/) 	{ addalias(zone, init, min, max); fCtrl->addnode( tr(label), zone, init, min, max); }
-	virtual void addHorizontalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT /*step*/) { addalias(zone, init, min, max); fCtrl->addnode( tr(label), zone, init, min, max); }
-	virtual void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT /*step*/) 		{ addalias(zone, init, min, max); fCtrl->addnode( tr(label), zone, init, min, max); }
+	virtual void addButton(const char* label, FAUSTFLOAT* zone) 		{ const char* l= tr(label); addalias(zone, 0, 0, 1, l); fCtrl->addnode( l, zone, (FAUSTFLOAT)0, (FAUSTFLOAT)0, (FAUSTFLOAT)1); }
+	virtual void addCheckButton(const char* label, FAUSTFLOAT* zone) 	{ const char* l= tr(label); addalias(zone, 0, 0, 1, l); fCtrl->addnode( l, zone, (FAUSTFLOAT)0, (FAUSTFLOAT)0, (FAUSTFLOAT)1); }
+	virtual void addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT /*step*/)
+																		{ const char* l= tr(label); addalias(zone, init, min, max, l); fCtrl->addnode( l, zone, init, min, max); }
+	virtual void addHorizontalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT /*step*/)
+																		{ const char* l= tr(label); addalias(zone, init, min, max, l); fCtrl->addnode( l, zone, init, min, max); }
+	virtual void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT /*step*/)
+																		{ const char* l= tr(label); addalias(zone, init, min, max, l); fCtrl->addnode( l, zone, init, min, max); }
 	
 	// -- passive widgets
 	
@@ -99,8 +107,11 @@ class OSCUI : public GUI
 
 	virtual void show() {}
 
-	void run()											{ fCtrl->run(); }
+	void run(){
+            fCtrl->run(); 
+    }
 	const char* getRootName()							{ return fCtrl->getRootName(); }
+    int getUDPPort()                { return fCtrl->getUDPPort(); }
 };
 
 const char* OSCUI::tr(const char* label) const
@@ -124,3 +135,5 @@ const char* OSCUI::tr(const char* label) const
 	*ptr = 0;
 	return buffer;
 }
+
+#endif

@@ -1,6 +1,6 @@
 //-----------------------------------------------------
 //
-// Code generated with Faust 0.9.58 (http://faust.grame.fr)
+// Code generated with Faust 0.9.67 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with  */
 #include <math.h>
@@ -230,17 +230,17 @@ class System_Tremolo_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = (0.0010000000000000009f * fslider0);
-		float 	fSlow1 = (0.0010000000000000009f * fslider1);
+		float 	fSlow0 = (0.0010000000000000009f * float(fslider0));
+		float 	fSlow1 = (0.0010000000000000009f * float(fslider1));
 		FAUSTFLOAT* input0 = input[0];
 		FAUSTFLOAT* input1 = input[1];
 		FAUSTFLOAT* output0 = output[0];
 		FAUSTFLOAT* output1 = output[1];
 		for (int i=0; i<count; i++) {
 			fRec2[0] = (fSlow0 + (0.999f * fRec2[1]));
-			float fTemp0 = ((fConst0 * fRec2[0]) + fRec1[1]);
+			float fTemp0 = (fRec1[1] + (fConst0 * fRec2[0]));
 			fRec1[0] = (fTemp0 - floorf(fTemp0));
-			fRec3[0] = (fSlow1 + (0.999f * fRec3[1]));
+			fRec3[0] = ((0.999f * fRec3[1]) + fSlow1);
 			float fTemp1 = (1 - (0.5f * (fRec3[0] * (1.0f + ftbl0[int((65536.0f * fRec1[0]))]))));
 			output0[i] = (FAUSTFLOAT)((float)input0[i] * fTemp1);
 			output1[i] = (FAUSTFLOAT)((float)input1[i] * fTemp1);
@@ -872,7 +872,7 @@ static void fill_type(SoundPluginType *type){
  type->data                     = NULL;
 };
 
-static SoundPluginType faust_type = {0};
+static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void CREATE_NAME (void){
   fill_type(&faust_type);

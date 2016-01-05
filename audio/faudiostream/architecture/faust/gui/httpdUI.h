@@ -9,7 +9,7 @@
 #define __httpdUI__
 
 #include "faust/gui/HTTPDControler.h"
-#include "faust/gui/GUI.h"
+#include "faust/gui/UI.h"
 
 /******************************************************************************
 *******************************************************************************
@@ -35,7 +35,7 @@ with '-' (hyphen).
 Space or tabulation are replaced with '_' (underscore)
 */
 
-using namespace std;
+//using namespace std;
 
 class httpdUI : public UI 
 {
@@ -76,8 +76,19 @@ class httpdUI : public UI
     virtual void declare (FAUSTFLOAT* , const char* key, const char* val ) { fCtrl->declare(key, val); }
 
 	void run()						{ fCtrl->run(); }
-};
+	int getTCPPort()                { return fCtrl->getTCPPort(); }
+    
+    void set_Inputs(int numInputs){
+        fCtrl->set_Inputs(numInputs);
+        
+    }
+    
+    void set_Outputs(int numOutputs){
+        fCtrl->set_Outputs(numOutputs);
+    }
+    std::string get_jsonInterface(){ return fCtrl->get_jsonInterface();}
 
+};
 					
 const char* httpdUI::tr(const char* label) const
 {

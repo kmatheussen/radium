@@ -4,17 +4,20 @@
 // copyright: "Romain Michon"
 // version: "1.0"
 //
-// Code generated with Faust 0.9.58 (http://faust.grame.fr)
+// Code generated with Faust 0.9.67 (http://faust.grame.fr)
 //-----------------------------------------------------
 /* link with : "" */
 #include <math.h>
 #include <phonemes.h>
+#ifndef FAUSTPOWER
+#define FAUSTPOWER
 #include <cmath>
-template <int N> inline float faustpower(float x) 		{ return powf(x,N); } 
-template <int N> inline double faustpower(double x) 	{ return pow(x,N); }
-template <int N> inline int faustpower(int x) 			{ return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
-template <> 	 inline int faustpower<0>(int x) 		{ return 1; }
-template <> 	 inline int faustpower<1>(int x) 		{ return x; }
+template <int N> inline float faustpower(float x)          { return powf(x,N); } 
+template <int N> inline double faustpower(double x)        { return pow(x,N); }
+template <int N> inline int faustpower(int x)              { return faustpower<N/2>(x) * faustpower<N-N/2>(x); } 
+template <> 	 inline int faustpower<0>(int x)            { return 1; }
+template <> 	 inline int faustpower<1>(int x)            { return x; }
+#endif
 #include <math.h>
 #include <string>
 
@@ -185,8 +188,8 @@ class Voice_Form_dsp : public dsp {
 	};
 
 
-	int 	iVec0[2];
 	FAUSTFLOAT 	fslider0;
+	int 	iVec0[2];
 	float 	fRec1[2];
 	FAUSTFLOAT 	fbutton0;
 	int 	iRec2[2];
@@ -208,12 +211,10 @@ class Voice_Form_dsp : public dsp {
 	float 	fConst5;
 	float 	fConst6;
 	float 	fConst7;
-	float 	fConst8;
-	float 	fConst9;
 	static float 	ftbl0[65536];
 	FAUSTFLOAT 	fslider5;
-	float 	fConst10;
-	float 	fConst11;
+	float 	fConst8;
+	float 	fConst9;
 	float 	fRec12[2];
 	int 	iRec13[2];
 	int 	iRec14[2];
@@ -226,12 +227,14 @@ class Voice_Form_dsp : public dsp {
 	float 	fRec16[2];
 	float 	fVec1[2];
 	float 	fVec2[2];
-	float 	fConst12;
+	float 	fConst10;
 	float 	fRec10[3];
+	float 	fConst11;
+	float 	fConst12;
 	float 	fConst13;
+	float 	fVec3[2];
 	float 	fConst14;
 	float 	fConst15;
-	float 	fVec3[2];
 	float 	fConst16;
 	float 	fRec9[2];
 	float 	fVec4[2];
@@ -288,11 +291,16 @@ class Voice_Form_dsp : public dsp {
 		m->declare("instrument.lib/copyright", "Romain Michon");
 		m->declare("instrument.lib/version", "1.0");
 		m->declare("instrument.lib/licence", "STK-4.3");
+		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("effect.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
-		m->declare("effect.lib/copyright", "Julius O. Smith III");
 		m->declare("effect.lib/version", "1.33");
 		m->declare("effect.lib/license", "STK-4.3");
+		m->declare("effect.lib/exciter_name", "Harmonic Exciter");
+		m->declare("effect.lib/exciter_author", "Priyanka Shekar (pshekar@ccrma.stanford.edu)");
+		m->declare("effect.lib/exciter_copyright", "Copyright (c) 2013 Priyanka Shekar");
+		m->declare("effect.lib/exciter_version", "1.0");
+		m->declare("effect.lib/exciter_license", "MIT License (MIT)");
 	}
 
 	virtual int getNumInputs() 	{ return 0; }
@@ -304,8 +312,8 @@ class Voice_Form_dsp : public dsp {
 	}
 	virtual void instanceInit(int samplingFreq) {
 		fSamplingFreq = samplingFreq;
-		for (int i=0; i<2; i++) iVec0[i] = 0;
 		fslider0 = 4.0f;
+		for (int i=0; i<2; i++) iVec0[i] = 0;
 		for (int i=0; i<2; i++) fRec1[i] = 0;
 		fbutton0 = 0.0;
 		for (int i=0; i<2; i++) iRec2[i] = 0;
@@ -321,36 +329,36 @@ class Voice_Form_dsp : public dsp {
 		for (int i=0; i<2; i++) fRec7[i] = 0;
 		for (int i=0; i<2; i++) fRec8[i] = 0;
 		fConst1 = tanf((10367.255756846318f / float(iConst0)));
-		fConst2 = (1.0f / fConst1);
-		fConst3 = (0.822445908998816f + fConst2);
-		fConst4 = (0 - ((0.822445908998816f - fConst2) / fConst3));
-		fConst5 = faustpower<2>(fConst1);
-		fConst6 = (2 * (1.412270893774204f - (1.0f / fConst5)));
-		fConst7 = (1.412270893774204f + ((fConst2 - 0.80263676416103f) / fConst1));
-		fConst8 = (1.412270893774204f + ((0.80263676416103f + fConst2) / fConst1));
-		fConst9 = (1.0f / fConst8);
+		fConst2 = faustpower<2>(fConst1);
+		fConst3 = (2 * (1.412270893774204f - (1.0f / fConst2)));
+		fConst4 = (1.0f / fConst1);
+		fConst5 = (1.412270893774204f + ((fConst4 - 0.80263676416103f) / fConst1));
+		fConst6 = (1.412270893774204f + ((0.80263676416103f + fConst4) / fConst1));
+		fConst7 = (1.0f / fConst6);
 		fslider5 = 6.0f;
-		fConst10 = float(iConst0);
-		fConst11 = (1.0f / fConst10);
+		fConst8 = float(iConst0);
+		fConst9 = (1.0f / fConst8);
 		for (int i=0; i<2; i++) fRec12[i] = 0;
 		for (int i=0; i<2; i++) iRec13[i] = 0;
 		for (int i=0; i<2; i++) iRec14[i] = 0;
-		fslider6 = 0.05f;
-		fslider7 = 0.5f;
-		fslider8 = 0.1f;
+		fslider6 = 0.1f;
+		fslider7 = 0.05f;
+		fslider8 = 0.5f;
 		for (int i=0; i<2; i++) fRec15[i] = 0;
 		fslider9 = 0.05f;
 		fentry1 = 4.4e+02f;
 		for (int i=0; i<2; i++) fRec16[i] = 0;
 		for (int i=0; i<2; i++) fVec1[i] = 0;
 		for (int i=0; i<2; i++) fVec2[i] = 0;
-		fConst12 = (0.5f * fConst10);
+		fConst10 = (0.5f * fConst8);
 		for (int i=0; i<3; i++) fRec10[i] = 0;
-		fConst13 = (0.019809144837789f / fConst5);
-		fConst14 = (1.161516418982696f + fConst13);
-		fConst15 = (2 * (1.161516418982696f - fConst13));
+		fConst11 = (0.019809144837789f / fConst2);
+		fConst12 = (1.161516418982696f + fConst11);
+		fConst13 = (2 * (1.161516418982696f - fConst11));
 		for (int i=0; i<2; i++) fVec3[i] = 0;
-		fConst16 = (1.0f / (fConst3 * fConst8));
+		fConst14 = (0.822445908998816f + fConst4);
+		fConst15 = (1.0f / (fConst14 * fConst6));
+		fConst16 = (0 - ((0.822445908998816f - fConst4) / fConst14));
 		for (int i=0; i<2; i++) fRec9[i] = 0;
 		for (int i=0; i<2; i++) fVec4[i] = 0;
 		for (int i=0; i<2; i++) fRec5[i] = 0;
@@ -411,24 +419,24 @@ class Voice_Form_dsp : public dsp {
 		interface->addHorizontalSlider("Voiced_Release", &fslider3, 0.01f, 0.0f, 2.0f, 0.01f);
 		interface->closeBox();
 		interface->openVerticalBox("Vibrato_Parameters");
+		interface->declare(&fslider8, "3", "");
+		interface->declare(&fslider8, "tooltip", "Vibrato attack duration");
+		interface->declare(&fslider8, "unit", "s");
+		interface->addHorizontalSlider("Vibrato_Attack", &fslider8, 0.5f, 0.0f, 2.0f, 0.01f);
 		interface->declare(&fslider7, "3", "");
-		interface->declare(&fslider7, "tooltip", "Vibrato attack duration");
+		interface->declare(&fslider7, "tooltip", "Vibrato silence duration before attack");
 		interface->declare(&fslider7, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Attack", &fslider7, 0.5f, 0.0f, 2.0f, 0.01f);
-		interface->declare(&fslider6, "3", "");
-		interface->declare(&fslider6, "tooltip", "Vibrato silence duration before attack");
-		interface->declare(&fslider6, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Begin", &fslider6, 0.05f, 0.0f, 2.0f, 0.01f);
+		interface->addHorizontalSlider("Vibrato_Begin", &fslider7, 0.05f, 0.0f, 2.0f, 0.01f);
 		interface->declare(&fslider5, "3", "");
 		interface->declare(&fslider5, "unit", "Hz");
 		interface->addHorizontalSlider("Vibrato_Freq", &fslider5, 6.0f, 1.0f, 15.0f, 0.1f);
 		interface->declare(&fslider9, "3", "");
 		interface->declare(&fslider9, "tooltip", "A value between 0 and 1");
 		interface->addHorizontalSlider("Vibrato_Gain", &fslider9, 0.05f, 0.0f, 1.0f, 0.01f);
-		interface->declare(&fslider8, "3", "");
-		interface->declare(&fslider8, "tooltip", "Vibrato release duration");
-		interface->declare(&fslider8, "unit", "s");
-		interface->addHorizontalSlider("Vibrato_Release", &fslider8, 0.1f, 0.0f, 2.0f, 0.01f);
+		interface->declare(&fslider6, "3", "");
+		interface->declare(&fslider6, "tooltip", "Vibrato release duration");
+		interface->declare(&fslider6, "unit", "s");
+		interface->addHorizontalSlider("Vibrato_Release", &fslider6, 0.1f, 0.0f, 2.0f, 0.01f);
 		interface->closeBox();
 		interface->closeBox();
 		interface->openVerticalBox("Physical_Parameters");
@@ -443,114 +451,114 @@ class Voice_Form_dsp : public dsp {
 		interface->closeBox();
 	}
 	virtual void compute (int count, FAUSTFLOAT** input, FAUSTFLOAT** output) {
-		float 	fSlow0 = fslider0;
+		float 	fSlow0 = float(fslider0);
 		float 	fSlow1 = (0.0010000000000000009f * loadPhonemeGains(fSlow0, 1));
-		float 	fSlow2 = fbutton0;
+		float 	fSlow2 = float(fbutton0);
 		int 	iSlow3 = (fSlow2 > 0);
 		int 	iSlow4 = (fSlow2 <= 0);
-		float 	fSlow5 = fslider1;
+		float 	fSlow5 = float(fslider1);
 		float 	fSlow6 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow5 == 0.0f) + (iConst0 * fSlow5))))));
-		float 	fSlow7 = fslider2;
+		float 	fSlow7 = float(fslider2);
 		float 	fSlow8 = (1.0f / ((fSlow7 == 0.0f) + (iConst0 * fSlow7)));
-		float 	fSlow9 = (0.2f * fentry0);
+		float 	fSlow9 = (0.2f * float(fentry0));
 		float 	fSlow10 = (fSlow9 - 0.97f);
-		float 	fSlow11 = fslider3;
+		float 	fSlow11 = float(fslider3);
 		float 	fSlow12 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow11 == 0.0f) + (iConst0 * fSlow11))))));
-		float 	fSlow13 = fslider4;
+		float 	fSlow13 = float(fslider4);
 		float 	fSlow14 = (1.0f / ((fSlow13 == 0.0f) + (iConst0 * fSlow13)));
 		float 	fSlow15 = (0.0010000000000000009f * loadPhonemeGains(fSlow0, 0));
-		float 	fSlow16 = (fConst11 * fslider5);
-		float 	fSlow17 = fslider6;
-		float 	fSlow18 = (iConst0 * fSlow17);
-		float 	fSlow19 = ((fSlow17 == 0.0f) + fSlow18);
-		float 	fSlow20 = fslider7;
-		float 	fSlow21 = (1.0f / ((fSlow20 == 0.0f) + (iConst0 * fSlow20)));
-		float 	fSlow22 = fslider8;
-		float 	fSlow23 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow22 == 0.0f) + (iConst0 * fSlow22))))));
-		float 	fSlow24 = (100 * fslider9);
-		float 	fSlow25 = fentry1;
+		float 	fSlow16 = (fConst9 * float(fslider5));
+		float 	fSlow17 = float(fslider6);
+		float 	fSlow18 = (1 - (1.0f / powf(1e+05f,(1.0f / ((fSlow17 == 0.0f) + (iConst0 * fSlow17))))));
+		float 	fSlow19 = float(fslider7);
+		float 	fSlow20 = (iConst0 * fSlow19);
+		float 	fSlow21 = ((fSlow19 == 0.0f) + fSlow20);
+		float 	fSlow22 = float(fslider8);
+		float 	fSlow23 = (1.0f / ((fSlow22 == 0.0f) + (iConst0 * fSlow22)));
+		float 	fSlow24 = (100 * float(fslider9));
+		float 	fSlow25 = float(fentry1);
 		float 	fSlow26 = (fSlow9 + 0.030000000000000027f);
-		float 	fSlow27 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 2, 2))));
-		float 	fSlow28 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 2, 0));
-		float 	fSlow29 = loadPhonemeParameters(fSlow0, 2, 1);
-		float 	fSlow30 = (0 - (2 * fSlow29));
-		float 	fSlow31 = faustpower<2>(fSlow29);
-		float 	fSlow32 = (0.5f * fSlow31);
-		float 	fSlow33 = (fSlow32 - 0.5f);
-		float 	fSlow34 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 1, 2))));
-		float 	fSlow35 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 1, 0));
-		float 	fSlow36 = loadPhonemeParameters(fSlow0, 1, 1);
-		float 	fSlow37 = (0 - (2 * fSlow36));
-		float 	fSlow38 = faustpower<2>(fSlow36);
-		float 	fSlow39 = (0.5f * fSlow38);
-		float 	fSlow40 = (fSlow39 - 0.5f);
-		float 	fSlow41 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 3, 2))));
-		float 	fSlow42 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 3, 0));
-		float 	fSlow43 = loadPhonemeParameters(fSlow0, 3, 1);
-		float 	fSlow44 = (0 - (2 * fSlow43));
-		float 	fSlow45 = faustpower<2>(fSlow43);
-		float 	fSlow46 = (0.5f * fSlow45);
-		float 	fSlow47 = (0.5f - fSlow46);
-		float 	fSlow48 = (fSlow46 - 0.5f);
-		float 	fSlow49 = (0.5f - fSlow39);
-		float 	fSlow50 = (0.5f - fSlow32);
-		float 	fSlow51 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 0, 2))));
-		float 	fSlow52 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 0, 0));
-		float 	fSlow53 = loadPhonemeParameters(fSlow0, 0, 1);
-		float 	fSlow54 = (0 - (2 * fSlow53));
-		float 	fSlow55 = faustpower<2>(fSlow53);
-		float 	fSlow56 = (0.5f * fSlow55);
-		float 	fSlow57 = (fSlow56 - 0.5f);
-		float 	fSlow58 = (0.5f - fSlow56);
-		float 	fSlow59 = fslider10;
+		float 	fSlow27 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 1, 2))));
+		float 	fSlow28 = loadPhonemeParameters(fSlow0, 1, 1);
+		float 	fSlow29 = faustpower<2>(fSlow28);
+		float 	fSlow30 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 1, 0));
+		float 	fSlow31 = (0 - (2 * fSlow28));
+		float 	fSlow32 = (0.5f * fSlow29);
+		float 	fSlow33 = (0.5f - fSlow32);
+		float 	fSlow34 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 2, 2))));
+		float 	fSlow35 = loadPhonemeParameters(fSlow0, 2, 1);
+		float 	fSlow36 = faustpower<2>(fSlow35);
+		float 	fSlow37 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 2, 0));
+		float 	fSlow38 = (0 - (2 * fSlow35));
+		float 	fSlow39 = (0.5f * fSlow36);
+		float 	fSlow40 = (0.5f - fSlow39);
+		float 	fSlow41 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 0, 2))));
+		float 	fSlow42 = loadPhonemeParameters(fSlow0, 0, 1);
+		float 	fSlow43 = faustpower<2>(fSlow42);
+		float 	fSlow44 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 0, 0));
+		float 	fSlow45 = (0 - (2 * fSlow42));
+		float 	fSlow46 = (0.5f * fSlow43);
+		float 	fSlow47 = (fSlow46 - 0.5f);
+		float 	fSlow48 = (0.5f - fSlow46);
+		float 	fSlow49 = (fSlow39 - 0.5f);
+		float 	fSlow50 = (fSlow32 - 0.5f);
+		float 	fSlow51 = (0.0010000000000000009f * powf(10,(0.05f * loadPhonemeParameters(fSlow0, 3, 2))));
+		float 	fSlow52 = loadPhonemeParameters(fSlow0, 3, 1);
+		float 	fSlow53 = faustpower<2>(fSlow52);
+		float 	fSlow54 = (0.0010000000000000009f * loadPhonemeParameters(fSlow0, 3, 0));
+		float 	fSlow55 = (0 - (2 * fSlow52));
+		float 	fSlow56 = (0.5f * fSlow53);
+		float 	fSlow57 = (0.5f - fSlow56);
+		float 	fSlow58 = (fSlow56 - 0.5f);
+		float 	fSlow59 = float(fslider10);
 		float 	fSlow60 = (1.0f - fSlow59);
-		int 	iSlow61 = int((int((fConst18 * (fslider11 / fSlow25))) & 4095));
+		int 	iSlow61 = int((int((fConst18 * (float(fslider11) / fSlow25))) & 4095));
 		FAUSTFLOAT* output0 = output[0];
 		FAUSTFLOAT* output1 = output[1];
 		for (int i=0; i<count; i++) {
 			iVec0[0] = 1;
-			fRec1[0] = (fSlow1 + (0.999f * fRec1[1]));
+			fRec1[0] = ((0.999f * fRec1[1]) + fSlow1);
 			iRec2[0] = (iSlow3 & (iRec2[1] | (fRec3[1] >= 1)));
 			int iTemp0 = (iSlow4 & (fRec3[1] > 0));
-			fRec3[0] = (((iTemp0 == 0) | (fRec3[1] >= 1e-06f)) * ((fSlow8 * (((iRec2[1] == 0) & iSlow3) & (fRec3[1] < 1))) + (fRec3[1] * (1 - (fSlow6 * iTemp0)))));
+			fRec3[0] = (((fSlow8 * (((iRec2[1] == 0) & iSlow3) & (fRec3[1] < 1))) + (fRec3[1] * (1 - (fSlow6 * iTemp0)))) * ((iTemp0 == 0) | (fRec3[1] >= 1e-06f)));
 			iRec4[0] = (12345 + (1103515245 * iRec4[1]));
 			iRec6[0] = (iSlow3 & (iRec6[1] | (fRec7[1] >= 1)));
 			int iTemp1 = (iSlow4 & (fRec7[1] > 0));
-			fRec7[0] = (((iTemp1 == 0) | (fRec7[1] >= 1e-06f)) * ((fSlow14 * (((iRec6[1] == 0) & iSlow3) & (fRec7[1] < 1))) + (fRec7[1] * (1 - (fSlow12 * iTemp1)))));
-			fRec8[0] = (fSlow15 + (0.999f * fRec8[1]));
+			fRec7[0] = (((fSlow14 * (((iRec6[1] == 0) & iSlow3) & (fRec7[1] < 1))) + (fRec7[1] * (1 - (fSlow12 * iTemp1)))) * ((iTemp1 == 0) | (fRec7[1] >= 1e-06f)));
+			fRec8[0] = ((0.999f * fRec8[1]) + fSlow15);
 			float fTemp2 = (fSlow16 + fRec12[1]);
 			fRec12[0] = (fTemp2 - floorf(fTemp2));
 			iRec13[0] = (iSlow3 & (iRec13[1] | (fRec15[1] >= 1)));
 			iRec14[0] = (iSlow3 * (1 + iRec14[1]));
 			int iTemp3 = (iSlow4 & (fRec15[1] > 0));
-			fRec15[0] = (((iTemp3 == 0) | (fRec15[1] >= 1e-06f)) * ((fRec15[1] * (1 - (fSlow23 * iTemp3))) + (fSlow21 * ((1 - (iRec14[1] < fSlow19)) * ((((iRec13[1] == 0) & iSlow3) & (fRec15[1] < 1)) & (iRec14[1] > fSlow18))))));
+			fRec15[0] = (((fSlow23 * (((((iRec13[1] == 0) & iSlow3) & (fRec15[1] < 1)) & (iRec14[1] > fSlow20)) * (1 - (iRec14[1] < fSlow21)))) + (fRec15[1] * (1 - (fSlow18 * iTemp3)))) * ((iTemp3 == 0) | (fRec15[1] >= 1e-06f)));
 			float fTemp4 = float((fSlow25 + (fSlow24 * (fRec15[0] * ftbl0[int((65536.0f * fRec12[0]))]))));
-			fRec16[0] = fmodf(((fConst11 * fTemp4) + fRec16[1]),1);
+			fRec16[0] = fmodf((fRec16[1] + (fConst9 * fTemp4)),1);
 			float fTemp5 = faustpower<2>(((2 * fRec16[0]) - 1));
 			fVec1[0] = fTemp5;
 			float fTemp6 = ((iVec0[1] * (fVec1[0] - fVec1[1])) / fTemp4);
 			fVec2[0] = fTemp6;
-			fRec10[0] = ((1 + (fConst12 * ((0.25f * fVec2[1]) - (0.25f * fVec2[0])))) - (iVec0[1] + (fConst9 * ((fConst7 * fRec10[2]) + (fConst6 * fRec10[1])))));
-			float fTemp7 = (((fConst14 * fRec10[0]) + (fConst15 * fRec10[1])) + (fConst14 * fRec10[2]));
+			fRec10[0] = ((1 + (fConst10 * ((0.25f * fVec2[1]) - (0.25f * fVec2[0])))) - (iVec0[1] + (fConst7 * ((fConst5 * fRec10[2]) + (fConst3 * fRec10[1])))));
+			float fTemp7 = (((fConst12 * fRec10[0]) + (fConst13 * fRec10[1])) + (fConst12 * fRec10[2]));
 			fVec3[0] = fTemp7;
-			fRec9[0] = ((fConst16 * (fVec3[0] + fVec3[1])) + (fConst4 * fRec9[1]));
+			fRec9[0] = ((fConst16 * fRec9[1]) + (fConst15 * (fVec3[0] + fVec3[1])));
 			float fTemp8 = ((fRec9[0] * fRec8[0]) * fRec7[0]);
 			fVec4[0] = fTemp8;
-			fRec5[0] = ((fSlow26 * ((0.5263157894736842f * fVec4[0]) + (0.47368421052631576f * fVec4[1]))) - (fSlow10 * fRec5[1]));
+			fRec5[0] = ((fSlow26 * ((0.47368421052631576f * fVec4[1]) + (0.5263157894736842f * fVec4[0]))) - (fSlow10 * fRec5[1]));
 			float fTemp9 = (fRec5[0] + (4.656612875245797e-10f * ((iRec4[0] * fRec3[0]) * fRec1[0])));
-			fRec17[0] = (fSlow27 + (0.999f * fRec17[1]));
-			fRec18[0] = (fSlow28 + (0.999f * fRec18[1]));
-			fRec0[0] = (0 - (((fSlow31 * fRec0[2]) + (fSlow30 * (fRec0[1] * cosf((fConst17 * fRec18[0]))))) - (fRec17[0] * fTemp9)));
-			fRec20[0] = (fSlow34 + (0.999f * fRec20[1]));
-			fRec21[0] = (fSlow35 + (0.999f * fRec21[1]));
-			fRec19[0] = (0 - (((fSlow38 * fRec19[2]) + (fSlow37 * (fRec19[1] * cosf((fConst17 * fRec21[0]))))) - (fRec20[0] * fTemp9)));
-			fRec23[0] = (fSlow41 + (0.999f * fRec23[1]));
-			fRec24[0] = (fSlow42 + (0.999f * fRec24[1]));
-			fRec22[0] = (0 - (((fSlow45 * fRec22[2]) + (fSlow44 * (fRec22[1] * cosf((fConst17 * fRec24[0]))))) - (fRec23[0] * fTemp9)));
-			fRec26[0] = (fSlow51 + (0.999f * fRec26[1]));
-			fRec27[0] = (fSlow52 + (0.999f * fRec27[1]));
-			fRec25[0] = (0 - (((fSlow55 * fRec25[2]) + (fSlow54 * (fRec25[1] * cosf((fConst17 * fRec27[0]))))) - (fRec26[0] * fTemp9)));
-			float fTemp10 = ((fSlow58 * fRec25[0]) + ((fSlow57 * fRec25[2]) + ((fSlow50 * fRec0[0]) + (((fSlow49 * fRec19[0]) + (((fSlow48 * fRec22[2]) + (fSlow47 * fRec22[0])) + (fSlow40 * fRec19[2]))) + (fSlow33 * fRec0[2])))));
+			fRec17[0] = ((0.999f * fRec17[1]) + fSlow27);
+			fRec18[0] = (fSlow30 + (0.999f * fRec18[1]));
+			fRec0[0] = (0 - (((fSlow31 * (cosf((fConst17 * fRec18[0])) * fRec0[1])) + (fSlow29 * fRec0[2])) - (fRec17[0] * fTemp9)));
+			fRec20[0] = ((0.999f * fRec20[1]) + fSlow34);
+			fRec21[0] = (fSlow37 + (0.999f * fRec21[1]));
+			fRec19[0] = (0 - (((fSlow38 * (cosf((fConst17 * fRec21[0])) * fRec19[1])) + (fSlow36 * fRec19[2])) - (fRec20[0] * fTemp9)));
+			fRec23[0] = ((0.999f * fRec23[1]) + fSlow41);
+			fRec24[0] = (fSlow44 + (0.999f * fRec24[1]));
+			fRec22[0] = (0 - (((fSlow45 * (cosf((fConst17 * fRec24[0])) * fRec22[1])) + (fSlow43 * fRec22[2])) - (fRec23[0] * fTemp9)));
+			fRec26[0] = ((0.999f * fRec26[1]) + fSlow51);
+			fRec27[0] = (fSlow54 + (0.999f * fRec27[1]));
+			fRec25[0] = (0 - (((fSlow55 * (cosf((fConst17 * fRec27[0])) * fRec25[1])) + (fSlow53 * fRec25[2])) - (fRec26[0] * fTemp9)));
+			float fTemp10 = ((fSlow58 * fRec25[2]) + ((fSlow57 * fRec25[0]) + ((fSlow50 * fRec0[2]) + (((fSlow49 * fRec19[2]) + (((fSlow48 * fRec22[0]) + (fSlow47 * fRec22[2])) + (fSlow40 * fRec19[0]))) + (fSlow33 * fRec0[0])))));
 			fVec5[IOTA&4095] = fTemp10;
 			output0[i] = (FAUSTFLOAT)(fSlow60 * fVec5[IOTA&4095]);
 			output1[i] = (FAUSTFLOAT)(fSlow59 * fVec5[(IOTA-iSlow61)&4095]);
@@ -1212,7 +1220,7 @@ static void fill_type(SoundPluginType *type){
  type->data                     = NULL;
 };
 
-static SoundPluginType faust_type = {0};
+static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void CREATE_NAME (void){
   fill_type(&faust_type);
