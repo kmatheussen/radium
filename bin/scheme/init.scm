@@ -8,6 +8,9 @@
         #t ;; whether the entire output should be displayed as a comment
         ))
 
+(require stuff.scm)
+(require write.scm)
+
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
               (display (ow!)))))
@@ -15,9 +18,6 @@
 ;;(set! (*stacktrace* 'max-frames) 1000)
 ;(set! (*stacktrace* 'code-cols) 2000)
 ;(set! (*stacktrace* 'total-cols) 2450)
-
-(require stuff.scm)
-(require write.scm)
 
 (load "common1.scm")
 

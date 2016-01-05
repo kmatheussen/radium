@@ -97,7 +97,7 @@
         ((vector? a)
          (<-> "[" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) (vector->list a))) "]"))
         ((procedure? a)
-         (if #t
+         (if #f
              "something"
              (catch #t
                     (lambda ()
@@ -107,13 +107,12 @@
                              (lambda ()
                                (cloned-instrument-to-string4 a))
                              (lambda args
-                               "something2"))))))
-                                        ;                           (with-output-to-string
-                                        ;                             (lambda ()
-                                        ;                               (display a))))))))
+                               (with-output-to-string
+                                 (lambda ()
+                                   (display a)))))))))
         
-        ;;(<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
-        (else
+         ;;(<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
+         (else
          "#unknown type")))
 
 
@@ -251,8 +250,27 @@
       (delete-list-from (delete-from das-list (car elements))
                         (cdr elements))))
 
-(define (last das-list)
+
+(define (last das-list) ;; Wouldn't be surprised if this version is slower than '(car (reverse das-list))' though... (but no, this one is much faster with the test below)
+  (let loop ((a (car das-list))
+             (b (cdr das-list)))
+    (if (null? b)
+        a
+        (loop (car b)
+              (cdr b)))))
+
+#||
+(define (last2 das-list)
   (car (reverse das-list)))
+
+(let ((list (make-list 10000000 "hello")))
+  (c-display "1")
+  (last list)
+  (c-display "2")
+  (last2 list)
+  (c-display "3"))
+||#
+
 
 (define (find-first das-list func)
   (cond ((null? das-list)
@@ -261,3 +279,5 @@
          (car das-list))
         (else
          (find-first (cdr das-list) func))))
+
+
