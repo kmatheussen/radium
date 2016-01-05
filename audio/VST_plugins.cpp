@@ -861,7 +861,7 @@ static void add_midi_event(struct SoundPlugin *plugin,int time,int val1, int val
     Data *data = (Data*)plugin->data;
     AEffect *aeffect = data->aeffect;
 
-    char disp[128] = {0};
+    char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     aeffect->dispatcher(aeffect,effGetParamDisplay,
 			effect_num, 0, (void *) disp, 0.0f);
 
@@ -890,9 +890,9 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
   {
-    char vendor[1024] = {0};
+    char vendor[1024] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     aeffect->dispatcher(aeffect, effGetVendorString, 0, 0, vendor, 0.0f);
-    char product[1024] = {0};
+    char product[1024] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
     
     if(strlen(vendor)>0 || strlen(product)>0)
@@ -1063,7 +1063,7 @@ vector_t *VST_get_uids(const wchar_t *w_filename){
     fflush(stderr);
     
     if (myLib.errorString().contains("dlopen: cannot load any more object with static TLS")){
-      vector_t v = {0};
+      vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
       
       VECTOR_push_back(&v,"Init VST plugins first");
       VECTOR_push_back(&v,"Continue without loading this plugin library.");

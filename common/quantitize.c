@@ -260,7 +260,7 @@ void SetQuantitize_CurrPos(
         
         GFX_CloseReq(window, reqtype);
 
-        if (root->quantitize_options.quant.numerator == after.counter && root->quantitize_options.quant.denominator == after.dividor)
+        if (root->quantitize_options.quant.numerator == (int)after.counter && root->quantitize_options.quant.denominator == (int)after.dividor)
           return;
 
         Undo_MainTempo(window, window->wblock);

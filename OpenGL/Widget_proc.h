@@ -33,10 +33,10 @@ extern void GL_lock(void);
 extern void GL_unlock(void);
 extern bool GL_maybeLock(void);
     
-volatile extern char *GE_vendor_string;
-volatile extern char *GE_renderer_string;
-volatile extern char *GE_version_string;
-volatile extern uint32_t GE_opengl_version_flags;
+extern volatile char *GE_vendor_string;
+extern volatile char *GE_renderer_string;
+extern volatile char *GE_version_string;
+extern volatile uint32_t GE_opengl_version_flags;
   
 extern void GE_set_curr_realline(int curr_realline);
 

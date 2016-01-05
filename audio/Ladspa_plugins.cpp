@@ -314,7 +314,7 @@ static void buffer_size_is_changed(SoundPlugin *plugin, int new_buffer_size){
   }
 }
 
-static const LADSPA_PortRangeHintDescriptor get_hintdescriptor(const SoundPluginType *plugin_type, int effect_num){
+static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const SoundPluginType *plugin_type, int effect_num){
   TypeData *type_data = (TypeData*)plugin_type->data;
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
@@ -492,7 +492,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
       
       if (PR_is_initing_vst_first()) {
         
-        vector_t v = {0};
+        vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
         
         VECTOR_push_back(&v,"Init LADSPA plugins first");
         VECTOR_push_back(&v,"Continue without loading this plugin library.");

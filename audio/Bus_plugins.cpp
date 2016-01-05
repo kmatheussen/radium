@@ -31,15 +31,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Bus_plugins_proc.h"
 
 
-static SoundPluginType bus_type1 = {0};
-static SoundPluginType bus_type2 = {0};
-static SoundPluginType pipe_type = {0};
+static SoundPluginType bus_type1 = {};
+static SoundPluginType bus_type2 = {};
+static SoundPluginType pipe_type = {};
 
-static SoundPluginType left_in_type = {0};
-static SoundPluginType right_in_type = {0};
+static SoundPluginType left_in_type = {};
+static SoundPluginType right_in_type = {};
 
-static SoundPluginType left_out_type = {0};
-static SoundPluginType right_out_type = {0};
+static SoundPluginType left_out_type = {};
+static SoundPluginType right_out_type = {};
 
 #if 0
 static void RT_bus_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){

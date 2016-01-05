@@ -443,12 +443,12 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 			for(;;){
 				midi_fx->name=GFX_GetString(window,reqtype,"Name >");
 				if(midi_fx->name==NULL) continue;
-				for(lokke=0;lokke<strlen(midi_fx->name);lokke++){
+				for(lokke=0;lokke<(int)strlen(midi_fx->name);lokke++){
 					if(midi_fx->name[lokke]==':' || midi_fx->name[lokke]=='/'){
 						break;
 					}
 				}
-				if(lokke<strlen(midi_fx->name)){
+				if(lokke<(int)strlen(midi_fx->name)){
 					midi_fx->name=GFX_GetString(window,reqtype,"(Name can not contain ':' or '/'. Press return.)");
 				}else{
 					break;

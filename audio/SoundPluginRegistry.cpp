@@ -76,7 +76,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
   if(!strcmp(type_name,"VST")){
     while(true){
-      vector_t v = {0};
+      vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
       VECTOR_push_back(&v, "Select plugin file");
       VECTOR_push_back(&v, "Use different plugin");

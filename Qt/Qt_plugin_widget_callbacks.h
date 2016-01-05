@@ -343,7 +343,7 @@ public slots:
     }
 
   void on_fxbp_button_clicked(){
-    vector_t v = {0};
+    vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     VECTOR_push_back(&v, "Load FXB or FXP file");
     VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
     VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
@@ -399,7 +399,7 @@ public slots:
 
       int num_presets = type->get_num_presets(plugin);
       
-      vector_t v = {0};
+      vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
       for(int i=0;i<num_presets;i++){
         VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_preset_name(plugin, i)));

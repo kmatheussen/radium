@@ -1329,7 +1329,7 @@ SoundPluginType *MW_popup_plugin_selector(const char *name, double x, double y, 
 
   if (entry.type==PluginMenuEntry::IS_CONTAINER) {
 
-    vector_t names={0};
+    vector_t names={};
 
     SoundPluginTypeContainer *plugin_type_container = entry.plugin_type_container;
     plugin_type_container->populate(plugin_type_container);

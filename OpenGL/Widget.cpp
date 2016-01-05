@@ -41,7 +41,7 @@
 
 #if FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
-  struct sched_param par={0};
+  struct sched_param par={};
   par.sched_priority=priority;
 
   //if((sched_setscheduler(pid,policy,&par)!=0)){
@@ -935,7 +935,7 @@ QWidget *GL_create_widget(QWidget *parent){
   }
 
   if (!is_opengl_version_recent_enough_questionmark()){
-    vector_t v = {0};
+    vector_t v = {};
     VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
     VECTOR_push_back(&v,"Quit");
 
@@ -1005,7 +1005,7 @@ QWidget *GL_create_widget(QWidget *parent){
 #ifdef FOR_LINUX
     if (s_vendor.contains("ATI"))
       if (SETTINGS_read_bool("show_catalyst_gfx_message_during_startup", true)) {
-        vector_t v = {0};
+        vector_t v = {};
         VECTOR_push_back(&v,"Ok");
         VECTOR_push_back(&v,"Don't show this message again");
         
@@ -1028,7 +1028,7 @@ QWidget *GL_create_widget(QWidget *parent){
     
     if (s_renderer.contains("Gallium") && s_renderer.contains("AMD")) {
       if (SETTINGS_read_bool("show_gallium_gfx_message_during_startup", true)) {
-        vector_t v = {0};
+        vector_t v = {};
         VECTOR_push_back(&v,"Ok");
         VECTOR_push_back(&v,"Don't show this message again");
         
@@ -1064,7 +1064,7 @@ QWidget *GL_create_widget(QWidget *parent){
 
     if (s_vendor.contains("Intel")) {
       if (SETTINGS_read_bool("show_intel_gfx_message2_during_startup", true)) {
-        vector_t v = {0};
+        vector_t v = {};
         VECTOR_push_back(&v,"Ok");
         VECTOR_push_back(&v,"Don't show this message again");
 

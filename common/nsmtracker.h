@@ -295,8 +295,8 @@ enum ColorNums {
 struct Placement{
 	int line;
 	SDB
-	uint_32 counter;
-	uint_32 dividor;
+	uint_32 counter; // What the ...? This is extremely dangerous. It should not be unsigned
+	uint_32 dividor; // Same here, although this one is probably not that much of a problem.
 };
 typedef struct Placement Place;
 
@@ -951,7 +951,7 @@ struct CurrentPianoNote{
   int pianonotenum;
 };
 
-static inline const NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
+static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
   const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
   const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
   const float note_width = gfx_width / notespan;

@@ -59,7 +59,7 @@ int get_subID_from_scancode(int scancode_code){
     scancodes_inited=true;
   }
 
-  R_ASSERT_RETURN_IF_FALSE2(scancode >= 0, EVENT_NO);
+  R_ASSERT_RETURN_IF_FALSE2(scancode_code >= 0, EVENT_NO);
   
   if (scancode_code >= 0x100)
     return EVENT_NO;

@@ -325,7 +325,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,ch
     if(apis.size()==1)
       api = apis[0];
     else{
-      vector_t v={0};
+      vector_t v={};  // c++ way of zero-initialization without getting missing-field-initializers warning.
       for(unsigned int i=0;i<apis.size();i++)
         VECTOR_push_back(&v,  apis[i]==RtMidi::LINUX_ALSA ? "Alsa"
                             : apis[i]==RtMidi::UNIX_JACK  ? "Jack"

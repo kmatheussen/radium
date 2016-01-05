@@ -39,9 +39,9 @@ static inline void ValidatePlace(const Place *place){
   if (place==NULL)
     return;
   R_ASSERT(place->line >= 0);
-  R_ASSERT(place->counter >= 0);
+  //R_ASSERT(place->counter >= 0); TODO! Put back this test when counter is signed.
   R_ASSERT(place->counter < place->dividor);
-  R_ASSERT(place->dividor > 0);
+  //R_ASSERT(place->dividor > 0); TODO! Put back this test when dividor is signed.
   R_ASSERT(place->dividor <= MAX_UINT32);
 }
 

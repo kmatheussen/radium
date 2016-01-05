@@ -154,7 +154,7 @@ struct MyQCheckBox : public QCheckBox{
     }else{
 
 #ifdef COMPILING_RADIUM
-      vector_t options = {0};
+      vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
       if(_is_a_pd_slider){
         /*

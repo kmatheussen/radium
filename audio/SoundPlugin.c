@@ -78,7 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
         gain)))
 */
 
-const static float threshold_val = 0.05f;
+static const float threshold_val = 0.05f;
 
 static float slider_2_gain(float val, const float db_min, const float db_max){
   if(val<=0.0f)

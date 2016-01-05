@@ -176,17 +176,17 @@ struct Comp : public MyWidget, public MyTimer{
 
 #endif
 
-    const int get_y_pixel(const Box &box){
+    int get_y_pixel(const Box &box) const {
       return scale(last_peak,min_db,max_db, box.y2, box.y1);
     }
 
-    const MyLine get_line_line(const Box &box){
+    MyLine get_line_line(const Box &box) const {
       const int peak = get_y_pixel(box);
       return MyLine(box.x1,peak,box.x2,peak);
     }
 
-    const MyLine get_line_to_next_box(const Box &box1, Peaks *peaks2, const Box &box2){
-      Peaks *peaks1 = this;
+    MyLine get_line_to_next_box(const Box &box1, Peaks *peaks2, const Box &box2) const{
+      const Peaks *peaks1 = this;
       int x1=box1.x2;
       int y1=peaks1->get_y_pixel(box1);
       int x2=box2.x1;
@@ -226,7 +226,7 @@ struct Comp : public MyWidget, public MyTimer{
     }
 
     // For lines in boxes (those lines are always horizontal)
-    const MyRect get_line_rect(const Box &box){
+    MyRect get_line_rect(const Box &box) const{
       const int peak = get_y_pixel(box);
       return MyRect(box.x1,peak-2,box.x2,peak+3);
     }

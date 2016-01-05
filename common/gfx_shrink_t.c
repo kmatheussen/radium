@@ -125,7 +125,7 @@ void GFXST_TextType(
         GFXS_TextType(GFX_OSFunc,window,color,text,x,y,width,flags,where);
     }else{
       if(x<minx){
-        if((strlen(text)+1)*window->fontwidth<minx) return;
+        if((int)((strlen(text)+1)*window->fontwidth) < minx) return;
         text+=(minx-x)/window->fontwidth;
         x=minx;
       }

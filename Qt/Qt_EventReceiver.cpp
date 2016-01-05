@@ -248,7 +248,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 #endif
 }
 
-struct TEvent tevent={0};
+struct TEvent tevent={}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 #if 0
 

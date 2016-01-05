@@ -904,7 +904,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
 
   QColor border_color = get_qcolor(BLACK_COLOR_NUM);
-  if(is_current_patch==false);
+  if(is_current_patch==false)
     border_color.setAlpha(160);
 
   painter->setPen(QPen(border_color, 2));

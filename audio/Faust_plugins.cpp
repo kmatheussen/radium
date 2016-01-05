@@ -754,7 +754,7 @@ static void fill_type(SoundPluginType *type){
  type->data                     = NULL;
 };
 
-static SoundPluginType faust_type = {0};
+static SoundPluginType faust_type = {};  // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void CREATE_NAME (void){
   fill_type(&faust_type);
