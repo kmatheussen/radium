@@ -622,3 +622,22 @@ for .emacs:
 
   (assert (test a b)))
 
+(define (group-by get-key key-compare elements)
+  (define keys '())
+  (define hash (make-hash-table 39 key-compare))
+  (for-each (lambda (element)
+              (let* ((key (get-key element))
+                     (old-value (hash-table-ref hash key)))
+                (if (not old-value)
+                    (push-back! keys key))
+                (hash-table-set! hash
+                                 key
+                                 (cons element
+                                       (or old-value '())))))
+            elements)
+  (map (lambda (key)
+         (reverse! (hash-table-ref hash key)))
+       keys))
+
+(***assert*** (group-by (lambda (x) x) = '(1 5 2 3 5 1))
+              '((1 1)(5 5)(2)(3)))

@@ -161,7 +161,6 @@ const char **get_ccnames(void){
 #include "mQt_patch_widget_callbacks.h"
 #include "mQt_midi_instrument_widget_callbacks.h"
 #include "mQt_audio_instrument_widget_callbacks.h"
-#include "mQt_vst_paths_widget_callbacks.h"
 //#include "mQt_mixer_widget_callbacks.h"
 #endif
 
@@ -1167,15 +1166,4 @@ void recreate_instrument_widget_order_from_state(hash_t *state){
 
 #include "undo_instruments_widget.cpp"
 
-
-void OS_VST_config(struct Tracker_Windows *window){
-#if defined(FOR_MACOSX)
-  GFX_Message(NULL,"No VST options to edit on OSX");
-#else
-  //EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
-  Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(NULL); // I'm not quite sure i it's safe to make this one static. It seems to work, but shouldn't the dialog be deleted when destroying the window? Not having it static is at least safe, although it might leak some memory.
-  vst_paths_widget->show();
-#endif  
-  printf("Ohjea\n");
-}
 
