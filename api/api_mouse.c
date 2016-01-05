@@ -1993,7 +1993,8 @@ static int addPitch(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   return getPitchNum(wtrack->track, note, pitch, false);
 }
 
-int createPitch(float value, float floatplace, int tracknum, int blocknum, int windownum){
+int createPitch3(float value, int line, int counter, int dividor, int tracknum, int blocknum, int windownum){
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2001,8 +2002,7 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
   if (wtrack==NULL)
     return -1;
 
-  Place place;
-  Float2Placement(floatplace, &place);
+  Place place = {line, counter, dividor};
   
   struct Notes *note = getNoteAtPlace(wtrack->track, &place);
 
@@ -2022,6 +2022,12 @@ int createPitch(float value, float floatplace, int tracknum, int blocknum, int w
 
   printf("\n\n\n\n ***** NUM: %d\n",ret);
   return ret;
+}
+
+int createPitch(float value, float floatplace, int tracknum, int blocknum, int windownum){
+  Place place;
+  Float2Placement(floatplace, &place);
+  return createPitch3(value, place.line, place.counter, place.dividor, tracknum, blocknum, windownum);
 }
 
 bool portamentoEnabled(int notenum, int tracknum, int blocknum, int windownum){
@@ -2249,7 +2255,8 @@ int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
   return nodes->num_elements;
 }
 
-int createVelocity(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int createVelocity3(float value, int line, int counter, int dividor, int notenum, int tracknum, int blocknum, int windownum){
+
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2257,8 +2264,7 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   if (note==NULL)
     return -1;
 
-  Place place;
-  Float2Placement(floatplace, &place);
+  Place place = {line, counter, dividor};
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (notenum>0)
@@ -2285,7 +2291,13 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
 
   return ret+1;
 }
-  
+
+int createVelocity(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  Place place;
+  Float2Placement(floatplace, &place);
+  return createVelocity3(value, place.line, place.counter, place.dividor, notenum, tracknum, blocknum, windownum);
+}
+
 int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
