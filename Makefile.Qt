@@ -1433,184 +1433,184 @@ zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
 
 audio/zita_rev.cpp: audio/zita_rev.dsp audio/Faust_plugins.cpp
-	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins.cpp zita_rev.dsp >zita_rev.cpp
+	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins.cpp zita_rev.dsp -o zita_rev.cpp
 
 stk_flute.o: audio/stk_flute.cpp
 	$(CCC) audio/stk_flute.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Flute_dsp -DDSP_NAME=\"STK\ Flute\" -DCREATE_NAME=create_stk_flute_plugin
 
 audio/stk_flute.cpp: audio/faust-examples/faust-stk/flute.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_dsp -a ../../Faust_plugins.cpp flute.dsp >../../stk_flute.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_dsp -a ../../Faust_plugins.cpp flute.dsp -o ../../stk_flute.cpp
 
 stk_bowed.o: audio/stk_bowed.cpp
 	$(CCC) audio/stk_bowed.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Bowed_dsp -DDSP_NAME=\"STK\ Bowed\" -DCREATE_NAME=create_stk_bowed_plugin
 
 audio/stk_bowed.cpp: audio/faust-examples/faust-stk/bowed.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bowed_dsp -a ../../Faust_plugins.cpp bowed.dsp >../../stk_bowed.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bowed_dsp -a ../../Faust_plugins.cpp bowed.dsp -o ../../stk_bowed.cpp
 
 stk_blow_bottle.o: audio/stk_blow_bottle.cpp
 	$(CCC) audio/stk_blow_bottle.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Blow_Bottle_dsp -DDSP_NAME=\"STK\ Blow\ Bottle\" -DCREATE_NAME=create_stk_blow_bottle_plugin
 
 audio/stk_blow_bottle.cpp: audio/faust-examples/faust-stk/blowBottle.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Bottle_dsp -a ../../Faust_plugins.cpp blowBottle.dsp >../../stk_blow_bottle.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Bottle_dsp -a ../../Faust_plugins.cpp blowBottle.dsp -o ../../stk_blow_bottle.cpp
 
 stk_bass.o: audio/stk_bass.cpp
 	$(CCC) audio/stk_bass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Bass_dsp -DDSP_NAME=\"STK\ Bass\" -DCREATE_NAME=create_stk_bass_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_bass.cpp: audio/faust-examples/faust-stk/bass.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bass_dsp -a ../../Faust_plugins.cpp bass.dsp >../../stk_bass.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bass_dsp -a ../../Faust_plugins.cpp bass.dsp -o ../../stk_bass.cpp
 
 stk_blow_hole.o: audio/stk_blow_hole.cpp
 	$(CCC) audio/stk_blow_hole.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Blow_Hole_dsp -DDSP_NAME=\"STK\ Blow\ Hole\ \(clarinet\)\" -DCREATE_NAME=create_stk_blow_hole_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_blow_hole.cpp: audio/faust-examples/faust-stk/blowHole.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Hole_dsp -a ../../Faust_plugins.cpp blowHole.dsp >../../stk_blow_hole.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Hole_dsp -a ../../Faust_plugins.cpp blowHole.dsp -o ../../stk_blow_hole.cpp
 
 stk_brass.o: audio/stk_brass.cpp
 	$(CCC) audio/stk_brass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Brass_dsp -DDSP_NAME=\"STK\ Brass\" -DCREATE_NAME=create_stk_brass_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_brass.cpp: audio/faust-examples/faust-stk/brass.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Brass_dsp -a ../../Faust_plugins.cpp brass.dsp >../../stk_brass.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Brass_dsp -a ../../Faust_plugins.cpp brass.dsp -o ../../stk_brass.cpp
 
 stk_clarinet.o: audio/stk_clarinet.cpp
 	$(CCC) audio/stk_clarinet.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Clarinet_dsp -DDSP_NAME=\"STK\ Clarinet\" -DCREATE_NAME=create_stk_clarinet_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_clarinet.cpp: audio/faust-examples/faust-stk/clarinet.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Clarinet_dsp -a ../../Faust_plugins.cpp clarinet.dsp >../../stk_clarinet.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Clarinet_dsp -a ../../Faust_plugins.cpp clarinet.dsp -o ../../stk_clarinet.cpp
 
 stk_flute_stk.o: audio/stk_flute_stk.cpp
 	$(CCC) audio/stk_flute_stk.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Flute_Stk_dsp -DDSP_NAME=\"STK\ Flute\ STK\" -DCREATE_NAME=create_stk_flute_stk_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_flute_stk.cpp: audio/faust-examples/faust-stk/flutestk.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_Stk_dsp -a ../../Faust_plugins.cpp flutestk.dsp >../../stk_flute_stk.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_Stk_dsp -a ../../Faust_plugins.cpp flutestk.dsp -o ../../stk_flute_stk.cpp
 
 stk_glass_harmonica.o: audio/stk_glass_harmonica.cpp
 	$(CCC) audio/stk_glass_harmonica.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Glass_Harmonica_dsp -DDSP_NAME=\"STK\ Glass\ Harmonica\" -DCREATE_NAME=create_stk_glass_harmonica_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_glass_harmonica.cpp: audio/faust-examples/faust-stk/glassHarmonica.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Glass_Harmonica_dsp -a ../../Faust_plugins.cpp glassHarmonica.dsp >../../stk_glass_harmonica.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Glass_Harmonica_dsp -a ../../Faust_plugins.cpp glassHarmonica.dsp -o ../../stk_glass_harmonica.cpp
 
 stk_harpsi.o: audio/stk_harpsi.cpp
 	$(CCC) audio/stk_harpsi.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Harpsi_dsp -DDSP_NAME=\"STK\ Harpsichord\" -DCREATE_NAME=create_stk_harpsi_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_harpsi.cpp: audio/faust-examples/faust-stk/harpsi.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Harpsi_dsp -a ../../Faust_plugins.cpp harpsi.dsp >../../stk_harpsi.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Harpsi_dsp -a ../../Faust_plugins.cpp harpsi.dsp -o ../../stk_harpsi.cpp
 
 stk_modal_bar.o: audio/stk_modal_bar.cpp
 	$(CCC) audio/stk_modal_bar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Modal_Bar_dsp -DDSP_NAME=\"STK\ Modal\ Bar\" -DCREATE_NAME=create_stk_modal_bar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_modal_bar.cpp: audio/faust-examples/faust-stk/modalBar.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Modal_Bar_dsp -a ../../Faust_plugins.cpp modalBar.dsp >../../stk_modal_bar.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Modal_Bar_dsp -a ../../Faust_plugins.cpp modalBar.dsp -o ../../stk_modal_bar.cpp
 
 stk_NLF_eks.o: audio/stk_NLF_eks.cpp
 	$(CCC) audio/stk_NLF_eks.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=NLF_Eks_dsp -DDSP_NAME=\"STK\ Non\-linear\ Karplus\-Strong\" -DCREATE_NAME=create_stk_NLF_eks_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_NLF_eks.cpp: audio/faust-examples/faust-stk/NLFeks.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Eks_dsp -a ../../Faust_plugins.cpp NLFeks.dsp >../../stk_NLF_eks.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Eks_dsp -a ../../Faust_plugins.cpp NLFeks.dsp -o ../../stk_NLF_eks.cpp
 
 stk_NLF_fm.o: audio/stk_NLF_fm.cpp
 	$(CCC) audio/stk_NLF_fm.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=NLF_Fm_dsp -DDSP_NAME=\"STK\ Non\-linear\ FM\" -DCREATE_NAME=create_stk_NLF_fm_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_NLF_fm.cpp: audio/faust-examples/faust-stk/NLFfm.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Fm_dsp -a ../../Faust_plugins.cpp NLFfm.dsp >../../stk_NLF_fm.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Fm_dsp -a ../../Faust_plugins.cpp NLFfm.dsp -o ../../stk_NLF_fm.cpp
 
 stk_piano.o: audio/stk_piano.cpp
 	$(CCC) audio/stk_piano.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Piano_dsp -DDSP_NAME=\"STK\ Piano\" -DCREATE_NAME=create_stk_piano_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_piano.cpp: audio/faust-examples/faust-stk/piano.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Piano_dsp -a ../../Faust_plugins.cpp piano.dsp >../../stk_piano.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Piano_dsp -a ../../Faust_plugins.cpp piano.dsp -o ../../stk_piano.cpp
 
 stk_saxophony.o: audio/stk_saxophony.cpp
 	$(CCC) audio/stk_saxophony.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Saxophony_dsp -DDSP_NAME=\"STK\ Saxophony\" -DCREATE_NAME=create_stk_saxophony_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_saxophony.cpp: audio/faust-examples/faust-stk/saxophony.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Saxophony_dsp -a ../../Faust_plugins.cpp saxophony.dsp >../../stk_saxophony.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Saxophony_dsp -a ../../Faust_plugins.cpp saxophony.dsp -o ../../stk_saxophony.cpp
 
 stk_sitar.o: audio/stk_sitar.cpp
 	$(CCC) audio/stk_sitar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Sitar_dsp -DDSP_NAME=\"STK\ Sitar\" -DCREATE_NAME=create_stk_sitar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_sitar.cpp: audio/faust-examples/faust-stk/sitar.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Sitar_dsp -a ../../Faust_plugins.cpp sitar.dsp >../../stk_sitar.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Sitar_dsp -a ../../Faust_plugins.cpp sitar.dsp -o ../../stk_sitar.cpp
 
 stk_tibetan_bowl.o: audio/stk_tibetan_bowl.cpp
 	$(CCC) audio/stk_tibetan_bowl.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Tibetan_Bowl_dsp -DDSP_NAME=\"STK\ Tibetan\ Bowl\" -DCREATE_NAME=create_stk_tibetan_bowl_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_tibetan_bowl.cpp: audio/faust-examples/faust-stk/tibetanBowl.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tibetan_Bowl_dsp -a ../../Faust_plugins.cpp tibetanBowl.dsp >../../stk_tibetan_bowl.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tibetan_Bowl_dsp -a ../../Faust_plugins.cpp tibetanBowl.dsp -o ../../stk_tibetan_bowl.cpp
 
 stk_tuned_bar.o: audio/stk_tuned_bar.cpp
 	$(CCC) audio/stk_tuned_bar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Tuned_Bar_dsp -DDSP_NAME=\"STK\ Tuned\ Bar\" -DCREATE_NAME=create_stk_tuned_bar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_tuned_bar.cpp: audio/faust-examples/faust-stk/tunedBar.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tuned_Bar_dsp -a ../../Faust_plugins.cpp tunedBar.dsp >../../stk_tuned_bar.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tuned_Bar_dsp -a ../../Faust_plugins.cpp tunedBar.dsp -o ../../stk_tuned_bar.cpp
 
 stk_uni_bar.o: audio/stk_uni_bar.cpp
 	$(CCC) audio/stk_uni_bar.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Uni_Bar_dsp -DDSP_NAME=\"STK\ Uni\ Bar\" -DCREATE_NAME=create_stk_uni_bar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_uni_bar.cpp: audio/faust-examples/faust-stk/uniBar.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Uni_Bar_dsp -a ../../Faust_plugins.cpp uniBar.dsp >../../stk_uni_bar.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Uni_Bar_dsp -a ../../Faust_plugins.cpp uniBar.dsp -o ../../stk_uni_bar.cpp
 
 stk_voice_form.o: audio/stk_voice_form.cpp
 	$(CCC) audio/stk_voice_form.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Voice_Form_dsp -DDSP_NAME=\"STK\ Voice\" -DCREATE_NAME=create_stk_voice_form_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_voice_form.cpp: audio/faust-examples/faust-stk/voiceForm.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples/faust-stk && $(FAUST) -cn Voice_Form_dsp -a ../../Faust_plugins.cpp voiceForm.dsp >../../stk_voice_form.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Voice_Form_dsp -a ../../Faust_plugins.cpp voiceForm.dsp -o ../../stk_voice_form.cpp
 
 faust_tapiir.o: audio/faust_tapiir.cpp
 	$(CCC) audio/faust_tapiir.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Tapiir_dsp -DDSP_NAME=\"Tapiir\" -DCREATE_NAME=create_faust_tapiir_plugin 
 
 audio/faust_tapiir.cpp: audio/faust-examples/tapiir.dsp audio/Faust_plugins.cpp
-	cd audio/faust-examples && $(FAUST) -cn Tapiir_dsp -a ../Faust_plugins.cpp tapiir.dsp >../faust_tapiir.cpp
+	cd audio/faust-examples && $(FAUST) -cn Tapiir_dsp -a ../Faust_plugins.cpp tapiir.dsp -o ../faust_tapiir.cpp
 
 faust_multibandcomp.o: audio/faust_multibandcomp.cpp
 	$(CCC) audio/faust_multibandcomp.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE
 
 audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins.cpp faust_multibandcomp.dsp >faust_multibandcomp.cpp
+	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins.cpp faust_multibandcomp.dsp -o faust_multibandcomp.cpp
 
 faust_system_eq.o: audio/faust_system_eq.cpp
 	$(CCC) audio/faust_system_eq.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DDONT_NORMALIZE_EFFECT_VALUES
 
 audio/faust_system_eq.cpp: audio/system_eq.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -cn System_Eq_dsp -a Faust_plugins.cpp system_eq.dsp >faust_system_eq.cpp
+	cd audio && $(FAUST) -cn System_Eq_dsp -a Faust_plugins.cpp system_eq.dsp -o faust_system_eq.cpp
 
 faust_system_tremolo.o: audio/faust_system_tremolo.cpp
 	$(CCC) audio/faust_system_tremolo.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Tremolo_dsp -DDSP_NAME=\"System\ Tremolo\" -DCREATE_NAME=create_faust_system_tremolo_plugin -DDONT_NORMALIZE_EFFECT_VALUES
 
 audio/faust_system_tremolo.cpp: audio/system_tremolo.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -cn System_Tremolo_dsp -a Faust_plugins.cpp system_tremolo.dsp >faust_system_tremolo.cpp
+	cd audio && $(FAUST) -cn System_Tremolo_dsp -a Faust_plugins.cpp system_tremolo.dsp -o faust_system_tremolo.cpp
 
 faust_system_lowpass.o: audio/faust_system_lowpass.cpp
 	$(CCC) audio/faust_system_lowpass.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DDONT_NORMALIZE_EFFECT_VALUES
 
 audio/faust_system_lowpass.cpp: audio/system_lowpass.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -cn System_Lowpass_dsp -a Faust_plugins.cpp system_lowpass.dsp >faust_system_lowpass.cpp
+	cd audio && $(FAUST) -cn System_Lowpass_dsp -a Faust_plugins.cpp system_lowpass.dsp -o faust_system_lowpass.cpp
 
 faust_system_lowshelf.o: audio/faust_system_lowshelf.cpp
 	$(CCC) audio/faust_system_lowshelf.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Lowshelf_dsp -DDSP_NAME=\"System\ Lowshelf\" -DCREATE_NAME=create_faust_system_lowshelf_plugin -DDONT_NORMALIZE_EFFECT_VALUES
 
 audio/faust_system_lowshelf.cpp: audio/system_lowshelf.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -cn System_Lowshelf_dsp -a Faust_plugins.cpp system_lowshelf.dsp >faust_system_lowshelf.cpp
+	cd audio && $(FAUST) -cn System_Lowshelf_dsp -a Faust_plugins.cpp system_lowshelf.dsp -o faust_system_lowshelf.cpp
 
 faust_system_highshelf.o: audio/faust_system_highshelf.cpp
 	$(CCC) audio/faust_system_highshelf.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Highshelf_dsp -DDSP_NAME=\"System\ Highshelf\" -DCREATE_NAME=create_faust_system_highshelf_plugin -DDONT_NORMALIZE_EFFECT_VALUES
 
 audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -cn System_Highshelf_dsp -a Faust_plugins.cpp system_highshelf.dsp >faust_system_highshelf.cpp
+	cd audio && $(FAUST) -cn System_Highshelf_dsp -a Faust_plugins.cpp system_highshelf.dsp -o faust_system_highshelf.cpp
 
 faust_system_delay.o: audio/faust_system_delay.cpp
 	$(CCC) audio/faust_system_delay.cpp $(CPPOPT) $(CPUOPT) -DCLASSNAME=System_Delay_dsp -DDSP_NAME=\"System\ Delay\" -DCREATE_NAME=create_faust_system_delay_plugin -DDONT_NORMALIZE_EFFECT_VALUES
 
 audio/faust_system_delay.cpp: audio/system_delay.dsp audio/Faust_plugins.cpp audio/filter_smoothing.lib
-	cd audio && $(FAUST) -cn System_Delay_dsp -a Faust_plugins.cpp system_delay.dsp >faust_system_delay.cpp
+	cd audio && $(FAUST) -cn System_Delay_dsp -a Faust_plugins.cpp system_delay.dsp -o faust_system_delay.cpp
 
 #Faust_plugins.o: audio/Faust_plugins.cpp audio/zita_rev.cpp audio/faust-examples/faust-stk/flute.cpp
 #	$(CCC) audio/Faust_plugins.cpp $(CPPOPT) $(CPUOPT) -DDSP_INCLUDE=zita_rev.cpp -DDSP_NAME=\"Zita Reverb\"
 
 #audio/zita_rev.cpp: audio/zita_rev.dsp
-#	cd audio && $(FAUST) -cn my_dsp zita_rev.dsp >zita_rev.cpp
+#	cd audio && $(FAUST) -cn my_dsp zita_rev.dsp -o zita_rev.cpp
 
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
-#	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp >flute.cpp
+#	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp -o flute.cpp
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
@@ -1670,7 +1670,7 @@ system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_co
 	$(CCC) $(QTOPT) $(CPUOPT) audio/system_compressor_wrapper.cpp
 
 audio/system_compressor.cpp: audio/system_compressor.dsp
-	$(FAUST) -vec -cn Faust_system_compressor audio/system_compressor.dsp >audio/system_compressor.cpp
+	$(FAUST) -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 
 bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" `$(PKG) --cflags QtGui` `$(PKG) --cflags QtNetwork` -o crashbin.o
