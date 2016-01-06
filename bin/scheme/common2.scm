@@ -177,6 +177,37 @@
 ||#
 
 
+(define (copy-struct-helper original struct-name keys arguments)
+
+  ;; check that new data is valid
+  (let loop ((arguments arguments))
+    (if (not (null? arguments))
+        (let ((key (car arguments))
+              (value (cadr arguments)))
+          (if (not (memq (keyword->symbol key) keys))
+              (throw (<-displayable-> "key '" key ,(<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
+          (loop (cddr arguments)))))
+
+  (define old-table (original :dir))
+  (define new-table (make-hash-table 32 eq?))
+
+  ;; copy old
+  (for-each (lambda (key)
+              (let ((key (symbol->keyword key)))
+                (hash-table-set! new-table
+                                 key
+                                 (old-table key))))
+            keys)
+
+  ;; add new data
+  (let loop ((arguments arguments))
+    (if (not (null? arguments))
+        (let ((key (car arguments))
+              (value (cadr arguments)))
+          (hash-table-set! new-table key value)
+          (loop (cddr arguments)))))
+
+  new-table)
 
 
 (define-macro (define-struct name . args)
@@ -190,6 +221,7 @@
   (define ret (gensym "ret"))
   (define keysvar (gensym "keys"))
   (define original (gensym "original"))
+  (define arguments (gensym "arguments"))
   
   `(begin
      (define (,(<_> 'make- name '-internal) ,table)
@@ -204,7 +236,7 @@
                         (throw (<-displayable-> "key '" ,key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword ,keysvar)))
                         ,ret)))))))
 
-     (define (,(<_> 'copy- name) ,original new-key new-value)
+     (define (,(<_> 'old-copy- name) ,original new-key new-value)
        (if (not (memq (keyword->symbol new-key) (quote ,keys)))
            (throw (<-displayable-> "key '" new-key ,(<-> "' not found in struct '" name "'") ". keys: " (map symbol->keyword (quote ,keys)))))
        ;;(c-display "copy-" new-key new-value)
@@ -215,6 +247,10 @@
        (hash-table-set! ,table new-key new-value)
        (,(<_> 'make- name '-internal) ,table))
 
+     (define (,(<_> 'copy- name) ,original . ,arguments)
+       (let ((,table (copy-struct-helper ,original (quote ,name) (quote ,keys) ,arguments)))
+         (,(<_> 'make- name '-internal) ,table)))
+                     
      (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
        ,@(map (lambda (must-be-defined)
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
