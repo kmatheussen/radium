@@ -2041,6 +2041,17 @@ bool portamentoEnabled(int notenum, int tracknum, int blocknum, int windownum){
   return note->pitch_end > 0;
 }
 
+void setNoteEndPitch(float value, int notenum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  if (note==NULL)
+    return;
+
+  note->pitch_end = value;
+}
+
 void enablePortamento(int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2298,7 +2309,8 @@ int createVelocity(float value, float floatplace, int notenum, int tracknum, int
   return createVelocity3(value, place.line, place.counter, place.dividor, notenum, tracknum, blocknum, windownum);
 }
 
-int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int setVelocity3(int velocitynum, float value, int line, int counter, int dividor, int notenum, int tracknum, int blocknum, int windownum){
+  
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -2319,30 +2331,31 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
 
   //printf("velocitynum==%d. floatplace: %f\n",velocitynum,floatplace);
 
+  Place place = {line, counter, dividor};
+
   if (velocitynum==0) {
+    
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (floatplace>=0) {
-      return MoveNote(block, track, note, PlaceCreate2(floatplace), true);
-    }
+    if (line>=0)
+      return MoveNote(block, track, note, &place, true);
+    
   } else if (velocitynum==nodes->num_elements-1) {
+    
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (floatplace>=0)
-      MoveEndNote(block, track, note, PlaceCreate2(floatplace), true);
+    if (line>=0)
+      MoveEndNote(block, track, note, &place, true);
 
   } else {
 
     struct Velocities *velocity;
 
-    if (floatplace < 0 ) {
+    if (line < 0 ) {
       velocity = ListFindElement3_num(&note->velocities->l, velocitynum-1);
     } else {
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
       
-      Place place;
-      Float2Placement(floatplace, &place);
-
       PLAYER_lock();{
         velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
         NOTE_validate(block, track, note);
@@ -2353,6 +2366,15 @@ int setVelocity(int velocitynum, float value, float floatplace, int notenum, int
   }
 
   return notenum;
+}
+
+int setVelocity(int velocitynum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+  if (floatplace < 0)
+    return setVelocity3(velocitynum, value, -1, 0, 1, notenum, tracknum, blocknum, windownum);
+
+  Place place;
+  Float2Placement(floatplace, &place);
+  return setVelocity3(velocitynum, value, place.line, place.counter, place.dividor, notenum, tracknum, blocknum, windownum);
 }
 
 void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
