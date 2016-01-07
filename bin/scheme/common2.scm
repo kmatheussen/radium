@@ -677,3 +677,61 @@ for .emacs:
 
 (***assert*** (group-by (lambda (x) x) = '(1 5 2 3 5 1))
               '((1 1)(5 5)(2)(3)))
+
+(define (true-for-all? pred elements)
+  (cond ((null? elements)
+         #t)
+        ((pred (car elements))
+         (true-for-all? pred (cdr elements)))
+        (else
+         #f)))
+               
+
+(***assert*** (true-for-all? even? '())
+              #t)
+
+(***assert*** (true-for-all? even? '(2 4 6))
+              #t)
+
+(***assert*** (true-for-all? even? '(2 4 3))
+              #f)
+
+
+(define (true-for-at-least-one? pred elements)
+  (if (null? elements)
+      #f
+      (or (pred (car elements))
+          (true-for-at-least-one? pred (cdr elements)))))
+
+(***assert*** (true-for-at-least-one? even? '())
+              #f)
+
+(***assert*** (true-for-at-least-one? even? '(2 4 6))
+              #t)
+
+(***assert*** (true-for-at-least-one? even? '(2 4 3))
+              #t)
+
+(***assert*** (true-for-at-least-one? even? '(1 9 3))
+              #f)
+
+(define (vector-copy vector)
+  (define out (make-vector (length vector)))
+  (for-each (lambda (n)
+              (vector-set! out n (vector n)))
+            (iota (length vector)))
+  out)
+
+(define (butlast elements)
+  (let ((rest (cdr elements)))
+    (if (null? rest)
+        '()
+        (cons (car elements)
+              (butlast rest)))))
+
+(***assert*** (butlast '(2)) '())
+(***assert*** (butlast '(2 3)) '(2))
+
+
+(define (second-last elements)
+  (cadr (reverse elements)))
