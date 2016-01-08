@@ -72,11 +72,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_DEFINE
 #define TRACKER_DEFINE 1
 
-#ifdef __cplusplus
-#  define LANGSPEC "C"
-#else
-#  define LANGSPEC
-#endif
+#  ifdef __cplusplus
+#    define LANGSPEC "C"
+#  else
+#    define LANGSPEC
+#  endif
 
 #if !USE_GTK_VISUAL && !USE_GTK_REQTYPE && !USE_GTK_MENU
 #  define GTK_IS_USED 0

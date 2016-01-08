@@ -2,6 +2,8 @@
 #ifndef RADIUM_COMMON_VECTOR_HPP
 #define RADIUM_COMMON_VECTOR_HPP
 
+#include "validatemem_proc.h"
+
 #include "LockAsserter.hpp"
 
 
@@ -38,13 +40,13 @@ public:
 
     R_ASSERT(num_elements_max > 0);
     
-    elements = (T*)calloc(num_elements_max, sizeof(T));
+    elements = (T*)V_calloc(num_elements_max, sizeof(T));
   }
 
   ~Vector(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
-    free(elements);
+    V_free(elements);
     elements = NULL; // For debugging
   }
 
@@ -109,7 +111,7 @@ public:
       while (new_num_elements > next_num_elements_max)
         next_num_elements_max *= 2;
 
-      next_elements = (T*) calloc(sizeof(T), next_num_elements_max);
+      next_elements = (T*) V_calloc(sizeof(T), next_num_elements_max);
       memcpy(next_elements, elements, sizeof(T)*num_elements);      
     }
   }
@@ -125,7 +127,7 @@ private:
         while (num_elements > num_elements_max)
           num_elements_max *= 2;
 
-        elements = (T*) realloc(elements, sizeof(T) * num_elements_max);
+        elements = (T*) V_realloc(elements, sizeof(T) * num_elements_max);
       }
       
       elements[num_elements-1] = t;
@@ -149,7 +151,7 @@ public:
 
       R_ASSERT(num_elements <= next_num_elements_max);
       
-      free(elements);
+      V_free(elements);
       
       elements = next_elements;
       num_elements_max = next_num_elements_max;

@@ -415,7 +415,7 @@ struct Notes *InsertNote(
 	note->velocity=velocity;
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
 	note->velocity_end=note->velocity;
-
+        
         PLAYER_lock();
         {
           ListAddElement3(&track->notes,&note->l);

@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include <QMutex>
+
 #include "nsmtracker.h"
 
 
@@ -21,6 +23,8 @@
 
 #define ALIGN_UP(value) (((uintptr_t)value + sizeof(int32_t) - 1) & -sizeof(int32_t))
 
+
+static QMutex mutex;
 
 
 typedef void *(*MemoryAllocator)(int size);
@@ -53,6 +57,8 @@ function remove(List list, Node node)
 */
 
 static void remove_memlink(Memlink *link){
+  QMutexLocker locker(&mutex);
+
   if (link->prev == NULL)
     g_root = link->next;
   else
@@ -86,6 +92,8 @@ function insertBefore(List list, Node node, Node newNode)
 */
 
 static void add_memlink(Memlink *link, int size, const char *filename, int linenumber){
+  QMutexLocker locker(&mutex);
+
   if (g_root == NULL) {
     
     g_root = link;
@@ -144,6 +152,8 @@ static void validate_link(Memlink *link){
 }
 
 void V_validate(void){
+  QMutexLocker locker(&mutex);
+
   Memlink *link = g_root;
 
   while(link!=NULL){

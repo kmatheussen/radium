@@ -303,7 +303,7 @@ struct SliderPainter{
 
   ~SliderPainter(){
     if(_local_peak_values==true)
-      free(_peak_values);
+      V_free(_peak_values);
 
     for(int i=0;i<(int)_data.size();i++) // Don't like iterators. Rather free memory manually than using them.
       delete _data.at(i);
@@ -355,7 +355,7 @@ struct SliderPainter{
     R_ASSERT(THREADING_is_main_thread());
     
     if(peak_values==NULL) {
-      _peak_values = (float*)calloc(sizeof(float),num_channels);
+      _peak_values = (float*)V_calloc(sizeof(float),num_channels);
 
       _local_peak_values = true;
 

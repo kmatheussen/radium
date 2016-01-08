@@ -539,7 +539,7 @@ memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
 	$(GCC) $(CD)memory.c $(OPT)
 
 validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp
-	$(CCC) $(CD)validatemem.cpp $(CPPOPT)
+	$(CCC) $(CD)validatemem.cpp $(QTOPT)
 
 placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
 	$(CC) $(CD)placement.c $(OPT)
