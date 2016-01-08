@@ -474,8 +474,8 @@ public:
 
     allocate_sound_buffers(num_frames);
 
-    _input_peaks = (float*)calloc(sizeof(float),_num_dry_sounds);
-    _volume_peaks = (float*)calloc(sizeof(float),_num_outputs);
+    _input_peaks = (float*)V_calloc(sizeof(float),_num_dry_sounds);
+    _volume_peaks = (float*)V_calloc(sizeof(float),_num_outputs);
 
     if (!_is_bus && _num_outputs>0){
       SoundProducerLink *linkbus1a = new SoundProducerLink(this, buses.bus1, false);
@@ -536,25 +536,25 @@ public:
 
     MIXER_remove_SoundProducer(this);
 
-    free(_input_peaks);
-    free(_volume_peaks);
+    V_free(_input_peaks);
+    V_free(_volume_peaks);
           
     free_sound_buffers();
   }
   
   void free_sound_buffers(){
     for(int ch=0;ch<_num_dry_sounds;ch++)
-      free(_dry_sound[ch]);
+      V_free(_dry_sound[ch]);
 
     for(int ch=0;ch<_num_inputs;ch++)
-      free(_input_sound[ch]);
+      V_free(_input_sound[ch]);
 
     for(int ch=0;ch<_num_outputs;ch++)
-      free(_output_sound[ch]);
+      V_free(_output_sound[ch]);
 
-    free(_dry_sound);
-    free(_input_sound);
-    free(_output_sound);
+    V_free(_dry_sound);
+    V_free(_input_sound);
+    V_free(_output_sound);
   }
 
     
@@ -593,17 +593,17 @@ public:
   }
 
   void allocate_sound_buffers(int num_frames){
-    _dry_sound = (float**)(calloc(sizeof(float*),_num_dry_sounds));
+    _dry_sound = (float**)(V_calloc(sizeof(float*),_num_dry_sounds));
     for(int ch=0;ch<_num_dry_sounds;ch++)
-      _dry_sound[ch] = (float*)calloc(sizeof(float),num_frames);
+      _dry_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
 
-    _input_sound = (float**)(calloc(sizeof(float*),_num_inputs));
+    _input_sound = (float**)(V_calloc(sizeof(float*),_num_inputs));
     for(int ch=0;ch<_num_inputs;ch++)
-      _input_sound[ch] = (float*)calloc(sizeof(float),num_frames);
+      _input_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
 
-    _output_sound = (float**)(calloc(sizeof(float*),_num_outputs));
+    _output_sound = (float**)(V_calloc(sizeof(float*),_num_outputs));
     for(int ch=0;ch<_num_outputs;ch++)
-      _output_sound[ch] = (float*)calloc(sizeof(float),num_frames);
+      _output_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
   }
 
   bool is_recursive(SoundProducer *start_producer){

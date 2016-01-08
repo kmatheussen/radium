@@ -1416,7 +1416,7 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename){
     for(ch=0;ch<num_channels;ch++){
       Sample *sample     = (Sample*)&data->samples[ch];
       sample->num_frames = sf_info.frames;
-      sample->sound       = malloc(sizeof(float)*sample->num_frames);
+      sample->sound       = V_malloc(sizeof(float)*sample->num_frames);
     }
 
     int interleaved_pos=0;
@@ -1476,8 +1476,8 @@ static void generate_peaks(Data *data){
       float *samples = sample->sound;
 
       int num_peaks = (sample->num_frames / SAMPLES_PER_PEAK)+10;
-      sample->min_peaks = malloc(sizeof(float)*num_peaks);
-      sample->max_peaks = malloc(sizeof(float)*num_peaks);
+      sample->min_peaks = V_malloc(sizeof(float)*num_peaks);
+      sample->max_peaks = V_malloc(sizeof(float)*num_peaks);
       
       int i;
       int peaknum=0;
@@ -1526,7 +1526,7 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
 }
 
 static SoundPlugin *create_tremolo(void){
-  SoundPlugin *ret = calloc(1, sizeof(SoundPlugin));
+  SoundPlugin *ret = V_calloc(1, sizeof(SoundPlugin));
   
   ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
   ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
@@ -1536,11 +1536,11 @@ static SoundPlugin *create_tremolo(void){
 
 static void free_tremolo(SoundPlugin *tremolo){
   tremolo->type->cleanup_plugin_data(tremolo);
-  free(tremolo);
+  V_free(tremolo);
 }
 
 static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, int resampler_type){
-  Data *data = calloc(1,sizeof(Data));
+  Data *data = V_calloc(1,sizeof(Data));
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
@@ -1617,7 +1617,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC); // cubic is the default
 
   if(load_sample(data,default_sound_filename,0)==false){
-    free(data);
+    V_free(data);
     return NULL;
   }
 
@@ -1634,9 +1634,9 @@ static void delete_data(Data *data){
 
     if(sample->sound!=NULL && sample->sound != prev){
       prev = sample->sound;
-      free(sample->sound);
-      free(sample->min_peaks);
-      free(sample->max_peaks);
+      V_free(sample->sound);
+      V_free(sample->min_peaks);
+      V_free(sample->max_peaks);
     }
   }
 
@@ -1649,7 +1649,7 @@ static void delete_data(Data *data){
 
   free_tremolo(data->tremolo);
     
-  free(data);
+  V_free(data);
 }
 
 static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number, int resampler_type){
@@ -1697,7 +1697,7 @@ static bool set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, 
 
  exit:
   if(success==false)
-    free(data);
+    V_free(data);
 
   return success;
 }

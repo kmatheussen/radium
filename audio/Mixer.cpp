@@ -380,8 +380,8 @@ struct Mixer{
             new_num_allocated_click_plugins = 16;
           else
             new_num_allocated_click_plugins = g_num_allocated_click_plugins * 2;
-          new_g_click_plugins = (SoundPlugin **)calloc(sizeof(SoundPlugin*), new_num_allocated_click_plugins);
-          new_g_click_patches = (Patch **)malloc(sizeof(Patch*)*new_num_allocated_click_plugins);
+          new_g_click_plugins = (SoundPlugin **)V_calloc(sizeof(SoundPlugin*), new_num_allocated_click_plugins);
+          new_g_click_patches = (Patch **)V_malloc(sizeof(Patch*)*new_num_allocated_click_plugins);
         }
         is_click_patch = true;
       }

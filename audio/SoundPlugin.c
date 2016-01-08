@@ -230,9 +230,9 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
 
 static void init_system_filter(SystemFilter *filter, int num_channels, const char *name){
   int ch;
-  filter->plugins=calloc(sizeof(SoundPlugin*),num_channels);
+  filter->plugins=V_calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
-    filter->plugins[ch] = calloc(1, sizeof(SoundPlugin));
+    filter->plugins[ch] = V_calloc(1, sizeof(SoundPlugin));
     filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, "Faust",name);
     filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size());
     filter->was_off = true;
@@ -244,13 +244,13 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
   int ch;
   for(ch=0;ch<num_channels;ch++){
     filter->plugins[ch]->type->cleanup_plugin_data(filter->plugins[ch]);
-    free(filter->plugins[ch]);
+    V_free(filter->plugins[ch]);
   }
-  free(filter->plugins);
+  V_free(filter->plugins);
 }
 
 SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *plugin_state){
-  SoundPlugin *plugin = calloc(1,sizeof(SoundPlugin));
+  SoundPlugin *plugin = V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
   int buffer_size = MIXER_get_buffer_size();
@@ -258,7 +258,7 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
   // TODO: Don't do this. Check if all plugins can be initialized later.
   plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size);
   if(plugin->data==NULL){
-    free(plugin);
+    V_free(plugin);
     return NULL;
   }
 
@@ -317,7 +317,7 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
 
   {
     int i;
-    plugin->savable_effect_values=calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->savable_effect_values=V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
 
 #if 0
     for(i=0;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++)
@@ -336,7 +336,7 @@ SoundPlugin *PLUGIN_create_plugin(const SoundPluginType *plugin_type, hash_t *pl
   }
 
   {
-    plugin->initial_effect_values=calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->initial_effect_values=V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     memcpy(plugin->initial_effect_values, plugin->savable_effect_values, sizeof(float) * (plugin_type->num_effects+NUM_SYSTEM_EFFECTS));
   }
 
@@ -353,8 +353,8 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
 
   plugin_type->cleanup_plugin_data(plugin);
 
-  free(plugin->initial_effect_values);
-  free(plugin->savable_effect_values);
+  V_free(plugin->initial_effect_values);
+  V_free(plugin->savable_effect_values);
 
   
   SMOOTH_release(&plugin->input_volume);
@@ -378,7 +378,7 @@ void PLUGIN_delete_plugin(SoundPlugin *plugin){
   release_system_filter(&plugin->delay, plugin_type->num_outputs);
   
   memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
-  free(plugin);
+  V_free(plugin);
 }
 
 // Called at the start of each block

@@ -615,7 +615,7 @@ protected:
     printf("triggering full collect\n");
     GC_gcollect();
 #endif
-
+    
     //static int hepp=0; printf("hepp %d\n",hepp++);
     
     if (rt_message_status == RT_MESSAGE_READY_FOR_SHOWING) {
@@ -679,6 +679,10 @@ protected:
       PlayCallVeryOften();
     }
 
+#if !defined(RELEASE)
+    V_validate();
+#endif
+    
     PATCH_call_very_often();
     BACKUP_call_very_often();
 

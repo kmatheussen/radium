@@ -92,6 +92,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "debug_proc.h"
+#include "validatemem_proc.h"
 #include "memory_proc.h"
 #include "nsmtracker_events.h"
 #include "OS_error_proc.h"

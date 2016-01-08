@@ -118,26 +118,26 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 static void delete_audio_ports(const SoundPluginType *type, Data *data){
   for(int i=0; i<type->num_inputs;i++)
-    free(data->inputs[i]);
-  free(data->inputs);
+    V_free(data->inputs[i]);
+  V_free(data->inputs);
 
   for(int i=0; i<type->num_outputs;i++)
-    free(data->outputs[i]);
-  free(data->outputs);
+    V_free(data->outputs[i]);
+  V_free(data->outputs);
 }
 
 static void setup_audio_ports(const SoundPluginType *type, Data *data, int block_size){
   TypeData *type_data = (TypeData*)type->data;
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
-  data->inputs=(float**)malloc(sizeof(float*)*type->num_inputs);
-  data->outputs=(float**)malloc(sizeof(float*)*type->num_outputs);
+  data->inputs=(float**)V_malloc(sizeof(float*)*type->num_inputs);
+  data->outputs=(float**)V_malloc(sizeof(float*)*type->num_outputs);
   
   for(int i=0; i<type->num_inputs;i++)
-    data->inputs[i]=(float*)calloc(sizeof(float),block_size);
+    data->inputs[i]=(float*)V_calloc(sizeof(float),block_size);
   
   for(int i=0; i<type->num_outputs;i++)
-    data->outputs[i]=(float*)calloc(sizeof(float),block_size);
+    data->outputs[i]=(float*)V_calloc(sizeof(float),block_size);
 
   {
     int input_num = 0;
@@ -207,7 +207,7 @@ static void remove_library_reference(TypeData *type_data){
 
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
-  Data *data = (Data*)calloc(1, sizeof(Data));
+  Data *data = (Data*)V_calloc(1, sizeof(Data));
   TypeData *type_data = (TypeData*)plugin_type->data;
 
   if (add_library_reference(type_data)==false)
@@ -215,7 +215,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
-  data->control_values = (float*)calloc(sizeof(float),descriptor->PortCount);
+  data->control_values = (float*)V_calloc(sizeof(float),descriptor->PortCount);
 
   data->handles[0] = descriptor->instantiate(descriptor,sample_rate);
   if(data->handles[0]==NULL){
@@ -286,8 +286,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
   delete_audio_ports(type,data);
 
-  free(data->control_values);
-  free(data);
+  V_free(data->control_values);
+  V_free(data);
   
   remove_library_reference(type_data);
 }
@@ -531,7 +531,7 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
     return;
   }
 
-  Library *library = (Library*)calloc(1, sizeof(Library));
+  Library *library = (Library*)V_calloc(1, sizeof(Library));
   library->library = qlibrary;
   library->filename = strdup(filename.toUtf8().constData());
   
@@ -540,8 +540,8 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
   const LADSPA_Descriptor *descriptor;
 
   for(int i = 0; (descriptor=get_descriptor_func(i)) != NULL ; i++){
-    SoundPluginType *plugin_type = (SoundPluginType*)calloc(1,sizeof(SoundPluginType));
-    TypeData *type_data = (TypeData*)calloc(1,sizeof(TypeData));
+    SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
+    TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
 
     plugin_type->data = type_data;
 
@@ -580,9 +580,9 @@ static void add_ladspa_plugin_type(QFileInfo file_info){
       }
     }
 
-    type_data->min_values     = (float*)calloc(sizeof(float),plugin_type->num_effects);
-    type_data->default_values = (float*)calloc(sizeof(float),plugin_type->num_effects);
-    type_data->max_values     = (float*)calloc(sizeof(float),plugin_type->num_effects);
+    type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+    type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+    type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
 
     {
       int effect_num = 0;
@@ -817,7 +817,7 @@ static void get_dir_uris (std::vector<char*> &lrdf_uris, const char * dir){
           strcmp (extension, ".rdfs") != 0)
         continue;
   
-      file_name = (char*)malloc (dirlen + 1 + strlen (dir_entry->d_name) + 1 + 7 + 100);
+      file_name = (char*)V_malloc (dirlen + 1 + strlen (dir_entry->d_name) + 1 + 7 + 100);
     
       sprintf(file_name,"%s:%s%s%s%s%s",
               "file",

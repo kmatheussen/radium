@@ -207,7 +207,7 @@ OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o clip
 
 OBJ4 = tbox.o area.o range.o nodelines.o
 
-OBJ5= debug.o memory.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o pixmap.o scroll.o blts.o
+OBJ5= debug.o memory.o validatemem.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o pixmap.o scroll.o blts.o
 
 OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
 
@@ -537,6 +537,9 @@ debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 
 memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
 	$(GCC) $(CD)memory.c $(OPT)
+
+validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp
+	$(CCC) $(CD)validatemem.cpp $(CPPOPT)
 
 placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
 	$(CC) $(CD)placement.c $(OPT)

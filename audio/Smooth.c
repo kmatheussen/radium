@@ -16,7 +16,7 @@ void SMOOTH_init(Smooth *smooth, float value, int blocksize){
   smooth->target_audio_will_be_modified = true;      
 
   smooth->num_values = blocksize;
-  smooth->values = malloc(sizeof(float)*blocksize);
+  smooth->values = V_malloc(sizeof(float)*blocksize);
 
   int i;
   for(i=0;i<blocksize;i++)
@@ -24,11 +24,11 @@ void SMOOTH_init(Smooth *smooth, float value, int blocksize){
 }
 
 void SMOOTH_new_blocksize(Smooth *smooth, int blocksize){
-  smooth->values = realloc(smooth->values, sizeof(float)*blocksize);
+  smooth->values = V_realloc(smooth->values, sizeof(float)*blocksize);
 }
 
 void SMOOTH_release(Smooth *smooth){
-  free(smooth->values);
+  V_free(smooth->values);
 }
 
 static bool is_smoothing_necessary(Smooth *smooth){
