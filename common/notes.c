@@ -260,7 +260,6 @@ static void set_new_position(struct Tracks *track, struct Notes *note, Place *st
 
   if (track==NULL && has_lock)
     RError("track==NULL && has_lock");
-
   
   if (track!=NULL) {
     if (has_lock==false)

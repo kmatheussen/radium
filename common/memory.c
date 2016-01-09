@@ -108,7 +108,7 @@ void *tracker_alloc__(size_t size,void *(*AllocFunction)(size_t size2), const ch
 #          if defined(RELEASE)               
                 void *ret = AllocFunction(size);
 #          else                
-		void *ret = V_alloc(AllocFunction,size,__FILE__,__LINE__);
+		void *ret = V_alloc(AllocFunction,size,filename,linenumber);
                 void *actual_mem_start = V_allocated_mem_real_start(ret);
                 GC_register_finalizer(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
 #          endif

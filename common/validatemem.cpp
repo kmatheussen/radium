@@ -8,16 +8,17 @@
 
 #include <QMutex>
 #include <QThread>
+#include <QTime>
 
 #include "nsmtracker.h"
 
 
 #ifndef BUF_BEFORE
-# define BUF_BEFORE 128
+# define BUF_BEFORE 32
 #endif
 
 #ifndef BUF_AFTER
-# define BUF_AFTER 128
+# define BUF_AFTER 32
 #endif
 
 #define CLEAR_BYTE 0x4f
@@ -27,7 +28,7 @@
 #define ALIGN_UP(value) (((uintptr_t)value + sizeof(int32_t) - 1) & -sizeof(int32_t))
 
 
-static QMutex mutex;
+static QMutex *mutex = NULL; // must be allocated manually since it can be used before all static variables have been initialized.
 
 namespace{
   
@@ -39,7 +40,7 @@ namespace{
     const char *filename;
     int linenumber;
     MemoryAllocator allocator;
-    bool is_being_validated;
+    bool can_be_freed;
   };
 
   struct LinkToMemlink{
@@ -105,7 +106,7 @@ function insertBefore(List list, Node node, Node newNode)
 */
 
 static void add_memlink(void *mem, int size, MemoryAllocator allocator, const char *filename, int linenumber){   
-  QMutexLocker locker(&mutex);
+  QMutexLocker locker(mutex);
 
   Memlink *link = (Memlink*)calloc(1, sizeof(Memlink));
   LinkToMemlink *linktomemlink = (LinkToMemlink*)mem;
@@ -180,31 +181,13 @@ void V_validate(void *mem){
   Memlink *link = linktomemlink->link;
   validate_link(link);
 }
-/*
-static Memlink *get_next_link(Memlink *link){  
-  //QMutexLocker locker(&mutex);
-  
-  Memlink *next = NULL;
-  
-  if (link==NULL)
-    next = g_root;
-  else {
-    link->is_being_validated = false;
-    next = link->next;
-  }
-  
-  if (next!=NULL)
-    next->is_being_validated = true;
-  
-  return next;
-}
-*/
+
 void V_validate_all(void){
-  QMutexLocker locker(&mutex);
+  QMutexLocker locker(mutex);
   
   Memlink *link = g_root;//get_next_link(NULL);
 
-  //fprintf(stderr, " STARTING TO VALIDATE %d \n",g_num_elements);
+  fprintf(stderr, " STARTING TO VALIDATE %d \n",g_num_elements);
 
   int num = 0;
   
@@ -228,6 +211,42 @@ void V_validate_all(void){
   //  fprintf(stderr, " FINISHED VALIDATING \n");
 }
 
+
+static QTime *timer; // Same here. Can be accessed before it's initialized.
+
+static double get_ms(void){
+  return timer->elapsed();
+}
+
+
+static Memlink *validate_a_little(double max_time, Memlink *link){
+  QMutexLocker locker(mutex);
+    
+  double start_time = get_ms();
+
+  if (link==NULL) {
+    link = g_root;
+    printf("   STARTING new VALIDATE CYCLE. %d\n",g_num_elements);
+  }
+  
+  while(link!=NULL){
+    if ( (get_ms() - start_time) > max_time) // max 10ms.
+      break;
+
+    Memlink *next = link->next;
+
+    if (link->can_be_freed)
+      remove_memlink(link);
+    else {
+      validate_link(link);
+    }
+    
+    link = next;
+  }
+
+  return link;
+}
+
 namespace{
   
 struct ValidationThread : public QThread {
@@ -240,9 +259,10 @@ public:
   }
 
   void run(){
+    Memlink *link = NULL;
     while(true){
-      V_validate_all();
-      usleep(20*1000);
+      link = validate_a_little(10, link);  // work 10ms
+      QThread::msleep(20);                 // sleep 20ms
     }
   }
 };
@@ -288,6 +308,11 @@ void *V_alloc(MemoryAllocator allocator, int size, const char *filename, int lin
   static bool has_inited = false;
   if (has_inited==false){
     has_inited=true;
+    
+    timer = new QTime;
+    timer->start();
+    
+    mutex = new QMutex;
 #if !defined(DONT_RUN_VALIDATION_THREAD)
     V_run_validation_thread();
 #endif
@@ -323,7 +348,7 @@ void *V_allocated_mem_real_start(void *allocated_mem){
 
 static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
 
-  QMutexLocker locker(&mutex); // May be moved to remove_memlink
+  QMutexLocker locker(mutex); // May be moved to remove_memlink
 
   LinkToMemlink *linktomemlink = (LinkToMemlink *) actual_mem_real_start;
   Memlink *link = linktomemlink->link;
@@ -342,7 +367,8 @@ static void V_free_it2(MemoryFreeer freeer, void *actual_mem_real_start){
 
   freeer(actual_mem_real_start);
 
-  remove_memlink(link);
+  link->can_be_freed = true;
+  //remove_memlink(link);
 }
 
 void V_free_actual_mem_real_start(MemoryFreeer freeer, void *actual_mem_real_start){
@@ -397,6 +423,8 @@ void *V_calloc__(size_t n, size_t size, const char *filename, int linenumber){
 }
 
 void V_free__(void *ptr){
+  if (ptr==NULL)
+    return;
   V_free_it(free, ptr);
 }
 
@@ -406,6 +434,35 @@ void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber){
 
   return V_realloc_it(free, ptr, size, filename, linenumber);
 }
+
+
+#if !defined(RELEASE)
+
+void* operator new(size_t size){
+  static int num=1;
+  //printf("new: %d. size: %d\n",num++,(int)size);
+  //return malloc(size);
+  if(true || num>100)
+    return V_malloc(size);
+  else
+    return malloc(size);
+}
+
+void operator delete (void* mem){
+  V_free(mem);
+}
+
+void* operator new[](size_t size){
+  return V_malloc(size);
+}
+
+void operator delete[](void* mem){
+  V_free(mem);
+}
+
+#endif // !RELEASE
+
+
 
 #ifdef TEST_MAIN
 int main(int argc, char **argv){

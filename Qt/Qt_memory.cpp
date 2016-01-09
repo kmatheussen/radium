@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/OS_memory_proc.h"
 
+
+
 #if 0
 
 #include <gc.h>
@@ -50,6 +52,8 @@ void operator delete[](void* mem)
   //free(mem);
 }
 #endif
+
+
 
 
 
